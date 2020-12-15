@@ -1,0 +1,183 @@
+version: 2.1
+
+orbs:
+  codecov: codecov/codecov@1
+
+executors:
+  gradle_docker:
+    docker:
+      - image: cimg/openjdk:11.0
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
+  helm:
+    docker:
+      - image: $DOCKER_REGISTRY/ai.traceable.build/helm-packager:0.1.3
+        auth:
+          username: $DOCKER_USERNAME
+          password: $DOCKER_PASSWORD
+  buf:
+    docker:
+      - image: bufbuild/buf:0.18.1
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
+commands:
+  gradle:
+    description: 'Run the provided gradle command'
+    parameters:
+      args:
+        type: string
+      when:
+        default: "on_success"
+        type: enum
+        enum: ["on_fail", "on_success", "always"]
+    steps:
+      - run:
+          name: << parameters.args >>
+          command: ./gradlew << parameters.args >> --info --max-workers=2 -Dorg.gradle.jvmargs=-Xmx2g -Dorg.gradle.console=plain --continue
+          when: << parameters.when >>
+  setup_build_environment:
+    description: 'Generates cache key from a hash of all gradle files'
+    steps:
+      - checkout
+      - run:
+          name: Generate cache key
+            # Find all gradle related files, hash each and order them consistently, then save to file for later use
+            command: find . -type f -name "*.gradle*" -o -name "gradle-wrapper*" | xargs shasum | sort > /tmp/checksum.txt && cat /tmp/checksum.txt
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "/tmp/checksum.txt" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+  populate_and_save_cache:
+    description: 'Downloads all gradle dependencies and uploads cache for later use'
+    steps:
+      - gradle:
+          args: downloadDependencies
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: v1-dependencies-{{ checksum "/tmp/checksum.txt" }}
+  docker_login:
+    description: "Login to dockerhub with readonly credentials"
+    steps:
+      - run:
+          name: Dockerhub login
+          command: echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
+
+jobs:
+  build:
+    executor: gradle_docker
+    steps:
+      - setup_build_environment
+      - setup_remote_docker
+      - docker_login
+      - populate_and_save_cache
+      - gradle:
+          args: build dockerBuildImages
+      - gradle:
+          args: jacocoTestReport
+      - gradle:
+          args: copyAllReports --output-dir=/tmp/test-reports
+          when: always
+      - codecov/upload:
+          flags: unit
+      - store_test_results:
+          path: /tmp/test-reports
+      - store_artifacts:
+          path: /tmp/test-reports
+          destination: reports
+      # Clear out uploaded unit test reports, then generate the integration test reports
+      - gradle:
+          args: clean
+      - gradle:
+          args: jacocoIntegrationTestReport
+      - gradle:
+          args: copyAllReports --output-dir=/tmp/test-reports
+          when: always
+      - store_test_results:
+          path: /tmp/test-reports
+      - store_artifacts:
+          path: /tmp/test-reports
+          destination: reports
+      - codecov/upload:
+          flags: integration
+  publish:
+    executor: gradle_docker
+    steps:
+      - setup_build_environment
+      - setup_remote_docker
+      - docker_login
+      - gradle:
+          args: :tag -Prelease
+      - add_ssh_keys:
+          fingerprints:
+            - '<REPLACEME>'
+      - run: git push origin $(./gradlew -q :printVersion)
+      - gradle:
+          args: publish dockerPushImages
+  verify-protos:
+    executor: buf
+    steps:
+      - checkout
+      - run: buf check lint
+      - run: buf check breaking --against-input "ssh://${CIRCLE_REPOSITORY_URL/://}#branch=main"
+  validate-charts:
+    executor: helm
+    steps:
+      - checkout
+      - run:
+          name: Helm Charts Lint and Template Render
+          command: |
+            helm lint --strict ./helm/
+            helm template ./helm/
+  package-charts:
+    executor: helm
+    steps:
+      - checkout
+      - run:
+          name: Package and Publish Helm Charts
+          # Read the "name:" from Chart.yaml. The chart version is <chart-name>-<semver git tag>
+          command: |
+            helm package --version $(git describe --abbrev=0) --app-version $(git describe --abbrev=0) ./helm/
+            helm push-artifactory $(awk '/name:/ {print $2}' ./helm/Chart.yaml)-$(git describe --abbrev=0).tgz https://traceableai.jfrog.io/traceableai/helm --username $DOCKER_USERNAME --password $DOCKER_PASSWORD --skip-reindex
+
+workflows:
+  version: 2
+  build-and-publish:
+    jobs:
+      - build:
+          context:
+            - ci-credentials
+            - dockerhub-read
+      - validate-charts:
+          context:
+            - ci-credentials
+      - verify-protos:
+          context:
+            - dockerhub-read
+          filters:
+            branches:
+              ignore:
+                - main
+      - publish:
+          context:
+            - ci-credentials
+            - dockerhub-read
+          requires:
+            - build
+            - validate-charts
+          filters:
+            branches:
+              only:
+                - main
+      - package-charts:
+          context:
+            - continuous_deployment
+          requires:
+            - publish
+          filters:
+            branches:
+              only:
+                - main

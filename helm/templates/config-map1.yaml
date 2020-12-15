@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configMap1.name }}
+  labels:
+    release: {{ .Release.Name }}
+data:
+  special.how: {{ .Values.configMap1.data.specialHow }}
+  special.type: {{ .Values.configMap1.data.specialType }}

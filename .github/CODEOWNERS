@@ -1,0 +1,7 @@
+# Each line is a file pattern followed by one or more owners.
+
+# global
+# * [Service owners]
+
+# protos/api contract
+# /service-api/ [API consumers]

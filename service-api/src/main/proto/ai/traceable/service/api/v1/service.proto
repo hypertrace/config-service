@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+
+package ai.traceable.service.api.v1;
+
+
+import "ai/traceable/service/api/v1/request.proto";
+import "ai/traceable/service/api/v1/response.proto";
+
+service TemplateService {
+  rpc GetData (GetDataRequest) returns (GetDataResponse) {
+  }
+}
