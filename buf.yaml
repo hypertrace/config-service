@@ -1,6 +1,6 @@
 build:
   roots:
-    - service-api/src/main/proto
+    - sensitive-data-config-service-api/src/main/proto
 lint:
   use:
     - DEFAULT

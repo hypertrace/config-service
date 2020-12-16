@@ -1,0 +1,4 @@
+[submodule "hypertrace-config-service"]
+	path = hypertrace-config-service
+	url = git@github.com:hypertrace/config-service.git
+  branch = main

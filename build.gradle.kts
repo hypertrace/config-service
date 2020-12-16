@@ -6,5 +6,5 @@ plugins {
 }
 
 subprojects {
-  group = "ai.traceable.example"
+  group = "ai.traceable.config.service"
 }

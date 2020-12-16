@@ -12,7 +12,7 @@ executors:
           password: $DOCKERHUB_PASSWORD
   helm:
     docker:
-      - image: $DOCKER_REGISTRY/ai.traceable.build/helm-packager:0.1.3
+      - image: $DOCKER_REGISTRY/traceable/helm-packager:0.1.3
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
@@ -37,14 +37,24 @@ commands:
           name: << parameters.args >>
           command: ./gradlew << parameters.args >> --info --max-workers=2 -Dorg.gradle.jvmargs=-Xmx2g -Dorg.gradle.console=plain --continue
           when: << parameters.when >>
+  update-submodule:
+    description: 'Pull Submodules'
+    steps:
+      - run:
+          name: Pull Submodules
+          command: git submodule update --init --recursive
+      - run:
+          name: Ensure submodules point to commit from main branch
+          command: git submodule foreach "git merge-base --is-ancestor HEAD origin/main"
   setup_build_environment:
     description: 'Generates cache key from a hash of all gradle files'
     steps:
       - checkout
+      - update-submodule
       - run:
           name: Generate cache key
-            # Find all gradle related files, hash each and order them consistently, then save to file for later use
-            command: find . -type f -name "*.gradle*" -o -name "gradle-wrapper*" | xargs shasum | sort > /tmp/checksum.txt && cat /tmp/checksum.txt
+          # Find all gradle related files, hash each and order them consistently, then save to file for later use
+          command: find . -type f -name "*.gradle*" -o -name "gradle-wrapper*" | xargs shasum | sort > /tmp/checksum.txt && cat /tmp/checksum.txt
       - restore_cache:
           keys:
             - v1-dependencies-{{ checksum "/tmp/checksum.txt" }}
@@ -120,9 +130,10 @@ jobs:
   verify-protos:
     executor: buf
     steps:
+      # TODO: Re-enable buf
       - checkout
       - run: buf check lint
-      - run: buf check breaking --against-input "ssh://${CIRCLE_REPOSITORY_URL/://}#branch=main"
+      # - run: buf check breaking --against-input "ssh://${CIRCLE_REPOSITORY_URL/://}#branch=main"
   validate-charts:
     executor: helm
     steps:

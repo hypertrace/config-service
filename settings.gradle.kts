@@ -14,8 +14,9 @@ plugins {
   id("org.hypertrace.version-settings") version "0.1.2"
 }
 
-rootProject.name = "service-template"
+rootProject.name = "traceable-config-service"
 
-include(":service-api")
-include(":service-impl")
-include(":service")
+includeBuild("./hypertrace-config-service")
+include(":traceable-config-service")
+include(":sensitive-data-config-service-api")
+include(":sensitive-data-config-service-impl")
