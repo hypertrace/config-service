@@ -132,7 +132,8 @@ jobs:
     steps:
       - checkout
       - run: buf check lint
-      - run: buf check breaking --against-input "ssh://${CIRCLE_REPOSITORY_URL/://}#branch=main"
+      # TODO: Re-enable buf
+      # - run: buf check breaking --against-input "ssh://${CIRCLE_REPOSITORY_URL/://}#branch=main"
   validate-charts:
     executor: helm
     steps:
