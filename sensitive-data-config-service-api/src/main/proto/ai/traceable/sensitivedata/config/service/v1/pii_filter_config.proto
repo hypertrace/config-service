@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.sensitivedata.config.service.v1;
+
+message PiiFilterConfig {
+  RedactionStrategy redaction_strategy = 1;
+  repeated string prefixes = 2;
+  repeated PiiElement key_regexs = 3;
+  repeated PiiElement value_regexs = 4;
+  repeated ComplexData complex_data = 5;
+}
+
+enum RedactionStrategy {
+  REDACTION_STRATEGY_UNSPECIFIED = 0;
+  REDACTION_STRATEGY_REDACT = 1;
+  REDACTION_STRATEGY_HASH = 2;
+  REDACTION_STRATEGY_RAW = 3;
+}
+
+message PiiElement {
+  string regex = 1;
+  string category = 2;
+  RedactionStrategy redaction_strategy = 3;
+  //  bool fqn = 4;  Is this required?
+  bool session_identifier = 4;
+  repeated int32 session_indexes = 5;
+  string session_separator = 6;
+}
+
+message ComplexData {
+  string key = 1;
+  string type = 2;
+  string type_key = 3;
+}
