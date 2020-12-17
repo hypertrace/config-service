@@ -5,4 +5,72 @@ option java_multiple_files = true;
 package ai.traceable.sensitivedata.config.service.v1;
 
 service SensitiveDataConfigService {
+  rpc MarkSensitiveData(MarkSensitiveDataRequest) returns (MarkSensitiveDataResponse) {}
+  rpc UnmarkSensitiveData(UnmarkSensitiveDataRequest) returns (UnmarkSensitiveDataResponse) {}
+  rpc UpdateRedactionStrategy(UpdateRedactionStrategyRequest) returns (UpdateRedactionStrategyResponse) {}
+  rpc GetSensitiveParams(GetSensitiveParamsRequest) returns (GetSensitiveParamsResponse) {}
+  rpc GetInsensitiveParams(GetInsensitiveParamsRequest) returns (GetInsensitiveParamsResponse) {}
+}
+
+message MarkSensitiveDataRequest {
+  repeated Parameter parameters = 1;  // allow bulk changes
+}
+
+message MarkSensitiveDataResponse {
+  bool success = 1;
+}
+
+message UnmarkSensitiveDataRequest {
+  repeated Parameter parameters = 1;  // allow bulk changes
+}
+
+message UnmarkSensitiveDataResponse {
+  bool success = 1;
+}
+
+message UpdateRedactionStrategyRequest {
+  Parameter parameter = 1;
+  RedactionStrategy redaction_strategy = 2;
+}
+
+message UpdateRedactionStrategyResponse {
+  bool success = 1;
+}
+
+message GetSensitiveParamsRequest {
+  ParamType param_type = 1;
+  string endpoint = 2;  // required if param type is not Header
+}
+
+message GetSensitiveParamsResponse {
+  repeated Parameter parameters = 1;
+}
+
+message GetInsensitiveParamsRequest {
+  ParamType param_type = 1;
+  string endpoint = 2;  // required if param type is not Header
+}
+
+message GetInsensitiveParamsResponse {
+  repeated Parameter parameters = 1;
+}
+
+message Parameter {
+  ParamType param_type = 1;
+  string name = 2;
+  string endpoint = 3;  // required if param type is not Header
+}
+
+enum ParamType {
+  PARAM_TYPE_UNSPECIFIED = 0;
+  PARAM_TYPE_HEADER = 1;
+  PARAM_TYPE_QUERY = 2;
+  PARAM_TYPE_BODY = 3;
+}
+
+enum RedactionStrategy {
+  REDACTION_STRATEGY_UNSPECIFIED = 0;
+  REDACTION_STRATEGY_REDACT = 1;
+  REDACTION_STRATEGY_HASH = 2;
+  REDACTION_STRATEGY_RAW = 3;
 }
