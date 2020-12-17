@@ -29,7 +29,9 @@ import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyRespo
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
+import com.google.protobuf.Value.KindCase;
 import io.grpc.stub.StreamObserver;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -214,7 +216,7 @@ public class SensitiveDataConfigServiceImpl
     if (paramType == ParamType.PARAM_TYPE_HEADER) {
       return paramType.name();
     }
-    return paramType.name() + endpoint;
+    return paramType.name() + "-" + endpoint;
   }
 
   private List<Value> getSensitiveParameters(String context) {
@@ -225,6 +227,9 @@ public class SensitiveDataConfigServiceImpl
             .addContexts(context)
             .build();
     Value config = getConfig(configServiceBlockingStub, getConfigRequest).getConfig();
+    if (config == null || config.getKindCase() != KindCase.LIST_VALUE) {
+      return Collections.emptyList();
+    }
     return config.getListValue().getValuesList();
   }
 
@@ -236,6 +241,9 @@ public class SensitiveDataConfigServiceImpl
             .addContexts(context)
             .build();
     Value config = getConfig(configServiceBlockingStub, getConfigRequest).getConfig();
+    if (config == null || config.getKindCase() != KindCase.LIST_VALUE) {
+      return Collections.emptyList();
+    }
     return config.getListValue().getValuesList();
   }
 
