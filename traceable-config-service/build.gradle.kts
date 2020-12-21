@@ -13,7 +13,7 @@ plugins {
   id("org.hypertrace.docker-java-application-plugin") version "0.2.3"
   id("org.hypertrace.docker-publish-plugin") version "0.2.3"
   id("ai.traceable.docker-convention-plugin") version "1.2.1"
-  id("org.hypertrace.integration-test-plugin") version "0.1.3"
+  id("org.hypertrace.integration-test-plugin") version "0.1.1"
 }
 
 tasks.register<DockerCreateNetwork>("createIntegrationTestNetwork") {
