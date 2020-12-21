@@ -5,55 +5,47 @@ option java_multiple_files = true;
 package ai.traceable.sensitivedata.config.service.v1;
 
 import "ai/traceable/sensitivedata/config/service/v1/pii_filter_config.proto";
+import "google/protobuf/wrappers.proto";
 
 service SensitiveDataConfigService {
-  rpc MarkSensitiveData(MarkSensitiveDataRequest) returns (MarkSensitiveDataResponse) {}
+  // mark the list of parameters as sensitive or insensitive
+  rpc MarkParameters(MarkParametersRequest) returns (MarkParametersResponse) {}
 
-  rpc UnmarkSensitiveData(UnmarkSensitiveDataRequest) returns (UnmarkSensitiveDataResponse) {}
+  // get the list of parameters explicitly marked as sensitive or/and insensitive by user
+  rpc GetParameters(GetParametersRequest) returns (GetParametersResponse) {}
 
-  // get the list of params explicitly marked as sensitive by user
-  rpc GetSensitiveParams(GetSensitiveParamsRequest) returns (GetSensitiveParamsResponse) {}
-
-  // get the list of params explicitly marked as insensitive by user
-  rpc GetInsensitiveParams(GetInsensitiveParamsRequest) returns (GetInsensitiveParamsResponse) {}
-
+  // update the redaction strategy of a parameter
   rpc UpdateRedactionStrategy(UpdateRedactionStrategyRequest) returns (UpdateRedactionStrategyResponse) {}
 }
 
-message MarkSensitiveDataRequest {
-  repeated Parameter parameters = 1;  // allow bulk changes
-  string endpoint = 2;
+message MarkParametersRequest {
+  // parameters to be marked as sensitive or insensitive
+  repeated Parameter parameters = 1;
+
+  // required if the list of parameters contains at least one non-header parameter.
+  google.protobuf.StringValue endpoint = 2;
+
+  // required - indicates whether to mark the parameters as sensitive or insensitive
+  google.protobuf.BoolValue sensitive = 3;
 }
 
-message MarkSensitiveDataResponse {
+message MarkParametersResponse {
   bool success = 1;
 }
 
-message UnmarkSensitiveDataRequest {
-  repeated Parameter parameters = 1;  // allow bulk changes
-  string endpoint = 2;
-}
-
-message UnmarkSensitiveDataResponse {
-  bool success = 1;
-}
-
-message GetSensitiveParamsRequest {
+message GetParametersRequest {
   ParamType param_type = 1;
-  string endpoint = 2;  // required if param type is not Header
+
+  // required if param type is not Header
+  google.protobuf.StringValue endpoint = 2;
+
+  // if null, gets both - sensitive and insensitive parameters marked by user. If true, gets sensitive parameters else insensitive parameters marked by user.
+  google.protobuf.BoolValue sensitive = 3;
 }
 
-message GetSensitiveParamsResponse {
-  repeated Parameter parameters = 1;
-}
-
-message GetInsensitiveParamsRequest {
-  ParamType param_type = 1;
-  string endpoint = 2;  // required if param type is not Header
-}
-
-message GetInsensitiveParamsResponse {
-  repeated Parameter parameters = 1;
+message GetParametersResponse {
+  // parameters explicitly marked as sensitive or/and insensitive by user
+  repeated ParameterWithSensitivity parameters_with_sensitivity = 1;
 }
 
 message UpdateRedactionStrategyRequest {
@@ -75,4 +67,9 @@ enum ParamType {
   PARAM_TYPE_HEADER = 1;
   PARAM_TYPE_QUERY = 2;
   PARAM_TYPE_BODY = 3;
+}
+
+message ParameterWithSensitivity {
+  Parameter parameter = 1;
+  bool sensitive = 2;
 }

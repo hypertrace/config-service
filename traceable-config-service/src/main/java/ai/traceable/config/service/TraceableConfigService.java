@@ -3,7 +3,7 @@ package ai.traceable.config.service;
 import ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl;
 import ai.traceable.sensitivedata.config.service.SensitiveDataConfigServiceImpl;
 import com.typesafe.config.Config;
-import io.grpc.Channel;
+import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -25,10 +25,10 @@ public class TraceableConfigService extends PlatformService {
   private static final String SERVICE_NAME_CONFIG = "service.name";
   private static final String SERVICE_PORT_CONFIG = "service.port";
   private static final String GENERIC_CONFIG_SERVICE_CONFIG = "generic.config.service";
+  private static final String PII_FILTER_CONFIG_SERVICE_CONFIG = "pii.filter.config.service";
   private static final Logger LOG = LoggerFactory.getLogger(TraceableConfigService.class);
   private String serviceName;
   private int serverPort;
-  private Server genericConfigServer;
   private Server traceableConfigServer;
 
   public TraceableConfigService(ConfigClient configClient) {
@@ -42,40 +42,27 @@ public class TraceableConfigService extends PlatformService {
     serverPort = config.getInt(SERVICE_PORT_CONFIG);
     LOG.info("Creating {} on port {}", serviceName, serverPort);
 
-    Config genericConfigServerConfig = config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG);
-    ConfigServiceGrpcImpl configServiceGrpcImpl =
-        new ConfigServiceGrpcImpl(getConfigStore(genericConfigServerConfig));
-    int genericConfigServerPort = genericConfigServerConfig.getInt(SERVICE_PORT_CONFIG);
-    genericConfigServer =
-        ServerBuilder.forPort(genericConfigServerPort)
-            .addService(InterceptorUtil.wrapInterceptors(configServiceGrpcImpl))
-            .build();
-
-    // need to start generic config service here only so that the client created below can connect
-    // to it
-    try {
-      genericConfigServer.start();
-      LOG.info("Started Generic Config Service on port {}", genericConfigServerPort);
-    } catch (IOException e) {
-      LOG.error("Unable to start Generic Config Service");
-      throw new RuntimeException(e);
-    }
-
-    Channel channel =
-        ManagedChannelBuilder.forAddress("localhost", genericConfigServerPort)
+    ManagedChannel managedChannel =
+        ManagedChannelBuilder.forAddress("localhost", serverPort)
             .usePlaintext()
             .build();
+    this.getLifecycle().shutdownComplete().thenRun(managedChannel::shutdown);
     ConfigServiceBlockingStub configServiceBlockingStub =
-        ConfigServiceGrpc.newBlockingStub(channel)
+        ConfigServiceGrpc.newBlockingStub(managedChannel)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
+    Config genericConfigServiceConfig = config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG);
+    ConfigServiceGrpcImpl genericConfigServiceGrpcImpl =
+        new ConfigServiceGrpcImpl(getConfigStore(genericConfigServiceConfig));
     SensitiveDataConfigServiceImpl sensitiveDataConfigService =
         new SensitiveDataConfigServiceImpl(configServiceBlockingStub);
+    Config piiFilterConfigServiceConfig = config.getConfig(PII_FILTER_CONFIG_SERVICE_CONFIG);
     PiiFilterConfigServiceImpl piiFilterConfigService =
-        new PiiFilterConfigServiceImpl(configServiceBlockingStub);
+        new PiiFilterConfigServiceImpl(configServiceBlockingStub, piiFilterConfigServiceConfig);
     traceableConfigServer =
         ServerBuilder.forPort(serverPort)
+            .addService(InterceptorUtil.wrapInterceptors(genericConfigServiceGrpcImpl))
             .addService(InterceptorUtil.wrapInterceptors(sensitiveDataConfigService))
             .addService(InterceptorUtil.wrapInterceptors(piiFilterConfigService))
             .build();
@@ -112,27 +99,11 @@ public class TraceableConfigService extends PlatformService {
         Thread.currentThread().interrupt();
       }
     }
-
-    LOG.info("Shutting down generic config service");
-    while (!genericConfigServer.isShutdown()) {
-      genericConfigServer.shutdown();
-      try {
-        Thread.sleep(100);
-      } catch (InterruptedException e) {
-        LOG.warn("Interrupted!", e);
-        Thread.currentThread().interrupt();
-      }
-    }
   }
 
   @Override
   public boolean healthCheck() {
     return true;
-  }
-
-  @Override
-  public String getServiceName() {
-    return serviceName;
   }
 
   private ConfigStore getConfigStore(Config config) {
