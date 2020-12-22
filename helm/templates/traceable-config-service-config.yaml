@@ -21,7 +21,7 @@ data:
         }
       }
     }
-    {{- if .Values.traceableConfigServiceConfig.defaultPiiFilterConfig }}
+    {{- if hasKey .Values.traceableConfigServiceConfig "defaultPiiFilterConfig" }}
     pii.filter.config.service {
       default.config {
         {{- .Values.traceableConfigServiceConfig.defaultPiiFilterConfig | nindent 8 }}
