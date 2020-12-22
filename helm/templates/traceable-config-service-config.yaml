@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.traceableConfigServiceConfig.name }}
+  labels:
+    release: {{ .Release.Name }}
+data:
+  application.conf: |-
+    service.port = {{ .Values.containerPort }}
+    service.admin.port = {{ .Values.containerAdminPort }}
+    generic.config.service {
+      document.store {
+        {{- $dst := .Values.traceableConfigServiceConfig.dataStoreType }}
+        dataStoreType = {{ $dst }}
+        {{ $dst }} {
+          {{- range $key, $value := (index .Values "traceableConfigServiceConfig" (printf "%s" $dst)) }}
+          {{- if $value }}
+          {{ $key }} = {{ $value | quote }}
+          {{- end }}
+          {{- end }}
+        }
+      }
+    }
+    {{- if .Values.traceableConfigServiceConfig.defaultPiiFilterConfig }}
+    pii.filter.config.service {
+      default.config {
+        {{- .Values.traceableConfigServiceConfig.defaultPiiFilterConfig | nindent 8 }}
+      }
+    }
+    {{- end }}

@@ -4,10 +4,9 @@ metadata:
   name: {{ .Chart.Name }}
   labels:
     release: {{ .Release.Name }}
-  annotations:
-    # This annotation distinguishes this deployment from those done with skaffold in order to remove those ones before
-    # deploying this one.
-    deployment.traceable.ai/tool: helm3
+  {{- with .Values.deploymentLabels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   replicas: {{ .Values.replicaCount }}
   strategy:
@@ -20,53 +19,67 @@ spec:
   template:
     metadata:
       labels:
-        {{- toYaml .Values.podLabels | nindent 8 }}
+        release: {{ .Release.Name }}
+      {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/traceable-config-service-config.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.containerAdminPort }}"
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-    {{- end }}
-    {{- with .Values.volumes }}
-      volumes:
       {{- toYaml . | nindent 8 }}
     {{- end }}
+      volumes:
+        - name: service-config
+          configMap:
+            name: {{ .Values.traceableConfigServiceConfig.name }}
+        - name: log4j-config
+          configMap:
+            name: {{ .Values.logConfig.name }}
     {{- with .Values.nodeLabels }}
       nodeSelector:
-      {{- toYaml . | nindent 8 }}
+      {{- toYaml . | nindent 8}}
     {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - name: http
+            - name: grpc-port
               containerPort: {{ .Values.containerPort }}
-        {{- if or .Values.env .Values.javaOpts }}
+              protocol: TCP
+            - name: admin-port
+              containerPort: {{ .Values.containerAdminPort }}
+              protocol: TCP
           env:
-        {{- with .Values.env }}
-          {{- toYaml . | nindent 12}}
-        {{- end }}
-        {{- if .Values.javaOpts }}
-            - name: JAVA_TOOL_OPTIONS
+            - name: BOOTSTRAP_CONFIG_URI
+              value: "file:///app/resources/configs"
+            - name: LOG4J_CONFIGURATION_FILE
+              value: "/var/{{ .Chart.Name }}/log/log4j2.properties"
+            - name: JAVA_OPTS
               value: {{ .Values.javaOpts | quote }}
-        {{- end }}
-        {{- end }}
-        {{- with .Values.volumeMounts }}
           volumeMounts:
-          {{- toYaml . | nindent 12}}
-        {{- end }}
-          # <REPLACE ME> - Need to set liveness and readiness probes here
+            - name: service-config
+              mountPath: /app/resources/configs/{{ .Chart.Name }}/application.conf
+              subPath: application.conf
+            - name: log4j-config
+              mountPath: /var/{{ .Chart.Name }}/log
           livenessProbe:
-            httpGet:
-              path: /example/health
-              port: http
-            initialDelaySeconds: 10
-            periodSeconds: 10
+            initialDelaySeconds: {{ int .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ int .Values.livenessProbe.periodSeconds }}
+            tcpSocket:
+              port: grpc-port
           readinessProbe:
+            initialDelaySeconds: {{ int .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ int .Values.readinessProbe.periodSeconds }}
             httpGet:
-              path: /example/health
-              port: http
-            initialDelaySeconds: 10
-            periodSeconds: 5
+              path: /health
+              port: {{ .Values.containerAdminPort }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

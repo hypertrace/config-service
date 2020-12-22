@@ -8,8 +8,8 @@ spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: http
+      targetPort: grpc-port
       protocol: TCP
-      name: http
+      name: {{ .Chart.Name }}
   selector:
     {{- toYaml .Values.serviceSelectorLabels | nindent 4 }}

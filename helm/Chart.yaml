@@ -3,9 +3,8 @@
 # Command to package:
 # helm package --version <chart version> --app-version <app version> <folder containing Chart.yaml>
 apiVersion: v2
-# <REPLACE ME> Replace the chart name and description
-name: service
-description: A Example Helm Chart
+name: traceable-config-service
+description: Helm Chart for Traceable Config Service
 
 # A chart can be either an 'application' or a 'library' chart.
 #
