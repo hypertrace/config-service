@@ -29,6 +29,7 @@ public class TraceableConfigService extends PlatformService {
   private static final Logger LOG = LoggerFactory.getLogger(TraceableConfigService.class);
   private String serviceName;
   private int serverPort;
+  private ConfigStore configStore;
   private Server traceableConfigServer;
 
   public TraceableConfigService(ConfigClient configClient) {
@@ -53,8 +54,8 @@ public class TraceableConfigService extends PlatformService {
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
     Config genericConfigServiceConfig = config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG);
-    ConfigServiceGrpcImpl genericConfigServiceGrpcImpl =
-        new ConfigServiceGrpcImpl(getConfigStore(genericConfigServiceConfig));
+    configStore = getConfigStore(genericConfigServiceConfig);
+    ConfigServiceGrpcImpl genericConfigServiceGrpcImpl = new ConfigServiceGrpcImpl(configStore);
     SensitiveDataConfigServiceImpl sensitiveDataConfigService =
         new SensitiveDataConfigServiceImpl(configServiceBlockingStub);
     Config piiFilterConfigServiceConfig = config.getConfig(PII_FILTER_CONFIG_SERVICE_CONFIG);
@@ -103,7 +104,7 @@ public class TraceableConfigService extends PlatformService {
 
   @Override
   public boolean healthCheck() {
-    return true;
+    return configStore.healthCheck();
   }
 
   private ConfigStore getConfigStore(Config config) {
