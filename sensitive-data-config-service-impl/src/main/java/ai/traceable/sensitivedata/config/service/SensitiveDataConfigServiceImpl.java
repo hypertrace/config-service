@@ -10,6 +10,7 @@ import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.toValue;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.upsertConfig;
 
+import ai.traceable.sensitivedata.config.service.v1.Filter;
 import ai.traceable.sensitivedata.config.service.v1.GetParametersRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetParametersResponse;
 import ai.traceable.sensitivedata.config.service.v1.MarkParametersRequest;
@@ -24,7 +25,6 @@ import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGr
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyResponse;
 import com.google.common.base.Preconditions;
-import com.google.protobuf.BoolValue;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
 import com.google.protobuf.Value.KindCase;
@@ -60,7 +60,7 @@ public class SensitiveDataConfigServiceImpl
       Preconditions.checkNotNull(
           request.getSensitive(),
           "Must specify whether to mark parameters as sensitive or insensitive");
-      boolean isSensitive = request.getSensitive().getValue();
+      boolean isSensitive = request.getSensitive();
       for (Map.Entry<ParamType, List<Parameter>> entry : paramTypeToListMap.entrySet()) {
         ParamType paramType = entry.getKey();
         List<Parameter> parameters = entry.getValue();
@@ -88,7 +88,7 @@ public class SensitiveDataConfigServiceImpl
         upsertParametersWithSensitivity(parametersWithSensitivity, context);
       }
 
-      responseObserver.onNext(MarkParametersResponse.newBuilder().setSuccess(true).build());
+      responseObserver.onNext(MarkParametersResponse.newBuilder().build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Mark Parameters RPC failed for request:{}", request, e);
@@ -104,7 +104,7 @@ public class SensitiveDataConfigServiceImpl
       GetParametersResponse.Builder responseBuilder = GetParametersResponse.newBuilder();
       for (Value value : getParametersWithSensitivity(context)) {
         ParameterWithSensitivity parameterWithSensitivity = toParameterWithSensitivity(value);
-        if (shouldInclude(request.getSensitive(), parameterWithSensitivity)) {
+        if (shouldInclude(request.getFilter(), parameterWithSensitivity)) {
           responseBuilder.addParametersWithSensitivity(parameterWithSensitivity);
         }
       }
@@ -165,8 +165,7 @@ public class SensitiveDataConfigServiceImpl
               .setConfig(toValue(builder.build()))
               .build();
       upsertConfig(configServiceBlockingStub, upsertConfigRequest);
-      responseObserver.onNext(
-          UpdateRedactionStrategyResponse.newBuilder().setSuccess(true).build());
+      responseObserver.onNext(UpdateRedactionStrategyResponse.newBuilder().build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Update Redaction Strategy RPC failed for request:{}", request, e);
@@ -205,8 +204,7 @@ public class SensitiveDataConfigServiceImpl
     upsertConfig(configServiceBlockingStub, upsertConfigRequest);
   }
 
-  private boolean shouldInclude(
-      BoolValue sensitive, ParameterWithSensitivity parameterWithSensitivity) {
-    return sensitive == null || sensitive.getValue() == parameterWithSensitivity.getSensitive();
+  private boolean shouldInclude(Filter filter, ParameterWithSensitivity parameterWithSensitivity) {
+    return filter == null || filter.getSensitive() == parameterWithSensitivity.getSensitive();
   }
 }

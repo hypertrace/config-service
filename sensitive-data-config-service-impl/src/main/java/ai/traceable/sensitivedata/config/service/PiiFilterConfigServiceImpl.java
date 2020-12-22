@@ -91,8 +91,7 @@ public class PiiFilterConfigServiceImpl
               .setConfig(toValue(request.getPiiFilterConfig()))
               .build();
       upsertConfig(configServiceBlockingStub, upsertConfigRequest);
-      UpsertPiiFilterConfigResponse response =
-          UpsertPiiFilterConfigResponse.newBuilder().setSuccess(true).build();
+      UpsertPiiFilterConfigResponse response = UpsertPiiFilterConfigResponse.newBuilder().build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception e) {

@@ -10,7 +10,6 @@ import static ai.traceable.sensitivedata.config.service.TestUtils.getPiiFilterCo
 import static ai.traceable.sensitivedata.config.service.v1.ParamType.PARAM_TYPE_BODY;
 import static ai.traceable.sensitivedata.config.service.v1.ParamType.PARAM_TYPE_QUERY;
 
-import com.google.protobuf.StringValue;
 import com.google.protobuf.Value;
 import io.grpc.stub.StreamObserver;
 import java.util.HashSet;
@@ -56,7 +55,7 @@ class MockConfigServiceImpl extends ConfigServiceGrpc.ConfigServiceImplBase {
         getConfigResponse =
             GetConfigResponse.newBuilder().setConfig(getPiiFilterConfigValue()).build();
       } else if (request.getResourceName().equals(PARAMETERS_WITH_SENSITIVITY)
-          && request.getContexts(0).equals(getContext(PARAM_TYPE_BODY, StringValue.of(ENDPOINT1)))) {
+          && request.getContexts(0).equals(getContext(PARAM_TYPE_BODY, ENDPOINT1))) {
         getConfigResponse =
             GetConfigResponse.newBuilder().setConfig(getParametersWithSensitivityValue()).build();
       }

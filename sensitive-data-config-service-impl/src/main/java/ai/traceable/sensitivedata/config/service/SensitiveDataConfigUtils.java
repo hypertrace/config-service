@@ -3,10 +3,8 @@ package ai.traceable.sensitivedata.config.service;
 import ai.traceable.sensitivedata.config.service.v1.ParamType;
 import ai.traceable.sensitivedata.config.service.v1.ParameterWithSensitivity;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfig;
-import com.google.common.base.Preconditions;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
-import com.google.protobuf.StringValue;
 import com.google.protobuf.Value;
 import com.google.protobuf.Value.KindCase;
 import com.google.protobuf.util.JsonFormat;
@@ -56,12 +54,11 @@ public class SensitiveDataConfigUtils {
     return builder.build();
   }
 
-  public static String getContext(ParamType paramType, StringValue endpoint) {
+  public static String getContext(ParamType paramType, String endpoint) {
     if (paramType == ParamType.PARAM_TYPE_HEADER) {
       return paramType.name();
     }
-    Preconditions.checkNotNull(endpoint, "Endpoint can't be null for non-header parameter");
-    return paramType.name() + "_" + endpoint.getValue();
+    return paramType.name() + "_" + endpoint;
   }
 
   public static GetConfigResponse getConfig(

@@ -5,7 +5,6 @@ option java_multiple_files = true;
 package ai.traceable.sensitivedata.config.service.v1;
 
 import "ai/traceable/sensitivedata/config/service/v1/pii_filter_config.proto";
-import "google/protobuf/wrappers.proto";
 
 service SensitiveDataConfigService {
   // mark the list of parameters as sensitive or insensitive
@@ -22,25 +21,23 @@ message MarkParametersRequest {
   // parameters to be marked as sensitive or insensitive
   repeated Parameter parameters = 1;
 
-  // required if the list of parameters contains at least one non-header parameter.
-  google.protobuf.StringValue endpoint = 2;
-
   // required - indicates whether to mark the parameters as sensitive or insensitive
-  google.protobuf.BoolValue sensitive = 3;
+  bool sensitive = 2;
+
+  // required if the list of parameters contains at least one non-header parameter.
+  string endpoint = 3;
 }
 
-message MarkParametersResponse {
-  bool success = 1;
-}
+message MarkParametersResponse {}
 
 message GetParametersRequest {
   ParamType param_type = 1;
 
   // required if param type is not Header
-  google.protobuf.StringValue endpoint = 2;
+  string endpoint = 2;
 
   // if null, gets both - sensitive and insensitive parameters marked by user. If true, gets sensitive parameters else insensitive parameters marked by user.
-  google.protobuf.BoolValue sensitive = 3;
+  Filter filter = 3;
 }
 
 message GetParametersResponse {
@@ -53,9 +50,7 @@ message UpdateRedactionStrategyRequest {
   RedactionStrategy redaction_strategy = 2;
 }
 
-message UpdateRedactionStrategyResponse {
-  bool success = 1;
-}
+message UpdateRedactionStrategyResponse {}
 
 message Parameter {
   ParamType param_type = 1;
@@ -67,6 +62,10 @@ enum ParamType {
   PARAM_TYPE_HEADER = 1;
   PARAM_TYPE_QUERY = 2;
   PARAM_TYPE_BODY = 3;
+}
+
+message Filter {
+  bool sensitive = 1;
 }
 
 message ParameterWithSensitivity {

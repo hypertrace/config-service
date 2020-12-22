@@ -1,9 +1,10 @@
 package ai.traceable.config.service;
 
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_HASH;
-import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_REDACT;
+import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_OBFUSCATE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import ai.traceable.sensitivedata.config.service.v1.Filter;
 import ai.traceable.sensitivedata.config.service.v1.GetParametersRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetParametersResponse;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigRequest;
@@ -19,9 +20,7 @@ import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyRequest;
-import com.google.protobuf.BoolValue;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.StringValue;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigRenderOptions;
@@ -102,17 +101,17 @@ public class TraceableConfigServiceIntegrationTest {
     Parameter parameter1 = getParameter(ParamType.PARAM_TYPE_BODY, "p1");
     Parameter parameter2 = getParameter(ParamType.PARAM_TYPE_HEADER, "p2");
 
-    updateRedactionStrategy(parameter1, REDACTION_STRATEGY_REDACT);
+    updateRedactionStrategy(parameter1, REDACTION_STRATEGY_OBFUSCATE);
     updateRedactionStrategy(parameter2, REDACTION_STRATEGY_HASH);
-    PiiElement piiElement1 = getPiiElement(parameter1.getName(), REDACTION_STRATEGY_REDACT);
+    PiiElement piiElement1 = getPiiElement(parameter1.getName(), REDACTION_STRATEGY_OBFUSCATE);
     PiiElement piiElement2 = getPiiElement(parameter2.getName(), REDACTION_STRATEGY_HASH);
     PiiFilterConfig expected = getExpectedPiiFilterConfig(List.of(piiElement1, piiElement2));
     PiiFilterConfig actual = getPiiFilterConfig();
     assertEquals(
         new HashSet<>(expected.getKeyRegexsList()), new HashSet<>(actual.getKeyRegexsList()));
 
-    updateRedactionStrategy(parameter2, REDACTION_STRATEGY_REDACT);
-    piiElement2 = getPiiElement(parameter2.getName(), REDACTION_STRATEGY_REDACT);
+    updateRedactionStrategy(parameter2, REDACTION_STRATEGY_OBFUSCATE);
+    piiElement2 = getPiiElement(parameter2.getName(), REDACTION_STRATEGY_OBFUSCATE);
     expected = getExpectedPiiFilterConfig(List.of(piiElement1, piiElement2));
     actual = getPiiFilterConfig();
     assertEquals(
@@ -123,24 +122,23 @@ public class TraceableConfigServiceIntegrationTest {
     return Parameter.newBuilder().setParamType(paramType).setName(paramName).build();
   }
 
-  private boolean markSensitive(List<Parameter> parameters, String endpoint) {
-    return markParameters(parameters, endpoint, true);
+  private void markSensitive(List<Parameter> parameters, String endpoint) {
+    markParameters(parameters, endpoint, true);
   }
 
-  private boolean markInsensitive(List<Parameter> parameters, String endpoint) {
-    return markParameters(parameters, endpoint, false);
+  private void markInsensitive(List<Parameter> parameters, String endpoint) {
+    markParameters(parameters, endpoint, false);
   }
 
-  private boolean markParameters(List<Parameter> parameters, String endpoint, boolean sensitive) {
+  private void markParameters(List<Parameter> parameters, String endpoint, boolean sensitive) {
     MarkParametersRequest request =
         MarkParametersRequest.newBuilder()
             .addAllParameters(parameters)
-            .setEndpoint(StringValue.of(endpoint))
-            .setSensitive(BoolValue.of(sensitive))
+            .setEndpoint(endpoint)
+            .setSensitive(sensitive)
             .build();
-    return GrpcClientRequestContextUtil.executeInTenantContext(
-            "tenant1", () -> sensitiveDataConfigServiceStub.markParameters(request))
-        .getSuccess();
+    GrpcClientRequestContextUtil.executeInTenantContext(
+        "tenant1", () -> sensitiveDataConfigServiceStub.markParameters(request));
   }
 
   private Set<Parameter> getSensitiveParameters(ParamType paramType, String endpoint) {
@@ -155,8 +153,8 @@ public class TraceableConfigServiceIntegrationTest {
     GetParametersRequest request =
         GetParametersRequest.newBuilder()
             .setParamType(paramType)
-            .setEndpoint(StringValue.of(endpoint))
-            .setSensitive(BoolValue.of(sensitive))
+            .setEndpoint(endpoint)
+            .setFilter(Filter.newBuilder().setSensitive(sensitive).build())
             .build();
     GetParametersResponse response =
         GrpcClientRequestContextUtil.executeInTenantContext(
@@ -166,16 +164,14 @@ public class TraceableConfigServiceIntegrationTest {
         .collect(Collectors.toSet());
   }
 
-  private boolean updateRedactionStrategy(
-      Parameter parameter, RedactionStrategy redactionStrategy) {
+  private void updateRedactionStrategy(Parameter parameter, RedactionStrategy redactionStrategy) {
     UpdateRedactionStrategyRequest request =
         UpdateRedactionStrategyRequest.newBuilder()
             .setParameter(parameter)
             .setRedactionStrategy(redactionStrategy)
             .build();
-    return GrpcClientRequestContextUtil.executeInTenantContext(
-            "tenant1", () -> sensitiveDataConfigServiceStub.updateRedactionStrategy(request))
-        .getSuccess();
+    GrpcClientRequestContextUtil.executeInTenantContext(
+        "tenant1", () -> sensitiveDataConfigServiceStub.updateRedactionStrategy(request));
   }
 
   private PiiElement getPiiElement(String paramName, RedactionStrategy redactionStrategy) {

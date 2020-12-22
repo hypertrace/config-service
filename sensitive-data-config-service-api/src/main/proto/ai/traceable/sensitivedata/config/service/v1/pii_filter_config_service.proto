@@ -21,6 +21,4 @@ message UpsertPiiFilterConfigRequest {
   PiiFilterConfig pii_filter_config = 1;
 }
 
-message UpsertPiiFilterConfigResponse {
-  bool success = 1;
-}
+message UpsertPiiFilterConfigResponse {}

@@ -17,6 +17,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import ai.traceable.sensitivedata.config.service.v1.Filter;
 import ai.traceable.sensitivedata.config.service.v1.GetParametersRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetParametersResponse;
 import ai.traceable.sensitivedata.config.service.v1.MarkParametersRequest;
@@ -26,9 +27,7 @@ import ai.traceable.sensitivedata.config.service.v1.ParameterWithSensitivity;
 import ai.traceable.sensitivedata.config.service.v1.PiiElement;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfig;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyRequest;
-import com.google.protobuf.BoolValue;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.StringValue;
 import com.google.protobuf.Value;
 import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
@@ -79,8 +78,8 @@ class SensitiveDataConfigServiceImplTest {
     MarkParametersRequest request =
         MarkParametersRequest.newBuilder()
             .addAllParameters(List.of(parameter1, parameter2))
-            .setEndpoint(StringValue.of(ENDPOINT2))
-            .setSensitive(BoolValue.of(true))
+            .setEndpoint(ENDPOINT2)
+            .setSensitive(true)
             .build();
     Runnable runnable =
         () -> sensitiveDataConfigService.markParameters(request, mock(StreamObserver.class));
@@ -98,8 +97,8 @@ class SensitiveDataConfigServiceImplTest {
     GetParametersRequest request =
         GetParametersRequest.newBuilder()
             .setParamType(ParamType.PARAM_TYPE_BODY)
-            .setEndpoint(StringValue.of(ENDPOINT1))
-            .setSensitive(BoolValue.of(true))
+            .setEndpoint(ENDPOINT1)
+            .setFilter(Filter.newBuilder().setSensitive(true).build())
             .build();
     Runnable runnable = () -> sensitiveDataConfigService.getParameters(request, responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);

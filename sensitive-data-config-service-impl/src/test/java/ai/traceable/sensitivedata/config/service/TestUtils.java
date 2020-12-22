@@ -2,7 +2,7 @@ package ai.traceable.sensitivedata.config.service;
 
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.toValue;
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_HASH;
-import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_REDACT;
+import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_OBFUSCATE;
 
 import ai.traceable.sensitivedata.config.service.v1.ParamType;
 import ai.traceable.sensitivedata.config.service.v1.Parameter;
@@ -25,7 +25,7 @@ public class TestUtils {
     PiiElement piiElement1 =
         PiiElement.newBuilder()
             .setRegex("p1")
-            .setRedactionStrategy(REDACTION_STRATEGY_REDACT)
+            .setRedactionStrategy(REDACTION_STRATEGY_OBFUSCATE)
             .build();
     PiiElement piiElement2 =
         PiiElement.newBuilder()
@@ -38,7 +38,7 @@ public class TestUtils {
   public static Value getPiiFilterConfigValue() {
     ListValue keyRegexsList =
         ListValue.newBuilder()
-            .addValues(getKeyRegexValue("p1", "REDACTION_STRATEGY_REDACT"))
+            .addValues(getKeyRegexValue("p1", "REDACTION_STRATEGY_OBFUSCATE"))
             .addValues(getKeyRegexValue("p2", "REDACTION_STRATEGY_HASH"))
             .build();
     Value keyRegexs = Value.newBuilder().setListValue(keyRegexsList).build();
