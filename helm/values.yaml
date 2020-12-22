@@ -25,6 +25,7 @@ imagePullSecrets:
 
 containerPort: 50101
 containerAdminPort: 50102
+containerPortName: grpc-port
 
 service:
   type: ClusterIP
@@ -83,9 +84,6 @@ traceableConfigServiceConfig:
   mongo:
     host: mongo
     url: ""
-
-attributes: []
-extraAttributes: []
 
 logConfig:
   name: traceable-config-service-log-config

@@ -51,7 +51,7 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - name: grpc-port
+            - name: {{ .Values.containerPortName }}
               containerPort: {{ .Values.containerPort }}
               protocol: TCP
             - name: admin-port
@@ -74,7 +74,7 @@ spec:
             initialDelaySeconds: {{ int .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ int .Values.livenessProbe.periodSeconds }}
             tcpSocket:
-              port: grpc-port
+              port: {{ .Values.containerPortName }}
           readinessProbe:
             initialDelaySeconds: {{ int .Values.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ int .Values.readinessProbe.periodSeconds }}
