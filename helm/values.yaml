@@ -2,14 +2,11 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 #
-# <REPLACE ME> - A lot to replace in this file and folder. Everything in the helm folder is a template that you may or
-# may not need. Figure out what k8s resources and config your service needs and replace accordingly.
-#
 # Note about Namespace
 # --------------------
 # It is deliberately left out here and using the helm -n or --namespace flag you can deploy your resources to the same
 # namespace as the release. If you leave it out, your resources will be deployed to the default namespace.
-# Also, not that the namespace you are deploying to should already exist otherwise the helm command will fail.
+# Also, note that the namespace you are deploying to should already exist otherwise the helm command will fail.
 # You can always specify a different namespace for a resource by setting it directly in it's yaml file or
 # making it configurable by defining it in this file.
 
@@ -20,42 +17,51 @@ replicaCount: 1
 maxUnavailable: 0
 
 image:
-  repository: traceableai-docker.jfrog.io/traceable/service
+  repository: traceableai-docker.jfrog.io/traceable/traceable-config-service
   pullPolicy: IfNotPresent
 
 imagePullSecrets:
   - name: regcred
 
-containerPort: 8080
+containerPort: 50101
+containerAdminPort: 50102
+containerPortName: grpc-port
 
 service:
   type: ClusterIP
-  port: 8080
+  port: 50101
 
-javaOpts: ""
+nodeLabels: {}
 
-env:
-  - name: ENV_VAR_1
-    value: env-val-1
-  - name: ENV_VAR_2
-    value: env-val-2
-  - name: ENV_VAR_3
-    value: env-val-3
+javaOpts: "-XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=75.0"
+
+livenessProbe:
+  initialDelaySeconds: 10
+  periodSeconds: 5
+
+readinessProbe:
+  initialDelaySeconds: 2
+  periodSeconds: 5
 
 resources:
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
   # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-   limits:
-     cpu: 0.5
-     memory: 128Mi
    requests:
-     cpu: 50m
-     memory: 64Mi
+     cpu: 0.1
+     memory: 128Mi
+   limits:
+     cpu: 1
+     memory: 256Mi
+
+deploymentLabels:
+  app: traceable-config-service
 
 podLabels:
-  app: example
+  app: traceable-config-service
+
+podAnnotations: {}
 
 # The Deployment Selector match labels are different from the pod labels. Note that they should be a subset of the pod
 # labels. You append new labels to them but cannot remove labels. If you remove or modify the labels you will need to
@@ -64,58 +70,26 @@ podLabels:
 # Also, please use "apiVersion: apps/v1" instead of the deprecated "apiVersion: extensions/v1beta1" for the deployment
 # apiVersion in the yaml file.
 deploymentSelectorMatchLabels:
-  app: example
+  app: traceable-config-service
 
 serviceSelectorLabels:
-  app: example
-
-# Volumes and Volume mounts
-volumeMounts:
-  - name: config1
-    mountPath: /app/config1
-  - name: config2
-    mountPath: /app/config2
-
-volumes:
-  - name: config1
-    configMap:
-      name: example-config1
-  - name: config2
-    configMap:
-     name: example-config2
-
-nodeLabels: {}
+  app: traceable-config-service
 
 ###########
 # Config Maps
 ###########
-configMap1:
-  name: example-config1
-  data:
-    specialHow: very
-    specialType: charm
+traceableConfigServiceConfig:
+  name: traceable-config-service-config
+  dataStoreType: "mongo"
+  mongo:
+    host: mongo
+    url: ""
 
-configMap2:
-  name: example-config2
-  data:
-    application.conf: |-
-      event.store {
-        type = kafka
-        bootstrap.servers = "bootstrap:9092"
-        consumer {
-          topic.name = anomaly-events
-          bootstrap.servers = "bootstrap:9092"
-        }
-        producer {
-          topic.name = normalized-domain-events
-          bootstrap.servers = "bootstrap:9092"
-        }
-      }
-
-      document.store {
-        dataStoreType = mongo
-        mongo {
-          host = mongo
-        }
-      }
-      rules.list = ["Rule1", "Rule2"]
+logConfig:
+  name: traceable-config-service-log-config
+  monitorInterval: 30
+  rootLogger:
+    level: INFO
+  appender:
+    rolling:
+      enabled: false

@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.sensitivedata.config.service.v1;
+
+import "ai/traceable/sensitivedata/config/service/v1/pii_filter_config.proto";
+
+service PiiFilterConfigService {
+  rpc GetPiiFilterConfig(GetPiiFilterConfigRequest) returns (GetPiiFilterConfigResponse) {}
+  rpc UpsertPiiFilterConfig(UpsertPiiFilterConfigRequest) returns (UpsertPiiFilterConfigResponse) {}
+}
+
+message GetPiiFilterConfigRequest {}
+
+message GetPiiFilterConfigResponse {
+  PiiFilterConfig pii_filter_config = 1;
+}
+
+message UpsertPiiFilterConfigRequest {
+  PiiFilterConfig pii_filter_config = 1;
+}
+
+message UpsertPiiFilterConfigResponse {}

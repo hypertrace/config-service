@@ -4,5 +4,71 @@ option java_multiple_files = true;
 
 package ai.traceable.sensitivedata.config.service.v1;
 
+import "ai/traceable/sensitivedata/config/service/v1/pii_filter_config.proto";
+
 service SensitiveDataConfigService {
+  // mark the list of parameters as sensitive or insensitive
+  rpc MarkParameters(MarkParametersRequest) returns (MarkParametersResponse) {}
+
+  // get the list of parameters explicitly marked as sensitive or/and insensitive by user
+  rpc GetParameters(GetParametersRequest) returns (GetParametersResponse) {}
+
+  // update the redaction strategy of a parameter
+  rpc UpdateRedactionStrategy(UpdateRedactionStrategyRequest) returns (UpdateRedactionStrategyResponse) {}
+}
+
+message MarkParametersRequest {
+  // parameters to be marked as sensitive or insensitive
+  repeated Parameter parameters = 1;
+
+  // required - indicates whether to mark the parameters as sensitive or insensitive
+  bool sensitive = 2;
+
+  // required if the list of parameters contains at least one non-header parameter.
+  string endpoint = 3;
+}
+
+message MarkParametersResponse {}
+
+message GetParametersRequest {
+  ParamType param_type = 1;
+
+  // required if param type is not Header
+  string endpoint = 2;
+
+  // if null, gets both - sensitive and insensitive parameters marked by user. If true, gets sensitive parameters else insensitive parameters marked by user.
+  Filter filter = 3;
+}
+
+message GetParametersResponse {
+  // parameters explicitly marked as sensitive or/and insensitive by user
+  repeated ParameterWithSensitivity parameters_with_sensitivity = 1;
+}
+
+message UpdateRedactionStrategyRequest {
+  Parameter parameter = 1;
+  RedactionStrategy redaction_strategy = 2;
+}
+
+message UpdateRedactionStrategyResponse {}
+
+message Parameter {
+  ParamType param_type = 1;
+  string name = 2;
+}
+
+enum ParamType {
+  PARAM_TYPE_UNSPECIFIED = 0;
+  PARAM_TYPE_HEADER = 1;
+  PARAM_TYPE_QUERY = 2;
+  PARAM_TYPE_BODY = 3;
+}
+
+message Filter {
+  bool sensitive = 1;
+}
+
+message ParameterWithSensitivity {
+  Parameter parameter = 1;
+  bool sensitive = 2;
 }

@@ -10,6 +10,12 @@ executors:
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
+  gradle_machine:
+    machine:
+      image: ubuntu-1604:201903-01
+    environment:
+      JVM_OPTS: -Xmx2g
+      TERM: dumb
   helm:
     docker:
       - image: $DOCKER_REGISTRY/traceable/helm-packager:0.1.3
@@ -69,6 +75,16 @@ commands:
           paths:
             - ~/.gradle
           key: v1-dependencies-{{ checksum "/tmp/checksum.txt" }}
+  machine_install_java11:
+    description: "Install java11 on machine executor"
+    steps:
+      - run:
+          name: Install open jdk11
+          command: |
+            sudo apt-get update
+            sudo apt-get install openjdk-11-jdk
+            sudo sh -c 'for bin in /usr/lib/jvm/java-11-openjdk-amd64/bin/*; do update-alternatives --install /usr/bin/$(basename $bin) $(basename $bin) $bin 100; done'
+            sudo sh -c 'for bin in /usr/lib/jvm/java-11-openjdk-amd64/bin/*; do update-alternatives --set $(basename $bin) $bin; done'
   docker_login:
     description: "Login to dockerhub with readonly credentials"
     steps:
@@ -93,14 +109,13 @@ jobs:
           when: always
       - codecov/upload:
           flags: unit
-      - store_test_results:
-          path: /tmp/test-reports
-      - store_artifacts:
-          path: /tmp/test-reports
-          destination: reports
-      # Clear out uploaded unit test reports, then generate the integration test reports
-      - gradle:
-          args: clean
+  integration-test:
+    executor: gradle_machine
+    steps:
+      - machine_install_java11
+      - setup_build_environment
+      - populate_and_save_cache
+      - docker_login
       - gradle:
           args: jacocoIntegrationTestReport
       - gradle:
@@ -162,6 +177,10 @@ workflows:
           context:
             - ci-credentials
             - dockerhub-read
+      - integration-test:
+          context:
+            - ci-credentials
+            - dockerhub-read
       - validate-charts:
           context:
             - ci-credentials
@@ -178,6 +197,7 @@ workflows:
             - dockerhub-read
           requires:
             - build
+            - integration-test
             - validate-charts
           filters:
             branches:
