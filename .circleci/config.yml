@@ -138,7 +138,7 @@ jobs:
           args: :tag -Prelease
       - add_ssh_keys:
           fingerprints:
-            - '<REPLACEME>'
+            - '74:a3:49:c9:b5:82:82:41:d5:6f:3e:1a:14:0d:57:7e'
       - run: git push origin $(./gradlew -q :printVersion)
       - gradle:
           args: publish dockerPushImages
