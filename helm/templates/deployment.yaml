@@ -58,14 +58,6 @@ spec:
               containerPort: {{ .Values.containerAdminPort }}
               protocol: TCP
           env:
-            - name: SERVICE_NAME
-              value: "{{ .Chart.Name }}"
-            - name: CLUSTER_NAME
-              value: "staging"
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
             - name: BOOTSTRAP_CONFIG_URI
               value: "file:///app/resources/configs"
             - name: LOG4J_CONFIGURATION_FILE
