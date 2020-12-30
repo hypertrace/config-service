@@ -86,3 +86,11 @@ tasks.run<JavaExec>  {
 tasks.jacocoIntegrationTestReport {
   sourceSets(project(":sensitive-data-config-service-impl").sourceSets.getByName("main"))
 }
+
+hypertraceDocker {
+  defaultImage {
+    javaApplication {
+      port.set(50101)
+    }
+  }
+}
