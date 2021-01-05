@@ -3,12 +3,17 @@ package org.hypertrace.config.service.store;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.protobuf.NullValue;
 import com.google.protobuf.Value;
 import com.typesafe.config.Config;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.ConfigResource;
+import org.hypertrace.config.service.ConfigServiceUtils;
+import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.DatastoreProvider;
@@ -22,6 +27,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 
+import static org.hypertrace.config.service.ConfigServiceUtils.emptyValue;
 import static org.hypertrace.config.service.store.ConfigDocument.CONTEXT_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_NAMESPACE_FIELD_NAME;
@@ -87,7 +93,7 @@ public class DocumentConfigStore implements ConfigStore {
 
   @Override
   public Value getConfig(ConfigResource configResource) throws IOException {
-    Value config = Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
+    Value config = emptyValue();
     Filter filter = getConfigResourceFilter(configResource)
         .and(Filter.eq(VERSION_FIELD_NAME, getLatestVersion(configResource)));
     Query query = new Query();
@@ -99,6 +105,19 @@ public class DocumentConfigStore implements ConfigStore {
       config = configDocument.getConfig();
     }
     return config;
+  }
+
+  @Override
+  public List<ContextSpecificConfig> getAllConfigs(String resourceName, String resourceNamespace,
+      String tenantId) throws IOException {
+    List<ContextSpecificConfig> contextSpecificConfigList = new ArrayList<>();
+    for (String context : getAllContexts(resourceName, resourceNamespace, tenantId)) {
+      Value config = getConfig(
+          new ConfigResource(resourceName, resourceNamespace, tenantId, context));
+      contextSpecificConfigList
+          .add(ContextSpecificConfig.newBuilder().setContext(context).setConfig(config).build());
+    }
+    return contextSpecificConfigList;
   }
 
   @Override
@@ -126,5 +145,27 @@ public class DocumentConfigStore implements ConfigStore {
         .and(Filter.eq(RESOURCE_NAMESPACE_FIELD_NAME, configResource.getResourceNamespace()))
         .and(Filter.eq(TENANT_ID_FIELD_NAME, configResource.getTenantId()))
         .and(Filter.eq(CONTEXT_FIELD_NAME, configResource.getContext()));
+  }
+
+  private Set<String> getAllContexts(String resourceName, String resourceNamespace,
+      String tenantId) throws IOException {
+    Set<String> contexts = new HashSet<>();
+    Filter filter = Filter.eq(RESOURCE_FIELD_NAME, resourceName)
+        .and(Filter.eq(RESOURCE_NAMESPACE_FIELD_NAME, resourceNamespace))
+        .and(Filter.eq(TENANT_ID_FIELD_NAME, tenantId));
+    Query query = new Query();
+    query.setFilter(filter);
+    Iterator<Document> documentIterator = collection.search(query);
+    // TODO : Currently the document store doesn't support distinct operation.
+    // Once it is supported, use the distinct clause on 'context' field with the above query.
+    // For now, we have to iterate over all the documents returned by this query and get the unique contexts.
+    while (documentIterator.hasNext()) {
+      String documentString = documentIterator.next().toJson();
+      ConfigDocument configDocument = ConfigDocument.fromJson(documentString);
+      if (!ConfigServiceUtils.isNull(configDocument.getConfig())) {
+        contexts.add(configDocument.getContext());
+      }
+    }
+    return contexts;
   }
 }
