@@ -31,7 +31,8 @@ message UpsertConfigRequest {
   // required - config value to be upserted
   google.protobuf.Value config = 3;
 
-  // optional - only required if config applies to a specific context
+  // optional - only required if config applies to a specific context.
+  // If empty, specified config is associated with a default context.
   string context = 4;
 }
 
