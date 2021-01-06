@@ -90,6 +90,25 @@ class DocumentConfigStoreTest {
     assertEquals(config1, config);
   }
 
+  @Test
+  void getAllConfigs() throws IOException {
+    List<Document> documentList = List
+        .of(getConfigDocument(DEFAULT_CONTEXT, CONFIG_VERSION, config1),
+            getConfigDocument(DEFAULT_CONTEXT, CONFIG_VERSION - 1, config2),
+            getConfigDocument(CONTEXT1, 1L, config2));
+    when(collection.search(any(Query.class))).thenReturn(documentList.iterator());
+
+    List<ContextSpecificConfig> contextSpecificConfigList = configStore
+        .getAllConfigs(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID);
+    assertEquals(2, contextSpecificConfigList.size());
+    assertEquals(
+        ContextSpecificConfig.newBuilder().setContext(DEFAULT_CONTEXT).setConfig(config1).build(),
+        contextSpecificConfigList.get(0));
+    assertEquals(
+        ContextSpecificConfig.newBuilder().setContext(CONTEXT1).setConfig(config2).build(),
+        contextSpecificConfigList.get(1));
+  }
+
   private static Document getConfigDocument(String context, long version, Value config) {
     return new ConfigDocument(RESOURCE_NAME, RESOURCE_NAMESPACE,
         TENANT_ID, context, version, USER_ID, config);

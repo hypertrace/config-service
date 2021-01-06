@@ -110,12 +110,24 @@ public class DocumentConfigStore implements ConfigStore {
   @Override
   public List<ContextSpecificConfig> getAllConfigs(String resourceName, String resourceNamespace,
       String tenantId) throws IOException {
+    Filter filter = Filter.eq(RESOURCE_FIELD_NAME, resourceName)
+        .and(Filter.eq(RESOURCE_NAMESPACE_FIELD_NAME, resourceNamespace))
+        .and(Filter.eq(TENANT_ID_FIELD_NAME, tenantId));
+    Query query = new Query();
+    query.setFilter(filter);
+    query.addOrderBy(new OrderBy(VERSION_FIELD_NAME, false));
+    Iterator<Document> documentIterator = collection.search(query);
     List<ContextSpecificConfig> contextSpecificConfigList = new ArrayList<>();
-    for (String context : getAllContexts(resourceName, resourceNamespace, tenantId)) {
-      Value config = getConfig(
-          new ConfigResource(resourceName, resourceNamespace, tenantId, context));
-      contextSpecificConfigList
-          .add(ContextSpecificConfig.newBuilder().setContext(context).setConfig(config).build());
+    Set<String> seenContexts = new HashSet<>();
+    while (documentIterator.hasNext()) {
+      String documentString = documentIterator.next().toJson();
+      ConfigDocument configDocument = ConfigDocument.fromJson(documentString);
+      String context = configDocument.getContext();
+      Value config = configDocument.getConfig();
+      if (seenContexts.add(context) && !ConfigServiceUtils.isNull(config)) {
+        contextSpecificConfigList
+            .add(ContextSpecificConfig.newBuilder().setContext(context).setConfig(config).build());
+      }
     }
     return contextSpecificConfigList;
   }
@@ -145,27 +157,5 @@ public class DocumentConfigStore implements ConfigStore {
         .and(Filter.eq(RESOURCE_NAMESPACE_FIELD_NAME, configResource.getResourceNamespace()))
         .and(Filter.eq(TENANT_ID_FIELD_NAME, configResource.getTenantId()))
         .and(Filter.eq(CONTEXT_FIELD_NAME, configResource.getContext()));
-  }
-
-  private Set<String> getAllContexts(String resourceName, String resourceNamespace,
-      String tenantId) throws IOException {
-    Set<String> contexts = new HashSet<>();
-    Filter filter = Filter.eq(RESOURCE_FIELD_NAME, resourceName)
-        .and(Filter.eq(RESOURCE_NAMESPACE_FIELD_NAME, resourceNamespace))
-        .and(Filter.eq(TENANT_ID_FIELD_NAME, tenantId));
-    Query query = new Query();
-    query.setFilter(filter);
-    Iterator<Document> documentIterator = collection.search(query);
-    // TODO : Currently the document store doesn't support distinct operation.
-    // Once it is supported, use the distinct clause on 'context' field with the above query.
-    // For now, we have to iterate over all the documents returned by this query and get the unique contexts.
-    while (documentIterator.hasNext()) {
-      String documentString = documentIterator.next().toJson();
-      ConfigDocument configDocument = ConfigDocument.fromJson(documentString);
-      if (!ConfigServiceUtils.isNull(configDocument.getConfig())) {
-        contexts.add(configDocument.getContext());
-      }
-    }
-    return contexts;
   }
 }

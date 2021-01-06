@@ -87,7 +87,7 @@ message DeleteConfigRequest {
   // required - namespace with which the config resource is associated
   string resource_namespace = 2;
 
-  // required - for default context, use "DEFAULT-CONTEXT"
+  // required
   string context = 3;
 }
 
