@@ -39,7 +39,7 @@ import org.mockito.Mockito;
  * A mock implementation of the generic config service. Limited support right now, it assumes all
  * calls are scoped to the same resource name/namespace.
  *
- * <p>Each method must be explicitly requested for mocking to
+ * <p>Each method must be explicitly requested for mocking to allow strict stubbing.
  */
 public class MockGenericConfigService {
 
