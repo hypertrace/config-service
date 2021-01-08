@@ -23,7 +23,7 @@ service ConfigService {
 
 message UpsertConfigRequest {
   // required - name of the resource associated with the config
-  string resource_name = 1;
+  string resource_name = 5;
 
   // required - namespace with which the config resource is associated
   string resource_namespace = 2;
