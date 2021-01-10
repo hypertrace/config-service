@@ -1,0 +1,59 @@
+name: Static Analysis
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  sonarqube-analysis:
+    runs-on: ubuntu-20.04
+    steps:
+      # Set fetch-depth: 0 to fetch commit history and tags for use in version calculation
+      - name: Check out code
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Checkout Traceable actions
+        uses: actions/checkout@v2
+        with:
+          repository: traceableai/github-actions
+          ssh-key: ${{ secrets.GH_ACTION_READ_KEY }}
+          path: .github/actions
+
+      - name: Create checksum file
+        uses: hypertrace/actions/checksum@main
+
+      - name: Cache gradle
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.gradle
+            !~/.gradle/gradle.properties
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/checksum.txt') }}
+          restore-keys: |
+            gradle-${{ runner.os }}
+
+      - name: Setup gradle auth
+        uses: ./.github/actions/gradle-setup
+        with:
+          context-url: ${{ secrets.ARTIFACTORY_CONTEXT_URL }}
+          user: ${{ secrets.ARTIFACTORY_READ_USER }}
+          password: ${{ secrets.ARTIFACTORY_READ_TOKEN }}
+
+      - name: Compile source
+        run: ./gradlew classes testClasses
+
+      - name: Jacoco Test Report
+        run: ./gradlew jacocoTestReport
+
+      - name: Dependency Check
+        run: ./gradlew dependencyCheckAggregate
+
+      - name: Sonarqube Analysis
+        uses: ./.github/actions/sonarqube-analysis
+        with:
+          sonar-host-url: ${{ secrets.SONAR_HOST_URL }}
+          sonar-login: ${{ secrets.SONAR_LOGIN }}
