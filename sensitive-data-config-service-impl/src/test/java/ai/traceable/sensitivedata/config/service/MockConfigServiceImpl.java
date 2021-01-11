@@ -42,7 +42,7 @@ class MockConfigServiceImpl extends ConfigServiceGrpc.ConfigServiceImplBase {
         }
       }
     }
-    responseObserver.onNext(UpsertConfigResponse.newBuilder().setConfigVersion(1).build());
+    responseObserver.onNext(UpsertConfigResponse.newBuilder().build());
     responseObserver.onCompleted();
   }
 

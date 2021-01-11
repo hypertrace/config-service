@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.ratelimiting.config.service.v1;
+
+import "ai/traceable/ratelimiting/config/service/v1/rate_limiting_rule.proto";
+import "ai/traceable/ratelimiting/config/service/v1/entity.proto";
+
+service RateLimitingConfigService {
+	rpc GetAllRateLimitingRules (GetAllRateLimitingRulesRequest) returns (GetAllRateLimitingRulesResponse) {
+	}
+	rpc UpdateAssociation (UpdateAssociationRequest) returns (UpdateAssociationResponse) {
+	}
+	rpc UpdateRuleConfig (UpdateRuleConfigRequest) returns (UpdateRuleConfigResponse) {
+	}
+	rpc DeleteRuleConfig (DeleteRuleConfigRequest) returns (DeleteRuleConfigResponse) {
+	}
+	rpc CreateRuleConfig (CreateRuleConfigRequest) returns (CreateRuleConfigResponse) {
+	}
+}
+
+message GetAllRateLimitingRulesRequest {
+}
+
+message GetAllRateLimitingRulesResponse {
+	repeated RateLimitingRuleWithAssociations rules = 1;
+}
+
+message UpdateAssociationRequest {
+	string rule_id = 1;
+	Entity entity = 2;
+	EditAssociationAction action = 3;
+}
+
+message UpdateAssociationResponse {
+}
+
+message UpdateRuleConfigRequest {
+	RateLimitingRuleConfig rule = 1;
+}
+
+message UpdateRuleConfigResponse {
+	RateLimitingRuleConfig rule = 1;
+}
+
+message DeleteRuleConfigRequest {
+	string rule_id = 1;
+}
+
+message DeleteRuleConfigResponse {
+	RateLimitingRuleConfig rule = 1;
+}
+
+message CreateRuleConfigRequest {
+	RateLimitingRuleConfig rule = 1;
+}
+
+message CreateRuleConfigResponse {
+	RateLimitingRuleConfig rule = 1;
+}
+
+enum EditAssociationAction {
+	EDIT_ASSOCIATION_ACTION_UNSPECIFIED = 0;
+	EDIT_ASSOCIATION_ACTION_ENABLE = 1;
+	EDIT_ASSOCIATION_ACTION_DISABLE = 2;
+}

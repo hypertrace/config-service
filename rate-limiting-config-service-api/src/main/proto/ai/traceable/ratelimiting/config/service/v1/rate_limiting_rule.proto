@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.ratelimiting.config.service.v1;
+
+import "ai/traceable/ratelimiting/config/service/v1/entity.proto";
+
+message RateLimitingRuleConfig {
+	string rule_id = 1;
+	string rule_name = 2;
+	string description = 3;
+	int64 max_call_count_allowed = 4;
+	int64 max_call_count_duration_millis = 5;
+	RuleViolationAction rule_violation_action = 6;
+	bool disabled = 7;
+	int64 suspend_duration_millis = 8;
+}
+
+enum RuleViolationAction {
+	RULE_VIOLATION_ACTION_UNSPECIFIED = 0;
+	RULE_VIOLATION_ACTION_BLOCK = 1;
+	RULE_VIOLATION_ACTION_SUSPEND = 2;
+	RULE_VIOLATION_ACTION_ALERT = 3;
+}
+
+message RateLimitingRuleWithAssociations {
+	RateLimitingRuleConfig rule = 1;
+	repeated Entity entities_associated = 2;
+}
