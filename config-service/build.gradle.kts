@@ -82,7 +82,7 @@ dependencies {
   testFixturesImplementation("org.mockito:mockito-core:3.7.0")
 
   constraints {
-    implementation("com.google.guava:guava:30.0-jre") {
+    implementation("com.google.guava:guava:30.1-jre") {
       because("https://snyk.io/vuln/SNYK-JAVA-COMGOOGLEGUAVA-1015415")
     }
     runtimeOnly("io.netty:netty-codec-http2:4.1.53.Final") {
