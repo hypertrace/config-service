@@ -59,7 +59,7 @@ dependencies {
   api("io.grpc:grpc-protobuf:1.34.1")
   api("io.grpc:grpc-stub:1.34.1")
   constraints {
-    implementation("com.google.guava:guava:30.0-jre") {
+    implementation("com.google.guava:guava:30.1-jre") {
       because("https://snyk.io/vuln/SNYK-JAVA-COMGOOGLEGUAVA-1015415")
     }
   }
