@@ -6,7 +6,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
-import org.hypertrace.spaces.config.service.v1.AttributeValueData;
+import org.hypertrace.spaces.config.service.v1.AttributeValueRuleData;
 import org.hypertrace.spaces.config.service.v1.CreateRuleRequest;
 import org.hypertrace.spaces.config.service.v1.DeleteRuleRequest;
 import org.hypertrace.spaces.config.service.v1.GetRulesRequest;
@@ -28,14 +28,16 @@ class SpaceConfigRequestValidatorImplTest {
   void validatesCreateRequest() {
     CreateRuleRequest validRequest =
         CreateRuleRequest.newBuilder()
-            .setAttributeValueData(
-                AttributeValueData.newBuilder().setAttributeScope("scope").setAttributeKey("key"))
+            .setAttributeValueRuleData(
+                AttributeValueRuleData.newBuilder()
+                    .setAttributeScope("scope")
+                    .setAttributeKey("key"))
             .build();
 
     CreateRuleRequest invalidRequest =
         validRequest.toBuilder()
-            .setAttributeValueData(
-                AttributeValueData.newBuilder().setAttributeScope("scope")) // missing key
+            .setAttributeValueRuleData(
+                AttributeValueRuleData.newBuilder().setAttributeScope("scope")) // missing key
             .build();
 
     when(requestContext.getTenantId()).thenReturn(Optional.empty());
@@ -113,8 +115,8 @@ class SpaceConfigRequestValidatorImplTest {
             .setUpdatedRule(
                 SpaceConfigRule.newBuilder()
                     .setId("id")
-                    .setAttributeValueData(
-                        AttributeValueData.newBuilder()
+                    .setAttributeValueRuleData(
+                        AttributeValueRuleData.newBuilder()
                             .setAttributeScope("scope")
                             .setAttributeKey("key")))
             .build();
@@ -128,8 +130,8 @@ class SpaceConfigRequestValidatorImplTest {
         validRequest.toBuilder()
             .setUpdatedRule(
                 validRequest.getUpdatedRule().toBuilder()
-                    .setAttributeValueData(
-                        validRequest.getUpdatedRule().getAttributeValueData().toBuilder()
+                    .setAttributeValueRuleData(
+                        validRequest.getUpdatedRule().getAttributeValueRuleData().toBuilder()
                             .clearAttributeKey()))
             .build();
 

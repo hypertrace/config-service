@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 
 import java.util.List;
 import org.hypertrace.config.service.MockGenericConfigService;
-import org.hypertrace.spaces.config.service.v1.AttributeValueData;
+import org.hypertrace.spaces.config.service.v1.AttributeValueRuleData;
 import org.hypertrace.spaces.config.service.v1.CreateRuleRequest;
 import org.hypertrace.spaces.config.service.v1.DeleteRuleRequest;
 import org.hypertrace.spaces.config.service.v1.GetRulesRequest;
@@ -43,14 +43,14 @@ class SpacesConfigServiceImplTest {
   @Test
   void createReadUpdateReadDelete() {
 
-    AttributeValueData attributeValueData1 =
-        AttributeValueData.newBuilder()
+    AttributeValueRuleData attributeValueRuleData1 =
+        AttributeValueRuleData.newBuilder()
             .setAttributeScope("attrScope")
             .setAttributeKey("attrKey1")
             .build();
 
-    AttributeValueData attributeValueData2 =
-        AttributeValueData.newBuilder()
+    AttributeValueRuleData attributeValueRuleData2 =
+        AttributeValueRuleData.newBuilder()
             .setAttributeScope("attrScope")
             .setAttributeKey("attrKey2")
             .build();
@@ -58,16 +58,20 @@ class SpacesConfigServiceImplTest {
     SpaceConfigRule createdRule1 =
         this.spacesStub
             .createRule(
-                CreateRuleRequest.newBuilder().setAttributeValueData(attributeValueData1).build())
+                CreateRuleRequest.newBuilder()
+                    .setAttributeValueRuleData(attributeValueRuleData1)
+                    .build())
             .getRule();
 
-    assertEquals(attributeValueData1, createdRule1.getAttributeValueData());
+    assertEquals(attributeValueRuleData1, createdRule1.getAttributeValueRuleData());
     assertFalse(createdRule1.getId().isEmpty());
 
     SpaceConfigRule createdRule2 =
         this.spacesStub
             .createRule(
-                CreateRuleRequest.newBuilder().setAttributeValueData(attributeValueData2).build())
+                CreateRuleRequest.newBuilder()
+                    .setAttributeValueRuleData(attributeValueRuleData2)
+                    .build())
             .getRule();
 
     assertIterableEquals(
@@ -76,8 +80,8 @@ class SpacesConfigServiceImplTest {
 
     SpaceConfigRule ruleToUpdate =
         createdRule1.toBuilder()
-            .setAttributeValueData(
-                attributeValueData1.toBuilder().setAttributeKey("updatedAttrKey1"))
+            .setAttributeValueRuleData(
+                attributeValueRuleData1.toBuilder().setAttributeKey("updatedAttrKey1"))
             .build();
 
     SpaceConfigRule updatedRule1 =

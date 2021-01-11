@@ -11,7 +11,7 @@ import java.util.Map;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
-import org.hypertrace.spaces.config.service.v1.AttributeValueData;
+import org.hypertrace.spaces.config.service.v1.AttributeValueRuleData;
 import org.hypertrace.spaces.config.service.v1.CreateRuleRequest;
 import org.hypertrace.spaces.config.service.v1.DeleteRuleRequest;
 import org.hypertrace.spaces.config.service.v1.GetRulesRequest;
@@ -32,8 +32,8 @@ class SpaceConfigRequestConverterImplTest {
   private static final SpaceConfigRule RULE =
       SpaceConfigRule.newBuilder()
           .setId(TEST_ID)
-          .setAttributeValueData(
-              AttributeValueData.newBuilder()
+          .setAttributeValueRuleData(
+              AttributeValueRuleData.newBuilder()
                   .setAttributeKey(TEST_KEY)
                   .setAttributeScope(TEST_SCOPE))
           .build();
@@ -46,7 +46,7 @@ class SpaceConfigRequestConverterImplTest {
                       Map.of(
                           "id",
                           Value.newBuilder().setStringValue(TEST_ID).build(),
-                          "attributeValueData",
+                          "attributeValueRuleData",
                           Value.newBuilder()
                               .setStructValue(
                                   Struct.newBuilder()
@@ -77,7 +77,7 @@ class SpaceConfigRequestConverterImplTest {
     UpsertConfigRequest convertedRequest =
         this.converter.convertCreateRequest(
             CreateRuleRequest.newBuilder()
-                .setAttributeValueData(RULE.getAttributeValueData())
+                .setAttributeValueRuleData(RULE.getAttributeValueRuleData())
                 .build());
 
     assertEquals(VALUE, convertedRequest.getConfig());

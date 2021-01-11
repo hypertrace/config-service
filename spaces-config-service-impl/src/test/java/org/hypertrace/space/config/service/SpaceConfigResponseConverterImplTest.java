@@ -10,7 +10,7 @@ import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigResponse;
 import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
-import org.hypertrace.spaces.config.service.v1.AttributeValueData;
+import org.hypertrace.spaces.config.service.v1.AttributeValueRuleData;
 import org.hypertrace.spaces.config.service.v1.DeleteRuleResponse;
 import org.hypertrace.spaces.config.service.v1.SpaceConfigRule;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,8 +26,8 @@ class SpaceConfigResponseConverterImplTest {
   private static final SpaceConfigRule RULE =
       SpaceConfigRule.newBuilder()
           .setId(TEST_ID)
-          .setAttributeValueData(
-              AttributeValueData.newBuilder()
+          .setAttributeValueRuleData(
+              AttributeValueRuleData.newBuilder()
                   .setAttributeKey(TEST_KEY)
                   .setAttributeScope(TEST_SCOPE))
           .build();
@@ -40,7 +40,7 @@ class SpaceConfigResponseConverterImplTest {
                       Map.of(
                           "id",
                           Value.newBuilder().setStringValue(TEST_ID).build(),
-                          "attributeValueData",
+                          "attributeValueRuleData",
                           Value.newBuilder()
                               .setStructValue(
                                   Struct.newBuilder()

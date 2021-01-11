@@ -20,7 +20,7 @@ service SpacesConfigService {
 
 message CreateRuleRequest {
   oneof rule_data {
-    AttributeValueData attribute_value_data = 1;
+    AttributeValueRuleData attribute_value_rule_data = 1;
   }
 }
 

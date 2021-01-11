@@ -7,20 +7,19 @@ import com.google.protobuf.ListValue;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 import java.util.Map;
-import org.hypertrace.spaces.config.service.v1.AttributeValueData;
+import org.hypertrace.spaces.config.service.v1.AttributeValueRuleData;
 import org.hypertrace.spaces.config.service.v1.SpaceConfigRule;
 import org.junit.jupiter.api.Test;
 
 class SpaceConfigRuleConverterImplTest {
 
-  private static final SpaceConfigRuleConverterImpl CONVERTER =
-      new SpaceConfigRuleConverterImpl();
+  private static final SpaceConfigRuleConverterImpl CONVERTER = new SpaceConfigRuleConverterImpl();
 
   private static final SpaceConfigRule RULE =
       SpaceConfigRule.newBuilder()
           .setId("test-id")
-          .setAttributeValueData(
-              AttributeValueData.newBuilder()
+          .setAttributeValueRuleData(
+              AttributeValueRuleData.newBuilder()
                   .setAttributeKey("attrKey")
                   .setAttributeScope("attrScope"))
           .build();
@@ -33,7 +32,7 @@ class SpaceConfigRuleConverterImplTest {
                       Map.of(
                           "id",
                           Value.newBuilder().setStringValue("test-id").build(),
-                          "attributeValueData",
+                          "attributeValueRuleData",
                           Value.newBuilder()
                               .setStructValue(
                                   Struct.newBuilder()

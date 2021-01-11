@@ -3,7 +3,7 @@ package org.hypertrace.space.config.service;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
 import org.hypertrace.core.grpcutils.context.RequestContext;
-import org.hypertrace.spaces.config.service.v1.AttributeValueData;
+import org.hypertrace.spaces.config.service.v1.AttributeValueRuleData;
 import org.hypertrace.spaces.config.service.v1.CreateRuleRequest;
 import org.hypertrace.spaces.config.service.v1.DeleteRuleRequest;
 import org.hypertrace.spaces.config.service.v1.GetRulesRequest;
@@ -17,9 +17,9 @@ class SpaceConfigRequestValidatorImpl implements SpaceConfigRequestValidator {
     return this.validateTenant(requestContext)
         .andThen(
             this.check(
-                createRuleRequest.hasAttributeValueData(),
-                "Only Attribute Value Data rules supported"))
-        .andThen(this.validateAttributeValueRule(createRuleRequest.getAttributeValueData()))
+                createRuleRequest.hasAttributeValueRuleData(),
+                "Only Attribute Value rules supported"))
+        .andThen(this.validateAttributeValueRule(createRuleRequest.getAttributeValueRuleData()))
         .toSingleDefault(createRuleRequest);
   }
 
@@ -48,18 +48,18 @@ class SpaceConfigRequestValidatorImpl implements SpaceConfigRequestValidator {
   private Completable validateRule(SpaceConfigRule rule) {
     return this.check(!rule.getId().isEmpty(), "Rule ID missing from update request")
         .andThen(
-            this.check(rule.hasAttributeValueData(), "Only Attribute Value Data rules supported"))
-        .andThen(this.validateAttributeValueRule(rule.getAttributeValueData()));
+            this.check(rule.hasAttributeValueRuleData(), "Only Attribute Value rules supported"))
+        .andThen(this.validateAttributeValueRule(rule.getAttributeValueRuleData()));
   }
 
-  private Completable validateAttributeValueRule(AttributeValueData attributeValueData) {
+  private Completable validateAttributeValueRule(AttributeValueRuleData attributeValueRuleData) {
     return this.check(
-            !attributeValueData.getAttributeScope().isEmpty(),
-            "Attribute value data rule missing attribute scope")
+            !attributeValueRuleData.getAttributeScope().isEmpty(),
+            "Attribute value rule missing attribute scope")
         .andThen(
             this.check(
-                !attributeValueData.getAttributeKey().isEmpty(),
-                "Attribute value data rule missing attribute key"));
+                !attributeValueRuleData.getAttributeKey().isEmpty(),
+                "Attribute value rule missing attribute key"));
   }
 
   private Completable validateTenant(RequestContext requestContext) {

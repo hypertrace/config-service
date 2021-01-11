@@ -61,8 +61,8 @@ class SpaceConfigRequestConverterImpl implements SpaceConfigRequestConverter {
         SpaceConfigRule.newBuilder().setId(this.idGenerator.generateId());
 
     switch (request.getRuleDataCase()) {
-      case ATTRIBUTE_VALUE_DATA:
-        return ruleBuilder.setAttributeValueData(request.getAttributeValueData()).build();
+      case ATTRIBUTE_VALUE_RULE_DATA:
+        return ruleBuilder.setAttributeValueRuleData(request.getAttributeValueRuleData()).build();
       case RULEDATA_NOT_SET:
       default:
         return ruleBuilder.build();
