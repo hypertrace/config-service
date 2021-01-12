@@ -5,12 +5,14 @@ option java_multiple_files = true;
 package ai.traceable.ratelimiting.config.service.v1;
 
 import "ai/traceable/ratelimiting/config/service/v1/rate_limiting_rule.proto";
-import "ai/traceable/ratelimiting/config/service/v1/entity.proto";
+import "ai/traceable/ratelimiting/config/service/v1/rate_limited_entity.proto";
 
 service RateLimitingConfigService {
 	rpc GetAllRateLimitingRules (GetAllRateLimitingRulesRequest) returns (GetAllRateLimitingRulesResponse) {
 	}
-	rpc UpdateAssociation (UpdateAssociationRequest) returns (UpdateAssociationResponse) {
+	rpc CreateRuleRateLimitedEntityAssociation (CreateRuleRateLimitedEntityAssociationRequest) returns (CreateRuleRateLimitedEntityAssociationResponse) {
+	}
+	rpc DeleteRuleRateLimitedEntityAssociation (DeleteRuleRateLimitedEntityAssociationRequest) returns (DeleteRuleRateLimitedEntityAssociationResponse) {
 	}
 	rpc UpdateRuleConfig (UpdateRuleConfigRequest) returns (UpdateRuleConfigResponse) {
 	}
@@ -24,16 +26,23 @@ message GetAllRateLimitingRulesRequest {
 }
 
 message GetAllRateLimitingRulesResponse {
-	repeated RateLimitingRuleWithAssociations rules = 1;
+	repeated RateLimitingRuleWithRateLimitedEntities rules = 1;
 }
 
-message UpdateAssociationRequest {
+message CreateRuleRateLimitedEntityAssociationRequest {
 	string rule_id = 1;
-	Entity entity = 2;
-	EditAssociationAction action = 3;
+	RateLimitedEntity entity = 2;
 }
 
-message UpdateAssociationResponse {
+message CreateRuleRateLimitedEntityAssociationResponse {
+}
+
+message DeleteRuleRateLimitedEntityAssociationRequest {
+	string rule_id = 1;
+	RateLimitedEntity entity = 2;
+}
+
+message DeleteRuleRateLimitedEntityAssociationResponse {
 }
 
 message UpdateRuleConfigRequest {
@@ -53,15 +62,9 @@ message DeleteRuleConfigResponse {
 }
 
 message CreateRuleConfigRequest {
-	RateLimitingRuleConfig rule = 1;
+	CreateRateLimitingRuleConfig rule = 1;
 }
 
 message CreateRuleConfigResponse {
 	RateLimitingRuleConfig rule = 1;
-}
-
-enum EditAssociationAction {
-	EDIT_ASSOCIATION_ACTION_UNSPECIFIED = 0;
-	EDIT_ASSOCIATION_ACTION_ENABLE = 1;
-	EDIT_ASSOCIATION_ACTION_DISABLE = 2;
 }
