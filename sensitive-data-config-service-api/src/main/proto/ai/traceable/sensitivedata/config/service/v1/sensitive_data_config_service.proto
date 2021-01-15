@@ -15,6 +15,9 @@ service SensitiveDataConfigService {
 
   // update the redaction strategy of a parameter
   rpc UpdateRedactionStrategy(UpdateRedactionStrategyRequest) returns (UpdateRedactionStrategyResponse) {}
+
+  // get the redaction strategy of sensitive parameters for the specified type and endpoint
+  rpc GetRedactionStrategy(GetRedactionStrategyRequest) returns (GetRedactionStrategyResponse) {}
 }
 
 message MarkParametersRequest {
@@ -26,18 +29,15 @@ message MarkParametersRequest {
 
   // required if the list of parameters contains at least one non-header parameter.
   string endpoint = 3;
+
+  // this flag determines if this request should change the sensitivity of an already marked parameter or not.
+  bool only_if_unset = 4;
 }
 
 message MarkParametersResponse {}
 
 message GetParametersRequest {
-  ParamType param_type = 1;
-
-  // required if param type is not Header
-  string endpoint = 2;
-
-  // if null, gets both - sensitive and insensitive parameters marked by user. If true, gets sensitive parameters else insensitive parameters marked by user.
-  Filter filter = 3;
+  Filter filter = 1;
 }
 
 message GetParametersResponse {
@@ -52,6 +52,15 @@ message UpdateRedactionStrategyRequest {
 
 message UpdateRedactionStrategyResponse {}
 
+message GetRedactionStrategyRequest {
+  Filter filter = 1;
+}
+
+message GetRedactionStrategyResponse {
+  // list of parameters with their redaction strategy
+  repeated ParameterWithRedactionStrategy parameters_with_redaction_strategy = 1;
+}
+
 message Parameter {
   ParamType param_type = 1;
   string name = 2;
@@ -65,10 +74,19 @@ enum ParamType {
 }
 
 message Filter {
-  bool sensitive = 1;
+  ParamType param_type = 1;
+  string endpoint = 2;
+  oneof sensitivity_filter {
+    bool sensitive = 3;
+  }
 }
 
 message ParameterWithSensitivity {
   Parameter parameter = 1;
   bool sensitive = 2;
+}
+
+message ParameterWithRedactionStrategy {
+  Parameter parameter = 1;
+  RedactionStrategy redaction_strategy = 2;
 }

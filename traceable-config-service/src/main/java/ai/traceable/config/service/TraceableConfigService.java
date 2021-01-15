@@ -25,7 +25,8 @@ public class TraceableConfigService extends PlatformService {
   private static final String SERVICE_NAME_CONFIG = "service.name";
   private static final String SERVICE_PORT_CONFIG = "service.port";
   private static final String GENERIC_CONFIG_SERVICE_CONFIG = "generic.config.service";
-  private static final String PII_FILTER_CONFIG_SERVICE_CONFIG = "pii.filter.config.service";
+  private static final String SENSITIVE_DATA_CONFIG_SERVICE_CONFIG =
+      "sensitive.data.config.service";
   private static final Logger LOG = LoggerFactory.getLogger(TraceableConfigService.class);
   private String serviceName;
   private int serverPort;
@@ -44,9 +45,7 @@ public class TraceableConfigService extends PlatformService {
     LOG.info("Creating {} on port {}", serviceName, serverPort);
 
     ManagedChannel managedChannel =
-        ManagedChannelBuilder.forAddress("localhost", serverPort)
-            .usePlaintext()
-            .build();
+        ManagedChannelBuilder.forAddress("localhost", serverPort).usePlaintext().build();
     this.getLifecycle().shutdownComplete().thenRun(managedChannel::shutdown);
     ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(managedChannel)
@@ -56,11 +55,13 @@ public class TraceableConfigService extends PlatformService {
     Config genericConfigServiceConfig = config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG);
     configStore = getConfigStore(genericConfigServiceConfig);
     ConfigServiceGrpcImpl genericConfigServiceGrpcImpl = new ConfigServiceGrpcImpl(configStore);
+    Config sensitiveDataConfigServiceConfig =
+        config.getConfig(SENSITIVE_DATA_CONFIG_SERVICE_CONFIG);
     SensitiveDataConfigServiceImpl sensitiveDataConfigService =
-        new SensitiveDataConfigServiceImpl(configServiceBlockingStub);
-    Config piiFilterConfigServiceConfig = config.getConfig(PII_FILTER_CONFIG_SERVICE_CONFIG);
+        new SensitiveDataConfigServiceImpl(
+            configServiceBlockingStub, sensitiveDataConfigServiceConfig);
     PiiFilterConfigServiceImpl piiFilterConfigService =
-        new PiiFilterConfigServiceImpl(configServiceBlockingStub, piiFilterConfigServiceConfig);
+        new PiiFilterConfigServiceImpl(configServiceBlockingStub, sensitiveDataConfigServiceConfig);
     traceableConfigServer =
         ServerBuilder.forPort(serverPort)
             .addService(InterceptorUtil.wrapInterceptors(genericConfigServiceGrpcImpl))

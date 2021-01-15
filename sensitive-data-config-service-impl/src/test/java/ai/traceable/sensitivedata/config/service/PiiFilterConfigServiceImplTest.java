@@ -1,6 +1,6 @@
 package ai.traceable.sensitivedata.config.service;
 
-import static ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl.DEFAULT_CONFIG;
+import static ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl.DEFAULT_PII_FILTER_CONFIG;
 import static ai.traceable.sensitivedata.config.service.TestUtils.TENANT_ID;
 import static ai.traceable.sensitivedata.config.service.TestUtils.getPiiFilterConfigInstance;
 import static ai.traceable.sensitivedata.config.service.TestUtils.getPiiFilterConfigValue;
@@ -54,7 +54,7 @@ class PiiFilterConfigServiceImplTest {
     ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(managedChannel);
 
-    Config config = ConfigFactory.parseMap(Map.of(DEFAULT_CONFIG, Map.of()));
+    Config config = ConfigFactory.parseMap(Map.of(DEFAULT_PII_FILTER_CONFIG, Map.of()));
     piiFilterConfigService = new PiiFilterConfigServiceImpl(configServiceBlockingStub, config);
   }
 

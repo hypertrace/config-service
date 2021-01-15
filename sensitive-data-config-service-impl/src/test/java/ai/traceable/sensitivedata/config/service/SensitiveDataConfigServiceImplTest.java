@@ -1,5 +1,6 @@
 package ai.traceable.sensitivedata.config.service;
 
+import static ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl.DEFAULT_PII_FILTER_CONFIG;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.toPiiFilterConfig;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.toValue;
 import static ai.traceable.sensitivedata.config.service.TestUtils.ENDPOINT1;
@@ -9,6 +10,7 @@ import static ai.traceable.sensitivedata.config.service.TestUtils.getParameter;
 import static ai.traceable.sensitivedata.config.service.TestUtils.getParameterWithSensitivity;
 import static ai.traceable.sensitivedata.config.service.TestUtils.getParametersWithSensitivityList;
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_HASH;
+import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_OBFUSCATE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -20,15 +22,20 @@ import static org.mockito.Mockito.verify;
 import ai.traceable.sensitivedata.config.service.v1.Filter;
 import ai.traceable.sensitivedata.config.service.v1.GetParametersRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetParametersResponse;
+import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyResponse;
 import ai.traceable.sensitivedata.config.service.v1.MarkParametersRequest;
 import ai.traceable.sensitivedata.config.service.v1.ParamType;
 import ai.traceable.sensitivedata.config.service.v1.Parameter;
+import ai.traceable.sensitivedata.config.service.v1.ParameterWithRedactionStrategy;
 import ai.traceable.sensitivedata.config.service.v1.ParameterWithSensitivity;
 import ai.traceable.sensitivedata.config.service.v1.PiiElement;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfig;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyRequest;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
@@ -36,6 +43,7 @@ import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -68,7 +76,9 @@ class SensitiveDataConfigServiceImplTest {
     ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(managedChannel);
 
-    sensitiveDataConfigService = new SensitiveDataConfigServiceImpl(configServiceBlockingStub);
+    Config config = ConfigFactory.parseMap(Map.of(DEFAULT_PII_FILTER_CONFIG, Map.of()));
+    sensitiveDataConfigService =
+        new SensitiveDataConfigServiceImpl(configServiceBlockingStub, config);
   }
 
   @Test
@@ -96,9 +106,12 @@ class SensitiveDataConfigServiceImplTest {
     StreamObserver<GetParametersResponse> responseObserver = mock(StreamObserver.class);
     GetParametersRequest request =
         GetParametersRequest.newBuilder()
-            .setParamType(ParamType.PARAM_TYPE_BODY)
-            .setEndpoint(ENDPOINT1)
-            .setFilter(Filter.newBuilder().setSensitive(true).build())
+            .setFilter(
+                Filter.newBuilder()
+                    .setParamType(ParamType.PARAM_TYPE_BODY)
+                    .setEndpoint(ENDPOINT1)
+                    .setSensitive(true)
+                    .build())
             .build();
     Runnable runnable = () -> sensitiveDataConfigService.getParameters(request, responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
@@ -144,5 +157,37 @@ class SensitiveDataConfigServiceImplTest {
             .setRedactionStrategy(REDACTION_STRATEGY_HASH)
             .build();
     assertEquals(expected, upsertedPiiElement.get());
+  }
+
+  @Test
+  void getRedactionStrategy() {
+    StreamObserver<GetRedactionStrategyResponse> responseObserver = mock(StreamObserver.class);
+    GetRedactionStrategyRequest request =
+        GetRedactionStrategyRequest.newBuilder()
+            .setFilter(
+                Filter.newBuilder()
+                    .setParamType(ParamType.PARAM_TYPE_BODY)
+                    .setEndpoint(ENDPOINT1)
+                    .build())
+            .build();
+    Runnable runnable =
+        () -> sensitiveDataConfigService.getRedactionStrategy(request, responseObserver);
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+    ArgumentCaptor<GetRedactionStrategyResponse> argumentCaptor =
+        ArgumentCaptor.forClass(GetRedactionStrategyResponse.class);
+    verify(responseObserver, times(1)).onNext(argumentCaptor.capture());
+    verify(responseObserver, times(1)).onCompleted();
+    verify(responseObserver, never()).onError(any(Throwable.class));
+
+    List<ParameterWithRedactionStrategy> expected =
+        List.of(
+            ParameterWithRedactionStrategy.newBuilder()
+                .setParameter(getParameter(ParamType.PARAM_TYPE_BODY, "p1"))
+                .setRedactionStrategy(REDACTION_STRATEGY_OBFUSCATE)
+                .build());
+    List<ParameterWithRedactionStrategy> actual =
+        argumentCaptor.getValue().getParametersWithRedactionStrategyList();
+    assertEquals(expected, actual);
   }
 }

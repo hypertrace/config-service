@@ -8,9 +8,12 @@ import ai.traceable.sensitivedata.config.service.v1.Filter;
 import ai.traceable.sensitivedata.config.service.v1.GetParametersRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetParametersResponse;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyResponse;
 import ai.traceable.sensitivedata.config.service.v1.MarkParametersRequest;
 import ai.traceable.sensitivedata.config.service.v1.ParamType;
 import ai.traceable.sensitivedata.config.service.v1.Parameter;
+import ai.traceable.sensitivedata.config.service.v1.ParameterWithRedactionStrategy;
 import ai.traceable.sensitivedata.config.service.v1.ParameterWithSensitivity;
 import ai.traceable.sensitivedata.config.service.v1.PiiElement;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfig;
@@ -44,7 +47,7 @@ public class TraceableConfigServiceIntegrationTest {
 
   private static final String SERVICE_NAME = "traceable-config-service";
   private static final String DEFAULT_PII_FILTER_CONFIG =
-      "pii.filter.config.service.default.config";
+      "sensitive.data.config.service.default.pii.filter.config";
 
   private static SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceStub;
   private static PiiFilterConfigServiceBlockingStub piiFilterConfigServiceStub;
@@ -76,13 +79,14 @@ public class TraceableConfigServiceIntegrationTest {
   void testSensitiveDataConfiguration() {
     Parameter parameter1 = getParameter(ParamType.PARAM_TYPE_BODY, "p1");
     Parameter parameter2 = getParameter(ParamType.PARAM_TYPE_BODY, "p2");
-    Parameter parameter3 = getParameter(ParamType.PARAM_TYPE_QUERY, "p3");
-    Parameter parameter4 = getParameter(ParamType.PARAM_TYPE_HEADER, "p4");
+    Parameter parameter3 = getParameter(ParamType.PARAM_TYPE_QUERY, "authorization");
+    Parameter parameter4 = getParameter(ParamType.PARAM_TYPE_HEADER, "access_token");
     String endpoint1 = "/checkout";
     String endpoint2 = "/orders";
 
-    markSensitive(List.of(parameter1, parameter2, parameter3), endpoint1);
-    markSensitive(List.of(parameter1, parameter4), endpoint2);
+    // mark the above parameters as sensitive in context of an endpoint
+    markSensitive(List.of(parameter1, parameter2, parameter3), endpoint1, true);
+    markSensitive(List.of(parameter1, parameter4), endpoint2, false);
     assertEquals(
         Set.of(parameter1, parameter2),
         getSensitiveParameters(ParamType.PARAM_TYPE_BODY, endpoint1));
@@ -90,10 +94,46 @@ public class TraceableConfigServiceIntegrationTest {
     assertEquals(Set.of(parameter1), getSensitiveParameters(ParamType.PARAM_TYPE_BODY, endpoint2));
     assertEquals(Set.of(parameter4), getSensitiveParameters(ParamType.PARAM_TYPE_HEADER, ""));
 
-    markInsensitive(List.of(parameter2), endpoint1);
+    // this should not mark parameter2 as insensitive as it has already been marked sensitive and
+    // onlyIfUnset is true
+    markInsensitive(List.of(parameter2), endpoint1, true);
+    assertEquals(
+        Set.of(parameter1, parameter2),
+        getSensitiveParameters(ParamType.PARAM_TYPE_BODY, endpoint1));
+    assertEquals(Set.of(), getInsensitiveParameters(ParamType.PARAM_TYPE_BODY, endpoint1));
+
+    // this should mark parameter2 as insensitive as onlyIfUnset is false
+    markInsensitive(List.of(parameter2), endpoint1, false);
     assertEquals(Set.of(parameter1), getSensitiveParameters(ParamType.PARAM_TYPE_BODY, endpoint1));
     assertEquals(
         Set.of(parameter2), getInsensitiveParameters(ParamType.PARAM_TYPE_BODY, endpoint1));
+
+    // update redaction strategy of parameter1
+    updateRedactionStrategy(parameter1, REDACTION_STRATEGY_OBFUSCATE);
+    assertEquals(
+        Set.of(
+            ParameterWithRedactionStrategy.newBuilder()
+                .setParameter(parameter1)
+                .setRedactionStrategy(REDACTION_STRATEGY_OBFUSCATE)
+                .build()),
+        getRedactionStrategy(ParamType.PARAM_TYPE_BODY, endpoint1));
+
+    // parameter3 and parameter 4 have been marked as sensitive and their redaction strategy comes
+    // from default pii filter config
+    assertEquals(
+        Set.of(
+            ParameterWithRedactionStrategy.newBuilder()
+                .setParameter(parameter3)
+                .setRedactionStrategy(REDACTION_STRATEGY_HASH)
+                .build()),
+        getRedactionStrategy(ParamType.PARAM_TYPE_QUERY, endpoint1));
+    assertEquals(
+        Set.of(
+            ParameterWithRedactionStrategy.newBuilder()
+                .setParameter(parameter4)
+                .setRedactionStrategy(REDACTION_STRATEGY_OBFUSCATE)
+                .build()),
+        getRedactionStrategy(ParamType.PARAM_TYPE_HEADER, ""));
   }
 
   @Test
@@ -122,20 +162,23 @@ public class TraceableConfigServiceIntegrationTest {
     return Parameter.newBuilder().setParamType(paramType).setName(paramName).build();
   }
 
-  private void markSensitive(List<Parameter> parameters, String endpoint) {
-    markParameters(parameters, endpoint, true);
+  private void markSensitive(List<Parameter> parameters, String endpoint, boolean onlyIfUnset) {
+    markParameters(parameters, endpoint, true, onlyIfUnset);
   }
 
-  private void markInsensitive(List<Parameter> parameters, String endpoint) {
-    markParameters(parameters, endpoint, false);
+  private void markInsensitive(
+      List<Parameter> parameters, String endpoint, boolean onlyIfUnset) {
+    markParameters(parameters, endpoint, false, onlyIfUnset);
   }
 
-  private void markParameters(List<Parameter> parameters, String endpoint, boolean sensitive) {
+  private void markParameters(
+      List<Parameter> parameters, String endpoint, boolean sensitive, boolean onlyIfUnset) {
     MarkParametersRequest request =
         MarkParametersRequest.newBuilder()
             .addAllParameters(parameters)
             .setEndpoint(endpoint)
             .setSensitive(sensitive)
+            .setOnlyIfUnset(onlyIfUnset)
             .build();
     GrpcClientRequestContextUtil.executeInTenantContext(
         "tenant1", () -> sensitiveDataConfigServiceStub.markParameters(request));
@@ -152,9 +195,12 @@ public class TraceableConfigServiceIntegrationTest {
   private Set<Parameter> getParameters(ParamType paramType, String endpoint, boolean sensitive) {
     GetParametersRequest request =
         GetParametersRequest.newBuilder()
-            .setParamType(paramType)
-            .setEndpoint(endpoint)
-            .setFilter(Filter.newBuilder().setSensitive(sensitive).build())
+            .setFilter(
+                Filter.newBuilder()
+                    .setParamType(paramType)
+                    .setEndpoint(endpoint)
+                    .setSensitive(sensitive)
+                    .build())
             .build();
     GetParametersResponse response =
         GrpcClientRequestContextUtil.executeInTenantContext(
@@ -172,6 +218,18 @@ public class TraceableConfigServiceIntegrationTest {
             .build();
     GrpcClientRequestContextUtil.executeInTenantContext(
         "tenant1", () -> sensitiveDataConfigServiceStub.updateRedactionStrategy(request));
+  }
+
+  private Set<ParameterWithRedactionStrategy> getRedactionStrategy(
+      ParamType paramType, String endpoint) {
+    GetRedactionStrategyRequest request =
+        GetRedactionStrategyRequest.newBuilder()
+            .setFilter(Filter.newBuilder().setParamType(paramType).setEndpoint(endpoint).build())
+            .build();
+    GetRedactionStrategyResponse response =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+            "tenant1", () -> sensitiveDataConfigServiceStub.getRedactionStrategy(request));
+    return new HashSet<>(response.getParametersWithRedactionStrategyList());
   }
 
   private PiiElement getPiiElement(String paramName, RedactionStrategy redactionStrategy) {

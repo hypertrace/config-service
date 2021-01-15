@@ -8,6 +8,8 @@ import com.google.protobuf.Message;
 import com.google.protobuf.Value;
 import com.google.protobuf.Value.KindCase;
 import com.google.protobuf.util.JsonFormat;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigRenderOptions;
 import java.util.Optional;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.GetConfigRequest;
@@ -25,6 +27,17 @@ public class SensitiveDataConfigUtils {
 
   private SensitiveDataConfigUtils() {
     // to prevent instantiation
+  }
+
+  public static PiiFilterConfig toPiiFilterConfig(Config piiFilterConfig) {
+    try {
+      String jsonString = piiFilterConfig.root().render(ConfigRenderOptions.concise());
+      PiiFilterConfig.Builder builder = PiiFilterConfig.newBuilder();
+      JsonFormat.parser().merge(jsonString, builder);
+      return builder.build();
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public static Value toValue(Message message) throws InvalidProtocolBufferException {

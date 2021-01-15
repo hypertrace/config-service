@@ -22,8 +22,8 @@ data:
       }
     }
     {{- if hasKey .Values.traceableConfigServiceConfig "defaultPiiFilterConfig" }}
-    pii.filter.config.service {
-      default.config {
+    sensitive.data.config.service {
+      default.pii.filter.config {
         {{- .Values.traceableConfigServiceConfig.defaultPiiFilterConfig | nindent 8 }}
       }
     }

@@ -2,8 +2,8 @@ package ai.traceable.sensitivedata.config.service;
 
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.PII_FILTER_CONFIG_RESOURCE;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.SENSITIVE_DATA_CONFIGURATION;
-import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.getConfig;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.toPiiFilterConfig;
+import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.getConfig;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.toValue;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.upsertConfig;
 
@@ -13,10 +13,7 @@ import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfig;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.UpsertPiiFilterConfigRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpsertPiiFilterConfigResponse;
-import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigRenderOptions;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
@@ -27,7 +24,7 @@ import org.hypertrace.config.service.v1.UpsertConfigRequest;
 public class PiiFilterConfigServiceImpl
     extends PiiFilterConfigServiceGrpc.PiiFilterConfigServiceImplBase {
 
-  static final String DEFAULT_CONFIG = "default.config";
+  static final String DEFAULT_PII_FILTER_CONFIG = "default.pii.filter.config";
 
   private final ConfigServiceBlockingStub configServiceBlockingStub;
   private final PiiFilterConfig defaultPiiFilterConfig;
@@ -35,18 +32,8 @@ public class PiiFilterConfigServiceImpl
   public PiiFilterConfigServiceImpl(
       ConfigServiceBlockingStub configServiceBlockingStub, Config config) {
     this.configServiceBlockingStub = configServiceBlockingStub;
-    this.defaultPiiFilterConfig = convert(config.getConfig(DEFAULT_CONFIG));
-  }
-
-  private PiiFilterConfig convert(Config piiFilterConfig) {
-    try {
-      String jsonString = piiFilterConfig.root().render(ConfigRenderOptions.concise());
-      PiiFilterConfig.Builder builder = PiiFilterConfig.newBuilder();
-      JsonFormat.parser().merge(jsonString, builder);
-      return builder.build();
-    } catch (InvalidProtocolBufferException e) {
-      throw new RuntimeException(e);
-    }
+    this.defaultPiiFilterConfig =
+        SensitiveDataConfigUtils.toPiiFilterConfig(config.getConfig(DEFAULT_PII_FILTER_CONFIG));
   }
 
   @Override
