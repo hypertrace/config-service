@@ -32,11 +32,9 @@ import com.google.common.base.Preconditions;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
-import com.google.protobuf.Value.KindCase;
 import com.typesafe.config.Config;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -58,8 +56,7 @@ public class SensitiveDataConfigServiceImpl
   public SensitiveDataConfigServiceImpl(
       ConfigServiceBlockingStub configServiceBlockingStub, Config config) {
     this.configServiceBlockingStub = configServiceBlockingStub;
-    this.defaultPiiFilterConfig =
-        SensitiveDataConfigUtils.toPiiFilterConfig(config.getConfig(DEFAULT_PII_FILTER_CONFIG));
+    this.defaultPiiFilterConfig = toPiiFilterConfig(config.getConfig(DEFAULT_PII_FILTER_CONFIG));
   }
 
   @Override
@@ -98,8 +95,7 @@ public class SensitiveDataConfigServiceImpl
 
           // if onlyIfUnset is true and parameter has previously been marked with opposite
           // sensitivity, then skip this parameter.
-          if (onlyIfUnset
-              && parametersWithSensitivity.contains(parameterWithOppositeSensitivity)) {
+          if (onlyIfUnset && parametersWithSensitivity.contains(parameterWithOppositeSensitivity)) {
             continue;
           }
           parametersWithSensitivity.add(parameterWithSensitivity);
@@ -237,11 +233,8 @@ public class SensitiveDataConfigServiceImpl
             .setResourceNamespace(SENSITIVE_DATA_CONFIGURATION)
             .addContexts(context)
             .build();
-    Value config = getConfig(configServiceBlockingStub, getConfigRequest).getConfig();
-    if (config == null || config.getKindCase() != KindCase.LIST_VALUE) {
-      return Collections.emptyList();
-    }
-    return config.getListValue().getValuesList();
+
+    return getConfig(configServiceBlockingStub, getConfigRequest).getListValue().getValuesList();
   }
 
   private void upsertParametersWithSensitivity(
@@ -277,7 +270,7 @@ public class SensitiveDataConfigServiceImpl
             .setResourceName(PII_FILTER_CONFIG_RESOURCE)
             .setResourceNamespace(SENSITIVE_DATA_CONFIGURATION)
             .build();
-    return toPiiFilterConfig(getConfig(configServiceBlockingStub, getConfigRequest).getConfig());
+    return toPiiFilterConfig(getConfig(configServiceBlockingStub, getConfigRequest));
   }
 
   private List<ParameterWithRedactionStrategy> getRedactionStrategyForSensitiveParameters(

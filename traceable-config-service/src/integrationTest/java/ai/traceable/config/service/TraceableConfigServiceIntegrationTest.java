@@ -163,7 +163,7 @@ public class TraceableConfigServiceIntegrationTest {
   }
 
   private void markSensitive(List<Parameter> parameters, String endpoint, boolean onlyIfUnset) {
-    markParameters(parameters, endpoint, true, onlyIfUnset);
+      markParameters(parameters, endpoint, true, onlyIfUnset);
   }
 
   private void markInsensitive(

@@ -2,8 +2,8 @@ package ai.traceable.sensitivedata.config.service;
 
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.PII_FILTER_CONFIG_RESOURCE;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.SENSITIVE_DATA_CONFIGURATION;
-import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.toPiiFilterConfig;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.getConfig;
+import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.toPiiFilterConfig;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.toValue;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.upsertConfig;
 
@@ -47,7 +47,7 @@ public class PiiFilterConfigServiceImpl
               .setResourceNamespace(SENSITIVE_DATA_CONFIGURATION)
               .build();
       PiiFilterConfig piiFilterConfig =
-          toPiiFilterConfig(getConfig(configServiceBlockingStub, getConfigRequest).getConfig());
+          toPiiFilterConfig(getConfig(configServiceBlockingStub, getConfigRequest));
       PiiFilterConfig resultingPiiFilterConfig =
           PiiFilterConfig.newBuilder(defaultPiiFilterConfig)
               .clearKeyRegexs()

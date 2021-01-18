@@ -8,9 +8,8 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import java.io.IOException;
-import org.hypertrace.config.service.ConfigServiceGrpcImpl;
+import org.hypertrace.config.service.ConfigServicesFactory;
 import org.hypertrace.config.service.store.ConfigStore;
-import org.hypertrace.config.service.store.DocumentConfigStore;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
@@ -24,7 +23,6 @@ public class TraceableConfigService extends PlatformService {
 
   private static final String SERVICE_NAME_CONFIG = "service.name";
   private static final String SERVICE_PORT_CONFIG = "service.port";
-  private static final String GENERIC_CONFIG_SERVICE_CONFIG = "generic.config.service";
   private static final String SENSITIVE_DATA_CONFIG_SERVICE_CONFIG =
       "sensitive.data.config.service";
   private static final Logger LOG = LoggerFactory.getLogger(TraceableConfigService.class);
@@ -47,27 +45,32 @@ public class TraceableConfigService extends PlatformService {
     ManagedChannel managedChannel =
         ManagedChannelBuilder.forAddress("localhost", serverPort).usePlaintext().build();
     this.getLifecycle().shutdownComplete().thenRun(managedChannel::shutdown);
-    ConfigServiceBlockingStub configServiceBlockingStub =
-        ConfigServiceGrpc.newBlockingStub(managedChannel)
-            .withCallCredentials(
-                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
-    Config genericConfigServiceConfig = config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG);
-    configStore = getConfigStore(genericConfigServiceConfig);
-    ConfigServiceGrpcImpl genericConfigServiceGrpcImpl = new ConfigServiceGrpcImpl(configStore);
+    ServerBuilder<?> serverBuilder = ServerBuilder.forPort(serverPort);
+    configStore = ConfigServicesFactory.buildConfigStore(getAppConfig());
+
+    ConfigServicesFactory.buildAllConfigServices(configStore, serverPort, getLifecycle())
+                         .stream()
+                         .map(InterceptorUtil::wrapInterceptors)
+                         .forEach(serverBuilder::addService);
+
     Config sensitiveDataConfigServiceConfig =
         config.getConfig(SENSITIVE_DATA_CONFIG_SERVICE_CONFIG);
+    ConfigServiceBlockingStub configServiceBlockingStub =
+        ConfigServiceGrpc.newBlockingStub(managedChannel)
+                         .withCallCredentials(
+                             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
     SensitiveDataConfigServiceImpl sensitiveDataConfigService =
         new SensitiveDataConfigServiceImpl(
             configServiceBlockingStub, sensitiveDataConfigServiceConfig);
     PiiFilterConfigServiceImpl piiFilterConfigService =
         new PiiFilterConfigServiceImpl(configServiceBlockingStub, sensitiveDataConfigServiceConfig);
-    traceableConfigServer =
-        ServerBuilder.forPort(serverPort)
-            .addService(InterceptorUtil.wrapInterceptors(genericConfigServiceGrpcImpl))
+
+    serverBuilder
             .addService(InterceptorUtil.wrapInterceptors(sensitiveDataConfigService))
-            .addService(InterceptorUtil.wrapInterceptors(piiFilterConfigService))
-            .build();
+            .addService(InterceptorUtil.wrapInterceptors(piiFilterConfigService));
+
+    traceableConfigServer = serverBuilder.build();
   }
 
   @Override
@@ -106,15 +109,5 @@ public class TraceableConfigService extends PlatformService {
   @Override
   public boolean healthCheck() {
     return configStore.healthCheck();
-  }
-
-  private ConfigStore getConfigStore(Config config) {
-    try {
-      ConfigStore configStore = new DocumentConfigStore();
-      configStore.init(config);
-      return configStore;
-    } catch (Exception e) {
-      throw new RuntimeException("Error in getting or initializing config store", e);
-    }
   }
 }

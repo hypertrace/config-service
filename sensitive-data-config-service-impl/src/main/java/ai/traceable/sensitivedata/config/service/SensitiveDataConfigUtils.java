@@ -10,10 +10,11 @@ import com.google.protobuf.Value.KindCase;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigRenderOptions;
+import io.grpc.Status;
 import java.util.Optional;
+import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.GetConfigRequest;
-import org.hypertrace.config.service.v1.GetConfigResponse;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
@@ -41,29 +42,31 @@ public class SensitiveDataConfigUtils {
   }
 
   public static Value toValue(Message message) throws InvalidProtocolBufferException {
-    String jsonString = JsonFormat.printer().print(message);
-    Value.Builder valueBuilder = Value.newBuilder();
-    JsonFormat.parser().merge(jsonString, valueBuilder);
-    return valueBuilder.build();
+    return ConfigProtoConverter.convertToValue(message);
   }
 
   public static PiiFilterConfig toPiiFilterConfig(Value value)
       throws InvalidProtocolBufferException {
-    PiiFilterConfig.Builder builder = PiiFilterConfig.newBuilder();
-    if (value != null && value.getKindCase() != KindCase.NULL_VALUE) {
-      String jsonString = JsonFormat.printer().print(value);
-      JsonFormat.parser().merge(jsonString, builder);
+    if (value == null
+        || value.getKindCase() == KindCase.NULL_VALUE
+        || value.getKindCase() == KindCase.KIND_NOT_SET) {
+      return PiiFilterConfig.getDefaultInstance();
     }
+
+    PiiFilterConfig.Builder builder = PiiFilterConfig.newBuilder();
+    ConfigProtoConverter.mergeFromValue(value, builder);
     return builder.build();
   }
 
   public static ParameterWithSensitivity toParameterWithSensitivity(Value value)
       throws InvalidProtocolBufferException {
-    ParameterWithSensitivity.Builder builder = ParameterWithSensitivity.newBuilder();
-    if (value != null && value.getKindCase() != KindCase.NULL_VALUE) {
-      String jsonString = JsonFormat.printer().print(value);
-      JsonFormat.parser().merge(jsonString, builder);
+    if (value == null
+        || value.getKindCase() == KindCase.NULL_VALUE
+        || value.getKindCase() == KindCase.KIND_NOT_SET) {
+      return ParameterWithSensitivity.getDefaultInstance();
     }
+    ParameterWithSensitivity.Builder builder = ParameterWithSensitivity.newBuilder();
+    ConfigProtoConverter.mergeFromValue(value, builder);
     return builder.build();
   }
 
@@ -74,10 +77,17 @@ public class SensitiveDataConfigUtils {
     return paramType.name() + "_" + endpoint;
   }
 
-  public static GetConfigResponse getConfig(
+  public static Value getConfig(
       ConfigServiceBlockingStub configServiceBlockingStub, GetConfigRequest request) {
-    return GrpcClientRequestContextUtil.executeInTenantContext(
-        getTenantId(), () -> configServiceBlockingStub.getConfig(request));
+    try {
+      return GrpcClientRequestContextUtil.executeInTenantContext(
+          getTenantId(), () -> configServiceBlockingStub.getConfig(request).getConfig());
+    } catch (Exception e) {
+      if (Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
+        return Value.getDefaultInstance();
+      }
+      throw e;
+    }
   }
 
   public static UpsertConfigResponse upsertConfig(
