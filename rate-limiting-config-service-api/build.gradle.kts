@@ -8,7 +8,7 @@ plugins {
 
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:3.12.3"
+        artifact = "com.google.protobuf:protoc:3.14.0"
     }
     plugins {
         id("grpc") {

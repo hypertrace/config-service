@@ -1,5 +1,6 @@
 package ai.traceable.config.service;
 
+import ai.traceable.ratelimiting.service.RateLimitingConfigServiceImpl;
 import ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl;
 import ai.traceable.sensitivedata.config.service.SensitiveDataConfigServiceImpl;
 import com.typesafe.config.Config;
@@ -23,6 +24,8 @@ public class TraceableConfigService extends PlatformService {
 
   private static final String SERVICE_NAME_CONFIG = "service.name";
   private static final String SERVICE_PORT_CONFIG = "service.port";
+  private static final String RATE_LIMITING_CONFIG_SERVICE_CONFIG =
+      "rate.limiting.config.service";
   private static final String SENSITIVE_DATA_CONFIG_SERVICE_CONFIG =
       "sensitive.data.config.service";
   private static final Logger LOG = LoggerFactory.getLogger(TraceableConfigService.class);
@@ -65,10 +68,13 @@ public class TraceableConfigService extends PlatformService {
             configServiceBlockingStub, sensitiveDataConfigServiceConfig);
     PiiFilterConfigServiceImpl piiFilterConfigService =
         new PiiFilterConfigServiceImpl(configServiceBlockingStub, sensitiveDataConfigServiceConfig);
-
+        Config rateLimitingConfigServiceConfig = config.getConfig(RATE_LIMITING_CONFIG_SERVICE_CONFIG);
+    RateLimitingConfigServiceImpl rateLimitingConfigService =
+        new RateLimitingConfigServiceImpl(configServiceBlockingStub, config);
     serverBuilder
-            .addService(InterceptorUtil.wrapInterceptors(sensitiveDataConfigService))
-            .addService(InterceptorUtil.wrapInterceptors(piiFilterConfigService));
+        .addService(InterceptorUtil.wrapInterceptors(sensitiveDataConfigService))
+        .addService(InterceptorUtil.wrapInterceptors(piiFilterConfigService))
+        .addService(InterceptorUtil.wrapInterceptors(rateLimitingConfigService));
 
     traceableConfigServer = serverBuilder.build();
   }

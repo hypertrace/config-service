@@ -58,7 +58,6 @@ message DeleteRuleConfigRequest {
 }
 
 message DeleteRuleConfigResponse {
-	RateLimitingRuleConfig rule = 1;
 }
 
 message CreateRuleConfigRequest {

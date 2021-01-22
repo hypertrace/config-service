@@ -3,7 +3,25 @@ package ai.traceable.config.service;
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_HASH;
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_OBFUSCATE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ai.traceable.ratelimiting.config.service.v1.CreateRateLimitingRuleConfig;
+import ai.traceable.ratelimiting.config.service.v1.CreateRuleConfigRequest;
+import ai.traceable.ratelimiting.config.service.v1.CreateRuleConfigResponse;
+import ai.traceable.ratelimiting.config.service.v1.CreateRuleRateLimitedEntityAssociationRequest;
+import ai.traceable.ratelimiting.config.service.v1.DeleteRuleConfigRequest;
+import ai.traceable.ratelimiting.config.service.v1.DeleteRuleRateLimitedEntityAssociationRequest;
+import ai.traceable.ratelimiting.config.service.v1.GetAllRateLimitingRulesRequest;
+import ai.traceable.ratelimiting.config.service.v1.RateLimitedEntity;
+import ai.traceable.ratelimiting.config.service.v1.RateLimitedEntityType;
+import ai.traceable.ratelimiting.config.service.v1.RateLimitingConfigServiceGrpc;
+import ai.traceable.ratelimiting.config.service.v1.RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub;
+import ai.traceable.ratelimiting.config.service.v1.RateLimitingConfigServiceGrpc.RateLimitingConfigServiceStub;
+import ai.traceable.ratelimiting.config.service.v1.RateLimitingRule;
+import ai.traceable.ratelimiting.config.service.v1.RateLimitingRuleConfig;
+import ai.traceable.ratelimiting.config.service.v1.RateLimitingRuleWithRateLimitedEntities;
+import ai.traceable.ratelimiting.config.service.v1.RuleViolationAction;
+import ai.traceable.ratelimiting.config.service.v1.UpdateRuleConfigRequest;
 import ai.traceable.sensitivedata.config.service.v1.Filter;
 import ai.traceable.sensitivedata.config.service.v1.GetParametersRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetParametersResponse;
@@ -48,9 +66,12 @@ public class TraceableConfigServiceIntegrationTest {
   private static final String SERVICE_NAME = "traceable-config-service";
   private static final String DEFAULT_PII_FILTER_CONFIG =
       "sensitive.data.config.service.default.pii.filter.config";
+  private static final String RATE_LIMITING_CONFIG_SERVICE_CONFIG =
+      "rate.limiting.config.service";
 
   private static SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceStub;
   private static PiiFilterConfigServiceBlockingStub piiFilterConfigServiceStub;
+  private static RateLimitingConfigServiceBlockingStub rateLimitingConfigServiceStub;
 
   @BeforeAll
   public static void setup() {
@@ -66,6 +87,10 @@ public class TraceableConfigServiceIntegrationTest {
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
     piiFilterConfigServiceStub =
         PiiFilterConfigServiceGrpc.newBlockingStub(managedChannel)
+            .withCallCredentials(
+                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+    rateLimitingConfigServiceStub =
+        RateLimitingConfigServiceGrpc.newBlockingStub(managedChannel)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }
@@ -156,6 +181,172 @@ public class TraceableConfigServiceIntegrationTest {
     actual = getPiiFilterConfig();
     assertEquals(
         new HashSet<>(expected.getKeyRegexsList()), new HashSet<>(actual.getKeyRegexsList()));
+  }
+
+  @Test
+  void testRateLimitingConfig() {
+    // Create rule1
+    CreateRateLimitingRuleConfig createRateLimitingRuleConfigOne =
+        CreateRateLimitingRuleConfig.newBuilder()
+            .setRuleName("rule1")
+            .setDescription("this is rule 1")
+            .setMaxCallCountAllowed(10L)
+            .setMaxCallCountDurationMillis(10000L)
+            .setRuleViolationAction(RuleViolationAction.RULE_VIOLATION_ACTION_SUSPEND)
+            .setSuspendDurationMillis(1000L)
+            .build();
+    String ruleId1 =
+        createRateLimitingRuleConfig(createRateLimitingRuleConfigOne).getRuleId();
+
+    // Create rule2
+    CreateRateLimitingRuleConfig createRateLimitingRuleConfigTwo =
+        CreateRateLimitingRuleConfig.newBuilder()
+            .setRuleName("rule2")
+            .setDescription("this is rule 1")
+            .setMaxCallCountAllowed(10L)
+            .setMaxCallCountDurationMillis(100000L)
+            .setRuleViolationAction(RuleViolationAction.RULE_VIOLATION_ACTION_SUSPEND)
+            .setSuspendDurationMillis(1000L)
+            .build();
+    String ruleId2 =
+        createRateLimitingRuleConfig(createRateLimitingRuleConfigTwo).getRuleId();
+
+    List<RateLimitingRuleWithRateLimitedEntities> rulesWithEntities =
+        getAllRateLimitingRule();
+
+    //Assert two rules created
+    assertEquals(2, rulesWithEntities.size());
+
+    //Associate entity1 with rule1.
+    RateLimitedEntity entityOne =
+        RateLimitedEntity.newBuilder()
+            .setEntityId("entity1")
+            .setEntityType(RateLimitedEntityType.RATE_LIMITED_ENTITY_TYPE_API)
+            .build();
+
+    CreateRuleRateLimitedEntityAssociationRequest createAssociationRequestOne =
+        CreateRuleRateLimitedEntityAssociationRequest.newBuilder()
+            .setRuleId(ruleId1)
+            .setEntity(entityOne)
+            .build();
+
+    GrpcClientRequestContextUtil.executeInTenantContext("tenant1",
+        () -> rateLimitingConfigServiceStub.createRuleRateLimitedEntityAssociation(createAssociationRequestOne));
+
+    // Associate entity2 with rule1.
+    RateLimitedEntity entityTwo =
+        RateLimitedEntity.newBuilder()
+            .setEntityId("entity2")
+            .setEntityType(RateLimitedEntityType.RATE_LIMITED_ENTITY_TYPE_API)
+            .build();
+
+    CreateRuleRateLimitedEntityAssociationRequest createAssociationRequestTwo =
+        CreateRuleRateLimitedEntityAssociationRequest.newBuilder()
+            .setRuleId(ruleId1)
+            .setEntity(entityTwo)
+            .build();
+
+    GrpcClientRequestContextUtil.executeInTenantContext("tenant1",
+        () -> rateLimitingConfigServiceStub.createRuleRateLimitedEntityAssociation(createAssociationRequestTwo));
+
+    // Associate entity3 with rule2.
+    RateLimitedEntity entityThree =
+        RateLimitedEntity.newBuilder()
+            .setEntityId("entity3")
+            .setEntityType(RateLimitedEntityType.RATE_LIMITED_ENTITY_TYPE_API)
+            .build();
+
+    CreateRuleRateLimitedEntityAssociationRequest createAssociationRequestThree =
+        CreateRuleRateLimitedEntityAssociationRequest.newBuilder()
+            .setRuleId(ruleId2)
+            .setEntity(entityThree)
+            .build();
+
+    GrpcClientRequestContextUtil.executeInTenantContext("tenant1",
+        () -> rateLimitingConfigServiceStub.createRuleRateLimitedEntityAssociation(createAssociationRequestThree));
+
+    // After creating all the associations
+    // rule1 -> entity1, entity2
+    // rule2 -> entity3
+    rulesWithEntities = getAllRateLimitingRule();
+    assertRuleAssociations(rulesWithEntities.get(0), ruleId1,
+        2, 1);
+    assertRuleAssociations(rulesWithEntities.get(1), ruleId1,
+        2, 1);
+
+    // Delete association between entity3 and rule2
+    DeleteRuleRateLimitedEntityAssociationRequest deleteRuleRateLimitedEntityAssociationRequest1 =
+        DeleteRuleRateLimitedEntityAssociationRequest.newBuilder()
+        .setEntity(entityThree)
+        .setRuleId(ruleId2)
+        .build();
+    GrpcClientRequestContextUtil.executeInTenantContext("tenant1",
+        () -> rateLimitingConfigServiceStub
+            .deleteRuleRateLimitedEntityAssociation(deleteRuleRateLimitedEntityAssociationRequest1));
+
+    rulesWithEntities = getAllRateLimitingRule();
+    //Assert association got deleted
+    assertEquals(2, rulesWithEntities.size());
+    assertRuleAssociations(rulesWithEntities.get(0), ruleId1,
+        2, 0);
+    assertRuleAssociations(rulesWithEntities.get(1), ruleId1,
+        2, 0);
+
+    // Update rule1 -> updatedRule1 and disable it too.
+    RateLimitingRuleConfig updatedRuleConfig =
+        RateLimitingRuleConfig.newBuilder()
+            .setRuleId(ruleId1)
+            .setRuleName("updatedRule1")
+            .setDescription("this is rule 1")
+            .setMaxCallCountAllowed(10L)
+            .setMaxCallCountDurationMillis(100000L)
+            .setRuleViolationAction(RuleViolationAction.RULE_VIOLATION_ACTION_SUSPEND)
+            .setSuspendDurationMillis(1000L)
+            .setDisabled(true)
+            .build();
+
+    UpdateRuleConfigRequest updateRuleConfigRequest =
+        UpdateRuleConfigRequest.newBuilder()
+            .setRule(updatedRuleConfig)
+            .build();
+    GrpcClientRequestContextUtil.executeInTenantContext("tenant1",
+        () -> rateLimitingConfigServiceStub
+            .updateRuleConfig(updateRuleConfigRequest));
+
+    // Assert rule update changed the fields
+    rulesWithEntities = getAllRateLimitingRule();
+    rulesWithEntities.stream()
+        .filter(r -> r.getRule().getRuleId().equals(ruleId1))
+        .forEach(r -> {
+          assertEquals("updatedRule1", r.getRule().getRuleName());
+          assertTrue(r.getRule().getDisabled());
+        });
+
+    // Delete rule1
+    DeleteRuleConfigRequest deleteRuleConfigRequest =
+        DeleteRuleConfigRequest.newBuilder()
+            .setRuleId(ruleId1)
+            .build();
+    GrpcClientRequestContextUtil.executeInTenantContext("tenant1",
+        () -> rateLimitingConfigServiceStub
+            .deleteRuleConfig(deleteRuleConfigRequest));
+    // Assert rule1 got deleted
+    rulesWithEntities = getAllRateLimitingRule();
+    assertEquals(1, rulesWithEntities.size());
+    assertEquals(ruleId2, rulesWithEntities.get(0).getRule().getRuleId());
+  }
+
+  private void assertRuleAssociations(RateLimitingRuleWithRateLimitedEntities ruleWithEntity,
+                                      String ruleId1,
+                                      long ruleId1ExpectedAssociationCount,
+                                      long ruleId2ExpectedAssociationCount) {
+    if (ruleWithEntity.getRule().getRuleId().equals(ruleId1)) {
+      assertEquals(ruleId1ExpectedAssociationCount,
+          ruleWithEntity.getEntitiesAssociatedList().size());
+    } else {
+      assertEquals(ruleId2ExpectedAssociationCount,
+          ruleWithEntity.getEntitiesAssociatedList().size());
+    }
   }
 
   private Parameter getParameter(ParamType paramType, String paramName) {
@@ -260,5 +451,21 @@ public class TraceableConfigServiceIntegrationTest {
             .addAllKeyRegexs(piiElementsAddedByUser)
             .build();
     return expectedPiiFilterConfig;
+  }
+
+  private RateLimitingRuleConfig createRateLimitingRuleConfig(CreateRateLimitingRuleConfig config) {
+    CreateRuleConfigRequest request =
+        CreateRuleConfigRequest.newBuilder()
+            .setRule(config)
+            .build();
+    return GrpcClientRequestContextUtil.executeInTenantContext("tenant1",
+        () -> rateLimitingConfigServiceStub.createRuleConfig(request)).getRule();
+  }
+
+  private List<RateLimitingRuleWithRateLimitedEntities> getAllRateLimitingRule() {
+    GetAllRateLimitingRulesRequest request =
+        GetAllRateLimitingRulesRequest.newBuilder().build();
+    return GrpcClientRequestContextUtil.executeInTenantContext("tenant1",
+        () -> rateLimitingConfigServiceStub.getAllRateLimitingRules(request)).getRulesList();
   }
 }
