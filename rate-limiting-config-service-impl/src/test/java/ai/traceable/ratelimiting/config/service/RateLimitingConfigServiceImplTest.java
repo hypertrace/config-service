@@ -9,6 +9,8 @@ import ai.traceable.ratelimiting.config.service.v1.DeleteRuleConfigRequest;
 import ai.traceable.ratelimiting.config.service.v1.DeleteRuleRateLimitedEntityAssociationRequest;
 import ai.traceable.ratelimiting.config.service.v1.GetAllRateLimitingRulesRequest;
 import ai.traceable.ratelimiting.config.service.v1.GetAllRateLimitingRulesResponse;
+import ai.traceable.ratelimiting.config.service.v1.GetRateLimitingConfigsForEntityRequest;
+import ai.traceable.ratelimiting.config.service.v1.GetRateLimitingConfigsForEntityResponse;
 import ai.traceable.ratelimiting.config.service.v1.RateLimitedEntity;
 import ai.traceable.ratelimiting.config.service.v1.RateLimitingRuleConfig;
 import ai.traceable.ratelimiting.config.service.v1.RateLimitingRuleWithRateLimitedEntities;
@@ -30,7 +32,6 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,7 +58,7 @@ public class RateLimitingConfigServiceImplTest {
   @Rule public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
 
   private RateLimitingConfigServiceImpl rateLimitingConfigService;
-  private MockConfigServiceImpl mockConfigService = new MockConfigServiceImpl();
+  private final MockConfigServiceImpl mockConfigService = new MockConfigServiceImpl();
   static final String TENANT_ID = "tenant1";
 
   @BeforeEach
@@ -75,7 +76,8 @@ public class RateLimitingConfigServiceImplTest {
     ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(managedChannel);
 
-    rateLimitingConfigService = new RateLimitingConfigServiceImpl(configServiceBlockingStub, mock(Config.class));
+    rateLimitingConfigService =
+        new RateLimitingConfigServiceImpl(configServiceBlockingStub, mock(Config.class));
   }
 
   @Test
@@ -94,51 +96,106 @@ public class RateLimitingConfigServiceImplTest {
     verify(responseObserver, times(1)).onCompleted();
     verify(responseObserver, never()).onError(any(Throwable.class));
     Assertions.assertEquals(1, argumentCaptor.getValue().getRulesList().size());
-    RateLimitingRuleWithRateLimitedEntities ruleResponse = argumentCaptor.getValue().getRulesList().get(0);
+    RateLimitingRuleWithRateLimitedEntities ruleResponse =
+        argumentCaptor.getValue().getRulesList().get(0);
     Assertions.assertEquals("entity1", ruleResponse.getEntitiesAssociated(0).getEntityId());
     Assertions.assertEquals("ruleId1", ruleResponse.getRule().getRuleId());
   }
 
   @Test
+  void getRateLimitConfigForEntityWithRuleConfig() {
+    StreamObserver<GetRateLimitingConfigsForEntityResponse> responseObserver =
+        mock(StreamObserver.class);
+    mockConfigService.setRateLimitingRuleConfigs(getRuleConfigMap());
+    mockConfigService.setRuleEntityAssociations(getRuleRateLimitedEntityAssociationMap());
+
+    GetRateLimitingConfigsForEntityRequest request =
+            GetRateLimitingConfigsForEntityRequest.newBuilder()
+            .setEntity(
+                RateLimitedEntity.newBuilder()
+                    .setEntityType(RATE_LIMITED_ENTITY_TYPE_API)
+                    .setEntityId("entity1")
+                    .build())
+            .build();
+    Runnable runnable =
+        () -> rateLimitingConfigService.getRateLimitingConfigsForEntity(request, responseObserver);
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    ArgumentCaptor<GetRateLimitingConfigsForEntityResponse> argumentCaptor =
+        ArgumentCaptor.forClass(GetRateLimitingConfigsForEntityResponse.class);
+    verify(responseObserver, times(1)).onNext(argumentCaptor.capture());
+    verify(responseObserver, times(1)).onCompleted();
+    verify(responseObserver, never()).onError(any(Throwable.class));
+    RateLimitingRuleConfig ruleConfig = argumentCaptor.getValue().getRuleList().get(0);
+    Assertions.assertEquals("ruleId1", ruleConfig.getRuleId());
+  }
+
+  @Test
+  void getRateLimitConfigForEntityWithNoRuleConfig() {
+    StreamObserver<GetRateLimitingConfigsForEntityResponse> responseObserver =
+        mock(StreamObserver.class);
+    mockConfigService.setRateLimitingRuleConfigs(getRuleConfigMap());
+    mockConfigService.setRuleEntityAssociations(getRuleRateLimitedEntityAssociationMap());
+
+    GetRateLimitingConfigsForEntityRequest request =
+            GetRateLimitingConfigsForEntityRequest.newBuilder()
+            .setEntity(
+                RateLimitedEntity.newBuilder()
+                    .setEntityType(RATE_LIMITED_ENTITY_TYPE_API)
+                    .setEntityId("entity2")
+                    .build())
+            .build();
+    Runnable runnable =
+        () -> rateLimitingConfigService.getRateLimitingConfigsForEntity(request, responseObserver);
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    ArgumentCaptor<GetRateLimitingConfigsForEntityResponse> argumentCaptor =
+        ArgumentCaptor.forClass(GetRateLimitingConfigsForEntityResponse.class);
+    verify(responseObserver, times(1)).onNext(argumentCaptor.capture());
+    verify(responseObserver, times(1)).onCompleted();
+    verify(responseObserver, never()).onError(any(Throwable.class));
+    Assertions.assertTrue(argumentCaptor.getValue().getRuleList().isEmpty());
+  }
+
+  @Test
   void createRuleRateLimitedEntityAssociation() {
-      StreamObserver<CreateRuleRateLimitedEntityAssociationResponse> responseObserver =
-          mock(StreamObserver.class);
-      RateLimitedEntity rateLimitedEntity =
-          RateLimitedEntity.newBuilder()
-              .setEntityId("entity1")
-              .setEntityType(RATE_LIMITED_ENTITY_TYPE_API)
-              .build();
-      CreateRuleRateLimitedEntityAssociationRequest request =
-          CreateRuleRateLimitedEntityAssociationRequest.newBuilder()
-              .setRuleId("ruleId1")
-              .setEntity(rateLimitedEntity)
-              .build();
-      Runnable runnable =
-          () ->
-              rateLimitingConfigService.createRuleRateLimitedEntityAssociation(
-                  request, responseObserver);
-      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
-      Assertions.assertEquals(1, mockConfigService.getRuleEntityAssociations().size());
-      ArgumentCaptor<CreateRuleRateLimitedEntityAssociationResponse> argumentCaptor =
-          ArgumentCaptor.forClass(CreateRuleRateLimitedEntityAssociationResponse.class);
-      verify(responseObserver, times(1)).onNext(argumentCaptor.capture());
-      verify(responseObserver, times(1)).onCompleted();
-      verify(responseObserver, never()).onError(any(Throwable.class));
-      String savedRuleId =
-              mockConfigService
-                  .getRuleEntityAssociations()
-                  .entrySet()
-                  .iterator()
-                  .next()
-                  .getValue().getStringValue();
-      Triple<String, String, String> resourceInfo =
-          mockConfigService.getRuleEntityAssociations().entrySet().iterator().next().getKey();
-      Assertions.assertEquals("ruleId1", savedRuleId);
-      Assertions.assertEquals("RATE_LIMITED_ENTITY_TYPE_API:entity1", resourceInfo.getRight());
-      Assertions.assertEquals(RULE_RATE_LIMITED_ENTITY_ASSOCIATION_RESOURCE_NAME, resourceInfo.getLeft());
-      Assertions.assertEquals(
-          RATE_LIMITING_NAMESPACE, resourceInfo.getMiddle());
-    }
+    StreamObserver<CreateRuleRateLimitedEntityAssociationResponse> responseObserver =
+        mock(StreamObserver.class);
+    RateLimitedEntity rateLimitedEntity =
+        RateLimitedEntity.newBuilder()
+            .setEntityId("entity1")
+            .setEntityType(RATE_LIMITED_ENTITY_TYPE_API)
+            .build();
+    CreateRuleRateLimitedEntityAssociationRequest request =
+        CreateRuleRateLimitedEntityAssociationRequest.newBuilder()
+            .setRuleId("ruleId1")
+            .setEntity(rateLimitedEntity)
+            .build();
+    Runnable runnable =
+        () ->
+            rateLimitingConfigService.createRuleRateLimitedEntityAssociation(
+                request, responseObserver);
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    Assertions.assertEquals(1, mockConfigService.getRuleEntityAssociations().size());
+    ArgumentCaptor<CreateRuleRateLimitedEntityAssociationResponse> argumentCaptor =
+        ArgumentCaptor.forClass(CreateRuleRateLimitedEntityAssociationResponse.class);
+    verify(responseObserver, times(1)).onNext(argumentCaptor.capture());
+    verify(responseObserver, times(1)).onCompleted();
+    verify(responseObserver, never()).onError(any(Throwable.class));
+    String savedRuleId =
+        mockConfigService
+            .getRuleEntityAssociations()
+            .entrySet()
+            .iterator()
+            .next()
+            .getValue()
+            .getStringValue();
+    Triple<String, String, String> resourceInfo =
+        mockConfigService.getRuleEntityAssociations().entrySet().iterator().next().getKey();
+    Assertions.assertEquals("ruleId1", savedRuleId);
+    Assertions.assertEquals("RATE_LIMITED_ENTITY_TYPE_API:entity1", resourceInfo.getRight());
+    Assertions.assertEquals(
+        RULE_RATE_LIMITED_ENTITY_ASSOCIATION_RESOURCE_NAME, resourceInfo.getLeft());
+    Assertions.assertEquals(RATE_LIMITING_NAMESPACE, resourceInfo.getMiddle());
+  }
 
   @Test
   void deleteRuleRateLimitedEntityAssociation() {
@@ -155,7 +212,9 @@ public class RateLimitingConfigServiceImplTest {
             .setEntity(rateLimitedEntityToDelete)
             .build();
     Runnable runnable =
-        () -> rateLimitingConfigService.deleteRuleRateLimitedEntityAssociation(request, mock(StreamObserver.class));
+        () ->
+            rateLimitingConfigService.deleteRuleRateLimitedEntityAssociation(
+                request, mock(StreamObserver.class));
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     Assertions.assertEquals(0, mockConfigService.getRuleEntityAssociations().size());
   }
@@ -175,17 +234,16 @@ public class RateLimitingConfigServiceImplTest {
             .setSuspendDurationMillis(1000)
             .setDisabled(true)
             .build();
-    UpdateRuleConfigRequest request = UpdateRuleConfigRequest.newBuilder()
-        .setRule(rateLimitingRuleConfig)
-        .build();
+    UpdateRuleConfigRequest request =
+        UpdateRuleConfigRequest.newBuilder().setRule(rateLimitingRuleConfig).build();
 
-    Runnable runnable =
-        () -> rateLimitingConfigService.updateRuleConfig(request, responseObserver);
+    Runnable runnable = () -> rateLimitingConfigService.updateRuleConfig(request, responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     Assertions.assertEquals(1, mockConfigService.getRateLimitingRuleConfigs().size());
     Entry<Triple<String, String, String>, Value> updatedEntry =
         mockConfigService.getRateLimitingRuleConfigs().entrySet().iterator().next();
-    Assertions.assertEquals(rateLimitingRuleConfig,
+    Assertions.assertEquals(
+        rateLimitingRuleConfig,
         RateLimitingConfigServiceUtils.toRateLimitingRuleConfig(updatedEntry.getValue()));
 
     ArgumentCaptor<UpdateRuleConfigResponse> argumentCaptor =
@@ -201,14 +259,13 @@ public class RateLimitingConfigServiceImplTest {
   void deleteRuleConfig() {
     mockConfigService.setRateLimitingRuleConfigs(getRuleConfigMap());
     mockConfigService.setRuleEntityAssociations(getRuleRateLimitedEntityAssociationMap());
-    DeleteRuleConfigRequest request = DeleteRuleConfigRequest.newBuilder()
-        .setRuleId("ruleId1")
-        .build();
+    DeleteRuleConfigRequest request =
+        DeleteRuleConfigRequest.newBuilder().setRuleId("ruleId1").build();
     Runnable runnable =
         () -> rateLimitingConfigService.deleteRuleConfig(request, mock(StreamObserver.class));
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     Assertions.assertEquals(0, mockConfigService.getRateLimitingRuleConfigs().size());
-    //since ruleId1 is deleted, association entry corresponding to rule1 should  also be deleted.
+    // since ruleId1 is deleted, association entry corresponding to rule1 should  also be deleted.
     Assertions.assertEquals(0, mockConfigService.getRuleEntityAssociations().size());
   }
 
@@ -229,7 +286,7 @@ public class RateLimitingConfigServiceImplTest {
     Runnable runnable = () -> rateLimitingConfigService.createRuleConfig(request, responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     System.out.println(mockConfigService.getRateLimitingRuleConfigs().size());
-     ArgumentCaptor<CreateRuleConfigResponse> argumentCaptor =
+    ArgumentCaptor<CreateRuleConfigResponse> argumentCaptor =
         ArgumentCaptor.forClass(CreateRuleConfigResponse.class);
     verify(responseObserver, times(1)).onNext(argumentCaptor.capture());
     verify(responseObserver, never()).onError(any(Throwable.class));
@@ -275,10 +332,7 @@ public class RateLimitingConfigServiceImplTest {
 
   private Map<Triple<String, String, String>, Value> getRuleConfigMap() {
     Triple<String, String, String> resourceInfo =
-        Triple.of(
-            RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME,
-            RATE_LIMITING_NAMESPACE,
-            "ruleId1");
+        Triple.of(RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME, RATE_LIMITING_NAMESPACE, "ruleId1");
     Value configValue = getRateLimitingConfigValue();
     Map<Triple<String, String, String>, Value> valueMap = new HashMap<>();
     valueMap.put(resourceInfo, configValue);
@@ -294,16 +348,23 @@ public class RateLimitingConfigServiceImplTest {
     RuleViolationAction action = RuleViolationAction.RULE_VIOLATION_ACTION_SUSPEND;
     long suspendDurationMillis = 1000;
 
-    Struct struct = Struct.newBuilder()
-        .putFields("ruleId", Value.newBuilder().setStringValue(ruleId).build())
-        .putFields("ruleName", Value.newBuilder().setStringValue(ruleName).build())
-        .putFields("description", Value.newBuilder().setStringValue(description).build())
-        .putFields("maxCallCountAllowed", Value.newBuilder().setNumberValue(maxCallsCount).build())
-        .putFields("maxCallCountDurationMillis", Value.newBuilder().setNumberValue(maxCallCountDuration).build())
-        .putFields("disabled", Value.newBuilder().setBoolValue(false).build())
-        .putFields("ruleViolationAction", Value.newBuilder().setStringValue(action.name()).build())
-        .putFields("suspendDurationMillis", Value.newBuilder().setNumberValue(suspendDurationMillis).build())
-        .build();
+    Struct struct =
+        Struct.newBuilder()
+            .putFields("ruleId", Value.newBuilder().setStringValue(ruleId).build())
+            .putFields("ruleName", Value.newBuilder().setStringValue(ruleName).build())
+            .putFields("description", Value.newBuilder().setStringValue(description).build())
+            .putFields(
+                "maxCallCountAllowed", Value.newBuilder().setNumberValue(maxCallsCount).build())
+            .putFields(
+                "maxCallCountDurationMillis",
+                Value.newBuilder().setNumberValue(maxCallCountDuration).build())
+            .putFields("disabled", Value.newBuilder().setBoolValue(false).build())
+            .putFields(
+                "ruleViolationAction", Value.newBuilder().setStringValue(action.name()).build())
+            .putFields(
+                "suspendDurationMillis",
+                Value.newBuilder().setNumberValue(suspendDurationMillis).build())
+            .build();
     return Value.newBuilder().setStructValue(struct).build();
   }
 }

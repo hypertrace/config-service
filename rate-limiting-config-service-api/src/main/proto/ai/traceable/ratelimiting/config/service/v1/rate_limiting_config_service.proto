@@ -10,6 +10,8 @@ import "ai/traceable/ratelimiting/config/service/v1/rate_limited_entity.proto";
 service RateLimitingConfigService {
 	rpc GetAllRateLimitingRules (GetAllRateLimitingRulesRequest) returns (GetAllRateLimitingRulesResponse) {
 	}
+	rpc GetRateLimitingConfigsForEntity (GetRateLimitingConfigsForEntityRequest) returns (GetRateLimitingConfigsForEntityResponse) {
+	}
 	rpc CreateRuleRateLimitedEntityAssociation (CreateRuleRateLimitedEntityAssociationRequest) returns (CreateRuleRateLimitedEntityAssociationResponse) {
 	}
 	rpc DeleteRuleRateLimitedEntityAssociation (DeleteRuleRateLimitedEntityAssociationRequest) returns (DeleteRuleRateLimitedEntityAssociationResponse) {
@@ -27,6 +29,14 @@ message GetAllRateLimitingRulesRequest {
 
 message GetAllRateLimitingRulesResponse {
 	repeated RateLimitingRuleWithRateLimitedEntities rules = 1;
+}
+
+message GetRateLimitingConfigsForEntityRequest {
+    RateLimitedEntity entity = 1;
+}
+
+message GetRateLimitingConfigsForEntityResponse {
+	repeated RateLimitingRuleConfig rule = 1;
 }
 
 message CreateRuleRateLimitedEntityAssociationRequest {

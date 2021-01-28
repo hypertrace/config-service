@@ -11,6 +11,8 @@ import ai.traceable.ratelimiting.config.service.v1.DeleteRuleRateLimitedEntityAs
 import ai.traceable.ratelimiting.config.service.v1.DeleteRuleRateLimitedEntityAssociationResponse;
 import ai.traceable.ratelimiting.config.service.v1.GetAllRateLimitingRulesRequest;
 import ai.traceable.ratelimiting.config.service.v1.GetAllRateLimitingRulesResponse;
+import ai.traceable.ratelimiting.config.service.v1.GetRateLimitingConfigsForEntityRequest;
+import ai.traceable.ratelimiting.config.service.v1.GetRateLimitingConfigsForEntityResponse;
 import ai.traceable.ratelimiting.config.service.v1.RateLimitedEntity;
 import ai.traceable.ratelimiting.config.service.v1.RateLimitedEntityType;
 import ai.traceable.ratelimiting.config.service.v1.RateLimitingConfigServiceGrpc;
@@ -29,12 +31,14 @@ import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetConfigRequest;
+import org.hypertrace.config.service.v1.GetConfigResponse;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -105,6 +109,39 @@ public class RateLimitingConfigServiceImpl
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Error getting all rules for request {}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getRateLimitingConfigsForEntity(
+      GetRateLimitingConfigsForEntityRequest request,
+      StreamObserver<GetRateLimitingConfigsForEntityResponse> responseObserver) {
+    Optional<String> maybeRuleId = getRuleIdForAssociatedEntity(request.getEntity());
+    if (maybeRuleId.isEmpty()) {
+      log.debug("No Rate Limiting configured for entity:{}", request.getEntity());
+      responseObserver.onNext(GetRateLimitingConfigsForEntityResponse.newBuilder().build());
+      responseObserver.onCompleted();
+      return;
+    }
+
+    // Get Rate Limit Rule config corresponding to the rule id
+    String ruleId = maybeRuleId.get();
+    try {
+      GetConfigResponse rateLimitConfigResponse =
+          configServiceBlockingStub.getConfig(
+              GetConfigRequest.newBuilder()
+                  .setResourceNamespace(RATE_LIMITING_NAMESPACE)
+                  .setResourceName(RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME)
+                  .addContexts(ruleId)
+                  .build());
+      RateLimitingRuleConfig ruleConfig =
+          toRateLimitingRuleConfig(rateLimitConfigResponse.getConfig());
+      responseObserver.onNext(
+          GetRateLimitingConfigsForEntityResponse.newBuilder().addRule(ruleConfig).build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Error getting rule config for ruleId:{}", ruleId, e);
       responseObserver.onError(e);
     }
   }
@@ -283,6 +320,27 @@ public class RateLimitingConfigServiceImpl
       log.error("Error while deleting Rule Rate Limited entity association {}", request, e);
       responseObserver.onError(e);
     }
+  }
+
+  private Optional<String> getRuleIdForAssociatedEntity(RateLimitedEntity rateLimitedEntity) {
+    try {
+      // Get Rate limit rule association configs
+      String entityContext = getRuleRateLimitedEntityContext(rateLimitedEntity);
+      GetConfigResponse rateLimitEntityAssociationConfigResponse =
+          configServiceBlockingStub.getConfig(
+              GetConfigRequest.newBuilder()
+                  .setResourceNamespace(RATE_LIMITING_NAMESPACE)
+                  .setResourceName(RULE_RATE_LIMITED_ENTITY_ASSOCIATION_RESOURCE_NAME)
+                  .addContexts(entityContext)
+                  .build());
+      return Optional.of(rateLimitEntityAssociationConfigResponse.getConfig().getStringValue());
+    } catch (Exception ex) {
+      if (!Status.fromThrowable(ex).equals(Status.NOT_FOUND)) {
+        log.error(
+            "Error fetching Rate Limit Association config for entity:{}", rateLimitedEntity, ex);
+      }
+    }
+    return Optional.empty();
   }
 
   private List<RateLimitingRuleWithRateLimitedEntities> getRuleIdToRateLimitedEntityAssociations(
