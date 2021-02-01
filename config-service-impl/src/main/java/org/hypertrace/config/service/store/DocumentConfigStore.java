@@ -55,7 +55,7 @@ public class DocumentConfigStore implements ConfigStore {
   @Override
   public void init(Config config) {
     datastore = initDataStore(config);
-    this.collection = getOrCreateCollection(datastore);
+    this.collection = this.datastore.getCollection(CONFIGURATIONS_COLLECTION);;
   }
 
   private Datastore initDataStore(Config config) {
@@ -63,16 +63,6 @@ public class DocumentConfigStore implements ConfigStore {
     String dataStoreType = docStoreConfig.getString(DATA_STORE_TYPE);
     Config dataStoreConfig = docStoreConfig.getConfig(dataStoreType);
     return DatastoreProvider.getDatastore(dataStoreType, dataStoreConfig);
-  }
-
-  private Collection getOrCreateCollection(Datastore datastore) {
-    if (!datastore.listCollections().contains(CONFIGURATIONS_COLLECTION)) {
-      if (!datastore.createCollection(CONFIGURATIONS_COLLECTION, Collections.emptyMap())) {
-        throw new RuntimeException(
-            "Failed to create collection:" + CONFIGURATIONS_COLLECTION + " in document store");
-      }
-    }
-    return datastore.getCollection(CONFIGURATIONS_COLLECTION);
   }
 
   @Override
