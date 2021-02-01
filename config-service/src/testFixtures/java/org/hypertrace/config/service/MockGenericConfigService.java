@@ -1,5 +1,7 @@
 package org.hypertrace.config.service;
 
+import static java.util.function.Predicate.not;
+
 import com.google.common.collect.Table;
 import com.google.common.collect.Tables;
 import com.google.protobuf.Value;
@@ -22,7 +24,10 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceImplBase;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.ContextSpecificConfig.Builder;
@@ -49,6 +54,7 @@ public class MockGenericConfigService {
   private final InProcessServerBuilder serverBuilder;
   private final ManagedChannel configChannel;
   private final RequestContext context = RequestContext.forTenantId("default tenant");
+  private final String DEFAULT_CONFIG_CONTEXT = "__default";
   private final Table<ResourceType, String, Value> currentValues =
       Tables.newCustomTable(new LinkedHashMap<>(), LinkedHashMap::new);
 
@@ -99,7 +105,7 @@ public class MockGenericConfigService {
                   invocation.getArgument(1, StreamObserver.class);
               currentValues.put(
                   ResourceType.of(request.getResourceNamespace(), request.getResourceName()),
-                  request.getContext(),
+                  configContextOrDefault(request.getContext()),
                   request.getConfig());
               responseStreamObserver.onNext(
                   UpsertConfigResponse.newBuilder().setConfig(request.getConfig()).build());
@@ -154,7 +160,7 @@ public class MockGenericConfigService {
 
               currentValues.remove(
                   ResourceType.of(request.getResourceNamespace(), request.getResourceName()),
-                  request.getContext());
+                  configContextOrDefault(request.getContext()));
               responseStreamObserver.onNext(DeleteConfigResponse.getDefaultInstance());
               responseStreamObserver.onCompleted();
               return null;
@@ -173,7 +179,8 @@ public class MockGenericConfigService {
                   invocation.getArgument(1, StreamObserver.class);
 
               Value mergedValue =
-                  request.getContextsList().stream()
+                  Stream.concat(
+                          Stream.of(DEFAULT_CONFIG_CONTEXT), request.getContextsList().stream())
                       .map(
                           context ->
                               this.currentValues.get(
@@ -197,6 +204,12 @@ public class MockGenericConfigService {
 
   private Value mergeValues(List<Value> values) {
     return values.stream().reduce(Value.getDefaultInstance(), ConfigServiceUtils::merge);
+  }
+
+  private String configContextOrDefault(String value) {
+    return Optional.ofNullable(value)
+        .filter(not(String::isEmpty))
+        .orElse(DEFAULT_CONFIG_CONTEXT);
   }
 
   private class TestInterceptor implements ServerInterceptor {
