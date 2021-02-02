@@ -1,29 +1,17 @@
 package ai.traceable.sensitivedata.config.service;
 
-import ai.traceable.sensitivedata.config.service.v1.ParamType;
-import ai.traceable.sensitivedata.config.service.v1.ParameterWithSensitivity;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfig;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.Message;
-import com.google.protobuf.Value;
-import com.google.protobuf.Value.KindCase;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigRenderOptions;
-import io.grpc.Status;
-import java.util.Optional;
-import org.hypertrace.config.proto.converter.ConfigProtoConverter;
-import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
-import org.hypertrace.config.service.v1.GetConfigRequest;
-import org.hypertrace.config.service.v1.UpsertConfigRequest;
-import org.hypertrace.config.service.v1.UpsertConfigResponse;
-import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
-import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class SensitiveDataConfigUtils {
 
-  public static final String PARAMETERS_WITH_SENSITIVITY = "parameters-with-sensitivity";
-  public static final String PII_FILTER_CONFIG_RESOURCE = "pii-filter-config";
+  public static final String PARAMETER_TYPE_REDACTION_STRATEGY_CONFIG =
+      "parameter-type-redaction-strategy-config";
+  public static final String AUTOMATIC_SECRET_REDACTION_STRATEGY_CONFIG =
+      "automatic-secret-redaction-strategy-config";
   public static final String SENSITIVE_DATA_CONFIGURATION = "sensitive-data-configuration";
 
   private SensitiveDataConfigUtils() {
@@ -39,68 +27,5 @@ public class SensitiveDataConfigUtils {
     } catch (InvalidProtocolBufferException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  public static Value toValue(Message message) throws InvalidProtocolBufferException {
-    return ConfigProtoConverter.convertToValue(message);
-  }
-
-  public static PiiFilterConfig toPiiFilterConfig(Value value)
-      throws InvalidProtocolBufferException {
-    if (value == null
-        || value.getKindCase() == KindCase.NULL_VALUE
-        || value.getKindCase() == KindCase.KIND_NOT_SET) {
-      return PiiFilterConfig.getDefaultInstance();
-    }
-
-    PiiFilterConfig.Builder builder = PiiFilterConfig.newBuilder();
-    ConfigProtoConverter.mergeFromValue(value, builder);
-    return builder.build();
-  }
-
-  public static ParameterWithSensitivity toParameterWithSensitivity(Value value)
-      throws InvalidProtocolBufferException {
-    if (value == null
-        || value.getKindCase() == KindCase.NULL_VALUE
-        || value.getKindCase() == KindCase.KIND_NOT_SET) {
-      return ParameterWithSensitivity.getDefaultInstance();
-    }
-    ParameterWithSensitivity.Builder builder = ParameterWithSensitivity.newBuilder();
-    ConfigProtoConverter.mergeFromValue(value, builder);
-    return builder.build();
-  }
-
-  public static String getContext(ParamType paramType, String endpoint) {
-    if (paramType == ParamType.PARAM_TYPE_HEADER) {
-      return paramType.name();
-    }
-    return paramType.name() + "_" + endpoint;
-  }
-
-  public static Value getConfig(
-      ConfigServiceBlockingStub configServiceBlockingStub, GetConfigRequest request) {
-    try {
-      return GrpcClientRequestContextUtil.executeInTenantContext(
-          getTenantId(), () -> configServiceBlockingStub.getConfig(request).getConfig());
-    } catch (Exception e) {
-      if (Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
-        return Value.getDefaultInstance();
-      }
-      throw e;
-    }
-  }
-
-  public static UpsertConfigResponse upsertConfig(
-      ConfigServiceBlockingStub configServiceBlockingStub, UpsertConfigRequest request) {
-    return GrpcClientRequestContextUtil.executeInTenantContext(
-        getTenantId(), () -> configServiceBlockingStub.upsertConfig(request));
-  }
-
-  public static String getTenantId() {
-    Optional<String> tenantId = RequestContext.CURRENT.get().getTenantId();
-    if (tenantId.isEmpty()) {
-      throw new IllegalArgumentException("Tenant Id is missing in the request.");
-    }
-    return tenantId.get();
   }
 }

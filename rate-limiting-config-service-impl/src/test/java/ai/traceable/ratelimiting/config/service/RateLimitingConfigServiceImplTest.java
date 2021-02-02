@@ -23,14 +23,13 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import org.apache.commons.lang3.tuple.Triple;
-import org.hypertrace.config.service.v1.ConfigServiceGrpc;
-import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.junit.Rule;
 import org.junit.jupiter.api.Assertions;
@@ -73,11 +72,8 @@ public class RateLimitingConfigServiceImplTest {
 
     ManagedChannel managedChannel =
         grpcCleanup.register(InProcessChannelBuilder.forName(serverName).directExecutor().build());
-    ConfigServiceBlockingStub configServiceBlockingStub =
-        ConfigServiceGrpc.newBlockingStub(managedChannel);
-
-    rateLimitingConfigService =
-        new RateLimitingConfigServiceImpl(configServiceBlockingStub, mock(Config.class));
+    Config config = ConfigFactory.parseMap(Map.of("rate.limiting.config.service", Map.of()));
+    rateLimitingConfigService = new RateLimitingConfigServiceImpl(managedChannel, config);
   }
 
   @Test

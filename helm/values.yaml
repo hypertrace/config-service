@@ -84,6 +84,9 @@ traceableConfigServiceConfig:
   mongo:
     host: mongo
     url: ""
+  insightsServiceConfig:
+    host: insights-service
+    port: 50098
 
 logConfig:
   name: traceable-config-service-log-config

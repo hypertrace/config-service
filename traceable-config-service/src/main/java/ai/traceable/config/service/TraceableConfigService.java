@@ -11,9 +11,6 @@ import io.grpc.ServerBuilder;
 import java.io.IOException;
 import org.hypertrace.config.service.ConfigServicesFactory;
 import org.hypertrace.config.service.store.ConfigStore;
-import org.hypertrace.config.service.v1.ConfigServiceGrpc;
-import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
-import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.server.InterceptorUtil;
 import org.hypertrace.core.serviceframework.PlatformService;
 import org.hypertrace.core.serviceframework.config.ConfigClient;
@@ -24,10 +21,6 @@ public class TraceableConfigService extends PlatformService {
 
   private static final String SERVICE_NAME_CONFIG = "service.name";
   private static final String SERVICE_PORT_CONFIG = "service.port";
-  private static final String RATE_LIMITING_CONFIG_SERVICE_CONFIG =
-      "rate.limiting.config.service";
-  private static final String SENSITIVE_DATA_CONFIG_SERVICE_CONFIG =
-      "sensitive.data.config.service";
   private static final Logger LOG = LoggerFactory.getLogger(TraceableConfigService.class);
   private String serviceName;
   private int serverPort;
@@ -52,25 +45,16 @@ public class TraceableConfigService extends PlatformService {
     ServerBuilder<?> serverBuilder = ServerBuilder.forPort(serverPort);
     configStore = ConfigServicesFactory.buildConfigStore(getAppConfig());
 
-    ConfigServicesFactory.buildAllConfigServices(configStore, serverPort, getLifecycle())
-                         .stream()
-                         .map(InterceptorUtil::wrapInterceptors)
-                         .forEach(serverBuilder::addService);
+    ConfigServicesFactory.buildAllConfigServices(configStore, serverPort, getLifecycle()).stream()
+        .map(InterceptorUtil::wrapInterceptors)
+        .forEach(serverBuilder::addService);
 
-    Config sensitiveDataConfigServiceConfig =
-        config.getConfig(SENSITIVE_DATA_CONFIG_SERVICE_CONFIG);
-    ConfigServiceBlockingStub configServiceBlockingStub =
-        ConfigServiceGrpc.newBlockingStub(managedChannel)
-                         .withCallCredentials(
-                             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
     SensitiveDataConfigServiceImpl sensitiveDataConfigService =
-        new SensitiveDataConfigServiceImpl(
-            configServiceBlockingStub, sensitiveDataConfigServiceConfig);
+        new SensitiveDataConfigServiceImpl(managedChannel, config);
     PiiFilterConfigServiceImpl piiFilterConfigService =
-        new PiiFilterConfigServiceImpl(configServiceBlockingStub, sensitiveDataConfigServiceConfig);
-        Config rateLimitingConfigServiceConfig = config.getConfig(RATE_LIMITING_CONFIG_SERVICE_CONFIG);
+        new PiiFilterConfigServiceImpl(managedChannel, config);
     RateLimitingConfigServiceImpl rateLimitingConfigService =
-        new RateLimitingConfigServiceImpl(configServiceBlockingStub, config);
+        new RateLimitingConfigServiceImpl(managedChannel, config);
     serverBuilder
         .addService(InterceptorUtil.wrapInterceptors(sensitiveDataConfigService))
         .addService(InterceptorUtil.wrapInterceptors(piiFilterConfigService))

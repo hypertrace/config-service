@@ -14,7 +14,7 @@ message PiiFilterConfig {
 
 enum RedactionStrategy {
   REDACTION_STRATEGY_UNSPECIFIED = 0;
-  REDACTION_STRATEGY_OBFUSCATE = 1;
+  REDACTION_STRATEGY_REDACT = 1;
   REDACTION_STRATEGY_HASH = 2;
   REDACTION_STRATEGY_RAW = 3;
 }
@@ -23,10 +23,10 @@ message PiiElement {
   string regex = 1;
   string category = 2;
   RedactionStrategy redaction_strategy = 3;
-  //  bool fqn = 4;  Is this required?
   bool session_identifier = 4;
   repeated int32 session_indexes = 5;
   string session_separator = 6;
+  bool fqn = 7;
 }
 
 message ComplexData {

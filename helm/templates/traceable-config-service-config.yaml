@@ -28,3 +28,7 @@ data:
       }
     }
     {{- end }}
+    insights.service.config = {
+      host = {{ .Values.traceableConfigServiceConfig.insightsServiceConfig.host }}
+      port = {{ .Values.traceableConfigServiceConfig.insightsServiceConfig.port }}
+    }

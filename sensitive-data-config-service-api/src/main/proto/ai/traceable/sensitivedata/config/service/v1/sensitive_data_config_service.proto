@@ -7,58 +7,44 @@ package ai.traceable.sensitivedata.config.service.v1;
 import "ai/traceable/sensitivedata/config/service/v1/pii_filter_config.proto";
 
 service SensitiveDataConfigService {
-  // mark the list of parameters as sensitive or insensitive
-  rpc MarkParameters(MarkParametersRequest) returns (MarkParametersResponse) {}
+  // update the redaction strategy for the specified parameter type
+  rpc UpdateRedactionStrategyForType(UpdateRedactionStrategyForTypeRequest) returns (UpdateRedactionStrategyForTypeResponse) {}
 
-  // get the list of parameters explicitly marked as sensitive or/and insensitive by user
-  rpc GetParameters(GetParametersRequest) returns (GetParametersResponse) {}
+  // get the redaction strategy for the specified parameter type
+  rpc GetRedactionStrategyForType(GetRedactionStrategyForTypeRequest) returns (GetRedactionStrategyForTypeResponse) {}
 
-  // update the redaction strategy of a parameter
-  rpc UpdateRedactionStrategy(UpdateRedactionStrategyRequest) returns (UpdateRedactionStrategyResponse) {}
+  // update automatic secret redaction strategy
+  rpc UpdateAutomaticSecretRedactionStrategy(UpdateAutomaticSecretRedactionStrategyRequest) returns (UpdateAutomaticSecretRedactionStrategyResponse) {}
 
-  // get the redaction strategy of sensitive parameters for the specified type and endpoint
-  rpc GetRedactionStrategy(GetRedactionStrategyRequest) returns (GetRedactionStrategyResponse) {}
+  // get automatic secret redaction strategy
+  rpc GetAutomaticSecretRedactionStrategy(GetAutomaticSecretRedactionStrategyRequest) returns (GetAutomaticSecretRedactionStrategyResponse) {}
 }
 
-message MarkParametersRequest {
-  // parameters to be marked as sensitive or insensitive
-  repeated Parameter parameters = 1;
-
-  // required - indicates whether to mark the parameters as sensitive or insensitive
-  bool sensitive = 2;
-
-  // required if the list of parameters contains at least one non-header parameter.
-  string endpoint = 3;
-
-  // this flag determines if this request should change the sensitivity of an already marked parameter or not.
-  bool only_if_unset = 4;
-}
-
-message MarkParametersResponse {}
-
-message GetParametersRequest {
-  Filter filter = 1;
-}
-
-message GetParametersResponse {
-  // parameters explicitly marked as sensitive or/and insensitive by user
-  repeated ParameterWithSensitivity parameters_with_sensitivity = 1;
-}
-
-message UpdateRedactionStrategyRequest {
-  Parameter parameter = 1;
+message UpdateRedactionStrategyForTypeRequest {
+  ParamType param_type = 1;
   RedactionStrategy redaction_strategy = 2;
 }
 
-message UpdateRedactionStrategyResponse {}
+message UpdateRedactionStrategyForTypeResponse {}
 
-message GetRedactionStrategyRequest {
-  Filter filter = 1;
+message GetRedactionStrategyForTypeRequest {
+  ParamType param_type = 1;
 }
 
-message GetRedactionStrategyResponse {
-  // list of parameters with their redaction strategy
-  repeated ParameterWithRedactionStrategy parameters_with_redaction_strategy = 1;
+message GetRedactionStrategyForTypeResponse {
+  RedactionStrategy redaction_strategy = 1;
+}
+
+message UpdateAutomaticSecretRedactionStrategyRequest {
+  bool enabled = 1;
+}
+
+message UpdateAutomaticSecretRedactionStrategyResponse {}
+
+message GetAutomaticSecretRedactionStrategyRequest {}
+
+message GetAutomaticSecretRedactionStrategyResponse {
+  bool enabled = 1;
 }
 
 message Parameter {
@@ -71,22 +57,4 @@ enum ParamType {
   PARAM_TYPE_HEADER = 1;
   PARAM_TYPE_QUERY = 2;
   PARAM_TYPE_BODY = 3;
-}
-
-message Filter {
-  ParamType param_type = 1;
-  string endpoint = 2;
-  oneof sensitivity_filter {
-    bool sensitive = 3;
-  }
-}
-
-message ParameterWithSensitivity {
-  Parameter parameter = 1;
-  bool sensitive = 2;
-}
-
-message ParameterWithRedactionStrategy {
-  Parameter parameter = 1;
-  RedactionStrategy redaction_strategy = 2;
 }

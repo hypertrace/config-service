@@ -23,9 +23,11 @@ import ai.traceable.ratelimiting.config.service.v1.UpdateRuleConfigResponse;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import com.typesafe.config.Config;
+import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
@@ -42,6 +44,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 import static ai.traceable.ratelimiting.service.RateLimitingConfigConstants.RATE_LIMITING_NAMESPACE;
 import static ai.traceable.ratelimiting.service.RateLimitingConfigConstants.RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME;
@@ -54,17 +57,22 @@ import static ai.traceable.ratelimiting.service.RateLimitingConfigServiceUtils.t
 public class RateLimitingConfigServiceImpl
     extends RateLimitingConfigServiceGrpc.RateLimitingConfigServiceImplBase {
 
+  private static final String RATE_LIMITING_CONFIG_SERVICE_CONFIG = "rate.limiting.config.service";
   private static final String MAX_CALL_COUNT_DURATION_LIMIT_MINUTES =
       "maxCallCountDurationLimitMinutes";
   private final ConfigServiceBlockingStub configServiceBlockingStub;
   private static long maxCallCountDurationLimit = TimeUnit.MINUTES.toMillis(180);
 
-  public RateLimitingConfigServiceImpl(
-      ConfigServiceBlockingStub configServiceBlockingStub, Config config) {
-    this.configServiceBlockingStub = configServiceBlockingStub;
-    if (config.hasPath(MAX_CALL_COUNT_DURATION_LIMIT_MINUTES)) {
+  public RateLimitingConfigServiceImpl(Channel configChannel, Config config) {
+    this.configServiceBlockingStub =
+        ConfigServiceGrpc.newBlockingStub(configChannel)
+            .withCallCredentials(
+                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+    Config rateLimitingConfigServiceConfig = config.getConfig(RATE_LIMITING_CONFIG_SERVICE_CONFIG);
+    if (rateLimitingConfigServiceConfig.hasPath(MAX_CALL_COUNT_DURATION_LIMIT_MINUTES)) {
       maxCallCountDurationLimit =
-          config.getDuration(MAX_CALL_COUNT_DURATION_LIMIT_MINUTES, TimeUnit.MILLISECONDS);
+          rateLimitingConfigServiceConfig.getDuration(
+              MAX_CALL_COUNT_DURATION_LIMIT_MINUTES, TimeUnit.MILLISECONDS);
     }
   }
 

@@ -9,6 +9,7 @@ plugins {
   java
   application
   jacoco
+  `java-test-fixtures`
   id("org.hypertrace.jacoco-report-plugin")
   id("org.hypertrace.docker-java-application-plugin") version "0.8.1"
   id("org.hypertrace.docker-publish-plugin") version "0.8.1"
@@ -61,18 +62,22 @@ dependencies {
   implementation("org.hypertrace.config.service:config-service-impl")
   implementation("org.hypertrace.core.grpcutils:grpc-server-utils:0.3.3")
   implementation("org.hypertrace.core.serviceframework:platform-service-framework:0.1.18")
-  implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.3.3")
   runtimeOnly("io.grpc:grpc-netty:1.35.0")
   implementation("com.typesafe:config:1.4.0")
   implementation("org.slf4j:slf4j-api:1.7.30")
   runtimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:2.13.3")
 
   //Integration test dependencies
+  integrationTestImplementation(testFixtures(project(":traceable-config-service")))
+  integrationTestImplementation("ai.traceable.platform:insights-service-api:0.28.13")
   integrationTestImplementation("org.junit.jupiter:junit-jupiter:5.6.2")
   integrationTestImplementation("com.google.guava:guava:30.0-jre")
   integrationTestImplementation("org.hypertrace.core.serviceframework:integrationtest-service-framework:0.1.18")
+  integrationTestImplementation("org.hypertrace.core.documentstore:document-store:0.4.5")
   integrationTestImplementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.3.3")
   integrationTestImplementation("com.google.protobuf:protobuf-java-util:3.13.0")
+
+  testFixturesImplementation("ai.traceable.platform:insights-service-api:0.28.13")
 }
 
 application {
