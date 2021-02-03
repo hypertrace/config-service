@@ -13,4 +13,6 @@ subprojects {
 
 dependencyCheck {
   format = org.owasp.dependencycheck.reporting.ReportGenerator.Format.valueOf("ALL")
+  suppressionFile = "owasp-suppressions.xml"
+  scanConfigurations.add("runtimeClasspath")
 }
