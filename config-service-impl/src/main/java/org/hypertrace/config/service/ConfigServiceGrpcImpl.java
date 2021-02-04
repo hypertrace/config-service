@@ -42,11 +42,9 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
       StreamObserver<UpsertConfigResponse> responseObserver) {
     try {
       ConfigResource configResource = getConfigResource(request);
-      Value existingConfig = configStore.getConfig(configResource);
-      Value resultingConfig = merge(existingConfig, request.getConfig());
-      configStore.writeConfig(configResource, getUserId(), resultingConfig);
+      configStore.writeConfig(configResource, getUserId(), request.getConfig());
       responseObserver.onNext(UpsertConfigResponse.newBuilder()
-          .setConfig(resultingConfig)
+          .setConfig(request.getConfig())
           .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
