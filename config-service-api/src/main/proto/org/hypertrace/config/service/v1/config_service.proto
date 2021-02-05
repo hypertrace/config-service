@@ -7,8 +7,8 @@ package org.hypertrace.config.service.v1;
 import "google/protobuf/struct.proto";
 
 service ConfigService {
-  // Merges the specified config with the existing config and upserts the
-  // resulting config into the store. Also returns the config which is upserted.
+  // Overrides the specified config with the config provided and upserts the
+  // provided config into the store. Also returns the config which is upserted.
   rpc UpsertConfig(UpsertConfigRequest) returns (UpsertConfigResponse) {}
 
   // Gets the config for the specified request
