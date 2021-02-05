@@ -92,7 +92,7 @@ public class ConfigServiceIntegrationTest {
     // upsert second version of config for tenant-1
     upsertConfigResponse = upsertConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1,
         Optional.empty(), config2);
-    assertEquals(config3, upsertConfigResponse.getConfig());
+    assertEquals(config2, upsertConfigResponse.getConfig());
 
     // test across tenants - upsert first version of config for tenant-2
     upsertConfigResponse = upsertConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_2,

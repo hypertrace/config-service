@@ -79,7 +79,7 @@ class ConfigServiceGrpcImplTest {
     List<UpsertConfigResponse> actualResponseList = upsertConfigResponseCaptor.getAllValues();
     assertEquals(3, actualResponseList.size());
     assertEquals(config1, actualResponseList.get(0).getConfig());
-    assertEquals(mergedConfig, actualResponseList.get(1).getConfig());
+    assertEquals(config2, actualResponseList.get(1).getConfig());
     assertEquals(config2, actualResponseList.get(2).getConfig());
   }
 
