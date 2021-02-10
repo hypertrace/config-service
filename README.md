@@ -12,7 +12,7 @@ Service for storing and serving configurations across multiple services and cont
 Refer [config_service.proto](config-service-api/src/main/proto/org/hypertrace/config/service/v1/config_service.proto) for Config Service APIs.
 
 ## Building locally
-The Attribute service uses gradlew to compile/install/distribute. Gradle wrapper is already part of the source code. To build Attribute Service, run:
+The Config service uses gradlew to compile/install/distribute. Gradle wrapper is already part of the source code. To build Config Service, run:
 
 ```
 ./gradlew dockerBuildImages
