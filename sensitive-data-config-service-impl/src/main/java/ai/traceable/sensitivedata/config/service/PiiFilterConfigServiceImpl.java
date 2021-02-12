@@ -10,6 +10,7 @@ import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfig;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
+import com.google.common.collect.Lists;
 import com.typesafe.config.Config;
 import io.grpc.Channel;
 import io.grpc.ManagedChannelBuilder;
@@ -72,10 +73,9 @@ public class PiiFilterConfigServiceImpl
       // get appropriate parts of pii filter config from redaction rules
       List<RedactionRule> redactionRules =
           configServiceCoordinator.getAllRedactionRules(requestContext);
-      // reverse the list to get redaction rules from latest to earliest
-      Collections.reverse(redactionRules);
+      // pass the reversed list to get redaction rules from latest to earliest
       mergeConfigFromRedactionRules(
-          redactionRules, keyRegexToPiiElementMap, valueRegexToPiiElementMap, complexDataMap);
+          Lists.reverse(redactionRules), keyRegexToPiiElementMap, valueRegexToPiiElementMap, complexDataMap);
 
       // get pii elements from sensitive headers and add them to key regexs
       List<Parameter> sensitiveHeaderParameters =

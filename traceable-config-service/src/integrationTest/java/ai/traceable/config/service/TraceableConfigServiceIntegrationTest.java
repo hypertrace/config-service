@@ -166,9 +166,15 @@ public class TraceableConfigServiceIntegrationTest {
     // add redaction rule
     createRedactionRule(
         getNewRedactionRule("rule-1", RedactionStrategy.REDACTION_STRATEGY_REDACT, "^name"));
+    createRedactionRule(
+        getNewRedactionRule("rule-2", RedactionStrategy.REDACTION_STRATEGY_HASH, "^address"));
     PiiElement piiElement3 =
         getPiiElement("^name", "pii", RedactionStrategy.REDACTION_STRATEGY_REDACT, false);
-    expected = getExpectedPiiFilterConfig(List.of(piiElement3, piiElement1, piiElement2), true);
+    PiiElement piiElement4 =
+        getPiiElement("^address", "pii", RedactionStrategy.REDACTION_STRATEGY_HASH, false);
+    expected =
+        getExpectedPiiFilterConfig(
+            List.of(piiElement4, piiElement3, piiElement1, piiElement2), true);
     actual = getPiiFilterConfig();
     assertEquals(expected, actual);
   }
