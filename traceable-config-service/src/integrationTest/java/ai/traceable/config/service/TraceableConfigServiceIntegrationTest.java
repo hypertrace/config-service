@@ -18,14 +18,18 @@ import ai.traceable.ratelimiting.config.service.v1.RateLimitingRuleConfig;
 import ai.traceable.ratelimiting.config.service.v1.RateLimitingRuleWithRateLimitedEntities;
 import ai.traceable.ratelimiting.config.service.v1.RuleViolationAction;
 import ai.traceable.ratelimiting.config.service.v1.UpdateRuleConfigRequest;
+import ai.traceable.sensitivedata.config.service.v1.CreateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAutomaticSecretRedactionStrategyRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeRequest;
+import ai.traceable.sensitivedata.config.service.v1.MatchType;
+import ai.traceable.sensitivedata.config.service.v1.NewRedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.ParamType;
 import ai.traceable.sensitivedata.config.service.v1.PiiElement;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfig;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfigServiceGrpc.PiiFilterConfigServiceBlockingStub;
+import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
@@ -42,7 +46,6 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import org.hypertrace.core.documentstore.Collection;
@@ -145,20 +148,29 @@ public class TraceableConfigServiceIntegrationTest {
     updateRedactionStrategyForType(
         ParamType.PARAM_TYPE_HEADER, RedactionStrategy.REDACTION_STRATEGY_HASH);
     PiiElement piiElement1 =
-        getPiiElement("http.request.header.h1", RedactionStrategy.REDACTION_STRATEGY_HASH);
+        getPiiElement(
+            "http.request.header.h1", "", RedactionStrategy.REDACTION_STRATEGY_HASH, true);
     PiiElement piiElement2 =
-        getPiiElement("http.request.header.h2", RedactionStrategy.REDACTION_STRATEGY_HASH);
+        getPiiElement(
+            "http.request.header.h2", "", RedactionStrategy.REDACTION_STRATEGY_HASH, true);
     PiiFilterConfig expected = getExpectedPiiFilterConfig(List.of(piiElement1, piiElement2), false);
     PiiFilterConfig actual = getPiiFilterConfig();
-    assertEquals(
-        new HashSet<>(expected.getKeyRegexsList()), new HashSet<>(actual.getKeyRegexsList()));
+    assertEquals(expected, actual);
 
     // enable automatic secret redaction
     updateAutomaticSecretRedactionStrategy(true);
     expected = getExpectedPiiFilterConfig(List.of(piiElement1, piiElement2), true);
     actual = getPiiFilterConfig();
-    assertEquals(
-        new HashSet<>(expected.getKeyRegexsList()), new HashSet<>(actual.getKeyRegexsList()));
+    assertEquals(expected, actual);
+
+    // add redaction rule
+    createRedactionRule(
+        getNewRedactionRule("rule-1", RedactionStrategy.REDACTION_STRATEGY_REDACT, "^name"));
+    PiiElement piiElement3 =
+        getPiiElement("^name", "pii", RedactionStrategy.REDACTION_STRATEGY_REDACT, false);
+    expected = getExpectedPiiFilterConfig(List.of(piiElement3, piiElement1, piiElement2), true);
+    actual = getPiiFilterConfig();
+    assertEquals(expected, actual);
   }
 
   private void updateRedactionStrategyForType(
@@ -197,6 +209,26 @@ public class TraceableConfigServiceIntegrationTest {
         .getEnabled();
   }
 
+  private RedactionRule createRedactionRule(NewRedactionRule newRedactionRule) {
+    CreateRedactionRuleRequest request =
+        CreateRedactionRuleRequest.newBuilder().setNewRedactionRule(newRedactionRule).build();
+    return GrpcClientRequestContextUtil.executeInTenantContext(
+            "tenant1", () -> sensitiveDataConfigServiceStub.createRedactionRule(request))
+        .getRedactionRule();
+  }
+
+  private NewRedactionRule getNewRedactionRule(
+      String name, RedactionStrategy redactionStrategy, String regex) {
+    return NewRedactionRule.newBuilder()
+        .setName(name)
+        .setDescription("sample rule")
+        .setCategory("pii")
+        .setRedactionStrategy(redactionStrategy)
+        .setMatchType(MatchType.MATCH_TYPE_KEY)
+        .setRegex(regex)
+        .build();
+  }
+
   private PiiFilterConfig getPiiFilterConfig() {
     GetPiiFilterConfigRequest request = GetPiiFilterConfigRequest.newBuilder().build();
     return GrpcClientRequestContextUtil.executeInTenantContext(
@@ -204,11 +236,13 @@ public class TraceableConfigServiceIntegrationTest {
         .getPiiFilterConfig();
   }
 
-  private PiiElement getPiiElement(String paramName, RedactionStrategy redactionStrategy) {
+  private PiiElement getPiiElement(
+      String regex, String category, RedactionStrategy redactionStrategy, boolean isFqn) {
     return PiiElement.newBuilder()
-        .setRegex(paramName)
+        .setRegex(regex)
+        .setCategory(category)
         .setRedactionStrategy(redactionStrategy)
-        .setFqn(true)
+        .setFqn(isFqn)
         .build();
   }
 
@@ -223,11 +257,15 @@ public class TraceableConfigServiceIntegrationTest {
     JsonFormat.parser().merge(jsonString, builder);
     PiiFilterConfig defaultPiiFilterConfig = builder.build();
     PiiFilterConfig.Builder expectedPiiFilterConfigBuilder =
-        PiiFilterConfig.newBuilder(defaultPiiFilterConfig);
-    if (!automaticSecretRedactionEnabled) {
-      expectedPiiFilterConfigBuilder.clearKeyRegexs();
+        PiiFilterConfig.newBuilder()
+            .addAllPrefixes(defaultPiiFilterConfig.getPrefixesList())
+            .setRedactionStrategy(defaultPiiFilterConfig.getRedactionStrategy());
+    expectedPiiFilterConfigBuilder.addAllKeyRegexs(piiElementsAddedByUser);
+    if (automaticSecretRedactionEnabled) {
+      expectedPiiFilterConfigBuilder.addAllKeyRegexs(defaultPiiFilterConfig.getKeyRegexsList());
+      expectedPiiFilterConfigBuilder.addAllValueRegexs(defaultPiiFilterConfig.getValueRegexsList());
+      expectedPiiFilterConfigBuilder.addAllComplexData(defaultPiiFilterConfig.getComplexDataList());
     }
-    expectedPiiFilterConfigBuilder.addAllKeyRegexs(piiElementsAddedByUser).build();
     return expectedPiiFilterConfigBuilder.build();
   }
 

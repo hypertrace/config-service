@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.sensitivedata.config.service.v1;
+
+import "ai/traceable/sensitivedata/config/service/v1/pii_filter_config.proto";
+
+message NewRedactionRule {
+  string name = 1;
+  string description = 2;
+  string category = 3;
+  RedactionStrategy redaction_strategy = 4;
+  MatchType match_type = 5;
+  oneof data {
+    ComplexData complex_data = 6;
+  }
+  string regex = 7;
+}
+
+message RedactionRule {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string category = 4;
+  RedactionStrategy redaction_strategy = 5;
+  MatchType match_type = 6;
+  oneof data {
+    ComplexData complex_data = 7;
+  }
+  string regex = 8;
+}
+
+enum MatchType {
+  MATCH_TYPE_UNSPECIFIED = 0;
+  MATCH_TYPE_HEADER = 1;
+  MATCH_TYPE_COMPLEX_DATA = 2;
+  MATCH_TYPE_KEY = 3;
+  MATCH_TYPE_VALUE = 4;
+}

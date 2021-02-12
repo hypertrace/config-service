@@ -1,7 +1,10 @@
 package ai.traceable.sensitivedata.config.service;
 
+import ai.traceable.sensitivedata.config.service.v1.NewRedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.ParamType;
+import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
+import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public interface ConfigServiceCoordinator {
@@ -19,4 +22,12 @@ public interface ConfigServiceCoordinator {
       AutomaticSecretRedactionStrategyConfig automaticSecretRedactionStrategyConfig);
 
   boolean isAutomaticSecretRedactionStrategyEnabled(RequestContext requestContext);
+
+  RedactionRule createRedactionRule(RequestContext requestContext, NewRedactionRule newRedactionRule);
+
+  RedactionRule updateRedactionRule(RequestContext requestContext, RedactionRule redactionRule);
+
+  List<RedactionRule> getAllRedactionRules(RequestContext requestContext);
+
+  void deleteRedactionRule(RequestContext requestContext, String redactionRuleId);
 }

@@ -12,6 +12,7 @@ public class SensitiveDataConfigUtils {
       "parameter-type-redaction-strategy-config";
   public static final String AUTOMATIC_SECRET_REDACTION_STRATEGY_CONFIG =
       "automatic-secret-redaction-strategy-config";
+  public static final String REDACTION_RULES_CONFIG = "redaction-rules-config";
   public static final String SENSITIVE_DATA_CONFIGURATION = "sensitive-data-configuration";
 
   private SensitiveDataConfigUtils() {

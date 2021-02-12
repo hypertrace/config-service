@@ -32,7 +32,7 @@ class PiiFilterConfigServiceImplTest {
 
   @BeforeEach
   void setUp() {
-    mockGenericConfigService = new MockGenericConfigService().mockUpsert().mockGet();
+    mockGenericConfigService = new MockGenericConfigService().mockUpsert().mockGet().mockGetAll();
 
     Config config =
         ConfigFactory.parseMap(

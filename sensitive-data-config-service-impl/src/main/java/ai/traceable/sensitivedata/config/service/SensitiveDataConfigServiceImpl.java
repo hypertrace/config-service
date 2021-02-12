@@ -2,6 +2,12 @@ package ai.traceable.sensitivedata.config.service;
 
 import static ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl.SENSITIVE_DATA_CONFIG_SERVICE_CONFIG;
 
+import ai.traceable.sensitivedata.config.service.v1.CreateRedactionRuleRequest;
+import ai.traceable.sensitivedata.config.service.v1.CreateRedactionRuleResponse;
+import ai.traceable.sensitivedata.config.service.v1.DeleteRedactionRuleRequest;
+import ai.traceable.sensitivedata.config.service.v1.DeleteRedactionRuleResponse;
+import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesResponse;
 import ai.traceable.sensitivedata.config.service.v1.GetAutomaticSecretRedactionStrategyRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAutomaticSecretRedactionStrategyResponse;
 import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeRequest;
@@ -11,6 +17,8 @@ import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.UpdateAutomaticSecretRedactionStrategyRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateAutomaticSecretRedactionStrategyResponse;
+import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionRuleRequest;
+import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionRuleResponse;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeResponse;
 import com.typesafe.config.Config;
@@ -112,6 +120,76 @@ public class SensitiveDataConfigServiceImpl
     } catch (Exception e) {
       log.error(
           "Get Automatic Secret Redaction Strategy For Type RPC failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void createRedactionRule(
+      CreateRedactionRuleRequest request,
+      StreamObserver<CreateRedactionRuleResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      responseObserver.onNext(
+          CreateRedactionRuleResponse.newBuilder()
+              .setRedactionRule(
+                  configServiceCoordinator.createRedactionRule(
+                      requestContext, request.getNewRedactionRule()))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Create Redaction Rule RPC failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void updateRedactionRule(
+      UpdateRedactionRuleRequest request,
+      StreamObserver<UpdateRedactionRuleResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      responseObserver.onNext(
+          UpdateRedactionRuleResponse.newBuilder()
+              .setRedactionRule(
+                  configServiceCoordinator.updateRedactionRule(
+                      requestContext, request.getRedactionRule()))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Update Redaction Rule RPC failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getAllRedactionRules(
+      GetAllRedactionRulesRequest request,
+      StreamObserver<GetAllRedactionRulesResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      responseObserver.onNext(
+          GetAllRedactionRulesResponse.newBuilder()
+              .addAllRedactionRules(configServiceCoordinator.getAllRedactionRules(requestContext))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Get All Redaction Rules RPC failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void deleteRedactionRule(
+      DeleteRedactionRuleRequest request,
+      StreamObserver<DeleteRedactionRuleResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      configServiceCoordinator.deleteRedactionRule(requestContext, request.getRedactionRuleId());
+      responseObserver.onNext(DeleteRedactionRuleResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Delete Redaction Rule RPC failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }

@@ -1,5 +1,6 @@
 package ai.traceable.sensitivedata.config.service;
 
+import ai.traceable.sensitivedata.config.service.v1.ComplexData;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigResponse;
 import ai.traceable.sensitivedata.config.service.v1.ParamType;
@@ -7,6 +8,7 @@ import ai.traceable.sensitivedata.config.service.v1.Parameter;
 import ai.traceable.sensitivedata.config.service.v1.PiiElement;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfig;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfigServiceGrpc;
+import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import com.typesafe.config.Config;
 import io.grpc.Channel;
@@ -14,7 +16,7 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,26 +64,45 @@ public class PiiFilterConfigServiceImpl
       StreamObserver<GetPiiFilterConfigResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
+
+      Map<String, PiiElement> keyRegexToPiiElementMap = new LinkedHashMap<>();
+      Map<String, PiiElement> valueRegexToPiiElementMap = new LinkedHashMap<>();
+      Map<String, ComplexData> complexDataMap = new LinkedHashMap<>();
+
+      // get appropriate parts of pii filter config from redaction rules
+      List<RedactionRule> redactionRules =
+          configServiceCoordinator.getAllRedactionRules(requestContext);
+      // reverse the list to get redaction rules from latest to earliest
+      Collections.reverse(redactionRules);
+      mergeConfigFromRedactionRules(
+          redactionRules, keyRegexToPiiElementMap, valueRegexToPiiElementMap, complexDataMap);
+
+      // get pii elements from sensitive headers and add them to key regexs
       List<Parameter> sensitiveHeaderParameters =
           insightsServiceCoordinator.getSensitiveHeaderParameters(requestContext);
       RedactionStrategy redactionStrategy =
           configServiceCoordinator.getParamTypeRedactionStrategy(
               requestContext, ParamType.PARAM_TYPE_HEADER);
-      Map<String, PiiElement> piiElementsMap = new HashMap<>();
       List<PiiElement> piiElements =
           computePiiElements(sensitiveHeaderParameters, redactionStrategy);
-      addPiiElements(piiElementsMap, piiElements);
+      addPiiElements(keyRegexToPiiElementMap, piiElements);
 
+      // if automatic secret redaction is enabled, merge config from default config
       boolean automaticSecretRedactionStrategyEnabled =
           configServiceCoordinator.isAutomaticSecretRedactionStrategyEnabled(requestContext);
       if (automaticSecretRedactionStrategyEnabled) {
-        addPiiElements(piiElementsMap, defaultPiiFilterConfig.getKeyRegexsList());
+        addPiiElements(keyRegexToPiiElementMap, defaultPiiFilterConfig.getKeyRegexsList());
+        addPiiElements(valueRegexToPiiElementMap, defaultPiiFilterConfig.getValueRegexsList());
+        addComplexDataElements(complexDataMap, defaultPiiFilterConfig.getComplexDataList());
       }
 
       PiiFilterConfig resultingPiiFilterConfig =
-          PiiFilterConfig.newBuilder(defaultPiiFilterConfig)
-              .clearKeyRegexs()
-              .addAllKeyRegexs(piiElementsMap.values())
+          PiiFilterConfig.newBuilder()
+              .addAllPrefixes(defaultPiiFilterConfig.getPrefixesList())
+              .setRedactionStrategy(defaultPiiFilterConfig.getRedactionStrategy())
+              .addAllKeyRegexs(keyRegexToPiiElementMap.values())
+              .addAllValueRegexs(valueRegexToPiiElementMap.values())
+              .addAllComplexData(complexDataMap.values())
               .build();
       GetPiiFilterConfigResponse response =
           GetPiiFilterConfigResponse.newBuilder()
@@ -120,5 +141,42 @@ public class PiiFilterConfigServiceImpl
       piiElements.add(piiElement);
     }
     return piiElements;
+  }
+
+  private void addComplexDataElements(
+      Map<String, ComplexData> complexDataMap, List<ComplexData> complexDataElementsToAdd) {
+    for (ComplexData complexData : complexDataElementsToAdd) {
+      complexDataMap.putIfAbsent(complexData.getKey(), complexData);
+    }
+  }
+
+  private void mergeConfigFromRedactionRules(
+      List<RedactionRule> redactionRules,
+      Map<String, PiiElement> keyRegexToPiiElementMap,
+      Map<String, PiiElement> valueRegexToPiiElementMap,
+      Map<String, ComplexData> complexDataMap) {
+    for (RedactionRule redactionRule : redactionRules) {
+      PiiElement piiElement =
+          PiiElement.newBuilder()
+              .setRegex(redactionRule.getRegex())
+              .setCategory(redactionRule.getCategory())
+              .setRedactionStrategy(redactionRule.getRedactionStrategy())
+              .build();
+      switch (redactionRule.getMatchType()) {
+        case MATCH_TYPE_HEADER:
+        case MATCH_TYPE_KEY:
+          keyRegexToPiiElementMap.putIfAbsent(redactionRule.getRegex(), piiElement);
+          break;
+        case MATCH_TYPE_VALUE:
+          valueRegexToPiiElementMap.putIfAbsent(redactionRule.getRegex(), piiElement);
+          break;
+        case MATCH_TYPE_COMPLEX_DATA:
+          keyRegexToPiiElementMap.putIfAbsent(redactionRule.getRegex(), piiElement);
+          ComplexData complexData = redactionRule.getComplexData();
+          complexDataMap.putIfAbsent(complexData.getKey(), complexData);
+          break;
+        default:
+      }
+    }
   }
 }
