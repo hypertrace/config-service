@@ -1,8 +1,9 @@
 syntax = "proto3";
 
-option java_multiple_files = true;
-
 package ai.traceable.sensitivedata.config.service.v1;
+
+option java_multiple_files = true;
+option go_package = "github.com/Traceableai/config-service/sensitivedata/v1";
 
 import "ai/traceable/sensitivedata/config/service/v1/pii_filter_config.proto";
 
