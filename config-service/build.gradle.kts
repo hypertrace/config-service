@@ -84,15 +84,12 @@ dependencies {
   testFixturesAnnotationProcessor("org.projectlombok:lombok:1.18.12")
   testFixturesCompileOnly("org.projectlombok:lombok:1.18.12")
 
+  runtimeOnly("io.netty:netty-codec-http2:4.1.59.Final")
+  runtimeOnly("io.netty:netty-handler-proxy:4.1.59.Final")
+  
   constraints {
     implementation("com.google.guava:guava:30.1-jre") {
       because("https://snyk.io/vuln/SNYK-JAVA-COMGOOGLEGUAVA-1015415")
-    }
-    runtimeOnly("io.netty:netty-codec-http2:4.1.53.Final") {
-      because("https://snyk.io/vuln/SNYK-JAVA-IONETTY-1020439")
-    }
-    runtimeOnly("io.netty:netty-handler-proxy:4.1.53.Final") {
-      because("https://snyk.io/vuln/SNYK-JAVA-IONETTY-1020439")
     }
   }
 }
