@@ -155,10 +155,10 @@ public class TraceableConfigServiceIntegrationTest {
         ParamType.PARAM_TYPE_HEADER, RedactionStrategy.REDACTION_STRATEGY_HASH);
     PiiElement piiElement1 =
         getPiiElement(
-            "http.request.header.h1", "", RedactionStrategy.REDACTION_STRATEGY_HASH, true);
+            "http.request.header.h1", "", RedactionStrategy.REDACTION_STRATEGY_HASH, true, false);
     PiiElement piiElement2 =
         getPiiElement(
-            "http.request.header.h2", "", RedactionStrategy.REDACTION_STRATEGY_HASH, true);
+            "http.request.header.h2", "", RedactionStrategy.REDACTION_STRATEGY_HASH, true, false);
     PiiFilterConfig expected = getExpectedPiiFilterConfig(List.of(piiElement1, piiElement2), false);
     PiiFilterConfig actual = getPiiFilterConfig();
     assertEquals(expected, actual);
@@ -171,13 +171,13 @@ public class TraceableConfigServiceIntegrationTest {
 
     // add redaction rule
     createRedactionRule(
-        getNewRedactionRule("rule-1", RedactionStrategy.REDACTION_STRATEGY_REDACT, "^name"));
+        getNewRedactionRule("rule-1", RedactionStrategy.REDACTION_STRATEGY_REDACT, "^name", false));
     createRedactionRule(
-        getNewRedactionRule("rule-2", RedactionStrategy.REDACTION_STRATEGY_HASH, "^address"));
+        getNewRedactionRule("rule-2", RedactionStrategy.REDACTION_STRATEGY_HASH, "^address", true));
     PiiElement piiElement3 =
-        getPiiElement("^name", "pii", RedactionStrategy.REDACTION_STRATEGY_REDACT, false);
+        getPiiElement("^name", "pii", RedactionStrategy.REDACTION_STRATEGY_REDACT, false, false);
     PiiElement piiElement4 =
-        getPiiElement("^address", "pii", RedactionStrategy.REDACTION_STRATEGY_HASH, false);
+        getPiiElement("^address", "pii", RedactionStrategy.REDACTION_STRATEGY_HASH, false, true);
     expected =
         getExpectedPiiFilterConfig(
             List.of(piiElement4, piiElement3, piiElement1, piiElement2), true);
@@ -230,7 +230,7 @@ public class TraceableConfigServiceIntegrationTest {
   }
 
   private NewRedactionRule getNewRedactionRule(
-      String name, RedactionStrategy redactionStrategy, String regex) {
+      String name, RedactionStrategy redactionStrategy, String regex, boolean sessionIdentifier) {
     return NewRedactionRule.newBuilder()
         .setName(name)
         .setDescription("sample rule")
@@ -238,6 +238,7 @@ public class TraceableConfigServiceIntegrationTest {
         .setRedactionStrategy(redactionStrategy)
         .setMatchType(MatchType.MATCH_TYPE_KEY)
         .setRegex(regex)
+        .setSessionIdentifier(sessionIdentifier)
         .build();
   }
 
@@ -249,12 +250,17 @@ public class TraceableConfigServiceIntegrationTest {
   }
 
   private PiiElement getPiiElement(
-      String regex, String category, RedactionStrategy redactionStrategy, boolean isFqn) {
+      String regex,
+      String category,
+      RedactionStrategy redactionStrategy,
+      boolean isFqn,
+      boolean sessionIdentifier) {
     return PiiElement.newBuilder()
         .setRegex(regex)
         .setCategory(category)
         .setRedactionStrategy(redactionStrategy)
         .setFqn(isFqn)
+        .setSessionIdentifier(sessionIdentifier)
         .build();
   }
 

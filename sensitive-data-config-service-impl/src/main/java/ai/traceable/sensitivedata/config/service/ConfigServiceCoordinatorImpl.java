@@ -208,7 +208,8 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
             .setCategory(newRedactionRule.getCategory())
             .setRedactionStrategy(newRedactionRule.getRedactionStrategy())
             .setMatchType(newRedactionRule.getMatchType())
-            .setRegex(newRedactionRule.getRegex());
+            .setRegex(newRedactionRule.getRegex())
+            .setSessionIdentifier(newRedactionRule.getSessionIdentifier());
     if (newRedactionRule.hasComplexData()) {
       builder.setComplexData(newRedactionRule.getComplexData());
     }

@@ -17,6 +17,7 @@ message NewRedactionRule {
     ComplexData complex_data = 6;
   }
   string regex = 7;
+  bool session_identifier = 8;
 }
 
 message RedactionRule {
@@ -30,6 +31,7 @@ message RedactionRule {
     ComplexData complex_data = 7;
   }
   string regex = 8;
+  bool session_identifier = 9;
 }
 
 enum MatchType {
