@@ -23,13 +23,16 @@ image:
 imagePullSecrets:
   - name: regcred
 
-containerPort: 50101
-containerAdminPort: 50102
-containerPortName: grpc-port
+internalContainerPort: 50101
+externalContainerPort: 50102
+containerAdminPort: 50103
+internalContainerPortName: grpc-internal-port
+externalContainerPortName: grpc-external-port
 
 service:
   type: ClusterIP
-  port: 50101
+  internalPort: 50101
+  externalPort: 50102
 
 nodeLabels: {}
 

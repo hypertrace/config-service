@@ -6,7 +6,8 @@ metadata:
     release: {{ .Release.Name }}
 data:
   application.conf: |-
-    service.port = {{ .Values.containerPort }}
+    service.port.internal = {{ .Values.internalContainerPort }}
+    service.port.external = {{ .Values.externalContainerPort }}
     service.admin.port = {{ .Values.containerAdminPort }}
     generic.config.service {
       document.store {

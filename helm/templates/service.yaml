@@ -7,8 +7,11 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: {{ .Values.containerPortName }}
-      name: {{ .Values.containerPortName }}-{{ .Chart.Name }}
+    - port: {{ .Values.service.internalPort }}
+      targetPort: {{ .Values.internalContainerPortName }}
+      name: {{ .Values.internalContainerPortName }}-{{ .Chart.Name }}
+    - port: {{ .Values.service.externalPort }}
+      targetPort: {{ .Values.externalContainerPortName }}
+      name: {{ .Values.externalContainerPortName }}-{{ .Chart.Name }}
   selector:
     {{- toYaml .Values.serviceSelectorLabels | nindent 4 }}

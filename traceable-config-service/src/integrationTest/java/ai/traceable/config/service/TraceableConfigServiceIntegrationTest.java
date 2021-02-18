@@ -75,25 +75,29 @@ public class TraceableConfigServiceIntegrationTest {
   private static PiiFilterConfigServiceBlockingStub piiFilterConfigServiceStub;
   private static RateLimitingConfigServiceBlockingStub rateLimitingConfigServiceStub;
   private static Server mockInsightsServer;
+  private static ManagedChannel managedChannelForInternalServices;
+  private static ManagedChannel managedChannelForExternalServices;
 
   @BeforeAll
   public static void setup() throws IOException {
     System.out.println("Starting Config Service E2E Test");
     IntegrationTestServerUtil.startServices(new String[] {SERVICE_NAME});
 
-    ManagedChannel managedChannel =
+    managedChannelForInternalServices =
         ManagedChannelBuilder.forAddress("localhost", 50101).usePlaintext().build();
+    managedChannelForExternalServices =
+        ManagedChannelBuilder.forAddress("localhost", 50102).usePlaintext().build();
 
     sensitiveDataConfigServiceStub =
-        SensitiveDataConfigServiceGrpc.newBlockingStub(managedChannel)
+        SensitiveDataConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
     piiFilterConfigServiceStub =
-        PiiFilterConfigServiceGrpc.newBlockingStub(managedChannel)
+        PiiFilterConfigServiceGrpc.newBlockingStub(managedChannelForExternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
     rateLimitingConfigServiceStub =
-        RateLimitingConfigServiceGrpc.newBlockingStub(managedChannel)
+        RateLimitingConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
@@ -103,6 +107,8 @@ public class TraceableConfigServiceIntegrationTest {
 
   @AfterAll
   public static void teardown() {
+    managedChannelForInternalServices.shutdown();
+    managedChannelForExternalServices.shutdown();
     IntegrationTestServerUtil.shutdownServices();
     mockInsightsServer.shutdown();
   }

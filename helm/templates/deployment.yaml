@@ -51,8 +51,11 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - name: {{ .Values.containerPortName }}
-              containerPort: {{ .Values.containerPort }}
+            - name: {{ .Values.internalContainerPortName }}
+              containerPort: {{ .Values.internalContainerPort }}
+              protocol: TCP
+            - name: {{ .Values.externalContainerPortName }}
+              containerPort: {{ .Values.externalContainerPort }}
               protocol: TCP
             - name: admin-port
               containerPort: {{ .Values.containerAdminPort }}
@@ -74,7 +77,7 @@ spec:
             initialDelaySeconds: {{ int .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ int .Values.livenessProbe.periodSeconds }}
             tcpSocket:
-              port: {{ .Values.containerPortName }}
+              port: {{ .Values.internalContainerPortName }}
           readinessProbe:
             initialDelaySeconds: {{ int .Values.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ int .Values.readinessProbe.periodSeconds }}

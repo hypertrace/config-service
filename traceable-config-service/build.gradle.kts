@@ -11,8 +11,8 @@ plugins {
   jacoco
   `java-test-fixtures`
   id("org.hypertrace.jacoco-report-plugin")
-  id("org.hypertrace.docker-java-application-plugin") version "0.8.1"
-  id("org.hypertrace.docker-publish-plugin") version "0.8.1"
+  id("org.hypertrace.docker-java-application-plugin") version "0.8.2"
+  id("org.hypertrace.docker-publish-plugin") version "0.8.2"
   id("ai.traceable.docker-convention-plugin") version "1.2.2"
   id("org.hypertrace.integration-test-plugin") version "0.1.3"
 }
@@ -97,7 +97,8 @@ tasks.jacocoIntegrationTestReport {
 hypertraceDocker {
   defaultImage {
     javaApplication {
-      port.set(50101)
+      ports.addAll(50101, 50102)
+      adminPort.set(50103)
     }
   }
 }
