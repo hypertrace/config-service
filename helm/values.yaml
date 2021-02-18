@@ -26,8 +26,8 @@ imagePullSecrets:
 internalContainerPort: 50101
 externalContainerPort: 50102
 containerAdminPort: 50103
-internalContainerPortName: grpc-internal-port
-externalContainerPortName: grpc-external-port
+internalContainerPortName: grpc-int-port
+externalContainerPortName: grpc-ext-port
 
 service:
   type: ClusterIP
