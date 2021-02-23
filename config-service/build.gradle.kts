@@ -14,6 +14,7 @@ plugins {
   id("org.hypertrace.docker-publish-plugin")
   id("org.hypertrace.integration-test-plugin")
   id("org.hypertrace.jacoco-report-plugin")
+  id("org.hypertrace.publish-plugin")
 }
 
 tasks.register<DockerCreateNetwork>("createIntegrationTestNetwork") {
