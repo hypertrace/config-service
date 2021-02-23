@@ -18,7 +18,7 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter:5.7.0")
   testImplementation("org.mockito:mockito-core:3.7.0")
   testImplementation("org.mockito:mockito-junit-jupiter:3.7.0")
-  testImplementation(testFixtures(project(":config-service")))
+  testImplementation(testFixtures(project(":config-service-api")))
 }
 
 tasks.test {

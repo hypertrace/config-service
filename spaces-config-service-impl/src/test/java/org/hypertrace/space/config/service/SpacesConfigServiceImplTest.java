@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 
 import java.util.List;
-import org.hypertrace.config.service.MockGenericConfigService;
+import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.spaces.config.service.v1.AttributeValueRuleData;
 import org.hypertrace.spaces.config.service.v1.CreateRuleRequest;
 import org.hypertrace.spaces.config.service.v1.DeleteRuleRequest;
