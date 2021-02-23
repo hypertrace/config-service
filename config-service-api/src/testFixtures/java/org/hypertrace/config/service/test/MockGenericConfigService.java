@@ -1,4 +1,4 @@
-package org.hypertrace.config.service;
+package org.hypertrace.config.service.test;
 
 import static java.util.function.Predicate.not;
 
