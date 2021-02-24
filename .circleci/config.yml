@@ -145,10 +145,9 @@ jobs:
   verify-protos:
     executor: buf
     steps:
-      # TODO: Re-enable buf
       - checkout
       - run: buf check lint
-      # - run: buf check breaking --against-input "ssh://${CIRCLE_REPOSITORY_URL/://}#branch=main"
+      - run: buf check breaking --against-input "ssh://${CIRCLE_REPOSITORY_URL/://}#branch=main"
   validate-charts:
     executor: helm
     steps:
