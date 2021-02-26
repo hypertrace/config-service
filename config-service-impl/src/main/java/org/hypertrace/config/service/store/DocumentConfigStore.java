@@ -6,6 +6,8 @@ import com.google.common.cache.LoadingCache;
 import com.google.protobuf.Value;
 import com.typesafe.config.Config;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,10 +26,9 @@ import org.hypertrace.core.documentstore.OrderBy;
 import org.hypertrace.core.documentstore.Query;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Iterator;
 
-import static org.hypertrace.config.service.ConfigServiceUtils.emptyValue;
+import static org.hypertrace.config.service.ConfigServiceUtils.emptyConfig;
 import static org.hypertrace.config.service.store.ConfigDocument.CONTEXT_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_NAMESPACE_FIELD_NAME;
@@ -55,7 +56,7 @@ public class DocumentConfigStore implements ConfigStore {
   @Override
   public void init(Config config) {
     datastore = initDataStore(config);
-    this.collection = this.datastore.getCollection(CONFIGURATIONS_COLLECTION);;
+    this.collection = this.datastore.getCollection(CONFIGURATIONS_COLLECTION);
   }
 
   private Datastore initDataStore(Config config) {
@@ -72,29 +73,44 @@ public class DocumentConfigStore implements ConfigStore {
     // for the same resource into the document store
     synchronized (configResourceLocks.getUnchecked(configResource)) {
       long configVersion = getLatestVersion(configResource) + 1;
+      long updateTimestamp = System.currentTimeMillis();
+      long creationTimestamp;
+      ContextSpecificConfig existingConfig = getConfig(configResource, configVersion - 1);
+      if (ConfigServiceUtils.isNull(existingConfig.getConfig())) {
+        creationTimestamp = updateTimestamp;
+      } else {
+        creationTimestamp = existingConfig.getCreationTimestamp();
+      }
       Key key = new ConfigDocumentKey(configResource, configVersion);
       Document document = new ConfigDocument(configResource.getResourceName(),
           configResource.getResourceNamespace(), configResource.getTenantId(),
-          configResource.getContext(), configVersion, userId, config);
+          configResource.getContext(), configVersion, userId, config, creationTimestamp,
+          updateTimestamp);
       collection.upsert(key, document);
       return configVersion;
     }
   }
 
   @Override
-  public Value getConfig(ConfigResource configResource) throws IOException {
-    Value config = emptyValue();
+  public ContextSpecificConfig getConfig(ConfigResource configResource) throws IOException {
+    return getConfig(configResource, getLatestVersion(configResource));
+  }
+
+  private ContextSpecificConfig getConfig(ConfigResource configResource, long configVersion)
+      throws IOException {
     Filter filter = getConfigResourceFilter(configResource)
-        .and(Filter.eq(VERSION_FIELD_NAME, getLatestVersion(configResource)));
+        .and(Filter.eq(VERSION_FIELD_NAME, configVersion));
     Query query = new Query();
     query.setFilter(filter);
     Iterator<Document> documentIterator = collection.search(query);
     if (documentIterator.hasNext()) {
       String documentString = documentIterator.next().toJson();
       ConfigDocument configDocument = ConfigDocument.fromJson(documentString);
-      config = configDocument.getConfig();
+      if (!ConfigServiceUtils.isNull(configDocument.getConfig())) {
+        return getContextSpecificConfig(configDocument);
+      }
     }
-    return config;
+    return emptyConfig(configResource.getContext());
   }
 
   @Override
@@ -115,10 +131,11 @@ public class DocumentConfigStore implements ConfigStore {
       String context = configDocument.getContext();
       Value config = configDocument.getConfig();
       if (seenContexts.add(context) && !ConfigServiceUtils.isNull(config)) {
-        contextSpecificConfigList
-            .add(ContextSpecificConfig.newBuilder().setContext(context).setConfig(config).build());
+        contextSpecificConfigList.add(getContextSpecificConfig(configDocument));
       }
     }
+    Collections.sort(contextSpecificConfigList,
+        Comparator.comparingLong(ContextSpecificConfig::getCreationTimestamp));
     return contextSpecificConfigList;
   }
 
@@ -147,5 +164,13 @@ public class DocumentConfigStore implements ConfigStore {
         .and(Filter.eq(RESOURCE_NAMESPACE_FIELD_NAME, configResource.getResourceNamespace()))
         .and(Filter.eq(TENANT_ID_FIELD_NAME, configResource.getTenantId()))
         .and(Filter.eq(CONTEXT_FIELD_NAME, configResource.getContext()));
+  }
+
+  private ContextSpecificConfig getContextSpecificConfig(ConfigDocument configDocument) {
+    return ContextSpecificConfig.newBuilder().setConfig(configDocument.getConfig())
+        .setContext(configDocument.getContext())
+        .setCreationTimestamp(configDocument.getCreationTimestamp())
+        .setUpdateTimestamp(configDocument.getUpdateTimestamp())
+        .build();
   }
 }

@@ -57,11 +57,12 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   public void getConfig(GetConfigRequest request,
       StreamObserver<GetConfigResponse> responseObserver) {
     try {
-      Value config = configStore.getConfig(getConfigResource(request));
+      Value config = configStore.getConfig(getConfigResource(request)).getConfig();
 
       // get the configs for the contexts mentioned in the request and merge them in the specified order
       for (String context : request.getContextsList()) {
-        Value contextSpecificConfig = configStore.getConfig(getConfigResource(request, context));
+        Value contextSpecificConfig = configStore.getConfig(getConfigResource(request, context))
+            .getConfig();
         config = merge(config, contextSpecificConfig);
       }
 
