@@ -53,8 +53,6 @@ class ConfigServiceGrpcImplTest {
     ConfigStore configStore = mock(ConfigStore.class);
     when(configStore.writeConfig(any(ConfigResource.class), anyString(), any(Value.class)))
         .thenReturn(10L);
-    when(configStore.getConfig(eq(configResourceWithoutContext))).thenReturn(emptyValue(), config1);
-    when(configStore.getConfig(eq(configResourceWithContext))).thenReturn(emptyValue());
 
     ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
 
@@ -86,8 +84,10 @@ class ConfigServiceGrpcImplTest {
   @Test
   void getConfig() throws IOException {
     ConfigStore configStore = mock(ConfigStore.class);
-    when(configStore.getConfig(eq(configResourceWithoutContext))).thenReturn(config1);
-    when(configStore.getConfig(eq(configResourceWithContext))).thenReturn(config2);
+    when(configStore.getConfig(eq(configResourceWithoutContext))).thenReturn(
+        ContextSpecificConfig.newBuilder().setConfig(config1).setContext(DEFAULT_CONTEXT).build());
+    when(configStore.getConfig(eq(configResourceWithContext))).thenReturn(
+        ContextSpecificConfig.newBuilder().setConfig(config2).setContext(CONTEXT1).build());
     ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
     StreamObserver<GetConfigResponse> responseObserver = mock(StreamObserver.class);
 

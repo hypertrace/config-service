@@ -37,11 +37,11 @@ public interface ConfigStore {
    * @param configResource
    * @return
    */
-  Value getConfig(ConfigResource configResource) throws IOException;
+  ContextSpecificConfig getConfig(ConfigResource configResource) throws IOException;
 
   /**
    * Get all the configs with the latest version(along with the context to which it applies) for the
-   * specified parameters.
+   * specified parameters, sorted in the ascending order of their creation time.
    *
    * @param resourceName
    * @param resourceNamespace

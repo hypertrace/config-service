@@ -126,21 +126,33 @@ public class ConfigServiceIntegrationTest {
 
   @Test
   public void testGetAllConfigs() {
-    // upsert config with default or no context
-    upsertConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, Optional.empty(), config1);
+    // upsert config with context1
+    upsertConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, Optional.of(CONTEXT_1), config1);
 
-    // upsert config with context
-    upsertConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, Optional.of(CONTEXT_1), config2);
+    // upsert config with context2
+    upsertConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, Optional.of(CONTEXT_2), config2);
 
+    // verify getAllConfigs
     List<ContextSpecificConfig> contextSpecificConfigList = getAllConfigs(RESOURCE_NAME,
         RESOURCE_NAMESPACE, TENANT_1).getContextSpecificConfigsList();
     assertEquals(2, contextSpecificConfigList.size());
-    assertEquals(
-        ContextSpecificConfig.newBuilder().setContext(DEFAULT_CONTEXT).setConfig(config1).build(),
-        contextSpecificConfigList.get(0));
-    assertEquals(
-        ContextSpecificConfig.newBuilder().setContext(CONTEXT_1).setConfig(config2).build(),
-        contextSpecificConfigList.get(1));
+    assertEquals(config1, contextSpecificConfigList.get(0).getConfig());
+    assertEquals(CONTEXT_1, contextSpecificConfigList.get(0).getContext());
+    assertEquals(config2, contextSpecificConfigList.get(1).getConfig());
+    assertEquals(CONTEXT_2, contextSpecificConfigList.get(1).getContext());
+
+    // delete first config and upsert it again so that its creation timestamp is greater than second config
+    deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, CONTEXT_1);
+    upsertConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, Optional.of(CONTEXT_1), config1);
+
+    // verify getAllConfigs - order should be reversed this time
+    contextSpecificConfigList = getAllConfigs(RESOURCE_NAME,
+        RESOURCE_NAMESPACE, TENANT_1).getContextSpecificConfigsList();
+    assertEquals(2, contextSpecificConfigList.size());
+    assertEquals(config2, contextSpecificConfigList.get(0).getConfig());
+    assertEquals(CONTEXT_2, contextSpecificConfigList.get(0).getContext());
+    assertEquals(config1, contextSpecificConfigList.get(1).getConfig());
+    assertEquals(CONTEXT_1, contextSpecificConfigList.get(1).getContext());
   }
 
   @Test

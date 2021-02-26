@@ -38,6 +38,8 @@ public class ConfigDocument implements Document {
   public static final String VERSION_FIELD_NAME = "configVersion";
   public static final String USER_ID_FIELD_NAME = "userId";
   public static final String CONFIG_FIELD_NAME = "config";
+  public static final String CREATION_TIMESTAMP_FIELD_NAME = "creationTimestamp";
+  public static final String UPDATE_TIMESTAMP_FIELD_NAME = "updateTimestamp";
 
   @JsonProperty(value = RESOURCE_FIELD_NAME)
   String resourceName;
@@ -62,6 +64,12 @@ public class ConfigDocument implements Document {
   @JsonProperty(value = CONFIG_FIELD_NAME)
   Value config;
 
+  @JsonProperty(value = CREATION_TIMESTAMP_FIELD_NAME)
+  long creationTimestamp;
+
+  @JsonProperty(value = UPDATE_TIMESTAMP_FIELD_NAME)
+  long updateTimestamp;
+
   @JsonCreator(mode = Mode.PROPERTIES)
   public ConfigDocument(@JsonProperty(RESOURCE_FIELD_NAME) String resourceName,
       @JsonProperty(RESOURCE_NAMESPACE_FIELD_NAME) String resourceNamespace,
@@ -69,7 +77,9 @@ public class ConfigDocument implements Document {
       @JsonProperty(CONTEXT_FIELD_NAME) String context,
       @JsonProperty(VERSION_FIELD_NAME) long configVersion,
       @JsonProperty(USER_ID_FIELD_NAME) String userId,
-      @JsonProperty(CONFIG_FIELD_NAME) Value config) {
+      @JsonProperty(CONFIG_FIELD_NAME) Value config,
+      @JsonProperty(CREATION_TIMESTAMP_FIELD_NAME) long creationTimestamp,
+      @JsonProperty(UPDATE_TIMESTAMP_FIELD_NAME) long updateTimestamp) {
     this.resourceName = resourceName;
     this.resourceNamespace = resourceNamespace;
     this.tenantId = tenantId;
@@ -77,6 +87,8 @@ public class ConfigDocument implements Document {
     this.configVersion = configVersion;
     this.userId = userId;
     this.config = config;
+    this.creationTimestamp = creationTimestamp;
+    this.updateTimestamp = updateTimestamp;
   }
 
   public static ConfigDocument fromJson(String json) throws IOException {
