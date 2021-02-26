@@ -98,7 +98,6 @@ public class DocumentConfigStore implements ConfigStore {
 
   private ContextSpecificConfig getConfig(ConfigResource configResource, long configVersion)
       throws IOException {
-    ContextSpecificConfig config = emptyConfig(configResource.getContext());
     Filter filter = getConfigResourceFilter(configResource)
         .and(Filter.eq(VERSION_FIELD_NAME, configVersion));
     Query query = new Query();
@@ -108,13 +107,10 @@ public class DocumentConfigStore implements ConfigStore {
       String documentString = documentIterator.next().toJson();
       ConfigDocument configDocument = ConfigDocument.fromJson(documentString);
       if (!ConfigServiceUtils.isNull(configDocument.getConfig())) {
-        config = ContextSpecificConfig.newBuilder().setConfig(configDocument.getConfig())
-            .setCreationTimestamp(configDocument.getCreationTimestamp())
-            .setUpdateTimestamp(configDocument.getUpdateTimestamp())
-            .setContext(configResource.getContext()).build();
+        return getContextSpecificConfig(configDocument);
       }
     }
-    return config;
+    return emptyConfig(configResource.getContext());
   }
 
   @Override
@@ -135,10 +131,7 @@ public class DocumentConfigStore implements ConfigStore {
       String context = configDocument.getContext();
       Value config = configDocument.getConfig();
       if (seenContexts.add(context) && !ConfigServiceUtils.isNull(config)) {
-        contextSpecificConfigList
-            .add(ContextSpecificConfig.newBuilder().setContext(context).setConfig(config)
-                .setCreationTimestamp(configDocument.getCreationTimestamp())
-                .setUpdateTimestamp(configDocument.getUpdateTimestamp()).build());
+        contextSpecificConfigList.add(getContextSpecificConfig(configDocument));
       }
     }
     Collections.sort(contextSpecificConfigList,
@@ -171,5 +164,13 @@ public class DocumentConfigStore implements ConfigStore {
         .and(Filter.eq(RESOURCE_NAMESPACE_FIELD_NAME, configResource.getResourceNamespace()))
         .and(Filter.eq(TENANT_ID_FIELD_NAME, configResource.getTenantId()))
         .and(Filter.eq(CONTEXT_FIELD_NAME, configResource.getContext()));
+  }
+
+  private ContextSpecificConfig getContextSpecificConfig(ConfigDocument configDocument) {
+    return ContextSpecificConfig.newBuilder().setConfig(configDocument.getConfig())
+        .setContext(configDocument.getContext())
+        .setCreationTimestamp(configDocument.getCreationTimestamp())
+        .setUpdateTimestamp(configDocument.getUpdateTimestamp())
+        .build();
   }
 }
