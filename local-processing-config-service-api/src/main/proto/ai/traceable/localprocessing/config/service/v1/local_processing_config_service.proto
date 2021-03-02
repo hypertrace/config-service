@@ -28,17 +28,6 @@ enum ProtectionMode {
 
 message ProtectedEndpoint {
   ProtectionMode protection_mode = 1;
-  oneof endpoint_specification {
-    HttpEndpointSpecification http_endpoint_specification = 2;
-    GrpcEndpointSpecification grpc_endpoint_specification = 3;
-  }
-}
-
-message HttpEndpointSpecification {
-  string path_regex = 1;
-  string method = 2;
-}
-
-message GrpcEndpointSpecification {
-  string path_regex = 1;
+  string url_pattern = 2;
+  string host_header = 3;
 }
