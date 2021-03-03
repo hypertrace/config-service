@@ -74,7 +74,7 @@ message GetAllConfigsRequest {
 }
 
 message GetAllConfigsResponse {
-  // list of config values along with the associated contexts, sorted in the ascending order of their creation time
+  // list of config values along with the associated contexts, sorted in the descending order of their creation time
   repeated ContextSpecificConfig context_specific_configs = 1;
 }
 

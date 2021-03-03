@@ -75,7 +75,7 @@ class SpacesConfigServiceImplTest {
             .getRule();
 
     assertIterableEquals(
-        List.of(createdRule1, createdRule2),
+        List.of(createdRule2, createdRule1),
         this.spacesStub.getRules(GetRulesRequest.getDefaultInstance()).getRulesList());
 
     SpaceConfigRule ruleToUpdate =
@@ -92,7 +92,7 @@ class SpacesConfigServiceImplTest {
     assertEquals(ruleToUpdate, updatedRule1);
 
     assertIterableEquals(
-        List.of(updatedRule1, createdRule2),
+        List.of(createdRule2, updatedRule1),
         this.spacesStub.getRules(GetRulesRequest.getDefaultInstance()).getRulesList());
 
     this.spacesStub.deleteRule(DeleteRuleRequest.newBuilder().setId(createdRule2.getId()).build());

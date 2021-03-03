@@ -116,12 +116,12 @@ class DocumentConfigStoreTest {
         .getAllConfigs(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID);
     assertEquals(2, contextSpecificConfigList.size());
     assertEquals(
-        ContextSpecificConfig.newBuilder().setContext(DEFAULT_CONTEXT).setConfig(config1)
-            .setCreationTimestamp(TIMESTAMP1).setUpdateTimestamp(TIMESTAMP2).build(),
-        contextSpecificConfigList.get(0));
-    assertEquals(
         ContextSpecificConfig.newBuilder().setContext(CONTEXT1).setConfig(config2)
             .setCreationTimestamp(TIMESTAMP3).setUpdateTimestamp(TIMESTAMP3).build(),
+        contextSpecificConfigList.get(0));
+    assertEquals(
+        ContextSpecificConfig.newBuilder().setContext(DEFAULT_CONTEXT).setConfig(config1)
+            .setCreationTimestamp(TIMESTAMP1).setUpdateTimestamp(TIMESTAMP2).build(),
         contextSpecificConfigList.get(1));
   }
 

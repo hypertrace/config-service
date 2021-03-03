@@ -2,6 +2,7 @@ package org.hypertrace.config.service.test;
 
 import static java.util.function.Predicate.not;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import com.google.common.collect.Tables;
 import com.google.protobuf.Value;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceImplBase;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
+import org.hypertrace.config.service.v1.ContextSpecificConfig.Builder;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.DeleteConfigResponse;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
@@ -134,13 +136,19 @@ public class MockGenericConfigService {
                   invocation.getArgument(1, StreamObserver.class);
               GetAllConfigsRequest request = invocation.getArgument(0, GetAllConfigsRequest.class);
               GetAllConfigsResponse response =
-                  GetAllConfigsResponse.newBuilder()
-                      .addAllContextSpecificConfigs(currentValues
-                          .row(
-                              ResourceType.of(
-                                  request.getResourceNamespace(), request.getResourceName()))
-                          .values())
-                      .build();
+                  currentValues
+                      .row(
+                          ResourceType.of(
+                              request.getResourceNamespace(), request.getResourceName()))
+                      .values()
+                      .stream()
+                      .collect(
+                          Collectors.collectingAndThen(
+                              Collectors.toList(),
+                              list ->
+                                  GetAllConfigsResponse.newBuilder()
+                                      .addAllContextSpecificConfigs(Lists.reverse(list))
+                                      .build()));
 
               responseStreamObserver.onNext(response);
               responseStreamObserver.onCompleted();

@@ -136,10 +136,10 @@ public class ConfigServiceIntegrationTest {
     List<ContextSpecificConfig> contextSpecificConfigList = getAllConfigs(RESOURCE_NAME,
         RESOURCE_NAMESPACE, TENANT_1).getContextSpecificConfigsList();
     assertEquals(2, contextSpecificConfigList.size());
-    assertEquals(config1, contextSpecificConfigList.get(0).getConfig());
-    assertEquals(CONTEXT_1, contextSpecificConfigList.get(0).getContext());
-    assertEquals(config2, contextSpecificConfigList.get(1).getConfig());
-    assertEquals(CONTEXT_2, contextSpecificConfigList.get(1).getContext());
+    assertEquals(config2, contextSpecificConfigList.get(0).getConfig());
+    assertEquals(CONTEXT_2, contextSpecificConfigList.get(0).getContext());
+    assertEquals(config1, contextSpecificConfigList.get(1).getConfig());
+    assertEquals(CONTEXT_1, contextSpecificConfigList.get(1).getContext());
 
     // delete first config and upsert it again so that its creation timestamp is greater than second config
     deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, CONTEXT_1);
@@ -149,10 +149,10 @@ public class ConfigServiceIntegrationTest {
     contextSpecificConfigList = getAllConfigs(RESOURCE_NAME,
         RESOURCE_NAMESPACE, TENANT_1).getContextSpecificConfigsList();
     assertEquals(2, contextSpecificConfigList.size());
-    assertEquals(config2, contextSpecificConfigList.get(0).getConfig());
-    assertEquals(CONTEXT_2, contextSpecificConfigList.get(0).getContext());
-    assertEquals(config1, contextSpecificConfigList.get(1).getConfig());
-    assertEquals(CONTEXT_1, contextSpecificConfigList.get(1).getContext());
+    assertEquals(config1, contextSpecificConfigList.get(0).getConfig());
+    assertEquals(CONTEXT_1, contextSpecificConfigList.get(0).getContext());
+    assertEquals(config2, contextSpecificConfigList.get(1).getConfig());
+    assertEquals(CONTEXT_2, contextSpecificConfigList.get(1).getContext());
   }
 
   @Test

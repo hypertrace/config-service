@@ -135,7 +135,7 @@ public class DocumentConfigStore implements ConfigStore {
       }
     }
     Collections.sort(contextSpecificConfigList,
-        Comparator.comparingLong(ContextSpecificConfig::getCreationTimestamp));
+        Comparator.comparingLong(ContextSpecificConfig::getCreationTimestamp).reversed());
     return contextSpecificConfigList;
   }
 
