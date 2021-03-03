@@ -22,6 +22,12 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter:5.5.2")
   testImplementation("org.mockito:mockito-core:3.3.3")
   testImplementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.3.3")
+
+  constraints {
+    runtimeOnly("org.mongodb:mongodb-driver-sync:4.1.2") {
+      because("https://snyk.io/vuln/SNYK-JAVA-ORGMONGODB-1079241")
+    }
+  }
 }
 
 tasks.test {

@@ -80,6 +80,9 @@ dependencies {
     runtimeOnly("io.netty:netty-handler-proxy:4.1.59.Final") {
       because("https://snyk.io/vuln/SNYK-JAVA-IONETTY-1070799")
     }
+    runtimeOnly("org.eclipse.jetty:jetty-server:9.4.37.v20210219") {
+      because("https://snyk.io/vuln/SNYK-JAVA-ORGECLIPSEJETTY-1080611")
+    }
   }
 }
 
