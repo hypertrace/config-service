@@ -71,7 +71,10 @@ class DocumentConfigStoreTest {
     when(collection.search(any(Query.class)))
         .thenReturn(documentList.iterator(), documentList.iterator());
 
-    configStore.writeConfig(configResource, USER_ID, config1);
+    ContextSpecificConfig contextSpecificConfig = configStore
+        .writeConfig(configResource, USER_ID, config1);
+    assertEquals(config1, contextSpecificConfig.getConfig());
+    assertEquals(TIMESTAMP1, contextSpecificConfig.getCreationTimestamp());
 
     ArgumentCaptor<Key> keyCaptor = ArgumentCaptor.forClass(Key.class);
     ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);

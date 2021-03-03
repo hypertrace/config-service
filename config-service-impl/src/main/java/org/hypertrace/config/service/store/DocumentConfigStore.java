@@ -67,7 +67,7 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   @Override
-  public long writeConfig(ConfigResource configResource, String userId, Value config)
+  public ContextSpecificConfig writeConfig(ConfigResource configResource, String userId, Value config)
       throws IOException {
     // Synchronization is required across different threads trying to write the latest config
     // for the same resource into the document store
@@ -82,12 +82,12 @@ public class DocumentConfigStore implements ConfigStore {
         creationTimestamp = existingConfig.getCreationTimestamp();
       }
       Key key = new ConfigDocumentKey(configResource, configVersion);
-      Document document = new ConfigDocument(configResource.getResourceName(),
+      ConfigDocument configDocument = new ConfigDocument(configResource.getResourceName(),
           configResource.getResourceNamespace(), configResource.getTenantId(),
           configResource.getContext(), configVersion, userId, config, creationTimestamp,
           updateTimestamp);
-      collection.upsert(key, document);
-      return configVersion;
+      collection.upsert(key, configDocument);
+      return getContextSpecificConfig(configDocument);
     }
   }
 

@@ -42,9 +42,12 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
       StreamObserver<UpsertConfigResponse> responseObserver) {
     try {
       ConfigResource configResource = getConfigResource(request);
-      configStore.writeConfig(configResource, getUserId(), request.getConfig());
+      ContextSpecificConfig contextSpecificConfig = configStore
+          .writeConfig(configResource, getUserId(), request.getConfig());
       responseObserver.onNext(UpsertConfigResponse.newBuilder()
           .setConfig(request.getConfig())
+          .setCreationTimestamp(contextSpecificConfig.getCreationTimestamp())
+          .setUpdateTimestamp(contextSpecificConfig.getUpdateTimestamp())
           .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
