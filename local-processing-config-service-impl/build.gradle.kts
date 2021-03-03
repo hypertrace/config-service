@@ -5,9 +5,8 @@ plugins {
 }
 
 dependencies {
-  api(project(":sensitive-data-config-service-api"))
+  api(project(":local-processing-config-service-api"))
   implementation("org.hypertrace.config.service:config-service-api")
-  implementation("ai.traceable.platform:insights-service-api:0.29.5")
   implementation("com.google.guava:guava:30.1-jre")
   implementation("com.google.protobuf:protobuf-java-util:3.14.0")
   implementation("com.typesafe:config:1.4.1")
@@ -23,7 +22,6 @@ dependencies {
   testImplementation("org.mockito:mockito-core:3.7.7")
   testImplementation("io.grpc:grpc-testing:1.35.0")
   testImplementation(testFixtures("org.hypertrace.config.service:config-service-api"))
-  testImplementation(testFixtures(project(":traceable-config-service")))
   testAnnotationProcessor("org.projectlombok:lombok:1.18.18")
   testCompileOnly("org.projectlombok:lombok:1.18.18")
 }

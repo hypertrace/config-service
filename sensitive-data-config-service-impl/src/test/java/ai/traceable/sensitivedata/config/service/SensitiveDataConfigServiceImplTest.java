@@ -24,7 +24,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.util.List;
 import java.util.Map;
-import org.hypertrace.config.service.MockGenericConfigService;
+import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

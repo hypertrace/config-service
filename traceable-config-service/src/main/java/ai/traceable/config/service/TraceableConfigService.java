@@ -1,5 +1,7 @@
 package ai.traceable.config.service;
 
+import ai.traceable.localprocessing.config.service.LocalProcessingConfigServiceImpl;
+import ai.traceable.localprocessing.config.service.LocalProcessingRulesServiceImpl;
 import ai.traceable.ratelimiting.service.RateLimitingConfigServiceImpl;
 import ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl;
 import ai.traceable.sensitivedata.config.service.SensitiveDataConfigServiceImpl;
@@ -62,15 +64,22 @@ public class TraceableConfigService extends PlatformService {
         new SensitiveDataConfigServiceImpl(managedChannel, config);
     RateLimitingConfigServiceImpl rateLimitingConfigService =
         new RateLimitingConfigServiceImpl(managedChannel, config);
+    LocalProcessingRulesServiceImpl localProcessingRulesService =
+        new LocalProcessingRulesServiceImpl(managedChannel);
     internalServerBuilder
         .addService(InterceptorUtil.wrapInterceptors(sensitiveDataConfigService))
-        .addService(InterceptorUtil.wrapInterceptors(rateLimitingConfigService));
+        .addService(InterceptorUtil.wrapInterceptors(rateLimitingConfigService))
+        .addService(InterceptorUtil.wrapInterceptors(localProcessingRulesService));
     internalTraceableConfigServer = internalServerBuilder.build();
 
     ServerBuilder<?> externalServerBuilder = ServerBuilder.forPort(externalServerPort);
     PiiFilterConfigServiceImpl piiFilterConfigService =
         new PiiFilterConfigServiceImpl(managedChannel, config);
-    externalServerBuilder.addService(InterceptorUtil.wrapInterceptors(piiFilterConfigService));
+    LocalProcessingConfigServiceImpl localProcessingConfigService =
+        new LocalProcessingConfigServiceImpl(managedChannel, config);
+    externalServerBuilder
+        .addService(InterceptorUtil.wrapInterceptors(piiFilterConfigService))
+        .addService(InterceptorUtil.wrapInterceptors(localProcessingConfigService));
     externalTraceableConfigServer = externalServerBuilder.build();
   }
 

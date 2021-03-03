@@ -35,7 +35,7 @@ tasks.register<DockerCreateContainer>("createMongoContainer") {
   targetImageId(tasks.getByName<DockerPullImage>("pullMongoImage").image)
   containerName.set("mongo-local")
   hostConfig.network.set(tasks.getByName<DockerCreateNetwork>("createIntegrationTestNetwork").networkId)
-  hostConfig.portBindings.set(listOf("27017:27017"))
+  hostConfig.portBindings.set(listOf("37017:27017"))
   hostConfig.autoRemove.set(true)
 }
 
@@ -58,6 +58,7 @@ tasks.integrationTest {
 dependencies {
   implementation(project(":sensitive-data-config-service-impl"))
   implementation(project(":rate-limiting-config-service-impl"))
+  implementation(project(":local-processing-config-service-impl"))
   implementation("org.hypertrace.config.service:config-service")
   implementation("org.hypertrace.config.service:config-service-impl")
   implementation("org.hypertrace.core.grpcutils:grpc-server-utils:0.3.3")

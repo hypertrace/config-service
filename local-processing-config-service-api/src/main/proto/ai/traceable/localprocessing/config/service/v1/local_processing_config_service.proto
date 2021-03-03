@@ -5,6 +5,8 @@ package ai.traceable.localprocessing.config.service.v1;
 option java_multiple_files = true;
 option go_package = "github.com/Traceableai/config-service/localprocessing/v1";
 
+import "ai/traceable/localprocessing/config/service/v1/protection_mode_config.proto";
+
 service LocalProcessingConfigService {
   rpc GetLocalProcessingConfig(GetLocalProcessingConfigRequest) returns (GetLocalProcessingConfigResponse) {}
 }
@@ -13,21 +15,4 @@ message GetLocalProcessingConfigRequest {}
 
 message GetLocalProcessingConfigResponse {
   ProtectionModeConfig protection_mode_config = 1;
-}
-
-message ProtectionModeConfig {
-  ProtectionMode default_protection_mode = 1;
-  repeated ProtectedEndpoint protected_endpoints = 2;
-}
-
-enum ProtectionMode {
-  PROTECTION_MODE_UNSPECIFIED = 0;
-  PROTECTION_MODE_ADVANCED = 1;
-  PROTECTION_MODE_CORE = 2;
-}
-
-message ProtectedEndpoint {
-  ProtectionMode protection_mode = 1;
-  string url_pattern = 2;
-  string host_header = 3;
 }

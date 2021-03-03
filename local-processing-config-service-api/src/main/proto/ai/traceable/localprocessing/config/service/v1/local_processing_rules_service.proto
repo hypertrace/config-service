@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package ai.traceable.localprocessing.config.service.v1;
+
+option java_multiple_files = true;
+option go_package = "github.com/Traceableai/config-service/localprocessing/v1";
+
+import "ai/traceable/localprocessing/config/service/v1/protection_mode_config.proto";
+
+service LocalProcessingRulesService {
+  rpc CreateLocalProcessingRule(CreateLocalProcessingRuleRequest) returns (CreateLocalProcessingRuleResponse) {}
+
+  rpc UpdateLocalProcessingRule(UpdateLocalProcessingRuleRequest) returns (UpdateLocalProcessingRuleResponse) {}
+
+  rpc GetAllLocalProcessingRules(GetAllLocalProcessingRulesRequest) returns (GetAllLocalProcessingRulesResponse) {}
+
+  rpc DeleteLocalProcessingRule(DeleteLocalProcessingRuleRequest) returns (DeleteLocalProcessingRuleResponse) {}
+}
+
+message CreateLocalProcessingRuleRequest {
+  NewLocalProcessingRule new_local_processing_rule = 1;
+}
+
+message CreateLocalProcessingRuleResponse {
+  LocalProcessingRuleDetails local_processing_rule_details = 1;
+}
+
+message UpdateLocalProcessingRuleRequest {
+  LocalProcessingRule local_processing_rule = 1;
+}
+
+message UpdateLocalProcessingRuleResponse {
+  LocalProcessingRuleDetails local_processing_rule_details = 1;
+}
+
+message GetAllLocalProcessingRulesRequest {}
+
+message GetAllLocalProcessingRulesResponse {
+  repeated LocalProcessingRuleDetails local_processing_rules_details = 1;
+}
+
+message DeleteLocalProcessingRuleRequest {
+  string local_processing_rule_id = 1;
+}
+
+message DeleteLocalProcessingRuleResponse {}
+
+message NewLocalProcessingRule {
+  string url_pattern = 1;
+  string host_header = 2;
+  ProtectionMode protection_mode = 3;
+}
+
+message LocalProcessingRule {
+  string id = 1;
+  string url_pattern = 2;
+  string host_header = 3;
+  ProtectionMode protection_mode = 4;
+}
+
+message LocalProcessingRuleDetails {
+  LocalProcessingRule rule = 1;
+  LocalProcessingRuleMetadata metadata = 2;
+}
+
+message LocalProcessingRuleMetadata {
+  int64 creation_timestamp = 1;
+}
