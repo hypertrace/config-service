@@ -41,7 +41,7 @@ public interface ConfigStore {
 
   /**
    * Get all the configs with the latest version(along with the context to which it applies) for the
-   * specified parameters, sorted in the ascending order of their creation time.
+   * specified parameters, sorted in the descending order of their creation time.
    *
    * @param resourceName
    * @param resourceNamespace
