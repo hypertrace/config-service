@@ -58,7 +58,7 @@ dependencies {
   implementation(project(":config-service-impl"))
   implementation(project(":spaces-config-service-impl"))
   implementation("org.hypertrace.core.grpcutils:grpc-server-utils:0.3.3")
-  implementation("org.hypertrace.core.serviceframework:platform-service-framework:0.1.18")
+  implementation("org.hypertrace.core.serviceframework:platform-service-framework:0.1.21")
   implementation("com.typesafe:config:1.4.0")
   implementation("org.slf4j:slf4j-api:1.7.30")
 
@@ -79,9 +79,6 @@ dependencies {
     }
     runtimeOnly("io.netty:netty-handler-proxy:4.1.59.Final") {
       because("https://snyk.io/vuln/SNYK-JAVA-IONETTY-1070799")
-    }
-    runtimeOnly("org.eclipse.jetty:jetty-server:9.4.37.v20210219") {
-      because("https://snyk.io/vuln/SNYK-JAVA-ORGECLIPSEJETTY-1080611")
     }
   }
 }
