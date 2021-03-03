@@ -115,7 +115,9 @@ public class MockGenericConfigService {
                       .setConfig(request.getConfig()).setCreationTimestamp(creationTimestamp)
                       .setUpdateTimestamp(updateTimestamp).build());
               responseStreamObserver.onNext(
-                  UpsertConfigResponse.newBuilder().setConfig(request.getConfig()).build());
+                  UpsertConfigResponse.newBuilder().setConfig(request.getConfig())
+                      .setCreationTimestamp(creationTimestamp).setUpdateTimestamp(updateTimestamp)
+                      .build());
               responseStreamObserver.onCompleted();
               return null;
             })
