@@ -27,9 +27,9 @@ public interface ConfigStore {
    * @param configResource
    * @param userId
    * @param config
-   * @return the version allocated to the newly inserted configuration
+   * @return the context specific config written to the store
    */
-  long writeConfig(ConfigResource configResource, String userId, Value config) throws IOException;
+  ContextSpecificConfig writeConfig(ConfigResource configResource, String userId, Value config) throws IOException;
 
   /**
    * Get the config with the latest version for the specified resource.

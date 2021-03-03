@@ -52,7 +52,11 @@ class ConfigServiceGrpcImplTest {
   void upsertConfig() throws IOException {
     ConfigStore configStore = mock(ConfigStore.class);
     when(configStore.writeConfig(any(ConfigResource.class), anyString(), any(Value.class)))
-        .thenReturn(10L);
+        .thenAnswer(invocation -> {
+          Value config = invocation.getArgument(2, Value.class);
+          return ContextSpecificConfig.newBuilder().setConfig(config).setCreationTimestamp(123L)
+              .setUpdateTimestamp(456L).build();
+        });
 
     ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
 
@@ -79,6 +83,8 @@ class ConfigServiceGrpcImplTest {
     assertEquals(config1, actualResponseList.get(0).getConfig());
     assertEquals(config2, actualResponseList.get(1).getConfig());
     assertEquals(config2, actualResponseList.get(2).getConfig());
+    assertEquals(123L, actualResponseList.get(0).getCreationTimestamp());
+    assertEquals(456L, actualResponseList.get(0).getUpdateTimestamp());
   }
 
   @Test
