@@ -13,7 +13,7 @@ dependencies {
   implementation("com.typesafe:config:1.4.0")
   implementation("org.slf4j:slf4j-api:1.7.30")
 
-  implementation("org.hypertrace.core.documentstore:document-store:0.5.3")
+  implementation("org.hypertrace.core.documentstore:document-store:0.5.4")
   implementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.3.3")
 
   annotationProcessor("org.projectlombok:lombok:1.18.12")
@@ -22,12 +22,6 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter:5.5.2")
   testImplementation("org.mockito:mockito-core:3.3.3")
   testImplementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.3.3")
-
-  constraints {
-    runtimeOnly("org.mongodb:mongodb-driver-sync:4.1.2") {
-      because("https://snyk.io/vuln/SNYK-JAVA-ORGMONGODB-1079241")
-    }
-  }
 }
 
 tasks.test {
