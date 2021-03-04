@@ -65,10 +65,10 @@ dependencies {
       because("https://snyk.io/vuln/SNYK-JAVA-COMGOOGLEGUAVA-1015415")
     }
   }
-  testFixturesApi("io.grpc:grpc-api:1.35.0")
+  testFixturesApi("io.grpc:grpc-api:1.36.0")
   testFixturesApi(project(":config-service-api"))
-  testFixturesImplementation("io.grpc:grpc-stub:1.35.0")
-  testFixturesImplementation("io.grpc:grpc-core:1.35.0")
+  testFixturesImplementation("io.grpc:grpc-stub:1.36.0")
+  testFixturesImplementation("io.grpc:grpc-core:1.36.0")
   testFixturesImplementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.3.3")
   testFixturesImplementation("org.mockito:mockito-core:3.7.0")
   testFixturesImplementation("com.google.guava:guava:30.1-jre")
