@@ -1,0 +1,21 @@
+{
+  "_id" : "config1:namespace1:tenant1:DEFAULT-CONTEXT:1",
+  "config" : {
+    "k1" : 10,
+    "k2" : "v2",
+    "k3" : [
+      {
+        "k31" : "v31"
+      },
+      {
+        "k32" : "v32"
+      }
+    ]
+  },
+  "configVersion" : 1,
+  "context" : "DEFAULT-CONTEXT",
+  "resourceName" : "config1",
+  "resourceNamespace" : "namespace1",
+  "tenantId" : "tenant1",
+  "userId" : ""
+}

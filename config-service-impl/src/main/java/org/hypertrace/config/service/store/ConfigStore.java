@@ -27,9 +27,9 @@ public interface ConfigStore {
    * @param configResource
    * @param userId
    * @param config
-   * @return the version allocated to the newly inserted configuration
+   * @return the context specific config written to the store
    */
-  long writeConfig(ConfigResource configResource, String userId, Value config) throws IOException;
+  ContextSpecificConfig writeConfig(ConfigResource configResource, String userId, Value config) throws IOException;
 
   /**
    * Get the config with the latest version for the specified resource.
@@ -37,11 +37,11 @@ public interface ConfigStore {
    * @param configResource
    * @return
    */
-  Value getConfig(ConfigResource configResource) throws IOException;
+  ContextSpecificConfig getConfig(ConfigResource configResource) throws IOException;
 
   /**
    * Get all the configs with the latest version(along with the context to which it applies) for the
-   * specified parameters.
+   * specified parameters, sorted in the descending order of their creation time.
    *
    * @param resourceName
    * @param resourceNamespace

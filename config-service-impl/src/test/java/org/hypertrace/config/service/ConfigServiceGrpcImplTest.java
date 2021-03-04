@@ -52,9 +52,11 @@ class ConfigServiceGrpcImplTest {
   void upsertConfig() throws IOException {
     ConfigStore configStore = mock(ConfigStore.class);
     when(configStore.writeConfig(any(ConfigResource.class), anyString(), any(Value.class)))
-        .thenReturn(10L);
-    when(configStore.getConfig(eq(configResourceWithoutContext))).thenReturn(emptyValue(), config1);
-    when(configStore.getConfig(eq(configResourceWithContext))).thenReturn(emptyValue());
+        .thenAnswer(invocation -> {
+          Value config = invocation.getArgument(2, Value.class);
+          return ContextSpecificConfig.newBuilder().setConfig(config).setCreationTimestamp(123L)
+              .setUpdateTimestamp(456L).build();
+        });
 
     ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
 
@@ -81,13 +83,17 @@ class ConfigServiceGrpcImplTest {
     assertEquals(config1, actualResponseList.get(0).getConfig());
     assertEquals(config2, actualResponseList.get(1).getConfig());
     assertEquals(config2, actualResponseList.get(2).getConfig());
+    assertEquals(123L, actualResponseList.get(0).getCreationTimestamp());
+    assertEquals(456L, actualResponseList.get(0).getUpdateTimestamp());
   }
 
   @Test
   void getConfig() throws IOException {
     ConfigStore configStore = mock(ConfigStore.class);
-    when(configStore.getConfig(eq(configResourceWithoutContext))).thenReturn(config1);
-    when(configStore.getConfig(eq(configResourceWithContext))).thenReturn(config2);
+    when(configStore.getConfig(eq(configResourceWithoutContext))).thenReturn(
+        ContextSpecificConfig.newBuilder().setConfig(config1).setContext(DEFAULT_CONTEXT).build());
+    when(configStore.getConfig(eq(configResourceWithContext))).thenReturn(
+        ContextSpecificConfig.newBuilder().setConfig(config2).setContext(CONTEXT1).build());
     ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
     StreamObserver<GetConfigResponse> responseObserver = mock(StreamObserver.class);
 

@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.service.v1.ContextSpecificConfig;
 
 /**
  * This class contains utility methods.
@@ -83,5 +84,10 @@ public class ConfigServiceUtils {
 
   public static Value emptyValue() {
     return EMPTY_VALUE;
+  }
+
+  public static ContextSpecificConfig emptyConfig(String context) {
+    return ContextSpecificConfig.newBuilder().setConfig(EMPTY_VALUE).setContext(context)
+        .setCreationTimestamp(0).setUpdateTimestamp(0).build();
   }
 }

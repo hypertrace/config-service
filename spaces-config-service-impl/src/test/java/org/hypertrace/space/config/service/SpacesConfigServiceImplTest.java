@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 
 import java.util.List;
-import org.hypertrace.config.service.MockGenericConfigService;
+import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.spaces.config.service.v1.AttributeValueRuleData;
 import org.hypertrace.spaces.config.service.v1.CreateRuleRequest;
 import org.hypertrace.spaces.config.service.v1.DeleteRuleRequest;
@@ -75,7 +75,7 @@ class SpacesConfigServiceImplTest {
             .getRule();
 
     assertIterableEquals(
-        List.of(createdRule1, createdRule2),
+        List.of(createdRule2, createdRule1),
         this.spacesStub.getRules(GetRulesRequest.getDefaultInstance()).getRulesList());
 
     SpaceConfigRule ruleToUpdate =
@@ -92,7 +92,7 @@ class SpacesConfigServiceImplTest {
     assertEquals(ruleToUpdate, updatedRule1);
 
     assertIterableEquals(
-        List.of(updatedRule1, createdRule2),
+        List.of(createdRule2, updatedRule1),
         this.spacesStub.getRules(GetRulesRequest.getDefaultInstance()).getRulesList());
 
     this.spacesStub.deleteRule(DeleteRuleRequest.newBuilder().setId(createdRule2.getId()).build());

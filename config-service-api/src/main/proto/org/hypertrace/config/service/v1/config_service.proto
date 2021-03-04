@@ -39,6 +39,12 @@ message UpsertConfigRequest {
 message UpsertConfigResponse {
   // config value upserted into the store
   google.protobuf.Value config = 1;
+
+  // timestamp (in milliseconds since epoch) at which this config was created
+  int64 creation_timestamp = 2;
+
+  // timestamp (in milliseconds since epoch) at which this config was last updated
+  int64 update_timestamp = 3;
 }
 
 message GetConfigRequest {
@@ -68,7 +74,7 @@ message GetAllConfigsRequest {
 }
 
 message GetAllConfigsResponse {
-  // list of config values along with the associated contexts
+  // list of config values along with the associated contexts, sorted in the descending order of their creation time
   repeated ContextSpecificConfig context_specific_configs = 1;
 }
 
@@ -78,6 +84,12 @@ message ContextSpecificConfig {
 
   // config value which applies to the above context
   google.protobuf.Value config = 2;
+
+  // timestamp (in milliseconds since epoch) at which this config was created
+  int64 creation_timestamp = 3;
+
+  // timestamp (in milliseconds since epoch) at which this config was last updated
+  int64 update_timestamp = 4;
 }
 
 message DeleteConfigRequest {

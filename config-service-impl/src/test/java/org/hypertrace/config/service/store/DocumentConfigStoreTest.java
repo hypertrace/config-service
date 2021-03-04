@@ -42,6 +42,9 @@ class DocumentConfigStoreTest {
 
   private static final long CONFIG_VERSION = 5;
   private static final String USER_ID = "user1";
+  private static final long TIMESTAMP1 = 100L;
+  private static final long TIMESTAMP2 = 200L;
+  private static final long TIMESTAMP3 = 300L;
   private static DocumentConfigStore configStore = new DocumentConfigStore();
   private static Value config1 = getConfig1();
   private static Value config2 = getConfig2();
@@ -63,10 +66,15 @@ class DocumentConfigStoreTest {
   @Test
   void writeConfig() throws IOException {
     List<Document> documentList = Collections
-        .singletonList(getConfigDocument(DEFAULT_CONTEXT, CONFIG_VERSION, config1));
-    when(collection.search(any(Query.class))).thenReturn(documentList.iterator());
+        .singletonList(
+            getConfigDocument(DEFAULT_CONTEXT, CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP2));
+    when(collection.search(any(Query.class)))
+        .thenReturn(documentList.iterator(), documentList.iterator());
 
-    configStore.writeConfig(configResource, USER_ID, config1);
+    ContextSpecificConfig contextSpecificConfig = configStore
+        .writeConfig(configResource, USER_ID, config1);
+    assertEquals(config1, contextSpecificConfig.getConfig());
+    assertEquals(TIMESTAMP1, contextSpecificConfig.getCreationTimestamp());
 
     ArgumentCaptor<Key> keyCaptor = ArgumentCaptor.forClass(Key.class);
     ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
@@ -76,42 +84,51 @@ class DocumentConfigStoreTest {
     Document document = documentCaptor.getValue();
     long newVersion = CONFIG_VERSION + 1;
     assertEquals(new ConfigDocumentKey(configResource, newVersion), key);
-    assertEquals(getConfigDocument(DEFAULT_CONTEXT, newVersion, config1), document);
+    assertEquals(getConfigDocument(DEFAULT_CONTEXT, newVersion, config1, TIMESTAMP1,
+        ((ConfigDocument) document).getUpdateTimestamp()), document);
   }
 
   @Test
   void getConfig() throws IOException {
     List<Document> documentList = Collections
-        .singletonList(getConfigDocument(DEFAULT_CONTEXT, CONFIG_VERSION, config1));
+        .singletonList(
+            getConfigDocument(DEFAULT_CONTEXT, CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP2));
     when(collection.search(any(Query.class)))
         .thenReturn(documentList.iterator(), documentList.iterator());
 
-    Value config = configStore.getConfig(configResource);
-    assertEquals(config1, config);
+    ContextSpecificConfig expectedConfig = ContextSpecificConfig.newBuilder().setConfig(config1)
+        .setContext(DEFAULT_CONTEXT).setCreationTimestamp(TIMESTAMP1).setUpdateTimestamp(TIMESTAMP2)
+        .build();
+    ContextSpecificConfig actualConfig = configStore.getConfig(configResource);
+    assertEquals(expectedConfig, actualConfig);
   }
 
   @Test
   void getAllConfigs() throws IOException {
     List<Document> documentList = List
-        .of(getConfigDocument(DEFAULT_CONTEXT, CONFIG_VERSION, config1),
-            getConfigDocument(DEFAULT_CONTEXT, CONFIG_VERSION - 1, config2),
-            getConfigDocument(CONTEXT1, 1L, config2));
+        .of(getConfigDocument(CONTEXT1, 1L, config2, TIMESTAMP3, TIMESTAMP3),
+            getConfigDocument(DEFAULT_CONTEXT, CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP2),
+            getConfigDocument(DEFAULT_CONTEXT, CONFIG_VERSION - 1, config2, TIMESTAMP1,
+                TIMESTAMP1));
     when(collection.search(any(Query.class))).thenReturn(documentList.iterator());
 
     List<ContextSpecificConfig> contextSpecificConfigList = configStore
         .getAllConfigs(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID);
     assertEquals(2, contextSpecificConfigList.size());
     assertEquals(
-        ContextSpecificConfig.newBuilder().setContext(DEFAULT_CONTEXT).setConfig(config1).build(),
+        ContextSpecificConfig.newBuilder().setContext(CONTEXT1).setConfig(config2)
+            .setCreationTimestamp(TIMESTAMP3).setUpdateTimestamp(TIMESTAMP3).build(),
         contextSpecificConfigList.get(0));
     assertEquals(
-        ContextSpecificConfig.newBuilder().setContext(CONTEXT1).setConfig(config2).build(),
+        ContextSpecificConfig.newBuilder().setContext(DEFAULT_CONTEXT).setConfig(config1)
+            .setCreationTimestamp(TIMESTAMP1).setUpdateTimestamp(TIMESTAMP2).build(),
         contextSpecificConfigList.get(1));
   }
 
-  private static Document getConfigDocument(String context, long version, Value config) {
+  private static Document getConfigDocument(String context, long version, Value config,
+      long creationTimestamp, long updateTimestamp) {
     return new ConfigDocument(RESOURCE_NAME, RESOURCE_NAMESPACE,
-        TENANT_ID, context, version, USER_ID, config);
+        TENANT_ID, context, version, USER_ID, config, creationTimestamp, updateTimestamp);
   }
 
   public static class MockDatastore implements Datastore {

@@ -1,7 +1,8 @@
-package org.hypertrace.config.service;
+package org.hypertrace.config.service.test;
 
 import static java.util.function.Predicate.not;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import com.google.common.collect.Tables;
 import com.google.protobuf.Value;
@@ -54,7 +55,7 @@ public class MockGenericConfigService {
   private final ManagedChannel configChannel;
   private final RequestContext context = RequestContext.forTenantId("default tenant");
   private final String DEFAULT_CONFIG_CONTEXT = "__default";
-  private final Table<ResourceType, String, Value> currentValues =
+  private final Table<ResourceType, String, ContextSpecificConfig> currentValues =
       Tables.newCustomTable(new LinkedHashMap<>(), LinkedHashMap::new);
 
   private final ConfigServiceImplBase mockConfigService =
@@ -102,12 +103,23 @@ public class MockGenericConfigService {
               UpsertConfigRequest request = invocation.getArgument(0, UpsertConfigRequest.class);
               StreamObserver<UpsertConfigResponse> responseStreamObserver =
                   invocation.getArgument(1, StreamObserver.class);
+              ResourceType resourceType = ResourceType
+                  .of(request.getResourceNamespace(), request.getResourceName());
+              String configContext = configContextOrDefault(request.getContext());
+              ContextSpecificConfig existingConfig = currentValues.get(resourceType, configContext);
+              long updateTimestamp = System.currentTimeMillis();
+              long creationTimestamp =
+                  existingConfig == null ? updateTimestamp : existingConfig.getCreationTimestamp();
               currentValues.put(
-                  ResourceType.of(request.getResourceNamespace(), request.getResourceName()),
-                  configContextOrDefault(request.getContext()),
-                  request.getConfig());
+                  resourceType,
+                  configContext,
+                  ContextSpecificConfig.newBuilder().setContext(configContext)
+                      .setConfig(request.getConfig()).setCreationTimestamp(creationTimestamp)
+                      .setUpdateTimestamp(updateTimestamp).build());
               responseStreamObserver.onNext(
-                  UpsertConfigResponse.newBuilder().setConfig(request.getConfig()).build());
+                  UpsertConfigResponse.newBuilder().setConfig(request.getConfig())
+                      .setCreationTimestamp(creationTimestamp).setUpdateTimestamp(updateTimestamp)
+                      .build());
               responseStreamObserver.onCompleted();
               return null;
             })
@@ -130,14 +142,12 @@ public class MockGenericConfigService {
                               request.getResourceNamespace(), request.getResourceName()))
                       .values()
                       .stream()
-                      .map(value -> ContextSpecificConfig.newBuilder().setConfig(value))
-                      .map(Builder::build)
                       .collect(
                           Collectors.collectingAndThen(
                               Collectors.toList(),
                               list ->
                                   GetAllConfigsResponse.newBuilder()
-                                      .addAllContextSpecificConfigs(list)
+                                      .addAllContextSpecificConfigs(Lists.reverse(list))
                                       .build()));
 
               responseStreamObserver.onNext(response);
@@ -187,6 +197,7 @@ public class MockGenericConfigService {
                                       request.getResourceNamespace(), request.getResourceName()),
                                   context))
                       .filter(Objects::nonNull)
+                      .map(ContextSpecificConfig::getConfig)
                       .collect(
                           Collectors.collectingAndThen(Collectors.toList(), this::mergeValues));
 
