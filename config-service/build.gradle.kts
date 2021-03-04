@@ -63,7 +63,7 @@ dependencies {
   implementation("org.slf4j:slf4j-api:1.7.30")
 
   runtimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:2.13.3")
-  runtimeOnly("io.grpc:grpc-netty:1.35.0")
+  runtimeOnly("io.grpc:grpc-netty:1.36.0")
 
   //Integration test dependencies
   integrationTestImplementation("org.junit.jupiter:junit-jupiter:5.6.2")
@@ -73,11 +73,11 @@ dependencies {
   integrationTestImplementation("org.hypertrace.core.serviceframework:integrationtest-service-framework:0.1.18")
   integrationTestImplementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.3.3")
 
-  testFixturesApi("io.grpc:grpc-api:1.35.0")
+  testFixturesApi("io.grpc:grpc-api:1.36.0")
   testFixturesApi(project(":config-service-api"))
   testFixturesImplementation(project(":config-service-impl"))
-  testFixturesImplementation("io.grpc:grpc-stub:1.35.0")
-  testFixturesImplementation("io.grpc:grpc-core:1.35.0")
+  testFixturesImplementation("io.grpc:grpc-stub:1.36.0")
+  testFixturesImplementation("io.grpc:grpc-core:1.36.0")
   testFixturesImplementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.3.3")
   testFixturesImplementation("org.mockito:mockito-core:3.7.0")
   testFixturesImplementation("com.google.guava:guava:30.1-jre")
