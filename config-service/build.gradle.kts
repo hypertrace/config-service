@@ -72,7 +72,6 @@ dependencies {
   integrationTestImplementation(project(":config-service-impl"))
   integrationTestImplementation("org.hypertrace.core.serviceframework:integrationtest-service-framework:0.1.18")
   integrationTestImplementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.3.3")
-  
   constraints {
     runtimeOnly("io.netty:netty-codec-http2:4.1.59.Final") {
       because("https://snyk.io/vuln/SNYK-JAVA-IONETTY-1070799")
