@@ -8,6 +8,9 @@ import static org.hypertrace.config.service.TestUtils.getConfig1;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.io.Resources;
+import com.google.protobuf.NullValue;
+import com.google.protobuf.Value;
+import com.google.protobuf.util.JsonFormat;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +23,15 @@ public class ConfigDocumentTest {
     long timestamp = System.currentTimeMillis();
     ConfigDocument configDocument = new ConfigDocument(RESOURCE_NAME, RESOURCE_NAMESPACE,
         TENANT_ID, DEFAULT_CONTEXT, 15, "user1", getConfig1(), timestamp, timestamp);
+    assertEquals(configDocument, ConfigDocument.fromJson(configDocument.toJson()));
+  }
+
+  @Test
+  void convertDocumentContainingNullValue() throws IOException {
+    long timestamp = System.currentTimeMillis();
+    Value nullValue = Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
+    ConfigDocument configDocument = new ConfigDocument(RESOURCE_NAME, RESOURCE_NAMESPACE,
+        TENANT_ID, DEFAULT_CONTEXT, 15, "user1", nullValue, timestamp, timestamp);
     assertEquals(configDocument, ConfigDocument.fromJson(configDocument.toJson()));
   }
 
