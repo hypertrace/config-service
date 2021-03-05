@@ -63,7 +63,7 @@ dependencies {
   implementation("org.hypertrace.config.service:config-service-impl")
   implementation("org.hypertrace.core.grpcutils:grpc-server-utils:0.3.3")
   implementation("org.hypertrace.core.serviceframework:platform-service-framework:0.1.20")
-  runtimeOnly("io.grpc:grpc-netty:1.35.0")
+  runtimeOnly("io.grpc:grpc-netty:1.36.0")
   implementation("com.typesafe:config:1.4.1")
   implementation("org.slf4j:slf4j-api:1.7.30")
   runtimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:2.14.0")
