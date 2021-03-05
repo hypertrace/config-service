@@ -7,6 +7,6 @@ package ai.traceable.ratelimiting.config.service.v1;
 import "ai/traceable/ratelimiting/config/service/v1/rate_limited_entity_type.proto";
 
 message RateLimitedEntity {
-	string entity_id = 1;
-	RateLimitedEntityType entity_type = 2;
+    string entity_id = 1;
+    RateLimitedEntityType entity_type = 2;
 }

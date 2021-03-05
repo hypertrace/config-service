@@ -13,6 +13,7 @@ class AutomaticSecretRedactionStrategyConfigTest {
     assertEquals(
         automaticSecretRedactionStrategyConfig,
         AutomaticSecretRedactionStrategyConfig.fromValue(
-            automaticSecretRedactionStrategyConfig.toValue()).get());
+                automaticSecretRedactionStrategyConfig.toValue())
+            .get());
   }
 }

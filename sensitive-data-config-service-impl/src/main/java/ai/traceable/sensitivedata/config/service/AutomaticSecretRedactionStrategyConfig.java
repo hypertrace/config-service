@@ -12,8 +12,7 @@ public class AutomaticSecretRedactionStrategyConfig {
   boolean enabled;
 
   public Value toValue() {
-    Value redactionStrategyValue =
-        Value.newBuilder().setBoolValue(enabled).build();
+    Value redactionStrategyValue = Value.newBuilder().setBoolValue(enabled).build();
     Struct struct =
         Struct.newBuilder().putFields(ENABLED_FIELD_NAME, redactionStrategyValue).build();
     return Value.newBuilder().setStructValue(struct).build();
@@ -24,8 +23,7 @@ public class AutomaticSecretRedactionStrategyConfig {
       return Optional.empty();
     }
     Value enabledValue = value.getStructValue().getFieldsMap().get(ENABLED_FIELD_NAME);
-    if (enabledValue == null
-        || enabledValue.getKindCase() != KindCase.BOOL_VALUE) {
+    if (enabledValue == null || enabledValue.getKindCase() != KindCase.BOOL_VALUE) {
       return Optional.empty();
     }
     return Optional.of(new AutomaticSecretRedactionStrategyConfig(enabledValue.getBoolValue()));

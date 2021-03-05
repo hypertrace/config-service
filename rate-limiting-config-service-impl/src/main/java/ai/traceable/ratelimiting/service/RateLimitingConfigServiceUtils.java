@@ -23,6 +23,6 @@ public class RateLimitingConfigServiceUtils {
   }
 
   public static String getRuleRateLimitedEntityContext(RateLimitedEntity rateLimitedEntity) {
-    return rateLimitedEntity.getEntityType().toString() +  ":" + rateLimitedEntity.getEntityId();
+    return rateLimitedEntity.getEntityType().toString() + ":" + rateLimitedEntity.getEntityId();
   }
 }

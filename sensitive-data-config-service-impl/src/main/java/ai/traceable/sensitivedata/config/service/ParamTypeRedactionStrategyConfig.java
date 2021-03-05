@@ -16,7 +16,9 @@ public class ParamTypeRedactionStrategyConfig {
     Value redactionStrategyValue =
         Value.newBuilder().setStringValue(redactionStrategy.name()).build();
     Struct struct =
-        Struct.newBuilder().putFields(REDACTION_STRATEGY_FIELD_NAME, redactionStrategyValue).build();
+        Struct.newBuilder()
+            .putFields(REDACTION_STRATEGY_FIELD_NAME, redactionStrategyValue)
+            .build();
     return Value.newBuilder().setStructValue(struct).build();
   }
 
@@ -24,8 +26,8 @@ public class ParamTypeRedactionStrategyConfig {
     if (value == null || value.getKindCase() != KindCase.STRUCT_VALUE) {
       return Optional.empty();
     }
-    Value redactionStrategyValue = value.getStructValue().getFieldsMap().get(
-        REDACTION_STRATEGY_FIELD_NAME);
+    Value redactionStrategyValue =
+        value.getStructValue().getFieldsMap().get(REDACTION_STRATEGY_FIELD_NAME);
     if (redactionStrategyValue == null
         || redactionStrategyValue.getKindCase() != KindCase.STRING_VALUE) {
       return Optional.empty();

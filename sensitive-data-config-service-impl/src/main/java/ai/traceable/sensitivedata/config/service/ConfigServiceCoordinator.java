@@ -23,7 +23,8 @@ public interface ConfigServiceCoordinator {
 
   boolean isAutomaticSecretRedactionStrategyEnabled(RequestContext requestContext);
 
-  RedactionRule createRedactionRule(RequestContext requestContext, NewRedactionRule newRedactionRule);
+  RedactionRule createRedactionRule(
+      RequestContext requestContext, NewRedactionRule newRedactionRule);
 
   RedactionRule updateRedactionRule(RequestContext requestContext, RedactionRule redactionRule);
 

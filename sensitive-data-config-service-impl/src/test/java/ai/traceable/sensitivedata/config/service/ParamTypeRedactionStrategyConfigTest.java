@@ -13,7 +13,7 @@ class ParamTypeRedactionStrategyConfigTest {
         new ParamTypeRedactionStrategyConfig(RedactionStrategy.REDACTION_STRATEGY_HASH);
     assertEquals(
         paramTypeRedactionStrategyConfig,
-        ParamTypeRedactionStrategyConfig.fromValue(
-            paramTypeRedactionStrategyConfig.toValue()).get());
+        ParamTypeRedactionStrategyConfig.fromValue(paramTypeRedactionStrategyConfig.toValue())
+            .get());
   }
 }

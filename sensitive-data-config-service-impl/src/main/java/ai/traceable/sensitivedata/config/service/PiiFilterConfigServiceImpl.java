@@ -75,7 +75,10 @@ public class PiiFilterConfigServiceImpl
           configServiceCoordinator.getAllRedactionRules(requestContext);
       // pass the reversed list to get redaction rules from latest to earliest
       mergeConfigFromRedactionRules(
-          Lists.reverse(redactionRules), keyRegexToPiiElementMap, valueRegexToPiiElementMap, complexDataMap);
+          Lists.reverse(redactionRules),
+          keyRegexToPiiElementMap,
+          valueRegexToPiiElementMap,
+          complexDataMap);
 
       // get pii elements from sensitive headers and add them to key regexs
       List<Parameter> sensitiveHeaderParameters =

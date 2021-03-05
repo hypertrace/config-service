@@ -1,5 +1,15 @@
 package ai.traceable.ratelimiting.config.service;
 
+import static ai.traceable.ratelimiting.config.service.v1.RateLimitedEntityType.RATE_LIMITED_ENTITY_TYPE_API;
+import static ai.traceable.ratelimiting.service.RateLimitingConfigConstants.RATE_LIMITING_NAMESPACE;
+import static ai.traceable.ratelimiting.service.RateLimitingConfigConstants.RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME;
+import static ai.traceable.ratelimiting.service.RateLimitingConfigConstants.RULE_RATE_LIMITED_ENTITY_ASSOCIATION_RESOURCE_NAME;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 import ai.traceable.ratelimiting.config.service.v1.CreateRateLimitingRuleConfig;
 import ai.traceable.ratelimiting.config.service.v1.CreateRuleConfigRequest;
 import ai.traceable.ratelimiting.config.service.v1.CreateRuleConfigResponse;
@@ -29,6 +39,10 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import org.apache.commons.lang3.tuple.Triple;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.junit.Rule;
@@ -36,21 +50,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import static ai.traceable.ratelimiting.config.service.v1.RateLimitedEntityType.RATE_LIMITED_ENTITY_TYPE_API;
-import static ai.traceable.ratelimiting.service.RateLimitingConfigConstants.RATE_LIMITING_NAMESPACE;
-import static ai.traceable.ratelimiting.service.RateLimitingConfigConstants.RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME;
-import static ai.traceable.ratelimiting.service.RateLimitingConfigConstants.RULE_RATE_LIMITED_ENTITY_ASSOCIATION_RESOURCE_NAME;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 public class RateLimitingConfigServiceImplTest {
 
@@ -106,7 +105,7 @@ public class RateLimitingConfigServiceImplTest {
     mockConfigService.setRuleEntityAssociations(getRuleRateLimitedEntityAssociationMap());
 
     GetRateLimitingConfigsForEntityRequest request =
-            GetRateLimitingConfigsForEntityRequest.newBuilder()
+        GetRateLimitingConfigsForEntityRequest.newBuilder()
             .setEntity(
                 RateLimitedEntity.newBuilder()
                     .setEntityType(RATE_LIMITED_ENTITY_TYPE_API)
@@ -133,7 +132,7 @@ public class RateLimitingConfigServiceImplTest {
     mockConfigService.setRuleEntityAssociations(getRuleRateLimitedEntityAssociationMap());
 
     GetRateLimitingConfigsForEntityRequest request =
-            GetRateLimitingConfigsForEntityRequest.newBuilder()
+        GetRateLimitingConfigsForEntityRequest.newBuilder()
             .setEntity(
                 RateLimitedEntity.newBuilder()
                     .setEntityType(RATE_LIMITED_ENTITY_TYPE_API)

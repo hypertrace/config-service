@@ -1,5 +1,12 @@
 package ai.traceable.ratelimiting.service;
 
+import static ai.traceable.ratelimiting.service.RateLimitingConfigConstants.RATE_LIMITING_NAMESPACE;
+import static ai.traceable.ratelimiting.service.RateLimitingConfigConstants.RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME;
+import static ai.traceable.ratelimiting.service.RateLimitingConfigConstants.RULE_RATE_LIMITED_ENTITY_ASSOCIATION_RESOURCE_NAME;
+import static ai.traceable.ratelimiting.service.RateLimitingConfigServiceUtils.getRuleRateLimitedEntityContext;
+import static ai.traceable.ratelimiting.service.RateLimitingConfigServiceUtils.toRateLimitingRuleConfig;
+import static ai.traceable.ratelimiting.service.RateLimitingConfigServiceUtils.toValue;
+
 import ai.traceable.ratelimiting.config.service.v1.CreateRateLimitingRuleConfig;
 import ai.traceable.ratelimiting.config.service.v1.CreateRuleConfigRequest;
 import ai.traceable.ratelimiting.config.service.v1.CreateRuleConfigResponse;
@@ -26,6 +33,14 @@ import com.typesafe.config.Config;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
@@ -35,23 +50,7 @@ import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
-
-import static ai.traceable.ratelimiting.service.RateLimitingConfigConstants.RATE_LIMITING_NAMESPACE;
-import static ai.traceable.ratelimiting.service.RateLimitingConfigConstants.RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME;
-import static ai.traceable.ratelimiting.service.RateLimitingConfigConstants.RULE_RATE_LIMITED_ENTITY_ASSOCIATION_RESOURCE_NAME;
-import static ai.traceable.ratelimiting.service.RateLimitingConfigServiceUtils.getRuleRateLimitedEntityContext;
-import static ai.traceable.ratelimiting.service.RateLimitingConfigServiceUtils.toRateLimitingRuleConfig;
-import static ai.traceable.ratelimiting.service.RateLimitingConfigServiceUtils.toValue;
 
 @Slf4j
 public class RateLimitingConfigServiceImpl
