@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.protobuf.Value;
 import com.google.protobuf.util.JsonFormat;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.service.ConfigServiceUtils;
 import org.hypertrace.core.documentstore.Document;
 
 import java.io.IOException;
@@ -123,6 +124,11 @@ public class ConfigDocument implements Document {
       Value.Builder valueBuilder = Value.newBuilder();
       JsonFormat.parser().merge(jsonString, valueBuilder);
       return valueBuilder.build();
+    }
+
+    @Override
+    public Value getNullValue(DeserializationContext ctxt) {
+      return ConfigServiceUtils.emptyValue();
     }
   }
 }
