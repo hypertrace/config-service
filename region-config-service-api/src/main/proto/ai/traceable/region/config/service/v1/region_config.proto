@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package ai.traceable.region.config.service.v1;
+
+option java_multiple_files = true;
+
+message GetRegionsRequest {
+}
+
+message GetRegionsResponse {
+    repeated Region region = 1;
+}
+
+message GetRegionRequest {
+    string id = 1;
+}
+
+message GetRegionResponse {
+    Region region = 1;
+}
+
+message Region {
+    string id = 1;
+    string name = 2;
+}
+
+message GetAllRegionRulesRequest {
+}
+
+message GetAllRegionRulesResponse {
+    repeated RegionRule rule = 1;
+}
+
+message CreateRegionRuleRequest {
+    repeated string region_id = 1;
+    string name = 2;
+    RegionRuleActionType action_type = 4;
+    int64 expiration_millis = 5;
+}
+
+message CreateRegionRuleResponse {
+    RegionRule rule = 1;
+}
+
+message UpdateRegionRuleRequest {
+    RegionRule rule = 1;
+}
+
+message UpdateRegionRuleResponse {
+    RegionRule rule = 1;
+}
+
+message DeleteRegionRuleRequest {
+    string id = 1;
+}
+
+message DeleteRegionRuleResponse {
+}
+
+message RegionRule {
+    string id = 1;
+    repeated string region_id = 2;
+    string name = 3;
+    RegionRuleActionType action_type = 4;
+    int64 expiration_millis = 5;
+}
+
+enum RegionRuleActionType {
+    REGION_RULE_ACTION_TYPE_UNSPECIFIED = 0;
+    REGION_RULE_ACTION_TYPE_BLOCK = 1;
+}

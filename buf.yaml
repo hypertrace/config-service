@@ -3,6 +3,7 @@ build:
     - sensitive-data-config-service-api/src/main/proto
     - rate-limiting-config-service-api/src/main/proto
     - local-processing-config-service-api/src/main/proto
+    - region-config-service-api/src/main/proto
 lint:
   use:
     - DEFAULT
