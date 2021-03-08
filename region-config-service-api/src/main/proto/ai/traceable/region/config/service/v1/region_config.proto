@@ -68,4 +68,5 @@ message RegionRule {
 enum RegionRuleActionType {
     REGION_RULE_ACTION_TYPE_UNSPECIFIED = 0;
     REGION_RULE_ACTION_TYPE_BLOCK = 1;
+    REGION_RULE_ACTION_TYPE_ALLOW = 2;
 }
