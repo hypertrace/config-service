@@ -1,0 +1,36 @@
+plugins {
+  `java-library`
+  jacoco
+  id("org.hypertrace.jacoco-report-plugin")
+}
+
+dependencies {
+  api(project(":region-config-service-api"))
+  implementation("org.hypertrace.config.service:config-service-api")
+
+  implementation("com.google.inject:guice:4.2.3")
+  implementation("com.google.guava:guava:30.1-jre")
+  implementation("com.google.protobuf:protobuf-java-util:3.14.0")
+  implementation("com.typesafe:config:1.4.1")
+  implementation("org.slf4j:slf4j-api:1.7.30")
+  implementation("org.apache.commons:commons-csv:1.8")
+  implementation("com.github.f4b6a3:uuid-creator:2.7.11")
+
+  implementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.3.3")
+  implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.3.3")
+  implementation("org.hypertrace.config.service:config-proto-converter")
+
+  annotationProcessor("org.projectlombok:lombok:1.18.18")
+  compileOnly("org.projectlombok:lombok:1.18.18")
+
+  testImplementation("org.junit.jupiter:junit-jupiter:5.7.0")
+  testImplementation("org.mockito:mockito-core:3.7.7")
+  testImplementation("io.grpc:grpc-testing:1.35.0")
+  testImplementation(testFixtures("org.hypertrace.config.service:config-service-api"))
+  testAnnotationProcessor("org.projectlombok:lombok:1.18.18")
+  testCompileOnly("org.projectlombok:lombok:1.18.18")
+}
+
+tasks.test {
+  useJUnitPlatform()
+}

@@ -3,6 +3,7 @@ package ai.traceable.config.service;
 import ai.traceable.localprocessing.config.service.LocalProcessingConfigServiceImpl;
 import ai.traceable.localprocessing.config.service.LocalProcessingRulesServiceImpl;
 import ai.traceable.ratelimiting.service.RateLimitingConfigServiceImpl;
+import ai.traceable.region.config.service.RegionConfigServiceFactory;
 import ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl;
 import ai.traceable.sensitivedata.config.service.SensitiveDataConfigServiceImpl;
 import com.typesafe.config.Config;
@@ -69,7 +70,8 @@ public class TraceableConfigService extends PlatformService {
     internalServerBuilder
         .addService(InterceptorUtil.wrapInterceptors(sensitiveDataConfigService))
         .addService(InterceptorUtil.wrapInterceptors(rateLimitingConfigService))
-        .addService(InterceptorUtil.wrapInterceptors(localProcessingRulesService));
+        .addService(InterceptorUtil.wrapInterceptors(localProcessingRulesService))
+        .addService(InterceptorUtil.wrapInterceptors(RegionConfigServiceFactory.build(config)));
     internalTraceableConfigServer = internalServerBuilder.build();
 
     ServerBuilder<?> externalServerBuilder = ServerBuilder.forPort(externalServerPort);

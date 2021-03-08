@@ -1,0 +1,57 @@
+package ai.traceable.region.config.service;
+
+import ai.traceable.region.config.service.regions.RegionStore;
+import ai.traceable.region.config.service.v1.GetRegionRequest;
+import ai.traceable.region.config.service.v1.GetRegionResponse;
+import ai.traceable.region.config.service.v1.GetRegionsRequest;
+import ai.traceable.region.config.service.v1.GetRegionsResponse;
+import ai.traceable.region.config.service.v1.Region;
+import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceImplBase;
+import com.google.inject.Inject;
+import io.grpc.Status;
+import io.grpc.stub.StreamObserver;
+import java.util.List;
+import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
+  private final RegionStore regionStore;
+
+  @Inject
+  RegionConfigServiceImpl(RegionStore regionStore) {
+    this.regionStore = regionStore;
+  }
+
+  @Override
+  public void getRegions(
+      GetRegionsRequest request, StreamObserver<GetRegionsResponse> responseObserver) {
+
+    List<Region> countries = regionStore.getCountries();
+
+    responseObserver.onNext(GetRegionsResponse.newBuilder().addAllRegion(countries).build());
+    responseObserver.onCompleted();
+  }
+
+  @Override
+  public void getRegion(
+      GetRegionRequest request, StreamObserver<GetRegionResponse> responseObserver) {
+    if (request.getId().isEmpty()) {
+      responseObserver.onError(
+          Status.INVALID_ARGUMENT
+              .withDescription("GetRegion API should have a valid id")
+              .asException());
+      return;
+    }
+
+    Optional<Region> maybeRegion = regionStore.getRegion(request.getId());
+    if (maybeRegion.isEmpty()) {
+      responseObserver.onError(Status.NOT_FOUND.asException());
+      return;
+    }
+
+    Region region = maybeRegion.get();
+    responseObserver.onNext(GetRegionResponse.newBuilder().setRegion(region).build());
+    responseObserver.onCompleted();
+  }
+}

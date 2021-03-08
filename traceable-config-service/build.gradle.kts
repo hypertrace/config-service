@@ -59,6 +59,7 @@ dependencies {
   implementation(project(":sensitive-data-config-service-impl"))
   implementation(project(":rate-limiting-config-service-impl"))
   implementation(project(":local-processing-config-service-impl"))
+  implementation(project(":region-config-service-impl"))
   implementation("org.hypertrace.config.service:config-service")
   implementation("org.hypertrace.config.service:config-service-impl")
   implementation("org.hypertrace.core.grpcutils:grpc-server-utils:0.3.3")
