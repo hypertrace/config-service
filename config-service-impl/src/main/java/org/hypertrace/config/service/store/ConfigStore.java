@@ -2,10 +2,9 @@ package org.hypertrace.config.service.store;
 
 import com.google.protobuf.Value;
 import com.typesafe.config.Config;
+import java.io.IOException;
 import java.util.List;
 import org.hypertrace.config.service.ConfigResource;
-
-import java.io.IOException;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 
 /**
@@ -29,7 +28,8 @@ public interface ConfigStore {
    * @param config
    * @return the context specific config written to the store
    */
-  ContextSpecificConfig writeConfig(ConfigResource configResource, String userId, Value config) throws IOException;
+  ContextSpecificConfig writeConfig(ConfigResource configResource, String userId, Value config)
+      throws IOException;
 
   /**
    * Get the config with the latest version for the specified resource.
@@ -49,8 +49,8 @@ public interface ConfigStore {
    * @return
    * @throws IOException
    */
-  List<ContextSpecificConfig> getAllConfigs(String resourceName, String resourceNamespace,
-      String tenantId) throws IOException;
+  List<ContextSpecificConfig> getAllConfigs(
+      String resourceName, String resourceNamespace, String tenantId) throws IOException;
 
   /**
    * Health check for the backend store

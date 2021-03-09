@@ -30,8 +30,7 @@ public class ConfigService extends PlatformService {
     ServerBuilder<?> serverBuilder = ServerBuilder.forPort(serverPort);
 
     configStore = ConfigServicesFactory.buildConfigStore(getAppConfig());
-    ConfigServicesFactory.buildAllConfigServices(configStore, serverPort, getLifecycle())
-        .stream()
+    ConfigServicesFactory.buildAllConfigServices(configStore, serverPort, getLifecycle()).stream()
         .map(InterceptorUtil::wrapInterceptors)
         .forEach(serverBuilder::addService);
 

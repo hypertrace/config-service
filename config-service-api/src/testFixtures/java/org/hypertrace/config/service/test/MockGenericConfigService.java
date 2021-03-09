@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceImplBase;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
-import org.hypertrace.config.service.v1.ContextSpecificConfig.Builder;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.DeleteConfigResponse;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
@@ -103,8 +102,8 @@ public class MockGenericConfigService {
               UpsertConfigRequest request = invocation.getArgument(0, UpsertConfigRequest.class);
               StreamObserver<UpsertConfigResponse> responseStreamObserver =
                   invocation.getArgument(1, StreamObserver.class);
-              ResourceType resourceType = ResourceType
-                  .of(request.getResourceNamespace(), request.getResourceName());
+              ResourceType resourceType =
+                  ResourceType.of(request.getResourceNamespace(), request.getResourceName());
               String configContext = configContextOrDefault(request.getContext());
               ContextSpecificConfig existingConfig = currentValues.get(resourceType, configContext);
               long updateTimestamp = System.currentTimeMillis();
@@ -113,12 +112,17 @@ public class MockGenericConfigService {
               currentValues.put(
                   resourceType,
                   configContext,
-                  ContextSpecificConfig.newBuilder().setContext(configContext)
-                      .setConfig(request.getConfig()).setCreationTimestamp(creationTimestamp)
-                      .setUpdateTimestamp(updateTimestamp).build());
+                  ContextSpecificConfig.newBuilder()
+                      .setContext(configContext)
+                      .setConfig(request.getConfig())
+                      .setCreationTimestamp(creationTimestamp)
+                      .setUpdateTimestamp(updateTimestamp)
+                      .build());
               responseStreamObserver.onNext(
-                  UpsertConfigResponse.newBuilder().setConfig(request.getConfig())
-                      .setCreationTimestamp(creationTimestamp).setUpdateTimestamp(updateTimestamp)
+                  UpsertConfigResponse.newBuilder()
+                      .setConfig(request.getConfig())
+                      .setCreationTimestamp(creationTimestamp)
+                      .setUpdateTimestamp(updateTimestamp)
                       .build());
               responseStreamObserver.onCompleted();
               return null;

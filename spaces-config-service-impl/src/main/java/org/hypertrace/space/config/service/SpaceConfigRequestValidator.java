@@ -9,11 +9,15 @@ import org.hypertrace.spaces.config.service.v1.UpdateRuleRequest;
 
 public interface SpaceConfigRequestValidator {
 
-  Single<CreateRuleRequest> validateCreateRequest(RequestContext requestContext, CreateRuleRequest createRuleRequest);
+  Single<CreateRuleRequest> validateCreateRequest(
+      RequestContext requestContext, CreateRuleRequest createRuleRequest);
 
-  Single<GetRulesRequest> validateGetRequest(RequestContext requestContext, GetRulesRequest getRulesRequest);
+  Single<GetRulesRequest> validateGetRequest(
+      RequestContext requestContext, GetRulesRequest getRulesRequest);
 
-  Single<UpdateRuleRequest> validateUpdateRequest(RequestContext requestContext, UpdateRuleRequest updateRuleRequest);
+  Single<UpdateRuleRequest> validateUpdateRequest(
+      RequestContext requestContext, UpdateRuleRequest updateRuleRequest);
 
-  Single<DeleteRuleRequest> validateDeleteRequest(RequestContext requestContext, DeleteRuleRequest deleteRuleRequest);
+  Single<DeleteRuleRequest> validateDeleteRequest(
+      RequestContext requestContext, DeleteRuleRequest deleteRuleRequest);
 }

@@ -26,15 +26,19 @@ public class TestUtils {
    * "k3": [ { "k31": "v31" }, { "k32": "v32" } ] }
    */
   public static Value getConfig1() {
-    ListValue listValueForK3 = ListValue.newBuilder()
-        .addValues(Value.newBuilder().setStructValue(getStructForKeyValue("k31", "v31")).build())
-        .addValues(Value.newBuilder().setStructValue(getStructForKeyValue("k32", "v32")).build())
-        .build();
-    Struct struct = Struct.newBuilder()
-        .putFields("k1", Value.newBuilder().setNumberValue(10).build())
-        .putFields("k2", Value.newBuilder().setStringValue("v2").build())
-        .putFields("k3", Value.newBuilder().setListValue(listValueForK3).build())
-        .build();
+    ListValue listValueForK3 =
+        ListValue.newBuilder()
+            .addValues(
+                Value.newBuilder().setStructValue(getStructForKeyValue("k31", "v31")).build())
+            .addValues(
+                Value.newBuilder().setStructValue(getStructForKeyValue("k32", "v32")).build())
+            .build();
+    Struct struct =
+        Struct.newBuilder()
+            .putFields("k1", Value.newBuilder().setNumberValue(10).build())
+            .putFields("k2", Value.newBuilder().setStringValue("v2").build())
+            .putFields("k3", Value.newBuilder().setListValue(listValueForK3).build())
+            .build();
 
     return Value.newBuilder().setStructValue(struct).build();
   }
@@ -44,14 +48,17 @@ public class TestUtils {
    * "k33": "v33" } ], "k4": "v4" }
    */
   public static Value getConfig2() {
-    ListValue listValueForK3 = ListValue.newBuilder()
-        .addValues(Value.newBuilder().setStructValue(getStructForKeyValue("k33", "v33")).build())
-        .build();
-    Struct struct = Struct.newBuilder()
-        .putFields("k1", Value.newBuilder().setNumberValue(20).build())
-        .putFields("k3", Value.newBuilder().setListValue(listValueForK3).build())
-        .putFields("k4", Value.newBuilder().setStringValue("v4").build())
-        .build();
+    ListValue listValueForK3 =
+        ListValue.newBuilder()
+            .addValues(
+                Value.newBuilder().setStructValue(getStructForKeyValue("k33", "v33")).build())
+            .build();
+    Struct struct =
+        Struct.newBuilder()
+            .putFields("k1", Value.newBuilder().setNumberValue(20).build())
+            .putFields("k3", Value.newBuilder().setListValue(listValueForK3).build())
+            .putFields("k4", Value.newBuilder().setStringValue("v4").build())
+            .build();
 
     return Value.newBuilder().setStructValue(struct).build();
   }
@@ -61,15 +68,18 @@ public class TestUtils {
    * config1 and config2) { "k1": 20, "k2": "v2", "k3": [ { "k33": "v33" } ], "k4": "v4" }
    */
   public static Value getExpectedMergedConfig() {
-    ListValue listValueForK3 = ListValue.newBuilder()
-        .addValues(Value.newBuilder().setStructValue(getStructForKeyValue("k33", "v33")).build())
-        .build();
-    Struct struct = Struct.newBuilder()
-        .putFields("k1", Value.newBuilder().setNumberValue(20).build())
-        .putFields("k2", Value.newBuilder().setStringValue("v2").build())
-        .putFields("k3", Value.newBuilder().setListValue(listValueForK3).build())
-        .putFields("k4", Value.newBuilder().setStringValue("v4").build())
-        .build();
+    ListValue listValueForK3 =
+        ListValue.newBuilder()
+            .addValues(
+                Value.newBuilder().setStructValue(getStructForKeyValue("k33", "v33")).build())
+            .build();
+    Struct struct =
+        Struct.newBuilder()
+            .putFields("k1", Value.newBuilder().setNumberValue(20).build())
+            .putFields("k2", Value.newBuilder().setStringValue("v2").build())
+            .putFields("k3", Value.newBuilder().setListValue(listValueForK3).build())
+            .putFields("k4", Value.newBuilder().setStringValue("v4").build())
+            .build();
 
     return Value.newBuilder().setStructValue(struct).build();
   }
