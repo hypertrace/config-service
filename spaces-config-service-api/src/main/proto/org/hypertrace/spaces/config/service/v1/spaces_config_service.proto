@@ -49,4 +49,3 @@ message DeleteRuleRequest {
 
 message DeleteRuleResponse {
 }
-

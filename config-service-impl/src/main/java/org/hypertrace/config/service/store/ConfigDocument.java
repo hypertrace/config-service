@@ -16,11 +16,10 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.protobuf.Value;
 import com.google.protobuf.util.JsonFormat;
+import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.ConfigServiceUtils;
 import org.hypertrace.core.documentstore.Document;
-
-import java.io.IOException;
 
 /**
  * This class represents the data model for the Document as stored by {@link DocumentConfigStore}.
@@ -72,7 +71,8 @@ public class ConfigDocument implements Document {
   long updateTimestamp;
 
   @JsonCreator(mode = Mode.PROPERTIES)
-  public ConfigDocument(@JsonProperty(RESOURCE_FIELD_NAME) String resourceName,
+  public ConfigDocument(
+      @JsonProperty(RESOURCE_FIELD_NAME) String resourceName,
       @JsonProperty(RESOURCE_NAMESPACE_FIELD_NAME) String resourceNamespace,
       @JsonProperty(TENANT_ID_FIELD_NAME) String tenantId,
       @JsonProperty(CONTEXT_FIELD_NAME) String context,
@@ -118,8 +118,7 @@ public class ConfigDocument implements Document {
   public static class ValueDeserializer extends JsonDeserializer<Value> {
 
     @Override
-    public Value deserialize(JsonParser p, DeserializationContext ctxt)
-        throws IOException {
+    public Value deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
       String jsonString = p.readValueAsTree().toString();
       Value.Builder valueBuilder = Value.newBuilder();
       JsonFormat.parser().merge(jsonString, valueBuilder);

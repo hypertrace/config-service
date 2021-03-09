@@ -25,9 +25,7 @@ import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-/**
- * Implementation for the gRPC service.
- */
+/** Implementation for the gRPC service. */
 @Slf4j
 public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBase {
 
@@ -38,17 +36,18 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   }
 
   @Override
-  public void upsertConfig(UpsertConfigRequest request,
-      StreamObserver<UpsertConfigResponse> responseObserver) {
+  public void upsertConfig(
+      UpsertConfigRequest request, StreamObserver<UpsertConfigResponse> responseObserver) {
     try {
       ConfigResource configResource = getConfigResource(request);
-      ContextSpecificConfig contextSpecificConfig = configStore
-          .writeConfig(configResource, getUserId(), request.getConfig());
-      responseObserver.onNext(UpsertConfigResponse.newBuilder()
-          .setConfig(request.getConfig())
-          .setCreationTimestamp(contextSpecificConfig.getCreationTimestamp())
-          .setUpdateTimestamp(contextSpecificConfig.getUpdateTimestamp())
-          .build());
+      ContextSpecificConfig contextSpecificConfig =
+          configStore.writeConfig(configResource, getUserId(), request.getConfig());
+      responseObserver.onNext(
+          UpsertConfigResponse.newBuilder()
+              .setConfig(request.getConfig())
+              .setCreationTimestamp(contextSpecificConfig.getCreationTimestamp())
+              .setUpdateTimestamp(contextSpecificConfig.getUpdateTimestamp())
+              .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Upsert failed for request:{}", request, e);
@@ -57,15 +56,16 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   }
 
   @Override
-  public void getConfig(GetConfigRequest request,
-      StreamObserver<GetConfigResponse> responseObserver) {
+  public void getConfig(
+      GetConfigRequest request, StreamObserver<GetConfigResponse> responseObserver) {
     try {
       Value config = configStore.getConfig(getConfigResource(request)).getConfig();
 
-      // get the configs for the contexts mentioned in the request and merge them in the specified order
+      // get the configs for the contexts mentioned in the request and merge them in the specified
+      // order
       for (String context : request.getContextsList()) {
-        Value contextSpecificConfig = configStore.getConfig(getConfigResource(request, context))
-            .getConfig();
+        Value contextSpecificConfig =
+            configStore.getConfig(getConfigResource(request, context)).getConfig();
         config = merge(config, contextSpecificConfig);
       }
 
@@ -85,13 +85,15 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   }
 
   @Override
-  public void getAllConfigs(GetAllConfigsRequest request,
-      StreamObserver<GetAllConfigsResponse> responseObserver) {
+  public void getAllConfigs(
+      GetAllConfigsRequest request, StreamObserver<GetAllConfigsResponse> responseObserver) {
     try {
-      List<ContextSpecificConfig> contextSpecificConfigList = configStore
-          .getAllConfigs(request.getResourceName(), request.getResourceNamespace(), getTenantId());
+      List<ContextSpecificConfig> contextSpecificConfigList =
+          configStore.getAllConfigs(
+              request.getResourceName(), request.getResourceNamespace(), getTenantId());
       responseObserver.onNext(
-          GetAllConfigsResponse.newBuilder().addAllContextSpecificConfigs(contextSpecificConfigList)
+          GetAllConfigsResponse.newBuilder()
+              .addAllContextSpecificConfigs(contextSpecificConfigList)
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -101,8 +103,8 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   }
 
   @Override
-  public void deleteConfig(DeleteConfigRequest request,
-      StreamObserver<DeleteConfigResponse> responseObserver) {
+  public void deleteConfig(
+      DeleteConfigRequest request, StreamObserver<DeleteConfigResponse> responseObserver) {
     try {
       // write an empty config for the specified config resource. This maintains the versioning.
       configStore.writeConfig(getConfigResource(request), getUserId(), emptyValue());
@@ -115,28 +117,32 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   }
 
   private ConfigResource getConfigResource(UpsertConfigRequest upsertConfigRequest) {
-    return new ConfigResource(upsertConfigRequest.getResourceName(),
+    return new ConfigResource(
+        upsertConfigRequest.getResourceName(),
         upsertConfigRequest.getResourceNamespace(),
         getTenantId(),
         getActualContext(upsertConfigRequest.getContext()));
   }
 
   private ConfigResource getConfigResource(GetConfigRequest getConfigRequest) {
-    return new ConfigResource(getConfigRequest.getResourceName(),
+    return new ConfigResource(
+        getConfigRequest.getResourceName(),
         getConfigRequest.getResourceNamespace(),
         getTenantId(),
         DEFAULT_CONTEXT);
   }
 
   private ConfigResource getConfigResource(GetConfigRequest getConfigRequest, String context) {
-    return new ConfigResource(getConfigRequest.getResourceName(),
+    return new ConfigResource(
+        getConfigRequest.getResourceName(),
         getConfigRequest.getResourceNamespace(),
         getTenantId(),
         getActualContext(context));
   }
 
   private ConfigResource getConfigResource(DeleteConfigRequest deleteConfigRequest) {
-    return new ConfigResource(deleteConfigRequest.getResourceName(),
+    return new ConfigResource(
+        deleteConfigRequest.getResourceName(),
         deleteConfigRequest.getResourceNamespace(),
         getTenantId(),
         deleteConfigRequest.getContext());
