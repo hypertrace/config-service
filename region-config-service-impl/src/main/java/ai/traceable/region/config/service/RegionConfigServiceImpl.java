@@ -1,12 +1,16 @@
 package ai.traceable.region.config.service;
 
 import ai.traceable.region.config.service.regions.RegionStore;
+import ai.traceable.region.config.service.rules.RulesManager;
+import ai.traceable.region.config.service.v1.GetAllRegionRulesRequest;
+import ai.traceable.region.config.service.v1.GetAllRegionRulesResponse;
 import ai.traceable.region.config.service.v1.GetRegionRequest;
 import ai.traceable.region.config.service.v1.GetRegionResponse;
 import ai.traceable.region.config.service.v1.GetRegionsRequest;
 import ai.traceable.region.config.service.v1.GetRegionsResponse;
 import ai.traceable.region.config.service.v1.Region;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceImplBase;
+import ai.traceable.region.config.service.v1.RegionRule;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -17,10 +21,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
   private final RegionStore regionStore;
+  private final RulesManager rulesManager;
 
   @Inject
-  RegionConfigServiceImpl(RegionStore regionStore) {
+  RegionConfigServiceImpl(RegionStore regionStore, RulesManager rulesManager) {
     this.regionStore = regionStore;
+    this.rulesManager = rulesManager;
   }
 
   @Override
@@ -52,6 +58,16 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
 
     Region region = maybeRegion.get();
     responseObserver.onNext(GetRegionResponse.newBuilder().setRegion(region).build());
+    responseObserver.onCompleted();
+  }
+
+  @Override
+  public void getAllRegionRules(
+      GetAllRegionRulesRequest request,
+      StreamObserver<GetAllRegionRulesResponse> responseObserver) {
+    List<RegionRule> regionRules = rulesManager.getRegionRules();
+
+    responseObserver.onNext(GetAllRegionRulesResponse.newBuilder().addAllRule(regionRules).build());
     responseObserver.onCompleted();
   }
 }

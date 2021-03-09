@@ -7,6 +7,7 @@ import ai.traceable.region.config.service.RegionConfigServiceFactory;
 import ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl;
 import ai.traceable.sensitivedata.config.service.SensitiveDataConfigServiceImpl;
 import com.typesafe.config.Config;
+import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Server;
@@ -67,11 +68,12 @@ public class TraceableConfigService extends PlatformService {
         new RateLimitingConfigServiceImpl(managedChannel, config);
     LocalProcessingRulesServiceImpl localProcessingRulesService =
         new LocalProcessingRulesServiceImpl(managedChannel);
+    BindableService regionConfigService = RegionConfigServiceFactory.build(managedChannel, config);
     internalServerBuilder
         .addService(InterceptorUtil.wrapInterceptors(sensitiveDataConfigService))
         .addService(InterceptorUtil.wrapInterceptors(rateLimitingConfigService))
         .addService(InterceptorUtil.wrapInterceptors(localProcessingRulesService))
-        .addService(InterceptorUtil.wrapInterceptors(RegionConfigServiceFactory.build(config)));
+        .addService(InterceptorUtil.wrapInterceptors(regionConfigService));
     internalTraceableConfigServer = internalServerBuilder.build();
 
     ServerBuilder<?> externalServerBuilder = ServerBuilder.forPort(externalServerPort);

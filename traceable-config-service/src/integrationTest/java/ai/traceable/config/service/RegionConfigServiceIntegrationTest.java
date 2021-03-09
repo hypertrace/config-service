@@ -53,4 +53,9 @@ class RegionConfigServiceIntegrationTest extends TraceableConfigServiceIntegrati
     Region region = regionResponse.getRegion();
     assertEquals(firstRegion, region);
   }
+
+  @Test
+  public void getAllRegionRules() {
+    // TODO: Add integration tests, once the CRUD APIs are in
+  }
 }

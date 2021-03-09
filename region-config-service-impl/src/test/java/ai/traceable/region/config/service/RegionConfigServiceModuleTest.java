@@ -5,14 +5,18 @@ import static org.mockito.Mockito.mock;
 
 import com.google.inject.Guice;
 import com.typesafe.config.Config;
+import io.grpc.ManagedChannel;
 import org.junit.jupiter.api.Test;
 
 class RegionConfigServiceModuleTest {
   @Test
-  public void testResolveBindings() {
+  void testResolveBindings() {
     Config mockConfig = mock(Config.class);
+    ManagedChannel mockChannel = mock(ManagedChannel.class);
 
     assertDoesNotThrow(
-        () -> Guice.createInjector(new RegionConfigServiceModule(mockConfig)).getAllBindings());
+        () ->
+            Guice.createInjector(new RegionConfigServiceModule(mockChannel, mockConfig))
+                .getAllBindings());
   }
 }
