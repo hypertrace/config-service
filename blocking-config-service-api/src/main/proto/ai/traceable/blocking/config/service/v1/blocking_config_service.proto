@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package ai.traceable.blocking.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/blocking/config/service/v1/blocking_config.proto";
+
+service BlockingConfigService {
+    rpc GetBlockingRules(GetBlockingRulesRequest) returns (GetBlockingRulesResponse) {}
+}

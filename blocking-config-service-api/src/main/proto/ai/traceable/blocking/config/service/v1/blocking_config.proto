@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package ai.traceable.blocking.config.service.v1;
+
+option java_multiple_files = true;
+
+message GetBlockingRulesRequest {
+    string omit_if_matches_hash = 1;
+}
+
+message GetBlockingRulesResponse {
+    repeated BlockingRule rule = 1;
+    string hash = 2;
+}
+
+message BlockingRule {
+    RuleActionType action_type = 1;
+    oneof mechanism {
+        IpBlocking ip_blocking = 2;
+    }
+    BlockingInfo blocking_info = 3;
+}
+
+message IpBlocking {
+    repeated IpRange ip_range = 1;
+}
+
+message IpRange {
+    oneof value {
+        IpV4Range ipv4_range = 1;
+    }
+}
+
+message IpV4Range {
+    int64 start_ip = 1;
+    int64 end_ip = 2;
+}
+
+enum RuleActionType {
+    RULE_ACTION_TYPE_UNSPECIFIED = 0;
+    RULE_ACTION_TYPE_BLOCK = 1;
+    RULE_ACTION_TYPE_ALLOW = 2;
+}
+
+message BlockingInfo {
+    string info = 1;
+    string category = 2;
+    string status = 3;
+}
