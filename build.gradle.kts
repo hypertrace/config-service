@@ -6,6 +6,7 @@ plugins {
   id("org.hypertrace.docker-java-application-plugin") version "0.8.1" apply false
   id("org.hypertrace.docker-publish-plugin") version "0.8.1" apply false
   id("org.hypertrace.integration-test-plugin") version "0.1.3" apply false
+  id("org.hypertrace.code-style-plugin") version "1.0.0" apply false
 }
 
 subprojects {
@@ -22,4 +23,6 @@ subprojects {
       targetCompatibility = JavaVersion.VERSION_11
     }
   }
+
+  apply(plugin = "org.hypertrace.code-style-plugin")
 }

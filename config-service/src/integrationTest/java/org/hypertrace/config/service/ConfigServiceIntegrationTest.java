@@ -31,9 +31,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/**
- * Integration test for ConfigService
- */
+/** Integration test for ConfigService */
 public class ConfigServiceIntegrationTest {
 
   private static final String RESOURCE_NAME = "foo";
@@ -52,15 +50,14 @@ public class ConfigServiceIntegrationTest {
   @BeforeAll
   public static void setup() throws IOException {
     System.out.println("Starting Config Service E2E Test");
-    IntegrationTestServerUtil.startServices(new String[]{"config-service"});
+    IntegrationTestServerUtil.startServices(new String[] {"config-service"});
 
-    Channel channel = ManagedChannelBuilder.forAddress("localhost", 50101)
-        .usePlaintext()
-        .build();
+    Channel channel = ManagedChannelBuilder.forAddress("localhost", 50101).usePlaintext().build();
 
-    configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(channel)
-        .withCallCredentials(
-            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+    configServiceBlockingStub =
+        ConfigServiceGrpc.newBlockingStub(channel)
+            .withCallCredentials(
+                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
     config1 = getConfigValue("config1.yaml");
     config2 = getConfigValue("config2.yaml");
@@ -85,18 +82,18 @@ public class ConfigServiceIntegrationTest {
   @Test
   public void testUpsertConfig() {
     // upsert first version of config for tenant-1
-    UpsertConfigResponse upsertConfigResponse = upsertConfig(RESOURCE_NAME, RESOURCE_NAMESPACE,
-        TENANT_1, Optional.empty(), config1);
+    UpsertConfigResponse upsertConfigResponse =
+        upsertConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, Optional.empty(), config1);
     assertEquals(config1, upsertConfigResponse.getConfig());
 
     // upsert second version of config for tenant-1
-    upsertConfigResponse = upsertConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1,
-        Optional.empty(), config2);
+    upsertConfigResponse =
+        upsertConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, Optional.empty(), config2);
     assertEquals(config2, upsertConfigResponse.getConfig());
 
     // test across tenants - upsert first version of config for tenant-2
-    upsertConfigResponse = upsertConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_2,
-        Optional.empty(), config1);
+    upsertConfigResponse =
+        upsertConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_2, Optional.empty(), config1);
     assertEquals(config1, upsertConfigResponse.getConfig());
   }
 
@@ -133,21 +130,22 @@ public class ConfigServiceIntegrationTest {
     upsertConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, Optional.of(CONTEXT_2), config2);
 
     // verify getAllConfigs
-    List<ContextSpecificConfig> contextSpecificConfigList = getAllConfigs(RESOURCE_NAME,
-        RESOURCE_NAMESPACE, TENANT_1).getContextSpecificConfigsList();
+    List<ContextSpecificConfig> contextSpecificConfigList =
+        getAllConfigs(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1).getContextSpecificConfigsList();
     assertEquals(2, contextSpecificConfigList.size());
     assertEquals(config2, contextSpecificConfigList.get(0).getConfig());
     assertEquals(CONTEXT_2, contextSpecificConfigList.get(0).getContext());
     assertEquals(config1, contextSpecificConfigList.get(1).getConfig());
     assertEquals(CONTEXT_1, contextSpecificConfigList.get(1).getContext());
 
-    // delete first config and upsert it again so that its creation timestamp is greater than second config
+    // delete first config and upsert it again so that its creation timestamp is greater than second
+    // config
     deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, CONTEXT_1);
     upsertConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, Optional.of(CONTEXT_1), config1);
 
     // verify getAllConfigs - order should be reversed this time
-    contextSpecificConfigList = getAllConfigs(RESOURCE_NAME,
-        RESOURCE_NAMESPACE, TENANT_1).getContextSpecificConfigsList();
+    contextSpecificConfigList =
+        getAllConfigs(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1).getContextSpecificConfigsList();
     assertEquals(2, contextSpecificConfigList.size());
     assertEquals(config1, contextSpecificConfigList.get(0).getConfig());
     assertEquals(CONTEXT_1, contextSpecificConfigList.get(0).getContext());
@@ -182,12 +180,17 @@ public class ConfigServiceIntegrationTest {
     assertEquals(Status.NOT_FOUND, exception.getStatus());
   }
 
-  private UpsertConfigResponse upsertConfig(String resourceName, String resourceNamespace,
-      String tenantId, Optional<String> context, Value config) {
-    UpsertConfigRequest.Builder builder = UpsertConfigRequest.newBuilder()
-        .setResourceName(resourceName)
-        .setResourceNamespace(resourceNamespace)
-        .setConfig(config);
+  private UpsertConfigResponse upsertConfig(
+      String resourceName,
+      String resourceNamespace,
+      String tenantId,
+      Optional<String> context,
+      Value config) {
+    UpsertConfigRequest.Builder builder =
+        UpsertConfigRequest.newBuilder()
+            .setResourceName(resourceName)
+            .setResourceNamespace(resourceNamespace)
+            .setConfig(config);
     if (context.isPresent()) {
       builder.setContext(context.get());
     }
@@ -195,36 +198,38 @@ public class ConfigServiceIntegrationTest {
         tenantId, () -> configServiceBlockingStub.upsertConfig(builder.build()));
   }
 
-  private GetConfigResponse getConfig(String resourceName, String resourceNamespace,
-      String tenantId, String... contexts) {
-    GetConfigRequest getConfigRequest = GetConfigRequest.newBuilder()
-        .setResourceName(resourceName)
-        .setResourceNamespace(resourceNamespace)
-        .addAllContexts(Arrays.asList(contexts))
-        .build();
+  private GetConfigResponse getConfig(
+      String resourceName, String resourceNamespace, String tenantId, String... contexts) {
+    GetConfigRequest getConfigRequest =
+        GetConfigRequest.newBuilder()
+            .setResourceName(resourceName)
+            .setResourceNamespace(resourceNamespace)
+            .addAllContexts(Arrays.asList(contexts))
+            .build();
     return GrpcClientRequestContextUtil.executeInTenantContext(
         tenantId, () -> configServiceBlockingStub.getConfig(getConfigRequest));
   }
 
-  private GetAllConfigsResponse getAllConfigs(String resourceName, String resourceNamespace,
-      String tenantId) {
-    GetAllConfigsRequest request = GetAllConfigsRequest.newBuilder()
-        .setResourceName(resourceName)
-        .setResourceNamespace(resourceNamespace)
-        .build();
+  private GetAllConfigsResponse getAllConfigs(
+      String resourceName, String resourceNamespace, String tenantId) {
+    GetAllConfigsRequest request =
+        GetAllConfigsRequest.newBuilder()
+            .setResourceName(resourceName)
+            .setResourceNamespace(resourceNamespace)
+            .build();
     return GrpcClientRequestContextUtil.executeInTenantContext(
         tenantId, () -> configServiceBlockingStub.getAllConfigs(request));
   }
 
-  private DeleteConfigResponse deleteConfig(String resourceName, String resourceNamespace,
-      String tenantId, String context) {
-    DeleteConfigRequest request = DeleteConfigRequest.newBuilder()
-        .setResourceName(resourceName)
-        .setResourceNamespace(resourceNamespace)
-        .setContext(context)
-        .build();
+  private DeleteConfigResponse deleteConfig(
+      String resourceName, String resourceNamespace, String tenantId, String context) {
+    DeleteConfigRequest request =
+        DeleteConfigRequest.newBuilder()
+            .setResourceName(resourceName)
+            .setResourceNamespace(resourceNamespace)
+            .setContext(context)
+            .build();
     return GrpcClientRequestContextUtil.executeInTenantContext(
         tenantId, () -> configServiceBlockingStub.deleteConfig(request));
   }
-
 }

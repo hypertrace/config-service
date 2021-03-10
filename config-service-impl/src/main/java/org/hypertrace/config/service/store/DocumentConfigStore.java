@@ -1,14 +1,23 @@
 package org.hypertrace.config.service.store;
 
+import static org.hypertrace.config.service.ConfigServiceUtils.emptyConfig;
+import static org.hypertrace.config.service.store.ConfigDocument.CONTEXT_FIELD_NAME;
+import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_FIELD_NAME;
+import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_NAMESPACE_FIELD_NAME;
+import static org.hypertrace.config.service.store.ConfigDocument.TENANT_ID_FIELD_NAME;
+import static org.hypertrace.config.service.store.ConfigDocument.VERSION_FIELD_NAME;
+
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.protobuf.Value;
 import com.typesafe.config.Config;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -25,19 +34,7 @@ import org.hypertrace.core.documentstore.Key;
 import org.hypertrace.core.documentstore.OrderBy;
 import org.hypertrace.core.documentstore.Query;
 
-import java.io.IOException;
-import java.util.Iterator;
-
-import static org.hypertrace.config.service.ConfigServiceUtils.emptyConfig;
-import static org.hypertrace.config.service.store.ConfigDocument.CONTEXT_FIELD_NAME;
-import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_FIELD_NAME;
-import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_NAMESPACE_FIELD_NAME;
-import static org.hypertrace.config.service.store.ConfigDocument.TENANT_ID_FIELD_NAME;
-import static org.hypertrace.config.service.store.ConfigDocument.VERSION_FIELD_NAME;
-
-/**
- * Document store which stores and serves the configurations.
- */
+/** Document store which stores and serves the configurations. */
 @Slf4j
 public class DocumentConfigStore implements ConfigStore {
 
@@ -67,8 +64,8 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   @Override
-  public ContextSpecificConfig writeConfig(ConfigResource configResource, String userId, Value config)
-      throws IOException {
+  public ContextSpecificConfig writeConfig(
+      ConfigResource configResource, String userId, Value config) throws IOException {
     // Synchronization is required across different threads trying to write the latest config
     // for the same resource into the document store
     synchronized (configResourceLocks.getUnchecked(configResource)) {
@@ -82,10 +79,17 @@ public class DocumentConfigStore implements ConfigStore {
         creationTimestamp = existingConfig.getCreationTimestamp();
       }
       Key key = new ConfigDocumentKey(configResource, configVersion);
-      ConfigDocument configDocument = new ConfigDocument(configResource.getResourceName(),
-          configResource.getResourceNamespace(), configResource.getTenantId(),
-          configResource.getContext(), configVersion, userId, config, creationTimestamp,
-          updateTimestamp);
+      ConfigDocument configDocument =
+          new ConfigDocument(
+              configResource.getResourceName(),
+              configResource.getResourceNamespace(),
+              configResource.getTenantId(),
+              configResource.getContext(),
+              configVersion,
+              userId,
+              config,
+              creationTimestamp,
+              updateTimestamp);
       collection.upsert(key, configDocument);
       return getContextSpecificConfig(configDocument);
     }
@@ -98,8 +102,8 @@ public class DocumentConfigStore implements ConfigStore {
 
   private ContextSpecificConfig getConfig(ConfigResource configResource, long configVersion)
       throws IOException {
-    Filter filter = getConfigResourceFilter(configResource)
-        .and(Filter.eq(VERSION_FIELD_NAME, configVersion));
+    Filter filter =
+        getConfigResourceFilter(configResource).and(Filter.eq(VERSION_FIELD_NAME, configVersion));
     Query query = new Query();
     query.setFilter(filter);
     Iterator<Document> documentIterator = collection.search(query);
@@ -114,11 +118,12 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   @Override
-  public List<ContextSpecificConfig> getAllConfigs(String resourceName, String resourceNamespace,
-      String tenantId) throws IOException {
-    Filter filter = Filter.eq(RESOURCE_FIELD_NAME, resourceName)
-        .and(Filter.eq(RESOURCE_NAMESPACE_FIELD_NAME, resourceNamespace))
-        .and(Filter.eq(TENANT_ID_FIELD_NAME, tenantId));
+  public List<ContextSpecificConfig> getAllConfigs(
+      String resourceName, String resourceNamespace, String tenantId) throws IOException {
+    Filter filter =
+        Filter.eq(RESOURCE_FIELD_NAME, resourceName)
+            .and(Filter.eq(RESOURCE_NAMESPACE_FIELD_NAME, resourceNamespace))
+            .and(Filter.eq(TENANT_ID_FIELD_NAME, tenantId));
     Query query = new Query();
     query.setFilter(filter);
     query.addOrderBy(new OrderBy(VERSION_FIELD_NAME, false));
@@ -134,7 +139,8 @@ public class DocumentConfigStore implements ConfigStore {
         contextSpecificConfigList.add(getContextSpecificConfig(configDocument));
       }
     }
-    Collections.sort(contextSpecificConfigList,
+    Collections.sort(
+        contextSpecificConfigList,
         Comparator.comparingLong(ContextSpecificConfig::getCreationTimestamp).reversed());
     return contextSpecificConfigList;
   }
@@ -167,7 +173,8 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   private ContextSpecificConfig getContextSpecificConfig(ConfigDocument configDocument) {
-    return ContextSpecificConfig.newBuilder().setConfig(configDocument.getConfig())
+    return ContextSpecificConfig.newBuilder()
+        .setConfig(configDocument.getConfig())
         .setContext(configDocument.getContext())
         .setCreationTimestamp(configDocument.getCreationTimestamp())
         .setUpdateTimestamp(configDocument.getUpdateTimestamp())

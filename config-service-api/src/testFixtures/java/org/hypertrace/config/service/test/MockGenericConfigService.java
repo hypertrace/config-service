@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceImplBase;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
-import org.hypertrace.config.service.v1.ContextSpecificConfig.Builder;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.DeleteConfigResponse;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;

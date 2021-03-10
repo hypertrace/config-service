@@ -10,15 +10,13 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 
-/**
- * This class contains utility methods.
- */
+/** This class contains utility methods. */
 @Slf4j
 public class ConfigServiceUtils {
 
   public static final String DEFAULT_CONTEXT = "DEFAULT-CONTEXT";
-  private static final Value EMPTY_VALUE = Value.newBuilder().setNullValue(NullValue.NULL_VALUE)
-      .build();
+  private static final Value EMPTY_VALUE =
+      Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
 
   private ConfigServiceUtils() {
     // to prevent instantiation
@@ -48,8 +46,8 @@ public class ConfigServiceUtils {
 
       Map<String, Value> resultConfigMap = new LinkedHashMap<>(defaultConfigMap);
       for (Map.Entry<String, Value> entry : overridingConfigMap.entrySet()) {
-        resultConfigMap.put(entry.getKey(),
-            merge(defaultConfigMap.get(entry.getKey()), entry.getValue()));
+        resultConfigMap.put(
+            entry.getKey(), merge(defaultConfigMap.get(entry.getKey()), entry.getValue()));
       }
       Struct struct = Struct.newBuilder().putAllFields(resultConfigMap).build();
       return Value.newBuilder().setStructValue(struct).build();
@@ -71,7 +69,8 @@ public class ConfigServiceUtils {
 
   public static boolean isNull(Value value) {
     if (value == null) {
-      log.error("NULL Value encountered. This is unexpected and indicates a BUG in code.",
+      log.error(
+          "NULL Value encountered. This is unexpected and indicates a BUG in code.",
           new RuntimeException());
       return true;
     }
@@ -87,7 +86,11 @@ public class ConfigServiceUtils {
   }
 
   public static ContextSpecificConfig emptyConfig(String context) {
-    return ContextSpecificConfig.newBuilder().setConfig(EMPTY_VALUE).setContext(context)
-        .setCreationTimestamp(0).setUpdateTimestamp(0).build();
+    return ContextSpecificConfig.newBuilder()
+        .setConfig(EMPTY_VALUE)
+        .setContext(context)
+        .setCreationTimestamp(0)
+        .setUpdateTimestamp(0)
+        .build();
   }
 }

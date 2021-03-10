@@ -52,30 +52,35 @@ class ConfigServiceGrpcImplTest {
   void upsertConfig() throws IOException {
     ConfigStore configStore = mock(ConfigStore.class);
     when(configStore.writeConfig(any(ConfigResource.class), anyString(), any(Value.class)))
-        .thenAnswer(invocation -> {
-          Value config = invocation.getArgument(2, Value.class);
-          return ContextSpecificConfig.newBuilder().setConfig(config).setCreationTimestamp(123L)
-              .setUpdateTimestamp(456L).build();
-        });
+        .thenAnswer(
+            invocation -> {
+              Value config = invocation.getArgument(2, Value.class);
+              return ContextSpecificConfig.newBuilder()
+                  .setConfig(config)
+                  .setCreationTimestamp(123L)
+                  .setUpdateTimestamp(456L)
+                  .build();
+            });
 
     ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
 
     StreamObserver<UpsertConfigResponse> responseObserver = mock(StreamObserver.class);
-    Runnable runnableWithoutContext1 = () -> configServiceGrpc.upsertConfig(
-        getUpsertConfigRequest("", config1), responseObserver);
-    Runnable runnableWithoutContext2 = () -> configServiceGrpc.upsertConfig(
-        getUpsertConfigRequest("", config2), responseObserver);
+    Runnable runnableWithoutContext1 =
+        () -> configServiceGrpc.upsertConfig(getUpsertConfigRequest("", config1), responseObserver);
+    Runnable runnableWithoutContext2 =
+        () -> configServiceGrpc.upsertConfig(getUpsertConfigRequest("", config2), responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnableWithoutContext1);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnableWithoutContext2);
 
-    Runnable runnableWithContext = () -> configServiceGrpc.upsertConfig(
-        getUpsertConfigRequest(CONTEXT1, config2), responseObserver);
+    Runnable runnableWithContext =
+        () ->
+            configServiceGrpc.upsertConfig(
+                getUpsertConfigRequest(CONTEXT1, config2), responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnableWithContext);
 
     ArgumentCaptor<UpsertConfigResponse> upsertConfigResponseCaptor =
         ArgumentCaptor.forClass(UpsertConfigResponse.class);
-    verify(responseObserver, times(3))
-        .onNext(upsertConfigResponseCaptor.capture());
+    verify(responseObserver, times(3)).onNext(upsertConfigResponseCaptor.capture());
     verify(responseObserver, times(3)).onCompleted();
     verify(responseObserver, never()).onError(any(Throwable.class));
     List<UpsertConfigResponse> actualResponseList = upsertConfigResponseCaptor.getAllValues();
@@ -90,34 +95,38 @@ class ConfigServiceGrpcImplTest {
   @Test
   void getConfig() throws IOException {
     ConfigStore configStore = mock(ConfigStore.class);
-    when(configStore.getConfig(eq(configResourceWithoutContext))).thenReturn(
-        ContextSpecificConfig.newBuilder().setConfig(config1).setContext(DEFAULT_CONTEXT).build());
-    when(configStore.getConfig(eq(configResourceWithContext))).thenReturn(
-        ContextSpecificConfig.newBuilder().setConfig(config2).setContext(CONTEXT1).build());
+    when(configStore.getConfig(eq(configResourceWithoutContext)))
+        .thenReturn(
+            ContextSpecificConfig.newBuilder()
+                .setConfig(config1)
+                .setContext(DEFAULT_CONTEXT)
+                .build());
+    when(configStore.getConfig(eq(configResourceWithContext)))
+        .thenReturn(
+            ContextSpecificConfig.newBuilder().setConfig(config2).setContext(CONTEXT1).build());
     ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
     StreamObserver<GetConfigResponse> responseObserver = mock(StreamObserver.class);
 
-    Runnable runnableWithoutContext = () ->
-        configServiceGrpc.getConfig(getGetConfigRequest(), responseObserver);
+    Runnable runnableWithoutContext =
+        () -> configServiceGrpc.getConfig(getGetConfigRequest(), responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnableWithoutContext);
 
-    Runnable runnableWithContext = () ->
-        configServiceGrpc.getConfig(getGetConfigRequest(CONTEXT1), responseObserver);
+    Runnable runnableWithContext =
+        () -> configServiceGrpc.getConfig(getGetConfigRequest(CONTEXT1), responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnableWithContext);
 
     ArgumentCaptor<GetConfigResponse> getConfigResponseCaptor =
         ArgumentCaptor.forClass(GetConfigResponse.class);
-    verify(responseObserver, times(2))
-        .onNext(getConfigResponseCaptor.capture());
+    verify(responseObserver, times(2)).onNext(getConfigResponseCaptor.capture());
     verify(responseObserver, times(2)).onCompleted();
     verify(responseObserver, never()).onError(any(Throwable.class));
 
     List<GetConfigResponse> actualResponseList = getConfigResponseCaptor.getAllValues();
     assertEquals(2, actualResponseList.size());
-    assertEquals(GetConfigResponse.newBuilder().setConfig(config1).build(),
-        actualResponseList.get(0));
-    assertEquals(GetConfigResponse.newBuilder().setConfig(mergedConfig).build(),
-        actualResponseList.get(1));
+    assertEquals(
+        GetConfigResponse.newBuilder().setConfig(config1).build(), actualResponseList.get(0));
+    assertEquals(
+        GetConfigResponse.newBuilder().setConfig(mergedConfig).build(), actualResponseList.get(1));
   }
 
   @Test
@@ -126,21 +135,20 @@ class ConfigServiceGrpcImplTest {
     List<ContextSpecificConfig> contextSpecificConfigList = new ArrayList<>();
     contextSpecificConfigList.add(
         ContextSpecificConfig.newBuilder().setContext(DEFAULT_CONTEXT).setConfig(config1).build());
-    contextSpecificConfigList
-        .add(ContextSpecificConfig.newBuilder().setContext(CONTEXT1).setConfig(config2).build());
+    contextSpecificConfigList.add(
+        ContextSpecificConfig.newBuilder().setContext(CONTEXT1).setConfig(config2).build());
     when(configStore.getAllConfigs(eq(RESOURCE_NAME), eq(RESOURCE_NAMESPACE), eq(TENANT_ID)))
         .thenReturn(contextSpecificConfigList);
     ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
     StreamObserver<GetAllConfigsResponse> responseObserver = mock(StreamObserver.class);
 
-    Runnable runnable = () ->
-        configServiceGrpc.getAllConfigs(getGetAllConfigsRequest(), responseObserver);
+    Runnable runnable =
+        () -> configServiceGrpc.getAllConfigs(getGetAllConfigsRequest(), responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
 
     ArgumentCaptor<GetAllConfigsResponse> getAllConfigsResponseCaptor =
         ArgumentCaptor.forClass(GetAllConfigsResponse.class);
-    verify(responseObserver, times(1))
-        .onNext(getAllConfigsResponseCaptor.capture());
+    verify(responseObserver, times(1)).onNext(getAllConfigsResponseCaptor.capture());
     verify(responseObserver, times(1)).onCompleted();
     verify(responseObserver, never()).onError(any(Throwable.class));
 
@@ -154,8 +162,8 @@ class ConfigServiceGrpcImplTest {
     ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
     StreamObserver<DeleteConfigResponse> responseObserver = mock(StreamObserver.class);
 
-    Runnable runnable = () ->
-        configServiceGrpc.deleteConfig(getDeleteConfigRequest(), responseObserver);
+    Runnable runnable =
+        () -> configServiceGrpc.deleteConfig(getDeleteConfigRequest(), responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
 
     verify(configStore, times(1))
@@ -196,5 +204,4 @@ class ConfigServiceGrpcImplTest {
         .setContext(CONTEXT1)
         .build();
   }
-
 }
