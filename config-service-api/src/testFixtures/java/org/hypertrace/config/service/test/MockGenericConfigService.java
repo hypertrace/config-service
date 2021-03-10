@@ -18,6 +18,7 @@ import io.grpc.ServerCall.Listener;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.ServerInterceptors;
+import io.grpc.Status;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
@@ -103,8 +104,8 @@ public class MockGenericConfigService {
               UpsertConfigRequest request = invocation.getArgument(0, UpsertConfigRequest.class);
               StreamObserver<UpsertConfigResponse> responseStreamObserver =
                   invocation.getArgument(1, StreamObserver.class);
-              ResourceType resourceType = ResourceType
-                  .of(request.getResourceNamespace(), request.getResourceName());
+              ResourceType resourceType =
+                  ResourceType.of(request.getResourceNamespace(), request.getResourceName());
               String configContext = configContextOrDefault(request.getContext());
               ContextSpecificConfig existingConfig = currentValues.get(resourceType, configContext);
               long updateTimestamp = System.currentTimeMillis();
@@ -113,12 +114,17 @@ public class MockGenericConfigService {
               currentValues.put(
                   resourceType,
                   configContext,
-                  ContextSpecificConfig.newBuilder().setContext(configContext)
-                      .setConfig(request.getConfig()).setCreationTimestamp(creationTimestamp)
-                      .setUpdateTimestamp(updateTimestamp).build());
+                  ContextSpecificConfig.newBuilder()
+                      .setContext(configContext)
+                      .setConfig(request.getConfig())
+                      .setCreationTimestamp(creationTimestamp)
+                      .setUpdateTimestamp(updateTimestamp)
+                      .build());
               responseStreamObserver.onNext(
-                  UpsertConfigResponse.newBuilder().setConfig(request.getConfig())
-                      .setCreationTimestamp(creationTimestamp).setUpdateTimestamp(updateTimestamp)
+                  UpsertConfigResponse.newBuilder()
+                      .setConfig(request.getConfig())
+                      .setCreationTimestamp(creationTimestamp)
+                      .setUpdateTimestamp(updateTimestamp)
                       .build());
               responseStreamObserver.onCompleted();
               return null;
@@ -201,9 +207,13 @@ public class MockGenericConfigService {
                       .collect(
                           Collectors.collectingAndThen(Collectors.toList(), this::mergeValues));
 
-              responseStreamObserver.onNext(
-                  GetConfigResponse.newBuilder().setConfig(mergedValue).build());
-              responseStreamObserver.onCompleted();
+              if (isValidValue(mergedValue)) {
+                responseStreamObserver.onNext(
+                    GetConfigResponse.newBuilder().setConfig(mergedValue).build());
+                responseStreamObserver.onCompleted();
+              } else {
+                responseStreamObserver.onError(Status.NOT_FOUND.asException());
+              }
               return null;
             })
         .when(this.mockConfigService)
@@ -218,6 +228,10 @@ public class MockGenericConfigService {
 
   private String configContextOrDefault(String value) {
     return Optional.ofNullable(value).filter(not(String::isEmpty)).orElse(DEFAULT_CONFIG_CONTEXT);
+  }
+
+  private boolean isValidValue(Value value) {
+    return value != null && value.getKindCase() != Value.KindCase.NULL_VALUE;
   }
 
   private class TestInterceptor implements ServerInterceptor {
