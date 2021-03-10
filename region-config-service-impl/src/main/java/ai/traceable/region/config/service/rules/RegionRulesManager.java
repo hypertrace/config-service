@@ -16,6 +16,7 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
+import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
@@ -58,7 +59,7 @@ class RegionRulesManager implements RulesManager {
         RegionRule regionRule = regionRuleConverter.convert(contextSpecificConfig.getConfig());
         regionRules.add(regionRule);
       } catch (InvalidProtocolBufferException e) {
-        log.error("Unable to convert config to region rule for rule id: {}", ruleId);
+        log.error("Unable to convert config to region rule for rule id: {}", ruleId, e);
       }
     }
 
@@ -142,6 +143,24 @@ class RegionRulesManager implements RulesManager {
     } catch (InvalidProtocolBufferException e) {
       log.error("Unable to convert config response {} to region rule", response);
       return Optional.empty();
+    }
+  }
+
+  @Override
+  public boolean deleteRegionRule(String id) {
+    DeleteConfigRequest deleteConfigRequest =
+        DeleteConfigRequest.newBuilder()
+            .setResourceNamespace(REGION_RULE_CONFIG_NAMESPACE)
+            .setResourceName(REGION_RULE_CONFIG_RESOURCE_NAME)
+            .setContext(id)
+            .build();
+
+    try {
+      configServiceBlockingStub.deleteConfig(deleteConfigRequest);
+      return true;
+    } catch (RuntimeException e) {
+      log.error("Unable to delete region rule {}", id, e);
+      return false;
     }
   }
 

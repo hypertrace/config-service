@@ -3,6 +3,7 @@ package ai.traceable.region.config.service.rules;
 import static org.junit.Assert.assertEquals;
 
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
+import ai.traceable.region.config.service.v1.DeleteRegionRuleRequest;
 import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRuleActionType;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
@@ -128,6 +129,19 @@ class RegionRulesValidatorTest {
               .build();
 
       Status status = rulesValidator.validate(updateRegionRuleRequest);
+
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    }
+  }
+
+  @Nested
+  class ValidateDeleteRegionRuleRequest {
+    @Test
+    @DisplayName("should return invalid argument status missing id")
+    void should_fail_deleteRegionRule_missingId() {
+      DeleteRegionRuleRequest deleteRegionRuleRequest =
+          DeleteRegionRuleRequest.getDefaultInstance();
+      Status status = rulesValidator.validate(deleteRegionRuleRequest);
 
       assertEquals(Code.INVALID_ARGUMENT, status.getCode());
     }

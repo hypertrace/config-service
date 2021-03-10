@@ -25,8 +25,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class RegionRulesManagerTest {
-  String REGION_RULE_CONFIG_NAMESPACE = "regionRule";
-  String REGION_RULE_CONFIG_RESOURCE_NAME = "regionRuleConfig";
+  private static final String REGION_RULE_CONFIG_NAMESPACE = "regionRule";
+  private static final String REGION_RULE_CONFIG_RESOURCE_NAME = "regionRuleConfig";
 
   private MockGenericConfigService mockConfigService;
   private ConfigServiceBlockingStub configServiceBlockingStub;
@@ -182,6 +182,18 @@ class RegionRulesManagerTest {
       Optional<RegionRule> maybeUpdatedRegionRule =
           rulesManager.updateRegionRule(updatedRegionRule);
       assertTrue(maybeUpdatedRegionRule.isEmpty());
+    }
+  }
+
+  @Nested
+  class DeleteRegionRule {
+    @Test
+    void shouldDeleteRegionRule() {
+      Value mockRegionRuleConfig = mockRuleConfig("id-1", "name-1");
+      addRegionRules(ImmutableSortedMap.of("id-1", mockRegionRuleConfig));
+
+      boolean isDeleted = rulesManager.deleteRegionRule("id-1");
+      assertTrue(isDeleted);
     }
   }
 

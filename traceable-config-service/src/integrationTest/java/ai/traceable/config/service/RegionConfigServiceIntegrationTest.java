@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
+import ai.traceable.region.config.service.v1.DeleteRegionRuleRequest;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesRequest;
 import ai.traceable.region.config.service.v1.GetRegionRequest;
 import ai.traceable.region.config.service.v1.GetRegionResponse;
@@ -223,5 +224,64 @@ class RegionConfigServiceIntegrationTest extends TraceableConfigServiceIntegrati
                     .getRule());
 
     assertEquals(regionRule, updatedRegionRule);
+  }
+
+  @Test
+  public void deleteRegionRules() {
+    // create region rules
+    String rule1Id =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+            TENANT_ID,
+            () ->
+                regionConfigServiceStub
+                    .createRegionRule(
+                        CreateRegionRuleRequest.newBuilder()
+                            .addAllRegionId(List.of("region-1", "region-2"))
+                            .setName("rule-1")
+                            .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
+                            .build())
+                    .getRule()
+                    .getId());
+
+    String rule2Id =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+            TENANT_ID,
+            () ->
+                regionConfigServiceStub
+                    .createRegionRule(
+                        CreateRegionRuleRequest.newBuilder()
+                            .addAllRegionId(List.of("region-Z"))
+                            .setName("rule-2")
+                            .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALLOW)
+                            .setExpirationMillis(123)
+                            .build())
+                    .getRule()
+                    .getId());
+
+    // delete region rule
+    GrpcClientRequestContextUtil.executeInTenantContext(
+        TENANT_ID,
+        () ->
+            regionConfigServiceStub.deleteRegionRule(
+                DeleteRegionRuleRequest.newBuilder().setId(rule2Id).build()));
+
+    // get all region rules
+    List<RegionRule> regionRules =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+            TENANT_ID,
+            () ->
+                regionConfigServiceStub
+                    .getAllRegionRules(GetAllRegionRulesRequest.getDefaultInstance())
+                    .getRuleList());
+
+    assertEquals(
+        List.of(
+            RegionRule.newBuilder()
+                .setId(rule1Id)
+                .setName("rule-1")
+                .addAllRegionId(List.of("region-1", "region-2"))
+                .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
+                .build()),
+        regionRules);
   }
 }

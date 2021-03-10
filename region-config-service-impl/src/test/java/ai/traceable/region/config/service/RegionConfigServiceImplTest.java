@@ -11,6 +11,8 @@ import ai.traceable.region.config.service.rules.RulesManager;
 import ai.traceable.region.config.service.rules.RulesValidator;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.CreateRegionRuleResponse;
+import ai.traceable.region.config.service.v1.DeleteRegionRuleRequest;
+import ai.traceable.region.config.service.v1.DeleteRegionRuleResponse;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesRequest;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesResponse;
 import ai.traceable.region.config.service.v1.GetRegionRequest;
@@ -294,6 +296,61 @@ class RegionConfigServiceImplTest {
       StreamObserver<UpdateRegionRuleResponse> responseObserver = mock(StreamObserver.class);
       Runnable runnable =
           () -> regionConfigService.updateRegionRule(updateRegionRuleRequest, responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1))
+          .onError(argThat(err -> Status.fromThrowable(err).getCode() == Code.INTERNAL));
+    }
+  }
+
+  @Nested
+  class DeleteRegionRule {
+    @Test
+    void shouldDeleteRegionRule() {
+      DeleteRegionRuleRequest deleteRegionRuleRequest =
+          DeleteRegionRuleRequest.newBuilder().setId("id").build();
+
+      when(rulesValidator.validate(deleteRegionRuleRequest)).thenReturn(Status.OK);
+      when(rulesManager.deleteRegionRule("id")).thenReturn(true);
+
+      StreamObserver<DeleteRegionRuleResponse> responseObserver = mock(StreamObserver.class);
+      Runnable runnable =
+          () -> regionConfigService.deleteRegionRule(deleteRegionRuleRequest, responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1)).onNext(DeleteRegionRuleResponse.getDefaultInstance());
+      verify(responseObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    @DisplayName("should return invalid argument status invalid request")
+    void should_fail_deleteRegionRule_invalidRequest() {
+      DeleteRegionRuleRequest deleteRegionRuleRequest =
+          DeleteRegionRuleRequest.getDefaultInstance();
+
+      when(rulesValidator.validate(deleteRegionRuleRequest)).thenReturn(Status.INVALID_ARGUMENT);
+
+      StreamObserver<DeleteRegionRuleResponse> responseObserver = mock(StreamObserver.class);
+      Runnable runnable =
+          () -> regionConfigService.deleteRegionRule(deleteRegionRuleRequest, responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1))
+          .onError(argThat(err -> Status.fromThrowable(err).getCode() == Code.INVALID_ARGUMENT));
+    }
+
+    @Test
+    @DisplayName("should return internal error unable to update")
+    void should_fail_deleteRegionRule_unableToDelete() {
+      DeleteRegionRuleRequest deleteRegionRuleRequest =
+          DeleteRegionRuleRequest.newBuilder().setId("id").build();
+
+      when(rulesValidator.validate(deleteRegionRuleRequest)).thenReturn(Status.OK);
+      when(rulesManager.deleteRegionRule("id")).thenReturn(false);
+
+      StreamObserver<DeleteRegionRuleResponse> responseObserver = mock(StreamObserver.class);
+      Runnable runnable =
+          () -> regionConfigService.deleteRegionRule(deleteRegionRuleRequest, responseObserver);
       GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
 
       verify(responseObserver, times(1))

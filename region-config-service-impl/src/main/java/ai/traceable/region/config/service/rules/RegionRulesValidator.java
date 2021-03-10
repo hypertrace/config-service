@@ -1,6 +1,7 @@
 package ai.traceable.region.config.service.rules;
 
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
+import ai.traceable.region.config.service.v1.DeleteRegionRuleRequest;
 import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRuleActionType;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
@@ -46,6 +47,16 @@ class RegionRulesValidator implements RulesValidator {
     if (regionRule.getActionType() == RegionRuleActionType.REGION_RULE_ACTION_TYPE_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
           "update region rule should have a valid action type");
+    }
+
+    return Status.OK;
+  }
+
+  @Override
+  public Status validate(DeleteRegionRuleRequest request) {
+    String ruleId = request.getId();
+    if (ruleId.isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription("delete region rule should have a valid id");
     }
 
     return Status.OK;

@@ -5,6 +5,8 @@ import ai.traceable.region.config.service.rules.RulesManager;
 import ai.traceable.region.config.service.rules.RulesValidator;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.CreateRegionRuleResponse;
+import ai.traceable.region.config.service.v1.DeleteRegionRuleRequest;
+import ai.traceable.region.config.service.v1.DeleteRegionRuleResponse;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesRequest;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesResponse;
 import ai.traceable.region.config.service.v1.GetRegionRequest;
@@ -118,5 +120,27 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
     responseObserver.onNext(
         UpdateRegionRuleResponse.newBuilder().setRule(updatedRegionRule).build());
     responseObserver.onCompleted();
+  }
+
+  @Override
+  public void deleteRegionRule(
+      DeleteRegionRuleRequest request, StreamObserver<DeleteRegionRuleResponse> responseObserver) {
+    Status status = rulesValidator.validate(request);
+    if (!status.isOk()) {
+      responseObserver.onError(status.asException());
+      return;
+    }
+
+    String ruleId = request.getId();
+    boolean isDeleted = rulesManager.deleteRegionRule(ruleId);
+    if (isDeleted) {
+      responseObserver.onNext(DeleteRegionRuleResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } else {
+      responseObserver.onError(
+          Status.INTERNAL
+              .withDescription(String.format("unable to delete region rule %s", ruleId))
+              .asRuntimeException());
+    }
   }
 }

@@ -11,4 +11,6 @@ public interface RulesManager {
   Optional<RegionRule> createRegionRule(CreateRegionRuleRequest createRuleRequest);
 
   Optional<RegionRule> updateRegionRule(RegionRule regionRule);
+
+  boolean deleteRegionRule(String id);
 }
