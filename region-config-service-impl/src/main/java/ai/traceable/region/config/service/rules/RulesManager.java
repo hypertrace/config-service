@@ -9,4 +9,6 @@ public interface RulesManager {
   List<RegionRule> getRegionRules();
 
   Optional<RegionRule> createRegionRule(CreateRegionRuleRequest createRuleRequest);
+
+  Optional<RegionRule> updateRegionRule(RegionRule regionRule);
 }

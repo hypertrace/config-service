@@ -14,6 +14,8 @@ import ai.traceable.region.config.service.v1.GetRegionsResponse;
 import ai.traceable.region.config.service.v1.Region;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceImplBase;
 import ai.traceable.region.config.service.v1.RegionRule;
+import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
+import ai.traceable.region.config.service.v1.UpdateRegionRuleResponse;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -94,6 +96,27 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
 
     RegionRule regionRule = maybeRegionRule.get();
     responseObserver.onNext(CreateRegionRuleResponse.newBuilder().setRule(regionRule).build());
+    responseObserver.onCompleted();
+  }
+
+  @Override
+  public void updateRegionRule(
+      UpdateRegionRuleRequest request, StreamObserver<UpdateRegionRuleResponse> responseObserver) {
+    Status status = rulesValidator.validate(request);
+    if (!status.isOk()) {
+      responseObserver.onError(status.asException());
+      return;
+    }
+
+    Optional<RegionRule> maybeUpdatedRegionRule = rulesManager.updateRegionRule(request.getRule());
+    if (maybeUpdatedRegionRule.isEmpty()) {
+      responseObserver.onError(Status.INTERNAL.asException());
+      return;
+    }
+
+    RegionRule updatedRegionRule = maybeUpdatedRegionRule.get();
+    responseObserver.onNext(
+        UpdateRegionRuleResponse.newBuilder().setRule(updatedRegionRule).build());
     responseObserver.onCompleted();
   }
 }

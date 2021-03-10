@@ -14,6 +14,7 @@ import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceBlockingStub;
 import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRuleActionType;
+import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import java.util.List;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
@@ -172,5 +173,55 @@ class RegionConfigServiceIntegrationTest extends TraceableConfigServiceIntegrati
             .setExpirationMillis(123)
             .build(),
         regionRule2);
+  }
+
+  @Test
+  public void updateRegionRules() {
+    // create region rules
+    GrpcClientRequestContextUtil.executeInTenantContext(
+        TENANT_ID,
+        () ->
+            regionConfigServiceStub.createRegionRule(
+                CreateRegionRuleRequest.newBuilder()
+                    .addAllRegionId(List.of("region-1", "region-2"))
+                    .setName("rule-1")
+                    .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
+                    .build()));
+
+    String rule2Id =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+            TENANT_ID,
+            () ->
+                regionConfigServiceStub
+                    .createRegionRule(
+                        CreateRegionRuleRequest.newBuilder()
+                            .addAllRegionId(List.of("region-Z"))
+                            .setName("rule-2")
+                            .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALLOW)
+                            .setExpirationMillis(123)
+                            .build())
+                    .getRule()
+                    .getId());
+
+    RegionRule regionRule =
+        RegionRule.newBuilder()
+            .setId(rule2Id)
+            .addRegionId("region-A")
+            .setName("updated-rule-2")
+            .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
+            .setExpirationMillis(789)
+            .build();
+
+    // update region rule
+    RegionRule updatedRegionRule =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+            TENANT_ID,
+            () ->
+                regionConfigServiceStub
+                    .updateRegionRule(
+                        UpdateRegionRuleRequest.newBuilder().setRule(regionRule).build())
+                    .getRule());
+
+    assertEquals(regionRule, updatedRegionRule);
   }
 }

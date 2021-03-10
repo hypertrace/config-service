@@ -9,6 +9,7 @@ import ai.traceable.region.config.service.v1.RegionRule;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
+import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
+import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
 
@@ -103,5 +105,61 @@ class RegionRulesManager implements RulesManager {
       log.error("Unable to convert config response {} to region rule", response);
       return Optional.empty();
     }
+  }
+
+  @Override
+  public Optional<RegionRule> updateRegionRule(RegionRule regionRule) {
+    String ruleId = regionRule.getId();
+    if (!doesRegionRuleExist(ruleId)) {
+      return Optional.empty();
+    }
+
+    UpsertConfigRequest upsertConfigRequest;
+
+    try {
+      upsertConfigRequest =
+          UpsertConfigRequest.newBuilder()
+              .setContext(ruleId)
+              .setResourceNamespace(REGION_RULE_CONFIG_NAMESPACE)
+              .setResourceName(REGION_RULE_CONFIG_RESOURCE_NAME)
+              .setConfig(regionRuleConverter.convert(regionRule))
+              .build();
+    } catch (InvalidProtocolBufferException e) {
+      log.error("Unable to convert region rule {} to config object", regionRule);
+      return Optional.empty();
+    }
+
+    UpsertConfigResponse response;
+    try {
+      response = configServiceBlockingStub.upsertConfig(upsertConfigRequest);
+    } catch (RuntimeException e) {
+      log.error("Unable to update region rule {}", regionRule);
+      return Optional.empty();
+    }
+
+    try {
+      return Optional.ofNullable(regionRuleConverter.convert(response.getConfig()));
+    } catch (InvalidProtocolBufferException e) {
+      log.error("Unable to convert config response {} to region rule", response);
+      return Optional.empty();
+    }
+  }
+
+  private boolean doesRegionRuleExist(String ruleId) {
+    try {
+      GetConfigRequest getConfigRequest =
+          GetConfigRequest.newBuilder()
+              .addContexts(ruleId)
+              .setResourceNamespace(REGION_RULE_CONFIG_NAMESPACE)
+              .setResourceName(REGION_RULE_CONFIG_RESOURCE_NAME)
+              .build();
+      configServiceBlockingStub.getConfig(getConfigRequest);
+      return true;
+    } catch (Exception e) {
+      if (Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
+        return false;
+      }
+    }
+    return false;
   }
 }

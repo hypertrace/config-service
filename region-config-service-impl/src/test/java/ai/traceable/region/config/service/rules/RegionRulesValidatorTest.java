@@ -3,7 +3,9 @@ package ai.traceable.region.config.service.rules;
 import static org.junit.Assert.assertEquals;
 
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
+import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRuleActionType;
+import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,6 +58,76 @@ class RegionRulesValidatorTest {
               .build();
 
       Status status = rulesValidator.validate(createRegionRuleRequest);
+
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    }
+  }
+
+  @Nested
+  class ValidateUpdateRegionRuleRequest {
+    @Test
+    @DisplayName("should return invalid argument status missing id")
+    void should_fail_updateRegionRule_missingId() {
+      UpdateRegionRuleRequest updateRegionRuleRequest =
+          UpdateRegionRuleRequest.newBuilder()
+              .setRule(
+                  RegionRule.newBuilder()
+                      .addRegionId("region-1")
+                      .setName("name")
+                      .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
+                      .build())
+              .build();
+
+      Status status = rulesValidator.validate(updateRegionRuleRequest);
+
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName("should return invalid argument status missing region ids")
+    void should_fail_updateRegionRule_missingRegionIds() {
+      UpdateRegionRuleRequest updateRegionRuleRequest =
+          UpdateRegionRuleRequest.newBuilder()
+              .setRule(
+                  RegionRule.newBuilder()
+                      .setId("id")
+                      .setName("name")
+                      .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
+                      .build())
+              .build();
+
+      Status status = rulesValidator.validate(updateRegionRuleRequest);
+
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName("should return invalid argument unspecified action type")
+    void should_fail_updateRegionRule_invalidActionType() {
+      UpdateRegionRuleRequest updateRegionRuleRequest =
+          UpdateRegionRuleRequest.newBuilder()
+              .setRule(
+                  RegionRule.newBuilder()
+                      .setId("id")
+                      .addRegionId("region-1")
+                      .setName("name")
+                      .build())
+              .build();
+
+      Status status = rulesValidator.validate(updateRegionRuleRequest);
+
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName("should return invalid argument invalid name")
+    void should_fail_updateRegionRule_invalidName() {
+      UpdateRegionRuleRequest updateRegionRuleRequest =
+          UpdateRegionRuleRequest.newBuilder()
+              .setRule(RegionRule.newBuilder().setId("id").addRegionId("region-1").build())
+              .build();
+
+      Status status = rulesValidator.validate(updateRegionRuleRequest);
 
       assertEquals(Code.INVALID_ARGUMENT, status.getCode());
     }

@@ -134,6 +134,57 @@ class RegionRulesManagerTest {
     }
   }
 
+  @Nested
+  class UpdateRegionRule {
+
+    @Test
+    void shouldUpdateRegionRule() throws InvalidProtocolBufferException {
+      Value mockRegionRuleConfig = mockRuleConfig("id-1", "name-1");
+      addRegionRules(ImmutableSortedMap.of("id-1", mockRegionRuleConfig));
+
+      RegionRule updatedRegionRule =
+          RegionRule.newBuilder().setId("id-1").setName("updated-name").build();
+      Value ruleConfig = mockRuleConfig("id-1", "updated-name");
+      when(regionRuleConverter.convert(updatedRegionRule)).thenReturn(ruleConfig);
+      when(regionRuleConverter.convert(ruleConfig)).thenReturn(updatedRegionRule);
+
+      Optional<RegionRule> maybeUpdatedRegionRule =
+          rulesManager.updateRegionRule(updatedRegionRule);
+      assertTrue(maybeUpdatedRegionRule.isPresent());
+      assertEquals(updatedRegionRule, maybeUpdatedRegionRule.get());
+    }
+
+    @Test
+    void should_notUpdateRegionRule_invalidRegionRuleConversion()
+        throws InvalidProtocolBufferException {
+      Value mockRegionRuleConfig = mockRuleConfig("id-1", "name-1");
+      addRegionRules(ImmutableSortedMap.of("id-1", mockRegionRuleConfig));
+
+      RegionRule regionRule = RegionRule.newBuilder().setId("id-1").build();
+      when(regionRuleConverter.convert(regionRule)).thenThrow(InvalidProtocolBufferException.class);
+
+      Optional<RegionRule> maybeUpdatedRegionRule = rulesManager.updateRegionRule(regionRule);
+      assertTrue(maybeUpdatedRegionRule.isEmpty());
+    }
+
+    @Test
+    void should_notUpdateRegionRule_invalidRegionRuleConfigConversion()
+        throws InvalidProtocolBufferException {
+      Value mockRegionRuleConfig = mockRuleConfig("id-1", "name-1");
+      addRegionRules(ImmutableSortedMap.of("id-1", mockRegionRuleConfig));
+
+      RegionRule updatedRegionRule =
+          RegionRule.newBuilder().setId("id-1").setName("updated-name").build();
+      Value ruleConfig = mockRuleConfig("id-1", "updated-name");
+      when(regionRuleConverter.convert(updatedRegionRule)).thenReturn(ruleConfig);
+      when(regionRuleConverter.convert(ruleConfig)).thenThrow(InvalidProtocolBufferException.class);
+
+      Optional<RegionRule> maybeUpdatedRegionRule =
+          rulesManager.updateRegionRule(updatedRegionRule);
+      assertTrue(maybeUpdatedRegionRule.isEmpty());
+    }
+  }
+
   private void addRegionRules(Map<String, Value> regionRuleConfigs) {
     regionRuleConfigs.forEach(
         (id, regionRuleConfig) ->
