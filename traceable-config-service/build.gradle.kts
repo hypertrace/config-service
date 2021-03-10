@@ -69,7 +69,7 @@ dependencies {
   implementation("org.slf4j:slf4j-api:1.7.30")
   runtimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:2.14.0")
 
-  //Integration test dependencies
+  // Integration test dependencies
   integrationTestImplementation(testFixtures(project(":traceable-config-service")))
   integrationTestImplementation("ai.traceable.platform:insights-service-api:0.29.5")
   integrationTestImplementation("org.junit.jupiter:junit-jupiter:5.7.0")
@@ -87,7 +87,7 @@ application {
 }
 
 // Config for gw run to be able to run this locally. Just execute gw run here on Intellij or on the console.
-tasks.run<JavaExec>  {
+tasks.run<JavaExec> {
   jvmArgs = listOf("-Dservice.name=${project.name}")
 }
 

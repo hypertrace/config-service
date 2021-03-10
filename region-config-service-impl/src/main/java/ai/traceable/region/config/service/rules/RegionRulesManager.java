@@ -3,29 +3,37 @@ package ai.traceable.region.config.service.rules;
 import static ai.traceable.region.config.service.constants.RegionConfigConstants.REGION_RULE_CONFIG_NAMESPACE;
 import static ai.traceable.region.config.service.constants.RegionConfigConstants.REGION_RULE_CONFIG_RESOURCE_NAME;
 
+import ai.traceable.region.config.service.utils.UuidGenerator;
+import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.RegionRule;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
+import org.hypertrace.config.service.v1.UpsertConfigRequest;
+import org.hypertrace.config.service.v1.UpsertConfigResponse;
 
 @Slf4j
 class RegionRulesManager implements RulesManager {
 
   private final ConfigServiceBlockingStub configServiceBlockingStub;
   private final RegionRuleConverter regionRuleConverter;
+  private final UuidGenerator uuidGenerator;
 
   @Inject
   RegionRulesManager(
       ConfigServiceBlockingStub configServiceBlockingStub,
-      RegionRuleConverter regionRuleConverter) {
+      RegionRuleConverter regionRuleConverter,
+      UuidGenerator uuidGenerator) {
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.regionRuleConverter = regionRuleConverter;
+    this.uuidGenerator = uuidGenerator;
   }
 
   @Override
@@ -53,5 +61,47 @@ class RegionRulesManager implements RulesManager {
     }
 
     return ImmutableList.<RegionRule>builder().addAll(regionRules).build();
+  }
+
+  @Override
+  public Optional<RegionRule> createRegionRule(CreateRegionRuleRequest createRuleRequest) {
+    String ruleId = this.uuidGenerator.generateId();
+    RegionRule regionRule =
+        RegionRule.newBuilder()
+            .setId(ruleId)
+            .addAllRegionId(createRuleRequest.getRegionIdList())
+            .setName(createRuleRequest.getName())
+            .setActionType(createRuleRequest.getActionType())
+            .setExpirationMillis(createRuleRequest.getExpirationMillis())
+            .build();
+
+    UpsertConfigRequest upsertConfigRequest;
+    try {
+      upsertConfigRequest =
+          UpsertConfigRequest.newBuilder()
+              .setResourceNamespace(REGION_RULE_CONFIG_NAMESPACE)
+              .setResourceName(REGION_RULE_CONFIG_RESOURCE_NAME)
+              .setConfig(regionRuleConverter.convert(regionRule))
+              .setContext(ruleId)
+              .build();
+    } catch (InvalidProtocolBufferException e) {
+      log.error("Unable to convert region rule {} to config object", regionRule);
+      return Optional.empty();
+    }
+
+    UpsertConfigResponse response;
+    try {
+      response = configServiceBlockingStub.upsertConfig(upsertConfigRequest);
+    } catch (RuntimeException e) {
+      log.error("Unable to create region rule for request {}", createRuleRequest);
+      return Optional.empty();
+    }
+
+    try {
+      return Optional.ofNullable(regionRuleConverter.convert(response.getConfig()));
+    } catch (InvalidProtocolBufferException e) {
+      log.error("Unable to convert config response {} to region rule", response);
+      return Optional.empty();
+    }
   }
 }

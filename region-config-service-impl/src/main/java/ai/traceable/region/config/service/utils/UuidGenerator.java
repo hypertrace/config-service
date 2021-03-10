@@ -11,4 +11,8 @@ public class UuidGenerator {
   public String generateId(String value) {
     return UuidCreator.getNameBasedSha1(NAMESPACE_UUID, value).toString();
   }
+
+  public String generateId() {
+    return UUID.randomUUID().toString();
+  }
 }

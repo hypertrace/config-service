@@ -67,6 +67,42 @@ class RegionRuleConverterTest {
   @Test
   void should_convert_regionRuleConfig_toRegionRule_nullRuleConfig()
       throws InvalidProtocolBufferException {
-    assertEquals(RegionRule.getDefaultInstance(), regionRuleConverter.convert(null));
+    assertEquals(RegionRule.getDefaultInstance(), regionRuleConverter.convert((Value) null));
+  }
+
+  @Test
+  void should_convert_regionRule_toRegionRuleConfig() throws InvalidProtocolBufferException {
+    RegionRule regionRule =
+        RegionRule.newBuilder()
+            .setId("id-1")
+            .addAllRegionId(List.of("region-1", "region-2"))
+            .setName("rule-name")
+            .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
+            .setExpirationMillis(123)
+            .build();
+
+    Value regionRuleConfig = regionRuleConverter.convert(regionRule);
+
+    Struct ruleConfigStruct =
+        Struct.newBuilder()
+            .putFields("id", Value.newBuilder().setStringValue("id-1").build())
+            .putFields(
+                "regionId",
+                Value.newBuilder()
+                    .setListValue(
+                        ListValue.newBuilder()
+                            .addValues(Value.newBuilder().setStringValue("region-1").build())
+                            .addValues(Value.newBuilder().setStringValue("region-2").build())
+                            .build())
+                    .build())
+            .putFields("name", Value.newBuilder().setStringValue("rule-name").build())
+            .putFields(
+                "actionType",
+                Value.newBuilder()
+                    .setStringValue(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK.name())
+                    .build())
+            .putFields("expirationMillis", Value.newBuilder().setStringValue("123").build())
+            .build();
+    assertEquals(Value.newBuilder().setStructValue(ruleConfigStruct).build(), regionRuleConfig);
   }
 }

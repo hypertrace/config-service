@@ -12,6 +12,7 @@ public class RulesManagerModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(RulesManager.class).to(RegionRulesManager.class);
+    bind(RulesValidator.class).to(RegionRulesValidator.class);
   }
 
   @Provides

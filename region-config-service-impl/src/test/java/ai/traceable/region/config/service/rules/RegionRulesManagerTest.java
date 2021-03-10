@@ -1,9 +1,12 @@
 package ai.traceable.region.config.service.rules;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.region.config.service.utils.UuidGenerator;
+import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.RegionRule;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -11,6 +14,7 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
@@ -27,6 +31,7 @@ class RegionRulesManagerTest {
   private MockGenericConfigService mockConfigService;
   private ConfigServiceBlockingStub configServiceBlockingStub;
   private RegionRuleConverter regionRuleConverter;
+  private UuidGenerator uuidGenerator;
 
   private RegionRulesManager rulesManager;
 
@@ -37,7 +42,9 @@ class RegionRulesManagerTest {
     mockConfigService.start();
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     regionRuleConverter = mock(RegionRuleConverter.class);
-    this.rulesManager = new RegionRulesManager(configServiceBlockingStub, regionRuleConverter);
+    uuidGenerator = mock(UuidGenerator.class);
+    this.rulesManager =
+        new RegionRulesManager(configServiceBlockingStub, regionRuleConverter, uuidGenerator);
   }
 
   @AfterEach
@@ -60,7 +67,6 @@ class RegionRulesManagerTest {
       when(regionRuleConverter.convert(mockRegionRuleConfig1)).thenReturn(regionRule1);
       when(regionRuleConverter.convert(mockRegionRuleConfig2)).thenReturn(regionRule2);
       List<RegionRule> regionRules = rulesManager.getRegionRules();
-
       assertEquals(List.of(regionRule2, regionRule1), regionRules);
     }
 
@@ -79,6 +85,52 @@ class RegionRulesManagerTest {
           .thenThrow(InvalidProtocolBufferException.class);
       List<RegionRule> regionRules = rulesManager.getRegionRules();
       assertEquals(List.of(regionRule1), regionRules);
+    }
+  }
+
+  @Nested
+  class CreateRegionRule {
+
+    @Test
+    void shouldCreateRegionRule() throws InvalidProtocolBufferException {
+      when(uuidGenerator.generateId()).thenReturn("id-1");
+      RegionRule regionRule = RegionRule.newBuilder().setId("id-1").setName("name-1").build();
+      Value ruleConfig = mockRuleConfig("id-1", "name-1");
+      when(regionRuleConverter.convert(regionRule)).thenReturn(ruleConfig);
+      when(regionRuleConverter.convert(ruleConfig)).thenReturn(regionRule);
+
+      Optional<RegionRule> maybeCreatedRegionRule =
+          rulesManager.createRegionRule(
+              CreateRegionRuleRequest.newBuilder().setName("name-1").build());
+      assertTrue(maybeCreatedRegionRule.isPresent());
+      assertEquals(regionRule, maybeCreatedRegionRule.get());
+    }
+
+    @Test
+    void should_notCreateRegionRule_invalidRegionRuleConversion()
+        throws InvalidProtocolBufferException {
+      when(uuidGenerator.generateId()).thenReturn("id-1");
+      RegionRule regionRule = RegionRule.newBuilder().setId("id-1").build();
+      when(regionRuleConverter.convert(regionRule)).thenThrow(InvalidProtocolBufferException.class);
+
+      Optional<RegionRule> maybeCreatedRegionRule =
+          rulesManager.createRegionRule(CreateRegionRuleRequest.getDefaultInstance());
+      assertTrue(maybeCreatedRegionRule.isEmpty());
+    }
+
+    @Test
+    void should_notCreateRegionRule_invalidRegionRuleConfigConversion()
+        throws InvalidProtocolBufferException {
+      when(uuidGenerator.generateId()).thenReturn("id-1");
+      RegionRule regionRule = RegionRule.newBuilder().setId("id-1").setName("name-1").build();
+      Value ruleConfig = mockRuleConfig("id-1", "name-1");
+      when(regionRuleConverter.convert(regionRule)).thenReturn(ruleConfig);
+      when(regionRuleConverter.convert(ruleConfig)).thenThrow(InvalidProtocolBufferException.class);
+
+      Optional<RegionRule> maybeCreatedRegionRule =
+          rulesManager.createRegionRule(
+              CreateRegionRuleRequest.newBuilder().setName("name-1").build());
+      assertTrue(maybeCreatedRegionRule.isEmpty());
     }
   }
 

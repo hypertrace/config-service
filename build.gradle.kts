@@ -5,7 +5,7 @@ plugins {
   id("org.hypertrace.jacoco-report-plugin") version "0.1.3" apply false
   id("org.sonarqube") version "3.0"
   id("org.owasp.dependencycheck") version "6.0.3"
-  id("org.hypertrace.code-style-plugin") version "1.0.0" apply false
+  id("org.hypertrace.code-style-plugin") version "1.0.2" apply false
 }
 
 subprojects {

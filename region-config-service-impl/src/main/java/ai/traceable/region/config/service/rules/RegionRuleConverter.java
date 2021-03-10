@@ -14,4 +14,8 @@ class RegionRuleConverter {
     }
     return builder.build();
   }
+
+  public Value convert(RegionRule regionRule) throws InvalidProtocolBufferException {
+    return ConfigProtoConverter.convertToValue(regionRule);
+  }
 }

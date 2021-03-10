@@ -2,6 +2,9 @@ package ai.traceable.region.config.service;
 
 import ai.traceable.region.config.service.regions.RegionStore;
 import ai.traceable.region.config.service.rules.RulesManager;
+import ai.traceable.region.config.service.rules.RulesValidator;
+import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
+import ai.traceable.region.config.service.v1.CreateRegionRuleResponse;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesRequest;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesResponse;
 import ai.traceable.region.config.service.v1.GetRegionRequest;
@@ -21,11 +24,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
   private final RegionStore regionStore;
+  private final RulesValidator rulesValidator;
   private final RulesManager rulesManager;
 
   @Inject
-  RegionConfigServiceImpl(RegionStore regionStore, RulesManager rulesManager) {
+  RegionConfigServiceImpl(
+      RegionStore regionStore, RulesValidator rulesValidator, RulesManager rulesManager) {
     this.regionStore = regionStore;
+    this.rulesValidator = rulesValidator;
     this.rulesManager = rulesManager;
   }
 
@@ -68,6 +74,26 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
     List<RegionRule> regionRules = rulesManager.getRegionRules();
 
     responseObserver.onNext(GetAllRegionRulesResponse.newBuilder().addAllRule(regionRules).build());
+    responseObserver.onCompleted();
+  }
+
+  @Override
+  public void createRegionRule(
+      CreateRegionRuleRequest request, StreamObserver<CreateRegionRuleResponse> responseObserver) {
+    Status status = rulesValidator.validate(request);
+    if (!status.isOk()) {
+      responseObserver.onError(status.asException());
+      return;
+    }
+
+    Optional<RegionRule> maybeRegionRule = rulesManager.createRegionRule(request);
+    if (maybeRegionRule.isEmpty()) {
+      responseObserver.onError(Status.INTERNAL.asException());
+      return;
+    }
+
+    RegionRule regionRule = maybeRegionRule.get();
+    responseObserver.onNext(CreateRegionRuleResponse.newBuilder().setRule(regionRule).build());
     responseObserver.onCompleted();
   }
 }
