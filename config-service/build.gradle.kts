@@ -34,7 +34,7 @@ tasks.register<DockerCreateContainer>("createMongoContainer") {
   targetImageId(tasks.getByName<DockerPullImage>("pullMongoImage").image)
   containerName.set("mongo-local")
   hostConfig.network.set(tasks.getByName<DockerCreateNetwork>("createIntegrationTestNetwork").networkId)
-  hostConfig.portBindings.set(listOf("27017:27017"))
+  hostConfig.portBindings.set(listOf("37017:27017"))
   hostConfig.autoRemove.set(true)
 }
 
@@ -73,10 +73,10 @@ dependencies {
   integrationTestImplementation("org.hypertrace.core.serviceframework:integrationtest-service-framework:0.1.18")
   integrationTestImplementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.3.3")
   constraints {
-    runtimeOnly("io.netty:netty-codec-http2:4.1.59.Final") {
-      because("https://snyk.io/vuln/SNYK-JAVA-IONETTY-1070799")
+    runtimeOnly("io.netty:netty-codec-http2:4.1.60.Final") {
+      because("https://snyk.io/vuln/SNYK-JAVA-IONETTY-1083991")
     }
-    runtimeOnly("io.netty:netty-handler-proxy:4.1.59.Final") {
+    runtimeOnly("io.netty:netty-handler-proxy:4.1.60.Final") {
       because("https://snyk.io/vuln/SNYK-JAVA-IONETTY-1070799")
     }
   }
