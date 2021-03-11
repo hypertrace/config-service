@@ -34,7 +34,7 @@ tasks.register<DockerCreateContainer>("createMongoContainer") {
   targetImageId(tasks.getByName<DockerPullImage>("pullMongoImage").image)
   containerName.set("mongo-local")
   hostConfig.network.set(tasks.getByName<DockerCreateNetwork>("createIntegrationTestNetwork").networkId)
-  hostConfig.portBindings.set(listOf("27017:27017"))
+  hostConfig.portBindings.set(listOf("37017:27017"))
   hostConfig.autoRemove.set(true)
 }
 
