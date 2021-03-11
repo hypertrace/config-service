@@ -64,7 +64,7 @@ dependencies {
 
   runtimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:2.13.3")
   runtimeOnly("io.grpc:grpc-netty:1.36.0")
-  runtimeOnly("io.netty:netty-codec-http2:4.1.60.Final")
+
   //Integration test dependencies
   integrationTestImplementation("org.junit.jupiter:junit-jupiter:5.6.2")
   integrationTestImplementation("com.google.guava:guava:30.1-jre")
@@ -73,6 +73,9 @@ dependencies {
   integrationTestImplementation("org.hypertrace.core.serviceframework:integrationtest-service-framework:0.1.18")
   integrationTestImplementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.3.3")
   constraints {
+    runtimeOnly("io.netty:netty-codec-http2:4.1.60.Final") {
+      because("https://snyk.io/vuln/SNYK-JAVA-IONETTY-1070799")
+    }
     runtimeOnly("io.netty:netty-handler-proxy:4.1.60.Final") {
       because("https://snyk.io/vuln/SNYK-JAVA-IONETTY-1070799")
     }
