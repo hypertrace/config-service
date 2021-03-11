@@ -18,6 +18,7 @@ import io.grpc.ServerCall.Listener;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.ServerInterceptors;
+import io.grpc.Status;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
@@ -205,9 +206,13 @@ public class MockGenericConfigService {
                       .collect(
                           Collectors.collectingAndThen(Collectors.toList(), this::mergeValues));
 
-              responseStreamObserver.onNext(
-                  GetConfigResponse.newBuilder().setConfig(mergedValue).build());
-              responseStreamObserver.onCompleted();
+              if (isValidValue(mergedValue)) {
+                responseStreamObserver.onNext(
+                    GetConfigResponse.newBuilder().setConfig(mergedValue).build());
+                responseStreamObserver.onCompleted();
+              } else {
+                responseStreamObserver.onError(Status.NOT_FOUND.asException());
+              }
               return null;
             })
         .when(this.mockConfigService)
@@ -222,6 +227,10 @@ public class MockGenericConfigService {
 
   private String configContextOrDefault(String value) {
     return Optional.ofNullable(value).filter(not(String::isEmpty)).orElse(DEFAULT_CONFIG_CONTEXT);
+  }
+
+  private boolean isValidValue(Value value) {
+    return value != null && value.getKindCase() != Value.KindCase.NULL_VALUE;
   }
 
   private class TestInterceptor implements ServerInterceptor {
