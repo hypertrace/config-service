@@ -74,7 +74,7 @@ dependencies {
   integrationTestImplementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.3.3")
   constraints {
     runtimeOnly("io.netty:netty-codec-http2:4.1.60.Final") {
-      because("https://snyk.io/vuln/SNYK-JAVA-IONETTY-1070799")
+      because("https://snyk.io/vuln/SNYK-JAVA-IONETTY-1083991")
     }
     runtimeOnly("io.netty:netty-handler-proxy:4.1.60.Final") {
       because("https://snyk.io/vuln/SNYK-JAVA-IONETTY-1070799")
