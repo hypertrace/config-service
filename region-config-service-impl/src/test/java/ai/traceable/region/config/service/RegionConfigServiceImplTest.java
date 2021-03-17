@@ -27,6 +27,7 @@ import ai.traceable.region.config.service.v1.UpdateRegionRuleResponse;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import io.grpc.stub.StreamObserver;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
@@ -58,7 +59,7 @@ class RegionConfigServiceImplTest {
     void shouldGetCountries() {
       StreamObserver<GetRegionsResponse> responseObserver = mock(StreamObserver.class);
       List<Region> regions = List.of(Region.newBuilder().setId("id").setName("name").build());
-      when(regionStore.getCountries()).thenReturn(regions);
+      when(regionStore.getCountries(Collections.emptyList())).thenReturn(regions);
 
       Runnable runnable =
           () ->

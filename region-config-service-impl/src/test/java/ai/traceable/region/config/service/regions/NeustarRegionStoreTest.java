@@ -36,10 +36,19 @@ class NeustarRegionStoreTest {
   @Nested
   class GetCountries {
     @Test
-    @DisplayName("should get countries")
-    void shouldGetCountries() {
-      List<ai.traceable.region.config.service.v1.Region> regions = regionStore.getCountries();
+    @DisplayName("should get all countries")
+    void shouldGetAllCountries() {
+      List<ai.traceable.region.config.service.v1.Region> regions =
+          regionStore.getCountries(Collections.emptyList());
       assertEquals(2, regions.size());
+    }
+
+    @Test
+    @DisplayName("should get countries based on region id")
+    void shouldGetCountries_regionIds() {
+      List<ai.traceable.region.config.service.v1.Region> regions =
+          regionStore.getCountries(List.of("region-id-1"));
+      assertEquals(1, regions.size());
     }
   }
 

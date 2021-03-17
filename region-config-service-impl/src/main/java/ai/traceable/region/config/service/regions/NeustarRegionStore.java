@@ -1,8 +1,10 @@
 package ai.traceable.region.config.service.regions;
 
 import com.google.inject.Inject;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -19,9 +21,10 @@ class NeustarRegionStore implements RegionStore {
   }
 
   @Override
-  public List<ai.traceable.region.config.service.v1.Region> getCountries() {
-    return regionIdToRegionMap.values().stream()
+  public List<ai.traceable.region.config.service.v1.Region> getCountries(List<String> ids) {
+    return getRegions(ids).stream()
         .filter(region -> RegionType.COUNTRY.equals(region.getType()))
+        .sorted(Comparator.comparing(Region::getName))
         .map(this.regionConverter::convert)
         .collect(Collectors.toList());
   }
@@ -29,5 +32,14 @@ class NeustarRegionStore implements RegionStore {
   @Override
   public Optional<ai.traceable.region.config.service.v1.Region> getRegion(String id) {
     return Optional.ofNullable(regionIdToRegionMap.get(id)).map(this.regionConverter::convert);
+  }
+
+  private List<Region> getRegions(List<String> ids) {
+    return ids.isEmpty()
+        ? List.copyOf(regionIdToRegionMap.values())
+        : ids.stream()
+            .map(regionIdToRegionMap::get)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
   }
 }

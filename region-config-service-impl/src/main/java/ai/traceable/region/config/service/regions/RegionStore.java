@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface RegionStore {
-  List<ai.traceable.region.config.service.v1.Region> getCountries();
+  List<ai.traceable.region.config.service.v1.Region> getCountries(List<String> ids);
 
   Optional<Region> getRegion(String id);
 }

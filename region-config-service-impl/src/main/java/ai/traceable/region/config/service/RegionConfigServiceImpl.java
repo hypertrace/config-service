@@ -21,6 +21,7 @@ import ai.traceable.region.config.service.v1.UpdateRegionRuleResponse;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -43,7 +44,9 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
   public void getRegions(
       GetRegionsRequest request, StreamObserver<GetRegionsResponse> responseObserver) {
 
-    List<Region> countries = regionStore.getCountries();
+    List<Region> countries =
+        regionStore.getCountries(
+            request.hasFilter() ? request.getFilter().getIdList() : Collections.emptyList());
 
     responseObserver.onNext(GetRegionsResponse.newBuilder().addAllRegion(countries).build());
     responseObserver.onCompleted();

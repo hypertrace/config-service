@@ -5,6 +5,11 @@ package ai.traceable.region.config.service.v1;
 option java_multiple_files = true;
 
 message GetRegionsRequest {
+    RegionsFilter filter = 1;
+}
+
+message RegionsFilter {
+    repeated string id = 1;
 }
 
 message GetRegionsResponse {
