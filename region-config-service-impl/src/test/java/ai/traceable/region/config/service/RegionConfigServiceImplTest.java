@@ -13,8 +13,11 @@ import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.CreateRegionRuleResponse;
 import ai.traceable.region.config.service.v1.DeleteRegionRuleRequest;
 import ai.traceable.region.config.service.v1.DeleteRegionRuleResponse;
+import ai.traceable.region.config.service.v1.DetailedRegion;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesRequest;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesResponse;
+import ai.traceable.region.config.service.v1.GetDetailedRegionsRequest;
+import ai.traceable.region.config.service.v1.GetDetailedRegionsResponse;
 import ai.traceable.region.config.service.v1.GetRegionRequest;
 import ai.traceable.region.config.service.v1.GetRegionResponse;
 import ai.traceable.region.config.service.v1.GetRegionsRequest;
@@ -69,6 +72,27 @@ class RegionConfigServiceImplTest {
 
       verify(responseObserver, times(1))
           .onNext(GetRegionsResponse.newBuilder().addAllRegion(regions).build());
+      verify(responseObserver, times(1)).onCompleted();
+    }
+  }
+
+  @Nested
+  class GetDetailedRegions {
+    @Test
+    void shouldGetDetailedRegions() {
+      StreamObserver<GetDetailedRegionsResponse> responseObserver = mock(StreamObserver.class);
+      List<DetailedRegion> regions =
+          List.of(DetailedRegion.newBuilder().setId("id").setName("name").build());
+      when(regionStore.getDetailedRegions(Collections.emptyList())).thenReturn(regions);
+
+      Runnable runnable =
+          () ->
+              regionConfigService.getDetailedRegions(
+                  GetDetailedRegionsRequest.getDefaultInstance(), responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1))
+          .onNext(GetDetailedRegionsResponse.newBuilder().addAllRegion(regions).build());
       verify(responseObserver, times(1)).onCompleted();
     }
   }

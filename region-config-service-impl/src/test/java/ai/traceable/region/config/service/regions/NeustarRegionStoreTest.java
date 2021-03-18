@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.region.config.service.v1.DetailedRegion;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,23 @@ class NeustarRegionStoreTest {
     void shouldGetCountries_regionIds() {
       List<ai.traceable.region.config.service.v1.Region> regions =
           regionStore.getCountries(List.of("region-id-1"));
+      assertEquals(1, regions.size());
+    }
+  }
+
+  @Nested
+  class GetDetailedRegions {
+    @Test
+    @DisplayName("should get all regions")
+    void shouldGetAllRegions() {
+      List<DetailedRegion> regions = regionStore.getDetailedRegions(Collections.emptyList());
+      assertEquals(2, regions.size());
+    }
+
+    @Test
+    @DisplayName("should get regions based on region id")
+    void shouldGetRegions_regionIds() {
+      List<DetailedRegion> regions = regionStore.getDetailedRegions(List.of("region-id-1"));
       assertEquals(1, regions.size());
     }
   }

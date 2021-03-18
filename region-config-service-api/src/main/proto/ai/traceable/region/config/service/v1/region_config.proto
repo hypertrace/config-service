@@ -24,9 +24,34 @@ message GetRegionResponse {
     Region region = 1;
 }
 
+message GetDetailedRegionsRequest {
+    RegionsFilter filter = 1;
+}
+
+message GetDetailedRegionsResponse {
+    repeated DetailedRegion region = 1;
+}
+
 message Region {
     string id = 1;
     string name = 2;
+}
+
+message DetailedRegion {
+    string id = 1;
+    string name = 2;
+    repeated IpRange ip_range = 3;
+}
+
+message IpRange {
+    oneof range {
+        IpV4Range ipv4_range = 1;
+    }
+}
+
+message IpV4Range {
+    int64 start_ip = 1;
+    int64 end_ip = 2;
 }
 
 message GetAllRegionRulesRequest {

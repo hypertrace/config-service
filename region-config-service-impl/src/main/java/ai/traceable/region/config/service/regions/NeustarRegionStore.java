@@ -1,5 +1,6 @@
 package ai.traceable.region.config.service.regions;
 
+import ai.traceable.region.config.service.v1.DetailedRegion;
 import com.google.inject.Inject;
 import java.util.Comparator;
 import java.util.List;
@@ -26,6 +27,13 @@ class NeustarRegionStore implements RegionStore {
         .filter(region -> RegionType.COUNTRY.equals(region.getType()))
         .sorted(Comparator.comparing(Region::getName))
         .map(this.regionConverter::convert)
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<DetailedRegion> getDetailedRegions(List<String> ids) {
+    return getRegions(ids).stream()
+        .map(this.regionConverter::convertToDetailedRegion)
         .collect(Collectors.toList());
   }
 

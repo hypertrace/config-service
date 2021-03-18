@@ -7,8 +7,11 @@ import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.CreateRegionRuleResponse;
 import ai.traceable.region.config.service.v1.DeleteRegionRuleRequest;
 import ai.traceable.region.config.service.v1.DeleteRegionRuleResponse;
+import ai.traceable.region.config.service.v1.DetailedRegion;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesRequest;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesResponse;
+import ai.traceable.region.config.service.v1.GetDetailedRegionsRequest;
+import ai.traceable.region.config.service.v1.GetDetailedRegionsResponse;
 import ai.traceable.region.config.service.v1.GetRegionRequest;
 import ai.traceable.region.config.service.v1.GetRegionResponse;
 import ai.traceable.region.config.service.v1.GetRegionsRequest;
@@ -49,6 +52,18 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
             request.hasFilter() ? request.getFilter().getIdList() : Collections.emptyList());
 
     responseObserver.onNext(GetRegionsResponse.newBuilder().addAllRegion(countries).build());
+    responseObserver.onCompleted();
+  }
+
+  @Override
+  public void getDetailedRegions(
+      GetDetailedRegionsRequest request,
+      StreamObserver<GetDetailedRegionsResponse> responseObserver) {
+    List<DetailedRegion> regions =
+        regionStore.getDetailedRegions(
+            request.hasFilter() ? request.getFilter().getIdList() : Collections.emptyList());
+
+    responseObserver.onNext(GetDetailedRegionsResponse.newBuilder().addAllRegion(regions).build());
     responseObserver.onCompleted();
   }
 

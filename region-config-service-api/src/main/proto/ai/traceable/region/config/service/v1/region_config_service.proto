@@ -10,6 +10,9 @@ service RegionConfigService {
     rpc GetRegions (GetRegionsRequest) returns (GetRegionsResponse) {
     }
 
+    rpc GetDetailedRegions (GetDetailedRegionsRequest) returns (GetDetailedRegionsResponse) {
+    }
+
     rpc GetRegion (GetRegionRequest) returns (GetRegionResponse) {
     }
 
