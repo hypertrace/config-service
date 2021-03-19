@@ -79,10 +79,20 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
         ParamType.PARAM_TYPE_HEADER, RedactionStrategy.REDACTION_STRATEGY_HASH);
     PiiElement piiElement1 =
         getPiiElement(
-            "http.request.header.h1", "", RedactionStrategy.REDACTION_STRATEGY_HASH, true, false);
+            "http.request.header.h1",
+            "",
+            RedactionStrategy.REDACTION_STRATEGY_HASH,
+            true,
+            false,
+            "");
     PiiElement piiElement2 =
         getPiiElement(
-            "http.request.header.h2", "", RedactionStrategy.REDACTION_STRATEGY_HASH, true, false);
+            "http.request.header.h2",
+            "",
+            RedactionStrategy.REDACTION_STRATEGY_HASH,
+            true,
+            false,
+            "");
     PiiFilterConfig expected = getExpectedPiiFilterConfig(List.of(piiElement1, piiElement2), false);
     PiiFilterConfig actual = getPiiFilterConfig();
     assertEquals(expected, actual);
@@ -94,14 +104,30 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
     assertEquals(expected, actual);
 
     // add redaction rule
-    createRedactionRule(
-        getNewRedactionRule("rule-1", RedactionStrategy.REDACTION_STRATEGY_REDACT, "^name", false));
-    createRedactionRule(
-        getNewRedactionRule("rule-2", RedactionStrategy.REDACTION_STRATEGY_HASH, "^address", true));
+    RedactionRule redactionRule1 =
+        createRedactionRule(
+            getNewRedactionRule(
+                "rule-1", RedactionStrategy.REDACTION_STRATEGY_REDACT, "^name", false));
+    RedactionRule redactionRule2 =
+        createRedactionRule(
+            getNewRedactionRule(
+                "rule-2", RedactionStrategy.REDACTION_STRATEGY_HASH, "^address", true));
     PiiElement piiElement3 =
-        getPiiElement("^name", "pii", RedactionStrategy.REDACTION_STRATEGY_REDACT, false, false);
+        getPiiElement(
+            "^name",
+            "pii",
+            RedactionStrategy.REDACTION_STRATEGY_REDACT,
+            false,
+            false,
+            redactionRule1.getId());
     PiiElement piiElement4 =
-        getPiiElement("^address", "pii", RedactionStrategy.REDACTION_STRATEGY_HASH, false, true);
+        getPiiElement(
+            "^address",
+            "pii",
+            RedactionStrategy.REDACTION_STRATEGY_HASH,
+            false,
+            true,
+            redactionRule2.getId());
     expected =
         getExpectedPiiFilterConfig(
             List.of(piiElement4, piiElement3, piiElement1, piiElement2), true);
@@ -178,13 +204,15 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
       String category,
       RedactionStrategy redactionStrategy,
       boolean isFqn,
-      boolean sessionIdentifier) {
+      boolean sessionIdentifier,
+      String ruleId) {
     return PiiElement.newBuilder()
         .setRegex(regex)
         .setCategory(category)
         .setRedactionStrategy(redactionStrategy)
         .setFqn(isFqn)
         .setSessionIdentifier(sessionIdentifier)
+        .setRuleId(ruleId)
         .build();
   }
 

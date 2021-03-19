@@ -165,6 +165,7 @@ public class PiiFilterConfigServiceImpl
               .setCategory(redactionRule.getCategory())
               .setRedactionStrategy(redactionRule.getRedactionStrategy())
               .setSessionIdentifier(redactionRule.getSessionIdentifier())
+              .setRuleId(redactionRule.getId())
               .build();
       switch (redactionRule.getMatchType()) {
         case MATCH_TYPE_HEADER:

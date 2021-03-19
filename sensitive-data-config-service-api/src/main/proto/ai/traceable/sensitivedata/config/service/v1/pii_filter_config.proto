@@ -22,12 +22,13 @@ enum RedactionStrategy {
 
 message PiiElement {
   string regex = 1;
-  string category = 2;
+  string category = 2 [deprecated = true];
   RedactionStrategy redaction_strategy = 3;
   bool session_identifier = 4;
   repeated int32 session_indexes = 5;
   string session_separator = 6;
   bool fqn = 7;
+  string rule_id = 8;
 }
 
 message ComplexData {
