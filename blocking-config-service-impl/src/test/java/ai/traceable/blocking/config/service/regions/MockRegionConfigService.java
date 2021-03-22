@@ -26,6 +26,38 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 class MockRegionConfigService extends RegionConfigServiceImplBase {
+  private static final DetailedRegion REGION_1 =
+      DetailedRegion.newBuilder()
+          .setId("region-id-1")
+          .setName("region-1")
+          .addIpRange(
+              IpRange.newBuilder()
+                  .setIpv4Range(IpV4Range.newBuilder().setStartIp(123L).setEndIp(789L).build())
+                  .build())
+          .build();
+  private static final DetailedRegion REGION_2 =
+      DetailedRegion.newBuilder()
+          .setId("region-id-2")
+          .setName("region-2")
+          .addIpRange(
+              IpRange.newBuilder()
+                  .setIpv4Range(IpV4Range.newBuilder().setStartIp(123L).setEndIp(234L).build())
+                  .build())
+          .addIpRange(
+              IpRange.newBuilder()
+                  .setIpv4Range(IpV4Range.newBuilder().setStartIp(234L).setEndIp(456L).build())
+                  .build())
+          .build();
+  private static final DetailedRegion REGION_3 =
+      DetailedRegion.newBuilder()
+          .setId("region-id-3")
+          .setName("region-3")
+          .addIpRange(
+              IpRange.newBuilder()
+                  .setIpv4Range(IpV4Range.newBuilder().setStartIp(456L).setEndIp(678L).build())
+                  .build())
+          .build();
+
   private Server grpcServer;
   private final InProcessServerBuilder serverBuilder;
   private final ManagedChannel configChannel;
@@ -66,6 +98,10 @@ class MockRegionConfigService extends RegionConfigServiceImplBase {
     responseObserver.onCompleted();
   }
 
+  public List<DetailedRegion> getDetailedRegions() {
+    return mockDetailedRegions();
+  }
+
   @Override
   public void getAllRegionRules(
       GetAllRegionRulesRequest request,
@@ -102,27 +138,7 @@ class MockRegionConfigService extends RegionConfigServiceImplBase {
   }
 
   private List<DetailedRegion> mockDetailedRegions() {
-    return List.of(
-        DetailedRegion.newBuilder()
-            .setId(generateId())
-            .setName("region-1")
-            .addIpRange(
-                IpRange.newBuilder()
-                    .setIpv4Range(IpV4Range.newBuilder().setStartIp(123L).setEndIp(789L).build())
-                    .build())
-            .build(),
-        DetailedRegion.newBuilder()
-            .setId(generateId())
-            .setName("region-2")
-            .addIpRange(
-                IpRange.newBuilder()
-                    .setIpv4Range(IpV4Range.newBuilder().setStartIp(123L).setEndIp(234L).build())
-                    .build())
-            .addIpRange(
-                IpRange.newBuilder()
-                    .setIpv4Range(IpV4Range.newBuilder().setStartIp(234L).setEndIp(456L).build())
-                    .build())
-            .build());
+    return List.of(REGION_1, REGION_2, REGION_3);
   }
 
   private String generateId() {

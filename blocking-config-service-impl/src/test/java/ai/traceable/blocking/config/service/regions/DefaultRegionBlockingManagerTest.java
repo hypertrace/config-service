@@ -47,7 +47,6 @@ class DefaultRegionBlockingManagerTest {
   public void shouldGetRegionBlockingRules() {
     long currentTimeMillis = 123L;
     when(this.clock.millis()).thenReturn(currentTimeMillis);
-
     CreateRegionRuleRequest expiredRegionRuleRequest =
         CreateRegionRuleRequest.newBuilder()
             .setName("rule-1")
