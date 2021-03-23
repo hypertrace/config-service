@@ -69,13 +69,11 @@ class RegionRuleConverterTest {
             .setId("rule-id-2")
             .setName("name-2")
             .addRegionId("region-id-3")
-            .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALLOW)
+            .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
             .build();
 
     when(this.actionTypeConverter.convert(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK))
         .thenReturn(Optional.of(RuleActionType.RULE_ACTION_TYPE_BLOCK));
-    when(this.actionTypeConverter.convert(RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALLOW))
-        .thenReturn(Optional.of(RuleActionType.RULE_ACTION_TYPE_ALLOW));
 
     List<DetailedRegion> regions = this.mockRegionConfigService.getDetailedRegions();
 
@@ -139,7 +137,7 @@ class RegionRuleConverterTest {
                 .setBlockingInfo(blockingInfo1)
                 .build(),
             BlockingRule.newBuilder()
-                .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
+                .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK)
                 .setIpBlocking(ipBlocking2)
                 .setBlockingInfo(blockingInfo2)
                 .build()),

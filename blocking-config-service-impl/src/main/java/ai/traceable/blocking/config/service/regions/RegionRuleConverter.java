@@ -42,8 +42,7 @@ class RegionRuleConverter {
 
     return regionRules.stream()
         .map(regionRule -> this.convert(regionRule, regions))
-        .filter(Optional::isPresent)
-        .map(Optional::get)
+        .flatMap(Optional::stream)
         .collect(Collectors.toList());
   }
 

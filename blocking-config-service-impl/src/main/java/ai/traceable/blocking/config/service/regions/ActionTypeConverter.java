@@ -11,8 +11,6 @@ class ActionTypeConverter {
     switch (regionRuleActionType) {
       case REGION_RULE_ACTION_TYPE_BLOCK:
         return Optional.of(RuleActionType.RULE_ACTION_TYPE_BLOCK);
-      case REGION_RULE_ACTION_TYPE_ALLOW:
-        return Optional.of(RuleActionType.RULE_ACTION_TYPE_ALLOW);
       default:
         log.error("Unknown region rule action type {}", regionRuleActionType);
         return Optional.empty();

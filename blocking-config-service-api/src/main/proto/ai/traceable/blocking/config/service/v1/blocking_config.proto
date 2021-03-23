@@ -39,11 +39,10 @@ message IpV4Range {
 enum RuleActionType {
     RULE_ACTION_TYPE_UNSPECIFIED = 0;
     RULE_ACTION_TYPE_BLOCK = 1;
-    RULE_ACTION_TYPE_ALLOW = 2;
 }
 
 message BlockingInfo {
     string info = 1;
     string category = 2;
-    string status = 3;
+    int64 expiration_millis = 3;
 }

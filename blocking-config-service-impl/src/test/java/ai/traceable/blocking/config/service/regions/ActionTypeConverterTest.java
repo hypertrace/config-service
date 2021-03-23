@@ -22,9 +22,6 @@ class ActionTypeConverterTest {
     assertEquals(
         Optional.of(RuleActionType.RULE_ACTION_TYPE_BLOCK),
         this.actionTypeConverter.convert(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK));
-    assertEquals(
-        Optional.of(RuleActionType.RULE_ACTION_TYPE_ALLOW),
-        this.actionTypeConverter.convert(RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALLOW));
     assertTrue(
         this.actionTypeConverter
             .convert(RegionRuleActionType.REGION_RULE_ACTION_TYPE_UNSPECIFIED)

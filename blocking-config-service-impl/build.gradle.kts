@@ -7,6 +7,7 @@ plugins {
 dependencies {
   api(project(":blocking-config-service-api"))
   api(project(":region-config-service-api"))
+  api("ai.traceable.platform:opa-aggregator-api:0.1.45")
 
   implementation("com.google.inject:guice:5.0.1")
   implementation("com.google.guava:guava:30.1-jre")
