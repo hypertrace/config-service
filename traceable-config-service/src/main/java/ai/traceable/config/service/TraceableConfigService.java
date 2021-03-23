@@ -1,5 +1,6 @@
 package ai.traceable.config.service;
 
+import ai.traceable.blocking.config.service.BlockingConfigServiceFactory;
 import ai.traceable.localprocessing.config.service.LocalProcessingConfigServiceImpl;
 import ai.traceable.localprocessing.config.service.LocalProcessingRulesServiceImpl;
 import ai.traceable.ratelimiting.service.RateLimitingConfigServiceImpl;
@@ -81,9 +82,11 @@ public class TraceableConfigService extends PlatformService {
         new PiiFilterConfigServiceImpl(managedChannel, config);
     LocalProcessingConfigServiceImpl localProcessingConfigService =
         new LocalProcessingConfigServiceImpl(managedChannel, config);
+    BindableService blockingConfigService = BlockingConfigServiceFactory.build(managedChannel);
     externalServerBuilder
         .addService(InterceptorUtil.wrapInterceptors(piiFilterConfigService))
-        .addService(InterceptorUtil.wrapInterceptors(localProcessingConfigService));
+        .addService(InterceptorUtil.wrapInterceptors(localProcessingConfigService))
+        .addService(InterceptorUtil.wrapInterceptors(blockingConfigService));
     externalTraceableConfigServer = externalServerBuilder.build();
   }
 
