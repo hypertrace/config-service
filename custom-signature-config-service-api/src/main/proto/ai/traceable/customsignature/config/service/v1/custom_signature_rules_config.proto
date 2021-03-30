@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+package ai.traceable.customsignature.config.service.v1;
+
+option java_multiple_files = true;
+
+message CreateCustomSignatureRuleRequest {
+  string name = 1;
+  string description = 2;
+  RuleDefinition definition = 3;
+  RuleEffect effect = 4;
+}
+
+message CreateCustomSignatureRuleResponse {
+  CustomSignatureRule rule = 1;
+}
+
+message UpdateCustomSignatureRuleRequest {
+  CustomSignatureRule rule = 1;
+}
+
+message UpdateCustomSignatureRuleResponse {
+  CustomSignatureRule rule = 1;
+}
+
+message DeleteCustomSignatureRuleRequest {
+  string id = 1;
+}
+
+message DeleteCustomSignatureRuleResponse {
+}
+
+message GetCustomSignatureRulesRequest {
+  oneof filter{
+    string rule_id = 1;
+    Status rule_status = 2;
+  }
+}
+
+message GetCustomSignatureRulesResponse {
+  repeated CustomSignatureRule rules = 1;
+}
+
+message CustomSignatureRule {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  RuleDefinition definition = 4;
+  RuleEffect effect = 5;
+}
+
+message RuleDefinition {
+  Clause clause = 1;
+}
+
+message RuleEffect {
+  Status status = 1;
+  Severity severity = 2;
+}
+
+message Clause {
+  oneof clause {
+    Expression expression = 1;
+    ClauseGroup clause_group = 2;
+  }
+}
+
+message ClauseGroup {
+  ClauseOperator clause_operator = 1;
+  repeated Clause child_clauses = 2;
+}
+
+message Expression {
+  oneof expression {
+    MatchExpression match_expression = 1;
+  }
+}
+
+message MatchExpression {
+  MatchKey match_key = 1;
+  MatchOperator match_operator = 2;
+  string match_value = 3;
+}
+
+enum Severity {
+  SEVERITY_UNSPECIFIED = 0;
+  SEVERITY_LOW = 1;
+  SEVERITY_MEDIUM = 2;
+  SEVERITY_HIGH = 3;
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_DISABLED = 1;
+  STATUS_ENABLED_INTERNALLY = 2;
+  STATUS_ENABLED_TENTATIVELY = 3;
+  STATUS_DETECTION_ENABLED = 4;
+  STATUS_BLOCKING_ENABLED = 5;
+}
+
+enum ClauseOperator {
+  CLAUSE_OPERATOR_UNSPECIFIED = 0;
+  CLAUSE_OPERATOR_AND = 1;
+  CLAUSE_OPERATOR_OR = 2;
+}
+
+enum MatchKey {
+  MATCH_KEY_UNSPECIFIED = 0;
+  MATCH_KEY_URL = 1;
+  MATCH_KEY_HEADER_NAME = 2;
+  MATCH_KEY_HEADER_VALUE = 3;
+  MATCH_KEY_PARAMETER_NAME = 4;
+  MATCH_KEY_PARAMETER_VALUE = 5;
+  MATCH_KEY_VERB = 6;
+}
+
+enum MatchOperator {
+  MATCH_OPERATOR_UNSPECIFIED = 0;
+  MATCH_OPERATOR_EQUALS = 1;
+  MATCH_OPERATOR_NOT_EQUALS = 2;
+  MATCH_OPERATOR_MATCHES_REGEX = 3;
+  MATCH_OPERATOR_NOT_MATCH_REGEX = 4;
+}
