@@ -1,3 +1,4 @@
+version: v1beta1
 build:
   roots:
     - sensitive-data-config-service-api/src/main/proto

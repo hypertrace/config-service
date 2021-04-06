@@ -22,12 +22,6 @@ executors:
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
-  buf:
-    docker:
-      - image: bufbuild/buf:0.18.1
-        auth:
-          username: $DOCKERHUB_USERNAME
-          password: $DOCKERHUB_PASSWORD
 commands:
   gradle:
     description: 'Run the provided gradle command'
@@ -142,12 +136,6 @@ jobs:
       - run: git push origin $(./gradlew -q :printVersion)
       - gradle:
           args: publish dockerPushImages
-  verify-protos:
-    executor: buf
-    steps:
-      - checkout
-      - run: buf check lint
-      - run: buf check breaking --against-input "ssh://${CIRCLE_REPOSITORY_URL/://}#branch=main"
   validate-charts:
     executor: helm
     steps:
@@ -183,13 +171,6 @@ workflows:
       - validate-charts:
           context:
             - ci-credentials
-      - verify-protos:
-          context:
-            - dockerhub-read
-          filters:
-            branches:
-              ignore:
-                - main
       - publish:
           context:
             - ci-credentials

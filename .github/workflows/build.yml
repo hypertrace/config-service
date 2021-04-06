@@ -1,0 +1,31 @@
+name: build and validate
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate-protos:
+    runs-on: ubuntu-20.04
+    container:
+      image: bufbuild/buf:0.41.0
+      credentials:
+        username: ${{ secrets.DOCKERHUB_READ_USER }}
+        password: ${{ secrets.DOCKERHUB_READ_TOKEN }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Check out main branch code
+        uses: actions/checkout@v2
+        with:
+          ref: main
+          path: main
+
+      - name: verify-protos
+        run: |
+          buf lint
+          buf breaking --against "$GITHUB_WORKSPACE/main"
