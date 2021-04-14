@@ -6,11 +6,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.blocking.config.service.regions.RegionBlockingManager;
-import ai.traceable.blocking.config.service.v1.BlockingRule;
+import ai.traceable.blocking.config.service.v1.BlockingRules;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesRequest;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesResponse;
+import ai.traceable.blocking.config.service.v1.RegionBlockingRules;
 import io.grpc.stub.StreamObserver;
-import java.util.List;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,8 +35,10 @@ class BlockingConfigServiceImplTest {
   @Test
   void shouldReturnResponse_hashChanged() {
     StreamObserver<GetBlockingRulesResponse> responseObserver = mock(StreamObserver.class);
-    List<BlockingRule> blockingRules = List.of(BlockingRule.getDefaultInstance());
-    when(this.regionBlockingManager.getBlockingRules()).thenReturn(blockingRules);
+    RegionBlockingRules regionBlockingRules = RegionBlockingRules.getDefaultInstance();
+    BlockingRules blockingRules =
+        BlockingRules.newBuilder().setRegionBlockingRules(regionBlockingRules).build();
+    when(this.regionBlockingManager.getBlockingRules()).thenReturn(regionBlockingRules);
     when(this.hashGenerator.generate(blockingRules)).thenReturn("new-hash");
 
     Runnable runnable =
@@ -49,7 +51,7 @@ class BlockingConfigServiceImplTest {
     verify(responseObserver, times(1))
         .onNext(
             GetBlockingRulesResponse.newBuilder()
-                .addAllRule(blockingRules)
+                .setBlockingRules(blockingRules)
                 .setHash("new-hash")
                 .build());
     verify(responseObserver, times(1)).onCompleted();
@@ -58,8 +60,10 @@ class BlockingConfigServiceImplTest {
   @Test
   void shouldReturnResponse_hashUnchanged() {
     StreamObserver<GetBlockingRulesResponse> responseObserver = mock(StreamObserver.class);
-    List<BlockingRule> blockingRules = List.of(BlockingRule.getDefaultInstance());
-    when(this.regionBlockingManager.getBlockingRules()).thenReturn(blockingRules);
+    RegionBlockingRules regionBlockingRules = RegionBlockingRules.getDefaultInstance();
+    BlockingRules blockingRules =
+        BlockingRules.newBuilder().setRegionBlockingRules(regionBlockingRules).build();
+    when(this.regionBlockingManager.getBlockingRules()).thenReturn(regionBlockingRules);
     when(this.hashGenerator.generate(blockingRules)).thenReturn("old-hash");
 
     Runnable runnable =

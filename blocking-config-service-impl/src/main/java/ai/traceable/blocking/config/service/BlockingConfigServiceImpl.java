@@ -2,13 +2,13 @@ package ai.traceable.blocking.config.service;
 
 import ai.traceable.blocking.config.service.regions.RegionBlockingManager;
 import ai.traceable.blocking.config.service.v1.BlockingConfigServiceGrpc.BlockingConfigServiceImplBase;
-import ai.traceable.blocking.config.service.v1.BlockingRule;
+import ai.traceable.blocking.config.service.v1.BlockingRules;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesRequest;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesResponse;
+import ai.traceable.blocking.config.service.v1.RegionBlockingRules;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -26,7 +26,7 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
   @Override
   public void getBlockingRules(
       GetBlockingRulesRequest request, StreamObserver<GetBlockingRulesResponse> responseObserver) {
-    List<BlockingRule> regionBlockingRules;
+    RegionBlockingRules regionBlockingRules;
     try {
       regionBlockingRules = this.regionBlockingManager.getBlockingRules();
     } catch (RuntimeException e) {
@@ -36,16 +36,17 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
       return;
     }
 
-    String currentHash = hashGenerator.generate(regionBlockingRules);
-    GetBlockingRulesResponse response =
-        currentHash.equals(request.getOmitIfMatchesHash())
-            ? GetBlockingRulesResponse.newBuilder().setHash(currentHash).build()
-            : GetBlockingRulesResponse.newBuilder()
-                .addAllRule(regionBlockingRules)
-                .setHash(currentHash)
-                .build();
+    BlockingRules blockingRules =
+        BlockingRules.newBuilder().setRegionBlockingRules(regionBlockingRules).build();
+    String currentHash = hashGenerator.generate(blockingRules);
 
-    responseObserver.onNext(response);
+    GetBlockingRulesResponse.Builder responseBuilder =
+        GetBlockingRulesResponse.newBuilder().setHash(currentHash);
+    if (!currentHash.equals(request.getOmitIfMatchesHash())) {
+      responseBuilder.setBlockingRules(blockingRules);
+    }
+
+    responseObserver.onNext(responseBuilder.build());
     responseObserver.onCompleted();
   }
 }

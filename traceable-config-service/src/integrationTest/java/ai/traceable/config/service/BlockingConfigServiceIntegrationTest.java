@@ -3,16 +3,13 @@ package ai.traceable.config.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.blocking.config.service.v1.BlockingConfigServiceGrpc;
 import ai.traceable.blocking.config.service.v1.BlockingConfigServiceGrpc.BlockingConfigServiceBlockingStub;
-import ai.traceable.blocking.config.service.v1.BlockingInfo;
-import ai.traceable.blocking.config.service.v1.BlockingRule;
+import ai.traceable.blocking.config.service.v1.BlockingRules;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesRequest;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesResponse;
-import ai.traceable.blocking.config.service.v1.IpBlocking;
-import ai.traceable.blocking.config.service.v1.RuleActionType;
+import ai.traceable.blocking.config.service.v1.RegionIpBlockingDetails;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.DetailedRegion;
 import ai.traceable.region.config.service.v1.GetDetailedRegionsRequest;
@@ -104,29 +101,25 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
             () ->
                 blockingConfigServiceStub.getBlockingRules(
                     GetBlockingRulesRequest.getDefaultInstance()));
-    List<BlockingRule> blockingRules = response.getRuleList();
+    BlockingRules blockingRules = response.getBlockingRules();
     String hash = response.getHash();
 
-    assertEquals(2, blockingRules.size());
+    assertEquals(3, blockingRules.getRegionBlockingRules().getRegionIpBlockingDetailsCount());
 
-    BlockingRule blockingRule1 = blockingRules.get(0);
-    assertEquals(RuleActionType.RULE_ACTION_TYPE_BLOCK, blockingRule1.getActionType());
-    BlockingInfo blockingInfo1 = blockingRule1.getBlockingInfo();
-    assertEquals(0, blockingInfo1.getExpirationMillis());
-    assertEquals("CUSTOM_REGION_RULE", blockingInfo1.getCategory());
-    assertFalse(blockingInfo1.getInfo().isEmpty());
-    IpBlocking ipBlocking1 = blockingRule1.getIpBlocking();
-    assertEquals(region3.getIpRangeCount(), ipBlocking1.getIpRangeCount());
+    RegionIpBlockingDetails regionIpBlockingDetails1 =
+        blockingRules.getRegionBlockingRules().getRegionIpBlockingDetails(0);
+    assertEquals(region1.getId(), regionIpBlockingDetails1.getRegionId());
+    assertEquals(region1.getIpRangeCount(), regionIpBlockingDetails1.getIpRangesCount());
 
-    BlockingRule blockingRule2 = blockingRules.get(1);
-    assertEquals(RuleActionType.RULE_ACTION_TYPE_BLOCK, blockingRule2.getActionType());
-    BlockingInfo blockingInfo2 = blockingRule2.getBlockingInfo();
-    assertEquals(0, blockingInfo2.getExpirationMillis());
-    assertEquals("CUSTOM_REGION_RULE", blockingInfo2.getCategory());
-    assertFalse(blockingInfo2.getInfo().isEmpty());
-    IpBlocking ipBlocking2 = blockingRule2.getIpBlocking();
-    assertEquals(
-        region1.getIpRangeCount() + region2.getIpRangeCount(), ipBlocking2.getIpRangeCount());
+    RegionIpBlockingDetails regionIpBlockingDetails2 =
+        blockingRules.getRegionBlockingRules().getRegionIpBlockingDetails(1);
+    assertEquals(region2.getId(), regionIpBlockingDetails2.getRegionId());
+    assertEquals(region2.getIpRangeCount(), regionIpBlockingDetails2.getIpRangesCount());
+
+    RegionIpBlockingDetails regionIpBlockingDetails3 =
+        blockingRules.getRegionBlockingRules().getRegionIpBlockingDetails(2);
+    assertEquals(region3.getId(), regionIpBlockingDetails3.getRegionId());
+    assertEquals(region3.getIpRangeCount(), regionIpBlockingDetails3.getIpRangesCount());
 
     // querying again with the same hash shouldn't return blocking rules
     GetBlockingRulesResponse sameHashedResponse =
@@ -137,7 +130,7 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
                     GetBlockingRulesRequest.newBuilder().setOmitIfMatchesHash(hash).build()));
 
     assertEquals(hash, sameHashedResponse.getHash());
-    assertTrue(sameHashedResponse.getRuleList().isEmpty());
+    assertFalse(sameHashedResponse.hasBlockingRules());
   }
 
   @Test
@@ -201,10 +194,10 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
                 blockingConfigServiceStub.getBlockingRules(
                     GetBlockingRulesRequest.getDefaultInstance()));
 
-    List<BlockingRule> blockingRules1 = response1.getRuleList();
+    BlockingRules blockingRules1 = response1.getBlockingRules();
     String hash1 = response1.getHash();
 
-    long expirationMillis = System.currentTimeMillis() + 10000;
+    long expirationMillis = System.currentTimeMillis();
     GrpcClientRequestContextUtil.executeInTenantContext(
         TENANT_ID,
         () ->
@@ -223,30 +216,12 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
                 blockingConfigServiceStub.getBlockingRules(
                     GetBlockingRulesRequest.newBuilder().setOmitIfMatchesHash(hash1).build()));
 
-    List<BlockingRule> blockingRules2 = response2.getRuleList();
+    BlockingRules blockingRules2 = response2.getBlockingRules();
     String hash2 = response2.getHash();
     assertNotEquals(hash1, hash2);
     assertNotEquals(blockingRules1, blockingRules2);
 
-    assertEquals(2, blockingRules2.size());
-
-    BlockingRule blockingRule1 = blockingRules2.get(0);
-    assertEquals(RuleActionType.RULE_ACTION_TYPE_BLOCK, blockingRule1.getActionType());
-    BlockingInfo blockingInfo1 = blockingRule1.getBlockingInfo();
-    assertEquals(expirationMillis, blockingInfo1.getExpirationMillis());
-    assertEquals("CUSTOM_REGION_RULE", blockingInfo1.getCategory());
-    assertFalse(blockingInfo1.getInfo().isEmpty());
-    IpBlocking ipBlocking1 = blockingRule1.getIpBlocking();
-    assertEquals(region3.getIpRangeCount(), ipBlocking1.getIpRangeCount());
-
-    BlockingRule blockingRule2 = blockingRules2.get(1);
-    assertEquals(RuleActionType.RULE_ACTION_TYPE_BLOCK, blockingRule2.getActionType());
-    BlockingInfo blockingInfo2 = blockingRule2.getBlockingInfo();
-    assertEquals(0, blockingInfo2.getExpirationMillis());
-    assertEquals("CUSTOM_REGION_RULE", blockingInfo2.getCategory());
-    assertFalse(blockingInfo2.getInfo().isEmpty());
-    IpBlocking ipBlocking2 = blockingRule2.getIpBlocking();
-    assertEquals(
-        region1.getIpRangeCount() + region2.getIpRangeCount(), ipBlocking2.getIpRangeCount());
+    assertEquals(3, blockingRules1.getRegionBlockingRules().getRegionIpBlockingDetailsCount());
+    assertEquals(2, blockingRules2.getRegionBlockingRules().getRegionIpBlockingDetailsCount());
   }
 }

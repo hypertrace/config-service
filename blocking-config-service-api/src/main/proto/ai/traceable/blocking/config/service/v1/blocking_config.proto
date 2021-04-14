@@ -9,20 +9,22 @@ message GetBlockingRulesRequest {
 }
 
 message GetBlockingRulesResponse {
-    repeated BlockingRule rule = 1;
+    BlockingRules blocking_rules = 1;
     string hash = 2;
 }
 
-message BlockingRule {
-    RuleActionType action_type = 1;
-    oneof mechanism {
-        IpBlocking ip_blocking = 2;
-    }
-    BlockingInfo blocking_info = 3;
+message BlockingRules {
+    RegionBlockingRules region_blocking_rules = 1;
+    CustomModsecBlockingRules custom_modsec_blocking_rules = 2;
 }
 
-message IpBlocking {
-    repeated IpRange ip_range = 1;
+message RegionBlockingRules {
+    repeated RegionIpBlockingDetails region_ip_blocking_details = 1;
+}
+
+message RegionIpBlockingDetails {
+    repeated IpRange ip_ranges = 1;
+    string region_id = 2;
 }
 
 message IpRange {
@@ -36,13 +38,6 @@ message IpV4Range {
     int64 end_ip = 2;
 }
 
-enum RuleActionType {
-    RULE_ACTION_TYPE_UNSPECIFIED = 0;
-    RULE_ACTION_TYPE_BLOCK = 1;
-}
-
-message BlockingInfo {
-    string info = 1;
-    string category = 2;
-    int64 expiration_millis = 3;
+message CustomModsecBlockingRules {
+    string custom_modsec_rules_blob = 1;
 }

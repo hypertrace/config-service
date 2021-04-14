@@ -4,11 +4,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 
-import ai.traceable.blocking.config.service.v1.BlockingRule;
-import ai.traceable.blocking.config.service.v1.IpBlocking;
+import ai.traceable.blocking.config.service.v1.BlockingRules;
 import ai.traceable.blocking.config.service.v1.IpRange;
 import ai.traceable.blocking.config.service.v1.IpV4Range;
-import ai.traceable.blocking.config.service.v1.RuleActionType;
+import ai.traceable.blocking.config.service.v1.RegionBlockingRules;
+import ai.traceable.blocking.config.service.v1.RegionIpBlockingDetails;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,74 +24,92 @@ class HashGeneratorTest {
 
   @Test
   void shouldGenerateHash() {
-    List<BlockingRule> rules =
-        List.of(
-            BlockingRule.newBuilder()
-                .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK)
-                .setIpBlocking(
-                    IpBlocking.newBuilder()
-                        .addIpRange(
-                            IpRange.newBuilder()
-                                .setIpv4Range(
-                                    IpV4Range.newBuilder().setStartIp(123L).setEndIp(789L).build())
-                                .build())
-                        .build())
-                .build(),
-            BlockingRule.getDefaultInstance());
-    assertNotNull(this.hashGenerator.generate(rules));
+    RegionBlockingRules regionBlockingRules =
+        RegionBlockingRules.newBuilder()
+            .addRegionIpBlockingDetails(
+                RegionIpBlockingDetails.newBuilder()
+                    .setRegionId("region-1")
+                    .addIpRanges(
+                        IpRange.newBuilder()
+                            .setIpv4Range(
+                                IpV4Range.newBuilder().setStartIp(123L).setEndIp(789L).build())
+                            .build())
+                    .build())
+            .build();
+    BlockingRules blockingRules =
+        BlockingRules.newBuilder().setRegionBlockingRules(regionBlockingRules).build();
+    assertNotNull(this.hashGenerator.generate(blockingRules));
   }
 
   @Test
   @DisplayName("generate same hash for same input")
   void shouldGenerate_sameHash_sameInput() {
-    List<BlockingRule> rules =
+    List<RegionIpBlockingDetails> regionIpBlockingDetails =
         List.of(
-            BlockingRule.newBuilder()
-                .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK)
-                .setIpBlocking(
-                    IpBlocking.newBuilder()
-                        .addIpRange(
-                            IpRange.newBuilder()
-                                .setIpv4Range(
-                                    IpV4Range.newBuilder().setStartIp(123L).setEndIp(789L).build())
-                                .build())
+            RegionIpBlockingDetails.newBuilder()
+                .setRegionId("region-1")
+                .addIpRanges(
+                    IpRange.newBuilder()
+                        .setIpv4Range(
+                            IpV4Range.newBuilder().setStartIp(123L).setEndIp(789L).build())
                         .build())
-                .build(),
-            BlockingRule.getDefaultInstance());
+                .build());
+
+    BlockingRules blockingRules1 =
+        BlockingRules.newBuilder()
+            .setRegionBlockingRules(
+                RegionBlockingRules.newBuilder()
+                    .addAllRegionIpBlockingDetails(regionIpBlockingDetails))
+            .build();
+    BlockingRules blockingRules2 =
+        BlockingRules.newBuilder()
+            .setRegionBlockingRules(
+                RegionBlockingRules.newBuilder()
+                    .addAllRegionIpBlockingDetails(List.copyOf(regionIpBlockingDetails)))
+            .build();
     assertEquals(
-        this.hashGenerator.generate(List.copyOf(rules)), this.hashGenerator.generate(rules));
+        this.hashGenerator.generate(blockingRules1), this.hashGenerator.generate(blockingRules2));
   }
 
   @Test
   @DisplayName("generate different hash for different input")
   void shouldGenerate_differentHash_differentInput() {
-    List<BlockingRule> rules1 =
+
+    List<RegionIpBlockingDetails> regionIpBlockingDetails1 =
         List.of(
-            BlockingRule.newBuilder()
-                .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK)
-                .setIpBlocking(
-                    IpBlocking.newBuilder()
-                        .addIpRange(
-                            IpRange.newBuilder()
-                                .setIpv4Range(
-                                    IpV4Range.newBuilder().setStartIp(123L).setEndIp(789L).build())
-                                .build())
+            RegionIpBlockingDetails.newBuilder()
+                .setRegionId("region-1")
+                .addIpRanges(
+                    IpRange.newBuilder()
+                        .setIpv4Range(
+                            IpV4Range.newBuilder().setStartIp(123L).setEndIp(789L).build())
+                        .build())
+                .build());
+    List<RegionIpBlockingDetails> regionIpBlockingDetails2 =
+        List.of(
+            RegionIpBlockingDetails.newBuilder()
+                .setRegionId("region-1")
+                .addIpRanges(
+                    IpRange.newBuilder()
+                        .setIpv4Range(
+                            IpV4Range.newBuilder().setStartIp(234L).setEndIp(789L).build())
                         .build())
                 .build());
 
-    List<BlockingRule> rules2 =
-        List.of(
-            BlockingRule.newBuilder()
-                .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK)
-                .setIpBlocking(
-                    IpBlocking.newBuilder()
-                        .addIpRange(
-                            IpRange.newBuilder()
-                                .setIpv4Range(
-                                    IpV4Range.newBuilder().setStartIp(234L).setEndIp(789L).build())
-                                .build())
-                        .build())
-                .build());
-    assertNotEquals(this.hashGenerator.generate(rules2), this.hashGenerator.generate(rules1));
+    BlockingRules blockingRules1 =
+        BlockingRules.newBuilder()
+            .setRegionBlockingRules(
+                RegionBlockingRules.newBuilder()
+                    .addAllRegionIpBlockingDetails(regionIpBlockingDetails1))
+            .build();
+    BlockingRules blockingRules2 =
+        BlockingRules.newBuilder()
+            .setRegionBlockingRules(
+                RegionBlockingRules.newBuilder()
+                    .addAllRegionIpBlockingDetails(List.copyOf(regionIpBlockingDetails2)))
+            .build();
+
+    assertNotEquals(
+        this.hashGenerator.generate(blockingRules1), this.hashGenerator.generate(blockingRules2));
   }
 }

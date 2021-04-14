@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.blocking.config.service.v1.BlockingRule;
+import ai.traceable.blocking.config.service.v1.RegionBlockingRules;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesRequest;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc;
@@ -20,7 +20,7 @@ class DefaultRegionBlockingManagerTest {
   private Clock clock;
   private RegionConfigServiceBlockingStub regionConfigServiceStub;
   private MockRegionConfigService mockRegionConfigService;
-  private RegionRuleConverter ruleConverter;
+  private RegionBlockingRulesConverter ruleConverter;
 
   private DefaultRegionBlockingManager regionBlockingManager;
 
@@ -32,7 +32,7 @@ class DefaultRegionBlockingManagerTest {
     this.regionConfigServiceStub =
         RegionConfigServiceGrpc.newBlockingStub(this.mockRegionConfigService.channel());
 
-    this.ruleConverter = mock(RegionRuleConverter.class);
+    this.ruleConverter = mock(RegionBlockingRulesConverter.class);
     this.regionBlockingManager =
         new DefaultRegionBlockingManager(
             this.clock, this.regionConfigServiceStub, this.ruleConverter);
@@ -69,9 +69,9 @@ class DefaultRegionBlockingManagerTest {
             .getAllRegionRules(GetAllRegionRulesRequest.getDefaultInstance())
             .getRuleList();
     List<RegionRule> activeRules = List.of(allRules.get(0), allRules.get(1));
-    List<BlockingRule> blockingRules = List.of(BlockingRule.getDefaultInstance());
-    when(this.ruleConverter.convert(activeRules)).thenReturn(blockingRules);
+    RegionBlockingRules regionBlockingRules = RegionBlockingRules.getDefaultInstance();
+    when(this.ruleConverter.convert(activeRules)).thenReturn(regionBlockingRules);
 
-    assertEquals(blockingRules, this.regionBlockingManager.getBlockingRules());
+    assertEquals(regionBlockingRules, this.regionBlockingManager.getBlockingRules());
   }
 }

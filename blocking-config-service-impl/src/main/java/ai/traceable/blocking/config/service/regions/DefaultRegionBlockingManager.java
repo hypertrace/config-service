@@ -1,6 +1,6 @@
 package ai.traceable.blocking.config.service.regions;
 
-import ai.traceable.blocking.config.service.v1.BlockingRule;
+import ai.traceable.blocking.config.service.v1.RegionBlockingRules;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesRequest;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceBlockingStub;
 import ai.traceable.region.config.service.v1.RegionRule;
@@ -12,20 +12,20 @@ import java.util.stream.Collectors;
 class DefaultRegionBlockingManager implements RegionBlockingManager {
   private final Clock clock;
   private final RegionConfigServiceBlockingStub regionConfigServiceStub;
-  private final RegionRuleConverter ruleConverter;
+  private final RegionBlockingRulesConverter ruleConverter;
 
   @Inject
   DefaultRegionBlockingManager(
       Clock clock,
       RegionConfigServiceBlockingStub regionConfigServiceStub,
-      RegionRuleConverter ruleConverter) {
+      RegionBlockingRulesConverter ruleConverter) {
     this.clock = clock;
     this.regionConfigServiceStub = regionConfigServiceStub;
     this.ruleConverter = ruleConverter;
   }
 
   @Override
-  public List<BlockingRule> getBlockingRules() {
+  public RegionBlockingRules getBlockingRules() {
     List<RegionRule> regionRules =
         this.regionConfigServiceStub
             .getAllRegionRules(GetAllRegionRulesRequest.getDefaultInstance())
