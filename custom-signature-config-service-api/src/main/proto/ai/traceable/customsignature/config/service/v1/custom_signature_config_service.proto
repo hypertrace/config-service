@@ -4,10 +4,10 @@ package ai.traceable.customsignature.config.service.v1;
 
 option java_multiple_files = true;
 
-import "ai/traceable/customsignature/config/service/v1/custom_signature_rules_config.proto";
+import "ai/traceable/customsignature/config/service/v1/custom_signature_config.proto";
 
 
-service CustomSignatureRulesConfigService {
+service CustomSignatureConfigService {
 
   rpc GetCustomSignatureRules (GetCustomSignatureRulesRequest) returns (GetCustomSignatureRulesResponse) {
   }
@@ -19,5 +19,8 @@ service CustomSignatureRulesConfigService {
   }
 
   rpc DeleteCustomSignatureRule (DeleteCustomSignatureRuleRequest) returns (DeleteCustomSignatureRuleResponse) {
+  }
+
+  rpc GetCustomSignatureModsecRules (GetCustomSignatureModsecRulesRequest) returns (GetCustomSignatureModsecRulesResponse) {
   }
 }

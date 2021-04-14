@@ -41,6 +41,16 @@ message GetCustomSignatureRulesResponse {
   repeated CustomSignatureRule rules = 1;
 }
 
+message GetCustomSignatureModsecRulesRequest {
+  repeated Status rule_status = 1;
+}
+
+message GetCustomSignatureModsecRulesResponse {
+  string modsec_rules_blob = 1;
+  repeated CustomSignatureRuleDetails rules = 2;
+}
+
+
 message CustomSignatureRule {
   string id = 1;
   string name = 2;
@@ -49,8 +59,14 @@ message CustomSignatureRule {
   RuleEffect effect = 5;
 }
 
+message CustomSignatureRuleDetails {
+  string id = 1;
+  string name = 2;
+  RuleEffect effect = 3;
+}
+
 message RuleDefinition {
-  Clause clause = 1;
+  ClauseGroup clause_group = 1;
 }
 
 message RuleEffect {
@@ -58,20 +74,13 @@ message RuleEffect {
   Severity severity = 2;
 }
 
-message Clause {
-  oneof clause {
-    Expression expression = 1;
-    ClauseGroup clause_group = 2;
-  }
-}
-
 message ClauseGroup {
   ClauseOperator clause_operator = 1;
-  repeated Clause child_clauses = 2;
+  repeated Clause clauses = 2;
 }
 
-message Expression {
-  oneof expression {
+message Clause {
+  oneof clause {
     MatchExpression match_expression = 1;
   }
 }
@@ -92,10 +101,10 @@ enum Severity {
 enum Status {
   STATUS_UNSPECIFIED = 0;
   STATUS_DISABLED = 1;
-  STATUS_ENABLED_INTERNALLY = 2;
-  STATUS_ENABLED_TENTATIVELY = 3;
-  STATUS_DETECTION_ENABLED = 4;
-  STATUS_BLOCKING_ENABLED = 5;
+  STATUS_DETECTION_ENABLED_INTERNALLY = 2;
+  STATUS_DETECTION_ENABLED_TENTATIVELY = 3;
+  STATUS_DETECTION_ENABLED_NORMALLY = 4;
+  STATUS_DETECTION_AND_BLOCKING_ENABLED = 5;
 }
 
 enum ClauseOperator {
@@ -111,7 +120,7 @@ enum MatchKey {
   MATCH_KEY_HEADER_VALUE = 3;
   MATCH_KEY_PARAMETER_NAME = 4;
   MATCH_KEY_PARAMETER_VALUE = 5;
-  MATCH_KEY_VERB = 6;
+  MATCH_KEY_HTTP_METHOD = 6;
 }
 
 enum MatchOperator {
@@ -120,4 +129,8 @@ enum MatchOperator {
   MATCH_OPERATOR_NOT_EQUALS = 2;
   MATCH_OPERATOR_MATCHES_REGEX = 3;
   MATCH_OPERATOR_NOT_MATCH_REGEX = 4;
+  MATCH_OPERATOR_GREATER_THAN = 5;
+  MATCH_OPERATOR_LESS_THAN = 6;
+  MATCH_OPERATOR_EXISTS = 7;
+  MATCH_OPERATOR_NOT_EXISTS = 8;
 }
