@@ -120,8 +120,6 @@ jobs:
       - store_artifacts:
           path: /tmp/test-reports
           destination: reports
-      - codecov/upload:
-          flags: integration
   publish:
     executor: gradle_docker
     steps:
