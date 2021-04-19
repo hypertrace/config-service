@@ -5,7 +5,7 @@ plugins {
 }
 
 dependencies {
-  api(project(":region-config-service-api"))
+  api(project(":custom-signature-config-service-api"))
   implementation("org.hypertrace.config.service:config-service-api")
 
   implementation("com.google.inject:guice:5.0.1")
