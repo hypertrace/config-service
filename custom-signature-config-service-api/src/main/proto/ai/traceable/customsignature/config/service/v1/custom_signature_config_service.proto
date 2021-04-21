@@ -21,6 +21,6 @@ service CustomSignatureConfigService {
   rpc DeleteCustomSignatureRule (DeleteCustomSignatureRuleRequest) returns (DeleteCustomSignatureRuleResponse) {
   }
 
-  rpc GetEnabledCustomSignatureModsecRules (GetEnabledCustomSignatureModsecRulesRequest) returns (GetEnabledCustomSignatureModsecRulesResponse) {
+  rpc GetCustomSignatureModsecRules (GetCustomSignatureModsecRulesRequest) returns (GetCustomSignatureModsecRulesResponse) {
   }
 }

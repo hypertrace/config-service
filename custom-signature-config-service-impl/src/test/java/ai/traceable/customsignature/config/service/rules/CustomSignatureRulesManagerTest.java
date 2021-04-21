@@ -11,6 +11,7 @@ import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleR
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
+import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import com.google.common.collect.ImmutableSortedMap;
@@ -60,6 +61,7 @@ public class CustomSignatureRulesManagerTest {
                 .setId("id1")
                 .setName("name-1")
                 .setDisabled(true)
+                .setInternal(true)
                 .setEffect(
                     RuleEffect.newBuilder()
                         .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING))
@@ -85,13 +87,19 @@ public class CustomSignatureRulesManagerTest {
     assertTrue(
         rulesManager
             .getCustomSignatureRules(
-                requestContext, GetCustomSignatureRulesRequest.newBuilder().setRuleId("id").build())
+                requestContext,
+                GetCustomSignatureRulesRequest.newBuilder()
+                    .setFilter(GetRulesFilter.newBuilder().addRuleIds("id").build())
+                    .build())
             .isEmpty());
 
     // Filter by id and id is present
     results =
         rulesManager.getCustomSignatureRules(
-            requestContext, GetCustomSignatureRulesRequest.newBuilder().setRuleId("id2").build());
+            requestContext,
+            GetCustomSignatureRulesRequest.newBuilder()
+                .setFilter(GetRulesFilter.newBuilder().addRuleIds("id2").build())
+                .build());
     assertEquals(1, results.size());
     assertEquals(expectedRules.get(1), results.get(0));
 
@@ -106,7 +114,10 @@ public class CustomSignatureRulesManagerTest {
     // Filter on disabled
     results =
         rulesManager.getCustomSignatureRules(
-            requestContext, GetCustomSignatureRulesRequest.newBuilder().setDisabled(true).build());
+            requestContext,
+            GetCustomSignatureRulesRequest.newBuilder()
+                .setFilter(GetRulesFilter.newBuilder().setDisabled(true).build())
+                .build());
     assertEquals(1, results.size());
     assertEquals(expectedRules.get(0), results.get(0));
 
@@ -115,7 +126,10 @@ public class CustomSignatureRulesManagerTest {
         rulesManager.getCustomSignatureRules(
             requestContext,
             GetCustomSignatureRulesRequest.newBuilder()
-                .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
+                .setFilter(
+                    GetRulesFilter.newBuilder()
+                        .addEventTypes(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
+                        .build())
                 .build());
     assertEquals(1, results.size());
     assertEquals(expectedRules.get(0), results.get(0));
@@ -125,7 +139,37 @@ public class CustomSignatureRulesManagerTest {
         rulesManager.getCustomSignatureRules(
             requestContext,
             GetCustomSignatureRulesRequest.newBuilder()
-                .setEventType(EventType.EVENT_TYPE_INTERNAL_DETECTION)
+                .setFilter(
+                    GetRulesFilter.newBuilder()
+                        .addEventTypes(EventType.EVENT_TYPE_TENTATIVE_DETECTION)
+                        .build())
+                .build());
+    assertTrue(results.isEmpty());
+
+    // Filter on event type : present and internal : present
+    results =
+        rulesManager.getCustomSignatureRules(
+            requestContext,
+            GetCustomSignatureRulesRequest.newBuilder()
+                .setFilter(
+                    GetRulesFilter.newBuilder()
+                        .addEventTypes(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
+                        .setInternal(true)
+                        .build())
+                .build());
+    assertEquals(1, results.size());
+    assertEquals(expectedRules.get(0), results.get(0));
+
+    // Filter on event type : present and internal : not present
+    results =
+        rulesManager.getCustomSignatureRules(
+            requestContext,
+            GetCustomSignatureRulesRequest.newBuilder()
+                .setFilter(
+                    GetRulesFilter.newBuilder()
+                        .addEventTypes(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                        .setInternal(true)
+                        .build())
                 .build());
     assertTrue(results.isEmpty());
   }
@@ -194,19 +238,28 @@ public class CustomSignatureRulesManagerTest {
     assertFalse(
         rulesManager
             .getCustomSignatureRules(
-                requestContext, GetCustomSignatureRulesRequest.newBuilder().setRuleId(id).build())
+                requestContext,
+                GetCustomSignatureRulesRequest.newBuilder()
+                    .setFilter(GetRulesFilter.newBuilder().addRuleIds(id).build())
+                    .build())
             .isEmpty());
     assertTrue(rulesManager.deleteCustomSignatureRule(requestContext, "invalidId"));
     assertFalse(
         rulesManager
             .getCustomSignatureRules(
-                requestContext, GetCustomSignatureRulesRequest.newBuilder().setRuleId(id).build())
+                requestContext,
+                GetCustomSignatureRulesRequest.newBuilder()
+                    .setFilter(GetRulesFilter.newBuilder().addRuleIds(id).build())
+                    .build())
             .isEmpty());
     assertTrue(rulesManager.deleteCustomSignatureRule(requestContext, id));
     assertTrue(
         rulesManager
             .getCustomSignatureRules(
-                requestContext, GetCustomSignatureRulesRequest.newBuilder().setRuleId(id).build())
+                requestContext,
+                GetCustomSignatureRulesRequest.newBuilder()
+                    .setFilter(GetRulesFilter.newBuilder().addRuleIds(id).build())
+                    .build())
             .isEmpty());
   }
 

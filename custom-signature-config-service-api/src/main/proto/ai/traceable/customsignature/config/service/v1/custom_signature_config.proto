@@ -31,24 +31,27 @@ message DeleteCustomSignatureRuleResponse {
 }
 
 message GetCustomSignatureRulesRequest {
-  oneof filter{
-    string rule_id = 1;
-    EventType event_type = 2;
-    bool disabled = 3;
-  }
+  GetRulesFilter filter = 1;
 }
 
 message GetCustomSignatureRulesResponse {
   repeated CustomSignatureRule rules = 1;
 }
 
-message GetEnabledCustomSignatureModsecRulesRequest {
-  repeated EventType event_type = 1;
+message GetCustomSignatureModsecRulesRequest {
+  GetRulesFilter filter = 1;
 }
 
-message GetEnabledCustomSignatureModsecRulesResponse {
+message GetCustomSignatureModsecRulesResponse {
   string modsec_rules_blob = 1;
   repeated CustomSignatureRuleDetails rules = 2;
+}
+
+message GetRulesFilter {
+  repeated string rule_ids = 1;
+  repeated EventType event_types = 2;
+  optional bool disabled = 3;
+  optional bool internal = 4;
 }
 
 message CustomSignatureRule {
@@ -58,12 +61,15 @@ message CustomSignatureRule {
   RuleDefinition definition = 4;
   RuleEffect effect = 5;
   bool disabled = 6;
+  bool internal = 7;
 }
 
 message CustomSignatureRuleDetails {
   string id = 1;
   string name = 2;
   RuleEffect effect = 3;
+  bool disabled = 6;
+  bool internal = 7;
 }
 
 message RuleDefinition {
@@ -110,10 +116,9 @@ enum EventSeverity {
 
 enum EventType {
   EVENT_TYPE_UNSPECIFIED = 0;
-  EVENT_TYPE_INTERNAL_DETECTION = 1;
-  EVENT_TYPE_TENTATIVE_DETECTION = 2;
-  EVENT_TYPE_NORMAL_DETECTION = 3;
-  EVENT_TYPE_DETECTION_AND_BLOCKING = 4;
+  EVENT_TYPE_TENTATIVE_DETECTION = 1;
+  EVENT_TYPE_NORMAL_DETECTION = 2;
+  EVENT_TYPE_DETECTION_AND_BLOCKING = 3;
 }
 
 enum ClauseOperator {

@@ -3,6 +3,7 @@ package ai.traceable.customsignature.config.service.rules;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
+import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
@@ -40,23 +41,6 @@ class CustomSignatureRulesManager implements RulesManager {
   public List<CustomSignatureRule> getCustomSignatureRules(
       RequestContext requestContext, GetCustomSignatureRulesRequest request) {
 
-    if (request.getFilterCase() == GetCustomSignatureRulesRequest.FilterCase.RULE_ID) {
-      Optional<Value> config = getCustomSignatureRule(requestContext, request.getRuleId());
-      if (config.isEmpty()) {
-        return Collections.emptyList();
-      } else {
-        try {
-          return Collections.singletonList(customSignatureRuleConverter.convert(config.get()));
-        } catch (InvalidProtocolBufferException e) {
-          log.error(
-              "Unable to convert config to custom signature rule for rule id: {}",
-              request.getRuleId(),
-              e);
-          throw new RuntimeException(e);
-        }
-      }
-    }
-
     List<CustomSignatureRule> customSignatureRules = new ArrayList<>();
     GetAllConfigsRequest getAllRuleConfigsRequest =
         GetAllConfigsRequest.newBuilder()
@@ -86,16 +70,29 @@ class CustomSignatureRulesManager implements RulesManager {
       }
     }
 
-    if (request.getFilterCase() == GetCustomSignatureRulesRequest.FilterCase.DISABLED) {
+    if (request.hasFilter()) {
+      GetRulesFilter filter = request.getFilter();
       return customSignatureRules.stream()
-          .filter(rule -> rule.getDisabled() == request.getDisabled())
+          .filter(
+              rule -> {
+                boolean ruleIdAccept =
+                    filter.getRuleIdsCount() == 0 || filter.getRuleIdsList().contains(rule.getId());
+
+                boolean eventTypeAccept =
+                    filter.getEventTypesList().isEmpty()
+                        || filter.getEventTypesList().contains(rule.getEffect().getEventType());
+
+                boolean disabledAccept =
+                    !(filter.hasDisabled() && rule.getDisabled() != filter.getDisabled());
+
+                boolean internalAccept =
+                    !(filter.hasInternal() && rule.getInternal() != filter.getInternal());
+
+                return ruleIdAccept && eventTypeAccept && disabledAccept && internalAccept;
+              })
           .collect(ImmutableList.toImmutableList());
     }
-    if (request.getFilterCase() == GetCustomSignatureRulesRequest.FilterCase.EVENT_TYPE) {
-      return customSignatureRules.stream()
-          .filter(rule -> rule.getEffect().getEventType() == request.getEventType())
-          .collect(ImmutableList.toImmutableList());
-    }
+
     return Collections.unmodifiableList(customSignatureRules);
   }
 
@@ -111,6 +108,7 @@ class CustomSignatureRulesManager implements RulesManager {
             .setDefinition(createRuleRequest.getDefinition())
             .setEffect(createRuleRequest.getEffect())
             .setDisabled(false)
+            .setInternal(false)
             .build();
     return upsertConfig(requestContext, customSignatureRule);
   }

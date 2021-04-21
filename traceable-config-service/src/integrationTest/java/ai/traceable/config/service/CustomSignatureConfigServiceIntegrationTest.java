@@ -15,6 +15,7 @@ import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleR
 import ai.traceable.customsignature.config.service.v1.EventSeverity;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
+import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueTag;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
@@ -106,7 +107,10 @@ public class CustomSignatureConfigServiceIntegrationTest
                 configServiceStub
                     .getCustomSignatureRules(
                         GetCustomSignatureRulesRequest.newBuilder()
-                            .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                            .setFilter(
+                                GetRulesFilter.newBuilder()
+                                    .addEventTypes(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                                    .build())
                             .build())
                     .getRulesList());
     assertEquals(1, fetchedRules.size());
@@ -120,7 +124,9 @@ public class CustomSignatureConfigServiceIntegrationTest
             () ->
                 configServiceStub
                     .getCustomSignatureRules(
-                        GetCustomSignatureRulesRequest.newBuilder().setDisabled(true).build())
+                        GetCustomSignatureRulesRequest.newBuilder()
+                            .setFilter(GetRulesFilter.newBuilder().setDisabled(true).build())
+                            .build())
                     .getRulesList());
     assertTrue(fetchedRules.isEmpty());
 
@@ -131,7 +137,9 @@ public class CustomSignatureConfigServiceIntegrationTest
             () ->
                 configServiceStub
                     .getCustomSignatureRules(
-                        GetCustomSignatureRulesRequest.newBuilder().setDisabled(true).build())
+                        GetCustomSignatureRulesRequest.newBuilder()
+                            .setFilter(GetRulesFilter.newBuilder().setDisabled(true).build())
+                            .build())
                     .getRulesList());
     assertEquals(1, fetchedRules.size());
     assertEquals(true, fetchedRules.get(0).getDisabled());
@@ -151,7 +159,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                             .setName("rule-1")
                             .setEffect(
                                 RuleEffect.newBuilder()
-                                    .setEventType(EventType.EVENT_TYPE_INTERNAL_DETECTION)
+                                    .setEventType(EventType.EVENT_TYPE_TENTATIVE_DETECTION)
                                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
                                     .build())
                             .setDefinition(definition)
@@ -235,7 +243,7 @@ public class CustomSignatureConfigServiceIntegrationTest
             .setName("rule-1")
             .setEffect(
                 RuleEffect.newBuilder()
-                    .setEventType(EventType.EVENT_TYPE_INTERNAL_DETECTION)
+                    .setEventType(EventType.EVENT_TYPE_TENTATIVE_DETECTION)
                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
                     .build())
             .setDefinition(definition)
