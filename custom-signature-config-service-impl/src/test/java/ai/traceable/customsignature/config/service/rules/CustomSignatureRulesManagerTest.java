@@ -10,7 +10,6 @@ import static org.mockito.Mockito.when;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.EventType;
-import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
@@ -87,26 +86,19 @@ public class CustomSignatureRulesManagerTest {
     assertTrue(
         rulesManager
             .getCustomSignatureRules(
-                requestContext,
-                GetCustomSignatureRulesRequest.newBuilder()
-                    .setFilter(GetRulesFilter.newBuilder().addRuleIds("id").build())
-                    .build())
+                requestContext, GetRulesFilter.newBuilder().addRuleIds("id").build())
             .isEmpty());
 
     // Filter by id and id is present
     results =
         rulesManager.getCustomSignatureRules(
-            requestContext,
-            GetCustomSignatureRulesRequest.newBuilder()
-                .setFilter(GetRulesFilter.newBuilder().addRuleIds("id2").build())
-                .build());
+            requestContext, GetRulesFilter.newBuilder().addRuleIds("id2").build());
     assertEquals(1, results.size());
     assertEquals(expectedRules.get(1), results.get(0));
 
     // No filter -- return all rules
     results =
-        rulesManager.getCustomSignatureRules(
-            requestContext, GetCustomSignatureRulesRequest.newBuilder().build());
+        rulesManager.getCustomSignatureRules(requestContext, GetRulesFilter.newBuilder().build());
     assertEquals(2, results.size());
     assertTrue(results.contains(expectedRules.get(0)));
     assertTrue(results.contains(expectedRules.get(1)));
@@ -114,10 +106,7 @@ public class CustomSignatureRulesManagerTest {
     // Filter on disabled
     results =
         rulesManager.getCustomSignatureRules(
-            requestContext,
-            GetCustomSignatureRulesRequest.newBuilder()
-                .setFilter(GetRulesFilter.newBuilder().setDisabled(true).build())
-                .build());
+            requestContext, GetRulesFilter.newBuilder().setDisabled(true).build());
     assertEquals(1, results.size());
     assertEquals(expectedRules.get(0), results.get(0));
 
@@ -125,11 +114,8 @@ public class CustomSignatureRulesManagerTest {
     results =
         rulesManager.getCustomSignatureRules(
             requestContext,
-            GetCustomSignatureRulesRequest.newBuilder()
-                .setFilter(
-                    GetRulesFilter.newBuilder()
-                        .addEventTypes(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
-                        .build())
+            GetRulesFilter.newBuilder()
+                .addEventTypes(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
                 .build());
     assertEquals(1, results.size());
     assertEquals(expectedRules.get(0), results.get(0));
@@ -138,11 +124,8 @@ public class CustomSignatureRulesManagerTest {
     results =
         rulesManager.getCustomSignatureRules(
             requestContext,
-            GetCustomSignatureRulesRequest.newBuilder()
-                .setFilter(
-                    GetRulesFilter.newBuilder()
-                        .addEventTypes(EventType.EVENT_TYPE_TENTATIVE_DETECTION)
-                        .build())
+            GetRulesFilter.newBuilder()
+                .addEventTypes(EventType.EVENT_TYPE_TENTATIVE_DETECTION)
                 .build());
     assertTrue(results.isEmpty());
 
@@ -150,12 +133,9 @@ public class CustomSignatureRulesManagerTest {
     results =
         rulesManager.getCustomSignatureRules(
             requestContext,
-            GetCustomSignatureRulesRequest.newBuilder()
-                .setFilter(
-                    GetRulesFilter.newBuilder()
-                        .addEventTypes(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
-                        .setInternal(true)
-                        .build())
+            GetRulesFilter.newBuilder()
+                .addEventTypes(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
+                .setInternal(true)
                 .build());
     assertEquals(1, results.size());
     assertEquals(expectedRules.get(0), results.get(0));
@@ -164,12 +144,9 @@ public class CustomSignatureRulesManagerTest {
     results =
         rulesManager.getCustomSignatureRules(
             requestContext,
-            GetCustomSignatureRulesRequest.newBuilder()
-                .setFilter(
-                    GetRulesFilter.newBuilder()
-                        .addEventTypes(EventType.EVENT_TYPE_NORMAL_DETECTION)
-                        .setInternal(true)
-                        .build())
+            GetRulesFilter.newBuilder()
+                .addEventTypes(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                .setInternal(true)
                 .build());
     assertTrue(results.isEmpty());
   }
@@ -238,28 +215,19 @@ public class CustomSignatureRulesManagerTest {
     assertFalse(
         rulesManager
             .getCustomSignatureRules(
-                requestContext,
-                GetCustomSignatureRulesRequest.newBuilder()
-                    .setFilter(GetRulesFilter.newBuilder().addRuleIds(id).build())
-                    .build())
+                requestContext, GetRulesFilter.newBuilder().addRuleIds(id).build())
             .isEmpty());
     assertTrue(rulesManager.deleteCustomSignatureRule(requestContext, "invalidId"));
     assertFalse(
         rulesManager
             .getCustomSignatureRules(
-                requestContext,
-                GetCustomSignatureRulesRequest.newBuilder()
-                    .setFilter(GetRulesFilter.newBuilder().addRuleIds(id).build())
-                    .build())
+                requestContext, GetRulesFilter.newBuilder().addRuleIds(id).build())
             .isEmpty());
     assertTrue(rulesManager.deleteCustomSignatureRule(requestContext, id));
     assertTrue(
         rulesManager
             .getCustomSignatureRules(
-                requestContext,
-                GetCustomSignatureRulesRequest.newBuilder()
-                    .setFilter(GetRulesFilter.newBuilder().addRuleIds(id).build())
-                    .build())
+                requestContext, GetRulesFilter.newBuilder().addRuleIds(id).build())
             .isEmpty());
   }
 

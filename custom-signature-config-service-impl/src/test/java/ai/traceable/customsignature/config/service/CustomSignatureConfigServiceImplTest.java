@@ -8,6 +8,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesValidator;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
@@ -15,6 +16,8 @@ import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleR
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleResponse;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesRequest;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesResponse;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
@@ -32,6 +35,7 @@ public class CustomSignatureConfigServiceImplTest {
 
   private RulesValidator rulesValidator;
   private RulesManager rulesManager;
+  private ModsecRulesManager modsecRulesManager;
 
   private CustomSignatureConfigServiceImpl configService;
 
@@ -39,7 +43,9 @@ public class CustomSignatureConfigServiceImplTest {
   public void setup() {
     rulesValidator = mock(RulesValidator.class);
     rulesManager = mock(RulesManager.class);
-    configService = new CustomSignatureConfigServiceImpl(rulesValidator, rulesManager);
+    modsecRulesManager = mock(ModsecRulesManager.class);
+    configService =
+        new CustomSignatureConfigServiceImpl(rulesValidator, rulesManager, modsecRulesManager);
   }
 
   @Test
@@ -156,6 +162,30 @@ public class CustomSignatureConfigServiceImplTest {
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseObserver, times(1))
         .onNext(DeleteCustomSignatureRuleResponse.getDefaultInstance());
+    verify(responseObserver, times(1)).onCompleted();
+  }
+
+  @Test
+  public void testGetCustomSignatureModsecRules() {
+    when(rulesManager.getCustomSignatureRules(any(), any()))
+        .thenReturn(List.of(CustomSignatureRule.newBuilder().build()));
+    when(modsecRulesManager.getModsecRules(any()))
+        .thenThrow(new UnsupportedOperationException())
+        .thenReturn(GetCustomSignatureModsecRulesResponse.newBuilder().build());
+
+    StreamObserver<GetCustomSignatureModsecRulesResponse> responseObserver =
+        mock(StreamObserver.class);
+    Runnable runnable =
+        () ->
+            configService.getCustomSignatureModsecRules(
+                GetCustomSignatureModsecRulesRequest.getDefaultInstance(), responseObserver);
+
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    verify(responseObserver, times(1))
+        .onError(argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INTERNAL));
+    verify(responseObserver, times(1))
+        .onNext(GetCustomSignatureModsecRulesResponse.newBuilder().build());
     verify(responseObserver, times(1)).onCompleted();
   }
 }

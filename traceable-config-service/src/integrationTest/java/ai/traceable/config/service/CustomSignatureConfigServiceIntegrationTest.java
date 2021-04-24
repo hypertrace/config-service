@@ -14,6 +14,8 @@ import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.EventSeverity;
 import ai.traceable.customsignature.config.service.v1.EventType;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesRequest;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
@@ -144,6 +146,57 @@ public class CustomSignatureConfigServiceIntegrationTest
     assertEquals(1, fetchedRules.size());
     assertEquals(true, fetchedRules.get(0).getDisabled());
     assertEquals(createdRules.get(0).getId(), fetchedRules.get(0).getId());
+  }
+
+  @Test
+  public void testGetModsecRules() {
+    assertTrue(fetchAllRules().isEmpty());
+    List<CustomSignatureRule> createdRules = createDefaultRules();
+    assertEquals(2, fetchAllRules().size());
+
+    GetCustomSignatureModsecRulesResponse rulesResponse =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+            TENANT_ID,
+            () ->
+                configServiceStub.getCustomSignatureModsecRules(
+                    GetCustomSignatureModsecRulesRequest.newBuilder()
+                        .setFilter(
+                            GetRulesFilter.newBuilder()
+                                .addEventTypes(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                                .build())
+                        .build()));
+
+    assertEquals(1, rulesResponse.getRulesCount());
+    assertEquals(
+        EventType.EVENT_TYPE_NORMAL_DETECTION,
+        rulesResponse.getRules(0).getEffect().getEventType());
+    assertEquals(createdRules.get(1).getId(), rulesResponse.getRules(0).getId());
+    assertTrue(rulesResponse.getModsecRulesBlob().startsWith("SecRule"));
+
+    rulesResponse =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+            TENANT_ID,
+            () ->
+                configServiceStub.getCustomSignatureModsecRules(
+                    GetCustomSignatureModsecRulesRequest.newBuilder()
+                        .setFilter(GetRulesFilter.newBuilder().setDisabled(true).build())
+                        .build()));
+    assertTrue(rulesResponse.getRulesList().isEmpty());
+    assertTrue(rulesResponse.getModsecRulesBlob().isEmpty());
+
+    disableRule(createdRules.get(0));
+    rulesResponse =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+            TENANT_ID,
+            () ->
+                configServiceStub.getCustomSignatureModsecRules(
+                    GetCustomSignatureModsecRulesRequest.newBuilder()
+                        .setFilter(GetRulesFilter.newBuilder().setDisabled(true).build())
+                        .build()));
+    assertEquals(1, rulesResponse.getRulesCount());
+    assertEquals(true, rulesResponse.getRules(0).getDisabled());
+    assertEquals(createdRules.get(0).getId(), rulesResponse.getRules(0).getId());
+    assertTrue(rulesResponse.getModsecRulesBlob().startsWith("SecRule"));
   }
 
   private List<CustomSignatureRule> createDefaultRules() {

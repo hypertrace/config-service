@@ -1,5 +1,6 @@
 package ai.traceable.customsignature.config.service;
 
+import ai.traceable.customsignature.config.service.modsec.ModsecRulesManagerModule;
 import ai.traceable.customsignature.config.service.rules.RulesManagerModule;
 import com.google.inject.AbstractModule;
 import io.grpc.BindableService;
@@ -17,5 +18,6 @@ class CustomSignatureConfigServiceModule extends AbstractModule {
     bind(BindableService.class).to(CustomSignatureConfigServiceImpl.class);
     bind(ManagedChannel.class).toInstance(channel);
     install(new RulesManagerModule());
+    install(new ModsecRulesManagerModule());
   }
 }

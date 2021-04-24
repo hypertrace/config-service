@@ -1,5 +1,6 @@
 package ai.traceable.customsignature.config.service;
 
+import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesValidator;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
@@ -8,6 +9,8 @@ import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServi
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleResponse;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesRequest;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesResponse;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
@@ -26,12 +29,16 @@ public class CustomSignatureConfigServiceImpl
 
   private final RulesValidator rulesValidator;
   private final RulesManager rulesManager;
+  private final ModsecRulesManager modsecRulesManager;
 
   @Inject
   public CustomSignatureConfigServiceImpl(
-      RulesValidator rulesValidator, RulesManager rulesManager) {
+      RulesValidator rulesValidator,
+      RulesManager rulesManager,
+      ModsecRulesManager modsecRulesManager) {
     this.rulesValidator = rulesValidator;
     this.rulesManager = rulesManager;
+    this.modsecRulesManager = modsecRulesManager;
   }
 
   @Override
@@ -40,7 +47,7 @@ public class CustomSignatureConfigServiceImpl
       StreamObserver<GetCustomSignatureRulesResponse> responseObserver) {
     try {
       List<CustomSignatureRule> rules =
-          rulesManager.getCustomSignatureRules(RequestContext.CURRENT.get(), request);
+          rulesManager.getCustomSignatureRules(RequestContext.CURRENT.get(), request.getFilter());
       responseObserver.onNext(
           GetCustomSignatureRulesResponse.newBuilder().addAllRules(rules).build());
       responseObserver.onCompleted();
@@ -129,6 +136,24 @@ public class CustomSignatureConfigServiceImpl
       responseObserver.onError(
           Status.INTERNAL
               .withDescription(String.format("Unable to delete custom signature rule %s", ruleId))
+              .asException());
+    }
+  }
+
+  @Override
+  public void getCustomSignatureModsecRules(
+      GetCustomSignatureModsecRulesRequest request,
+      StreamObserver<GetCustomSignatureModsecRulesResponse> responseObserver) {
+    try {
+      List<CustomSignatureRule> rules =
+          rulesManager.getCustomSignatureRules(RequestContext.CURRENT.get(), request.getFilter());
+      GetCustomSignatureModsecRulesResponse response = modsecRulesManager.getModsecRules(rules);
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      responseObserver.onError(
+          Status.INTERNAL
+              .withDescription(String.format("Unable to fetch modsec custom signature rules"))
               .asException());
     }
   }

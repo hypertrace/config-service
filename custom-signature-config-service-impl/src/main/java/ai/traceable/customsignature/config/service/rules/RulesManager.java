@@ -2,7 +2,7 @@ package ai.traceable.customsignature.config.service.rules;
 
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
-import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
+import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -14,7 +14,7 @@ public interface RulesManager {
   String CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME = "customSignatureRuleConfig";
 
   List<CustomSignatureRule> getCustomSignatureRules(
-      RequestContext requestContext, GetCustomSignatureRulesRequest request);
+      RequestContext requestContext, GetRulesFilter filter);
 
   Optional<CustomSignatureRule> createCustomSignatureRule(
       RequestContext requestContext, CreateCustomSignatureRuleRequest createRuleRequest);

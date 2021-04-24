@@ -2,7 +2,6 @@ package ai.traceable.customsignature.config.service.rules;
 
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
-import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -39,7 +38,7 @@ class CustomSignatureRulesManager implements RulesManager {
 
   @Override
   public List<CustomSignatureRule> getCustomSignatureRules(
-      RequestContext requestContext, GetCustomSignatureRulesRequest request) {
+      RequestContext requestContext, GetRulesFilter filter) {
 
     List<CustomSignatureRule> customSignatureRules = new ArrayList<>();
     GetAllConfigsRequest getAllRuleConfigsRequest =
@@ -70,8 +69,7 @@ class CustomSignatureRulesManager implements RulesManager {
       }
     }
 
-    if (request.hasFilter()) {
-      GetRulesFilter filter = request.getFilter();
+    if (filter != GetRulesFilter.getDefaultInstance()) {
       return customSignatureRules.stream()
           .filter(
               rule -> {
