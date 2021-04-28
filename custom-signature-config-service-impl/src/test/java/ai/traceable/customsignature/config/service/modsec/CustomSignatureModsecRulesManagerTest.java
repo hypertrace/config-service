@@ -1,6 +1,7 @@
 package ai.traceable.customsignature.config.service.modsec;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -8,6 +9,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceConfig;
 import ai.traceable.customsignature.config.service.modsec.registry.ModsecRuleMappings;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
@@ -25,11 +27,14 @@ import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import com.github.f4b6a3.uuid.UuidCreator;
 import com.google.common.io.Resources;
+import com.typesafe.config.ConfigFactory;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
@@ -39,9 +44,11 @@ public class CustomSignatureModsecRulesManagerTest {
 
   @Test
   public void testConvertRulesException() {
+    CustomSignatureConfigServiceConfig mockConfig = mock(CustomSignatureConfigServiceConfig.class);
+    when(mockConfig.getModsecDirectivesDataPath()).thenReturn("modsecurity.conf");
     ModsecRuleConversion modsecRuleConversion = mock(ModsecRuleConversion.class);
     CustomSignatureModsecRulesManager modsecRulesManager =
-        new CustomSignatureModsecRulesManager(modsecRuleConversion);
+        new CustomSignatureModsecRulesManager(modsecRuleConversion, mockConfig);
 
     GetCustomSignatureModsecRulesResponse response =
         modsecRulesManager.getModsecRules(List.of(CustomSignatureRule.newBuilder().build()));
@@ -81,12 +88,23 @@ public class CustomSignatureModsecRulesManagerTest {
     assertTrue(response.getModsecRulesBlob().isEmpty());
     assertTrue(response.getRulesList().isEmpty());
     verify(modsecRuleConversion, times(1)).getModsecRuleForANDClauses(any(), any());
+
+    when(mockConfig.getModsecDirectivesDataPath()).thenReturn("xyz");
+    assertThrows(
+        RuntimeException.class,
+        () -> new CustomSignatureModsecRulesManager(modsecRuleConversion, mockConfig));
   }
 
   @Test
   public void testConvertRules() throws IOException {
+    Map<String, Object> configMap = new HashMap<>();
+    configMap.put("modsecurity.directives.data.path", "modsecurity.conf");
+    CustomSignatureConfigServiceConfig config =
+        new CustomSignatureConfigServiceConfig(ConfigFactory.parseMap(configMap));
+
     CustomSignatureModsecRulesManager modsecRulesManager =
-        new CustomSignatureModsecRulesManager(new ModsecRuleConversion(new ModsecRuleMappings()));
+        new CustomSignatureModsecRulesManager(
+            new ModsecRuleConversion(new ModsecRuleMappings()), config);
 
     List<CustomSignatureRule> rules = new ArrayList<>();
 
@@ -188,7 +206,7 @@ public class CustomSignatureModsecRulesManagerTest {
 
     GetCustomSignatureModsecRulesResponse response = modsecRulesManager.getModsecRules(rules);
     assertEquals(
-        rules.size() + 4, /* 3+1 extra chained rules */
+        rules.size() + 4 + 31, /* 3+1 extra chained rules and 31 lines of modsec directives */
         response.getModsecRulesBlob().split("\r\n|\n\n|\r|\n").length);
     assertEquals(rules.size(), response.getRulesCount());
 

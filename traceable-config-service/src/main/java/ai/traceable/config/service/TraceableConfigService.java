@@ -72,7 +72,7 @@ public class TraceableConfigService extends PlatformService {
         new LocalProcessingRulesServiceImpl(managedChannel);
     BindableService regionConfigService = RegionConfigServiceFactory.build(managedChannel, config);
     BindableService customSignatureConfigService =
-        CustomSignatureConfigServiceFactory.build(managedChannel);
+        CustomSignatureConfigServiceFactory.build(managedChannel, config);
     internalServerBuilder
         .addService(InterceptorUtil.wrapInterceptors(sensitiveDataConfigService))
         .addService(InterceptorUtil.wrapInterceptors(rateLimitingConfigService))

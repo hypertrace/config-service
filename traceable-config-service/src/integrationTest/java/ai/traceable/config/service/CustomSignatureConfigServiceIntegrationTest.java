@@ -150,6 +150,40 @@ public class CustomSignatureConfigServiceIntegrationTest
 
   @Test
   public void testGetModsecRules() {
+    String modsecDirectives =
+        "SecRuleEngine On\n"
+            + "SecRequestBodyAccess On\n"
+            + "SecRequestBodyLimit 13107200\n"
+            + "SecRequestBodyNoFilesLimit 131072\n"
+            + "SecRequestBodyLimitAction Reject\n"
+            + "SecPcreMatchLimit 1000\n"
+            + "SecPcreMatchLimitRecursion 1000\n"
+            + "SecResponseBodyAccess On\n"
+            + "SecResponseBodyLimit 524288\n"
+            + "SecTmpDir /tmp/\n"
+            + "SecDataDir /tmp/\n"
+            + "SecAuditEngine Off\n"
+            + "SecAuditLogRelevantStatus \"^(?:5|4(?!04))\"\n"
+            + "SecAuditLogParts ABIJDEFHZ\n"
+            + "SecAuditLogType Serial\n"
+            + "SecAuditLog /var/log/modsec_audit.log\n"
+            + "SecArgumentSeparator &\n"
+            + "SecCookieFormat 0\n"
+            + "SecUnicodeMapFile unicode.mapping 20127\n"
+            + "SecStatusEngine Off\n"
+            + "SecDefaultAction \"phase:1,log,auditlog,deny,status:403\"\n"
+            + "SecDefaultAction \"phase:2,log,auditlog,deny,status:403\"\n"
+            + "SecCollectionTimeout 600\n"
+            + "SecAction \\\n"
+            + " \"id:900000,\\\n"
+            + "  phase:1,\\\n"
+            + "  nolog,\\\n"
+            + "  pass,\\\n"
+            + "  t:none,\\\n"
+            + "  setvar:tx.crs_setup_version=320,\\\n"
+            + "  setvar:tx.paranoia_level=1\"\n"
+            + "\n";
+
     assertTrue(fetchAllRules().isEmpty());
     List<CustomSignatureRule> createdRules = createDefaultRules();
     assertEquals(2, fetchAllRules().size());
@@ -171,7 +205,13 @@ public class CustomSignatureConfigServiceIntegrationTest
         EventType.EVENT_TYPE_NORMAL_DETECTION,
         rulesResponse.getRules(0).getEffect().getEventType());
     assertEquals(createdRules.get(1).getId(), rulesResponse.getRules(0).getId());
-    assertTrue(rulesResponse.getModsecRulesBlob().startsWith("SecRule"));
+    assertEquals(
+        modsecDirectives
+            + "SecRule REQUEST_HEADERS:Host|REQUEST_HEADERS:x-forwarded-host|REQUEST_HEADERS:forwarded \"@streq 127.0.0.1\" \"id:10000001,phase:2,capture,t:none,msg:'',logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',tag:'rule-uuid/"
+            + createdRules.get(1).getId()
+            + "',severity:'CRITICAL',chain\"\n"
+            + "SecRule REQUEST_HEADERS:x-real-ip \"@rx ^127\" \"capture,t:none\"",
+        rulesResponse.getModsecRulesBlob());
 
     rulesResponse =
         GrpcClientRequestContextUtil.executeInTenantContext(
@@ -196,7 +236,13 @@ public class CustomSignatureConfigServiceIntegrationTest
     assertEquals(1, rulesResponse.getRulesCount());
     assertEquals(true, rulesResponse.getRules(0).getDisabled());
     assertEquals(createdRules.get(0).getId(), rulesResponse.getRules(0).getId());
-    assertTrue(rulesResponse.getModsecRulesBlob().startsWith("SecRule"));
+    assertEquals(
+        modsecDirectives
+            + "SecRule REQUEST_HEADERS:Host|REQUEST_HEADERS:x-forwarded-host|REQUEST_HEADERS:forwarded \"@streq 127.0.0.1\" \"id:10000001,phase:2,capture,t:none,msg:'',logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',tag:'rule-uuid/"
+            + createdRules.get(0).getId()
+            + "',severity:'CRITICAL',chain\"\n"
+            + "SecRule REQUEST_HEADERS:x-real-ip \"@rx ^127\" \"capture,t:none\"",
+        rulesResponse.getModsecRulesBlob());
   }
 
   private List<CustomSignatureRule> createDefaultRules() {

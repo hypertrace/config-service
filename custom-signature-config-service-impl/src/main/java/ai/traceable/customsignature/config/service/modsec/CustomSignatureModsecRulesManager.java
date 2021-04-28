@@ -1,11 +1,16 @@
 package ai.traceable.customsignature.config.service.modsec;
 
+import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceConfig;
 import ai.traceable.customsignature.config.service.modsec.registry.ModsecActions;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRuleDetails;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
+import com.google.common.io.Resources;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import javax.inject.Inject;
@@ -18,10 +23,13 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
   private static final String NEW_LINES_DELIMITER = "\n\n";
 
   private final ModsecRuleConversion modsecRuleConversion;
+  private String modsecConfigDirectives;
 
   @Inject
-  public CustomSignatureModsecRulesManager(ModsecRuleConversion modsecRuleConversion) {
+  public CustomSignatureModsecRulesManager(
+      ModsecRuleConversion modsecRuleConversion, CustomSignatureConfigServiceConfig config) {
     this.modsecRuleConversion = modsecRuleConversion;
+    initModsecConfigDirectives(config);
   }
 
   @Override
@@ -66,9 +74,31 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
       }
     }
 
+    if (ruleDetailsList.isEmpty()) {
+      return GetCustomSignatureModsecRulesResponse.getDefaultInstance();
+    }
+
     return GetCustomSignatureModsecRulesResponse.newBuilder()
-        .setModsecRulesBlob(String.join(NEW_LINES_DELIMITER, modsecRules))
+        .setModsecRulesBlob(modsecConfigDirectives + String.join(NEW_LINES_DELIMITER, modsecRules))
         .addAllRules(ruleDetailsList)
         .build();
+  }
+
+  private void initModsecConfigDirectives(CustomSignatureConfigServiceConfig config) {
+    URL resourceUrl =
+        CustomSignatureModsecRulesManager.class
+            .getClassLoader()
+            .getResource(config.getModsecDirectivesDataPath());
+    if (resourceUrl == null) {
+      throw new RuntimeException("Unable to locate modsec directives file");
+    } else {
+      try {
+        modsecConfigDirectives =
+            Resources.toString(resourceUrl, StandardCharsets.UTF_8) + NEW_LINES_DELIMITER;
+      } catch (IOException e) {
+        throw new RuntimeException(
+            String.format("Unable to read modsec directives file: {}", resourceUrl), e);
+      }
+    }
   }
 }
