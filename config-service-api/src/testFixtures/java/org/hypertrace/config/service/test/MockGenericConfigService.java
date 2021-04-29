@@ -62,6 +62,11 @@ public class MockGenericConfigService {
       Mockito.mock(
           ConfigServiceImplBase.class,
           invocation -> { // Error if unmocked called so we don't hang waiting for streamobserver
+            if (invocation
+                .getMethod()
+                .equals(ConfigServiceImplBase.class.getMethod("bindService"))) {
+              return invocation.callRealMethod();
+            }
             throw new UnsupportedOperationException("Unmocked method invoked");
           });
 

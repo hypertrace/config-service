@@ -17,7 +17,7 @@ protobuf {
   }
   plugins {
     id("grpc") {
-      artifact = "io.grpc:protoc-gen-grpc-java:1.36.1"
+      artifact = "io.grpc:protoc-gen-grpc-java:1.37.0"
     }
   }
   generateProtoTasks {
@@ -30,14 +30,9 @@ protobuf {
 }
 
 dependencies {
-  api("io.grpc:grpc-protobuf:1.36.1")
-  api("io.grpc:grpc-stub:1.36.1")
+  api("io.grpc:grpc-protobuf:1.37.0")
+  api("io.grpc:grpc-stub:1.37.0")
   api("javax.annotation:javax.annotation-api:1.3.2")
-  constraints {
-    implementation("com.google.guava:guava:30.1-jre") {
-      because("https://snyk.io/vuln/SNYK-JAVA-COMGOOGLEGUAVA-1015415")
-    }
-  }
 }
 
 sourceSets {
