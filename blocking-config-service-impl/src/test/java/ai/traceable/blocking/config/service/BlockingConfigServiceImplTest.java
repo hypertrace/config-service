@@ -5,8 +5,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.blocking.config.service.customsignature.CustomModsecBlockingManager;
 import ai.traceable.blocking.config.service.regions.RegionBlockingManager;
 import ai.traceable.blocking.config.service.v1.BlockingRules;
+import ai.traceable.blocking.config.service.v1.CustomModsecBlockingRules;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesRequest;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesResponse;
 import ai.traceable.blocking.config.service.v1.RegionBlockingRules;
@@ -20,6 +22,7 @@ class BlockingConfigServiceImplTest {
 
   private HashGenerator hashGenerator;
   private RegionBlockingManager regionBlockingManager;
+  private CustomModsecBlockingManager customModsecBlockingManager;
 
   private BlockingConfigServiceImpl blockingConfigService;
 
@@ -27,9 +30,11 @@ class BlockingConfigServiceImplTest {
   void setup() {
     this.hashGenerator = mock(HashGenerator.class);
     this.regionBlockingManager = mock(RegionBlockingManager.class);
+    this.customModsecBlockingManager = mock(CustomModsecBlockingManager.class);
 
     this.blockingConfigService =
-        new BlockingConfigServiceImpl(this.hashGenerator, this.regionBlockingManager);
+        new BlockingConfigServiceImpl(
+            this.hashGenerator, this.regionBlockingManager, this.customModsecBlockingManager);
   }
 
   @Test
@@ -37,8 +42,13 @@ class BlockingConfigServiceImplTest {
     StreamObserver<GetBlockingRulesResponse> responseObserver = mock(StreamObserver.class);
     RegionBlockingRules regionBlockingRules = RegionBlockingRules.getDefaultInstance();
     BlockingRules blockingRules =
-        BlockingRules.newBuilder().setRegionBlockingRules(regionBlockingRules).build();
+        BlockingRules.newBuilder()
+            .setRegionBlockingRules(regionBlockingRules)
+            .setCustomModsecBlockingRules(CustomModsecBlockingRules.getDefaultInstance())
+            .build();
     when(this.regionBlockingManager.getBlockingRules()).thenReturn(regionBlockingRules);
+    when(this.customModsecBlockingManager.getEnabledBlockingRules())
+        .thenReturn(CustomModsecBlockingRules.getDefaultInstance());
     when(this.hashGenerator.generate(blockingRules)).thenReturn("new-hash");
 
     Runnable runnable =
@@ -62,8 +72,13 @@ class BlockingConfigServiceImplTest {
     StreamObserver<GetBlockingRulesResponse> responseObserver = mock(StreamObserver.class);
     RegionBlockingRules regionBlockingRules = RegionBlockingRules.getDefaultInstance();
     BlockingRules blockingRules =
-        BlockingRules.newBuilder().setRegionBlockingRules(regionBlockingRules).build();
+        BlockingRules.newBuilder()
+            .setRegionBlockingRules(regionBlockingRules)
+            .setCustomModsecBlockingRules(CustomModsecBlockingRules.getDefaultInstance())
+            .build();
     when(this.regionBlockingManager.getBlockingRules()).thenReturn(regionBlockingRules);
+    when(this.customModsecBlockingManager.getEnabledBlockingRules())
+        .thenReturn(CustomModsecBlockingRules.getDefaultInstance());
     when(this.hashGenerator.generate(blockingRules)).thenReturn("old-hash");
 
     Runnable runnable =

@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 
 import ai.traceable.blocking.config.service.v1.BlockingRules;
+import ai.traceable.blocking.config.service.v1.CustomModsecBlockingRules;
 import ai.traceable.blocking.config.service.v1.IpRange;
 import ai.traceable.blocking.config.service.v1.IpV4Range;
 import ai.traceable.blocking.config.service.v1.RegionBlockingRules;
@@ -60,12 +61,16 @@ class HashGeneratorTest {
             .setRegionBlockingRules(
                 RegionBlockingRules.newBuilder()
                     .addAllRegionIpBlockingDetails(regionIpBlockingDetails))
+            .setCustomModsecBlockingRules(
+                CustomModsecBlockingRules.newBuilder().setCustomModsecRulesBlob("1234").build())
             .build();
     BlockingRules blockingRules2 =
         BlockingRules.newBuilder()
             .setRegionBlockingRules(
                 RegionBlockingRules.newBuilder()
                     .addAllRegionIpBlockingDetails(List.copyOf(regionIpBlockingDetails)))
+            .setCustomModsecBlockingRules(
+                CustomModsecBlockingRules.newBuilder().setCustomModsecRulesBlob("1234").build())
             .build();
     assertEquals(
         this.hashGenerator.generate(blockingRules1), this.hashGenerator.generate(blockingRules2));
@@ -101,12 +106,16 @@ class HashGeneratorTest {
             .setRegionBlockingRules(
                 RegionBlockingRules.newBuilder()
                     .addAllRegionIpBlockingDetails(regionIpBlockingDetails1))
+            .setCustomModsecBlockingRules(
+                CustomModsecBlockingRules.newBuilder().setCustomModsecRulesBlob("1234").build())
             .build();
     BlockingRules blockingRules2 =
         BlockingRules.newBuilder()
             .setRegionBlockingRules(
                 RegionBlockingRules.newBuilder()
                     .addAllRegionIpBlockingDetails(List.copyOf(regionIpBlockingDetails2)))
+            .setCustomModsecBlockingRules(
+                CustomModsecBlockingRules.newBuilder().setCustomModsecRulesBlob("4567").build())
             .build();
 
     assertNotEquals(

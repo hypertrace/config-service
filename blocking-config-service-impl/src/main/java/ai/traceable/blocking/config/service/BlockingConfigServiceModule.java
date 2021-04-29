@@ -1,5 +1,6 @@
 package ai.traceable.blocking.config.service;
 
+import ai.traceable.blocking.config.service.customsignature.CustomModsecBlockingManagerModule;
 import ai.traceable.blocking.config.service.regions.RegionBlockingManagerModule;
 import com.google.inject.AbstractModule;
 import io.grpc.BindableService;
@@ -19,5 +20,6 @@ class BlockingConfigServiceModule extends AbstractModule {
     bind(BindableService.class).to(BlockingConfigServiceImpl.class);
     bind(ManagedChannel.class).toInstance(channel);
     install(new RegionBlockingManagerModule());
+    install(new CustomModsecBlockingManagerModule());
   }
 }
