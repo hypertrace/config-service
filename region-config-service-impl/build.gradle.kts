@@ -10,7 +10,7 @@ dependencies {
 
   implementation("com.google.inject:guice:5.0.1")
   implementation("com.google.guava:guava:30.1-jre")
-  implementation("com.google.protobuf:protobuf-java-util:3.14.0")
+  implementation("com.google.protobuf:protobuf-java-util:3.15.8")
   implementation("com.typesafe:config:1.4.1")
   implementation("org.slf4j:slf4j-api:1.7.30")
   implementation("org.apache.commons:commons-csv:1.8")

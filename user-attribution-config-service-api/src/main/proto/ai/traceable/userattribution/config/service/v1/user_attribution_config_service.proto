@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package ai.traceable.userattribution.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/userattribution/config/service/v1/user_attribution_rule.proto";
+
+service UserAttributionConfigService {
+  rpc GetUserAttributionRules (GetUserAttributionRulesRequest) returns (GetUserAttributionRulesResponse) {
+  }
+
+  rpc CreateUserAttributionRule (CreateUserAttributionRuleRequest) returns (CreateUserAttributionRuleResponse) {
+  }
+
+  rpc UpdateUserAttributionRule (UpdateUserAttributionRuleRequest) returns (UpdateUserAttributionRuleResponse) {
+  }
+
+  rpc DeleteUserAttributionRule (DeleteUserAttributionRuleRequest) returns (DeleteUserAttributionRuleResponse) {
+  }
+}
+
+message GetUserAttributionRulesRequest {
+}
+
+message GetUserAttributionRulesResponse {
+  repeated UserAttributionRule rules = 1;
+}
+
+message CreateUserAttributionRuleRequest {
+  string name = 1;
+  UserAttributionRuleData data = 2;
+}
+
+message CreateUserAttributionRuleResponse {
+  UserAttributionRule rule = 1;
+}
+
+message UpdateUserAttributionRuleRequest {
+  UserAttributionRule rule = 1;
+}
+
+message UpdateUserAttributionRuleResponse {
+  UserAttributionRule rule = 1;
+}
+
+message DeleteUserAttributionRuleRequest {
+  string rule_id = 1;
+}
+
+message DeleteUserAttributionRuleResponse {
+}

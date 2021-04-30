@@ -23,7 +23,7 @@ dependencies {
 
   testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
   testImplementation("org.mockito:mockito-core:3.8.0")
-  testImplementation("io.grpc:grpc-testing:1.36.0")
+  testImplementation("io.grpc:grpc-testing:1.37.0")
   testAnnotationProcessor("org.projectlombok:lombok:1.18.18")
   testCompileOnly("org.projectlombok:lombok:1.18.18")
 }

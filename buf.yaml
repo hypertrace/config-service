@@ -7,6 +7,7 @@ build:
     - blocking-config-service-api/src/main/proto
     - region-config-service-api/src/main/proto
     - custom-signature-config-service-api/src/main/proto
+    - user-attribution-config-service-api/src/main/proto
 lint:
   use:
     - DEFAULT

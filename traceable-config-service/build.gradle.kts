@@ -66,7 +66,7 @@ dependencies {
   implementation("org.hypertrace.config.service:config-service-impl")
   implementation("org.hypertrace.core.grpcutils:grpc-server-utils:0.3.3")
   implementation("org.hypertrace.core.serviceframework:platform-service-framework:0.1.20")
-  runtimeOnly("io.grpc:grpc-netty:1.36.0")
+  runtimeOnly("io.grpc:grpc-netty:1.37.0")
   implementation("com.typesafe:config:1.4.1")
   implementation("org.slf4j:slf4j-api:1.7.30")
   runtimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:2.14.0")
@@ -79,7 +79,7 @@ dependencies {
   integrationTestImplementation("org.hypertrace.core.serviceframework:integrationtest-service-framework:0.1.20")
   integrationTestImplementation("org.hypertrace.core.documentstore:document-store:0.5.0")
   integrationTestImplementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.3.3")
-  integrationTestImplementation("com.google.protobuf:protobuf-java-util:3.14.0")
+  integrationTestImplementation("com.google.protobuf:protobuf-java-util:3.15.8")
 
   testFixturesImplementation("ai.traceable.platform:insights-service-api:0.29.5")
 }

@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package ai.traceable.userattribution.config.service.v1;
+
+option java_multiple_files = true;
+
+message UserAttributionRule {
+  string id = 1;
+  string name = 2;
+  UserAttributionRuleData data = 3;
+}
+
+
+message UserAttributionRuleData {
+  oneof data {
+    BasicAuthenticationUserAttributionRuleData basic_authentication_data = 1;
+    JwtUserAttributionRuleData jwt_data = 2;
+    ResponseBodyUserAttributionRuleData response_body_data = 3;
+    RequestHeaderUserAttributionRuleData request_header_data = 4;
+    CustomUserAttributionRuleData custom_data = 5;
+  }
+
+  message CustomUserAttributionRuleData {
+    string yaml = 1;
+  }
+
+  message BasicAuthenticationUserAttributionRuleData {
+    HeaderLocation location = 1;
+  }
+
+  message JwtUserAttributionRuleData {
+    HeaderLocation jwt_location = 1;
+    string user_id_claim = 2;
+    EncodedLocation user_id_location = 3;
+    string role_claim = 4;
+    EncodedLocation role_location = 5;
+  }
+
+  message ResponseBodyUserAttributionRuleData {
+    RuleCondition condition = 1;
+    EncodedLocation user_id_location = 2;
+    EncodedLocation role_location = 3;
+  }
+
+  message RequestHeaderUserAttributionRuleData {
+    HeaderLocation user_id_location = 1;
+    HeaderLocation role_location = 2;
+  }
+
+  message HeaderLocation {
+    oneof location {
+      string header_name = 1;
+      string cookie_name = 2;
+    }
+  }
+
+  message EncodedLocation {
+    oneof location {
+      string json_path = 1;
+    }
+  }
+
+  message RuleCondition {
+    oneof condition {
+      string url_match_regex = 1;
+    }
+  }
+}
