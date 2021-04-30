@@ -20,7 +20,7 @@ dependencies {
   testImplementation("org.mockito:mockito-core:3.9.0")
   testImplementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.4.0")
   testImplementation("org.apache.commons:commons-lang3:3.11")
-  testImplementation("io.grpc:grpc-testing:1.37.0")
+  testImplementation("io.grpc:grpc-core:1.37.0")
 }
 
 tasks.test {

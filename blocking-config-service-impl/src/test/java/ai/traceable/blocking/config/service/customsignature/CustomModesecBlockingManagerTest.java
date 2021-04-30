@@ -1,6 +1,6 @@
 package ai.traceable.blocking.config.service.customsignature;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import ai.traceable.blocking.config.service.v1.CustomModsecBlockingRules;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;

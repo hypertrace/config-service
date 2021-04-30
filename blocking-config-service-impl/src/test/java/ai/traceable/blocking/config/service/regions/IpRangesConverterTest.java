@@ -1,6 +1,6 @@
 package ai.traceable.blocking.config.service.regions;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import ai.traceable.region.config.service.v1.IpRange;
 import ai.traceable.region.config.service.v1.IpV4Range;

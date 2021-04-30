@@ -25,7 +25,6 @@ dependencies {
 
   testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
   testImplementation("org.mockito:mockito-core:3.9.0")
-  testImplementation("io.grpc:grpc-testing:1.37.0")
   testImplementation(testFixtures("org.hypertrace.config.service:config-service-api"))
   testAnnotationProcessor("org.projectlombok:lombok:1.18.20")
   testCompileOnly("org.projectlombok:lombok:1.18.20")

@@ -1,6 +1,6 @@
 package ai.traceable.region.config.service;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;

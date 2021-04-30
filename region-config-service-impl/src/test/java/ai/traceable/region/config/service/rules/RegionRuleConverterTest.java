@@ -1,6 +1,6 @@
 package ai.traceable.region.config.service.rules;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.traceable.region.config.service.v1.RegionRule;
