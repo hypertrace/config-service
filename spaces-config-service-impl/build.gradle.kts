@@ -16,8 +16,8 @@ dependencies {
   implementation("org.hypertrace.core.grpcutils:grpc-client-rx-utils:0.4.0")
 
   testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
-  testImplementation("org.mockito:mockito-core:3.8.0")
-  testImplementation("org.mockito:mockito-junit-jupiter:3.8.0")
+  testImplementation("org.mockito:mockito-core:3.9.0")
+  testImplementation("org.mockito:mockito-junit-jupiter:3.9.0")
   testImplementation(testFixtures(project(":config-service-api")))
 }
 

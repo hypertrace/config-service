@@ -63,7 +63,7 @@ dependencies {
   implementation("org.slf4j:slf4j-api:1.7.30")
 
   runtimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:2.14.1")
-  runtimeOnly("io.grpc:grpc-netty:1.36.1")
+  runtimeOnly("io.grpc:grpc-netty:1.37.0")
 
   // Integration test dependencies
   integrationTestImplementation("org.junit.jupiter:junit-jupiter:5.7.1")

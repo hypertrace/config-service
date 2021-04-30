@@ -20,7 +20,7 @@ dependencies {
   compileOnly("org.projectlombok:lombok:1.18.20")
 
   testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
-  testImplementation("org.mockito:mockito-core:3.8.0")
+  testImplementation("org.mockito:mockito-core:3.9.0")
   testImplementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.4.0")
 }
 
