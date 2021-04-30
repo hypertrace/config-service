@@ -35,17 +35,17 @@ import com.google.protobuf.Value;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.ManagedChannel;
+import io.grpc.Server;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
-import io.grpc.testing.GrpcCleanupRule;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.commons.lang3.tuple.Triple;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
-import org.junit.Rule;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,26 +53,31 @@ import org.mockito.ArgumentCaptor;
 
 public class RateLimitingConfigServiceImplTest {
 
-  @Rule public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
-
   private RateLimitingConfigServiceImpl rateLimitingConfigService;
   private final MockConfigServiceImpl mockConfigService = new MockConfigServiceImpl();
   static final String TENANT_ID = "tenant1";
+  private Server testServer;
+  private ManagedChannel testChannel;
 
   @BeforeEach
   void setup() throws IOException {
     String serverName = InProcessServerBuilder.generateName();
-    grpcCleanup.register(
+    testServer =
         InProcessServerBuilder.forName(serverName)
             .directExecutor()
             .addService(mockConfigService)
             .build()
-            .start());
+            .start();
 
-    ManagedChannel managedChannel =
-        grpcCleanup.register(InProcessChannelBuilder.forName(serverName).directExecutor().build());
+    testChannel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
     Config config = ConfigFactory.parseMap(Map.of("rate.limiting.config.service", Map.of()));
-    rateLimitingConfigService = new RateLimitingConfigServiceImpl(managedChannel, config);
+    rateLimitingConfigService = new RateLimitingConfigServiceImpl(testChannel, config);
+  }
+
+  @AfterEach
+  void afterEach() {
+    testServer.shutdownNow();
+    testChannel.shutdownNow();
   }
 
   @Test
