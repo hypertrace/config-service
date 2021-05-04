@@ -3,6 +3,7 @@ syntax = "proto3";
 package ai.traceable.blocking.config.service.v1;
 
 option java_multiple_files = true;
+option go_package = "github.com/Traceableai/config-service/blocking/v1";
 
 message GetBlockingRulesRequest {
     string omit_if_matches_hash = 1;
