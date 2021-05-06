@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package ai.traceable.threatmanagement.config.service.v1;
+
+option java_multiple_files = true;
+
+service ThreatManagementConfigService {
+  rpc GetThreatScoreBound (GetThreatScoreBoundRequest) returns (GetThreatScoreBoundResponse) {
+  }
+
+  rpc UpdateThreatScoreBound (UpdateThreatScoreBoundRequest) returns (UpdateThreatScoreBoundResponse) {
+  }
+}
+
+message GetThreatScoreBoundRequest {
+}
+
+message GetThreatScoreBoundResponse {
+  ThreatScoreBound threat_score_bound = 1;
+}
+
+message UpdateThreatScoreBoundRequest {
+  ThreatScoreBound threat_score_bound = 1;
+}
+
+message UpdateThreatScoreBoundResponse {
+  ThreatScoreBound threat_score_bound = 1;
+}
+
+message ThreatScoreBound {
+  int32 medium_score_upper_bound = 1;
+  int32 high_score_upper_bound = 2;
+}
