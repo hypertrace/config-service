@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package ai.traceable.threatmanagement.config.service.v1;
+
+option java_multiple_files = true;
+
+message GetSecurityEventScoreContributionRequest {
+}
+
+message GetSecurityEventScoreContributionResponse {
+  SecurityEventScoreContribution security_event_score_contribution = 1;
+}
+
+message UpdateSecurityEventScoreContributionRequest {
+  SecurityEventScoreContribution security_event_score_contribution = 1;
+}
+
+message UpdateSecurityEventScoreContributionResponse {
+  SecurityEventScoreContribution security_event_score_contribution = 1;
+}
+
+message SecurityEventScoreContribution {
+  int32 medium_score = 1;
+  int32 high_score = 2;
+  int32 anomaly_score = 3;
+}

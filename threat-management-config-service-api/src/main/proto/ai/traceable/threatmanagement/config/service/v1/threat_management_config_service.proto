@@ -4,30 +4,19 @@ package ai.traceable.threatmanagement.config.service.v1;
 
 option java_multiple_files = true;
 
+import "ai/traceable/threatmanagement/config/service/v1/threat_score_bound.proto";
+import "ai/traceable/threatmanagement/config/service/v1/security_event_score_contribution.proto";
+
 service ThreatManagementConfigService {
   rpc GetThreatScoreBound (GetThreatScoreBoundRequest) returns (GetThreatScoreBoundResponse) {
   }
 
   rpc UpdateThreatScoreBound (UpdateThreatScoreBoundRequest) returns (UpdateThreatScoreBoundResponse) {
   }
-}
 
-message GetThreatScoreBoundRequest {
-}
+  rpc GetSecurityEventScoreContribution (GetSecurityEventScoreContributionRequest) returns (GetSecurityEventScoreContributionResponse) {
+  }
 
-message GetThreatScoreBoundResponse {
-  ThreatScoreBound threat_score_bound = 1;
-}
-
-message UpdateThreatScoreBoundRequest {
-  ThreatScoreBound threat_score_bound = 1;
-}
-
-message UpdateThreatScoreBoundResponse {
-  ThreatScoreBound threat_score_bound = 1;
-}
-
-message ThreatScoreBound {
-  int32 medium_score_upper_bound = 1;
-  int32 high_score_upper_bound = 2;
+  rpc UpdateSecurityEventScoreContribution (UpdateSecurityEventScoreContributionRequest) returns (UpdateSecurityEventScoreContributionResponse) {
+  }
 }
