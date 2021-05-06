@@ -127,7 +127,7 @@ public class CustomSignatureRulesManagerTest {
         rulesManager.getCustomSignatureRules(
             requestContext,
             GetRulesFilter.newBuilder()
-                .addEventTypes(EventType.EVENT_TYPE_TENTATIVE_DETECTION)
+                .addEventTypes(EventType.EVENT_TYPE_TESTING_DETECTION)
                 .build());
     assertTrue(results.isEmpty());
 

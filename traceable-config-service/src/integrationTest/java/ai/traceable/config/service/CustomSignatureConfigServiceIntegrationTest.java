@@ -280,7 +280,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                             .setName("rule-1")
                             .setEffect(
                                 RuleEffect.newBuilder()
-                                    .setEventType(EventType.EVENT_TYPE_TENTATIVE_DETECTION)
+                                    .setEventType(EventType.EVENT_TYPE_TESTING_DETECTION)
                                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
                                     .build())
                             .setDefinition(definition)
@@ -364,7 +364,7 @@ public class CustomSignatureConfigServiceIntegrationTest
             .setName("rule-1")
             .setEffect(
                 RuleEffect.newBuilder()
-                    .setEventType(EventType.EVENT_TYPE_TENTATIVE_DETECTION)
+                    .setEventType(EventType.EVENT_TYPE_TESTING_DETECTION)
                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
                     .build())
             .setDefinition(definition)
@@ -407,7 +407,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                     GetCustomSignatureRulesRequest.newBuilder()
                         .setFilter(
                             GetRulesFilter.newBuilder()
-                                .addEventTypes(EventType.EVENT_TYPE_TENTATIVE_DETECTION)
+                                .addEventTypes(EventType.EVENT_TYPE_TESTING_DETECTION)
                                 .build())
                         .build())
                 .getRulesList());
