@@ -14,6 +14,7 @@ import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.EventSeverity;
 import ai.traceable.customsignature.config.service.v1.EventType;
+import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
@@ -26,6 +27,8 @@ import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
@@ -146,6 +149,21 @@ public class CustomSignatureConfigServiceIntegrationTest
     assertEquals(1, fetchedRules.size());
     assertEquals(true, fetchedRules.get(0).getDisabled());
     assertEquals(createdRules.get(0).getId(), fetchedRules.get(0).getId());
+
+    fetchedRules = fetchTestRules();
+    assertFalse(fetchedRules.get(0).getBlockingExpiryDetails().hasExpiryDuration());
+    assertEquals(0, fetchedRules.get(0).getBlockingExpiryDetails().getExpiryTimestampMillis());
+    updateExpiryTime(fetchedRules.get(0));
+    List<CustomSignatureRule> updatedRules = fetchTestRules();
+    assertEquals(1, updatedRules.size());
+    assertEquals(updatedRules.get(0).getId(), fetchedRules.get(0).getId());
+    assertEquals(
+        2,
+        Duration.parse(updatedRules.get(0).getBlockingExpiryDetails().getExpiryDuration())
+            .toDays());
+    assertTrue(
+        updatedRules.get(0).getBlockingExpiryDetails().getExpiryTimestampMillis()
+            > System.currentTimeMillis());
   }
 
   @Test
@@ -206,6 +224,8 @@ public class CustomSignatureConfigServiceIntegrationTest
         rulesResponse.getRules(0).getEffect().getEventType());
     assertEquals(createdRules.get(1).getId(), rulesResponse.getRules(0).getId());
     assertEquals(
+        0, rulesResponse.getRules(0).getBlockingExpiryDetails().getExpiryTimestampMillis());
+    assertEquals(
         modsecDirectives
             + "SecRule REQUEST_HEADERS:Host|REQUEST_HEADERS:x-forwarded-host|REQUEST_HEADERS:forwarded \"@streq 127.0.0.1\" \"id:10000001,phase:2,capture,t:none,msg:'',logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',tag:'rule-uuid/"
             + createdRules.get(1).getId()
@@ -236,6 +256,8 @@ public class CustomSignatureConfigServiceIntegrationTest
     assertEquals(1, rulesResponse.getRulesCount());
     assertEquals(true, rulesResponse.getRules(0).getDisabled());
     assertEquals(createdRules.get(0).getId(), rulesResponse.getRules(0).getId());
+    assertEquals(
+        0, rulesResponse.getRules(0).getBlockingExpiryDetails().getExpiryTimestampMillis());
     assertEquals(
         modsecDirectives
             + "SecRule REQUEST_HEADERS:Host|REQUEST_HEADERS:x-forwarded-host|REQUEST_HEADERS:forwarded \"@streq 127.0.0.1\" \"id:10000001,phase:2,capture,t:none,msg:'',logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',tag:'rule-uuid/"
@@ -357,5 +379,37 @@ public class CustomSignatureConfigServiceIntegrationTest
                     .build())
             .setDefinition(definition)
             .build());
+  }
+
+  private CustomSignatureRule updateExpiryTime(CustomSignatureRule rule) {
+    CustomSignatureRule updatedRule =
+        CustomSignatureRule.newBuilder(rule)
+            .setBlockingExpiryDetails(
+                ExpiryDetails.newBuilder()
+                    .setExpiryDuration(Duration.of(2, ChronoUnit.DAYS).toString())
+                    .build())
+            .build();
+    return GrpcClientRequestContextUtil.executeInTenantContext(
+        TENANT_ID,
+        () ->
+            configServiceStub
+                .updateCustomSignatureRule(
+                    UpdateCustomSignatureRuleRequest.newBuilder().setRule(updatedRule).build())
+                .getRule());
+  }
+
+  private List<CustomSignatureRule> fetchTestRules() {
+    return GrpcClientRequestContextUtil.executeInTenantContext(
+        TENANT_ID,
+        () ->
+            configServiceStub
+                .getCustomSignatureRules(
+                    GetCustomSignatureRulesRequest.newBuilder()
+                        .setFilter(
+                            GetRulesFilter.newBuilder()
+                                .addEventTypes(EventType.EVENT_TYPE_TENTATIVE_DETECTION)
+                                .build())
+                        .build())
+                .getRulesList());
   }
 }

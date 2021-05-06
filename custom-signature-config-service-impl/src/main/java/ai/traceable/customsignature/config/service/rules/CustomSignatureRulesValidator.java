@@ -8,6 +8,7 @@ import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.EventSeverity;
 import ai.traceable.customsignature.config.service.v1.EventType;
+import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueTag;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
@@ -17,6 +18,8 @@ import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
 import io.grpc.Status;
+import java.time.Duration;
+import java.time.format.DateTimeParseException;
 
 class CustomSignatureRulesValidator implements RulesValidator {
   @Override
@@ -41,6 +44,10 @@ class CustomSignatureRulesValidator implements RulesValidator {
           "Create custom signature rule should have a valid definition.");
     }
     if ((status = validateRuleDefinition(request.getDefinition())) != Status.OK) {
+      return status;
+    }
+
+    if ((status = validateExpiry(request.getBlockingExpiryDetails())) != Status.OK) {
       return status;
     }
 
@@ -76,6 +83,11 @@ class CustomSignatureRulesValidator implements RulesValidator {
     if ((status = validateRuleDefinition(rule.getDefinition())) != Status.OK) {
       return status;
     }
+
+    if ((status = validateExpiry(rule.getBlockingExpiryDetails())) != Status.OK) {
+      return status;
+    }
+
     return Status.OK;
   }
 
@@ -171,6 +183,17 @@ class CustomSignatureRulesValidator implements RulesValidator {
     if (keyValueExpression.getValueMatchOperator() == MatchOperator.MATCH_OPERATOR_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule key-value expression should have a valid value match operator.");
+    }
+    return Status.OK;
+  }
+
+  private static Status validateExpiry(ExpiryDetails expiry) {
+    if (expiry.hasExpiryDuration()) {
+      try {
+        Duration.parse(expiry.getExpiryDuration());
+      } catch (DateTimeParseException e) {
+        return Status.INVALID_ARGUMENT.withDescription("Blocking expiry duration can't be parsed");
+      }
     }
     return Status.OK;
   }

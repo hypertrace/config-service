@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.EventType;
+import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
@@ -17,6 +18,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -229,6 +231,143 @@ public class CustomSignatureRulesManagerTest {
             .getCustomSignatureRules(
                 requestContext, GetRulesFilter.newBuilder().addRuleIds(id).build())
             .isEmpty());
+  }
+
+  @Test
+  void testBlockingExpiryForCreateRule() {
+    when(rulesManager.generateRuleId()).thenReturn("id");
+
+    // Expiry duration and expiry timestamp are not set
+    CustomSignatureRule customSignatureRule =
+        CustomSignatureRule.newBuilder()
+            .setId("id")
+            .setName("name")
+            .setDefinition(RuleDefinition.newBuilder().build())
+            .setEffect(RuleEffect.newBuilder().build())
+            .build();
+    CreateCustomSignatureRuleRequest createRuleRequest =
+        CreateCustomSignatureRuleRequest.newBuilder().setName("name").build();
+    assertEquals(
+        customSignatureRule,
+        rulesManager.createCustomSignatureRule(requestContext, createRuleRequest).get());
+
+    // Expiry duration is set, expiry timestamp not set
+    createRuleRequest =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setBlockingExpiryDetails(ExpiryDetails.newBuilder().setExpiryDuration("PT2H").build())
+            .build();
+    long expiryTimestampMillis =
+        rulesManager
+            .createCustomSignatureRule(requestContext, createRuleRequest)
+            .get()
+            .getBlockingExpiryDetails()
+            .getExpiryTimestampMillis();
+    assertTrue(expiryTimestampMillis > System.currentTimeMillis() + 1 * 60 * 60 * 1000);
+
+    // Expiry duration is not set, expiry timestamp is set
+    createRuleRequest =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setBlockingExpiryDetails(
+                ExpiryDetails.newBuilder()
+                    .setExpiryTimestampMillis(System.currentTimeMillis() + 5 * 24 * 3600 * 1000)
+                    .build())
+            .build();
+    String expiryDuration =
+        rulesManager
+            .createCustomSignatureRule(requestContext, createRuleRequest)
+            .get()
+            .getBlockingExpiryDetails()
+            .getExpiryDuration();
+    assertTrue(Duration.parse(expiryDuration).toDays() >= 4);
+
+    // Expiry duration and expiry timestamp are set
+    createRuleRequest =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setBlockingExpiryDetails(
+                ExpiryDetails.newBuilder()
+                    .setExpiryDuration("PT2H")
+                    .setExpiryTimestampMillis(23456789)
+                    .build())
+            .build();
+    expiryTimestampMillis =
+        rulesManager
+            .createCustomSignatureRule(requestContext, createRuleRequest)
+            .get()
+            .getBlockingExpiryDetails()
+            .getExpiryTimestampMillis();
+    assertEquals(23456789, expiryTimestampMillis);
+  }
+
+  @Test
+  void testBlockingExpiryForUpdateRule() {
+    CustomSignatureRule customSignatureRule =
+        CustomSignatureRule.newBuilder().setId("id").setName("name").build();
+    assertTrue(
+        rulesManager.updateCustomSignatureRule(requestContext, customSignatureRule).isEmpty());
+
+    Value mockRuleConfig = mockRuleConfig("id", "name-1");
+    upsertRuleConfigs(ImmutableSortedMap.of("id", mockRuleConfig));
+
+    // Expiry duration is set, expiry timestamp not set
+    customSignatureRule =
+        CustomSignatureRule.newBuilder()
+            .setId("id")
+            .setName("name")
+            .setBlockingExpiryDetails(ExpiryDetails.newBuilder().setExpiryDuration("PT2H").build())
+            .build();
+    long expiryTimestampMillis =
+        rulesManager
+            .updateCustomSignatureRule(requestContext, customSignatureRule)
+            .get()
+            .getBlockingExpiryDetails()
+            .getExpiryTimestampMillis();
+    assertTrue(expiryTimestampMillis > System.currentTimeMillis() + 1 * 3600 * 1000);
+
+    // Expiry duration is not set, expiry timestamp is set
+    customSignatureRule =
+        CustomSignatureRule.newBuilder()
+            .setId("id")
+            .setName("name")
+            .setBlockingExpiryDetails(
+                ExpiryDetails.newBuilder()
+                    .setExpiryTimestampMillis(System.currentTimeMillis() + 5 * 24 * 3600 * 1000)
+                    .build())
+            .build();
+    String expiryDuration =
+        rulesManager
+            .updateCustomSignatureRule(requestContext, customSignatureRule)
+            .get()
+            .getBlockingExpiryDetails()
+            .getExpiryDuration();
+    assertTrue(Duration.parse(expiryDuration).toDays() >= 4);
+
+    // Expiry duration and expiry timestamp are set
+    customSignatureRule =
+        CustomSignatureRule.newBuilder()
+            .setId("id")
+            .setName("name")
+            .setBlockingExpiryDetails(
+                ExpiryDetails.newBuilder()
+                    .setExpiryDuration("PT2H")
+                    .setExpiryTimestampMillis(23456789)
+                    .build())
+            .build();
+    expiryTimestampMillis =
+        rulesManager
+            .updateCustomSignatureRule(requestContext, customSignatureRule)
+            .get()
+            .getBlockingExpiryDetails()
+            .getExpiryTimestampMillis();
+    assertEquals(23456789, expiryTimestampMillis);
+
+    // Expiry duration and expiry timestamp are not set
+    customSignatureRule = CustomSignatureRule.newBuilder().setId("id").setName("name").build();
+    assertEquals(
+        customSignatureRule,
+        rulesManager.updateCustomSignatureRule(requestContext, customSignatureRule).get());
   }
 
   private void upsertRuleConfigs(Map<String, Value> ruleConfigs) {

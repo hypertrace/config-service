@@ -67,6 +67,7 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
                 .setEffect(rule.getEffect())
                 .setDisabled(rule.getDisabled())
                 .setInternal(rule.getInternal())
+                .setBlockingExpiryDetails(rule.getBlockingExpiryDetails())
                 .build());
         modsecIdAssignment++;
       } catch (Exception e) {

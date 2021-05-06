@@ -17,6 +17,7 @@ import ai.traceable.customsignature.config.service.v1.ClauseOperator;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.EventSeverity;
 import ai.traceable.customsignature.config.service.v1.EventType;
+import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueTag;
@@ -40,6 +41,8 @@ import org.junit.jupiter.api.Test;
 
 public class CustomSignatureModsecRulesManagerTest {
 
+  private static final int EXPIRY_TIMESTAMP_MILLIS = 12345678;
+  private static final String EXPIRY_DURATION = "P3M";
   private final String ruleUuidSeed = "621c77fd-8014-41ac-b473-fa865642ef41";
 
   @Test
@@ -209,6 +212,9 @@ public class CustomSignatureModsecRulesManagerTest {
         rules.size() + 4 + 31, /* 3+1 extra chained rules and 31 lines of modsec directives */
         response.getModsecRulesBlob().split("\r\n|\n\n|\r|\n").length);
     assertEquals(rules.size(), response.getRulesCount());
+    assertEquals(
+        EXPIRY_TIMESTAMP_MILLIS,
+        response.getRulesList().get(0).getBlockingExpiryDetails().getExpiryTimestampMillis());
 
     String fileRules =
         Resources.toString(
@@ -233,6 +239,11 @@ public class CustomSignatureModsecRulesManagerTest {
                             .setName(matchCombination.getMatchKey() + " : " + matchOperator)
                             .setDescription(matchCombination.getMatchKey() + " : " + matchOperator)
                             .setEffect(getDefaultRuleEffect())
+                            .setBlockingExpiryDetails(
+                                ExpiryDetails.newBuilder()
+                                    .setExpiryTimestampMillis(EXPIRY_TIMESTAMP_MILLIS)
+                                    .setExpiryDuration(EXPIRY_DURATION)
+                                    .build())
                             .setDefinition(
                                 RuleDefinition.newBuilder()
                                     .setClauseGroup(
@@ -316,6 +327,11 @@ public class CustomSignatureModsecRulesManagerTest {
                                                                     .build())
                                                             .build())
                                                     .build())
+                                            .build())
+                                    .setBlockingExpiryDetails(
+                                        ExpiryDetails.newBuilder()
+                                            .setExpiryDuration(EXPIRY_DURATION)
+                                            .setExpiryTimestampMillis(EXPIRY_TIMESTAMP_MILLIS)
                                             .build())
                                     .build()))));
   }

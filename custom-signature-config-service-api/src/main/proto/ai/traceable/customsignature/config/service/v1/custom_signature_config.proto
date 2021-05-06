@@ -9,6 +9,7 @@ message CreateCustomSignatureRuleRequest {
   string description = 2;
   RuleDefinition definition = 3;
   RuleEffect effect = 4;
+  ExpiryDetails blocking_expiry_details = 5;
 }
 
 message CreateCustomSignatureRuleResponse {
@@ -62,6 +63,7 @@ message CustomSignatureRule {
   RuleEffect effect = 5;
   bool disabled = 6;
   bool internal = 7;
+  ExpiryDetails blocking_expiry_details = 8;
 }
 
 message CustomSignatureRuleDetails {
@@ -70,6 +72,7 @@ message CustomSignatureRuleDetails {
   RuleEffect effect = 3;
   bool disabled = 6;
   bool internal = 7;
+  ExpiryDetails blocking_expiry_details = 8;
 }
 
 message RuleDefinition {
@@ -105,6 +108,15 @@ message KeyValueExpression {
   string match_key = 3;
   MatchOperator value_match_operator = 4;
   string match_value = 5;
+}
+
+message ExpiryDetails {
+  // Expiry duration represented in ISO 8601 duration format.
+  // If expiry_duration is not set and expiry_timestamp_millis is set, the value gets derived from the expiry_timestamp_millis field
+  optional string expiry_duration = 1;
+  // Timestamp at which the blocking expires.
+  // If expiry_timestamp_millis is not set and expiry_duration is set, the value gets derived from the expiry_duration field
+  optional int64 expiry_timestamp_millis = 2;
 }
 
 enum EventSeverity {

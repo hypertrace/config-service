@@ -2,10 +2,13 @@ package ai.traceable.customsignature.config.service.rules;
 
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
+import ai.traceable.customsignature.config.service.v1.CustomSignatureRule.Builder;
+import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -98,7 +101,7 @@ class CustomSignatureRulesManager implements RulesManager {
   public Optional<CustomSignatureRule> createCustomSignatureRule(
       RequestContext requestContext, CreateCustomSignatureRuleRequest createRuleRequest) {
     String ruleId = generateRuleId();
-    CustomSignatureRule customSignatureRule =
+    Builder customSignatureRuleBuilder =
         CustomSignatureRule.newBuilder()
             .setId(ruleId)
             .setName(createRuleRequest.getName())
@@ -106,9 +109,11 @@ class CustomSignatureRulesManager implements RulesManager {
             .setDefinition(createRuleRequest.getDefinition())
             .setEffect(createRuleRequest.getEffect())
             .setDisabled(false)
-            .setInternal(false)
-            .build();
-    return upsertConfig(requestContext, customSignatureRule);
+            .setInternal(false);
+    if (createRuleRequest.hasBlockingExpiryDetails()) {
+      updateExpiryDetails(customSignatureRuleBuilder, createRuleRequest.getBlockingExpiryDetails());
+    }
+    return upsertConfig(requestContext, customSignatureRuleBuilder.build());
   }
 
   @Override
@@ -118,7 +123,12 @@ class CustomSignatureRulesManager implements RulesManager {
     if (getCustomSignatureRule(requestContext, ruleId).isEmpty()) {
       return Optional.empty();
     }
-    return upsertConfig(requestContext, customSignatureRule);
+    Builder customSignatureRuleBuilder = CustomSignatureRule.newBuilder(customSignatureRule);
+    if (customSignatureRule.hasBlockingExpiryDetails()) {
+      updateExpiryDetails(
+          customSignatureRuleBuilder, customSignatureRule.getBlockingExpiryDetails());
+    }
+    return upsertConfig(requestContext, customSignatureRuleBuilder.build());
   }
 
   @Override
@@ -194,5 +204,20 @@ class CustomSignatureRulesManager implements RulesManager {
       log.error("Unable to convert config response {} to custom signature rule", response);
       return Optional.empty();
     }
+  }
+
+  private void updateExpiryDetails(
+      Builder customSignatureRuleBuilder, ExpiryDetails expiryDetails) {
+    ExpiryDetails.Builder expiryDetailsBuilder = ExpiryDetails.newBuilder(expiryDetails);
+    if (expiryDetails.hasExpiryDuration() && !expiryDetails.hasExpiryTimestampMillis()) {
+      expiryDetailsBuilder.setExpiryTimestampMillis(
+          System.currentTimeMillis()
+              + Duration.parse(expiryDetails.getExpiryDuration()).toMillis());
+    } else if (expiryDetails.hasExpiryTimestampMillis() && !expiryDetails.hasExpiryDuration()) {
+      expiryDetailsBuilder.setExpiryDuration(
+          Duration.ofMillis(expiryDetails.getExpiryTimestampMillis() - System.currentTimeMillis())
+              .toString());
+    }
+    customSignatureRuleBuilder.setBlockingExpiryDetails(expiryDetailsBuilder.build());
   }
 }
