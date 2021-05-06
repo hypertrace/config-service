@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package ai.traceable.threatmanagement.config.service.v1;
+
+option java_multiple_files = true;
+
+message GetSecurityEventTypeContributionRequest {
+}
+
+message GetSecurityEventTypeContributionResponse {
+  SecurityEventTypeContribution security_event_type_contribution = 1;
+}
+
+message UpdateSecurityEventTypeContributionRequest {
+  SecurityEventTypeContribution security_event_type_contribution = 1;
+}
+
+message UpdateSecurityEventTypeContributionResponse {
+  SecurityEventTypeContribution security_event_type_contribution = 1;
+}
+
+enum SecurityEventTypeContribution {
+  SECURITY_EVENT_TYPE_CONTRIBUTION_UNSPECIFIED = 0;
+  SECURITY_EVENT_TYPE_CONTRIBUTION_ALL = 1;
+  SECURITY_EVENT_TYPE_CONTRIBUTION_HIGH_RISK_APIS = 2;
+}
