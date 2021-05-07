@@ -7,6 +7,7 @@ option java_multiple_files = true;
 import "ai/traceable/threatmanagement/config/service/v1/threat_score_bound.proto";
 import "ai/traceable/threatmanagement/config/service/v1/security_event_score_contribution.proto";
 import "ai/traceable/threatmanagement/config/service/v1/security_event_type_contribution.proto";
+import "ai/traceable/threatmanagement/config/service/v1/threat_auto_blocking.proto";
 
 service ThreatManagementConfigService {
   rpc GetThreatScoreBound (GetThreatScoreBoundRequest) returns (GetThreatScoreBoundResponse) {
@@ -25,5 +26,11 @@ service ThreatManagementConfigService {
   }
 
   rpc UpdateSecurityEventTypeContribution (UpdateSecurityEventTypeContributionRequest) returns (UpdateSecurityEventTypeContributionResponse) {
+  }
+
+  rpc GetThreatAutoBlockingConfig (GetThreatAutoBlockingConfigRequest) returns (GetThreatAutoBlockingConfigResponse) {
+  }
+
+  rpc UpdateThreatAutoBlockingConfig (UpdateThreatAutoBlockingConfigRequest) returns (UpdateThreatAutoBlockingConfigResponse) {
   }
 }
