@@ -56,7 +56,7 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
       }
       try {
         ModsecActions modsecActions =
-            new ModsecActions(modsecIdAssignment, rule.getId(), rule.getDescription());
+            new ModsecActions(modsecIdAssignment, rule.getId(), rule.getName());
         modsecRules.add(
             modsecRuleConversion.getModsecRuleForANDClauses(
                 clauseGroup.getClausesList(), modsecActions));
