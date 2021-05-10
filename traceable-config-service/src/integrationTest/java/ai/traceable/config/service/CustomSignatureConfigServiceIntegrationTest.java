@@ -187,19 +187,10 @@ public class CustomSignatureConfigServiceIntegrationTest
             + "SecAuditLog /var/log/modsec_audit.log\n"
             + "SecArgumentSeparator &\n"
             + "SecCookieFormat 0\n"
-            + "SecUnicodeMapFile unicode.mapping 20127\n"
             + "SecStatusEngine Off\n"
             + "SecDefaultAction \"phase:1,log,auditlog,deny,status:403\"\n"
             + "SecDefaultAction \"phase:2,log,auditlog,deny,status:403\"\n"
             + "SecCollectionTimeout 600\n"
-            + "SecAction \\\n"
-            + " \"id:900000,\\\n"
-            + "  phase:1,\\\n"
-            + "  nolog,\\\n"
-            + "  pass,\\\n"
-            + "  t:none,\\\n"
-            + "  setvar:tx.crs_setup_version=320,\\\n"
-            + "  setvar:tx.paranoia_level=1\"\n"
             + "\n";
 
     assertTrue(fetchAllRules().isEmpty());

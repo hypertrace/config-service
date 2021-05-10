@@ -209,7 +209,7 @@ public class CustomSignatureModsecRulesManagerTest {
 
     GetCustomSignatureModsecRulesResponse response = modsecRulesManager.getModsecRules(rules);
     assertEquals(
-        rules.size() + 4 + 31, /* 3+1 extra chained rules and 31 lines of modsec directives */
+        rules.size() + 4 + 22, /* 3+1 extra chained rules and 22 lines of modsec directives */
         response.getModsecRulesBlob().split("\r\n|\n\n|\r|\n").length);
     assertEquals(rules.size(), response.getRulesCount());
     assertEquals(
