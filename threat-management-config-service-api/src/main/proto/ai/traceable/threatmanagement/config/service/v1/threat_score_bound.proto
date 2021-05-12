@@ -9,6 +9,7 @@ message GetThreatScoreBoundRequest {
 
 message GetThreatScoreBoundResponse {
   ThreatScoreBound threat_score_bound = 1;
+  ThreatScoreBound default_threat_score_bound = 2;
 }
 
 message UpdateThreatScoreBoundRequest {
@@ -17,6 +18,7 @@ message UpdateThreatScoreBoundRequest {
 
 message UpdateThreatScoreBoundResponse {
   ThreatScoreBound threat_score_bound = 1;
+  ThreatScoreBound default_threat_score_bound = 2;
 }
 
 message ThreatScoreBound {
