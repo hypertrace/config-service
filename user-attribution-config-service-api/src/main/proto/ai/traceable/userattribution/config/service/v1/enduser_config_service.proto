@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package ai.traceable.userattribution.config.service.v1;
+option go_package = "github.com/Traceableai/config-service/user-attribution/v1";
+
+option java_multiple_files = true;
+
+import "ai/traceable/userattribution/config/service/v1/enduser.proto";
+
+service ExternalUserAttributionConfigService {
+  rpc GetExternalUserAttributionRules (GetExternalUserAttributionRulesRequest) returns (GetExternalUserAttributionRulesResponse) {
+  }
+}
+
+message GetExternalUserAttributionRulesRequest {
+  string hash = 1;
+}
+
+message GetExternalUserAttributionRulesResponse {
+  ExternalUserAttributionRules external_user_attribution_rules = 1;
+  string hash = 2;
+}

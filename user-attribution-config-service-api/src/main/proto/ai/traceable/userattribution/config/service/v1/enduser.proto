@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package ai.traceable.userattribution.config.service.v1;
+option go_package = "github.com/Traceableai/config-service/user-attribution/v1";
+
+option java_multiple_files = true;
+
+message ExternalUserAttributionRules {
+  repeated ExternalUserAttributionRule external_user_attribution_rule = 1;
+}
+
+message ExternalUserAttributionRule {
+  oneof rule {
+    RawExternalUserAttributionRule raw_external_user_attribution_rule = 1;
+    TransformedExternalUserAttributionRule transformed_external_user_attribution_rule = 2;
+  }
+
+  message RawExternalUserAttributionRule {
+    string yaml = 1;
+  }
+
+  message TransformedExternalUserAttributionRule {
+    string attribute_key = 1;
+    // Type - id, role, scope, authheader, json, urlencoded, cookie
+    Type type = 2;
+    // Encoding (e.g. jwt)
+    Encoding encoding = 3;
+    string cookie_name = 4;
+    repeated Condition conditions = 5;
+    // ID (e.g. jdoe) configuration.
+    repeated string id_claims = 6;
+    repeated string id_paths = 7;
+    repeated string id_keys = 8;
+    // Role (e.g. user) configuration
+    repeated string role_claims = 9;
+    repeated string role_paths = 10;
+    repeated string role_keys = 11;
+    // Scope (e.g. hypertrace) configuration.
+    repeated string scope_claims = 12;
+    repeated string scope_paths = 13;
+    repeated string scope_keys = 14;
+    // Session (e.g. token) configuration.
+    repeated string session_claims = 15;
+    repeated string session_paths = 16;
+    repeated string session_keys = 17;
+    repeated string session_indexes = 18;
+    string session_separator = 19;
+    // Whether to capture raw session or hash it.
+    bool capture_raw_session = 20;
+
+    enum Type {
+      TYPE_UNSPECIFIED = 0;
+      TYPE_ID = 1;
+      TYPE_ROLE = 2;
+      TYPE_SCOPE = 3;
+      TYPE_AUTHHEADER = 4;
+      TYPE_JSON = 5;
+      TYPE_URLENCODED = 6;
+      TYPE_COOKIE = 7;
+    }
+
+    enum Encoding {
+      ENCODING_UNSPECIFIED = 0;
+      ENCODING_JWT = 1;
+    }
+
+    message Condition {
+      string key = 1;
+      string regex = 2;
+    }
+  }
+}
