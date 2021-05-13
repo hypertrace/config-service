@@ -1,0 +1,147 @@
+package ai.traceable.threatmanagement.config.service.eventscore;
+
+import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.SECURITY_EVENT_SCORE_CONTRIBUTION_CONFIG_RESOURCE_NAME;
+import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.THREAT_MANAGEMENT_CONFIG_NAMESPACE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceConfig;
+import ai.traceable.threatmanagement.config.service.v1.SecurityEventScoreContribution;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.Struct;
+import com.google.protobuf.Value;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
+import org.hypertrace.config.service.v1.GetConfigRequest;
+import org.hypertrace.config.service.v1.GetConfigResponse;
+import org.hypertrace.config.service.v1.UpsertConfigRequest;
+import org.hypertrace.config.service.v1.UpsertConfigResponse;
+import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+@ExtendWith(MockitoExtension.class)
+class DefaultSecurityEventScoreContributionManagerTest {
+  private static final String TENANT_ID = "tenant-id";
+  private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
+
+  private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_ANOMALY_SCORE = 1;
+  private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_MEDIUM_SCORE = 2;
+  private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_HIGH_SCORE = 3;
+
+  private static final SecurityEventScoreContribution SECURITY_EVENT_SCORE_CONTRIBUTION_1 =
+      SecurityEventScoreContribution.newBuilder()
+          .setAnomalyScore(10)
+          .setMediumScore(20)
+          .setHighScore(30)
+          .build();
+
+  private static final Value SECURITY_EVENT_CONTRIBUTION_CONFIG_1_VALUE =
+      Value.newBuilder()
+          .setStructValue(
+              Struct.newBuilder()
+                  .putFields("anomalyScore", Value.newBuilder().setNumberValue(10).build())
+                  .putFields("mediumScore", Value.newBuilder().setNumberValue(20).build())
+                  .putFields("highScore", Value.newBuilder().setNumberValue(30).build()))
+          .build();
+
+  private static final SecurityEventScoreContribution SECURITY_EVENT_SCORE_CONTRIBUTION_2 =
+      SecurityEventScoreContribution.newBuilder()
+          .setAnomalyScore(100)
+          .setMediumScore(200)
+          .setHighScore(300)
+          .build();
+
+  private static final Value SECURITY_EVENT_CONTRIBUTION_CONFIG_2_VALUE =
+      Value.newBuilder()
+          .setStructValue(
+              Struct.newBuilder()
+                  .putFields("anomalyScore", Value.newBuilder().setNumberValue(100).build())
+                  .putFields("mediumScore", Value.newBuilder().setNumberValue(200).build())
+                  .putFields("highScore", Value.newBuilder().setNumberValue(300).build()))
+          .build();
+
+  @Mock private ConfigServiceBlockingStub configServiceStub;
+
+  @Mock private ThreatManagementConfigServiceConfig config;
+
+  private SecurityEventScoreContributionManager securityEventScoreContributionManager;
+
+  @BeforeEach
+  void setup() {
+    configServiceStub = mock(ConfigServiceBlockingStub.class);
+    this.securityEventScoreContributionManager =
+        new DefaultSecurityEventScoreContributionManager(
+            configServiceStub, config, new SecurityEventScoreContributionConverter());
+  }
+
+  @Test
+  void shouldReturnDefaultSecurityEventScoreContribution() throws InvalidProtocolBufferException {
+    GetConfigRequest request =
+        GetConfigRequest.newBuilder()
+            .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
+            .setResourceName(SECURITY_EVENT_SCORE_CONTRIBUTION_CONFIG_RESOURCE_NAME)
+            .addContexts(TENANT_ID)
+            .build();
+
+    when(configServiceStub.getConfig(request)).thenReturn(GetConfigResponse.newBuilder().build());
+    when(this.config.getDefaultSecurityEventContributionAnomalyScore())
+        .thenReturn(DEFAULT_SECURITY_EVENT_CONTRIBUTION_ANOMALY_SCORE);
+    when(this.config.getDefaultSecurityEventContributionMediumScore())
+        .thenReturn(DEFAULT_SECURITY_EVENT_CONTRIBUTION_MEDIUM_SCORE);
+    when(this.config.getDefaultSecurityEventContributionHighScore())
+        .thenReturn(DEFAULT_SECURITY_EVENT_CONTRIBUTION_HIGH_SCORE);
+
+    assertEquals(
+        SecurityEventScoreContribution.newBuilder()
+            .setAnomalyScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_ANOMALY_SCORE)
+            .setMediumScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_MEDIUM_SCORE)
+            .setHighScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_HIGH_SCORE)
+            .build(),
+        securityEventScoreContributionManager.getSecurityEventScoreContribution(REQUEST_CONTEXT));
+  }
+
+  @Test
+  void shouldReturnSecurityEventContributionConfig() throws InvalidProtocolBufferException {
+    GetConfigRequest request =
+        GetConfigRequest.newBuilder()
+            .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
+            .setResourceName(SECURITY_EVENT_SCORE_CONTRIBUTION_CONFIG_RESOURCE_NAME)
+            .addContexts(TENANT_ID)
+            .build();
+    when(configServiceStub.getConfig(request))
+        .thenReturn(
+            GetConfigResponse.newBuilder()
+                .setConfig(SECURITY_EVENT_CONTRIBUTION_CONFIG_1_VALUE)
+                .build());
+
+    assertEquals(
+        SECURITY_EVENT_SCORE_CONTRIBUTION_1,
+        securityEventScoreContributionManager.getSecurityEventScoreContribution(REQUEST_CONTEXT));
+  }
+
+  @Test
+  void shouldUpsertExistingSecurityEventContributionConfig() throws InvalidProtocolBufferException {
+    UpsertConfigRequest request =
+        UpsertConfigRequest.newBuilder()
+            .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
+            .setResourceName(SECURITY_EVENT_SCORE_CONTRIBUTION_CONFIG_RESOURCE_NAME)
+            .setConfig(SECURITY_EVENT_CONTRIBUTION_CONFIG_2_VALUE)
+            .setContext(TENANT_ID)
+            .build();
+
+    when(configServiceStub.upsertConfig(request))
+        .thenReturn(
+            UpsertConfigResponse.newBuilder()
+                .setConfig(SECURITY_EVENT_CONTRIBUTION_CONFIG_2_VALUE)
+                .build());
+
+    assertEquals(
+        SECURITY_EVENT_SCORE_CONTRIBUTION_2,
+        securityEventScoreContributionManager.upsertSecurityEventScoreContribution(
+            REQUEST_CONTEXT, SECURITY_EVENT_SCORE_CONTRIBUTION_2));
+  }
+}

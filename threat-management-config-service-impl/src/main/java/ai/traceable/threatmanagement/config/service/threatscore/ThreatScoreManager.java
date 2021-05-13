@@ -10,4 +10,6 @@ public interface ThreatScoreManager {
   // update if config present, else create
   ThreatScoreBound upsertThreatScoreBound(
       RequestContext requestContext, ThreatScoreBound threatScoreBound);
+
+  ThreatScoreBound getDefaultThreatScoreBound();
 }

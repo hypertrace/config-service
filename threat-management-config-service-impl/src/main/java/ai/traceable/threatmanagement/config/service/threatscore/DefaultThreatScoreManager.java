@@ -35,13 +35,7 @@ class DefaultThreatScoreManager implements ThreatScoreManager {
 
   @Override
   public ThreatScoreBound getThreatScoreBound(RequestContext requestContext) {
-    return getThreatScoreBoundConfig(requestContext)
-        .orElseGet(
-            () ->
-                ThreatScoreBound.newBuilder()
-                    .setMediumScoreUpperBound(this.config.getDefaultThreatUpperBoundMediumScore())
-                    .setHighScoreUpperBound(this.config.getDefaultThreatUpperBoundHighScore())
-                    .build());
+    return getThreatScoreBoundConfig(requestContext).orElseGet(this::getDefaultThreatScoreBound);
   }
 
   @SneakyThrows
@@ -63,7 +57,6 @@ class DefaultThreatScoreManager implements ThreatScoreManager {
       if (Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
         return Optional.empty();
       }
-      log.error("Unable to get threat score bound config");
       throw e;
     }
   }
@@ -80,21 +73,24 @@ class DefaultThreatScoreManager implements ThreatScoreManager {
       RequestContext requestContext, ThreatScoreBound threatScoreBound) {
     String configId = getConfigId(requestContext);
 
-    try {
-      UpsertConfigRequest request =
-          UpsertConfigRequest.newBuilder()
-              .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
-              .setResourceName(THREAT_SCORE_BOUND_CONFIG_RESOURCE_NAME)
-              .setConfig(threatScoreBoundConverter.convert(threatScoreBound))
-              .setContext(configId)
-              .build();
+    UpsertConfigRequest request =
+        UpsertConfigRequest.newBuilder()
+            .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
+            .setResourceName(THREAT_SCORE_BOUND_CONFIG_RESOURCE_NAME)
+            .setConfig(threatScoreBoundConverter.convert(threatScoreBound))
+            .setContext(configId)
+            .build();
 
-      UpsertConfigResponse response = configServiceBlockingStub.upsertConfig(request);
-      return threatScoreBoundConverter.convert(response.getConfig());
-    } catch (Exception e) {
-      log.error("Unable to upsert threat score bound config {}", threatScoreBound);
-      throw e;
-    }
+    UpsertConfigResponse response = configServiceBlockingStub.upsertConfig(request);
+    return threatScoreBoundConverter.convert(response.getConfig());
+  }
+
+  @Override
+  public ThreatScoreBound getDefaultThreatScoreBound() {
+    return ThreatScoreBound.newBuilder()
+        .setMediumScoreUpperBound(this.config.getDefaultThreatUpperBoundMediumScore())
+        .setHighScoreUpperBound(this.config.getDefaultThreatUpperBoundHighScore())
+        .build();
   }
 
   private String getConfigId(RequestContext requestContext) {

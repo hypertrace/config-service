@@ -2,7 +2,9 @@ package ai.traceable.threatmanagement.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import ai.traceable.threatmanagement.config.service.v1.SecurityEventScoreContribution;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
+import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatScoreBoundRequest;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,6 +65,22 @@ class ThreatManagementConfigRequestValidatorTest {
                             .setMediumScoreUpperBound(100)
                             .setHighScoreUpperBound(50)
                             .build())
+                    .build()));
+  }
+
+  @Test
+  void validatePositiveSecurityEventContributions() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            this.requestValidator.validateOrThrow(
+                REQUEST_CONTEXT,
+                UpdateSecurityEventScoreContributionRequest.newBuilder()
+                    .setSecurityEventScoreContribution(
+                        SecurityEventScoreContribution.newBuilder()
+                            .setAnomalyScore(-1)
+                            .setMediumScore(-1)
+                            .setHighScore(-1))
                     .build()));
   }
 }

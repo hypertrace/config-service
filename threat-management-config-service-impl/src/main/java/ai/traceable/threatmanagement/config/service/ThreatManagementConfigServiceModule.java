@@ -1,5 +1,6 @@
 package ai.traceable.threatmanagement.config.service;
 
+import ai.traceable.threatmanagement.config.service.eventscore.SecurityEventScoreContributionModule;
 import ai.traceable.threatmanagement.config.service.threatscore.ThreatScoreModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -26,6 +27,7 @@ public class ThreatManagementConfigServiceModule extends AbstractModule {
         .toInstance(new ThreatManagementConfigServiceConfig(config));
 
     install(new ThreatScoreModule());
+    install(new SecurityEventScoreContributionModule());
   }
 
   @Provides

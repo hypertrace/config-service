@@ -9,6 +9,7 @@ message GetSecurityEventScoreContributionRequest {
 
 message GetSecurityEventScoreContributionResponse {
   SecurityEventScoreContribution security_event_score_contribution = 1;
+  SecurityEventScoreContribution default_security_event_score_contribution = 2;
 }
 
 message UpdateSecurityEventScoreContributionRequest {
@@ -17,6 +18,7 @@ message UpdateSecurityEventScoreContributionRequest {
 
 message UpdateSecurityEventScoreContributionResponse {
   SecurityEventScoreContribution security_event_score_contribution = 1;
+  SecurityEventScoreContribution default_security_event_score_contribution = 2;
 }
 
 message SecurityEventScoreContribution {
