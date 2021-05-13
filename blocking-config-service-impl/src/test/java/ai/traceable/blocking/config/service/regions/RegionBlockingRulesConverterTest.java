@@ -4,8 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.blocking.config.service.v1.RegionBlockingRules;
-import ai.traceable.blocking.config.service.v1.RegionIpBlockingDetails;
+import ai.traceable.blocking.config.service.v1.RegionIpBlockingRule;
 import ai.traceable.region.config.service.v1.DetailedRegion;
 import ai.traceable.region.config.service.v1.IpRange;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc;
@@ -78,22 +77,19 @@ class RegionBlockingRulesConverterTest {
     when(this.ipRangesConverter.convert(region3IpRanges)).thenReturn(convertedIpRanges3);
 
     assertEquals(
-        RegionBlockingRules.newBuilder()
-            .addAllRegionIpBlockingDetails(
-                List.of(
-                    RegionIpBlockingDetails.newBuilder()
-                        .setRegionId(regions.get(0).getId())
-                        .addAllIpRanges(convertedIpRanges1)
-                        .build(),
-                    RegionIpBlockingDetails.newBuilder()
-                        .setRegionId(regions.get(1).getId())
-                        .addAllIpRanges(convertedIpRanges2)
-                        .build(),
-                    RegionIpBlockingDetails.newBuilder()
-                        .setRegionId(regions.get(2).getId())
-                        .addAllIpRanges(convertedIpRanges3)
-                        .build()))
-            .build(),
+        List.of(
+            RegionIpBlockingRule.newBuilder()
+                .setRegionId(regions.get(0).getId())
+                .addAllIpRanges(convertedIpRanges1)
+                .build(),
+            RegionIpBlockingRule.newBuilder()
+                .setRegionId(regions.get(1).getId())
+                .addAllIpRanges(convertedIpRanges2)
+                .build(),
+            RegionIpBlockingRule.newBuilder()
+                .setRegionId(regions.get(2).getId())
+                .addAllIpRanges(convertedIpRanges3)
+                .build()),
         this.regionBlockingRulesConverter.convert(List.of(regionRuleA, regionRuleB)));
   }
 

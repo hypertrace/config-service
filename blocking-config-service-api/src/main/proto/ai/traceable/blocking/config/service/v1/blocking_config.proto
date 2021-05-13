@@ -6,24 +6,33 @@ option java_multiple_files = true;
 option go_package = "github.com/Traceableai/config-service/blocking/v1";
 
 message GetBlockingRulesRequest {
-    string omit_if_matches_hash = 1;
+    string region_blocking_rules_hash = 1;
+    string custom_modsec_blocking_rules_hash = 2;
+    string safe_crs_blocking_rules_hash = 3;
 }
 
 message GetBlockingRulesResponse {
-    BlockingRules blocking_rules = 1;
-    string hash = 2;
-}
-
-message BlockingRules {
     RegionBlockingRules region_blocking_rules = 1;
     CustomModsecBlockingRules custom_modsec_blocking_rules = 2;
+    SafeCrsBlockingRules safe_crs_blocking_rules = 3;
 }
 
 message RegionBlockingRules {
-    repeated RegionIpBlockingDetails region_ip_blocking_details = 1;
+    string hash = 1;
+    repeated RegionIpBlockingRule region_ip_blocking_rules = 2;
 }
 
-message RegionIpBlockingDetails {
+message CustomModsecBlockingRules {
+    string hash = 1;
+    optional string custom_modsec_rules_blob = 2;
+}
+
+message SafeCrsBlockingRules {
+    string hash = 1;
+    optional string safe_crs_rules_blob = 2;
+}
+
+message RegionIpBlockingRule {
     repeated IpRange ip_ranges = 1;
     string region_id = 2;
 }
@@ -37,8 +46,4 @@ message IpRange {
 message IpV4Range {
     int64 start_ip = 1;
     int64 end_ip = 2;
-}
-
-message CustomModsecBlockingRules {
-    string custom_modsec_rules_blob = 1;
 }

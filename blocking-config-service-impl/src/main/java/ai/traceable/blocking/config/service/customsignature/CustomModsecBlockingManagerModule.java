@@ -9,6 +9,11 @@ import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProvide
 
 public class CustomModsecBlockingManagerModule extends AbstractModule {
 
+  @Override
+  protected void configure() {
+    bind(CustomModsecBlockingManager.class).to(DefaultCustomModsecBlockingManager.class);
+  }
+
   @Provides
   CustomSignatureConfigServiceBlockingStub providesCustomSignatureConfigServiceStub(
       ManagedChannel channel) {

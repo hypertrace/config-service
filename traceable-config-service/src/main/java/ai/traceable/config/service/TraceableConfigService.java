@@ -90,7 +90,8 @@ public class TraceableConfigService extends PlatformService {
         new PiiFilterConfigServiceImpl(managedChannel, config);
     LocalProcessingConfigServiceImpl localProcessingConfigService =
         new LocalProcessingConfigServiceImpl(managedChannel, config);
-    BindableService blockingConfigService = BlockingConfigServiceFactory.build(managedChannel);
+    BindableService blockingConfigService =
+        BlockingConfigServiceFactory.build(managedChannel, config);
     externalServerBuilder
         .addService(InterceptorUtil.wrapInterceptors(piiFilterConfigService))
         .addService(InterceptorUtil.wrapInterceptors(localProcessingConfigService))

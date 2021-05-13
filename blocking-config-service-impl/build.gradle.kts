@@ -14,6 +14,7 @@ dependencies {
   implementation("com.google.protobuf:protobuf-java-util:3.15.8")
   implementation("com.typesafe:config:1.4.1")
   implementation("org.slf4j:slf4j-api:1.7.30")
+  implementation("com.github.f4b6a3:uuid-creator:2.7.11")
 
   implementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.4.0")
   implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.4.0")

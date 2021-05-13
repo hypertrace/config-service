@@ -1,9 +1,11 @@
 package ai.traceable.blocking.config.service.regions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.blocking.config.service.UuidGenerator;
 import ai.traceable.blocking.config.service.v1.RegionBlockingRules;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesRequest;
@@ -17,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class DefaultRegionBlockingManagerTest {
+  private final UuidGenerator uuidGenerator = new UuidGenerator();
   private Clock clock;
   private RegionConfigServiceBlockingStub regionConfigServiceStub;
   private MockRegionConfigService mockRegionConfigService;
@@ -32,10 +35,11 @@ class DefaultRegionBlockingManagerTest {
     this.regionConfigServiceStub =
         RegionConfigServiceGrpc.newBlockingStub(this.mockRegionConfigService.channel());
 
-    this.ruleConverter = mock(RegionBlockingRulesConverter.class);
+    this.ruleConverter =
+        new RegionBlockingRulesConverter(regionConfigServiceStub, new IpRangesConverter());
     this.regionBlockingManager =
         new DefaultRegionBlockingManager(
-            this.clock, this.regionConfigServiceStub, this.ruleConverter);
+            this.clock, this.regionConfigServiceStub, this.ruleConverter, uuidGenerator);
   }
 
   @AfterEach
@@ -69,9 +73,21 @@ class DefaultRegionBlockingManagerTest {
             .getAllRegionRules(GetAllRegionRulesRequest.getDefaultInstance())
             .getRuleList();
     List<RegionRule> activeRules = List.of(allRules.get(0), allRules.get(1));
-    RegionBlockingRules regionBlockingRules = RegionBlockingRules.getDefaultInstance();
-    when(this.ruleConverter.convert(activeRules)).thenReturn(regionBlockingRules);
+    RegionBlockingRules regionBlockingRules =
+        RegionBlockingRules.newBuilder()
+            .addAllRegionIpBlockingRules(ruleConverter.convert(activeRules))
+            .build();
 
-    assertEquals(regionBlockingRules, this.regionBlockingManager.getBlockingRules());
+    RegionBlockingRules responseRules = this.regionBlockingManager.getEnabledBlockingRules("");
+
+    assertEquals(
+        regionBlockingRules.getRegionIpBlockingRulesList(),
+        responseRules.getRegionIpBlockingRulesList());
+    assertFalse(responseRules.getHash().isEmpty());
+    assertEquals(
+        0,
+        this.regionBlockingManager
+            .getEnabledBlockingRules(responseRules.getHash())
+            .getRegionIpBlockingRulesCount());
   }
 }

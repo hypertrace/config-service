@@ -1,7 +1,9 @@
 package ai.traceable.blocking.config.service.customsignature;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
+import ai.traceable.blocking.config.service.UuidGenerator;
 import ai.traceable.blocking.config.service.v1.CustomModsecBlockingRules;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
@@ -19,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 class CustomModesecBlockingManagerTest {
 
+  private final UuidGenerator uuidGenerator = new UuidGenerator();
   private CustomSignatureConfigServiceBlockingStub configServiceStub;
   private Server mockConfigService;
   private ManagedChannel configServiceChannel;
@@ -35,7 +38,8 @@ class CustomModesecBlockingManagerTest {
             .start();
     configServiceChannel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
     this.configServiceStub = CustomSignatureConfigServiceGrpc.newBlockingStub(configServiceChannel);
-    customModsecBlockingManager = new CustomModsecBlockingManager(configServiceStub);
+    customModsecBlockingManager =
+        new DefaultCustomModsecBlockingManager(configServiceStub, uuidGenerator);
   }
 
   @AfterEach
@@ -46,8 +50,14 @@ class CustomModesecBlockingManagerTest {
 
   @Test
   void testEnabledBlockingRules() {
-    CustomModsecBlockingRules blockingRules = customModsecBlockingManager.getEnabledBlockingRules();
+    CustomModsecBlockingRules blockingRules =
+        customModsecBlockingManager.getEnabledBlockingRules("");
     assertEquals("testblob", blockingRules.getCustomModsecRulesBlob());
+    assertEquals(uuidGenerator.generateId("testblob"), blockingRules.getHash());
+
+    blockingRules = customModsecBlockingManager.getEnabledBlockingRules(blockingRules.getHash());
+    assertFalse(blockingRules.hasCustomModsecRulesBlob());
+    assertEquals(uuidGenerator.generateId("testblob"), blockingRules.getHash());
   }
 
   private static class MockCustomSignatureConfigService

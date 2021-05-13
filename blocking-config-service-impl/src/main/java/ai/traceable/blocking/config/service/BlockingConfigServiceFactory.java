@@ -2,12 +2,13 @@ package ai.traceable.blocking.config.service;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 
 public class BlockingConfigServiceFactory {
-  public static BindableService build(ManagedChannel channel) {
-    Injector injector = Guice.createInjector(new BlockingConfigServiceModule(channel));
+  public static BindableService build(ManagedChannel channel, Config config) {
+    Injector injector = Guice.createInjector(new BlockingConfigServiceModule(channel, config));
     return injector.getInstance(BindableService.class);
   }
 }

@@ -14,7 +14,7 @@ class IpRangesConverter {
         .map(this::convert)
         .filter(Optional::isPresent)
         .map(Optional::get)
-        .collect(Collectors.toList());
+        .collect(Collectors.toUnmodifiableList());
   }
 
   private Optional<IpRange> convert(ai.traceable.region.config.service.v1.IpRange ipRange) {
