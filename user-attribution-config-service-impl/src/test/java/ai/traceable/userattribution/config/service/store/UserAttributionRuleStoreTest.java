@@ -15,12 +15,16 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.He
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.RequestHeaderUserAttributionRuleData;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
+import io.grpc.Status;
 import java.util.List;
+import java.util.Optional;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsResponse;
+import org.hypertrace.config.service.v1.GetConfigRequest;
+import org.hypertrace.config.service.v1.GetConfigResponse;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -181,6 +185,48 @@ class UserAttributionRuleStoreTest {
                 .setResourceNamespace("user-attribution")
                 .setContext("second-id")
                 .setConfig(RULE_2_AS_VALUE)
+                .build());
+  }
+
+  @Test
+  void generatesUpsertRequestsForUpsertAll() {
+    when(this.mockStub.upsertConfig(any()))
+        .thenAnswer(
+            invocation ->
+                UpsertConfigResponse.newBuilder()
+                    .setConfig(((UpsertConfigRequest) invocation.getArguments()[0]).getConfig())
+                    .build());
+    assertEquals(
+        List.of(RULE_1, RULE_2),
+        this.store.upsertAllRules(this.mockRequestContext, List.of(RULE_1, RULE_2)));
+    verify(this.mockStub, times(2)).upsertConfig(any());
+  }
+
+  @Test
+  void getRequest() {
+    when(this.mockStub.getConfig(any()))
+        .thenReturn(GetConfigResponse.newBuilder().setConfig(RULE_1_AS_VALUE).build());
+
+    assertEquals(Optional.of(RULE_1), this.store.getRule(this.mockRequestContext, "id"));
+
+    verify(this.mockStub, times(1))
+        .getConfig(
+            GetConfigRequest.newBuilder()
+                .setResourceName("user-attribution-rule")
+                .setResourceNamespace("user-attribution")
+                .addContexts("id")
+                .build());
+
+    when(this.mockStub.getConfig(any())).thenThrow(Status.NOT_FOUND.asRuntimeException());
+
+    assertEquals(Optional.empty(), this.store.getRule(this.mockRequestContext, "second-id"));
+
+    verify(this.mockStub, times(1))
+        .getConfig(
+            GetConfigRequest.newBuilder()
+                .setResourceName("user-attribution-rule")
+                .setResourceNamespace("user-attribution")
+                .addContexts("second-id")
                 .build());
   }
 }

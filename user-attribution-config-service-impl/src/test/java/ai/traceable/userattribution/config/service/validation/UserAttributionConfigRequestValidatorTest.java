@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import ai.traceable.userattribution.config.service.v1.CreateUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.DeleteUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest;
+import ai.traceable.userattribution.config.service.v1.RankUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.UpdateUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData;
@@ -337,6 +338,50 @@ class UserAttributionConfigRequestValidatorTest {
                                         HeaderLocation.newBuilder().setHeaderName("jwt"))
                                     .setUserIdClaim("user-id-claim")))
                     .build()));
+  }
+
+  @Test
+  void validatesRankRequest() {
+    assertIllegalArgContaining(
+        "Tenant ID",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, RankUserAttributionRuleRequest.newBuilder().build()));
+
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    assertIllegalArgContaining(
+        "id_to_update",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, RankUserAttributionRuleRequest.newBuilder().build()));
+
+    assertIllegalArgContaining(
+        "Can't rerank a rule against itself",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                RankUserAttributionRuleRequest.newBuilder()
+                    .setIdToUpdate("some-id")
+                    .setPrecedingRuleId("some-id")
+                    .build()));
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                RankUserAttributionRuleRequest.newBuilder().setIdToUpdate("some-id").build()));
+  }
+
+  @Test
+  void validatesRuleUpdate() {
+    UserAttributionRule existingRule = UserAttributionRule.newBuilder().setRank(2).build();
+    UserAttributionRule updatedRule = UserAttributionRule.newBuilder().setRank(3).build();
+    assertIllegalArgContaining(
+        "rank", () -> validator.validateUpdateOrThrow(existingRule, updatedRule));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateUpdateOrThrow(
+                existingRule, updatedRule.toBuilder().setRank(existingRule.getRank()).build()));
   }
 
   private void assertIllegalArgContaining(String text, Executable executable) {

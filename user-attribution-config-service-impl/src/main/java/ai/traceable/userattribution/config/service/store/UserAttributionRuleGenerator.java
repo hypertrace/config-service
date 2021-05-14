@@ -5,7 +5,7 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import java.util.UUID;
 
 public class UserAttributionRuleGenerator {
-  public UserAttributionRule generateNewRule(CreateUserAttributionRuleRequest request) {
+  public UserAttributionRule generateNewRuleWithoutRank(CreateUserAttributionRuleRequest request) {
     return UserAttributionRule.newBuilder()
         .setData(request.getData())
         .setName(request.getName())

@@ -3,10 +3,12 @@ package ai.traceable.userattribution.config.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import ai.traceable.userattribution.config.service.store.UserAttributionRuleGenerator;
+import ai.traceable.userattribution.config.service.store.UserAttributionRuleRankCalculator;
 import ai.traceable.userattribution.config.service.store.UserAttributionRuleStore;
 import ai.traceable.userattribution.config.service.v1.CreateUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.DeleteUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest;
+import ai.traceable.userattribution.config.service.v1.RankUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.UpdateUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServiceGrpc;
 import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServiceGrpc.UserAttributionConfigServiceBlockingStub;
@@ -33,7 +35,7 @@ class UserAttributionConfigServiceImplTest {
   @BeforeEach
   void beforeEach() {
     this.mockGenericConfigService =
-        new MockGenericConfigService().mockUpsert().mockGetAll().mockDelete();
+        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
 
     ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
@@ -43,7 +45,9 @@ class UserAttributionConfigServiceImplTest {
             new UserAttributionConfigServiceImpl(
                 new UserAttributionConfigRequestValidator(),
                 new UserAttributionRuleStore(genericStub),
-                new UserAttributionRuleGenerator()))
+                new UserAttributionRuleGenerator(),
+                new UserAttributionRuleRankCalculator(),
+                new UserAttributionRuleDiffer()))
         .start();
 
     this.userAttributionStub =
@@ -66,7 +70,7 @@ class UserAttributionConfigServiceImplTest {
                     .build())
             .getRule();
 
-    UserAttributionRule updated =
+    UserAttributionRule firstUpdated =
         this.userAttributionStub
             .updateUserAttributionRule(
                 UpdateUserAttributionRuleRequest.newBuilder()
@@ -84,18 +88,47 @@ class UserAttributionConfigServiceImplTest {
             .getRule();
 
     assertEquals(
-        List.of(secondCreated, updated),
+        List.of(firstUpdated, secondCreated),
         this.userAttributionStub
             .getUserAttributionRules(GetUserAttributionRulesRequest.getDefaultInstance())
             .getRulesList());
-
-    this.userAttributionStub.deleteUserAttributionRule(
-        DeleteUserAttributionRuleRequest.newBuilder().setRuleId(secondCreated.getId()).build());
 
     assertEquals(
-        List.of(updated),
+        List.of(withRank(secondCreated, 1), withRank(firstUpdated, 2)),
+        this.userAttributionStub
+            .rankUserAttributionRule(
+                RankUserAttributionRuleRequest.newBuilder()
+                    .setIdToUpdate(firstUpdated.getId())
+                    .setPrecedingRuleId(secondCreated.getId())
+                    .build())
+            .getRulesList());
+
+    assertEquals(
+        List.of(withRank(firstUpdated, 1), withRank(secondCreated, 2)),
+        this.userAttributionStub
+            .rankUserAttributionRule(
+                RankUserAttributionRuleRequest.newBuilder()
+                    .setIdToUpdate(firstUpdated.getId())
+                    .build())
+            .getRulesList());
+
+    assertEquals(
+        List.of(withRank(secondCreated, 1)),
+        this.userAttributionStub
+            .deleteUserAttributionRule(
+                DeleteUserAttributionRuleRequest.newBuilder()
+                    .setRuleId(firstUpdated.getId())
+                    .build())
+            .getRulesList());
+
+    assertEquals(
+        List.of(withRank(secondCreated, 1)),
         this.userAttributionStub
             .getUserAttributionRules(GetUserAttributionRulesRequest.getDefaultInstance())
             .getRulesList());
+  }
+
+  private UserAttributionRule withRank(UserAttributionRule rule, int rank) {
+    return rule.toBuilder().setRank(rank).build();
   }
 }

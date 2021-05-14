@@ -25,7 +25,7 @@ class UserAttributionRuleGeneratorTest {
             .build();
 
     UserAttributionRule generatedRule =
-        generator.generateNewRule(
+        generator.generateNewRuleWithoutRank(
             CreateUserAttributionRuleRequest.newBuilder()
                 .setName("name")
                 .setData(expectedData)

@@ -3,6 +3,7 @@ package ai.traceable.userattribution.config.service.validation;
 import ai.traceable.userattribution.config.service.v1.CreateUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.DeleteUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest;
+import ai.traceable.userattribution.config.service.v1.RankUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.UpdateUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData;
@@ -43,10 +44,28 @@ public class UserAttributionConfigRequestValidator {
     this.validateRuleData(rule.getData());
   }
 
+  public void validateUpdateOrThrow(UserAttributionRule existing, UserAttributionRule updated) {
+    if (existing.getRank() != updated.getRank()) {
+      throw new IllegalArgumentException(
+          "Updated rule must match existing rule rank. Use rank API to adjust ranks");
+    }
+  }
+
   public void validateOrThrow(
       RequestContext requestContext, DeleteUserAttributionRuleRequest request) {
     this.validateRequestContext(requestContext);
     this.validateNonDefaultPresence(request, DeleteUserAttributionRuleRequest.RULE_ID_FIELD_NUMBER);
+  }
+
+  public void validateOrThrow(
+      RequestContext requestContext, RankUserAttributionRuleRequest request) {
+    this.validateRequestContext(requestContext);
+    this.validateNonDefaultPresence(
+        request, RankUserAttributionRuleRequest.ID_TO_UPDATE_FIELD_NUMBER);
+    if (request.getIdToUpdate().equals(request.getPrecedingRuleId())) {
+      throw new IllegalArgumentException(
+          "Can't rerank a rule against itself: " + this.printOrToString(request));
+    }
   }
 
   private void validateRequestContext(RequestContext requestContext) {

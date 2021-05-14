@@ -19,6 +19,9 @@ service UserAttributionConfigService {
 
   rpc DeleteUserAttributionRule (DeleteUserAttributionRuleRequest) returns (DeleteUserAttributionRuleResponse) {
   }
+
+  rpc RankUserAttributionRule (RankUserAttributionRuleRequest) returns (RankUserAttributionRuleResponse) {
+  }
 }
 
 message GetUserAttributionRulesRequest {
@@ -34,7 +37,9 @@ message CreateUserAttributionRuleRequest {
 }
 
 message CreateUserAttributionRuleResponse {
-  UserAttributionRule rule = 1;
+  // rule deprecated as a new rule may change the ranks of existing rules
+  UserAttributionRule rule = 1 [deprecated = true];
+  repeated UserAttributionRule rules = 2;
 }
 
 message UpdateUserAttributionRuleRequest {
@@ -50,4 +55,15 @@ message DeleteUserAttributionRuleRequest {
 }
 
 message DeleteUserAttributionRuleResponse {
+  repeated UserAttributionRule rules = 2;
+}
+
+message RankUserAttributionRuleRequest {
+  string id_to_update = 1;
+  // The id of the rule that should immediately precede the target id. Omit if we're updating to highest rank.
+  optional string preceding_rule_id = 2;
+}
+
+message RankUserAttributionRuleResponse {
+  repeated UserAttributionRule rules = 1;
 }
