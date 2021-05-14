@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 package ai.traceable.userattribution.config.service.v1;
-option go_package = "github.com/Traceableai/config-service/user-attribution/v1";
 
 option java_multiple_files = true;
 
