@@ -68,7 +68,7 @@ class UserAttributionConfigServiceImplTest {
                     .setName("first")
                     .setData(RULE_DATA)
                     .build())
-            .getRule();
+            .getRules(0);
 
     UserAttributionRule firstUpdated =
         this.userAttributionStub
@@ -78,14 +78,20 @@ class UserAttributionConfigServiceImplTest {
                     .build())
             .getRule();
 
-    UserAttributionRule secondCreated =
+    assertEquals(1, firstUpdated.getRank());
+
+    List<UserAttributionRule> afterSecondCreate =
         this.userAttributionStub
             .createUserAttributionRule(
                 CreateUserAttributionRuleRequest.newBuilder()
                     .setName("second")
                     .setData(RULE_DATA)
                     .build())
-            .getRule();
+            .getRulesList();
+    assertEquals(firstUpdated, afterSecondCreate.get(0));
+    UserAttributionRule secondCreated = afterSecondCreate.get(1);
+    assertEquals(2, secondCreated.getRank());
+    assertEquals("second", secondCreated.getName());
 
     assertEquals(
         List.of(firstUpdated, secondCreated),

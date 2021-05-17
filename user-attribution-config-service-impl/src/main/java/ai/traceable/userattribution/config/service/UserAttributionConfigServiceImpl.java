@@ -73,22 +73,21 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
 
       UserAttributionRule newRule = this.ruleGenerator.generateNewRuleWithoutRank(request);
       List<UserAttributionRule> existingRules = this.ruleStore.getRules(requestContext);
-      List<UserAttributionRule> rulesToUpdate =
-          this.ruleDiffer.filterUnchangedRules(
-              existingRules, this.rankCalculator.rankAndMergeNewRule(newRule, existingRules));
-
-      List<UserAttributionRule> updatedRules =
-          this.ruleStore.upsertAllRules(requestContext, rulesToUpdate);
+      List<UserAttributionRule> mergedAndRankedRules =
+          this.rankCalculator.rankAndMergeNewRule(newRule, existingRules);
+      this.ruleStore.upsertAllRules(
+          requestContext,
+          this.ruleDiffer.filterUnchangedRules(existingRules, mergedAndRankedRules));
       // TODO remove once deprecated api removed
       UserAttributionRule createdNewRule =
-          updatedRules.stream()
+          mergedAndRankedRules.stream()
               .filter(rule -> rule.getId().equals(newRule.getId()))
               .findFirst()
               .orElseThrow();
       responseObserver.onNext(
           CreateUserAttributionRuleResponse.newBuilder()
               .setRule(createdNewRule)
-              .addAllRules(updatedRules)
+              .addAllRules(mergedAndRankedRules)
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -130,13 +129,13 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
       this.validator.validateOrThrow(requestContext, request);
       this.ruleStore.deleteRule(requestContext, request.getRuleId());
       List<UserAttributionRule> rulesAfterDelete = this.ruleStore.getRules(requestContext);
-      List<UserAttributionRule> rerankedRules =
-          this.ruleDiffer.filterUnchangedRules(
-              rulesAfterDelete, this.rankCalculator.rankFromOrder(rulesAfterDelete));
+      List<UserAttributionRule> rerankedRules = this.rankCalculator.rankFromOrder(rulesAfterDelete);
+
+      this.ruleStore.upsertAllRules(
+          requestContext, this.ruleDiffer.filterUnchangedRules(rulesAfterDelete, rerankedRules));
+
       responseObserver.onNext(
-          DeleteUserAttributionRuleResponse.newBuilder()
-              .addAllRules(this.ruleStore.upsertAllRules(requestContext, rerankedRules))
-              .build());
+          DeleteUserAttributionRuleResponse.newBuilder().addAllRules(rerankedRules).build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
       log.error("Error deleting user attribution rule: {}", request, exception);
@@ -153,12 +152,12 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
       this.validator.validateOrThrow(requestContext, request);
       List<UserAttributionRule> existingRules = this.ruleStore.getRules(requestContext);
       List<UserAttributionRule> rerankedRules =
-          this.ruleDiffer.filterUnchangedRules(
-              existingRules, this.rankCalculator.rerankRules(request, existingRules));
+          this.rankCalculator.rerankRules(request, existingRules);
+
+      this.ruleStore.upsertAllRules(
+          requestContext, this.ruleDiffer.filterUnchangedRules(existingRules, rerankedRules));
       responseObserver.onNext(
-          RankUserAttributionRuleResponse.newBuilder()
-              .addAllRules(this.ruleStore.upsertAllRules(requestContext, rerankedRules))
-              .build());
+          RankUserAttributionRuleResponse.newBuilder().addAllRules(rerankedRules).build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
       log.error("Error ranking user attribution rule: {}", request, exception);
