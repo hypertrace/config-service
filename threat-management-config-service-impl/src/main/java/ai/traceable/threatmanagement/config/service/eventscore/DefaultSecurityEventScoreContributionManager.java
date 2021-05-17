@@ -109,7 +109,7 @@ class DefaultSecurityEventScoreContributionManager
   }
 
   private String getConfigId(RequestContext requestContext) {
-    // Using tenant id as threat score bound config id, since it's tenant scoped
+    // Using tenant id as security event score contribution config id, since it's tenant scoped
     return requestContext
         .getTenantId()
         .orElseThrow(

@@ -19,8 +19,12 @@ message UpdateSecurityEventTypeContributionResponse {
   SecurityEventTypeContribution security_event_type_contribution = 1;
 }
 
-enum SecurityEventTypeContribution {
-  SECURITY_EVENT_TYPE_CONTRIBUTION_UNSPECIFIED = 0;
-  SECURITY_EVENT_TYPE_CONTRIBUTION_ALL = 1;
-  SECURITY_EVENT_TYPE_CONTRIBUTION_HIGH_RISK_APIS = 2;
+message SecurityEventTypeContribution {
+  SecurityEventTypeContributionKind security_event_type_contribution_kind = 1;
+
+  enum SecurityEventTypeContributionKind {
+    SECURITY_EVENT_TYPE_CONTRIBUTION_KIND_UNSPECIFIED = 0;
+    SECURITY_EVENT_TYPE_CONTRIBUTION_KIND_ALL = 1;
+    SECURITY_EVENT_TYPE_CONTRIBUTION_KIND_HIGH_RISK_APIS = 2;
+  }
 }

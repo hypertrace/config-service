@@ -10,15 +10,22 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.threatmanagement.config.service.eventscore.SecurityEventScoreContributionManager;
+import ai.traceable.threatmanagement.config.service.eventtype.SecurityEventTypeContributionManager;
 import ai.traceable.threatmanagement.config.service.threatscore.ThreatScoreManager;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventScoreContributionResponse;
+import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventTypeContributionRequest;
+import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventTypeContributionResponse;
 import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreBoundRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreBoundResponse;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventScoreContribution;
+import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution;
+import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution.SecurityEventTypeContributionKind;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventScoreContributionResponse;
+import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventTypeContributionRequest;
+import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventTypeContributionResponse;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatScoreBoundRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatScoreBoundResponse;
 import io.grpc.Status;
@@ -75,9 +82,22 @@ class ThreatManagementConfigServiceImplTest {
           .setHighScore(300)
           .build();
 
+  private static final SecurityEventTypeContribution SECURITY_EVENT_TYPE_CONTRIBUTION_1 =
+      SecurityEventTypeContribution.newBuilder()
+          .setSecurityEventTypeContributionKind(
+              SecurityEventTypeContributionKind.SECURITY_EVENT_TYPE_CONTRIBUTION_KIND_ALL)
+          .build();
+  private static final SecurityEventTypeContribution SECURITY_EVENT_TYPE_CONTRIBUTION_2 =
+      SecurityEventTypeContribution.newBuilder()
+          .setSecurityEventTypeContributionKind(
+              SecurityEventTypeContributionKind
+                  .SECURITY_EVENT_TYPE_CONTRIBUTION_KIND_HIGH_RISK_APIS)
+          .build();
+
   private ThreatManagementConfigRequestValidator requestValidator;
   private ThreatScoreManager threatScoreManager;
   private SecurityEventScoreContributionManager securityEventScoreContributionManager;
+  private SecurityEventTypeContributionManager securityEventTypeContributionManager;
 
   private ThreatManagementConfigServiceImpl threatManagementConfigService;
 
@@ -107,9 +127,14 @@ class ThreatManagementConfigServiceImplTest {
     when(this.securityEventScoreContributionManager.getDefaultSecurityEventScoreContribution())
         .thenReturn(DEFAULT_SECURITY_EVENT_SCORE_CONTRIBUTION);
 
+    this.securityEventTypeContributionManager = mock(SecurityEventTypeContributionManager.class);
+
     this.threatManagementConfigService =
         new ThreatManagementConfigServiceImpl(
-            requestValidator, threatScoreManager, securityEventScoreContributionManager);
+            requestValidator,
+            threatScoreManager,
+            securityEventScoreContributionManager,
+            securityEventTypeContributionManager);
   }
 
   @Nested
@@ -187,7 +212,7 @@ class ThreatManagementConfigServiceImplTest {
   @Nested
   class SecurityEventScoreContributions {
     @Test
-    void getSecurityEventContribution() {
+    void getSecurityEventScoreContribution() {
       when(securityEventScoreContributionManager.getSecurityEventScoreContribution(
               any(RequestContext.class)))
           .thenReturn(SECURITY_EVENT_SCORE_CONTRIBUTION_1);
@@ -253,6 +278,80 @@ class ThreatManagementConfigServiceImplTest {
               threatManagementConfigService.updateSecurityEventScoreContribution(
                   UpdateSecurityEventScoreContributionRequest.newBuilder()
                       .setSecurityEventScoreContribution(SECURITY_EVENT_SCORE_CONTRIBUTION_1)
+                      .build(),
+                  responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1))
+          .onError(argThat(err -> Status.fromThrowable(err).getCode() == Code.UNKNOWN));
+    }
+  }
+
+  @Nested
+  class SecurityEventTypeContributions {
+    @Test
+    void getSecurityEventTypeContribution() {
+      when(securityEventTypeContributionManager.getSecurityEventTypeContribution(
+              any(RequestContext.class)))
+          .thenReturn(SECURITY_EVENT_TYPE_CONTRIBUTION_1);
+
+      StreamObserver<GetSecurityEventTypeContributionResponse> responseObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () ->
+              threatManagementConfigService.getSecurityEventTypeContribution(
+                  GetSecurityEventTypeContributionRequest.getDefaultInstance(), responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1))
+          .onNext(
+              GetSecurityEventTypeContributionResponse.newBuilder()
+                  .setSecurityEventTypeContribution(SECURITY_EVENT_TYPE_CONTRIBUTION_1)
+                  .build());
+      verify(responseObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    void updateSecurityEventTypeContribution() {
+      when(securityEventTypeContributionManager.upsertSecurityEventTypeContribution(
+              any(RequestContext.class), eq(SECURITY_EVENT_TYPE_CONTRIBUTION_1)))
+          .thenReturn(SECURITY_EVENT_TYPE_CONTRIBUTION_2);
+
+      StreamObserver<UpdateSecurityEventTypeContributionResponse> responseObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () ->
+              threatManagementConfigService.updateSecurityEventTypeContribution(
+                  UpdateSecurityEventTypeContributionRequest.newBuilder()
+                      .setSecurityEventTypeContribution(SECURITY_EVENT_TYPE_CONTRIBUTION_1)
+                      .build(),
+                  responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1))
+          .onNext(
+              UpdateSecurityEventTypeContributionResponse.newBuilder()
+                  .setSecurityEventTypeContribution(SECURITY_EVENT_TYPE_CONTRIBUTION_2)
+                  .build());
+      verify(responseObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    void skipUpdateSecurityEventTypeContribution() {
+      when(securityEventTypeContributionManager.upsertSecurityEventTypeContribution(
+              any(RequestContext.class), eq(SECURITY_EVENT_TYPE_CONTRIBUTION_1)))
+          .thenThrow(IllegalArgumentException.class);
+
+      StreamObserver<UpdateSecurityEventTypeContributionResponse> responseObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () ->
+              threatManagementConfigService.updateSecurityEventTypeContribution(
+                  UpdateSecurityEventTypeContributionRequest.newBuilder()
+                      .setSecurityEventTypeContribution(SECURITY_EVENT_TYPE_CONTRIBUTION_1)
                       .build(),
                   responseObserver);
       GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);

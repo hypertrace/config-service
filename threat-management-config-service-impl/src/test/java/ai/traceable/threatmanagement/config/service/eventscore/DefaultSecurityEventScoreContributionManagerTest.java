@@ -8,7 +8,6 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceConfig;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventScoreContribution;
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
@@ -39,7 +38,7 @@ class DefaultSecurityEventScoreContributionManagerTest {
           .setHighScore(30)
           .build();
 
-  private static final Value SECURITY_EVENT_CONTRIBUTION_CONFIG_1_VALUE =
+  private static final Value SECURITY_EVENT_SCORE_CONTRIBUTION_CONFIG_1_VALUE =
       Value.newBuilder()
           .setStructValue(
               Struct.newBuilder()
@@ -55,7 +54,7 @@ class DefaultSecurityEventScoreContributionManagerTest {
           .setHighScore(300)
           .build();
 
-  private static final Value SECURITY_EVENT_CONTRIBUTION_CONFIG_2_VALUE =
+  private static final Value SECURITY_EVENT_SCORE_CONTRIBUTION_CONFIG_2_VALUE =
       Value.newBuilder()
           .setStructValue(
               Struct.newBuilder()
@@ -79,7 +78,7 @@ class DefaultSecurityEventScoreContributionManagerTest {
   }
 
   @Test
-  void shouldReturnDefaultSecurityEventScoreContribution() throws InvalidProtocolBufferException {
+  void shouldReturnDefaultSecurityEventScoreContribution() {
     GetConfigRequest request =
         GetConfigRequest.newBuilder()
             .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
@@ -105,7 +104,7 @@ class DefaultSecurityEventScoreContributionManagerTest {
   }
 
   @Test
-  void shouldReturnSecurityEventContributionConfig() throws InvalidProtocolBufferException {
+  void shouldReturnSecurityEventScoreContributionConfig() {
     GetConfigRequest request =
         GetConfigRequest.newBuilder()
             .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
@@ -115,7 +114,7 @@ class DefaultSecurityEventScoreContributionManagerTest {
     when(configServiceStub.getConfig(request))
         .thenReturn(
             GetConfigResponse.newBuilder()
-                .setConfig(SECURITY_EVENT_CONTRIBUTION_CONFIG_1_VALUE)
+                .setConfig(SECURITY_EVENT_SCORE_CONTRIBUTION_CONFIG_1_VALUE)
                 .build());
 
     assertEquals(
@@ -124,19 +123,19 @@ class DefaultSecurityEventScoreContributionManagerTest {
   }
 
   @Test
-  void shouldUpsertExistingSecurityEventContributionConfig() throws InvalidProtocolBufferException {
+  void shouldUpsertExistingSecurityEventScoreContributionConfig() {
     UpsertConfigRequest request =
         UpsertConfigRequest.newBuilder()
             .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
             .setResourceName(SECURITY_EVENT_SCORE_CONTRIBUTION_CONFIG_RESOURCE_NAME)
-            .setConfig(SECURITY_EVENT_CONTRIBUTION_CONFIG_2_VALUE)
+            .setConfig(SECURITY_EVENT_SCORE_CONTRIBUTION_CONFIG_2_VALUE)
             .setContext(TENANT_ID)
             .build();
 
     when(configServiceStub.upsertConfig(request))
         .thenReturn(
             UpsertConfigResponse.newBuilder()
-                .setConfig(SECURITY_EVENT_CONTRIBUTION_CONFIG_2_VALUE)
+                .setConfig(SECURITY_EVENT_SCORE_CONTRIBUTION_CONFIG_2_VALUE)
                 .build());
 
     assertEquals(

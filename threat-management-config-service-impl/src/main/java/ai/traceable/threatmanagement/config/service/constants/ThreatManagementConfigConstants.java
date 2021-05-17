@@ -5,4 +5,6 @@ public interface ThreatManagementConfigConstants {
   String THREAT_SCORE_BOUND_CONFIG_RESOURCE_NAME = "threatScoreBoundConfig";
   String SECURITY_EVENT_SCORE_CONTRIBUTION_CONFIG_RESOURCE_NAME =
       "securityEventScoreContributionConfig";
+  String SECURITY_EVENT_TYPE_CONTRIBUTION_CONFIG_RESOURCE_NAME =
+      "securityEventTypeContributionConfig";
 }
