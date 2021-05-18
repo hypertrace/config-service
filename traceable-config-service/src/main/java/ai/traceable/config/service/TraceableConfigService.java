@@ -8,6 +8,7 @@ import ai.traceable.ratelimiting.service.RateLimitingConfigServiceImpl;
 import ai.traceable.region.config.service.RegionConfigServiceFactory;
 import ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl;
 import ai.traceable.sensitivedata.config.service.SensitiveDataConfigServiceImpl;
+import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceFactory;
 import ai.traceable.userattribution.config.service.UserAttributionConfigServiceFactory;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
@@ -76,13 +77,16 @@ public class TraceableConfigService extends PlatformService {
         CustomSignatureConfigServiceFactory.build(managedChannel, config);
     BindableService userAttributionConfigService =
         UserAttributionConfigServiceFactory.build(managedChannel);
+    BindableService threatManagementConfigService =
+        ThreatManagementConfigServiceFactory.build(managedChannel, config);
     internalServerBuilder
         .addService(InterceptorUtil.wrapInterceptors(sensitiveDataConfigService))
         .addService(InterceptorUtil.wrapInterceptors(rateLimitingConfigService))
         .addService(InterceptorUtil.wrapInterceptors(localProcessingRulesService))
         .addService(InterceptorUtil.wrapInterceptors(regionConfigService))
         .addService(InterceptorUtil.wrapInterceptors(customSignatureConfigService))
-        .addService(InterceptorUtil.wrapInterceptors(userAttributionConfigService));
+        .addService(InterceptorUtil.wrapInterceptors(userAttributionConfigService))
+        .addService(InterceptorUtil.wrapInterceptors(threatManagementConfigService));
     internalTraceableConfigServer = internalServerBuilder.build();
 
     ServerBuilder<?> externalServerBuilder = ServerBuilder.forPort(externalServerPort);
