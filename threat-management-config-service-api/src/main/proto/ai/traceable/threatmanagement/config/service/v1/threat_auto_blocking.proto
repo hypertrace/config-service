@@ -12,7 +12,13 @@ message GetThreatAutoBlockingConfigResponse {
 }
 
 message UpdateThreatAutoBlockingConfigRequest {
-  ThreatAutoBlockingActionConfig auto_blocking_action_config = 1;
+  ThreatAutoBlockingActionType action_type = 1;
+  ExpirationDetails expiration_details = 2;
+
+  message ExpirationDetails {
+    // Duration represented in ISO 8601 duration format.
+    optional string duration = 1;
+  }
 }
 
 message UpdateThreatAutoBlockingConfigResponse {
@@ -21,20 +27,17 @@ message UpdateThreatAutoBlockingConfigResponse {
 
 message ThreatAutoBlockingActionConfig {
   ThreatAutoBlockingActionType action_type = 1;
-  ExpiryDetails expiry_details = 2;
+  ExpirationDetails expiration_details = 2;
+
+  message ExpirationDetails {
+    // Duration represented in ISO 8601 duration format.
+    string duration = 1;
+    int64 timestamp_millis = 2;
+  }
 }
 
 enum ThreatAutoBlockingActionType {
   THREAT_AUTO_BLOCKING_ACTION_TYPE_UNSPECIFIED = 0;
   THREAT_AUTO_BLOCKING_ACTION_TYPE_NO_ACTION = 1;
   THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK = 2;
-}
-
-message ExpiryDetails {
-  // Expiry duration represented in ISO 8601 duration format.
-  // If expiry_duration is not set and expiry_timestamp_millis is set, the value gets derived from the expiry_timestamp_millis field
-  optional string expiry_duration = 1;
-  // Timestamp at which the blocking expires.
-  // If expiry_timestamp_millis is not set and expiry_duration is set, the value gets derived from the expiry_duration field
-  optional int64 expiry_timestamp_millis = 2;
 }

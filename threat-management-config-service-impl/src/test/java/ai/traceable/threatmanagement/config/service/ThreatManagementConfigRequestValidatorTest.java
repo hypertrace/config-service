@@ -5,9 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventScoreContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution.SecurityEventTypeContributionKind;
+import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionType;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventTypeContributionRequest;
+import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest;
+import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest.ExpirationDetails;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatScoreBoundRequest;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -110,6 +113,53 @@ class ThreatManagementConfigRequestValidatorTest {
                             .setSecurityEventTypeContributionKind(
                                 SecurityEventTypeContributionKind.UNRECOGNIZED)
                             .build())
+                    .build()));
+  }
+
+  @Test
+  void validateThreatAutoBlockingActionConfigActionType() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            this.requestValidator.validateOrThrow(
+                REQUEST_CONTEXT,
+                UpdateThreatAutoBlockingConfigRequest.newBuilder()
+                    .setActionType(
+                        ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_UNSPECIFIED)
+                    .build()));
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            this.requestValidator.validateOrThrow(
+                REQUEST_CONTEXT, UpdateThreatAutoBlockingConfigRequest.getDefaultInstance()));
+  }
+
+  @Test
+  void validateThreatAutoBlockingActionConfig_noActionType() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            this.requestValidator.validateOrThrow(
+                REQUEST_CONTEXT,
+                UpdateThreatAutoBlockingConfigRequest.newBuilder()
+                    .setActionType(
+                        ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_NO_ACTION)
+                    .setExpirationDetails(ExpirationDetails.newBuilder().setDuration("PT").build())
+                    .build()));
+  }
+
+  @Test
+  void validateThreatAutoBlockingActionConfigExpiration() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            this.requestValidator.validateOrThrow(
+                REQUEST_CONTEXT,
+                UpdateThreatAutoBlockingConfigRequest.newBuilder()
+                    .setActionType(
+                        ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK)
+                    .setExpirationDetails(ExpirationDetails.newBuilder().setDuration("PT").build())
                     .build()));
   }
 }

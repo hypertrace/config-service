@@ -11,21 +11,29 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.threatmanagement.config.service.eventscore.SecurityEventScoreContributionManager;
 import ai.traceable.threatmanagement.config.service.eventtype.SecurityEventTypeContributionManager;
+import ai.traceable.threatmanagement.config.service.threatautoblocking.ThreatAutoBlockingManager;
 import ai.traceable.threatmanagement.config.service.threatscore.ThreatScoreManager;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventScoreContributionResponse;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventTypeContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventTypeContributionResponse;
+import ai.traceable.threatmanagement.config.service.v1.GetThreatAutoBlockingConfigRequest;
+import ai.traceable.threatmanagement.config.service.v1.GetThreatAutoBlockingConfigResponse;
 import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreBoundRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreBoundResponse;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventScoreContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution.SecurityEventTypeContributionKind;
+import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionConfig;
+import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionConfig.ExpirationDetails;
+import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionType;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventScoreContributionResponse;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventTypeContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventTypeContributionResponse;
+import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest;
+import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigResponse;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatScoreBoundRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatScoreBoundResponse;
 import io.grpc.Status;
@@ -36,6 +44,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 
 class ThreatManagementConfigServiceImplTest {
   private static final String TENANT_ID = "tenant-1";
@@ -94,10 +103,22 @@ class ThreatManagementConfigServiceImplTest {
                   .SECURITY_EVENT_TYPE_CONTRIBUTION_KIND_HIGH_RISK_APIS)
           .build();
 
-  private ThreatManagementConfigRequestValidator requestValidator;
-  private ThreatScoreManager threatScoreManager;
-  private SecurityEventScoreContributionManager securityEventScoreContributionManager;
-  private SecurityEventTypeContributionManager securityEventTypeContributionManager;
+  private static final ThreatAutoBlockingActionConfig THREAT_AUTO_BLOCKING_ACTION_CONFIG_1 =
+      ThreatAutoBlockingActionConfig.newBuilder()
+          .setActionType(ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK)
+          .build();
+  private static final ThreatAutoBlockingActionConfig THREAT_AUTO_BLOCKING_ACTION_CONFIG_2 =
+      ThreatAutoBlockingActionConfig.newBuilder()
+          .setActionType(ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK)
+          .setExpirationDetails(
+              ExpirationDetails.newBuilder().setDuration("PT1H2M34S").setTimestampMillis(3754000))
+          .build();
+
+  @Mock private ThreatManagementConfigRequestValidator requestValidator;
+  @Mock private ThreatScoreManager threatScoreManager;
+  @Mock private SecurityEventScoreContributionManager securityEventScoreContributionManager;
+  @Mock private SecurityEventTypeContributionManager securityEventTypeContributionManager;
+  @Mock private ThreatAutoBlockingManager threatAutoBlockingManager;
 
   private ThreatManagementConfigServiceImpl threatManagementConfigService;
 
@@ -129,12 +150,15 @@ class ThreatManagementConfigServiceImplTest {
 
     this.securityEventTypeContributionManager = mock(SecurityEventTypeContributionManager.class);
 
+    this.threatAutoBlockingManager = mock(ThreatAutoBlockingManager.class);
+
     this.threatManagementConfigService =
         new ThreatManagementConfigServiceImpl(
             requestValidator,
             threatScoreManager,
             securityEventScoreContributionManager,
-            securityEventTypeContributionManager);
+            securityEventTypeContributionManager,
+            threatAutoBlockingManager);
   }
 
   @Nested
@@ -354,6 +378,85 @@ class ThreatManagementConfigServiceImplTest {
                       .setSecurityEventTypeContribution(SECURITY_EVENT_TYPE_CONTRIBUTION_1)
                       .build(),
                   responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1))
+          .onError(argThat(err -> Status.fromThrowable(err).getCode() == Code.UNKNOWN));
+    }
+  }
+
+  @Nested
+  class ThreatAutoBlocking {
+    @Test
+    void getThreatAutoBlockingActionConfig() {
+      when(threatAutoBlockingManager.getThreatAutoBlockingAction(any(RequestContext.class)))
+          .thenReturn(THREAT_AUTO_BLOCKING_ACTION_CONFIG_1);
+
+      StreamObserver<GetThreatAutoBlockingConfigResponse> responseObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () ->
+              threatManagementConfigService.getThreatAutoBlockingConfig(
+                  GetThreatAutoBlockingConfigRequest.getDefaultInstance(), responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1))
+          .onNext(
+              GetThreatAutoBlockingConfigResponse.newBuilder()
+                  .setAutoBlockingActionConfig(THREAT_AUTO_BLOCKING_ACTION_CONFIG_1)
+                  .build());
+      verify(responseObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    void updateThreatAutoBlockingActionConfig() {
+      UpdateThreatAutoBlockingConfigRequest request =
+          UpdateThreatAutoBlockingConfigRequest.newBuilder()
+              .setActionType(ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK)
+              .setExpirationDetails(
+                  UpdateThreatAutoBlockingConfigRequest.ExpirationDetails.newBuilder()
+                      .setDuration("PT1H2M34S")
+                      .build())
+              .build();
+      when(threatAutoBlockingManager.upsertThreatAutoBlockingAction(
+              any(RequestContext.class), eq(request)))
+          .thenReturn(THREAT_AUTO_BLOCKING_ACTION_CONFIG_2);
+
+      StreamObserver<UpdateThreatAutoBlockingConfigResponse> responseObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () ->
+              threatManagementConfigService.updateThreatAutoBlockingConfig(
+                  request, responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1))
+          .onNext(
+              UpdateThreatAutoBlockingConfigResponse.newBuilder()
+                  .setAutoBlockingActionConfig(THREAT_AUTO_BLOCKING_ACTION_CONFIG_2)
+                  .build());
+      verify(responseObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    void skipUpdateThreatAutoBlockingActionConfig() {
+      UpdateThreatAutoBlockingConfigRequest request =
+          UpdateThreatAutoBlockingConfigRequest.newBuilder()
+              .setActionType(ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK)
+              .build();
+      when(threatAutoBlockingManager.upsertThreatAutoBlockingAction(
+              any(RequestContext.class), eq(request)))
+          .thenThrow(IllegalArgumentException.class);
+
+      StreamObserver<UpdateThreatAutoBlockingConfigResponse> responseObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () ->
+              threatManagementConfigService.updateThreatAutoBlockingConfig(
+                  request, responseObserver);
       GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
 
       verify(responseObserver, times(1))

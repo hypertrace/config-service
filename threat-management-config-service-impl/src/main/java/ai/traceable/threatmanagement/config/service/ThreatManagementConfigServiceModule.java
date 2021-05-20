@@ -2,6 +2,7 @@ package ai.traceable.threatmanagement.config.service;
 
 import ai.traceable.threatmanagement.config.service.eventscore.SecurityEventScoreContributionModule;
 import ai.traceable.threatmanagement.config.service.eventtype.SecurityEventTypeContributionModule;
+import ai.traceable.threatmanagement.config.service.threatautoblocking.ThreatAutoBlockingModule;
 import ai.traceable.threatmanagement.config.service.threatscore.ThreatScoreModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -30,6 +31,7 @@ public class ThreatManagementConfigServiceModule extends AbstractModule {
     install(new ThreatScoreModule());
     install(new SecurityEventScoreContributionModule());
     install(new SecurityEventTypeContributionModule());
+    install(new ThreatAutoBlockingModule());
   }
 
   @Provides

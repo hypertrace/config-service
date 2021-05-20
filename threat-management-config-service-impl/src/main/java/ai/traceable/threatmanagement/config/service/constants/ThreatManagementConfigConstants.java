@@ -7,4 +7,5 @@ public interface ThreatManagementConfigConstants {
       "securityEventScoreContributionConfig";
   String SECURITY_EVENT_TYPE_CONTRIBUTION_CONFIG_RESOURCE_NAME =
       "securityEventTypeContributionConfig";
+  String THREAT_AUTO_BLOCKING_CONFIG_RESOURCE_NAME = "threatAutoBlockingConfig";
 }

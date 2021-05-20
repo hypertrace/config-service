@@ -53,9 +53,7 @@ public class CustomSignatureConfigServiceImpl
       responseObserver.onCompleted();
     } catch (Exception e) {
       responseObserver.onError(
-          Status.INTERNAL
-              .withDescription(String.format("Unable to fetch custom signature rules"))
-              .asException());
+          Status.INTERNAL.withDescription("Unable to fetch custom signature rules").asException());
     }
   }
 
@@ -65,7 +63,7 @@ public class CustomSignatureConfigServiceImpl
       StreamObserver<CreateCustomSignatureRuleResponse> responseObserver) {
     Status status = rulesValidator.validate(request);
     if (!status.isOk()) {
-      log.error("Create Custom Signature Rule Request is not valid: ", status.getDescription());
+      log.error("Create Custom Signature Rule Request is not valid {}", status.getDescription());
       responseObserver.onError(status.asException());
       return;
     }
@@ -93,7 +91,7 @@ public class CustomSignatureConfigServiceImpl
       StreamObserver<UpdateCustomSignatureRuleResponse> responseObserver) {
     Status status = rulesValidator.validate(request);
     if (!status.isOk()) {
-      log.error("Update Custom Signature Rule Request is not valid: ", status.getDescription());
+      log.error("Update Custom Signature Rule Request is not valid {}", status.getDescription());
       responseObserver.onError(status.asException());
       return;
     }
@@ -122,7 +120,7 @@ public class CustomSignatureConfigServiceImpl
       StreamObserver<DeleteCustomSignatureRuleResponse> responseObserver) {
     Status status = rulesValidator.validate(request);
     if (!status.isOk()) {
-      log.error("Delete Custom Signature Rule Request is not valid: ", status.getDescription());
+      log.error("Delete Custom Signature Rule Request is not valid {}", status.getDescription());
       responseObserver.onError(status.asException());
       return;
     }
@@ -153,7 +151,7 @@ public class CustomSignatureConfigServiceImpl
     } catch (Exception e) {
       responseObserver.onError(
           Status.INTERNAL
-              .withDescription(String.format("Unable to fetch modsec custom signature rules"))
+              .withDescription("Unable to fetch modsec custom signature rules")
               .asException());
     }
   }
