@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package ai.traceable.anomaly.config.service.v1.global;
+
+option java_multiple_files = true;
+
+import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
+
+message UpdateAnomalyGlobalConfigStatusRequest {
+  AnomalyConfigScope config_scope = 1;
+  AnomalyConfigStatusChange config_status = 2;
+}
+
+message UpdateAnomalyGlobalConfigStatusResponse {
+  AnomalyConfigStatusChange config_status = 1;
+}
+
+message GetAnomalyGlobalConfigStatusRequest {
+  AnomalyConfigScope config_scope = 1;
+}
+
+message GetAnomalyGlobalConfigStatusResponse {
+  AnomalyConfigStatus config_status = 1;
+}

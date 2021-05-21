@@ -33,3 +33,11 @@ data:
       host = {{ .Values.traceableConfigServiceConfig.insightsServiceConfig.host }}
       port = {{ .Values.traceableConfigServiceConfig.insightsServiceConfig.port }}
     }
+    anomaly.config.service = {
+      include "anomaly.conf"
+    }
+  anomaly.conf: |-
+    global {
+      disabled = {{ .Values.anomalyConfigServiceConfig.global.disabled }}
+      internal = {{ .Values.anomalyConfigServiceConfig.global.internal }}
+    }

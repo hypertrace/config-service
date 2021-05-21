@@ -39,6 +39,9 @@ spec:
         - name: service-config
           configMap:
             name: {{ .Values.traceableConfigServiceConfig.name }}
+        - name: anomaly-config
+          configMap:
+            name: {{ .Values.anomalyConfigServiceConfig.name }}
         - name: log4j-config
           configMap:
             name: {{ .Values.logConfig.name }}
@@ -71,6 +74,9 @@ spec:
             - name: service-config
               mountPath: /app/resources/configs/{{ .Chart.Name }}/application.conf
               subPath: application.conf
+            - name: anomaly-config
+              mountPath: /app/resources/configs/{{ .Chart.Name }}/anomaly.conf
+              subPath: anomaly.conf
             - name: log4j-config
               mountPath: /var/{{ .Chart.Name }}/log
           livenessProbe:

@@ -64,6 +64,7 @@ dependencies {
   implementation(project(":blocking-config-service-impl"))
   implementation(project(":user-attribution-config-service-impl"))
   implementation(project(":threat-management-config-service-impl"))
+  implementation(project(":anomaly-config-service-impl"))
   implementation("org.hypertrace.config.service:config-service")
   implementation("org.hypertrace.config.service:config-service-impl")
   implementation("org.hypertrace.core.grpcutils:grpc-server-utils:0.4.0")

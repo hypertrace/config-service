@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package ai.traceable.anomaly.config.service.v1;
+
+option java_multiple_files = true;
+
+message AnomalyConfigStatusChange {
+  optional bool disabled = 1;
+  optional bool internal = 2;
+}
+
+message AnomalyConfigStatus {
+  bool disabled = 1;
+  bool internal = 2; // used only when disabled = true
+}
+
+message AnomalyConfigScope {
+  AnomalyConfigScopeType scope_type = 1;
+  oneof scope { // empty if scope_type = ANOMALY_CONFIG_SCOPE_TYPE_CUSTOMER
+    AnomalyServiceScope service_scope = 2; // set if scope_type = ANOMALY_CONFIG_SCOPE_TYPE_SERVICE
+    AnomalyApiScope api_scope = 3; // set if scope_type = ANOMALY_CONFIG_SCOPE_TYPE_API
+  }
+}
+
+message AnomalyApiScope {
+  string id = 1;
+  AnomalyServiceScope service_scope = 2;
+}
+
+message AnomalyServiceScope {
+  string id = 1;
+}
+
+enum AnomalyConfigScopeType {
+  ANOMALY_CONFIG_SCOPE_TYPE_UNSPECIFIED = 0;
+  ANOMALY_CONFIG_SCOPE_TYPE_CUSTOMER = 1;
+  ANOMALY_CONFIG_SCOPE_TYPE_SERVICE = 2;
+  ANOMALY_CONFIG_SCOPE_TYPE_API = 3;
+}

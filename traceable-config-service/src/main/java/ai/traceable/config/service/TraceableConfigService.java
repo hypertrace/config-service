@@ -1,5 +1,6 @@
 package ai.traceable.config.service;
 
+import ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory;
 import ai.traceable.blocking.config.service.BlockingConfigServiceFactory;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceFactory;
 import ai.traceable.localprocessing.config.service.LocalProcessingConfigServiceImpl;
@@ -17,6 +18,8 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.hypertrace.config.service.ConfigServicesFactory;
 import org.hypertrace.config.service.store.ConfigStore;
 import org.hypertrace.core.grpcutils.server.InterceptorUtil;
@@ -79,6 +82,13 @@ public class TraceableConfigService extends PlatformService {
         UserAttributionConfigServiceFactory.build(managedChannel);
     BindableService threatManagementConfigService =
         ThreatManagementConfigServiceFactory.build(managedChannel, config);
+    List<BindableService> anomalyConfigServices =
+        AnomalyConfigServiceFactory.build(managedChannel, config);
+
+    internalServerBuilder.addServices(
+        anomalyConfigServices.stream()
+            .map(anomalyConfigService -> InterceptorUtil.wrapInterceptors(anomalyConfigService))
+            .collect(Collectors.toUnmodifiableList()));
     internalServerBuilder
         .addService(InterceptorUtil.wrapInterceptors(sensitiveDataConfigService))
         .addService(InterceptorUtil.wrapInterceptors(rateLimitingConfigService))

@@ -99,3 +99,9 @@ logConfig:
   appender:
     rolling:
       enabled: false
+
+anomalyConfigServiceConfig:
+  name: anomaly-config-service-config
+  global:
+    disabled: false
+    internal: false

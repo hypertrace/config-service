@@ -17,7 +17,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 
 /** This class starts and shuts down the services required for integration test */
-class TraceableConfigServiceIntegrationTestBase {
+public class TraceableConfigServiceIntegrationTestBase {
 
   protected static final String SERVICE_NAME = "traceable-config-service";
   protected static final String TENANT_ID = "tenant1";
