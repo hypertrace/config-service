@@ -4,6 +4,7 @@ import static ai.traceable.sensitivedata.config.service.ConfigServiceCoordinator
 import static ai.traceable.sensitivedata.config.service.ConfigServiceCoordinatorImpl.DEFAULT_PARAM_TYPE_REDACTION_STRATEGY;
 import static ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl.SENSITIVE_DATA_CONFIG_SERVICE_CONFIG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.traceable.sensitivedata.config.service.v1.CreateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.DeleteRedactionRuleRequest;
@@ -22,6 +23,7 @@ import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeRequest;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import io.grpc.StatusRuntimeException;
 import java.util.List;
 import java.util.Map;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -157,6 +159,20 @@ class SensitiveDataConfigServiceImplTest {
         sensitiveDataStub
             .getAllRedactionRules(GetAllRedactionRulesRequest.getDefaultInstance())
             .getRedactionRulesList());
+  }
+
+  @Test
+  void createRedactionRuleWithInvalidRegexShouldFail() {
+    NewRedactionRule newRedactionRule = getNewRedactionRule("rule1", "pass**");
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            sensitiveDataStub
+                .createRedactionRule(
+                    CreateRedactionRuleRequest.newBuilder()
+                        .setNewRedactionRule(newRedactionRule)
+                        .build())
+                .getRedactionRule());
   }
 
   private NewRedactionRule getNewRedactionRule(String name, String regex) {

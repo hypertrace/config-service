@@ -16,6 +16,8 @@ import io.grpc.Status;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
@@ -112,6 +114,7 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   @Override
   public RedactionRule createRedactionRule(
       RequestContext requestContext, NewRedactionRule newRedactionRule) {
+    validateRegex(newRedactionRule.getRegex());
     RedactionRule redactionRule = getRedactionRule(newRedactionRule);
     UpsertConfigRequest upsertConfigRequest =
         UpsertConfigRequest.newBuilder()
@@ -127,6 +130,7 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   @Override
   public RedactionRule updateRedactionRule(
       RequestContext requestContext, RedactionRule redactionRule) {
+    validateRegex(redactionRule.getRegex());
     long creationTimestamp =
         getRedactionRuleConfig(requestContext, redactionRule.getId()).getCreationTimestamp();
     UpsertConfigRequest upsertConfigRequest =
@@ -225,5 +229,14 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
             .addContexts(redactionRuleId)
             .build();
     return RedactionRuleConfig.fromValue(getConfig(requestContext, getConfigRequest));
+  }
+
+  private void validateRegex(String redactionRuleRegex) {
+    // compiling an invalid regex throws PatternSyntaxException
+    try {
+      Pattern.compile(redactionRuleRegex);
+    } catch (PatternSyntaxException e) {
+      throw new IllegalArgumentException("Invalid regex", e);
+    }
   }
 }
