@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package ai.traceable.iprange.config.service.v1;
+
+option java_multiple_files = true;
+
+message CreateIpRangeRuleRequest {
+    IpRangeRuleDetails rule_details = 1;
+}
+
+message CreateIpRangeRuleResponse {
+    IpRangeRule rule = 1;
+}
+
+message UpdateIpRangeRuleRequest {
+    string id = 1;
+    IpRangeRuleDetails rule_details = 2;
+    bool disabled = 3;
+    bool internal = 4;
+}
+
+message UpdateIpRangeRuleResponse {
+    IpRangeRule rule = 1;
+}
+
+message DeleteIpRangeRuleRequest {
+    string id = 1;
+}
+
+message DeleteIpRangeRuleResponse {
+}
+
+message GetIpRangeRulesRequest {
+    GetRulesFilter filter = 1;
+}
+
+message GetIpRangeRulesResponse {
+    repeated IpRangeRule rules = 1;
+}
+
+message GetRulesFilter {
+    repeated string rule_ids = 1;
+    optional RuleAction rule_action = 2;
+    optional bool disabled = 3;
+    optional bool internal = 4;
+}
+
+message IpRangeRule {
+    string id = 1;
+    IpRangeRuleDetails rule_details = 2;
+    bool disabled = 3;
+    bool internal = 4;
+    repeated string ip_ranges = 5;
+    repeated string ip_addresses = 6;
+}
+
+message IpRangeRuleDetails {
+    string name = 1;
+    string description = 2;
+    repeated string raw_input_ip_data = 3;
+    RuleAction rule_action = 4;
+    ExpirationDetails expiration_details = 5;
+}
+
+message ExpirationDetails {
+    // Expiration duration represented in ISO 8601 duration format.
+    // If expiration_duration is not set and expiration_timestamp_millis is set, the value gets derived from the expiration_timestamp_millis field
+    optional string expiration_duration = 1;
+    // Timestamp at which the blocking expires.
+    // If expiration_timestamp_millis is not set and expiration_duration is set, the value gets derived from the expiration_duration field
+    optional int64 expiration_timestamp_millis = 2;
+}
+
+enum RuleAction {
+    RULE_ACTION_UNSPECIFIED = 0;
+    RULE_ACTION_BLOCK = 1;
+    RULE_ACTION_ALLOW = 2;
+}
