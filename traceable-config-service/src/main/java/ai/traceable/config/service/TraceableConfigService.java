@@ -3,6 +3,7 @@ package ai.traceable.config.service;
 import ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory;
 import ai.traceable.blocking.config.service.BlockingConfigServiceFactory;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceFactory;
+import ai.traceable.external.userattribution.config.service.ExternalUserAttributionConfigServiceFactory;
 import ai.traceable.localprocessing.config.service.LocalProcessingConfigServiceImpl;
 import ai.traceable.localprocessing.config.service.LocalProcessingRulesServiceImpl;
 import ai.traceable.ratelimiting.service.RateLimitingConfigServiceImpl;
@@ -106,10 +107,13 @@ public class TraceableConfigService extends PlatformService {
         new LocalProcessingConfigServiceImpl(managedChannel, config);
     BindableService blockingConfigService =
         BlockingConfigServiceFactory.build(managedChannel, config);
+    BindableService externalUserAttributionConfigService =
+        ExternalUserAttributionConfigServiceFactory.build(managedChannel);
     externalServerBuilder
         .addService(InterceptorUtil.wrapInterceptors(piiFilterConfigService))
         .addService(InterceptorUtil.wrapInterceptors(localProcessingConfigService))
-        .addService(InterceptorUtil.wrapInterceptors(blockingConfigService));
+        .addService(InterceptorUtil.wrapInterceptors(blockingConfigService))
+        .addService(InterceptorUtil.wrapInterceptors(externalUserAttributionConfigService));
     externalTraceableConfigServer = externalServerBuilder.build();
   }
 

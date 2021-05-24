@@ -63,6 +63,7 @@ dependencies {
   implementation(project(":custom-signature-config-service-impl"))
   implementation(project(":blocking-config-service-impl"))
   implementation(project(":user-attribution-config-service-impl"))
+  implementation(project(":external-user-attribution-config-service-impl"))
   implementation(project(":threat-management-config-service-impl"))
   implementation(project(":anomaly-config-service-impl"))
   implementation("org.hypertrace.config.service:config-service")
