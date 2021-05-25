@@ -15,6 +15,7 @@ dependencies {
   implementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.4.0")
   implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.4.0")
   implementation("org.hypertrace.config.service:config-proto-converter")
+  implementation("com.google.re2j:re2j:1.6")
 
   annotationProcessor("org.projectlombok:lombok:1.18.20")
   compileOnly("org.projectlombok:lombok:1.18.20")
