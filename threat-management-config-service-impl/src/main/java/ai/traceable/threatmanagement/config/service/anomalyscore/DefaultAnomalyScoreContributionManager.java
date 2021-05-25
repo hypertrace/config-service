@@ -1,10 +1,10 @@
-package ai.traceable.threatmanagement.config.service.threatscore;
+package ai.traceable.threatmanagement.config.service.anomalyscore;
 
+import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.ANOMALY_SCORE_CONTRIBUTION_CONFIG_RESOURCE_NAME;
 import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.THREAT_MANAGEMENT_CONFIG_NAMESPACE;
-import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.THREAT_SCORE_BOUND_CONFIG_RESOURCE_NAME;
 
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceConfig;
-import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
+import ai.traceable.threatmanagement.config.service.v1.AnomalyScoreContribution;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
 import io.grpc.Status;
@@ -18,41 +18,43 @@ import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-class DefaultThreatScoreManager implements ThreatScoreManager {
+class DefaultAnomalyScoreContributionManager implements AnomalyScoreContributionManager {
   private final ConfigServiceBlockingStub configServiceBlockingStub;
   private final ThreatManagementConfigServiceConfig config;
-  private final ThreatScoreBoundConverter threatScoreBoundConverter;
+  private final AnomalyScoreContributionConverter anomalyScoreContributionConverter;
 
   @Inject
-  DefaultThreatScoreManager(
+  DefaultAnomalyScoreContributionManager(
       ConfigServiceBlockingStub configServiceBlockingStub,
       ThreatManagementConfigServiceConfig config,
-      ThreatScoreBoundConverter threatScoreBoundConverter) {
+      AnomalyScoreContributionConverter anomalyScoreContributionConverter) {
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.config = config;
-    this.threatScoreBoundConverter = threatScoreBoundConverter;
+    this.anomalyScoreContributionConverter = anomalyScoreContributionConverter;
   }
 
   @Override
-  public ThreatScoreBound getThreatScoreBound(RequestContext requestContext) {
-    return getThreatScoreBoundConfig(requestContext).orElseGet(this::getDefaultThreatScoreBound);
+  public AnomalyScoreContribution getAnomalyScoreContribution(RequestContext requestContext) {
+    return getAnomalyScoreContributionConfig(requestContext)
+        .orElseGet(this::getDefaultAnomalyScoreContribution);
   }
 
   @SneakyThrows
-  private Optional<ThreatScoreBound> getThreatScoreBoundConfig(RequestContext requestContext) {
+  private Optional<AnomalyScoreContribution> getAnomalyScoreContributionConfig(
+      RequestContext requestContext) {
     String configId = getConfigId(requestContext);
-    GetConfigRequest getThreatScoreBoundRequest =
+    GetConfigRequest request =
         GetConfigRequest.newBuilder()
             .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
-            .setResourceName(THREAT_SCORE_BOUND_CONFIG_RESOURCE_NAME)
+            .setResourceName(ANOMALY_SCORE_CONTRIBUTION_CONFIG_RESOURCE_NAME)
             .addContexts(configId)
             .build();
 
     try {
       Value config =
-          requestContext.call(
-              () -> configServiceBlockingStub.getConfig(getThreatScoreBoundRequest).getConfig());
-      return threatScoreBoundConverter.convert(config);
+          requestContext.call(() -> configServiceBlockingStub.getConfig(request).getConfig());
+
+      return anomalyScoreContributionConverter.convert(config);
     } catch (Exception e) {
       if (Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
         return Optional.empty();
@@ -62,40 +64,38 @@ class DefaultThreatScoreManager implements ThreatScoreManager {
   }
 
   @Override
-  public ThreatScoreBound upsertThreatScoreBound(
-      RequestContext requestContext, ThreatScoreBound threatScoreBound) {
-    return upsertThreatScoreBoundConfig(requestContext, threatScoreBound)
+  public AnomalyScoreContribution upsertAnomalyScoreContribution(
+      RequestContext requestContext, AnomalyScoreContribution anomalyScoreContribution) {
+    return upsertAnomalyScoreContributionConfig(requestContext, anomalyScoreContribution)
         .orElseThrow(Status.INTERNAL::asRuntimeException);
   }
 
   @SneakyThrows
-  private Optional<ThreatScoreBound> upsertThreatScoreBoundConfig(
-      RequestContext requestContext, ThreatScoreBound threatScoreBound) {
+  private Optional<AnomalyScoreContribution> upsertAnomalyScoreContributionConfig(
+      RequestContext requestContext, AnomalyScoreContribution anomalyScoreContribution) {
     String configId = getConfigId(requestContext);
 
     UpsertConfigRequest request =
         UpsertConfigRequest.newBuilder()
             .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
-            .setResourceName(THREAT_SCORE_BOUND_CONFIG_RESOURCE_NAME)
-            .setConfig(threatScoreBoundConverter.convert(threatScoreBound))
+            .setResourceName(ANOMALY_SCORE_CONTRIBUTION_CONFIG_RESOURCE_NAME)
+            .setConfig(anomalyScoreContributionConverter.convert(anomalyScoreContribution))
             .setContext(configId)
             .build();
 
     UpsertConfigResponse response = configServiceBlockingStub.upsertConfig(request);
-    return threatScoreBoundConverter.convert(response.getConfig());
+    return anomalyScoreContributionConverter.convert(response.getConfig());
   }
 
   @Override
-  public ThreatScoreBound getDefaultThreatScoreBound() {
-    return ThreatScoreBound.newBuilder()
-        .setLowScoreUpperBound(this.config.getDefaultThreatUpperBoundLowScore())
-        .setMediumScoreUpperBound(this.config.getDefaultThreatUpperBoundMediumScore())
-        .setHighScoreUpperBound(this.config.getDefaultThreatUpperBoundHighScore())
+  public AnomalyScoreContribution getDefaultAnomalyScoreContribution() {
+    return AnomalyScoreContribution.newBuilder()
+        .setAnomalyScore(this.config.getDefaultAnomalyContributionScore())
         .build();
   }
 
   private String getConfigId(RequestContext requestContext) {
-    // Using tenant id as threat score bound config id, since it's tenant scoped
+    // Using tenant id as anomaly score contribution config id, since it's tenant scoped
     return requestContext
         .getTenantId()
         .orElseThrow(

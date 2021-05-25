@@ -1,5 +1,7 @@
 package ai.traceable.threatmanagement.config.service;
 
+import ai.traceable.threatmanagement.config.service.v1.AnomalyScoreContribution;
+import ai.traceable.threatmanagement.config.service.v1.GetAnomalyScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventTypeContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetThreatAutoBlockingConfigRequest;
@@ -9,6 +11,7 @@ import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribu
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution.SecurityEventTypeContributionKind;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionType;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
+import ai.traceable.threatmanagement.config.service.v1.UpdateAnomalyScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventTypeContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest;
@@ -37,6 +40,17 @@ class ThreatManagementConfigRequestValidator {
       RequestContext requestContext, UpdateSecurityEventScoreContributionRequest request) {
     this.validateRequestContext(requestContext);
     this.validateSecurityEventScoreContribution(request.getSecurityEventScoreContribution());
+  }
+
+  public void validateOrThrow(
+      RequestContext requestContext, GetAnomalyScoreContributionRequest request) {
+    this.validateRequestContext(requestContext);
+  }
+
+  public void validateOrThrow(
+      RequestContext requestContext, UpdateAnomalyScoreContributionRequest request) {
+    this.validateRequestContext(requestContext);
+    this.validateAnomalyScoreContribution(request.getAnomalyScoreContribution());
   }
 
   public void validateOrThrow(
@@ -75,10 +89,16 @@ class ThreatManagementConfigRequestValidator {
   }
 
   private void validateThreatScoreBound(ThreatScoreBound threatScoreBound) {
+    int lowScoreUpperBound = threatScoreBound.getLowScoreUpperBound();
     int mediumScoreUpperBound = threatScoreBound.getMediumScoreUpperBound();
     int highScoreUpperBound = threatScoreBound.getHighScoreUpperBound();
-    if (mediumScoreUpperBound < 0 || highScoreUpperBound < 0) {
+    if (lowScoreUpperBound < 0 || mediumScoreUpperBound < 0 || highScoreUpperBound < 0) {
       throw new IllegalArgumentException("threat score bounds should be non negative");
+    }
+
+    if (lowScoreUpperBound > mediumScoreUpperBound) {
+      throw new IllegalArgumentException(
+          "low score upper bound should be less than medium score upper bound");
     }
 
     if (mediumScoreUpperBound > highScoreUpperBound) {
@@ -89,13 +109,21 @@ class ThreatManagementConfigRequestValidator {
 
   private void validateSecurityEventScoreContribution(
       SecurityEventScoreContribution securityEventScoreContribution) {
-    int anomalyScore = securityEventScoreContribution.getAnomalyScore();
+    int lowScore = securityEventScoreContribution.getLowScore();
     int mediumScore = securityEventScoreContribution.getMediumScore();
     int highScore = securityEventScoreContribution.getHighScore();
 
-    if (anomalyScore < 0 || mediumScore < 0 || highScore < 0) {
+    if (lowScore < 0 || mediumScore < 0 || highScore < 0) {
       throw new IllegalArgumentException(
           "security event score contributions should be non negative");
+    }
+  }
+
+  private void validateAnomalyScoreContribution(AnomalyScoreContribution anomalyScoreContribution) {
+    int anomalyScore = anomalyScoreContribution.getAnomalyScore();
+
+    if (anomalyScore < 0) {
+      throw new IllegalArgumentException("anomaly score contributions should be non negative");
     }
   }
 

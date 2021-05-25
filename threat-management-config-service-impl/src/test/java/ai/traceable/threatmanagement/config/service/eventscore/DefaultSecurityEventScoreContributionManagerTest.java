@@ -27,13 +27,13 @@ class DefaultSecurityEventScoreContributionManagerTest {
   private static final String TENANT_ID = "tenant-id";
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
 
-  private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_ANOMALY_SCORE = 1;
+  private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_LOW_SCORE = 1;
   private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_MEDIUM_SCORE = 2;
   private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_HIGH_SCORE = 3;
 
   private static final SecurityEventScoreContribution SECURITY_EVENT_SCORE_CONTRIBUTION_1 =
       SecurityEventScoreContribution.newBuilder()
-          .setAnomalyScore(10)
+          .setLowScore(10)
           .setMediumScore(20)
           .setHighScore(30)
           .build();
@@ -42,14 +42,14 @@ class DefaultSecurityEventScoreContributionManagerTest {
       Value.newBuilder()
           .setStructValue(
               Struct.newBuilder()
-                  .putFields("anomalyScore", Value.newBuilder().setNumberValue(10).build())
+                  .putFields("lowScore", Value.newBuilder().setNumberValue(10).build())
                   .putFields("mediumScore", Value.newBuilder().setNumberValue(20).build())
                   .putFields("highScore", Value.newBuilder().setNumberValue(30).build()))
           .build();
 
   private static final SecurityEventScoreContribution SECURITY_EVENT_SCORE_CONTRIBUTION_2 =
       SecurityEventScoreContribution.newBuilder()
-          .setAnomalyScore(100)
+          .setLowScore(100)
           .setMediumScore(200)
           .setHighScore(300)
           .build();
@@ -58,7 +58,7 @@ class DefaultSecurityEventScoreContributionManagerTest {
       Value.newBuilder()
           .setStructValue(
               Struct.newBuilder()
-                  .putFields("anomalyScore", Value.newBuilder().setNumberValue(100).build())
+                  .putFields("lowScore", Value.newBuilder().setNumberValue(100).build())
                   .putFields("mediumScore", Value.newBuilder().setNumberValue(200).build())
                   .putFields("highScore", Value.newBuilder().setNumberValue(300).build()))
           .build();
@@ -87,8 +87,8 @@ class DefaultSecurityEventScoreContributionManagerTest {
             .build();
 
     when(configServiceStub.getConfig(request)).thenReturn(GetConfigResponse.newBuilder().build());
-    when(this.config.getDefaultSecurityEventContributionAnomalyScore())
-        .thenReturn(DEFAULT_SECURITY_EVENT_CONTRIBUTION_ANOMALY_SCORE);
+    when(this.config.getDefaultSecurityEventContributionLowScore())
+        .thenReturn(DEFAULT_SECURITY_EVENT_CONTRIBUTION_LOW_SCORE);
     when(this.config.getDefaultSecurityEventContributionMediumScore())
         .thenReturn(DEFAULT_SECURITY_EVENT_CONTRIBUTION_MEDIUM_SCORE);
     when(this.config.getDefaultSecurityEventContributionHighScore())
@@ -96,7 +96,7 @@ class DefaultSecurityEventScoreContributionManagerTest {
 
     assertEquals(
         SecurityEventScoreContribution.newBuilder()
-            .setAnomalyScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_ANOMALY_SCORE)
+            .setLowScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_LOW_SCORE)
             .setMediumScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_MEDIUM_SCORE)
             .setHighScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_HIGH_SCORE)
             .build(),

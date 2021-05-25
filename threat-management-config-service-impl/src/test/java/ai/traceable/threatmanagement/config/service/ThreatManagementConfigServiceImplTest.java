@@ -9,10 +9,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.threatmanagement.config.service.anomalyscore.AnomalyScoreContributionManager;
 import ai.traceable.threatmanagement.config.service.eventscore.SecurityEventScoreContributionManager;
 import ai.traceable.threatmanagement.config.service.eventtype.SecurityEventTypeContributionManager;
 import ai.traceable.threatmanagement.config.service.threatautoblocking.ThreatAutoBlockingManager;
 import ai.traceable.threatmanagement.config.service.threatscore.ThreatScoreManager;
+import ai.traceable.threatmanagement.config.service.v1.AnomalyScoreContribution;
+import ai.traceable.threatmanagement.config.service.v1.GetAnomalyScoreContributionRequest;
+import ai.traceable.threatmanagement.config.service.v1.GetAnomalyScoreContributionResponse;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventScoreContributionResponse;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventTypeContributionRequest;
@@ -28,6 +32,8 @@ import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionC
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionConfig.ExpirationDetails;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionType;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
+import ai.traceable.threatmanagement.config.service.v1.UpdateAnomalyScoreContributionRequest;
+import ai.traceable.threatmanagement.config.service.v1.UpdateAnomalyScoreContributionResponse;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventScoreContributionResponse;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventTypeContributionRequest;
@@ -52,9 +58,11 @@ class ThreatManagementConfigServiceImplTest {
   private static final int DEFAULT_UPPER_BOUND_MEDIUM_THREAT_SCORE = 10;
   private static final int DEFAULT_UPPER_BOUND_HIGH_THREAT_SCORE = 20;
 
-  private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_ANOMALY_SCORE = 1;
+  private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_LOW_SCORE = 1;
   private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_MEDIUM_SCORE = 2;
   private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_HIGH_SCORE = 3;
+
+  private static final int DEFAULT_ANOMALY_CONTRIBUTION_SCORE = 1;
 
   private static final ThreatScoreBound DEFAULT_THREAT_SCORE_BOUND =
       ThreatScoreBound.newBuilder()
@@ -74,22 +82,31 @@ class ThreatManagementConfigServiceImplTest {
 
   private static final SecurityEventScoreContribution DEFAULT_SECURITY_EVENT_SCORE_CONTRIBUTION =
       SecurityEventScoreContribution.newBuilder()
-          .setAnomalyScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_ANOMALY_SCORE)
+          .setLowScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_LOW_SCORE)
           .setMediumScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_MEDIUM_SCORE)
           .setHighScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_HIGH_SCORE)
           .build();
   private static final SecurityEventScoreContribution SECURITY_EVENT_SCORE_CONTRIBUTION_1 =
       SecurityEventScoreContribution.newBuilder()
-          .setAnomalyScore(10)
+          .setLowScore(10)
           .setMediumScore(20)
           .setHighScore(30)
           .build();
   private static final SecurityEventScoreContribution SECURITY_EVENT_SCORE_CONTRIBUTION_2 =
       SecurityEventScoreContribution.newBuilder()
-          .setAnomalyScore(100)
+          .setLowScore(100)
           .setMediumScore(200)
           .setHighScore(300)
           .build();
+
+  private static final AnomalyScoreContribution DEFAULT_ANOMALY_SCORE_CONTRIBUTION =
+      AnomalyScoreContribution.newBuilder()
+          .setAnomalyScore(DEFAULT_ANOMALY_CONTRIBUTION_SCORE)
+          .build();
+  private static final AnomalyScoreContribution ANOMALY_SCORE_CONTRIBUTION_1 =
+      AnomalyScoreContribution.newBuilder().setAnomalyScore(10).build();
+  private static final AnomalyScoreContribution ANOMALY_SCORE_CONTRIBUTION_2 =
+      AnomalyScoreContribution.newBuilder().setAnomalyScore(100).build();
 
   private static final SecurityEventTypeContribution SECURITY_EVENT_TYPE_CONTRIBUTION_1 =
       SecurityEventTypeContribution.newBuilder()
@@ -117,6 +134,7 @@ class ThreatManagementConfigServiceImplTest {
   @Mock private ThreatManagementConfigRequestValidator requestValidator;
   @Mock private ThreatScoreManager threatScoreManager;
   @Mock private SecurityEventScoreContributionManager securityEventScoreContributionManager;
+  @Mock private AnomalyScoreContributionManager anomalyScoreContributionManager;
   @Mock private SecurityEventTypeContributionManager securityEventTypeContributionManager;
   @Mock private ThreatAutoBlockingManager threatAutoBlockingManager;
 
@@ -148,6 +166,10 @@ class ThreatManagementConfigServiceImplTest {
     when(this.securityEventScoreContributionManager.getDefaultSecurityEventScoreContribution())
         .thenReturn(DEFAULT_SECURITY_EVENT_SCORE_CONTRIBUTION);
 
+    this.anomalyScoreContributionManager = mock(AnomalyScoreContributionManager.class);
+    when(this.anomalyScoreContributionManager.getDefaultAnomalyScoreContribution())
+        .thenReturn(DEFAULT_ANOMALY_SCORE_CONTRIBUTION);
+
     this.securityEventTypeContributionManager = mock(SecurityEventTypeContributionManager.class);
 
     this.threatAutoBlockingManager = mock(ThreatAutoBlockingManager.class);
@@ -157,6 +179,7 @@ class ThreatManagementConfigServiceImplTest {
             requestValidator,
             threatScoreManager,
             securityEventScoreContributionManager,
+            anomalyScoreContributionManager,
             securityEventTypeContributionManager,
             threatAutoBlockingManager);
   }
@@ -302,6 +325,81 @@ class ThreatManagementConfigServiceImplTest {
               threatManagementConfigService.updateSecurityEventScoreContribution(
                   UpdateSecurityEventScoreContributionRequest.newBuilder()
                       .setSecurityEventScoreContribution(SECURITY_EVENT_SCORE_CONTRIBUTION_1)
+                      .build(),
+                  responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1))
+          .onError(argThat(err -> Status.fromThrowable(err).getCode() == Code.UNKNOWN));
+    }
+  }
+
+  @Nested
+  class AnomalyScoreContributions {
+    @Test
+    void getAnomalyScoreContribution() {
+      when(anomalyScoreContributionManager.getAnomalyScoreContribution(any(RequestContext.class)))
+          .thenReturn(ANOMALY_SCORE_CONTRIBUTION_1);
+
+      StreamObserver<GetAnomalyScoreContributionResponse> responseObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () ->
+              threatManagementConfigService.getAnomalyScoreContribution(
+                  GetAnomalyScoreContributionRequest.getDefaultInstance(), responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1))
+          .onNext(
+              GetAnomalyScoreContributionResponse.newBuilder()
+                  .setAnomalyScoreContribution(ANOMALY_SCORE_CONTRIBUTION_1)
+                  .setDefaultAnomalyScoreContribution(DEFAULT_ANOMALY_SCORE_CONTRIBUTION)
+                  .build());
+      verify(responseObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    void updateAnomalyScoreContribution() {
+      when(anomalyScoreContributionManager.upsertAnomalyScoreContribution(
+              any(RequestContext.class), eq(ANOMALY_SCORE_CONTRIBUTION_1)))
+          .thenReturn(ANOMALY_SCORE_CONTRIBUTION_2);
+
+      StreamObserver<UpdateAnomalyScoreContributionResponse> responseObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () ->
+              threatManagementConfigService.updateAnomalyScoreContribution(
+                  UpdateAnomalyScoreContributionRequest.newBuilder()
+                      .setAnomalyScoreContribution(ANOMALY_SCORE_CONTRIBUTION_1)
+                      .build(),
+                  responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1))
+          .onNext(
+              UpdateAnomalyScoreContributionResponse.newBuilder()
+                  .setAnomalyScoreContribution(ANOMALY_SCORE_CONTRIBUTION_2)
+                  .setDefaultAnomalyScoreContribution(DEFAULT_ANOMALY_SCORE_CONTRIBUTION)
+                  .build());
+      verify(responseObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    void skipUpdateAnomalyScoreContribution() {
+      when(anomalyScoreContributionManager.upsertAnomalyScoreContribution(
+              any(RequestContext.class), eq(ANOMALY_SCORE_CONTRIBUTION_1)))
+          .thenThrow(IllegalArgumentException.class);
+
+      StreamObserver<UpdateAnomalyScoreContributionResponse> responseObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () ->
+              threatManagementConfigService.updateAnomalyScoreContribution(
+                  UpdateAnomalyScoreContributionRequest.newBuilder()
+                      .setAnomalyScoreContribution(ANOMALY_SCORE_CONTRIBUTION_1)
                       .build(),
                   responseObserver);
       GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);

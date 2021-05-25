@@ -38,13 +38,7 @@ class DefaultSecurityEventScoreContributionManager
   public SecurityEventScoreContribution getSecurityEventScoreContribution(
       RequestContext requestContext) {
     return getSecurityEventScoreContributionConfig(requestContext)
-        .orElseGet(
-            () ->
-                SecurityEventScoreContribution.newBuilder()
-                    .setAnomalyScore(this.config.getDefaultSecurityEventContributionAnomalyScore())
-                    .setMediumScore(this.config.getDefaultSecurityEventContributionMediumScore())
-                    .setHighScore(this.config.getDefaultSecurityEventContributionHighScore())
-                    .build());
+        .orElseGet(this::getDefaultSecurityEventScoreContribution);
   }
 
   @SneakyThrows
@@ -102,7 +96,7 @@ class DefaultSecurityEventScoreContributionManager
   @Override
   public SecurityEventScoreContribution getDefaultSecurityEventScoreContribution() {
     return SecurityEventScoreContribution.newBuilder()
-        .setAnomalyScore(this.config.getDefaultSecurityEventContributionAnomalyScore())
+        .setLowScore(this.config.getDefaultSecurityEventContributionLowScore())
         .setMediumScore(this.config.getDefaultSecurityEventContributionMediumScore())
         .setHighScore(this.config.getDefaultSecurityEventContributionHighScore())
         .build();

@@ -2,11 +2,13 @@ package ai.traceable.threatmanagement.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import ai.traceable.threatmanagement.config.service.v1.AnomalyScoreContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventScoreContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution.SecurityEventTypeContributionKind;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionType;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
+import ai.traceable.threatmanagement.config.service.v1.UpdateAnomalyScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventTypeContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest;
@@ -33,6 +35,15 @@ class ThreatManagementConfigRequestValidatorTest {
             this.requestValidator.validateOrThrow(
                 REQUEST_CONTEXT,
                 UpdateThreatScoreBoundRequest.newBuilder()
+                    .setThreatScoreBound(ThreatScoreBound.newBuilder().setLowScoreUpperBound(-1))
+                    .build()));
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            this.requestValidator.validateOrThrow(
+                REQUEST_CONTEXT,
+                UpdateThreatScoreBoundRequest.newBuilder()
                     .setThreatScoreBound(ThreatScoreBound.newBuilder().setMediumScoreUpperBound(-1))
                     .build()));
 
@@ -53,6 +64,7 @@ class ThreatManagementConfigRequestValidatorTest {
                 UpdateThreatScoreBoundRequest.newBuilder()
                     .setThreatScoreBound(
                         ThreatScoreBound.newBuilder()
+                            .setLowScoreUpperBound(-1)
                             .setMediumScoreUpperBound(-1)
                             .setHighScoreUpperBound(-1))
                     .build()));
@@ -68,6 +80,7 @@ class ThreatManagementConfigRequestValidatorTest {
                 UpdateThreatScoreBoundRequest.newBuilder()
                     .setThreatScoreBound(
                         ThreatScoreBound.newBuilder()
+                            .setLowScoreUpperBound(200)
                             .setMediumScoreUpperBound(100)
                             .setHighScoreUpperBound(50)
                             .build())
@@ -84,9 +97,22 @@ class ThreatManagementConfigRequestValidatorTest {
                 UpdateSecurityEventScoreContributionRequest.newBuilder()
                     .setSecurityEventScoreContribution(
                         SecurityEventScoreContribution.newBuilder()
-                            .setAnomalyScore(-1)
+                            .setLowScore(-1)
                             .setMediumScore(-1)
                             .setHighScore(-1))
+                    .build()));
+  }
+
+  @Test
+  void validatePositiveAnomalyScoreContributions() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            this.requestValidator.validateOrThrow(
+                REQUEST_CONTEXT,
+                UpdateAnomalyScoreContributionRequest.newBuilder()
+                    .setAnomalyScoreContribution(
+                        AnomalyScoreContribution.newBuilder().setAnomalyScore(-1))
                     .build()));
   }
 

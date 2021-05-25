@@ -1,5 +1,6 @@
 package ai.traceable.threatmanagement.config.service;
 
+import ai.traceable.threatmanagement.config.service.anomalyscore.AnomalyScoreContributionModule;
 import ai.traceable.threatmanagement.config.service.eventscore.SecurityEventScoreContributionModule;
 import ai.traceable.threatmanagement.config.service.eventtype.SecurityEventTypeContributionModule;
 import ai.traceable.threatmanagement.config.service.threatautoblocking.ThreatAutoBlockingModule;
@@ -30,6 +31,7 @@ public class ThreatManagementConfigServiceModule extends AbstractModule {
 
     install(new ThreatScoreModule());
     install(new SecurityEventScoreContributionModule());
+    install(new AnomalyScoreContributionModule());
     install(new SecurityEventTypeContributionModule());
     install(new ThreatAutoBlockingModule());
   }

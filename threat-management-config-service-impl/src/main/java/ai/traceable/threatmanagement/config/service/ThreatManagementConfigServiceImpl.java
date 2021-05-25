@@ -1,9 +1,13 @@
 package ai.traceable.threatmanagement.config.service;
 
+import ai.traceable.threatmanagement.config.service.anomalyscore.AnomalyScoreContributionManager;
 import ai.traceable.threatmanagement.config.service.eventscore.SecurityEventScoreContributionManager;
 import ai.traceable.threatmanagement.config.service.eventtype.SecurityEventTypeContributionManager;
 import ai.traceable.threatmanagement.config.service.threatautoblocking.ThreatAutoBlockingManager;
 import ai.traceable.threatmanagement.config.service.threatscore.ThreatScoreManager;
+import ai.traceable.threatmanagement.config.service.v1.AnomalyScoreContribution;
+import ai.traceable.threatmanagement.config.service.v1.GetAnomalyScoreContributionRequest;
+import ai.traceable.threatmanagement.config.service.v1.GetAnomalyScoreContributionResponse;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventScoreContributionResponse;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventTypeContributionRequest;
@@ -17,6 +21,8 @@ import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribu
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatManagementConfigServiceGrpc.ThreatManagementConfigServiceImplBase;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
+import ai.traceable.threatmanagement.config.service.v1.UpdateAnomalyScoreContributionRequest;
+import ai.traceable.threatmanagement.config.service.v1.UpdateAnomalyScoreContributionResponse;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventScoreContributionResponse;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventTypeContributionRequest;
@@ -35,6 +41,7 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
   private final ThreatManagementConfigRequestValidator requestValidator;
   private final ThreatScoreManager threatScoreManager;
   private final SecurityEventScoreContributionManager securityEventScoreContributionManager;
+  private final AnomalyScoreContributionManager anomalyScoreContributionManager;
   private final SecurityEventTypeContributionManager securityEventTypeContributionManager;
   private final ThreatAutoBlockingManager threatAutoBlockingManager;
 
@@ -43,11 +50,13 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
       ThreatManagementConfigRequestValidator requestValidator,
       ThreatScoreManager threatScoreManager,
       SecurityEventScoreContributionManager securityEventScoreContributionManager,
+      AnomalyScoreContributionManager anomalyScoreContributionManager,
       SecurityEventTypeContributionManager securityEventTypeContributionManager,
       ThreatAutoBlockingManager threatAutoBlockingManager) {
     this.requestValidator = requestValidator;
     this.threatScoreManager = threatScoreManager;
     this.securityEventScoreContributionManager = securityEventScoreContributionManager;
+    this.anomalyScoreContributionManager = anomalyScoreContributionManager;
     this.securityEventTypeContributionManager = securityEventTypeContributionManager;
     this.threatAutoBlockingManager = threatAutoBlockingManager;
   }
@@ -146,6 +155,57 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Unable to update security event score contribution for request {}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getAnomalyScoreContribution(
+      GetAnomalyScoreContributionRequest request,
+      StreamObserver<GetAnomalyScoreContributionResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      requestValidator.validateOrThrow(requestContext, request);
+
+      AnomalyScoreContribution anomalyScoreContribution =
+          anomalyScoreContributionManager.getAnomalyScoreContribution(requestContext);
+      AnomalyScoreContribution defaultAnomalyScoreContribution =
+          anomalyScoreContributionManager.getDefaultAnomalyScoreContribution();
+
+      responseObserver.onNext(
+          GetAnomalyScoreContributionResponse.newBuilder()
+              .setAnomalyScoreContribution(anomalyScoreContribution)
+              .setDefaultAnomalyScoreContribution(defaultAnomalyScoreContribution)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to get anomaly contribution for request: {}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void updateAnomalyScoreContribution(
+      UpdateAnomalyScoreContributionRequest request,
+      StreamObserver<UpdateAnomalyScoreContributionResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      requestValidator.validateOrThrow(requestContext, request);
+
+      AnomalyScoreContribution anomalyScoreContribution =
+          anomalyScoreContributionManager.upsertAnomalyScoreContribution(
+              requestContext, request.getAnomalyScoreContribution());
+      AnomalyScoreContribution defaultAnomalyScoreContribution =
+          anomalyScoreContributionManager.getDefaultAnomalyScoreContribution();
+
+      responseObserver.onNext(
+          UpdateAnomalyScoreContributionResponse.newBuilder()
+              .setAnomalyScoreContribution(anomalyScoreContribution)
+              .setDefaultAnomalyScoreContribution(defaultAnomalyScoreContribution)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to update anomaly score contribution for request {}", request, e);
       responseObserver.onError(e);
     }
   }

@@ -24,5 +24,5 @@ message UpdateSecurityEventScoreContributionResponse {
 message SecurityEventScoreContribution {
   int32 medium_score = 1;
   int32 high_score = 2;
-  int32 anomaly_score = 3;
+  int32 low_score = 3;
 }

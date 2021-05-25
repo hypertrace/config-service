@@ -8,7 +8,6 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
@@ -28,11 +27,13 @@ class DefaultThreatScoreManagerTest {
   private static final String TENANT_ID = "tenant-id";
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
 
-  private static final int DEFAULT_UPPER_BOUND_MEDIUM_THREAT_SCORE = 10;
-  private static final int DEFAULT_UPPER_BOUND_HIGH_THREAT_SCORE = 20;
+  private static final int DEFAULT_UPPER_BOUND_LOW_THREAT_SCORE = 10;
+  private static final int DEFAULT_UPPER_BOUND_MEDIUM_THREAT_SCORE = 20;
+  private static final int DEFAULT_UPPER_BOUND_HIGH_THREAT_SCORE = 50;
 
   private static final ThreatScoreBound THREAT_SCORE_BOUND_1 =
       ThreatScoreBound.newBuilder()
+          .setLowScoreUpperBound(30)
           .setMediumScoreUpperBound(50)
           .setHighScoreUpperBound(100)
           .build();
@@ -41,12 +42,14 @@ class DefaultThreatScoreManagerTest {
       Value.newBuilder()
           .setStructValue(
               Struct.newBuilder()
+                  .putFields("lowScoreUpperBound", Value.newBuilder().setNumberValue(30).build())
                   .putFields("mediumScoreUpperBound", Value.newBuilder().setNumberValue(50).build())
                   .putFields("highScoreUpperBound", Value.newBuilder().setNumberValue(100).build()))
           .build();
 
   private static final ThreatScoreBound THREAT_SCORE_BOUND_2 =
       ThreatScoreBound.newBuilder()
+          .setLowScoreUpperBound(100)
           .setMediumScoreUpperBound(200)
           .setHighScoreUpperBound(300)
           .build();
@@ -55,6 +58,7 @@ class DefaultThreatScoreManagerTest {
       Value.newBuilder()
           .setStructValue(
               Struct.newBuilder()
+                  .putFields("lowScoreUpperBound", Value.newBuilder().setNumberValue(100).build())
                   .putFields(
                       "mediumScoreUpperBound", Value.newBuilder().setNumberValue(200).build())
                   .putFields("highScoreUpperBound", Value.newBuilder().setNumberValue(300).build()))
@@ -74,7 +78,7 @@ class DefaultThreatScoreManagerTest {
   }
 
   @Test
-  void shouldReturnDefaultThreatScoreBounds() throws InvalidProtocolBufferException {
+  void shouldReturnDefaultThreatScoreBounds() {
     GetConfigRequest request =
         GetConfigRequest.newBuilder()
             .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
@@ -83,6 +87,8 @@ class DefaultThreatScoreManagerTest {
             .build();
 
     when(configServiceStub.getConfig(request)).thenReturn(GetConfigResponse.newBuilder().build());
+    when(this.config.getDefaultThreatUpperBoundLowScore())
+        .thenReturn(DEFAULT_UPPER_BOUND_LOW_THREAT_SCORE);
     when(this.config.getDefaultThreatUpperBoundMediumScore())
         .thenReturn(DEFAULT_UPPER_BOUND_MEDIUM_THREAT_SCORE);
     when(this.config.getDefaultThreatUpperBoundHighScore())
@@ -90,6 +96,7 @@ class DefaultThreatScoreManagerTest {
 
     assertEquals(
         ThreatScoreBound.newBuilder()
+            .setLowScoreUpperBound(DEFAULT_UPPER_BOUND_LOW_THREAT_SCORE)
             .setMediumScoreUpperBound(DEFAULT_UPPER_BOUND_MEDIUM_THREAT_SCORE)
             .setHighScoreUpperBound(DEFAULT_UPPER_BOUND_HIGH_THREAT_SCORE)
             .build(),
@@ -97,7 +104,7 @@ class DefaultThreatScoreManagerTest {
   }
 
   @Test
-  void shouldReturnThreatScoreBoundConfig() throws InvalidProtocolBufferException {
+  void shouldReturnThreatScoreBoundConfig() {
     GetConfigRequest request =
         GetConfigRequest.newBuilder()
             .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
@@ -111,7 +118,7 @@ class DefaultThreatScoreManagerTest {
   }
 
   @Test
-  void shouldUpsertExistingThreatScoreBoundConfig() throws InvalidProtocolBufferException {
+  void shouldUpsertExistingThreatScoreBoundConfig() {
     UpsertConfigRequest request =
         UpsertConfigRequest.newBuilder()
             .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)

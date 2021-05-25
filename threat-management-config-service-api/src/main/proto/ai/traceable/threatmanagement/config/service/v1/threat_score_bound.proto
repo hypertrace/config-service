@@ -24,4 +24,5 @@ message UpdateThreatScoreBoundResponse {
 message ThreatScoreBound {
   int32 medium_score_upper_bound = 1;
   int32 high_score_upper_bound = 2;
+  int32 low_score_upper_bound = 3;
 }
