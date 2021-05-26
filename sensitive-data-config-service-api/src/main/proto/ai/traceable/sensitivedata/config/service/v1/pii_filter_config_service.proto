@@ -11,7 +11,9 @@ service PiiFilterConfigService {
   rpc GetPiiFilterConfig(GetPiiFilterConfigRequest) returns (GetPiiFilterConfigResponse) {}
 }
 
-message GetPiiFilterConfigRequest {}
+message GetPiiFilterConfigRequest {
+  bool include_conditional_rules = 1;
+}
 
 message GetPiiFilterConfigResponse {
   PiiFilterConfig pii_filter_config = 1;

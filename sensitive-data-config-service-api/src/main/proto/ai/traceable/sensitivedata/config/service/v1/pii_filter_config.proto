@@ -29,10 +29,21 @@ message PiiElement {
   string session_separator = 6;
   bool fqn = 7;
   string rule_id = 8;
+  repeated Condition conditions = 9;
 }
 
 message ComplexData {
   string key = 1;
   string type = 2;
   string type_key = 3;
+}
+
+message Condition {
+  oneof condition {
+    AttributeRegexMatch attribute_regex_match = 1;
+  }
+  message AttributeRegexMatch {
+    string key = 1;
+    string regex = 2;
+  }
 }

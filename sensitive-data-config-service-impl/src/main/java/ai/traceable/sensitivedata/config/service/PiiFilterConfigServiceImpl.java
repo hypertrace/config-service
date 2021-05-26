@@ -30,12 +30,14 @@ public class PiiFilterConfigServiceImpl
     extends PiiFilterConfigServiceGrpc.PiiFilterConfigServiceImplBase {
 
   static final String DEFAULT_PII_FILTER_CONFIG = "default.pii.filter.config";
+  static final String DEFAULT_REDACTION_RULES = "default.redaction.rules";
   static final String SENSITIVE_DATA_CONFIG_SERVICE_CONFIG = "sensitive.data.config.service";
   static final String INSIGHTS_SERVICE_CONFIG = "insights.service.config";
 
   private final ConfigServiceCoordinator configServiceCoordinator;
   private final InsightsServiceCoordinator insightsServiceCoordinator;
   private final PiiFilterConfig defaultPiiFilterConfig;
+  private final List<RedactionRule> defaultConditionalRedactionRules;
 
   public PiiFilterConfigServiceImpl(Channel configChannel, Config config) {
     this(
@@ -57,6 +59,15 @@ public class PiiFilterConfigServiceImpl
     this.defaultPiiFilterConfig =
         SensitiveDataConfigUtils.toPiiFilterConfig(
             sensitiveDataConfigServiceConfig.getConfig(DEFAULT_PII_FILTER_CONFIG));
+    if (sensitiveDataConfigServiceConfig
+        .getConfig(DEFAULT_REDACTION_RULES)
+        .hasPath(SensitiveDataConfigUtils.REDACTION_RULES_CONFIG)) {
+      this.defaultConditionalRedactionRules =
+          SensitiveDataConfigUtils.toRedactionRules(
+              sensitiveDataConfigServiceConfig.getConfig(DEFAULT_REDACTION_RULES));
+    } else {
+      this.defaultConditionalRedactionRules = null;
+    }
   }
 
   @Override
@@ -71,14 +82,19 @@ public class PiiFilterConfigServiceImpl
       Map<String, ComplexData> complexDataMap = new LinkedHashMap<>();
 
       // get appropriate parts of pii filter config from redaction rules
-      List<RedactionRule> redactionRules =
-          configServiceCoordinator.getAllRedactionRules(requestContext);
+      List<RedactionRule> redactionRules = new ArrayList<>();
+      if (defaultConditionalRedactionRules != null) {
+        redactionRules.addAll(defaultConditionalRedactionRules);
+      }
+      redactionRules.addAll(configServiceCoordinator.getAllRedactionRules(requestContext));
+
       // pass the reversed list to get redaction rules from latest to earliest
       mergeConfigFromRedactionRules(
           Lists.reverse(redactionRules),
           keyRegexToPiiElementMap,
           valueRegexToPiiElementMap,
-          complexDataMap);
+          complexDataMap,
+          request.getIncludeConditionalRules());
 
       // get pii elements from sensitive headers and add them to key regexs
       List<Parameter> sensitiveHeaderParameters =
@@ -157,8 +173,12 @@ public class PiiFilterConfigServiceImpl
       List<RedactionRule> redactionRules,
       Map<String, PiiElement> keyRegexToPiiElementMap,
       Map<String, PiiElement> valueRegexToPiiElementMap,
-      Map<String, ComplexData> complexDataMap) {
+      Map<String, ComplexData> complexDataMap,
+      boolean includeConditionalRedactionRules) {
     for (RedactionRule redactionRule : redactionRules) {
+      if (!includeConditionalRedactionRules && !redactionRule.getConditionsList().isEmpty()) {
+        continue;
+      }
       PiiElement piiElement =
           PiiElement.newBuilder()
               .setRegex(redactionRule.getRegex())
@@ -166,6 +186,7 @@ public class PiiFilterConfigServiceImpl
               .setRedactionStrategy(redactionRule.getRedactionStrategy())
               .setSessionIdentifier(redactionRule.getSessionIdentifier())
               .setRuleId(redactionRule.getId())
+              .addAllConditions(redactionRule.getConditionsList())
               .build();
       switch (redactionRule.getMatchType()) {
         case MATCH_TYPE_HEADER:

@@ -3,6 +3,7 @@ package ai.traceable.sensitivedata.config.service;
 import static ai.traceable.sensitivedata.config.service.ConfigServiceCoordinatorImpl.DEFAULT_AUTOMATIC_SECRET_REDACTION_ENABLED;
 import static ai.traceable.sensitivedata.config.service.ConfigServiceCoordinatorImpl.DEFAULT_PARAM_TYPE_REDACTION_STRATEGY;
 import static ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl.DEFAULT_PII_FILTER_CONFIG;
+import static ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl.DEFAULT_REDACTION_RULES;
 import static ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl.INSIGHTS_SERVICE_CONFIG;
 import static ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl.SENSITIVE_DATA_CONFIG_SERVICE_CONFIG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -46,6 +47,8 @@ class PiiFilterConfigServiceImplTest {
                     DEFAULT_AUTOMATIC_SECRET_REDACTION_ENABLED,
                     true,
                     DEFAULT_PII_FILTER_CONFIG,
+                    Map.of(),
+                    DEFAULT_REDACTION_RULES,
                     Map.of())));
     Channel channel = mockGenericConfigService.channel();
     mockGenericConfigService
