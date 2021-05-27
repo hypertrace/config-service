@@ -159,6 +159,9 @@ class ConfigServiceGrpcImplTest {
   @Test
   void deleteConfig() throws IOException {
     ConfigStore configStore = mock(ConfigStore.class);
+    ContextSpecificConfig deletedConfig =
+        ContextSpecificConfig.newBuilder().setConfig(config2).setContext(CONTEXT1).build();
+    when(configStore.getConfig(eq(configResourceWithContext))).thenReturn(deletedConfig);
     ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
     StreamObserver<DeleteConfigResponse> responseObserver = mock(StreamObserver.class);
 
@@ -168,7 +171,9 @@ class ConfigServiceGrpcImplTest {
 
     verify(configStore, times(1))
         .writeConfig(eq(configResourceWithContext), eq(""), eq(emptyValue()));
-    verify(responseObserver, times(1)).onNext(eq(DeleteConfigResponse.getDefaultInstance()));
+    verify(responseObserver, times(1))
+        .onNext(
+            eq(DeleteConfigResponse.newBuilder().setContextSpecificConfig(deletedConfig).build()));
     verify(responseObserver, times(1)).onCompleted();
     verify(responseObserver, never()).onError(any(Throwable.class));
   }

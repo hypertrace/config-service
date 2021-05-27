@@ -162,14 +162,20 @@ public class ConfigServiceIntegrationTest {
     upsertConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, Optional.of(CONTEXT_1), config2);
 
     // delete config with context
-    deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, CONTEXT_1);
+    ContextSpecificConfig deletedConfig =
+        deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, CONTEXT_1)
+            .getContextSpecificConfig();
+    assertEquals(config2, deletedConfig.getConfig());
 
     // get config with context should return default config
     Value config = getConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, CONTEXT_1).getConfig();
     assertEquals(config1, config);
 
     // delete config with default context also
-    deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, DEFAULT_CONTEXT);
+    deletedConfig =
+        deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, DEFAULT_CONTEXT)
+            .getContextSpecificConfig();
+    assertEquals(config1, deletedConfig.getConfig());
 
     // get config with context should return empty config
     StatusRuntimeException exception =
