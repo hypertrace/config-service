@@ -11,6 +11,7 @@ import static org.hypertrace.config.service.TestUtils.getConfig2;
 import static org.hypertrace.config.service.TestUtils.getConfigResource;
 import static org.hypertrace.config.service.TestUtils.getExpectedMergedConfig;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -21,6 +22,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.protobuf.Value;
+import io.grpc.Status;
+import io.grpc.StatusException;
 import io.grpc.stub.StreamObserver;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -175,6 +178,30 @@ class ConfigServiceGrpcImplTest {
         .onNext(eq(DeleteConfigResponse.newBuilder().setDeletedConfig(deletedConfig).build()));
     verify(responseObserver, times(1)).onCompleted();
     verify(responseObserver, never()).onError(any(Throwable.class));
+  }
+
+  @Test
+  void deletingNonExistingConfigShouldThrowError() throws IOException {
+    ConfigStore configStore = mock(ConfigStore.class);
+    ContextSpecificConfig emptyConfig = ConfigServiceUtils.emptyConfig(CONTEXT1);
+    when(configStore.getConfig(eq(configResourceWithContext))).thenReturn(emptyConfig);
+    ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
+    StreamObserver<DeleteConfigResponse> responseObserver = mock(StreamObserver.class);
+
+    Runnable runnable =
+        () -> configServiceGrpc.deleteConfig(getDeleteConfigRequest(), responseObserver);
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+    ArgumentCaptor<Throwable> throwableArgumentCaptor = ArgumentCaptor.forClass(Throwable.class);
+    verify(responseObserver, times(1)).onError(throwableArgumentCaptor.capture());
+    Throwable throwable = throwableArgumentCaptor.getValue();
+    assertTrue(throwable instanceof StatusException);
+    assertEquals(Status.NOT_FOUND, ((StatusException) throwable).getStatus());
+
+    verify(configStore, never())
+        .writeConfig(any(ConfigResource.class), anyString(), any(Value.class));
+    verify(responseObserver, never()).onNext(any(DeleteConfigResponse.class));
+    verify(responseObserver, never()).onCompleted();
   }
 
   private UpsertConfigRequest getUpsertConfigRequest(String context, Value config) {
