@@ -1,5 +1,7 @@
 package ai.traceable.config.service;
 
+import ai.traceable.activity.event.producer.ActivityEventProducer;
+import ai.traceable.activity.event.producer.ActivityEventProducerFactory;
 import ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory;
 import ai.traceable.blocking.config.service.BlockingConfigServiceFactory;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceFactory;
@@ -70,10 +72,13 @@ public class TraceableConfigService extends PlatformService {
         .map(InterceptorUtil::wrapInterceptors)
         .forEach(internalServerBuilder::addService);
 
+    ActivityEventProducer activityEventProducer = ActivityEventProducerFactory.build(config);
+    this.getLifecycle().shutdownComplete().thenRun(activityEventProducer::close);
+
     SensitiveDataConfigServiceImpl sensitiveDataConfigService =
         new SensitiveDataConfigServiceImpl(managedChannel, config);
     RateLimitingConfigServiceImpl rateLimitingConfigService =
-        new RateLimitingConfigServiceImpl(managedChannel, config);
+        new RateLimitingConfigServiceImpl(managedChannel, config, activityEventProducer);
     LocalProcessingRulesServiceImpl localProcessingRulesService =
         new LocalProcessingRulesServiceImpl(managedChannel);
     BindableService regionConfigService = RegionConfigServiceFactory.build(managedChannel, config);
@@ -88,7 +93,7 @@ public class TraceableConfigService extends PlatformService {
 
     internalServerBuilder.addServices(
         anomalyConfigServices.stream()
-            .map(anomalyConfigService -> InterceptorUtil.wrapInterceptors(anomalyConfigService))
+            .map(InterceptorUtil::wrapInterceptors)
             .collect(Collectors.toUnmodifiableList()));
     internalServerBuilder
         .addService(InterceptorUtil.wrapInterceptors(sensitiveDataConfigService))

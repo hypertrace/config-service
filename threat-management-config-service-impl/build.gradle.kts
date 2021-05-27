@@ -14,8 +14,8 @@ dependencies {
   implementation("org.slf4j:slf4j-api:1.7.30")
   implementation("com.typesafe:config:1.4.1")
 
-  implementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.4.0")
-  implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.4.0")
+  implementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.4.1")
+  implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.4.1")
   implementation("org.hypertrace.config.service:config-proto-converter")
 
   annotationProcessor("org.projectlombok:lombok:1.18.20")

@@ -56,6 +56,7 @@ tasks.integrationTest {
 }
 
 dependencies {
+  implementation(project(":activity-event-producer"))
   implementation(project(":sensitive-data-config-service-impl"))
   implementation(project(":rate-limiting-config-service-impl"))
   implementation(project(":local-processing-config-service-impl"))
@@ -68,10 +69,12 @@ dependencies {
   implementation(project(":anomaly-config-service-impl"))
   implementation("org.hypertrace.config.service:config-service")
   implementation("org.hypertrace.config.service:config-service-impl")
-  implementation("org.hypertrace.core.grpcutils:grpc-server-utils:0.4.0")
+  implementation("org.hypertrace.core.grpcutils:grpc-server-utils:0.4.1")
   implementation("org.hypertrace.core.serviceframework:platform-service-framework:0.1.20")
+  implementation("ai.traceable.activity.event.service:activity-event-api:0.3.0")
   implementation("com.typesafe:config:1.4.1")
   implementation("org.slf4j:slf4j-api:1.7.30")
+  implementation("io.confluent:kafka-avro-serializer:6.0.1")
   runtimeOnly("io.grpc:grpc-netty:1.37.0")
   runtimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:2.14.0")
 
@@ -82,7 +85,7 @@ dependencies {
   integrationTestImplementation("com.google.guava:guava:30.1.1-jre")
   integrationTestImplementation("org.hypertrace.core.serviceframework:integrationtest-service-framework:0.1.20")
   integrationTestImplementation("org.hypertrace.core.documentstore:document-store:0.5.0")
-  integrationTestImplementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.4.0")
+  integrationTestImplementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.4.1")
   integrationTestImplementation("com.google.protobuf:protobuf-java-util:3.15.8")
 
   testFixturesImplementation("ai.traceable.platform:insights-service-api:0.29.5")
