@@ -6,3 +6,6 @@ build
 
 .idea
 *.log
+*.log.gz
+out/
+.DS_Store
