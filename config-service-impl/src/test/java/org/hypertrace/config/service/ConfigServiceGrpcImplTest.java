@@ -172,8 +172,7 @@ class ConfigServiceGrpcImplTest {
     verify(configStore, times(1))
         .writeConfig(eq(configResourceWithContext), eq(""), eq(emptyValue()));
     verify(responseObserver, times(1))
-        .onNext(
-            eq(DeleteConfigResponse.newBuilder().setContextSpecificConfig(deletedConfig).build()));
+        .onNext(eq(DeleteConfigResponse.newBuilder().setDeletedConfig(deletedConfig).build()));
     verify(responseObserver, times(1)).onCompleted();
     verify(responseObserver, never()).onError(any(Throwable.class));
   }

@@ -163,8 +163,7 @@ public class ConfigServiceIntegrationTest {
 
     // delete config with context
     ContextSpecificConfig deletedConfig =
-        deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, CONTEXT_1)
-            .getContextSpecificConfig();
+        deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, CONTEXT_1).getDeletedConfig();
     assertEquals(config2, deletedConfig.getConfig());
 
     // get config with context should return default config
@@ -174,7 +173,7 @@ public class ConfigServiceIntegrationTest {
     // delete config with default context also
     deletedConfig =
         deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, DEFAULT_CONTEXT)
-            .getContextSpecificConfig();
+            .getDeletedConfig();
     assertEquals(config1, deletedConfig.getConfig());
 
     // get config with context should return empty config

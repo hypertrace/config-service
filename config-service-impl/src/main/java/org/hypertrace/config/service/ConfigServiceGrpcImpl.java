@@ -111,7 +111,7 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
       // write an empty config for the specified config resource. This maintains the versioning.
       configStore.writeConfig(configResource, getUserId(), emptyValue());
       responseObserver.onNext(
-          DeleteConfigResponse.newBuilder().setContextSpecificConfig(configToDelete).build());
+          DeleteConfigResponse.newBuilder().setDeletedConfig(configToDelete).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Delete config failed for request:{}", request, e);

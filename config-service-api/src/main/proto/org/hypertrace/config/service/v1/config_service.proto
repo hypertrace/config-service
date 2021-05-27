@@ -104,6 +104,5 @@ message DeleteConfigRequest {
 }
 
 message DeleteConfigResponse {
-  // deleted config
-  ContextSpecificConfig context_specific_config = 1;
+  ContextSpecificConfig deleted_config = 1;
 }
