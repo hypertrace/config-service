@@ -103,6 +103,6 @@ message DeleteConfigRequest {
   string context = 3;
 }
 
-// empty response
 message DeleteConfigResponse {
+  ContextSpecificConfig deleted_config = 1;
 }

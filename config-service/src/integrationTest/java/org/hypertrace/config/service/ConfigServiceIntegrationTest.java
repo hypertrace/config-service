@@ -5,13 +5,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.protobuf.Value;
+import com.typesafe.config.ConfigFactory;
 import io.grpc.Channel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
@@ -23,12 +26,15 @@ import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
+import org.hypertrace.core.documentstore.Collection;
+import org.hypertrace.core.documentstore.Datastore;
+import org.hypertrace.core.documentstore.DatastoreProvider;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.serviceframework.IntegrationTestServerUtil;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Integration test for ConfigService */
@@ -41,6 +47,8 @@ public class ConfigServiceIntegrationTest {
   private static final String CONTEXT_1 = "ctx1";
   private static final String CONTEXT_2 = "ctx2";
   private static final String DEFAULT_CONTEXT = "DEFAULT-CONTEXT";
+  private static final String DATA_STORE_COLLECTION = "configurations";
+  private static final Collection CONFIGURATIONS_COLLECTION = getConfigurationsCollection();
 
   private static ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub;
   private static Value config1;
@@ -69,14 +77,10 @@ public class ConfigServiceIntegrationTest {
     IntegrationTestServerUtil.shutdownServices();
   }
 
-  @BeforeEach
-  public void clearPreviousState() {
-    deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, DEFAULT_CONTEXT);
-    deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_2, DEFAULT_CONTEXT);
-    deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, CONTEXT_1);
-    deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_2, CONTEXT_1);
-    deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, CONTEXT_2);
-    deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_2, CONTEXT_2);
+  // Need to delete the collection after each test for stateless integration testing
+  @AfterEach
+  void delete() {
+    CONFIGURATIONS_COLLECTION.deleteAll();
   }
 
   @Test
@@ -162,14 +166,19 @@ public class ConfigServiceIntegrationTest {
     upsertConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, Optional.of(CONTEXT_1), config2);
 
     // delete config with context
-    deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, CONTEXT_1);
+    ContextSpecificConfig deletedConfig =
+        deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, CONTEXT_1).getDeletedConfig();
+    assertEquals(config2, deletedConfig.getConfig());
 
     // get config with context should return default config
     Value config = getConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, CONTEXT_1).getConfig();
     assertEquals(config1, config);
 
     // delete config with default context also
-    deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, DEFAULT_CONTEXT);
+    deletedConfig =
+        deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, DEFAULT_CONTEXT)
+            .getDeletedConfig();
+    assertEquals(config1, deletedConfig.getConfig());
 
     // get config with context should return empty config
     StatusRuntimeException exception =
@@ -231,5 +240,14 @@ public class ConfigServiceIntegrationTest {
             .build();
     return GrpcClientRequestContextUtil.executeInTenantContext(
         tenantId, () -> configServiceBlockingStub.deleteConfig(request));
+  }
+
+  private static Collection getConfigurationsCollection() {
+    Map<String, Object> configMap = new HashMap<>();
+    configMap.put("host", "localhost");
+    configMap.put("port", "37017");
+    Datastore datastore =
+        DatastoreProvider.getDatastore("mongo", ConfigFactory.parseMap(configMap));
+    return datastore.getCollection(DATA_STORE_COLLECTION);
   }
 }

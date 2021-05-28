@@ -106,9 +106,20 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   public void deleteConfig(
       DeleteConfigRequest request, StreamObserver<DeleteConfigResponse> responseObserver) {
     try {
+      ConfigResource configResource = getConfigResource(request);
+      ContextSpecificConfig configToDelete = configStore.getConfig(configResource);
+
+      // if configToDelete is null/empty (i.e. config value doesn't exist or is already deleted),
+      // then throw NOT_FOUND exception
+      if (ConfigServiceUtils.isNull(configToDelete.getConfig())) {
+        responseObserver.onError(Status.NOT_FOUND.asException());
+        return;
+      }
+
       // write an empty config for the specified config resource. This maintains the versioning.
-      configStore.writeConfig(getConfigResource(request), getUserId(), emptyValue());
-      responseObserver.onNext(DeleteConfigResponse.getDefaultInstance());
+      configStore.writeConfig(configResource, getUserId(), emptyValue());
+      responseObserver.onNext(
+          DeleteConfigResponse.newBuilder().setDeletedConfig(configToDelete).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Delete config failed for request:{}", request, e);
