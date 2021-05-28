@@ -1,27 +1,22 @@
 package ai.traceable.sensitivedata.config.service;
 
-import static ai.traceable.sensitivedata.config.service.ConfigServiceCoordinatorImpl.DEFAULT_AUTOMATIC_SECRET_REDACTION_ENABLED;
-import static ai.traceable.sensitivedata.config.service.ConfigServiceCoordinatorImpl.DEFAULT_PARAM_TYPE_REDACTION_STRATEGY;
-import static ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl.DEFAULT_PII_FILTER_CONFIG;
-import static ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl.DEFAULT_REDACTION_RULES;
-import static ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl.INSIGHTS_SERVICE_CONFIG;
-import static ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl.SENSITIVE_DATA_CONFIG_SERVICE_CONFIG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.config.service.MockInsightsService;
+import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigRequest;
 import ai.traceable.sensitivedata.config.service.v1.PiiElement;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfig;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfigServiceGrpc.PiiFilterConfigServiceBlockingStub;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import io.grpc.Channel;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import org.hypertrace.config.service.test.MockGenericConfigService;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,25 +30,20 @@ class PiiFilterConfigServiceImplTest {
   void setUp() {
     mockGenericConfigService = new MockGenericConfigService().mockUpsert().mockGet().mockGetAll();
 
-    Config config =
-        ConfigFactory.parseMap(
-            Map.of(
-                INSIGHTS_SERVICE_CONFIG,
-                Map.of("host", "localhost", "port", 50098),
-                SENSITIVE_DATA_CONFIG_SERVICE_CONFIG,
-                Map.of(
-                    DEFAULT_PARAM_TYPE_REDACTION_STRATEGY,
-                    RedactionStrategy.REDACTION_STRATEGY_HASH.name(),
-                    DEFAULT_AUTOMATIC_SECRET_REDACTION_ENABLED,
-                    true,
-                    DEFAULT_PII_FILTER_CONFIG,
-                    Map.of(),
-                    DEFAULT_REDACTION_RULES,
-                    Map.of())));
+    SensitiveDataServiceConfig mockConfig = mock(SensitiveDataServiceConfig.class);
+    when(mockConfig.defaultParamTypeRedactionStrategy())
+        .thenReturn(RedactionStrategy.REDACTION_STRATEGY_HASH);
+    when(mockConfig.defaultPiiFilterConfig()).thenReturn(PiiFilterConfig.getDefaultInstance());
     Channel channel = mockGenericConfigService.channel();
+
     mockGenericConfigService
         .addService(new MockInsightsService())
-        .addService(new PiiFilterConfigServiceImpl(channel, channel, config))
+        .addService(
+            new PiiFilterConfigServiceImpl(
+                mockConfig,
+                new ConfigServiceCoordinatorImpl(
+                    ConfigServiceGrpc.newBlockingStub(channel), mockConfig),
+                new InsightsServiceCoordinatorImpl(InsightsServiceGrpc.newBlockingStub(channel))))
         .start();
 
     piiFilterStub = PiiFilterConfigServiceGrpc.newBlockingStub(channel);

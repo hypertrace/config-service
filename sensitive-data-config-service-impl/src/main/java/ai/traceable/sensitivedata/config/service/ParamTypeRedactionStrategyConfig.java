@@ -7,7 +7,7 @@ import com.google.protobuf.Value.KindCase;
 import java.util.Optional;
 
 @lombok.Value
-public class ParamTypeRedactionStrategyConfig {
+class ParamTypeRedactionStrategyConfig {
   private static final String REDACTION_STRATEGY_FIELD_NAME = "redactionStrategy";
 
   RedactionStrategy redactionStrategy;

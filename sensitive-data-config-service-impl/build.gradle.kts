@@ -6,6 +6,7 @@ plugins {
 
 dependencies {
   api(project(":sensitive-data-config-service-api"))
+
   implementation("org.hypertrace.config.service:config-service-api")
   implementation("ai.traceable.platform:insights-service-api:0.29.5")
   implementation("com.google.guava:guava:30.1.1-jre")
@@ -16,6 +17,7 @@ dependencies {
   implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.4.1")
   implementation("org.hypertrace.config.service:config-proto-converter")
   implementation("com.google.re2j:re2j:1.6")
+  implementation("com.google.inject:guice:5.0.1")
 
   annotationProcessor("org.projectlombok:lombok:1.18.20")
   compileOnly("org.projectlombok:lombok:1.18.20")

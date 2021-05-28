@@ -11,15 +11,13 @@ import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import com.google.protobuf.Value;
 import com.google.re2j.Pattern;
-import com.typesafe.config.Config;
-import io.grpc.Channel;
 import io.grpc.Status;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
-import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import javax.inject.Inject;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
@@ -27,29 +25,20 @@ import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
-import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
-
-  static final String DEFAULT_PARAM_TYPE_REDACTION_STRATEGY =
-      "default.param.type.redaction.strategy";
-  static final String DEFAULT_AUTOMATIC_SECRET_REDACTION_ENABLED =
-      "default.automatic.secret.redaction.enabled";
+class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
 
   private final ConfigServiceBlockingStub configServiceBlockingStub;
   private final RedactionStrategy defaultParamTypeRedactionStrategy;
   private final boolean defaultAutomaticSecretRedactionEnabled;
 
-  public ConfigServiceCoordinatorImpl(Channel configChannel, Config config) {
-    this.configServiceBlockingStub =
-        ConfigServiceGrpc.newBlockingStub(configChannel)
-            .withCallCredentials(
-                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
-    this.defaultParamTypeRedactionStrategy =
-        RedactionStrategy.valueOf(config.getString(DEFAULT_PARAM_TYPE_REDACTION_STRATEGY));
-    this.defaultAutomaticSecretRedactionEnabled =
-        config.getBoolean(DEFAULT_AUTOMATIC_SECRET_REDACTION_ENABLED);
+  @Inject
+  ConfigServiceCoordinatorImpl(
+      ConfigServiceBlockingStub configServiceBlockingStub, SensitiveDataServiceConfig config) {
+    this.configServiceBlockingStub = configServiceBlockingStub;
+    this.defaultAutomaticSecretRedactionEnabled = config.defaultAutomaticRedactionStrategy();
+    this.defaultParamTypeRedactionStrategy = config.defaultParamTypeRedactionStrategy();
   }
 
   @Override

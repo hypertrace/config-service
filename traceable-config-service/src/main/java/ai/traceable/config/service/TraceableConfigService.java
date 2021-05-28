@@ -10,14 +10,12 @@ import ai.traceable.localprocessing.config.service.LocalProcessingConfigServiceI
 import ai.traceable.localprocessing.config.service.LocalProcessingRulesServiceImpl;
 import ai.traceable.ratelimiting.service.RateLimitingConfigServiceImpl;
 import ai.traceable.region.config.service.RegionConfigServiceFactory;
-import ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl;
-import ai.traceable.sensitivedata.config.service.SensitiveDataConfigServiceImpl;
+import ai.traceable.sensitivedata.config.service.SensitiveDataConfigServicesProvider;
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceFactory;
 import ai.traceable.userattribution.config.service.UserAttributionConfigServiceFactory;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import java.io.IOException;
@@ -25,6 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.hypertrace.config.service.ConfigServicesFactory;
 import org.hypertrace.config.service.store.ConfigStore;
+import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.hypertrace.core.grpcutils.server.InterceptorUtil;
 import org.hypertrace.core.serviceframework.PlatformService;
 import org.hypertrace.core.serviceframework.config.ConfigClient;
@@ -60,9 +59,9 @@ public class TraceableConfigService extends PlatformService {
         internalServerPort,
         externalServerPort);
 
-    ManagedChannel managedChannel =
-        ManagedChannelBuilder.forAddress("localhost", internalServerPort).usePlaintext().build();
-    this.getLifecycle().shutdownComplete().thenRun(managedChannel::shutdown);
+    GrpcChannelRegistry channelRegistry = new GrpcChannelRegistry();
+    ManagedChannel managedChannel = channelRegistry.forAddress("localhost", internalServerPort);
+    this.getLifecycle().shutdownComplete().thenRun(channelRegistry::shutdown);
 
     ServerBuilder<?> internalServerBuilder = ServerBuilder.forPort(internalServerPort);
     configStore = ConfigServicesFactory.buildConfigStore(getAppConfig());
@@ -71,12 +70,13 @@ public class TraceableConfigService extends PlatformService {
         .stream()
         .map(InterceptorUtil::wrapInterceptors)
         .forEach(internalServerBuilder::addService);
-
+    SensitiveDataConfigServicesProvider sensitiveDataConfigServicesProvider =
+        new SensitiveDataConfigServicesProvider(managedChannel, config, channelRegistry);
     ActivityEventProducer activityEventProducer = ActivityEventProducerFactory.build(config);
     this.getLifecycle().shutdownComplete().thenRun(activityEventProducer::close);
 
-    SensitiveDataConfigServiceImpl sensitiveDataConfigService =
-        new SensitiveDataConfigServiceImpl(managedChannel, config);
+    BindableService sensitiveDataConfigService =
+        sensitiveDataConfigServicesProvider.getSensitiveDataConfigService();
     RateLimitingConfigServiceImpl rateLimitingConfigService =
         new RateLimitingConfigServiceImpl(managedChannel, config, activityEventProducer);
     LocalProcessingRulesServiceImpl localProcessingRulesService =
@@ -106,8 +106,8 @@ public class TraceableConfigService extends PlatformService {
     internalTraceableConfigServer = internalServerBuilder.build();
 
     ServerBuilder<?> externalServerBuilder = ServerBuilder.forPort(externalServerPort);
-    PiiFilterConfigServiceImpl piiFilterConfigService =
-        new PiiFilterConfigServiceImpl(managedChannel, config);
+    BindableService piiFilterConfigService =
+        sensitiveDataConfigServicesProvider.getPiiFilterConfigService();
     LocalProcessingConfigServiceImpl localProcessingConfigService =
         new LocalProcessingConfigServiceImpl(managedChannel, config);
     BindableService blockingConfigService =

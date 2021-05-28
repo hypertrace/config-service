@@ -11,9 +11,6 @@ import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import com.google.common.collect.Lists;
-import com.typesafe.config.Config;
-import io.grpc.Channel;
-import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,52 +19,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-public class PiiFilterConfigServiceImpl
-    extends PiiFilterConfigServiceGrpc.PiiFilterConfigServiceImplBase {
-
-  static final String DEFAULT_PII_FILTER_CONFIG = "default.pii.filter.config";
-  static final String DEFAULT_REDACTION_RULES = "default.redaction.rules";
-  static final String SENSITIVE_DATA_CONFIG_SERVICE_CONFIG = "sensitive.data.config.service";
-  static final String INSIGHTS_SERVICE_CONFIG = "insights.service.config";
+class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterConfigServiceImplBase {
 
   private final ConfigServiceCoordinator configServiceCoordinator;
   private final InsightsServiceCoordinator insightsServiceCoordinator;
   private final PiiFilterConfig defaultPiiFilterConfig;
   private final List<RedactionRule> defaultConditionalRedactionRules;
 
-  public PiiFilterConfigServiceImpl(Channel configChannel, Config config) {
-    this(
-        configChannel,
-        ManagedChannelBuilder.forAddress(
-                config.getConfig(INSIGHTS_SERVICE_CONFIG).getString("host"),
-                config.getConfig(INSIGHTS_SERVICE_CONFIG).getInt("port"))
-            .usePlaintext()
-            .build(),
-        config);
-  }
-
-  public PiiFilterConfigServiceImpl(Channel configChannel, Channel insightsChannel, Config config) {
-    Config sensitiveDataConfigServiceConfig =
-        config.getConfig(SENSITIVE_DATA_CONFIG_SERVICE_CONFIG);
-    this.configServiceCoordinator =
-        new ConfigServiceCoordinatorImpl(configChannel, sensitiveDataConfigServiceConfig);
-    this.insightsServiceCoordinator = new InsightsServiceCoordinatorImpl(insightsChannel);
-    this.defaultPiiFilterConfig =
-        SensitiveDataConfigUtils.toPiiFilterConfig(
-            sensitiveDataConfigServiceConfig.getConfig(DEFAULT_PII_FILTER_CONFIG));
-    if (sensitiveDataConfigServiceConfig
-        .getConfig(DEFAULT_REDACTION_RULES)
-        .hasPath(SensitiveDataConfigUtils.REDACTION_RULES_CONFIG)) {
-      this.defaultConditionalRedactionRules =
-          SensitiveDataConfigUtils.toRedactionRules(
-              sensitiveDataConfigServiceConfig.getConfig(DEFAULT_REDACTION_RULES));
-    } else {
-      this.defaultConditionalRedactionRules = null;
-    }
+  @Inject
+  PiiFilterConfigServiceImpl(
+      SensitiveDataServiceConfig sensitiveDataServiceConfig,
+      ConfigServiceCoordinator configServiceCoordinator,
+      InsightsServiceCoordinator insightsServiceCoordinator) {
+    this.configServiceCoordinator = configServiceCoordinator;
+    this.insightsServiceCoordinator = insightsServiceCoordinator;
+    this.defaultPiiFilterConfig = sensitiveDataServiceConfig.defaultPiiFilterConfig();
+    this.defaultConditionalRedactionRules =
+        sensitiveDataServiceConfig.defaultConditionalRedactionRules();
   }
 
   @Override
@@ -83,9 +56,7 @@ public class PiiFilterConfigServiceImpl
 
       // get appropriate parts of pii filter config from redaction rules
       List<RedactionRule> redactionRules = new ArrayList<>();
-      if (defaultConditionalRedactionRules != null) {
-        redactionRules.addAll(defaultConditionalRedactionRules);
-      }
+      redactionRules.addAll(defaultConditionalRedactionRules);
       redactionRules.addAll(configServiceCoordinator.getAllRedactionRules(requestContext));
 
       // pass the reversed list to get redaction rules from latest to earliest

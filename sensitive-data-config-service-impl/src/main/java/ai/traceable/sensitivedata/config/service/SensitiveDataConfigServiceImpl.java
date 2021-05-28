@@ -1,7 +1,5 @@
 package ai.traceable.sensitivedata.config.service;
 
-import static ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl.SENSITIVE_DATA_CONFIG_SERVICE_CONFIG;
-
 import ai.traceable.sensitivedata.config.service.v1.CreateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.CreateRedactionRuleResponse;
 import ai.traceable.sensitivedata.config.service.v1.DeleteRedactionRuleRequest;
@@ -21,22 +19,20 @@ import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionRuleResponse;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeResponse;
-import com.typesafe.config.Config;
-import io.grpc.Channel;
 import io.grpc.stub.StreamObserver;
+import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-public class SensitiveDataConfigServiceImpl
+class SensitiveDataConfigServiceImpl
     extends SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceImplBase {
 
   private final ConfigServiceCoordinator configServiceCoordinator;
 
-  public SensitiveDataConfigServiceImpl(Channel configChannel, Config config) {
-    this.configServiceCoordinator =
-        new ConfigServiceCoordinatorImpl(
-            configChannel, config.getConfig(SENSITIVE_DATA_CONFIG_SERVICE_CONFIG));
+  @Inject
+  SensitiveDataConfigServiceImpl(ConfigServiceCoordinator configServiceCoordinator) {
+    this.configServiceCoordinator = configServiceCoordinator;
   }
 
   @Override

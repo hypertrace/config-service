@@ -6,7 +6,7 @@ import com.google.protobuf.Value.KindCase;
 import java.util.Optional;
 
 @lombok.Value
-public class AutomaticSecretRedactionStrategyConfig {
+class AutomaticSecretRedactionStrategyConfig {
   private static final String ENABLED_FIELD_NAME = "enabled";
 
   boolean enabled;

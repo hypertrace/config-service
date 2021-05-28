@@ -7,7 +7,7 @@ import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public interface ConfigServiceCoordinator {
+interface ConfigServiceCoordinator {
 
   void upsertParamTypeRedactionStrategyConfig(
       RequestContext requestContext,

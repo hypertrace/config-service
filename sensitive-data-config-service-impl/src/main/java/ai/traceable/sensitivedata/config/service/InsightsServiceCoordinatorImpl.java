@@ -3,7 +3,6 @@ package ai.traceable.sensitivedata.config.service;
 import ai.traceable.platform.insights.api.v1.AttributeFilter;
 import ai.traceable.platform.insights.api.v1.AttributeValue;
 import ai.traceable.platform.insights.api.v1.InsightType;
-import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc;
 import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc.InsightsServiceBlockingStub;
 import ai.traceable.platform.insights.api.v1.Operator;
 import ai.traceable.platform.insights.api.v1.QueryInsightsRequest;
@@ -11,25 +10,22 @@ import ai.traceable.platform.insights.api.v1.QueryInsightsResponse;
 import ai.traceable.platform.insights.api.v1.Value;
 import ai.traceable.sensitivedata.config.service.v1.ParamType;
 import ai.traceable.sensitivedata.config.service.v1.Parameter;
-import io.grpc.Channel;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
-import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public class InsightsServiceCoordinatorImpl implements InsightsServiceCoordinator {
+class InsightsServiceCoordinatorImpl implements InsightsServiceCoordinator {
 
   private static final String HEADER_NAMESPACED_NAME = "headerNamespacedName";
   private static final String IS_HEADER_PII = "isHeaderPii";
 
   private final InsightsServiceBlockingStub insightsServiceBlockingStub;
 
-  public InsightsServiceCoordinatorImpl(Channel insightsChannel) {
-    this.insightsServiceBlockingStub =
-        InsightsServiceGrpc.newBlockingStub(insightsChannel)
-            .withCallCredentials(
-                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  @Inject
+  InsightsServiceCoordinatorImpl(InsightsServiceBlockingStub insightsServiceBlockingStub) {
+    this.insightsServiceBlockingStub = insightsServiceBlockingStub;
   }
 
   @Override
