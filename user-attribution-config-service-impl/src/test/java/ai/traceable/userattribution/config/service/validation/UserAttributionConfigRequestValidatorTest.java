@@ -268,19 +268,6 @@ class UserAttributionConfigRequestValidatorTest {
   @Test
   void validatesBasicAuthCreate() {
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
-    assertIllegalArgContaining(
-        "header location",
-        () ->
-            validator.validateOrThrow(
-                mockRequestContext,
-                CreateUserAttributionRuleRequest.newBuilder()
-                    .setName("rule-name")
-                    .setData(
-                        UserAttributionRuleData.newBuilder()
-                            .setBasicAuthenticationData(
-                                BasicAuthenticationUserAttributionRuleData.getDefaultInstance()))
-                    .build()));
-
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
@@ -290,9 +277,7 @@ class UserAttributionConfigRequestValidatorTest {
                     .setData(
                         UserAttributionRuleData.newBuilder()
                             .setBasicAuthenticationData(
-                                BasicAuthenticationUserAttributionRuleData.newBuilder()
-                                    .setLocation(
-                                        HeaderLocation.newBuilder().setHeaderName("name"))))
+                                BasicAuthenticationUserAttributionRuleData.getDefaultInstance()))
                     .build()));
   }
 

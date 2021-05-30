@@ -7,7 +7,6 @@ import ai.traceable.userattribution.config.service.v1.RankUserAttributionRuleReq
 import ai.traceable.userattribution.config.service.v1.UpdateUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData;
-import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.BasicAuthenticationUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.CustomUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.EncodedLocation;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.HeaderLocation;
@@ -80,7 +79,7 @@ public class UserAttributionConfigRequestValidator {
         this.validateJwtData(ruleData.getJwtData());
         break;
       case BASIC_AUTHENTICATION_DATA:
-        this.validateBasicAuthRuleData(ruleData.getBasicAuthenticationData());
+        // No validation required, no data expected
         break;
       case RESPONSE_BODY_DATA:
         this.validateResponseBodyData(ruleData.getResponseBodyData());
@@ -101,11 +100,6 @@ public class UserAttributionConfigRequestValidator {
   private void validateCustomRuleData(CustomUserAttributionRuleData customRuleData) {
     this.validateNonDefaultPresence(
         customRuleData, CustomUserAttributionRuleData.YAML_FIELD_NUMBER);
-  }
-
-  private void validateBasicAuthRuleData(
-      BasicAuthenticationUserAttributionRuleData basicAuthRuleData) {
-    this.validateHeaderLocation(basicAuthRuleData.getLocation());
   }
 
   private void validateRequestHeaderRuleData(
