@@ -1,0 +1,9 @@
+{
+  "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+  "prefixes": [
+    "http.request.header.",
+    "http.response.header.",
+    "rpc.request.metadata.",
+    "rpc.response.metadata."
+  ]
+}

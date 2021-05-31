@@ -1,0 +1,314 @@
+{
+  "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+  "prefixes": [
+    "http.request.header.",
+    "http.response.header.",
+    "rpc.request.metadata.",
+    "rpc.response.metadata."
+  ],
+  "keyRegexs": [
+    {
+      "regex": "^address",
+      "category": "pii",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "sessionIdentifier": true,
+      "ruleId": "placeholder-id"
+    },
+    {
+      "regex": "^name",
+      "category": "pii",
+      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "ruleId": "placeholder-id"
+    },
+    {
+      "regex": "rpc.request.metadata.:path",
+      "redactionStrategy": "REDACTION_STRATEGY_RAW",
+      "conditions": [
+        {
+          "attributeRegexMatch": {
+            "key": "traceableai.processing",
+            "regex": "core"
+          }
+        }
+      ]
+    },
+    {
+      "regex": "http.response.header.content-type",
+      "redactionStrategy": "REDACTION_STRATEGY_RAW",
+      "conditions": [
+        {
+          "attributeRegexMatch": {
+            "key": "traceableai.processing",
+            "regex": "core"
+          }
+        }
+      ]
+    },
+    {
+      "regex": "http.request.header.content-type",
+      "redactionStrategy": "REDACTION_STRATEGY_RAW",
+      "conditions": [
+        {
+          "attributeRegexMatch": {
+            "key": "traceableai.processing",
+            "regex": "core"
+          }
+        }
+      ]
+    },
+    {
+      "regex": "redis.args",
+      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "conditions": [
+        {
+          "attributeRegexMatch": {
+            "key": "traceableai.processing",
+            "regex": "core"
+          }
+        }
+      ]
+    },
+    {
+      "regex": "sql.params",
+      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "conditions": [
+        {
+          "attributeRegexMatch": {
+            "key": "traceableai.processing",
+            "regex": "core"
+          }
+        }
+      ]
+    },
+    {
+      "regex": "sql.query",
+      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "conditions": [
+        {
+          "attributeRegexMatch": {
+            "key": "traceableai.processing",
+            "regex": "core"
+          }
+        }
+      ]
+    },
+    {
+      "regex": "rabbitmq.message",
+      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "conditions": [
+        {
+          "attributeRegexMatch": {
+            "key": "traceableai.processing",
+            "regex": "core"
+          }
+        }
+      ]
+    },
+    {
+      "regex": "mongo.command",
+      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "conditions": [
+        {
+          "attributeRegexMatch": {
+            "key": "traceableai.processing",
+            "regex": "core"
+          }
+        }
+      ]
+    },
+    {
+      "regex": "rpc.response.body",
+      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "conditions": [
+        {
+          "attributeRegexMatch": {
+            "key": "traceableai.processing",
+            "regex": "core"
+          }
+        }
+      ]
+    },
+    {
+      "regex": "rpc.response.metadata",
+      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "conditions": [
+        {
+          "attributeRegexMatch": {
+            "key": "traceableai.processing",
+            "regex": "core"
+          }
+        }
+      ]
+    },
+    {
+      "regex": "rpc.request.body",
+      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "conditions": [
+        {
+          "attributeRegexMatch": {
+            "key": "traceableai.processing",
+            "regex": "core"
+          }
+        }
+      ]
+    },
+    {
+      "regex": "rpc.request.metadata",
+      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "conditions": [
+        {
+          "attributeRegexMatch": {
+            "key": "traceableai.processing",
+            "regex": "core"
+          }
+        }
+      ]
+    },
+    {
+      "regex": "http.response.body",
+      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "conditions": [
+        {
+          "attributeRegexMatch": {
+            "key": "traceableai.processing",
+            "regex": "core"
+          }
+        }
+      ]
+    },
+    {
+      "regex": "http.response.header",
+      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "conditions": [
+        {
+          "attributeRegexMatch": {
+            "key": "traceableai.processing",
+            "regex": "core"
+          }
+        }
+      ]
+    },
+    {
+      "regex": "http.request.body",
+      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "conditions": [
+        {
+          "attributeRegexMatch": {
+            "key": "traceableai.processing",
+            "regex": "core"
+          }
+        }
+      ]
+    },
+    {
+      "regex": "http.request.header",
+      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "conditions": [
+        {
+          "attributeRegexMatch": {
+            "key": "traceableai.processing",
+            "regex": "core"
+          }
+        }
+      ]
+    },
+    {
+      "regex": "http.url",
+      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "conditions": [
+        {
+          "attributeRegexMatch": {
+            "key": "traceableai.processing",
+            "regex": "core"
+          }
+        }
+      ]
+    },
+    {
+      "regex": "http.request.header.h1",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "fqn": true
+    },
+    {
+      "regex": "http.request.header.h2",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "fqn": true
+    },
+    {
+      "regex": "^authorization(\\[\\d+\\])?$",
+      "category": "auth",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "sessionIdentifier": true
+    },
+    {
+      "regex": "^remember_token(\\[\\d+\\])?$",
+      "category": "auth",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "sessionIdentifier": true
+    },
+    {
+      "regex": "^session(\\[\\d+\\])?$",
+      "category": "auth",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "sessionIdentifier": true
+    },
+    {
+      "regex": "^access_token(\\[\\d+\\])?$",
+      "category": "auth"
+    },
+    {
+      "regex": "^api_key(\\[\\d+\\])?$",
+      "category": "auth"
+    },
+    {
+      "regex": "^apikey(\\[\\d+\\])?$",
+      "category": "auth"
+    },
+    {
+      "regex": "^password(\\[\\d+\\])?$",
+      "category": "auth"
+    },
+    {
+      "regex": "^passwd(\\[\\d+\\])?$",
+      "category": "auth"
+    },
+    {
+      "regex": "^secret(\\[\\d+\\])?$",
+      "category": "auth"
+    }
+  ],
+  "complexData": [
+    {
+      "key": "http.response.header.set-cookie",
+      "type": "cookie"
+    },
+    {
+      "key": "http.request.header.cookie",
+      "type": "cookie"
+    },
+    {
+      "key": "http.response.body",
+      "typeKey": "http.response.header.content-type"
+    },
+    {
+      "key": "http.request.body",
+      "typeKey": "http.request.header.content-type"
+    },
+    {
+      "key": "rpc.response.body",
+      "type": "json"
+    },
+    {
+      "key": "rpc.request.body",
+      "type": "json"
+    },
+    {
+      "key": "sql.query",
+      "type": "sql"
+    },
+    {
+      "key": "http.url",
+      "type": "urlencoded"
+    }
+  ]
+}

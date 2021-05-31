@@ -1,0 +1,21 @@
+{
+  "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+  "prefixes": [
+    "http.request.header.",
+    "http.response.header.",
+    "rpc.request.metadata.",
+    "rpc.response.metadata."
+  ],
+  "keyRegexs": [
+    {
+      "regex": "http.request.header.h1",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "fqn": true
+    },
+    {
+      "regex": "http.request.header.h2",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "fqn": true
+    }
+  ]
+}
