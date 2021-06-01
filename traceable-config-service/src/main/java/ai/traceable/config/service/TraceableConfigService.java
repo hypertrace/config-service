@@ -80,7 +80,7 @@ public class TraceableConfigService extends PlatformService {
     RateLimitingConfigServiceImpl rateLimitingConfigService =
         new RateLimitingConfigServiceImpl(managedChannel, config, activityEventProducer);
     LocalProcessingRulesServiceImpl localProcessingRulesService =
-        new LocalProcessingRulesServiceImpl(managedChannel);
+        new LocalProcessingRulesServiceImpl(managedChannel, config);
     BindableService regionConfigService = RegionConfigServiceFactory.build(managedChannel, config);
     BindableService customSignatureConfigService =
         CustomSignatureConfigServiceFactory.build(managedChannel, config);

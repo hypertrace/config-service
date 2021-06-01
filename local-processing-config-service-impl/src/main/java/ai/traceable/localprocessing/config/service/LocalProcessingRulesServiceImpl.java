@@ -9,6 +9,7 @@ import ai.traceable.localprocessing.config.service.v1.GetAllLocalProcessingRules
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRulesServiceGrpc;
 import ai.traceable.localprocessing.config.service.v1.UpdateLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.UpdateLocalProcessingRuleResponse;
+import com.typesafe.config.Config;
 import io.grpc.Channel;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
@@ -20,8 +21,8 @@ public class LocalProcessingRulesServiceImpl
 
   private final ConfigServiceCoordinator configServiceCoordinator;
 
-  public LocalProcessingRulesServiceImpl(Channel configChannel) {
-    this.configServiceCoordinator = new ConfigServiceCoordinatorImpl(configChannel);
+  public LocalProcessingRulesServiceImpl(Channel configChannel, Config config) {
+    this.configServiceCoordinator = new ConfigServiceCoordinatorImpl(configChannel, config);
   }
 
   @Override

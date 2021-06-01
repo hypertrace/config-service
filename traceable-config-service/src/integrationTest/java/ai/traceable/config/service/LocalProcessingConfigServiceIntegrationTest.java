@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import ai.traceable.localprocessing.config.service.v1.CreateLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.DeleteLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.GetAllLocalProcessingRulesRequest;
+import ai.traceable.localprocessing.config.service.v1.GetDefaultProtectionModeRequest;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigRequest;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc.LocalProcessingConfigServiceBlockingStub;
@@ -17,6 +18,7 @@ import ai.traceable.localprocessing.config.service.v1.NewLocalProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.ProtectedEndpoint;
 import ai.traceable.localprocessing.config.service.v1.ProtectionMode;
 import ai.traceable.localprocessing.config.service.v1.ProtectionModeConfig;
+import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionModeRequest;
 import ai.traceable.localprocessing.config.service.v1.UpdateLocalProcessingRuleRequest;
 import java.util.List;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
@@ -118,6 +120,16 @@ class LocalProcessingConfigServiceIntegrationTest
             .build();
     ProtectionModeConfig actualConfig = getConfig();
     assertEquals(expectedConfig, actualConfig);
+
+    // test default protection mode
+    updateDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_CORE);
+    assertEquals(ProtectionMode.PROTECTION_MODE_CORE, getDefaultProtectionMode());
+    expectedConfig =
+        expectedConfig.toBuilder()
+            .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
+            .build();
+    actualConfig = getConfig();
+    assertEquals(expectedConfig, actualConfig);
   }
 
   private LocalProcessingRuleDetails buildLocalProcessingRuleDetails(
@@ -141,6 +153,22 @@ class LocalProcessingConfigServiceIntegrationTest
                 .setCreationTimestamp(creationTimestamp)
                 .build())
         .build();
+  }
+
+  private void updateDefaultProtectionMode(ProtectionMode protectionMode) {
+    UpdateDefaultProtectionModeRequest request =
+        UpdateDefaultProtectionModeRequest.newBuilder()
+            .setDefaultProtectionMode(protectionMode)
+            .build();
+    GrpcClientRequestContextUtil.executeInTenantContext(
+        TENANT_ID, () -> localProcessingConfigStub.updateDefaultProtectionMode(request));
+  }
+
+  private ProtectionMode getDefaultProtectionMode() {
+    GetDefaultProtectionModeRequest request = GetDefaultProtectionModeRequest.newBuilder().build();
+    return GrpcClientRequestContextUtil.executeInTenantContext(
+            TENANT_ID, () -> localProcessingConfigStub.getDefaultProtectionMode(request))
+        .getDefaultProtectionMode();
   }
 
   private LocalProcessingRuleDetails createRule(NewLocalProcessingRule newLocalProcessingRule) {

@@ -1,10 +1,11 @@
 package ai.traceable.localprocessing.config.service;
 
-import static ai.traceable.localprocessing.config.service.LocalProcessingConfigServiceImpl.DEFAULT_PROTECTION_MODE;
-import static ai.traceable.localprocessing.config.service.LocalProcessingConfigServiceImpl.LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG;
+import static ai.traceable.localprocessing.config.service.ConfigServiceCoordinatorImpl.DEFAULT_PROTECTION_MODE;
+import static ai.traceable.localprocessing.config.service.ConfigServiceCoordinatorImpl.LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import ai.traceable.localprocessing.config.service.v1.CreateLocalProcessingRuleRequest;
+import ai.traceable.localprocessing.config.service.v1.GetDefaultProtectionModeRequest;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigRequest;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc.LocalProcessingConfigServiceBlockingStub;
@@ -15,6 +16,8 @@ import ai.traceable.localprocessing.config.service.v1.NewLocalProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.ProtectedEndpoint;
 import ai.traceable.localprocessing.config.service.v1.ProtectionMode;
 import ai.traceable.localprocessing.config.service.v1.ProtectionModeConfig;
+import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionModeRequest;
+import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionModeResponse;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.Channel;
@@ -42,7 +45,7 @@ class LocalProcessingConfigServiceImplTest {
     Channel channel = mockGenericConfigService.channel();
     mockGenericConfigService
         .addService(new LocalProcessingConfigServiceImpl(channel, config))
-        .addService(new LocalProcessingRulesServiceImpl(channel))
+        .addService(new LocalProcessingRulesServiceImpl(channel, config))
         .start();
 
     localProcessingConfigStub = LocalProcessingConfigServiceGrpc.newBlockingStub(channel);
@@ -79,6 +82,27 @@ class LocalProcessingConfigServiceImplTest {
             .getLocalProcessingConfig(GetLocalProcessingConfigRequest.getDefaultInstance())
             .getProtectionModeConfig();
     assertEquals(expectedConfig, actualConfig);
+  }
+
+  @Test
+  void upsertAndGetDefaultProtectionMode() {
+    ProtectionMode defaultProtectionMode =
+        localProcessingConfigStub
+            .getDefaultProtectionMode(GetDefaultProtectionModeRequest.newBuilder().build())
+            .getDefaultProtectionMode();
+    assertEquals(ProtectionMode.PROTECTION_MODE_ADVANCED, defaultProtectionMode);
+
+    UpdateDefaultProtectionModeResponse response =
+        localProcessingConfigStub.updateDefaultProtectionMode(
+            UpdateDefaultProtectionModeRequest.newBuilder()
+                .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
+                .build());
+    assertEquals(ProtectionMode.PROTECTION_MODE_CORE, response.getDefaultProtectionMode());
+    defaultProtectionMode =
+        localProcessingConfigStub
+            .getDefaultProtectionMode(GetDefaultProtectionModeRequest.newBuilder().build())
+            .getDefaultProtectionMode();
+    assertEquals(ProtectionMode.PROTECTION_MODE_CORE, defaultProtectionMode);
   }
 
   private LocalProcessingRuleDetails createLocalProcessingRule(

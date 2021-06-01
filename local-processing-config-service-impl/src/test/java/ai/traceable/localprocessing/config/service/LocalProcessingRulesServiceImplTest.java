@@ -1,5 +1,7 @@
 package ai.traceable.localprocessing.config.service;
 
+import static ai.traceable.localprocessing.config.service.ConfigServiceCoordinatorImpl.DEFAULT_PROTECTION_MODE;
+import static ai.traceable.localprocessing.config.service.ConfigServiceCoordinatorImpl.LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import ai.traceable.localprocessing.config.service.v1.CreateLocalProcessingRuleRequest;
@@ -13,7 +15,10 @@ import ai.traceable.localprocessing.config.service.v1.LocalProcessingRulesServic
 import ai.traceable.localprocessing.config.service.v1.NewLocalProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.ProtectionMode;
 import ai.traceable.localprocessing.config.service.v1.UpdateLocalProcessingRuleRequest;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import java.util.List;
+import java.util.Map;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,8 +34,13 @@ class LocalProcessingRulesServiceImplTest {
     mockGenericConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
 
+    Config config =
+        ConfigFactory.parseMap(
+            Map.of(
+                LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG,
+                Map.of(DEFAULT_PROTECTION_MODE, ProtectionMode.PROTECTION_MODE_ADVANCED.name())));
     mockGenericConfigService
-        .addService(new LocalProcessingRulesServiceImpl(mockGenericConfigService.channel()))
+        .addService(new LocalProcessingRulesServiceImpl(mockGenericConfigService.channel(), config))
         .start();
 
     localProcessingRulesStub =

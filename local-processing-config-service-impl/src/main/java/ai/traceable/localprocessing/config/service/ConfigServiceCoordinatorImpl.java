@@ -1,5 +1,6 @@
 package ai.traceable.localprocessing.config.service;
 
+import static ai.traceable.localprocessing.config.service.LocalProcessingConstants.DEFAULT_PROTECTION_MODE_CONFIG;
 import static ai.traceable.localprocessing.config.service.LocalProcessingConstants.LOCAL_PROCESSING_RULE_RESOURCE_NAME;
 import static ai.traceable.localprocessing.config.service.LocalProcessingConstants.LOCAL_PROCESSING_RULE_RESOURCE_NAMESPACE;
 
@@ -11,8 +12,11 @@ import ai.traceable.localprocessing.config.service.v1.ProtectionMode;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
+import com.typesafe.config.Config;
 import io.grpc.Channel;
+import io.grpc.Status;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
@@ -21,6 +25,7 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingS
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
+import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
@@ -29,13 +34,22 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
 
-  private final ConfigServiceBlockingStub configServiceBlockingStub;
+  static final String LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG = "local.processing.config.service";
+  static final String DEFAULT_PROTECTION_MODE = "default.protection.mode";
 
-  public ConfigServiceCoordinatorImpl(Channel configChannel) {
+  private final ConfigServiceBlockingStub configServiceBlockingStub;
+  private final ProtectionMode defaultProtectionMode;
+
+  public ConfigServiceCoordinatorImpl(Channel configChannel, Config config) {
     this.configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(configChannel)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+    this.defaultProtectionMode =
+        ProtectionMode.valueOf(
+            config
+                .getConfig(LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG)
+                .getString(DEFAULT_PROTECTION_MODE));
   }
 
   @Override
@@ -100,6 +114,33 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
     deleteConfig(requestContext, deleteConfigRequest);
   }
 
+  @Override
+  public ProtectionMode upsertDefaultProtectionModeConfig(
+      RequestContext requestContext, ProtectionMode defaultProtectionMode) {
+
+    UpsertConfigRequest upsertConfigRequest =
+        UpsertConfigRequest.newBuilder()
+            .setResourceName(DEFAULT_PROTECTION_MODE_CONFIG)
+            .setResourceNamespace(LOCAL_PROCESSING_RULE_RESOURCE_NAMESPACE)
+            .setConfig(DefaultProtectionModeConfigConverter.toValue(defaultProtectionMode))
+            .build();
+    return DefaultProtectionModeConfigConverter.fromValue(
+            upsertConfig(requestContext, upsertConfigRequest).getConfig())
+        .orElseThrow(Status.INTERNAL::asRuntimeException);
+  }
+
+  @Override
+  public ProtectionMode getDefaultProtectionModeConfig(RequestContext requestContext) {
+    GetConfigRequest getConfigRequest =
+        GetConfigRequest.newBuilder()
+            .setResourceName(DEFAULT_PROTECTION_MODE_CONFIG)
+            .setResourceNamespace(LOCAL_PROCESSING_RULE_RESOURCE_NAMESPACE)
+            .build();
+    Optional<ProtectionMode> defaultProtectionModeConfig =
+        getConfig(requestContext, getConfigRequest);
+    return defaultProtectionModeConfig.orElse(defaultProtectionMode);
+  }
+
   private void validateRule(LocalProcessingRule localProcessingRule) {
     Preconditions.checkArgument(
         localProcessingRule.getProtectionMode() != ProtectionMode.PROTECTION_MODE_UNSPECIFIED,
@@ -109,6 +150,18 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   private UpsertConfigResponse upsertConfig(RequestContext context, UpsertConfigRequest request) {
     return GrpcClientRequestContextUtil.executeWithHeadersContext(
         context.getRequestHeaders(), () -> configServiceBlockingStub.upsertConfig(request));
+  }
+
+  private Optional<ProtectionMode> getConfig(RequestContext context, GetConfigRequest request) {
+    try {
+      return DefaultProtectionModeConfigConverter.fromValue(
+          context.call(() -> configServiceBlockingStub.getConfig(request)).getConfig());
+    } catch (Exception e) {
+      if (Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
+        return Optional.empty();
+      }
+      throw e;
+    }
   }
 
   private List<ContextSpecificConfig> getAllConfigs(
