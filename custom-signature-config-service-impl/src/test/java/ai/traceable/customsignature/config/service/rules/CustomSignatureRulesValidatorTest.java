@@ -198,6 +198,32 @@ public class CustomSignatureRulesValidatorTest {
                                     .setMatchExpression(
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
+                                            .setMatchOperator(
+                                                MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                                            .setMatchValue("**invalid")
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    assertTrue(status.getDescription().contains("Invalid Regex Value"));
+
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setEffect(ruleEffect)
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setMatchExpression(
+                                        MatchExpression.newBuilder()
+                                            .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
                                             .build())
                                     .build())
@@ -326,6 +352,35 @@ public class CustomSignatureRulesValidatorTest {
     status = rulesValidator.validate(request);
     assertEquals(Code.INVALID_ARGUMENT, status.getCode());
     assertTrue(status.getDescription().contains("valid value match operator"));
+
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setEffect(ruleEffect)
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setKeyValueExpression(
+                                        KeyValueExpression.newBuilder()
+                                            .setTag(KeyValueTag.KEY_VALUE_TAG_HEADER)
+                                            .setMatchKey("key")
+                                            .setKeyMatchOperator(
+                                                MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setMatchValue("inva**lid")
+                                            .setValueMatchOperator(
+                                                MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX)
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    assertTrue(status.getDescription().contains("Invalid Regex Value"));
 
     RuleDefinition validRuleDefinition =
         RuleDefinition.newBuilder()

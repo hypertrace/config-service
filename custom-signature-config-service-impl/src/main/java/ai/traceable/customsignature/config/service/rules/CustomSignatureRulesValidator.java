@@ -17,6 +17,8 @@ import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
+import com.google.re2j.Pattern;
+import com.google.re2j.PatternSyntaxException;
 import io.grpc.Status;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
@@ -160,6 +162,10 @@ class CustomSignatureRulesValidator implements RulesValidator {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule match expression should have a valid match operator.");
     }
+    if (matchExpression.getMatchOperator() == MatchOperator.MATCH_OPERATOR_MATCHES_REGEX
+        || matchExpression.getMatchOperator() == MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX) {
+      return validateRegex(matchExpression.getMatchValue());
+    }
     return Status.OK;
   }
 
@@ -184,16 +190,32 @@ class CustomSignatureRulesValidator implements RulesValidator {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule key-value expression should have a valid value match operator.");
     }
+    if (keyValueExpression.getValueMatchOperator() == MatchOperator.MATCH_OPERATOR_MATCHES_REGEX
+        || keyValueExpression.getValueMatchOperator()
+            == MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX) {
+      return validateRegex(keyValueExpression.getMatchValue());
+    }
     return Status.OK;
   }
 
-  private static Status validateExpiry(ExpiryDetails expiry) {
+  private Status validateExpiry(ExpiryDetails expiry) {
     if (expiry.hasExpiryDuration()) {
       try {
         Duration.parse(expiry.getExpiryDuration());
       } catch (DateTimeParseException e) {
         return Status.INVALID_ARGUMENT.withDescription("Blocking expiry duration can't be parsed");
       }
+    }
+    return Status.OK;
+  }
+
+  private Status validateRegex(String regexPattern) {
+    // compiling an invalid regex throws PatternSyntaxException
+    try {
+      Pattern.compile(regexPattern);
+    } catch (PatternSyntaxException e) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Invalid Regex Value for the custom signature rule expression");
     }
     return Status.OK;
   }
