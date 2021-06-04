@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package ai.traceable.anomaly.config.service.v1.global;
+
+option java_multiple_files = true;
+
+import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
+
+message GetAnomalyExclusionConfigApplicableRequest {
+  AnomalyEventCategory anomaly_event_category = 1;
+  AnomalyEventFamily anomaly_event_family = 2;
+  string anomaly_event_type_id = 3;
+}
+
+message GetAnomalyExclusionConfigApplicableResponse {
+  bool applicable = 1;
+}
+
+enum AnomalyEventCategory {
+  ANOMALY_EVENT_CATEGORY_UNSPECIFIED = 0;
+  ANOMALY_EVENT_CATEGORY_SECURITY = 1;
+  ANOMALY_EVENT_CATEGORY_BLOCKED = 2;
+}

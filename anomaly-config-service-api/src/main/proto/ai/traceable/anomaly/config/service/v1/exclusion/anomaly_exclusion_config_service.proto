@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package ai.traceable.anomaly.config.service.v1.global;
+
+option java_multiple_files = true;
+
+import "ai/traceable/anomaly/config/service/v1/exclusion/anomaly_exclusion_config.proto";
+
+service AnomalyExclusionConfigService {
+
+  rpc GetAnomalyExclusionConfigApplicable (GetAnomalyExclusionConfigApplicableRequest) returns (GetAnomalyExclusionConfigApplicableResponse) {
+  }
+
+}
