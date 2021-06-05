@@ -1,10 +1,51 @@
 syntax = "proto3";
 
-package ai.traceable.anomaly.config.service.v1.global;
+package ai.traceable.anomaly.config.service.v1.exclusion;
 
 option java_multiple_files = true;
 
 import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
+
+message CreateAnomalyExclusionRuleRequest {
+  AnomalyExclusionRuleData rule_data = 1;
+}
+
+message CreateAnomalyExclusionRuleResponse {
+  AnomalyExclusionRuleConfig config = 1;
+}
+
+message GetAnomalyExclusionRulesRequest {
+  GetRulesFilter filter = 1;
+}
+
+message GetRulesFilter {
+  repeated string rule_ids = 1;
+  EventExclusionInfo event_exclusion_info = 2;
+  ThreatActorExclusionInfo threat_actor_exclusion_info = 3;
+  AnomalyConfigScope anomaly_config_scope = 4;
+}
+
+message GetAnomalyExclusionRulesResponse {
+  repeated AnomalyExclusionRuleConfig configs = 1;
+}
+
+message UpdateAnomalyExclusionRuleRequest {
+  string rule_id = 1;
+  string name = 2;
+  string description = 3;
+  AnomalyConfigStatus config_status = 4;
+}
+
+message UpdateAnomalyExclusionRuleResponse {
+  AnomalyExclusionRuleConfig config = 1;
+}
+
+message DeleteAnomalyExclusionRuleRequest {
+  string rule_id = 1;
+}
+
+message DeleteAnomalyExclusionRuleResponse {
+}
 
 message GetAnomalyExclusionConfigApplicableRequest {
   AnomalyEventCategory anomaly_event_category = 1;
@@ -16,8 +57,41 @@ message GetAnomalyExclusionConfigApplicableResponse {
   bool applicable = 1;
 }
 
+message AnomalyExclusionRuleConfig {
+  string id = 1;
+  AnomalyExclusionRuleData rule_data = 2;
+  AnomalyConfigStatus config_status = 3;
+}
+
+message AnomalyExclusionRuleData {
+  string name = 1;
+  string description = 2;
+  EventExclusionInfo event_exclusion_info = 3;
+  ThreatActorExclusionInfo threat_actor_exclusion_info = 4;
+  AnomalyConfigScope anomaly_config_scope = 5;
+}
+
+message EventExclusionInfo {
+  optional string event_type_id = 1;
+  AnomalyEventFamily anomaly_event_family = 2;
+  EventExclusionType event_exclusion_type = 3;
+}
+
+message ThreatActorExclusionInfo {
+  oneof threat_actor_exclusion {
+    string threat_actor_id = 1;
+  }
+}
+
 enum AnomalyEventCategory {
   ANOMALY_EVENT_CATEGORY_UNSPECIFIED = 0;
   ANOMALY_EVENT_CATEGORY_SECURITY = 1;
   ANOMALY_EVENT_CATEGORY_BLOCKED = 2;
+}
+
+enum EventExclusionType {
+  EVENT_EXCLUSION_TYPE_UNSPECIFIED = 0;
+  EVENT_EXCLUSION_TYPE_ALL_EVENTS = 1;
+  EVENT_EXCLUSION_TYPE_EVENT_TYPE = 2;
+  EVENT_EXCLUSION_TYPE_EVENT_SUBTYPE = 3;
 }
