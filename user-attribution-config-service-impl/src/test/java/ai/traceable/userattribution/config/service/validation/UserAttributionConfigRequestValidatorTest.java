@@ -118,7 +118,7 @@ class UserAttributionConfigRequestValidatorTest {
                     .setData(
                         UserAttributionRuleData.newBuilder()
                             .setCustomData(
-                                CustomUserAttributionRuleData.newBuilder().setYaml("yaml")))
+                                CustomUserAttributionRuleData.newBuilder().setYaml("key: value")))
                     .build()));
   }
 
@@ -182,7 +182,7 @@ class UserAttributionConfigRequestValidatorTest {
                                 UserAttributionRuleData.newBuilder()
                                     .setCustomData(
                                         CustomUserAttributionRuleData.newBuilder()
-                                            .setYaml("yaml"))))
+                                            .setYaml("key: value"))))
                     .build()));
   }
 
@@ -367,6 +367,46 @@ class UserAttributionConfigRequestValidatorTest {
         () ->
             validator.validateUpdateOrThrow(
                 existingRule, updatedRule.toBuilder().setRank(existingRule.getRank()).build()));
+  }
+
+  @Test
+  void validatesCustomRuleYaml() {
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    assertIllegalArgContaining(
+        "YAML of unexpected type",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setCustomData(
+                                CustomUserAttributionRuleData.newBuilder().setYaml("bad-yaml")))
+                    .build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setCustomData(
+                                CustomUserAttributionRuleData.newBuilder().setYaml("[]")))
+                    .build()));
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setCustomData(
+                                CustomUserAttributionRuleData.newBuilder().setYaml("key: value")))
+                    .build()));
   }
 
   private void assertIllegalArgContaining(String text, Executable executable) {

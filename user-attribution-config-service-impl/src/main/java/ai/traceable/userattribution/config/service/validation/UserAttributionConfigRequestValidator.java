@@ -14,6 +14,10 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.Jw
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.RequestHeaderUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ResponseBodyUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.RuleCondition;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
@@ -21,6 +25,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class UserAttributionConfigRequestValidator {
   private static final JsonFormat.Printer JSON_PRINTER = JsonFormat.printer();
+  private static final ObjectMapper YAML_OBJECT_MAPPER = new ObjectMapper(new YAMLFactory());
 
   public void validateOrThrow(
       RequestContext requestContext, GetUserAttributionRulesRequest request) {
@@ -100,6 +105,7 @@ public class UserAttributionConfigRequestValidator {
   private void validateCustomRuleData(CustomUserAttributionRuleData customRuleData) {
     this.validateNonDefaultPresence(
         customRuleData, CustomUserAttributionRuleData.YAML_FIELD_NUMBER);
+    this.validateValidYaml(customRuleData.getYaml());
   }
 
   private void validateRequestHeaderRuleData(
@@ -157,6 +163,17 @@ public class UserAttributionConfigRequestValidator {
       default:
         throw new IllegalArgumentException(
             "Unexpected encoded location: " + this.printOrToString(encodedLocation));
+    }
+  }
+
+  private void validateValidYaml(String yamlString) {
+    try {
+      JsonNode node = YAML_OBJECT_MAPPER.readTree(yamlString);
+      if (!node.isArray() && !node.isObject()) {
+        throw new IllegalArgumentException("YAML of unexpected type: " + node);
+      }
+    } catch (JsonProcessingException e) {
+      throw new IllegalArgumentException("Invalid yaml", e);
     }
   }
 

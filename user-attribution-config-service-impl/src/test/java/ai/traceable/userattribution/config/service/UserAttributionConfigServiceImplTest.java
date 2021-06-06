@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 class UserAttributionConfigServiceImplTest {
   private static final UserAttributionRuleData RULE_DATA =
       UserAttributionRuleData.newBuilder()
-          .setCustomData(CustomUserAttributionRuleData.newBuilder().setYaml("some-yaml"))
+          .setCustomData(CustomUserAttributionRuleData.newBuilder().setYaml("key: value"))
           .build();
   UserAttributionConfigServiceBlockingStub userAttributionStub;
   MockGenericConfigService mockGenericConfigService;

@@ -14,6 +14,7 @@ dependencies {
   implementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.4.1")
   implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.4.1")
   implementation("org.hypertrace.config.service:config-proto-converter")
+  implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.12.2")
 
   annotationProcessor("org.projectlombok:lombok:1.18.20")
   compileOnly("org.projectlombok:lombok:1.18.20")
