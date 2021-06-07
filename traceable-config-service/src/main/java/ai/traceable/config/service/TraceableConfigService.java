@@ -6,6 +6,7 @@ import ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory;
 import ai.traceable.blocking.config.service.BlockingConfigServiceFactory;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceFactory;
 import ai.traceable.external.userattribution.config.service.ExternalUserAttributionConfigServiceFactory;
+import ai.traceable.iprange.config.service.IpRangeConfigServiceFactory;
 import ai.traceable.localprocessing.config.service.LocalProcessingConfigServiceImpl;
 import ai.traceable.localprocessing.config.service.LocalProcessingRulesServiceImpl;
 import ai.traceable.ratelimiting.service.RateLimitingConfigServiceImpl;
@@ -82,6 +83,7 @@ public class TraceableConfigService extends PlatformService {
     LocalProcessingRulesServiceImpl localProcessingRulesService =
         new LocalProcessingRulesServiceImpl(managedChannel, config);
     BindableService regionConfigService = RegionConfigServiceFactory.build(managedChannel, config);
+    BindableService iprangeConfigService = IpRangeConfigServiceFactory.build(managedChannel);
     BindableService customSignatureConfigService =
         CustomSignatureConfigServiceFactory.build(managedChannel, config);
     BindableService userAttributionConfigService =
@@ -100,6 +102,7 @@ public class TraceableConfigService extends PlatformService {
         .addService(InterceptorUtil.wrapInterceptors(rateLimitingConfigService))
         .addService(InterceptorUtil.wrapInterceptors(localProcessingRulesService))
         .addService(InterceptorUtil.wrapInterceptors(regionConfigService))
+        .addService(InterceptorUtil.wrapInterceptors(iprangeConfigService))
         .addService(InterceptorUtil.wrapInterceptors(customSignatureConfigService))
         .addService(InterceptorUtil.wrapInterceptors(userAttributionConfigService))
         .addService(InterceptorUtil.wrapInterceptors(threatManagementConfigService));

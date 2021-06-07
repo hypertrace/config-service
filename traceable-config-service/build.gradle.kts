@@ -61,6 +61,7 @@ dependencies {
   implementation(project(":rate-limiting-config-service-impl"))
   implementation(project(":local-processing-config-service-impl"))
   implementation(project(":region-config-service-impl"))
+  implementation(project(":iprange-config-service-impl"))
   implementation(project(":custom-signature-config-service-impl"))
   implementation(project(":blocking-config-service-impl"))
   implementation(project(":user-attribution-config-service-impl"))
