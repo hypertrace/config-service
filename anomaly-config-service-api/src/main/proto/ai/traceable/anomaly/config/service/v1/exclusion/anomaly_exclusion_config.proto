@@ -20,9 +20,10 @@ message GetAnomalyExclusionRulesRequest {
 
 message GetRulesFilter {
   repeated string rule_ids = 1;
-  EventExclusionInfo event_exclusion_info = 2;
-  ThreatActorExclusionInfo threat_actor_exclusion_info = 3;
-  AnomalyConfigScope anomaly_config_scope = 4;
+  repeated string event_type_ids = 2;
+  repeated AnomalyEventFamily event_families = 3;
+  repeated string threat_actor_ids = 4;
+  AnomalyConfigScope anomaly_config_scope = 5;
 }
 
 message GetAnomalyExclusionRulesResponse {
