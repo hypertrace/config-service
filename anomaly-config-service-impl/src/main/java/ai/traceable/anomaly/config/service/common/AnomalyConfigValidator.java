@@ -1,28 +1,29 @@
 package ai.traceable.anomaly.config.service.common;
 
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
-import ai.traceable.anomaly.config.service.v1.AnomalyConfigScopeType;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import io.grpc.Status;
 
 public class AnomalyConfigValidator {
 
   public Status validate(AnomalyConfigScope configScope) {
-    if (configScope.getScopeType()
-        == AnomalyConfigScopeType.ANOMALY_CONFIG_SCOPE_TYPE_UNSPECIFIED) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Anomaly Global Config Scope should have a valid scope type.");
-    }
-    if (configScope.getScopeType() == AnomalyConfigScopeType.ANOMALY_CONFIG_SCOPE_TYPE_SERVICE
+    if (configScope.getScopeCase() == AnomalyConfigScope.ScopeCase.SERVICE_SCOPE
         && configScope.getServiceScope().getId().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
-          "Anomaly Global Config Scope SERVICE should have valid Service Scope.");
+          "Anomaly Global Config SERVICE Scope should have valid Service ID.");
     }
-    if (configScope.getScopeType() == AnomalyConfigScopeType.ANOMALY_CONFIG_SCOPE_TYPE_API
+    if (configScope.getScopeCase() == AnomalyConfigScope.ScopeCase.API_SCOPE
         && (configScope.getApiScope().getId().isEmpty()
             || configScope.getApiScope().getServiceScope().getId().isEmpty())) {
       return Status.INVALID_ARGUMENT.withDescription(
-          "Anomaly Global Config Scope API should have valid API Scope.");
+          "Anomaly Global Config API Scope should have valid API and Service IDs.");
+    }
+    if (configScope.getScopeCase() == AnomalyConfigScope.ScopeCase.PARAM_SCOPE
+        && (configScope.getParamScope().getApiScope().getId().isEmpty()
+            || configScope.getParamScope().getApiScope().getServiceScope().getId().isEmpty()
+            || configScope.getParamScope().getParamName().isEmpty())) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Anomaly Global Config PARAM Scope should have a valid API and Service IDs and valid param name.");
     }
     return Status.OK;
   }

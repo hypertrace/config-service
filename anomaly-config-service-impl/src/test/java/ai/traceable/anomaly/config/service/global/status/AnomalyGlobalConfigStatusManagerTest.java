@@ -13,6 +13,8 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScopeType;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
+import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
@@ -46,7 +48,7 @@ public class AnomalyGlobalConfigStatusManagerTest {
 
   private final AnomalyConfigScope customerConfigScope =
       AnomalyConfigScope.newBuilder()
-          .setScopeType(AnomalyConfigScopeType.ANOMALY_CONFIG_SCOPE_TYPE_CUSTOMER)
+          .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
           .build();
   private final AnomalyConfigScope serviceConfigScope =
       AnomalyConfigScope.newBuilder()
@@ -92,7 +94,10 @@ public class AnomalyGlobalConfigStatusManagerTest {
         RuntimeException.class,
         () ->
             configStatusManager.getAnomalyConfigStatus(
-                requestContext, AnomalyConfigScope.getDefaultInstance()));
+                requestContext,
+                AnomalyConfigScope.newBuilder()
+                    .setParamScope(AnomalyParamScope.getDefaultInstance())
+                    .build()));
 
     expectedStatus =
         AnomalyConfigStatus.newBuilder()
@@ -149,29 +154,57 @@ public class AnomalyGlobalConfigStatusManagerTest {
         () ->
             configStatusManager.updateAnomalyConfigStatus(
                 requestContext,
-                AnomalyConfigScope.getDefaultInstance(),
+                AnomalyConfigScope.newBuilder()
+                    .setParamScope(AnomalyParamScope.getDefaultInstance())
+                    .build(),
                 AnomalyConfigStatusChange.getDefaultInstance()));
 
     AnomalyConfigStatusChange configStatusChange;
+    AnomalyConfigStatus expectedCustomerStatus;
+    {
+      configStatusChange = AnomalyConfigStatusChange.newBuilder().setInternal(true).build();
+      assertEquals(
+          configStatusChange,
+          configStatusManager.updateAnomalyConfigStatus(
+              requestContext, customerConfigScope, configStatusChange));
+      expectedCustomerStatus = AnomalyConfigStatus.newBuilder().setInternal(true).build();
+      assertEquals(
+          expectedCustomerStatus,
+          configConverter.convert(
+              fetchCustomerConfigStatus(), AnomalyConfigStatus.getDefaultInstance()));
+      assertEquals(
+          expectedCustomerStatus,
+          configConverter.convert(
+              fetchServiceConfigStatus(), AnomalyConfigStatus.getDefaultInstance()));
+      assertEquals(
+          expectedCustomerStatus,
+          configConverter.convert(
+              fetchApiConfigStatus(), AnomalyConfigStatus.getDefaultInstance()));
 
-    configStatusChange = AnomalyConfigStatusChange.newBuilder().setInternal(true).build();
-    assertEquals(
-        configStatusChange,
-        configStatusManager.updateAnomalyConfigStatus(
-            requestContext, customerConfigScope, configStatusChange));
-    AnomalyConfigStatus expectedCustomerStatus =
-        AnomalyConfigStatus.newBuilder().setInternal(true).build();
-    assertEquals(
-        expectedCustomerStatus,
-        configConverter.convert(
-            fetchCustomerConfigStatus(), AnomalyConfigStatus.getDefaultInstance()));
-    assertEquals(
-        expectedCustomerStatus,
-        configConverter.convert(
-            fetchServiceConfigStatus(), AnomalyConfigStatus.getDefaultInstance()));
-    assertEquals(
-        expectedCustomerStatus,
-        configConverter.convert(fetchApiConfigStatus(), AnomalyConfigStatus.getDefaultInstance()));
+      configStatusChange = AnomalyConfigStatusChange.newBuilder().setDisabled(false).build();
+      assertEquals(
+          AnomalyConfigStatusChange.newBuilder().setDisabled(false).setInternal(true).build(),
+          configStatusManager.updateAnomalyConfigStatus(
+              requestContext, customerConfigScope, configStatusChange));
+      expectedCustomerStatus =
+          AnomalyConfigStatus.newBuilder().setDisabled(false).setInternal(true).build();
+      assertEquals(
+          expectedCustomerStatus,
+          configConverter.convert(
+              fetchCustomerConfigStatus(), AnomalyConfigStatus.getDefaultInstance()));
+
+      configStatusChange = AnomalyConfigStatusChange.newBuilder().setDisabled(true).build();
+      assertEquals(
+          AnomalyConfigStatusChange.newBuilder().setDisabled(true).setInternal(true).build(),
+          configStatusManager.updateAnomalyConfigStatus(
+              requestContext, customerConfigScope, configStatusChange));
+      expectedCustomerStatus =
+          AnomalyConfigStatus.newBuilder().setDisabled(true).setInternal(true).build();
+      assertEquals(
+          expectedCustomerStatus,
+          configConverter.convert(
+              fetchCustomerConfigStatus(), AnomalyConfigStatus.getDefaultInstance()));
+    }
 
     configStatusChange = AnomalyConfigStatusChange.newBuilder().setDisabled(true).build();
     assertEquals(
@@ -242,6 +275,7 @@ public class AnomalyGlobalConfigStatusManagerTest {
       throws InvalidProtocolBufferException {
     configServiceBlockingStub.upsertConfig(
         UpsertConfigRequest.newBuilder()
+            .setContext(tenantId)
             .setResourceNamespace(
                 AnomalyGlobalConfigServiceConstants.ANOMALY_GLOBAL_CONFIG_NAMESPACE)
             .setResourceName(
@@ -254,6 +288,7 @@ public class AnomalyGlobalConfigStatusManagerTest {
     return configServiceBlockingStub
         .getConfig(
             GetConfigRequest.newBuilder()
+                .addContexts(tenantId)
                 .setResourceNamespace(ANOMALY_GLOBAL_CONFIG_NAMESPACE)
                 .setResourceName(ANOMALY_GLOBAL_CONFIG_STATUS_RESOURCE_NAME)
                 .build())
@@ -264,7 +299,7 @@ public class AnomalyGlobalConfigStatusManagerTest {
     return configServiceBlockingStub
         .getConfig(
             GetConfigRequest.newBuilder()
-                .addContexts(serviceScope.getId())
+                .addAllContexts(List.of(tenantId, serviceScope.getId()))
                 .setResourceNamespace(ANOMALY_GLOBAL_CONFIG_NAMESPACE)
                 .setResourceName(ANOMALY_GLOBAL_CONFIG_STATUS_RESOURCE_NAME)
                 .build())
@@ -275,7 +310,7 @@ public class AnomalyGlobalConfigStatusManagerTest {
     return configServiceBlockingStub
         .getConfig(
             GetConfigRequest.newBuilder()
-                .addAllContexts(List.of(serviceScope.getId(), apiScope.getId()))
+                .addAllContexts(List.of(tenantId, serviceScope.getId(), apiScope.getId()))
                 .setResourceNamespace(ANOMALY_GLOBAL_CONFIG_NAMESPACE)
                 .setResourceName(ANOMALY_GLOBAL_CONFIG_STATUS_RESOURCE_NAME)
                 .build())

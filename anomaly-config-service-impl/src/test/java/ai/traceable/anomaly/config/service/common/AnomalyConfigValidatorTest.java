@@ -5,8 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
-import ai.traceable.anomaly.config.service.v1.AnomalyConfigScopeType;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
+import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
 import io.grpc.Status;
 import org.junit.jupiter.api.Test;
@@ -19,38 +20,24 @@ public class AnomalyConfigValidatorTest {
   public void testValidateConfigScope() {
     Status status;
 
-    status = configValidator.validate(AnomalyConfigScope.getDefaultInstance());
-    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
-    assertTrue(status.getDescription().contains("valid scope type"));
-
     status =
         configValidator.validate(
             AnomalyConfigScope.newBuilder()
-                .setScopeType(AnomalyConfigScopeType.ANOMALY_CONFIG_SCOPE_TYPE_CUSTOMER)
+                .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
                 .build());
     assertEquals(Status.OK.getCode(), status.getCode());
 
     status =
         configValidator.validate(
             AnomalyConfigScope.newBuilder()
-                .setScopeType(AnomalyConfigScopeType.ANOMALY_CONFIG_SCOPE_TYPE_SERVICE)
+                .setServiceScope(AnomalyServiceScope.getDefaultInstance())
                 .build());
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
-    assertTrue(status.getDescription().contains("valid Service Scope"));
+    assertTrue(status.getDescription().contains("valid Service ID"));
 
     status =
         configValidator.validate(
             AnomalyConfigScope.newBuilder()
-                .setScopeType(AnomalyConfigScopeType.ANOMALY_CONFIG_SCOPE_TYPE_SERVICE)
-                .setApiScope(AnomalyApiScope.newBuilder().setId("id").build())
-                .build());
-    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
-    assertTrue(status.getDescription().contains("valid Service Scope"));
-
-    status =
-        configValidator.validate(
-            AnomalyConfigScope.newBuilder()
-                .setScopeType(AnomalyConfigScopeType.ANOMALY_CONFIG_SCOPE_TYPE_SERVICE)
                 .setServiceScope(AnomalyServiceScope.newBuilder().setId("id").build())
                 .build());
     assertEquals(Status.OK.getCode(), status.getCode());
@@ -58,38 +45,83 @@ public class AnomalyConfigValidatorTest {
     status =
         configValidator.validate(
             AnomalyConfigScope.newBuilder()
-                .setScopeType(AnomalyConfigScopeType.ANOMALY_CONFIG_SCOPE_TYPE_API)
+                .setApiScope(AnomalyApiScope.getDefaultInstance())
                 .build());
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
-    assertTrue(status.getDescription().contains("valid API Scope"));
+    assertTrue(status.getDescription().contains("valid API and Service IDs."));
 
     status =
         configValidator.validate(
             AnomalyConfigScope.newBuilder()
-                .setScopeType(AnomalyConfigScopeType.ANOMALY_CONFIG_SCOPE_TYPE_API)
-                .setServiceScope(AnomalyServiceScope.newBuilder().setId("id").build())
-                .build());
-    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
-    assertTrue(status.getDescription().contains("valid API Scope"));
-
-    status =
-        configValidator.validate(
-            AnomalyConfigScope.newBuilder()
-                .setScopeType(AnomalyConfigScopeType.ANOMALY_CONFIG_SCOPE_TYPE_API)
                 .setApiScope(AnomalyApiScope.newBuilder().setId("id").build())
                 .build());
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
-    assertTrue(status.getDescription().contains("valid API Scope"));
+    assertTrue(status.getDescription().contains("valid API and Service IDs."));
 
     status =
         configValidator.validate(
             AnomalyConfigScope.newBuilder()
-                .setScopeType(AnomalyConfigScopeType.ANOMALY_CONFIG_SCOPE_TYPE_API)
                 .setApiScope(
                     AnomalyApiScope.newBuilder()
                         .setId("api")
                         .setServiceScope(AnomalyServiceScope.newBuilder().setId("id"))
                         .build())
+                .build());
+    assertEquals(Status.OK.getCode(), status.getCode());
+
+    status =
+        configValidator.validate(
+            AnomalyConfigScope.newBuilder()
+                .setParamScope(AnomalyParamScope.getDefaultInstance())
+                .build());
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("valid API and Service IDs and valid param name"));
+
+    status =
+        configValidator.validate(
+            AnomalyConfigScope.newBuilder()
+                .setParamScope(
+                    AnomalyParamScope.newBuilder()
+                        .setApiScope(AnomalyApiScope.newBuilder().build()))
+                .build());
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("valid API and Service IDs and valid param name"));
+
+    status =
+        configValidator.validate(
+            AnomalyConfigScope.newBuilder()
+                .setParamScope(
+                    AnomalyParamScope.newBuilder()
+                        .setApiScope(AnomalyApiScope.newBuilder().setId("api").build()))
+                .build());
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("valid API and Service IDs and valid param name"));
+
+    status =
+        configValidator.validate(
+            AnomalyConfigScope.newBuilder()
+                .setParamScope(
+                    AnomalyParamScope.newBuilder()
+                        .setApiScope(
+                            AnomalyApiScope.newBuilder()
+                                .setId("api")
+                                .setServiceScope(AnomalyServiceScope.newBuilder().setId("id"))
+                                .build()))
+                .build());
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("valid API and Service IDs and valid param name"));
+
+    status =
+        configValidator.validate(
+            AnomalyConfigScope.newBuilder()
+                .setParamScope(
+                    AnomalyParamScope.newBuilder()
+                        .setApiScope(
+                            AnomalyApiScope.newBuilder()
+                                .setId("api")
+                                .setServiceScope(AnomalyServiceScope.newBuilder().setId("id"))
+                                .build())
+                        .setParamName("param"))
                 .build());
     assertEquals(Status.OK.getCode(), status.getCode());
   }

@@ -20,6 +20,7 @@ message AnomalyConfigScope {
     AnomalyServiceScope service_scope = 2; // set if scope_type = ANOMALY_CONFIG_SCOPE_TYPE_SERVICE
     AnomalyApiScope api_scope = 3; // set if scope_type = ANOMALY_CONFIG_SCOPE_TYPE_API
     AnomalyParamScope param_scope = 4; // set if scope_type = ANOMALY_CONFIG_SCOPE_TYPE_PARAM
+    AnomalyCustomerScope customer_scope = 5;
   }
 }
 
@@ -35,6 +36,9 @@ message AnomalyApiScope {
 
 message AnomalyServiceScope {
   string id = 1;
+}
+
+message AnomalyCustomerScope {
 }
 
 enum AnomalyConfigScopeType {

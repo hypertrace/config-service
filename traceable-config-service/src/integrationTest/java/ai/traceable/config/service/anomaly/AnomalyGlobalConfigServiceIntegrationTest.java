@@ -5,9 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
-import ai.traceable.anomaly.config.service.v1.AnomalyConfigScopeType;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
+import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
 import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceGrpc;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyGlobalConfigStatusRequest;
@@ -31,18 +32,12 @@ public class AnomalyGlobalConfigServiceIntegrationTest
 
   private final AnomalyConfigScope customerConfigScope =
       AnomalyConfigScope.newBuilder()
-          .setScopeType(AnomalyConfigScopeType.ANOMALY_CONFIG_SCOPE_TYPE_CUSTOMER)
+          .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
           .build();
   private final AnomalyConfigScope serviceConfigScope =
-      AnomalyConfigScope.newBuilder()
-          .setScopeType(AnomalyConfigScopeType.ANOMALY_CONFIG_SCOPE_TYPE_SERVICE)
-          .setServiceScope(serviceScope)
-          .build();
+      AnomalyConfigScope.newBuilder().setServiceScope(serviceScope).build();
   private final AnomalyConfigScope apiConfigScope =
-      AnomalyConfigScope.newBuilder()
-          .setScopeType(AnomalyConfigScopeType.ANOMALY_CONFIG_SCOPE_TYPE_API)
-          .setApiScope(apiScope)
-          .build();
+      AnomalyConfigScope.newBuilder().setApiScope(apiScope).build();
 
   @BeforeAll
   static void init() {
@@ -59,7 +54,11 @@ public class AnomalyGlobalConfigServiceIntegrationTest
 
     assertThrows(
         RuntimeException.class,
-        () -> fetchGlobalConfigStatus(AnomalyConfigScope.getDefaultInstance()));
+        () ->
+            fetchGlobalConfigStatus(
+                AnomalyConfigScope.newBuilder()
+                    .setParamScope(AnomalyParamScope.getDefaultInstance())
+                    .build()));
 
     expectedStatus =
         AnomalyConfigStatus.newBuilder()

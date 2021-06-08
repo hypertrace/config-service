@@ -7,13 +7,13 @@ import ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceConf
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.GetConfigRequest;
@@ -48,20 +48,27 @@ public class AnomalyGlobalConfigStatusManager implements ConfigStatusManager {
      * serviceConfig.disabled value and so on.. Similarly for internal flag too..
      */
     List<String> contextsWithIncreasingPriority = new ArrayList<>();
+    contextsWithIncreasingPriority.add(
+        requestContext
+            .getTenantId()
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException("Unable to get tenant id from request context")));
 
-    switch (configScope.getScopeType()) {
-      case ANOMALY_CONFIG_SCOPE_TYPE_CUSTOMER:
+    switch (configScope.getScopeCase()) {
+      case SCOPE_NOT_SET: // for backward compatibility
+      case CUSTOMER_SCOPE:
         break;
-      case ANOMALY_CONFIG_SCOPE_TYPE_SERVICE:
+      case SERVICE_SCOPE:
         contextsWithIncreasingPriority.add(configScope.getServiceScope().getId());
         break;
-      case ANOMALY_CONFIG_SCOPE_TYPE_API:
+      case API_SCOPE:
         contextsWithIncreasingPriority.add(configScope.getApiScope().getServiceScope().getId());
         contextsWithIncreasingPriority.add(configScope.getApiScope().getId());
         break;
       default:
         throw new RuntimeException(
-            String.format("Invalid scope type found: {%s}", configScope.getScopeType()));
+            String.format("Invalid scope found: {%s}", configScope.getScopeCase()));
     }
 
     return fetchConfig(requestContext, contextsWithIncreasingPriority)
@@ -76,25 +83,67 @@ public class AnomalyGlobalConfigStatusManager implements ConfigStatusManager {
 
     String context;
 
-    switch (configScope.getScopeType()) {
-      case ANOMALY_CONFIG_SCOPE_TYPE_CUSTOMER:
-        context = null;
+    switch (configScope.getScopeCase()) {
+      case SCOPE_NOT_SET: // for backward compatibility
+      case CUSTOMER_SCOPE:
+        context =
+            requestContext
+                .getTenantId()
+                .orElseThrow(
+                    () ->
+                        new IllegalArgumentException(
+                            "Unable to get tenant id from request context"));
         break;
-      case ANOMALY_CONFIG_SCOPE_TYPE_SERVICE:
+      case SERVICE_SCOPE:
         context = configScope.getServiceScope().getId();
         break;
-      case ANOMALY_CONFIG_SCOPE_TYPE_API:
+      case API_SCOPE:
         context = configScope.getApiScope().getId();
         break;
       default:
         throw new RuntimeException(
-            String.format("Invalid scope type found: {%s}", configScope.getScopeType()));
+            String.format("Invalid scope found: {%s}", configScope.getScopeCase()));
     }
-    return upsertConfig(requestContext, context, configStatusChange);
+
+    AnomalyConfigStatusChange changeToUpsert =
+        fetchContextSpecificConfig(requestContext, context)
+            .map(AnomalyConfigStatusChange::toBuilder)
+            .map(builder -> builder.mergeFrom(configStatusChange))
+            .map(AnomalyConfigStatusChange.Builder::build)
+            .orElse(configStatusChange);
+
+    return upsertConfig(requestContext, context, changeToUpsert);
   }
 
-  @SneakyThrows
   private Optional<AnomalyConfigStatus> fetchConfig(
+      RequestContext requestContext, List<String> contextsWithIncreasingPriority) {
+
+    return fetchConfigValue(requestContext, contextsWithIncreasingPriority)
+        .map(
+            value -> {
+              try {
+                return configConverter.convert(value, config.getConfigStatus());
+              } catch (InvalidProtocolBufferException e) {
+                throw new RuntimeException(e);
+              }
+            });
+  }
+
+  private Optional<AnomalyConfigStatusChange> fetchContextSpecificConfig(
+      RequestContext requestContext, String context) {
+
+    return fetchConfigValue(requestContext, List.of(context))
+        .map(
+            value -> {
+              try {
+                return configConverter.convert(value);
+              } catch (InvalidProtocolBufferException e) {
+                throw new RuntimeException(e);
+              }
+            });
+  }
+
+  private Optional<Value> fetchConfigValue(
       RequestContext requestContext, List<String> contextsWithIncreasingPriority) {
     try {
       GetConfigRequest getConfigRequest =
@@ -108,7 +157,7 @@ public class AnomalyGlobalConfigStatusManager implements ConfigStatusManager {
           requestContext.call(
               () -> configServiceBlockingStub.getConfig(getConfigRequest).getConfig());
       if (value != null && value.getKindCase() != Value.KindCase.KIND_NOT_SET) {
-        return Optional.ofNullable(configConverter.convert(value, config.getConfigStatus()));
+        return Optional.of(value);
       }
     } catch (Exception e) {
       if (Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
@@ -126,12 +175,10 @@ public class AnomalyGlobalConfigStatusManager implements ConfigStatusManager {
     try {
       upsertConfigRequestBuilder =
           UpsertConfigRequest.newBuilder()
+              .setContext(context)
               .setResourceNamespace(ANOMALY_GLOBAL_CONFIG_NAMESPACE)
               .setResourceName(ANOMALY_GLOBAL_CONFIG_STATUS_RESOURCE_NAME)
               .setConfig(configConverter.convert(configStatusChange));
-      if (!isEmpty(context)) { // else it's default context..
-        upsertConfigRequestBuilder.setContext(context);
-      }
     } catch (Exception e) {
       throw new RuntimeException(
           String.format(
