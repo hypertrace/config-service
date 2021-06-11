@@ -202,7 +202,7 @@ public class MockGenericConfigService {
               StreamObserver<GetConfigResponse> responseStreamObserver =
                   invocation.getArgument(1, StreamObserver.class);
 
-              Value mergedValue =
+              Optional<Value> mergedValue =
                   Stream.concat(
                           Stream.of(DEFAULT_CONFIG_CONTEXT), request.getContextsList().stream())
                       .map(
@@ -218,7 +218,7 @@ public class MockGenericConfigService {
 
               if (isValidValue(mergedValue)) {
                 responseStreamObserver.onNext(
-                    GetConfigResponse.newBuilder().setConfig(mergedValue).build());
+                    GetConfigResponse.newBuilder().setConfig(mergedValue.get()).build());
                 responseStreamObserver.onCompleted();
               } else {
                 responseStreamObserver.onError(Status.NOT_FOUND.asException());
@@ -231,19 +231,20 @@ public class MockGenericConfigService {
     return this;
   }
 
-  private Value mergeValues(List<Value> values) {
+  private Optional<Value> mergeValues(List<Value> values) {
     if (values.isEmpty()) {
-      return null;
+      return Optional.empty();
     }
-    return values.stream().reduce(Value.getDefaultInstance(), ConfigServiceUtils::merge);
+    return Optional.ofNullable(
+        values.stream().reduce(Value.getDefaultInstance(), ConfigServiceUtils::merge));
   }
 
   private String configContextOrDefault(String value) {
     return Optional.ofNullable(value).filter(not(String::isEmpty)).orElse(DEFAULT_CONFIG_CONTEXT);
   }
 
-  private boolean isValidValue(Value value) {
-    return value != null && value.getKindCase() != Value.KindCase.NULL_VALUE;
+  private boolean isValidValue(Optional<Value> value) {
+    return value.isPresent() && value.get().getKindCase() != Value.KindCase.NULL_VALUE;
   }
 
   private class TestInterceptor implements ServerInterceptor {
