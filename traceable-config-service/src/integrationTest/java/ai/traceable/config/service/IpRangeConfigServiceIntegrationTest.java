@@ -1,6 +1,7 @@
 package ai.traceable.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.iprange.config.service.v1.*;
 import java.util.Arrays;
@@ -91,7 +92,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
                     .getIpRangeRules(GetIpRangeRulesRequest.getDefaultInstance())
                     .getRulesList());
 
-    assertEquals(List.of(ipRangeRule2, ipRangeRule1), ipRangeRules);
+    assertCustom(List.of(ipRangeRule2, ipRangeRule1), ipRangeRules);
   }
 
   @Test
@@ -153,8 +154,8 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
             .addAllIpAddresses(Arrays.asList("11.12.13.14"))
             .build();
 
-    assertEquals(ipRangeRule1, createdIpRangeRule1);
-    assertEquals(ipRangeRule2, createdIpRangeRule2);
+    assertCustom(ipRangeRule1, createdIpRangeRule1);
+    assertCustom(ipRangeRule2, createdIpRangeRule2);
   }
 
   @Test
@@ -166,7 +167,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
             .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
             .setRuleAction(RuleAction.RULE_ACTION_BLOCK)
             .setExpirationDetails(
-                ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
+                ExpirationDetails.newBuilder().setExpirationTimestampMillis(1623226263462L).build())
             .build();
 
     String ruleId =
@@ -215,7 +216,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
                             .build())
                     .getRule());
 
-    assertEquals(updatedIpRangeRule, returnedIpRangeRule);
+    assertCustom(updatedIpRangeRule, returnedIpRangeRule);
     assertEquals(
         1,
         GrpcClientRequestContextUtil.executeInTenantContext(
@@ -236,7 +237,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
             .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
             .setRuleAction(RuleAction.RULE_ACTION_BLOCK)
             .setExpirationDetails(
-                ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
+                ExpirationDetails.newBuilder().setExpirationTimestampMillis(1623226263462L).build())
             .build();
 
     String ruleId1 =
@@ -294,6 +295,48 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
                     .getIpRangeRules(GetIpRangeRulesRequest.getDefaultInstance())
                     .getRulesList());
 
-    assertEquals(List.of(ipRangeRule1), ipRangeRules);
+    assertCustom(List.of(ipRangeRule1), ipRangeRules);
+  }
+
+  private boolean assertCustom(IpRangeRule ipRangeRule1, IpRangeRule ipRangeRule2) {
+    assertEquals(ipRangeRule1.getId(), ipRangeRule2.getId());
+    assertEquals(ipRangeRule1.getRuleDetails().getName(), ipRangeRule2.getRuleDetails().getName());
+    assertEquals(
+        ipRangeRule1.getRuleDetails().getDescription(),
+        ipRangeRule2.getRuleDetails().getDescription());
+    assertEquals(
+        ipRangeRule1.getRuleDetails().getRawInputIpDataList(),
+        ipRangeRule2.getRuleDetails().getRawInputIpDataList());
+    assertEquals(
+        ipRangeRule1.getRuleDetails().getRuleAction(),
+        ipRangeRule2.getRuleDetails().getRuleAction());
+    if (ipRangeRule1.getRuleDetails().hasExpirationDetails()
+        && ipRangeRule2.getRuleDetails().hasExpirationDetails()) {
+      assertTrue(
+          ipRangeRule1
+                  .getRuleDetails()
+                  .getExpirationDetails()
+                  .getExpirationDuration()
+                  .equals(
+                      ipRangeRule2.getRuleDetails().getExpirationDetails().getExpirationDuration())
+              || ipRangeRule1.getRuleDetails().getExpirationDetails().getExpirationTimestampMillis()
+                  == ipRangeRule2
+                      .getRuleDetails()
+                      .getExpirationDetails()
+                      .getExpirationTimestampMillis());
+    }
+    assertEquals(ipRangeRule1.getDisabled(), ipRangeRule2.getDisabled());
+    assertEquals(ipRangeRule1.getInternal(), ipRangeRule2.getInternal());
+    assertEquals(ipRangeRule1.getIpRangesList(), ipRangeRule2.getIpRangesList());
+    assertEquals(ipRangeRule1.getIpAddressesList(), ipRangeRule2.getIpAddressesList());
+    return true;
+  }
+
+  private boolean assertCustom(List<IpRangeRule> ipRangeRules1, List<IpRangeRule> ipRangeRules2) {
+    assertEquals(ipRangeRules1.size(), ipRangeRules2.size());
+    for (int i = 0; i < ipRangeRules1.size(); i++) {
+      assertCustom(ipRangeRules1.get(i), ipRangeRules2.get(i));
+    }
+    return true;
   }
 }

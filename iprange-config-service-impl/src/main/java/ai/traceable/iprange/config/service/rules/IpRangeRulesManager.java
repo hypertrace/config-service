@@ -5,14 +5,13 @@ import static ai.traceable.iprange.config.service.constants.IpRangeConfigConstan
 
 import ai.traceable.iprange.config.service.utils.IpValidationUtils;
 import ai.traceable.iprange.config.service.utils.UuidGenerator;
-import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
-import ai.traceable.iprange.config.service.v1.GetRulesFilter;
-import ai.traceable.iprange.config.service.v1.IpRangeRule;
-import ai.traceable.iprange.config.service.v1.UpdateIpRangeRuleRequest;
+import ai.traceable.iprange.config.service.v1.*;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
@@ -30,17 +29,20 @@ class IpRangeRulesManager implements RulesManager {
   private final IpRangeRuleConverter ipRangeRuleConverter;
   private final UuidGenerator uuidGenerator;
   private final IpValidationUtils ipValidationUtils;
+  private final Clock clock;
 
   @Inject
   IpRangeRulesManager(
       ConfigServiceBlockingStub configServiceBlockingStub,
       IpRangeRuleConverter ipRangeRuleConverter,
       UuidGenerator uuidGenerator,
-      IpValidationUtils ipValidationUtils) {
+      IpValidationUtils ipValidationUtils,
+      Clock clock) {
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.ipRangeRuleConverter = ipRangeRuleConverter;
     this.uuidGenerator = uuidGenerator;
     this.ipValidationUtils = ipValidationUtils;
+    this.clock = clock;
   }
 
   @Override
@@ -113,11 +115,10 @@ class IpRangeRulesManager implements RulesManager {
     IpRangeRule ipRangeRule =
         IpRangeRule.newBuilder()
             .setId(ruleId)
-            .setRuleDetails(createRuleRequest.getRuleDetails())
+            .setRuleDetails(parseRuleDetails(createRuleRequest.getRuleDetails()))
             .addAllIpRanges(ipRanges)
             .addAllIpAddresses(ipAddresses)
             .build();
-
     return upsertConfig(requestContext, ipRangeRule);
   }
 
@@ -138,7 +139,7 @@ class IpRangeRulesManager implements RulesManager {
     IpRangeRule ipRangeRule =
         IpRangeRule.newBuilder()
             .setId(ruleId)
-            .setRuleDetails(updateRuleRequest.getRuleDetails())
+            .setRuleDetails(parseRuleDetails(updateRuleRequest.getRuleDetails()))
             .setDisabled(updateRuleRequest.getDisabled())
             .setInternal(updateRuleRequest.getInternal())
             .addAllIpRanges(ipRanges)
@@ -230,5 +231,21 @@ class IpRangeRulesManager implements RulesManager {
           }
         });
     return new Object[] {ipAddresses, ipRanges};
+  }
+
+  private IpRangeRuleDetails parseRuleDetails(IpRangeRuleDetails ipRangeRuleDetails) {
+    if (ipRangeRuleDetails.getExpirationDetails().hasExpirationDuration()
+        && !ipRangeRuleDetails.getExpirationDetails().hasExpirationTimestampMillis()) {
+      IpRangeRuleDetails.Builder builder = ipRangeRuleDetails.toBuilder();
+      builder
+          .getExpirationDetailsBuilder()
+          .setExpirationTimestampMillis(
+              clock.millis()
+                  + Duration.parse(
+                          ipRangeRuleDetails.getExpirationDetails().getExpirationDuration())
+                      .toMillis());
+      return builder.build();
+    }
+    return ipRangeRuleDetails;
   }
 }

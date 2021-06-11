@@ -13,6 +13,8 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.*;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -26,9 +28,9 @@ class IpRangeRulesManagerTest {
   private ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub;
   private IpRangeRuleConverter ipRangeRuleConverter;
   private UuidGenerator uuidGenerator;
-  private IpValidationUtils ipValidationUtils;
   private IpRangeRulesManager rulesManager;
   private RequestContext requestContext;
+  private Clock mockClock;
 
   @BeforeEach
   void setUp() {
@@ -38,10 +40,15 @@ class IpRangeRulesManagerTest {
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     ipRangeRuleConverter = mock(IpRangeRuleConverter.class);
     uuidGenerator = mock(UuidGenerator.class);
-    ipValidationUtils = new IpValidationUtils();
+    IpValidationUtils ipValidationUtils = new IpValidationUtils();
+    mockClock = mock(Clock.class);
     this.rulesManager =
         new IpRangeRulesManager(
-            configServiceBlockingStub, ipRangeRuleConverter, uuidGenerator, ipValidationUtils);
+            configServiceBlockingStub,
+            ipRangeRuleConverter,
+            uuidGenerator,
+            ipValidationUtils,
+            mockClock);
     requestContext = RequestContext.forTenantId("default tenant");
   }
 
@@ -185,10 +192,26 @@ class IpRangeRulesManagerTest {
                   ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
               .build();
 
+      long now = Clock.systemUTC().millis();
+
       IpRangeRule ipRangeRule =
           IpRangeRule.newBuilder()
               .setId("First-test")
-              .setRuleDetails(ipRangeRuleDetails)
+              .setRuleDetails(
+                  IpRangeRuleDetails.newBuilder(ipRangeRuleDetails)
+                      .setExpirationDetails(
+                          ExpirationDetails.newBuilder()
+                              .setExpirationDuration(
+                                  ipRangeRuleDetails.getExpirationDetails().getExpirationDuration())
+                              .setExpirationTimestampMillis(
+                                  Duration.parse(
+                                              ipRangeRuleDetails
+                                                  .getExpirationDetails()
+                                                  .getExpirationDuration())
+                                          .toMillis()
+                                      + now)
+                              .build())
+                      .build())
               .addAllIpAddresses(Arrays.asList("1.2.3.4"))
               .addAllIpRanges(Arrays.asList("1.1.1.1/16"))
               .build();
@@ -199,6 +222,7 @@ class IpRangeRulesManagerTest {
 
       when(ipRangeRuleConverter.convert(ipRangeRule)).thenReturn(ruleConfig);
       when(ipRangeRuleConverter.convert(ruleConfig)).thenReturn(ipRangeRule);
+      when(mockClock.millis()).thenReturn(now);
 
       IpRangeRule maybeCreatedIpRangeRule =
           rulesManager.createIpRangeRule(
@@ -227,7 +251,20 @@ class IpRangeRulesManagerTest {
       IpRangeRule ipRangeRule =
           IpRangeRule.newBuilder()
               .setId("First-test")
-              .setRuleDetails(ipRangeRuleDetails)
+              .setRuleDetails(
+                  IpRangeRuleDetails.newBuilder(ipRangeRuleDetails)
+                      .setExpirationDetails(
+                          ExpirationDetails.newBuilder()
+                              .setExpirationDuration(
+                                  ipRangeRuleDetails.getExpirationDetails().getExpirationDuration())
+                              .setExpirationTimestampMillis(
+                                  Duration.parse(
+                                          ipRangeRuleDetails
+                                              .getExpirationDetails()
+                                              .getExpirationDuration())
+                                      .toMillis())
+                              .build())
+                      .build())
               .addAllIpAddresses(Arrays.asList("1.2.3.4"))
               .addAllIpRanges(Arrays.asList("1.1.1.1/16"))
               .build();
@@ -348,11 +385,26 @@ class IpRangeRulesManagerTest {
               .setExpirationDetails(
                   ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
               .build();
+      long now = Clock.systemUTC().millis();
 
       IpRangeRule updatedIpRangeRule =
           IpRangeRule.newBuilder()
               .setId("First-test")
-              .setRuleDetails(updatedRuleDetails)
+              .setRuleDetails(
+                  IpRangeRuleDetails.newBuilder(updatedRuleDetails)
+                      .setExpirationDetails(
+                          ExpirationDetails.newBuilder()
+                              .setExpirationDuration(
+                                  updatedRuleDetails.getExpirationDetails().getExpirationDuration())
+                              .setExpirationTimestampMillis(
+                                  Duration.parse(
+                                              updatedRuleDetails
+                                                  .getExpirationDetails()
+                                                  .getExpirationDuration())
+                                          .toMillis()
+                                      + now)
+                              .build())
+                      .build())
               .setDisabled(true)
               .addAllIpAddresses(Arrays.asList("11.12.13.14"))
               .addAllIpRanges(Arrays.asList("1.1.1.1/16"))
@@ -364,6 +416,7 @@ class IpRangeRulesManagerTest {
       Value ruleConfig = mockRuleConfig("First-test", "Tester-1");
       when(ipRangeRuleConverter.convert(updatedIpRangeRule)).thenReturn(ruleConfig);
       when(ipRangeRuleConverter.convert(ruleConfig)).thenReturn(updatedIpRangeRule);
+      when(mockClock.millis()).thenReturn(now);
 
       IpRangeRule maybeUpdatedIpRangeRule =
           rulesManager.updateIpRangeRule(
@@ -394,7 +447,20 @@ class IpRangeRulesManagerTest {
       IpRangeRule updatedIpRangeRule =
           IpRangeRule.newBuilder()
               .setId("First-test")
-              .setRuleDetails(updatedRuleDetails)
+              .setRuleDetails(
+                  IpRangeRuleDetails.newBuilder(updatedRuleDetails)
+                      .setExpirationDetails(
+                          ExpirationDetails.newBuilder()
+                              .setExpirationDuration(
+                                  updatedRuleDetails.getExpirationDetails().getExpirationDuration())
+                              .setExpirationTimestampMillis(
+                                  Duration.parse(
+                                          updatedRuleDetails
+                                              .getExpirationDetails()
+                                              .getExpirationDuration())
+                                      .toMillis())
+                              .build())
+                      .build())
               .setDisabled(true)
               .addAllIpAddresses(Arrays.asList("11.12.13.14"))
               .addAllIpRanges(Arrays.asList("1.1.1.1/16"))
@@ -436,7 +502,20 @@ class IpRangeRulesManagerTest {
       IpRangeRule updatedIpRangeRule =
           IpRangeRule.newBuilder()
               .setId("First-test")
-              .setRuleDetails(updatedRuleDetails)
+              .setRuleDetails(
+                  IpRangeRuleDetails.newBuilder(updatedRuleDetails)
+                      .setExpirationDetails(
+                          ExpirationDetails.newBuilder()
+                              .setExpirationDuration(
+                                  updatedRuleDetails.getExpirationDetails().getExpirationDuration())
+                              .setExpirationTimestampMillis(
+                                  Duration.parse(
+                                          updatedRuleDetails
+                                              .getExpirationDetails()
+                                              .getExpirationDuration())
+                                      .toMillis())
+                              .build())
+                      .build())
               .setDisabled(true)
               .addAllIpAddresses(Arrays.asList("11.12.13.14"))
               .addAllIpRanges(Arrays.asList("1.1.1.1/16"))
