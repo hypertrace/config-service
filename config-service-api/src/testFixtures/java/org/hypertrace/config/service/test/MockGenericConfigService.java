@@ -232,6 +232,9 @@ public class MockGenericConfigService {
   }
 
   private Value mergeValues(List<Value> values) {
+    if (values.isEmpty()) {
+      return null;
+    }
     return values.stream().reduce(Value.getDefaultInstance(), ConfigServiceUtils::merge);
   }
 
