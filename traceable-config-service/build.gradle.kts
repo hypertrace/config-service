@@ -59,6 +59,7 @@ dependencies {
   implementation(project(":activity-event-producer"))
   implementation(project(":sensitive-data-config-service-impl"))
   implementation(project(":rate-limiting-config-service-impl"))
+  implementation(project(":license-status-config-service-impl"))
   implementation(project(":local-processing-config-service-impl"))
   implementation(project(":region-config-service-impl"))
   implementation(project(":iprange-config-service-impl"))

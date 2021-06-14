@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package ai.traceable.licensestatus.config.service.v1;
+
+option java_multiple_files = true;
+
+message LicenseStatus {
+  LicenseLimit traces_license_limit = 1;
+}
+
+enum LicenseLimit {
+  LICENSE_LIMIT_UNSPECIFIED = 0;
+  LICENSE_LIMIT_AVAILABLE = 1;
+  LICENSE_LIMIT_EXHAUSTED = 2;
+}

@@ -5,9 +5,7 @@ plugins {
 }
 
 dependencies {
-  api(project(":local-processing-config-service-api"))
-
-  implementation(project(":license-status-config-service-api"))
+  api(project(":license-status-config-service-api"))
   implementation("org.hypertrace.config.service:config-service-api")
   implementation("com.google.guava:guava:30.1.1-jre")
   implementation("com.google.protobuf:protobuf-java-util:3.15.8")
@@ -23,8 +21,6 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
   testImplementation("org.mockito:mockito-core:3.9.0")
   testImplementation(testFixtures("org.hypertrace.config.service:config-service-api"))
-  testAnnotationProcessor("org.projectlombok:lombok:1.18.20")
-  testCompileOnly("org.projectlombok:lombok:1.18.20")
 }
 
 tasks.test {

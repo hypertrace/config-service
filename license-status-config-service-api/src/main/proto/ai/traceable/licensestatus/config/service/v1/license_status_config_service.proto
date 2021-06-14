@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package ai.traceable.licensestatus.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/licensestatus/config/service/v1/license_status.proto";
+
+service LicenseStatusConfigService {
+
+  // update tenant limit status
+  rpc UpdateLicenseStatus(UpdateLicenseStatusRequest) returns (UpdateLicenseStatusResponse) {}
+
+  // get tenant limit status
+  rpc GetLicenseStatus(GetLicenseStatusRequest) returns (GetLicenseStatusResponse) {}
+
+}
+
+message UpdateLicenseStatusRequest {
+  LicenseStatus license_status = 1;
+}
+
+message UpdateLicenseStatusResponse {
+  LicenseStatus license_status = 1;
+}
+
+message GetLicenseStatusRequest {
+}
+
+message GetLicenseStatusResponse {
+  LicenseStatus license_status = 1;
+}
