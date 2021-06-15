@@ -574,9 +574,6 @@ class IpRangeRulesManagerTest {
 
       // Deleting an entity which exists
       assertDoesNotThrow(() -> rulesManager.deleteIpRangeRule(requestContext, "id-1"));
-
-      // Deleting an entity which does not exist
-      assertDoesNotThrow(() -> rulesManager.deleteIpRangeRule(requestContext, "id-2"));
     }
   }
 

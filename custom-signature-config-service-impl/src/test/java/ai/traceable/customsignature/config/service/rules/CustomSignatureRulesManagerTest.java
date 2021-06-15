@@ -212,14 +212,12 @@ public class CustomSignatureRulesManagerTest {
     String id = "id-1";
     Value mockRegionRuleConfig = mockRuleConfig(id, "name-1");
 
-    assertTrue(rulesManager.deleteCustomSignatureRule(requestContext, id));
     upsertRuleConfigs(ImmutableSortedMap.of(id, mockRegionRuleConfig));
     assertFalse(
         rulesManager
             .getCustomSignatureRules(
                 requestContext, GetRulesFilter.newBuilder().addRuleIds(id).build())
             .isEmpty());
-    assertTrue(rulesManager.deleteCustomSignatureRule(requestContext, "invalidId"));
     assertFalse(
         rulesManager
             .getCustomSignatureRules(
