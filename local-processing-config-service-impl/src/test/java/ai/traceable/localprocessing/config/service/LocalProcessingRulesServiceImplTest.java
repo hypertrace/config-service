@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import ai.traceable.localprocessing.config.service.v1.CreateLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.DeleteLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.GetAllLocalProcessingRulesRequest;
+import ai.traceable.localprocessing.config.service.v1.GetDefaultProtectionModeRequest;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRuleDetails;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRuleMetadata;
@@ -14,6 +15,8 @@ import ai.traceable.localprocessing.config.service.v1.LocalProcessingRulesServic
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRulesServiceGrpc.LocalProcessingRulesServiceBlockingStub;
 import ai.traceable.localprocessing.config.service.v1.NewLocalProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.ProtectionMode;
+import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionModeRequest;
+import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionModeResponse;
 import ai.traceable.localprocessing.config.service.v1.UpdateLocalProcessingRuleRequest;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -127,6 +130,27 @@ class LocalProcessingRulesServiceImplTest {
         localProcessingRulesStub
             .getAllLocalProcessingRules(GetAllLocalProcessingRulesRequest.getDefaultInstance())
             .getLocalProcessingRulesDetailsList());
+  }
+
+  @Test
+  void upsertAndGetDefaultProtectionMode() {
+    ProtectionMode defaultProtectionMode =
+        localProcessingRulesStub
+            .getDefaultProtectionMode(GetDefaultProtectionModeRequest.newBuilder().build())
+            .getDefaultProtectionMode();
+    assertEquals(ProtectionMode.PROTECTION_MODE_ADVANCED, defaultProtectionMode);
+
+    UpdateDefaultProtectionModeResponse response =
+        localProcessingRulesStub.updateDefaultProtectionMode(
+            UpdateDefaultProtectionModeRequest.newBuilder()
+                .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
+                .build());
+    assertEquals(ProtectionMode.PROTECTION_MODE_CORE, response.getDefaultProtectionMode());
+    defaultProtectionMode =
+        localProcessingRulesStub
+            .getDefaultProtectionMode(GetDefaultProtectionModeRequest.newBuilder().build())
+            .getDefaultProtectionMode();
+    assertEquals(ProtectionMode.PROTECTION_MODE_CORE, defaultProtectionMode);
   }
 
   private LocalProcessingRuleDetails buildLocalProcessingRuleDetails(

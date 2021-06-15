@@ -13,7 +13,6 @@ import ai.traceable.licensestatus.config.service.v1.LicenseStatus;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc.LicenseStatusConfigServiceBlockingStub;
 import ai.traceable.localprocessing.config.service.v1.CreateLocalProcessingRuleRequest;
-import ai.traceable.localprocessing.config.service.v1.GetDefaultProtectionModeRequest;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigRequest;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc.LocalProcessingConfigServiceBlockingStub;
@@ -24,8 +23,6 @@ import ai.traceable.localprocessing.config.service.v1.NewLocalProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.ProtectedEndpoint;
 import ai.traceable.localprocessing.config.service.v1.ProtectionMode;
 import ai.traceable.localprocessing.config.service.v1.ProtectionModeConfig;
-import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionModeRequest;
-import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionModeResponse;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.Channel;
@@ -117,27 +114,6 @@ class LocalProcessingConfigServiceImplTest {
             .getLocalProcessingConfig(GetLocalProcessingConfigRequest.getDefaultInstance())
             .getProtectionModeConfig();
     assertEquals(expectedConfig, actualConfig);
-  }
-
-  @Test
-  void upsertAndGetDefaultProtectionMode() {
-    ProtectionMode defaultProtectionMode =
-        localProcessingConfigStub
-            .getDefaultProtectionMode(GetDefaultProtectionModeRequest.newBuilder().build())
-            .getDefaultProtectionMode();
-    assertEquals(ProtectionMode.PROTECTION_MODE_ADVANCED, defaultProtectionMode);
-
-    UpdateDefaultProtectionModeResponse response =
-        localProcessingConfigStub.updateDefaultProtectionMode(
-            UpdateDefaultProtectionModeRequest.newBuilder()
-                .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
-                .build());
-    assertEquals(ProtectionMode.PROTECTION_MODE_CORE, response.getDefaultProtectionMode());
-    defaultProtectionMode =
-        localProcessingConfigStub
-            .getDefaultProtectionMode(GetDefaultProtectionModeRequest.newBuilder().build())
-            .getDefaultProtectionMode();
-    assertEquals(ProtectionMode.PROTECTION_MODE_CORE, defaultProtectionMode);
   }
 
   private LocalProcessingRuleDetails createLocalProcessingRule(

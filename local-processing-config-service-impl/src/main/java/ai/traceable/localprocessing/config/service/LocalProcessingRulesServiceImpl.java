@@ -6,7 +6,12 @@ import ai.traceable.localprocessing.config.service.v1.DeleteLocalProcessingRuleR
 import ai.traceable.localprocessing.config.service.v1.DeleteLocalProcessingRuleResponse;
 import ai.traceable.localprocessing.config.service.v1.GetAllLocalProcessingRulesRequest;
 import ai.traceable.localprocessing.config.service.v1.GetAllLocalProcessingRulesResponse;
+import ai.traceable.localprocessing.config.service.v1.GetDefaultProtectionModeRequest;
+import ai.traceable.localprocessing.config.service.v1.GetDefaultProtectionModeResponse;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRulesServiceGrpc;
+import ai.traceable.localprocessing.config.service.v1.ProtectionMode;
+import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionModeRequest;
+import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionModeResponse;
 import ai.traceable.localprocessing.config.service.v1.UpdateLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.UpdateLocalProcessingRuleResponse;
 import com.typesafe.config.Config;
@@ -93,6 +98,48 @@ public class LocalProcessingRulesServiceImpl
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Delete Redaction Rule RPC failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void updateDefaultProtectionMode(
+      UpdateDefaultProtectionModeRequest request,
+      StreamObserver<UpdateDefaultProtectionModeResponse> responseObserver) {
+
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      LocalProcessingConfigRequestValidator.validateOrThrow(requestContext, request);
+      ProtectionMode defaultProtectionMode = request.getDefaultProtectionMode();
+      ProtectionMode updatedDefaultProtectionMode =
+          configServiceCoordinator.upsertDefaultProtectionModeConfig(
+              requestContext, defaultProtectionMode);
+      responseObserver.onNext(
+          UpdateDefaultProtectionModeResponse.newBuilder()
+              .setDefaultProtectionMode(updatedDefaultProtectionMode)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Update Default Protection Mode Config RPC failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getDefaultProtectionMode(
+      GetDefaultProtectionModeRequest request,
+      StreamObserver<GetDefaultProtectionModeResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      LocalProcessingConfigRequestValidator.validateOrThrow(requestContext, request);
+      responseObserver.onNext(
+          GetDefaultProtectionModeResponse.newBuilder()
+              .setDefaultProtectionMode(
+                  configServiceCoordinator.getDefaultProtectionModeConfig(requestContext))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Get Default Protection Mode Config RPC failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }

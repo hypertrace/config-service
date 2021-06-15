@@ -15,6 +15,13 @@ service LocalProcessingRulesService {
   rpc GetAllLocalProcessingRules(GetAllLocalProcessingRulesRequest) returns (GetAllLocalProcessingRulesResponse) {}
 
   rpc DeleteLocalProcessingRule(DeleteLocalProcessingRuleRequest) returns (DeleteLocalProcessingRuleResponse) {}
+
+  // update default protection mode
+  rpc UpdateDefaultProtectionMode(UpdateDefaultProtectionModeRequest) returns (UpdateDefaultProtectionModeResponse) {}
+
+  // get default protection mode
+  rpc GetDefaultProtectionMode(GetDefaultProtectionModeRequest) returns (GetDefaultProtectionModeResponse) {}
+
 }
 
 message CreateLocalProcessingRuleRequest {
@@ -44,6 +51,20 @@ message DeleteLocalProcessingRuleRequest {
 }
 
 message DeleteLocalProcessingRuleResponse {}
+
+message UpdateDefaultProtectionModeRequest {
+  ProtectionMode default_protection_mode = 1;
+}
+
+message UpdateDefaultProtectionModeResponse {
+  ProtectionMode default_protection_mode = 1;
+}
+
+message GetDefaultProtectionModeRequest {}
+
+message GetDefaultProtectionModeResponse {
+  ProtectionMode default_protection_mode = 1;
+}
 
 message NewLocalProcessingRule {
   string url_pattern = 1;

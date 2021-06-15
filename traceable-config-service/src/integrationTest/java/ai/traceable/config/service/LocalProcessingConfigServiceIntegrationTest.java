@@ -199,13 +199,13 @@ class LocalProcessingConfigServiceIntegrationTest
             .setDefaultProtectionMode(protectionMode)
             .build();
     GrpcClientRequestContextUtil.executeInTenantContext(
-        TENANT_ID, () -> localProcessingConfigStub.updateDefaultProtectionMode(request));
+        TENANT_ID, () -> localProcessingRulesStub.updateDefaultProtectionMode(request));
   }
 
   private ProtectionMode getDefaultProtectionMode() {
     GetDefaultProtectionModeRequest request = GetDefaultProtectionModeRequest.newBuilder().build();
     return GrpcClientRequestContextUtil.executeInTenantContext(
-            TENANT_ID, () -> localProcessingConfigStub.getDefaultProtectionMode(request))
+            TENANT_ID, () -> localProcessingRulesStub.getDefaultProtectionMode(request))
         .getDefaultProtectionMode();
   }
 

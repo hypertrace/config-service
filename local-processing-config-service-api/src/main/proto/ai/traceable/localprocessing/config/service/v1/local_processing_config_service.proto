@@ -9,31 +9,10 @@ import "ai/traceable/localprocessing/config/service/v1/protection_mode_config.pr
 
 service LocalProcessingConfigService {
   rpc GetLocalProcessingConfig(GetLocalProcessingConfigRequest) returns (GetLocalProcessingConfigResponse) {}
-
-  // update default protection mode
-  rpc UpdateDefaultProtectionMode(UpdateDefaultProtectionModeRequest) returns (UpdateDefaultProtectionModeResponse) {}
-
-  // get default protection mode
-  rpc GetDefaultProtectionMode(GetDefaultProtectionModeRequest) returns (GetDefaultProtectionModeResponse) {}
-
 }
 
 message GetLocalProcessingConfigRequest {}
 
 message GetLocalProcessingConfigResponse {
   ProtectionModeConfig protection_mode_config = 1;
-}
-
-message UpdateDefaultProtectionModeRequest {
-  ProtectionMode default_protection_mode = 1;
-}
-
-message UpdateDefaultProtectionModeResponse {
-  ProtectionMode default_protection_mode = 1;
-}
-
-message GetDefaultProtectionModeRequest {}
-
-message GetDefaultProtectionModeResponse {
-  ProtectionMode default_protection_mode = 1;
 }

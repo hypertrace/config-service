@@ -7,17 +7,12 @@ import ai.traceable.licensestatus.config.service.v1.GetLicenseStatusResponse;
 import ai.traceable.licensestatus.config.service.v1.LicenseLimit;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc.LicenseStatusConfigServiceBlockingStub;
-import ai.traceable.localprocessing.config.service.v1.GetDefaultProtectionModeRequest;
-import ai.traceable.localprocessing.config.service.v1.GetDefaultProtectionModeResponse;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigRequest;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigResponse;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRuleDetails;
 import ai.traceable.localprocessing.config.service.v1.ProtectedEndpoint;
-import ai.traceable.localprocessing.config.service.v1.ProtectionMode;
 import ai.traceable.localprocessing.config.service.v1.ProtectionModeConfig;
-import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionModeRequest;
-import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionModeResponse;
 import com.typesafe.config.Config;
 import io.grpc.Channel;
 import io.grpc.stub.StreamObserver;
@@ -106,47 +101,5 @@ public class LocalProcessingConfigServiceImpl
                     .setDefaultProtectionMode(PROTECTION_MODE_CORE)
                     .build())
             .build());
-  }
-
-  @Override
-  public void updateDefaultProtectionMode(
-      UpdateDefaultProtectionModeRequest request,
-      StreamObserver<UpdateDefaultProtectionModeResponse> responseObserver) {
-
-    try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
-      LocalProcessingConfigRequestValidator.validateOrThrow(requestContext, request);
-      ProtectionMode defaultProtectionMode = request.getDefaultProtectionMode();
-      ProtectionMode updatedDefaultProtectionMode =
-          configServiceCoordinator.upsertDefaultProtectionModeConfig(
-              requestContext, defaultProtectionMode);
-      responseObserver.onNext(
-          UpdateDefaultProtectionModeResponse.newBuilder()
-              .setDefaultProtectionMode(updatedDefaultProtectionMode)
-              .build());
-      responseObserver.onCompleted();
-    } catch (Exception e) {
-      log.error("Update Default Protection Mode Config RPC failed for request:{}", request, e);
-      responseObserver.onError(e);
-    }
-  }
-
-  @Override
-  public void getDefaultProtectionMode(
-      GetDefaultProtectionModeRequest request,
-      StreamObserver<GetDefaultProtectionModeResponse> responseObserver) {
-    try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
-      LocalProcessingConfigRequestValidator.validateOrThrow(requestContext, request);
-      responseObserver.onNext(
-          GetDefaultProtectionModeResponse.newBuilder()
-              .setDefaultProtectionMode(
-                  configServiceCoordinator.getDefaultProtectionModeConfig(requestContext))
-              .build());
-      responseObserver.onCompleted();
-    } catch (Exception e) {
-      log.error("Get Default Protection Mode Config RPC failed for request:{}", request, e);
-      responseObserver.onError(e);
-    }
   }
 }
