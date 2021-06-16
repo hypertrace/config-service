@@ -22,7 +22,7 @@ message GetRulesFilter {
   repeated string rule_ids = 1;
   repeated string event_type_ids = 2;
   repeated AnomalyEventFamily event_families = 3;
-  repeated string threat_actor_ids = 4;
+  repeated string anomaly_actor_ids = 4;
   AnomalyConfigScope anomaly_config_scope = 5;
 }
 
@@ -69,7 +69,7 @@ message AnomalyExclusionRuleData {
   string name = 1;
   string description = 2;
   EventExclusionInfo event_exclusion_info = 3;
-  ThreatActorExclusionInfo threat_actor_exclusion_info = 4;
+  AnomalyActorExclusionInfo anomaly_actor_exclusion_info = 4;
   AnomalyConfigScope anomaly_config_scope = 5;
 }
 
@@ -77,11 +77,12 @@ message EventExclusionInfo {
   optional string event_type_id = 1;
   AnomalyEventFamily anomaly_event_family = 2;
   EventExclusionType event_exclusion_type = 3;
+  optional string event_type_name = 4;
 }
 
-message ThreatActorExclusionInfo {
-  oneof threat_actor_exclusion {
-    string threat_actor_id = 1;
+message AnomalyActorExclusionInfo {
+  oneof anomaly_actor_exclusion {
+    string anomaly_actor_id = 1;
   }
 }
 
