@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package org.hypertrace.notification.channel.config.service.v1;
+
+message NewNotificationChannel {
+  string channel_name = 1;
+  NotificationChannelConfig notification_channel_config = 3;
+}
+
+message NotificationChannel {
+  string id = 1;
+  string channel_name = 2;
+  NotificationChannelConfig notification_channel_config = 4;
+}
+
+message NotificationChannelConfig {
+  repeated EmailChannelConfig email_channel_config = 1;
+  repeated WebhookChannelConfig webhook_channel_config = 2;
+}
+
+enum WebhookFormat {
+  WEBHOOK_FORMAT_UNSPECIFIED = 0;
+  WEBHOOK_FORMAT_SLACK = 1;
+  WEBHOOK_FORMAT_JSON = 2;
+}
+
+message WebhookChannelConfig {
+  string url = 1;
+  WebhookFormat format = 2;
+}
+
+message EmailChannelConfig {
+  string address = 1;
+}

@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package org.hypertrace.alerting.config.service.v1;
+
+message EventAnomalyEventCondition {
+  string event_category = 1;
+  repeated EventCondition event_conditions = 2;
+}
+
+message EventCondition {
+  string event_type = 1;
+  string event_value = 2;
+}

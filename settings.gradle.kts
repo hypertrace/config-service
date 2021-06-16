@@ -20,3 +20,7 @@ include(":config-proto-converter")
 
 include(":spaces-config-service-api")
 include(":spaces-config-service-impl")
+
+
+include(":alerting-config-service-api")
+include(":notification-channel-config-service-api")
