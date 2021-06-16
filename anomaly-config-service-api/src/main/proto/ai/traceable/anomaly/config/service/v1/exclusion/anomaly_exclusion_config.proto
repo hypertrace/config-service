@@ -82,8 +82,12 @@ message EventExclusionInfo {
 
 message AnomalyActorExclusionInfo {
   oneof anomaly_actor_exclusion {
-    string anomaly_actor_id = 1;
+    AnomalyActor anomaly_actor = 1;
   }
+}
+
+message AnomalyActor {
+  string id = 1;
 }
 
 enum AnomalyEventCategory {
