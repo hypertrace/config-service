@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package org.hypertrace.alerting.config.service.v1;
+
+message MetricAnomalyEventCondition {
+
+}

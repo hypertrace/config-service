@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package org.hypertrace.alerting.config.service.v1;
+
+import "org/hypertrace/alerting/config/service/v1/notification_rule.proto";
+
+service NotificationRuleConfigService {
+  rpc CreateNotificationRule(CreateNotificationRuleRequest) returns (CreateNotificationRuleResponse) {}
+  rpc UpdateNotificationRule(UpdateNotificationRuleRequest) returns (UpdateNotificationRuleResponse) {}
+  rpc GetAllNotificationRules(GetAllNotificationRulesRequest) returns (GetAllNotificationRulesResponse) {}
+  rpc DeleteNotificationRule(DeleteNotificationRuleRequest) returns (DeleteNotificationRuleResponse) {}
+}
+
+message CreateNotificationRuleRequest {
+  NewNotificationRule new_notification_rule = 1;
+}
+
+message CreateNotificationRuleResponse {
+  NotificationRule notification_rule = 1;
+}
+
+message UpdateNotificationRuleRequest {
+  NotificationRule notification_rule = 1;
+}
+
+message UpdateNotificationRuleResponse {
+  NotificationRule notification_rule = 1;
+}
+
+message GetAllNotificationRulesRequest {}
+
+message GetAllNotificationRulesResponse {
+  repeated NotificationRule notification_rules = 1;
+}
+
+message DeleteNotificationRuleRequest {
+  string notification_rule_id = 1;
+}
+
+message DeleteNotificationRuleResponse {}
+
+message GetNotificationRulesResponse {
+  repeated NotificationRule notification_rules = 1;
+}
