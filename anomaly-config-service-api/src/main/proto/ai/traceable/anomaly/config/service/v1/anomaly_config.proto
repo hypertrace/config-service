@@ -56,3 +56,16 @@ enum AnomalyEventFamily {
   ANOMALY_EVENT_FAMILY_RATE_LIMIT = 4;
   ANOMALY_EVENT_FAMILY_CUSTOM_SIGNATURE = 5;
 }
+
+message AnomalyRuleInfo {
+  string rule_id = 1;
+  string rule_name = 2;
+  string rule_category = 3;
+  AnomalyEventFamily event_family = 4;
+  repeated AnomalySubRuleInfo sub_rule_infos = 5;
+}
+
+message AnomalySubRuleInfo {
+  string rule_id = 1;
+  string rule_name = 2;
+}
