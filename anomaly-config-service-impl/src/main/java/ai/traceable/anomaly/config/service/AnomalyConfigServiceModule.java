@@ -1,12 +1,16 @@
 package ai.traceable.anomaly.config.service;
 
+import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.ANOMALY_EXCLUSION_CONFIG_ANNOTATION;
 import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.ANOMALY_GLOBAL_CONFIG_ANNOTATION;
 
+import ai.traceable.anomaly.config.service.exclusion.AnomalyExclusionConfigServiceModule;
 import ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
 import io.grpc.ManagedChannel;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 public class AnomalyConfigServiceModule extends AbstractModule {
 
@@ -23,14 +27,21 @@ public class AnomalyConfigServiceModule extends AbstractModule {
 
   @Override
   protected void configure() {
-    bind(ManagedChannel.class).toInstance(channel);
     install(
         new AnomalyGlobalConfigServiceModule(
             config.getAnomalyGlobalConfig(), ANOMALY_GLOBAL_CONFIG_ANNOTATION));
+    install(new AnomalyExclusionConfigServiceModule(ANOMALY_EXCLUSION_CONFIG_ANNOTATION));
   }
 
   @Provides
   AnomalyConfigServiceConfig providesAnomalyServiceConfig() {
     return config;
+  }
+
+  @Provides
+  ConfigServiceGrpc.ConfigServiceBlockingStub providesConfigService() {
+    return ConfigServiceGrpc.newBlockingStub(channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }
 }

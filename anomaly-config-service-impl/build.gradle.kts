@@ -6,6 +6,7 @@ plugins {
 
 dependencies {
   api(project(":anomaly-config-service-api"))
+  api(project(":anomaly-config-service-registry"))
   implementation("org.hypertrace.config.service:config-service-api")
 
   implementation("com.google.inject:guice:5.0.1")

@@ -6,9 +6,6 @@ import com.google.inject.Provides;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
-import io.grpc.ManagedChannel;
-import org.hypertrace.config.service.v1.ConfigServiceGrpc;
-import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 public class AnomalyGlobalConfigServiceModule extends AbstractModule {
 
@@ -31,12 +28,5 @@ public class AnomalyGlobalConfigServiceModule extends AbstractModule {
   @Provides
   AnomalyGlobalConfigServiceConfig providesAnomalyGlobalServiceConfig() {
     return new AnomalyGlobalConfigServiceConfig(this.config);
-  }
-
-  @Provides
-  ConfigServiceGrpc.ConfigServiceBlockingStub providesConfigService(ManagedChannel channel) {
-    return ConfigServiceGrpc.newBlockingStub(channel)
-        .withCallCredentials(
-            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }
 }
