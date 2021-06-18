@@ -48,17 +48,6 @@ message DeleteAnomalyExclusionRuleRequest {
 message DeleteAnomalyExclusionRuleResponse {
 }
 
-message GetAnomalyExclusionConfigApplicableRequest {
-  AnomalyEventCategory anomaly_event_category = 1;
-  AnomalyEventFamily anomaly_event_family = 2;
-  string anomaly_event_type_id = 3;
-}
-
-message GetAnomalyExclusionConfigApplicableResponse {
-  bool applicable = 1;
-  bool event_sub_type_available = 2;
-}
-
 message AnomalyExclusionRuleConfig {
   string id = 1;
   AnomalyExclusionRuleData rule_data = 2;
@@ -88,12 +77,6 @@ message AnomalyActorExclusionInfo {
 
 message AnomalyActor {
   string id = 1;
-}
-
-enum AnomalyEventCategory {
-  ANOMALY_EVENT_CATEGORY_UNSPECIFIED = 0;
-  ANOMALY_EVENT_CATEGORY_SECURITY = 1;
-  ANOMALY_EVENT_CATEGORY_BLOCKED = 2;
 }
 
 enum EventExclusionType {
