@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package ai.traceable.anomaly.config.service.v1.modsec;
+
+option java_multiple_files = true;
+
+import "ai/traceable/anomaly/config/service/v1/modsec/anomaly_modsec_config.proto";
+
+
+service AnomalyModsecConfigService {
+
+  rpc GetModsecCrsRules (GetModsecCrsRulesRequest) returns (GetModsecCrsRulesResponse) {
+  }
+}

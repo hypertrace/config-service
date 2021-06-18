@@ -14,7 +14,7 @@ public class SessionRulesRegistryTest {
     SessionRulesRegistryImpl sessionRulesRegistry =
         new SessionRulesRegistryImpl(new ConfigConverter());
 
-    Map<String, AnomalyRuleInfo> anomalyRuleInfos = sessionRulesRegistry.getSessionRuleConfigs();
+    Map<String, AnomalyRuleInfo> anomalyRuleInfos = sessionRulesRegistry.getSessionRuleInfos();
     assertEquals(1, anomalyRuleInfos.size());
   }
 }

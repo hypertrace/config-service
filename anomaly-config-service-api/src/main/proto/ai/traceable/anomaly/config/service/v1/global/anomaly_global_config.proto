@@ -22,3 +22,11 @@ message GetAnomalyGlobalConfigStatusRequest {
 message GetAnomalyGlobalConfigStatusResponse {
   AnomalyConfigStatus config_status = 1;
 }
+
+message GetAnomalyRuleInfosRequest {
+  repeated AnomalyEventFamily event_families = 1;
+}
+
+message GetAnomalyRuleInfosResponse {
+  repeated AnomalyRuleInfo rule_infos = 1;
+}

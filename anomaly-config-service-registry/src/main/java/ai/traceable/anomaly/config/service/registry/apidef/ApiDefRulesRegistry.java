@@ -5,5 +5,5 @@ import java.util.Map;
 
 public interface ApiDefRulesRegistry {
 
-  Map<String, AnomalyRuleInfo> getApiDefRuleConfigs();
+  Map<String, AnomalyRuleInfo> getApiDefRuleInfos();
 }

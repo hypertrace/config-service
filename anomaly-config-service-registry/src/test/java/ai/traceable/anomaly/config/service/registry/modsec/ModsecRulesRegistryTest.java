@@ -33,7 +33,7 @@ public class ModsecRulesRegistryTest {
 
   @Test
   public void testRules() {
-    Map<String, AnomalyRuleInfo> anomalyRuleInfos = modsecRulesRegistry.getModsecRuleConfigs();
+    Map<String, AnomalyRuleInfo> anomalyRuleInfos = modsecRulesRegistry.getModsecRuleInfos();
     assertEquals(10, anomalyRuleInfos.size());
 
     String safeCrsRules =

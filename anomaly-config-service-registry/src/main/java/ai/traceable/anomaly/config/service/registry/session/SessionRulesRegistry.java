@@ -5,5 +5,5 @@ import java.util.Map;
 
 public interface SessionRulesRegistry {
 
-  Map<String, AnomalyRuleInfo> getSessionRuleConfigs();
+  Map<String, AnomalyRuleInfo> getSessionRuleInfos();
 }

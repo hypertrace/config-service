@@ -29,7 +29,7 @@ public class ApiDefRulesRegistryImpl implements ApiDefRulesRegistry {
             AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF);
   }
 
-  public Map<String, AnomalyRuleInfo> getApiDefRuleConfigs() {
+  public Map<String, AnomalyRuleInfo> getApiDefRuleInfos() {
     return apiDefRules;
   }
 

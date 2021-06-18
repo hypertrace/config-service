@@ -14,7 +14,7 @@ public class ApiDefRulesRegistryTest {
     ApiDefRulesRegistryImpl apiDefRulesRegistry =
         new ApiDefRulesRegistryImpl(new ConfigConverter());
 
-    Map<String, AnomalyRuleInfo> anomalyRuleInfos = apiDefRulesRegistry.getApiDefRuleConfigs();
+    Map<String, AnomalyRuleInfo> anomalyRuleInfos = apiDefRulesRegistry.getApiDefRuleInfos();
     assertEquals(10, anomalyRuleInfos.size());
   }
 }

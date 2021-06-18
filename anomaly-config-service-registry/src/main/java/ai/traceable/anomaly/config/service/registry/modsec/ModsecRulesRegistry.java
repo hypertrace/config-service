@@ -5,7 +5,7 @@ import java.util.Map;
 
 public interface ModsecRulesRegistry {
 
-  Map<String, AnomalyRuleInfo> getModsecRuleConfigs();
+  Map<String, AnomalyRuleInfo> getModsecRuleInfos();
 
   String getModsecSafeRulesBlob();
 }

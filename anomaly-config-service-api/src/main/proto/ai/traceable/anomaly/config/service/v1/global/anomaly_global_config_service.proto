@@ -14,4 +14,7 @@ service AnomalyGlobalConfigService {
 
   rpc UpdateAnomalyGlobalConfigStatus (UpdateAnomalyGlobalConfigStatusRequest) returns (UpdateAnomalyGlobalConfigStatusResponse) {
   }
+
+  rpc GetAnomalyRuleInfos (GetAnomalyRuleInfosRequest) returns (GetAnomalyRuleInfosResponse) {
+  }
 }

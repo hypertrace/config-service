@@ -39,7 +39,7 @@ public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
     this.modsecRules = initModsecRules();
   }
 
-  public Map<String, AnomalyRuleInfo> getModsecRuleConfigs() {
+  public Map<String, AnomalyRuleInfo> getModsecRuleInfos() {
     return modsecRules;
   }
 

@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package ai.traceable.anomaly.config.service.v1.modsec;
+
+option java_multiple_files = true;
+
+import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
+
+message GetModsecCrsRulesRequest {
+  repeated ModsecCrsRulesType modsec_crs_rules_types = 1;
+}
+
+message GetModsecCrsRulesResponse {
+  repeated ModsecCrsRulesData modsec_crs_rules = 1;
+}
+
+message ModsecCrsRulesData {
+  ModsecCrsRulesType modsec_crs_rules_type = 1;
+  string modsec_crs_rules_blob = 2;
+}
+
+enum ModsecCrsRulesType {
+  MODSEC_CRS_RULES_TYPE_UNSPECIFIED = 0;
+  MODSEC_CRS_RULES_TYPE_SAFE = 1;
+  MODSEC_CRS_RULES_TYPE_REGULAR = 2;
+}
