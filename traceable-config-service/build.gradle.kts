@@ -90,6 +90,7 @@ dependencies {
   integrationTestImplementation("org.hypertrace.core.serviceframework:integrationtest-service-framework:0.1.23")
   integrationTestImplementation("org.hypertrace.core.documentstore:document-store:0.5.0")
   integrationTestImplementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.5.0")
+  integrationTestImplementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.5.0")
   integrationTestImplementation("com.google.protobuf:protobuf-java-util:3.15.8")
 
   testFixturesImplementation("ai.traceable.platform:insights-service-api:0.29.5")

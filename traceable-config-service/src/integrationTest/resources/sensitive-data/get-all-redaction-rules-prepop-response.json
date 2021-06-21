@@ -1,0 +1,31 @@
+{
+  "redactionRules": [
+    {
+      "id": "placeholder-id",
+      "name": "Default: authorization",
+      "category": "auth",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "matchType": "MATCH_TYPE_HEADER",
+      "regex": "^authorization(\\[\\d+\\])?$",
+      "sessionIdentifier": true
+    },
+    {
+      "id": "placeholder-id",
+      "name": "Default: remember_token",
+      "category": "auth",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "matchType": "MATCH_TYPE_HEADER",
+      "regex": "^remember_token(\\[\\d+\\])?$",
+      "sessionIdentifier": true
+    },
+    {
+      "id": "placeholder-id",
+      "name": "Default: session",
+      "category": "auth",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "matchType": "MATCH_TYPE_HEADER",
+      "regex": "^session(\\[\\d+\\])?$",
+      "sessionIdentifier": true
+    }
+  ]
+}

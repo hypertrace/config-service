@@ -14,6 +14,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Streams;
+import com.google.common.util.concurrent.Striped;
 import com.google.protobuf.Value;
 import com.google.re2j.Pattern;
 import io.grpc.Status;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.locks.Lock;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -40,8 +42,13 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @Singleton
 class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
 
+  // Not concerned about memory footprint here
+  private static final int PREPOPULATION_LOCK_STRIPE_COUNT = 1000;
+
   private final ConfigServiceBlockingStub configServiceBlockingStub;
   private final RedactionStrategy defaultParamTypeRedactionStrategy;
+  private final Striped<Lock> stripedPrepopulationLock =
+      Striped.lazyWeakLock(PREPOPULATION_LOCK_STRIPE_COUNT);
   private final boolean defaultAutomaticSecretRedactionEnabled;
   private final DefaultRedactionRules defaultRedactionRules;
   private final LoadingCache<ContextualKey<Void>, DefaultRedactionRulePopulationStatus>
@@ -189,40 +196,48 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   }
 
   private void insertPrepopulatedRulesIfRequired(RequestContext requestContext) {
-    DefaultRedactionRulePopulationStatus status = this.getPrepopulationStatus(requestContext);
+    Lock prepopulationLock = this.stripedPrepopulationLock.get(requestContext.getTenantId());
+    prepopulationLock.lock();
+    try {
+      DefaultRedactionRulePopulationStatus status = this.getPrepopulationStatus(requestContext);
 
-    if (this.defaultRedactionRules.isPrepopulationComplete(status)) {
-      return;
+      if (this.defaultRedactionRules.isPrepopulationComplete(status)) {
+        return;
+      }
+
+      this.defaultRedactionRules
+          .getRulesToPrepopulate(status)
+          .forEach(
+              (defaultId, rule) -> {
+                log.info("Prepopulating rule {} for tenant {}", rule, requestContext.getTenantId());
+                RedactionRule insertedRule = this.createRedactionRule(requestContext, rule);
+                try {
+                  this.updatePrepopulationStatus(
+                      requestContext, status.withAdditionalPopulatedRules(Set.of(defaultId)));
+                } catch (Exception exception) {
+                  log.error(
+                      "Failed to update status for prepopulated rule {} for tenant {}, attempting to delete",
+                      insertedRule,
+                      requestContext.getTenantId(),
+                      exception);
+
+                  this.deleteRedactionRule(requestContext, insertedRule.getId());
+                  log.error("Delete successful: rule id {} removed", insertedRule.getId());
+                }
+              });
+
+      DefaultRedactionRulePopulationStatus completedStatus =
+          this.defaultRedactionRules.completedPrepopulationStatus(status);
+
+      this.updatePrepopulationStatus(requestContext, completedStatus);
+
+      log.info(
+          "Prepopulation complete: {} for tenant: {}",
+          completedStatus,
+          requestContext.getTenantId());
+    } finally {
+      prepopulationLock.unlock();
     }
-
-    this.defaultRedactionRules
-        .getRulesToPrepopulate(status)
-        .forEach(
-            (defaultId, rule) -> {
-              log.info("Prepopulating rule {} for tenant {}", rule, requestContext.getTenantId());
-              RedactionRule insertedRule = this.createRedactionRule(requestContext, rule);
-              try {
-                this.updatePrepopulationStatus(
-                    requestContext, status.withAdditionalPopulatedRules(Set.of(defaultId)));
-              } catch (Exception exception) {
-                log.error(
-                    "Failed to update status for prepopulated rule {} for tenant {}, attempting to delete",
-                    insertedRule,
-                    requestContext.getTenantId(),
-                    exception);
-
-                this.deleteRedactionRule(requestContext, insertedRule.getId());
-                log.error("Delete successful: rule id {} removed", insertedRule.getId());
-              }
-            });
-
-    DefaultRedactionRulePopulationStatus completedStatus =
-        this.defaultRedactionRules.completedPrepopulationStatus(status);
-
-    this.updatePrepopulationStatus(requestContext, completedStatus);
-
-    log.info(
-        "Prepopulation complete: {} for tenant: {}", completedStatus, requestContext.getTenantId());
   }
 
   private List<RedactionRule> getUnpersistedDefaultRules() {
