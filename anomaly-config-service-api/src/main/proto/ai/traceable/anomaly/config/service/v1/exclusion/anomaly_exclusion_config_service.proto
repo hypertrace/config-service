@@ -7,7 +7,6 @@ option java_multiple_files = true;
 import "ai/traceable/anomaly/config/service/v1/exclusion/anomaly_exclusion_config.proto";
 
 service AnomalyExclusionConfigService {
-
   rpc CreateAnomalyExclusionRule (CreateAnomalyExclusionRuleRequest) returns (CreateAnomalyExclusionRuleResponse) {
   }
 

@@ -1,13 +1,10 @@
 package ai.traceable.anomaly.config.service.registry.modsec;
 
-import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import com.google.common.io.Resources;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,10 +23,17 @@ class ModsecCrsRulesHandler {
     this.modsecRuleUtils = modsecRuleUtils;
   }
 
-  Map<String, List<AnomalySubRuleInfo>> parseModsecCrsRules(String modsecCrsSafeRules) {
-    Map<String, List<AnomalySubRuleInfo>> modsecRulesMap = new HashMap<>();
+  /**
+   * Method to parse the modsec CRS rules file into separate rules
+   *
+   * @return map of parent-rule-id to map of sub-rule-id to sub-rule-name E.g. key = crs_913, value
+   *     = Map(key = crs_913110, value = {}; key = crs_913120, value = {})
+   */
+  Map<String, Map<String, String>> parseModsecCrsRules(String modsecCrsRulesBlob) {
 
-    for (String rule : modsecCrsSafeRules.split(SEC_RULE)) {
+    Map<String, Map<String, String>> modsecRulesMap = new HashMap<>();
+
+    for (String rule : modsecCrsRulesBlob.split(SEC_RULE)) {
       Matcher idMatcher = ID_PATTERN.matcher(rule);
       if (idMatcher.find()) {
         long id = Long.parseLong(idMatcher.group(1));
@@ -49,14 +53,11 @@ class ModsecCrsRulesHandler {
         }
 
         if (!modsecRulesMap.containsKey(parentId)) {
-          modsecRulesMap.put(parentId, new ArrayList<>());
+          modsecRulesMap.put(parentId, new HashMap<>());
         }
-        modsecRulesMap
-            .get(parentId)
-            .add(AnomalySubRuleInfo.newBuilder().setRuleId(subRuleId).setRuleName(msg).build());
+        modsecRulesMap.get(parentId).put(subRuleId, msg);
       }
     }
-
     return Collections.unmodifiableMap(modsecRulesMap);
   }
 

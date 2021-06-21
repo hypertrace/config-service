@@ -7,5 +7,7 @@ public interface ModsecRulesRegistry {
 
   Map<String, AnomalyRuleInfo> getModsecRuleInfos();
 
-  String getModsecSafeRulesBlob();
+  String getModsecSafeCrsRulesBlob();
+
+  String getModsecRegularCrsRulesBlob();
 }

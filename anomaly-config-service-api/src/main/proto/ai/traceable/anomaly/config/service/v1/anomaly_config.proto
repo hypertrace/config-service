@@ -68,4 +68,5 @@ message AnomalyRuleInfo {
 message AnomalySubRuleInfo {
   string rule_id = 1;
   string rule_name = 2;
+  bool blocking_available = 3;
 }

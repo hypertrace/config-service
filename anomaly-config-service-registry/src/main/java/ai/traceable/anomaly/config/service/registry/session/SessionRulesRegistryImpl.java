@@ -29,6 +29,7 @@ public class SessionRulesRegistryImpl implements SessionRulesRegistry {
             AnomalyEventFamily.ANOMALY_EVENT_FAMILY_SESSION);
   }
 
+  @Override
   public Map<String, AnomalyRuleInfo> getSessionRuleInfos() {
     return sessionRules;
   }
