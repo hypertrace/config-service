@@ -166,7 +166,8 @@ class SensitiveDataConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       responseObserver.onNext(
           GetAllRedactionRulesResponse.newBuilder()
-              .addAllRedactionRules(configServiceCoordinator.getAllRedactionRules(requestContext))
+              .addAllRedactionRules(
+                  configServiceCoordinator.getViewableRedactionRules(requestContext))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {

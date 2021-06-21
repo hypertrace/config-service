@@ -67,10 +67,10 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
   }
 
   @Test
-  void testPiiFilterConfigService() throws InvalidProtocolBufferException {
-    // automatic secret redaction is disabled and redaction strategy is set to RAW(default)
-    updateAutomaticSecretRedactionStrategy(false);
-    assertMatchesResource("sensitive-data/pii-filter-without-auto.json", getPiiFilterConfig(false));
+  void testPiiFilterConfigService() {
+    // automatic secret redaction is enabled and redaction strategy is set to RAW(default)
+    assertMatchesResource(
+        "sensitive-data/pii-filter-with-auto-redaction.json", getPiiFilterConfig(false));
 
     // set redaction strategy to HASH
     updateRedactionStrategyForType(
@@ -78,10 +78,13 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
     assertMatchesResource(
         "sensitive-data/pii-filter-with-hash-strategy.json", getPiiFilterConfig(false));
 
-    // enable automatic secret redaction
+    // disable automatic secret redaction
+    updateAutomaticSecretRedactionStrategy(false);
+    assertMatchesResource(
+        "sensitive-data/pii-filter-without-auto-redaction.json", getPiiFilterConfig(false));
     updateAutomaticSecretRedactionStrategy(true);
     assertMatchesResource(
-        "sensitive-data/pii-filter-with-auto-redaction.json", getPiiFilterConfig(false));
+        "sensitive-data/pii-filter-with-auto-redaction-again.json", getPiiFilterConfig(false));
 
     // add redaction rule
     createRedactionRule(

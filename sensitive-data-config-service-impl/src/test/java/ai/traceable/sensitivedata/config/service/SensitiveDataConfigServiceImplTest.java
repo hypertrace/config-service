@@ -2,6 +2,8 @@ package ai.traceable.sensitivedata.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -22,6 +24,8 @@ import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeRequest;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.junit.jupiter.api.AfterEach;
@@ -31,16 +35,19 @@ import org.junit.jupiter.api.Test;
 class SensitiveDataConfigServiceImplTest {
   SensitiveDataConfigServiceBlockingStub sensitiveDataStub;
   MockGenericConfigService mockGenericConfigService;
+  SensitiveDataServiceConfig mockConfig;
 
   @BeforeEach
   void beforeEach() {
     mockGenericConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
 
-    SensitiveDataServiceConfig mockConfig = mock(SensitiveDataServiceConfig.class);
+    this.mockConfig = mock(SensitiveDataServiceConfig.class);
+    DefaultRedactionRules mockDefaultRedactionRules = mock(DefaultRedactionRules.class);
     when(mockConfig.defaultAutomaticRedactionStrategy()).thenReturn(true);
     when(mockConfig.defaultParamTypeRedactionStrategy())
         .thenReturn(RedactionStrategy.REDACTION_STRATEGY_RAW);
+    when(mockConfig.defaultRedactionRules()).thenReturn(mockDefaultRedactionRules);
 
     mockGenericConfigService
         .addService(
@@ -106,6 +113,7 @@ class SensitiveDataConfigServiceImplTest {
 
   @Test
   void createReadUpdateDeleteRedactionRules() {
+    when(mockConfig.defaultRedactionRules().isPrepopulationComplete(any())).thenReturn(true);
     NewRedactionRule newRedactionRule1 = getNewRedactionRule("rule1", "^password");
     NewRedactionRule newRedactionRule2 = getNewRedactionRule("rule2", "^name");
     RedactionRule redactionRule1 =
@@ -172,6 +180,29 @@ class SensitiveDataConfigServiceImplTest {
                 .getRedactionRule());
   }
 
+  @Test
+  void prepopulatesRules() {
+    NewRedactionRule defaultRule = getNewRedactionRule("rule1", "^password");
+    when(mockConfig.defaultRedactionRules().isPrepopulationComplete(any())).thenReturn(false);
+    when(mockConfig.defaultRedactionRules().getRulesToPrepopulate(any()))
+        .thenReturn(Map.of("other-key", defaultRule));
+    when(mockConfig.defaultRedactionRules().completedPrepopulationStatus(any()))
+        .thenReturn(DefaultRedactionRulePopulationStatus.of(Set.of("key")));
+    assertRedactionRulesMatch(
+        List.of(defaultRule),
+        sensitiveDataStub
+            .getAllRedactionRules(GetAllRedactionRulesRequest.getDefaultInstance())
+            .getRedactionRulesList());
+
+    when(mockConfig.defaultRedactionRules().isPrepopulationComplete(any())).thenReturn(true);
+
+    assertRedactionRulesMatch(
+        List.of(defaultRule),
+        sensitiveDataStub
+            .getAllRedactionRules(GetAllRedactionRulesRequest.getDefaultInstance())
+            .getRedactionRulesList());
+  }
+
   private NewRedactionRule getNewRedactionRule(String name, String regex) {
     return NewRedactionRule.newBuilder()
         .setName(name)
@@ -197,5 +228,19 @@ class SensitiveDataConfigServiceImplTest {
       builder.setComplexData(newRedactionRule.getComplexData());
     }
     return builder.build();
+  }
+
+  private void assertRedactionRulesMatch(
+      List<NewRedactionRule> expectedRules, List<RedactionRule> actualRules) {
+    // Just using this method to ignore any generated ID
+    if (expectedRules.size() != actualRules.size()) {
+      fail("expected size should match actual size");
+    }
+
+    for (int index = 0; index < expectedRules.size(); index++) {
+      RedactionRule expected = this.getRedactionRule(expectedRules.get(index), "generated-id");
+      RedactionRule actual = actualRules.get(index).toBuilder().setId("generated-id").build();
+      assertEquals(expected, actual);
+    }
   }
 }

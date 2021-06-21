@@ -11,8 +11,8 @@ dependencies {
   implementation("com.google.guava:guava:30.1.1-jre")
   implementation("com.google.protobuf:protobuf-java-util:3.15.8")
   implementation("org.slf4j:slf4j-api:1.7.30")
-  implementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.4.1")
-  implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.4.1")
+  implementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.5.0")
+  implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.5.0")
   implementation("org.hypertrace.config.service:config-proto-converter")
   implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.12.2")
 

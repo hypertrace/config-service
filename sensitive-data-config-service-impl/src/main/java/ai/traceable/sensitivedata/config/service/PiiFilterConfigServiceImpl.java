@@ -29,7 +29,6 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
   private final ConfigServiceCoordinator configServiceCoordinator;
   private final InsightsServiceCoordinator insightsServiceCoordinator;
   private final PiiFilterConfig defaultPiiFilterConfig;
-  private final List<RedactionRule> defaultConditionalRedactionRules;
 
   @Inject
   PiiFilterConfigServiceImpl(
@@ -39,8 +38,6 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
     this.configServiceCoordinator = configServiceCoordinator;
     this.insightsServiceCoordinator = insightsServiceCoordinator;
     this.defaultPiiFilterConfig = sensitiveDataServiceConfig.defaultPiiFilterConfig();
-    this.defaultConditionalRedactionRules =
-        sensitiveDataServiceConfig.defaultConditionalRedactionRules();
   }
 
   @Override
@@ -54,18 +51,13 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
       Map<String, PiiElement> valueRegexToPiiElementMap = new LinkedHashMap<>();
       Map<String, ComplexData> complexDataMap = new LinkedHashMap<>();
 
-      // get appropriate parts of pii filter config from redaction rules
-      List<RedactionRule> redactionRules = new ArrayList<>();
-      redactionRules.addAll(defaultConditionalRedactionRules);
-      redactionRules.addAll(configServiceCoordinator.getAllRedactionRules(requestContext));
+      List<RedactionRule> redactionRules =
+          Lists.reverse(
+              configServiceCoordinator.getAllRedactionRules(
+                  requestContext, request.getIncludeConditionalRules()));
 
-      // pass the reversed list to get redaction rules from latest to earliest
       mergeConfigFromRedactionRules(
-          Lists.reverse(redactionRules),
-          keyRegexToPiiElementMap,
-          valueRegexToPiiElementMap,
-          complexDataMap,
-          request.getIncludeConditionalRules());
+          redactionRules, keyRegexToPiiElementMap, valueRegexToPiiElementMap, complexDataMap);
 
       // get pii elements from sensitive headers and add them to key regexs
       List<Parameter> sensitiveHeaderParameters =
@@ -144,12 +136,8 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
       List<RedactionRule> redactionRules,
       Map<String, PiiElement> keyRegexToPiiElementMap,
       Map<String, PiiElement> valueRegexToPiiElementMap,
-      Map<String, ComplexData> complexDataMap,
-      boolean includeConditionalRedactionRules) {
+      Map<String, ComplexData> complexDataMap) {
     for (RedactionRule redactionRule : redactionRules) {
-      if (!includeConditionalRedactionRules && !redactionRule.getConditionsList().isEmpty()) {
-        continue;
-      }
       PiiElement piiElement =
           PiiElement.newBuilder()
               .setRegex(redactionRule.getRegex())

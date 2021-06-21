@@ -9,7 +9,7 @@ dependencies {
   implementation(project(":user-attribution-config-service-api"))
   implementation("com.google.inject:guice:5.0.1")
   implementation("org.slf4j:slf4j-api:1.7.30")
-  implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.4.1")
+  implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.5.0")
   implementation("com.github.f4b6a3:uuid-creator:2.7.11")
 
   annotationProcessor("org.projectlombok:lombok:1.18.20")

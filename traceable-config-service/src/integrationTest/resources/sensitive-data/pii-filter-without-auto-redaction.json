@@ -1,0 +1,42 @@
+{
+  "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+  "prefixes": [
+    "http.request.header.",
+    "http.response.header.",
+    "rpc.request.metadata.",
+    "rpc.response.metadata."
+  ],
+  "keyRegexs": [
+    {
+      "regex": "^session(\\[\\d+\\])?$",
+      "category": "auth",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "sessionIdentifier": true,
+      "ruleId": "placeholder-id"
+    },
+    {
+      "regex": "^remember_token(\\[\\d+\\])?$",
+      "category": "auth",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "sessionIdentifier": true,
+      "ruleId": "placeholder-id"
+    },
+    {
+      "regex": "^authorization(\\[\\d+\\])?$",
+      "category": "auth",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "sessionIdentifier": true,
+      "ruleId": "placeholder-id"
+    },
+    {
+      "regex": "http.request.header.h1",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "fqn": true
+    },
+    {
+      "regex": "http.request.header.h2",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "fqn": true
+    }
+  ]
+}

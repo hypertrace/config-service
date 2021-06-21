@@ -21,6 +21,27 @@
       "ruleId": "placeholder-id"
     },
     {
+      "regex": "^session(\\[\\d+\\])?$",
+      "category": "auth",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "sessionIdentifier": true,
+      "ruleId": "placeholder-id"
+    },
+    {
+      "regex": "^remember_token(\\[\\d+\\])?$",
+      "category": "auth",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "sessionIdentifier": true,
+      "ruleId": "placeholder-id"
+    },
+    {
+      "regex": "^authorization(\\[\\d+\\])?$",
+      "category": "auth",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "sessionIdentifier": true,
+      "ruleId": "placeholder-id"
+    },
+    {
       "regex": "http.request.header.h1",
       "redactionStrategy": "REDACTION_STRATEGY_HASH",
       "fqn": true
@@ -29,24 +50,6 @@
       "regex": "http.request.header.h2",
       "redactionStrategy": "REDACTION_STRATEGY_HASH",
       "fqn": true
-    },
-    {
-      "regex": "^authorization(\\[\\d+\\])?$",
-      "category": "auth",
-      "redactionStrategy": "REDACTION_STRATEGY_HASH",
-      "sessionIdentifier": true
-    },
-    {
-      "regex": "^remember_token(\\[\\d+\\])?$",
-      "category": "auth",
-      "redactionStrategy": "REDACTION_STRATEGY_HASH",
-      "sessionIdentifier": true
-    },
-    {
-      "regex": "^session(\\[\\d+\\])?$",
-      "category": "auth",
-      "redactionStrategy": "REDACTION_STRATEGY_HASH",
-      "sessionIdentifier": true
     },
     {
       "regex": "^access_token(\\[\\d+\\])?$",

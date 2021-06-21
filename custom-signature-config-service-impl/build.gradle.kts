@@ -17,8 +17,8 @@ dependencies {
   implementation("com.github.f4b6a3:uuid-creator:2.7.11")
   implementation("com.google.re2j:re2j:1.6")
 
-  implementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.4.1")
-  implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.4.1")
+  implementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.5.0")
+  implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.5.0")
   implementation("org.hypertrace.config.service:config-proto-converter")
 
   annotationProcessor("org.projectlombok:lombok:1.18.20")

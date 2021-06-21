@@ -18,6 +18,7 @@ plugins {
 }
 
 tasks.register<DockerCreateNetwork>("createIntegrationTestNetwork") {
+  mustRunAfter("compileIntegrationTestJava")
   networkName.set("traceable-cfg-svc-int-test")
 }
 
@@ -71,8 +72,8 @@ dependencies {
   implementation(project(":anomaly-config-service-impl"))
   implementation("org.hypertrace.config.service:config-service")
   implementation("org.hypertrace.config.service:config-service-impl")
-  implementation("org.hypertrace.core.grpcutils:grpc-server-utils:0.4.1")
-  implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.4.1")
+  implementation("org.hypertrace.core.grpcutils:grpc-server-utils:0.5.0")
+  implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.5.0")
   implementation("org.hypertrace.core.serviceframework:platform-service-framework:0.1.23")
   implementation("ai.traceable.activity.event.service:activity-event-api:0.3.0")
   implementation("com.typesafe:config:1.4.1")
@@ -88,7 +89,7 @@ dependencies {
   integrationTestImplementation("com.google.guava:guava:30.1.1-jre")
   integrationTestImplementation("org.hypertrace.core.serviceframework:integrationtest-service-framework:0.1.23")
   integrationTestImplementation("org.hypertrace.core.documentstore:document-store:0.5.0")
-  integrationTestImplementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.4.1")
+  integrationTestImplementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.5.0")
   integrationTestImplementation("com.google.protobuf:protobuf-java-util:3.15.8")
 
   testFixturesImplementation("ai.traceable.platform:insights-service-api:0.29.5")
