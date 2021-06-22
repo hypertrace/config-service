@@ -42,7 +42,7 @@
       "ruleId": "placeholder-id"
     },
     {
-      "regex": "rpc.request.metadata.:path",
+      "regex": "(^x-real-ip$)|(^forwarded$)|(^x-forwarded-for$)|(^x-proxy-user-ip$)",
       "redactionStrategy": "REDACTION_STRATEGY_RAW",
       "conditions": [
         {
@@ -54,7 +54,7 @@
       ]
     },
     {
-      "regex": "http.response.header.content-type",
+      "regex": "^:authority$",
       "redactionStrategy": "REDACTION_STRATEGY_RAW",
       "conditions": [
         {
@@ -66,7 +66,7 @@
       ]
     },
     {
-      "regex": "http.request.header.content-type",
+      "regex": "^grpc-status$",
       "redactionStrategy": "REDACTION_STRATEGY_RAW",
       "conditions": [
         {
@@ -78,8 +78,8 @@
       ]
     },
     {
-      "regex": "redis.args",
-      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "regex": "^:status$",
+      "redactionStrategy": "REDACTION_STRATEGY_RAW",
       "conditions": [
         {
           "attributeRegexMatch": {
@@ -90,8 +90,8 @@
       ]
     },
     {
-      "regex": "sql.params",
-      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "regex": "^:path$",
+      "redactionStrategy": "REDACTION_STRATEGY_RAW",
       "conditions": [
         {
           "attributeRegexMatch": {
@@ -102,8 +102,8 @@
       ]
     },
     {
-      "regex": "sql.query",
-      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "regex": "^content-length$",
+      "redactionStrategy": "REDACTION_STRATEGY_RAW",
       "conditions": [
         {
           "attributeRegexMatch": {
@@ -114,8 +114,8 @@
       ]
     },
     {
-      "regex": "rabbitmq.message",
-      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "regex": "^content-type$",
+      "redactionStrategy": "REDACTION_STRATEGY_RAW",
       "conditions": [
         {
           "attributeRegexMatch": {
@@ -126,8 +126,8 @@
       ]
     },
     {
-      "regex": "mongo.command",
-      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "regex": "^host$",
+      "redactionStrategy": "REDACTION_STRATEGY_RAW",
       "conditions": [
         {
           "attributeRegexMatch": {
@@ -138,8 +138,8 @@
       ]
     },
     {
-      "regex": "rpc.response.body",
-      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "regex": "^user-agent$",
+      "redactionStrategy": "REDACTION_STRATEGY_RAW",
       "conditions": [
         {
           "attributeRegexMatch": {
@@ -150,91 +150,7 @@
       ]
     },
     {
-      "regex": "rpc.response.metadata",
-      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
-      "conditions": [
-        {
-          "attributeRegexMatch": {
-            "key": "traceableai.processing",
-            "regex": "core"
-          }
-        }
-      ]
-    },
-    {
-      "regex": "rpc.request.body",
-      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
-      "conditions": [
-        {
-          "attributeRegexMatch": {
-            "key": "traceableai.processing",
-            "regex": "core"
-          }
-        }
-      ]
-    },
-    {
-      "regex": "rpc.request.metadata",
-      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
-      "conditions": [
-        {
-          "attributeRegexMatch": {
-            "key": "traceableai.processing",
-            "regex": "core"
-          }
-        }
-      ]
-    },
-    {
-      "regex": "http.response.body",
-      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
-      "conditions": [
-        {
-          "attributeRegexMatch": {
-            "key": "traceableai.processing",
-            "regex": "core"
-          }
-        }
-      ]
-    },
-    {
-      "regex": "http.response.header",
-      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
-      "conditions": [
-        {
-          "attributeRegexMatch": {
-            "key": "traceableai.processing",
-            "regex": "core"
-          }
-        }
-      ]
-    },
-    {
-      "regex": "http.request.body",
-      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
-      "conditions": [
-        {
-          "attributeRegexMatch": {
-            "key": "traceableai.processing",
-            "regex": "core"
-          }
-        }
-      ]
-    },
-    {
-      "regex": "http.request.header",
-      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
-      "conditions": [
-        {
-          "attributeRegexMatch": {
-            "key": "traceableai.processing",
-            "regex": "core"
-          }
-        }
-      ]
-    },
-    {
-      "regex": "http.url",
+      "regex": ".*",
       "redactionStrategy": "REDACTION_STRATEGY_REDACT",
       "conditions": [
         {
