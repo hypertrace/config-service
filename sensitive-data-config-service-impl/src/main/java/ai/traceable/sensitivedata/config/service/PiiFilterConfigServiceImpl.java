@@ -68,6 +68,9 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
       List<PiiElement> piiElements =
           computePiiElements(sensitiveHeaderParameters, redactionStrategy);
       addPiiElements(keyRegexToPiiElementMap, piiElements);
+      // complex data should be included always as it is also needed by default local processing PII
+      // rules
+      addComplexDataElements(complexDataMap, defaultPiiFilterConfig.getComplexDataList());
 
       // if automatic secret redaction is enabled, merge config from default config
       boolean automaticSecretRedactionStrategyEnabled =
@@ -75,7 +78,6 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
       if (automaticSecretRedactionStrategyEnabled) {
         addPiiElements(keyRegexToPiiElementMap, defaultPiiFilterConfig.getKeyRegexsList());
         addPiiElements(valueRegexToPiiElementMap, defaultPiiFilterConfig.getValueRegexsList());
-        addComplexDataElements(complexDataMap, defaultPiiFilterConfig.getComplexDataList());
       }
 
       PiiFilterConfig resultingPiiFilterConfig =
