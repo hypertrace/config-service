@@ -13,9 +13,6 @@
 ###########
 # Deployment and Service
 ###########
-# Do not increase replica count above 1 without changing locking behavior in
-# ai/traceable/sensitivedata/config/service/ConfigServiceCoordinatorImpl.java
-replicaCount: 1
 maxUnavailable: 0
 
 image:

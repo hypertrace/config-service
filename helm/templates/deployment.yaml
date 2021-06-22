@@ -8,7 +8,9 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  # Do not increase replica count above 1 without changing locking behavior in
+  # ai/traceable/sensitivedata/config/service/ConfigServiceCoordinatorImpl.java
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
