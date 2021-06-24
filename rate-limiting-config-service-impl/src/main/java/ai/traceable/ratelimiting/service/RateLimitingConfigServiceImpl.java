@@ -64,11 +64,11 @@ public class RateLimitingConfigServiceImpl
   private static final String RATE_LIMITING_CONFIG_SERVICE_CONFIG = "rate.limiting.config.service";
   private static final String MAX_CALL_COUNT_DURATION_LIMIT_MINUTES =
       "maxCallCountDurationLimitMinutes";
-  private static final String PUBLISH_ACTIVITY_EVENTS_CONFIG = "publishActivityEvents";
+  private static final String SHOULD_PUBLISH_ACTIVITY_EVENTS_CONFIG = "shouldPublishActivityEvents";
   private final ConfigServiceBlockingStub configServiceBlockingStub;
   private static long maxCallCountDurationLimit = TimeUnit.MINUTES.toMillis(180);
   private ActivityEventProducer activityEventProducer;
-  private final boolean publishActivityEvents;
+  private final boolean shouldPublishActivityEvents;
 
   public RateLimitingConfigServiceImpl(
       Channel configChannel, Config config, ActivityEventProducer activityEventProducer) {
@@ -83,8 +83,8 @@ public class RateLimitingConfigServiceImpl
               MAX_CALL_COUNT_DURATION_LIMIT_MINUTES, TimeUnit.MILLISECONDS);
     }
     this.activityEventProducer = activityEventProducer;
-    this.publishActivityEvents =
-        rateLimitingConfigServiceConfig.getBoolean(PUBLISH_ACTIVITY_EVENTS_CONFIG);
+    this.shouldPublishActivityEvents =
+        rateLimitingConfigServiceConfig.getBoolean(SHOULD_PUBLISH_ACTIVITY_EVENTS_CONFIG);
   }
 
   @Override
@@ -203,10 +203,10 @@ public class RateLimitingConfigServiceImpl
       responseObserver.onNext(createRuleConfigResponse);
       responseObserver.onCompleted();
 
-      if (publishActivityEvents) {
+      if (shouldPublishActivityEvents) {
         activityEventProducer.publishSecurityConfigurationChangeEvent(
             RequestContext.CURRENT.get(),
-            getSecurityConfigurationChangeEvent(
+            buildSecurityConfigurationChangeEvent(
                 createdRuleConfig, SecurityConfigurationAction.ADD));
       }
     } catch (Exception e) {
@@ -221,16 +221,6 @@ public class RateLimitingConfigServiceImpl
     try {
       // RuleId to delete
       String ruleId = request.getRuleId();
-
-      GetConfigResponse rateLimitConfigResponse =
-          configServiceBlockingStub.getConfig(
-              GetConfigRequest.newBuilder()
-                  .setResourceName(RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME)
-                  .setResourceNamespace(RATE_LIMITING_NAMESPACE)
-                  .addContexts(ruleId)
-                  .build());
-      RateLimitingRuleConfig ruleConfig =
-          toRateLimitingRuleConfig(rateLimitConfigResponse.getConfig());
 
       // Get all rule to rate limited entities associations
       GetAllConfigsRequest getAllAssociationsRequest =
@@ -259,17 +249,23 @@ public class RateLimitingConfigServiceImpl
               .setContext(ruleId)
               .build();
 
-      configServiceBlockingStub.deleteConfig(deleteConfigRequest);
+      RateLimitingRuleConfig deletedRuleConfig =
+          toRateLimitingRuleConfig(
+              configServiceBlockingStub
+                  .deleteConfig(deleteConfigRequest)
+                  .getDeletedConfig()
+                  .getConfig());
 
       DeleteRuleConfigResponse deleteRuleConfigResponse =
           DeleteRuleConfigResponse.newBuilder().build();
       responseObserver.onNext(deleteRuleConfigResponse);
       responseObserver.onCompleted();
 
-      if (publishActivityEvents) {
+      if (shouldPublishActivityEvents) {
         activityEventProducer.publishSecurityConfigurationChangeEvent(
             RequestContext.CURRENT.get(),
-            getSecurityConfigurationChangeEvent(ruleConfig, SecurityConfigurationAction.REMOVE));
+            buildSecurityConfigurationChangeEvent(
+                deletedRuleConfig, SecurityConfigurationAction.REMOVE));
       }
     } catch (Exception e) {
       log.error("Error while deleting the Rate Limiting Rule for request {}", request, e);
@@ -301,10 +297,10 @@ public class RateLimitingConfigServiceImpl
       responseObserver.onNext(updateRuleConfigResponse);
       responseObserver.onCompleted();
 
-      if (publishActivityEvents) {
+      if (shouldPublishActivityEvents) {
         activityEventProducer.publishSecurityConfigurationChangeEvent(
             RequestContext.CURRENT.get(),
-            getSecurityConfigurationChangeEvent(
+            buildSecurityConfigurationChangeEvent(
                 updatedRuleConfig, SecurityConfigurationAction.UPDATE));
       }
     } catch (Exception e) {
@@ -474,7 +470,7 @@ public class RateLimitingConfigServiceImpl
     }
   }
 
-  private SecurityConfigurationChange getSecurityConfigurationChangeEvent(
+  private SecurityConfigurationChange buildSecurityConfigurationChangeEvent(
       RateLimitingRuleConfig rateLimitingRuleConfig,
       SecurityConfigurationAction securityConfigurationAction) {
     return SecurityConfigurationChange.newBuilder()

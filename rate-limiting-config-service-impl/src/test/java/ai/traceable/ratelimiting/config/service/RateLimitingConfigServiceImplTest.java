@@ -79,7 +79,7 @@ class RateLimitingConfigServiceImplTest {
     testChannel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
     Config config =
         ConfigFactory.parseMap(
-            Map.of("rate.limiting.config.service", Map.of("publishActivityEvents", true)));
+            Map.of("rate.limiting.config.service", Map.of("shouldPublishActivityEvents", true)));
     mockActivityEventProducer = mock(ActivityEventProducer.class);
     rateLimitingConfigService =
         new RateLimitingConfigServiceImpl(testChannel, config, mockActivityEventProducer);

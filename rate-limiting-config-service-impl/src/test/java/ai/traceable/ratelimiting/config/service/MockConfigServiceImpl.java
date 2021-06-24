@@ -98,14 +98,17 @@ public class MockConfigServiceImpl extends ConfigServiceGrpc.ConfigServiceImplBa
     Triple<String, String, String> resourceInfo =
         Triple.of(request.getResourceName(), request.getResourceNamespace(), request.getContext());
 
+    ContextSpecificConfig.Builder deletedConfigBuilder =
+        ContextSpecificConfig.newBuilder().setContext(request.getContext());
     if (request.getResourceName().equals(RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME)) {
-      rateLimitingRuleConfigs.remove(resourceInfo);
+      deletedConfigBuilder.setConfig(rateLimitingRuleConfigs.remove(resourceInfo));
     } else if (request
         .getResourceName()
         .equals(RULE_RATE_LIMITED_ENTITY_ASSOCIATION_RESOURCE_NAME)) {
-      ruleEntityAssociations.remove(resourceInfo);
+      deletedConfigBuilder.setConfig(ruleEntityAssociations.remove(resourceInfo));
     }
-    responseObserver.onNext(DeleteConfigResponse.newBuilder().build());
+    responseObserver.onNext(
+        DeleteConfigResponse.newBuilder().setDeletedConfig(deletedConfigBuilder.build()).build());
     responseObserver.onCompleted();
   }
 
