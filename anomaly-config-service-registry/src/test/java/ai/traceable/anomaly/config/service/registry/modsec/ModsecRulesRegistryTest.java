@@ -1,17 +1,22 @@
 package ai.traceable.anomaly.config.service.registry.modsec;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.modsecurity.RuleEngine;
+import com.google.common.io.Resources;
 import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
 import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -36,15 +41,16 @@ public class ModsecRulesRegistryTest {
   @Test
   public void testRules() {
     Map<String, AnomalyRuleInfo> anomalyRuleInfos = modsecRulesRegistry.getModsecRuleInfos();
-    assertEquals(10, anomalyRuleInfos.size());
+    assertEquals(11, anomalyRuleInfos.size());
     assertEquals(
-        "crs_913 :: Scanner Detection\n"
+        "crs_912 :: Denial of Service (DOS) attack\n"
+            + "crs_913 :: Scanner Detection\n"
             + "crs_921 :: HTTP Protocol Attacks\n"
             + "crs_930 :: Local File Inclusion\n"
             + "crs_931 :: Remote File Inclusion\n"
             + "crs_932 :: Remote Code Execution\n"
             + "crs_934 :: NodeJS Injection\n"
-            + "crs_941 :: Cross Site Scripting\n"
+            + "crs_941 :: Cross Site Scripting (XSS)\n"
             + "crs_942 :: SQL Injection\n"
             + "crs_943 :: Session Fixation\n"
             + "crs_944 :: Java Apache Struts Attacks",
@@ -71,77 +77,85 @@ public class ModsecRulesRegistryTest {
                 .forEach(anomalySubRuleInfo -> anomalyRuleInfo.getRuleId().startsWith(ruleId)));
 
     // check count of sub-rules..
-    Set<String> idMatches = new HashSet<>();
-    idMatches.addAll(
+    Set<String> expectedIdMatches = new HashSet<>();
+    expectedIdMatches.addAll(
         getIdMatches(
             modsecCrsRulesHandler.loadModsecCrsFileContents("modsec/crs/modsec-safe-rules.conf")));
-    idMatches.addAll(
+    expectedIdMatches.addAll(
         getIdMatches(
             modsecCrsRulesHandler.loadModsecCrsFileContents(
                 "modsec/crs/modsec-regular-rules.conf")));
-    int countSubRules =
+
+    Set<String> idMatches =
         anomalyRuleInfos.values().stream()
-            .map(AnomalyRuleInfo::getSubRuleInfosCount)
-            .reduce(0, (a, b) -> a + b);
-    assertEquals(idMatches.size(), countSubRules);
-    assertEquals(28, countSubRules);
+            .flatMap(rule -> rule.getSubRuleInfosList().stream())
+            .map(AnomalySubRuleInfo::getRuleId)
+            .map(ruleId -> ruleId.substring(4))
+            .collect(Collectors.toSet());
+    assertEquals(expectedIdMatches.size(), idMatches.size());
+    idMatches.forEach(id -> assertTrue(expectedIdMatches.contains(id)));
 
     // check for no duplicate names..
-    List<String> subRuleNames =
-        anomalyRuleInfos.values().stream()
-            .flatMap(rule -> rule.getSubRuleInfosList().stream())
-            .map(AnomalySubRuleInfo::getRuleName)
-            .collect(Collectors.toList());
-    assertEquals(new HashSet<>(subRuleNames).size(), subRuleNames.size());
+    Set<String> subRuleNames = new HashSet<>();
+    anomalyRuleInfos.values().stream()
+        .flatMap(rule -> rule.getSubRuleInfosList().stream())
+        .forEach(
+            anomalySubRuleInfo -> {
+              assertFalse(subRuleNames.contains(anomalySubRuleInfo.getRuleName()));
+              subRuleNames.add(anomalySubRuleInfo.getRuleName());
+            });
 
+    // check safe-rules
     assertEquals(
-        "crs_913100 :: User-Agent associated with security scanner :: blocking=true\n"
-            + "crs_913110 :: Request header associated with security scanner :: blocking=true\n"
-            + "crs_913120 :: Request filename/argument associated with security scanner :: blocking=true\n"
-            + "crs_921110 :: HTTP Request Smuggling Attack :: blocking=true\n"
-            + "crs_921140 :: HTTP Header Injection Attack via headers :: blocking=true\n"
-            + "crs_930100 :: Path Traversal Attack (/../) (100) :: blocking=true\n"
-            + "crs_930110 :: Path Traversal Attack (/../) (110) :: blocking=true\n"
-            + "crs_930120 :: OS File Access Attempt :: blocking=true\n"
-            + "crs_930130 :: Restricted File Access Attempt :: blocking=true\n"
-            + "crs_931120 :: Possible Remote File Inclusion (RFI) Attack: URL Payload Used w/Trailing Question Mark Character (?) :: blocking=true\n"
-            + "crs_932160 :: Remote Command Execution: Unix Shell Code Found :: blocking=true\n"
-            + "crs_932170 :: Remote Command Execution: Shellshock (CVE-2014-6271) (170) :: blocking=true\n"
-            + "crs_932171 :: Remote Command Execution: Shellshock (CVE-2014-6271) (171) :: blocking=true\n"
-            + "crs_934100 :: Node.js Injection Attack :: blocking=true\n"
-            + "crs_941110 :: XSS Filter - Category 1: Script Tag Vector :: blocking=true\n"
-            + "crs_941200 :: IE XSS Filters - Attack using VML frames :: blocking=true\n"
-            + "crs_941210 :: IE XSS Filters - Attack using obfuscated Javascript :: blocking=true\n"
-            + "crs_941220 :: IE XSS Filters - using obfuscated VB Script :: blocking=true\n"
-            + "crs_941230 :: IE XSS Filters - using \\'embed\\' tag :: blocking=true\n"
-            + "crs_941240 :: IE XSS Filters - Attack using \\'import\\' or \\'implementation\\' attribute :: blocking=true\n"
-            + "crs_941270 :: IE XSS Filters - Attack using \\'link\\' href :: blocking=true\n"
-            + "crs_941280 :: IE XSS Filters - Attack using \\'base\\' tag :: blocking=true\n"
-            + "crs_941290 :: IE XSS Filters - Attack using \\'applet\\' tag :: blocking=true\n"
-            + "crs_941300 :: IE XSS Filters - Attack using \\'object\\' tag :: blocking=true\n"
-            + "crs_941350 :: UTF-7 Encoding IE XSS - Attack Detected :: blocking=true\n"
-            + "crs_942290 :: Basic MongoDB SQL injection attempts :: blocking=true\n"
-            + "crs_943100 :: Possible Session Fixation Attack: Setting Cookie Values in HTML :: blocking=true\n"
-            + "crs_944120 :: Possible payload execution and remote command execution: Java serialization (CVE-2015-5842) :: blocking=true",
+        loadModsecFileContents("modsec/modsec-safe-rules.txt"),
         anomalyRuleInfos.values().stream()
             .flatMap(rule -> rule.getSubRuleInfosList().stream())
+            .filter(AnomalySubRuleInfo::getBlockingAvailable)
             .map(
                 anomalySubRuleInfo ->
-                    anomalySubRuleInfo.getRuleId()
-                        + " :: "
-                        + anomalySubRuleInfo.getRuleName()
-                        + " :: blocking="
-                        + anomalySubRuleInfo.getBlockingAvailable())
+                    anomalySubRuleInfo.getRuleId() + " :: " + anomalySubRuleInfo.getRuleName())
+            .sorted()
+            .collect(Collectors.joining("\n")));
+
+    // check unsafe-rules
+    assertEquals(
+        loadModsecFileContents("modsec/modsec-unsafe-rules.txt"),
+        anomalyRuleInfos.values().stream()
+            .flatMap(rule -> rule.getSubRuleInfosList().stream())
+            .filter(anomalySubRuleInfo -> !anomalySubRuleInfo.getBlockingAvailable())
+            .map(
+                anomalySubRuleInfo ->
+                    anomalySubRuleInfo.getRuleId() + " :: " + anomalySubRuleInfo.getRuleName())
             .sorted()
             .collect(Collectors.joining("\n")));
   }
 
   private Set<String> getIdMatches(String text) {
     Set<String> idMatches = new HashSet<>();
-    Matcher matcher = Pattern.compile("id:([0-9]+),").matcher(text);
-    while (matcher.find()) {
-      idMatches.add(matcher.group(1));
-    }
+    Arrays.asList(text.split("SecRule"))
+        .forEach(
+            phrase -> {
+              Matcher idMatcher = Pattern.compile("id:([0-9]+)").matcher(phrase);
+              Matcher msgMatcher = Pattern.compile("msg:'(.*)'").matcher(phrase);
+              while (idMatcher.find() && msgMatcher.find()) {
+                idMatches.add(idMatcher.group(1));
+              }
+            });
     return idMatches;
+  }
+
+  private String loadModsecFileContents(String crsFilePath) {
+    URL resourceUrl = getClass().getClassLoader().getResource(crsFilePath);
+    if (resourceUrl == null) {
+      throw new RuntimeException(
+          String.format("Unable to locate modsec crs file: %s", crsFilePath));
+    } else {
+      try {
+        return Resources.toString(resourceUrl, StandardCharsets.UTF_8);
+      } catch (Exception e) {
+        throw new RuntimeException(
+            String.format("Unable to read modsec crs file: %s", resourceUrl), e);
+      }
+    }
   }
 }

@@ -13,8 +13,8 @@ import javax.inject.Inject;
 class ModsecCrsRulesHandler {
 
   private static final String SEC_RULE = "SecRule";
-  private static final Pattern ID_PATTERN = Pattern.compile("id:([0-9]+),");
-  private static final Pattern MSG_PATTERN = Pattern.compile("msg:'(.+)',");
+  private static final Pattern ID_PATTERN = Pattern.compile("id:([0-9]+)");
+  private static final Pattern MSG_PATTERN = Pattern.compile("msg:'(.*)'");
 
   private final ModsecRuleUtils modsecRuleUtils;
 
@@ -35,23 +35,19 @@ class ModsecCrsRulesHandler {
 
     for (String rule : modsecCrsRulesBlob.split(SEC_RULE)) {
       Matcher idMatcher = ID_PATTERN.matcher(rule);
-      if (idMatcher.find()) {
+      Matcher msgMatcher = MSG_PATTERN.matcher(rule);
+
+      if (idMatcher.find() && msgMatcher.find()) {
         long id = Long.parseLong(idMatcher.group(1));
         String subRuleId = modsecRuleUtils.getModsecRuleId(id);
         String parentId = modsecRuleUtils.getModsecParentRuleId(subRuleId);
-
-        Matcher msgMatcher = MSG_PATTERN.matcher(rule);
-        String msg = "";
-        if (msgMatcher.find()) {
-          msg = msgMatcher.group(1);
-        }
+        String msg = msgMatcher.group(1).trim();
         if (msg.isEmpty()) {
           throw new RuntimeException(
               String.format(
-                  "Modsec rule with id:%s should have a valid message to be used as the rule name",
+                  "Modsec rule with id:%s should have a non-empty message to be used as the rule name",
                   id));
         }
-
         if (!modsecRulesMap.containsKey(parentId)) {
           modsecRulesMap.put(parentId, new HashMap<>());
         }

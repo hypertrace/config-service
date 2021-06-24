@@ -24,7 +24,7 @@ public class ApiDefRulesRegistryTest {
             + "enum :: Invalid Enumerations\n"
             + "httpStatus :: Unexpected HTTP Response Code\n"
             + "integer :: Value Out of Range\n"
-            + "ssrf :: Server-Side Request Forgery\n"
+            + "ssrf :: Server-Side Request Forgery (SSRF)\n"
             + "type :: Type Anomaly\n"
             + "unknownParam :: Unrecognized Field\n"
             + "xxe :: XML External Entity Injection",

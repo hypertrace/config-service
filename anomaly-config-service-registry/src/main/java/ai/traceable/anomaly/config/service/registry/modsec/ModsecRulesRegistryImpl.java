@@ -100,6 +100,9 @@ public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
                 (id, name) -> {
                   if (!modsecCrsSafeRulesMap.containsKey(ruleId)
                       || !modsecCrsSafeRulesMap.get(ruleId).containsKey(id)) {
+                    if (!anomalyRuleBuildersMap.containsKey(ruleId)) {
+                      throw new RuntimeException("No rule details added for ruleId:" + ruleId);
+                    }
                     anomalyRuleBuildersMap
                         .get(ruleId)
                         .addSubRuleInfos(
