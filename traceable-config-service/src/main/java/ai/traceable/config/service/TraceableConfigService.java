@@ -86,7 +86,9 @@ public class TraceableConfigService extends PlatformService {
     LocalProcessingRulesServiceImpl localProcessingRulesService =
         new LocalProcessingRulesServiceImpl(managedChannel, config);
     BindableService regionConfigService = RegionConfigServiceFactory.build(managedChannel, config);
-    BindableService iprangeConfigService = IpRangeConfigServiceFactory.build(managedChannel);
+    BindableService ipRangeConfigService =
+        IpRangeConfigServiceFactory.build(managedChannel, config, activityEventProducer);
+
     BindableService customSignatureConfigService =
         CustomSignatureConfigServiceFactory.build(managedChannel, config);
     BindableService userAttributionConfigService =
@@ -106,7 +108,7 @@ public class TraceableConfigService extends PlatformService {
         .addService(InterceptorUtil.wrapInterceptors(licenseStatusConfigService))
         .addService(InterceptorUtil.wrapInterceptors(localProcessingRulesService))
         .addService(InterceptorUtil.wrapInterceptors(regionConfigService))
-        .addService(InterceptorUtil.wrapInterceptors(iprangeConfigService))
+        .addService(InterceptorUtil.wrapInterceptors(ipRangeConfigService))
         .addService(InterceptorUtil.wrapInterceptors(customSignatureConfigService))
         .addService(InterceptorUtil.wrapInterceptors(userAttributionConfigService))
         .addService(InterceptorUtil.wrapInterceptors(threatManagementConfigService));

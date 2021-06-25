@@ -7,7 +7,7 @@ plugins {
 dependencies {
     api(project(":iprange-config-service-api"))
     implementation("org.hypertrace.config.service:config-service-api")
-
+    implementation(project(":activity-event-producer"))
     implementation("com.google.inject:guice:5.0.1")
     implementation("com.google.protobuf:protobuf-java-util:3.15.8")
     implementation("com.typesafe:config:1.4.1")
@@ -19,7 +19,7 @@ dependencies {
     implementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.4.0")
     implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.4.0")
     implementation("org.hypertrace.config.service:config-proto-converter")
-
+    implementation("ai.traceable.activity.event.service:activity-event-api:0.3.0")
     annotationProcessor("org.projectlombok:lombok:1.18.20")
     compileOnly("org.projectlombok:lombok:1.18.20")
 

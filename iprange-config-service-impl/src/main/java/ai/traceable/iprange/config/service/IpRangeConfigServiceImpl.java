@@ -1,9 +1,14 @@
 package ai.traceable.iprange.config.service;
 
+import ai.traceable.activity.event.SecurityConfigurationAction;
+import ai.traceable.activity.event.SecurityConfigurationChange;
+import ai.traceable.activity.event.SecurityConfigurationType;
+import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.iprange.config.service.rules.RulesManager;
 import ai.traceable.iprange.config.service.rules.RulesValidator;
 import ai.traceable.iprange.config.service.v1.*;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc.IpRangeConfigServiceImplBase;
+import ai.traceable.iprange.config.service.v1.IpRangeRule;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -15,11 +20,20 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 class IpRangeConfigServiceImpl extends IpRangeConfigServiceImplBase {
   private final RulesValidator rulesValidator;
   private final RulesManager rulesManager;
+  private ActivityEventProducer activityEventProducer;
+
+  private final boolean shouldPublishActivityEvents;
 
   @Inject
-  IpRangeConfigServiceImpl(RulesValidator rulesValidator, RulesManager rulesManager) {
+  IpRangeConfigServiceImpl(
+      RulesValidator rulesValidator,
+      RulesManager rulesManager,
+      IpRangeConfigServiceConfig config,
+      ActivityEventProducer activityEventProducer) {
     this.rulesValidator = rulesValidator;
     this.rulesManager = rulesManager;
+    this.activityEventProducer = activityEventProducer;
+    this.shouldPublishActivityEvents = config.shouldPublishActivityEvents();
   }
 
   @Override
@@ -66,6 +80,12 @@ class IpRangeConfigServiceImpl extends IpRangeConfigServiceImplBase {
 
       responseObserver.onNext(CreateIpRangeRuleResponse.newBuilder().setRule(ipRangeRule).build());
       responseObserver.onCompleted();
+
+      if (shouldPublishActivityEvents) {
+        activityEventProducer.publishSecurityConfigurationChangeEvent(
+            RequestContext.CURRENT.get(),
+            buildSecurityConfigurationChangeEvent(ipRangeRule, SecurityConfigurationAction.ADD));
+      }
     } catch (Exception e) {
       log.error("Unable to create Ip Range Rule {}", request, e);
       responseObserver.onError(e);
@@ -99,6 +119,13 @@ class IpRangeConfigServiceImpl extends IpRangeConfigServiceImplBase {
       responseObserver.onNext(
           UpdateIpRangeRuleResponse.newBuilder().setRule(updatedIpRangeRule).build());
       responseObserver.onCompleted();
+
+      if (shouldPublishActivityEvents) {
+        activityEventProducer.publishSecurityConfigurationChangeEvent(
+            RequestContext.CURRENT.get(),
+            buildSecurityConfigurationChangeEvent(
+                updatedIpRangeRule, SecurityConfigurationAction.UPDATE));
+      }
     } catch (Exception e) {
       log.error("Unable to update Ip Range Rule {} :", request, e);
       responseObserver.onError(e);
@@ -116,12 +143,29 @@ class IpRangeConfigServiceImpl extends IpRangeConfigServiceImplBase {
         responseObserver.onError(status.asException());
         return;
       }
-      rulesManager.deleteIpRangeRule(RequestContext.CURRENT.get(), request.getId());
+      IpRangeRule deletedIpRangeRuleConfig =
+          rulesManager.deleteIpRangeRule(RequestContext.CURRENT.get(), request.getId());
       responseObserver.onNext(DeleteIpRangeRuleResponse.newBuilder().build());
       responseObserver.onCompleted();
+      if (shouldPublishActivityEvents) {
+        activityEventProducer.publishSecurityConfigurationChangeEvent(
+            RequestContext.CURRENT.get(),
+            buildSecurityConfigurationChangeEvent(
+                deletedIpRangeRuleConfig, SecurityConfigurationAction.REMOVE));
+      }
     } catch (Exception e) {
       log.error("Unable to delete ip range rule with id {} :", request.getId(), e);
       responseObserver.onError(e);
     }
+  }
+
+  private SecurityConfigurationChange buildSecurityConfigurationChangeEvent(
+      IpRangeRule ipRangeRuleConfig, SecurityConfigurationAction securityConfigurationAction) {
+    return SecurityConfigurationChange.newBuilder()
+        .setRuleId(ipRangeRuleConfig.getId())
+        .setRuleName(ipRangeRuleConfig.getRuleDetails().getName())
+        .setSecurityConfigurationType(SecurityConfigurationType.IP_RANGE_RULE)
+        .setSecurityConfigurationAction(securityConfigurationAction)
+        .build();
   }
 }

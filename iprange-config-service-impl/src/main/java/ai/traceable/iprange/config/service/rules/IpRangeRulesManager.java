@@ -150,7 +150,8 @@ class IpRangeRulesManager implements RulesManager {
   }
 
   @Override
-  public void deleteIpRangeRule(RequestContext requestContext, String id) {
+  public IpRangeRule deleteIpRangeRule(RequestContext requestContext, String id)
+      throws InvalidProtocolBufferException {
     DeleteConfigRequest deleteConfigRequest =
         DeleteConfigRequest.newBuilder()
             .setResourceNamespace(IPRANGE_RULE_CONFIG_NAMESPACE)
@@ -158,7 +159,13 @@ class IpRangeRulesManager implements RulesManager {
             .setContext(id)
             .build();
 
-    requestContext.call(() -> configServiceBlockingStub.deleteConfig(deleteConfigRequest));
+    return ipRangeRuleConverter.convert(
+        requestContext.call(
+            () ->
+                configServiceBlockingStub
+                    .deleteConfig(deleteConfigRequest)
+                    .getDeletedConfig()
+                    .getConfig()));
   }
 
   private IpRangeRule upsertConfig(RequestContext requestContext, IpRangeRule ipRangeRule) {

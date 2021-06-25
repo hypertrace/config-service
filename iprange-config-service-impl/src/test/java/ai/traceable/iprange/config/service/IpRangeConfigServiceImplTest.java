@@ -3,15 +3,21 @@ package ai.traceable.iprange.config.service;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
+import ai.traceable.activity.event.SecurityConfigurationAction;
+import ai.traceable.activity.event.SecurityConfigurationChange;
+import ai.traceable.activity.event.SecurityConfigurationType;
+import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.iprange.config.service.rules.RulesManager;
 import ai.traceable.iprange.config.service.rules.RulesValidator;
 import ai.traceable.iprange.config.service.v1.*;
+import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -22,12 +28,22 @@ class IpRangeConfigServiceImplTest {
   private RulesValidator rulesValidator;
   private RulesManager rulesManager;
   private IpRangeConfigServiceImpl ipRangeConfigService;
+  private ActivityEventProducer mockActivityEventProducer;
 
   @BeforeEach
   void setup() {
     rulesValidator = mock(RulesValidator.class);
     rulesManager = mock(RulesManager.class);
-    ipRangeConfigService = new IpRangeConfigServiceImpl(rulesValidator, rulesManager);
+    IpRangeConfigServiceConfig mockIpRangeConfigServiceConfig =
+        mock(IpRangeConfigServiceConfig.class);
+    when(mockIpRangeConfigServiceConfig.shouldPublishActivityEvents()).thenReturn(true);
+    mockActivityEventProducer = mock(ActivityEventProducer.class);
+    ipRangeConfigService =
+        new IpRangeConfigServiceImpl(
+            rulesValidator,
+            rulesManager,
+            mockIpRangeConfigServiceConfig,
+            mockActivityEventProducer);
   }
 
   @Nested
@@ -120,6 +136,17 @@ class IpRangeConfigServiceImplTest {
       verify(responseStreamObserver, times(1))
           .onNext(CreateIpRangeRuleResponse.newBuilder().setRule(ipRangeRule).build());
       verify(responseStreamObserver, times(1)).onCompleted();
+
+      verify(mockActivityEventProducer, times(1))
+          .publishSecurityConfigurationChangeEvent(
+              any(RequestContext.class),
+              eq(
+                  SecurityConfigurationChange.newBuilder()
+                      .setRuleId("First-test")
+                      .setRuleName("Tester-1")
+                      .setSecurityConfigurationType(SecurityConfigurationType.IP_RANGE_RULE)
+                      .setSecurityConfigurationAction(SecurityConfigurationAction.ADD)
+                      .build()));
     }
 
     @Test
@@ -245,6 +272,17 @@ class IpRangeConfigServiceImplTest {
       verify(responseStreamObserver, times(1))
           .onNext(UpdateIpRangeRuleResponse.newBuilder().setRule(ipRangeRule).build());
       verify(responseStreamObserver, times(1)).onCompleted();
+
+      verify(mockActivityEventProducer, times(1))
+          .publishSecurityConfigurationChangeEvent(
+              any(RequestContext.class),
+              eq(
+                  SecurityConfigurationChange.newBuilder()
+                      .setRuleId("First-test")
+                      .setRuleName("Tester-1")
+                      .setSecurityConfigurationType(SecurityConfigurationType.IP_RANGE_RULE)
+                      .setSecurityConfigurationAction(SecurityConfigurationAction.UPDATE)
+                      .build()));
     }
 
     @Test
@@ -347,12 +385,14 @@ class IpRangeConfigServiceImplTest {
   class DeleteIpRangeRule {
     @Test
     @DisplayName("should delete for a valid request")
-    void shouldDeleteIpRangeRule() {
+    void shouldDeleteIpRangeRule() throws InvalidProtocolBufferException {
       DeleteIpRangeRuleRequest deleteIpRangeRuleRequest =
           DeleteIpRangeRuleRequest.newBuilder().setId("id").build();
 
       when(rulesValidator.validate(deleteIpRangeRuleRequest)).thenReturn(Status.OK);
-      doNothing().when(rulesManager).deleteIpRangeRule(any(), eq("id"));
+
+      when(rulesManager.deleteIpRangeRule(any(), eq("id")))
+          .thenReturn(IpRangeRule.newBuilder().setId("id").build());
 
       StreamObserver<DeleteIpRangeRuleResponse> responseStreamObserver = mock(StreamObserver.class);
       Runnable runnable =
@@ -364,6 +404,17 @@ class IpRangeConfigServiceImplTest {
       verify(responseStreamObserver, times(1))
           .onNext(DeleteIpRangeRuleResponse.getDefaultInstance());
       verify(responseStreamObserver, times(1)).onCompleted();
+
+      verify(mockActivityEventProducer, times(1))
+          .publishSecurityConfigurationChangeEvent(
+              any(RequestContext.class),
+              eq(
+                  SecurityConfigurationChange.newBuilder()
+                      .setRuleId("id")
+                      .setRuleName(IpRangeRule.getDefaultInstance().getRuleDetails().getName())
+                      .setSecurityConfigurationType(SecurityConfigurationType.IP_RANGE_RULE)
+                      .setSecurityConfigurationAction(SecurityConfigurationAction.REMOVE)
+                      .build()));
     }
 
     @Test
@@ -387,7 +438,7 @@ class IpRangeConfigServiceImplTest {
 
     @Test
     @DisplayName("should throw a runtime error when it occurs inside manager")
-    void propagateRuntimeException_inDeleteIpRange() {
+    void propagateRuntimeException_inDeleteIpRange() throws InvalidProtocolBufferException {
       DeleteIpRangeRuleRequest deleteIpRangeRuleRequest =
           DeleteIpRangeRuleRequest.newBuilder().setId("id").build();
 
