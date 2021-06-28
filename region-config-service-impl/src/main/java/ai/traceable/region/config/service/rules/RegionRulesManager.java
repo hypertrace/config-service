@@ -21,6 +21,7 @@ import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 class RegionRulesManager implements RulesManager {
@@ -147,7 +148,8 @@ class RegionRulesManager implements RulesManager {
   }
 
   @Override
-  public boolean deleteRegionRule(String id) {
+  public RegionRule deleteRegionRule(RequestContext requestContext, String id)
+      throws InvalidProtocolBufferException {
     DeleteConfigRequest deleteConfigRequest =
         DeleteConfigRequest.newBuilder()
             .setResourceNamespace(REGION_RULE_CONFIG_NAMESPACE)
@@ -155,13 +157,13 @@ class RegionRulesManager implements RulesManager {
             .setContext(id)
             .build();
 
-    try {
-      configServiceBlockingStub.deleteConfig(deleteConfigRequest);
-      return true;
-    } catch (RuntimeException e) {
-      log.error("Unable to delete region rule {}", id, e);
-      return false;
-    }
+    return regionRuleConverter.convert(
+        requestContext.call(
+            () ->
+                configServiceBlockingStub
+                    .deleteConfig(deleteConfigRequest)
+                    .getDeletedConfig()
+                    .getConfig()));
   }
 
   private boolean doesRegionRuleExist(String ruleId) {

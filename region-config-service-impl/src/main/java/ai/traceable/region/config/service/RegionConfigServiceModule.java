@@ -1,34 +1,32 @@
 package ai.traceable.region.config.service;
 
+import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.region.config.service.regions.RegionStoreModule;
 import ai.traceable.region.config.service.rules.RulesManagerModule;
 import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 
 class RegionConfigServiceModule extends AbstractModule {
-  private final Config config;
+  private final RegionConfigServiceConfig config;
   private final ManagedChannel channel;
+  private final ActivityEventProducer activityEventProducer;
 
-  RegionConfigServiceModule(ManagedChannel channel, Config config) {
+  RegionConfigServiceModule(
+      ManagedChannel channel, Config config, ActivityEventProducer activityEventProducer) {
     this.channel = channel;
-    this.config = config.getConfig("region.config.service");
+    this.config = new RegionConfigServiceConfig(config);
+    this.activityEventProducer = activityEventProducer;
   }
 
   @Override
   protected void configure() {
     bind(BindableService.class).to(RegionConfigServiceImpl.class);
     bind(ManagedChannel.class).toInstance(channel);
+    bind(ActivityEventProducer.class).toInstance(activityEventProducer);
+    bind(RegionConfigServiceConfig.class).toInstance(this.config);
     install(new RegionStoreModule());
     install(new RulesManagerModule());
-  }
-
-  @Provides
-  @Singleton
-  RegionConfigServiceConfig providesRegionServiceConfig() {
-    return new RegionConfigServiceConfig(this.config);
   }
 }

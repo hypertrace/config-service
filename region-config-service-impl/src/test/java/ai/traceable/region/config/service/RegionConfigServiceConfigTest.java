@@ -1,6 +1,8 @@
 package ai.traceable.region.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -23,8 +25,11 @@ class RegionConfigServiceConfigTest {
   }
 
   private Config mockConfig() {
+    Config mockConfig = mock(Config.class);
     Map<String, Object> configMap = new HashMap<>();
     configMap.put("neustar.countries.data.path", "/neustar/countries.csv");
-    return ConfigFactory.parseMap(configMap);
+    when(mockConfig.getConfig("region.config.service"))
+        .thenReturn(ConfigFactory.parseMap(configMap));
+    return mockConfig;
   }
 }

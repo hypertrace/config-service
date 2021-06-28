@@ -28,14 +28,11 @@ import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import com.github.f4b6a3.uuid.UuidCreator;
 import com.google.common.io.Resources;
+import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
@@ -102,8 +99,10 @@ public class CustomSignatureModsecRulesManagerTest {
   public void testConvertRules() throws IOException {
     Map<String, Object> configMap = new HashMap<>();
     configMap.put("modsecurity.directives.data.path", "modsecurity.conf");
-    CustomSignatureConfigServiceConfig config =
-        new CustomSignatureConfigServiceConfig(ConfigFactory.parseMap(configMap));
+    Config mockConfig = mock(Config.class);
+    when(mockConfig.getConfig("custom.signature.config.service"))
+        .thenReturn(ConfigFactory.parseMap(configMap));
+    CustomSignatureConfigServiceConfig config = new CustomSignatureConfigServiceConfig(mockConfig);
 
     CustomSignatureModsecRulesManager modsecRulesManager =
         new CustomSignatureModsecRulesManager(

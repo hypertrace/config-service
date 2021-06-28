@@ -1,5 +1,6 @@
 package ai.traceable.customsignature.config.service.rules;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -223,7 +224,7 @@ public class CustomSignatureRulesManagerTest {
             .getCustomSignatureRules(
                 requestContext, GetRulesFilter.newBuilder().addRuleIds(id).build())
             .isEmpty());
-    assertTrue(rulesManager.deleteCustomSignatureRule(requestContext, id));
+    assertDoesNotThrow(() -> rulesManager.deleteCustomSignatureRule(requestContext, id));
     assertTrue(
         rulesManager
             .getCustomSignatureRules(

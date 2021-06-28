@@ -132,22 +132,22 @@ class CustomSignatureRulesManager implements RulesManager {
   }
 
   @Override
-  public boolean deleteCustomSignatureRule(RequestContext requestContext, String id) {
+  public CustomSignatureRule deleteCustomSignatureRule(RequestContext requestContext, String id)
+      throws InvalidProtocolBufferException {
     DeleteConfigRequest deleteConfigRequest =
         DeleteConfigRequest.newBuilder()
             .setResourceNamespace(CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE)
             .setResourceName(CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME)
             .setContext(id)
             .build();
-    try {
-      GrpcClientRequestContextUtil.executeWithHeadersContext(
-          requestContext.getRequestHeaders(),
-          () -> configServiceBlockingStub.deleteConfig(deleteConfigRequest));
-      return true;
-    } catch (RuntimeException e) {
-      log.error("Unable to delete custom signature rule {}", id, e);
-      return false;
-    }
+
+    return customSignatureRuleConverter.convert(
+        requestContext.call(
+            () ->
+                configServiceBlockingStub
+                    .deleteConfig(deleteConfigRequest)
+                    .getDeletedConfig()
+                    .getConfig()));
   }
 
   private Optional<Value> getCustomSignatureRule(RequestContext requestContext, String ruleId) {

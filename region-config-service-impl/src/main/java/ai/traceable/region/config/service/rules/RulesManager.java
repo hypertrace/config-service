@@ -2,8 +2,10 @@ package ai.traceable.region.config.service.rules;
 
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.RegionRule;
+import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.List;
 import java.util.Optional;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public interface RulesManager {
   List<RegionRule> getRegionRules();
@@ -12,5 +14,6 @@ public interface RulesManager {
 
   Optional<RegionRule> updateRegionRule(RegionRule regionRule);
 
-  boolean deleteRegionRule(String id);
+  RegionRule deleteRegionRule(RequestContext requestContext, String id)
+      throws InvalidProtocolBufferException;
 }

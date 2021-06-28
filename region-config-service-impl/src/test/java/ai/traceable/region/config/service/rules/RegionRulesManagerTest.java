@@ -1,5 +1,6 @@
 package ai.traceable.region.config.service.rules;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -19,6 +20,7 @@ import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -32,6 +34,7 @@ class RegionRulesManagerTest {
   private ConfigServiceBlockingStub configServiceBlockingStub;
   private RegionRuleConverter regionRuleConverter;
   private UuidGenerator uuidGenerator;
+  private RequestContext requestContext;
 
   private RegionRulesManager rulesManager;
 
@@ -43,6 +46,7 @@ class RegionRulesManagerTest {
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     regionRuleConverter = mock(RegionRuleConverter.class);
     uuidGenerator = mock(UuidGenerator.class);
+    requestContext = RequestContext.forTenantId("default tenant");
     this.rulesManager =
         new RegionRulesManager(configServiceBlockingStub, regionRuleConverter, uuidGenerator);
   }
@@ -188,12 +192,13 @@ class RegionRulesManagerTest {
   @Nested
   class DeleteRegionRule {
     @Test
-    void shouldDeleteRegionRule() {
+    void shouldDeleteRegionRule() throws InvalidProtocolBufferException {
       Value mockRegionRuleConfig = mockRuleConfig("id-1", "name-1");
+      RegionRule regionRule = RegionRule.newBuilder().setId("id-1").setName("name-1").build();
       addRegionRules(ImmutableSortedMap.of("id-1", mockRegionRuleConfig));
 
-      boolean isDeleted = rulesManager.deleteRegionRule("id-1");
-      assertTrue(isDeleted);
+      when(regionRuleConverter.convert(mockRegionRuleConfig)).thenReturn(regionRule);
+      assertDoesNotThrow(() -> rulesManager.deleteRegionRule(requestContext, "id-1"));
     }
   }
 

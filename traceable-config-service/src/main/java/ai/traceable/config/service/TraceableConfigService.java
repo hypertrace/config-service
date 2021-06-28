@@ -85,12 +85,14 @@ public class TraceableConfigService extends PlatformService {
         new LicenseStatusConfigServiceImpl(managedChannel, config);
     LocalProcessingRulesServiceImpl localProcessingRulesService =
         new LocalProcessingRulesServiceImpl(managedChannel, config);
-    BindableService regionConfigService = RegionConfigServiceFactory.build(managedChannel, config);
+    BindableService regionConfigService =
+        RegionConfigServiceFactory.build(managedChannel, config, activityEventProducer);
+
     BindableService ipRangeConfigService =
         IpRangeConfigServiceFactory.build(managedChannel, config, activityEventProducer);
 
     BindableService customSignatureConfigService =
-        CustomSignatureConfigServiceFactory.build(managedChannel, config);
+        CustomSignatureConfigServiceFactory.build(managedChannel, config, activityEventProducer);
     BindableService userAttributionConfigService =
         UserAttributionConfigServiceFactory.build(managedChannel);
     BindableService threatManagementConfigService =

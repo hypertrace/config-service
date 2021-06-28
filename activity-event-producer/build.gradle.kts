@@ -7,7 +7,7 @@ plugins {
 dependencies {
   implementation("com.typesafe:config:1.4.1")
   implementation("org.slf4j:slf4j-api:1.7.30")
-  implementation("ai.traceable.activity.event.service:activity-event-api:0.3.0")
+  implementation("ai.traceable.activity.event.service:activity-event-api:0.3.1")
   implementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.5.0")
   implementation("org.hypertrace.core.eventstore:event-store:0.1.1")
 

@@ -75,7 +75,7 @@ dependencies {
   implementation("org.hypertrace.core.grpcutils:grpc-server-utils:0.5.0")
   implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.5.0")
   implementation("org.hypertrace.core.serviceframework:platform-service-framework:0.1.23")
-  implementation("ai.traceable.activity.event.service:activity-event-api:0.3.0")
+  implementation("ai.traceable.activity.event.service:activity-event-api:0.3.1")
   implementation("com.typesafe:config:1.4.1")
   implementation("org.slf4j:slf4j-api:1.7.30")
   implementation("io.confluent:kafka-avro-serializer:6.0.1")

@@ -13,7 +13,7 @@ dependencies {
   implementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.5.0")
   implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.5.0")
   implementation("org.hypertrace.config.service:config-proto-converter")
-  implementation("ai.traceable.activity.event.service:activity-event-api:0.3.0")
+  implementation("ai.traceable.activity.event.service:activity-event-api:0.3.1")
 
   annotationProcessor("org.projectlombok:lombok:1.18.20")
   compileOnly("org.projectlombok:lombok:1.18.20")

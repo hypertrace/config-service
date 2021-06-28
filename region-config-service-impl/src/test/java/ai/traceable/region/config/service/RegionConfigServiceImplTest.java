@@ -1,11 +1,17 @@
 package ai.traceable.region.config.service;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.activity.event.SecurityConfigurationAction;
+import ai.traceable.activity.event.SecurityConfigurationChange;
+import ai.traceable.activity.event.SecurityConfigurationType;
+import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.region.config.service.regions.RegionStore;
 import ai.traceable.region.config.service.rules.RulesManager;
 import ai.traceable.region.config.service.rules.RulesValidator;
@@ -27,6 +33,7 @@ import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRuleActionType;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleResponse;
+import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import io.grpc.stub.StreamObserver;
@@ -34,6 +41,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -47,13 +55,24 @@ class RegionConfigServiceImplTest {
   private RulesManager rulesManager;
 
   private RegionConfigServiceImpl regionConfigService;
+  private ActivityEventProducer mockActivityEventProducer;
 
   @BeforeEach
   void setup() {
     regionStore = mock(RegionStore.class);
     rulesValidator = mock(RulesValidator.class);
     rulesManager = mock(RulesManager.class);
-    regionConfigService = new RegionConfigServiceImpl(regionStore, rulesValidator, rulesManager);
+    mockActivityEventProducer = mock(ActivityEventProducer.class);
+    RegionConfigServiceConfig mockCustomSignatureConfigServiceConfig =
+        mock(RegionConfigServiceConfig.class);
+    when(mockCustomSignatureConfigServiceConfig.shouldPublishActivityEvents()).thenReturn(true);
+    regionConfigService =
+        new RegionConfigServiceImpl(
+            regionStore,
+            rulesValidator,
+            rulesManager,
+            mockCustomSignatureConfigServiceConfig,
+            mockActivityEventProducer);
   }
 
   @Nested
@@ -203,6 +222,17 @@ class RegionConfigServiceImplTest {
       verify(responseObserver, times(1))
           .onNext(CreateRegionRuleResponse.newBuilder().setRule(regionRule).build());
       verify(responseObserver, times(1)).onCompleted();
+
+      verify(mockActivityEventProducer, times(1))
+          .publishSecurityConfigurationChangeEvent(
+              any(RequestContext.class),
+              eq(
+                  SecurityConfigurationChange.newBuilder()
+                      .setRuleId("id-1")
+                      .setRuleName("name")
+                      .setSecurityConfigurationType(SecurityConfigurationType.LOCATION_RULE)
+                      .setSecurityConfigurationAction(SecurityConfigurationAction.ADD)
+                      .build()));
     }
 
     @Test
@@ -276,6 +306,17 @@ class RegionConfigServiceImplTest {
       verify(responseObserver, times(1))
           .onNext(UpdateRegionRuleResponse.newBuilder().setRule(updatedRegionRule).build());
       verify(responseObserver, times(1)).onCompleted();
+
+      verify(mockActivityEventProducer, times(1))
+          .publishSecurityConfigurationChangeEvent(
+              any(RequestContext.class),
+              eq(
+                  SecurityConfigurationChange.newBuilder()
+                      .setRuleId("id")
+                      .setRuleName("name")
+                      .setSecurityConfigurationType(SecurityConfigurationType.LOCATION_RULE)
+                      .setSecurityConfigurationAction(SecurityConfigurationAction.UPDATE)
+                      .build()));
     }
 
     @Test
@@ -331,12 +372,13 @@ class RegionConfigServiceImplTest {
   @Nested
   class DeleteRegionRule {
     @Test
-    void shouldDeleteRegionRule() {
+    void shouldDeleteRegionRule() throws InvalidProtocolBufferException {
       DeleteRegionRuleRequest deleteRegionRuleRequest =
           DeleteRegionRuleRequest.newBuilder().setId("id").build();
 
+      RegionRule regionRule = RegionRule.newBuilder().setId("id").build();
       when(rulesValidator.validate(deleteRegionRuleRequest)).thenReturn(Status.OK);
-      when(rulesManager.deleteRegionRule("id")).thenReturn(true);
+      when(rulesManager.deleteRegionRule(any(), eq("id"))).thenReturn(regionRule);
 
       StreamObserver<DeleteRegionRuleResponse> responseObserver = mock(StreamObserver.class);
       Runnable runnable =
@@ -345,6 +387,17 @@ class RegionConfigServiceImplTest {
 
       verify(responseObserver, times(1)).onNext(DeleteRegionRuleResponse.getDefaultInstance());
       verify(responseObserver, times(1)).onCompleted();
+
+      verify(mockActivityEventProducer, times(1))
+          .publishSecurityConfigurationChangeEvent(
+              any(RequestContext.class),
+              eq(
+                  SecurityConfigurationChange.newBuilder()
+                      .setRuleId("id")
+                      .setRuleName(regionRule.getName())
+                      .setSecurityConfigurationType(SecurityConfigurationType.LOCATION_RULE)
+                      .setSecurityConfigurationAction(SecurityConfigurationAction.REMOVE)
+                      .build()));
     }
 
     @Test
@@ -362,24 +415,6 @@ class RegionConfigServiceImplTest {
 
       verify(responseObserver, times(1))
           .onError(argThat(err -> Status.fromThrowable(err).getCode() == Code.INVALID_ARGUMENT));
-    }
-
-    @Test
-    @DisplayName("should return internal error unable to update")
-    void should_fail_deleteRegionRule_unableToDelete() {
-      DeleteRegionRuleRequest deleteRegionRuleRequest =
-          DeleteRegionRuleRequest.newBuilder().setId("id").build();
-
-      when(rulesValidator.validate(deleteRegionRuleRequest)).thenReturn(Status.OK);
-      when(rulesManager.deleteRegionRule("id")).thenReturn(false);
-
-      StreamObserver<DeleteRegionRuleResponse> responseObserver = mock(StreamObserver.class);
-      Runnable runnable =
-          () -> regionConfigService.deleteRegionRule(deleteRegionRuleRequest, responseObserver);
-      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
-
-      verify(responseObserver, times(1))
-          .onError(argThat(err -> Status.fromThrowable(err).getCode() == Code.INTERNAL));
     }
   }
 }

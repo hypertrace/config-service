@@ -3,6 +3,7 @@ package ai.traceable.customsignature.config.service.rules;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
+import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -22,7 +23,8 @@ public interface RulesManager {
   Optional<CustomSignatureRule> updateCustomSignatureRule(
       RequestContext requestContext, CustomSignatureRule customSignatureRule);
 
-  boolean deleteCustomSignatureRule(RequestContext requestContext, String id);
+  CustomSignatureRule deleteCustomSignatureRule(RequestContext requestContext, String id)
+      throws InvalidProtocolBufferException;
 
   default String generateRuleId() {
     return UUID.randomUUID().toString();
