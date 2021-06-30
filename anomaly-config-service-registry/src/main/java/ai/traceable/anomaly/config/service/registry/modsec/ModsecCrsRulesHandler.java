@@ -10,7 +10,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
 
-class ModsecCrsRulesHandler {
+public class ModsecCrsRulesHandler {
 
   private static final String SEC_RULE = "SecRule";
   private static final Pattern ID_PATTERN = Pattern.compile("id:([0-9]+)");
