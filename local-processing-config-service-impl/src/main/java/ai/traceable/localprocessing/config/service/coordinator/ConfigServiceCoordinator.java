@@ -1,4 +1,4 @@
-package ai.traceable.localprocessing.config.service;
+package ai.traceable.localprocessing.config.service.coordinator;
 
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRuleDetails;

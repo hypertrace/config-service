@@ -1,4 +1,4 @@
-package ai.traceable.localprocessing.config.service;
+package ai.traceable.localprocessing.config.service.ruleservice;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -7,11 +7,11 @@ import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionMod
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Test;
 
-public class LocalProcessingConfigRequestValidatorTest {
+class LocalProcessingConfigRequestValidatorTest {
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId("tenant-1");
 
   @Test
-  public void validateDefaultProtectionMode() {
+  void validateDefaultProtectionMode() {
     assertThrows(
         IllegalArgumentException.class,
         () ->

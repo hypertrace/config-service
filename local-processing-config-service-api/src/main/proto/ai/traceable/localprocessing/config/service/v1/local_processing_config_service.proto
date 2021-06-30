@@ -11,8 +11,23 @@ service LocalProcessingConfigService {
   rpc GetLocalProcessingConfig(GetLocalProcessingConfigRequest) returns (GetLocalProcessingConfigResponse) {}
 }
 
-message GetLocalProcessingConfigRequest {}
+message GetLocalProcessingConfigRequest {
+  string regular_modsec_detection_rules_hash = 1;
+  string custom_modsec_detection_rules_hash = 2;
+}
 
 message GetLocalProcessingConfigResponse {
   ProtectionModeConfig protection_mode_config = 1;
+  RegularModsecDetectionRules regular_modsec_detection_rules = 2;
+  CustomModsecDetectionRules custom_modsec_detection_rules = 3;
+}
+
+message CustomModsecDetectionRules {
+  string hash = 1;
+  optional string custom_modsec_detection_rules_blob = 2;
+}
+
+message RegularModsecDetectionRules {
+  string hash = 1;
+  optional string regular_modsec_detection_rules_blob = 2;
 }

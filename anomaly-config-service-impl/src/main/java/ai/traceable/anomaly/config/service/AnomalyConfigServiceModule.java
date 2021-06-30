@@ -2,9 +2,11 @@ package ai.traceable.anomaly.config.service;
 
 import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.ANOMALY_EXCLUSION_CONFIG_ANNOTATION;
 import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.ANOMALY_GLOBAL_CONFIG_ANNOTATION;
+import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.ANOMALY_MODSEC_CONFIG_ANNOTATION;
 
 import ai.traceable.anomaly.config.service.exclusion.AnomalyExclusionConfigServiceModule;
 import ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceModule;
+import ai.traceable.anomaly.config.service.modsec.AnomalyModsecConfigServiceModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
@@ -31,6 +33,7 @@ public class AnomalyConfigServiceModule extends AbstractModule {
         new AnomalyGlobalConfigServiceModule(
             config.getAnomalyGlobalConfig(), ANOMALY_GLOBAL_CONFIG_ANNOTATION));
     install(new AnomalyExclusionConfigServiceModule(ANOMALY_EXCLUSION_CONFIG_ANNOTATION));
+    install(new AnomalyModsecConfigServiceModule(ANOMALY_MODSEC_CONFIG_ANNOTATION));
   }
 
   @Provides

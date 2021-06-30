@@ -2,9 +2,12 @@ package ai.traceable.localprocessing.config.service;
 
 import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_LIMIT_AVAILABLE;
 import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_LIMIT_EXHAUSTED;
-import static ai.traceable.localprocessing.config.service.ConfigServiceCoordinatorImpl.DEFAULT_PROTECTION_MODE;
-import static ai.traceable.localprocessing.config.service.ConfigServiceCoordinatorImpl.LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG;
+import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.DEFAULT_PROTECTION_MODE;
+import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.licensestatus.config.service.v1.GetLicenseStatusRequest;
 import ai.traceable.licensestatus.config.service.v1.GetLicenseStatusResponse;
@@ -12,8 +15,15 @@ import ai.traceable.licensestatus.config.service.v1.LicenseLimit;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatus;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc.LicenseStatusConfigServiceBlockingStub;
+import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinator;
+import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinatorImpl;
+import ai.traceable.localprocessing.config.service.customsignature.CustomModsecDetectionManager;
+import ai.traceable.localprocessing.config.service.regularmodsec.RegularModsecDetectionManager;
+import ai.traceable.localprocessing.config.service.ruleservice.LocalProcessingRulesServiceImpl;
 import ai.traceable.localprocessing.config.service.v1.CreateLocalProcessingRuleRequest;
+import ai.traceable.localprocessing.config.service.v1.CustomModsecDetectionRules;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigRequest;
+import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigResponse;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc.LocalProcessingConfigServiceBlockingStub;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRuleDetails;
@@ -23,15 +33,17 @@ import ai.traceable.localprocessing.config.service.v1.NewLocalProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.ProtectedEndpoint;
 import ai.traceable.localprocessing.config.service.v1.ProtectionMode;
 import ai.traceable.localprocessing.config.service.v1.ProtectionModeConfig;
+import ai.traceable.localprocessing.config.service.v1.RegularModsecDetectionRules;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import io.grpc.Channel;
+import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
 import java.util.HashMap;
 import java.util.Map;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class LocalProcessingConfigServiceImplTest {
@@ -41,6 +53,8 @@ class LocalProcessingConfigServiceImplTest {
   LicenseStatusConfigServiceBlockingStub licenseStatusConfigStub;
   MockGenericConfigService mockGenericConfigService;
   LicenseStatus licenseStatus;
+  CustomModsecDetectionManager customModsecDetectionManager;
+  RegularModsecDetectionManager regularModsecDetectionManager;
 
   @BeforeEach
   void setUp() {
@@ -55,10 +69,21 @@ class LocalProcessingConfigServiceImplTest {
         Map.of("default.license.limit", "LICENSE_LIMIT_AVAILABLE"));
 
     Config config = ConfigFactory.parseMap(configMap);
-    Channel channel = mockGenericConfigService.channel();
+    ManagedChannel channel = (ManagedChannel) mockGenericConfigService.channel();
+
+    customModsecDetectionManager = mock(CustomModsecDetectionManager.class);
+    regularModsecDetectionManager = mock(RegularModsecDetectionManager.class);
+
+    ConfigServiceCoordinator configServiceCoordinator =
+        new ConfigServiceCoordinatorImpl(channel, new LocalProcessingConfigServiceConfig(config));
     mockGenericConfigService
-        .addService(new LocalProcessingConfigServiceImpl(channel, config))
-        .addService(new LocalProcessingRulesServiceImpl(channel, config))
+        .addService(
+            new LocalProcessingConfigServiceImpl(
+                channel,
+                configServiceCoordinator,
+                customModsecDetectionManager,
+                regularModsecDetectionManager))
+        .addService(new LocalProcessingRulesServiceImpl(configServiceCoordinator))
         .addService(new MockLicenseStatusConfigService())
         .start();
 
@@ -73,7 +98,48 @@ class LocalProcessingConfigServiceImplTest {
   }
 
   @Test
-  void getLocalProcessingConfig() {
+  @DisplayName("Test get local processing config modsec rules part")
+  void getLocalProcessingConfig_modsecRules() {
+    CustomModsecDetectionRules expectedCustomModsecDetectionRules =
+        CustomModsecDetectionRules.newBuilder()
+            .setHash("Custom")
+            .setCustomModsecDetectionRulesBlob("Custom rules")
+            .build();
+
+    RegularModsecDetectionRules expectedRegularModsecDetectionRules =
+        RegularModsecDetectionRules.newBuilder()
+            .setHash("Regular")
+            .setRegularModsecDetectionRulesBlob("Regular rules")
+            .build();
+
+    when(customModsecDetectionManager.getEnabledRules("Custom"))
+        .thenReturn(expectedCustomModsecDetectionRules);
+    when(regularModsecDetectionManager.getDetectionRules("Regular"))
+        .thenReturn(expectedRegularModsecDetectionRules);
+
+    setLicenseStatus(LICENSE_LIMIT_AVAILABLE);
+    createLocalProcessingRule("/checkout/*", "abc.com", ProtectionMode.PROTECTION_MODE_CORE);
+    createLocalProcessingRule("/orders/**", "xyz.com", ProtectionMode.PROTECTION_MODE_ADVANCED);
+
+    GetLocalProcessingConfigResponse response =
+        localProcessingConfigStub.getLocalProcessingConfig(
+            GetLocalProcessingConfigRequest.newBuilder()
+                .setCustomModsecDetectionRulesHash("Custom")
+                .setRegularModsecDetectionRulesHash("Regular")
+                .build());
+
+    assertEquals(expectedCustomModsecDetectionRules, response.getCustomModsecDetectionRules());
+    assertEquals(expectedRegularModsecDetectionRules, response.getRegularModsecDetectionRules());
+  }
+
+  @Test
+  @DisplayName("Test get local processing config protection config part")
+  void getLocalProcessingConfig_protectionConfig() {
+    when(customModsecDetectionManager.getEnabledRules(any()))
+        .thenReturn(CustomModsecDetectionRules.getDefaultInstance());
+    when(regularModsecDetectionManager.getDetectionRules(any()))
+        .thenReturn(RegularModsecDetectionRules.getDefaultInstance());
+
     setLicenseStatus(LICENSE_LIMIT_AVAILABLE);
     createLocalProcessingRule("/checkout/*", "abc.com", ProtectionMode.PROTECTION_MODE_CORE);
     createLocalProcessingRule("/orders/**", "xyz.com", ProtectionMode.PROTECTION_MODE_ADVANCED);
@@ -101,7 +167,12 @@ class LocalProcessingConfigServiceImplTest {
   }
 
   @Test
-  void getLocalProcessingConfigWithLimitExhausted() {
+  void getLocalProcessingConfigWithLimitExhausted_protectionConfig() {
+    when(customModsecDetectionManager.getEnabledRules(any()))
+        .thenReturn(CustomModsecDetectionRules.getDefaultInstance());
+    when(regularModsecDetectionManager.getDetectionRules(any()))
+        .thenReturn(RegularModsecDetectionRules.getDefaultInstance());
+
     setLicenseStatus(LICENSE_LIMIT_EXHAUSTED);
     createLocalProcessingRule("/checkout/*", "abc.com", ProtectionMode.PROTECTION_MODE_CORE);
     createLocalProcessingRule("/orders/**", "xyz.com", ProtectionMode.PROTECTION_MODE_ADVANCED);

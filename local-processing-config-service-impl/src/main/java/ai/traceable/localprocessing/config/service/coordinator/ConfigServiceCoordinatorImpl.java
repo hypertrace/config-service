@@ -1,19 +1,22 @@
-package ai.traceable.localprocessing.config.service;
+package ai.traceable.localprocessing.config.service.coordinator;
 
-import static ai.traceable.localprocessing.config.service.LocalProcessingConstants.DEFAULT_PROTECTION_MODE_CONFIG;
-import static ai.traceable.localprocessing.config.service.LocalProcessingConstants.LOCAL_PROCESSING_RULE_RESOURCE_NAME;
-import static ai.traceable.localprocessing.config.service.LocalProcessingConstants.LOCAL_PROCESSING_RULE_RESOURCE_NAMESPACE;
+import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.DEFAULT_PROTECTION_MODE;
+import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.DEFAULT_PROTECTION_MODE_CONFIG;
+import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG;
+import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.LOCAL_PROCESSING_RULE_RESOURCE_NAME;
+import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.LOCAL_PROCESSING_RULE_RESOURCE_NAMESPACE;
 
+import ai.traceable.localprocessing.config.service.LocalProcessingConfigServiceConfig;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRuleDetails;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRuleMetadata;
 import ai.traceable.localprocessing.config.service.v1.NewLocalProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.ProtectionMode;
 import com.google.common.base.Preconditions;
+import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
-import com.typesafe.config.Config;
-import io.grpc.Channel;
+import io.grpc.ManagedChannel;
 import io.grpc.Status;
 import java.util.List;
 import java.util.Optional;
@@ -33,21 +36,21 @@ import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProvide
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
-
-  static final String LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG = "local.processing.config.service";
-  static final String DEFAULT_PROTECTION_MODE = "default.protection.mode";
-
   private final ConfigServiceBlockingStub configServiceBlockingStub;
   private final ProtectionMode defaultProtectionMode;
 
-  public ConfigServiceCoordinatorImpl(Channel configChannel, Config config) {
+  @Inject
+  public ConfigServiceCoordinatorImpl(
+      ManagedChannel channel,
+      LocalProcessingConfigServiceConfig localProcessingConfigServiceConfig) {
     this.configServiceBlockingStub =
-        ConfigServiceGrpc.newBlockingStub(configChannel)
+        ConfigServiceGrpc.newBlockingStub(channel)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
     this.defaultProtectionMode =
         ProtectionMode.valueOf(
-            config
+            localProcessingConfigServiceConfig
+                .getConfig()
                 .getConfig(LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG)
                 .getString(DEFAULT_PROTECTION_MODE));
   }

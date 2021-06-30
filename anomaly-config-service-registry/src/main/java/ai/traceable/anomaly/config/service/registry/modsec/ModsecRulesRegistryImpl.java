@@ -6,7 +6,6 @@ import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -118,8 +117,7 @@ public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
 
   private Config loadModsecRuleDetails() {
     try {
-      return ConfigFactory.parseFile(
-          new File(getClass().getClassLoader().getResource(MODSEC_RULE_DETAILS_FILE_PATH).toURI()));
+      return ConfigFactory.parseResources(MODSEC_RULE_DETAILS_FILE_PATH);
     } catch (Exception e) {
       throw new RuntimeException(
           String.format(

@@ -7,14 +7,17 @@ import ai.traceable.licensestatus.config.service.v1.GetLicenseStatusResponse;
 import ai.traceable.licensestatus.config.service.v1.LicenseLimit;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc.LicenseStatusConfigServiceBlockingStub;
+import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinator;
+import ai.traceable.localprocessing.config.service.customsignature.CustomModsecDetectionManager;
+import ai.traceable.localprocessing.config.service.regularmodsec.RegularModsecDetectionManager;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigRequest;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigResponse;
-import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc;
+import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc.LocalProcessingConfigServiceImplBase;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRuleDetails;
 import ai.traceable.localprocessing.config.service.v1.ProtectedEndpoint;
 import ai.traceable.localprocessing.config.service.v1.ProtectionModeConfig;
-import com.typesafe.config.Config;
-import io.grpc.Channel;
+import com.google.inject.Inject;
+import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,18 +26,26 @@ import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProvide
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-public class LocalProcessingConfigServiceImpl
-    extends LocalProcessingConfigServiceGrpc.LocalProcessingConfigServiceImplBase {
+public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServiceImplBase {
 
   private final ConfigServiceCoordinator configServiceCoordinator;
   private final LicenseStatusConfigServiceBlockingStub licenseStatusConfigServiceBlockingStub;
+  private final RegularModsecDetectionManager regularModsecDetectionManager;
+  private final CustomModsecDetectionManager customModsecDetectionManager;
 
-  public LocalProcessingConfigServiceImpl(Channel configChannel, Config config) {
-    this.configServiceCoordinator = new ConfigServiceCoordinatorImpl(configChannel, config);
-    licenseStatusConfigServiceBlockingStub =
-        LicenseStatusConfigServiceGrpc.newBlockingStub(configChannel)
+  @Inject
+  public LocalProcessingConfigServiceImpl(
+      ManagedChannel channel,
+      ConfigServiceCoordinator configServiceCoordinator,
+      CustomModsecDetectionManager customModsecDetectionManager,
+      RegularModsecDetectionManager regularModsecDetectionManager) {
+    this.configServiceCoordinator = configServiceCoordinator;
+    this.licenseStatusConfigServiceBlockingStub =
+        LicenseStatusConfigServiceGrpc.newBlockingStub(channel)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+    this.regularModsecDetectionManager = regularModsecDetectionManager;
+    this.customModsecDetectionManager = customModsecDetectionManager;
   }
 
   @Override
@@ -43,16 +54,30 @@ public class LocalProcessingConfigServiceImpl
       StreamObserver<GetLocalProcessingConfigResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-
-      if (isLicenseLimitAvailable(requestContext)) {
-        sendAllLocalProcessingRules(responseObserver, requestContext);
-      } else {
-        overrideAllLocalProcessingRulesWithDefaultCoreMode(responseObserver);
-      }
+      responseObserver.onNext(
+          GetLocalProcessingConfigResponse.newBuilder()
+              .setProtectionModeConfig(getProtectionModeConfig(requestContext))
+              .setCustomModsecDetectionRules(
+                  customModsecDetectionManager.getEnabledRules(
+                      request.getCustomModsecDetectionRulesHash()))
+              .setRegularModsecDetectionRules(
+                  regularModsecDetectionManager.getDetectionRules(
+                      request.getRegularModsecDetectionRulesHash()))
+              .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Get Local Processing Config RPC failed for request:{}", request, e);
       responseObserver.onError(e);
+    }
+  }
+
+  private ProtectionModeConfig getProtectionModeConfig(RequestContext requestContext) {
+    if (isLicenseLimitAvailable(requestContext)) {
+      return sendAllLocalProcessingRules(requestContext);
+    } else {
+      return ProtectionModeConfig.newBuilder()
+          .setDefaultProtectionMode(PROTECTION_MODE_CORE)
+          .build();
     }
   }
 
@@ -66,9 +91,7 @@ public class LocalProcessingConfigServiceImpl
         .equals(LicenseLimit.LICENSE_LIMIT_AVAILABLE);
   }
 
-  private void sendAllLocalProcessingRules(
-      StreamObserver<GetLocalProcessingConfigResponse> responseObserver,
-      RequestContext requestContext) {
+  private ProtectionModeConfig sendAllLocalProcessingRules(RequestContext requestContext) {
     List<ProtectedEndpoint> protectedEndpoints =
         configServiceCoordinator.getAllLocalProcessingRules(requestContext).stream()
             .map(LocalProcessingRuleDetails::getRule)
@@ -81,25 +104,10 @@ public class LocalProcessingConfigServiceImpl
                         .build())
             .collect(Collectors.toList());
 
-    responseObserver.onNext(
-        GetLocalProcessingConfigResponse.newBuilder()
-            .setProtectionModeConfig(
-                ProtectionModeConfig.newBuilder()
-                    .setDefaultProtectionMode(
-                        configServiceCoordinator.getDefaultProtectionModeConfig(requestContext))
-                    .addAllProtectedEndpoints(protectedEndpoints)
-                    .build())
-            .build());
-  }
-
-  private void overrideAllLocalProcessingRulesWithDefaultCoreMode(
-      StreamObserver<GetLocalProcessingConfigResponse> responseObserver) {
-    responseObserver.onNext(
-        GetLocalProcessingConfigResponse.newBuilder()
-            .setProtectionModeConfig(
-                ProtectionModeConfig.newBuilder()
-                    .setDefaultProtectionMode(PROTECTION_MODE_CORE)
-                    .build())
-            .build());
+    return ProtectionModeConfig.newBuilder()
+        .setDefaultProtectionMode(
+            configServiceCoordinator.getDefaultProtectionModeConfig(requestContext))
+        .addAllProtectedEndpoints(protectedEndpoints)
+        .build();
   }
 }

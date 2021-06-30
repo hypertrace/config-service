@@ -1,4 +1,4 @@
-package ai.traceable.localprocessing.config.service;
+package ai.traceable.localprocessing.config.service.ruleservice;
 
 import ai.traceable.localprocessing.config.service.v1.GetDefaultProtectionModeRequest;
 import ai.traceable.localprocessing.config.service.v1.ProtectionMode;

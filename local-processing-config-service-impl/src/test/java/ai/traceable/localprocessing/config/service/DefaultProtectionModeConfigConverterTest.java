@@ -2,6 +2,7 @@ package ai.traceable.localprocessing.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import ai.traceable.localprocessing.config.service.coordinator.DefaultProtectionModeConfigConverter;
 import ai.traceable.localprocessing.config.service.v1.ProtectionMode;
 import org.junit.jupiter.api.Test;
 

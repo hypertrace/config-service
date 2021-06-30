@@ -14,13 +14,15 @@ public class AnomalyConfigServiceFactory {
 
   static final String ANOMALY_GLOBAL_CONFIG_ANNOTATION = "anomalyGlobalConfig";
   static final String ANOMALY_EXCLUSION_CONFIG_ANNOTATION = "anomalyExclusionConfig";
+  static final String ANOMALY_MODSEC_CONFIG_ANNOTATION = "anomalyModsecConfig";
 
   public static List<BindableService> build(ManagedChannel channel, Config config) {
     Injector injector = Guice.createInjector(new AnomalyConfigServiceModule(channel, config));
 
     return ImmutableList.of(
         getInjectorInstance(injector, ANOMALY_GLOBAL_CONFIG_ANNOTATION),
-        getInjectorInstance(injector, ANOMALY_EXCLUSION_CONFIG_ANNOTATION));
+        getInjectorInstance(injector, ANOMALY_EXCLUSION_CONFIG_ANNOTATION),
+        getInjectorInstance(injector, ANOMALY_MODSEC_CONFIG_ANNOTATION));
   }
 
   private static <T> BindableService getInjectorInstance(Injector injector, String annotation) {

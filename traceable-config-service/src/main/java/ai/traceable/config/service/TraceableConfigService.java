@@ -8,8 +8,8 @@ import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceF
 import ai.traceable.external.userattribution.config.service.ExternalUserAttributionConfigServiceFactory;
 import ai.traceable.iprange.config.service.IpRangeConfigServiceFactory;
 import ai.traceable.licensestatus.config.service.LicenseStatusConfigServiceImpl;
-import ai.traceable.localprocessing.config.service.LocalProcessingConfigServiceImpl;
-import ai.traceable.localprocessing.config.service.LocalProcessingRulesServiceImpl;
+import ai.traceable.localprocessing.config.service.LocalProcessingConfigServiceFactory;
+import ai.traceable.localprocessing.config.service.ruleservice.LocalProcessingRulesServiceFactory;
 import ai.traceable.ratelimiting.service.RateLimitingConfigServiceImpl;
 import ai.traceable.region.config.service.RegionConfigServiceFactory;
 import ai.traceable.sensitivedata.config.service.SensitiveDataConfigServicesProvider;
@@ -83,11 +83,10 @@ public class TraceableConfigService extends PlatformService {
         new RateLimitingConfigServiceImpl(managedChannel, config, activityEventProducer);
     LicenseStatusConfigServiceImpl licenseStatusConfigService =
         new LicenseStatusConfigServiceImpl(managedChannel, config);
-    LocalProcessingRulesServiceImpl localProcessingRulesService =
-        new LocalProcessingRulesServiceImpl(managedChannel, config);
+    BindableService localProcessingRulesService =
+        LocalProcessingRulesServiceFactory.build(managedChannel, config);
     BindableService regionConfigService =
         RegionConfigServiceFactory.build(managedChannel, config, activityEventProducer);
-
     BindableService ipRangeConfigService =
         IpRangeConfigServiceFactory.build(managedChannel, config, activityEventProducer);
 
@@ -119,8 +118,8 @@ public class TraceableConfigService extends PlatformService {
     ServerBuilder<?> externalServerBuilder = ServerBuilder.forPort(externalServerPort);
     BindableService piiFilterConfigService =
         sensitiveDataConfigServicesProvider.getPiiFilterConfigService();
-    LocalProcessingConfigServiceImpl localProcessingConfigService =
-        new LocalProcessingConfigServiceImpl(managedChannel, config);
+    BindableService localProcessingConfigService =
+        LocalProcessingConfigServiceFactory.build(managedChannel, config);
     BindableService blockingConfigService =
         BlockingConfigServiceFactory.build(managedChannel, config);
     BindableService externalUserAttributionConfigService =

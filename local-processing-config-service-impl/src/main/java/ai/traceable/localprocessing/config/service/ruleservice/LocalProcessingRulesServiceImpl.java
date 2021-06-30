@@ -1,5 +1,6 @@
-package ai.traceable.localprocessing.config.service;
+package ai.traceable.localprocessing.config.service.ruleservice;
 
+import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinator;
 import ai.traceable.localprocessing.config.service.v1.CreateLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.CreateLocalProcessingRuleResponse;
 import ai.traceable.localprocessing.config.service.v1.DeleteLocalProcessingRuleRequest;
@@ -14,8 +15,7 @@ import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionMod
 import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionModeResponse;
 import ai.traceable.localprocessing.config.service.v1.UpdateLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.UpdateLocalProcessingRuleResponse;
-import com.typesafe.config.Config;
-import io.grpc.Channel;
+import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -26,8 +26,9 @@ public class LocalProcessingRulesServiceImpl
 
   private final ConfigServiceCoordinator configServiceCoordinator;
 
-  public LocalProcessingRulesServiceImpl(Channel configChannel, Config config) {
-    this.configServiceCoordinator = new ConfigServiceCoordinatorImpl(configChannel, config);
+  @Inject
+  public LocalProcessingRulesServiceImpl(ConfigServiceCoordinator configServiceCoordinator) {
+    this.configServiceCoordinator = configServiceCoordinator;
   }
 
   @Override

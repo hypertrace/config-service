@@ -1,9 +1,11 @@
-package ai.traceable.localprocessing.config.service;
+package ai.traceable.localprocessing.config.service.ruleservice;
 
-import static ai.traceable.localprocessing.config.service.ConfigServiceCoordinatorImpl.DEFAULT_PROTECTION_MODE;
-import static ai.traceable.localprocessing.config.service.ConfigServiceCoordinatorImpl.LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG;
+import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.DEFAULT_PROTECTION_MODE;
+import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import ai.traceable.localprocessing.config.service.LocalProcessingConfigServiceConfig;
+import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinatorImpl;
 import ai.traceable.localprocessing.config.service.v1.CreateLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.DeleteLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.GetAllLocalProcessingRulesRequest;
@@ -20,6 +22,7 @@ import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionMod
 import ai.traceable.localprocessing.config.service.v1.UpdateLocalProcessingRuleRequest;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import io.grpc.ManagedChannel;
 import java.util.List;
 import java.util.Map;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -43,7 +46,11 @@ class LocalProcessingRulesServiceImplTest {
                 LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG,
                 Map.of(DEFAULT_PROTECTION_MODE, ProtectionMode.PROTECTION_MODE_ADVANCED.name())));
     mockGenericConfigService
-        .addService(new LocalProcessingRulesServiceImpl(mockGenericConfigService.channel(), config))
+        .addService(
+            new LocalProcessingRulesServiceImpl(
+                new ConfigServiceCoordinatorImpl(
+                    (ManagedChannel) mockGenericConfigService.channel(),
+                    new LocalProcessingConfigServiceConfig(config))))
         .start();
 
     localProcessingRulesStub =

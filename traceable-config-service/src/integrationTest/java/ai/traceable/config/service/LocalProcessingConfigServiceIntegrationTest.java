@@ -262,4 +262,6 @@ class LocalProcessingConfigServiceIntegrationTest
     GrpcClientRequestContextUtil.executeInTenantContext(
         TENANT_ID, () -> licenseStatusConfigStub.updateLicenseStatus(request));
   }
+
+  // TODO: Write integration test for customRules and regularModsecRules
 }
