@@ -52,7 +52,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   private final boolean defaultAutomaticSecretRedactionEnabled;
   private final DefaultRedactionRules defaultRedactionRules;
   private final LoadingCache<ContextualKey<Void>, DefaultRedactionRulePopulationStatus>
-      preopulationStatusCache =
+      prePopulationStatusCache =
           CacheBuilder.newBuilder()
               .maximumSize(10000)
               .build(CacheLoader.from(key -> this.fetchPrepopulationStatus(key.getContext())));
@@ -271,7 +271,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
             .setConfig(updatedStatus.toValue())
             .build());
 
-    this.preopulationStatusCache.put(requestContext.buildContextualKey(), updatedStatus);
+    this.prePopulationStatusCache.put(requestContext.buildContextualKey(), updatedStatus);
   }
 
   private DefaultRedactionRulePopulationStatus getPrepopulationStatus(
@@ -280,12 +280,12 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
     ContextualKey<Void> key =
         RequestContext.forTenantId(requestContext.getTenantId().orElseThrow()).buildContextualKey();
     // If populated with a complete value use it, else invalidate and refetch
-    return Optional.ofNullable(this.preopulationStatusCache.getIfPresent(key))
+    return Optional.ofNullable(this.prePopulationStatusCache.getIfPresent(key))
         .filter(this.defaultRedactionRules::isPrepopulationComplete)
         .orElseGet(
             () -> {
-              this.preopulationStatusCache.invalidate(key);
-              return this.preopulationStatusCache.getUnchecked(key);
+              this.prePopulationStatusCache.invalidate(key);
+              return this.prePopulationStatusCache.getUnchecked(key);
             });
   }
 

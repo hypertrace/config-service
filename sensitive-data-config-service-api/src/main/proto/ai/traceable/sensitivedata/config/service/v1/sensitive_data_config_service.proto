@@ -28,6 +28,12 @@ service SensitiveDataConfigService {
   rpc GetAllRedactionRules(GetAllRedactionRulesRequest) returns (GetAllRedactionRulesResponse) {}
 
   rpc DeleteRedactionRule(DeleteRedactionRuleRequest) returns (DeleteRedactionRuleResponse) {}
+
+  // get full privacy mode
+  rpc GetFullPrivacyMode(GetFullPrivacyModeRequest) returns (GetFullPrivacyModeResponse) {}
+
+  // update full privacy mode
+  rpc UpdateFullPrivacyMode(UpdateFullPrivacyModeRequest) returns (UpdateFullPrivacyModeResponse) {}
 }
 
 message UpdateRedactionStrategyForTypeRequest {
@@ -96,3 +102,15 @@ enum ParamType {
   PARAM_TYPE_QUERY = 2;
   PARAM_TYPE_BODY = 3;
 }
+
+message GetFullPrivacyModeRequest {}
+
+message GetFullPrivacyModeResponse {
+  bool enabled = 1;
+}
+
+message UpdateFullPrivacyModeRequest {
+  bool enabled = 1;
+}
+
+message UpdateFullPrivacyModeResponse {}
