@@ -5,10 +5,10 @@ plugins {
 }
 
 dependencies {
-    api(project(":iprange-config-service-api"))
     api(project(":activity-event-producer"))
     api("com.typesafe:config:1.4.1")
     api("io.grpc:grpc-api:1.37.0")
+    implementation(project(":iprange-config-service-api"))
     implementation("org.hypertrace.config.service:config-service-api")
     implementation("com.google.inject:guice:5.0.1")
     implementation("com.google.protobuf:protobuf-java-util:3.15.8")

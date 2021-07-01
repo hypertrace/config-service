@@ -92,7 +92,7 @@ dependencies {
   integrationTestImplementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.5.0")
   integrationTestImplementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.5.0")
   integrationTestImplementation("com.google.protobuf:protobuf-java-util:3.15.8")
-
+  integrationTestImplementation(project(":iprange-config-service-api"))
   testFixturesImplementation("ai.traceable.platform:insights-service-api:0.29.5")
 }
 
