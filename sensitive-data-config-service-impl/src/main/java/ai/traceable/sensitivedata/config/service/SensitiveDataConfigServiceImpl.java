@@ -8,6 +8,8 @@ import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesResponse;
 import ai.traceable.sensitivedata.config.service.v1.GetAutomaticSecretRedactionStrategyRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAutomaticSecretRedactionStrategyResponse;
+import ai.traceable.sensitivedata.config.service.v1.GetFullPrivacyModeRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetFullPrivacyModeResponse;
 import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeResponse;
 import ai.traceable.sensitivedata.config.service.v1.ParamType;
@@ -15,6 +17,8 @@ import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.UpdateAutomaticSecretRedactionStrategyRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateAutomaticSecretRedactionStrategyResponse;
+import ai.traceable.sensitivedata.config.service.v1.UpdateFullPrivacyModeRequest;
+import ai.traceable.sensitivedata.config.service.v1.UpdateFullPrivacyModeResponse;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionRuleResponse;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeRequest;
@@ -187,6 +191,40 @@ class SensitiveDataConfigServiceImpl
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Delete Redaction Rule RPC failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getFullPrivacyMode(
+      GetFullPrivacyModeRequest request,
+      StreamObserver<GetFullPrivacyModeResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      responseObserver.onNext(
+          GetFullPrivacyModeResponse.newBuilder()
+              .setEnabled(configServiceCoordinator.isFullPrivacyModeEnabled(requestContext))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Get Full Privacy Mode RPC failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void updateFullPrivacyMode(
+      UpdateFullPrivacyModeRequest request,
+      StreamObserver<UpdateFullPrivacyModeResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      boolean fullPrivacyModeEnabled = request.getEnabled();
+      configServiceCoordinator.upsertFullPrivacyModeConfig(
+          requestContext, new FullPrivacyModeConfig(fullPrivacyModeEnabled));
+      responseObserver.onNext(UpdateFullPrivacyModeResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Update Full Privacy Mode RPC failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }

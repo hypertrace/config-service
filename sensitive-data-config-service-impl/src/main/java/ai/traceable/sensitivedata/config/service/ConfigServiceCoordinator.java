@@ -28,10 +28,14 @@ interface ConfigServiceCoordinator {
 
   RedactionRule updateRedactionRule(RequestContext requestContext, RedactionRule redactionRule);
 
-  List<RedactionRule> getAllRedactionRules(
-      RequestContext requestContext, boolean includeConditional);
+  List<RedactionRule> getRedactionRules(RequestContext requestContext, boolean includeConditional);
 
   List<RedactionRule> getViewableRedactionRules(RequestContext requestContext);
 
   void deleteRedactionRule(RequestContext requestContext, String redactionRuleId);
+
+  boolean isFullPrivacyModeEnabled(RequestContext requestContext);
+
+  void upsertFullPrivacyModeConfig(
+      RequestContext requestContext, FullPrivacyModeConfig fullPrivacyModeConfig);
 }

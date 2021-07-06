@@ -1,0 +1,113 @@
+{
+  "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+  "prefixes": [
+    "http.request.header.",
+    "http.response.header.",
+    "rpc.request.metadata.",
+    "rpc.response.metadata."
+  ],
+  "keyRegexs": [
+    {
+      "regex": "^address",
+      "category": "pii",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "sessionIdentifier": true,
+      "ruleId": "placeholder-id"
+    },
+    {
+      "regex": "^name",
+      "category": "pii",
+      "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "ruleId": "placeholder-id"
+    },
+    {
+      "regex": "^session(\\[\\d+\\])?$",
+      "category": "auth",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "sessionIdentifier": true,
+      "ruleId": "placeholder-id"
+    },
+    {
+      "regex": "^remember_token(\\[\\d+\\])?$",
+      "category": "auth",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "sessionIdentifier": true,
+      "ruleId": "placeholder-id"
+    },
+    {
+      "regex": "^authorization(\\[\\d+\\])?$",
+      "category": "auth",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "sessionIdentifier": true,
+      "ruleId": "placeholder-id"
+    },
+    {
+      "regex": "http.request.header.h1",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "fqn": true
+    },
+    {
+      "regex": "http.request.header.h2",
+      "redactionStrategy": "REDACTION_STRATEGY_HASH",
+      "fqn": true
+    },
+    {
+      "regex": "^access_token(\\[\\d+\\])?$",
+      "category": "auth"
+    },
+    {
+      "regex": "^api_key(\\[\\d+\\])?$",
+      "category": "auth"
+    },
+    {
+      "regex": "^apikey(\\[\\d+\\])?$",
+      "category": "auth"
+    },
+    {
+      "regex": "^password(\\[\\d+\\])?$",
+      "category": "auth"
+    },
+    {
+      "regex": "^passwd(\\[\\d+\\])?$",
+      "category": "auth"
+    },
+    {
+      "regex": "^secret(\\[\\d+\\])?$",
+      "category": "auth"
+    }
+  ],
+  "complexData": [
+    {
+      "key": "http.response.header.set-cookie",
+      "type": "cookie"
+    },
+    {
+      "key": "http.request.header.cookie",
+      "type": "cookie"
+    },
+    {
+      "key": "http.response.body",
+      "typeKey": "http.response.header.content-type"
+    },
+    {
+      "key": "http.request.body",
+      "typeKey": "http.request.header.content-type"
+    },
+    {
+      "key": "rpc.response.body",
+      "type": "json"
+    },
+    {
+      "key": "rpc.request.body",
+      "type": "json"
+    },
+    {
+      "key": "sql.query",
+      "type": "sql"
+    },
+    {
+      "key": "http.url",
+      "type": "urlencoded"
+    }
+  ]
+}

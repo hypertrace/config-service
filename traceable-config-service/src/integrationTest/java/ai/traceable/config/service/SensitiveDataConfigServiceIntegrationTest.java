@@ -9,6 +9,7 @@ import ai.traceable.sensitivedata.config.service.v1.CreateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesResponse;
 import ai.traceable.sensitivedata.config.service.v1.GetAutomaticSecretRedactionStrategyRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetFullPrivacyModeRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeRequest;
 import ai.traceable.sensitivedata.config.service.v1.MatchType;
@@ -23,6 +24,7 @@ import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
 import ai.traceable.sensitivedata.config.service.v1.UpdateAutomaticSecretRedactionStrategyRequest;
+import ai.traceable.sensitivedata.config.service.v1.UpdateFullPrivacyModeRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeRequest;
 import com.google.common.io.Resources;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -104,9 +106,19 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
         getNewRedactionRule("rule-2", RedactionStrategy.REDACTION_STRATEGY_HASH, "^address", true));
     assertMatchesResource("sensitive-data/pii-filter-after-add.json", getPiiFilterConfig(false));
 
-    // include local processing rules
+    // Test for full privacy mode
+    // When disabled, which is the default, the full privacy mode rules should not be sent down.
     assertMatchesResource(
-        "sensitive-data/pii-filter-with-local-processing.json", getPiiFilterConfig(true));
+        "sensitive-data/pii-filter-with-full-privacy-mode-disabled.json", getPiiFilterConfig(true));
+
+    // When disabled, which is the default, the full privacy mode rules should be sent down.
+    updateFullPrivacyMode(true);
+    assertMatchesResource(
+        "sensitive-data/pii-filter-with-full-privacy-mode-enabled.json", getPiiFilterConfig(true));
+
+    updateFullPrivacyMode(false);
+    assertMatchesResource(
+        "sensitive-data/pii-filter-with-full-privacy-mode-disabled.json", getPiiFilterConfig(true));
   }
 
   @Test
@@ -130,6 +142,22 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
         });
   }
 
+  @Test
+  void testFullPrivacyMode() {
+    requestContext = RequestContext.forTenantId("testFullPrivacyMode-tenant");
+
+    // Default full privacy mode should be false
+    assertFalse(getFullPrivacyMode());
+
+    // Update to true
+    updateFullPrivacyMode(true);
+    assertTrue(getFullPrivacyMode());
+
+    // Update to false
+    updateFullPrivacyMode(false);
+    assertFalse(getFullPrivacyMode());
+  }
+
   private void updateRedactionStrategyForType(
       ParamType paramType, RedactionStrategy redactionStrategy) {
     UpdateRedactionStrategyForTypeRequest request =
@@ -147,6 +175,19 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
     return requestContext
         .call(() -> sensitiveDataConfigServiceStub.getRedactionStrategyForType(request))
         .getRedactionStrategy();
+  }
+
+  private void updateFullPrivacyMode(boolean fullPrivacyMode) {
+    UpdateFullPrivacyModeRequest request =
+        UpdateFullPrivacyModeRequest.newBuilder().setEnabled(fullPrivacyMode).build();
+    requestContext.call(() -> sensitiveDataConfigServiceStub.updateFullPrivacyMode(request));
+  }
+
+  private boolean getFullPrivacyMode() {
+    GetFullPrivacyModeRequest request = GetFullPrivacyModeRequest.newBuilder().build();
+    return requestContext
+        .call(() -> sensitiveDataConfigServiceStub.getFullPrivacyMode(request))
+        .getEnabled();
   }
 
   private void updateAutomaticSecretRedactionStrategy(boolean enabled) {

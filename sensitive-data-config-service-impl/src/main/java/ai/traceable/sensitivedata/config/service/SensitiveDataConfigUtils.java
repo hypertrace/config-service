@@ -15,6 +15,7 @@ public class SensitiveDataConfigUtils {
   public static final String REDACTION_RULES_CONFIG = "redaction-rules-config";
   public static final String SENSITIVE_DATA_CONFIGURATION = "sensitive-data-configuration";
   public static final String DEFAULT_RULE_POPULATION_STATUS = "default-rule-population-status";
+  public static final String FULL_PRIVACY_MODE_CONFIG = "full-privacy-mode-config";
 
   private SensitiveDataConfigUtils() {
     // to prevent instantiation

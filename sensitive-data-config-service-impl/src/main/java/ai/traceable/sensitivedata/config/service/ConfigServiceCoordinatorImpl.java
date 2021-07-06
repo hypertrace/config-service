@@ -2,6 +2,7 @@ package ai.traceable.sensitivedata.config.service;
 
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.AUTOMATIC_SECRET_REDACTION_STRATEGY_CONFIG;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.DEFAULT_RULE_POPULATION_STATUS;
+import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.FULL_PRIVACY_MODE_CONFIG;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.PARAMETER_TYPE_REDACTION_STRATEGY_CONFIG;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.REDACTION_RULES_CONFIG;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.SENSITIVE_DATA_CONFIGURATION;
@@ -50,6 +51,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   private final Striped<Lock> stripedPrepopulationLock =
       Striped.lazyWeakLock(PREPOPULATION_LOCK_STRIPE_COUNT);
   private final boolean defaultAutomaticSecretRedactionEnabled;
+  private final boolean defaultFullPrivacyModeEnabled;
   private final DefaultRedactionRules defaultRedactionRules;
   private final LoadingCache<ContextualKey<Void>, DefaultRedactionRulePopulationStatus>
       prePopulationStatusCache =
@@ -63,6 +65,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.defaultRedactionRules = config.defaultRedactionRules();
     this.defaultAutomaticSecretRedactionEnabled = config.defaultAutomaticRedactionStrategy();
+    this.defaultFullPrivacyModeEnabled = config.defaultFullPrivacyMode();
     this.defaultParamTypeRedactionStrategy = config.defaultParamTypeRedactionStrategy();
   }
 
@@ -164,15 +167,24 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   }
 
   @Override
-  public List<RedactionRule> getAllRedactionRules(
+  public List<RedactionRule> getRedactionRules(
       RequestContext requestContext, boolean includeConditionalRules) {
     this.insertPrepopulatedRulesIfRequired(requestContext);
 
-    return Streams.concat(
-            this.getUnpersistedDefaultRules().stream(),
-            this.fetchPersistedRules(requestContext).stream())
-        .filter(rule -> includeConditionalRules || rule.getConditionsList().isEmpty())
-        .collect(Collectors.toUnmodifiableList());
+    boolean fullPrivacyMode = this.isFullPrivacyModeEnabled(requestContext);
+    if (fullPrivacyMode) { // Send all rules including full privacy mode ones.
+      return Streams.concat(
+              this.getUnpersistedDefaultRules().stream(), // Full privacy mode rules
+              this.fetchPersistedRules(requestContext).stream())
+          .filter(rule -> includeConditionalRules || rule.getConditionsList().isEmpty())
+          .collect(Collectors.toUnmodifiableList());
+    } else {
+      // Only send the persisted rules that the customer has defined and other default rules that
+      // are persisted. No full privacy mode rules.
+      return this.fetchPersistedRules(requestContext).stream()
+          .filter(rule -> includeConditionalRules || rule.getConditionsList().isEmpty())
+          .collect(Collectors.toUnmodifiableList());
+    }
   }
 
   @Override
@@ -193,6 +205,32 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
             .setContext(redactionRuleId)
             .build();
     deleteConfig(requestContext, deleteConfigRequest);
+  }
+
+  @Override
+  public boolean isFullPrivacyModeEnabled(RequestContext requestContext) {
+    GetConfigRequest getConfigRequest =
+        GetConfigRequest.newBuilder()
+            .setResourceName(FULL_PRIVACY_MODE_CONFIG)
+            .setResourceNamespace(SENSITIVE_DATA_CONFIGURATION)
+            .build();
+    Optional<FullPrivacyModeConfig> fullPrivacyModeConfig =
+        getConfig(requestContext, getConfigRequest).flatMap(FullPrivacyModeConfig::fromValue);
+    return fullPrivacyModeConfig
+        .map(FullPrivacyModeConfig::isEnabled)
+        .orElse(defaultFullPrivacyModeEnabled);
+  }
+
+  @Override
+  public void upsertFullPrivacyModeConfig(
+      RequestContext requestContext, FullPrivacyModeConfig fullPrivacyModeConfig) {
+    UpsertConfigRequest upsertConfigRequest =
+        UpsertConfigRequest.newBuilder()
+            .setResourceName(FULL_PRIVACY_MODE_CONFIG)
+            .setResourceNamespace(SENSITIVE_DATA_CONFIGURATION)
+            .setConfig(fullPrivacyModeConfig.toValue())
+            .build();
+    upsertConfig(requestContext, upsertConfigRequest);
   }
 
   private void insertPrepopulatedRulesIfRequired(RequestContext requestContext) {

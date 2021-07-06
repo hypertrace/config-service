@@ -22,6 +22,8 @@ class SensitiveDataServiceConfig {
       "default.param.type.redaction.strategy";
   private static final String DEFAULT_AUTOMATIC_SECRET_REDACTION_ENABLED =
       "default.automatic.secret.redaction.enabled";
+  private static final String DEFAULT_FULL_PRIVACY_MODE_ENABLED =
+      "default.full.privacy.mode.enabled";
 
   private final GrpcChannelRegistry channelRegistry;
   private final Config sensitiveDataConfig;
@@ -33,7 +35,7 @@ class SensitiveDataServiceConfig {
     this.channelRegistry = channelRegistry;
     this.sensitiveDataConfig = config.getConfig(SENSITIVE_DATA_CONFIG_SERVICE_CONFIG);
     this.config = config;
-    this.defaultRedactionRules = this.buildDefaultRedactionRues();
+    this.defaultRedactionRules = this.buildDefaultRedactionRules();
   }
 
   PiiFilterConfig defaultPiiFilterConfig() {
@@ -54,13 +56,17 @@ class SensitiveDataServiceConfig {
     return sensitiveDataConfig.getBoolean(DEFAULT_AUTOMATIC_SECRET_REDACTION_ENABLED);
   }
 
+  boolean defaultFullPrivacyMode() {
+    return sensitiveDataConfig.getBoolean(DEFAULT_FULL_PRIVACY_MODE_ENABLED);
+  }
+
   Channel insightsChannel() {
     return channelRegistry.forAddress(
         config.getConfig(INSIGHTS_SERVICE_CONFIG).getString("host"),
         config.getConfig(INSIGHTS_SERVICE_CONFIG).getInt("port"));
   }
 
-  private DefaultRedactionRules buildDefaultRedactionRues() {
+  private DefaultRedactionRules buildDefaultRedactionRules() {
     List<? extends ConfigObject> defaultRules =
         sensitiveDataConfig.getObjectList(DEFAULT_REDACTION_RULES);
     ConfigObject prepopulatedRules = sensitiveDataConfig.getObject(PREPOPULATED_REDACTION_RULES);

@@ -53,7 +53,7 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
 
       List<RedactionRule> redactionRules =
           Lists.reverse(
-              configServiceCoordinator.getAllRedactionRules(
+              configServiceCoordinator.getRedactionRules(
                   requestContext, request.getIncludeConditionalRules()));
 
       mergeConfigFromRedactionRules(

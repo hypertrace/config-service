@@ -1,7 +1,10 @@
 package ai.traceable.sensitivedata.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -11,6 +14,7 @@ import ai.traceable.sensitivedata.config.service.v1.CreateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.DeleteRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAutomaticSecretRedactionStrategyRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetFullPrivacyModeRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeRequest;
 import ai.traceable.sensitivedata.config.service.v1.MatchType;
 import ai.traceable.sensitivedata.config.service.v1.NewRedactionRule;
@@ -20,6 +24,8 @@ import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
 import ai.traceable.sensitivedata.config.service.v1.UpdateAutomaticSecretRedactionStrategyRequest;
+import ai.traceable.sensitivedata.config.service.v1.UpdateFullPrivacyModeRequest;
+import ai.traceable.sensitivedata.config.service.v1.UpdateFullPrivacyModeResponse;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeRequest;
 import io.grpc.StatusRuntimeException;
@@ -201,6 +207,38 @@ class SensitiveDataConfigServiceImplTest {
         sensitiveDataStub
             .getAllRedactionRules(GetAllRedactionRulesRequest.getDefaultInstance())
             .getRedactionRulesList());
+  }
+
+  @Test
+  void upsertAndGetFullPrivacyMode() {
+    // Should be false when not set
+    boolean fullPrivacyMode =
+        sensitiveDataStub
+            .getFullPrivacyMode(GetFullPrivacyModeRequest.newBuilder().build())
+            .getEnabled();
+    assertFalse(fullPrivacyMode);
+
+    // Set to true
+    UpdateFullPrivacyModeResponse updateFullPrivacyModeResponse =
+        sensitiveDataStub.updateFullPrivacyMode(
+            UpdateFullPrivacyModeRequest.newBuilder().setEnabled(true).build());
+    assertNotNull(updateFullPrivacyModeResponse);
+    fullPrivacyMode =
+        sensitiveDataStub
+            .getFullPrivacyMode(GetFullPrivacyModeRequest.newBuilder().build())
+            .getEnabled();
+    assertTrue(fullPrivacyMode);
+
+    // Set to false
+    updateFullPrivacyModeResponse =
+        sensitiveDataStub.updateFullPrivacyMode(
+            UpdateFullPrivacyModeRequest.newBuilder().setEnabled(false).build());
+    assertNotNull(updateFullPrivacyModeResponse);
+    fullPrivacyMode =
+        sensitiveDataStub
+            .getFullPrivacyMode(GetFullPrivacyModeRequest.newBuilder().build())
+            .getEnabled();
+    assertFalse(fullPrivacyMode);
   }
 
   private NewRedactionRule getNewRedactionRule(String name, String regex) {
