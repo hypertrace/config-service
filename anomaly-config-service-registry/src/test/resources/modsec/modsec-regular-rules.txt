@@ -1,3 +1,5 @@
+crs_912120 :: Denial of Service (DoS) attack identified from %{tx.real_ip} (%{tx.dos_block_counter} hits since last alert)
+crs_912170 :: Potential Denial of Service (DoS) Attack from %{tx.real_ip} - # of Request Bursts: %{ip.dos_burst_counter}
 crs_913100 :: User-Agent associated with security scanner
 crs_913110 :: Request header associated with security scanner
 crs_913120 :: Request filename/argument associated with security scanner
@@ -7,7 +9,11 @@ crs_9210120 :: HTTP Request Smuggling Attack (Content-Length Confusion)
 crs_9210300 :: URL Encoding Abuse Attack Attempt
 crs_9210305 :: Null Byte Injection
 crs_921110 :: HTTP Request Smuggling Attack
+crs_921120 :: HTTP Response Splitting Attack (120)
+crs_921130 :: HTTP Response Splitting Attack (130)
 crs_921140 :: HTTP Header Injection Attack via headers
+crs_921150 :: HTTP Header Injection Attack via payload (CR/LF) (150)
+crs_921160 :: HTTP Header Injection Attack via payload (CR/LF and header-name)
 crs_921190 :: HTTP Splitting (CR/LF in request filename)
 crs_921200 :: LDAP Injection Attack
 crs_9300120 :: OS File Access Attempt (T120)
@@ -15,43 +21,69 @@ crs_930100 :: Path Traversal Attack (/../) (100)
 crs_930110 :: Path Traversal Attack (/../) (110)
 crs_930120 :: OS File Access Attempt (120)
 crs_930130 :: Restricted File Access Attempt
+crs_931100 :: Possible Remote File Inclusion (RFI) Attack: URL Parameter using IP Address
+crs_931110 :: Possible Remote File Inclusion (RFI) Attack: Common RFI Vulnerable Parameter Name used w/URL Payload
 crs_931120 :: Possible Remote File Inclusion (RFI) Attack: URL Payload Used w/Trailing Question Mark Character (?)
 crs_9320100 :: Remote Command Execution: Unix Command Injection (T100)
 crs_9320105 :: Remote Command Execution: Unix Command Injection (T105)
 crs_9320150 :: Remote Command Execution: Direct Unix Command Execution (T150)
 crs_9320155 :: Remote Command Execution: Direct Unix Command Execution (T155)
+crs_932100 :: Remote Command Execution: Unix Command Injection (100)
+crs_932105 :: Remote Command Execution: Unix Command Injection (105)
+crs_932110 :: Remote Command Execution: Windows Command Injection (110)
+crs_932115 :: Remote Command Execution: Windows Command Injection (115)
+crs_932120 :: Remote Command Execution: Windows PowerShell Command Found
+crs_932140 :: Remote Command Execution: Windows FOR/IF Command Found
+crs_932150 :: Remote Command Execution: Direct Unix Command Execution
 crs_932160 :: Remote Command Execution: Unix Shell Code Found
 crs_932170 :: Remote Command Execution: Shellshock (CVE-2014-6271) (170)
 crs_932171 :: Remote Command Execution: Shellshock (CVE-2014-6271) (171)
 crs_932180 :: Restricted File Upload Attempt
 crs_934100 :: Node.js Injection Attack
+crs_941100 :: XSS Attack (100)
 crs_941110 :: XSS Filter - Category 1: Script Tag Vector
+crs_941130 :: XSS Filter - Category 3: Attribute Vector
+crs_941140 :: XSS Filter - Category 4: Javascript URI Vector
+crs_941160 :: NoScript XSS InjectionChecker: HTML Injection
 crs_941170 :: NoScript XSS InjectionChecker: Attribute Injection
+crs_941180 :: Node-Validator Blacklist Keywords
+crs_941190 :: IE XSS Filters - Attack (Style Sheets)
 crs_941200 :: IE XSS Filters - Attack (VML Frames)
 crs_941210 :: IE XSS Filters - Attack (Obfuscated Javascript)
 crs_941220 :: IE XSS Filters - Attack (Obfuscated VB Script)
 crs_941230 :: IE XSS Filters - Attack (Embed Tag)
 crs_941240 :: IE XSS Filters - Attack (Import or Implementation Attribute)
+crs_941250 :: IE XSS Filters - Attack (Meta http-equiv)
 crs_941260 :: IE XSS Filters - Attack (Meta charset)
 crs_941270 :: IE XSS Filters - Attack (Link href)
 crs_941280 :: IE XSS Filters - Attack (Base href)
 crs_941290 :: IE XSS Filters - Attack (Applet Tag)
 crs_941300 :: IE XSS Filters - Attack (Object Tag)
+crs_941310 :: US-ASCII Malformed Encoding XSS Filter - Attack
 crs_941350 :: UTF-7 Encoding IE XSS - Attack
 crs_941360 :: JSFuck / Hieroglyphy obfuscation
+crs_941370 :: JavaScript global variable
 crs_9420190 :: MSSQL code execution and information gathering attempts
 crs_9420230 :: Conditional SQL injection attempts (T230)
+crs_942100 :: SQL Injection Attack (100)
 crs_942140 :: SQL Injection Attack: Common DB Names
 crs_942160 :: Blind sqli tests using sleep() or benchmark()
+crs_942170 :: SQL benchmark and sleep injection attempts including conditional queries
+crs_942190 :: SQL code execution and information gathering attempts
 crs_942220 :: Integer overflow attacks, these are taken from skipfish, except 3.0.00738585072007e-308 is the \"magic number\" crash
+crs_942230 :: Conditional SQL injection attempts (230)
 crs_942240 :: MySQL charset switch and MSSQL DoS attempts
 crs_942250 :: MATCH AGAINST, MERGE and EXECUTE IMMEDIATE injections
 crs_942270 :: Basic sql injection. Common attack string for mysql, oracle and others
 crs_942280 :: Postgres pg_sleep injection, waitfor delay attacks and database shutdown attempts
 crs_942290 :: Basic MongoDB SQL injection attempts
+crs_942320 :: MySQL and PostgreSQL stored procedure/function injections
+crs_942350 :: MySQL UDF injection and other data/structure manipulation attempts
+crs_942360 :: Concatenated basic SQL injection and SQLLFI attempts
 crs_942500 :: MySQL in-line comment
 crs_943100 :: Possible Session Fixation Attack: Setting Cookie Values in HTML
 crs_943110 :: Possible Session Fixation Attack: SessionID Parameter Name with Off-Domain Referer
+crs_943120 :: Possible Session Fixation Attack: SessionID Parameter Name with No Referer
 crs_944100 :: Remote Command Execution: Suspicious Java class
 crs_944110 :: Remote Command Execution: Java process spawn (CVE-2017-9805)
 crs_944120 :: Remote Command Execution: Java serialization (CVE-2015-4852) (120)

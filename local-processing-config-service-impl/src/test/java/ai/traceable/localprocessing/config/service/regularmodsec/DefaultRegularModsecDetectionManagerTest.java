@@ -6,10 +6,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc.AnomalyModsecConfigServiceBlockingStub;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesResponse;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesData;
-import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesType;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.RegularModsecDetectionRules;
 import java.util.List;
@@ -44,7 +44,7 @@ class DefaultRegularModsecDetectionManagerTest {
                     List.of(
                         ModsecCrsRulesData.newBuilder()
                             .setModsecCrsRulesBlob("Tester rule blob")
-                            .setModsecCrsRulesType(ModsecCrsRulesType.MODSEC_CRS_RULES_TYPE_REGULAR)
+                            .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR)
                             .build()))
                 .build());
 

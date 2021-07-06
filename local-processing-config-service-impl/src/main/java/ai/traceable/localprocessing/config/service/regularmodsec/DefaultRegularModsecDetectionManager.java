@@ -1,9 +1,9 @@
 package ai.traceable.localprocessing.config.service.regularmodsec;
 
+import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc.AnomalyModsecConfigServiceBlockingStub;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesResponse;
-import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesType;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.RegularModsecDetectionRules;
 import com.google.inject.Inject;
@@ -26,14 +26,13 @@ class DefaultRegularModsecDetectionManager implements RegularModsecDetectionMana
     GetModsecCrsRulesResponse response =
         configServiceBlockingStub.getModsecCrsRules(
             GetModsecCrsRulesRequest.newBuilder()
-                .addAllModsecCrsRulesTypes(
-                    List.of(ModsecCrsRulesType.MODSEC_CRS_RULES_TYPE_REGULAR))
+                .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
                 .build());
 
     String regularCrsRulesBlob;
     if (response.getModsecCrsRulesList().size() == 1
-        && response.getModsecCrsRulesList().get(0).getModsecCrsRulesType()
-            == ModsecCrsRulesType.MODSEC_CRS_RULES_TYPE_REGULAR) {
+        && response.getModsecCrsRulesList().get(0).getSubRuleType()
+            == AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR) {
       // The request was done for only one modsec type so we should be getting only 1 element
       regularCrsRulesBlob = response.getModsecCrsRulesList().get(0).getModsecCrsRulesBlob();
     } else {

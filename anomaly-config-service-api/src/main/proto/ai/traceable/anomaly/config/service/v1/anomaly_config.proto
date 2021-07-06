@@ -68,5 +68,12 @@ message AnomalyRuleInfo {
 message AnomalySubRuleInfo {
   string rule_id = 1;
   string rule_name = 2;
-  bool blocking_available = 3;
+  repeated AnomalySubRuleType sub_rule_types = 3;
+}
+
+enum AnomalySubRuleType {
+  ANOMALY_SUB_RULE_TYPE_UNSPECIFIED = 0;
+  ANOMALY_SUB_RULE_TYPE_REGULAR = 1;
+  ANOMALY_SUB_RULE_TYPE_SAFE = 2;
+  ANOMALY_SUB_RULE_TYPE_BLOCK = 3;
 }

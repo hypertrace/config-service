@@ -7,7 +7,6 @@ import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesResponse;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import java.util.HashSet;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -40,8 +39,7 @@ public class AnomalyModsecConfigServiceImpl extends AnomalyModsecConfigServiceIm
           GetModsecCrsRulesResponse.newBuilder()
               .addAllModsecCrsRules(
                   manager.getModsecCrsRules(
-                      RequestContext.CURRENT.get(),
-                      new HashSet<>(request.getModsecCrsRulesTypesList())))
+                      RequestContext.CURRENT.get(), request.getSubRuleTypesList()))
               .build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();

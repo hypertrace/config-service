@@ -25,4 +25,10 @@ public class ModsecRuleUtilsTest {
     assertEquals("crs_912", modsecRuleUtils.getModsecParentRuleId("crs_912330"));
     assertEquals("crs_912", modsecRuleUtils.getModsecParentRuleId("crs_912"));
   }
+
+  @Test
+  public void testGetModsecCrsRuleIdNumber() {
+    assertEquals(9123304, modsecRuleUtils.getModsecCrsRuleIdNumber("crs_9123304"));
+    assertEquals(912, modsecRuleUtils.getModsecCrsRuleIdNumber("crs_912"));
+  }
 }

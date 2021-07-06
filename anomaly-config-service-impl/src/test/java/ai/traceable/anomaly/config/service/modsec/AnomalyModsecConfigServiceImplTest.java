@@ -10,10 +10,10 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.modsec.rules.ModsecManager;
 import ai.traceable.anomaly.config.service.modsec.rules.ModsecValidator;
+import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesResponse;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesData;
-import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesType;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
@@ -42,12 +42,12 @@ class AnomalyModsecConfigServiceImplTest {
 
     ModsecCrsRulesData rule1 =
         ModsecCrsRulesData.newBuilder()
-            .setModsecCrsRulesType(ModsecCrsRulesType.MODSEC_CRS_RULES_TYPE_SAFE)
+            .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)
             .setModsecCrsRulesBlob("safe")
             .build();
     ModsecCrsRulesData rule2 =
         ModsecCrsRulesData.newBuilder()
-            .setModsecCrsRulesType(ModsecCrsRulesType.MODSEC_CRS_RULES_TYPE_REGULAR)
+            .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR)
             .setModsecCrsRulesBlob("regular")
             .build();
 

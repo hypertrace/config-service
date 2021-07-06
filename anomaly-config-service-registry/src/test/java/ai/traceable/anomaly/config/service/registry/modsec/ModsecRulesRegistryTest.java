@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
+import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.modsecurity.RuleEngine;
 import com.google.common.io.Resources;
 import com.google.re2j.Matcher;
@@ -17,6 +18,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -33,8 +35,75 @@ public class ModsecRulesRegistryTest {
   public void testModsecCrsRules() throws IOException {
     if (SystemUtils.IS_OS_LINUX) {
       RuleEngine.loadNativeLibrary();
-      assertNotNull(RuleEngine.create(modsecRulesRegistry.getModsecSafeCrsRulesBlob()));
-      assertNotNull(RuleEngine.create(modsecRulesRegistry.getModsecRegularCrsRulesBlob()));
+      assertNotNull(
+          RuleEngine.create(
+              modsecRulesRegistry.getModsecCrsRulesBlob(
+                  AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR)));
+      assertNotNull(
+          RuleEngine.create(
+              modsecRulesRegistry.getModsecCrsRulesBlob(
+                  AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)));
+      assertNotNull(
+          RuleEngine.create(
+              modsecRulesRegistry.getModsecCrsRulesBlob(
+                  AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)));
+    }
+
+    String secRuleRemoveByIdKeyword = "SecRuleRemoveById";
+    List<AnomalySubRuleInfo> subRules =
+        modsecRulesRegistry.getModsecRuleInfos().values().stream()
+            .map(AnomalyRuleInfo::getSubRuleInfosList)
+            .flatMap(List::stream)
+            .collect(Collectors.toList());
+    long regularRulesCount =
+        subRules.stream()
+            .filter(
+                subRule ->
+                    subRule
+                        .getSubRuleTypesList()
+                        .contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
+            .collect(Collectors.counting());
+    {
+      String crsRulesBlob =
+          modsecRulesRegistry.getModsecCrsRulesBlob(
+              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR);
+      // all rules in file used
+      assertEquals(1, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
+    }
+    {
+      String crsRulesBlob =
+          modsecRulesRegistry.getModsecCrsRulesBlob(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);
+      long safeRulesCount =
+          subRules.stream()
+              .filter(
+                  subRule ->
+                      subRule
+                          .getSubRuleTypesList()
+                          .contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
+              .collect(Collectors.counting());
+      // few rules in file not marked safe
+      assertEquals(
+          regularRulesCount - safeRulesCount,
+          crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
+      assertEquals(33, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
+    }
+    {
+      String crsRulesBlob =
+          modsecRulesRegistry.getModsecCrsRulesBlob(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK);
+      long blockingRulesCount =
+          subRules.stream()
+              .filter(
+                  subRule ->
+                      subRule
+                          .getSubRuleTypesList()
+                          .contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK))
+              .collect(Collectors.counting());
+      // few rules in file not marked safe
+      assertEquals(
+          regularRulesCount - blockingRulesCount,
+          crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
+      // few rules in file not marked for blocking
+      assertEquals(63, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
     }
   }
 
@@ -77,14 +146,8 @@ public class ModsecRulesRegistryTest {
                 .forEach(anomalySubRuleInfo -> anomalyRuleInfo.getRuleId().startsWith(ruleId)));
 
     // check count of sub-rules..
-    Set<String> expectedIdMatches = new HashSet<>();
-    expectedIdMatches.addAll(
-        getIdMatches(
-            modsecCrsRulesHandler.loadModsecCrsFileContents("modsec/crs/modsec-safe-rules.conf")));
-    expectedIdMatches.addAll(
-        getIdMatches(
-            modsecCrsRulesHandler.loadModsecCrsFileContents(
-                "modsec/crs/modsec-regular-rules.conf")));
+    Set<String> expectedIdMatches =
+        getIdMatches(loadModsecFileContents("modsec/crs/modsec-crs-rules.conf"));
 
     Set<String> idMatches =
         anomalyRuleInfos.values().stream()
@@ -105,24 +168,48 @@ public class ModsecRulesRegistryTest {
               subRuleNames.add(anomalySubRuleInfo.getRuleName());
             });
 
-    // check safe-rules
+    // check regular rules
     assertEquals(
-        loadModsecFileContents("modsec/modsec-safe-rules.txt"),
+        loadModsecFileContents("modsec/modsec-regular-rules.txt"),
         anomalyRuleInfos.values().stream()
             .flatMap(rule -> rule.getSubRuleInfosList().stream())
-            .filter(AnomalySubRuleInfo::getBlockingAvailable)
+            .filter(
+                subRule ->
+                    subRule
+                        .getSubRuleTypesList()
+                        .contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
             .map(
                 anomalySubRuleInfo ->
                     anomalySubRuleInfo.getRuleId() + " :: " + anomalySubRuleInfo.getRuleName())
             .sorted()
             .collect(Collectors.joining("\n")));
 
-    // check unsafe-rules
+    // check safe rules
     assertEquals(
-        loadModsecFileContents("modsec/modsec-unsafe-rules.txt"),
+        loadModsecFileContents("modsec/modsec-safe-rules.txt"),
         anomalyRuleInfos.values().stream()
             .flatMap(rule -> rule.getSubRuleInfosList().stream())
-            .filter(anomalySubRuleInfo -> !anomalySubRuleInfo.getBlockingAvailable())
+            .filter(
+                subRule ->
+                    subRule
+                        .getSubRuleTypesList()
+                        .contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
+            .map(
+                anomalySubRuleInfo ->
+                    anomalySubRuleInfo.getRuleId() + " :: " + anomalySubRuleInfo.getRuleName())
+            .sorted()
+            .collect(Collectors.joining("\n")));
+
+    // check blocking rules
+    assertEquals(
+        loadModsecFileContents("modsec/modsec-blocking-rules.txt"),
+        anomalyRuleInfos.values().stream()
+            .flatMap(rule -> rule.getSubRuleInfosList().stream())
+            .filter(
+                subRule ->
+                    subRule
+                        .getSubRuleTypesList()
+                        .contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK))
             .map(
                 anomalySubRuleInfo ->
                     anomalySubRuleInfo.getRuleId() + " :: " + anomalySubRuleInfo.getRuleName())

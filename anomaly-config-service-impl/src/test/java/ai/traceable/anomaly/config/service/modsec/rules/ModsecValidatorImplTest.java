@@ -2,8 +2,8 @@ package ai.traceable.anomaly.config.service.modsec.rules;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesRequest;
-import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesType;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import java.util.List;
@@ -24,10 +24,10 @@ class ModsecValidatorImplTest {
   void validateOk() {
     GetModsecCrsRulesRequest request =
         GetModsecCrsRulesRequest.newBuilder()
-            .addAllModsecCrsRulesTypes(
+            .addAllSubRuleTypes(
                 List.of(
-                    ModsecCrsRulesType.MODSEC_CRS_RULES_TYPE_SAFE,
-                    ModsecCrsRulesType.MODSEC_CRS_RULES_TYPE_REGULAR))
+                    AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
+                    AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
             .build();
     Status status = validator.validate(request);
     assertEquals(Status.Code.OK, status.getCode());
@@ -39,10 +39,10 @@ class ModsecValidatorImplTest {
   void validateError() {
     GetModsecCrsRulesRequest request =
         GetModsecCrsRulesRequest.newBuilder()
-            .addAllModsecCrsRulesTypes(
+            .addAllSubRuleTypes(
                 List.of(
-                    ModsecCrsRulesType.MODSEC_CRS_RULES_TYPE_UNSPECIFIED,
-                    ModsecCrsRulesType.MODSEC_CRS_RULES_TYPE_REGULAR))
+                    AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSPECIFIED,
+                    AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
             .build();
     Status status = validator.validate(request);
     assertEquals(Code.INVALID_ARGUMENT, status.getCode());

@@ -12,6 +12,7 @@ import ai.traceable.anomaly.config.service.registry.modsec.ModsecCrsRulesHandler
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRuleUtils;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistryImpl;
+import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
@@ -248,7 +249,7 @@ public class LocalProcessingConfigServiceIntegrationTest
     ModsecCrsRulesHandler modsecCrsRulesHandler = new ModsecCrsRulesHandler(new ModsecRuleUtils());
     ModsecRulesRegistry registry =
         new ModsecRulesRegistryImpl(new ConfigConverter(), modsecCrsRulesHandler);
-    return registry.getModsecRegularCrsRulesBlob();
+    return registry.getModsecCrsRulesBlob(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR);
   }
 
   private void createAndGetCustomSignatureRule(EventType eventType) {

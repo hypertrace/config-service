@@ -7,11 +7,10 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistryImpl;
+import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesData;
-import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesType;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
-import java.util.Set;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,21 +31,28 @@ class ModsecManagerImplTest {
   @Test
   @DisplayName("Should return same rule type")
   void getModsecCrsRules() {
-    when(mockModsecRulesRegistry.getModsecSafeCrsRulesBlob()).thenReturn("safe");
-    when(mockModsecRulesRegistry.getModsecRegularCrsRulesBlob()).thenReturn("regular");
+    when(mockModsecRulesRegistry.getModsecCrsRulesBlob(
+            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
+        .thenReturn("regular");
+    when(mockModsecRulesRegistry.getModsecCrsRulesBlob(
+            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
+        .thenReturn("safe");
+    when(mockModsecRulesRegistry.getModsecCrsRulesBlob(
+            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK))
+        .thenReturn("block");
 
-    Set<ModsecCrsRulesType> request =
-        Set.of(
-            ModsecCrsRulesType.MODSEC_CRS_RULES_TYPE_SAFE,
-            ModsecCrsRulesType.MODSEC_CRS_RULES_TYPE_REGULAR);
+    List<AnomalySubRuleType> request =
+        List.of(
+            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
+            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR);
     List<ModsecCrsRulesData> expectedResponse =
         ImmutableList.of(
             ModsecCrsRulesData.newBuilder()
-                .setModsecCrsRulesType(ModsecCrsRulesType.MODSEC_CRS_RULES_TYPE_SAFE)
+                .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)
                 .setModsecCrsRulesBlob("safe")
                 .build(),
             ModsecCrsRulesData.newBuilder()
-                .setModsecCrsRulesType(ModsecCrsRulesType.MODSEC_CRS_RULES_TYPE_REGULAR)
+                .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR)
                 .setModsecCrsRulesBlob("regular")
                 .build());
     List<ModsecCrsRulesData> response = modsecManager.getModsecCrsRules(requestContext, request);

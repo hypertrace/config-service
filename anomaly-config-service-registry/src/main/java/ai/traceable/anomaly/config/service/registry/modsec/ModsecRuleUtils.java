@@ -11,6 +11,10 @@ public class ModsecRuleUtils {
     return MODSEC_RULE_PREFIX + ruleIdNumber;
   }
 
+  public long getModsecCrsRuleIdNumber(String modsecRuleId) {
+    return Long.parseLong(modsecRuleId.substring(MODSEC_RULE_PREFIX_LENGTH));
+  }
+
   public String getModsecParentRuleId(String modsecRuleId) {
     return modsecRuleId.substring(0, MODSEC_PARENT_RULE_ID_LENGTH);
   }
