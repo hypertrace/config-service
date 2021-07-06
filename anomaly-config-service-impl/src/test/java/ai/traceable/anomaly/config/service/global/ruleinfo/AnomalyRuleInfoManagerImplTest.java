@@ -1,0 +1,95 @@
+package ai.traceable.anomaly.config.service.global.ruleinfo;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import ai.traceable.anomaly.config.service.registry.apidef.ApiDefRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.apidef.ApiDefRulesRegistryImpl;
+import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistryImpl;
+import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
+import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
+import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
+import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
+import java.util.List;
+import java.util.Map;
+import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+class AnomalyRuleInfoManagerImplTest {
+  private ApiDefRulesRegistry apiDefRulesRegistry;
+  private ModsecRulesRegistry modsecRulesRegistry;
+  private SessionRulesRegistry sessionRulesRegistry;
+  private RuleInfoManager ruleInfoManager;
+  private RequestContext requestContext;
+
+  @BeforeEach
+  void setUp() {
+    apiDefRulesRegistry = mock(ApiDefRulesRegistryImpl.class);
+    modsecRulesRegistry = mock(ModsecRulesRegistryImpl.class);
+    sessionRulesRegistry = mock(SessionRulesRegistryImpl.class);
+    ruleInfoManager =
+        new AnomalyRuleInfoManagerImpl(
+            apiDefRulesRegistry, modsecRulesRegistry, sessionRulesRegistry);
+    requestContext = RequestContext.forTenantId("default tenant");
+  }
+
+  @Test
+  void getAnomalyRuleInfos() {
+    when(apiDefRulesRegistry.getApiDefRuleInfos())
+        .thenReturn(
+            Map.of("id-0", buildAnomalyRuleInfo("id-0"), "id-00", buildAnomalyRuleInfo("id-0")));
+    when(modsecRulesRegistry.getModsecRuleInfos())
+        .thenReturn(Map.of("id-1", buildAnomalyRuleInfo("id-1")));
+    when(sessionRulesRegistry.getSessionRuleInfos())
+        .thenReturn(
+            Map.of(
+                "id-1", buildAnomalyRuleInfo("id-1"),
+                "id-2", buildAnomalyRuleInfo("id-2"),
+                "id-3", buildAnomalyRuleInfo("id-3")));
+    List<AnomalyRuleInfo> response =
+        ruleInfoManager.getAnomalyRuleInfos(
+            requestContext, List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC));
+    assertEquals(1, response.size());
+    response =
+        ruleInfoManager.getAnomalyRuleInfos(
+            requestContext, List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF));
+    // As two are repeated
+    assertEquals(1, response.size());
+    response =
+        ruleInfoManager.getAnomalyRuleInfos(
+            requestContext,
+            List.of(
+                AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF,
+                AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC));
+    assertEquals(2, response.size());
+
+    response =
+        ruleInfoManager.getAnomalyRuleInfos(
+            requestContext,
+            List.of(
+                AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF,
+                AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC,
+                AnomalyEventFamily.ANOMALY_EVENT_FAMILY_SESSION));
+    // Common rules are not duplicated
+    assertEquals(4, response.size());
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            ruleInfoManager.getAnomalyRuleInfos(
+                requestContext,
+                List.of(
+                    AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CUSTOM_SIGNATURE,
+                    AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC)));
+  }
+
+  private AnomalyRuleInfo buildAnomalyRuleInfo(String id) {
+    return AnomalyRuleInfo.newBuilder()
+        .addSubRuleInfos(AnomalySubRuleInfo.newBuilder().setRuleId(id).build())
+        .build();
+  }
+}

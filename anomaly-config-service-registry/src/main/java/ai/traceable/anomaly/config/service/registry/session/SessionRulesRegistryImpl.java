@@ -5,7 +5,6 @@ import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import java.io.File;
 import java.util.Map;
 import javax.inject.Inject;
 
@@ -36,9 +35,7 @@ public class SessionRulesRegistryImpl implements SessionRulesRegistry {
 
   private Config loadSessionRuleDetails() {
     try {
-      return ConfigFactory.parseFile(
-          new File(
-              getClass().getClassLoader().getResource(SESSION_RULE_DETAILS_FILE_PATH).toURI()));
+      return ConfigFactory.parseResources(SESSION_RULE_DETAILS_FILE_PATH);
     } catch (Exception e) {
       throw new RuntimeException(
           String.format(
