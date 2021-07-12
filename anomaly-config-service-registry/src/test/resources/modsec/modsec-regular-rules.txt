@@ -32,10 +32,10 @@ crs_932100 :: Remote Command Execution: Unix Command Injection (100)
 crs_932105 :: Remote Command Execution: Unix Command Injection (105)
 crs_932110 :: Remote Command Execution: Windows Command Injection (110)
 crs_932115 :: Remote Command Execution: Windows Command Injection (115)
-crs_932120 :: Remote Command Execution: Windows PowerShell Command Found
-crs_932140 :: Remote Command Execution: Windows FOR/IF Command Found
+crs_932120 :: Remote Command Execution: Windows PowerShell Command
+crs_932140 :: Remote Command Execution: Windows FOR/IF Command
 crs_932150 :: Remote Command Execution: Direct Unix Command Execution
-crs_932160 :: Remote Command Execution: Unix Shell Code Found
+crs_932160 :: Remote Command Execution: Unix Shell Code
 crs_932170 :: Remote Command Execution: Shellshock (CVE-2014-6271) (170)
 crs_932171 :: Remote Command Execution: Shellshock (CVE-2014-6271) (171)
 crs_932180 :: Restricted File Upload Attempt
@@ -65,6 +65,7 @@ crs_941360 :: JSFuck / Hieroglyphy obfuscation
 crs_941370 :: JavaScript global variable
 crs_9420190 :: MSSQL code execution and information gathering attempts
 crs_9420230 :: Conditional SQL injection attempts (T230)
+crs_9420290 :: Basic MongoDB SQL injection attempts (Relaxed)
 crs_942100 :: SQL Injection Attack (100)
 crs_942140 :: SQL Injection Attack: Common DB Names
 crs_942160 :: Blind sqli tests using sleep() or benchmark()
@@ -84,6 +85,7 @@ crs_942500 :: MySQL in-line comment
 crs_943100 :: Possible Session Fixation Attack: Setting Cookie Values in HTML
 crs_943110 :: Possible Session Fixation Attack: SessionID Parameter Name with Off-Domain Referer
 crs_943120 :: Possible Session Fixation Attack: SessionID Parameter Name with No Referer
+crs_9440210 :: Java Deserialization: Magic Bytes Base64 Encoded
 crs_944100 :: Remote Command Execution: Suspicious Java class
 crs_944110 :: Remote Command Execution: Java process spawn (CVE-2017-9805)
 crs_944120 :: Remote Command Execution: Java serialization (CVE-2015-4852) (120)

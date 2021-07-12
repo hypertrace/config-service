@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -85,7 +86,7 @@ public class ModsecRulesRegistryTest {
       assertEquals(
           regularRulesCount - safeRulesCount,
           crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
-      assertEquals(33, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
+      assertEquals(34, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
     }
     {
       String crsRulesBlob =
@@ -103,7 +104,7 @@ public class ModsecRulesRegistryTest {
           regularRulesCount - blockingRulesCount,
           crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
       // few rules in file not marked for blocking
-      assertEquals(63, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
+      assertEquals(65, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
     }
   }
 
@@ -169,8 +170,10 @@ public class ModsecRulesRegistryTest {
             });
 
     // check regular rules
-    assertEquals(
-        loadModsecFileContents("modsec/modsec-regular-rules.txt"),
+    List<String> subRulesRead =
+        Arrays.asList(loadModsecFileContents("modsec/modsec-regular-rules.txt").split("\\n"));
+    Collections.sort(subRulesRead);
+    List<String> subRulesCollected =
         anomalyRuleInfos.values().stream()
             .flatMap(rule -> rule.getSubRuleInfosList().stream())
             .filter(
@@ -182,11 +185,15 @@ public class ModsecRulesRegistryTest {
                 anomalySubRuleInfo ->
                     anomalySubRuleInfo.getRuleId() + " :: " + anomalySubRuleInfo.getRuleName())
             .sorted()
-            .collect(Collectors.joining("\n")));
+            .collect(Collectors.toList());
+    assertEquals(subRulesRead.size(), subRulesCollected.size());
+    assertEquals(subRulesRead, subRulesCollected);
 
     // check safe rules
-    assertEquals(
-        loadModsecFileContents("modsec/modsec-safe-rules.txt"),
+    subRulesRead =
+        Arrays.asList(loadModsecFileContents("modsec/modsec-safe-rules.txt").split("\\n"));
+    Collections.sort(subRulesRead);
+    subRulesCollected =
         anomalyRuleInfos.values().stream()
             .flatMap(rule -> rule.getSubRuleInfosList().stream())
             .filter(
@@ -198,11 +205,15 @@ public class ModsecRulesRegistryTest {
                 anomalySubRuleInfo ->
                     anomalySubRuleInfo.getRuleId() + " :: " + anomalySubRuleInfo.getRuleName())
             .sorted()
-            .collect(Collectors.joining("\n")));
+            .collect(Collectors.toList());
+    assertEquals(subRulesRead.size(), subRulesCollected.size());
+    assertEquals(subRulesRead, subRulesCollected);
 
     // check blocking rules
-    assertEquals(
-        loadModsecFileContents("modsec/modsec-blocking-rules.txt"),
+    subRulesRead =
+        Arrays.asList(loadModsecFileContents("modsec/modsec-blocking-rules.txt").split("\\n"));
+    Collections.sort(subRulesRead);
+    subRulesCollected =
         anomalyRuleInfos.values().stream()
             .flatMap(rule -> rule.getSubRuleInfosList().stream())
             .filter(
@@ -214,7 +225,9 @@ public class ModsecRulesRegistryTest {
                 anomalySubRuleInfo ->
                     anomalySubRuleInfo.getRuleId() + " :: " + anomalySubRuleInfo.getRuleName())
             .sorted()
-            .collect(Collectors.joining("\n")));
+            .collect(Collectors.toList());
+    assertEquals(subRulesRead.size(), subRulesCollected.size());
+    assertEquals(subRulesRead, subRulesCollected);
   }
 
   private Set<String> getIdMatches(String text) {

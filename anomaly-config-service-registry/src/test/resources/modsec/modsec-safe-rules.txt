@@ -20,7 +20,7 @@ crs_9320100 :: Remote Command Execution: Unix Command Injection (T100)
 crs_9320105 :: Remote Command Execution: Unix Command Injection (T105)
 crs_9320150 :: Remote Command Execution: Direct Unix Command Execution (T150)
 crs_9320155 :: Remote Command Execution: Direct Unix Command Execution (T155)
-crs_932160 :: Remote Command Execution: Unix Shell Code Found
+crs_932160 :: Remote Command Execution: Unix Shell Code
 crs_932170 :: Remote Command Execution: Shellshock (CVE-2014-6271) (170)
 crs_932171 :: Remote Command Execution: Shellshock (CVE-2014-6271) (171)
 crs_932180 :: Restricted File Upload Attempt
@@ -52,7 +52,9 @@ crs_942290 :: Basic MongoDB SQL injection attempts
 crs_942500 :: MySQL in-line comment
 crs_943100 :: Possible Session Fixation Attack: Setting Cookie Values in HTML
 crs_943110 :: Possible Session Fixation Attack: SessionID Parameter Name with Off-Domain Referer
+crs_9440210 :: Java Deserialization: Magic Bytes Base64 Encoded
 crs_944100 :: Remote Command Execution: Suspicious Java class
 crs_944110 :: Remote Command Execution: Java process spawn (CVE-2017-9805)
 crs_944120 :: Remote Command Execution: Java serialization (CVE-2015-4852) (120)
 crs_944130 :: Suspicious Java class
+

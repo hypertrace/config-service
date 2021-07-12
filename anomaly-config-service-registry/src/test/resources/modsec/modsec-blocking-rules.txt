@@ -8,7 +8,7 @@ crs_930110 :: Path Traversal Attack (/../) (110)
 crs_930120 :: OS File Access Attempt (120)
 crs_930130 :: Restricted File Access Attempt
 crs_931120 :: Possible Remote File Inclusion (RFI) Attack: URL Payload Used w/Trailing Question Mark Character (?)
-crs_932160 :: Remote Command Execution: Unix Shell Code Found
+crs_932160 :: Remote Command Execution: Unix Shell Code
 crs_932170 :: Remote Command Execution: Shellshock (CVE-2014-6271) (170)
 crs_932171 :: Remote Command Execution: Shellshock (CVE-2014-6271) (171)
 crs_934100 :: Node.js Injection Attack
