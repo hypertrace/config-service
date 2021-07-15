@@ -7,6 +7,7 @@ import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.REDACTION_RULES_CONFIG;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.SENSITIVE_DATA_CONFIGURATION;
 
+import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
 import ai.traceable.sensitivedata.config.service.v1.NewRedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.ParamType;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
@@ -188,11 +189,21 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   }
 
   @Override
-  public List<RedactionRule> getViewableRedactionRules(RequestContext requestContext) {
+  public List<RedactionRule> getAllRedactionRules(
+      RequestContext requestContext, GetAllRedactionRulesRequest.RedactionRuleFilter filter) {
     this.insertPrepopulatedRulesIfRequired(requestContext);
-    // For now this means no conditional rules
-    return this.fetchPersistedRules(requestContext).stream()
-        .filter(rule -> rule.getConditionsList().isEmpty())
+    if (filter.hasIsPersisted()) {
+      // Currently when filtering persisted rules, we do not include Conditional rules.
+      // This might need to change later
+      return filter.getIsPersisted()
+          ? getViewableRedactionRules(requestContext)
+          : getUnpersistedRedactionRules();
+    }
+    // Return all redaction rules without any filtering if filter does not have isPersisted boolean
+    // set
+    return Streams.concat(
+            this.getUnpersistedDefaultRules().stream(),
+            this.fetchPersistedRules(requestContext).stream())
         .collect(Collectors.toUnmodifiableList());
   }
 
@@ -231,6 +242,17 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
             .setConfig(fullPrivacyModeConfig.toValue())
             .build();
     upsertConfig(requestContext, upsertConfigRequest);
+  }
+
+  private List<RedactionRule> getViewableRedactionRules(RequestContext requestContext) {
+    // For now this means no conditional rules
+    return this.fetchPersistedRules(requestContext).stream()
+        .filter(rule -> rule.getConditionsList().isEmpty())
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private List<RedactionRule> getUnpersistedRedactionRules() {
+    return this.getUnpersistedDefaultRules();
   }
 
   private void insertPrepopulatedRulesIfRequired(RequestContext requestContext) {
@@ -279,9 +301,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   }
 
   private List<RedactionRule> getUnpersistedDefaultRules() {
-    return this.defaultRedactionRules.getDefaultRules().stream()
-        .map(this::buildRedactionRuleWithoutId)
-        .collect(Collectors.toUnmodifiableList());
+    return this.defaultRedactionRules.getDefaultRules();
   }
 
   private List<RedactionRule> fetchPersistedRules(RequestContext requestContext) {
@@ -374,14 +394,9 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   }
 
   private RedactionRule buildRedactionRuleWithId(NewRedactionRule newRedactionRule) {
-    return buildRedactionRuleWithoutId(newRedactionRule).toBuilder()
-        .setId(UUID.randomUUID().toString())
-        .build();
-  }
-
-  private RedactionRule buildRedactionRuleWithoutId(NewRedactionRule newRedactionRule) {
     RedactionRule.Builder builder =
         RedactionRule.newBuilder()
+            .setId(UUID.randomUUID().toString())
             .setName(newRedactionRule.getName())
             .setDescription(newRedactionRule.getDescription())
             .setCategory(newRedactionRule.getCategory())

@@ -120,6 +120,17 @@ class SensitiveDataConfigServiceImplTest {
   @Test
   void createReadUpdateDeleteRedactionRules() {
     when(mockConfig.defaultRedactionRules().isPrepopulationComplete(any())).thenReturn(true);
+    RedactionRule defaultRedactionRule =
+        RedactionRule.newBuilder()
+            .setName("name")
+            .setDescription("default rule")
+            .setCategory("core_mode")
+            .setRedactionStrategy(RedactionStrategy.REDACTION_STRATEGY_REDACT)
+            .setMatchType(MatchType.MATCH_TYPE_KEY)
+            .setRegex("regex")
+            .build();
+    when(mockConfig.defaultRedactionRules().getDefaultRules())
+        .thenReturn(List.of(defaultRedactionRule));
     NewRedactionRule newRedactionRule1 = getNewRedactionRule("rule1", "^password");
     NewRedactionRule newRedactionRule2 = getNewRedactionRule("rule2", "^name");
     RedactionRule redactionRule1 =
@@ -142,7 +153,33 @@ class SensitiveDataConfigServiceImplTest {
     assertEquals(
         List.of(redactionRule1, redactionRule2),
         sensitiveDataStub
+            .getAllRedactionRules(
+                GetAllRedactionRulesRequest.newBuilder()
+                    .setFilter(
+                        GetAllRedactionRulesRequest.RedactionRuleFilter.newBuilder()
+                            .setIsPersisted(true)
+                            .build())
+                    .build())
+            .getRedactionRulesList());
+
+    assertEquals(
+        // TODO: update to the following when removing temporary logic in this api
+        //        List.of(defaultRedactionRule, redactionRule1, redactionRule2),
+        List.of(redactionRule1, redactionRule2),
+        sensitiveDataStub
             .getAllRedactionRules(GetAllRedactionRulesRequest.getDefaultInstance())
+            .getRedactionRulesList());
+
+    assertEquals(
+        List.of(defaultRedactionRule),
+        sensitiveDataStub
+            .getAllRedactionRules(
+                GetAllRedactionRulesRequest.newBuilder()
+                    .setFilter(
+                        GetAllRedactionRulesRequest.RedactionRuleFilter.newBuilder()
+                            .setIsPersisted(false)
+                            .build())
+                    .build())
             .getRedactionRulesList());
 
     RedactionRule ruleToUpdate =
@@ -160,7 +197,13 @@ class SensitiveDataConfigServiceImplTest {
     assertEquals(
         List.of(updatedRule, redactionRule2),
         sensitiveDataStub
-            .getAllRedactionRules(GetAllRedactionRulesRequest.getDefaultInstance())
+            .getAllRedactionRules(
+                GetAllRedactionRulesRequest.newBuilder()
+                    .setFilter(
+                        GetAllRedactionRulesRequest.RedactionRuleFilter.newBuilder()
+                            .setIsPersisted(true)
+                            .build())
+                    .build())
             .getRedactionRulesList());
 
     sensitiveDataStub.deleteRedactionRule(
@@ -168,7 +211,13 @@ class SensitiveDataConfigServiceImplTest {
     assertEquals(
         List.of(updatedRule),
         sensitiveDataStub
-            .getAllRedactionRules(GetAllRedactionRulesRequest.getDefaultInstance())
+            .getAllRedactionRules(
+                GetAllRedactionRulesRequest.newBuilder()
+                    .setFilter(
+                        GetAllRedactionRulesRequest.RedactionRuleFilter.newBuilder()
+                            .setIsPersisted(true)
+                            .build())
+                    .build())
             .getRedactionRulesList());
   }
 
@@ -197,7 +246,13 @@ class SensitiveDataConfigServiceImplTest {
     assertRedactionRulesMatch(
         List.of(defaultRule),
         sensitiveDataStub
-            .getAllRedactionRules(GetAllRedactionRulesRequest.getDefaultInstance())
+            .getAllRedactionRules(
+                GetAllRedactionRulesRequest.newBuilder()
+                    .setFilter(
+                        GetAllRedactionRulesRequest.RedactionRuleFilter.newBuilder()
+                            .setIsPersisted(true)
+                            .build())
+                    .build())
             .getRedactionRulesList());
 
     when(mockConfig.defaultRedactionRules().isPrepopulationComplete(any())).thenReturn(true);
@@ -205,7 +260,13 @@ class SensitiveDataConfigServiceImplTest {
     assertRedactionRulesMatch(
         List.of(defaultRule),
         sensitiveDataStub
-            .getAllRedactionRules(GetAllRedactionRulesRequest.getDefaultInstance())
+            .getAllRedactionRules(
+                GetAllRedactionRulesRequest.newBuilder()
+                    .setFilter(
+                        GetAllRedactionRulesRequest.RedactionRuleFilter.newBuilder()
+                            .setIsPersisted(true)
+                            .build())
+                    .build())
             .getRedactionRulesList());
   }
 

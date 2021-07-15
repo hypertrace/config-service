@@ -1,5 +1,6 @@
 package ai.traceable.sensitivedata.config.service;
 
+import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
 import ai.traceable.sensitivedata.config.service.v1.NewRedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.ParamType;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
@@ -30,7 +31,8 @@ interface ConfigServiceCoordinator {
 
   List<RedactionRule> getRedactionRules(RequestContext requestContext, boolean includeConditional);
 
-  List<RedactionRule> getViewableRedactionRules(RequestContext requestContext);
+  List<RedactionRule> getAllRedactionRules(
+      RequestContext requestContext, GetAllRedactionRulesRequest.RedactionRuleFilter filter);
 
   void deleteRedactionRule(RequestContext requestContext, String redactionRuleId);
 

@@ -43,7 +43,9 @@
     },
     {
       "regex": "(^x-real-ip$)|(^forwarded$)|(^x-forwarded-for$)|(^x-proxy-user-ip$)",
+      "category": "core_mode_default_rules",
       "redactionStrategy": "REDACTION_STRATEGY_RAW",
+      "ruleId": "core_mode_rule_10",
       "conditions": [
         {
           "attributeRegexMatch": {
@@ -55,7 +57,9 @@
     },
     {
       "regex": "^:authority$",
+      "category": "core_mode_default_rules",
       "redactionStrategy": "REDACTION_STRATEGY_RAW",
+      "ruleId": "core_mode_rule_9",
       "conditions": [
         {
           "attributeRegexMatch": {
@@ -67,7 +71,9 @@
     },
     {
       "regex": "^grpc-status$",
+      "category": "core_mode_default_rules",
       "redactionStrategy": "REDACTION_STRATEGY_RAW",
+      "ruleId": "core_mode_rule_8",
       "conditions": [
         {
           "attributeRegexMatch": {
@@ -79,7 +85,9 @@
     },
     {
       "regex": "^:status$",
+      "category": "core_mode_default_rules",
       "redactionStrategy": "REDACTION_STRATEGY_RAW",
+      "ruleId": "core_mode_rule_7",
       "conditions": [
         {
           "attributeRegexMatch": {
@@ -91,7 +99,9 @@
     },
     {
       "regex": "^:path$",
+      "category": "core_mode_default_rules",
       "redactionStrategy": "REDACTION_STRATEGY_RAW",
+      "ruleId": "core_mode_rule_6",
       "conditions": [
         {
           "attributeRegexMatch": {
@@ -103,7 +113,9 @@
     },
     {
       "regex": "^content-length$",
+      "category": "core_mode_default_rules",
       "redactionStrategy": "REDACTION_STRATEGY_RAW",
+      "ruleId": "core_mode_rule_5",
       "conditions": [
         {
           "attributeRegexMatch": {
@@ -115,7 +127,9 @@
     },
     {
       "regex": "^content-type$",
+      "category": "core_mode_default_rules",
       "redactionStrategy": "REDACTION_STRATEGY_RAW",
+      "ruleId": "core_mode_rule_4",
       "conditions": [
         {
           "attributeRegexMatch": {
@@ -127,7 +141,9 @@
     },
     {
       "regex": "^host$",
+      "category": "core_mode_default_rules",
       "redactionStrategy": "REDACTION_STRATEGY_RAW",
+      "ruleId": "core_mode_rule_3",
       "conditions": [
         {
           "attributeRegexMatch": {
@@ -139,7 +155,9 @@
     },
     {
       "regex": "^user-agent$",
+      "category": "core_mode_default_rules",
       "redactionStrategy": "REDACTION_STRATEGY_RAW",
+      "ruleId": "core_mode_rule_2",
       "conditions": [
         {
           "attributeRegexMatch": {
@@ -151,7 +169,9 @@
     },
     {
       "regex": ".*",
+      "category": "core_mode_default_rules",
       "redactionStrategy": "REDACTION_STRATEGY_REDACT",
+      "ruleId": "core_mode_rule_1",
       "conditions": [
         {
           "attributeRegexMatch": {

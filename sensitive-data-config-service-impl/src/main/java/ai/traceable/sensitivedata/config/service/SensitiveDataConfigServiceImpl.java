@@ -167,11 +167,25 @@ class SensitiveDataConfigServiceImpl
       GetAllRedactionRulesRequest request,
       StreamObserver<GetAllRedactionRulesResponse> responseObserver) {
     try {
+      // For backwards compatibility, adding this temporary logic to add filter if there is no
+      // filter present in request
+      // TODO: remove this temporary logic when all usages of this api have been updated to use
+      // filter
+      if (!request.hasFilter()) {
+        request =
+            request.toBuilder()
+                .setFilter(
+                    GetAllRedactionRulesRequest.RedactionRuleFilter.newBuilder()
+                        .setIsPersisted(true))
+                .build();
+      }
+
       RequestContext requestContext = RequestContext.CURRENT.get();
       responseObserver.onNext(
           GetAllRedactionRulesResponse.newBuilder()
               .addAllRedactionRules(
-                  configServiceCoordinator.getViewableRedactionRules(requestContext))
+                  configServiceCoordinator.getAllRedactionRules(
+                      requestContext, request.getFilter()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {

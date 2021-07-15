@@ -1,6 +1,7 @@
 package ai.traceable.sensitivedata.config.service;
 
 import ai.traceable.sensitivedata.config.service.v1.NewRedactionRule;
+import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.ConfigObject;
@@ -14,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 class DefaultRedactionRules {
   private final Map<String, NewRedactionRule> prepopulationRules;
-  private final List<NewRedactionRule> defaultRules;
+  private final List<RedactionRule> defaultRules;
 
   DefaultRedactionRules(
       ConfigObject prepopulationRuleConfigMap, List<? extends ConfigObject> defaultRules) {
@@ -25,7 +26,7 @@ class DefaultRedactionRules {
                 key ->
                     Map.entry(
                         key,
-                        buildRedactionRuleFromConfig(
+                        buildNewRedactionRuleFromConfig(
                             prepopulationRuleConfigMap.toConfig().getObject(key))))
             .collect(
                 ImmutableMap.toImmutableMap( // Predictable iteration order
@@ -34,7 +35,7 @@ class DefaultRedactionRules {
   }
 
   DefaultRedactionRules(
-      Map<String, NewRedactionRule> prepopulationRules, List<NewRedactionRule> defaultRules) {
+      Map<String, NewRedactionRule> prepopulationRules, List<RedactionRule> defaultRules) {
     this.prepopulationRules = prepopulationRules;
     this.defaultRules = defaultRules;
   }
@@ -49,7 +50,7 @@ class DefaultRedactionRules {
                 Entry::getKey, Entry::getValue)); // Predictable iteration order
   }
 
-  public List<NewRedactionRule> getDefaultRules() {
+  public List<RedactionRule> getDefaultRules() {
     return List.copyOf(this.defaultRules);
   }
 
@@ -62,7 +63,7 @@ class DefaultRedactionRules {
     return currentStatus.withAdditionalPopulatedRules(this.prepopulationRules.keySet());
   }
 
-  private static List<NewRedactionRule> buildRedactionRuleList(
+  private static List<RedactionRule> buildRedactionRuleList(
       List<? extends ConfigObject> configObjectList) {
     return configObjectList.stream()
         .map(DefaultRedactionRules::buildRedactionRuleFromConfig)
@@ -70,7 +71,15 @@ class DefaultRedactionRules {
   }
 
   @SneakyThrows
-  private static NewRedactionRule buildRedactionRuleFromConfig(ConfigObject configObject) {
+  private static RedactionRule buildRedactionRuleFromConfig(ConfigObject configObject) {
+    String jsonString = configObject.render();
+    RedactionRule.Builder builder = RedactionRule.newBuilder();
+    JsonFormat.parser().merge(jsonString, builder);
+    return builder.build();
+  }
+
+  @SneakyThrows
+  private static NewRedactionRule buildNewRedactionRuleFromConfig(ConfigObject configObject) {
     String jsonString = configObject.render();
     NewRedactionRule.Builder builder = NewRedactionRule.newBuilder();
     JsonFormat.parser().merge(jsonString, builder);

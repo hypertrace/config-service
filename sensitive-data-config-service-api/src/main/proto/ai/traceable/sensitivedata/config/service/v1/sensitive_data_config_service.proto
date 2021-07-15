@@ -79,7 +79,13 @@ message UpdateRedactionRuleResponse {
   RedactionRule redaction_rule = 1;
 }
 
-message GetAllRedactionRulesRequest {}
+message GetAllRedactionRulesRequest {
+  RedactionRuleFilter filter = 1;
+
+  message RedactionRuleFilter {
+    optional bool is_persisted =1; // true for persisted rules only, false for unpersisted only, omit for all rules - the default.
+  }
+}
 
 message GetAllRedactionRulesResponse {
   repeated RedactionRule redaction_rules = 1;

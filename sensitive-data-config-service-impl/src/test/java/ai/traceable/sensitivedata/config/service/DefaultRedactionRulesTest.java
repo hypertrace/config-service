@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.sensitivedata.config.service.v1.NewRedactionRule;
+import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import com.typesafe.config.ConfigFactory;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +52,7 @@ class DefaultRedactionRulesTest {
             List.of(ConfigFactory.parseString(defaultRuleConfigString).root()));
 
     assertEquals(
-        List.of(NewRedactionRule.newBuilder().setName("default-name-1").build()),
+        List.of(RedactionRule.newBuilder().setName("default-name-1").build()),
         defaultRedactionRules.getDefaultRules());
 
     assertEquals(

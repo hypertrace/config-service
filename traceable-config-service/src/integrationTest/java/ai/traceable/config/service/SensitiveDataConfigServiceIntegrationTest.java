@@ -126,7 +126,8 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
     requestContext = RequestContext.forTenantId("testDefaultPopulationConcurrency-tenant");
     ExecutorService executorService = Executors.newFixedThreadPool(10);
     List<Callable<GetAllRedactionRulesResponse>> calls =
-        Stream.generate(() -> (Callable<GetAllRedactionRulesResponse>) this::getRedactionRules)
+        Stream.generate(
+                () -> (Callable<GetAllRedactionRulesResponse>) () -> this.getRedactionRules(true))
             .limit(10)
             .collect(Collectors.toList());
     List<Future<GetAllRedactionRulesResponse>> responses = executorService.invokeAll(calls);
@@ -135,6 +136,41 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
         response -> {
           try {
             assertMatchesResource(
+                "sensitive-data/get-all-redaction-rules-prepop-response.json", response.get());
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+        });
+
+    calls =
+        Stream.generate(
+                () -> (Callable<GetAllRedactionRulesResponse>) () -> this.getRedactionRules(false))
+            .limit(10)
+            .collect(Collectors.toList());
+    responses = executorService.invokeAll(calls);
+
+    responses.forEach(
+        response -> {
+          try {
+            assertMatchesResource(
+                "sensitive-data/get-all-redaction-rules-unpersisted-response.json", response.get());
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+        });
+
+    calls =
+        Stream.generate(() -> (Callable<GetAllRedactionRulesResponse>) this::getAllRedactionRules)
+            .limit(10)
+            .collect(Collectors.toList());
+    responses = executorService.invokeAll(calls);
+
+    responses.forEach(
+        response -> {
+          try {
+            assertMatchesResource(
+                // TODO: update to the following when removing temporary logic in this api
+                //                "sensitive-data/get-all-redaction-rules-response.json",
                 "sensitive-data/get-all-redaction-rules-prepop-response.json", response.get());
           } catch (Exception e) {
             throw new RuntimeException(e);
@@ -213,7 +249,19 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
         .getRedactionRule();
   }
 
-  private GetAllRedactionRulesResponse getRedactionRules() {
+  private GetAllRedactionRulesResponse getRedactionRules(boolean isPersisted) {
+    return requestContext.call(
+        () ->
+            sensitiveDataConfigServiceStub.getAllRedactionRules(
+                GetAllRedactionRulesRequest.newBuilder()
+                    .setFilter(
+                        GetAllRedactionRulesRequest.RedactionRuleFilter.newBuilder()
+                            .setIsPersisted(isPersisted)
+                            .build())
+                    .build()));
+  }
+
+  private GetAllRedactionRulesResponse getAllRedactionRules() {
     return requestContext.call(
         () ->
             sensitiveDataConfigServiceStub.getAllRedactionRules(

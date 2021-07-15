@@ -15,6 +15,7 @@ import ai.traceable.sensitivedata.config.service.v1.PiiElement;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfig;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfigServiceGrpc.PiiFilterConfigServiceBlockingStub;
+import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import io.grpc.Channel;
 import java.util.List;
@@ -152,14 +153,14 @@ class PiiFilterConfigServiceImplTest {
                 .setRegex("def456")
                 .build());
     // full privacy mode rules
-    List<NewRedactionRule> defaultRedactionRules =
+    List<RedactionRule> defaultRedactionRules =
         List.of(
-            NewRedactionRule.newBuilder()
+            RedactionRule.newBuilder()
                 .setName("Rule 1")
                 .setMatchType(MatchType.MATCH_TYPE_KEY)
                 .setRegex("uvw789")
                 .build(),
-            NewRedactionRule.newBuilder()
+            RedactionRule.newBuilder()
                 .setName("Rule 2")
                 .setMatchType(MatchType.MATCH_TYPE_KEY)
                 .setRegex("xyz101112")
