@@ -34,7 +34,6 @@ crs_932110 :: Remote Command Execution: Windows Command Injection (110)
 crs_932115 :: Remote Command Execution: Windows Command Injection (115)
 crs_932120 :: Remote Command Execution: Windows PowerShell Command
 crs_932140 :: Remote Command Execution: Windows FOR/IF Command
-crs_932150 :: Remote Command Execution: Direct Unix Command Execution
 crs_932160 :: Remote Command Execution: Unix Shell Code
 crs_932170 :: Remote Command Execution: Shellshock (CVE-2014-6271) (170)
 crs_932171 :: Remote Command Execution: Shellshock (CVE-2014-6271) (171)
@@ -42,7 +41,6 @@ crs_932180 :: Restricted File Upload Attempt
 crs_934100 :: Node.js Injection Attack
 crs_941100 :: XSS Attack (100)
 crs_941110 :: XSS Filter - Category 1: Script Tag Vector
-crs_941130 :: XSS Filter - Category 3: Attribute Vector
 crs_941140 :: XSS Filter - Category 4: Javascript URI Vector
 crs_941160 :: NoScript XSS InjectionChecker: HTML Injection
 crs_941170 :: NoScript XSS InjectionChecker: Attribute Injection
