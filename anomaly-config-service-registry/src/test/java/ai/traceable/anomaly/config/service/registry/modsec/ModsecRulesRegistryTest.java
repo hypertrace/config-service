@@ -186,8 +186,11 @@ public class ModsecRulesRegistryTest {
                     anomalySubRuleInfo.getRuleId() + " :: " + anomalySubRuleInfo.getRuleName())
             .sorted()
             .collect(Collectors.toList());
+    // assertEquals(subRulesRead, subRulesCollected);
+    for (int i = 0; i < subRulesRead.size(); i++) {
+      assertEquals(subRulesRead.get(i), subRulesCollected.get(i));
+    }
     assertEquals(subRulesRead.size(), subRulesCollected.size());
-    assertEquals(subRulesRead, subRulesCollected);
 
     // check safe rules
     subRulesRead =
@@ -206,8 +209,10 @@ public class ModsecRulesRegistryTest {
                     anomalySubRuleInfo.getRuleId() + " :: " + anomalySubRuleInfo.getRuleName())
             .sorted()
             .collect(Collectors.toList());
+    for (int i = 0; i < subRulesRead.size(); i++) {
+      assertEquals(subRulesRead.get(i), subRulesCollected.get(i));
+    }
     assertEquals(subRulesRead.size(), subRulesCollected.size());
-    assertEquals(subRulesRead, subRulesCollected);
 
     // check blocking rules
     subRulesRead =
@@ -226,8 +231,11 @@ public class ModsecRulesRegistryTest {
                     anomalySubRuleInfo.getRuleId() + " :: " + anomalySubRuleInfo.getRuleName())
             .sorted()
             .collect(Collectors.toList());
+    // assertEquals(subRulesRead, subRulesCollected);
+    for (int i = 0; i < subRulesRead.size(); i++) {
+      assertEquals(subRulesRead.get(i), subRulesCollected.get(i));
+    }
     assertEquals(subRulesRead.size(), subRulesCollected.size());
-    assertEquals(subRulesRead, subRulesCollected);
   }
 
   private Set<String> getIdMatches(String text) {
