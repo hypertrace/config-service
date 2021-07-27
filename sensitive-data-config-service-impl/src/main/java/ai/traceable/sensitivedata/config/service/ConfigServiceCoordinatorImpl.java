@@ -1,6 +1,7 @@
 package ai.traceable.sensitivedata.config.service;
 
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.AUTOMATIC_SECRET_REDACTION_STRATEGY_CONFIG;
+import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.CORE_MODE_RULE_CATEGORY;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.DEFAULT_RULE_POPULATION_STATUS;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.FULL_PRIVACY_MODE_CONFIG;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.PARAMETER_TYPE_REDACTION_STRATEGY_CONFIG;
@@ -300,6 +301,9 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
         !filter.hasIsConditional()
             || this.redactionRuleIsConditional(rule) == filter.getIsConditional();
 
+    boolean passesSensitiveFilter =
+        !filter.hasIsSensitive() || this.redactionRuleIsSensitive(rule) == filter.getIsSensitive();
+
     // TODO very temporary default logic for backwards compatibility, where we filtered conditional,
     // persisted rules
     boolean passesBackwardsCompatibilityFilter =
@@ -307,7 +311,10 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
             || !this.redactionRuleIsPersisted(rule)
             || !this.redactionRuleIsConditional(rule);
 
-    return passesPersistenceFilter && passesConditionalFilter && passesBackwardsCompatibilityFilter;
+    return passesPersistenceFilter
+        && passesConditionalFilter
+        && passesSensitiveFilter
+        && passesBackwardsCompatibilityFilter;
   }
 
   private boolean redactionRuleIsConditional(RedactionRule rule) {
@@ -317,6 +324,11 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   private boolean redactionRuleIsPersisted(RedactionRule rule) {
     // Assuming a valid uuid indicates a persisted rule
     return UuidValidator.isValid(rule.getId());
+  }
+
+  private boolean redactionRuleIsSensitive(RedactionRule rule) {
+    // Currently only core mode rules do not mark the data as sensitive
+    return !rule.getCategory().equals(CORE_MODE_RULE_CATEGORY);
   }
 
   private List<RedactionRule> fetchPersistedRules(RequestContext requestContext) {

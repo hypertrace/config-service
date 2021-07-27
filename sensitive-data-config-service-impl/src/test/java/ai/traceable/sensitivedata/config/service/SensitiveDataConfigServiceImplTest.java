@@ -1,5 +1,6 @@
 package ai.traceable.sensitivedata.config.service;
 
+import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.CORE_MODE_RULE_CATEGORY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -351,6 +352,52 @@ class SensitiveDataConfigServiceImplTest {
             .getAllRedactionRules(
                 GetAllRedactionRulesRequest.newBuilder()
                     .setFilter(RedactionRuleFilter.newBuilder().setIsConditional(false))
+                    .build())
+            .getRedactionRulesList());
+  }
+
+  @Test
+  void sensitiveRuleFiltering() {
+    when(mockConfig.defaultRedactionRules().isPrepopulationComplete(any())).thenReturn(true);
+    RedactionRule sensitiveRule =
+        sensitiveDataStub
+            .createRedactionRule(
+                CreateRedactionRuleRequest.newBuilder()
+                    .setNewRedactionRule(getNewRedactionRule("sensitive-rule", "^password"))
+                    .build())
+            .getRedactionRule();
+
+    RedactionRule insensitiveRule =
+        sensitiveDataStub
+            .createRedactionRule(
+                CreateRedactionRuleRequest.newBuilder()
+                    .setNewRedactionRule(
+                        getNewRedactionRule("insensitive-rule", "^password").toBuilder()
+                            .setCategory(CORE_MODE_RULE_CATEGORY))
+                    .build())
+            .getRedactionRule();
+
+    assertEquals(
+        List.of(sensitiveRule, insensitiveRule),
+        sensitiveDataStub
+            .getAllRedactionRules(GetAllRedactionRulesRequest.getDefaultInstance())
+            .getRedactionRulesList());
+
+    assertEquals(
+        List.of(sensitiveRule),
+        sensitiveDataStub
+            .getAllRedactionRules(
+                GetAllRedactionRulesRequest.newBuilder()
+                    .setFilter(RedactionRuleFilter.newBuilder().setIsSensitive(true))
+                    .build())
+            .getRedactionRulesList());
+
+    assertEquals(
+        List.of(insensitiveRule),
+        sensitiveDataStub
+            .getAllRedactionRules(
+                GetAllRedactionRulesRequest.newBuilder()
+                    .setFilter(RedactionRuleFilter.newBuilder().setIsSensitive(false))
                     .build())
             .getRedactionRulesList());
   }

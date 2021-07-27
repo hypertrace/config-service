@@ -16,6 +16,7 @@ public class SensitiveDataConfigUtils {
   public static final String SENSITIVE_DATA_CONFIGURATION = "sensitive-data-configuration";
   public static final String DEFAULT_RULE_POPULATION_STATUS = "default-rule-population-status";
   public static final String FULL_PRIVACY_MODE_CONFIG = "full-privacy-mode-config";
+  public static final String CORE_MODE_RULE_CATEGORY = "core_mode_default_rules";
 
   private SensitiveDataConfigUtils() {
     // to prevent instantiation
