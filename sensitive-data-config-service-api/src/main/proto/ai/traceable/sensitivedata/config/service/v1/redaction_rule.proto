@@ -19,6 +19,7 @@ message NewRedactionRule {
   string regex = 7;
   bool session_identifier = 8;
   repeated Condition conditions = 9;
+  bool fqn = 10;
 }
 
 message RedactionRule {
@@ -34,6 +35,7 @@ message RedactionRule {
   string regex = 8;
   bool session_identifier = 9;
   repeated Condition conditions = 10;
+  bool fqn = 11;
 }
 
 enum MatchType {

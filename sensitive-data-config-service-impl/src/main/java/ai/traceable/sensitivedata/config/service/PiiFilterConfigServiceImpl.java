@@ -148,6 +148,7 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
               .setSessionIdentifier(redactionRule.getSessionIdentifier())
               .setRuleId(redactionRule.getId())
               .addAllConditions(redactionRule.getConditionsList())
+              .setFqn(redactionRule.getFqn())
               .build();
       switch (redactionRule.getMatchType()) {
         case MATCH_TYPE_HEADER:
