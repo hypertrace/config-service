@@ -97,7 +97,7 @@ public class LocalProcessingConfigServiceIntegrationTest
 
     ProtectionModeConfig expectedConfig =
         ProtectionModeConfig.newBuilder()
-            .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_ADVANCED)
+            .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
             .addProtectedEndpoints(
                 ProtectedEndpoint.newBuilder()
                     .setUrlPattern("/orders/**")
@@ -114,11 +114,11 @@ public class LocalProcessingConfigServiceIntegrationTest
     assertEquals(expectedConfig, actualConfig);
 
     // test default protection mode
-    updateDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_CORE);
-    assertEquals(ProtectionMode.PROTECTION_MODE_CORE, getDefaultProtectionMode());
+    updateDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_ADVANCED);
+    assertEquals(ProtectionMode.PROTECTION_MODE_ADVANCED, getDefaultProtectionMode());
     expectedConfig =
         expectedConfig.toBuilder()
-            .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
+            .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_ADVANCED)
             .build();
     actualConfig = getConfig();
     assertEquals(expectedConfig, actualConfig);
