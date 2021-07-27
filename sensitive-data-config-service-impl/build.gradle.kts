@@ -18,6 +18,7 @@ dependencies {
   implementation("org.hypertrace.config.service:config-proto-converter")
   implementation("com.google.re2j:re2j:1.6")
   implementation("com.google.inject:guice:5.0.1")
+  implementation("com.github.f4b6a3:uuid-creator:2.7.11")
 
   annotationProcessor("org.projectlombok:lombok:1.18.20")
   compileOnly("org.projectlombok:lombok:1.18.20")

@@ -10,9 +10,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.sensitivedata.config.service.v1.Condition;
+import ai.traceable.sensitivedata.config.service.v1.Condition.AttributeRegexMatch;
 import ai.traceable.sensitivedata.config.service.v1.CreateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.DeleteRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest.RedactionRuleFilter;
 import ai.traceable.sensitivedata.config.service.v1.GetAutomaticSecretRedactionStrategyRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetFullPrivacyModeRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeRequest;
@@ -163,9 +166,7 @@ class SensitiveDataConfigServiceImplTest {
             .getRedactionRulesList());
 
     assertEquals(
-        // TODO: update to the following when removing temporary logic in this api
-        //        List.of(defaultRedactionRule, redactionRule1, redactionRule2),
-        List.of(redactionRule1, redactionRule2),
+        List.of(defaultRedactionRule, redactionRule1, redactionRule2),
         sensitiveDataStub
             .getAllRedactionRules(GetAllRedactionRulesRequest.getDefaultInstance())
             .getRedactionRulesList());
@@ -300,6 +301,58 @@ class SensitiveDataConfigServiceImplTest {
             .getFullPrivacyMode(GetFullPrivacyModeRequest.newBuilder().build())
             .getEnabled();
     assertFalse(fullPrivacyMode);
+  }
+
+  @Test
+  void conditionalRuleFiltering() {
+    when(mockConfig.defaultRedactionRules().isPrepopulationComplete(any())).thenReturn(true);
+    RedactionRule unconditionalRule =
+        sensitiveDataStub
+            .createRedactionRule(
+                CreateRedactionRuleRequest.newBuilder()
+                    .setNewRedactionRule(getNewRedactionRule("conditional-rule", "^password"))
+                    .build())
+            .getRedactionRule();
+
+    RedactionRule conditionalRule =
+        sensitiveDataStub
+            .createRedactionRule(
+                CreateRedactionRuleRequest.newBuilder()
+                    .setNewRedactionRule(
+                        getNewRedactionRule("unconditional-rule", "^password").toBuilder()
+                            .addConditions(
+                                Condition.newBuilder()
+                                    .setAttributeRegexMatch(
+                                        AttributeRegexMatch.newBuilder()
+                                            .setKey("foo")
+                                            .setRegex("bar"))))
+                    .build())
+            .getRedactionRule();
+
+    // TODO, will contain both rules once backwards compatibility logic removed
+    assertEquals(
+        List.of(unconditionalRule),
+        sensitiveDataStub
+            .getAllRedactionRules(GetAllRedactionRulesRequest.getDefaultInstance())
+            .getRedactionRulesList());
+
+    assertEquals(
+        List.of(conditionalRule),
+        sensitiveDataStub
+            .getAllRedactionRules(
+                GetAllRedactionRulesRequest.newBuilder()
+                    .setFilter(RedactionRuleFilter.newBuilder().setIsConditional(true))
+                    .build())
+            .getRedactionRulesList());
+
+    assertEquals(
+        List.of(unconditionalRule),
+        sensitiveDataStub
+            .getAllRedactionRules(
+                GetAllRedactionRulesRequest.newBuilder()
+                    .setFilter(RedactionRuleFilter.newBuilder().setIsConditional(false))
+                    .build())
+            .getRedactionRulesList());
   }
 
   private NewRedactionRule getNewRedactionRule(String name, String regex) {

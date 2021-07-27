@@ -83,7 +83,8 @@ message GetAllRedactionRulesRequest {
   RedactionRuleFilter filter = 1;
 
   message RedactionRuleFilter {
-    optional bool is_persisted =1; // true for persisted rules only, false for unpersisted only, omit for all rules - the default.
+    optional bool is_persisted = 1; // true for persisted rules only, false for unpersisted only, omit for all rules - the default.
+    optional bool is_conditional = 2;
   }
 }
 

@@ -169,9 +169,7 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
         response -> {
           try {
             assertMatchesResource(
-                // TODO: update to the following when removing temporary logic in this api
-                //                "sensitive-data/get-all-redaction-rules-response.json",
-                "sensitive-data/get-all-redaction-rules-prepop-response.json", response.get());
+                "sensitive-data/get-all-redaction-rules-response.json", response.get());
           } catch (Exception e) {
             throw new RuntimeException(e);
           }

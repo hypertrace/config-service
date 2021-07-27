@@ -7,11 +7,12 @@ import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.REDACTION_RULES_CONFIG;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.SENSITIVE_DATA_CONFIGURATION;
 
-import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest.RedactionRuleFilter;
 import ai.traceable.sensitivedata.config.service.v1.NewRedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.ParamType;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
+import com.github.f4b6a3.uuid.util.UuidValidator;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -27,6 +28,7 @@ import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
@@ -172,38 +174,27 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
       RequestContext requestContext, boolean includeConditionalRules) {
     this.insertPrepopulatedRulesIfRequired(requestContext);
 
-    boolean fullPrivacyMode = this.isFullPrivacyModeEnabled(requestContext);
-    if (fullPrivacyMode) { // Send all rules including full privacy mode ones.
-      return Streams.concat(
-              this.getUnpersistedDefaultRules().stream(), // Full privacy mode rules
-              this.fetchPersistedRules(requestContext).stream())
-          .filter(rule -> includeConditionalRules || rule.getConditionsList().isEmpty())
-          .collect(Collectors.toUnmodifiableList());
-    } else {
-      // Only send the persisted rules that the customer has defined and other default rules that
-      // are persisted. No full privacy mode rules.
-      return this.fetchPersistedRules(requestContext).stream()
-          .filter(rule -> includeConditionalRules || rule.getConditionsList().isEmpty())
-          .collect(Collectors.toUnmodifiableList());
+    RedactionRuleFilter.Builder filterBuilder = RedactionRuleFilter.newBuilder();
+    if (!includeConditionalRules) {
+      filterBuilder.setIsConditional(false);
     }
+
+    if (!this.isFullPrivacyModeEnabled(requestContext)) {
+      // Unpersisted rules are for full privacy
+      filterBuilder.setIsPersisted(true);
+    }
+
+    return this.gatherUnfilteredRedactionRules(requestContext)
+        .filter(rule -> this.redactionRuleMatchesFilter(rule, filterBuilder.build()))
+        .collect(Collectors.toUnmodifiableList());
   }
 
   @Override
   public List<RedactionRule> getAllRedactionRules(
-      RequestContext requestContext, GetAllRedactionRulesRequest.RedactionRuleFilter filter) {
+      RequestContext requestContext, RedactionRuleFilter filter) {
     this.insertPrepopulatedRulesIfRequired(requestContext);
-    if (filter.hasIsPersisted()) {
-      // Currently when filtering persisted rules, we do not include Conditional rules.
-      // This might need to change later
-      return filter.getIsPersisted()
-          ? getViewableRedactionRules(requestContext)
-          : getUnpersistedRedactionRules();
-    }
-    // Return all redaction rules without any filtering if filter does not have isPersisted boolean
-    // set
-    return Streams.concat(
-            this.getUnpersistedDefaultRules().stream(),
-            this.fetchPersistedRules(requestContext).stream())
+    return this.gatherUnfilteredRedactionRules(requestContext)
+        .filter(rule -> this.redactionRuleMatchesFilter(rule, filter))
         .collect(Collectors.toUnmodifiableList());
   }
 
@@ -242,17 +233,6 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
             .setConfig(fullPrivacyModeConfig.toValue())
             .build();
     upsertConfig(requestContext, upsertConfigRequest);
-  }
-
-  private List<RedactionRule> getViewableRedactionRules(RequestContext requestContext) {
-    // For now this means no conditional rules
-    return this.fetchPersistedRules(requestContext).stream()
-        .filter(rule -> rule.getConditionsList().isEmpty())
-        .collect(Collectors.toUnmodifiableList());
-  }
-
-  private List<RedactionRule> getUnpersistedRedactionRules() {
-    return this.getUnpersistedDefaultRules();
   }
 
   private void insertPrepopulatedRulesIfRequired(RequestContext requestContext) {
@@ -302,6 +282,41 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
 
   private List<RedactionRule> getUnpersistedDefaultRules() {
     return this.defaultRedactionRules.getDefaultRules();
+  }
+
+  private Stream<RedactionRule> gatherUnfilteredRedactionRules(RequestContext requestContext) {
+    return Streams.concat(
+        this.getUnpersistedDefaultRules().stream(),
+        this.fetchPersistedRules(requestContext).stream());
+  }
+
+  private boolean redactionRuleMatchesFilter(RedactionRule rule, RedactionRuleFilter filter) {
+    // This can be made prettier if we start expanding to a bunch more conditions
+
+    boolean passesPersistenceFilter =
+        !filter.hasIsPersisted() || this.redactionRuleIsPersisted(rule) == filter.getIsPersisted();
+
+    boolean passesConditionalFilter =
+        !filter.hasIsConditional()
+            || this.redactionRuleIsConditional(rule) == filter.getIsConditional();
+
+    // TODO very temporary default logic for backwards compatibility, where we filtered conditional,
+    // persisted rules
+    boolean passesBackwardsCompatibilityFilter =
+        filter.hasIsConditional()
+            || !this.redactionRuleIsPersisted(rule)
+            || !this.redactionRuleIsConditional(rule);
+
+    return passesPersistenceFilter && passesConditionalFilter && passesBackwardsCompatibilityFilter;
+  }
+
+  private boolean redactionRuleIsConditional(RedactionRule rule) {
+    return !rule.getConditionsList().isEmpty();
+  }
+
+  private boolean redactionRuleIsPersisted(RedactionRule rule) {
+    // Assuming a valid uuid indicates a persisted rule
+    return UuidValidator.isValid(rule.getId());
   }
 
   private List<RedactionRule> fetchPersistedRules(RequestContext requestContext) {
