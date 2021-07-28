@@ -304,17 +304,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
     boolean passesSensitiveFilter =
         !filter.hasIsSensitive() || this.redactionRuleIsSensitive(rule) == filter.getIsSensitive();
 
-    // TODO very temporary default logic for backwards compatibility, where we filtered conditional,
-    // persisted rules
-    boolean passesBackwardsCompatibilityFilter =
-        filter.hasIsConditional()
-            || !this.redactionRuleIsPersisted(rule)
-            || !this.redactionRuleIsConditional(rule);
-
-    return passesPersistenceFilter
-        && passesConditionalFilter
-        && passesSensitiveFilter
-        && passesBackwardsCompatibilityFilter;
+    return passesPersistenceFilter && passesConditionalFilter && passesSensitiveFilter;
   }
 
   private boolean redactionRuleIsConditional(RedactionRule rule) {

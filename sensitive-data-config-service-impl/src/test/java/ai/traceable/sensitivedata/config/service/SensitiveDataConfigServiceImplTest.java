@@ -330,9 +330,8 @@ class SensitiveDataConfigServiceImplTest {
                     .build())
             .getRedactionRule();
 
-    // TODO, will contain both rules once backwards compatibility logic removed
     assertEquals(
-        List.of(unconditionalRule),
+        List.of(unconditionalRule, conditionalRule),
         sensitiveDataStub
             .getAllRedactionRules(GetAllRedactionRulesRequest.getDefaultInstance())
             .getRedactionRulesList());
