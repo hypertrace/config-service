@@ -4,6 +4,7 @@ import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.AN
 import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.ANOMALY_GLOBAL_CONFIG_ANNOTATION;
 import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.ANOMALY_MODSEC_CONFIG_ANNOTATION;
 
+import ai.traceable.anomaly.config.service.common.license.LicenseMeteringServiceModule;
 import ai.traceable.anomaly.config.service.exclusion.AnomalyExclusionConfigServiceModule;
 import ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceModule;
 import ai.traceable.anomaly.config.service.modsec.AnomalyModsecConfigServiceModule;
@@ -12,33 +13,38 @@ import com.google.inject.Provides;
 import com.typesafe.config.Config;
 import io.grpc.ManagedChannel;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 public class AnomalyConfigServiceModule extends AbstractModule {
 
   private static final String ANOMALY_CONFIG_SERVICE_CONFIG_PATH = "anomaly.config.service";
+  private static final String LICENSE_METERING_SERVICE_CONFIG_PATH = "license.metering.service";
 
-  private final AnomalyConfigServiceConfig config;
+  private final Config config;
+  private final GrpcChannelRegistry channelRegistry;
   private final ManagedChannel channel;
 
-  AnomalyConfigServiceModule(ManagedChannel channel, Config config) {
+  AnomalyConfigServiceModule(
+      GrpcChannelRegistry channelRegistry, ManagedChannel channel, Config config) {
     this.channel = channel;
-    this.config =
-        new AnomalyConfigServiceConfig(config.getConfig(ANOMALY_CONFIG_SERVICE_CONFIG_PATH));
+    this.channelRegistry = channelRegistry;
+    this.config = config;
   }
 
   @Override
   protected void configure() {
     install(
-        new AnomalyGlobalConfigServiceModule(
-            config.getAnomalyGlobalConfig(), ANOMALY_GLOBAL_CONFIG_ANNOTATION));
+        new LicenseMeteringServiceModule(
+            config.getConfig(LICENSE_METERING_SERVICE_CONFIG_PATH), channelRegistry));
+    install(new AnomalyGlobalConfigServiceModule(ANOMALY_GLOBAL_CONFIG_ANNOTATION));
     install(new AnomalyExclusionConfigServiceModule(ANOMALY_EXCLUSION_CONFIG_ANNOTATION));
     install(new AnomalyModsecConfigServiceModule(ANOMALY_MODSEC_CONFIG_ANNOTATION));
   }
 
   @Provides
   AnomalyConfigServiceConfig providesAnomalyServiceConfig() {
-    return config;
+    return new AnomalyConfigServiceConfig(config.getConfig(ANOMALY_CONFIG_SERVICE_CONFIG_PATH));
   }
 
   @Provides

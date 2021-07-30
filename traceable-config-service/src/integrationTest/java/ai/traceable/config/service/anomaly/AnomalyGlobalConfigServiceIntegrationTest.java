@@ -14,6 +14,7 @@ import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceG
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.UpdateAnomalyGlobalConfigStatusRequest;
 import ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase;
+import ai.traceable.license.metering.service.api.v1.LicenseInfo;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.junit.jupiter.api.BeforeAll;
@@ -60,6 +61,10 @@ public class AnomalyGlobalConfigServiceIntegrationTest
                     .setParamScope(AnomalyParamScope.getDefaultInstance())
                     .build()));
 
+    assertEquals(
+        AnomalyConfigStatus.newBuilder().setInternal(false).setDisabled(true).build(),
+        fetchGlobalConfigStatus(customerConfigScope, "tenant_" + LicenseInfo.Tier.TIER_TEAM_TRIAL));
+
     expectedStatus =
         AnomalyConfigStatus.newBuilder()
             .setInternal(false)
@@ -98,6 +103,7 @@ public class AnomalyGlobalConfigServiceIntegrationTest
 
   @Test
   public void testUpdateGlobalConfigStatus() {
+    String tenantId = TENANT_ID;
     assertThrows(
         RuntimeException.class,
         () ->
@@ -135,8 +141,13 @@ public class AnomalyGlobalConfigServiceIntegrationTest
   }
 
   private AnomalyConfigStatus fetchGlobalConfigStatus(AnomalyConfigScope configScope) {
+    return fetchGlobalConfigStatus(configScope, TENANT_ID);
+  }
+
+  private AnomalyConfigStatus fetchGlobalConfigStatus(
+      AnomalyConfigScope configScope, String tenantId) {
     return GrpcClientRequestContextUtil.executeInTenantContext(
-        TENANT_ID,
+        tenantId,
         () ->
             configServiceStub
                 .getAnomalyGlobalConfigStatus(

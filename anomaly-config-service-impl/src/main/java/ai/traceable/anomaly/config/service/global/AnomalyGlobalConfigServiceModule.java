@@ -1,21 +1,19 @@
 package ai.traceable.anomaly.config.service.global;
 
+import ai.traceable.anomaly.config.service.AnomalyConfigServiceConfig;
 import ai.traceable.anomaly.config.service.global.ruleinfo.RuleInfoModule;
 import ai.traceable.anomaly.config.service.global.status.ConfigStatusModule;
 import ai.traceable.anomaly.config.service.global.validator.GlobalConfigValidatorModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.name.Names;
-import com.typesafe.config.Config;
 import io.grpc.BindableService;
 
 public class AnomalyGlobalConfigServiceModule extends AbstractModule {
 
-  private final Config config;
   private final String bindableServiceAnnotation;
 
-  public AnomalyGlobalConfigServiceModule(Config config, String bindableServiceAnnotation) {
-    this.config = config;
+  public AnomalyGlobalConfigServiceModule(String bindableServiceAnnotation) {
     this.bindableServiceAnnotation = bindableServiceAnnotation;
   }
 
@@ -30,7 +28,8 @@ public class AnomalyGlobalConfigServiceModule extends AbstractModule {
   }
 
   @Provides
-  AnomalyGlobalConfigServiceConfig providesAnomalyGlobalServiceConfig() {
-    return new AnomalyGlobalConfigServiceConfig(this.config);
+  AnomalyGlobalConfigServiceConfig providesAnomalyGlobalServiceConfig(
+      AnomalyConfigServiceConfig config) {
+    return new AnomalyGlobalConfigServiceConfig(config.getAnomalyGlobalConfig());
   }
 }

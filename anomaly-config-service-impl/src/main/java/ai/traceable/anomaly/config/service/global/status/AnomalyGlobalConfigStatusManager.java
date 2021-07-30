@@ -3,6 +3,7 @@ package ai.traceable.anomaly.config.service.global.status;
 import static ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceConstants.ANOMALY_GLOBAL_CONFIG_NAMESPACE;
 import static ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceConstants.ANOMALY_GLOBAL_CONFIG_STATUS_RESOURCE_NAME;
 
+import ai.traceable.anomaly.config.service.common.license.LicenseInfoLoader;
 import ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceConfig;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
@@ -13,7 +14,9 @@ import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.GetConfigRequest;
@@ -27,18 +30,22 @@ public class AnomalyGlobalConfigStatusManager implements ConfigStatusManager {
   private final AnomalyGlobalConfigServiceConfig config;
   private final ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub;
   private final GlobalConfigStatusConverter configConverter;
+  private final LicenseInfoLoader licenseInfoLoader;
 
   @Inject
   public AnomalyGlobalConfigStatusManager(
       AnomalyGlobalConfigServiceConfig config,
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
-      GlobalConfigStatusConverter configConverter) {
+      GlobalConfigStatusConverter configConverter,
+      LicenseInfoLoader licenseInfoLoader) {
     this.config = config;
     this.configServiceBlockingStub = configServiceBlockingStub;
+    this.licenseInfoLoader = licenseInfoLoader;
     this.configConverter = configConverter;
   }
 
   @Override
+  @SneakyThrows
   public AnomalyConfigStatus getAnomalyConfigStatus(
       RequestContext requestContext, AnomalyConfigScope configScope) {
 
@@ -72,7 +79,7 @@ public class AnomalyGlobalConfigStatusManager implements ConfigStatusManager {
     }
 
     return fetchConfig(requestContext, contextsWithIncreasingPriority)
-        .orElse(config.getConfigStatus());
+        .orElse(getDefaultTierConfig(requestContext));
   }
 
   @Override
@@ -122,8 +129,8 @@ public class AnomalyGlobalConfigStatusManager implements ConfigStatusManager {
         .map(
             value -> {
               try {
-                return configConverter.convert(value, config.getConfigStatus());
-              } catch (InvalidProtocolBufferException e) {
+                return configConverter.convert(value, getDefaultTierConfig(requestContext));
+              } catch (InvalidProtocolBufferException | ExecutionException e) {
                 throw new RuntimeException(e);
               }
             });
@@ -211,7 +218,8 @@ public class AnomalyGlobalConfigStatusManager implements ConfigStatusManager {
     }
   }
 
-  private boolean isEmpty(String str) {
-    return str == null || str.isEmpty();
+  private AnomalyConfigStatus getDefaultTierConfig(RequestContext requestContext)
+      throws ExecutionException {
+    return config.getConfigStatus(licenseInfoLoader.getLicenseTier(requestContext));
   }
 }

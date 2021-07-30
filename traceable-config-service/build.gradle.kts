@@ -85,6 +85,7 @@ dependencies {
   // Integration test dependencies
   integrationTestImplementation(testFixtures(project(":traceable-config-service")))
   integrationTestImplementation("ai.traceable.platform:insights-service-api:0.29.5")
+  integrationTestImplementation("ai.traceable.license.metering.service:license-metering-service-api:0.1.13")
   integrationTestImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
   integrationTestImplementation("com.google.guava:guava:30.1.1-jre")
   integrationTestImplementation("org.hypertrace.core.serviceframework:integrationtest-service-framework:0.1.23")
@@ -94,6 +95,9 @@ dependencies {
   integrationTestImplementation("com.google.protobuf:protobuf-java-util:3.15.8")
   integrationTestImplementation(project(":iprange-config-service-api"))
   testFixturesImplementation("ai.traceable.platform:insights-service-api:0.29.5")
+  testFixturesImplementation("ai.traceable.license.metering.service:license-metering-service-api:0.1.13")
+  testFixturesImplementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.5.0")
+  testFixturesImplementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.5.0")
 }
 
 application {

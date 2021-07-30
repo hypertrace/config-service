@@ -8,6 +8,7 @@ dependencies {
   api(project(":anomaly-config-service-api"))
   api(project(":anomaly-config-service-registry"))
   implementation("org.hypertrace.config.service:config-service-api")
+  implementation("org.hypertrace.config.service:config-proto-converter")
 
   implementation("com.google.inject:guice:5.0.1")
   implementation("com.google.guava:guava:30.1.1-jre")
@@ -16,10 +17,13 @@ dependencies {
   implementation("org.slf4j:slf4j-api:1.7.30")
   implementation("org.apache.commons:commons-csv:1.8")
   implementation("com.github.f4b6a3:uuid-creator:2.7.11")
+  implementation("io.grpc:grpc-netty:1.38.0")
 
   implementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.5.0")
   implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.5.0")
-  implementation("org.hypertrace.config.service:config-proto-converter")
+  // https://traceableai.atlassian.net/browse/ENG-10685
+  // anomaly-config-service should be carved out soon to avoid chances of dependency loop..
+  implementation("ai.traceable.license.metering.service:license-metering-service-api:0.1.13")
 
   annotationProcessor("org.projectlombok:lombok:1.18.20")
   compileOnly("org.projectlombok:lombok:1.18.20")

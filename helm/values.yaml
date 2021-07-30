@@ -85,6 +85,10 @@ traceableConfigServiceConfig:
   insightsServiceConfig:
     host: insights-service
     port: 50098
+  licenseMeteringServiceConfig:
+    host: license-metering-service
+    port: 51018
+    cacheExpiryDuration: 5m
 
 logConfig:
   name: traceable-config-service-log-config
@@ -100,6 +104,13 @@ anomalyConfigServiceConfig:
   global:
     disabled: false
     internal: false
+    licenseTiers: |-
+      [
+        {
+          tier = TIER_TEAM_TRIAL
+          disabled = false
+        }
+      ]
 
 hpa:
   enabled: false

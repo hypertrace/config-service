@@ -41,6 +41,11 @@ data:
       host = {{ .Values.traceableConfigServiceConfig.insightsServiceConfig.host }}
       port = {{ .Values.traceableConfigServiceConfig.insightsServiceConfig.port }}
     }
+    license.metering.service = {
+      host = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.host }}
+      port = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.port }}
+      cache.expiry.duration = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.cacheExpiryDuration }}
+    }
     anomaly.config.service = {
       include "anomaly.conf"
     }
@@ -48,4 +53,5 @@ data:
     global {
       disabled = {{ .Values.anomalyConfigServiceConfig.global.disabled }}
       internal = {{ .Values.anomalyConfigServiceConfig.global.internal }}
+      licenseTiers = {{ .Values.anomalyConfigServiceConfig.global.licenseTiers | nindent 6 }}
     }

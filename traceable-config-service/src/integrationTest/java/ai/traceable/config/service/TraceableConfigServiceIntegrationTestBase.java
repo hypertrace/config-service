@@ -5,6 +5,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.ServerInterceptors;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +27,7 @@ public class TraceableConfigServiceIntegrationTestBase {
   protected static ManagedChannel managedChannelForInternalServices;
   protected static ManagedChannel managedChannelForExternalServices;
   private static Server mockInsightsServer;
+  private static Server mockLicenseMeteringServer;
 
   @BeforeAll
   static void setup() throws IOException {
@@ -39,6 +41,13 @@ public class TraceableConfigServiceIntegrationTestBase {
 
     mockInsightsServer =
         ServerBuilder.forPort(60098).addService(new MockInsightsService()).build().start();
+    mockLicenseMeteringServer =
+        ServerBuilder.forPort(60099)
+            .addService(
+                ServerInterceptors.intercept(
+                    new MockLicenseMeteringService(), new TestInterceptor()))
+            .build()
+            .start();
   }
 
   @AfterAll
@@ -47,6 +56,7 @@ public class TraceableConfigServiceIntegrationTestBase {
     managedChannelForExternalServices.shutdown();
     IntegrationTestServerUtil.shutdownServices();
     mockInsightsServer.shutdown();
+    mockLicenseMeteringServer.shutdown();
   }
 
   private static Collection getConfigurationsCollection() {

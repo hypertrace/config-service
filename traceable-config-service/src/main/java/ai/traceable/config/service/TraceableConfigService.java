@@ -97,7 +97,7 @@ public class TraceableConfigService extends PlatformService {
     BindableService threatManagementConfigService =
         ThreatManagementConfigServiceFactory.build(managedChannel, config);
     List<BindableService> anomalyConfigServices =
-        AnomalyConfigServiceFactory.build(managedChannel, config);
+        AnomalyConfigServiceFactory.build(channelRegistry, managedChannel, config);
 
     internalServerBuilder.addServices(
         anomalyConfigServices.stream()

@@ -7,7 +7,7 @@ import com.google.inject.Guice;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.ManagedChannel;
-import java.util.Map;
+import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.junit.jupiter.api.Test;
 
 class AnomalyConfigServiceModuleTest {
@@ -15,16 +15,23 @@ class AnomalyConfigServiceModuleTest {
   public void testResolveBindings() {
     ManagedChannel mockChannel = mock(ManagedChannel.class);
     Config config =
-        ConfigFactory.parseMap(
-            Map.of(
-                "anomaly.config.service.global.disbled",
-                true,
-                "anomaly.config.service.internal",
-                false));
+        ConfigFactory.parseString(
+            "anomaly.config.service {\n"
+                + "  disabled = true\n"
+                + "  internal = false\n"
+                + "}\n"
+                + "license.metering.service {\n"
+                + "  host = \"localhost\"\n"
+                + "  port = 51018\n"
+                + "  call.timeout.ms = 60000\n"
+                + "  cache.expiry.duration = 5m\n"
+                + "  cache.max.size = 5000\n"
+                + "}");
 
     assertDoesNotThrow(
         () ->
-            Guice.createInjector(new AnomalyConfigServiceModule(mockChannel, config))
+            Guice.createInjector(
+                    new AnomalyConfigServiceModule(new GrpcChannelRegistry(), mockChannel, config))
                 .getAllBindings());
   }
 }
