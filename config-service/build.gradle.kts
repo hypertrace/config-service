@@ -59,6 +59,7 @@ dependencies {
   implementation(project(":spaces-config-service-impl"))
   implementation("org.hypertrace.core.grpcutils:grpc-server-utils:0.4.0")
   implementation("org.hypertrace.core.serviceframework:platform-service-framework:0.1.23")
+  implementation("org.hypertrace.core.serviceframework:platform-metrics:0.1.23")
   implementation("com.typesafe:config:1.4.1")
   implementation("org.slf4j:slf4j-api:1.7.30")
 
