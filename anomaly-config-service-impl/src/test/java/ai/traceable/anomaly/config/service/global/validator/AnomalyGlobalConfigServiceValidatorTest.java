@@ -40,7 +40,7 @@ class AnomalyGlobalConfigServiceValidatorTest {
   @Nested
   class ConfigStatusValidation {
     @Test
-    public void testValidateGetStatusRequest() {
+    void testValidateGetStatusRequest() {
       Status status =
           globalValidator.validate(GetAnomalyGlobalConfigStatusRequest.getDefaultInstance());
       assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
@@ -55,7 +55,7 @@ class AnomalyGlobalConfigServiceValidatorTest {
     }
 
     @Test
-    public void testValidateUpdateStatusRequest() {
+    void testValidateUpdateStatusRequest() {
       Status status =
           globalValidator.validate(UpdateAnomalyGlobalConfigStatusRequest.getDefaultInstance());
       assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());

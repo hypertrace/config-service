@@ -1,8 +1,8 @@
-package ai.traceable.blocking.config.service.safecrs;
+package ai.traceable.blocking.config.service.blockingmodsec;
 
 import ai.traceable.blocking.config.service.v1.SafeCrsBlockingRules;
 
-public interface SafeCrsBlockingManager {
+public interface ModsecBlockingManager {
 
   SafeCrsBlockingRules getBlockingRules(String requestHash);
 }

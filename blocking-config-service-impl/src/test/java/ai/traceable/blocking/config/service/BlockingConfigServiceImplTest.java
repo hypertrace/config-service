@@ -5,9 +5,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import ai.traceable.blocking.config.service.blockingmodsec.ModsecBlockingManager;
 import ai.traceable.blocking.config.service.customsignature.CustomModsecBlockingManager;
 import ai.traceable.blocking.config.service.regions.RegionBlockingManager;
-import ai.traceable.blocking.config.service.safecrs.SafeCrsBlockingManager;
 import ai.traceable.blocking.config.service.v1.CustomModsecBlockingRules;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesRequest;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesResponse;
@@ -23,7 +23,7 @@ class BlockingConfigServiceImplTest {
 
   private RegionBlockingRules regionBlockingRules;
   private CustomModsecBlockingRules customModsecBlockingRules;
-  private SafeCrsBlockingRules safeCrsBlockingRules;
+  private SafeCrsBlockingRules modsecCrsBlockingRules;
 
   private BlockingConfigServiceImpl blockingConfigService;
   private String hash1 = "hash1";
@@ -34,21 +34,21 @@ class BlockingConfigServiceImplTest {
     RegionBlockingManager regionBlockingManager = mock(RegionBlockingManager.class);
     CustomModsecBlockingManager customModsecBlockingManager =
         mock(CustomModsecBlockingManager.class);
-    SafeCrsBlockingManager safeCrsBlockingManager = mock(SafeCrsBlockingManager.class);
+    ModsecBlockingManager modsecBlockingManager = mock(ModsecBlockingManager.class);
 
     this.regionBlockingRules = RegionBlockingRules.newBuilder().setHash(hash2).build();
     this.customModsecBlockingRules = CustomModsecBlockingRules.newBuilder().setHash(hash2).build();
-    this.safeCrsBlockingRules = SafeCrsBlockingRules.newBuilder().setHash(hash2).build();
+    this.modsecCrsBlockingRules = SafeCrsBlockingRules.newBuilder().setHash(hash2).build();
 
     doReturn(regionBlockingRules).when(regionBlockingManager).getEnabledBlockingRules(hash1);
     doReturn(customModsecBlockingRules)
         .when(customModsecBlockingManager)
         .getEnabledBlockingRules(hash1);
-    doReturn(safeCrsBlockingRules).when(safeCrsBlockingManager).getBlockingRules(hash1);
+    doReturn(modsecCrsBlockingRules).when(modsecBlockingManager).getBlockingRules(hash1);
 
     this.blockingConfigService =
         new BlockingConfigServiceImpl(
-            regionBlockingManager, customModsecBlockingManager, safeCrsBlockingManager);
+            regionBlockingManager, customModsecBlockingManager, modsecBlockingManager);
   }
 
   @Test
@@ -70,7 +70,7 @@ class BlockingConfigServiceImplTest {
             GetBlockingRulesResponse.newBuilder()
                 .setRegionBlockingRules(regionBlockingRules)
                 .setCustomModsecBlockingRules(customModsecBlockingRules)
-                .setSafeCrsBlockingRules(safeCrsBlockingRules)
+                .setSafeCrsBlockingRules(modsecCrsBlockingRules)
                 .build());
 
     // exception for region blocking rules..
@@ -88,7 +88,7 @@ class BlockingConfigServiceImplTest {
         .onNext(
             GetBlockingRulesResponse.newBuilder()
                 .setCustomModsecBlockingRules(customModsecBlockingRules)
-                .setSafeCrsBlockingRules(safeCrsBlockingRules)
+                .setSafeCrsBlockingRules(modsecCrsBlockingRules)
                 .build());
 
     // exception for custom signature blocking rules..
@@ -106,7 +106,7 @@ class BlockingConfigServiceImplTest {
         .onNext(
             GetBlockingRulesResponse.newBuilder()
                 .setRegionBlockingRules(regionBlockingRules)
-                .setSafeCrsBlockingRules(safeCrsBlockingRules)
+                .setSafeCrsBlockingRules(modsecCrsBlockingRules)
                 .build());
 
     // exception for safe crs rules..

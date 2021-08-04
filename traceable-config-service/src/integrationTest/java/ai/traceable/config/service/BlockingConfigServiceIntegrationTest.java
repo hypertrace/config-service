@@ -89,8 +89,8 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
             .getCustomModsecRulesBlob()
             .isEmpty()); // rules actually empty
 
-    final String safeCrsBlockingRulesHash = response.getSafeCrsBlockingRules().getHash();
-    assertNotEquals(emptyValueUuid, safeCrsBlockingRulesHash);
+    final String modsecCrsBlockingRulesHash = response.getSafeCrsBlockingRules().getHash();
+    assertNotEquals(emptyValueUuid, modsecCrsBlockingRulesHash);
     assertFalse(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
 
     int numRegions = createAndGetRegions();
@@ -103,7 +103,7 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
                     GetBlockingRulesRequest.newBuilder()
                         .setRegionBlockingRulesHash(emptyValueUuid)
                         .setCustomModsecBlockingRulesHash(emptyValueUuid)
-                        .setSafeCrsBlockingRulesHash(safeCrsBlockingRulesHash)
+                        .setSafeCrsBlockingRulesHash(modsecCrsBlockingRulesHash)
                         .build()));
 
     String regionBlockingRulesHash = response.getRegionBlockingRules().getHash();
@@ -115,7 +115,7 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
     assertFalse(response.getCustomModsecBlockingRules().getCustomModsecRulesBlob().isEmpty());
 
     assertEquals(
-        safeCrsBlockingRulesHash, response.getSafeCrsBlockingRules().getHash()); // not changed
+        modsecCrsBlockingRulesHash, response.getSafeCrsBlockingRules().getHash()); // not changed
     assertTrue(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
 
     response =

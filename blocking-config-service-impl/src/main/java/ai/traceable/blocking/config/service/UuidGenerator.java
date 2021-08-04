@@ -4,7 +4,6 @@ import com.github.f4b6a3.uuid.UuidCreator;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.GeneratedMessageV3;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 public class UuidGenerator {
@@ -18,18 +17,12 @@ public class UuidGenerator {
     return UuidCreator.getNameBasedSha1(NAMESPACE_UUID, value).toString();
   }
 
-  public String generateId(Optional<String> value) {
-    return value.isEmpty()
-        ? emptyValueUuid
-        : UuidCreator.getNameBasedSha1(NAMESPACE_UUID, value.get()).toString();
-  }
-
   public String generateId(List<? extends GeneratedMessageV3> protoMessages) {
     return protoMessages.stream()
-        .map(message -> message.toByteString())
-        .reduce((str1, str2) -> str1.concat(str2))
+        .map(GeneratedMessageV3::toByteString)
+        .reduce(ByteString::concat)
         .map(ByteString::toByteArray)
-        .map(byteArray -> generateId(byteArray))
+        .map(this::generateId)
         .orElse(emptyValueUuid);
   }
 

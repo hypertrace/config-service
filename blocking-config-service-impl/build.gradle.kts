@@ -8,6 +8,7 @@ dependencies {
   api(project(":blocking-config-service-api"))
   api(project(":region-config-service-api"))
   api(project(":custom-signature-config-service-api"))
+  api(project(":anomaly-config-service-api"))
 
   implementation("com.google.inject:guice:5.0.1")
   implementation("com.google.guava:guava:30.1.1-jre")
@@ -23,7 +24,7 @@ dependencies {
   compileOnly("org.projectlombok:lombok:1.18.20")
 
   testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
-  testImplementation("org.mockito:mockito-core:3.9.0")
+  testImplementation("org.mockito:mockito-inline:3.9.0")
   testImplementation("io.grpc:grpc-core:1.37.0")
   testAnnotationProcessor("org.projectlombok:lombok:1.18.20")
   testCompileOnly("org.projectlombok:lombok:1.18.20")

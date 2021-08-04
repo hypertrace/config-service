@@ -120,8 +120,7 @@ public class TraceableConfigService extends PlatformService {
         sensitiveDataConfigServicesProvider.getPiiFilterConfigService();
     BindableService localProcessingConfigService =
         LocalProcessingConfigServiceFactory.build(managedChannel, config);
-    BindableService blockingConfigService =
-        BlockingConfigServiceFactory.build(managedChannel, config);
+    BindableService blockingConfigService = BlockingConfigServiceFactory.build(managedChannel);
     BindableService externalUserAttributionConfigService =
         ExternalUserAttributionConfigServiceFactory.build(managedChannel);
     externalServerBuilder
