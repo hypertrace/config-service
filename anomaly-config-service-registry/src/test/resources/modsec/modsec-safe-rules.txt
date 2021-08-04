@@ -43,7 +43,6 @@ crs_9420190 :: MSSQL code execution and information gathering attempts
 crs_9420230 :: Conditional SQL injection attempts (T230)
 crs_942140 :: SQL Injection Attack: Common DB Names
 crs_942160 :: Blind sqli tests using sleep() or benchmark()
-crs_942220 :: Integer overflow attacks, these are taken from skipfish, except 3.0.00738585072007e-308 is the \"magic number\" crash
 crs_942240 :: MySQL charset switch and MSSQL DoS attempts
 crs_942250 :: MATCH AGAINST, MERGE and EXECUTE IMMEDIATE injections
 crs_942270 :: Basic sql injection. Common attack string for mysql, oracle and others
