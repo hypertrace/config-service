@@ -292,10 +292,15 @@ class RegionConfigServiceImplTest {
               .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
               .build();
       UpdateRegionRuleRequest updateRegionRuleRequest =
-          UpdateRegionRuleRequest.newBuilder().setRule(updatedRegionRule).build();
+          UpdateRegionRuleRequest.newBuilder()
+              .setId("id")
+              .addRegionId("region-1")
+              .setName("name")
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
+              .build();
 
       when(rulesValidator.validate(updateRegionRuleRequest)).thenReturn(Status.OK);
-      when(rulesManager.updateRegionRule(updatedRegionRule))
+      when(rulesManager.updateRegionRule(updateRegionRuleRequest))
           .thenReturn(Optional.of(updatedRegionRule));
 
       StreamObserver<UpdateRegionRuleResponse> responseObserver = mock(StreamObserver.class);
@@ -329,10 +334,14 @@ class RegionConfigServiceImplTest {
               .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
               .build();
       UpdateRegionRuleRequest updateRegionRuleRequest =
-          UpdateRegionRuleRequest.newBuilder().setRule(updatedRegionRule).build();
+          UpdateRegionRuleRequest.newBuilder()
+              .setId("id")
+              .addRegionId("region-1")
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
+              .build();
 
       when(rulesValidator.validate(updateRegionRuleRequest)).thenReturn(Status.INVALID_ARGUMENT);
-      when(rulesManager.updateRegionRule(updatedRegionRule)).thenReturn(Optional.empty());
+      when(rulesManager.updateRegionRule(updateRegionRuleRequest)).thenReturn(Optional.empty());
 
       StreamObserver<UpdateRegionRuleResponse> responseObserver = mock(StreamObserver.class);
       Runnable runnable =
@@ -354,10 +363,15 @@ class RegionConfigServiceImplTest {
               .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
               .build();
       UpdateRegionRuleRequest updateRegionRuleRequest =
-          UpdateRegionRuleRequest.newBuilder().setRule(updatedRegionRule).build();
+          UpdateRegionRuleRequest.newBuilder()
+              .setId("id")
+              .setName("name")
+              .addRegionId("region-1")
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
+              .build();
 
       when(rulesValidator.validate(updateRegionRuleRequest)).thenReturn(Status.OK);
-      when(rulesManager.updateRegionRule(updatedRegionRule)).thenReturn(Optional.empty());
+      when(rulesManager.updateRegionRule(updateRegionRuleRequest)).thenReturn(Optional.empty());
 
       StreamObserver<UpdateRegionRuleResponse> responseObserver = mock(StreamObserver.class);
       Runnable runnable =

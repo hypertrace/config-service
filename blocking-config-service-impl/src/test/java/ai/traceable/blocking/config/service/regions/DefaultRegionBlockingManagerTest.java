@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import ai.traceable.blocking.config.service.UuidGenerator;
 import ai.traceable.blocking.config.service.v1.RegionBlockingRules;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
+import ai.traceable.region.config.service.v1.ExpirationDetails;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesRequest;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceBlockingStub;
@@ -49,19 +50,19 @@ class DefaultRegionBlockingManagerTest {
 
   @Test
   public void shouldGetRegionBlockingRules() {
-    long currentTimeMillis = 123L;
+    long currentTimeMillis = 1230000000L;
     when(this.clock.millis()).thenReturn(currentTimeMillis);
     CreateRegionRuleRequest expiredRegionRuleRequest =
         CreateRegionRuleRequest.newBuilder()
             .setName("rule-1")
-            .setExpirationMillis(currentTimeMillis - 1)
+            .setExpirationDetails(ExpirationDetails.newBuilder().setDuration("-P1D").build())
             .build();
     CreateRegionRuleRequest alwaysActiveRegionRuleRequest =
-        CreateRegionRuleRequest.newBuilder().setName("rule-2").setExpirationMillis(0).build();
+        CreateRegionRuleRequest.newBuilder().setName("rule-2").build();
     CreateRegionRuleRequest activeRegionRuleRequest =
         CreateRegionRuleRequest.newBuilder()
             .setName("rule-3")
-            .setExpirationMillis(currentTimeMillis + 1)
+            .setExpirationDetails(ExpirationDetails.newBuilder().setDuration("P1D").build())
             .build();
 
     this.regionConfigServiceStub.createRegionRule(expiredRegionRuleRequest);

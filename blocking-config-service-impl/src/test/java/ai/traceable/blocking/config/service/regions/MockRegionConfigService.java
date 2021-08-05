@@ -11,6 +11,7 @@ import ai.traceable.region.config.service.v1.IpRange;
 import ai.traceable.region.config.service.v1.IpV4Range;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceImplBase;
 import ai.traceable.region.config.service.v1.RegionRule;
+import ai.traceable.region.config.service.v1.RegionRule.ExpirationDetails;
 import com.google.common.collect.Lists;
 import io.grpc.Channel;
 import io.grpc.ManagedChannel;
@@ -19,6 +20,8 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import java.io.IOException;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +29,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 class MockRegionConfigService extends RegionConfigServiceImplBase {
+  private final Clock clock = Clock.systemUTC();
   private static final DetailedRegion REGION_1 =
       DetailedRegion.newBuilder()
           .setId("region-id-1")
@@ -124,14 +128,30 @@ class MockRegionConfigService extends RegionConfigServiceImplBase {
   public void createRegionRule(
       CreateRegionRuleRequest request, StreamObserver<CreateRegionRuleResponse> responseObserver) {
     String id = generateId();
-    RegionRule regionRule =
-        RegionRule.newBuilder()
-            .setId(id)
-            .setActionType(request.getActionType())
-            .setName(request.getName())
-            .addAllRegionId(request.getRegionIdList())
-            .setExpirationMillis(request.getExpirationMillis())
-            .build();
+    RegionRule regionRule;
+    if (!request.hasExpirationDetails()) {
+      regionRule =
+          RegionRule.newBuilder()
+              .setId(id)
+              .setActionType(request.getActionType())
+              .setName(request.getName())
+              .addAllRegionId(request.getRegionIdList())
+              .build();
+    } else {
+      String duration = request.getExpirationDetails().getDuration();
+      regionRule =
+          RegionRule.newBuilder()
+              .setId(id)
+              .setActionType(request.getActionType())
+              .setName(request.getName())
+              .addAllRegionId(request.getRegionIdList())
+              .setExpirationDetails(
+                  ExpirationDetails.newBuilder()
+                      .setDuration(duration)
+                      .setTimestampMillis(clock.millis() + Duration.parse(duration).toMillis())
+                      .build())
+              .build();
+    }
     rules.put(id, regionRule);
     responseObserver.onNext(CreateRegionRuleResponse.newBuilder().setRule(regionRule).build());
     responseObserver.onCompleted();

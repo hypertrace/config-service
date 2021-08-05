@@ -2,6 +2,7 @@ package ai.traceable.region.config.service.rules;
 
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.RegionRule;
+import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.List;
 import java.util.Optional;
@@ -12,7 +13,7 @@ public interface RulesManager {
 
   Optional<RegionRule> createRegionRule(CreateRegionRuleRequest createRuleRequest);
 
-  Optional<RegionRule> updateRegionRule(RegionRule regionRule);
+  Optional<RegionRule> updateRegionRule(UpdateRegionRuleRequest request);
 
   RegionRule deleteRegionRule(RequestContext requestContext, String id)
       throws InvalidProtocolBufferException;

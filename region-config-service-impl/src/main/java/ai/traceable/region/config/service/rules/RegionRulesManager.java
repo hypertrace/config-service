@@ -6,10 +6,15 @@ import static ai.traceable.region.config.service.constants.RegionConfigConstants
 import ai.traceable.region.config.service.utils.UuidGenerator;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.RegionRule;
+import ai.traceable.region.config.service.v1.RegionRule.Builder;
+import ai.traceable.region.config.service.v1.RegionRule.ExpirationDetails;
+import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.Status;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +30,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 class RegionRulesManager implements RulesManager {
+  private final Clock clock;
 
   private final ConfigServiceBlockingStub configServiceBlockingStub;
   private final RegionRuleConverter regionRuleConverter;
@@ -32,9 +38,11 @@ class RegionRulesManager implements RulesManager {
 
   @Inject
   RegionRulesManager(
+      Clock clock,
       ConfigServiceBlockingStub configServiceBlockingStub,
       RegionRuleConverter regionRuleConverter,
       UuidGenerator uuidGenerator) {
+    this.clock = clock;
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.regionRuleConverter = regionRuleConverter;
     this.uuidGenerator = uuidGenerator;
@@ -70,14 +78,12 @@ class RegionRulesManager implements RulesManager {
   @Override
   public Optional<RegionRule> createRegionRule(CreateRegionRuleRequest createRuleRequest) {
     String ruleId = this.uuidGenerator.generateId();
-    RegionRule regionRule =
-        RegionRule.newBuilder()
-            .setId(ruleId)
-            .addAllRegionId(createRuleRequest.getRegionIdList())
-            .setName(createRuleRequest.getName())
-            .setActionType(createRuleRequest.getActionType())
-            .setExpirationMillis(createRuleRequest.getExpirationMillis())
-            .build();
+    RegionRule regionRule;
+    if (createRuleRequest.hasExpirationDetails()) {
+      regionRule = createRegionRuleWithExpirationDetails(createRuleRequest, ruleId);
+    } else {
+      regionRule = createDefaultRegionRule(createRuleRequest, ruleId);
+    }
 
     UpsertConfigRequest upsertConfigRequest;
     try {
@@ -110,7 +116,18 @@ class RegionRulesManager implements RulesManager {
   }
 
   @Override
-  public Optional<RegionRule> updateRegionRule(RegionRule regionRule) {
+  public Optional<RegionRule> updateRegionRule(UpdateRegionRuleRequest request) {
+    Builder regionRuleBuilder = RegionRule.newBuilder();
+    regionRuleBuilder
+        .setId(request.getId())
+        .setName(request.getName())
+        .addAllRegionId(request.getRegionIdList())
+        .setActionType(request.getActionType());
+    if (request.hasExpirationDetails()) {
+      updateExpirationDetails(regionRuleBuilder, request.getExpirationDetails().getDuration());
+    }
+    RegionRule regionRule = regionRuleBuilder.build();
+
     String ruleId = regionRule.getId();
     if (!doesRegionRuleExist(ruleId)) {
       return Optional.empty();
@@ -182,5 +199,36 @@ class RegionRulesManager implements RulesManager {
       }
     }
     return false;
+  }
+
+  private RegionRule createRegionRuleWithExpirationDetails(
+      CreateRegionRuleRequest createRuleRequest, String ruleId) {
+    String duration = createRuleRequest.getExpirationDetails().getDuration();
+    RegionRule defaultRegionRule = createDefaultRegionRule(createRuleRequest, ruleId);
+    return RegionRule.newBuilder(defaultRegionRule)
+        .setExpirationDetails(
+            ExpirationDetails.newBuilder()
+                .setDuration(duration)
+                .setTimestampMillis(clock.millis() + Duration.parse(duration).toMillis())
+                .build())
+        .build();
+  }
+
+  private RegionRule createDefaultRegionRule(
+      CreateRegionRuleRequest createRuleRequest, String ruleId) {
+    return RegionRule.newBuilder()
+        .setId(ruleId)
+        .addAllRegionId(createRuleRequest.getRegionIdList())
+        .setName(createRuleRequest.getName())
+        .setActionType(createRuleRequest.getActionType())
+        .build();
+  }
+
+  private void updateExpirationDetails(Builder regionRuleBuilder, String duration) {
+    regionRuleBuilder.setExpirationDetails(
+        ExpirationDetails.newBuilder()
+            .setDuration(duration)
+            .setTimestampMillis(System.currentTimeMillis() + Duration.parse(duration).toMillis())
+            .build());
   }
 }

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.traceable.region.config.service.v1.RegionRule;
+import ai.traceable.region.config.service.v1.RegionRule.ExpirationDetails;
 import ai.traceable.region.config.service.v1.RegionRuleActionType;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.ListValue;
@@ -41,7 +42,16 @@ class RegionRuleConverterTest {
                 Value.newBuilder()
                     .setStringValue(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK.name())
                     .build())
-            .putFields("expiration_millis", Value.newBuilder().setStringValue("123").build())
+            .putFields(
+                "expiration_details",
+                Value.newBuilder()
+                    .setStructValue(
+                        Struct.newBuilder()
+                            .putFields(
+                                "timestamp_millis",
+                                Value.newBuilder().setStringValue("123").build())
+                            .build())
+                    .build())
             .build();
     Value ruleConfig = Value.newBuilder().setStructValue(ruleConfigStruct).build();
     RegionRule regionRule = regionRuleConverter.convert(ruleConfig);
@@ -52,7 +62,7 @@ class RegionRuleConverterTest {
             .addAllRegionId(List.of("region-1", "region-2"))
             .setName("rule-name")
             .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
-            .setExpirationMillis(123)
+            .setExpirationDetails(ExpirationDetails.newBuilder().setTimestampMillis(123).build())
             .build(),
         regionRule);
   }
@@ -78,7 +88,7 @@ class RegionRuleConverterTest {
             .addAllRegionId(List.of("region-1", "region-2"))
             .setName("rule-name")
             .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
-            .setExpirationMillis(123)
+            .setExpirationDetails(ExpirationDetails.newBuilder().setTimestampMillis(123).build())
             .build();
 
     Value regionRuleConfig = regionRuleConverter.convert(regionRule);
@@ -101,7 +111,15 @@ class RegionRuleConverterTest {
                 Value.newBuilder()
                     .setStringValue(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK.name())
                     .build())
-            .putFields("expirationMillis", Value.newBuilder().setStringValue("123").build())
+            .putFields(
+                "expirationDetails",
+                Value.newBuilder()
+                    .setStructValue(
+                        Struct.newBuilder()
+                            .putFields(
+                                "timestampMillis", Value.newBuilder().setStringValue("123").build())
+                            .build())
+                    .build())
             .build();
     assertEquals(Value.newBuilder().setStructValue(ruleConfigStruct).build(), regionRuleConfig);
   }

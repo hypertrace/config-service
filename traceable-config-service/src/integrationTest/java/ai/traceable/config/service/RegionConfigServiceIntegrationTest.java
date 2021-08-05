@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.DeleteRegionRuleRequest;
+import ai.traceable.region.config.service.v1.ExpirationDetails;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesRequest;
 import ai.traceable.region.config.service.v1.GetRegionRequest;
 import ai.traceable.region.config.service.v1.GetRegionResponse;
@@ -94,7 +95,8 @@ class RegionConfigServiceIntegrationTest extends TraceableConfigServiceIntegrati
                             .addAllRegionId(List.of("region-Z"))
                             .setName("rule-2")
                             .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALLOW)
-                            .setExpirationMillis(123)
+                            .setExpirationDetails(
+                                ExpirationDetails.newBuilder().setDuration("P1D").build())
                             .build())
                     .getRule()
                     .getId());
@@ -108,22 +110,22 @@ class RegionConfigServiceIntegrationTest extends TraceableConfigServiceIntegrati
                     .getAllRegionRules(GetAllRegionRulesRequest.getDefaultInstance())
                     .getRuleList());
 
-    assertEquals(
-        List.of(
-            RegionRule.newBuilder()
-                .setId(rule2Id)
-                .setName("rule-2")
-                .addAllRegionId(List.of("region-Z"))
-                .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALLOW)
-                .setExpirationMillis(123)
-                .build(),
-            RegionRule.newBuilder()
-                .setId(rule1Id)
-                .setName("rule-1")
-                .addAllRegionId(List.of("region-1", "region-2"))
-                .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
-                .build()),
-        regionRules);
+    assertEquals(regionRules.size(), 2);
+    RegionRule regionRule1, regionRule2;
+    regionRule1 = regionRules.get(1);
+    regionRule2 = regionRules.get(0);
+
+    assertEquals(regionRule1.getId(), rule1Id);
+    assertEquals(regionRule1.getName(), "rule-1");
+    assertEquals(regionRule1.getRegionIdList(), List.of("region-1", "region-2"));
+    assertEquals(regionRule1.getActionType(), RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK);
+    assertEquals(regionRule1.getExpirationDetails().getTimestampMillis() >= 0, true);
+
+    assertEquals(regionRule2.getId(), rule2Id);
+    assertEquals(regionRule2.getName(), "rule-2");
+    assertEquals(regionRule2.getRegionIdList(), List.of("region-Z"));
+    assertEquals(regionRule2.getActionType(), RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALLOW);
+    assertEquals(regionRule2.getExpirationDetails().getTimestampMillis() > 0, true);
   }
 
   @Test
@@ -152,28 +154,20 @@ class RegionConfigServiceIntegrationTest extends TraceableConfigServiceIntegrati
                             .addAllRegionId(List.of("region-Z"))
                             .setName("rule-2")
                             .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALLOW)
-                            .setExpirationMillis(123)
+                            .setExpirationDetails(
+                                ExpirationDetails.newBuilder().setDuration("P2D").build())
                             .build())
                     .getRule());
 
-    assertEquals(
-        RegionRule.newBuilder()
-            .setId(regionRule1.getId())
-            .setName("rule-1")
-            .addAllRegionId(List.of("region-1", "region-2"))
-            .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
-            .build(),
-        regionRule1);
+    assertEquals(regionRule1.getName(), "rule-1");
+    assertEquals(regionRule1.getRegionIdList(), List.of("region-1", "region-2"));
+    assertEquals(regionRule1.getActionType(), RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK);
+    assertEquals(regionRule1.getExpirationDetails().getTimestampMillis() >= 0, true);
 
-    assertEquals(
-        RegionRule.newBuilder()
-            .setId(regionRule2.getId())
-            .setName("rule-2")
-            .addAllRegionId(List.of("region-Z"))
-            .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALLOW)
-            .setExpirationMillis(123)
-            .build(),
-        regionRule2);
+    assertEquals(regionRule2.getName(), "rule-2");
+    assertEquals(regionRule2.getRegionIdList(), List.of("region-Z"));
+    assertEquals(regionRule2.getActionType(), RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALLOW);
+    assertEquals(regionRule2.getExpirationDetails().getTimestampMillis() > 0, true);
   }
 
   @Test
@@ -199,7 +193,8 @@ class RegionConfigServiceIntegrationTest extends TraceableConfigServiceIntegrati
                             .addAllRegionId(List.of("region-Z"))
                             .setName("rule-2")
                             .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALLOW)
-                            .setExpirationMillis(123)
+                            .setExpirationDetails(
+                                ExpirationDetails.newBuilder().setDuration("P1D").build())
                             .build())
                     .getRule()
                     .getId());
@@ -210,7 +205,11 @@ class RegionConfigServiceIntegrationTest extends TraceableConfigServiceIntegrati
             .addRegionId("region-A")
             .setName("updated-rule-2")
             .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
-            .setExpirationMillis(789)
+            .setExpirationDetails(
+                RegionRule.ExpirationDetails.newBuilder()
+                    .setDuration("P1D")
+                    .setTimestampMillis(789)
+                    .build())
             .build();
 
     // update region rule
@@ -220,10 +219,23 @@ class RegionConfigServiceIntegrationTest extends TraceableConfigServiceIntegrati
             () ->
                 regionConfigServiceStub
                     .updateRegionRule(
-                        UpdateRegionRuleRequest.newBuilder().setRule(regionRule).build())
+                        UpdateRegionRuleRequest.newBuilder()
+                            .setId(rule2Id)
+                            .addRegionId("region-A")
+                            .setName("updated-rule-2")
+                            .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
+                            .setExpirationDetails(
+                                ExpirationDetails.newBuilder().setDuration("P1D").build())
+                            .build())
                     .getRule());
 
-    assertEquals(regionRule, updatedRegionRule);
+    assertEquals(regionRule.getId(), updatedRegionRule.getId());
+    assertEquals(regionRule.getName(), updatedRegionRule.getName());
+    assertEquals(regionRule.getRegionIdList(), updatedRegionRule.getRegionIdList());
+    assertEquals(regionRule.getActionType(), updatedRegionRule.getActionType());
+    assertEquals(
+        regionRule.getExpirationDetails().getDuration(),
+        updatedRegionRule.getExpirationDetails().getDuration());
   }
 
   @Test
@@ -253,7 +265,6 @@ class RegionConfigServiceIntegrationTest extends TraceableConfigServiceIntegrati
                             .addAllRegionId(List.of("region-Z"))
                             .setName("rule-2")
                             .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALLOW)
-                            .setExpirationMillis(123)
                             .build())
                     .getRule()
                     .getId());

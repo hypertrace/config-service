@@ -51,11 +51,16 @@ class DefaultRegionBlockingManager implements RegionBlockingManager {
 
   private List<RegionRule> getActiveRegionRules(List<RegionRule> regionRules) {
     return regionRules.stream()
-        .filter(rule -> isRuleActive(clock.millis(), rule.getExpirationMillis()))
+        .filter(rule -> isRuleActive(clock.millis(), rule))
         .collect(Collectors.toUnmodifiableList());
   }
 
-  private boolean isRuleActive(long currentTimeMillis, long expirationMillis) {
+  private boolean isRuleActive(long currentTimeMillis, RegionRule regionRule) {
+    if (!regionRule.hasExpirationDetails()) {
+      return true;
+    }
+
+    long expirationMillis = regionRule.getExpirationDetails().getTimestampMillis();
     return expirationMillis == 0 || expirationMillis > currentTimeMillis;
   }
 }

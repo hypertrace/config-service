@@ -64,8 +64,8 @@ message GetAllRegionRulesResponse {
 message CreateRegionRuleRequest {
     repeated string region_id = 1;
     string name = 2;
-    RegionRuleActionType action_type = 4;
-    int64 expiration_millis = 5;
+    RegionRuleActionType action_type = 3;
+    ExpirationDetails expiration_details = 4;
 }
 
 message CreateRegionRuleResponse {
@@ -73,7 +73,11 @@ message CreateRegionRuleResponse {
 }
 
 message UpdateRegionRuleRequest {
-    RegionRule rule = 1;
+    string id = 1;
+    repeated string region_id = 2;
+    string name = 3;
+    RegionRuleActionType action_type = 4;
+    ExpirationDetails expiration_details = 5;
 }
 
 message UpdateRegionRuleResponse {
@@ -87,12 +91,24 @@ message DeleteRegionRuleRequest {
 message DeleteRegionRuleResponse {
 }
 
+message ExpirationDetails {
+    oneof Expiry {
+        // Duration represented in ISO 8601 duration format.
+        string duration = 1;
+    }
+}
+
 message RegionRule {
     string id = 1;
     repeated string region_id = 2;
     string name = 3;
     RegionRuleActionType action_type = 4;
-    int64 expiration_millis = 5;
+    ExpirationDetails expiration_details = 5;
+    message ExpirationDetails {
+        // Duration represented in ISO 8601 duration format.
+        string duration = 1;
+        int64 timestamp_millis = 2;
+    }
 }
 
 enum RegionRuleActionType {

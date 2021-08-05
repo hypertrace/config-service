@@ -147,7 +147,7 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
       return;
     }
 
-    Optional<RegionRule> maybeUpdatedRegionRule = rulesManager.updateRegionRule(request.getRule());
+    Optional<RegionRule> maybeUpdatedRegionRule = rulesManager.updateRegionRule(request);
     if (maybeUpdatedRegionRule.isEmpty()) {
       responseObserver.onError(Status.INTERNAL.asException());
       return;

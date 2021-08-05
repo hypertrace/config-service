@@ -9,10 +9,12 @@ import static org.mockito.Mockito.when;
 import ai.traceable.region.config.service.utils.UuidGenerator;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.RegionRule;
+import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
+import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,6 +29,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class RegionRulesManagerTest {
+  private final Clock clock = Clock.systemUTC();
   private static final String REGION_RULE_CONFIG_NAMESPACE = "regionRule";
   private static final String REGION_RULE_CONFIG_RESOURCE_NAME = "regionRuleConfig";
 
@@ -48,7 +51,8 @@ class RegionRulesManagerTest {
     uuidGenerator = mock(UuidGenerator.class);
     requestContext = RequestContext.forTenantId("default tenant");
     this.rulesManager =
-        new RegionRulesManager(configServiceBlockingStub, regionRuleConverter, uuidGenerator);
+        new RegionRulesManager(
+            clock, configServiceBlockingStub, regionRuleConverter, uuidGenerator);
   }
 
   @AfterEach
@@ -148,12 +152,13 @@ class RegionRulesManagerTest {
 
       RegionRule updatedRegionRule =
           RegionRule.newBuilder().setId("id-1").setName("updated-name").build();
+      UpdateRegionRuleRequest request =
+          UpdateRegionRuleRequest.newBuilder().setId("id-1").setName("updated-name").build();
       Value ruleConfig = mockRuleConfig("id-1", "updated-name");
       when(regionRuleConverter.convert(updatedRegionRule)).thenReturn(ruleConfig);
       when(regionRuleConverter.convert(ruleConfig)).thenReturn(updatedRegionRule);
 
-      Optional<RegionRule> maybeUpdatedRegionRule =
-          rulesManager.updateRegionRule(updatedRegionRule);
+      Optional<RegionRule> maybeUpdatedRegionRule = rulesManager.updateRegionRule(request);
       assertTrue(maybeUpdatedRegionRule.isPresent());
       assertEquals(updatedRegionRule, maybeUpdatedRegionRule.get());
     }
@@ -165,9 +170,10 @@ class RegionRulesManagerTest {
       addRegionRules(ImmutableSortedMap.of("id-1", mockRegionRuleConfig));
 
       RegionRule regionRule = RegionRule.newBuilder().setId("id-1").build();
+      UpdateRegionRuleRequest request = UpdateRegionRuleRequest.newBuilder().setId("id-1").build();
       when(regionRuleConverter.convert(regionRule)).thenThrow(InvalidProtocolBufferException.class);
 
-      Optional<RegionRule> maybeUpdatedRegionRule = rulesManager.updateRegionRule(regionRule);
+      Optional<RegionRule> maybeUpdatedRegionRule = rulesManager.updateRegionRule(request);
       assertTrue(maybeUpdatedRegionRule.isEmpty());
     }
 
@@ -179,12 +185,13 @@ class RegionRulesManagerTest {
 
       RegionRule updatedRegionRule =
           RegionRule.newBuilder().setId("id-1").setName("updated-name").build();
+      UpdateRegionRuleRequest request =
+          UpdateRegionRuleRequest.newBuilder().setId("id-1").setName("updated-name").build();
       Value ruleConfig = mockRuleConfig("id-1", "updated-name");
       when(regionRuleConverter.convert(updatedRegionRule)).thenReturn(ruleConfig);
       when(regionRuleConverter.convert(ruleConfig)).thenThrow(InvalidProtocolBufferException.class);
 
-      Optional<RegionRule> maybeUpdatedRegionRule =
-          rulesManager.updateRegionRule(updatedRegionRule);
+      Optional<RegionRule> maybeUpdatedRegionRule = rulesManager.updateRegionRule(request);
       assertTrue(maybeUpdatedRegionRule.isEmpty());
     }
   }

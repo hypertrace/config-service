@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.DeleteRegionRuleRequest;
-import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRuleActionType;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import io.grpc.Status;
@@ -71,12 +70,9 @@ class RegionRulesValidatorTest {
     void should_fail_updateRegionRule_missingId() {
       UpdateRegionRuleRequest updateRegionRuleRequest =
           UpdateRegionRuleRequest.newBuilder()
-              .setRule(
-                  RegionRule.newBuilder()
-                      .addRegionId("region-1")
-                      .setName("name")
-                      .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
-                      .build())
+              .addRegionId("region-1")
+              .setName("name")
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
               .build();
 
       Status status = rulesValidator.validate(updateRegionRuleRequest);
@@ -89,12 +85,9 @@ class RegionRulesValidatorTest {
     void should_fail_updateRegionRule_missingRegionIds() {
       UpdateRegionRuleRequest updateRegionRuleRequest =
           UpdateRegionRuleRequest.newBuilder()
-              .setRule(
-                  RegionRule.newBuilder()
-                      .setId("id")
-                      .setName("name")
-                      .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
-                      .build())
+              .setId("id")
+              .setName("name")
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
               .build();
 
       Status status = rulesValidator.validate(updateRegionRuleRequest);
@@ -107,12 +100,9 @@ class RegionRulesValidatorTest {
     void should_fail_updateRegionRule_invalidActionType() {
       UpdateRegionRuleRequest updateRegionRuleRequest =
           UpdateRegionRuleRequest.newBuilder()
-              .setRule(
-                  RegionRule.newBuilder()
-                      .setId("id")
-                      .addRegionId("region-1")
-                      .setName("name")
-                      .build())
+              .setId("id")
+              .addRegionId("region-1")
+              .setName("name")
               .build();
 
       Status status = rulesValidator.validate(updateRegionRuleRequest);
@@ -124,9 +114,7 @@ class RegionRulesValidatorTest {
     @DisplayName("should return invalid argument invalid name")
     void should_fail_updateRegionRule_invalidName() {
       UpdateRegionRuleRequest updateRegionRuleRequest =
-          UpdateRegionRuleRequest.newBuilder()
-              .setRule(RegionRule.newBuilder().setId("id").addRegionId("region-1").build())
-              .build();
+          UpdateRegionRuleRequest.newBuilder().setId("id").addRegionId("region-1").build();
 
       Status status = rulesValidator.validate(updateRegionRuleRequest);
 
