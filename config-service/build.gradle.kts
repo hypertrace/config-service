@@ -55,33 +55,25 @@ tasks.integrationTest {
 }
 
 dependencies {
-  implementation(project(":config-service-impl"))
-  implementation(project(":spaces-config-service-impl"))
-  implementation("org.hypertrace.core.grpcutils:grpc-server-utils:0.4.0")
-  implementation("org.hypertrace.core.serviceframework:platform-service-framework:0.1.23")
-  implementation("org.hypertrace.core.serviceframework:platform-metrics:0.1.23")
-  implementation("com.typesafe:config:1.4.1")
-  implementation("org.slf4j:slf4j-api:1.7.30")
+  implementation(projects.configServiceImpl)
+  implementation(projects.spacesConfigServiceImpl)
+  implementation(libs.hypertrace.grpcutils.server)
+  implementation(libs.hypertrace.framework.container)
+  implementation(libs.hypertrace.framework.metrics)
+  implementation(libs.typesafe.config)
+  implementation(libs.slf4j.api)
 
-  runtimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:2.14.1")
-  runtimeOnly("io.grpc:grpc-netty:1.37.0")
+  runtimeOnly(libs.slf4j.log4jimpl)
+  runtimeOnly(libs.grpc.netty)
 
   // Integration test dependencies
-  integrationTestImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
-  integrationTestImplementation("com.google.guava:guava:30.1.1-jre")
-  integrationTestImplementation("org.yaml:snakeyaml:1.28")
-  integrationTestImplementation(project(":config-service-impl"))
-  integrationTestImplementation("org.hypertrace.core.serviceframework:integrationtest-service-framework:0.1.23")
-  integrationTestImplementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.4.0")
-  integrationTestImplementation("org.hypertrace.core.documentstore:document-store:0.5.7")
-  constraints {
-    runtimeOnly("io.netty:netty-codec-http2:4.1.63.Final") {
-      because("https://snyk.io/vuln/SNYK-JAVA-IONETTY-1083991")
-    }
-    runtimeOnly("io.netty:netty-handler-proxy:4.1.63.Final") {
-      because("https://snyk.io/vuln/SNYK-JAVA-IONETTY-1070799")
-    }
-  }
+  integrationTestImplementation(projects.configServiceImpl)
+  integrationTestImplementation(libs.junit.jupiter)
+  integrationTestImplementation(libs.guava)
+  integrationTestImplementation(libs.snakeyaml)
+  integrationTestImplementation(libs.hypertrace.framework.integrationtest)
+  integrationTestImplementation(libs.hypertrace.grpcutils.client)
+  integrationTestImplementation(libs.hypertrace.documentstore)
 }
 
 application {
@@ -100,7 +92,8 @@ tasks.jacocoIntegrationTestReport {
 hypertraceDocker {
   defaultImage {
     javaApplication {
-      port.set(50101)
+      ports.add(50101)
+      adminPort.set(50102)
     }
   }
 }
