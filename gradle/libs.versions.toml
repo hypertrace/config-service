@@ -1,0 +1,50 @@
+[versions]
+protoc = "3.17.3"
+grpc = "1.39.0"
+hypertrace-grpcutils = "0.5.2"
+hypertrace-framework = "0.1.29"
+lombok = "1.18.20"
+jackson = "2.12.4"
+
+junit = "5.7.2"
+mockito = "3.11.2"
+
+[libraries]
+
+hypertrace-grpcutils-client = { module = "org.hypertrace.core.grpcutils:grpc-client-utils", version.ref = "hypertrace-grpcutils" }
+hypertrace-grpcutils-server = { module = "org.hypertrace.core.grpcutils:grpc-server-utils", version.ref = "hypertrace-grpcutils" }
+hypertrace-grpcutils-context = { module = "org.hypertrace.core.grpcutils:grpc-context-utils", version.ref = "hypertrace-grpcutils" }
+hypertrace-grpcutils-rxserver = { module = "org.hypertrace.core.grpcutils:grpc-server-rx-utils", version.ref = "hypertrace-grpcutils" }
+hypertrace-grpcutils-rxclient = { module = "org.hypertrace.core.grpcutils:grpc-client-rx-utils", version.ref = "hypertrace-grpcutils" }
+
+hypertrace-framework-container = { module = "org.hypertrace.core.serviceframework:platform-service-framework", version.ref = "hypertrace-framework" }
+hypertrace-framework-metrics = { module = "org.hypertrace.core.serviceframework:platform-service-framework", version.ref = "hypertrace-framework" }
+hypertrace-framework-integrationtest = { module = "org.hypertrace.core.serviceframework:integrationtest-service-framework", version.ref = "hypertrace-framework" }
+
+hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:document-store", version = "0.5.7" }
+guava = { module = "com.google.guava:guava", version = "30.1.1-jre" }
+javax-annotation = { module = "javax.annotation:javax.annotation-api", version = "1.3.2" }
+typesafe-config = { module = "com.typesafe:config", version = "1.4.1" }
+lombok = { module = "org.projectlombok:lombok", version = "1.18.20" }
+snakeyaml = { module = "org.yaml:snakeyaml", version = "1.28" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+rxjava3 = {module = "io.reactivex.rxjava3:rxjava", version ="3.0.11"}
+
+grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "grpc" }
+grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
+grpc-api = { module = "io.grpc:grpc-api", version.ref = "grpc" }
+grpc-core = { module = "io.grpc:grpc-core", version.ref = "grpc" }
+grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "grpc" }
+protobuf-javautil = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protoc" }
+
+slf4j-log4jimpl = { module = "org.apache.logging.log4j:log4j-slf4j-impl", version = "2.14.1" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version = "1.7.30" }
+
+
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+mockito-junit = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
+
+[bundles]
+grpc-api = ["grpc-stub", "grpc-protobuf", "javax-annotation"]

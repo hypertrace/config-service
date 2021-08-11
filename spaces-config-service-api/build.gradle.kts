@@ -7,17 +7,17 @@ import com.google.protobuf.gradle.protoc
 
 plugins {
   `java-library`
-  id("com.google.protobuf") version "0.8.15"
+  id("com.google.protobuf") version "0.8.17"
   id("org.hypertrace.publish-plugin")
 }
 
 protobuf {
   protoc {
-    artifact = "com.google.protobuf:protoc:3.15.7"
+    artifact = "com.google.protobuf:protoc:${libs.versions.protoc.get()}"
   }
   plugins {
     id("grpc") {
-      artifact = "io.grpc:protoc-gen-grpc-java:1.37.0"
+      artifact = "io.grpc:protoc-gen-grpc-java:${libs.versions.grpc.get()}"
     }
   }
   generateProtoTasks {
@@ -30,9 +30,7 @@ protobuf {
 }
 
 dependencies {
-  api("io.grpc:grpc-protobuf:1.37.0")
-  api("io.grpc:grpc-stub:1.37.0")
-  api("javax.annotation:javax.annotation-api:1.3.2")
+  api(libs.bundles.grpc.api)
 }
 
 sourceSets {

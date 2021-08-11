@@ -1,4 +1,4 @@
-rootProject.name = "config-service"
+rootProject.name = "config-service-root"
 
 pluginManagement {
   repositories {
@@ -11,6 +11,9 @@ pluginManagement {
 plugins {
   id("org.hypertrace.version-settings") version "0.2.0"
 }
+
+enableFeaturePreview("VERSION_CATALOGS")
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 include(":config-service-api")
 include(":config-service-impl")

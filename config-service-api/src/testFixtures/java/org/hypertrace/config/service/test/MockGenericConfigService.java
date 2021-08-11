@@ -102,6 +102,7 @@ public class MockGenericConfigService {
     this.configChannel.shutdownNow();
   }
 
+  @SuppressWarnings("unchecked")
   public MockGenericConfigService mockUpsert() {
     Mockito.doAnswer(
             invocation -> {
@@ -139,6 +140,7 @@ public class MockGenericConfigService {
     return this;
   }
 
+  @SuppressWarnings("unchecked")
   public MockGenericConfigService mockGetAll() {
     Mockito.doAnswer(
             invocation -> {
@@ -170,6 +172,7 @@ public class MockGenericConfigService {
     return this;
   }
 
+  @SuppressWarnings("unchecked")
   public MockGenericConfigService mockDelete() {
     Mockito.doAnswer(
             invocation -> {
@@ -195,6 +198,7 @@ public class MockGenericConfigService {
     return this;
   }
 
+  @SuppressWarnings("unchecked")
   public MockGenericConfigService mockGet() {
     Mockito.doAnswer(
             invocation -> {
