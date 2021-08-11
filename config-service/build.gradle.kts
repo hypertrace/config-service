@@ -65,6 +65,14 @@ dependencies {
 
   runtimeOnly(libs.slf4j.log4jimpl)
   runtimeOnly(libs.grpc.netty)
+  constraints {
+    runtimeOnly("io.netty:netty-codec-http2:4.1.66.Final") {
+      because("Multiple Vulnerabilities")
+    }
+    runtimeOnly("io.netty:netty-handler-proxy:4.1.66.Final") {
+      because("Multiple Vulnerabilities")
+    }
+  }
 
   // Integration test dependencies
   integrationTestImplementation(projects.configServiceImpl)
