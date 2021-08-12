@@ -6,39 +6,37 @@ import com.google.protobuf.gradle.protobuf
 import com.google.protobuf.gradle.protoc
 
 plugins {
-    `java-library`
-    id("com.google.protobuf") version "0.8.16"
-    id("ai.traceable.publish-plugin")
+  `java-library`
+  id("com.google.protobuf") version "0.8.17"
+  id("ai.traceable.publish-plugin")
 }
 
 protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:3.15.8"
+  protoc {
+    artifact = "com.google.protobuf:protoc:${libs.versions.protoc.get()}"
+  }
+  plugins {
+    id("grpc") {
+      artifact = "io.grpc:protoc-gen-grpc-java:${libs.versions.grpc.get()}"
     }
-    plugins {
-        id("grpc") {
-            artifact = "io.grpc:protoc-gen-grpc-java:1.37.0"
-        }
+  }
+  generateProtoTasks {
+    ofSourceSet("main").forEach { task ->
+      task.plugins {
+        id("grpc")
+      }
     }
-    generateProtoTasks {
-        ofSourceSet("main").forEach { task ->
-            task.plugins {
-                id("grpc")
-            }
-        }
-    }
+  }
 }
 
 dependencies {
-    api("io.grpc:grpc-protobuf:1.37.0")
-    api("io.grpc:grpc-stub:1.37.0")
-    api("javax.annotation:javax.annotation-api:1.3.2")
+  api(libs.bundles.grpc.api)
 }
 
 sourceSets {
-    main {
-        java {
-            srcDirs("build/generated/source/proto/main/java", "build/generated/source/proto/main/grpc")
-        }
+  main {
+    java {
+      srcDirs("build/generated/source/proto/main/java", "build/generated/source/proto/main/grpc")
     }
+  }
 }

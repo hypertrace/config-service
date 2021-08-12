@@ -4,21 +4,21 @@ plugins {
 }
 
 dependencies {
-  api(project(":anomaly-config-service-api"))
+  api(projects.anomalyConfigServiceApi)
+  api(libs.javax.annotation)
+  api(libs.typesafe.config)
 
-  api("javax.annotation:javax.annotation-api:1.3.2")
-  api("com.typesafe:config:1.4.1")
-  implementation("com.google.inject:guice:5.0.1")
-  implementation("com.google.protobuf:protobuf-java-util:3.15.7")
-  implementation("com.google.re2j:re2j:1.6")
-  implementation("org.slf4j:slf4j-api:1.7.30")
+  implementation(libs.guice)
+  implementation(libs.protobuf.javautil)
+  implementation(libs.re2j)
+  implementation(libs.slf4j.api)
 
-  annotationProcessor("org.projectlombok:lombok:1.18.20")
-  compileOnly("org.projectlombok:lombok:1.18.20")
+  annotationProcessor(libs.lombok)
+  compileOnly(libs.lombok)
 
-  testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
-  testImplementation("org.apache.commons:commons-lang3:3.11")
-  testImplementation("ai.traceable.platform:jni-modsecurity:0.1.83")
+  testImplementation(libs.junit.jupiter)
+  testImplementation(libs.commons.lang)
+  testImplementation(libs.traceable.platform.jnimodsecurity)
 }
 
 tasks.test {

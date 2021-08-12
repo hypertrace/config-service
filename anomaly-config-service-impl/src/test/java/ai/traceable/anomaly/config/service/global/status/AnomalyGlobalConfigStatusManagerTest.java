@@ -22,17 +22,18 @@ import ai.traceable.license.metering.service.api.v1.LicenseInfo;
 import ai.traceable.license.metering.service.api.v1.LicenseMeteringServiceGrpc;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.typesafe.config.ConfigFactory;
+import io.grpc.Channel;
 import io.grpc.Context;
 import io.grpc.Contexts;
-import io.grpc.ManagedChannelBuilder;
 import io.grpc.Metadata;
 import io.grpc.Server;
-import io.grpc.ServerBuilder;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.ServerInterceptors;
 import io.grpc.Status;
+import io.grpc.inprocess.InProcessChannelBuilder;
+import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import java.io.IOException;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -40,7 +41,6 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +49,7 @@ public class AnomalyGlobalConfigStatusManagerTest {
 
   private static Server mockServer;
   private static MockGenericConfigService mockConfigService;
+  private static Channel channelForMockServer;
   private AnomalyGlobalConfigServiceConfig config;
   private ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub;
   private LicenseInfoLoader licenseInfoLoader;
@@ -77,18 +78,19 @@ public class AnomalyGlobalConfigStatusManagerTest {
           .build();
 
   @BeforeAll
-  public static void setupServer() {
+  public static void setupServer() throws IOException {
     TestInterceptor testInterceptor = new TestInterceptor();
-    try {
-      mockServer =
-          ServerBuilder.forPort(51018)
-              .addService(
-                  ServerInterceptors.intercept(new MockLicenseMeteringService(), testInterceptor))
-              .build()
-              .start();
-    } catch (IOException e) {
-      Assertions.fail();
-    }
+
+    String serverName = InProcessServerBuilder.generateName();
+    mockServer =
+        InProcessServerBuilder.forName(serverName)
+            .addService(
+                ServerInterceptors.intercept(new MockLicenseMeteringService(), testInterceptor))
+            .build()
+            .start();
+
+    channelForMockServer = InProcessChannelBuilder.forName(serverName).build();
+
     mockConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     mockConfigService.start();
@@ -106,8 +108,7 @@ public class AnomalyGlobalConfigStatusManagerTest {
                         + "  call.timeout.ms = 60000\n"
                         + "  cache.expiry.duration = 5m\n"
                         + "  cache.max.size = 5000")),
-            LicenseMeteringServiceGrpc.newBlockingStub(
-                ManagedChannelBuilder.forAddress("localhost", 51018).usePlaintext().build()));
+            LicenseMeteringServiceGrpc.newBlockingStub(channelForMockServer));
 
     config =
         new AnomalyGlobalConfigServiceConfig(

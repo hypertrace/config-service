@@ -5,24 +5,24 @@ plugins {
 }
 
 dependencies {
-  api(project(":rate-limiting-config-service-api"))
-  api("org.hypertrace.config.service:config-service-api")
-  implementation(project(":activity-event-producer"))
-  implementation("com.typesafe:config:1.4.1")
-  implementation("org.slf4j:slf4j-api:1.7.30")
-  implementation("org.hypertrace.core.grpcutils:grpc-context-utils:0.5.0")
-  implementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.5.0")
-  implementation("org.hypertrace.config.service:config-proto-converter")
-  implementation("ai.traceable.activity.event.service:activity-event-api:0.3.1")
+  api(projects.rateLimitingConfigServiceApi)
+  api(libs.hypertrace.configservice.api)
+  implementation(projects.activityEventProducer)
+  implementation(libs.typesafe.config)
+  implementation(libs.slf4j.api)
+  implementation(libs.hypertrace.grpcutils.context)
+  implementation(libs.hypertrace.grpcutils.client)
+  implementation(libs.hypertrace.configservice.protoconverter)
+  implementation(libs.traceable.activityevent.api)
 
-  annotationProcessor("org.projectlombok:lombok:1.18.20")
-  compileOnly("org.projectlombok:lombok:1.18.20")
+  annotationProcessor(libs.lombok)
+  compileOnly(libs.lombok)
 
-  testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
-  testImplementation("org.mockito:mockito-core:3.9.0")
-  testImplementation("org.hypertrace.core.grpcutils:grpc-client-utils:0.5.0")
-  testImplementation("org.apache.commons:commons-lang3:3.11")
-  testImplementation("io.grpc:grpc-core:1.37.0")
+  testImplementation(libs.junit.jupiter)
+  testImplementation(libs.mockito.core)
+  testImplementation(libs.hypertrace.grpcutils.client)
+  testImplementation(libs.commons.lang)
+  testImplementation(libs.grpc.core)
 }
 
 tasks.test {

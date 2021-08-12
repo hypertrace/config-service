@@ -1,0 +1,64 @@
+[versions]
+protoc = "3.17.3"
+grpc = "1.39.0"
+lombok = "1.18.20"
+jackson = "2.12.4"
+hypertrace-grpcutils = "0.5.2"
+hypertrace-framework = "0.1.29"
+traceable-platform = "0.1.83"
+kafka = "6.0.1"
+
+junit = "5.7.2"
+mockito = "3.11.2"
+
+[libraries]
+traceable-insights-api = { module = "ai.traceable.platform:insights-service-api", version = "0.29.5" }
+traceable-activityevent-api = { module = "ai.traceable.activity.event.service:activity-event-api", version = "0.3.1" }
+traceable-licensemetering-api = { module = "ai.traceable.license.metering.service:license-metering-service-api", version = "0.1.13" }
+traceable-platform-jnimodsecurity = { module = "ai.traceable.platform:jni-modsecurity", version.ref = "traceable-platform" }
+
+hypertrace-grpcutils-client = { module = "org.hypertrace.core.grpcutils:grpc-client-utils", version.ref = "hypertrace-grpcutils" }
+hypertrace-grpcutils-server = { module = "org.hypertrace.core.grpcutils:grpc-server-utils", version.ref = "hypertrace-grpcutils" }
+hypertrace-grpcutils-context = { module = "org.hypertrace.core.grpcutils:grpc-context-utils", version.ref = "hypertrace-grpcutils" }
+hypertrace-eventstore = { module = "org.hypertrace.core.eventstore:event-store", version = "0.1.1" }
+hypertrace-configservice-server = { module = "org.hypertrace.config.service:config-service" }
+hypertrace-configservice-impl = { module = "org.hypertrace.config.service:config-service-impl" }
+hypertrace-configservice-api = { module = "org.hypertrace.config.service:config-service-api" }
+hypertrace-configservice-protoconverter = { module = "org.hypertrace.config.service:config-proto-converter" }
+hypertrace-framework-container = { module = "org.hypertrace.core.serviceframework:platform-service-framework", version.ref = "hypertrace-framework" }
+hypertrace-framework-metrics = { module = "org.hypertrace.core.serviceframework:platform-service-framework", version.ref = "hypertrace-framework" }
+hypertrace-framework-integrationtest = { module = "org.hypertrace.core.serviceframework:integrationtest-service-framework", version.ref = "hypertrace-framework" }
+hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:document-store", version = "0.5.7" }
+
+guava = { module = "com.google.guava:guava", version = "30.1.1-jre" }
+guice = { module = "com.google.inject:guice", version = "5.0.1" }
+javax-annotation = { module = "javax.annotation:javax.annotation-api", version = "1.3.2" }
+typesafe-config = { module = "com.typesafe:config", version = "1.4.1" }
+re2j = { module = "com.google.re2j:re2j", version = "1.6" }
+uuidCreator = { module = "com.github.f4b6a3:uuid-creator", version = "2.7.11" }
+lombok = { module = "org.projectlombok:lombok", version = "1.18.18" }
+commons-csv = { module = "org.apache.commons:commons-csv", version = "1.8" }
+commons-lang = { module = "org.apache.commons:commons-lang3", version = "3.11" }
+commons-net = { module = "commons-net:commons-net", version = "3.8.0" }
+commons-validator = { module = "commons-validator:commons-validator", version = "1.7" }
+jackson-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
+kafka-avro-serializer = { module = "io.confluent:kafka-avro-serializer", version = "6.0.1" }
+grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "grpc" }
+grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
+grpc-api = { module = "io.grpc:grpc-api", version.ref = "grpc" }
+grpc-core = { module = "io.grpc:grpc-core", version.ref = "grpc" }
+grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "grpc" }
+protobuf-javautil = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protoc" }
+
+slf4j-log4jimpl = { module = "org.apache.logging.log4j:log4j-slf4j-impl", version = "2.14.1" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version = "1.7.30" }
+
+
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+mockito-junit = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
+mockito-inline = { module = "org.mockito:mockito-inline", version.ref = "mockito" }
+
+[bundles]
+grpc-api = ["grpc-stub", "grpc-protobuf", "javax-annotation"]

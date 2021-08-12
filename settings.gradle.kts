@@ -14,7 +14,10 @@ plugins {
   id("org.hypertrace.version-settings") version "0.1.2"
 }
 
-rootProject.name = "traceable-config-service"
+rootProject.name = "traceable-config-service-root"
+
+enableFeaturePreview("VERSION_CATALOGS")
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 includeBuild("./hypertrace-config-service")
 include(":traceable-config-service")
