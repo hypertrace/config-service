@@ -6,7 +6,6 @@ crs_9210115 :: HTTP Request Smuggling Attack (Content-Length/Transfer-Encoding C
 crs_9210120 :: HTTP Request Smuggling Attack (Content-Length Confusion)
 crs_9210300 :: URL Encoding Abuse Attack Attempt
 crs_9210305 :: Null Byte Injection
-crs_921110 :: HTTP Request Smuggling Attack
 crs_921140 :: HTTP Header Injection Attack via headers
 crs_921190 :: HTTP Splitting (CR/LF in request filename)
 crs_921200 :: LDAP Injection Attack
