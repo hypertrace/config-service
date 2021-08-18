@@ -45,6 +45,7 @@ import ai.traceable.localprocessing.config.service.v1.ProtectedEndpoint;
 import ai.traceable.localprocessing.config.service.v1.ProtectionMode;
 import ai.traceable.localprocessing.config.service.v1.ProtectionModeConfig;
 import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionModeRequest;
+import java.util.List;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.junit.jupiter.api.BeforeAll;
@@ -95,30 +96,43 @@ public class LocalProcessingConfigServiceIntegrationTest
     createRule(newLocalProcessingRule1);
     createRule(newLocalProcessingRule2);
 
+    List<ProtectedEndpoint> protectedEndpoints =
+        List.of(
+            ProtectedEndpoint.newBuilder()
+                .setUrlPattern("/orders/**")
+                .setProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
+                .build(),
+            ProtectedEndpoint.newBuilder()
+                .setUrlPattern("/checkout/*")
+                .setHostHeader("abc.com")
+                .setProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
+                .build());
+    ProtectionModeConfig protectionModeConfig =
+        ProtectionModeConfig.newBuilder()
+            .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
+            .addAllProtectedEndpoints(protectedEndpoints)
+            .build();
+
     ProtectionModeConfig expectedConfig =
         ProtectionModeConfig.newBuilder()
             .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
-            .addProtectedEndpoints(
-                ProtectedEndpoint.newBuilder()
-                    .setUrlPattern("/orders/**")
-                    .setProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
-                    .build())
-            .addProtectedEndpoints(
-                ProtectedEndpoint.newBuilder()
-                    .setUrlPattern("/checkout/*")
-                    .setHostHeader("abc.com")
-                    .setProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
-                    .build())
+            .setHash(uuidGenerator.generateId(protectionModeConfig))
+            .addAllProtectedEndpoints(protectedEndpoints)
             .build();
     ProtectionModeConfig actualConfig = getConfig();
     assertEquals(expectedConfig, actualConfig);
 
-    // test default protection mode
+    // test update default protection mode
     updateDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_ADVANCED);
+    protectionModeConfig =
+        protectionModeConfig.toBuilder()
+            .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_ADVANCED)
+            .build();
     assertEquals(ProtectionMode.PROTECTION_MODE_ADVANCED, getDefaultProtectionMode());
     expectedConfig =
         expectedConfig.toBuilder()
             .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_ADVANCED)
+            .setHash(uuidGenerator.generateId(protectionModeConfig))
             .build();
     actualConfig = getConfig();
     assertEquals(expectedConfig, actualConfig);
@@ -145,6 +159,8 @@ public class LocalProcessingConfigServiceIntegrationTest
         ProtectionModeConfig.newBuilder()
             .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
             .build();
+    expectedConfig =
+        expectedConfig.toBuilder().setHash(uuidGenerator.generateId(expectedConfig)).build();
     ProtectionModeConfig actualConfig = getConfig();
     assertEquals(expectedConfig, actualConfig);
   }

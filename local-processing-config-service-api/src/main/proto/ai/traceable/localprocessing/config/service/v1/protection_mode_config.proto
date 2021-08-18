@@ -8,6 +8,7 @@ option go_package = "github.com/Traceableai/config-service/localprocessing/v1";
 message ProtectionModeConfig {
   ProtectionMode default_protection_mode = 1;
   repeated ProtectedEndpoint protected_endpoints = 2;
+  string hash = 3;
 }
 
 enum ProtectionMode {

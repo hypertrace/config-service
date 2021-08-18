@@ -20,6 +20,7 @@ import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoor
 import ai.traceable.localprocessing.config.service.customsignature.CustomModsecDetectionManager;
 import ai.traceable.localprocessing.config.service.regularmodsec.RegularModsecDetectionManager;
 import ai.traceable.localprocessing.config.service.ruleservice.LocalProcessingRulesServiceImpl;
+import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.CreateLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.CustomModsecDetectionRules;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigRequest;
@@ -39,6 +40,7 @@ import com.typesafe.config.ConfigFactory;
 import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.junit.jupiter.api.AfterEach;
@@ -55,6 +57,7 @@ class LocalProcessingConfigServiceImplTest {
   LicenseStatus licenseStatus;
   CustomModsecDetectionManager customModsecDetectionManager;
   RegularModsecDetectionManager regularModsecDetectionManager;
+  UuidGenerator uuidGenerator;
 
   @BeforeEach
   void setUp() {
@@ -73,6 +76,7 @@ class LocalProcessingConfigServiceImplTest {
 
     customModsecDetectionManager = mock(CustomModsecDetectionManager.class);
     regularModsecDetectionManager = mock(RegularModsecDetectionManager.class);
+    uuidGenerator = new UuidGenerator();
 
     ConfigServiceCoordinator configServiceCoordinator =
         new ConfigServiceCoordinatorImpl(channel, new LocalProcessingConfigServiceConfig(config));
@@ -82,7 +86,8 @@ class LocalProcessingConfigServiceImplTest {
                 channel,
                 configServiceCoordinator,
                 customModsecDetectionManager,
-                regularModsecDetectionManager))
+                regularModsecDetectionManager,
+                uuidGenerator))
         .addService(new LocalProcessingRulesServiceImpl(configServiceCoordinator))
         .addService(new MockLicenseStatusConfigService())
         .start();
@@ -143,25 +148,50 @@ class LocalProcessingConfigServiceImplTest {
     setLicenseStatus(LICENSE_LIMIT_AVAILABLE);
     createLocalProcessingRule("/checkout/*", "abc.com", ProtectionMode.PROTECTION_MODE_CORE);
     createLocalProcessingRule("/orders/**", "xyz.com", ProtectionMode.PROTECTION_MODE_ADVANCED);
+
+    List<ProtectedEndpoint> protectedEndpoints =
+        List.of(
+            ProtectedEndpoint.newBuilder()
+                .setUrlPattern("/orders/**")
+                .setHostHeader("xyz.com")
+                .setProtectionMode(ProtectionMode.PROTECTION_MODE_ADVANCED)
+                .build(),
+            ProtectedEndpoint.newBuilder()
+                .setUrlPattern("/checkout/*")
+                .setHostHeader("abc.com")
+                .setProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
+                .build());
+
+    ProtectionModeConfig protectionModeConfig =
+        ProtectionModeConfig.newBuilder()
+            .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_ADVANCED)
+            .addAllProtectedEndpoints(protectedEndpoints)
+            .build();
+
+    String protectionModeHash = uuidGenerator.generateId(protectionModeConfig);
+
     ProtectionModeConfig expectedConfig =
         ProtectionModeConfig.newBuilder()
             .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_ADVANCED)
-            .addProtectedEndpoints(
-                ProtectedEndpoint.newBuilder()
-                    .setUrlPattern("/orders/**")
-                    .setHostHeader("xyz.com")
-                    .setProtectionMode(ProtectionMode.PROTECTION_MODE_ADVANCED)
-                    .build())
-            .addProtectedEndpoints(
-                ProtectedEndpoint.newBuilder()
-                    .setUrlPattern("/checkout/*")
-                    .setHostHeader("abc.com")
-                    .setProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
-                    .build())
+            .addAllProtectedEndpoints(protectedEndpoints)
+            .setHash(protectionModeHash)
             .build();
+
     ProtectionModeConfig actualConfig =
         localProcessingConfigStub
             .getLocalProcessingConfig(GetLocalProcessingConfigRequest.getDefaultInstance())
+            .getProtectionModeConfig();
+    assertEquals(expectedConfig, actualConfig);
+
+    // next call, hash specified in request, empty protection mode config from server
+    // expected
+    expectedConfig = ProtectionModeConfig.newBuilder().setHash(protectionModeHash).build();
+    actualConfig =
+        localProcessingConfigStub
+            .getLocalProcessingConfig(
+                GetLocalProcessingConfigRequest.newBuilder()
+                    .setProtectionModeHash(actualConfig.getHash())
+                    .build())
             .getProtectionModeConfig();
     assertEquals(expectedConfig, actualConfig);
   }
@@ -180,6 +210,8 @@ class LocalProcessingConfigServiceImplTest {
         ProtectionModeConfig.newBuilder()
             .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
             .build();
+    expectedConfig =
+        expectedConfig.toBuilder().setHash(uuidGenerator.generateId(expectedConfig)).build();
     ProtectionModeConfig actualConfig =
         localProcessingConfigStub
             .getLocalProcessingConfig(GetLocalProcessingConfigRequest.getDefaultInstance())

@@ -10,6 +10,7 @@ import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGr
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinator;
 import ai.traceable.localprocessing.config.service.customsignature.CustomModsecDetectionManager;
 import ai.traceable.localprocessing.config.service.regularmodsec.RegularModsecDetectionManager;
+import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigRequest;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigResponse;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc.LocalProcessingConfigServiceImplBase;
@@ -32,13 +33,15 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
   private final LicenseStatusConfigServiceBlockingStub licenseStatusConfigServiceBlockingStub;
   private final RegularModsecDetectionManager regularModsecDetectionManager;
   private final CustomModsecDetectionManager customModsecDetectionManager;
+  private final UuidGenerator uuidGenerator;
 
   @Inject
   public LocalProcessingConfigServiceImpl(
       ManagedChannel channel,
       ConfigServiceCoordinator configServiceCoordinator,
       CustomModsecDetectionManager customModsecDetectionManager,
-      RegularModsecDetectionManager regularModsecDetectionManager) {
+      RegularModsecDetectionManager regularModsecDetectionManager,
+      UuidGenerator uuidGenerator) {
     this.configServiceCoordinator = configServiceCoordinator;
     this.licenseStatusConfigServiceBlockingStub =
         LicenseStatusConfigServiceGrpc.newBlockingStub(channel)
@@ -46,6 +49,7 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
     this.regularModsecDetectionManager = regularModsecDetectionManager;
     this.customModsecDetectionManager = customModsecDetectionManager;
+    this.uuidGenerator = uuidGenerator;
   }
 
   @Override
@@ -56,7 +60,8 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
       RequestContext requestContext = RequestContext.CURRENT.get();
       responseObserver.onNext(
           GetLocalProcessingConfigResponse.newBuilder()
-              .setProtectionModeConfig(getProtectionModeConfig(requestContext))
+              .setProtectionModeConfig(
+                  getProtectionModeConfig(request.getProtectionModeHash(), requestContext))
               .setCustomModsecDetectionRules(
                   customModsecDetectionManager.getEnabledRules(
                       request.getCustomModsecDetectionRulesHash()))
@@ -71,14 +76,23 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
     }
   }
 
-  private ProtectionModeConfig getProtectionModeConfig(RequestContext requestContext) {
+  private ProtectionModeConfig getProtectionModeConfig(
+      String requestHash, RequestContext requestContext) {
+    ProtectionModeConfig protectionModeConfig;
     if (isLicenseLimitAvailable(requestContext)) {
-      return sendAllLocalProcessingRules(requestContext);
+      protectionModeConfig = sendAllLocalProcessingRules(requestContext);
     } else {
-      return ProtectionModeConfig.newBuilder()
-          .setDefaultProtectionMode(PROTECTION_MODE_CORE)
-          .build();
+      protectionModeConfig =
+          ProtectionModeConfig.newBuilder().setDefaultProtectionMode(PROTECTION_MODE_CORE).build();
     }
+
+    String responseHash = uuidGenerator.generateId(protectionModeConfig);
+    if (!responseHash.equals(requestHash)) {
+      return protectionModeConfig.toBuilder().setHash(responseHash).build();
+    }
+
+    // if config is up to date, return empty object with hash.
+    return ProtectionModeConfig.newBuilder().setHash(responseHash).build();
   }
 
   private boolean isLicenseLimitAvailable(RequestContext requestContext) {
@@ -104,10 +118,12 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
                         .build())
             .collect(Collectors.toList());
 
-    return ProtectionModeConfig.newBuilder()
-        .setDefaultProtectionMode(
-            configServiceCoordinator.getDefaultProtectionModeConfig(requestContext))
-        .addAllProtectedEndpoints(protectedEndpoints)
-        .build();
+    ProtectionModeConfig.Builder protectionModeConfigBuilder =
+        ProtectionModeConfig.newBuilder()
+            .setDefaultProtectionMode(
+                configServiceCoordinator.getDefaultProtectionModeConfig(requestContext))
+            .addAllProtectedEndpoints(protectedEndpoints);
+
+    return protectionModeConfigBuilder.build();
   }
 }

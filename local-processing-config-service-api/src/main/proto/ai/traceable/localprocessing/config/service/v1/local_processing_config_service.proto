@@ -14,6 +14,7 @@ service LocalProcessingConfigService {
 message GetLocalProcessingConfigRequest {
   string regular_modsec_detection_rules_hash = 1;
   string custom_modsec_detection_rules_hash = 2;
+  string protection_mode_hash = 3;
 }
 
 message GetLocalProcessingConfigResponse {

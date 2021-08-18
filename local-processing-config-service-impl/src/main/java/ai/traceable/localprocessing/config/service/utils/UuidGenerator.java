@@ -25,6 +25,10 @@ public class UuidGenerator {
         : UuidCreator.getNameBasedSha1(NAMESPACE_UUID, value.get()).toString();
   }
 
+  public String generateId(GeneratedMessageV3 protoMessage) {
+    return generateId(protoMessage.toByteString().toByteArray());
+  }
+
   public String generateId(List<? extends GeneratedMessageV3> protoMessages) {
     return protoMessages.stream()
         .map(AbstractMessageLite::toByteString)
