@@ -14,17 +14,8 @@ service TagConfigService {
   // get tag by id
   rpc GetTag(GetTagRequest) returns (GetTagResponse) {}
 
-  // get tag by ids
-  rpc GetTags(GetTagsRequest) returns (GetTagsResponse) {}
-
-  // get tag by name
-  rpc GetTagByName(GetTagByNameRequest) returns (GetTagByNameResponse) {}
-
-  // get tag by names
-  rpc GetTagByNames(GetTagByNamesRequest) returns (GetTagByNamesResponse) {}
-
   // get all tags
-  rpc GetAllTags(GetAllTagsRequest) returns (GetAllTagsResponse) {}
+  rpc GetTags(GetTagsRequest) returns (GetTagsResponse) {}
 
   // update tag
   rpc UpdateTag(UpdateTagRequest) returns (UpdateTagResponse) {}
@@ -35,64 +26,39 @@ service TagConfigService {
 }
 
 message CreateTagRequest {
-  TagConfig tagConfig = 1;
+  CreateTag tag = 1;
 }
 
 message CreateTagResponse {
-  TagConfig tagConfig = 1;
+  Tag tag = 1;
 }
 
 message GetTagRequest {
-  string tag_id = 1;
+  string id = 1;
 }
 
 message GetTagResponse {
-  TagConfig tagConfig = 1;
+  Tag tag = 1;
 }
 
 message GetTagsRequest {
-  repeated string tag_id = 1;
 }
 
 message GetTagsResponse {
-  repeated TagConfig tagConfig = 1;
-}
-
-message GetTagByNameRequest {
-  string tag_name = 1;
-}
-
-message GetTagByNameResponse {
-  TagConfig tagConfig = 1;
-}
-
-message GetTagByNamesRequest {
-  repeated string tag_name = 1;
-}
-
-message GetTagByNamesResponse {
-  repeated TagConfig tagConfig = 1;
-}
-
-message GetAllTagsRequest {
-}
-
-message GetAllTagsResponse {
-  repeated TagConfig tagConfig = 1;
+  repeated Tag tags = 1;
 }
 
 message UpdateTagRequest {
-  TagConfig tagConfig = 1;
+  Tag tag = 1;
 }
 
 message UpdateTagResponse {
-  TagConfig tagConfig = 1;
+  Tag tag = 1;
 }
 
 message DeleteTagRequest {
-  string tag_id = 1;
+  string id = 1;
 }
 
 message DeleteTagResponse {
-  TagConfig tagConfig = 1;
 }

@@ -4,14 +4,11 @@ package org.hypertrace.tag.config.service.v1;
 
 option java_multiple_files = true;
 
-message TagConfig {
-  string tag_id = 1;
-  string tag_name = 2;
-  Category category = 3;
+message Tag {
+  string id = 1;
+  string name = 2;
 }
 
-enum Category {
-  CATEGORY_UNSPECIFIED = 0;
-  CATEGORY_COMMON = 1;
-  CATEGORY_SYSTEM = 2;
+message CreateTag {
+  string name = 2;
 }
