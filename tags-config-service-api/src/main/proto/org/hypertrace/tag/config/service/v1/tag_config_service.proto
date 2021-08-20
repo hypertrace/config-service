@@ -1,0 +1,98 @@
+syntax = "proto3";
+
+package org.hypertrace.tag.config.service.v1;
+
+option java_multiple_files = true;
+
+import "org/hypertrace/tag/config/service/v1/tag.proto";
+
+service TagConfigService {
+
+  // create tag
+  rpc CreateTag(CreateTagRequest) returns (CreateTagResponse) {}
+
+  // get tag by id
+  rpc GetTag(GetTagRequest) returns (GetTagResponse) {}
+
+  // get tag by ids
+  rpc GetTags(GetTagsRequest) returns (GetTagsResponse) {}
+
+  // get tag by name
+  rpc GetTagByName(GetTagByNameRequest) returns (GetTagByNameResponse) {}
+
+  // get tag by names
+  rpc GetTagByNames(GetTagByNamesRequest) returns (GetTagByNamesResponse) {}
+
+  // get all tags
+  rpc GetAllTags(GetAllTagsRequest) returns (GetAllTagsResponse) {}
+
+  // update tag
+  rpc UpdateTag(UpdateTagRequest) returns (UpdateTagResponse) {}
+
+  // delete tag by id
+  rpc DeleteTag(DeleteTagRequest) returns (DeleteTagResponse) {}
+
+}
+
+message CreateTagRequest {
+  TagConfig tagConfig = 1;
+}
+
+message CreateTagResponse {
+  TagConfig tagConfig = 1;
+}
+
+message GetTagRequest {
+  string tag_id = 1;
+}
+
+message GetTagResponse {
+  TagConfig tagConfig = 1;
+}
+
+message GetTagsRequest {
+  repeated string tag_id = 1;
+}
+
+message GetTagsResponse {
+  repeated TagConfig tagConfig = 1;
+}
+
+message GetTagByNameRequest {
+  string tag_name = 1;
+}
+
+message GetTagByNameResponse {
+  TagConfig tagConfig = 1;
+}
+
+message GetTagByNamesRequest {
+  repeated string tag_name = 1;
+}
+
+message GetTagByNamesResponse {
+  repeated TagConfig tagConfig = 1;
+}
+
+message GetAllTagsRequest {
+}
+
+message GetAllTagsResponse {
+  repeated TagConfig tagConfig = 1;
+}
+
+message UpdateTagRequest {
+  TagConfig tagConfig = 1;
+}
+
+message UpdateTagResponse {
+  TagConfig tagConfig = 1;
+}
+
+message DeleteTagRequest {
+  string tag_id = 1;
+}
+
+message DeleteTagResponse {
+  TagConfig tagConfig = 1;
+}
