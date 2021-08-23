@@ -56,7 +56,7 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
         GetConfigRequest.newBuilder()
             .setResourceName(TAG_CONFIG)
             .setResourceNamespace(TAG_RESOURCE_NAMESPACE)
-                .addContexts(tagId)
+            .addContexts(tagId)
             .build();
     GetConfigResponse getConfigResponse = getConfig(requestContext, getConfigRequest);
     return convertToTagFromGeneric(getConfigResponse.getConfig());
