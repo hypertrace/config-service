@@ -25,7 +25,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class TagConfigServiceImplTest {
+public final class TagConfigServiceImplTest {
   TagConfigServiceBlockingStub tagConfigStub;
   MockGenericConfigService mockGenericConfigService;
   List<CreateTag> createTagsList =
@@ -47,34 +47,32 @@ public class TagConfigServiceImplTest {
     mockGenericConfigService.shutdown();
   }
 
+  private List<Tag> createTags() {
+    // Creating or inserting tags
+    return createTagsList.stream()
+        .map(
+            createTag -> {
+              CreateTagResponse response =
+                  tagConfigStub.createTag(CreateTagRequest.newBuilder().setTag(createTag).build());
+              return response.getTag();
+            })
+        .collect(Collectors.toList());
+  }
+
   @Test
   void test_createTag() {
     List<CreateTag> createdTagsList =
-        createTagsList.stream()
-            .map(
-                createTag -> {
-                  CreateTagResponse response =
-                      tagConfigStub.createTag(
-                          CreateTagRequest.newBuilder().setTag(createTag).build());
-                  return CreateTag.newBuilder().setKey(response.getTag().getKey()).build();
-                })
+        createTags().stream()
+            .map(tag -> CreateTag.newBuilder().setKey(tag.getKey()).build())
             .collect(Collectors.toList());
     assertEquals(createTagsList, createdTagsList);
   }
 
   @Test
   void test_getTag() {
-    List<Tag> createdTagsList =
-        createTagsList.stream()
-            .map(
-                createTag -> {
-                  CreateTagResponse response =
-                      tagConfigStub.createTag(
-                          CreateTagRequest.newBuilder().setTag(createTag).build());
-                  return response.getTag();
-                })
-            .collect(Collectors.toList());
-    List<Tag> getTags =
+    List<Tag> createdTagsList = createTags();
+    // Querying each tag one by one for the created or inserted tags in the previous step
+    List<Tag> getTagList =
         createdTagsList.stream()
             .map(
                 tag -> {
@@ -84,37 +82,21 @@ public class TagConfigServiceImplTest {
                   return response.getTag();
                 })
             .collect(Collectors.toList());
-    assertEquals(createdTagsList, getTags);
+    assertEquals(createdTagsList, getTagList);
   }
 
   @Test
   void test_getTags() {
-    List<Tag> createdTagsList =
-        createTagsList.stream()
-            .map(
-                createTag -> {
-                  CreateTagResponse response =
-                      tagConfigStub.createTag(
-                          CreateTagRequest.newBuilder().setTag(createTag).build());
-                  return response.getTag();
-                })
-            .collect(Collectors.toList());
+    List<Tag> createdTagsList = createTags();
+    // Querying for all the tags at once for the created or inserted tags in the previous step
     List<Tag> getTags = tagConfigStub.getTags(GetTagsRequest.newBuilder().build()).getTagsList();
     assertEquals(Set.copyOf(createdTagsList), Set.copyOf(getTags));
   }
 
   @Test
   void test_updateTag() {
-    List<Tag> createdTagsList =
-        createTagsList.stream()
-            .map(
-                createTag -> {
-                  CreateTagResponse response =
-                      tagConfigStub.createTag(
-                          CreateTagRequest.newBuilder().setTag(createTag).build());
-                  return response.getTag();
-                })
-            .collect(Collectors.toList());
+    List<Tag> createdTagsList = createTags();
+    // Updating the tags by appending the keys of tags with a "*"
     List<Tag> updateTagsList =
         createdTagsList.stream()
             .map(tag -> Tag.newBuilder().setId(tag.getId()).setKey(tag.getKey() + "*").build())
@@ -134,16 +116,8 @@ public class TagConfigServiceImplTest {
 
   @Test
   void test_deleteTag() {
-    List<Tag> createdTagsList =
-        createTagsList.stream()
-            .map(
-                createTag -> {
-                  CreateTagResponse response =
-                      tagConfigStub.createTag(
-                          CreateTagRequest.newBuilder().setTag(createTag).build());
-                  return response.getTag();
-                })
-            .collect(Collectors.toList());
+    List<Tag> createdTagsList = createTags();
+    // Deleting each tag one by one and verifying the delete operation
     createdTagsList.stream()
         .forEach(
             tag -> {

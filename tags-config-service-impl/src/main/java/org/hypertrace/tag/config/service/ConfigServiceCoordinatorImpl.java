@@ -1,7 +1,7 @@
 package org.hypertrace.tag.config.service;
 
-import static org.hypertrace.tag.config.service.TagConfigConstants.TAG_CONFIG;
-import static org.hypertrace.tag.config.service.TagConfigConstants.TAG_RESOURCE_NAMESPACE;
+import static org.hypertrace.tag.config.service.TagConfigConstants.TAG_CONFIG_RESOURCE_NAME;
+import static org.hypertrace.tag.config.service.TagConfigConstants.TAG_CONFIG_RESOURCE_NAMESPACE;
 
 import com.google.protobuf.Value;
 import io.grpc.Channel;
@@ -23,7 +23,7 @@ import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProvide
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.tag.config.service.v1.Tag;
 
-public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
+public final class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   private final ConfigServiceBlockingStub configServiceBlockingStub;
 
   public ConfigServiceCoordinatorImpl(Channel configChannel) {
@@ -37,8 +37,8 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   public Tag upsertTag(RequestContext requestContext, Tag tag) {
     UpsertConfigRequest upsertConfigRequest =
         UpsertConfigRequest.newBuilder()
-            .setResourceName(TAG_CONFIG)
-            .setResourceNamespace(TAG_RESOURCE_NAMESPACE)
+            .setResourceName(TAG_CONFIG_RESOURCE_NAME)
+            .setResourceNamespace(TAG_CONFIG_RESOURCE_NAMESPACE)
             .setConfig(convertToGenericFromTag(tag))
             .setContext(tag.getId())
             .build();
@@ -46,7 +46,7 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
     return convertToTagFromGeneric(upsertConfigResponse.getConfig());
   }
 
-  public UpsertConfigResponse upsertConfig(RequestContext context, UpsertConfigRequest request) {
+  private UpsertConfigResponse upsertConfig(RequestContext context, UpsertConfigRequest request) {
     return context.call(() -> configServiceBlockingStub.upsertConfig(request));
   }
 
@@ -54,15 +54,15 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   public Tag getTag(RequestContext requestContext, String tagId) {
     GetConfigRequest getConfigRequest =
         GetConfigRequest.newBuilder()
-            .setResourceName(TAG_CONFIG)
-            .setResourceNamespace(TAG_RESOURCE_NAMESPACE)
+            .setResourceName(TAG_CONFIG_RESOURCE_NAME)
+            .setResourceNamespace(TAG_CONFIG_RESOURCE_NAMESPACE)
             .addContexts(tagId)
             .build();
     GetConfigResponse getConfigResponse = getConfig(requestContext, getConfigRequest);
     return convertToTagFromGeneric(getConfigResponse.getConfig());
   }
 
-  public GetConfigResponse getConfig(RequestContext context, GetConfigRequest request) {
+  private GetConfigResponse getConfig(RequestContext context, GetConfigRequest request) {
     return context.call(() -> configServiceBlockingStub.getConfig(request));
   }
 
@@ -70,8 +70,8 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   public List<Tag> getAllTags(RequestContext requestContext) {
     GetAllConfigsRequest getAllConfigsRequest =
         GetAllConfigsRequest.newBuilder()
-            .setResourceName(TAG_CONFIG)
-            .setResourceNamespace(TAG_RESOURCE_NAMESPACE)
+            .setResourceName(TAG_CONFIG_RESOURCE_NAME)
+            .setResourceNamespace(TAG_CONFIG_RESOURCE_NAMESPACE)
             .build();
     GetAllConfigsResponse getAllConfigsResponse =
         getAllConfigs(requestContext, getAllConfigsRequest);
@@ -80,7 +80,8 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
         .collect(Collectors.toList());
   }
 
-  public GetAllConfigsResponse getAllConfigs(RequestContext context, GetAllConfigsRequest request) {
+  private GetAllConfigsResponse getAllConfigs(
+      RequestContext context, GetAllConfigsRequest request) {
     return context.call(() -> configServiceBlockingStub.getAllConfigs(request));
   }
 
@@ -88,14 +89,14 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   public void deleteTag(RequestContext requestContext, String tagId) {
     DeleteConfigRequest deleteConfigRequest =
         DeleteConfigRequest.newBuilder()
-            .setResourceName(TAG_CONFIG)
-            .setResourceNamespace(TAG_RESOURCE_NAMESPACE)
+            .setResourceName(TAG_CONFIG_RESOURCE_NAME)
+            .setResourceNamespace(TAG_CONFIG_RESOURCE_NAMESPACE)
             .setContext(tagId)
             .build();
     deleteConfig(requestContext, deleteConfigRequest);
   }
 
-  public DeleteConfigResponse deleteConfig(RequestContext context, DeleteConfigRequest request) {
+  private DeleteConfigResponse deleteConfig(RequestContext context, DeleteConfigRequest request) {
     return context.call(() -> configServiceBlockingStub.deleteConfig(request));
   }
 
