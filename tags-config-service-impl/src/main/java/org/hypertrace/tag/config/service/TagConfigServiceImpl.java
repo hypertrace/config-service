@@ -31,75 +31,49 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
   @Override
   public void createTag(
       CreateTagRequest request, StreamObserver<CreateTagResponse> responseObserver) {
-    try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
-      CreateTag createTag = request.getTag();
-      Tag tag =
-          Tag.newBuilder().setId(UUID.randomUUID().toString()).setKey(createTag.getKey()).build();
-      Tag createdTag = configServiceCoordinator.upsertTag(requestContext, tag);
-      responseObserver.onNext(CreateTagResponse.newBuilder().setTag(createdTag).build());
-      responseObserver.onCompleted();
-
-    } catch (Exception e) {
-      log.error("Create Tag RPC failed for request:{} with exception {}", request, e);
-      responseObserver.onError(e);
-    }
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    CreateTag createTag = request.getTag();
+    Tag tag =
+        Tag.newBuilder().setId(UUID.randomUUID().toString()).setKey(createTag.getKey()).build();
+    Tag createdTag = configServiceCoordinator.upsertTag(requestContext, tag);
+    responseObserver.onNext(CreateTagResponse.newBuilder().setTag(createdTag).build());
+    responseObserver.onCompleted();
   }
 
   @Override
   public void getTag(GetTagRequest request, StreamObserver<GetTagResponse> responseObserver) {
-    try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
-      String tagId = request.getId();
-      Tag tag = configServiceCoordinator.getTag(requestContext, tagId);
-      responseObserver.onNext(GetTagResponse.newBuilder().setTag(tag).build());
-      responseObserver.onCompleted();
-    } catch (Exception e) {
-      log.error("Get Tag RPC failed for request:{} with exception {}", request, e);
-      responseObserver.onError(e);
-    }
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    String tagId = request.getId();
+    Tag tag = configServiceCoordinator.getTag(requestContext, tagId);
+    responseObserver.onNext(GetTagResponse.newBuilder().setTag(tag).build());
+    responseObserver.onCompleted();
   }
 
   @Override
   public void getTags(GetTagsRequest request, StreamObserver<GetTagsResponse> responseObserver) {
-    try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
-      List<Tag> tagList = configServiceCoordinator.getAllTags(requestContext);
-      responseObserver.onNext(GetTagsResponse.newBuilder().addAllTags(tagList).build());
-      responseObserver.onCompleted();
-    } catch (Exception e) {
-      log.error("Get All Tags RPC failed for request:{} with exception {}", request, e);
-      responseObserver.onError(e);
-    }
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    List<Tag> tagList = configServiceCoordinator.getAllTags(requestContext);
+    responseObserver.onNext(GetTagsResponse.newBuilder().addAllTags(tagList).build());
+    responseObserver.onCompleted();
   }
 
   @Override
   public void updateTag(
       UpdateTagRequest request, StreamObserver<UpdateTagResponse> responseObserver) {
-    try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
-      Tag updateTag = request.getTag();
-      Tag updatedTag = configServiceCoordinator.upsertTag(requestContext, updateTag);
-      responseObserver.onNext(UpdateTagResponse.newBuilder().setTag(updatedTag).build());
-      responseObserver.onCompleted();
-    } catch (Exception e) {
-      log.error("Update Tag RPC failed for request:{} with exception {}", request, e);
-      responseObserver.onError(e);
-    }
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    Tag updateTag = request.getTag();
+    Tag updatedTag = configServiceCoordinator.upsertTag(requestContext, updateTag);
+    responseObserver.onNext(UpdateTagResponse.newBuilder().setTag(updatedTag).build());
+    responseObserver.onCompleted();
   }
 
   @Override
   public void deleteTag(
       DeleteTagRequest request, StreamObserver<DeleteTagResponse> responseObserver) {
-    try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
-      String tagId = request.getId();
-      configServiceCoordinator.deleteTag(requestContext, tagId);
-      responseObserver.onNext(DeleteTagResponse.newBuilder().build());
-      responseObserver.onCompleted();
-    } catch (Exception e) {
-      log.error("Delete Tag RPC failed for request:{} with exception {}", request, e);
-      responseObserver.onError(e);
-    }
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    String tagId = request.getId();
+    configServiceCoordinator.deleteTag(requestContext, tagId);
+    responseObserver.onNext(DeleteTagResponse.newBuilder().build());
+    responseObserver.onCompleted();
   }
 }
