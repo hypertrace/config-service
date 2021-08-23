@@ -4,7 +4,6 @@ import static org.hypertrace.tag.config.service.TagConfigConstants.TAG_CONFIG;
 import static org.hypertrace.tag.config.service.TagConfigConstants.TAG_RESOURCE_NAMESPACE;
 
 import com.google.protobuf.Value;
-import com.typesafe.config.Config;
 import io.grpc.Channel;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,7 +26,7 @@ import org.hypertrace.tag.config.service.v1.Tag;
 public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   private final ConfigServiceBlockingStub configServiceBlockingStub;
 
-  public ConfigServiceCoordinatorImpl(Channel configChannel, Config config) {
+  public ConfigServiceCoordinatorImpl(Channel configChannel) {
     this.configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(configChannel)
             .withCallCredentials(
@@ -57,7 +56,7 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
         GetConfigRequest.newBuilder()
             .setResourceName(TAG_CONFIG)
             .setResourceNamespace(TAG_RESOURCE_NAMESPACE)
-            .setContexts(0, tagId)
+                .addContexts(tagId)
             .build();
     GetConfigResponse getConfigResponse = getConfig(requestContext, getConfigRequest);
     return convertToTagFromGeneric(getConfigResponse.getConfig());

@@ -1,6 +1,5 @@
 package org.hypertrace.tag.config.service;
 
-import com.typesafe.config.Config;
 import io.grpc.Channel;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
@@ -25,8 +24,8 @@ import org.hypertrace.tag.config.service.v1.UpdateTagResponse;
 public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceImplBase {
   private final ConfigServiceCoordinator configServiceCoordinator;
 
-  public TagConfigServiceImpl(Channel configChannel, Config config) {
-    configServiceCoordinator = new ConfigServiceCoordinatorImpl(configChannel, config);
+  public TagConfigServiceImpl(Channel configChannel) {
+    configServiceCoordinator = new ConfigServiceCoordinatorImpl(configChannel);
   }
 
   @Override
@@ -34,7 +33,6 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
       CreateTagRequest request, StreamObserver<CreateTagResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      // TagConfigRequestValidator.validateOrThrow(requestContext, request);
       CreateTag createTag = request.getTag();
       Tag tag =
           Tag.newBuilder().setId(UUID.randomUUID().toString()).setKey(createTag.getKey()).build();
@@ -52,7 +50,6 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
   public void getTag(GetTagRequest request, StreamObserver<GetTagResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      // TagRequestValidator.validateOrThrow(requestContext, request);
       String tagId = request.getId();
       Tag tag = configServiceCoordinator.getTag(requestContext, tagId);
       responseObserver.onNext(GetTagResponse.newBuilder().setTag(tag).build());
@@ -67,7 +64,6 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
   public void getTags(GetTagsRequest request, StreamObserver<GetTagsResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      // TagRequestValidator.validateOrThrow(requestContext, request);
       List<Tag> tagList = configServiceCoordinator.getAllTags(requestContext);
       responseObserver.onNext(GetTagsResponse.newBuilder().addAllTags(tagList).build());
       responseObserver.onCompleted();
@@ -82,7 +78,6 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
       UpdateTagRequest request, StreamObserver<UpdateTagResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      // TagRequestValidator.validateOrThrow(requestContext, request);
       Tag updateTag = request.getTag();
       Tag updatedTag = configServiceCoordinator.upsertTag(requestContext, updateTag);
       responseObserver.onNext(UpdateTagResponse.newBuilder().setTag(updatedTag).build());
@@ -98,7 +93,6 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
       DeleteTagRequest request, StreamObserver<DeleteTagResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      // TagRequestValidator.validateOrThrow(requestContext, request);
       String tagId = request.getId();
       configServiceCoordinator.deleteTag(requestContext, tagId);
       responseObserver.onNext(DeleteTagResponse.newBuilder().build());
