@@ -9,6 +9,7 @@ build:
     - custom-signature-config-service-api/src/main/proto
     - user-attribution-config-service-api/src/main/proto
     - external-user-attribution-config-service-api/src/main/proto
+    - risk-config-service-api/src/main/proto
 lint:
   use:
     - DEFAULT

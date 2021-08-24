@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package ai.traceable.risk.config.service.v1;
+
+option java_multiple_files = true;
+
+message RiskLevelConfig {
+  RiskLevelConfigValues risk_level_config_values = 1;
+  bool is_default = 2;
+}
+
+message RiskLevelConfigValues {
+  int32 medium_level_min_score = 1;
+  int32 high_level_min_score = 2;
+  int32 critical_level_min_score = 3;
+}
+
+message RiskFactorGridConfig {
+  RiskFactorGridConfigValues risk_factor_grid_config_values = 1;
+  bool is_default = 2;
+}
+
+message RiskFactorGridConfigValues {
+  repeated RiskFactorGridCell risk_factor_grid_cells = 1;
+}
+
+enum RiskScoreCategory {
+  RISK_SCORE_CATEGORY_UNSPECIFIED = 0;
+  RISK_SCORE_CATEGORY_LOW = 1;
+  RISK_SCORE_CATEGORY_MEDIUM = 2;
+  RISK_SCORE_CATEGORY_HIGH = 3;
+  RISK_SCORE_CATEGORY_CRITICAL = 4;
+}
+
+message RiskFactorGridCell {
+  RiskScoreCategory likelihood_score_category = 1;
+  RiskScoreCategory impact_score_category = 2;
+  int32 score = 3;
+}
