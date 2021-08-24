@@ -31,13 +31,17 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
   @Override
   public void createTag(
       CreateTagRequest request, StreamObserver<CreateTagResponse> responseObserver) {
-    RequestContext requestContext = RequestContext.CURRENT.get();
-    CreateTag createTag = request.getTag();
-    Tag tag =
-        Tag.newBuilder().setId(UUID.randomUUID().toString()).setKey(createTag.getKey()).build();
-    Tag createdTag = configServiceCoordinator.upsertTag(requestContext, tag);
-    responseObserver.onNext(CreateTagResponse.newBuilder().setTag(createdTag).build());
-    responseObserver.onCompleted();
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      CreateTag createTag = request.getTag();
+      Tag tag =
+          Tag.newBuilder().setId(UUID.randomUUID().toString()).setKey(createTag.getKey()).build();
+      Tag createdTag = configServiceCoordinator.upsertTag(requestContext, tag);
+      responseObserver.onNext(CreateTagResponse.newBuilder().setTag(createdTag).build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      responseObserver.onError(e);
+    }
   }
 
   @Override
@@ -49,7 +53,7 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
       responseObserver.onNext(GetTagResponse.newBuilder().setTag(tag).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
-      throw e;
+      responseObserver.onError(e);
     }
   }
 
@@ -72,7 +76,7 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
       responseObserver.onNext(UpdateTagResponse.newBuilder().setTag(updatedTag).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
-      throw e;
+      responseObserver.onError(e);
     }
   }
 
@@ -87,7 +91,7 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
       responseObserver.onNext(DeleteTagResponse.newBuilder().build());
       responseObserver.onCompleted();
     } catch (Exception e) {
-      throw e;
+      responseObserver.onError(e);
     }
   }
 }

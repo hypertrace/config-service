@@ -90,7 +90,7 @@ public final class TagConfigServiceImplTest {
       exceptionMessage = e.getMessage();
       System.out.println(e);
     }
-    assertEquals("UNKNOWN", exceptionMessage);
+    assertEquals("NOT_FOUND", exceptionMessage);
   }
 
   @Test
@@ -131,7 +131,7 @@ public final class TagConfigServiceImplTest {
       exceptionMessage = e.getMessage();
       System.out.println(e);
     }
-    assertEquals("UNKNOWN", exceptionMessage);
+    assertEquals("NOT_FOUND", exceptionMessage);
   }
 
   @Test
@@ -145,7 +145,7 @@ public final class TagConfigServiceImplTest {
       exceptionMessage = e.getMessage();
       System.out.println(e);
     }
-    assertEquals("UNKNOWN", exceptionMessage);
+    assertEquals("NOT_FOUND", exceptionMessage);
     // Deleting each tag one by one and verifying the delete operation
     createdTagsList.stream()
         .forEach(

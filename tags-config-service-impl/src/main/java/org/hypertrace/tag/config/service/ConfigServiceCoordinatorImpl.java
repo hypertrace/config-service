@@ -35,15 +35,19 @@ public final class ConfigServiceCoordinatorImpl implements ConfigServiceCoordina
 
   @Override
   public Tag upsertTag(RequestContext requestContext, Tag tag) {
-    UpsertConfigRequest upsertConfigRequest =
-        UpsertConfigRequest.newBuilder()
-            .setResourceName(TAG_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(TAG_CONFIG_RESOURCE_NAMESPACE)
-            .setConfig(convertToGenericFromTag(tag))
-            .setContext(tag.getId())
-            .build();
-    UpsertConfigResponse upsertConfigResponse = upsertConfig(requestContext, upsertConfigRequest);
-    return convertToTagFromGeneric(upsertConfigResponse.getConfig());
+    try {
+      UpsertConfigRequest upsertConfigRequest =
+          UpsertConfigRequest.newBuilder()
+              .setResourceName(TAG_CONFIG_RESOURCE_NAME)
+              .setResourceNamespace(TAG_CONFIG_RESOURCE_NAMESPACE)
+              .setConfig(convertToGenericFromTag(tag))
+              .setContext(tag.getId())
+              .build();
+      UpsertConfigResponse upsertConfigResponse = upsertConfig(requestContext, upsertConfigRequest);
+      return convertToTagFromGeneric(upsertConfigResponse.getConfig());
+    } catch (Exception e) {
+      throw e;
+    }
   }
 
   private UpsertConfigResponse upsertConfig(RequestContext context, UpsertConfigRequest request) {
@@ -52,14 +56,18 @@ public final class ConfigServiceCoordinatorImpl implements ConfigServiceCoordina
 
   @Override
   public Tag getTag(RequestContext requestContext, String tagId) {
-    GetConfigRequest getConfigRequest =
-        GetConfigRequest.newBuilder()
-            .setResourceName(TAG_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(TAG_CONFIG_RESOURCE_NAMESPACE)
-            .addContexts(tagId)
-            .build();
-    GetConfigResponse getConfigResponse = getConfig(requestContext, getConfigRequest);
-    return convertToTagFromGeneric(getConfigResponse.getConfig());
+    try {
+      GetConfigRequest getConfigRequest =
+          GetConfigRequest.newBuilder()
+              .setResourceName(TAG_CONFIG_RESOURCE_NAME)
+              .setResourceNamespace(TAG_CONFIG_RESOURCE_NAMESPACE)
+              .addContexts(tagId)
+              .build();
+      GetConfigResponse getConfigResponse = getConfig(requestContext, getConfigRequest);
+      return convertToTagFromGeneric(getConfigResponse.getConfig());
+    } catch (Exception e) {
+      throw e;
+    }
   }
 
   private GetConfigResponse getConfig(RequestContext context, GetConfigRequest request) {
