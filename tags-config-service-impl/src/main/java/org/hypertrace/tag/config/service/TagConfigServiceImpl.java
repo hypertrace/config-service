@@ -70,10 +70,10 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
       UpdateTagRequest request, StreamObserver<UpdateTagResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      Tag updateTag = request.getTag();
-      configServiceCoordinator.getTag(requestContext, updateTag.getId());
-      Tag updatedTag = configServiceCoordinator.upsertTag(requestContext, updateTag);
-      responseObserver.onNext(UpdateTagResponse.newBuilder().setTag(updatedTag).build());
+      Tag updatedTagInReq = request.getTag();
+      configServiceCoordinator.getTag(requestContext, updatedTagInReq.getId());
+      Tag updatedTagInRes = configServiceCoordinator.upsertTag(requestContext, request.getTag());
+      responseObserver.onNext(UpdateTagResponse.newBuilder().setTag(updatedTagInRes).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       responseObserver.onError(e);
