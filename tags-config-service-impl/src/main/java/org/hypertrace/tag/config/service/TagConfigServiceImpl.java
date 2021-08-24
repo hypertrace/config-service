@@ -42,11 +42,15 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
 
   @Override
   public void getTag(GetTagRequest request, StreamObserver<GetTagResponse> responseObserver) {
-    RequestContext requestContext = RequestContext.CURRENT.get();
-    String tagId = request.getId();
-    Tag tag = configServiceCoordinator.getTag(requestContext, tagId);
-    responseObserver.onNext(GetTagResponse.newBuilder().setTag(tag).build());
-    responseObserver.onCompleted();
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      String tagId = request.getId();
+      Tag tag = configServiceCoordinator.getTag(requestContext, tagId);
+      responseObserver.onNext(GetTagResponse.newBuilder().setTag(tag).build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      throw e;
+    }
   }
 
   @Override
@@ -60,20 +64,30 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
   @Override
   public void updateTag(
       UpdateTagRequest request, StreamObserver<UpdateTagResponse> responseObserver) {
-    RequestContext requestContext = RequestContext.CURRENT.get();
-    Tag updateTag = request.getTag();
-    Tag updatedTag = configServiceCoordinator.upsertTag(requestContext, updateTag);
-    responseObserver.onNext(UpdateTagResponse.newBuilder().setTag(updatedTag).build());
-    responseObserver.onCompleted();
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      Tag updateTag = request.getTag();
+      configServiceCoordinator.getTag(requestContext, updateTag.getId());
+      Tag updatedTag = configServiceCoordinator.upsertTag(requestContext, updateTag);
+      responseObserver.onNext(UpdateTagResponse.newBuilder().setTag(updatedTag).build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      throw e;
+    }
   }
 
   @Override
   public void deleteTag(
       DeleteTagRequest request, StreamObserver<DeleteTagResponse> responseObserver) {
-    RequestContext requestContext = RequestContext.CURRENT.get();
-    String tagId = request.getId();
-    configServiceCoordinator.deleteTag(requestContext, tagId);
-    responseObserver.onNext(DeleteTagResponse.newBuilder().build());
-    responseObserver.onCompleted();
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      String tagId = request.getId();
+      configServiceCoordinator.getTag(requestContext, tagId);
+      configServiceCoordinator.deleteTag(requestContext, tagId);
+      responseObserver.onNext(DeleteTagResponse.newBuilder().build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      throw e;
+    }
   }
 }

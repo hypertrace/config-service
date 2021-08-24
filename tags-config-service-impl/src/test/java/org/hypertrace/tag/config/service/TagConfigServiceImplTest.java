@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.grpc.Channel;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -83,6 +82,15 @@ public final class TagConfigServiceImplTest {
                 })
             .collect(Collectors.toList());
     assertEquals(createdTagsList, getTagList);
+    // Get a tag that does not exist
+    String exceptionMessage = "NONE";
+    try {
+      tagConfigStub.getTag(GetTagRequest.newBuilder().setId("1").build());
+    } catch (Exception e) {
+      exceptionMessage = e.getMessage();
+      System.out.println(e);
+    }
+    assertEquals("UNKNOWN", exceptionMessage);
   }
 
   @Test
@@ -96,10 +104,10 @@ public final class TagConfigServiceImplTest {
   @Test
   void test_updateTag() {
     List<Tag> createdTagsList = createTags();
-    // Updating the tags by appending the keys of tags with a "*"
+    // Updating the tags by appending the keys of tags with a "new"
     List<Tag> updateTagsList =
         createdTagsList.stream()
-            .map(tag -> Tag.newBuilder().setId(tag.getId()).setKey(tag.getKey() + "*").build())
+            .map(tag -> Tag.newBuilder().setId(tag.getId()).setKey(tag.getKey() + "new").build())
             .collect(Collectors.toList());
     List<Tag> updatedTagsList =
         updateTagsList.stream()
@@ -112,11 +120,32 @@ public final class TagConfigServiceImplTest {
                 })
             .collect(Collectors.toList());
     assertEquals(updateTagsList, updatedTagsList);
+    // Updating a tag that does not exist
+    String exceptionMessage = "NONE";
+    try {
+      tagConfigStub.updateTag(
+          UpdateTagRequest.newBuilder()
+              .setTag(Tag.newBuilder().setId("1").setKey("API-X").build())
+              .build());
+    } catch (Exception e) {
+      exceptionMessage = e.getMessage();
+      System.out.println(e);
+    }
+    assertEquals("UNKNOWN", exceptionMessage);
   }
 
   @Test
   void test_deleteTag() {
     List<Tag> createdTagsList = createTags();
+    // Deleting a tag that does not exist
+    String exceptionMessage = "NONE";
+    try {
+      tagConfigStub.deleteTag(DeleteTagRequest.newBuilder().setId("1").build());
+    } catch (Exception e) {
+      exceptionMessage = e.getMessage();
+      System.out.println(e);
+    }
+    assertEquals("UNKNOWN", exceptionMessage);
     // Deleting each tag one by one and verifying the delete operation
     createdTagsList.stream()
         .forEach(
@@ -127,6 +156,6 @@ public final class TagConfigServiceImplTest {
               assertEquals(false, allTags.contains(tag));
             });
     List<Tag> allTags = tagConfigStub.getTags(GetTagsRequest.newBuilder().build()).getTagsList();
-    assertEquals(Collections.emptyList(), allTags);
+    assertEquals(true, allTags.isEmpty());
   }
 }
