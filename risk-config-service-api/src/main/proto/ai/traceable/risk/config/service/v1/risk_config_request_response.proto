@@ -5,7 +5,18 @@ package ai.traceable.risk.config.service.v1;
 option java_multiple_files = true;
 
 import "ai/traceable/risk/config/service/v1/risk_scoring_configs.proto";
+import "ai/traceable/risk/config/service/v1/risk_factor_configs.proto";
 
+
+message GetAllRiskConfigsRequest {
+}
+
+message GetAllRiskConfigsResponse {
+  RiskLevelConfig risk_level_config = 1;
+  RiskFactorGridConfig risk_factor_grid_config = 2;
+  repeated RiskFactor likelihood_risk_factors = 3;
+  repeated RiskFactor impact_risk_factors = 4;
+}
 
 message GetRiskScoringConfigsRequest {
 }
@@ -13,6 +24,20 @@ message GetRiskScoringConfigsRequest {
 message GetRiskScoringConfigsResponse {
   RiskLevelConfig risk_level_config = 1;
   RiskFactorGridConfig risk_factor_grid_config = 2;
+}
+
+message GetRiskLikelihoodFactorsRequest {
+}
+
+message GetRiskLikelihoodFactorsResponse {
+  repeated RiskFactor risk_factors = 1;
+}
+
+message GetRiskImpactFactorsRequest {
+}
+
+message GetRiskImpactFactorsResponse {
+  repeated RiskFactor risk_factors = 1;
 }
 
 message UpdateRiskLevelConfigRequest {
@@ -31,6 +56,22 @@ message UpdateRiskFactorGridConfigResponse {
   RiskFactorGridConfig risk_factor_grid_config = 1;
 }
 
+message UpdateRiskLikelihoodFactorConfigsRequest {
+  repeated RiskFactorConfig risk_factor_configs = 1;
+}
+
+message UpdateRiskLikelihoodFactorConfigsResponse {
+  repeated RiskFactor risk_factors = 1;
+}
+
+message UpdateRiskImpactFactorConfigsRequest {
+  repeated RiskFactorConfig risk_factor_configs = 1;
+}
+
+message UpdateRiskImpactFactorConfigsResponse {
+  repeated RiskFactor risk_factors = 1;
+}
+
 message ResetRiskLevelConfigRequest {
 }
 
@@ -43,4 +84,20 @@ message ResetRiskFactorGridConfigRequest {
 
 message ResetRiskFactorGridConfigResponse {
   RiskFactorGridConfig risk_factor_grid_config = 1;
+}
+
+message ResetRiskLikelihoodFactorConfigsRequest {
+  repeated string risk_factor_ids = 1;
+}
+
+message ResetRiskLikelihoodFactorConfigsResponse {
+  repeated RiskFactor risk_factors = 1;
+}
+
+message ResetRiskImpactFactorConfigsRequest {
+  repeated string risk_factor_ids = 1;
+}
+
+message ResetRiskImpactFactorConfigsResponse {
+  repeated RiskFactor risk_factors = 1;
 }

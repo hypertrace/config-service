@@ -9,7 +9,16 @@ import "ai/traceable/risk/config/service/v1/risk_config_request_response.proto";
 
 service RiskConfigService {
 
+  rpc GetAllRiskConfigs (GetAllRiskConfigsRequest) returns (GetAllRiskConfigsResponse) {
+  }
+
   rpc GetRiskScoringConfigs (GetRiskScoringConfigsRequest) returns (GetRiskScoringConfigsResponse) {
+  }
+
+  rpc GetRiskLikelihoodFactors (GetRiskLikelihoodFactorsRequest) returns (GetRiskLikelihoodFactorsResponse) {
+  }
+
+  rpc GetRiskImpactFactors (GetRiskImpactFactorsRequest) returns (GetRiskImpactFactorsResponse) {
   }
 
   rpc UpdateRiskLevelConfig (UpdateRiskLevelConfigRequest) returns (UpdateRiskLevelConfigResponse) {
@@ -18,9 +27,21 @@ service RiskConfigService {
   rpc UpdateRiskFactorGridConfig (UpdateRiskFactorGridConfigRequest) returns (UpdateRiskFactorGridConfigResponse) {
   }
 
+  rpc UpdateRiskLikelihoodFactorConfigs (UpdateRiskLikelihoodFactorConfigsRequest) returns (UpdateRiskLikelihoodFactorConfigsResponse) {
+  }
+
+  rpc UpdateRiskImpactFactorConfigs (UpdateRiskImpactFactorConfigsRequest) returns (UpdateRiskImpactFactorConfigsResponse) {
+  }
+
   rpc ResetRiskLevelConfig (ResetRiskLevelConfigRequest) returns (ResetRiskLevelConfigResponse) {
   }
 
   rpc ResetRiskFactorGridConfig (ResetRiskFactorGridConfigRequest) returns (ResetRiskFactorGridConfigResponse) {
+  }
+
+  rpc ResetRiskLikelihoodFactorConfigs (ResetRiskLikelihoodFactorConfigsRequest) returns (ResetRiskLikelihoodFactorConfigsResponse) {
+  }
+
+  rpc ResetRiskImpactFactorConfigs (ResetRiskImpactFactorConfigsRequest) returns (ResetRiskImpactFactorConfigsResponse) {
   }
 }

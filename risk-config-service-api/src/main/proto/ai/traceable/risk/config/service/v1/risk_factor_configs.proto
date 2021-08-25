@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package ai.traceable.risk.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/risk/config/service/v1/risk_element_configs.proto";
+
+message RiskFactor {
+  RiskFactorConfig risk_factor_config = 1;
+  repeated CustomizationOptions customization_options = 2;
+  bool is_default = 3;
+}
+
+message RiskFactorConfig {
+  string id = 1;
+  RiskFactorInfo risk_factor_info = 2;
+  RiskFactorScoring risk_factor_scoring = 3;
+}
+
+message RiskFactorInfo {
+  string name = 1;
+  RiskFactorType risk_factor_type = 2;
+  repeated RiskElementConfig risk_element_configs = 3;
+}
+
+enum RiskFactorType {
+  RISK_FACTOR_TYPE_UNSPECIFIED = 0;
+  RISK_FACTOR_TYPE_CUSTOM_TAGS = 1;
+  RISK_FACTOR_TYPE_SENSITIVE_DATA_EXPOSURE = 2;
+  RISK_FACTOR_TYPE_MOTIVE = 3;
+  RISK_FACTOR_TYPE_EASE_OF_ACCESS = 4;
+}
+
+message RiskFactorScoring {
+   bool disabled = 1;
+   RiskFactorScoreContribution score_contribution = 2;
+}
+
+enum RiskFactorScoreContribution {
+  RISK_FACTOR_SCORE_CONTRIBUTION_UNSPECIFIED = 0;  // default
+  RISK_FACTOR_SCORE_CONTRIBUTION_ABSOLUTE = 1; // If present, likelihood/impact must resolve to exactly this value
+}
+
+enum CustomizationOptions {
+  CUSTOMIZATION_OPTIONS_FACTOR_SCORE_UNSPECIFIED = 0;
+  CUSTOMIZATION_OPTIONS_FACTOR_SCORE_CONTRIBUTION = 1;
+  CUSTOMIZATION_OPTIONS_ELEMENT_ADD_DELETE = 2;
+}
