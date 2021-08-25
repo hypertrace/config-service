@@ -8,7 +8,9 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -33,21 +35,21 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
   private final String TAG_CONFIG_SERVICE_CONFIG = "tag.config.service";
   private final String SYSTEM_TAGS = "system.tags";
   private final List<Tag> systemTags;
-  private final List<String> systemTagIds;
-  private final List<String> systemTagKeys;
+  private final Map<String, Tag> getSystemTagById;
+  private final Map<String, Tag> getSystemTagByKey;
 
   public TagConfigServiceImpl(Channel configChannel, Config config) {
     configServiceCoordinator = new ConfigServiceCoordinatorImpl(configChannel);
     Config tagConfig = config.getConfig(TAG_CONFIG_SERVICE_CONFIG);
     List<? extends ConfigObject> systemTagsObjectList = tagConfig.getObjectList(SYSTEM_TAGS);
     systemTags = buildSystemTagList(systemTagsObjectList);
-    systemTagIds =
-        systemTags.stream().map(systemTag -> systemTag.getId()).collect(Collectors.toList());
-    systemTagKeys =
-        systemTags.stream().map(systemTag -> systemTag.getKey()).collect(Collectors.toList());
+    getSystemTagById =
+        systemTags.stream().collect(Collectors.toMap(Tag::getId, Function.identity()));
+    getSystemTagByKey =
+        systemTags.stream().collect(Collectors.toMap(Tag::getKey, Function.identity()));
   }
 
-  private static List<Tag> buildSystemTagList(List<? extends ConfigObject> configObjectList) {
+  private List<Tag> buildSystemTagList(List<? extends ConfigObject> configObjectList) {
     return configObjectList.stream()
         .map(TagConfigServiceImpl::buildTagFromConfig)
         .collect(Collectors.toUnmodifiableList());
@@ -67,7 +69,7 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       CreateTag createTag = request.getTag();
-      if (systemTagKeys.contains(createTag.getKey())) {
+      if (getSystemTagByKey.containsKey(createTag.getKey())) {
         // Creating a tag with a name that clashes with one of system tags name
         responseObserver.onError(new StatusRuntimeException(Status.ALREADY_EXISTS));
         return;
@@ -88,8 +90,8 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       Tag tag;
-      if (systemTagIds.contains(tagId)) {
-        tag = Tag.newBuilder().setId(tagId).setKey(tagId).build();
+      if (getSystemTagById.containsKey(tagId)) {
+        tag = getSystemTagById.get(tagId);
       } else {
         tag = configServiceCoordinator.getTag(requestContext, tagId);
       }
@@ -115,17 +117,13 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
     Tag updatedTagInReq = request.getTag();
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      if (systemTagIds.contains(updatedTagInReq.getId())) {
+      if (getSystemTagById.containsKey(updatedTagInReq.getId())
+          || getSystemTagByKey.containsKey(updatedTagInReq.getKey())) {
         // Updating a system tag will error
-        responseObserver.onError(new StatusRuntimeException(Status.PERMISSION_DENIED));
-        return;
-      }
-      configServiceCoordinator.getTag(requestContext, updatedTagInReq.getId());
-      if (systemTagKeys.contains(updatedTagInReq.getKey())) {
-        // Updating the name of some tag to name of some system tag will error
         responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
         return;
       }
+      configServiceCoordinator.getTag(requestContext, updatedTagInReq.getId());
       Tag updatedTagInRes = configServiceCoordinator.upsertTag(requestContext, updatedTagInReq);
       responseObserver.onNext(UpdateTagResponse.newBuilder().setTag(updatedTagInRes).build());
       responseObserver.onCompleted();
@@ -140,9 +138,9 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       String tagId = request.getId();
-      if (systemTagIds.contains(tagId)) {
+      if (getSystemTagById.containsKey(tagId)) {
         // Deleting a system tag
-        responseObserver.onError(new StatusRuntimeException(Status.PERMISSION_DENIED));
+        responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
         return;
       }
       configServiceCoordinator.getTag(requestContext, tagId);

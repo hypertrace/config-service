@@ -192,7 +192,7 @@ public final class TagConfigServiceImplTest {
       try {
         tagConfigStub.updateTag(updateTagRequest);
       } catch (Exception e) {
-        assertEquals(Status.PERMISSION_DENIED, Status.fromThrowable(e));
+        assertEquals(Status.INVALID_ARGUMENT, Status.fromThrowable(e));
       }
     }
     for (String key : systemTags) {
@@ -244,7 +244,7 @@ public final class TagConfigServiceImplTest {
       try {
         tagConfigStub.deleteTag(deleteTagRequest);
       } catch (Exception e) {
-        assertEquals(Status.PERMISSION_DENIED, Status.fromThrowable(e));
+        assertEquals(Status.INVALID_ARGUMENT, Status.fromThrowable(e));
       }
     }
   }
