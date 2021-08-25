@@ -1,14 +1,16 @@
 package org.hypertrace.tag.config.service;
 
+import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigObject;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.tag.config.service.v1.CreateTag;
@@ -28,20 +30,35 @@ import org.hypertrace.tag.config.service.v1.UpdateTagResponse;
 @Slf4j
 public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceImplBase {
   private final ConfigServiceCoordinator configServiceCoordinator;
-  private final List<String> SYSTEM_TAGS;
-  private final List<String> SYSTEM_TAG_PATHS =
-      Arrays.asList(
-          "tag.config.service.CRITICAL",
-          "tag.config.service.SENSITIVE",
-          "tag.config.service.EXTERNAL",
-          "tag.config.service.SENTRY");
+  private final String TAG_CONFIG_SERVICE_CONFIG = "tag.config.service";
+  private final String SYSTEM_TAGS = "system.tags";
+  private final List<Tag> systemTags;
+  private final List<String> systemTagIds;
+  private final List<String> systemTagKeys;
 
   public TagConfigServiceImpl(Channel configChannel, Config config) {
     configServiceCoordinator = new ConfigServiceCoordinatorImpl(configChannel);
-    SYSTEM_TAGS =
-        SYSTEM_TAG_PATHS.stream()
-            .map(tagPath -> config.getString(tagPath))
-            .collect(Collectors.toList());
+    Config tagConfig = config.getConfig(TAG_CONFIG_SERVICE_CONFIG);
+    List<? extends ConfigObject> systemTagsObjectList = tagConfig.getObjectList(SYSTEM_TAGS);
+    systemTags = buildSystemTagList(systemTagsObjectList);
+    systemTagIds =
+        systemTags.stream().map(systemTag -> systemTag.getId()).collect(Collectors.toList());
+    systemTagKeys =
+        systemTags.stream().map(systemTag -> systemTag.getKey()).collect(Collectors.toList());
+  }
+
+  private static List<Tag> buildSystemTagList(List<? extends ConfigObject> configObjectList) {
+    return configObjectList.stream()
+        .map(TagConfigServiceImpl::buildTagFromConfig)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  @SneakyThrows
+  private static Tag buildTagFromConfig(ConfigObject configObject) {
+    String jsonString = configObject.render();
+    Tag.Builder builder = Tag.newBuilder();
+    JsonFormat.parser().merge(jsonString, builder);
+    return builder.build();
   }
 
   @Override
@@ -50,7 +67,7 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       CreateTag createTag = request.getTag();
-      if (SYSTEM_TAGS.contains(createTag.getKey())) {
+      if (systemTagKeys.contains(createTag.getKey())) {
         // Creating a tag with a name that clashes with one of system tags name
         responseObserver.onError(new StatusRuntimeException(Status.ALREADY_EXISTS));
         return;
@@ -71,7 +88,7 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       Tag tag;
-      if (SYSTEM_TAGS.contains(tagId)) {
+      if (systemTagIds.contains(tagId)) {
         tag = Tag.newBuilder().setId(tagId).setKey(tagId).build();
       } else {
         tag = configServiceCoordinator.getTag(requestContext, tagId);
@@ -87,11 +104,7 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
   public void getTags(GetTagsRequest request, StreamObserver<GetTagsResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
     List<Tag> tagList = configServiceCoordinator.getAllTags(requestContext);
-    List<Tag> systemTagsList =
-        SYSTEM_TAGS.stream()
-            .map(key -> Tag.newBuilder().setId(key).setKey(key).build())
-            .collect(Collectors.toList());
-    tagList.addAll(systemTagsList);
+    tagList.addAll(systemTags);
     responseObserver.onNext(GetTagsResponse.newBuilder().addAllTags(tagList).build());
     responseObserver.onCompleted();
   }
@@ -102,13 +115,13 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
     Tag updatedTagInReq = request.getTag();
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      if (SYSTEM_TAGS.contains(updatedTagInReq.getId())) {
+      if (systemTagIds.contains(updatedTagInReq.getId())) {
         // Updating a system tag will error
         responseObserver.onError(new StatusRuntimeException(Status.PERMISSION_DENIED));
         return;
       }
       configServiceCoordinator.getTag(requestContext, updatedTagInReq.getId());
-      if (SYSTEM_TAGS.contains(updatedTagInReq.getKey())) {
+      if (systemTagKeys.contains(updatedTagInReq.getKey())) {
         // Updating the name of some tag to name of some system tag will error
         responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
         return;
@@ -127,7 +140,7 @@ public class TagConfigServiceImpl extends TagConfigServiceGrpc.TagConfigServiceI
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       String tagId = request.getId();
-      if (SYSTEM_TAGS.contains(tagId)) {
+      if (systemTagIds.contains(tagId)) {
         // Deleting a system tag
         responseObserver.onError(new StatusRuntimeException(Status.PERMISSION_DENIED));
         return;

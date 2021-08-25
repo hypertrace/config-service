@@ -43,18 +43,16 @@ public final class TagConfigServiceImplTest {
   void setUp() {
     mockGenericConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    Map<String, List<Map<String, String>>> systemTagsConfigMap = new HashMap<>();
+    systemTagsConfigMap.put(
+        "system.tags",
+        List.of(
+            Map.of("id", systemTags.get(0), "key", systemTags.get(0)),
+            Map.of("id", systemTags.get(1), "key", systemTags.get(1)),
+            Map.of("id", systemTags.get(2), "key", systemTags.get(2)),
+            Map.of("id", systemTags.get(3), "key", systemTags.get(3))));
     Map<String, Object> configMap = new HashMap<>();
-    configMap.put(
-        "tag.config.service",
-        Map.of(
-            "CRITICAL",
-            systemTags.get(0),
-            "SENSITIVE",
-            systemTags.get(1),
-            "EXTERNAL",
-            systemTags.get(2),
-            "SENTRY",
-            systemTags.get(3)));
+    configMap.put("tag.config.service", systemTagsConfigMap);
     config = ConfigFactory.parseMap(configMap);
     Channel channel = mockGenericConfigService.channel();
     mockGenericConfigService.addService(new TagConfigServiceImpl(channel, config)).start();

@@ -9,6 +9,7 @@ dependencies {
     implementation(projects.configServiceApi)
     implementation(projects.configProtoConverter)
     implementation(libs.typesafe.config)
+    implementation(libs.protobuf.javautil)
     implementation(libs.slf4j.api)
     implementation(libs.guava)
     implementation(libs.rxjava3)
