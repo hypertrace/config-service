@@ -17,6 +17,7 @@ import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServi
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRuleDetails;
 import ai.traceable.localprocessing.config.service.v1.ProtectedEndpoint;
 import ai.traceable.localprocessing.config.service.v1.ProtectionModeConfig;
+import ai.traceable.localprocessing.config.service.v1.SamplingPolicies;
 import com.google.inject.Inject;
 import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
@@ -68,12 +69,23 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
               .setRegularModsecDetectionRules(
                   regularModsecDetectionManager.getDetectionRules(
                       request.getRegularModsecDetectionRulesHash()))
+              .setSamplingPolicies(getSamplingPoliciesConfig(request.getSamplingPoliciesHash()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Get Local Processing Config RPC failed for request:{}", request, e);
       responseObserver.onError(e);
     }
+  }
+
+  private SamplingPolicies getSamplingPoliciesConfig(String requestHash) {
+    SamplingPolicies samplingPolicies = configServiceCoordinator.getSamplingPoliciesConfig();
+    String responseHash = uuidGenerator.generateId(samplingPolicies);
+    if (!responseHash.equals(requestHash)) {
+      return samplingPolicies.toBuilder().setSamplingPoliciesHash(responseHash).build();
+    }
+    // If config is up to date, return empty object with hash
+    return SamplingPolicies.newBuilder().setSamplingPoliciesHash(responseHash).build();
   }
 
   private ProtectionModeConfig getProtectionModeConfig(

@@ -5,6 +5,7 @@ import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
@@ -44,6 +45,8 @@ import ai.traceable.localprocessing.config.service.v1.NewLocalProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.ProtectedEndpoint;
 import ai.traceable.localprocessing.config.service.v1.ProtectionMode;
 import ai.traceable.localprocessing.config.service.v1.ProtectionModeConfig;
+import ai.traceable.localprocessing.config.service.v1.SamplingPolicies;
+import ai.traceable.localprocessing.config.service.v1.SamplingPolicy;
 import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionModeRequest;
 import java.util.List;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
@@ -217,6 +220,84 @@ public class LocalProcessingConfigServiceIntegrationTest
         response.getRegularModsecDetectionRules().getRegularModsecDetectionRulesBlob());
     assertEquals(
         uuidGenerator.generateId(expectedVal), response.getRegularModsecDetectionRules().getHash());
+  }
+
+  @Test
+  void testGetSamplingPoliciesConfig() {
+    GetLocalProcessingConfigRequest request = GetLocalProcessingConfigRequest.getDefaultInstance();
+    GetLocalProcessingConfigResponse response =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+            TENANT_ID, () -> localProcessingConfigStub.getLocalProcessingConfig(request));
+    SamplingPolicies samplingPolicies = response.getSamplingPolicies();
+    assertNotNull(samplingPolicies.getSamplingPoliciesHash());
+    assertNotEquals("", samplingPolicies.getSamplingPoliciesHash());
+    assertEquals(3, samplingPolicies.getPoliciesCount());
+
+    assertEquals(
+        SamplingPolicy.PolicyConfigCase.RATE_LIMITING,
+        samplingPolicies.getPolicies(0).getPolicyConfigCase());
+    assertEquals("endpoint-rate-limit", samplingPolicies.getPolicies(0).getName());
+    assertEquals(
+        1000,
+        samplingPolicies.getPolicies(0).getRateLimiting().getTraceLimitPerEndpointPerMinute());
+    assertEquals(
+        10000, samplingPolicies.getPolicies(0).getRateLimiting().getTraceLimitGloballyPerMinute());
+
+    assertEquals(
+        SamplingPolicy.PolicyConfigCase.MODSEC_ANOMALY,
+        samplingPolicies.getPolicies(1).getPolicyConfigCase());
+    assertEquals("modsec-anomaly", samplingPolicies.getPolicies(1).getName());
+
+    assertEquals(
+        SamplingPolicy.PolicyConfigCase.SPAN_ATTRIBUTES,
+        samplingPolicies.getPolicies(2).getPolicyConfigCase());
+    assertEquals("traceableai-blocking-attribute", samplingPolicies.getPolicies(2).getName());
+    assertEquals(
+        1,
+        samplingPolicies
+            .getPolicies(2)
+            .getSpanAttributes()
+            .getAttributesRequiredForSamplingCount());
+    assertEquals(
+        "traceableai.blocked",
+        samplingPolicies
+            .getPolicies(2)
+            .getSpanAttributes()
+            .getAttributesRequiredForSampling(0)
+            .getKey());
+    assertEquals(
+        2,
+        samplingPolicies
+            .getPolicies(2)
+            .getSpanAttributes()
+            .getAttributesRequiredForSampling(0)
+            .getValuesCount());
+    assertEquals(
+        "true",
+        samplingPolicies
+            .getPolicies(2)
+            .getSpanAttributes()
+            .getAttributesRequiredForSampling(0)
+            .getValues(0)
+            .getStringValue());
+    assertTrue(
+        samplingPolicies
+            .getPolicies(2)
+            .getSpanAttributes()
+            .getAttributesRequiredForSampling(0)
+            .getValues(1)
+            .getBoolValue());
+
+    // test get config with same hash
+    String hash = samplingPolicies.getSamplingPoliciesHash();
+    GetLocalProcessingConfigRequest request2 =
+        GetLocalProcessingConfigRequest.newBuilder().setSamplingPoliciesHash(hash).build();
+    response =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+            TENANT_ID, () -> localProcessingConfigStub.getLocalProcessingConfig(request2));
+    samplingPolicies = response.getSamplingPolicies();
+    assertEquals(hash, samplingPolicies.getSamplingPoliciesHash());
+    assertEquals(0, samplingPolicies.getPoliciesCount());
   }
 
   private void updateDefaultProtectionMode(ProtectionMode protectionMode) {

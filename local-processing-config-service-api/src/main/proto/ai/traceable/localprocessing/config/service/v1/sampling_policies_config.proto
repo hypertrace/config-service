@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package ai.traceable.localprocessing.config.service.v1;
+
+option java_multiple_files = true;
+option go_package = "github.com/Traceableai/config-service/localprocessing/v1";
+
+message SamplingPolicies {
+  string sampling_policies_hash = 1;
+  repeated SamplingPolicy policies = 2;
+}
+
+message SamplingPolicy {
+  // Name of this policy. Used to differentiate between different policies of same type
+  string name = 1;
+  // policy config corresponding to the type of sampling in this policy
+  oneof policy_config {
+    ModsecAnomalyConfig modsec_anomaly = 2;
+    RateLimitingConfig rate_limiting = 3;
+    SpanAttributesConfig span_attributes = 4;
+  }
+}
+
+// Sampling based on Modsec Anomaly Detection
+message ModsecAnomalyConfig {}
+
+// Config for Rate limit sampling in agent
+message RateLimitingConfig {
+  // Per minute limit for traces in an endpoint
+  int64 trace_limit_per_endpoint_per_minute = 1;
+  // Per minute limit for traces overall
+  int64 trace_limit_globally_per_minute = 2;
+}
+
+// Config for sampling based on attributes present in span
+message SpanAttributesConfig {
+  // List of attributes that must be present for sampling
+  repeated AttributeKeyValues attributes_required_for_sampling = 1;
+  message AttributeKeyValues {
+    // key of attribute
+    string key = 1;
+    // list of values accepted for this key for sampling
+    repeated Value values = 2;
+    message Value {
+      oneof value {
+        string string_value = 1;
+        bool bool_value = 2;
+      }
+    }
+  }
+}

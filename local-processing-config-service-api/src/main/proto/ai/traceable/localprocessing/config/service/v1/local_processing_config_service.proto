@@ -6,6 +6,7 @@ option java_multiple_files = true;
 option go_package = "github.com/Traceableai/config-service/localprocessing/v1";
 
 import "ai/traceable/localprocessing/config/service/v1/protection_mode_config.proto";
+import "ai/traceable/localprocessing/config/service/v1/sampling_policies_config.proto";
 
 service LocalProcessingConfigService {
   rpc GetLocalProcessingConfig(GetLocalProcessingConfigRequest) returns (GetLocalProcessingConfigResponse) {}
@@ -15,12 +16,14 @@ message GetLocalProcessingConfigRequest {
   string regular_modsec_detection_rules_hash = 1;
   string custom_modsec_detection_rules_hash = 2;
   string protection_mode_hash = 3;
+  string sampling_policies_hash = 4;
 }
 
 message GetLocalProcessingConfigResponse {
   ProtectionModeConfig protection_mode_config = 1;
   RegularModsecDetectionRules regular_modsec_detection_rules = 2;
   CustomModsecDetectionRules custom_modsec_detection_rules = 3;
+  SamplingPolicies sampling_policies = 4;
 }
 
 message CustomModsecDetectionRules {

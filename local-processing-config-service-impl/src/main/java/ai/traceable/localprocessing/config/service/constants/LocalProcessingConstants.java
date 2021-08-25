@@ -9,4 +9,6 @@ public final class LocalProcessingConstants {
   public static final String LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG =
       "local.processing.config.service";
   public static final String DEFAULT_PROTECTION_MODE = "default.protection.mode";
+  public static final String SAMPLING_POLICIES = "sampling.policies";
+  public static final String SAMPLING_POLICY_RESOURCE_NAME = "sampling-policy";
 }

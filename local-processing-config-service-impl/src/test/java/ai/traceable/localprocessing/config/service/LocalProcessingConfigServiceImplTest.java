@@ -4,7 +4,9 @@ import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_
 import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_LIMIT_EXHAUSTED;
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.DEFAULT_PROTECTION_MODE;
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG;
+import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.SAMPLING_POLICIES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -35,6 +37,8 @@ import ai.traceable.localprocessing.config.service.v1.ProtectedEndpoint;
 import ai.traceable.localprocessing.config.service.v1.ProtectionMode;
 import ai.traceable.localprocessing.config.service.v1.ProtectionModeConfig;
 import ai.traceable.localprocessing.config.service.v1.RegularModsecDetectionRules;
+import ai.traceable.localprocessing.config.service.v1.SamplingPolicies;
+import ai.traceable.localprocessing.config.service.v1.SamplingPolicy;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.ManagedChannel;
@@ -66,7 +70,32 @@ class LocalProcessingConfigServiceImplTest {
     Map<String, Map> configMap = new HashMap<>();
     configMap.put(
         LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG,
-        Map.of(DEFAULT_PROTECTION_MODE, ProtectionMode.PROTECTION_MODE_ADVANCED.name()));
+        Map.of(
+            DEFAULT_PROTECTION_MODE,
+            ProtectionMode.PROTECTION_MODE_ADVANCED.name(),
+            SAMPLING_POLICIES,
+            List.of(
+                Map.of("name", "modsec-sampling", "modsecAnomaly", Map.of()),
+                Map.of(
+                    "name",
+                    "rate-limit-sampling",
+                    "rateLimiting",
+                    Map.of(
+                        "traceLimitPerEndpointPerMinute", 10, "traceLimitGloballyPerMinute", 100)),
+                Map.of(
+                    "name",
+                    "span-attributes-sampling",
+                    "spanAttributes",
+                    Map.of(
+                        "attributesRequiredForSampling",
+                        List.of(
+                            Map.of(
+                                "key",
+                                "attribute.key",
+                                "values",
+                                List.of(
+                                    Map.of("stringValue", "true"),
+                                    Map.of("boolValue", true)))))))));
     configMap.put(
         "license.status.config.service",
         Map.of("default.license.limit", "LICENSE_LIMIT_AVAILABLE"));
@@ -217,6 +246,75 @@ class LocalProcessingConfigServiceImplTest {
             .getLocalProcessingConfig(GetLocalProcessingConfigRequest.getDefaultInstance())
             .getProtectionModeConfig();
     assertEquals(expectedConfig, actualConfig);
+  }
+
+  @Test
+  void getSamplingPoliciesConfig() {
+    when(customModsecDetectionManager.getEnabledRules(any()))
+        .thenReturn(CustomModsecDetectionRules.getDefaultInstance());
+    when(regularModsecDetectionManager.getDetectionRules(any()))
+        .thenReturn(RegularModsecDetectionRules.getDefaultInstance());
+    setLicenseStatus(LICENSE_LIMIT_AVAILABLE);
+
+    SamplingPolicies samplingPolicies =
+        localProcessingConfigStub
+            .getLocalProcessingConfig(GetLocalProcessingConfigRequest.getDefaultInstance())
+            .getSamplingPolicies();
+    assertEquals(3, samplingPolicies.getPoliciesCount());
+
+    assertEquals(
+        SamplingPolicy.PolicyConfigCase.MODSEC_ANOMALY,
+        samplingPolicies.getPolicies(0).getPolicyConfigCase());
+    assertEquals("modsec-sampling", samplingPolicies.getPolicies(0).getName());
+
+    assertEquals(
+        SamplingPolicy.PolicyConfigCase.RATE_LIMITING,
+        samplingPolicies.getPolicies(1).getPolicyConfigCase());
+    assertEquals("rate-limit-sampling", samplingPolicies.getPolicies(1).getName());
+    assertEquals(
+        10, samplingPolicies.getPolicies(1).getRateLimiting().getTraceLimitPerEndpointPerMinute());
+    assertEquals(
+        100, samplingPolicies.getPolicies(1).getRateLimiting().getTraceLimitGloballyPerMinute());
+
+    assertEquals(
+        SamplingPolicy.PolicyConfigCase.SPAN_ATTRIBUTES,
+        samplingPolicies.getPolicies(2).getPolicyConfigCase());
+    assertEquals("span-attributes-sampling", samplingPolicies.getPolicies(2).getName());
+    assertEquals(
+        1,
+        samplingPolicies
+            .getPolicies(2)
+            .getSpanAttributes()
+            .getAttributesRequiredForSamplingCount());
+    assertEquals(
+        "attribute.key",
+        samplingPolicies
+            .getPolicies(2)
+            .getSpanAttributes()
+            .getAttributesRequiredForSampling(0)
+            .getKey());
+    assertEquals(
+        2,
+        samplingPolicies
+            .getPolicies(2)
+            .getSpanAttributes()
+            .getAttributesRequiredForSampling(0)
+            .getValuesCount());
+    assertEquals(
+        "true",
+        samplingPolicies
+            .getPolicies(2)
+            .getSpanAttributes()
+            .getAttributesRequiredForSampling(0)
+            .getValues(0)
+            .getStringValue());
+    assertTrue(
+        samplingPolicies
+            .getPolicies(2)
+            .getSpanAttributes()
+            .getAttributesRequiredForSampling(0)
+            .getValues(1)
+            .getBoolValue());
   }
 
   private LocalProcessingRuleDetails createLocalProcessingRule(
