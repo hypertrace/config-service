@@ -1,5 +1,6 @@
 package ai.traceable.sensitivedata.config.service;
 
+import ai.traceable.config.uuid.UuidGenerator;
 import ai.traceable.sensitivedata.config.service.v1.ComplexData;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigResponse;
@@ -29,15 +30,18 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
   private final ConfigServiceCoordinator configServiceCoordinator;
   private final InsightsServiceCoordinator insightsServiceCoordinator;
   private final PiiFilterConfig defaultPiiFilterConfig;
+  private final UuidGenerator uuidGenerator;
 
   @Inject
   PiiFilterConfigServiceImpl(
       SensitiveDataServiceConfig sensitiveDataServiceConfig,
       ConfigServiceCoordinator configServiceCoordinator,
-      InsightsServiceCoordinator insightsServiceCoordinator) {
+      InsightsServiceCoordinator insightsServiceCoordinator,
+      UuidGenerator uuidGenerator) {
     this.configServiceCoordinator = configServiceCoordinator;
     this.insightsServiceCoordinator = insightsServiceCoordinator;
     this.defaultPiiFilterConfig = sensitiveDataServiceConfig.defaultPiiFilterConfig();
+    this.uuidGenerator = uuidGenerator;
   }
 
   @Override
@@ -88,11 +92,14 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
               .addAllValueRegexs(valueRegexToPiiElementMap.values())
               .addAllComplexData(complexDataMap.values())
               .build();
-      GetPiiFilterConfigResponse response =
-          GetPiiFilterConfigResponse.newBuilder()
-              .setPiiFilterConfig(resultingPiiFilterConfig)
-              .build();
-      responseObserver.onNext(response);
+
+      String responseHash = uuidGenerator.generateId(resultingPiiFilterConfig);
+      GetPiiFilterConfigResponse.Builder responseBuilder =
+          GetPiiFilterConfigResponse.newBuilder().setHash(responseHash);
+      if (!responseHash.equals(request.getHash())) {
+        responseBuilder.setPiiFilterConfig(resultingPiiFilterConfig);
+      }
+      responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Get PII Filter Config RPC failed for request:{}", request, e);

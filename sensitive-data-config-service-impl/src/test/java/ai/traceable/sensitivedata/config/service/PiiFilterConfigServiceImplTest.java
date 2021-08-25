@@ -7,8 +7,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.service.MockInsightsService;
+import ai.traceable.config.uuid.UuidGenerator;
 import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigResponse;
 import ai.traceable.sensitivedata.config.service.v1.MatchType;
 import ai.traceable.sensitivedata.config.service.v1.NewRedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.PiiElement;
@@ -33,6 +35,7 @@ class PiiFilterConfigServiceImplTest {
   PiiFilterConfigServiceBlockingStub piiFilterStub;
   MockGenericConfigService mockGenericConfigService;
   SensitiveDataServiceConfig mockConfig;
+  UuidGenerator uuidGenerator = new UuidGenerator();
 
   @BeforeEach
   void setUp() {
@@ -53,10 +56,11 @@ class PiiFilterConfigServiceImplTest {
   void getPiiFilterConfig() {
     setupPiiFilterConfigServiceImpl(false, getDefaultRedactionRules());
 
-    PiiFilterConfig piiFilterConfig =
-        piiFilterStub
-            .getPiiFilterConfig(GetPiiFilterConfigRequest.newBuilder().build())
-            .getPiiFilterConfig();
+    GetPiiFilterConfigResponse response =
+        piiFilterStub.getPiiFilterConfig(GetPiiFilterConfigRequest.newBuilder().build());
+
+    PiiFilterConfig piiFilterConfig = response.getPiiFilterConfig();
+    assertEquals(uuidGenerator.generateId(piiFilterConfig), response.getHash());
     // Only the prepopulated rules + the ones in mock insights service
     Set<PiiElement> expected =
         Set.of(
@@ -73,6 +77,17 @@ class PiiFilterConfigServiceImplTest {
             .map(piiElement -> PiiElement.newBuilder(piiElement).setRuleId("").build())
             .collect(Collectors.toSet());
     assertEquals(expected, actual);
+
+    // no update
+    response =
+        piiFilterStub.getPiiFilterConfig(
+            GetPiiFilterConfigRequest.newBuilder().setHash(response.getHash()).build());
+    assertEquals(uuidGenerator.generateId(piiFilterConfig), response.getHash());
+    assertEquals(
+        GetPiiFilterConfigResponse.newBuilder()
+            .setHash(uuidGenerator.generateId(piiFilterConfig))
+            .build(),
+        response);
   }
 
   @Test
@@ -182,7 +197,8 @@ class PiiFilterConfigServiceImplTest {
                 mockConfig,
                 new ConfigServiceCoordinatorImpl(
                     ConfigServiceGrpc.newBlockingStub(channel), mockConfig),
-                new InsightsServiceCoordinatorImpl(InsightsServiceGrpc.newBlockingStub(channel))))
+                new InsightsServiceCoordinatorImpl(InsightsServiceGrpc.newBlockingStub(channel)),
+                new UuidGenerator()))
         .start();
 
     piiFilterStub = PiiFilterConfigServiceGrpc.newBlockingStub(channel);
