@@ -24,5 +24,5 @@ include(":config-proto-converter")
 include(":spaces-config-service-api")
 include(":spaces-config-service-impl")
 
-include(":tags-config-service-api")
-include (":tags-config-service-impl")
+include(":labels-config-service-api")
+include(":labels-config-service-impl")

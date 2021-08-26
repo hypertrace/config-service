@@ -60,8 +60,8 @@ jobs:
 
       - name: verify-protos
         run: |
-          buf check lint
-          buf check breaking --against-input "https://github.com/${GITHUB_REPOSITORY}.git#branch=main"
+          buf lint
+          buf breaking --against-input "https://github.com/${GITHUB_REPOSITORY}.git#branch=main"
 
   snyk-scan:
     runs-on: ubuntu-20.04
