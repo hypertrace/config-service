@@ -8,19 +8,19 @@ import "org/hypertrace/label/config/service/v1/label.proto";
 
 service LabelConfigService {
 
-  // create tag
+  // create label
   rpc CreateLabel(CreateLabelRequest) returns (CreateLabelResponse) {}
 
-  // get tag by id
+  // get label by id
   rpc GetLabel(GetLabelRequest) returns (GetLabelResponse) {}
 
-  // get all tags
+  // get all labels
   rpc GetLabels(GetLabelsRequest) returns (GetLabelsResponse) {}
 
-  // update tag
+  // update label
   rpc UpdateLabel(UpdateLabelRequest) returns (UpdateLabelResponse) {}
 
-  // delete tag by id
+  // delete label by id
   rpc DeleteLabel(DeleteLabelRequest) returns (DeleteLabelResponse) {}
 
 }
