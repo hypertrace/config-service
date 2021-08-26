@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.Channel;
+import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -100,7 +101,7 @@ public final class TagConfigServiceImplTest {
               () -> {
                 tagConfigStub.createTag(createTagRequest);
               });
-      assertEquals("ALREADY_EXISTS", exception.getMessage());
+      assertEquals(Status.ALREADY_EXISTS, Status.fromThrowable(exception));
     }
   }
 
@@ -126,7 +127,7 @@ public final class TagConfigServiceImplTest {
             () -> {
               tagConfigStub.getTag(GetTagRequest.newBuilder().setId("1").build());
             });
-    assertEquals("NOT_FOUND", exception.getMessage());
+    assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
   }
 
   @Test
@@ -176,7 +177,7 @@ public final class TagConfigServiceImplTest {
                       .setTag(Tag.newBuilder().setId("1").setKey("API-X").build())
                       .build());
             });
-    assertEquals("NOT_FOUND", exception.getMessage());
+    assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
   }
 
   @Test
@@ -193,7 +194,7 @@ public final class TagConfigServiceImplTest {
               () -> {
                 tagConfigStub.updateTag(updateTagRequest);
               });
-      assertEquals("INVALID_ARGUMENT", exception.getMessage());
+      assertEquals(Status.INVALID_ARGUMENT, Status.fromThrowable(exception));
     }
     for (Tag systemTag : systemTags) {
       UpdateTagRequest updateTagRequest =
@@ -210,7 +211,7 @@ public final class TagConfigServiceImplTest {
               () -> {
                 tagConfigStub.updateTag(updateTagRequest);
               });
-      assertEquals("INVALID_ARGUMENT", exception.getMessage());
+      assertEquals(Status.INVALID_ARGUMENT, Status.fromThrowable(exception));
     }
   }
 
@@ -224,7 +225,7 @@ public final class TagConfigServiceImplTest {
             () -> {
               tagConfigStub.deleteTag(DeleteTagRequest.newBuilder().setId("1").build());
             });
-    assertEquals("NOT_FOUND", exception.getMessage());
+    assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
     // Deleting each tag one by one and verifying the delete operation
     createdTagsList.stream()
         .forEach(
@@ -249,7 +250,7 @@ public final class TagConfigServiceImplTest {
               () -> {
                 tagConfigStub.deleteTag(deleteTagRequest);
               });
-      assertEquals("INVALID_ARGUMENT", exception.getMessage());
+      assertEquals(Status.INVALID_ARGUMENT, Status.fromThrowable(exception));
     }
   }
 }
