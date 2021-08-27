@@ -6,7 +6,7 @@ option java_multiple_files = true;
 
 import "org/hypertrace/label/config/service/v1/label.proto";
 
-service LabelConfigService {
+service LabelsConfigService {
 
   // create label
   rpc CreateLabel(CreateLabelRequest) returns (CreateLabelResponse) {}

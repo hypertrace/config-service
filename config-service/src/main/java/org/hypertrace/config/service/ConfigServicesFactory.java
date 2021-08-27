@@ -8,6 +8,7 @@ import java.util.List;
 import org.hypertrace.config.service.store.ConfigStore;
 import org.hypertrace.config.service.store.DocumentConfigStore;
 import org.hypertrace.core.serviceframework.spi.PlatformServiceLifecycle;
+import org.hypertrace.label.config.service.LabelsConfigServiceImpl;
 import org.hypertrace.space.config.service.SpacesConfigServiceImpl;
 
 public class ConfigServicesFactory {
@@ -15,17 +16,20 @@ public class ConfigServicesFactory {
 
   public static List<BindableService> buildAllConfigServices(
       Config config, int port, PlatformServiceLifecycle lifecycle) {
-    return buildAllConfigServices(ConfigServicesFactory.buildConfigStore(config), port, lifecycle);
+    return buildAllConfigServices(
+        config, ConfigServicesFactory.buildConfigStore(config), port, lifecycle);
   }
 
   public static List<BindableService> buildAllConfigServices(
-      ConfigStore configStore, int port, PlatformServiceLifecycle lifecycle) {
+      Config config, ConfigStore configStore, int port, PlatformServiceLifecycle lifecycle) {
     ManagedChannel configChannel =
         ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
     lifecycle.shutdownComplete().thenRun(configChannel::shutdown);
 
     return List.of(
-        new ConfigServiceGrpcImpl(configStore), new SpacesConfigServiceImpl(configChannel));
+        new ConfigServiceGrpcImpl(configStore),
+        new SpacesConfigServiceImpl(configChannel),
+        new LabelsConfigServiceImpl(configChannel, config));
   }
 
   public static ConfigStore buildConfigStore(Config config) {
