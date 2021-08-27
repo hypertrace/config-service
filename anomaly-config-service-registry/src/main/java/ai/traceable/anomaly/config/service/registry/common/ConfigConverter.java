@@ -1,7 +1,9 @@
 package ai.traceable.anomaly.config.service.registry.common;
 
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
+import ai.traceable.anomaly.config.service.v1.AnomalyRuleCategory;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
+import ai.traceable.anomaly.config.service.v1.EnumExtension;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
@@ -22,7 +24,22 @@ public class ConfigConverter {
             config -> {
               AnomalyRuleInfo.Builder builder = AnomalyRuleInfo.newBuilder();
               mergeFromConfig(config, builder);
-              return builder.setEventFamily(eventFamily).build();
+              if (builder.getAnomalyRuleCategory()
+                  == AnomalyRuleCategory.ANOMALY_RULE_CATEGORY_UNSPECIFIED) {
+                throw new IllegalArgumentException(
+                    String.format(
+                        "Anomaly rule with id - %s does not have a valid anomaly rule category",
+                        builder.getRuleId()));
+              }
+              return builder
+                  .setEventFamily(eventFamily)
+                  .setRuleCategory(
+                      builder
+                          .getAnomalyRuleCategory()
+                          .getValueDescriptor()
+                          .getOptions()
+                          .getExtension(EnumExtension.stringValue))
+                  .build();
             })
         .collect(Collectors.toUnmodifiableMap(AnomalyRuleInfo::getRuleId, config -> config));
   }

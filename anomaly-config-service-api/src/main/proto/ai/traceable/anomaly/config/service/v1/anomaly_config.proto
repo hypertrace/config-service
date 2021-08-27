@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package ai.traceable.anomaly.config.service.v1;
 
+import "ai/traceable/anomaly/config/service/v1/enum_extension.proto";
+
 option java_multiple_files = true;
 
 message AnomalyConfigStatusChange {
@@ -60,9 +62,10 @@ enum AnomalyEventFamily {
 message AnomalyRuleInfo {
   string rule_id = 1;
   string rule_name = 2;
-  string rule_category = 3;
+  string rule_category = 3 [deprecated = true];
   AnomalyEventFamily event_family = 4;
   repeated AnomalySubRuleInfo sub_rule_infos = 5;
+  AnomalyRuleCategory anomaly_rule_category = 6;
 }
 
 message AnomalySubRuleInfo {
@@ -76,4 +79,19 @@ enum AnomalySubRuleType {
   ANOMALY_SUB_RULE_TYPE_REGULAR = 1;
   ANOMALY_SUB_RULE_TYPE_SAFE = 2;
   ANOMALY_SUB_RULE_TYPE_BLOCK = 3;
+}
+
+enum AnomalyRuleCategory {
+  ANOMALY_RULE_CATEGORY_UNSPECIFIED = 0 [(string_value) = "Unspecified"];
+  ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES = 1 [(string_value) = "Parameter Anomalies"];
+  ANOMALY_RULE_CATEGORY_REQUEST_RESPONSE_METADATA_ANOMALIES = 2 [(string_value) = "Request and Response Metadata Anomalies"];
+  ANOMALY_RULE_CATEGORY_INJECTIONS = 3 [(string_value) = "Injections"];
+  ANOMALY_RULE_CATEGORY_SSRF = 4 [(string_value) = "Server-Side Request Forgery (SSRF)"];
+  ANOMALY_RULE_CATEGORY_DOS = 5 [(string_value) = "Denial of Service (DOS) attack"];
+  ANOMALY_RULE_CATEGORY_SCANNER_DETECTED = 6 [(string_value) = "Scanner Detection"];
+  ANOMALY_RULE_CATEGORY_XSS = 7 [(string_value) = "Cross Site Scripting (XSS)"];
+  ANOMALY_RULE_CATEGORY_SESSION_FIXATION = 8 [(string_value) = "Session Fixation"];
+  ANOMALY_RULE_CATEGORY_PATH_MANIPULATION = 9 [(string_value) = "Path Manipulation"];
+  ANOMALY_RULE_CATEGORY_KNOWN_VULNERABILITIES = 10 [(string_value) = "Known Vulnerabilities"];
+  ANOMALY_RULE_CATEGORY_AUTHORIZATION_VIOLATIONS = 11 [(string_value) = "Session Anomalies"];
 }
