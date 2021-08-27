@@ -1,7 +1,7 @@
 package org.hypertrace.label.config.service;
 
-import static org.hypertrace.label.config.service.LabelConfigConstants.LABEL_CONFIG_RESOURCE_NAME;
-import static org.hypertrace.label.config.service.LabelConfigConstants.LABEL_CONFIG_RESOURCE_NAMESPACE;
+import static org.hypertrace.label.config.service.LabelsConfigServiceConstants.LABELS_CONFIG_RESOURCE_NAMESPACE;
+import static org.hypertrace.label.config.service.LabelsConfigServiceConstants.LABEL_CONFIG_RESOURCE_NAME;
 
 import com.google.protobuf.Value;
 import io.grpc.Channel;
@@ -38,7 +38,7 @@ public final class ConfigServiceCoordinatorImpl implements ConfigServiceCoordina
     UpsertConfigRequest upsertConfigRequest =
         UpsertConfigRequest.newBuilder()
             .setResourceName(LABEL_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(LABEL_CONFIG_RESOURCE_NAMESPACE)
+            .setResourceNamespace(LABELS_CONFIG_RESOURCE_NAMESPACE)
             .setConfig(convertToGenericFromLabel(label))
             .setContext(label.getId())
             .build();
@@ -55,7 +55,7 @@ public final class ConfigServiceCoordinatorImpl implements ConfigServiceCoordina
     GetConfigRequest getConfigRequest =
         GetConfigRequest.newBuilder()
             .setResourceName(LABEL_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(LABEL_CONFIG_RESOURCE_NAMESPACE)
+            .setResourceNamespace(LABELS_CONFIG_RESOURCE_NAMESPACE)
             .addContexts(labelId)
             .build();
     GetConfigResponse getConfigResponse = getConfig(requestContext, getConfigRequest);
@@ -71,7 +71,7 @@ public final class ConfigServiceCoordinatorImpl implements ConfigServiceCoordina
     GetAllConfigsRequest getAllConfigsRequest =
         GetAllConfigsRequest.newBuilder()
             .setResourceName(LABEL_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(LABEL_CONFIG_RESOURCE_NAMESPACE)
+            .setResourceNamespace(LABELS_CONFIG_RESOURCE_NAMESPACE)
             .build();
     GetAllConfigsResponse getAllConfigsResponse =
         getAllConfigs(requestContext, getAllConfigsRequest);
@@ -90,7 +90,7 @@ public final class ConfigServiceCoordinatorImpl implements ConfigServiceCoordina
     DeleteConfigRequest deleteConfigRequest =
         DeleteConfigRequest.newBuilder()
             .setResourceName(LABEL_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(LABEL_CONFIG_RESOURCE_NAMESPACE)
+            .setResourceNamespace(LABELS_CONFIG_RESOURCE_NAMESPACE)
             .setContext(labelId)
             .build();
     deleteConfig(requestContext, deleteConfigRequest);

@@ -7,6 +7,7 @@ import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -25,33 +26,46 @@ import org.hypertrace.label.config.service.v1.GetLabelResponse;
 import org.hypertrace.label.config.service.v1.GetLabelsRequest;
 import org.hypertrace.label.config.service.v1.GetLabelsResponse;
 import org.hypertrace.label.config.service.v1.Label;
-import org.hypertrace.label.config.service.v1.LabelConfigServiceGrpc;
+import org.hypertrace.label.config.service.v1.LabelsConfigServiceGrpc;
 import org.hypertrace.label.config.service.v1.UpdateLabelRequest;
 import org.hypertrace.label.config.service.v1.UpdateLabelResponse;
 
 @Slf4j
-public class LabelConfigServiceImpl extends LabelConfigServiceGrpc.LabelConfigServiceImplBase {
+public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfigServiceImplBase {
   private final ConfigServiceCoordinator configServiceCoordinator;
-  private final String LABEL_CONFIG_SERVICE_CONFIG = "label.config.service";
+  private final String LABELS_CONFIG_SERVICE_CONFIG = "labels.config.service";
   private final String SYSTEM_LABELS = "system.labels";
   private final List<Label> systemLabels;
   private final Map<String, Label> systemLabelsIdLabelMap;
   private final Map<String, Label> systemLabelsKeyLabelMap;
 
-  public LabelConfigServiceImpl(Channel configChannel, Config config) {
+  public LabelsConfigServiceImpl(Channel configChannel, Config config) {
     configServiceCoordinator = new ConfigServiceCoordinatorImpl(configChannel);
-    Config labelConfig = config.getConfig(LABEL_CONFIG_SERVICE_CONFIG);
-    List<? extends ConfigObject> systemLabelsObjectList = labelConfig.getObjectList(SYSTEM_LABELS);
-    systemLabels = buildSystemLabelList(systemLabelsObjectList);
-    systemLabelsIdLabelMap =
-        systemLabels.stream().collect(Collectors.toMap(Label::getId, Function.identity()));
-    systemLabelsKeyLabelMap =
-        systemLabels.stream().collect(Collectors.toMap(Label::getKey, Function.identity()));
+    List<? extends ConfigObject> systemLabelsObjectList = null;
+    if (config.hasPath(LABELS_CONFIG_SERVICE_CONFIG)) {
+      Config labelConfig = config.getConfig(LABELS_CONFIG_SERVICE_CONFIG);
+      if (labelConfig.hasPath(SYSTEM_LABELS)) {
+        systemLabelsObjectList = labelConfig.getObjectList(SYSTEM_LABELS);
+      }
+    }
+    if (systemLabelsObjectList != null) {
+      systemLabels = buildSystemLabelList(systemLabelsObjectList);
+      systemLabelsIdLabelMap =
+          systemLabels.stream()
+              .collect(Collectors.toUnmodifiableMap(Label::getId, Function.identity()));
+      systemLabelsKeyLabelMap =
+          systemLabels.stream()
+              .collect(Collectors.toUnmodifiableMap(Label::getKey, Function.identity()));
+    } else {
+      systemLabels = Collections.emptyList();
+      systemLabelsIdLabelMap = Collections.emptyMap();
+      systemLabelsKeyLabelMap = Collections.emptyMap();
+    }
   }
 
   private List<Label> buildSystemLabelList(List<? extends ConfigObject> configObjectList) {
     return configObjectList.stream()
-        .map(LabelConfigServiceImpl::buildLabelFromConfig)
+        .map(LabelsConfigServiceImpl::buildLabelFromConfig)
         .collect(Collectors.toUnmodifiableList());
   }
 

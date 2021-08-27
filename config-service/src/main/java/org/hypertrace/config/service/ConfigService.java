@@ -1,5 +1,6 @@
 package org.hypertrace.config.service;
 
+import com.typesafe.config.Config;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import java.io.IOException;
@@ -24,13 +25,15 @@ public class ConfigService extends PlatformService {
 
   @Override
   protected void doInit() {
-    serverPort = getAppConfig().getInt(SERVICE_PORT_CONFIG);
+    Config config = getAppConfig();
+    serverPort = config.getInt(SERVICE_PORT_CONFIG);
     LOG.info("Creating {} on port {}", getServiceName(), serverPort);
 
     ServerBuilder<?> serverBuilder = ServerBuilder.forPort(serverPort);
 
-    configStore = ConfigServicesFactory.buildConfigStore(getAppConfig());
-    ConfigServicesFactory.buildAllConfigServices(configStore, serverPort, getLifecycle()).stream()
+    configStore = ConfigServicesFactory.buildConfigStore(config);
+    ConfigServicesFactory.buildAllConfigServices(config, configStore, serverPort, getLifecycle())
+        .stream()
         .map(InterceptorUtil::wrapInterceptors)
         .forEach(serverBuilder::addService);
 

@@ -23,16 +23,16 @@ import org.hypertrace.label.config.service.v1.GetLabelRequest;
 import org.hypertrace.label.config.service.v1.GetLabelResponse;
 import org.hypertrace.label.config.service.v1.GetLabelsRequest;
 import org.hypertrace.label.config.service.v1.Label;
-import org.hypertrace.label.config.service.v1.LabelConfigServiceGrpc;
-import org.hypertrace.label.config.service.v1.LabelConfigServiceGrpc.LabelConfigServiceBlockingStub;
+import org.hypertrace.label.config.service.v1.LabelsConfigServiceGrpc;
+import org.hypertrace.label.config.service.v1.LabelsConfigServiceGrpc.LabelsConfigServiceBlockingStub;
 import org.hypertrace.label.config.service.v1.UpdateLabelRequest;
 import org.hypertrace.label.config.service.v1.UpdateLabelResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public final class LabelConfigServiceImplTest {
-  LabelConfigServiceBlockingStub labelConfigStub;
+public final class LabelsConfigServiceImplTest {
+  LabelsConfigServiceBlockingStub labelConfigStub;
   Config config;
   MockGenericConfigService mockGenericConfigService;
   List<Label> systemLabels =
@@ -55,11 +55,11 @@ public final class LabelConfigServiceImplTest {
             .map(systemLabel -> Map.of("id", systemLabel.getId(), "key", systemLabel.getKey()))
             .collect(Collectors.toList()));
     Map<String, Object> configMap = new HashMap<>();
-    configMap.put("label.config.service", systemLabelsConfigMap);
+    configMap.put("labels.config.service", systemLabelsConfigMap);
     config = ConfigFactory.parseMap(configMap);
     Channel channel = mockGenericConfigService.channel();
-    mockGenericConfigService.addService(new LabelConfigServiceImpl(channel, config)).start();
-    labelConfigStub = LabelConfigServiceGrpc.newBlockingStub(channel);
+    mockGenericConfigService.addService(new LabelsConfigServiceImpl(channel, config)).start();
+    labelConfigStub = LabelsConfigServiceGrpc.newBlockingStub(channel);
   }
 
   @AfterEach
