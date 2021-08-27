@@ -68,7 +68,8 @@ public class TraceableConfigService extends PlatformService {
     ServerBuilder<?> internalServerBuilder = ServerBuilder.forPort(internalServerPort);
     configStore = ConfigServicesFactory.buildConfigStore(getAppConfig());
 
-    ConfigServicesFactory.buildAllConfigServices(configStore, internalServerPort, getLifecycle())
+    ConfigServicesFactory.buildAllConfigServices(
+            config, configStore, internalServerPort, getLifecycle())
         .stream()
         .map(InterceptorUtil::wrapInterceptors)
         .forEach(internalServerBuilder::addService);
