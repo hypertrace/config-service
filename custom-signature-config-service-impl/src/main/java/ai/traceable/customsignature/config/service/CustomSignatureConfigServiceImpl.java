@@ -34,7 +34,7 @@ public class CustomSignatureConfigServiceImpl
   private final RulesValidator rulesValidator;
   private final RulesManager rulesManager;
   private final ModsecRulesManager modsecRulesManager;
-  private ActivityEventProducer activityEventProducer;
+  private final ActivityEventProducer activityEventProducer;
   private final boolean shouldPublishActivityEvents;
 
   @Inject

@@ -1,7 +1,6 @@
 package ai.traceable.customsignature.config.service.modsec;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -9,7 +8,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceConfig;
+import ai.traceable.customsignature.config.service.modsec.directives.ModsecDirectivesManager;
 import ai.traceable.customsignature.config.service.modsec.registry.ModsecRuleMappings;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
@@ -28,8 +27,6 @@ import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import com.github.f4b6a3.uuid.UuidCreator;
 import com.google.common.io.Resources;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -40,15 +37,14 @@ public class CustomSignatureModsecRulesManagerTest {
 
   private static final int EXPIRY_TIMESTAMP_MILLIS = 12345678;
   private static final String EXPIRY_DURATION = "P3M";
-  private final String ruleUuidSeed = "621c77fd-8014-41ac-b473-fa865642ef41";
 
   @Test
   public void testConvertRulesException() {
-    CustomSignatureConfigServiceConfig mockConfig = mock(CustomSignatureConfigServiceConfig.class);
-    when(mockConfig.getModsecDirectivesDataPath()).thenReturn("modsecurity.conf");
+    ModsecDirectivesManager mockDirectivesManager = mock(ModsecDirectivesManager.class);
+    when(mockDirectivesManager.getModsecHeader()).thenReturn("");
     ModsecRuleConversion modsecRuleConversion = mock(ModsecRuleConversion.class);
     CustomSignatureModsecRulesManager modsecRulesManager =
-        new CustomSignatureModsecRulesManager(modsecRuleConversion, mockConfig);
+        new CustomSignatureModsecRulesManager(modsecRuleConversion, mockDirectivesManager);
 
     GetCustomSignatureModsecRulesResponse response =
         modsecRulesManager.getModsecRules(List.of(CustomSignatureRule.newBuilder().build()));
@@ -88,25 +84,40 @@ public class CustomSignatureModsecRulesManagerTest {
     assertTrue(response.getModsecRulesBlob().isEmpty());
     assertTrue(response.getRulesList().isEmpty());
     verify(modsecRuleConversion, times(1)).getModsecRuleForANDClauses(any(), any());
-
-    when(mockConfig.getModsecDirectivesDataPath()).thenReturn("xyz");
-    assertThrows(
-        RuntimeException.class,
-        () -> new CustomSignatureModsecRulesManager(modsecRuleConversion, mockConfig));
   }
 
   @Test
   public void testConvertRules() throws IOException {
-    Map<String, Object> configMap = new HashMap<>();
-    configMap.put("modsecurity.directives.data.path", "modsecurity.conf");
-    Config mockConfig = mock(Config.class);
-    when(mockConfig.getConfig("custom.signature.config.service"))
-        .thenReturn(ConfigFactory.parseMap(configMap));
-    CustomSignatureConfigServiceConfig config = new CustomSignatureConfigServiceConfig(mockConfig);
+    ModsecDirectivesManager mockDirectivesManager = mock(ModsecDirectivesManager.class);
+    when(mockDirectivesManager.getModsecHeader())
+        .thenReturn(
+            "SecRuleEngine On\n"
+                + "SecRequestBodyAccess On\n"
+                + "SecRequestBodyLimit 13107200\n"
+                + "SecRequestBodyNoFilesLimit 131072\n"
+                + "SecRequestBodyLimitAction Reject\n"
+                + "SecPcreMatchLimit 1000\n"
+                + "SecPcreMatchLimitRecursion 1000\n"
+                + "SecResponseBodyAccess On\n"
+                + "SecResponseBodyLimit 524288\n"
+                + "SecTmpDir /tmp/\n"
+                + "SecDataDir /tmp/\n"
+                + "SecAuditEngine Off\n"
+                + "SecAuditLogRelevantStatus \"^(?:5|4(?!04))\"\n"
+                + "SecAuditLogParts ABIJDEFHZ\n"
+                + "SecAuditLogType Serial\n"
+                + "SecAuditLog /var/log/modsec_audit.log\n"
+                + "SecArgumentSeparator &\n"
+                + "SecCookieFormat 0\n"
+                + "SecStatusEngine Off\n"
+                + "SecDefaultAction \"phase:1,log,auditlog,deny,status:403\"\n"
+                + "SecDefaultAction \"phase:2,log,auditlog,deny,status:403\"\n"
+                + "SecCollectionTimeout 600"
+                + "\n\n");
 
     CustomSignatureModsecRulesManager modsecRulesManager =
         new CustomSignatureModsecRulesManager(
-            new ModsecRuleConversion(new ModsecRuleMappings()), config);
+            new ModsecRuleConversion(new ModsecRuleMappings()), mockDirectivesManager);
 
     List<CustomSignatureRule> rules = new ArrayList<>();
 
@@ -337,11 +348,9 @@ public class CustomSignatureModsecRulesManagerTest {
 
   private void createChainedRule(List<CustomSignatureRule> rules, int... indices) {
     String idList =
-        String.join(
-            " , ",
-            Arrays.stream(indices)
-                .mapToObj(i -> String.valueOf(10000000 + 1 + i))
-                .collect(Collectors.toList()));
+        Arrays.stream(indices)
+            .mapToObj(i -> String.valueOf(10000000 + 1 + i))
+            .collect(Collectors.joining(" , "));
     rules.add(
         CustomSignatureRule.newBuilder()
             .setId(getUUID("Chained rule with ids: " + idList))
@@ -376,6 +385,7 @@ public class CustomSignatureModsecRulesManagerTest {
   }
 
   private String getUUID(String value) {
+    String ruleUuidSeed = "621c77fd-8014-41ac-b473-fa865642ef41";
     return UuidCreator.getNameBasedSha1(ruleUuidSeed, value).toString();
   }
 

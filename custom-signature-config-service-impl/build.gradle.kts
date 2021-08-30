@@ -8,6 +8,8 @@ dependencies {
   api(projects.activityEventProducer)
   api(libs.grpc.api)
   api(libs.typesafe.config)
+
+  implementation(projects.anomalyConfigServiceRegistry)
   implementation(projects.customSignatureConfigServiceApi)
   implementation(libs.hypertrace.configservice.api)
   implementation(libs.guice)
@@ -16,7 +18,6 @@ dependencies {
   implementation(libs.slf4j.api)
   implementation(libs.uuidCreator)
   implementation(libs.re2j)
-
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpcutils.client)
   implementation(libs.hypertrace.configservice.protoconverter)

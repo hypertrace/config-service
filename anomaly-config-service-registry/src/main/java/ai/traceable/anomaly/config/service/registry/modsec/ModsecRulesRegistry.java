@@ -9,4 +9,7 @@ public interface ModsecRulesRegistry {
   Map<String, AnomalyRuleInfo> getModsecRuleInfos();
 
   String getModsecCrsRulesBlob(AnomalySubRuleType subRuleType);
+
+  //  Returns both directives and initalization
+  String getModsecHeader();
 }

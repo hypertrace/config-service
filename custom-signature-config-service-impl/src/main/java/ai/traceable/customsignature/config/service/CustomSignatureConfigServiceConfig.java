@@ -6,14 +6,9 @@ public class CustomSignatureConfigServiceConfig {
   private final Config config;
   private static final String CUSTOM_SIGNATURE_CONFIG_SERVICE = "custom.signature.config.service";
   private static final String SHOULD_PUBLISH_ACTIVITY_EVENTS_CONFIG = "shouldPublishActivityEvents";
-  private static final String MODSECURITY_DIRECTIVES_DATA_PATH = "modsecurity.directives.data.path";
 
   public CustomSignatureConfigServiceConfig(Config config) {
     this.config = config.getConfig(CUSTOM_SIGNATURE_CONFIG_SERVICE);
-  }
-
-  public String getModsecDirectivesDataPath() {
-    return this.config.getString(MODSECURITY_DIRECTIVES_DATA_PATH);
   }
 
   public boolean shouldPublishActivityEvents() {

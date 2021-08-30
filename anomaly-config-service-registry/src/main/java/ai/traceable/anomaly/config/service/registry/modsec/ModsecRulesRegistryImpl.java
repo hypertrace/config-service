@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
-
+  private static final String NEWLINE_DELIMITER = "\n";
   private static final String MODSEC_DIRECTORY = "modsec/";
   private static final String MODSEC_RULE_DETAILS_FILE_PATH =
       MODSEC_DIRECTORY + "modsec-rule-details.conf";
@@ -64,6 +64,14 @@ public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
         MODSEC_CRS_RULES_FILE_PATH,
         modsecRules,
         subRuleType);
+  }
+
+  @Override
+  public String getModsecHeader() {
+    return String.join(
+        NEWLINE_DELIMITER,
+        modsecCrsRulesHandler.loadModsecCrsFileContents(MODSEC_CRS_DIRECTIVES_FILE_PATH),
+        modsecCrsRulesHandler.loadModsecCrsFileContents(MODSEC_CRS_INITIALIZATION_RULES_FILE_PATH));
   }
 
   private Map<String, AnomalyRuleInfo> initModsecRules() {

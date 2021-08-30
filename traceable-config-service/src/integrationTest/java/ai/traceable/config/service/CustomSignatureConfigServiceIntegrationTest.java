@@ -147,7 +147,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                             .build())
                     .getRulesList());
     assertEquals(1, fetchedRules.size());
-    assertEquals(true, fetchedRules.get(0).getDisabled());
+    assertTrue(fetchedRules.get(0).getDisabled());
     assertEquals(createdRules.get(0).getId(), fetchedRules.get(0).getId());
 
     fetchedRules = fetchTestRules();
@@ -188,10 +188,66 @@ public class CustomSignatureConfigServiceIntegrationTest
             + "SecArgumentSeparator &\n"
             + "SecCookieFormat 0\n"
             + "SecStatusEngine Off\n"
-            + "SecDefaultAction \"phase:1,log,auditlog,deny,status:403\"\n"
-            + "SecDefaultAction \"phase:2,log,auditlog,deny,status:403\"\n"
+            + "# Rule action should be pass so that detection works in case of multiple matches\n"
+            + "#   and first match is excluded\n"
+            + "SecDefaultAction \"phase:1,log,auditlog,pass\"\n"
+            + "SecDefaultAction \"phase:2,log,auditlog,pass\"\n"
             + "SecCollectionTimeout 600\n"
-            + "\n";
+            + "\n"
+            + "# If no content type specified process as URLENCODED\n"
+            + "# static_extensions used by DOS rules\n"
+            + "SecAction \\\n"
+            + "  \"id:900000,\\\n"
+            + "   phase:1,\\\n"
+            + "   nolog,\\\n"
+            + "   pass,\\\n"
+            + "   t:none,\\\n"
+            + "   setvar:tx.paranoia_level=1,\\\n"
+            + "   setvar:'tx.enforce_bodyproc_urlencoded=1',\\\n"
+            + "   setvar:'tx.static_extensions=/.jpg/ /.jpeg/ /.png/ /.gif/ /.js/ /.css/ /.ico/ /.svg/ /.webp/'\""
+            + "\n"
+            + "# Initialize both Global and IP collections for rules to use.\n"
+            + "SecRule REQUEST_HEADERS:User-Agent \"@rx ^.*$\" \\\n"
+            + "    \"id:901318,\\\n"
+            + "    phase:1,\\\n"
+            + "    pass,\\\n"
+            + "    t:none,t:sha1,t:hexEncode,\\\n"
+            + "    nolog,\\\n"
+            + "    setvar:'tx.ua_hash=%{MATCHED_VAR}'\"\n"
+            + "SecAction \\\n"
+            + "    \"id:901321,\\\n"
+            + "    phase:1,\\\n"
+            + "    pass,\\\n"
+            + "    t:none,\\\n"
+            + "    nolog,\\\n"
+            + "    initcol:global=global,\\\n"
+            + "    initcol:ip=%{remote_addr}_%{tx.ua_hash},\\\n"
+            + "    setvar:'tx.real_ip=%{remote_addr}'\"\n"
+            + "\n"
+            + "# Initialize Correct Body Processing\n"
+            + "# Force request body variable\n"
+            + "SecRule REQBODY_PROCESSOR \"!@rx (?:URLENCODED|MULTIPART|XML|JSON)\" \\\n"
+            + "    \"id:901340,\\\n"
+            + "    phase:1,\\\n"
+            + "    pass,\\\n"
+            + "    nolog,\\\n"
+            + "    noauditlog,\\\n"
+            + "    msg:'Enabling body inspection',\\\n"
+            + "    tag:'paranoia-level/1',\\\n"
+            + "    ctl:forceRequestBodyVariable=On\"\n"
+            + "# Force body processor URLENCODED\n"
+            + "SecRule TX:enforce_bodyproc_urlencoded \"@eq 1\" \\\n"
+            + "    \"id:901350,\\\n"
+            + "    phase:1,\\\n"
+            + "    pass,\\\n"
+            + "    t:none,t:urlDecodeUni,\\\n"
+            + "    nolog,\\\n"
+            + "    noauditlog,\\\n"
+            + "    msg:'Enabling forced body inspection for ASCII content',\\\n"
+            + "    chain\"\n"
+            + "    SecRule REQBODY_PROCESSOR \"!@rx (?:URLENCODED|MULTIPART|XML|JSON)\" \\\n"
+            + "        \"ctl:requestBodyProcessor=URLENCODED\""
+            + "\n\n";
 
     assertTrue(fetchAllRules().isEmpty());
     List<CustomSignatureRule> createdRules = createDefaultRules();
@@ -245,7 +301,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                         .setFilter(GetRulesFilter.newBuilder().setDisabled(true).build())
                         .build()));
     assertEquals(1, rulesResponse.getRulesCount());
-    assertEquals(true, rulesResponse.getRules(0).getDisabled());
+    assertTrue(rulesResponse.getRules(0).getDisabled());
     assertEquals(createdRules.get(0).getId(), rulesResponse.getRules(0).getId());
     assertEquals(
         0, rulesResponse.getRules(0).getBlockingExpiryDetails().getExpiryTimestampMillis());
