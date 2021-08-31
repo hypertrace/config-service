@@ -7,7 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.service.MockInsightsService;
-import ai.traceable.config.uuid.UuidGenerator;
+import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigResponse;

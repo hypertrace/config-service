@@ -1,4 +1,4 @@
-package ai.traceable.config.uuid;
+package ai.traceable.config.utils;
 
 import com.github.f4b6a3.uuid.UuidCreator;
 import com.google.protobuf.GeneratedMessageV3;
@@ -11,6 +11,10 @@ public class UuidGenerator {
 
   public String generateId(GeneratedMessageV3 protoMessage) {
     return generateId(protoMessage.toByteString().toByteArray());
+  }
+
+  public String generateRandomId() {
+    return UuidCreator.getRandomBased().toString();
   }
 
   private String generateId(byte[] value) {

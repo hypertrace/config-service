@@ -2,8 +2,11 @@ package ai.traceable.userattribution.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import ai.traceable.config.utils.ObjectDiffer;
+import ai.traceable.config.utils.RankCalculator;
+import ai.traceable.config.utils.RankCalculator.RankConfig;
+import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.userattribution.config.service.store.UserAttributionRuleGenerator;
-import ai.traceable.userattribution.config.service.store.UserAttributionRuleRankCalculator;
 import ai.traceable.userattribution.config.service.store.UserAttributionRuleStore;
 import ai.traceable.userattribution.config.service.v1.CreateUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.DeleteUserAttributionRuleRequest;
@@ -40,14 +43,21 @@ class UserAttributionConfigServiceImplTest {
     ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
 
+    RankCalculator<UserAttributionRule, String> rankCalculator =
+        new RankCalculator<>(
+            new RankConfig<>(
+                UserAttributionRule::getRank,
+                UserAttributionRule::getId,
+                (rule, rank) -> rule.toBuilder().setRank(rank).build()));
+
     this.mockGenericConfigService
         .addService(
             new UserAttributionConfigServiceImpl(
                 new UserAttributionConfigRequestValidator(),
-                new UserAttributionRuleStore(genericStub),
-                new UserAttributionRuleGenerator(),
-                new UserAttributionRuleRankCalculator(),
-                new UserAttributionRuleDiffer()))
+                new UserAttributionRuleStore(genericStub, rankCalculator),
+                new UserAttributionRuleGenerator(new UuidGenerator()),
+                rankCalculator,
+                new ObjectDiffer()))
         .start();
 
     this.userAttributionStub =

@@ -6,7 +6,7 @@ plugins {
 
 dependencies {
   api(projects.sensitiveDataConfigServiceApi)
-  implementation(projects.uuidGenerator)
+  implementation(projects.configUtils)
 
   implementation(libs.hypertrace.configservice.api)
   implementation(libs.traceable.insights.api)

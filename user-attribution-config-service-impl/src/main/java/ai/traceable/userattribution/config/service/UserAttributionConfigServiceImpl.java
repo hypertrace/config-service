@@ -1,7 +1,8 @@
 package ai.traceable.userattribution.config.service;
 
+import ai.traceable.config.utils.ObjectDiffer;
+import ai.traceable.config.utils.RankCalculator;
 import ai.traceable.userattribution.config.service.store.UserAttributionRuleGenerator;
-import ai.traceable.userattribution.config.service.store.UserAttributionRuleRankCalculator;
 import ai.traceable.userattribution.config.service.store.UserAttributionRuleStore;
 import ai.traceable.userattribution.config.service.v1.CreateUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.CreateUserAttributionRuleResponse;
@@ -28,21 +29,21 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
   private final UserAttributionConfigRequestValidator validator;
   private final UserAttributionRuleStore ruleStore;
   private final UserAttributionRuleGenerator ruleGenerator;
-  private final UserAttributionRuleRankCalculator rankCalculator;
-  private final UserAttributionRuleDiffer ruleDiffer;
+  private final RankCalculator<UserAttributionRule, String> rankCalculator;
+  private final ObjectDiffer objectDiffer;
 
   @Inject
   UserAttributionConfigServiceImpl(
       UserAttributionConfigRequestValidator validator,
       UserAttributionRuleStore ruleStore,
       UserAttributionRuleGenerator ruleGenerator,
-      UserAttributionRuleRankCalculator rankCalculator,
-      UserAttributionRuleDiffer ruleDiffer) {
+      RankCalculator<UserAttributionRule, String> rankCalculator,
+      ObjectDiffer objectDiffer) {
     this.validator = validator;
     this.ruleStore = ruleStore;
     this.ruleGenerator = ruleGenerator;
     this.rankCalculator = rankCalculator;
-    this.ruleDiffer = ruleDiffer;
+    this.objectDiffer = objectDiffer;
   }
 
   @Override
@@ -74,10 +75,10 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
       UserAttributionRule newRule = this.ruleGenerator.generateNewRuleWithoutRank(request);
       List<UserAttributionRule> existingRules = this.ruleStore.getRules(requestContext);
       List<UserAttributionRule> mergedAndRankedRules =
-          this.rankCalculator.rankAndMergeNewRule(newRule, existingRules);
+          this.rankCalculator.rankAndMergeNewObject(newRule, existingRules);
       this.ruleStore.upsertAllRules(
           requestContext,
-          this.ruleDiffer.filterUnchangedRules(existingRules, mergedAndRankedRules));
+          this.objectDiffer.getNewOrUpdatedObjects(existingRules, mergedAndRankedRules));
       // TODO remove once deprecated api removed
       UserAttributionRule createdNewRule =
           mergedAndRankedRules.stream()
@@ -132,7 +133,8 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
       List<UserAttributionRule> rerankedRules = this.rankCalculator.rankFromOrder(rulesAfterDelete);
 
       this.ruleStore.upsertAllRules(
-          requestContext, this.ruleDiffer.filterUnchangedRules(rulesAfterDelete, rerankedRules));
+          requestContext,
+          this.objectDiffer.getNewOrUpdatedObjects(rulesAfterDelete, rerankedRules));
 
       responseObserver.onNext(
           DeleteUserAttributionRuleResponse.newBuilder().addAllRules(rerankedRules).build());
@@ -152,10 +154,13 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
       this.validator.validateOrThrow(requestContext, request);
       List<UserAttributionRule> existingRules = this.ruleStore.getRules(requestContext);
       List<UserAttributionRule> rerankedRules =
-          this.rankCalculator.rerankRules(request, existingRules);
+          request.hasPrecedingRuleId()
+              ? this.rankCalculator.rerankAfterOtherObject(
+                  request.getIdToUpdate(), request.getPrecedingRuleId(), existingRules)
+              : this.rankCalculator.rerankAsHighestRank(request.getIdToUpdate(), existingRules);
 
       this.ruleStore.upsertAllRules(
-          requestContext, this.ruleDiffer.filterUnchangedRules(existingRules, rerankedRules));
+          requestContext, this.objectDiffer.getNewOrUpdatedObjects(existingRules, rerankedRules));
       responseObserver.onNext(
           RankUserAttributionRuleResponse.newBuilder().addAllRules(rerankedRules).build());
       responseObserver.onCompleted();

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.utils.RankCalculator;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.CustomUserAttributionRuleData;
@@ -116,6 +117,7 @@ class UserAttributionRuleStoreTest {
                   .build())
           .build();
   @Mock ConfigServiceBlockingStub mockStub;
+  @Mock RankCalculator<UserAttributionRule, String> mockRankCalculator;
 
   @Mock(answer = Answers.CALLS_REAL_METHODS)
   RequestContext mockRequestContext;
@@ -125,11 +127,13 @@ class UserAttributionRuleStoreTest {
   @BeforeEach
   void beforeEach() {
     this.mockStub = mock(ConfigServiceBlockingStub.class);
-    this.store = new UserAttributionRuleStore(this.mockStub);
+    this.store = new UserAttributionRuleStore(this.mockStub, mockRankCalculator);
   }
 
   @Test
   void generatesConfigReadRequest() {
+    when(this.mockRankCalculator.orderFromRanks(any()))
+        .thenAnswer(invocation -> invocation.getArguments()[0]);
     when(this.mockStub.getAllConfigs(any()))
         .thenReturn(
             GetAllConfigsResponse.newBuilder()

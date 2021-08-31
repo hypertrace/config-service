@@ -1,7 +1,6 @@
 package ai.traceable.userattribution.config.service.store;
 
-import static ai.traceable.userattribution.config.service.store.UserAttributionRuleRankCalculator.RULE_RANK_COMPARATOR;
-
+import ai.traceable.config.utils.RankCalculator;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
@@ -26,10 +25,14 @@ public class UserAttributionRuleStore {
   private static final String USER_ATTRIBUTION_RESOURCE_NAMESPACE = "user-attribution";
 
   private final ConfigServiceBlockingStub configServiceBlockingStub;
+  private final RankCalculator<UserAttributionRule, String> rankCalculator;
 
   @Inject
-  public UserAttributionRuleStore(ConfigServiceBlockingStub configServiceBlockingStub) {
+  public UserAttributionRuleStore(
+      ConfigServiceBlockingStub configServiceBlockingStub,
+      RankCalculator<UserAttributionRule, String> rankCalculator) {
     this.configServiceBlockingStub = configServiceBlockingStub;
+    this.rankCalculator = rankCalculator;
   }
 
   public List<UserAttributionRule> getRules(RequestContext context) {
@@ -46,8 +49,9 @@ public class UserAttributionRuleStore {
         .map(ContextSpecificConfig::getConfig)
         .map(this::buildRule)
         .flatMap(Optional::stream)
-        .sorted(RULE_RANK_COMPARATOR)
-        .collect(Collectors.toUnmodifiableList());
+        .collect(
+            Collectors.collectingAndThen(
+                Collectors.toUnmodifiableList(), rankCalculator::orderFromRanks));
   }
 
   public Optional<UserAttributionRule> getRule(RequestContext context, String id) {

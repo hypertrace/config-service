@@ -1,6 +1,6 @@
 package ai.traceable.sensitivedata.config.service;
 
-import ai.traceable.config.uuid.UuidGenerator;
+import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.sensitivedata.config.service.v1.ComplexData;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigResponse;

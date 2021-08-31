@@ -7,6 +7,7 @@ plugins {
 dependencies {
   api(projects.userAttributionConfigServiceApi)
   implementation(libs.hypertrace.configservice.api)
+  implementation(projects.configUtils)
   implementation(libs.guice)
   implementation(libs.guava)
   implementation(libs.protobuf.javautil)
