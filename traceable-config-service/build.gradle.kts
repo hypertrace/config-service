@@ -70,6 +70,7 @@ dependencies {
   implementation(projects.externalUserAttributionConfigServiceImpl)
   implementation(projects.threatManagementConfigServiceImpl)
   implementation(projects.anomalyConfigServiceImpl)
+  implementation(projects.riskConfigServiceImpl)
   implementation(libs.hypertrace.configservice.server)
   implementation(libs.hypertrace.configservice.impl)
   implementation(libs.hypertrace.grpcutils.server)
@@ -100,6 +101,7 @@ dependencies {
   integrationTestImplementation(libs.hypertrace.grpcutils.context)
   integrationTestImplementation(libs.protobuf.javautil)
   integrationTestImplementation(projects.iprangeConfigServiceApi)
+  integrationTestImplementation(projects.riskConfigServiceApi)
 }
 
 application {

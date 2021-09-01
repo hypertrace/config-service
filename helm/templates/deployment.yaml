@@ -76,6 +76,9 @@ spec:
             - name: service-config
               mountPath: /app/resources/configs/{{ .Chart.Name }}/anomaly.conf
               subPath: anomaly.conf
+            - name: service-config
+              mountPath: /app/resources/configs/{{ .Chart.Name }}/risk.conf
+              subPath: risk.conf
             - name: log4j-config
               mountPath: /var/{{ .Chart.Name }}/log
           livenessProbe:

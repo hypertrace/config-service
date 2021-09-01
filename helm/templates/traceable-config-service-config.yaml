@@ -49,9 +49,21 @@ data:
     anomaly.config.service = {
       include "anomaly.conf"
     }
+    risk.config.service = {
+      include "risk.conf"
+    }
   anomaly.conf: |-
     global {
       disabled = {{ .Values.anomalyConfigServiceConfig.global.disabled }}
       internal = {{ .Values.anomalyConfigServiceConfig.global.internal }}
       licenseTiers = {{ .Values.anomalyConfigServiceConfig.global.licenseTiers | nindent 6 }}
     }
+  risk.conf: |-
+    {{- if hasKey .Values "riskConfigServiceConfig" }}
+      {{- if hasKey .Values.riskConfigServiceConfig "riskLevelConfigValues" }}
+        riskLevelConfigValues = {{ .Values.riskConfigServiceConfig.riskLevelConfigValues | nindent 2 }}
+      {{- end }}
+      {{- if hasKey .Values.riskConfigServiceConfig "riskFactorGridConfigValues" }}
+        riskFactorGridConfigValues = {{ .Values.riskConfigServiceConfig.riskFactorGridConfigValues | nindent 2 }}
+      {{- end }}
+    {{- end }}

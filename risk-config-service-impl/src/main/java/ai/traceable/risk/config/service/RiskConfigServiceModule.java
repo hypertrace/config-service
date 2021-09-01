@@ -5,6 +5,7 @@ import ai.traceable.risk.config.service.level.RiskLevelConfigModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
+import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
@@ -23,6 +24,8 @@ public class RiskConfigServiceModule extends AbstractModule {
 
   @Override
   protected void configure() {
+    bind(BindableService.class).to(RiskConfigServiceImpl.class);
+    bind(ManagedChannel.class).toInstance(channel);
     install(new RiskLevelConfigModule());
     install(new RiskFactorGridConfigModule());
   }
