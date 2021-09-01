@@ -93,7 +93,7 @@ public class ModsecRuleConversionTest {
         "SecRule "
             + "REQUEST_HEADERS:Host|REQUEST_HEADERS:x-forwarded-host|REQUEST_HEADERS:forwarded "
             + "\"@streq 127.0.0.1\" "
-            + "\"id:10000005,phase:2,capture,t:none,"
+            + "\"id:10000005,phase:2,capture,block,t:none,"
             + "msg:'MATCH_KEY_HOST : MATCH_OPERATOR_EQUALS',"
             + "logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',"
             + "tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',"
@@ -123,7 +123,7 @@ public class ModsecRuleConversionTest {
             + "tag:'rule-uuid/4d1e7177-4e54-5a8e-a985-ad1308304605',severity:'CRITICAL',chain\"\n"
             + "SecRule REQUEST_METHOD \"@contains post\" \"capture,t:none,chain\"\n"
             + "SecRule REQUEST_HEADERS:x-real \"@rx .*\\<script\\>.*\" \"capture,t:none,chain\"\n"
-            + "SecRule ARGS:/paramLevel/ \"@gt 5\" \"capture,t:none\"",
+            + "SecRule ARGS:/paramLevel/ \"@gt 5\" \"capture,block,t:none\"",
         modsecRuleConversion.getModsecRuleForANDClauses(
             List.of(
                 Clause.newBuilder()
@@ -177,7 +177,7 @@ public class ModsecRuleConversionTest {
             + "tag:'rule-uuid/3c7f7064-013a-5b33-ae02-4ae202acea60',"
             + "severity:'CRITICAL',chain\"\n"
             + "SecRule ARGS|!ARGS:/^(param)[a-s1-9_-]{3,16}$/ \"!@rx ^\\d+$\" "
-            + "\"capture,t:none\"",
+            + "\"capture,block,t:none\"",
         modsecRuleConversion.getModsecRuleForANDClauses(
             List.of(
                 Clause.newBuilder()

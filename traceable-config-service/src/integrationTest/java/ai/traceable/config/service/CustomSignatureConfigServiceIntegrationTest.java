@@ -188,10 +188,9 @@ public class CustomSignatureConfigServiceIntegrationTest
             + "SecArgumentSeparator &\n"
             + "SecCookieFormat 0\n"
             + "SecStatusEngine Off\n"
-            + "# Rule action should be pass so that detection works in case of multiple matches\n"
-            + "#   and first match is excluded\n"
-            + "SecDefaultAction \"phase:1,log,auditlog,pass\"\n"
-            + "SecDefaultAction \"phase:2,log,auditlog,pass\"\n"
+            + "# Reverted rule action to block and exit till the issue around match attributes for multiple matches is resolved\n"
+            + "SecDefaultAction \"phase:1,log,auditlog,deny,status:403\"\n"
+            + "SecDefaultAction \"phase:2,log,auditlog,deny,status:403\"\n"
             + "SecCollectionTimeout 600\n"
             + "\n"
             + "# If no content type specified process as URLENCODED\n"
@@ -277,7 +276,7 @@ public class CustomSignatureConfigServiceIntegrationTest
             + "SecRule REQUEST_HEADERS:Host|REQUEST_HEADERS:x-forwarded-host|REQUEST_HEADERS:forwarded \"@streq 127.0.0.1\" \"id:10000001,phase:2,capture,t:none,msg:'rule-2',logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',tag:'rule-uuid/"
             + createdRules.get(1).getId()
             + "',severity:'CRITICAL',chain\"\n"
-            + "SecRule REQUEST_HEADERS:x-real-ip \"@rx ^127\" \"capture,t:none\"",
+            + "SecRule REQUEST_HEADERS:x-real-ip \"@rx ^127\" \"capture,block,t:none\"",
         rulesResponse.getModsecRulesBlob());
 
     rulesResponse =
@@ -310,7 +309,7 @@ public class CustomSignatureConfigServiceIntegrationTest
             + "SecRule REQUEST_HEADERS:Host|REQUEST_HEADERS:x-forwarded-host|REQUEST_HEADERS:forwarded \"@streq 127.0.0.1\" \"id:10000001,phase:2,capture,t:none,msg:'rule-1',logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',tag:'rule-uuid/"
             + createdRules.get(0).getId()
             + "',severity:'CRITICAL',chain\"\n"
-            + "SecRule REQUEST_HEADERS:x-real-ip \"@rx ^127\" \"capture,t:none\"",
+            + "SecRule REQUEST_HEADERS:x-real-ip \"@rx ^127\" \"capture,block,t:none\"",
         rulesResponse.getModsecRulesBlob());
   }
 

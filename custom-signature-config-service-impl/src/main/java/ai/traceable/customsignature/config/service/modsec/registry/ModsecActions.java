@@ -13,6 +13,7 @@ public class ModsecActions {
   private static final String DEFAULT_PARANOIA_LEVEL = String.format(PARANOIA_LEVEL_TAG_FORMAT, 1);
 
   private static final String CAPTURE = "capture";
+  private static final String BLOCK = "block";
   private static final String TRANSFORMATION_NONE = "t:none";
   private static final String LOG_DATA =
       "logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}'";
@@ -37,6 +38,7 @@ public class ModsecActions {
             String.format(ID_FORMAT, id),
             DEFAULT_PHASE,
             CAPTURE,
+            BLOCK,
             TRANSFORMATION_NONE,
             String.format(MSG_FORMAT, msg),
             LOG_DATA,
@@ -70,6 +72,6 @@ public class ModsecActions {
   }
 
   public String getChainedRuleFinalActionsString() {
-    return "\"" + String.join(COMMA_DELIMITER, CAPTURE, TRANSFORMATION_NONE) + "\"";
+    return "\"" + String.join(COMMA_DELIMITER, CAPTURE, BLOCK, TRANSFORMATION_NONE) + "\"";
   }
 }
