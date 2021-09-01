@@ -156,7 +156,7 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
         deleteConfigRequest.getResourceName(),
         deleteConfigRequest.getResourceNamespace(),
         getTenantId(),
-        deleteConfigRequest.getContext());
+        getActualContext(deleteConfigRequest.getContext()));
   }
 
   private String getTenantId() {

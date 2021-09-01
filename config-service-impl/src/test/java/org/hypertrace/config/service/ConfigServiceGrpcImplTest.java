@@ -181,6 +181,29 @@ class ConfigServiceGrpcImplTest {
   }
 
   @Test
+  void deleteDefaultContextConfig() throws IOException {
+    ConfigStore configStore = mock(ConfigStore.class);
+    ContextSpecificConfig deletedConfig =
+        ContextSpecificConfig.newBuilder().setConfig(config2).build();
+    when(configStore.getConfig(eq(configResourceWithoutContext))).thenReturn(deletedConfig);
+    ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
+    StreamObserver<DeleteConfigResponse> responseObserver = mock(StreamObserver.class);
+
+    Runnable runnable =
+        () ->
+            configServiceGrpc.deleteConfig(
+                getDefaultContextDeleteConfigRequest(), responseObserver);
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+    verify(configStore, times(1))
+        .writeConfig(eq(configResourceWithoutContext), eq(""), eq(emptyValue()));
+    verify(responseObserver, times(1))
+        .onNext(eq(DeleteConfigResponse.newBuilder().setDeletedConfig(deletedConfig).build()));
+    verify(responseObserver, times(1)).onCompleted();
+    verify(responseObserver, never()).onError(any(Throwable.class));
+  }
+
+  @Test
   void deletingNonExistingConfigShouldThrowError() throws IOException {
     ConfigStore configStore = mock(ConfigStore.class);
     ContextSpecificConfig emptyConfig = ConfigServiceUtils.emptyConfig(CONTEXT1);
@@ -233,6 +256,13 @@ class ConfigServiceGrpcImplTest {
         .setResourceName(RESOURCE_NAME)
         .setResourceNamespace(RESOURCE_NAMESPACE)
         .setContext(CONTEXT1)
+        .build();
+  }
+
+  private DeleteConfigRequest getDefaultContextDeleteConfigRequest() {
+    return DeleteConfigRequest.newBuilder()
+        .setResourceName(RESOURCE_NAME)
+        .setResourceNamespace(RESOURCE_NAMESPACE)
         .build();
   }
 }

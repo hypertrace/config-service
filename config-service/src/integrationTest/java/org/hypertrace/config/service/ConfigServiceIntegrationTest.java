@@ -175,9 +175,7 @@ public class ConfigServiceIntegrationTest {
     assertEquals(config1, config);
 
     // delete config with default context also
-    deletedConfig =
-        deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1, DEFAULT_CONTEXT)
-            .getDeletedConfig();
+    deletedConfig = deleteConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_1).getDeletedConfig();
     assertEquals(config1, deletedConfig.getConfig());
 
     // get config with context should return empty config
@@ -228,6 +226,17 @@ public class ConfigServiceIntegrationTest {
             .build();
     return GrpcClientRequestContextUtil.executeInTenantContext(
         tenantId, () -> configServiceBlockingStub.getAllConfigs(request));
+  }
+
+  private DeleteConfigResponse deleteConfig(
+      String resourceName, String resourceNamespace, String tenantId) {
+    DeleteConfigRequest request =
+        DeleteConfigRequest.newBuilder()
+            .setResourceName(resourceName)
+            .setResourceNamespace(resourceNamespace)
+            .build();
+    return GrpcClientRequestContextUtil.executeInTenantContext(
+        tenantId, () -> configServiceBlockingStub.deleteConfig(request));
   }
 
   private DeleteConfigResponse deleteConfig(
