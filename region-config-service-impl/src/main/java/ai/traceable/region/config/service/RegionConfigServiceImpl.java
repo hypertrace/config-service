@@ -31,6 +31,7 @@ import io.grpc.stub.StreamObserver;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -115,7 +116,7 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
   @Override
   public void createRegionRule(
       CreateRegionRuleRequest request, StreamObserver<CreateRegionRuleResponse> responseObserver) {
-    Status status = rulesValidator.validate(request);
+    Status status = rulesValidator.validate(request, getAllRegionsRulesSupplier());
     if (!status.isOk()) {
       responseObserver.onError(status.asException());
       return;
@@ -126,7 +127,6 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
       responseObserver.onError(Status.INTERNAL.asException());
       return;
     }
-
     RegionRule regionRule = maybeRegionRule.get();
     responseObserver.onNext(CreateRegionRuleResponse.newBuilder().setRule(regionRule).build());
     responseObserver.onCompleted();
@@ -141,7 +141,7 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
   @Override
   public void updateRegionRule(
       UpdateRegionRuleRequest request, StreamObserver<UpdateRegionRuleResponse> responseObserver) {
-    Status status = rulesValidator.validate(request);
+    Status status = rulesValidator.validate(request, getAllRegionsRulesSupplier());
     if (!status.isOk()) {
       responseObserver.onError(status.asException());
       return;
@@ -201,5 +201,9 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
         .setSecurityConfigurationType(SecurityConfigurationType.LOCATION_RULE)
         .setSecurityConfigurationAction(securityConfigurationAction)
         .build();
+  }
+
+  private Supplier<List<RegionRule>> getAllRegionsRulesSupplier() {
+    return rulesManager::getRegionRules;
   }
 }

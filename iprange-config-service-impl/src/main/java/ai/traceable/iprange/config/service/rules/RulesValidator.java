@@ -10,10 +10,10 @@ import java.util.function.Supplier;
 
 public interface RulesValidator {
   Status validate(
-      CreateIpRangeRuleRequest request, Supplier<List<IpRangeRule>> existingRulesSupplier);
+      CreateIpRangeRuleRequest request, Supplier<List<IpRangeRule>> blockAllExceptRulesSupplier);
 
   Status validate(
-      UpdateIpRangeRuleRequest request, Supplier<List<IpRangeRule>> existingRulesSupplier);
+      UpdateIpRangeRuleRequest request, Supplier<List<IpRangeRule>> blockAllExceptRulesSupplier);
 
   Status validate(DeleteIpRangeRuleRequest request);
 }

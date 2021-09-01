@@ -2,14 +2,18 @@ package ai.traceable.region.config.service.rules;
 
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.DeleteRegionRuleRequest;
+import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRuleActionType;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import io.grpc.Status;
+import java.util.List;
+import java.util.function.Supplier;
 
 class RegionRulesValidator implements RulesValidator {
 
   @Override
-  public Status validate(CreateRegionRuleRequest request) {
+  public Status validate(
+      CreateRegionRuleRequest request, Supplier<List<RegionRule>> existingRegionRulesSupplier) {
     if (request.getRegionIdList().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "create region rule should have non empty region id list");
@@ -24,11 +28,19 @@ class RegionRulesValidator implements RulesValidator {
           "create region rule should have a valid action type");
     }
 
+    if (RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT.equals(
+            request.getActionType())
+        && isDuplicateBlockAllExceptRuleCreate(existingRegionRulesSupplier)) {
+      return Status.ALREADY_EXISTS.withDescription(
+          "Trying to create duplicate rule for action "
+              + RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT);
+    }
     return Status.OK;
   }
 
   @Override
-  public Status validate(UpdateRegionRuleRequest request) {
+  public Status validate(
+      UpdateRegionRuleRequest request, Supplier<List<RegionRule>> existingRegionRulesSupplier) {
     if (request.getId().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription("update region rule should have a valid id");
     }
@@ -47,6 +59,14 @@ class RegionRulesValidator implements RulesValidator {
           "update region rule should have a valid action type");
     }
 
+    if (RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT.equals(
+            request.getActionType())
+        && isDuplicateBlockAllExceptRuleUpdate(request.getId(), existingRegionRulesSupplier)) {
+      return Status.ALREADY_EXISTS.withDescription(
+          "Trying to change rule action to "
+              + RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT
+              + ". Rule of this type already exists.");
+    }
     return Status.OK;
   }
 
@@ -58,5 +78,24 @@ class RegionRulesValidator implements RulesValidator {
     }
 
     return Status.OK;
+  }
+
+  private boolean isDuplicateBlockAllExceptRuleCreate(
+      Supplier<List<RegionRule>> existingRegionRulesSupplier) {
+    return existingRegionRulesSupplier.get().stream()
+        .anyMatch(
+            regionRule ->
+                RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT.equals(
+                    regionRule.getActionType()));
+  }
+
+  private boolean isDuplicateBlockAllExceptRuleUpdate(
+      String id, Supplier<List<RegionRule>> existingRegionRulesSupplier) {
+    return existingRegionRulesSupplier.get().stream()
+        .anyMatch(
+            regionRule ->
+                RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT.equals(
+                        regionRule.getActionType())
+                    && !id.equals(regionRule.getId()));
   }
 }

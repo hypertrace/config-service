@@ -210,7 +210,7 @@ class RegionConfigServiceImplTest {
               .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
               .build();
 
-      when(rulesValidator.validate(createRegionRuleRequest)).thenReturn(Status.OK);
+      when(rulesValidator.validate(eq(createRegionRuleRequest), any())).thenReturn(Status.OK);
       when(rulesManager.createRegionRule(createRegionRuleRequest))
           .thenReturn(Optional.of(regionRule));
 
@@ -245,7 +245,8 @@ class RegionConfigServiceImplTest {
               .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
               .build();
 
-      when(rulesValidator.validate(createRegionRuleRequest)).thenReturn(Status.INVALID_ARGUMENT);
+      when(rulesValidator.validate(eq(createRegionRuleRequest), any()))
+          .thenReturn(Status.INVALID_ARGUMENT);
       when(rulesManager.createRegionRule(createRegionRuleRequest)).thenReturn(Optional.empty());
 
       StreamObserver<CreateRegionRuleResponse> responseObserver = mock(StreamObserver.class);
@@ -267,7 +268,7 @@ class RegionConfigServiceImplTest {
               .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
               .build();
 
-      when(rulesValidator.validate(createRegionRuleRequest)).thenReturn(Status.OK);
+      when(rulesValidator.validate(eq(createRegionRuleRequest), any())).thenReturn(Status.OK);
       when(rulesManager.createRegionRule(createRegionRuleRequest)).thenReturn(Optional.empty());
 
       StreamObserver<CreateRegionRuleResponse> responseObserver = mock(StreamObserver.class);
@@ -299,7 +300,7 @@ class RegionConfigServiceImplTest {
               .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
               .build();
 
-      when(rulesValidator.validate(updateRegionRuleRequest)).thenReturn(Status.OK);
+      when(rulesValidator.validate(eq(updateRegionRuleRequest), any())).thenReturn(Status.OK);
       when(rulesManager.updateRegionRule(updateRegionRuleRequest))
           .thenReturn(Optional.of(updatedRegionRule));
 
@@ -340,7 +341,8 @@ class RegionConfigServiceImplTest {
               .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
               .build();
 
-      when(rulesValidator.validate(updateRegionRuleRequest)).thenReturn(Status.INVALID_ARGUMENT);
+      when(rulesValidator.validate(eq(updateRegionRuleRequest), any()))
+          .thenReturn(Status.INVALID_ARGUMENT);
       when(rulesManager.updateRegionRule(updateRegionRuleRequest)).thenReturn(Optional.empty());
 
       StreamObserver<UpdateRegionRuleResponse> responseObserver = mock(StreamObserver.class);
@@ -370,7 +372,7 @@ class RegionConfigServiceImplTest {
               .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
               .build();
 
-      when(rulesValidator.validate(updateRegionRuleRequest)).thenReturn(Status.OK);
+      when(rulesValidator.validate(eq(updateRegionRuleRequest), any())).thenReturn(Status.OK);
       when(rulesManager.updateRegionRule(updateRegionRuleRequest)).thenReturn(Optional.empty());
 
       StreamObserver<UpdateRegionRuleResponse> responseObserver = mock(StreamObserver.class);

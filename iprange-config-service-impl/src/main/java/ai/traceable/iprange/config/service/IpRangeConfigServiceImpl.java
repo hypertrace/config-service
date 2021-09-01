@@ -58,7 +58,9 @@ class IpRangeConfigServiceImpl extends IpRangeConfigServiceImplBase {
       CreateIpRangeRuleRequest request,
       StreamObserver<CreateIpRangeRuleResponse> responseObserver) {
     try {
-      Status status = rulesValidator.validate(request, getBlockAllExceptRulesSupplier());
+      Status status =
+          rulesValidator.validate(
+              request, getBlockAllExceptRulesSupplier(RequestContext.CURRENT.get()));
       if (!status.isOk()) {
         log.error("Create Ip Range Rule Request is not valid {}", status.getDescription());
         responseObserver.onError(status.asException());
@@ -98,7 +100,9 @@ class IpRangeConfigServiceImpl extends IpRangeConfigServiceImplBase {
       UpdateIpRangeRuleRequest request,
       StreamObserver<UpdateIpRangeRuleResponse> responseObserver) {
     try {
-      Status status = rulesValidator.validate(request, getBlockAllExceptRulesSupplier());
+      Status status =
+          rulesValidator.validate(
+              request, getBlockAllExceptRulesSupplier(RequestContext.CURRENT.get()));
       if (!status.isOk()) {
         log.error("Update Ip Range Rule Request is not valid {}", status.getDescription());
         responseObserver.onError(status.asException());
@@ -170,9 +174,10 @@ class IpRangeConfigServiceImpl extends IpRangeConfigServiceImplBase {
         .build();
   }
 
-  private Supplier<List<IpRangeRule>> getBlockAllExceptRulesSupplier() {
+  private Supplier<List<IpRangeRule>> getBlockAllExceptRulesSupplier(
+      RequestContext requestContext) {
     GetRulesFilter actionFilter =
         GetRulesFilter.newBuilder().setRuleAction(RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT).build();
-    return () -> rulesManager.getIpRangeRules(RequestContext.CURRENT.get(), actionFilter);
+    return () -> rulesManager.getIpRangeRules(requestContext, actionFilter);
   }
 }
