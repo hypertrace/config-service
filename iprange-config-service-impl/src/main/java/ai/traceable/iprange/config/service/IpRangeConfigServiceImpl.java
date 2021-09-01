@@ -13,6 +13,7 @@ import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
+import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -57,7 +58,7 @@ class IpRangeConfigServiceImpl extends IpRangeConfigServiceImplBase {
       CreateIpRangeRuleRequest request,
       StreamObserver<CreateIpRangeRuleResponse> responseObserver) {
     try {
-      Status status = rulesValidator.validate(request);
+      Status status = rulesValidator.validate(request, getBlockAllExceptRulesSupplier());
       if (!status.isOk()) {
         log.error("Create Ip Range Rule Request is not valid {}", status.getDescription());
         responseObserver.onError(status.asException());
@@ -97,7 +98,7 @@ class IpRangeConfigServiceImpl extends IpRangeConfigServiceImplBase {
       UpdateIpRangeRuleRequest request,
       StreamObserver<UpdateIpRangeRuleResponse> responseObserver) {
     try {
-      Status status = rulesValidator.validate(request);
+      Status status = rulesValidator.validate(request, getBlockAllExceptRulesSupplier());
       if (!status.isOk()) {
         log.error("Update Ip Range Rule Request is not valid {}", status.getDescription());
         responseObserver.onError(status.asException());
@@ -167,5 +168,11 @@ class IpRangeConfigServiceImpl extends IpRangeConfigServiceImplBase {
         .setSecurityConfigurationType(SecurityConfigurationType.IP_RANGE_RULE)
         .setSecurityConfigurationAction(securityConfigurationAction)
         .build();
+  }
+
+  private Supplier<List<IpRangeRule>> getBlockAllExceptRulesSupplier() {
+    GetRulesFilter actionFilter =
+        GetRulesFilter.newBuilder().setRuleAction(RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT).build();
+    return () -> rulesManager.getIpRangeRules(RequestContext.CURRENT.get(), actionFilter);
   }
 }

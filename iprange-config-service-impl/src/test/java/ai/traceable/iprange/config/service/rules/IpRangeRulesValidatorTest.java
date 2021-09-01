@@ -4,18 +4,26 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import ai.traceable.iprange.config.service.v1.*;
 import io.grpc.Status;
+import io.grpc.Status.Code;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 class IpRangeRulesValidatorTest {
   private IpRangeRulesValidator rulesValidator;
+  private Supplier<List<IpRangeRule>> blockAllExceptRulesSupplier;
 
   @BeforeEach
   void setUp() {
     this.rulesValidator = new IpRangeRulesValidator();
+    this.blockAllExceptRulesSupplier = Mockito.mock(Supplier.class);
+    Mockito.when(blockAllExceptRulesSupplier.get()).thenReturn(Collections.emptyList());
   }
 
   @Nested
@@ -36,7 +44,8 @@ class IpRangeRulesValidatorTest {
       CreateIpRangeRuleRequest createIpRangeRuleRequest =
           CreateIpRangeRuleRequest.newBuilder().setRuleDetails(iprangeRuleDetails).build();
 
-      Status status = rulesValidator.validate(createIpRangeRuleRequest);
+      Status status =
+          rulesValidator.validate(createIpRangeRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Status.Code.OK, status.getCode());
     }
 
@@ -54,7 +63,8 @@ class IpRangeRulesValidatorTest {
       CreateIpRangeRuleRequest createIpRangeRuleRequest =
           CreateIpRangeRuleRequest.newBuilder().setRuleDetails(iprangeRuleDetails).build();
 
-      Status status = rulesValidator.validate(createIpRangeRuleRequest);
+      Status status =
+          rulesValidator.validate(createIpRangeRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Status.Code.OK, status.getCode());
     }
 
@@ -71,7 +81,8 @@ class IpRangeRulesValidatorTest {
       CreateIpRangeRuleRequest createIpRangeRuleRequest =
           CreateIpRangeRuleRequest.newBuilder().setRuleDetails(iprangeRuleDetails).build();
 
-      Status status = rulesValidator.validate(createIpRangeRuleRequest);
+      Status status =
+          rulesValidator.validate(createIpRangeRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -88,7 +99,8 @@ class IpRangeRulesValidatorTest {
       CreateIpRangeRuleRequest createIpRangeRuleRequest =
           CreateIpRangeRuleRequest.newBuilder().setRuleDetails(iprangeRuleDetails).build();
 
-      Status status = rulesValidator.validate(createIpRangeRuleRequest);
+      Status status =
+          rulesValidator.validate(createIpRangeRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -105,7 +117,8 @@ class IpRangeRulesValidatorTest {
       CreateIpRangeRuleRequest createIpRangeRuleRequest =
           CreateIpRangeRuleRequest.newBuilder().setRuleDetails(iprangeRuleDetails).build();
 
-      Status status = rulesValidator.validate(createIpRangeRuleRequest);
+      Status status =
+          rulesValidator.validate(createIpRangeRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -126,8 +139,50 @@ class IpRangeRulesValidatorTest {
       CreateIpRangeRuleRequest createIpRangeRuleRequest =
           CreateIpRangeRuleRequest.newBuilder().setRuleDetails(iprangeRuleDetails).build();
 
-      Status status = rulesValidator.validate(createIpRangeRuleRequest);
+      Status status =
+          rulesValidator.validate(createIpRangeRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName("Should return OK status when first rule of type block all except")
+    void validateCreateIpRangeRuleRequest_correct_firstBlockAllExcept() {
+      IpRangeRuleDetails iprangeRuleDetails =
+          IpRangeRuleDetails.newBuilder()
+              .setName("Tester")
+              .setDescription("Range rule test")
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .setRuleAction(RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT)
+              .build();
+
+      CreateIpRangeRuleRequest createIpRangeRuleRequest =
+          CreateIpRangeRuleRequest.newBuilder().setRuleDetails(iprangeRuleDetails).build();
+
+      Status status =
+          rulesValidator.validate(createIpRangeRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Status.Code.OK, status.getCode());
+    }
+
+    @Test
+    @DisplayName(
+        "Should return ALREADY_EXISTS status when creating a duplicate block all except rule")
+    void validateCreateIpRangeRuleRequest_incorrect_duplicateBlockAllExcept() {
+      IpRangeRuleDetails iprangeRuleDetails =
+          IpRangeRuleDetails.newBuilder()
+              .setName("Tester")
+              .setDescription("Range rule test")
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .setRuleAction(RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT)
+              .build();
+      Mockito.when(blockAllExceptRulesSupplier.get())
+          .thenReturn(List.of(IpRangeRule.getDefaultInstance()));
+
+      CreateIpRangeRuleRequest createIpRangeRuleRequest =
+          CreateIpRangeRuleRequest.newBuilder().setRuleDetails(iprangeRuleDetails).build();
+
+      Status status =
+          rulesValidator.validate(createIpRangeRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Code.ALREADY_EXISTS, status.getCode());
     }
   }
 
@@ -154,7 +209,8 @@ class IpRangeRulesValidatorTest {
               .setInternal(false)
               .build();
 
-      Status status = rulesValidator.validate(updateIpRangeRuleRequest);
+      Status status =
+          rulesValidator.validate(updateIpRangeRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Status.Code.OK, status.getCode());
     }
 
@@ -174,7 +230,8 @@ class IpRangeRulesValidatorTest {
               .setRuleDetails(iprangeRuleDetails)
               .build();
 
-      Status status = rulesValidator.validate(updateIpRangeRuleRequest);
+      Status status =
+          rulesValidator.validate(updateIpRangeRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Status.Code.OK, status.getCode());
     }
 
@@ -192,7 +249,8 @@ class IpRangeRulesValidatorTest {
       UpdateIpRangeRuleRequest updateIpRangeRuleRequest =
           UpdateIpRangeRuleRequest.newBuilder().setRuleDetails(iprangeRuleDetails).build();
 
-      Status status = rulesValidator.validate(updateIpRangeRuleRequest);
+      Status status =
+          rulesValidator.validate(updateIpRangeRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -213,7 +271,8 @@ class IpRangeRulesValidatorTest {
               .setRuleDetails(iprangeRuleDetails)
               .build();
 
-      Status status = rulesValidator.validate(updateIpRangeRuleRequest);
+      Status status =
+          rulesValidator.validate(updateIpRangeRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -235,7 +294,8 @@ class IpRangeRulesValidatorTest {
               .setRuleDetails(iprangeRuleDetails)
               .build();
 
-      Status status = rulesValidator.validate(updateIpRangeRuleRequest);
+      Status status =
+          rulesValidator.validate(updateIpRangeRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -255,7 +315,8 @@ class IpRangeRulesValidatorTest {
               .setRuleDetails(iprangeRuleDetails)
               .build();
 
-      Status status = rulesValidator.validate(updateIpRangeRuleRequest);
+      Status status =
+          rulesValidator.validate(updateIpRangeRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -278,8 +339,58 @@ class IpRangeRulesValidatorTest {
               .setRuleDetails(iprangeRuleDetails)
               .build();
 
-      Status status = rulesValidator.validate(updateIpRangeRuleRequest);
+      Status status =
+          rulesValidator.validate(updateIpRangeRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName(
+        "Should return OK status when trying to update rule with action already as block all except")
+    void validateUpdateIpRangeRuleRequest_correct_sameRuleId() {
+      IpRangeRuleDetails iprangeRuleDetails =
+          IpRangeRuleDetails.newBuilder()
+              .setName("Tester")
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .setRuleAction(RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT)
+              .build();
+
+      UpdateIpRangeRuleRequest updateIpRangeRuleRequest =
+          UpdateIpRangeRuleRequest.newBuilder()
+              .setId("Tester0")
+              .setRuleDetails(iprangeRuleDetails)
+              .build();
+      Mockito.when(blockAllExceptRulesSupplier.get())
+          .thenReturn(List.of(IpRangeRule.newBuilder().setId("Tester0").build()));
+
+      Status status =
+          rulesValidator.validate(updateIpRangeRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Status.Code.OK, status.getCode());
+    }
+
+    @Test
+    @DisplayName(
+        "Should return ALREADY_EXISTS status when trying to update rule with action block all except, "
+            + "and rule of such action already exists")
+    void validateUpdateIpRangeRuleRequest_correct_differentRuleId() {
+      IpRangeRuleDetails iprangeRuleDetails =
+          IpRangeRuleDetails.newBuilder()
+              .setName("Tester")
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .setRuleAction(RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT)
+              .build();
+
+      UpdateIpRangeRuleRequest updateIpRangeRuleRequest =
+          UpdateIpRangeRuleRequest.newBuilder()
+              .setId("Tester0")
+              .setRuleDetails(iprangeRuleDetails)
+              .build();
+      Mockito.when(blockAllExceptRulesSupplier.get())
+          .thenReturn(List.of(IpRangeRule.newBuilder().setId("Tester1").build()));
+
+      Status status =
+          rulesValidator.validate(updateIpRangeRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Code.ALREADY_EXISTS, status.getCode());
     }
   }
 

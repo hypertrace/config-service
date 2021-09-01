@@ -12,7 +12,12 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import java.time.Clock;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
@@ -104,7 +109,6 @@ class IpRangeRulesManager implements RulesManager {
   @Override
   public IpRangeRule createIpRangeRule(
       RequestContext requestContext, CreateIpRangeRuleRequest createRuleRequest) {
-
     Object[] parsedRawIpRange =
         parseRawIpRange(createRuleRequest.getRuleDetails().getRawInputIpDataList());
     Set<String> ipAddresses = (Set<String>) parsedRawIpRange[0];
@@ -119,6 +123,7 @@ class IpRangeRulesManager implements RulesManager {
             .addAllIpRanges(ipRanges)
             .addAllIpAddresses(ipAddresses)
             .build();
+
     return upsertConfig(requestContext, ipRangeRule);
   }
 
@@ -216,7 +221,7 @@ class IpRangeRulesManager implements RulesManager {
           Optional.ofNullable(
                   requestContext.call(
                       () -> configServiceBlockingStub.getConfig(getConfigRequest).getConfig()))
-              .filter(valuae -> valuae.getKindCase() != Value.KindCase.KIND_NOT_SET);
+              .filter(value -> value.getKindCase() != Value.KindCase.KIND_NOT_SET);
       return parsedValue.isPresent();
     } catch (Exception e) {
       return false;

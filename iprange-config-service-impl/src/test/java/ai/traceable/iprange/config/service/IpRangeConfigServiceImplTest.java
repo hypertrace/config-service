@@ -16,12 +16,14 @@ import io.grpc.stub.StreamObserver;
 import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.Supplier;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 class IpRangeConfigServiceImplTest {
   private static final String TENANT_ID = "tenant-ip-range-test";
@@ -29,6 +31,7 @@ class IpRangeConfigServiceImplTest {
   private RulesManager rulesManager;
   private IpRangeConfigServiceImpl ipRangeConfigService;
   private ActivityEventProducer mockActivityEventProducer;
+  private Supplier<List<IpRangeRule>> blockAllExceptRulesSupplier;
 
   @BeforeEach
   void setup() {
@@ -38,6 +41,7 @@ class IpRangeConfigServiceImplTest {
         mock(IpRangeConfigServiceConfig.class);
     when(mockIpRangeConfigServiceConfig.shouldPublishActivityEvents()).thenReturn(true);
     mockActivityEventProducer = mock(ActivityEventProducer.class);
+    this.blockAllExceptRulesSupplier = Mockito.mock(Supplier.class);
     ipRangeConfigService =
         new IpRangeConfigServiceImpl(
             rulesValidator,
@@ -120,7 +124,7 @@ class IpRangeConfigServiceImplTest {
       CreateIpRangeRuleRequest createIpRangeRuleRequest =
           CreateIpRangeRuleRequest.newBuilder().setRuleDetails(ipRangeRuleDetails).build();
 
-      when(rulesValidator.validate(createIpRangeRuleRequest)).thenReturn(Status.OK);
+      when(rulesValidator.validate(eq(createIpRangeRuleRequest), any())).thenReturn(Status.OK);
       when(rulesManager.createIpRangeRule(any(), eq(createIpRangeRuleRequest)))
           .thenReturn(ipRangeRule);
 
@@ -152,7 +156,7 @@ class IpRangeConfigServiceImplTest {
     @Test
     @DisplayName("should return invalid arguments if validator rejects the arguments")
     void should_fail_CreateIpRangeRule_onInvalidRequest() {
-      when(rulesValidator.validate(CreateIpRangeRuleRequest.getDefaultInstance()))
+      when(rulesValidator.validate(eq(CreateIpRangeRuleRequest.getDefaultInstance()), any()))
           .thenReturn(Status.INVALID_ARGUMENT);
 
       StreamObserver<CreateIpRangeRuleResponse> responseStreamObserver = mock(StreamObserver.class);
@@ -171,7 +175,7 @@ class IpRangeConfigServiceImplTest {
     @Test
     @DisplayName("should return internal error unable to create")
     void should_fail_createIpRangeRule_unableToCreate() {
-      when(rulesValidator.validate(CreateIpRangeRuleRequest.getDefaultInstance()))
+      when(rulesValidator.validate(eq(CreateIpRangeRuleRequest.getDefaultInstance()), any()))
           .thenReturn(Status.OK);
       when(rulesManager.createIpRangeRule(any(), eq(CreateIpRangeRuleRequest.getDefaultInstance())))
           .thenReturn(null);
@@ -192,7 +196,7 @@ class IpRangeConfigServiceImplTest {
     @DisplayName("should throw a runtime exception from create Ip Range Rule if gets one")
     void propagateRuntimeException_inCreateIpRange() {
       StreamObserver<CreateIpRangeRuleResponse> responseStreamObserver = mock(StreamObserver.class);
-      when(rulesValidator.validate(CreateIpRangeRuleRequest.getDefaultInstance()))
+      when(rulesValidator.validate(eq(CreateIpRangeRuleRequest.getDefaultInstance()), any()))
           .thenReturn(Status.OK);
       when(rulesManager.createIpRangeRule(any(), eq(CreateIpRangeRuleRequest.getDefaultInstance())))
           .thenThrow(RuntimeException.class);
@@ -211,7 +215,7 @@ class IpRangeConfigServiceImplTest {
         "should throw a invalid arguments exception from create Ip Range Rule if manager throws it")
     void propagateIllegalArgumentException_inCreateIpRange() {
       StreamObserver<CreateIpRangeRuleResponse> responseStreamObserver = mock(StreamObserver.class);
-      when(rulesValidator.validate(CreateIpRangeRuleRequest.getDefaultInstance()))
+      when(rulesValidator.validate(eq(CreateIpRangeRuleRequest.getDefaultInstance()), any()))
           .thenReturn(Status.OK);
       when(rulesManager.createIpRangeRule(any(), eq(CreateIpRangeRuleRequest.getDefaultInstance())))
           .thenThrow(IllegalArgumentException.class);
@@ -256,7 +260,7 @@ class IpRangeConfigServiceImplTest {
               .setDisabled(true)
               .build();
 
-      when(rulesValidator.validate(updateIpRangeRuleRequest)).thenReturn(Status.OK);
+      when(rulesValidator.validate(eq(updateIpRangeRuleRequest), any())).thenReturn(Status.OK);
       when(rulesManager.updateIpRangeRule(any(), eq(updateIpRangeRuleRequest)))
           .thenReturn(ipRangeRule);
 
@@ -288,7 +292,7 @@ class IpRangeConfigServiceImplTest {
     @Test
     @DisplayName("should return invalid arguments if validator rejects the arguments")
     void should_fail_UpdateIpRangeRule_onInvalidRequest() {
-      when(rulesValidator.validate(UpdateIpRangeRuleRequest.getDefaultInstance()))
+      when(rulesValidator.validate(eq(UpdateIpRangeRuleRequest.getDefaultInstance()), any()))
           .thenReturn(Status.INVALID_ARGUMENT);
 
       StreamObserver<UpdateIpRangeRuleResponse> responseStreamObserver = mock(StreamObserver.class);
@@ -307,7 +311,7 @@ class IpRangeConfigServiceImplTest {
     @Test
     @DisplayName("should return internal error unable to update")
     void should_fail_updateIpRangeRule_unableToUpdate() {
-      when(rulesValidator.validate(UpdateIpRangeRuleRequest.getDefaultInstance()))
+      when(rulesValidator.validate(eq(UpdateIpRangeRuleRequest.getDefaultInstance()), any()))
           .thenReturn(Status.OK);
       when(rulesManager.updateIpRangeRule(any(), eq(UpdateIpRangeRuleRequest.getDefaultInstance())))
           .thenReturn(null);
@@ -328,7 +332,7 @@ class IpRangeConfigServiceImplTest {
     @DisplayName("should throw a runtime exception from update Ip Range Rule if gets one")
     void propagateRuntimeException_inUpdateIpRange() {
       StreamObserver<UpdateIpRangeRuleResponse> responseStreamObserver = mock(StreamObserver.class);
-      when(rulesValidator.validate(UpdateIpRangeRuleRequest.getDefaultInstance()))
+      when(rulesValidator.validate(eq(UpdateIpRangeRuleRequest.getDefaultInstance()), any()))
           .thenReturn(Status.OK);
       when(rulesManager.updateIpRangeRule(any(), eq(UpdateIpRangeRuleRequest.getDefaultInstance())))
           .thenThrow(RuntimeException.class);
@@ -347,7 +351,7 @@ class IpRangeConfigServiceImplTest {
         "should throw a invalid arguments exception from update Ip Range Rule if manager throws it")
     void propagateIllegalArgumentException_inCreateIpRange() {
       StreamObserver<UpdateIpRangeRuleResponse> responseStreamObserver = mock(StreamObserver.class);
-      when(rulesValidator.validate(UpdateIpRangeRuleRequest.getDefaultInstance()))
+      when(rulesValidator.validate(eq(UpdateIpRangeRuleRequest.getDefaultInstance()), any()))
           .thenReturn(Status.OK);
       when(rulesManager.updateIpRangeRule(any(), eq(UpdateIpRangeRuleRequest.getDefaultInstance())))
           .thenThrow(IllegalArgumentException.class);
@@ -366,7 +370,7 @@ class IpRangeConfigServiceImplTest {
         "should throw a noSuchElement exception from when Ip Range Rule with given id does not exist")
     void propagateNoSuchElementException_inCreateIpRange() {
       StreamObserver<UpdateIpRangeRuleResponse> responseStreamObserver = mock(StreamObserver.class);
-      when(rulesValidator.validate(UpdateIpRangeRuleRequest.getDefaultInstance()))
+      when(rulesValidator.validate(eq(UpdateIpRangeRuleRequest.getDefaultInstance()), any()))
           .thenReturn(Status.OK);
       when(rulesManager.updateIpRangeRule(any(), eq(UpdateIpRangeRuleRequest.getDefaultInstance())))
           .thenThrow(NoSuchElementException.class);

@@ -2,25 +2,50 @@ package ai.traceable.iprange.config.service.rules;
 
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.DeleteIpRangeRuleRequest;
+import ai.traceable.iprange.config.service.v1.IpRangeRule;
 import ai.traceable.iprange.config.service.v1.IpRangeRuleDetails;
 import ai.traceable.iprange.config.service.v1.RuleAction;
 import ai.traceable.iprange.config.service.v1.UpdateIpRangeRuleRequest;
 import io.grpc.Status;
 import java.time.format.DateTimeParseException;
+import java.util.List;
+import java.util.function.Supplier;
 
 class IpRangeRulesValidator implements RulesValidator {
 
   @Override
-  public Status validate(CreateIpRangeRuleRequest request) {
-    return validate(request.getRuleDetails());
+  public Status validate(
+      CreateIpRangeRuleRequest request, Supplier<List<IpRangeRule>> blockAllExceptRulesSupplier) {
+    Status status = validate(request.getRuleDetails());
+    if (!status.isOk()) {
+      return status;
+    }
+    if (RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT.equals(request.getRuleDetails().getRuleAction())
+        && isDuplicateBlockAllExceptCreate(blockAllExceptRulesSupplier)) {
+      return Status.ALREADY_EXISTS.withDescription(
+          "Trying to create duplicate rule for action " + RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT);
+    }
+    return Status.OK;
   }
 
   @Override
-  public Status validate(UpdateIpRangeRuleRequest request) {
+  public Status validate(
+      UpdateIpRangeRuleRequest request, Supplier<List<IpRangeRule>> blockAllExceptRulesSupplier) {
     if (request.getId().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription("Update Ip Range rule should have a valid id");
     }
-    return validate(request.getRuleDetails());
+    Status status = validate(request.getRuleDetails());
+    if (!status.isOk()) {
+      return status;
+    }
+    if (RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT.equals(request.getRuleDetails().getRuleAction())
+        && isDuplicateBlockAllExceptUpdate(request.getId(), blockAllExceptRulesSupplier)) {
+      return Status.ALREADY_EXISTS.withDescription(
+          "Trying to change rule action to "
+              + RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT
+              + ". Rule of this type already exists");
+    }
+    return Status.OK;
   }
 
   @Override
@@ -55,5 +80,16 @@ class IpRangeRulesValidator implements RulesValidator {
       }
     }
     return Status.OK;
+  }
+
+  private boolean isDuplicateBlockAllExceptCreate(
+      Supplier<List<IpRangeRule>> blockAllExceptRulesSupplier) {
+    return !blockAllExceptRulesSupplier.get().isEmpty();
+  }
+
+  private boolean isDuplicateBlockAllExceptUpdate(
+      String id, Supplier<List<IpRangeRule>> blockAllExceptRulesSupplier) {
+    List<IpRangeRule> ipRangeRules = blockAllExceptRulesSupplier.get();
+    return ipRangeRules.stream().anyMatch(rule -> !rule.getId().equals(id));
   }
 }
