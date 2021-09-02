@@ -83,7 +83,8 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       CreateLabel createLabel = request.getLabel();
-      if (systemLabelsKeyLabelMap.containsKey(createLabel.getKey())) {
+      if (systemLabelsKeyLabelMap.containsKey(createLabel.getKey())
+          || isDuplicateKey(createLabel.getKey())) {
         // Creating a label with a name that clashes with one of system labels name
         responseObserver.onError(new StatusRuntimeException(Status.ALREADY_EXISTS));
         return;
@@ -141,6 +142,10 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
         responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
         return;
       }
+      if (isDuplicateKey(updatedLabelInReq.getKey())) {
+        responseObserver.onError(new StatusRuntimeException(Status.ALREADY_EXISTS));
+        return;
+      }
       configServiceCoordinator.getLabel(requestContext, updatedLabelInReq.getId());
       Label updatedLabelInRes =
           configServiceCoordinator.upsertLabel(requestContext, updatedLabelInReq);
@@ -169,5 +174,13 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     } catch (Exception e) {
       responseObserver.onError(e);
     }
+  }
+
+  private boolean isDuplicateKey(String key) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    List<Label> labelList = configServiceCoordinator.getAllLabels(requestContext);
+    List<String> keyList =
+        labelList.stream().map(label -> label.getKey()).collect(Collectors.toList());
+    return keyList.contains(key);
   }
 }
