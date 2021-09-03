@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -86,36 +87,37 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
       CreateLabelRequest request, StreamObserver<CreateLabelResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
     Lock labelsLock = this.stripedLabelsLock.get(requestContext.getTenantId());
-    labelsLock.lock();
     try {
-      CreateLabel createLabel = request.getLabel();
-      if (systemLabelsKeyLabelMap.containsKey(createLabel.getKey())
-          || isDuplicateKey(createLabel.getKey())) {
-        // Creating a label with a name that clashes with one of system labels name
-        responseObserver.onError(new StatusRuntimeException(Status.ALREADY_EXISTS));
-        return;
+      boolean lockAcquired = labelsLock.tryLock(5, TimeUnit.MINUTES);
+      if (lockAcquired) {
+        CreateLabel createLabel = request.getLabel();
+        if (systemLabelsKeyLabelMap.containsKey(createLabel.getKey())
+            || isDuplicateKey(createLabel.getKey())) {
+          // Creating a label with a name that clashes with one of system labels name
+          responseObserver.onError(new StatusRuntimeException(Status.ALREADY_EXISTS));
+          return;
+        }
+        Label label =
+            Label.newBuilder()
+                .setId(UUID.randomUUID().toString())
+                .setKey(createLabel.getKey())
+                .build();
+        Label createdLabel = configServiceCoordinator.upsertLabel(requestContext, label);
+        responseObserver.onNext(CreateLabelResponse.newBuilder().setLabel(createdLabel).build());
+        responseObserver.onCompleted();
+      } else {
+        throw new StatusRuntimeException(Status.DEADLINE_EXCEEDED);
       }
-      Label label =
-          Label.newBuilder()
-              .setId(UUID.randomUUID().toString())
-              .setKey(createLabel.getKey())
-              .build();
-      Label createdLabel = configServiceCoordinator.upsertLabel(requestContext, label);
-      responseObserver.onNext(CreateLabelResponse.newBuilder().setLabel(createdLabel).build());
-      responseObserver.onCompleted();
     } catch (Exception e) {
-      labelsLock.unlock();
       responseObserver.onError(e);
-      return;
+    } finally {
+      labelsLock.unlock();
     }
-    labelsLock.unlock();
   }
 
   @Override
   public void getLabel(GetLabelRequest request, StreamObserver<GetLabelResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
-    Lock labelsLock = this.stripedLabelsLock.get(requestContext.getTenantId());
-    labelsLock.lock();
     String labelId = request.getId();
     try {
       Label label;
@@ -127,21 +129,15 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
       responseObserver.onNext(GetLabelResponse.newBuilder().setLabel(label).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
-      labelsLock.unlock();
       responseObserver.onError(e);
-      return;
     }
-    labelsLock.unlock();
   }
 
   @Override
   public void getLabels(
       GetLabelsRequest request, StreamObserver<GetLabelsResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
-    Lock labelsLock = this.stripedLabelsLock.get(requestContext.getTenantId());
-    labelsLock.lock();
     List<Label> labelList = configServiceCoordinator.getAllLabels(requestContext);
-    labelsLock.unlock();
     labelList.addAll(systemLabels);
     responseObserver.onNext(GetLabelsResponse.newBuilder().addAllLabels(labelList).build());
     responseObserver.onCompleted();
@@ -153,29 +149,33 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     Label updatedLabelInReq = request.getLabel();
     RequestContext requestContext = RequestContext.CURRENT.get();
     Lock labelsLock = this.stripedLabelsLock.get(requestContext.getTenantId());
-    labelsLock.lock();
     try {
-      if (systemLabelsIdLabelMap.containsKey(updatedLabelInReq.getId())
-          || systemLabelsKeyLabelMap.containsKey(updatedLabelInReq.getKey())) {
-        // Updating a system label will error
-        responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
-        return;
+      boolean lockAcquired = labelsLock.tryLock(5, TimeUnit.MINUTES);
+      if (lockAcquired) {
+        if (systemLabelsIdLabelMap.containsKey(updatedLabelInReq.getId())
+            || systemLabelsKeyLabelMap.containsKey(updatedLabelInReq.getKey())) {
+          // Updating a system label will error
+          responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
+          return;
+        }
+        if (isDuplicateKey(updatedLabelInReq.getKey())) {
+          responseObserver.onError(new StatusRuntimeException(Status.ALREADY_EXISTS));
+          return;
+        }
+        configServiceCoordinator.getLabel(requestContext, updatedLabelInReq.getId());
+        Label updatedLabelInRes =
+            configServiceCoordinator.upsertLabel(requestContext, updatedLabelInReq);
+        responseObserver.onNext(
+            UpdateLabelResponse.newBuilder().setLabel(updatedLabelInRes).build());
+        responseObserver.onCompleted();
+      } else {
+        throw new StatusRuntimeException(Status.DEADLINE_EXCEEDED);
       }
-      if (isDuplicateKey(updatedLabelInReq.getKey())) {
-        responseObserver.onError(new StatusRuntimeException(Status.ALREADY_EXISTS));
-        return;
-      }
-      configServiceCoordinator.getLabel(requestContext, updatedLabelInReq.getId());
-      Label updatedLabelInRes =
-          configServiceCoordinator.upsertLabel(requestContext, updatedLabelInReq);
-      responseObserver.onNext(UpdateLabelResponse.newBuilder().setLabel(updatedLabelInRes).build());
-      responseObserver.onCompleted();
     } catch (Exception e) {
-      labelsLock.unlock();
       responseObserver.onError(e);
-      return;
+    } finally {
+      labelsLock.unlock();
     }
-    labelsLock.unlock();
   }
 
   @Override
@@ -185,22 +185,26 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     Lock labelsLock = this.stripedLabelsLock.get(requestContext.getTenantId());
     labelsLock.lock();
     try {
-      String labelId = request.getId();
-      if (systemLabelsIdLabelMap.containsKey(labelId)) {
-        // Deleting a system label
-        responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
-        return;
+      boolean lockAcquired = labelsLock.tryLock(5, TimeUnit.MINUTES);
+      if (lockAcquired) {
+        String labelId = request.getId();
+        if (systemLabelsIdLabelMap.containsKey(labelId)) {
+          // Deleting a system label
+          responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
+          return;
+        }
+        configServiceCoordinator.getLabel(requestContext, labelId);
+        configServiceCoordinator.deleteLabel(requestContext, labelId);
+        responseObserver.onNext(DeleteLabelResponse.newBuilder().build());
+        responseObserver.onCompleted();
+      } else {
+        throw new StatusRuntimeException(Status.DEADLINE_EXCEEDED);
       }
-      configServiceCoordinator.getLabel(requestContext, labelId);
-      configServiceCoordinator.deleteLabel(requestContext, labelId);
-      responseObserver.onNext(DeleteLabelResponse.newBuilder().build());
-      responseObserver.onCompleted();
     } catch (Exception e) {
-      labelsLock.unlock();
       responseObserver.onError(e);
-      return;
+    } finally {
+      labelsLock.unlock();
     }
-    labelsLock.unlock();
   }
 
   private boolean isDuplicateKey(String key) {
