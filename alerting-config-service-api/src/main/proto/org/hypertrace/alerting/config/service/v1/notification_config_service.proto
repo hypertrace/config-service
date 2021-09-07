@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package org.hypertrace.alerting.config.service.v1;
+
+import "org/hypertrace/alerting/config/service/v1/notification_rule.proto";
+import "org/hypertrace/alerting/config/service/v1/notification_channel.proto";
+
+service NotificationConfigService {
+  rpc CreateNotificationRule(CreateNotificationRuleRequest) returns (CreateNotificationRuleResponse) {}
+  rpc UpdateNotificationRule(UpdateNotificationRuleRequest) returns (UpdateNotificationRuleResponse) {}
+  rpc GetAllNotificationRules(GetAllNotificationRulesRequest) returns (GetAllNotificationRulesResponse) {}
+  rpc DeleteNotificationRule(DeleteNotificationRuleRequest) returns (DeleteNotificationRuleResponse) {}
+
+  rpc CreateNotificationChannel(CreateNotificationChannelRequest) returns (CreateNotificationChannelResponse) {}
+  rpc UpdateNotificationChannel(UpdateNotificationChannelRequest) returns (UpdateNotificationChannelResponse) {}
+  rpc GetAllNotificationChannels(GetAllNotificationChannelsRequest) returns (GetAllNotificationChannelsResponse) {}
+  rpc DeleteNotificationChannel(DeleteNotificationChannelRequest) returns (DeleteNotificationChannelResponse) {}
+
+}
+
+message CreateNotificationRuleRequest {
+  NewNotificationRule new_notification_rule = 1;
+}
+
+message CreateNotificationRuleResponse {
+  NotificationRule notification_rule = 1;
+}
+
+message UpdateNotificationRuleRequest {
+  NotificationRule notification_rule = 1;
+}
+
+message UpdateNotificationRuleResponse {
+  NotificationRule notification_rule = 1;
+}
+
+message GetAllNotificationRulesRequest {}
+
+message GetAllNotificationRulesResponse {
+  repeated NotificationRule notification_rules = 1;
+}
+
+message DeleteNotificationRuleRequest {
+  string notification_rule_id = 1;
+}
+
+message DeleteNotificationRuleResponse {}
+
+message CreateNotificationChannelRequest {
+  NewNotificationChannel new_notification_channel = 1;
+}
+
+message CreateNotificationChannelResponse {
+  NotificationChannel notification_channel = 1;
+}
+
+message UpdateNotificationChannelRequest {
+  NotificationChannel notification_channel = 1;
+}
+
+message UpdateNotificationChannelResponse {
+  NotificationChannel notification_channel = 1;
+}
+
+message GetAllNotificationChannelsRequest {}
+
+message GetAllNotificationChannelsResponse {
+  repeated NotificationChannel notification_channels = 1;
+}
+
+message GetNotificationChannelRequest {
+  string notification_channel_id = 1;
+}
+
+message GetNotificationChannelResponse {
+  NotificationChannel notification_channel = 1;
+}
+
+message DeleteNotificationChannelRequest {
+  string notification_channel_id = 1;
+}
+
+message DeleteNotificationChannelResponse {}
