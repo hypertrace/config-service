@@ -99,7 +99,8 @@ message DeleteConfigRequest {
   // required - namespace with which the config resource is associated
   string resource_namespace = 2;
 
-  // required
+  // optional - only required if config applies to a specific context.
+  // If empty, specified config is associated with a default context.
   string context = 3;
 }
 
