@@ -163,14 +163,14 @@ public class AlertingConfigServiceCoordinatorImpl implements AlertingConfigServi
 
   private Value upsertConfig(RequestContext context, UpsertConfigRequest request) {
     return GrpcClientRequestContextUtil.executeWithHeadersContext(
-        context.getRequestHeaders(), () -> configServiceBlockingStub.upsertConfig(request))
+            context.getRequestHeaders(), () -> configServiceBlockingStub.upsertConfig(request))
         .getConfig();
   }
 
   private List<ContextSpecificConfig> getAllConfigs(
       RequestContext context, GetAllConfigsRequest request) {
     return GrpcClientRequestContextUtil.executeWithHeadersContext(
-        context.getRequestHeaders(), () -> configServiceBlockingStub.getAllConfigs(request))
+            context.getRequestHeaders(), () -> configServiceBlockingStub.getAllConfigs(request))
         .getContextSpecificConfigsList();
   }
 
@@ -181,7 +181,7 @@ public class AlertingConfigServiceCoordinatorImpl implements AlertingConfigServi
 
   private Value getConfig(RequestContext context, GetConfigRequest request) {
     return GrpcClientRequestContextUtil.executeWithHeadersContext(
-        context.getRequestHeaders(), () -> configServiceBlockingStub.getConfig(request))
+            context.getRequestHeaders(), () -> configServiceBlockingStub.getConfig(request))
         .getConfig();
   }
 

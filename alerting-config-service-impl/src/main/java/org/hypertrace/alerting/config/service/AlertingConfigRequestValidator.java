@@ -42,5 +42,4 @@ public interface AlertingConfigRequestValidator {
 
   void validateDeleteNotificationChannelRequest(
       RequestContext requestContext, DeleteNotificationChannelRequest request);
-
 }

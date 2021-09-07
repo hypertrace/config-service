@@ -23,13 +23,13 @@ import org.hypertrace.alerting.config.service.v1.UpdateNotificationRuleResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-public class AlertingConfigServiceImpl extends NotificationConfigServiceGrpc.NotificationConfigServiceImplBase {
+public class AlertingConfigServiceImpl
+    extends NotificationConfigServiceGrpc.NotificationConfigServiceImplBase {
   private final AlertingConfigServiceCoordinator alertingConfigServiceCoordinator;
   private final AlertingConfigRequestValidator alertingConfigRequestValidator;
 
   public AlertingConfigServiceImpl(Channel channel) {
-    this.alertingConfigServiceCoordinator =
-        new AlertingConfigServiceCoordinatorImpl(channel);
+    this.alertingConfigServiceCoordinator = new AlertingConfigServiceCoordinatorImpl(channel);
     this.alertingConfigRequestValidator = new AlertingConfigRequestValidatorImpl();
   }
 
