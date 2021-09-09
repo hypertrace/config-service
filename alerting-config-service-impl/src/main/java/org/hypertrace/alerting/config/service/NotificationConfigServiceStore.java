@@ -24,17 +24,16 @@ import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public class AlertingConfigServiceCoordinatorImpl implements AlertingConfigServiceCoordinator {
+public class NotificationConfigServiceStore {
   private final ConfigServiceBlockingStub configServiceBlockingStub;
 
-  public AlertingConfigServiceCoordinatorImpl(Channel configChannel) {
+  public NotificationConfigServiceStore(Channel configChannel) {
     this.configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(configChannel)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }
 
-  @Override
   public NotificationRule createNotificationRule(
       RequestContext requestContext, NewNotificationRule newNotificationRule) {
     NotificationRule notificationRule = getNotificationRule(newNotificationRule);
@@ -49,7 +48,6 @@ public class AlertingConfigServiceCoordinatorImpl implements AlertingConfigServi
     return notificationRule;
   }
 
-  @Override
   public NotificationRule updateNotificationRule(
       RequestContext requestContext, NotificationRule notificationRule) {
     long creationTimestamp =
@@ -66,7 +64,6 @@ public class AlertingConfigServiceCoordinatorImpl implements AlertingConfigServi
     return notificationRule;
   }
 
-  @Override
   public List<NotificationRule> getAllNotificationRules(RequestContext requestContext) {
     GetAllConfigsRequest getAllConfigsRequest =
         GetAllConfigsRequest.newBuilder()
@@ -82,7 +79,6 @@ public class AlertingConfigServiceCoordinatorImpl implements AlertingConfigServi
         .collect(Collectors.toUnmodifiableList());
   }
 
-  @Override
   public void deleteNotificationRule(RequestContext requestContext, String notificationRuleId) {
     DeleteConfigRequest deleteConfigRequest =
         DeleteConfigRequest.newBuilder()
@@ -93,7 +89,6 @@ public class AlertingConfigServiceCoordinatorImpl implements AlertingConfigServi
     deleteConfig(requestContext, deleteConfigRequest);
   }
 
-  @Override
   public NotificationChannel createNotificationChannel(
       RequestContext requestContext, NewNotificationChannel newNotificationChannel) {
     NotificationChannel notificationChannel = getNotificationChannel(newNotificationChannel);
@@ -108,7 +103,6 @@ public class AlertingConfigServiceCoordinatorImpl implements AlertingConfigServi
     return notificationChannel;
   }
 
-  @Override
   public NotificationChannel updateNotificationChannel(
       RequestContext requestContext, NotificationChannel notificationChannel) {
     long creationTimestamp =
@@ -126,7 +120,6 @@ public class AlertingConfigServiceCoordinatorImpl implements AlertingConfigServi
     return notificationChannel;
   }
 
-  @Override
   public List<NotificationChannel> getAllNotificationChannels(RequestContext requestContext) {
     GetAllConfigsRequest getAllConfigsRequest =
         GetAllConfigsRequest.newBuilder()
@@ -141,15 +134,14 @@ public class AlertingConfigServiceCoordinatorImpl implements AlertingConfigServi
         .map(NotificationChannelWrapper::getNotificationChannel)
         .collect(Collectors.toUnmodifiableList());
   }
-
-  @Override
+  
   public NotificationChannel getNotificationChannel(
       RequestContext requestContext, String notificationChannelId) {
     return getNotificationChannelConfigWrapper(requestContext, notificationChannelId)
         .getNotificationChannel();
   }
 
-  @Override
+  
   public void deleteNotificationChannel(
       RequestContext requestContext, String notificationChannelId) {
     DeleteConfigRequest deleteConfigRequest =

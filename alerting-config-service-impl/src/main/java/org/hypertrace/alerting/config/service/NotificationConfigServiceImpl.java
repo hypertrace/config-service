@@ -23,14 +23,14 @@ import org.hypertrace.alerting.config.service.v1.UpdateNotificationRuleResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-public class AlertingConfigServiceImpl
+public class NotificationConfigServiceImpl
     extends NotificationConfigServiceGrpc.NotificationConfigServiceImplBase {
-  private final AlertingConfigServiceCoordinator alertingConfigServiceCoordinator;
+  private final NotificationConfigServiceStore notificationConfigServiceStore;
   private final AlertingConfigRequestValidator alertingConfigRequestValidator;
 
-  public AlertingConfigServiceImpl(Channel channel) {
-    this.alertingConfigServiceCoordinator = new AlertingConfigServiceCoordinatorImpl(channel);
-    this.alertingConfigRequestValidator = new AlertingConfigRequestValidatorImpl();
+  public NotificationConfigServiceImpl(Channel channel) {
+    this.notificationConfigServiceStore = new NotificationConfigServiceStore(channel);
+    this.alertingConfigRequestValidator = new AlertingConfigRequestValidator();
   }
 
   @Override
@@ -40,11 +40,11 @@ public class AlertingConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       alertingConfigRequestValidator.validateCreateNotificationRuleRequest(
-          requestContext, request, alertingConfigServiceCoordinator);
+          requestContext, request, notificationConfigServiceStore);
       responseObserver.onNext(
           CreateNotificationRuleResponse.newBuilder()
               .setNotificationRule(
-                  alertingConfigServiceCoordinator.createNotificationRule(
+                  notificationConfigServiceStore.createNotificationRule(
                       requestContext, request.getNewNotificationRule()))
               .build());
       responseObserver.onCompleted();
@@ -61,11 +61,11 @@ public class AlertingConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       alertingConfigRequestValidator.validateUpdateNotificationRuleRequest(
-          requestContext, request, alertingConfigServiceCoordinator);
+          requestContext, request, notificationConfigServiceStore);
       responseObserver.onNext(
           UpdateNotificationRuleResponse.newBuilder()
               .setNotificationRule(
-                  alertingConfigServiceCoordinator.updateNotificationRule(
+                  notificationConfigServiceStore.updateNotificationRule(
                       requestContext, request.getNotificationRule()))
               .build());
       responseObserver.onCompleted();
@@ -86,7 +86,7 @@ public class AlertingConfigServiceImpl
       responseObserver.onNext(
           GetAllNotificationRulesResponse.newBuilder()
               .addAllNotificationRules(
-                  alertingConfigServiceCoordinator.getAllNotificationRules(requestContext))
+                  notificationConfigServiceStore.getAllNotificationRules(requestContext))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -102,7 +102,7 @@ public class AlertingConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       alertingConfigRequestValidator.validateDeleteNotificationRuleRequest(requestContext, request);
-      alertingConfigServiceCoordinator.deleteNotificationRule(
+      notificationConfigServiceStore.deleteNotificationRule(
           requestContext, request.getNotificationRuleId());
       responseObserver.onNext(DeleteNotificationRuleResponse.getDefaultInstance());
       responseObserver.onCompleted();
@@ -123,7 +123,7 @@ public class AlertingConfigServiceImpl
       responseObserver.onNext(
           CreateNotificationChannelResponse.newBuilder()
               .setNotificationChannel(
-                  alertingConfigServiceCoordinator.createNotificationChannel(
+                  notificationConfigServiceStore.createNotificationChannel(
                       requestContext, request.getNewNotificationChannel()))
               .build());
       responseObserver.onCompleted();
@@ -144,7 +144,7 @@ public class AlertingConfigServiceImpl
       responseObserver.onNext(
           UpdateNotificationChannelResponse.newBuilder()
               .setNotificationChannel(
-                  alertingConfigServiceCoordinator.updateNotificationChannel(
+                  notificationConfigServiceStore.updateNotificationChannel(
                       requestContext, request.getNotificationChannel()))
               .build());
       responseObserver.onCompleted();
@@ -165,7 +165,7 @@ public class AlertingConfigServiceImpl
       responseObserver.onNext(
           GetAllNotificationChannelsResponse.newBuilder()
               .addAllNotificationChannels(
-                  alertingConfigServiceCoordinator.getAllNotificationChannels(requestContext))
+                  notificationConfigServiceStore.getAllNotificationChannels(requestContext))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -182,7 +182,7 @@ public class AlertingConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       alertingConfigRequestValidator.validateDeleteNotificationChannelRequest(
           requestContext, request);
-      alertingConfigServiceCoordinator.deleteNotificationChannel(
+      notificationConfigServiceStore.deleteNotificationChannel(
           requestContext, request.getNotificationChannelId());
       responseObserver.onNext(DeleteNotificationChannelResponse.getDefaultInstance());
       responseObserver.onCompleted();
