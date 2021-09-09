@@ -134,14 +134,13 @@ public class NotificationConfigServiceStore {
         .map(NotificationChannelWrapper::getNotificationChannel)
         .collect(Collectors.toUnmodifiableList());
   }
-  
+
   public NotificationChannel getNotificationChannel(
       RequestContext requestContext, String notificationChannelId) {
     return getNotificationChannelConfigWrapper(requestContext, notificationChannelId)
         .getNotificationChannel();
   }
 
-  
   public void deleteNotificationChannel(
       RequestContext requestContext, String notificationChannelId) {
     DeleteConfigRequest deleteConfigRequest =

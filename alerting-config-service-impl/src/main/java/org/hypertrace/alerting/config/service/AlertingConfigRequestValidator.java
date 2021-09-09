@@ -13,7 +13,7 @@ import org.hypertrace.alerting.config.service.v1.UpdateNotificationRuleRequest;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class AlertingConfigRequestValidator {
-  
+
   public void validateCreateNotificationRuleRequest(
       RequestContext requestContext,
       CreateNotificationRuleRequest request,
@@ -29,11 +29,10 @@ public class AlertingConfigRequestValidator {
         requestContext, request.getNewNotificationRule().getChannelId());
   }
 
-  
   public void validateUpdateNotificationRuleRequest(
       RequestContext requestContext,
       UpdateNotificationRuleRequest request,
-      NotificationConfigServiceStore  notificationConfigServiceStore) {
+      NotificationConfigServiceStore notificationConfigServiceStore) {
     validateTenantID(requestContext);
     Preconditions.checkArgument(
         request.hasNotificationRule(), "Notification rule should be present");
@@ -45,13 +44,11 @@ public class AlertingConfigRequestValidator {
         requestContext, request.getNotificationRule().getChannelId());
   }
 
-  
   public void validateGetAllNotificationRulesRequest(
       RequestContext requestContext, GetAllNotificationRulesRequest request) {
     validateTenantID(requestContext);
   }
 
-  
   public void validateDeleteNotificationRuleRequest(
       RequestContext requestContext, DeleteNotificationRuleRequest request) {
     validateTenantID(requestContext);
@@ -59,7 +56,6 @@ public class AlertingConfigRequestValidator {
         !request.getNotificationRuleId().isBlank(), "RuleId cannot be empty");
   }
 
-  
   public void validateCreateNotificationChannelRequest(
       RequestContext requestContext, CreateNotificationChannelRequest request) {
     validateTenantID(requestContext);
@@ -73,7 +69,6 @@ public class AlertingConfigRequestValidator {
         "Channel config has to be present");
   }
 
-  
   public void validateUpdateNotificationChannelRequest(
       RequestContext requestContext, UpdateNotificationChannelRequest request) {
     validateTenantID(requestContext);
@@ -87,13 +82,11 @@ public class AlertingConfigRequestValidator {
         "Channel config has to be present");
   }
 
-  
   public void validateGetAllNotificationChannelsRequest(
       RequestContext requestContext, GetAllNotificationChannelsRequest request) {
     validateTenantID(requestContext);
   }
 
-  
   public void validateGetNotificationChannelRequest(
       RequestContext requestContext, GetNotificationChannelRequest request) {
     validateTenantID(requestContext);
@@ -101,7 +94,6 @@ public class AlertingConfigRequestValidator {
         !request.getNotificationChannelId().isBlank(), "ChannelId cannot be empty");
   }
 
-  
   public void validateDeleteNotificationChannelRequest(
       RequestContext requestContext, DeleteNotificationChannelRequest request) {
     validateTenantID(requestContext);
