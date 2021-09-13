@@ -9,6 +9,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.activity.event.SecurityConfigurationAction;
+import ai.traceable.activity.event.SecurityConfigurationChange;
+import ai.traceable.activity.event.SecurityConfigurationType;
+import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.threatmanagement.config.service.anomalyscore.AnomalyScoreContributionManager;
 import ai.traceable.threatmanagement.config.service.eventscore.SecurityEventScoreContributionManager;
 import ai.traceable.threatmanagement.config.service.eventtype.SecurityEventTypeContributionManager;
@@ -139,6 +143,8 @@ class ThreatManagementConfigServiceImplTest {
   @Mock private ThreatAutoBlockingManager threatAutoBlockingManager;
 
   private ThreatManagementConfigServiceImpl threatManagementConfigService;
+  private ActivityEventProducer mockActivityEventProducer;
+  private ThreatManagementConfigServiceConfig mockConfig;
 
   @BeforeEach
   void setup() {
@@ -173,7 +179,9 @@ class ThreatManagementConfigServiceImplTest {
     this.securityEventTypeContributionManager = mock(SecurityEventTypeContributionManager.class);
 
     this.threatAutoBlockingManager = mock(ThreatAutoBlockingManager.class);
-
+    this.mockActivityEventProducer = mock(ActivityEventProducer.class);
+    this.mockConfig = mock(ThreatManagementConfigServiceConfig.class);
+    when(mockConfig.shouldPublishActivityEvents()).thenReturn(true);
     this.threatManagementConfigService =
         new ThreatManagementConfigServiceImpl(
             requestValidator,
@@ -181,7 +189,9 @@ class ThreatManagementConfigServiceImplTest {
             securityEventScoreContributionManager,
             anomalyScoreContributionManager,
             securityEventTypeContributionManager,
-            threatAutoBlockingManager);
+            threatAutoBlockingManager,
+            mockConfig,
+            mockActivityEventProducer);
   }
 
   @Nested
@@ -536,6 +546,15 @@ class ThreatManagementConfigServiceImplTest {
                   .setAutoBlockingActionConfig(THREAT_AUTO_BLOCKING_ACTION_CONFIG_2)
                   .build());
       verify(responseObserver, times(1)).onCompleted();
+
+      verify(mockActivityEventProducer, times(1))
+          .publishSecurityConfigurationChangeEvent(
+              any(RequestContext.class),
+              eq(
+                  SecurityConfigurationChange.newBuilder()
+                      .setSecurityConfigurationType(SecurityConfigurationType.THREAT_AUTO_BLOCKING)
+                      .setSecurityConfigurationAction(SecurityConfigurationAction.ENABLE)
+                      .build()));
     }
 
     @Test

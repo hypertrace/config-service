@@ -5,6 +5,7 @@ plugins {
 }
 
 dependencies {
+  api(projects.activityEventProducer)
   api(projects.threatManagementConfigServiceApi)
   implementation(libs.hypertrace.configservice.api)
 
@@ -17,6 +18,7 @@ dependencies {
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpcutils.client)
   implementation(libs.hypertrace.configservice.protoconverter)
+  implementation(libs.traceable.activityevent.api)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

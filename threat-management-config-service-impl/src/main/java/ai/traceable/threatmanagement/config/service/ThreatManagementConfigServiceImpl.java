@@ -1,5 +1,9 @@
 package ai.traceable.threatmanagement.config.service;
 
+import ai.traceable.activity.event.SecurityConfigurationAction;
+import ai.traceable.activity.event.SecurityConfigurationChange;
+import ai.traceable.activity.event.SecurityConfigurationType;
+import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.threatmanagement.config.service.anomalyscore.AnomalyScoreContributionManager;
 import ai.traceable.threatmanagement.config.service.eventscore.SecurityEventScoreContributionManager;
 import ai.traceable.threatmanagement.config.service.eventtype.SecurityEventTypeContributionManager;
@@ -19,6 +23,7 @@ import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreBoundRespon
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventScoreContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionConfig;
+import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionType;
 import ai.traceable.threatmanagement.config.service.v1.ThreatManagementConfigServiceGrpc.ThreatManagementConfigServiceImplBase;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
 import ai.traceable.threatmanagement.config.service.v1.UpdateAnomalyScoreContributionRequest;
@@ -44,6 +49,8 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
   private final AnomalyScoreContributionManager anomalyScoreContributionManager;
   private final SecurityEventTypeContributionManager securityEventTypeContributionManager;
   private final ThreatAutoBlockingManager threatAutoBlockingManager;
+  private final ActivityEventProducer activityEventProducer;
+  private final boolean shouldPublishActivityEvents;
 
   @Inject
   ThreatManagementConfigServiceImpl(
@@ -52,13 +59,17 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
       SecurityEventScoreContributionManager securityEventScoreContributionManager,
       AnomalyScoreContributionManager anomalyScoreContributionManager,
       SecurityEventTypeContributionManager securityEventTypeContributionManager,
-      ThreatAutoBlockingManager threatAutoBlockingManager) {
+      ThreatAutoBlockingManager threatAutoBlockingManager,
+      ThreatManagementConfigServiceConfig config,
+      ActivityEventProducer activityEventProducer) {
     this.requestValidator = requestValidator;
     this.threatScoreManager = threatScoreManager;
     this.securityEventScoreContributionManager = securityEventScoreContributionManager;
     this.anomalyScoreContributionManager = anomalyScoreContributionManager;
     this.securityEventTypeContributionManager = securityEventTypeContributionManager;
     this.threatAutoBlockingManager = threatAutoBlockingManager;
+    this.activityEventProducer = activityEventProducer;
+    this.shouldPublishActivityEvents = config.shouldPublishActivityEvents();
   }
 
   @Override
@@ -293,9 +304,31 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
               .setAutoBlockingActionConfig(threatAutoBlockingActionConfig)
               .build());
       responseObserver.onCompleted();
+
+      if (shouldPublishActivityEvents) {
+        activityEventProducer.publishSecurityConfigurationChangeEvent(
+            RequestContext.CURRENT.get(),
+            buildSecurityConfigurationChangeEvent(threatAutoBlockingActionConfig));
+      }
     } catch (Exception e) {
       log.error("Unable to update threat auto blocking action config for request {}", request, e);
       responseObserver.onError(e);
     }
+  }
+
+  private SecurityConfigurationChange buildSecurityConfigurationChangeEvent(
+      ThreatAutoBlockingActionConfig threatAutoBlockingActionConfig) {
+    SecurityConfigurationAction securityConfigurationAction;
+    if (threatAutoBlockingActionConfig.getActionType()
+        == ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK) {
+      securityConfigurationAction = SecurityConfigurationAction.ENABLE;
+    } else {
+      securityConfigurationAction = SecurityConfigurationAction.DISABLE;
+    }
+
+    return SecurityConfigurationChange.newBuilder()
+        .setSecurityConfigurationType(SecurityConfigurationType.THREAT_AUTO_BLOCKING)
+        .setSecurityConfigurationAction(securityConfigurationAction)
+        .build();
   }
 }
