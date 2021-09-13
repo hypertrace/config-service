@@ -10,6 +10,7 @@ build:
     - user-attribution-config-service-api/src/main/proto
     - external-user-attribution-config-service-api/src/main/proto
     - risk-config-service-api/src/main/proto
+    - data-handling-config-service-api/src/main/proto
 lint:
   use:
     - DEFAULT

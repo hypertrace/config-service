@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package ai.traceable.data.handling.config.service.v1;
+
+import "ai/traceable/data/handling/config/service/v1/data_handling_rule.proto";
+
+option java_multiple_files = true;
+
+service DataHandlingConfigService {
+  rpc GetDataHandlingRules(GetDataHandlingRulesRequest) returns (GetDataHandlingRulesResponse) {
+  }
+
+  rpc CreateDataHandlingRule(CreateDataHandlingRuleRequest) returns (CreateDataHandlingRuleResponse) {
+  }
+
+  rpc UpdateDataHandlingRule(UpdateDataHandlingRuleRequest) returns (UpdateDataHandlingRuleResponse) {
+  }
+
+  rpc RankDataHandlingRule(RankDataHandlingRuleRequest) returns (RankDataHandlingRuleResponse) {
+  }
+
+  rpc DeleteDataHandlingRule(DeleteDataHandlingRuleRequest) returns (DeleteDataHandlingRuleResponse) {
+  }
+}
+
+message GetDataHandlingRulesRequest {
+}
+
+message GetDataHandlingRulesResponse {
+  repeated DataHandlingRule rules = 1;
+}
+
+
+message CreateDataHandlingRuleRequest {
+  DataHandlingRuleData data = 1;
+}
+
+message CreateDataHandlingRuleResponse {
+  repeated DataHandlingRule rules = 1;
+}
+
+message UpdateDataHandlingRuleRequest {
+  string id = 1;
+  DataHandlingRuleData data = 2;
+}
+
+message UpdateDataHandlingRuleResponse {
+  DataHandlingRule rule = 1;
+}
+
+message RankDataHandlingRuleRequest {
+  string rule_id_to_update = 1;
+  // Omit to rank highest
+  optional string preceding_rule_id = 2;
+}
+
+message RankDataHandlingRuleResponse {
+  repeated DataHandlingRule rules = 1;
+}
+
+message DeleteDataHandlingRuleRequest {
+  string id = 1;
+}
+
+message DeleteDataHandlingRuleResponse {
+  repeated DataHandlingRule rules = 1;
+}
