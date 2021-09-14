@@ -37,15 +37,15 @@ import org.hypertrace.label.config.service.v1.UpdateLabelResponse;
 
 @Slf4j
 public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfigServiceImplBase {
+  private static final Duration WAIT_TIME = Duration.newBuilder().setSeconds(5).build();
+  private static final String LABELS_CONFIG_SERVICE_CONFIG = "labels.config.service";
+  private static final String SYSTEM_LABELS = "system.labels";
+  private static final int LABEL_LOCK_STRIPE_COUNT = 1000;
   private final ConfigServiceCoordinator configServiceCoordinator;
-  private final String LABELS_CONFIG_SERVICE_CONFIG = "labels.config.service";
-  private final String SYSTEM_LABELS = "system.labels";
   private final List<Label> systemLabels;
   private final Map<String, Label> systemLabelsIdLabelMap;
   private final Map<String, Label> systemLabelsKeyLabelMap;
   private final Striped<Lock> stripedLabelsLock;
-  private static final int LABEL_LOCK_STRIPE_COUNT = 1000;
-  private static final Duration WAIT_TIME = Duration.newBuilder().setSeconds(5).build();
 
   public LabelsConfigServiceImpl(Channel configChannel, Config config) {
     stripedLabelsLock = Striped.lazyWeakLock(LABEL_LOCK_STRIPE_COUNT);
