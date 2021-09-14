@@ -1,6 +1,7 @@
 package org.hypertrace.label.config.service;
 
 import com.google.common.util.concurrent.Striped;
+import com.google.protobuf.Duration;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
@@ -11,6 +12,7 @@ import io.grpc.stub.StreamObserver;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -41,10 +43,12 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
   private final List<Label> systemLabels;
   private final Map<String, Label> systemLabelsIdLabelMap;
   private final Map<String, Label> systemLabelsKeyLabelMap;
-  private final int LABEL_LOCK_STRIPE_COUNT = 1000;
-  private final Striped<Lock> stripedLabelsLock = Striped.lazyWeakLock(LABEL_LOCK_STRIPE_COUNT);
+  private final Striped<Lock> stripedLabelsLock;
+  private static final int LABEL_LOCK_STRIPE_COUNT = 1000;
+  private static final Duration WAIT_TIME = Duration.newBuilder().setSeconds(5).build();
 
   public LabelsConfigServiceImpl(Channel configChannel, Config config) {
+    stripedLabelsLock = Striped.lazyWeakLock(LABEL_LOCK_STRIPE_COUNT);
     configServiceCoordinator = new ConfigServiceCoordinatorImpl(configChannel);
     List<? extends ConfigObject> systemLabelsObjectList = null;
     if (config.hasPath(LABELS_CONFIG_SERVICE_CONFIG)) {
@@ -88,7 +92,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     RequestContext requestContext = RequestContext.CURRENT.get();
     Lock labelsLock = this.stripedLabelsLock.get(requestContext.getTenantId());
     try {
-      boolean lockAcquired = labelsLock.tryLock(5, TimeUnit.MINUTES);
+      boolean lockAcquired = labelsLock.tryLock(WAIT_TIME.getSeconds(), TimeUnit.SECONDS);
       if (lockAcquired) {
         CreateLabel createLabel = request.getLabel();
         if (systemLabelsKeyLabelMap.containsKey(createLabel.getKey())
@@ -150,7 +154,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     RequestContext requestContext = RequestContext.CURRENT.get();
     Lock labelsLock = this.stripedLabelsLock.get(requestContext.getTenantId());
     try {
-      boolean lockAcquired = labelsLock.tryLock(5, TimeUnit.MINUTES);
+      boolean lockAcquired = labelsLock.tryLock(WAIT_TIME.getSeconds(), TimeUnit.SECONDS);
       if (lockAcquired) {
         if (systemLabelsIdLabelMap.containsKey(updatedLabelInReq.getId())
             || systemLabelsKeyLabelMap.containsKey(updatedLabelInReq.getKey())) {
@@ -185,7 +189,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     Lock labelsLock = this.stripedLabelsLock.get(requestContext.getTenantId());
     labelsLock.lock();
     try {
-      boolean lockAcquired = labelsLock.tryLock(5, TimeUnit.MINUTES);
+      boolean lockAcquired = labelsLock.tryLock(WAIT_TIME.getSeconds(), TimeUnit.SECONDS);
       if (lockAcquired) {
         String labelId = request.getId();
         if (systemLabelsIdLabelMap.containsKey(labelId)) {
@@ -210,8 +214,8 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
   private boolean isDuplicateKey(String key) {
     RequestContext requestContext = RequestContext.CURRENT.get();
     List<Label> labelList = configServiceCoordinator.getAllLabels(requestContext);
-    List<String> keyList =
-        labelList.stream().map(label -> label.getKey()).collect(Collectors.toList());
-    return keyList.contains(key);
+    Optional<Label> match =
+        labelList.stream().filter(label -> label.getKey().equals(key)).findAny();
+    return match.isPresent();
   }
 }
