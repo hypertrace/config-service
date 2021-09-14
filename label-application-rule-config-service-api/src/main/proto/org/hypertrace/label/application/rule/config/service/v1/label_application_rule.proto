@@ -9,15 +9,10 @@ message LabelApplicationRule {
   LabelApplicationRule data = 2;
 }
 
-message CreateLabelApplicationRule {
-  LabelApplicationRule data = 2;
-}
-
 message LabelApplicationRuleData {
   string name = 1;
-  string description = 2;
-  MatchingCriteria matching_criteria = 3;
-  ApplicationCriteria application_criteria = 4;
+  MatchingCriteria matching_criteria = 2;
+  ApplicationCriteria application_criteria = 3;
 
   message MatchingCriteria {
     Type type = 1;
@@ -36,40 +31,26 @@ message LabelApplicationRuleData {
       Operator operator = 4;
       optional string value = 5;
 
-      enum Scope {
-        SCOPE_UNSPECIFIED = 0;
-        SCOPE_ATTRIBUTE = 1;
-        SCOPE_REQUEST = 2;
-        SCOPE_RESPONSE = 3;
-      }
-
       enum Operator {
         OPERATOR_UNSPECIFIED = 0;
-        OPERATOR_EXISTS = 1;
-        OPERATOR_EQUALS = 2;
-        OPERATOR_CONTAINS = 3;
-        OPERATOR_STARTS_WITH = 4;
-        OPERATOR_ENDS_WITH = 5;
-        OPERATOR_MATCHES_REGEX = 6;
+        OPERATOR_EXISTS = 1; // operator to check if the key exists, value is not checked in this case
+        OPERATOR_EQUALS = 2; // operator to check if the key exists, and value is equal to the provided value
+        OPERATOR_CONTAINS = 3; // operator to check if the key exists, and value contains the provided value
+        OPERATOR_STARTS_WITH = 4; // operator to check if the key exists, and value starts with the provided value
+        OPERATOR_ENDS_WITH = 5; // operator to check if the key exists, and value ends with the provided value
+        OPERATOR_MATCHES_REGEX = 6; // operator to check if the key exists, and value matches the provided regex value
       }
     }
   }
 
   message ApplicationCriteria {
     Type type = 1;
-    Scope scope = 2;
+    string scope = 2;
     Action action = 3;
 
     enum Type {
       TYPE_UNSPECIFIED = 0;
       TYPE_ENTITY = 1;
-    }
-
-    enum Scope {
-      SCOPE_UNSPECIFIED = 0;
-      SCOPE_API = 1;
-      SCOPE_SERVICE = 2;
-      SCOPE_DOMAIN = 3;
     }
 
     message Action {
@@ -86,13 +67,21 @@ message LabelApplicationRuleData {
 
       message DynamicLabel {
         repeated TokenExtractionRule token_extraction_rules = 1;
-        string token_combining_expression  = 2;
+        string token_combining_expression  = 2; // sample expression "${deployment}_${version}"
 
         message TokenExtractionRule {
           string key = 1;
-          optional string alias = 2;
+          Scope scope = 2;
+          optional string alias = 3;
         }
       }
     }
+  }
+
+  enum Scope {
+    SCOPE_UNSPECIFIED = 0;
+    SCOPE_ATTRIBUTE = 1;
+    SCOPE_REQUEST = 2;
+    SCOPE_RESPONSE = 3;
   }
 }
