@@ -25,27 +25,38 @@ message LabelApplicationRuleData {
     }
 
     message Condition {
-      string name = 1;
-      Scope scope = 2;
-      string key = 3;
-      Operator operator = 4;
-      optional string value = 5;
+      oneof condition {
+        StringCondition string_condition = 1;
+        UnaryCondition unary_condition = 3;
+      }
+    }
+
+    message StringCondition {
+      Scope scope = 1;
+      string key = 2;
+      Operator operator = 3;
+      string value = 4;
 
       enum Operator {
         OPERATOR_UNSPECIFIED = 0;
-        OPERATOR_EXISTS = 1; // operator to check if the key exists, value is not checked in this case
-        OPERATOR_EQUALS = 2; // operator to check if the key exists, and value is equal to the provided value
+        OPERATOR_EQUALS = 1; // operator to check if the key exists, and value is equal to the provided value
+        OPERATOR_NOT_EQUALS = 2; // operator to check if the key exists, and value is not equal to the provided value
         OPERATOR_CONTAINS = 3; // operator to check if the key exists, and value contains the provided value
         OPERATOR_STARTS_WITH = 4; // operator to check if the key exists, and value starts with the provided value
         OPERATOR_ENDS_WITH = 5; // operator to check if the key exists, and value ends with the provided value
         OPERATOR_MATCHES_REGEX = 6; // operator to check if the key exists, and value matches the provided regex value
       }
     }
+
+    message UnaryCondition {
+      Scope scope = 1;
+      string key = 2; // checks for existence of the key
+    }
   }
 
   message ApplicationCriteria {
     Type type = 1;
-    string scope = 2;
+    string sub_type = 2; // captures the entity type - "API", "Service", "Domain"
     Action action = 3;
 
     enum Type {
