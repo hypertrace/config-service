@@ -12,7 +12,7 @@ import org.hypertrace.alerting.config.service.v1.UpdateNotificationChannelReques
 import org.hypertrace.alerting.config.service.v1.UpdateNotificationRuleRequest;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public class AlertingConfigRequestValidator {
+public class NotificationConfigServiceRequestValidator {
 
   public void validateCreateNotificationRuleRequest(
       RequestContext requestContext,
@@ -25,8 +25,6 @@ public class AlertingConfigRequestValidator {
         !request.getNewNotificationRule().getRuleName().isBlank(), "Rule name cannot be empty");
     Preconditions.checkArgument(
         !request.getNewNotificationRule().getChannelId().isBlank(), "ChannelId cannot be empty");
-    notificationConfigServiceStore.getNotificationChannel(
-        requestContext, request.getNewNotificationRule().getChannelId());
   }
 
   public void validateUpdateNotificationRuleRequest(
@@ -40,8 +38,6 @@ public class AlertingConfigRequestValidator {
         !request.getNotificationRule().getRuleName().isBlank(), "Rule name cannot be empty");
     Preconditions.checkArgument(
         !request.getNotificationRule().getChannelId().isBlank(), "ChannelId cannot be empty");
-    notificationConfigServiceStore.getNotificationChannel(
-        requestContext, request.getNotificationRule().getChannelId());
   }
 
   public void validateGetAllNotificationRulesRequest(
@@ -85,13 +81,6 @@ public class AlertingConfigRequestValidator {
   public void validateGetAllNotificationChannelsRequest(
       RequestContext requestContext, GetAllNotificationChannelsRequest request) {
     validateTenantID(requestContext);
-  }
-
-  public void validateGetNotificationChannelRequest(
-      RequestContext requestContext, GetNotificationChannelRequest request) {
-    validateTenantID(requestContext);
-    Preconditions.checkArgument(
-        !request.getNotificationChannelId().isBlank(), "ChannelId cannot be empty");
   }
 
   public void validateDeleteNotificationChannelRequest(

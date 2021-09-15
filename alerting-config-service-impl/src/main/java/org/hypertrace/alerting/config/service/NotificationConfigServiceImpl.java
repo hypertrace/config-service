@@ -26,11 +26,11 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class NotificationConfigServiceImpl
     extends NotificationConfigServiceGrpc.NotificationConfigServiceImplBase {
   private final NotificationConfigServiceStore notificationConfigServiceStore;
-  private final AlertingConfigRequestValidator alertingConfigRequestValidator;
+  private final NotificationConfigServiceRequestValidator notificationConfigServiceRequestValidator;
 
   public NotificationConfigServiceImpl(Channel channel) {
     this.notificationConfigServiceStore = new NotificationConfigServiceStore(channel);
-    this.alertingConfigRequestValidator = new AlertingConfigRequestValidator();
+    this.notificationConfigServiceRequestValidator = new NotificationConfigServiceRequestValidator();
   }
 
   @Override
@@ -39,7 +39,7 @@ public class NotificationConfigServiceImpl
       StreamObserver<CreateNotificationRuleResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      alertingConfigRequestValidator.validateCreateNotificationRuleRequest(
+      notificationConfigServiceRequestValidator.validateCreateNotificationRuleRequest(
           requestContext, request, notificationConfigServiceStore);
       responseObserver.onNext(
           CreateNotificationRuleResponse.newBuilder()
@@ -60,7 +60,7 @@ public class NotificationConfigServiceImpl
       StreamObserver<UpdateNotificationRuleResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      alertingConfigRequestValidator.validateUpdateNotificationRuleRequest(
+      notificationConfigServiceRequestValidator.validateUpdateNotificationRuleRequest(
           requestContext, request, notificationConfigServiceStore);
       responseObserver.onNext(
           UpdateNotificationRuleResponse.newBuilder()
@@ -81,7 +81,7 @@ public class NotificationConfigServiceImpl
       StreamObserver<GetAllNotificationRulesResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      alertingConfigRequestValidator.validateGetAllNotificationRulesRequest(
+      notificationConfigServiceRequestValidator.validateGetAllNotificationRulesRequest(
           requestContext, request);
       responseObserver.onNext(
           GetAllNotificationRulesResponse.newBuilder()
@@ -101,7 +101,8 @@ public class NotificationConfigServiceImpl
       StreamObserver<DeleteNotificationRuleResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      alertingConfigRequestValidator.validateDeleteNotificationRuleRequest(requestContext, request);
+      notificationConfigServiceRequestValidator
+          .validateDeleteNotificationRuleRequest(requestContext, request);
       notificationConfigServiceStore.deleteNotificationRule(
           requestContext, request.getNotificationRuleId());
       responseObserver.onNext(DeleteNotificationRuleResponse.getDefaultInstance());
@@ -118,7 +119,7 @@ public class NotificationConfigServiceImpl
       StreamObserver<CreateNotificationChannelResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      alertingConfigRequestValidator.validateCreateNotificationChannelRequest(
+      notificationConfigServiceRequestValidator.validateCreateNotificationChannelRequest(
           requestContext, request);
       responseObserver.onNext(
           CreateNotificationChannelResponse.newBuilder()
@@ -139,7 +140,7 @@ public class NotificationConfigServiceImpl
       StreamObserver<UpdateNotificationChannelResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      alertingConfigRequestValidator.validateUpdateNotificationChannelRequest(
+      notificationConfigServiceRequestValidator.validateUpdateNotificationChannelRequest(
           requestContext, request);
       responseObserver.onNext(
           UpdateNotificationChannelResponse.newBuilder()
@@ -160,7 +161,7 @@ public class NotificationConfigServiceImpl
       StreamObserver<GetAllNotificationChannelsResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      alertingConfigRequestValidator.validateGetAllNotificationChannelsRequest(
+      notificationConfigServiceRequestValidator.validateGetAllNotificationChannelsRequest(
           requestContext, request);
       responseObserver.onNext(
           GetAllNotificationChannelsResponse.newBuilder()
@@ -180,7 +181,7 @@ public class NotificationConfigServiceImpl
       StreamObserver<DeleteNotificationChannelResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      alertingConfigRequestValidator.validateDeleteNotificationChannelRequest(
+      notificationConfigServiceRequestValidator.validateDeleteNotificationChannelRequest(
           requestContext, request);
       notificationConfigServiceStore.deleteNotificationChannel(
           requestContext, request.getNotificationChannelId());

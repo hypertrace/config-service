@@ -1,24 +1,25 @@
 package org.hypertrace.alerting.config.service;
 
-import static org.hypertrace.alerting.config.service.AlertingConfigServiceConstants.ALERTING_CHANNEL_CONFIG_RESOURCE_NAME;
-import static org.hypertrace.alerting.config.service.AlertingConfigServiceConstants.ALERTING_CONFIG_NAMESPACE;
-import static org.hypertrace.alerting.config.service.AlertingConfigServiceConstants.ALERTING_RULE_CONFIG_RESOURCE_NAME;
+import static org.hypertrace.alerting.config.service.NotificationConfigServiceConstants.NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME;
+import static org.hypertrace.alerting.config.service.NotificationConfigServiceConstants.NOTIFICATION_CONFIG_NAMESPACE;
+import static org.hypertrace.alerting.config.service.NotificationConfigServiceConstants.NOTIFICATION_RULE_CONFIG_RESOURCE_NAME;
 
 import com.google.protobuf.Value;
 import io.grpc.Channel;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.SneakyThrows;
 import org.hypertrace.alerting.config.service.v1.NewNotificationChannel;
 import org.hypertrace.alerting.config.service.v1.NewNotificationRule;
 import org.hypertrace.alerting.config.service.v1.NotificationChannel;
 import org.hypertrace.alerting.config.service.v1.NotificationRule;
+import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
-import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
@@ -37,53 +38,41 @@ public class NotificationConfigServiceStore {
   public NotificationRule createNotificationRule(
       RequestContext requestContext, NewNotificationRule newNotificationRule) {
     NotificationRule notificationRule = getNotificationRule(newNotificationRule);
-    UpsertConfigRequest upsertConfigRequest =
-        UpsertConfigRequest.newBuilder()
-            .setResourceName(ALERTING_RULE_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(ALERTING_CONFIG_NAMESPACE)
-            .setContext(notificationRule.getId())
-            .setConfig(new NotificationRuleWrapper(notificationRule).toValue())
-            .build();
-    upsertConfig(requestContext, upsertConfigRequest);
-    return notificationRule;
+    return updateNotificationRule(requestContext, notificationRule);
   }
 
   public NotificationRule updateNotificationRule(
       RequestContext requestContext, NotificationRule notificationRule) {
-    long creationTimestamp =
-        getNotificationRuleConfigWrapper(requestContext, notificationRule.getId())
-            .getCreationTimestamp();
     UpsertConfigRequest upsertConfigRequest =
         UpsertConfigRequest.newBuilder()
-            .setResourceName(ALERTING_RULE_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(ALERTING_CONFIG_NAMESPACE)
+            .setResourceName(NOTIFICATION_RULE_CONFIG_RESOURCE_NAME)
+            .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
             .setContext(notificationRule.getId())
-            .setConfig(new NotificationRuleWrapper(notificationRule, creationTimestamp).toValue())
+            .setConfig(convertNotificationRuleToGeneric(notificationRule))
             .build();
-    upsertConfig(requestContext, upsertConfigRequest);
-    return notificationRule;
+    Value value = upsertConfig(requestContext, upsertConfigRequest);
+    return convertFromGenericToNotificationRule(value);
   }
 
   public List<NotificationRule> getAllNotificationRules(RequestContext requestContext) {
     GetAllConfigsRequest getAllConfigsRequest =
         GetAllConfigsRequest.newBuilder()
-            .setResourceName(ALERTING_RULE_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(ALERTING_CONFIG_NAMESPACE)
+            .setResourceName(NOTIFICATION_RULE_CONFIG_RESOURCE_NAME)
+            .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
             .build();
     return getAllConfigs(requestContext, getAllConfigsRequest).stream()
         .map(
             contextSpecificConfig ->
-                NotificationRuleWrapper.fromValue(contextSpecificConfig.getConfig()))
+                convertFromGenericToNotificationRule(contextSpecificConfig.getConfig()))
         .sorted()
-        .map(NotificationRuleWrapper::getNotificationRule)
         .collect(Collectors.toUnmodifiableList());
   }
 
   public void deleteNotificationRule(RequestContext requestContext, String notificationRuleId) {
     DeleteConfigRequest deleteConfigRequest =
         DeleteConfigRequest.newBuilder()
-            .setResourceName(ALERTING_RULE_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(ALERTING_CONFIG_NAMESPACE)
+            .setResourceName(NOTIFICATION_RULE_CONFIG_RESOURCE_NAME)
+            .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
             .setContext(notificationRuleId)
             .build();
     deleteConfig(requestContext, deleteConfigRequest);
@@ -92,61 +81,42 @@ public class NotificationConfigServiceStore {
   public NotificationChannel createNotificationChannel(
       RequestContext requestContext, NewNotificationChannel newNotificationChannel) {
     NotificationChannel notificationChannel = getNotificationChannel(newNotificationChannel);
-    UpsertConfigRequest upsertConfigRequest =
-        UpsertConfigRequest.newBuilder()
-            .setResourceName(ALERTING_CHANNEL_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(ALERTING_CONFIG_NAMESPACE)
-            .setContext(notificationChannel.getId())
-            .setConfig(new NotificationChannelWrapper(notificationChannel).toValue())
-            .build();
-    upsertConfig(requestContext, upsertConfigRequest);
-    return notificationChannel;
+    return updateNotificationChannel(requestContext, notificationChannel);
   }
 
   public NotificationChannel updateNotificationChannel(
       RequestContext requestContext, NotificationChannel notificationChannel) {
-    long creationTimestamp =
-        getNotificationChannelConfigWrapper(requestContext, notificationChannel.getId())
-            .getCreationTimestamp();
     UpsertConfigRequest upsertConfigRequest =
         UpsertConfigRequest.newBuilder()
-            .setResourceName(ALERTING_CHANNEL_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(ALERTING_CONFIG_NAMESPACE)
+            .setResourceName(NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
+            .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
             .setContext(notificationChannel.getId())
-            .setConfig(
-                new NotificationChannelWrapper(notificationChannel, creationTimestamp).toValue())
+            .setConfig(convertNotificationChannelToGeneric(notificationChannel))
             .build();
-    upsertConfig(requestContext, upsertConfigRequest);
-    return notificationChannel;
+    Value value = upsertConfig(requestContext, upsertConfigRequest);
+    return convertFromGenericToNotificationChannel(value);
   }
 
   public List<NotificationChannel> getAllNotificationChannels(RequestContext requestContext) {
     GetAllConfigsRequest getAllConfigsRequest =
         GetAllConfigsRequest.newBuilder()
-            .setResourceName(ALERTING_CHANNEL_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(ALERTING_CONFIG_NAMESPACE)
+            .setResourceName(NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
+            .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
             .build();
     return getAllConfigs(requestContext, getAllConfigsRequest).stream()
         .map(
             contextSpecificConfig ->
-                NotificationChannelWrapper.fromValue(contextSpecificConfig.getConfig()))
+                convertFromGenericToNotificationChannel(contextSpecificConfig.getConfig()))
         .sorted()
-        .map(NotificationChannelWrapper::getNotificationChannel)
         .collect(Collectors.toUnmodifiableList());
-  }
-
-  public NotificationChannel getNotificationChannel(
-      RequestContext requestContext, String notificationChannelId) {
-    return getNotificationChannelConfigWrapper(requestContext, notificationChannelId)
-        .getNotificationChannel();
   }
 
   public void deleteNotificationChannel(
       RequestContext requestContext, String notificationChannelId) {
     DeleteConfigRequest deleteConfigRequest =
         DeleteConfigRequest.newBuilder()
-            .setResourceName(ALERTING_CHANNEL_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(ALERTING_CONFIG_NAMESPACE)
+            .setResourceName(NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
+            .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
             .setContext(notificationChannelId)
             .build();
     deleteConfig(requestContext, deleteConfigRequest);
@@ -168,12 +138,6 @@ public class NotificationConfigServiceStore {
   private void deleteConfig(RequestContext context, DeleteConfigRequest request) {
     GrpcClientRequestContextUtil.executeWithHeadersContext(
         context.getRequestHeaders(), () -> configServiceBlockingStub.deleteConfig(request));
-  }
-
-  private Value getConfig(RequestContext context, GetConfigRequest request) {
-    return GrpcClientRequestContextUtil.executeWithHeadersContext(
-            context.getRequestHeaders(), () -> configServiceBlockingStub.getConfig(request))
-        .getConfig();
   }
 
   private NotificationRule getNotificationRule(NewNotificationRule newNotificationRule) {
@@ -202,25 +166,27 @@ public class NotificationConfigServiceStore {
     return builder.build();
   }
 
-  private NotificationRuleWrapper getNotificationRuleConfigWrapper(
-      RequestContext requestContext, String notificationRuleId) {
-    GetConfigRequest getConfigRequest =
-        GetConfigRequest.newBuilder()
-            .setResourceName(ALERTING_RULE_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(ALERTING_CONFIG_NAMESPACE)
-            .addContexts(notificationRuleId)
-            .build();
-    return NotificationRuleWrapper.fromValue(getConfig(requestContext, getConfigRequest));
+  @SneakyThrows
+  private Value convertNotificationChannelToGeneric(NotificationChannel notificationChannel) {
+    return ConfigProtoConverter.convertToValue(notificationChannel);
   }
 
-  private NotificationChannelWrapper getNotificationChannelConfigWrapper(
-      RequestContext requestContext, String notificationChannelId) {
-    GetConfigRequest getConfigRequest =
-        GetConfigRequest.newBuilder()
-            .setResourceName(ALERTING_CHANNEL_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(ALERTING_CONFIG_NAMESPACE)
-            .addContexts(notificationChannelId)
-            .build();
-    return NotificationChannelWrapper.fromValue(getConfig(requestContext, getConfigRequest));
+  @SneakyThrows
+  private Value convertNotificationRuleToGeneric(NotificationRule notificationRule) {
+    return ConfigProtoConverter.convertToValue(notificationRule);
+  }
+
+  @SneakyThrows
+  private NotificationChannel convertFromGenericToNotificationChannel(Value value) {
+    NotificationChannel.Builder builder = NotificationChannel.newBuilder();
+    ConfigProtoConverter.mergeFromValue(value, builder);
+    return builder.build();
+  }
+
+  @SneakyThrows
+  private NotificationRule convertFromGenericToNotificationRule(Value value) {
+    NotificationRule.Builder builder = NotificationRule.newBuilder();
+    ConfigProtoConverter.mergeFromValue(value, builder);
+    return builder.build();
   }
 }
