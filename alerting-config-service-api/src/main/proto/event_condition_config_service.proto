@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package org.hypertrace.alerting.config.service.v1;
+
+import "org/hypertrace/alerting/config/service/v1/event_condition.proto";
+
+service EventConditionsConfigService {
+  rpc CreateEventCondition(CreateEventConditionRequest) returns (CreateEventConditionResponse) {}
+  rpc UpdateEventCondition(UpdateEventConditionRequest) returns (UpdateEventConditionResponse) {}
+  rpc GetAllEventConditions(GetAllEventConditionsRequest) returns (GetAllEventConditionsResponse) {}
+  rpc DeleteEventCondition(DeleteEventConditionRequest) returns (DeleteEventConditionResponse) {}
+}
+
+message CreateEventConditionRequest {
+  NewEventCondition new_event_conditions = 1;
+}
+
+message CreateEventConditionResponse {
+  EventCondition event_conditions = 1;
+}
+
+message UpdateEventConditionRequest {
+  EventCondition event_condition = 1;
+}
+
+message UpdateEventConditionResponse {
+  EventCondition event_condition = 1;
+}
+
+message GetAllEventConditionsRequest {}
+
+message GetAllEventConditionsResponse {
+  repeated EventCondition event_condition = 1;
+}
+
+message DeleteEventConditionRequest {
+  string event_condition_id = 1;
+}
+
+message DeleteEventConditionResponse {}

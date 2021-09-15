@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package org.hypertrace.alerting.config.service.v1;
+
+message NewEventCondition {
+  oneof condition {
+
+  }
+}
+
+message EventCondition {
+  string id = 1;
+  oneof condition {
+
+  }
+}
