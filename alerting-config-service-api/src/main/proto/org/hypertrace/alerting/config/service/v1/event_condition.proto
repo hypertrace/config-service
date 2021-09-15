@@ -8,13 +8,13 @@ import "org/hypertrace/alert/engine/eventcondition/config/service/v1/metric_anom
 
 message NewEventCondition {
   oneof condition {
-
+    MetricAnomalyEventCondition metric_anomaly_event_condtion = 1;
   }
 }
 
 message EventCondition {
   string id = 1;
   oneof condition {
-
+    MetricAnomalyEventCondition metric_anomaly_event_condtion = 1;
   }
 }
