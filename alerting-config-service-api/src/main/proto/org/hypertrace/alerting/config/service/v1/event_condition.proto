@@ -4,6 +4,8 @@ option java_multiple_files = true;
 
 package org.hypertrace.alerting.config.service.v1;
 
+import "org/hypertrace/alert/engine/eventcondition/config/service/v1/metric_anomaly_event_condition.proto";
+
 message NewEventCondition {
   oneof condition {
 

@@ -31,6 +31,8 @@ protobuf {
 
 dependencies {
     api(libs.bundles.grpc.api)
+    // todo publish this lib
+    implementation("org.hypertrace.alerting:metric-anomaly-data-model:0.1.0-SNAPSHOT")
 }
 
 sourceSets {
