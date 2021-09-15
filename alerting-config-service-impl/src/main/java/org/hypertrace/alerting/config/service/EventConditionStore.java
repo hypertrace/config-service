@@ -1,7 +1,7 @@
 package org.hypertrace.alerting.config.service;
 
-import static org.hypertrace.alerting.config.service.AlertingConfigServiceConstants.ALERTING_EVENT_CONDITION_CONFIG_RESOURCE_NAME;
 import static org.hypertrace.alerting.config.service.AlertingConfigServiceConstants.ALERTING_CONFIG_NAMESPACE;
+import static org.hypertrace.alerting.config.service.AlertingConfigServiceConstants.ALERTING_EVENT_CONDITION_CONFIG_RESOURCE_NAME;
 
 import com.google.protobuf.Value;
 import io.grpc.Channel;
@@ -62,7 +62,7 @@ public class EventConditionStore {
 
   private Value upsertConfig(RequestContext context, UpsertConfigRequest request) {
     return GrpcClientRequestContextUtil.executeWithHeadersContext(
-        context.getRequestHeaders(), () -> configServiceBlockingStub.upsertConfig(request))
+            context.getRequestHeaders(), () -> configServiceBlockingStub.upsertConfig(request))
         .getConfig();
   }
 

@@ -3,7 +3,6 @@ package org.hypertrace.notification.config.service;
 import io.grpc.Channel;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
-
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.CreateNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.CreateNotificationChannelResponse;
@@ -31,7 +30,8 @@ public class NotificationConfigServiceImpl
 
   public NotificationConfigServiceImpl(Channel channel) {
     this.notificationConfigServiceStore = new NotificationConfigServiceStore(channel);
-    this.notificationConfigServiceRequestValidator = new NotificationConfigServiceRequestValidator();
+    this.notificationConfigServiceRequestValidator =
+        new NotificationConfigServiceRequestValidator();
   }
 
   @Override
@@ -102,8 +102,8 @@ public class NotificationConfigServiceImpl
       StreamObserver<DeleteNotificationRuleResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      notificationConfigServiceRequestValidator
-          .validateDeleteNotificationRuleRequest(requestContext, request);
+      notificationConfigServiceRequestValidator.validateDeleteNotificationRuleRequest(
+          requestContext, request);
       notificationConfigServiceStore.deleteNotificationRule(
           requestContext, request.getNotificationRuleId());
       responseObserver.onNext(DeleteNotificationRuleResponse.getDefaultInstance());
