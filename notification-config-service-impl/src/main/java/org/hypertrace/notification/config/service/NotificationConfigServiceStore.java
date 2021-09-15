@@ -1,8 +1,4 @@
-package org.hypertrace.alerting.config.service;
-
-import static org.hypertrace.alerting.config.service.NotificationConfigServiceConstants.NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME;
-import static org.hypertrace.alerting.config.service.NotificationConfigServiceConstants.NOTIFICATION_CONFIG_NAMESPACE;
-import static org.hypertrace.alerting.config.service.NotificationConfigServiceConstants.NOTIFICATION_RULE_CONFIG_RESOURCE_NAME;
+package org.hypertrace.notification.config.service;
 
 import com.google.protobuf.Value;
 import io.grpc.Channel;
@@ -10,10 +6,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
-import org.hypertrace.alerting.config.service.v1.NewNotificationChannel;
-import org.hypertrace.alerting.config.service.v1.NewNotificationRule;
-import org.hypertrace.alerting.config.service.v1.NotificationChannel;
-import org.hypertrace.alerting.config.service.v1.NotificationRule;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
@@ -24,6 +16,10 @@ import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.notification.config.service.v1.NewNotificationChannel;
+import org.hypertrace.notification.config.service.v1.NewNotificationRule;
+import org.hypertrace.notification.config.service.v1.NotificationChannel;
+import org.hypertrace.notification.config.service.v1.NotificationRule;
 
 public class NotificationConfigServiceStore {
   private final ConfigServiceBlockingStub configServiceBlockingStub;
@@ -45,8 +41,9 @@ public class NotificationConfigServiceStore {
       RequestContext requestContext, NotificationRule notificationRule) {
     UpsertConfigRequest upsertConfigRequest =
         UpsertConfigRequest.newBuilder()
-            .setResourceName(NOTIFICATION_RULE_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
+            .setResourceName(
+                NotificationConfigServiceConstants.NOTIFICATION_RULE_CONFIG_RESOURCE_NAME)
+            .setResourceNamespace(NotificationConfigServiceConstants.NOTIFICATION_CONFIG_NAMESPACE)
             .setContext(notificationRule.getId())
             .setConfig(convertNotificationRuleToGeneric(notificationRule))
             .build();
@@ -57,8 +54,9 @@ public class NotificationConfigServiceStore {
   public List<NotificationRule> getAllNotificationRules(RequestContext requestContext) {
     GetAllConfigsRequest getAllConfigsRequest =
         GetAllConfigsRequest.newBuilder()
-            .setResourceName(NOTIFICATION_RULE_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
+            .setResourceName(
+                NotificationConfigServiceConstants.NOTIFICATION_RULE_CONFIG_RESOURCE_NAME)
+            .setResourceNamespace(NotificationConfigServiceConstants.NOTIFICATION_CONFIG_NAMESPACE)
             .build();
     return getAllConfigs(requestContext, getAllConfigsRequest).stream()
         .map(
@@ -71,8 +69,9 @@ public class NotificationConfigServiceStore {
   public void deleteNotificationRule(RequestContext requestContext, String notificationRuleId) {
     DeleteConfigRequest deleteConfigRequest =
         DeleteConfigRequest.newBuilder()
-            .setResourceName(NOTIFICATION_RULE_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
+            .setResourceName(
+                NotificationConfigServiceConstants.NOTIFICATION_RULE_CONFIG_RESOURCE_NAME)
+            .setResourceNamespace(NotificationConfigServiceConstants.NOTIFICATION_CONFIG_NAMESPACE)
             .setContext(notificationRuleId)
             .build();
     deleteConfig(requestContext, deleteConfigRequest);
@@ -88,8 +87,9 @@ public class NotificationConfigServiceStore {
       RequestContext requestContext, NotificationChannel notificationChannel) {
     UpsertConfigRequest upsertConfigRequest =
         UpsertConfigRequest.newBuilder()
-            .setResourceName(NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
+            .setResourceName(
+                NotificationConfigServiceConstants.NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
+            .setResourceNamespace(NotificationConfigServiceConstants.NOTIFICATION_CONFIG_NAMESPACE)
             .setContext(notificationChannel.getId())
             .setConfig(convertNotificationChannelToGeneric(notificationChannel))
             .build();
@@ -100,8 +100,9 @@ public class NotificationConfigServiceStore {
   public List<NotificationChannel> getAllNotificationChannels(RequestContext requestContext) {
     GetAllConfigsRequest getAllConfigsRequest =
         GetAllConfigsRequest.newBuilder()
-            .setResourceName(NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
+            .setResourceName(
+                NotificationConfigServiceConstants.NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
+            .setResourceNamespace(NotificationConfigServiceConstants.NOTIFICATION_CONFIG_NAMESPACE)
             .build();
     return getAllConfigs(requestContext, getAllConfigsRequest).stream()
         .map(
@@ -115,8 +116,9 @@ public class NotificationConfigServiceStore {
       RequestContext requestContext, String notificationChannelId) {
     DeleteConfigRequest deleteConfigRequest =
         DeleteConfigRequest.newBuilder()
-            .setResourceName(NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
+            .setResourceName(
+                NotificationConfigServiceConstants.NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
+            .setResourceNamespace(NotificationConfigServiceConstants.NOTIFICATION_CONFIG_NAMESPACE)
             .setContext(notificationChannelId)
             .build();
     deleteConfig(requestContext, deleteConfigRequest);

@@ -1,16 +1,15 @@
-package org.hypertrace.alerting.config.service;
+package org.hypertrace.notification.config.service;
 
 import com.google.common.base.Preconditions;
-import org.hypertrace.alerting.config.service.v1.CreateNotificationChannelRequest;
-import org.hypertrace.alerting.config.service.v1.CreateNotificationRuleRequest;
-import org.hypertrace.alerting.config.service.v1.DeleteNotificationChannelRequest;
-import org.hypertrace.alerting.config.service.v1.DeleteNotificationRuleRequest;
-import org.hypertrace.alerting.config.service.v1.GetAllNotificationChannelsRequest;
-import org.hypertrace.alerting.config.service.v1.GetAllNotificationRulesRequest;
-import org.hypertrace.alerting.config.service.v1.GetNotificationChannelRequest;
-import org.hypertrace.alerting.config.service.v1.UpdateNotificationChannelRequest;
-import org.hypertrace.alerting.config.service.v1.UpdateNotificationRuleRequest;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.notification.config.service.v1.CreateNotificationChannelRequest;
+import org.hypertrace.notification.config.service.v1.CreateNotificationRuleRequest;
+import org.hypertrace.notification.config.service.v1.DeleteNotificationChannelRequest;
+import org.hypertrace.notification.config.service.v1.DeleteNotificationRuleRequest;
+import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsRequest;
+import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesRequest;
+import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelRequest;
+import org.hypertrace.notification.config.service.v1.UpdateNotificationRuleRequest;
 
 public class NotificationConfigServiceRequestValidator {
 

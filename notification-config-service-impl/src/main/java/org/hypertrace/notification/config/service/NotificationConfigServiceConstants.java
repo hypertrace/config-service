@@ -1,4 +1,4 @@
-package org.hypertrace.alerting.config.service;
+package org.hypertrace.notification.config.service;
 
 public interface NotificationConfigServiceConstants {
   String NOTIFICATION_RULE_CONFIG_RESOURCE_NAME = "notificationRuleConfig";

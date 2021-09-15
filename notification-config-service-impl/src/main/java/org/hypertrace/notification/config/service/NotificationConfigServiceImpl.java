@@ -1,26 +1,27 @@
-package org.hypertrace.alerting.config.service;
+package org.hypertrace.notification.config.service;
 
 import io.grpc.Channel;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.alerting.config.service.v1.CreateNotificationChannelRequest;
-import org.hypertrace.alerting.config.service.v1.CreateNotificationChannelResponse;
-import org.hypertrace.alerting.config.service.v1.CreateNotificationRuleRequest;
-import org.hypertrace.alerting.config.service.v1.CreateNotificationRuleResponse;
-import org.hypertrace.alerting.config.service.v1.DeleteNotificationChannelRequest;
-import org.hypertrace.alerting.config.service.v1.DeleteNotificationChannelResponse;
-import org.hypertrace.alerting.config.service.v1.DeleteNotificationRuleRequest;
-import org.hypertrace.alerting.config.service.v1.DeleteNotificationRuleResponse;
-import org.hypertrace.alerting.config.service.v1.GetAllNotificationChannelsRequest;
-import org.hypertrace.alerting.config.service.v1.GetAllNotificationChannelsResponse;
-import org.hypertrace.alerting.config.service.v1.GetAllNotificationRulesRequest;
-import org.hypertrace.alerting.config.service.v1.GetAllNotificationRulesResponse;
-import org.hypertrace.alerting.config.service.v1.NotificationConfigServiceGrpc;
-import org.hypertrace.alerting.config.service.v1.UpdateNotificationChannelRequest;
-import org.hypertrace.alerting.config.service.v1.UpdateNotificationChannelResponse;
-import org.hypertrace.alerting.config.service.v1.UpdateNotificationRuleRequest;
-import org.hypertrace.alerting.config.service.v1.UpdateNotificationRuleResponse;
+
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.notification.config.service.v1.CreateNotificationChannelRequest;
+import org.hypertrace.notification.config.service.v1.CreateNotificationChannelResponse;
+import org.hypertrace.notification.config.service.v1.CreateNotificationRuleRequest;
+import org.hypertrace.notification.config.service.v1.CreateNotificationRuleResponse;
+import org.hypertrace.notification.config.service.v1.DeleteNotificationChannelRequest;
+import org.hypertrace.notification.config.service.v1.DeleteNotificationChannelResponse;
+import org.hypertrace.notification.config.service.v1.DeleteNotificationRuleRequest;
+import org.hypertrace.notification.config.service.v1.DeleteNotificationRuleResponse;
+import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsRequest;
+import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsResponse;
+import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesRequest;
+import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesResponse;
+import org.hypertrace.notification.config.service.v1.NotificationConfigServiceGrpc;
+import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelRequest;
+import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelResponse;
+import org.hypertrace.notification.config.service.v1.UpdateNotificationRuleRequest;
+import org.hypertrace.notification.config.service.v1.UpdateNotificationRuleResponse;
 
 @Slf4j
 public class NotificationConfigServiceImpl

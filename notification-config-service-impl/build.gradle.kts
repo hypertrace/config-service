@@ -5,7 +5,7 @@ plugins {
 }
 
 dependencies {
-    api(projects.alertingConfigServiceApi)
+    api(projects.notificationConfigServiceApi)
     implementation(projects.configServiceApi)
     implementation(projects.configProtoConverter)
     implementation(libs.guava)
