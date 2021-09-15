@@ -91,8 +91,9 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
       CreateLabelRequest request, StreamObserver<CreateLabelResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
     Lock labelsLock = this.stripedLabelsLock.get(requestContext.getTenantId());
+    boolean lockAcquired = false;
     try {
-      boolean lockAcquired = labelsLock.tryLock(WAIT_TIME.getSeconds(), TimeUnit.SECONDS);
+      lockAcquired = labelsLock.tryLock(WAIT_TIME.getSeconds(), TimeUnit.SECONDS);
       if (lockAcquired) {
         CreateLabel createLabel = request.getLabel();
         if (systemLabelsKeyLabelMap.containsKey(createLabel.getKey())
@@ -115,7 +116,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     } catch (Exception e) {
       responseObserver.onError(e);
     } finally {
-      labelsLock.unlock();
+      if (lockAcquired) labelsLock.unlock();
     }
   }
 
@@ -153,8 +154,9 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     Label updatedLabelInReq = request.getLabel();
     RequestContext requestContext = RequestContext.CURRENT.get();
     Lock labelsLock = this.stripedLabelsLock.get(requestContext.getTenantId());
+    boolean lockAcquired = false;
     try {
-      boolean lockAcquired = labelsLock.tryLock(WAIT_TIME.getSeconds(), TimeUnit.SECONDS);
+      lockAcquired = labelsLock.tryLock(WAIT_TIME.getSeconds(), TimeUnit.SECONDS);
       if (lockAcquired) {
         if (systemLabelsIdLabelMap.containsKey(updatedLabelInReq.getId())
             || systemLabelsKeyLabelMap.containsKey(updatedLabelInReq.getKey())) {
@@ -178,7 +180,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     } catch (Exception e) {
       responseObserver.onError(e);
     } finally {
-      labelsLock.unlock();
+      if (lockAcquired) labelsLock.unlock();
     }
   }
 
@@ -188,8 +190,9 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     RequestContext requestContext = RequestContext.CURRENT.get();
     Lock labelsLock = this.stripedLabelsLock.get(requestContext.getTenantId());
     labelsLock.lock();
+    boolean lockAcquired = false;
     try {
-      boolean lockAcquired = labelsLock.tryLock(WAIT_TIME.getSeconds(), TimeUnit.SECONDS);
+      lockAcquired = labelsLock.tryLock(WAIT_TIME.getSeconds(), TimeUnit.SECONDS);
       if (lockAcquired) {
         String labelId = request.getId();
         if (systemLabelsIdLabelMap.containsKey(labelId)) {
@@ -207,7 +210,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     } catch (Exception e) {
       responseObserver.onError(e);
     } finally {
-      labelsLock.unlock();
+      if (lockAcquired) labelsLock.unlock();
     }
   }
 
