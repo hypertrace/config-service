@@ -1,5 +1,6 @@
 package org.hypertrace.notification.config.service;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import io.grpc.Channel;
 import java.util.List;
@@ -168,27 +169,39 @@ public class NotificationConfigServiceStore {
     return builder.build();
   }
 
-  @SneakyThrows
   private Value convertNotificationChannelToGeneric(NotificationChannel notificationChannel) {
-    return ConfigProtoConverter.convertToValue(notificationChannel);
+    try {
+      return ConfigProtoConverter.convertToValue(notificationChannel);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
   }
 
-  @SneakyThrows
   private Value convertNotificationRuleToGeneric(NotificationRule notificationRule) {
-    return ConfigProtoConverter.convertToValue(notificationRule);
+    try {
+      return ConfigProtoConverter.convertToValue(notificationRule);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
   }
 
-  @SneakyThrows
   private NotificationChannel convertFromGenericToNotificationChannel(Value value) {
     NotificationChannel.Builder builder = NotificationChannel.newBuilder();
-    ConfigProtoConverter.mergeFromValue(value, builder);
+    try {
+      ConfigProtoConverter.mergeFromValue(value, builder);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
     return builder.build();
   }
 
-  @SneakyThrows
   private NotificationRule convertFromGenericToNotificationRule(Value value) {
     NotificationRule.Builder builder = NotificationRule.newBuilder();
-    ConfigProtoConverter.mergeFromValue(value, builder);
+    try {
+      ConfigProtoConverter.mergeFromValue(value, builder);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
     return builder.build();
   }
 }
