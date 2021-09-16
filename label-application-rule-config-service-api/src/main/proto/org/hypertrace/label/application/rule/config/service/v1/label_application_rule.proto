@@ -56,12 +56,20 @@ message LabelApplicationRuleData {
     }
 
     message UnaryCondition {
-      // used to check the existence of the key
+      Operator operator = 1;
+
+      enum Operator {
+        OPERATOR_UNSPECIFIED = 0;
+        OPERATOR_EXISTS = 1; // checks for the existence for the key
+      }
     }
 
     message JsonCondition {
-      string json_path = 1; // path to the key in the json structure
-      LeafCondition value_condition = 2;
+      string json_path = 1; // path to json structure
+      oneof value_condition {
+        StringCondition string_condition = 2;
+        UnaryCondition unary_condition = 3;
+      }
     }
   }
 
