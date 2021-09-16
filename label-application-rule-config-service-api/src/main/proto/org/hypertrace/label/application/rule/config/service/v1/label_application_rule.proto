@@ -15,50 +15,60 @@ message LabelApplicationRuleData {
   ApplicationCriteria application_criteria = 3;
 
   message MatchingCriteria {
-    Type type = 1;
-    repeated Condition conditions = 2;
-
-    enum Type {
-      TYPE_UNSPECIFIED = 0;
-      TYPE_SPAN = 1;
-      TYPE_TRACE = 2;
-    }
+    Condition condition = 1;
 
     message Condition {
       oneof condition {
-        StringCondition string_condition = 1;
-        UnaryCondition unary_condition = 3;
+        LeafCondition leaf_condition = 1;
+        CompositeCondition composite_condition = 2;
+      }
+    }
+
+    message CompositeCondition {
+      LogicalOperator operator = 1;
+      repeated Condition children = 2;
+
+      enum LogicalOperator {
+        LOGICAL_OPERATOR_UNSPECIFIED = 0;
+        LOGICAL_OPERATOR_AND = 1;
+        LOGICAL_OPERATOR_OR = 2;
+      }
+    }
+
+    message LeafCondition {
+      Scope scope = 1;
+      string key = 2;
+      oneof condition {
+        StringCondition string_condition = 3;
+        UnaryCondition unary_condition = 4;
+        JsonCondition json_condition = 5;
       }
     }
 
     message StringCondition {
-      Scope scope = 1;
-      string key = 2;
-      Operator operator = 3;
-      string value = 4;
+      Operator operator = 1;
+      string value = 2;
 
       enum Operator {
         OPERATOR_UNSPECIFIED = 0;
         OPERATOR_EQUALS = 1; // operator to check if the key exists, and value is equal to the provided value
-        OPERATOR_MATCHES_REGEX = 6; // operator to check if the key exists, and value matches the provided regex value
+        OPERATOR_MATCHES_REGEX = 2; // operator to check if the key exists, and value matches the provided regex value
       }
     }
 
     message UnaryCondition {
-      Scope scope = 1;
-      string key = 2; // checks for existence of the key
+      // used to check the existence of the key
+    }
+
+    message JsonCondition {
+      string json_path = 1; // path to the key in the json structure
+      LeafCondition value_condition = 2;
     }
   }
 
   message ApplicationCriteria {
-    Type type = 1;
-    string sub_type = 2; // captures the entity type - "API", "Service"
-    Action action = 3;
-
-    enum Type {
-      TYPE_UNSPECIFIED = 0;
-      TYPE_ENTITY = 1;
-    }
+    string entity_type = 1; // captures the entity type - "API", "Service"
+    Action action = 2;
 
     message Action {
       Operation operation = 1;
