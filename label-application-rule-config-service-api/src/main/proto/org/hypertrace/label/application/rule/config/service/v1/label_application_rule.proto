@@ -36,7 +36,7 @@ message LabelApplicationRuleData {
     }
 
     message LeafCondition {
-      string key = 1;
+      StringCondition key_condition = 1;
       oneof condition {
         StringCondition string_condition = 2;
         UnaryCondition unary_condition = 3;
