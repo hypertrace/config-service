@@ -36,12 +36,11 @@ message LabelApplicationRuleData {
     }
 
     message LeafCondition {
-      Scope scope = 1;
-      string key = 2;
+      string key = 1;
       oneof condition {
-        StringCondition string_condition = 3;
-        UnaryCondition unary_condition = 4;
-        JsonCondition json_condition = 5;
+        StringCondition string_condition = 2;
+        UnaryCondition unary_condition = 3;
+        JsonCondition json_condition = 4;
       }
     }
 
@@ -83,22 +82,15 @@ message LabelApplicationRuleData {
       }
 
       message DynamicLabel {
-        repeated TokenExtractionRule token_extraction_rules = 1;
-        string token_combining_expression  = 2; // sample expression "${deployment}_${version}"
+        string label_expression = 1; // expression to combine tokens to generate label, example "${deployment}_${version}"
+        repeated TokenExtractionRule token_extraction_rules = 2;
 
         message TokenExtractionRule {
           string key = 1;
-          Scope scope = 2;
+          optional string json_path = 2;
           optional string alias = 3;
         }
       }
     }
-  }
-
-  enum Scope {
-    SCOPE_UNSPECIFIED = 0;
-    SCOPE_ATTRIBUTE = 1;
-    SCOPE_REQUEST = 2;
-    SCOPE_RESPONSE = 3;
   }
 }
