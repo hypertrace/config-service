@@ -40,7 +40,8 @@ public class NotificationConfigServiceImpl
       StreamObserver<CreateNotificationRuleResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      notificationConfigServiceRequestValidator.validateCreateNotificationRuleRequest(requestContext, request);
+      notificationConfigServiceRequestValidator.validateCreateNotificationRuleRequest(
+          requestContext, request);
       responseObserver.onNext(
           CreateNotificationRuleResponse.newBuilder()
               .setNotificationRule(

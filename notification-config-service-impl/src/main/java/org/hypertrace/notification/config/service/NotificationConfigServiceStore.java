@@ -6,7 +6,6 @@ import io.grpc.Channel;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import lombok.SneakyThrows;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
