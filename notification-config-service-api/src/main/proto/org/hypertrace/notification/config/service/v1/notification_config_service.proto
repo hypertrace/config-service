@@ -4,8 +4,8 @@ option java_multiple_files = true;
 
 package org.hypertrace.notification.config.service.v1;
 
-import "org/hypertrace/alerting/config/service/v1/notification_rule.proto";
-import "org/hypertrace/alerting/config/service/v1/notification_channel.proto";
+import "org/hypertrace/notification/config/service/v1/notification_rule.proto";
+import "org/hypertrace/notification/config/service/v1/notification_channel.proto";
 
 service NotificationConfigService {
   rpc CreateNotificationRule(CreateNotificationRuleRequest) returns (CreateNotificationRuleResponse) {}
