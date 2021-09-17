@@ -2,6 +2,7 @@ package org.hypertrace.notification.config.service;
 
 import io.grpc.Channel;
 import io.grpc.stub.StreamObserver;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.CreateNotificationChannelRequest;
@@ -16,6 +17,7 @@ import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsR
 import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsResponse;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesRequest;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesResponse;
+import org.hypertrace.notification.config.service.v1.NotificationChannel;
 import org.hypertrace.notification.config.service.v1.NotificationConfigServiceGrpc;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelResponse;
@@ -164,11 +166,11 @@ public class NotificationConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       notificationConfigServiceRequestValidator.validateGetAllNotificationChannelsRequest(
           requestContext, request);
-      responseObserver.onNext(
-          GetAllNotificationChannelsResponse.newBuilder()
-              .addAllNotificationChannels(
-                  notificationConfigServiceStore.getAllNotificationChannels(requestContext))
-              .build());
+      List<NotificationChannel> notificationChannels = notificationConfigServiceStore.getAllNotificationChannels(requestContext);
+      GetAllNotificationChannelsResponse getAllNotificationChannelsResponse = GetAllNotificationChannelsResponse.newBuilder()
+          .addAllNotificationChannels(notificationChannels)
+          .build();
+      responseObserver.onNext(getAllNotificationChannelsResponse);
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Get All Notification Channels RPC failed for request:{}", request, e);
