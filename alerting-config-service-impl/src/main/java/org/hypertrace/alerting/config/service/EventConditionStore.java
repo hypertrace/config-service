@@ -3,14 +3,15 @@ package org.hypertrace.alerting.config.service;
 import static org.hypertrace.alerting.config.service.AlertingConfigServiceConstants.ALERTING_CONFIG_NAMESPACE;
 import static org.hypertrace.alerting.config.service.AlertingConfigServiceConstants.ALERTING_EVENT_CONDITION_CONFIG_RESOURCE_NAME;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import io.grpc.Channel;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import lombok.SneakyThrows;
 import org.hypertrace.alerting.config.service.v1.EventCondition;
 import org.hypertrace.alerting.config.service.v1.NewEventCondition;
+import org.hypertrace.alerting.config.service.v1.NewEventCondition.ConditionCase;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
@@ -35,10 +36,10 @@ public class EventConditionStore {
   public EventCondition createEventCondition(
       RequestContext requestContext, NewEventCondition newEventCondition) {
     EventCondition.Builder builder = EventCondition.newBuilder();
-    switch (newEventCondition.getConditionCase()) {
-      case METRIC_ANOMALY_EVENT_CONDTION:
-        builder.setMetricAnomalyEventCondtion(newEventCondition.getMetricAnomalyEventCondtion());
-        break;
+    if (newEventCondition.getConditionCase() == ConditionCase.METRIC_ANOMALY_EVENT_CONDTION) {
+      builder.setMetricAnomalyEventCondtion(newEventCondition.getMetricAnomalyEventCondtion());
+    } else {
+      throw new RuntimeException(String.format("Condition type is incorrect: %s", newEventCondition.getConditionCase().name()));
     }
 
     builder.setId(UUID.randomUUID().toString());
@@ -94,15 +95,21 @@ public class EventConditionStore {
         () -> configServiceBlockingStub.deleteConfig(deleteConfigRequest));
   }
 
-  @SneakyThrows
   private Value convertToGeneric(EventCondition eventCondition) {
-    return ConfigProtoConverter.convertToValue(eventCondition);
+    try {
+      return ConfigProtoConverter.convertToValue(eventCondition);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
   }
 
-  @SneakyThrows
   private EventCondition convertFromGeneric(Value value) {
     EventCondition.Builder builder = EventCondition.newBuilder();
-    ConfigProtoConverter.mergeFromValue(value, builder);
+    try {
+      ConfigProtoConverter.mergeFromValue(value, builder);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
     return builder.build();
   }
 }

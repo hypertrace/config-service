@@ -57,7 +57,7 @@ public class EventConditionConfigServiceImpl
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
-      log.error("Update Notification Rule RPC failed for request:{}", request, e);
+      log.error("Update EventCondition RPC failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }
@@ -74,7 +74,7 @@ public class EventConditionConfigServiceImpl
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
-      log.error("Get All Notification Rules RPC failed for request:{}", request, e);
+      log.error("Get All EventCondition RPC failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }
@@ -89,7 +89,7 @@ public class EventConditionConfigServiceImpl
       responseObserver.onNext(DeleteEventConditionResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Exception e) {
-      log.error("Delete Notification Rule RPC failed for request:{}", request, e);
+      log.error("Delete EventCondition RPC failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }
