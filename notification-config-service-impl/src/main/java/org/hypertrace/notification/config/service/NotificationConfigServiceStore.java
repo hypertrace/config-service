@@ -1,5 +1,8 @@
 package org.hypertrace.notification.config.service;
 
+import static org.hypertrace.notification.config.service.NotificationConfigServiceConstants.NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME;
+import static org.hypertrace.notification.config.service.NotificationConfigServiceConstants.NOTIFICATION_CONFIG_NAMESPACE;
+
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import io.grpc.Channel;
@@ -43,7 +46,7 @@ public class NotificationConfigServiceStore {
         UpsertConfigRequest.newBuilder()
             .setResourceName(
                 NotificationConfigServiceConstants.NOTIFICATION_RULE_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(NotificationConfigServiceConstants.NOTIFICATION_CONFIG_NAMESPACE)
+            .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
             .setContext(notificationRule.getId())
             .setConfig(convertNotificationRuleToGeneric(notificationRule))
             .build();
@@ -56,13 +59,12 @@ public class NotificationConfigServiceStore {
         GetAllConfigsRequest.newBuilder()
             .setResourceName(
                 NotificationConfigServiceConstants.NOTIFICATION_RULE_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(NotificationConfigServiceConstants.NOTIFICATION_CONFIG_NAMESPACE)
+            .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
             .build();
     return getAllConfigs(requestContext, getAllConfigsRequest).stream()
         .map(
             contextSpecificConfig ->
                 convertFromGenericToNotificationRule(contextSpecificConfig.getConfig()))
-        .sorted()
         .collect(Collectors.toUnmodifiableList());
   }
 
@@ -71,7 +73,7 @@ public class NotificationConfigServiceStore {
         DeleteConfigRequest.newBuilder()
             .setResourceName(
                 NotificationConfigServiceConstants.NOTIFICATION_RULE_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(NotificationConfigServiceConstants.NOTIFICATION_CONFIG_NAMESPACE)
+            .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
             .setContext(notificationRuleId)
             .build();
     deleteConfig(requestContext, deleteConfigRequest);
@@ -88,8 +90,8 @@ public class NotificationConfigServiceStore {
     UpsertConfigRequest upsertConfigRequest =
         UpsertConfigRequest.newBuilder()
             .setResourceName(
-                NotificationConfigServiceConstants.NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(NotificationConfigServiceConstants.NOTIFICATION_CONFIG_NAMESPACE)
+                NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
+            .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
             .setContext(notificationChannel.getId())
             .setConfig(convertNotificationChannelToGeneric(notificationChannel))
             .build();
@@ -101,14 +103,14 @@ public class NotificationConfigServiceStore {
     GetAllConfigsRequest getAllConfigsRequest =
         GetAllConfigsRequest.newBuilder()
             .setResourceName(
-                NotificationConfigServiceConstants.NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(NotificationConfigServiceConstants.NOTIFICATION_CONFIG_NAMESPACE)
+                NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
+            .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
             .build();
-    return getAllConfigs(requestContext, getAllConfigsRequest).stream()
+    List<ContextSpecificConfig> list = getAllConfigs(requestContext, getAllConfigsRequest);
+    return list.stream()
         .map(
             contextSpecificConfig ->
                 convertFromGenericToNotificationChannel(contextSpecificConfig.getConfig()))
-        .sorted()
         .collect(Collectors.toUnmodifiableList());
   }
 
@@ -117,8 +119,8 @@ public class NotificationConfigServiceStore {
     DeleteConfigRequest deleteConfigRequest =
         DeleteConfigRequest.newBuilder()
             .setResourceName(
-                NotificationConfigServiceConstants.NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(NotificationConfigServiceConstants.NOTIFICATION_CONFIG_NAMESPACE)
+                NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
+            .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
             .setContext(notificationChannelId)
             .build();
     deleteConfig(requestContext, deleteConfigRequest);
