@@ -19,9 +19,11 @@ public class EventConditionConfigServiceImpl
     extends EventConditionsConfigServiceGrpc.EventConditionsConfigServiceImplBase {
 
   private final EventConditionStore eventConditionStore;
+  private final EventConditionConfigServiceRequestValidator requestValidator;
 
   public EventConditionConfigServiceImpl(Channel configChannel) {
     this.eventConditionStore = new EventConditionStore(configChannel);
+    this.requestValidator = new EventConditionConfigServiceRequestValidator();
   }
 
   @Override
@@ -30,6 +32,7 @@ public class EventConditionConfigServiceImpl
       StreamObserver<CreateEventConditionResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
+      requestValidator.validateCreateEventConditionRequest(requestContext, request);
       responseObserver.onNext(
           CreateEventConditionResponse.newBuilder()
               .setEventCondition(
@@ -49,6 +52,7 @@ public class EventConditionConfigServiceImpl
       StreamObserver<UpdateEventConditionResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
+      requestValidator.validateUpdateEventConditionRequest(requestContext, request);
       responseObserver.onNext(
           UpdateEventConditionResponse.newBuilder()
               .setEventCondition(
@@ -68,6 +72,7 @@ public class EventConditionConfigServiceImpl
       StreamObserver<GetAllEventConditionsResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
+      requestValidator.validateGetAllEventConditionsRequest(requestContext, request);
       responseObserver.onNext(
           GetAllEventConditionsResponse.newBuilder()
               .addAllEventCondition(eventConditionStore.getAllEventConditions(requestContext))
@@ -85,6 +90,7 @@ public class EventConditionConfigServiceImpl
       StreamObserver<DeleteEventConditionResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
+      requestValidator.validateDeleteEventConditionRequest(requestContext, request);
       eventConditionStore.deleteEventCondition(requestContext, request.getEventConditionId());
       responseObserver.onNext(DeleteEventConditionResponse.getDefaultInstance());
       responseObserver.onCompleted();
