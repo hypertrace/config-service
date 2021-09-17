@@ -20,6 +20,7 @@ include(":config-service-impl")
 include(":config-service")
 
 include(":config-proto-converter")
+include(":object-store")
 
 include(":spaces-config-service-api")
 include(":spaces-config-service-impl")
