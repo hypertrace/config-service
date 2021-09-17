@@ -5,10 +5,12 @@ import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import java.util.List;
+import org.hypertrace.alerting.config.service.EventConditionConfigServiceImpl;
 import org.hypertrace.config.service.store.ConfigStore;
 import org.hypertrace.config.service.store.DocumentConfigStore;
 import org.hypertrace.core.serviceframework.spi.PlatformServiceLifecycle;
 import org.hypertrace.label.config.service.LabelsConfigServiceImpl;
+import org.hypertrace.notification.config.service.NotificationConfigServiceImpl;
 import org.hypertrace.space.config.service.SpacesConfigServiceImpl;
 
 public class ConfigServicesFactory {
@@ -29,7 +31,9 @@ public class ConfigServicesFactory {
     return List.of(
         new ConfigServiceGrpcImpl(configStore),
         new SpacesConfigServiceImpl(configChannel),
-        new LabelsConfigServiceImpl(configChannel, config));
+        new LabelsConfigServiceImpl(configChannel, config),
+        new NotificationConfigServiceImpl(configChannel),
+        new EventConditionConfigServiceImpl(configChannel));
   }
 
   public static ConfigStore buildConfigStore(Config config) {
