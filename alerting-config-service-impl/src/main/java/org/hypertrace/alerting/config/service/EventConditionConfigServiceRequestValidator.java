@@ -12,19 +12,16 @@ public class EventConditionConfigServiceRequestValidator {
   public void validateCreateEventConditionRequest(
       RequestContext requestContext, CreateEventConditionRequest request) {
     validateTenantID(requestContext);
-    Preconditions.checkArgument(
-        request.hasNewEventCondition(), "EventCondition should be present");
+    Preconditions.checkArgument(request.hasNewEventCondition(), "EventCondition should be present");
     Preconditions.checkArgument(
         request.getNewEventCondition().getMetricAnomalyEventCondtion() != null,
         "MetricAnomalyEventCondition should be present");
   }
 
   public void validateUpdateEventConditionRequest(
-      RequestContext requestContext,
-      UpdateEventConditionRequest request) {
+      RequestContext requestContext, UpdateEventConditionRequest request) {
     validateTenantID(requestContext);
-    Preconditions.checkArgument(
-        request.hasEventCondition(), "EventCondition should be present");
+    Preconditions.checkArgument(request.hasEventCondition(), "EventCondition should be present");
     Preconditions.checkArgument(
         request.getEventCondition().getMetricAnomalyEventCondtion() != null,
         "MetricAnomalyEventCondition should be present");

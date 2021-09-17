@@ -89,8 +89,7 @@ public class NotificationConfigServiceStore {
       RequestContext requestContext, NotificationChannel notificationChannel) {
     UpsertConfigRequest upsertConfigRequest =
         UpsertConfigRequest.newBuilder()
-            .setResourceName(
-                NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
+            .setResourceName(NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
             .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
             .setContext(notificationChannel.getId())
             .setConfig(convertNotificationChannelToGeneric(notificationChannel))
@@ -102,8 +101,7 @@ public class NotificationConfigServiceStore {
   public List<NotificationChannel> getAllNotificationChannels(RequestContext requestContext) {
     GetAllConfigsRequest getAllConfigsRequest =
         GetAllConfigsRequest.newBuilder()
-            .setResourceName(
-                NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
+            .setResourceName(NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
             .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
             .build();
     List<ContextSpecificConfig> list = getAllConfigs(requestContext, getAllConfigsRequest);
@@ -118,8 +116,7 @@ public class NotificationConfigServiceStore {
       RequestContext requestContext, String notificationChannelId) {
     DeleteConfigRequest deleteConfigRequest =
         DeleteConfigRequest.newBuilder()
-            .setResourceName(
-                NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
+            .setResourceName(NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME)
             .setResourceNamespace(NOTIFICATION_CONFIG_NAMESPACE)
             .setContext(notificationChannelId)
             .build();

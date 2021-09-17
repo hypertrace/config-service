@@ -56,42 +56,60 @@ public class EventConditionConfigServiceImplTest {
   void createReadUpdateReadDelete() {
 
     NewEventCondition newEventCondition1 = getNewEventCondition();
-    EventCondition eventCondition1 = eventConditionsStub.createEventCondition(
-        CreateEventConditionRequest.newBuilder().setNewEventCondition(newEventCondition1).build())
-        .getEventCondition();
-    assertEquals(newEventCondition1.getConditionCase().name(),
-        eventCondition1.getConditionCase().name());
+    EventCondition eventCondition1 =
+        eventConditionsStub
+            .createEventCondition(
+                CreateEventConditionRequest.newBuilder()
+                    .setNewEventCondition(newEventCondition1)
+                    .build())
+            .getEventCondition();
+    assertEquals(
+        newEventCondition1.getConditionCase().name(), eventCondition1.getConditionCase().name());
     assertFalse(eventCondition1.getId().isEmpty());
 
-    EventCondition eventCondition2 = eventConditionsStub.createEventCondition(
-        CreateEventConditionRequest.newBuilder().setNewEventCondition(newEventCondition1).build())
-        .getEventCondition();
+    EventCondition eventCondition2 =
+        eventConditionsStub
+            .createEventCondition(
+                CreateEventConditionRequest.newBuilder()
+                    .setNewEventCondition(newEventCondition1)
+                    .build())
+            .getEventCondition();
     assertIterableEquals(
         List.of(eventCondition2, eventCondition1),
-        eventConditionsStub.getAllEventConditions(GetAllEventConditionsRequest.getDefaultInstance())
+        eventConditionsStub
+            .getAllEventConditions(GetAllEventConditionsRequest.getDefaultInstance())
             .getEventConditionList());
 
-    EventCondition eventCondition1ToUpdate = eventCondition1.toBuilder()
-        .setMetricAnomalyEventCondtion(getMetricAnomalyEventCondition("PT5M"))
-        .build();
+    EventCondition eventCondition1ToUpdate =
+        eventCondition1.toBuilder()
+            .setMetricAnomalyEventCondtion(getMetricAnomalyEventCondition("PT5M"))
+            .build();
 
-    EventCondition updatedEventCondition1 = eventConditionsStub.updateEventCondition(
-        UpdateEventConditionRequest.newBuilder().setEventCondition(eventCondition1ToUpdate).build())
-        .getEventCondition();
+    EventCondition updatedEventCondition1 =
+        eventConditionsStub
+            .updateEventCondition(
+                UpdateEventConditionRequest.newBuilder()
+                    .setEventCondition(eventCondition1ToUpdate)
+                    .build())
+            .getEventCondition();
 
     assertEquals(eventCondition1ToUpdate, updatedEventCondition1);
 
     assertIterableEquals(
-        List.of(eventCondition2, updatedEventCondition1), eventConditionsStub.getAllEventConditions(
-            GetAllEventConditionsRequest.getDefaultInstance()).getEventConditionList());
+        List.of(eventCondition2, updatedEventCondition1),
+        eventConditionsStub
+            .getAllEventConditions(GetAllEventConditionsRequest.getDefaultInstance())
+            .getEventConditionList());
 
     eventConditionsStub.deleteEventCondition(
-        DeleteEventConditionRequest.newBuilder().setEventConditionId(eventCondition2.getId())
+        DeleteEventConditionRequest.newBuilder()
+            .setEventConditionId(eventCondition2.getId())
             .build());
 
     assertIterableEquals(
         List.of(updatedEventCondition1),
-        eventConditionsStub.getAllEventConditions(GetAllEventConditionsRequest.getDefaultInstance())
+        eventConditionsStub
+            .getAllEventConditions(GetAllEventConditionsRequest.getDefaultInstance())
             .getEventConditionList());
   }
 
@@ -102,9 +120,10 @@ public class EventConditionConfigServiceImplTest {
   }
 
   private MetricAnomalyEventCondition getMetricAnomalyEventCondition(String ruleDuration) {
-    LhsExpression lhsExpression = LhsExpression.newBuilder()
-        .setAttribute(Attribute.newBuilder().setKey("name").setScope("SERVICE").build())
-        .build();
+    LhsExpression lhsExpression =
+        LhsExpression.newBuilder()
+            .setAttribute(Attribute.newBuilder().setKey("name").setScope("SERVICE").build())
+            .build();
     RhsExpression rhsExpression = RhsExpression.newBuilder().setStringValue("frontend").build();
     LeafFilter leafFilter =
         LeafFilter.newBuilder()

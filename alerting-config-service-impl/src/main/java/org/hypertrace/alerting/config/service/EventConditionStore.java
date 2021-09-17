@@ -39,7 +39,9 @@ public class EventConditionStore {
     if (newEventCondition.getConditionCase() == ConditionCase.METRIC_ANOMALY_EVENT_CONDTION) {
       builder.setMetricAnomalyEventCondtion(newEventCondition.getMetricAnomalyEventCondtion());
     } else {
-      throw new RuntimeException(String.format("Condition type is incorrect: %s", newEventCondition.getConditionCase().name()));
+      throw new RuntimeException(
+          String.format(
+              "Condition type is incorrect: %s", newEventCondition.getConditionCase().name()));
     }
 
     builder.setId(UUID.randomUUID().toString());

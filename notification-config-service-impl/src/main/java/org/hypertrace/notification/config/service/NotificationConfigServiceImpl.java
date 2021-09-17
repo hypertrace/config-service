@@ -63,7 +63,8 @@ public class NotificationConfigServiceImpl
       StreamObserver<UpdateNotificationRuleResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      notificationConfigServiceRequestValidator.validateUpdateNotificationRuleRequest(requestContext, request);
+      notificationConfigServiceRequestValidator.validateUpdateNotificationRuleRequest(
+          requestContext, request);
       responseObserver.onNext(
           UpdateNotificationRuleResponse.newBuilder()
               .setNotificationRule(
@@ -165,10 +166,12 @@ public class NotificationConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       notificationConfigServiceRequestValidator.validateGetAllNotificationChannelsRequest(
           requestContext, request);
-      List<NotificationChannel> notificationChannels = notificationConfigServiceStore.getAllNotificationChannels(requestContext);
-      GetAllNotificationChannelsResponse getAllNotificationChannelsResponse = GetAllNotificationChannelsResponse.newBuilder()
-          .addAllNotificationChannels(notificationChannels)
-          .build();
+      List<NotificationChannel> notificationChannels =
+          notificationConfigServiceStore.getAllNotificationChannels(requestContext);
+      GetAllNotificationChannelsResponse getAllNotificationChannelsResponse =
+          GetAllNotificationChannelsResponse.newBuilder()
+              .addAllNotificationChannels(notificationChannels)
+              .build();
       responseObserver.onNext(getAllNotificationChannelsResponse);
       responseObserver.onCompleted();
     } catch (Exception e) {
