@@ -4,6 +4,7 @@ build:
     - spaces-config-service-api/src/main/proto
     - labels-config-service-api/src/main/proto
     - alerting-config-service-api/src/main/proto
+    - notification-config-service-api/src/main/proto
 lint:
   use:
     - DEFAULT
