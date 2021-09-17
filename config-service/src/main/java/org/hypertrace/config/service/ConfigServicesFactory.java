@@ -10,7 +10,6 @@ import org.hypertrace.config.service.store.ConfigStore;
 import org.hypertrace.config.service.store.DocumentConfigStore;
 import org.hypertrace.core.serviceframework.spi.PlatformServiceLifecycle;
 import org.hypertrace.label.config.service.LabelsConfigServiceImpl;
-import org.hypertrace.notification.config.service.NotificationConfigServiceImpl;
 import org.hypertrace.space.config.service.SpacesConfigServiceImpl;
 
 public class ConfigServicesFactory {
@@ -32,7 +31,6 @@ public class ConfigServicesFactory {
         new ConfigServiceGrpcImpl(configStore),
         new SpacesConfigServiceImpl(configChannel),
         new LabelsConfigServiceImpl(configChannel, config),
-        new NotificationConfigServiceImpl(configChannel),
         new EventConditionConfigServiceImpl(configChannel));
   }
 
