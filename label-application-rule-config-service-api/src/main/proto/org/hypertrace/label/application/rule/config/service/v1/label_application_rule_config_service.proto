@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package org.hypertrace.label.application.rule.config.service.v1;
+
+option java_multiple_files = true;
+
+import "org/hypertrace/label/application/rule/config/service/v1/label_application_rule.proto";
+
+service LabelApplicationRuleConfigService {
+
+  // create label application rule
+  rpc CreateLabelApplicationRule(CreateLabelApplicationRuleRequest) returns (CreateLabelApplicationRuleResponse) {}
+
+  // get label application rule by id
+  rpc GetLabelApplicationRule(GetLabelApplicationRuleRequest) returns (GetLabelApplicationRuleResponse) {}
+
+  // get all label application rules
+  rpc GetLabelApplicationRules(GetLabelApplicationRulesRequest) returns (GetLabelApplicationRulesResponse) {}
+
+  // update label application rule
+  rpc UpdateLabelApplicationRule(UpdateLabelApplicationRuleRequest) returns (UpdateLabelApplicationRuleResponse) {}
+
+  // delete label application rule by id
+  rpc DeleteLabelApplicationRule(DeleteLabelApplicationRuleRequest) returns (DeleteLabelApplicationRuleResponse) {}
+
+}
+
+message CreateLabelApplicationRuleRequest {
+  LabelApplicationRuleData data = 1;
+}
+
+message CreateLabelApplicationRuleResponse {
+  LabelApplicationRule label_application_rule = 1;
+}
+
+message GetLabelApplicationRuleRequest {
+  string id = 1;
+}
+
+message GetLabelApplicationRuleResponse {
+  LabelApplicationRule label_application_rule = 1;
+}
+
+message GetLabelApplicationRulesRequest {
+}
+
+message GetLabelApplicationRulesResponse {
+  repeated LabelApplicationRule label_application_rules = 1;
+}
+
+message UpdateLabelApplicationRuleRequest {
+  string id = 1;
+  LabelApplicationRuleData data = 2;
+}
+
+message UpdateLabelApplicationRuleResponse {
+  LabelApplicationRule label_application_rule = 1;
+}
+
+message DeleteLabelApplicationRuleRequest {
+  string id = 1;
+}
+
+message DeleteLabelApplicationRuleResponse {
+}
