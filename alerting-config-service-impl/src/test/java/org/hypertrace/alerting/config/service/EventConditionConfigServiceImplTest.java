@@ -57,15 +57,15 @@ public class EventConditionConfigServiceImplTest {
 
     NewEventCondition newEventCondition1 = getNewEventCondition();
     EventCondition eventCondition1 = eventConditionsStub.createEventCondition(
-        CreateEventConditionRequest.newBuilder().setNewEventConditions(newEventCondition1).build())
-        .getEventConditions();
+        CreateEventConditionRequest.newBuilder().setNewEventCondition(newEventCondition1).build())
+        .getEventCondition();
     assertEquals(newEventCondition1.getConditionCase().name(),
         eventCondition1.getConditionCase().name());
     assertFalse(eventCondition1.getId().isEmpty());
 
     EventCondition eventCondition2 = eventConditionsStub.createEventCondition(
-        CreateEventConditionRequest.newBuilder().setNewEventConditions(newEventCondition1).build())
-        .getEventConditions();
+        CreateEventConditionRequest.newBuilder().setNewEventCondition(newEventCondition1).build())
+        .getEventCondition();
     assertIterableEquals(
         List.of(eventCondition2, eventCondition1),
         eventConditionsStub.getAllEventConditions(GetAllEventConditionsRequest.getDefaultInstance())

@@ -32,9 +32,9 @@ public class EventConditionConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       responseObserver.onNext(
           CreateEventConditionResponse.newBuilder()
-              .setEventConditions(
+              .setEventCondition(
                   eventConditionStore.createEventCondition(
-                      requestContext, request.getNewEventConditions()))
+                      requestContext, request.getNewEventCondition()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {

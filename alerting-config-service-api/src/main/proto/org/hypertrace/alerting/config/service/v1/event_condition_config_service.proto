@@ -14,11 +14,11 @@ service EventConditionsConfigService {
 }
 
 message CreateEventConditionRequest {
-  NewEventCondition new_event_conditions = 1;
+  NewEventCondition new_event_condition = 1;
 }
 
 message CreateEventConditionResponse {
-  EventCondition event_conditions = 1;
+  EventCondition event_condition = 1;
 }
 
 message UpdateEventConditionRequest {
