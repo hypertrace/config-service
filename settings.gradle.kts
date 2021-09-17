@@ -27,5 +27,7 @@ include(":spaces-config-service-impl")
 include(":labels-config-service-api")
 include(":labels-config-service-impl")
 
+include(":label-application-rule-config-service-api")
+
 include(":notification-config-service-api")
 include(":notification-config-service-impl")

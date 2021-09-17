@@ -3,6 +3,7 @@ build:
     - config-service-api/src/main/proto
     - spaces-config-service-api/src/main/proto
     - labels-config-service-api/src/main/proto
+    - label-application-rule-config-service-api/src/main/proto
     - notification-config-service-api/src/main/proto
 lint:
   use:
