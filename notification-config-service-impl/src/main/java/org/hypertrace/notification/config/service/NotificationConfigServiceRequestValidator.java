@@ -26,8 +26,7 @@ public class NotificationConfigServiceRequestValidator {
 
   public void validateUpdateNotificationRuleRequest(
       RequestContext requestContext,
-      UpdateNotificationRuleRequest request,
-      NotificationConfigServiceStore notificationConfigServiceStore) {
+      UpdateNotificationRuleRequest request) {
     validateTenantID(requestContext);
     Preconditions.checkArgument(
         request.hasNotificationRule(), "Notification rule should be present");
