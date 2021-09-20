@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+// buf:lint:ignore PACKAGE_VERSION_SUFFIX
+package ai.traceable.anomaly.config.service.v1.apidef;
+
+option java_multiple_files = true;
+
+import "ai/traceable/anomaly/config/service/v1/apidef/apidef_trainer_config.proto";
+
+
+service ApiDefinitionTrainerConfigService {
+
+  rpc GetApiDefinitionTrainerConfigs (GetApiDefinitionTrainerConfigsRequest) returns (GetApiDefinitionTrainerConfigsResponse) {
+  }
+
+  rpc UpdateApiDefinitionTrainerConfigs (UpdateApiDefinitionTrainerConfigsRequest) returns (UpdateApiDefinitionTrainerConfigsResponse) {
+  }
+}

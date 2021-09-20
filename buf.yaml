@@ -11,9 +11,11 @@ build:
     - external-user-attribution-config-service-api/src/main/proto
     - risk-config-service-api/src/main/proto
     - data-handling-config-service-api/src/main/proto
+    - anomaly-config-service-api/src/main/proto
 lint:
   use:
     - DEFAULT
+  allow_comment_ignores: true
 breaking:
   use:
     - PACKAGE
