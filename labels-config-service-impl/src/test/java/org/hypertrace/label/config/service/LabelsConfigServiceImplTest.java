@@ -87,6 +87,14 @@ public final class LabelsConfigServiceImplTest {
             .map(label -> CreateLabel.newBuilder().setKey(label.getKey()).build())
             .collect(Collectors.toList());
     assertEquals(createLabelsList, createdLabelsList);
+    Throwable exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> {
+              labelConfigStub.createLabel(
+                  CreateLabelRequest.newBuilder().setLabel(createLabelsList.get(0)).build());
+            });
+    assertEquals(Status.ALREADY_EXISTS, Status.fromThrowable(exception));
   }
 
   @Test
@@ -155,6 +163,20 @@ public final class LabelsConfigServiceImplTest {
   @Test
   void test_updateLabel() {
     List<Label> createdLabelsList = createLabels();
+    Throwable exception1 =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> {
+              labelConfigStub.updateLabel(
+                  UpdateLabelRequest.newBuilder()
+                      .setLabel(
+                          Label.newBuilder()
+                              .setId(createdLabelsList.get(1).getId())
+                              .setKey(createdLabelsList.get(0).getKey())
+                              .build())
+                      .build());
+            });
+    assertEquals(Status.ALREADY_EXISTS, Status.fromThrowable(exception1));
     // Updating the labels by appending the keys of labels with a "new"
     List<Label> updateLabelsList =
         createdLabelsList.stream()

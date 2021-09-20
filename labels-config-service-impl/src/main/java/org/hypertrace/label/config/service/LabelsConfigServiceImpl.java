@@ -1,5 +1,7 @@
 package org.hypertrace.label.config.service;
 
+import com.google.common.util.concurrent.Striped;
+import com.google.protobuf.Duration;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
@@ -10,7 +12,10 @@ import io.grpc.stub.StreamObserver;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
@@ -32,14 +37,18 @@ import org.hypertrace.label.config.service.v1.UpdateLabelResponse;
 
 @Slf4j
 public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfigServiceImplBase {
+  private static final Duration WAIT_TIME = Duration.newBuilder().setSeconds(5).build();
+  private static final String LABELS_CONFIG_SERVICE_CONFIG = "labels.config.service";
+  private static final String SYSTEM_LABELS = "system.labels";
+  private static final int LABEL_LOCK_STRIPE_COUNT = 1000;
   private final ConfigServiceCoordinator configServiceCoordinator;
-  private final String LABELS_CONFIG_SERVICE_CONFIG = "labels.config.service";
-  private final String SYSTEM_LABELS = "system.labels";
   private final List<Label> systemLabels;
   private final Map<String, Label> systemLabelsIdLabelMap;
   private final Map<String, Label> systemLabelsKeyLabelMap;
+  private final Striped<Lock> stripedLabelsLock;
 
   public LabelsConfigServiceImpl(Channel configChannel, Config config) {
+    stripedLabelsLock = Striped.lazyWeakLock(LABEL_LOCK_STRIPE_COUNT);
     configServiceCoordinator = new ConfigServiceCoordinatorImpl(configChannel);
     List<? extends ConfigObject> systemLabelsObjectList = null;
     if (config.hasPath(LABELS_CONFIG_SERVICE_CONFIG)) {
@@ -82,20 +91,30 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
       CreateLabelRequest request, StreamObserver<CreateLabelResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      CreateLabel createLabel = request.getLabel();
-      if (systemLabelsKeyLabelMap.containsKey(createLabel.getKey())) {
-        // Creating a label with a name that clashes with one of system labels name
-        responseObserver.onError(new StatusRuntimeException(Status.ALREADY_EXISTS));
-        return;
+      Lock labelsLock = this.stripedLabelsLock.get(requestContext.getTenantId());
+      if (labelsLock.tryLock(WAIT_TIME.getSeconds(), TimeUnit.SECONDS)) {
+        try {
+          CreateLabel createLabel = request.getLabel();
+          if (systemLabelsKeyLabelMap.containsKey(createLabel.getKey())
+              || isDuplicateKey(createLabel.getKey())) {
+            // Creating a label with a name that clashes with one of system labels name
+            responseObserver.onError(new StatusRuntimeException(Status.ALREADY_EXISTS));
+            return;
+          }
+          Label label =
+              Label.newBuilder()
+                  .setId(UUID.randomUUID().toString())
+                  .setKey(createLabel.getKey())
+                  .build();
+          Label createdLabel = configServiceCoordinator.upsertLabel(requestContext, label);
+          responseObserver.onNext(CreateLabelResponse.newBuilder().setLabel(createdLabel).build());
+          responseObserver.onCompleted();
+        } finally {
+          labelsLock.unlock();
+        }
+      } else {
+        responseObserver.onError(new StatusRuntimeException(Status.ABORTED));
       }
-      Label label =
-          Label.newBuilder()
-              .setId(UUID.randomUUID().toString())
-              .setKey(createLabel.getKey())
-              .build();
-      Label createdLabel = configServiceCoordinator.upsertLabel(requestContext, label);
-      responseObserver.onNext(CreateLabelResponse.newBuilder().setLabel(createdLabel).build());
-      responseObserver.onCompleted();
     } catch (Exception e) {
       responseObserver.onError(e);
     }
@@ -103,9 +122,9 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
 
   @Override
   public void getLabel(GetLabelRequest request, StreamObserver<GetLabelResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
     String labelId = request.getId();
     try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
       Label label;
       if (systemLabelsIdLabelMap.containsKey(labelId)) {
         label = systemLabelsIdLabelMap.get(labelId);
@@ -132,20 +151,34 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
   @Override
   public void updateLabel(
       UpdateLabelRequest request, StreamObserver<UpdateLabelResponse> responseObserver) {
-    Label updatedLabelInReq = request.getLabel();
     try {
+      Label updatedLabelInReq = request.getLabel();
       RequestContext requestContext = RequestContext.CURRENT.get();
-      if (systemLabelsIdLabelMap.containsKey(updatedLabelInReq.getId())
-          || systemLabelsKeyLabelMap.containsKey(updatedLabelInReq.getKey())) {
-        // Updating a system label will error
-        responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
-        return;
+      Lock labelsLock = this.stripedLabelsLock.get(requestContext.getTenantId());
+      if (labelsLock.tryLock(WAIT_TIME.getSeconds(), TimeUnit.SECONDS)) {
+        try {
+          if (systemLabelsIdLabelMap.containsKey(updatedLabelInReq.getId())
+              || systemLabelsKeyLabelMap.containsKey(updatedLabelInReq.getKey())) {
+            // Updating a system label will error
+            responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
+            return;
+          }
+          if (isDuplicateKey(updatedLabelInReq.getKey())) {
+            responseObserver.onError(new StatusRuntimeException(Status.ALREADY_EXISTS));
+            return;
+          }
+          configServiceCoordinator.getLabel(requestContext, updatedLabelInReq.getId());
+          Label updatedLabelInRes =
+              configServiceCoordinator.upsertLabel(requestContext, updatedLabelInReq);
+          responseObserver.onNext(
+              UpdateLabelResponse.newBuilder().setLabel(updatedLabelInRes).build());
+          responseObserver.onCompleted();
+        } finally {
+          labelsLock.unlock();
+        }
+      } else {
+        responseObserver.onError(new StatusRuntimeException(Status.ABORTED));
       }
-      configServiceCoordinator.getLabel(requestContext, updatedLabelInReq.getId());
-      Label updatedLabelInRes =
-          configServiceCoordinator.upsertLabel(requestContext, updatedLabelInReq);
-      responseObserver.onNext(UpdateLabelResponse.newBuilder().setLabel(updatedLabelInRes).build());
-      responseObserver.onCompleted();
     } catch (Exception e) {
       responseObserver.onError(e);
     }
@@ -156,18 +189,36 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
       DeleteLabelRequest request, StreamObserver<DeleteLabelResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      String labelId = request.getId();
-      if (systemLabelsIdLabelMap.containsKey(labelId)) {
-        // Deleting a system label
-        responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
-        return;
+      Lock labelsLock = this.stripedLabelsLock.get(requestContext.getTenantId());
+      labelsLock.lock();
+      if (labelsLock.tryLock(WAIT_TIME.getSeconds(), TimeUnit.SECONDS)) {
+        try {
+          String labelId = request.getId();
+          if (systemLabelsIdLabelMap.containsKey(labelId)) {
+            // Deleting a system label
+            responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
+            return;
+          }
+          configServiceCoordinator.getLabel(requestContext, labelId);
+          configServiceCoordinator.deleteLabel(requestContext, labelId);
+          responseObserver.onNext(DeleteLabelResponse.newBuilder().build());
+          responseObserver.onCompleted();
+        } finally {
+          labelsLock.unlock();
+        }
+      } else {
+        responseObserver.onError(new StatusRuntimeException(Status.ABORTED));
       }
-      configServiceCoordinator.getLabel(requestContext, labelId);
-      configServiceCoordinator.deleteLabel(requestContext, labelId);
-      responseObserver.onNext(DeleteLabelResponse.newBuilder().build());
-      responseObserver.onCompleted();
     } catch (Exception e) {
       responseObserver.onError(e);
     }
+  }
+
+  private boolean isDuplicateKey(String key) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    List<Label> labelList = configServiceCoordinator.getAllLabels(requestContext);
+    Optional<Label> match =
+        labelList.stream().filter(label -> label.getKey().equals(key)).findAny();
+    return match.isPresent();
   }
 }
