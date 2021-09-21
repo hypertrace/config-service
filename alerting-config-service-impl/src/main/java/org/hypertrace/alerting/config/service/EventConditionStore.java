@@ -37,13 +37,17 @@ public class EventConditionStore {
   public EventCondition createEventCondition(
       RequestContext requestContext, NewEventCondition newEventCondition) {
     EventCondition.Builder builder = EventCondition.newBuilder();
-    if (newEventCondition.getEventConditionData().getConditionCase() == ConditionCase.METRIC_ANOMALY_EVENT_CONDITION) {
-      builder.setEventConditionData(EventConditionData.newBuilder()
-          .setMetricAnomalyEventCondition(newEventCondition.getEventConditionData().getMetricAnomalyEventCondition()));
+    if (newEventCondition.getEventConditionData().getConditionCase()
+        == ConditionCase.METRIC_ANOMALY_EVENT_CONDITION) {
+      builder.setEventConditionData(
+          EventConditionData.newBuilder()
+              .setMetricAnomalyEventCondition(
+                  newEventCondition.getEventConditionData().getMetricAnomalyEventCondition()));
     } else {
       throw new RuntimeException(
           String.format(
-              "Condition type is incorrect: %s", newEventCondition.getEventConditionData().getConditionCase().name()));
+              "Condition type is incorrect: %s",
+              newEventCondition.getEventConditionData().getConditionCase().name()));
     }
 
     builder.setId(UUID.randomUUID().toString());

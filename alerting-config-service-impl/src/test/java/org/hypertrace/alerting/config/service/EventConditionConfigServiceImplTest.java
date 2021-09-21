@@ -65,7 +65,8 @@ public class EventConditionConfigServiceImplTest {
                     .build())
             .getEventCondition();
     assertEquals(
-        newEventCondition1.getEventConditionData().getConditionCase().name(), eventCondition1.getEventConditionData().getConditionCase().name());
+        newEventCondition1.getEventConditionData().getConditionCase().name(),
+        eventCondition1.getEventConditionData().getConditionCase().name());
     assertFalse(eventCondition1.getId().isEmpty());
 
     EventCondition eventCondition2 =
@@ -82,10 +83,11 @@ public class EventConditionConfigServiceImplTest {
             .getEventConditionList());
 
     EventCondition eventCondition1ToUpdate =
-        eventCondition1.toBuilder().setEventConditionData(
-            EventConditionData.newBuilder()
-                .setMetricAnomalyEventCondition(getMetricAnomalyEventCondition("PT5M"))
-                .build())
+        eventCondition1.toBuilder()
+            .setEventConditionData(
+                EventConditionData.newBuilder()
+                    .setMetricAnomalyEventCondition(getMetricAnomalyEventCondition("PT5M"))
+                    .build())
             .build();
 
     EventCondition updatedEventCondition1 =
@@ -118,8 +120,10 @@ public class EventConditionConfigServiceImplTest {
 
   private NewEventCondition getNewEventCondition() {
     return NewEventCondition.newBuilder()
-        .setEventConditionData(EventConditionData.newBuilder()
-        .setMetricAnomalyEventCondition(getMetricAnomalyEventCondition("PT1M")).build())
+        .setEventConditionData(
+            EventConditionData.newBuilder()
+                .setMetricAnomalyEventCondition(getMetricAnomalyEventCondition("PT1M"))
+                .build())
         .build();
   }
 
