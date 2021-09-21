@@ -56,7 +56,7 @@ public class EventConditionConfigServiceImpl
       responseObserver.onNext(
           UpdateEventConditionResponse.newBuilder()
               .setEventCondition(
-                  eventConditionStore.updateEventCondition(
+                  eventConditionStore.upsertObject(
                       requestContext, request.getEventCondition()))
               .build());
       responseObserver.onCompleted();
@@ -75,7 +75,7 @@ public class EventConditionConfigServiceImpl
       requestValidator.validateGetAllEventConditionsRequest(requestContext, request);
       responseObserver.onNext(
           GetAllEventConditionsResponse.newBuilder()
-              .addAllEventCondition(eventConditionStore.getAllEventConditions(requestContext))
+              .addAllEventCondition(eventConditionStore.getAllObjects(requestContext))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -91,7 +91,7 @@ public class EventConditionConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       requestValidator.validateDeleteEventConditionRequest(requestContext, request);
-      eventConditionStore.deleteEventCondition(requestContext, request.getEventConditionId());
+      eventConditionStore.deleteObject(requestContext, request.getEventConditionId());
       responseObserver.onNext(DeleteEventConditionResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Exception e) {
