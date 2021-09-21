@@ -7,7 +7,7 @@ import org.hypertrace.alerting.config.service.v1.CreateEventConditionRequest;
 import org.hypertrace.alerting.config.service.v1.CreateEventConditionResponse;
 import org.hypertrace.alerting.config.service.v1.DeleteEventConditionRequest;
 import org.hypertrace.alerting.config.service.v1.DeleteEventConditionResponse;
-import org.hypertrace.alerting.config.service.v1.EventConditionsConfigServiceGrpc;
+import org.hypertrace.alerting.config.service.v1.EventConditionConfigServiceGrpc;
 import org.hypertrace.alerting.config.service.v1.GetAllEventConditionsRequest;
 import org.hypertrace.alerting.config.service.v1.GetAllEventConditionsResponse;
 import org.hypertrace.alerting.config.service.v1.UpdateEventConditionRequest;
@@ -16,7 +16,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class EventConditionConfigServiceImpl
-    extends EventConditionsConfigServiceGrpc.EventConditionsConfigServiceImplBase {
+    extends EventConditionConfigServiceGrpc.EventConditionConfigServiceImplBase {
 
   private final EventConditionStore eventConditionStore;
   private final EventConditionConfigServiceRequestValidator requestValidator;

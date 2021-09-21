@@ -10,8 +10,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.hypertrace.alerting.config.service.v1.EventCondition;
+import org.hypertrace.alerting.config.service.v1.EventConditionData;
+import org.hypertrace.alerting.config.service.v1.EventConditionData.ConditionCase;
 import org.hypertrace.alerting.config.service.v1.NewEventCondition;
-import org.hypertrace.alerting.config.service.v1.NewEventCondition.ConditionCase;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
@@ -36,12 +37,13 @@ public class EventConditionStore {
   public EventCondition createEventCondition(
       RequestContext requestContext, NewEventCondition newEventCondition) {
     EventCondition.Builder builder = EventCondition.newBuilder();
-    if (newEventCondition.getConditionCase() == ConditionCase.METRIC_ANOMALY_EVENT_CONDTION) {
-      builder.setMetricAnomalyEventCondtion(newEventCondition.getMetricAnomalyEventCondtion());
+    if (newEventCondition.getEventConditionData().getConditionCase() == ConditionCase.METRIC_ANOMALY_EVENT_CONDITION) {
+      builder.setEventConditionData(EventConditionData.newBuilder()
+          .setMetricAnomalyEventCondition(newEventCondition.getEventConditionData().getMetricAnomalyEventCondition()));
     } else {
       throw new RuntimeException(
           String.format(
-              "Condition type is incorrect: %s", newEventCondition.getConditionCase().name()));
+              "Condition type is incorrect: %s", newEventCondition.getEventConditionData().getConditionCase().name()));
     }
 
     builder.setId(UUID.randomUUID().toString());

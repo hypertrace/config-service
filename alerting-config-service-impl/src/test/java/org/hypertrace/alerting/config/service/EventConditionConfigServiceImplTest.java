@@ -10,8 +10,9 @@ import org.hypertrace.alerting.config.service.v1.BaselineThresholdCondition;
 import org.hypertrace.alerting.config.service.v1.CreateEventConditionRequest;
 import org.hypertrace.alerting.config.service.v1.DeleteEventConditionRequest;
 import org.hypertrace.alerting.config.service.v1.EventCondition;
-import org.hypertrace.alerting.config.service.v1.EventConditionsConfigServiceGrpc;
-import org.hypertrace.alerting.config.service.v1.EventConditionsConfigServiceGrpc.EventConditionsConfigServiceBlockingStub;
+import org.hypertrace.alerting.config.service.v1.EventConditionConfigServiceGrpc;
+import org.hypertrace.alerting.config.service.v1.EventConditionConfigServiceGrpc.EventConditionConfigServiceBlockingStub;
+import org.hypertrace.alerting.config.service.v1.EventConditionData;
 import org.hypertrace.alerting.config.service.v1.Filter;
 import org.hypertrace.alerting.config.service.v1.GetAllEventConditionsRequest;
 import org.hypertrace.alerting.config.service.v1.LeafFilter;
@@ -31,7 +32,7 @@ import org.junit.jupiter.api.Test;
 
 public class EventConditionConfigServiceImplTest {
 
-  EventConditionsConfigServiceBlockingStub eventConditionsStub;
+  EventConditionConfigServiceBlockingStub eventConditionsStub;
   MockGenericConfigService mockGenericConfigService;
 
   @BeforeEach
@@ -44,7 +45,7 @@ public class EventConditionConfigServiceImplTest {
         .start();
 
     this.eventConditionsStub =
-        EventConditionsConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+        EventConditionConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
   }
 
   @AfterEach
@@ -64,7 +65,7 @@ public class EventConditionConfigServiceImplTest {
                     .build())
             .getEventCondition();
     assertEquals(
-        newEventCondition1.getConditionCase().name(), eventCondition1.getConditionCase().name());
+        newEventCondition1.getEventConditionData().getConditionCase().name(), eventCondition1.getEventConditionData().getConditionCase().name());
     assertFalse(eventCondition1.getId().isEmpty());
 
     EventCondition eventCondition2 =
@@ -81,8 +82,10 @@ public class EventConditionConfigServiceImplTest {
             .getEventConditionList());
 
     EventCondition eventCondition1ToUpdate =
-        eventCondition1.toBuilder()
-            .setMetricAnomalyEventCondtion(getMetricAnomalyEventCondition("PT5M"))
+        eventCondition1.toBuilder().setEventConditionData(
+            EventConditionData.newBuilder()
+                .setMetricAnomalyEventCondition(getMetricAnomalyEventCondition("PT5M"))
+                .build())
             .build();
 
     EventCondition updatedEventCondition1 =
@@ -115,7 +118,8 @@ public class EventConditionConfigServiceImplTest {
 
   private NewEventCondition getNewEventCondition() {
     return NewEventCondition.newBuilder()
-        .setMetricAnomalyEventCondtion(getMetricAnomalyEventCondition("PT1M"))
+        .setEventConditionData(EventConditionData.newBuilder()
+        .setMetricAnomalyEventCondition(getMetricAnomalyEventCondition("PT1M")).build())
         .build();
   }
 
