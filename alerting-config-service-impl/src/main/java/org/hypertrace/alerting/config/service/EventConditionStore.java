@@ -19,14 +19,17 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @Slf4j
 public class EventConditionStore extends IdentifiedObjectStore<EventCondition> {
 
-  private static final String ALERTING_EVENT_CONDITION_CONFIG_RESOURCE_NAME = "alertingEventConditionConfig";
+  private static final String ALERTING_EVENT_CONDITION_CONFIG_RESOURCE_NAME =
+      "alertingEventConditionConfig";
   private static final String ALERTING_CONFIG_NAMESPACE = "alerting-v1";
 
   public EventConditionStore(Channel configChannel) {
-    super(ConfigServiceGrpc.newBlockingStub(configChannel)
+    super(
+        ConfigServiceGrpc.newBlockingStub(configChannel)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get()),
-        ALERTING_CONFIG_NAMESPACE, ALERTING_EVENT_CONDITION_CONFIG_RESOURCE_NAME);
+        ALERTING_CONFIG_NAMESPACE,
+        ALERTING_EVENT_CONDITION_CONFIG_RESOURCE_NAME);
   }
 
   public EventCondition createEventCondition(

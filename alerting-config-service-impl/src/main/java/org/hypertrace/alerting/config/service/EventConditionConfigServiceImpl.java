@@ -56,8 +56,7 @@ public class EventConditionConfigServiceImpl
       responseObserver.onNext(
           UpdateEventConditionResponse.newBuilder()
               .setEventCondition(
-                  eventConditionStore.upsertObject(
-                      requestContext, request.getEventCondition()))
+                  eventConditionStore.upsertObject(requestContext, request.getEventCondition()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {

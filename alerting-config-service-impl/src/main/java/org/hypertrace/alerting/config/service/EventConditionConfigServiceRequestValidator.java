@@ -7,7 +7,6 @@ import org.hypertrace.alerting.config.service.v1.CreateEventConditionRequest;
 import org.hypertrace.alerting.config.service.v1.DeleteEventConditionRequest;
 import org.hypertrace.alerting.config.service.v1.GetAllEventConditionsRequest;
 import org.hypertrace.alerting.config.service.v1.UpdateEventConditionRequest;
-import org.hypertrace.config.validation.GrpcValidatorUtils;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class EventConditionConfigServiceRequestValidator {
