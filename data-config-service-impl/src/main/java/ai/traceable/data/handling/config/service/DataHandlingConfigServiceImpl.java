@@ -56,7 +56,7 @@ class DataHandlingConfigServiceImpl extends DataHandlingConfigServiceImplBase {
       this.validator.validateOrThrow(requestContext, request);
       responseObserver.onNext(
           GetDataHandlingRulesResponse.newBuilder()
-              .addAllRules(this.ruleStore.getRules(requestContext))
+              .addAllRules(this.ruleStore.getAllObjects(requestContext))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -74,10 +74,10 @@ class DataHandlingConfigServiceImpl extends DataHandlingConfigServiceImplBase {
       this.validator.validateOrThrow(requestContext, request);
 
       DataHandlingRule newRule = this.ruleGenerator.generateNewRuleWithoutRank(request);
-      List<DataHandlingRule> existingRules = this.ruleStore.getRules(requestContext);
+      List<DataHandlingRule> existingRules = this.ruleStore.getAllObjects(requestContext);
       List<DataHandlingRule> mergedAndRankedRules =
           this.rankCalculator.rankAndMergeNewObject(newRule, existingRules);
-      this.ruleStore.upsertAllRules(
+      this.ruleStore.upsertObjects(
           requestContext, this.differ.getNewOrUpdatedObjects(existingRules, mergedAndRankedRules));
       responseObserver.onNext(
           CreateDataHandlingRuleResponse.newBuilder().addAllRules(mergedAndRankedRules).build());
@@ -97,14 +97,14 @@ class DataHandlingConfigServiceImpl extends DataHandlingConfigServiceImplBase {
       this.validator.validateOrThrow(requestContext, request);
       DataHandlingRule existingRule =
           this.ruleStore
-              .getRule(requestContext, request.getId())
+              .getObject(requestContext, request.getId())
               .orElseThrow(Status.NOT_FOUND::asException);
 
       DataHandlingRule updatedRule = existingRule.toBuilder().setData(request.getData()).build();
 
       responseObserver.onNext(
           UpdateDataHandlingRuleResponse.newBuilder()
-              .setRule(this.ruleStore.upsertRule(requestContext, updatedRule))
+              .setRule(this.ruleStore.upsertObject(requestContext, updatedRule))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -120,14 +120,14 @@ class DataHandlingConfigServiceImpl extends DataHandlingConfigServiceImplBase {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
-      List<DataHandlingRule> existingRules = this.ruleStore.getRules(requestContext);
+      List<DataHandlingRule> existingRules = this.ruleStore.getAllObjects(requestContext);
       List<DataHandlingRule> rerankedRules =
           request.hasPrecedingRuleId()
               ? this.rankCalculator.rerankAfterOtherObject(
                   request.getRuleIdToUpdate(), request.getPrecedingRuleId(), existingRules)
               : this.rankCalculator.rerankAsHighestRank(request.getRuleIdToUpdate(), existingRules);
 
-      this.ruleStore.upsertAllRules(
+      this.ruleStore.upsertObjects(
           requestContext, this.differ.getNewOrUpdatedObjects(existingRules, rerankedRules));
       responseObserver.onNext(
           RankDataHandlingRuleResponse.newBuilder().addAllRules(rerankedRules).build());
@@ -145,11 +145,11 @@ class DataHandlingConfigServiceImpl extends DataHandlingConfigServiceImplBase {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
-      this.ruleStore.deleteRule(requestContext, request.getId());
-      List<DataHandlingRule> rulesAfterDelete = this.ruleStore.getRules(requestContext);
+      this.ruleStore.deleteObject(requestContext, request.getId());
+      List<DataHandlingRule> rulesAfterDelete = this.ruleStore.getAllObjects(requestContext);
       List<DataHandlingRule> rerankedRules = this.rankCalculator.rankFromOrder(rulesAfterDelete);
 
-      this.ruleStore.upsertAllRules(
+      this.ruleStore.upsertObjects(
           requestContext, this.differ.getNewOrUpdatedObjects(rulesAfterDelete, rerankedRules));
 
       responseObserver.onNext(

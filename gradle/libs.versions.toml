@@ -25,6 +25,8 @@ hypertrace-configservice-server = { module = "org.hypertrace.config.service:conf
 hypertrace-configservice-impl = { module = "org.hypertrace.config.service:config-service-impl" }
 hypertrace-configservice-api = { module = "org.hypertrace.config.service:config-service-api" }
 hypertrace-configservice-protoconverter = { module = "org.hypertrace.config.service:config-proto-converter" }
+hypertrace-configservice-objectstore = { module = "org.hypertrace.config.service:object-store" }
+hypertrace-configservice-validation = { module = "org.hypertrace.config.service:validation-utils" }
 hypertrace-framework-container = { module = "org.hypertrace.core.serviceframework:platform-service-framework", version.ref = "hypertrace-framework" }
 hypertrace-framework-metrics = { module = "org.hypertrace.core.serviceframework:platform-metrics", version.ref = "hypertrace-framework" }
 hypertrace-framework-integrationtest = { module = "org.hypertrace.core.serviceframework:integrationtest-service-framework", version.ref = "hypertrace-framework" }

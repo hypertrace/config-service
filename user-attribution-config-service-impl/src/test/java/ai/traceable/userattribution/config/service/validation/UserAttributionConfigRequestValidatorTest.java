@@ -1,6 +1,7 @@
 package ai.traceable.userattribution.config.service.validation;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
@@ -20,6 +21,9 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.Jw
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.RequestHeaderUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ResponseBodyUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.RuleCondition;
+import io.grpc.Status.Code;
+import io.grpc.StatusRuntimeException;
+import java.util.Objects;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Test;
@@ -40,7 +44,7 @@ class UserAttributionConfigRequestValidatorTest {
 
   @Test
   void validatesGetRequest() {
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "Tenant ID",
         () ->
             validator.validateOrThrow(
@@ -55,13 +59,13 @@ class UserAttributionConfigRequestValidatorTest {
 
   @Test
   void validatesDeleteRequest() {
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "Tenant ID",
         () ->
             validator.validateOrThrow(
                 mockRequestContext, DeleteUserAttributionRuleRequest.newBuilder().build()));
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "DeleteUserAttributionRuleRequest.rule_id",
         () ->
             validator.validateOrThrow(
@@ -77,27 +81,27 @@ class UserAttributionConfigRequestValidatorTest {
 
   @Test
   void validatesCreateRequest() {
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "Tenant ID",
         () ->
             validator.validateOrThrow(
                 mockRequestContext, CreateUserAttributionRuleRequest.newBuilder().build()));
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "CreateUserAttributionRuleRequest.name",
         () ->
             validator.validateOrThrow(
                 mockRequestContext,
                 CreateUserAttributionRuleRequest.newBuilder().setName("").build()));
 
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "Unexpected data case",
         () ->
             validator.validateOrThrow(
                 mockRequestContext,
                 CreateUserAttributionRuleRequest.newBuilder().setName("rule-name").build()));
 
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "CustomUserAttributionRuleData.yaml",
         () ->
             validator.validateOrThrow(
@@ -124,19 +128,19 @@ class UserAttributionConfigRequestValidatorTest {
 
   @Test
   void validatesUpdateRequest() {
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "Tenant ID",
         () ->
             validator.validateOrThrow(
-                mockRequestContext, CreateUserAttributionRuleRequest.newBuilder().build()));
+                mockRequestContext, UpdateUserAttributionRuleRequest.newBuilder().build()));
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "UserAttributionRule.id",
         () ->
             validator.validateOrThrow(
                 mockRequestContext, UpdateUserAttributionRuleRequest.newBuilder().build()));
 
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "UserAttributionRule.name",
         () ->
             validator.validateOrThrow(
@@ -145,7 +149,7 @@ class UserAttributionConfigRequestValidatorTest {
                     .setRule(UserAttributionRule.newBuilder().setId("rule-id"))
                     .build()));
 
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "Unexpected data case",
         () ->
             validator.validateOrThrow(
@@ -154,7 +158,7 @@ class UserAttributionConfigRequestValidatorTest {
                     .setRule(UserAttributionRule.newBuilder().setName("rule-name").setId("rule-id"))
                     .build()));
 
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "CustomUserAttributionRuleData.yaml",
         () ->
             validator.validateOrThrow(
@@ -189,7 +193,7 @@ class UserAttributionConfigRequestValidatorTest {
   @Test
   void validatesResponseBodyCreate() {
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "rule condition",
         () ->
             validator.validateOrThrow(
@@ -202,7 +206,7 @@ class UserAttributionConfigRequestValidatorTest {
                                 ResponseBodyUserAttributionRuleData.getDefaultInstance()))
                     .build()));
 
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "encoded location",
         () ->
             validator.validateOrThrow(
@@ -237,7 +241,7 @@ class UserAttributionConfigRequestValidatorTest {
   @Test
   void validatesRequestHeaderCreate() {
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "header location",
         () ->
             validator.validateOrThrow(
@@ -284,7 +288,7 @@ class UserAttributionConfigRequestValidatorTest {
   @Test
   void validatesJwtCreate() {
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "header location",
         () ->
             validator.validateOrThrow(
@@ -295,7 +299,7 @@ class UserAttributionConfigRequestValidatorTest {
                         UserAttributionRuleData.newBuilder()
                             .setJwtData(JwtUserAttributionRuleData.newBuilder()))
                     .build()));
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "JwtUserAttributionRuleData.user_id_claim",
         () ->
             validator.validateOrThrow(
@@ -327,20 +331,20 @@ class UserAttributionConfigRequestValidatorTest {
 
   @Test
   void validatesRankRequest() {
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "Tenant ID",
         () ->
             validator.validateOrThrow(
                 mockRequestContext, RankUserAttributionRuleRequest.newBuilder().build()));
 
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "id_to_update",
         () ->
             validator.validateOrThrow(
                 mockRequestContext, RankUserAttributionRuleRequest.newBuilder().build()));
 
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "Can't rerank a rule against itself",
         () ->
             validator.validateOrThrow(
@@ -360,7 +364,7 @@ class UserAttributionConfigRequestValidatorTest {
   void validatesRuleUpdate() {
     UserAttributionRule existingRule = UserAttributionRule.newBuilder().setRank(2).build();
     UserAttributionRule updatedRule = UserAttributionRule.newBuilder().setRank(3).build();
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "rank", () -> validator.validateUpdateOrThrow(existingRule, updatedRule));
 
     assertDoesNotThrow(
@@ -372,7 +376,7 @@ class UserAttributionConfigRequestValidatorTest {
   @Test
   void validatesCustomRuleYaml() {
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
-    assertIllegalArgContaining(
+    assertInvalidArgStatusContaining(
         "YAML of unexpected type",
         () ->
             validator.validateOrThrow(
@@ -409,10 +413,12 @@ class UserAttributionConfigRequestValidatorTest {
                     .build()));
   }
 
-  private void assertIllegalArgContaining(String text, Executable executable) {
-    IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, executable);
+  private void assertInvalidArgStatusContaining(String text, Executable executable) {
+    StatusRuntimeException exception = assertThrows(StatusRuntimeException.class, executable);
+    assertEquals(Code.INVALID_ARGUMENT, exception.getStatus().getCode());
+
     assertTrue(
-        exception.getMessage().contains(text),
+        Objects.requireNonNull(exception.getStatus().getDescription()).contains(text),
         "Expected arg to contain " + text + " but was " + exception.getMessage());
   }
 }

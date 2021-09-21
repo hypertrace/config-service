@@ -10,6 +10,8 @@ dependencies {
   implementation(projects.dataConfigServiceApi)
   implementation(projects.configUtils)
   implementation(libs.hypertrace.configservice.api)
+  implementation(libs.hypertrace.configservice.objectstore)
+  implementation(libs.hypertrace.configservice.validation)
   implementation(libs.guice)
   implementation(libs.slf4j.api)
   implementation(libs.hypertrace.grpcutils.context)

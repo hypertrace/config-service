@@ -1,5 +1,9 @@
 package ai.traceable.userattribution.config.service.validation;
 
+import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
+import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
+import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
+
 import ai.traceable.userattribution.config.service.v1.CreateUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.DeleteUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest;
@@ -18,63 +22,58 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.protobuf.Descriptors.FieldDescriptor;
-import com.google.protobuf.Message;
-import com.google.protobuf.util.JsonFormat;
+import io.grpc.Status;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class UserAttributionConfigRequestValidator {
-  private static final JsonFormat.Printer JSON_PRINTER = JsonFormat.printer();
   private static final ObjectMapper YAML_OBJECT_MAPPER = new ObjectMapper(new YAMLFactory());
 
   public void validateOrThrow(
       RequestContext requestContext, GetUserAttributionRulesRequest request) {
-    this.validateRequestContext(requestContext);
+    validateRequestContextOrThrow(requestContext);
   }
 
   public void validateOrThrow(
       RequestContext requestContext, CreateUserAttributionRuleRequest request) {
-    this.validateRequestContext(requestContext);
-    this.validateNonDefaultPresence(request, CreateUserAttributionRuleRequest.NAME_FIELD_NUMBER);
+    validateRequestContextOrThrow(requestContext);
+    validateNonDefaultPresenceOrThrow(request, CreateUserAttributionRuleRequest.NAME_FIELD_NUMBER);
     this.validateRuleData(request.getData());
   }
 
   public void validateOrThrow(
       RequestContext requestContext, UpdateUserAttributionRuleRequest request) {
-    this.validateRequestContext(requestContext);
+    validateRequestContextOrThrow(requestContext);
     UserAttributionRule rule = request.getRule();
-    this.validateNonDefaultPresence(rule, UserAttributionRule.ID_FIELD_NUMBER);
-    this.validateNonDefaultPresence(rule, UserAttributionRule.NAME_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(rule, UserAttributionRule.ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(rule, UserAttributionRule.NAME_FIELD_NUMBER);
     this.validateRuleData(rule.getData());
   }
 
   public void validateUpdateOrThrow(UserAttributionRule existing, UserAttributionRule updated) {
     if (existing.getRank() != updated.getRank()) {
-      throw new IllegalArgumentException(
-          "Updated rule must match existing rule rank. Use rank API to adjust ranks");
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "Updated rule must match existing rule rank. Use rank API to adjust ranks")
+          .asRuntimeException();
     }
   }
 
   public void validateOrThrow(
       RequestContext requestContext, DeleteUserAttributionRuleRequest request) {
-    this.validateRequestContext(requestContext);
-    this.validateNonDefaultPresence(request, DeleteUserAttributionRuleRequest.RULE_ID_FIELD_NUMBER);
+    validateRequestContextOrThrow(requestContext);
+    validateNonDefaultPresenceOrThrow(
+        request, DeleteUserAttributionRuleRequest.RULE_ID_FIELD_NUMBER);
   }
 
   public void validateOrThrow(
       RequestContext requestContext, RankUserAttributionRuleRequest request) {
-    this.validateRequestContext(requestContext);
-    this.validateNonDefaultPresence(
+    validateRequestContextOrThrow(requestContext);
+    validateNonDefaultPresenceOrThrow(
         request, RankUserAttributionRuleRequest.ID_TO_UPDATE_FIELD_NUMBER);
     if (request.getIdToUpdate().equals(request.getPrecedingRuleId())) {
-      throw new IllegalArgumentException(
-          "Can't rerank a rule against itself: " + this.printOrToString(request));
-    }
-  }
-
-  private void validateRequestContext(RequestContext requestContext) {
-    if (requestContext.getTenantId().isEmpty()) {
-      throw new IllegalArgumentException("Missing expected Tenant ID in request");
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Can't rerank a rule against itself: " + printMessage(request))
+          .asRuntimeException();
     }
   }
 
@@ -97,13 +96,14 @@ public class UserAttributionConfigRequestValidator {
         break;
       case DATA_NOT_SET:
       default:
-        throw new IllegalArgumentException(
-            "Unexpected data case: " + this.printOrToString(ruleData));
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Unexpected data case: " + printMessage(ruleData))
+            .asRuntimeException();
     }
   }
 
   private void validateCustomRuleData(CustomUserAttributionRuleData customRuleData) {
-    this.validateNonDefaultPresence(
+    validateNonDefaultPresenceOrThrow(
         customRuleData, CustomUserAttributionRuleData.YAML_FIELD_NUMBER);
     this.validateValidYaml(customRuleData.getYaml());
   }
@@ -122,7 +122,7 @@ public class UserAttributionConfigRequestValidator {
 
   private void validateJwtData(JwtUserAttributionRuleData jwtRuleData) {
     this.validateHeaderLocation(jwtRuleData.getJwtLocation());
-    this.validateNonDefaultPresence(
+    validateNonDefaultPresenceOrThrow(
         jwtRuleData, JwtUserAttributionRuleData.USER_ID_CLAIM_FIELD_NUMBER);
     // Role and all encoded locations not required
   }
@@ -130,39 +130,43 @@ public class UserAttributionConfigRequestValidator {
   private void validateHeaderLocation(HeaderLocation headerLocation) {
     switch (headerLocation.getLocationCase()) {
       case HEADER_NAME:
-        this.validateNonDefaultPresence(headerLocation, HeaderLocation.HEADER_NAME_FIELD_NUMBER);
+        validateNonDefaultPresenceOrThrow(headerLocation, HeaderLocation.HEADER_NAME_FIELD_NUMBER);
         break;
       case COOKIE_NAME:
-        this.validateNonDefaultPresence(headerLocation, HeaderLocation.COOKIE_NAME_FIELD_NUMBER);
+        validateNonDefaultPresenceOrThrow(headerLocation, HeaderLocation.COOKIE_NAME_FIELD_NUMBER);
         break;
       case LOCATION_NOT_SET:
       default:
-        throw new IllegalArgumentException(
-            "Unexpected header location: " + this.printOrToString(headerLocation));
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Unexpected header location: " + printMessage(headerLocation))
+            .asRuntimeException();
     }
   }
 
   private void validateRuleCondition(RuleCondition ruleCondition) {
     switch (ruleCondition.getConditionCase()) {
       case URL_MATCH_REGEX:
-        this.validateNonDefaultPresence(ruleCondition, RuleCondition.URL_MATCH_REGEX_FIELD_NUMBER);
+        validateNonDefaultPresenceOrThrow(
+            ruleCondition, RuleCondition.URL_MATCH_REGEX_FIELD_NUMBER);
         return;
       case CONDITION_NOT_SET:
       default:
-        throw new IllegalArgumentException(
-            "Unexpected rule condition: " + this.printOrToString(ruleCondition));
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Unexpected rule condition: " + printMessage(ruleCondition))
+            .asRuntimeException();
     }
   }
 
   private void validateEncodedLocation(EncodedLocation encodedLocation) {
     switch (encodedLocation.getLocationCase()) {
       case JSON_PATH:
-        this.validateNonDefaultPresence(encodedLocation, EncodedLocation.JSON_PATH_FIELD_NUMBER);
+        validateNonDefaultPresenceOrThrow(encodedLocation, EncodedLocation.JSON_PATH_FIELD_NUMBER);
         return;
       case LOCATION_NOT_SET:
       default:
-        throw new IllegalArgumentException(
-            "Unexpected encoded location: " + this.printOrToString(encodedLocation));
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Unexpected encoded location: " + printMessage(encodedLocation))
+            .asRuntimeException();
     }
   }
 
@@ -170,29 +174,15 @@ public class UserAttributionConfigRequestValidator {
     try {
       JsonNode node = YAML_OBJECT_MAPPER.readTree(yamlString);
       if (!node.isArray() && !node.isObject()) {
-        throw new IllegalArgumentException("YAML of unexpected type: " + node);
+        throw Status.INVALID_ARGUMENT
+            .withDescription("YAML of unexpected type: " + node)
+            .asRuntimeException();
       }
     } catch (JsonProcessingException e) {
-      throw new IllegalArgumentException("Invalid yaml", e);
-    }
-  }
-
-  private <T extends Message> void validateNonDefaultPresence(T source, int fieldNumber) {
-    FieldDescriptor descriptor = source.getDescriptorForType().findFieldByNumber(fieldNumber);
-    if (!source.hasField(descriptor)
-        || source.getField(descriptor).equals(descriptor.getDefaultValue())) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Expected field value %s but not present:\n %s",
-              descriptor.getFullName(), this.printOrToString(source)));
-    }
-  }
-
-  private String printOrToString(Message message) {
-    try {
-      return JSON_PRINTER.print(message);
-    } catch (Exception exception) {
-      return message.toString();
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Invalid yaml")
+          .withCause(e)
+          .asRuntimeException();
     }
   }
 }

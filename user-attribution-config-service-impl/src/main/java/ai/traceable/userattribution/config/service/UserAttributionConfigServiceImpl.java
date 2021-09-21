@@ -55,7 +55,7 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
       this.validator.validateOrThrow(requestContext, request);
       responseObserver.onNext(
           GetUserAttributionRulesResponse.newBuilder()
-              .addAllRules(this.ruleStore.getRules(requestContext))
+              .addAllRules(this.ruleStore.getAllObjects(requestContext))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -73,10 +73,10 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
       this.validator.validateOrThrow(requestContext, request);
 
       UserAttributionRule newRule = this.ruleGenerator.generateNewRuleWithoutRank(request);
-      List<UserAttributionRule> existingRules = this.ruleStore.getRules(requestContext);
+      List<UserAttributionRule> existingRules = this.ruleStore.getAllObjects(requestContext);
       List<UserAttributionRule> mergedAndRankedRules =
           this.rankCalculator.rankAndMergeNewObject(newRule, existingRules);
-      this.ruleStore.upsertAllRules(
+      this.ruleStore.upsertObjects(
           requestContext,
           this.objectDiffer.getNewOrUpdatedObjects(existingRules, mergedAndRankedRules));
       // TODO remove once deprecated api removed
@@ -106,13 +106,13 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
       this.validator.validateOrThrow(requestContext, request);
       UserAttributionRule existingRule =
           this.ruleStore
-              .getRule(requestContext, request.getRule().getId())
+              .getObject(requestContext, request.getRule().getId())
               .orElseThrow(Status.NOT_FOUND::asException);
       this.validator.validateUpdateOrThrow(existingRule, request.getRule());
 
       responseObserver.onNext(
           UpdateUserAttributionRuleResponse.newBuilder()
-              .setRule(this.ruleStore.upsertRule(requestContext, request.getRule()))
+              .setRule(this.ruleStore.upsertObject(requestContext, request.getRule()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -128,11 +128,11 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
-      this.ruleStore.deleteRule(requestContext, request.getRuleId());
-      List<UserAttributionRule> rulesAfterDelete = this.ruleStore.getRules(requestContext);
+      this.ruleStore.deleteObject(requestContext, request.getRuleId());
+      List<UserAttributionRule> rulesAfterDelete = this.ruleStore.getAllObjects(requestContext);
       List<UserAttributionRule> rerankedRules = this.rankCalculator.rankFromOrder(rulesAfterDelete);
 
-      this.ruleStore.upsertAllRules(
+      this.ruleStore.upsertObjects(
           requestContext,
           this.objectDiffer.getNewOrUpdatedObjects(rulesAfterDelete, rerankedRules));
 
@@ -152,14 +152,14 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
-      List<UserAttributionRule> existingRules = this.ruleStore.getRules(requestContext);
+      List<UserAttributionRule> existingRules = this.ruleStore.getAllObjects(requestContext);
       List<UserAttributionRule> rerankedRules =
           request.hasPrecedingRuleId()
               ? this.rankCalculator.rerankAfterOtherObject(
                   request.getIdToUpdate(), request.getPrecedingRuleId(), existingRules)
               : this.rankCalculator.rerankAsHighestRank(request.getIdToUpdate(), existingRules);
 
-      this.ruleStore.upsertAllRules(
+      this.ruleStore.upsertObjects(
           requestContext, this.objectDiffer.getNewOrUpdatedObjects(existingRules, rerankedRules));
       responseObserver.onNext(
           RankUserAttributionRuleResponse.newBuilder().addAllRules(rerankedRules).build());
