@@ -110,7 +110,7 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
 
   private void validateJsonCondition(JsonCondition jsonCondition) {
     if (!jsonCondition.hasStringCondition() && !jsonCondition.hasUnaryCondition()) {
-      throw new IllegalArgumentException("Condition in JSON Condition not set");
+      throw new IllegalArgumentException("Missing String or Unary condition in JSON Condition");
     }
     if (jsonCondition.hasStringCondition()) {
       validateStringCondition(jsonCondition.getStringCondition());

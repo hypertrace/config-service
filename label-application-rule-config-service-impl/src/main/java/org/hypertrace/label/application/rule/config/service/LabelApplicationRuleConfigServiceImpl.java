@@ -1,15 +1,9 @@
 package org.hypertrace.label.application.rule.config.service;
 
-import com.google.common.util.concurrent.Striped;
-import com.google.protobuf.Duration;
 import io.grpc.Channel;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplicationRuleRequest;
 import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplicationRuleResponse;
@@ -26,14 +20,10 @@ import org.hypertrace.label.application.rule.config.service.v1.UpdateLabelApplic
 
 public class LabelApplicationRuleConfigServiceImpl
     extends LabelApplicationRuleConfigServiceGrpc.LabelApplicationRuleConfigServiceImplBase {
-  private static final int LABEL_LOCK_STRIPE_COUNT = 1000;
-  private final Striped<Lock> stripedLabelApplicationRuleLock;
-  private static final Duration WAIT_TIME = Duration.newBuilder().setSeconds(5).build();
   private final ConfigServiceCoordinator configServiceCoordinator;
   private final LabelApplicationRuleValidator requestValidator;
 
   public LabelApplicationRuleConfigServiceImpl(Channel configChannel) {
-    this.stripedLabelApplicationRuleLock = Striped.lazyWeakLock(LABEL_LOCK_STRIPE_COUNT);
     this.configServiceCoordinator = new ConfigServiceCoordinatorImpl(configChannel);
     this.requestValidator = new LabelApplicationRuleValidatorImpl();
   }
@@ -111,25 +101,14 @@ public class LabelApplicationRuleConfigServiceImpl
       String ruleId = request.getId();
       LabelApplicationRule labelApplicationRule =
           LabelApplicationRule.newBuilder().setId(ruleId).setData(request.getData()).build();
-      Lock labelApplicationRuleLock =
-          stripedLabelApplicationRuleLock.get(requestContext.getTenantId());
-      if (labelApplicationRuleLock.tryLock(WAIT_TIME.getSeconds(), TimeUnit.SECONDS)) {
-        try {
-          configServiceCoordinator.getLabelApplicationRule(requestContext, ruleId);
-          LabelApplicationRule updateLabelApplicationRule =
-              configServiceCoordinator.upsertLabelApplicationRule(
-                  requestContext, labelApplicationRule);
-          responseObserver.onNext(
-              UpdateLabelApplicationRuleResponse.newBuilder()
-                  .setLabelApplicationRule(updateLabelApplicationRule)
-                  .build());
-          responseObserver.onCompleted();
-        } finally {
-          labelApplicationRuleLock.unlock();
-        }
-      } else {
-        responseObserver.onError(new StatusRuntimeException(Status.ABORTED));
-      }
+      configServiceCoordinator.getLabelApplicationRule(requestContext, ruleId);
+      LabelApplicationRule updateLabelApplicationRule =
+          configServiceCoordinator.upsertLabelApplicationRule(requestContext, labelApplicationRule);
+      responseObserver.onNext(
+          UpdateLabelApplicationRuleResponse.newBuilder()
+              .setLabelApplicationRule(updateLabelApplicationRule)
+              .build());
+      responseObserver.onCompleted();
     } catch (Exception e) {
       responseObserver.onError(e);
     }
@@ -143,20 +122,10 @@ public class LabelApplicationRuleConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.requestValidator.validateOrThrow(requestContext, request);
       String ruleId = request.getId();
-      Lock labelApplicationRuleLock =
-          stripedLabelApplicationRuleLock.get(requestContext.getTenantId());
-      if (labelApplicationRuleLock.tryLock(WAIT_TIME.getSeconds(), TimeUnit.SECONDS)) {
-        try {
-          configServiceCoordinator.getLabelApplicationRule(requestContext, ruleId);
-          configServiceCoordinator.deleteLabelApplicationRule(requestContext, ruleId);
-          responseObserver.onNext(DeleteLabelApplicationRuleResponse.getDefaultInstance());
-          responseObserver.onCompleted();
-        } finally {
-          labelApplicationRuleLock.unlock();
-        }
-      } else {
-        responseObserver.onError(new StatusRuntimeException(Status.ABORTED));
-      }
+      configServiceCoordinator.getLabelApplicationRule(requestContext, ruleId);
+      configServiceCoordinator.deleteLabelApplicationRule(requestContext, ruleId);
+      responseObserver.onNext(DeleteLabelApplicationRuleResponse.getDefaultInstance());
+      responseObserver.onCompleted();
     } catch (Exception e) {
       responseObserver.onError(e);
     }
