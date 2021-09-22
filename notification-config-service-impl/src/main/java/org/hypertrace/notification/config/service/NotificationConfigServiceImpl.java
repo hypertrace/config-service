@@ -3,6 +3,7 @@ package org.hypertrace.notification.config.service;
 import io.grpc.Channel;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.CreateNotificationChannelRequest;
@@ -17,8 +18,12 @@ import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsR
 import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsResponse;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesRequest;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesResponse;
+import org.hypertrace.notification.config.service.v1.NewNotificationChannel;
+import org.hypertrace.notification.config.service.v1.NewNotificationRule;
 import org.hypertrace.notification.config.service.v1.NotificationChannel;
 import org.hypertrace.notification.config.service.v1.NotificationConfigServiceGrpc;
+import org.hypertrace.notification.config.service.v1.NotificationRule;
+import org.hypertrace.notification.config.service.v1.NotificationRuleMutableData;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelResponse;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationRuleRequest;
@@ -27,11 +32,13 @@ import org.hypertrace.notification.config.service.v1.UpdateNotificationRuleRespo
 @Slf4j
 public class NotificationConfigServiceImpl
     extends NotificationConfigServiceGrpc.NotificationConfigServiceImplBase {
-  private final NotificationConfigServiceStore notificationConfigServiceStore;
+  private final NotificationChannelStore notificationChannelStore;
+  private final NotificationRuleStore notificationRuleStore;
   private final NotificationConfigServiceRequestValidator notificationConfigServiceRequestValidator;
 
   public NotificationConfigServiceImpl(Channel channel) {
-    this.notificationConfigServiceStore = new NotificationConfigServiceStore(channel);
+    this.notificationChannelStore = new NotificationChannelStore(channel);
+    this.notificationRuleStore = new NotificationRuleStore(channel);
     this.notificationConfigServiceRequestValidator =
         new NotificationConfigServiceRequestValidator();
   }
@@ -44,11 +51,23 @@ public class NotificationConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       notificationConfigServiceRequestValidator.validateCreateNotificationRuleRequest(
           requestContext, request);
+      NewNotificationRule newNotificationRule = request.getNewNotificationRule();
+      NotificationRule.Builder builder =
+          NotificationRule.newBuilder()
+              .setId(UUID.randomUUID().toString())
+              .setNotificationRuleData(NotificationRuleMutableData.newBuilder()
+                  .setRuleName(newNotificationRule.getNotificationRuleData().getRuleName())
+                  .setEventConditionId(newNotificationRule.getNotificationRuleData().getEventConditionId())
+                  .setEventConditionType(newNotificationRule.getNotificationRuleData().getEventConditionType())
+                  .setDescription(newNotificationRule.getNotificationRuleData().getDescription())
+                  .setChannelId(newNotificationRule.getNotificationRuleData().getChannelId())
+                  .setRateLimitIntervalDuration(newNotificationRule.getNotificationRuleData().getRateLimitIntervalDuration()));
+
       responseObserver.onNext(
           CreateNotificationRuleResponse.newBuilder()
               .setNotificationRule(
-                  notificationConfigServiceStore.createNotificationRule(
-                      requestContext, request.getNewNotificationRule()))
+                  notificationRuleStore.upsertObject(
+                      requestContext, builder.build()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -68,7 +87,7 @@ public class NotificationConfigServiceImpl
       responseObserver.onNext(
           UpdateNotificationRuleResponse.newBuilder()
               .setNotificationRule(
-                  notificationConfigServiceStore.updateNotificationRule(
+                  notificationRuleStore.upsertObject(
                       requestContext, request.getNotificationRule()))
               .build());
       responseObserver.onCompleted();
@@ -89,7 +108,7 @@ public class NotificationConfigServiceImpl
       responseObserver.onNext(
           GetAllNotificationRulesResponse.newBuilder()
               .addAllNotificationRules(
-                  notificationConfigServiceStore.getAllNotificationRules(requestContext))
+                  notificationRuleStore.getAllObjects(requestContext))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -106,7 +125,7 @@ public class NotificationConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       notificationConfigServiceRequestValidator.validateDeleteNotificationRuleRequest(
           requestContext, request);
-      notificationConfigServiceStore.deleteNotificationRule(
+      notificationRuleStore.deleteObject(
           requestContext, request.getNotificationRuleId());
       responseObserver.onNext(DeleteNotificationRuleResponse.getDefaultInstance());
       responseObserver.onCompleted();
@@ -124,11 +143,17 @@ public class NotificationConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       notificationConfigServiceRequestValidator.validateCreateNotificationChannelRequest(
           requestContext, request);
+      NewNotificationChannel newNotificationChannel = request.getNewNotificationChannel();
+      NotificationChannel.Builder builder =
+          NotificationChannel.newBuilder()
+              .setId(UUID.randomUUID().toString())
+              .setChannelName(newNotificationChannel.getChannelName())
+              .setNotificationChannelConfig(newNotificationChannel.getNotificationChannelConfig());
       responseObserver.onNext(
           CreateNotificationChannelResponse.newBuilder()
               .setNotificationChannel(
-                  notificationConfigServiceStore.createNotificationChannel(
-                      requestContext, request.getNewNotificationChannel()))
+                  notificationChannelStore.upsertObject(
+                      requestContext, builder.build()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -148,7 +173,7 @@ public class NotificationConfigServiceImpl
       responseObserver.onNext(
           UpdateNotificationChannelResponse.newBuilder()
               .setNotificationChannel(
-                  notificationConfigServiceStore.updateNotificationChannel(
+                  notificationChannelStore.upsertObject(
                       requestContext, request.getNotificationChannel()))
               .build());
       responseObserver.onCompleted();
@@ -167,7 +192,7 @@ public class NotificationConfigServiceImpl
       notificationConfigServiceRequestValidator.validateGetAllNotificationChannelsRequest(
           requestContext, request);
       List<NotificationChannel> notificationChannels =
-          notificationConfigServiceStore.getAllNotificationChannels(requestContext);
+          notificationChannelStore.getAllObjects(requestContext);
       GetAllNotificationChannelsResponse getAllNotificationChannelsResponse =
           GetAllNotificationChannelsResponse.newBuilder()
               .addAllNotificationChannels(notificationChannels)
@@ -188,7 +213,7 @@ public class NotificationConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       notificationConfigServiceRequestValidator.validateDeleteNotificationChannelRequest(
           requestContext, request);
-      notificationConfigServiceStore.deleteNotificationChannel(
+      notificationChannelStore.deleteObject(
           requestContext, request.getNotificationChannelId());
       responseObserver.onNext(DeleteNotificationChannelResponse.getDefaultInstance());
       responseObserver.onCompleted();

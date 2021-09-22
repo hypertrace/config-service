@@ -16,6 +16,7 @@ import org.hypertrace.notification.config.service.v1.NotificationChannel;
 import org.hypertrace.notification.config.service.v1.NotificationChannelConfig;
 import org.hypertrace.notification.config.service.v1.NotificationConfigServiceGrpc;
 import org.hypertrace.notification.config.service.v1.NotificationRule;
+import org.hypertrace.notification.config.service.v1.NotificationRuleMutableData;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationRuleRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -75,7 +76,10 @@ public class NotificationConfigServiceImplTest {
             .getAllNotificationRules(GetAllNotificationRulesRequest.getDefaultInstance())
             .getNotificationRulesList());
 
-    NotificationRule ruleToUpdate = notificationRule1.toBuilder().setRuleName("rule1a").build();
+    NotificationRule ruleToUpdate = notificationRule1.toBuilder()
+        .setNotificationRuleData
+            (notificationRule1.getNotificationRuleData().toBuilder().setRuleName("rule1a").build())
+        .build();
     NotificationRule updatedRule =
         notificationStub
             .updateNotificationRule(
@@ -161,12 +165,14 @@ public class NotificationConfigServiceImplTest {
 
   private NewNotificationRule getNewNotificationRule(String name, String channelId) {
     return NewNotificationRule.newBuilder()
-        .setRuleName(name)
-        .setDescription("sample rule")
-        .setEnvironment("dev")
-        .setChannelId(channelId)
-        .setEventConditionType("metricAnomalyEventCondition")
-        .setEventConditionId("rule-1")
+        .setNotificationRuleData(
+            NotificationRuleMutableData.newBuilder()
+                .setRuleName(name)
+                .setDescription("sample rule")
+                .setChannelId(channelId)
+                .setEventConditionType("metricAnomalyEventCondition")
+                .setEventConditionId("rule-1")
+                .build())
         .build();
   }
 
@@ -174,12 +180,16 @@ public class NotificationConfigServiceImplTest {
     NotificationRule.Builder builder =
         NotificationRule.newBuilder()
             .setId(id)
-            .setRuleName(newNotificationRule.getRuleName())
-            .setDescription(newNotificationRule.getDescription())
-            .setEnvironment(newNotificationRule.getEnvironment())
-            .setEventConditionId(newNotificationRule.getEventConditionId())
-            .setEventConditionType(newNotificationRule.getEventConditionType())
-            .setChannelId(newNotificationRule.getChannelId());
+            .setNotificationRuleData(NotificationRuleMutableData.newBuilder()
+                .setRuleName(newNotificationRule.getNotificationRuleData().getRuleName())
+                .setDescription(newNotificationRule.getNotificationRuleData().getDescription())
+                .setEventConditionId(
+                    newNotificationRule.getNotificationRuleData().getEventConditionId())
+                .setEventConditionType(
+                    newNotificationRule.getNotificationRuleData().getEventConditionType())
+                .setChannelId(newNotificationRule.getNotificationRuleData().getChannelId())
+                .build());
+
     return builder.build();
   }
 
