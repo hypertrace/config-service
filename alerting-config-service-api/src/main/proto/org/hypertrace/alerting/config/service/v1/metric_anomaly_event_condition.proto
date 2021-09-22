@@ -79,19 +79,19 @@ enum Severity {
 
 message ViolationCondition {
   oneof condition {
-    StaticThresholdCondition static_threshold_condition = 2;
-    BaselineThresholdCondition baseline_threshold_condition = 3;
+    StaticThresholdCondition static_threshold_condition = 1;
+    BaselineThresholdCondition baseline_threshold_condition = 2;
   }
 }
 
 message StaticThresholdCondition {
   StaticThresholdOperator operator = 1;
   double value = 2;
-  Severity severity = 4;
+  Severity severity = 3;
 }
 
 message BaselineThresholdCondition {
-  string baseline_duration = 2;  // iso duration string
+  string baseline_duration = 1;  // iso duration string
 }
 
 enum StaticThresholdOperator {
