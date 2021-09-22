@@ -39,6 +39,8 @@ public class NotificationConfigServiceRequestValidator {
     Preconditions.checkArgument(
         !request.getNotificationRule().getNotificationRuleData().getChannelId().isBlank(),
         "ChannelId cannot be empty");
+    Preconditions.checkArgument(
+        !request.getNotificationRule().getId().isBlank(), "Id cannot be empty");
   }
 
   public void validateGetAllNotificationRulesRequest(
@@ -59,10 +61,10 @@ public class NotificationConfigServiceRequestValidator {
     Preconditions.checkArgument(
         request.hasNewNotificationChannel(), "Notification channel should be present");
     Preconditions.checkArgument(
-        !request.getNewNotificationChannel().getChannelName().isBlank(),
+        !request.getNewNotificationChannel().getNotificationChannelMutableData().getChannelName().isBlank(),
         "Channel name should be present");
     Preconditions.checkArgument(
-        request.getNewNotificationChannel().hasNotificationChannelConfig(),
+        request.getNewNotificationChannel().getNotificationChannelMutableData().hasNotificationChannelConfig(),
         "Channel config has to be present");
   }
 
@@ -72,11 +74,13 @@ public class NotificationConfigServiceRequestValidator {
     Preconditions.checkArgument(
         request.hasNotificationChannel(), "Notification channel should be present");
     Preconditions.checkArgument(
-        !request.getNotificationChannel().getChannelName().isBlank(),
+        !request.getNotificationChannel().getNotificationChannelMutableData().getChannelName().isBlank(),
         "Channel name should be present");
     Preconditions.checkArgument(
-        request.getNotificationChannel().hasNotificationChannelConfig(),
+        request.getNotificationChannel().getNotificationChannelMutableData().hasNotificationChannelConfig(),
         "Channel config has to be present");
+    Preconditions.checkArgument(
+        !request.getNotificationChannel().getId().isBlank(), "Id cannot be empty");
   }
 
   public void validateGetAllNotificationChannelsRequest(
