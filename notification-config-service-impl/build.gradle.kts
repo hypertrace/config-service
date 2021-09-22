@@ -8,6 +8,9 @@ dependencies {
     api(projects.notificationConfigServiceApi)
     implementation(projects.configServiceApi)
     implementation(projects.configProtoConverter)
+    implementation(projects.objectStore)
+    implementation(projects.validationUtils)
+
     implementation(libs.guava)
     implementation(libs.rxjava3)
 
