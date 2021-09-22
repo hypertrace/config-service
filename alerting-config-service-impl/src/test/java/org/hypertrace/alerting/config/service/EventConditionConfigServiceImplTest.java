@@ -127,7 +127,8 @@ public class EventConditionConfigServiceImplTest {
         .build();
   }
 
-  private MetricAnomalyEventCondition getMetricAnomalyEventCondition(String ruleDuration) {
+  private MetricAnomalyEventCondition getMetricAnomalyEventCondition(
+      String evaluationWindowDuration) {
     LhsExpression lhsExpression =
         LhsExpression.newBuilder()
             .setAttribute(Attribute.newBuilder().setKey("name").setScope("SERVICE").build())
@@ -151,7 +152,7 @@ public class EventConditionConfigServiceImplTest {
 
     MetricAnomalyEventCondition.Builder metricAnomalyEventConditionBuilder =
         MetricAnomalyEventCondition.newBuilder();
-    metricAnomalyEventConditionBuilder.setRuleDuration(ruleDuration);
+    metricAnomalyEventConditionBuilder.setEvaluationWindowDuration(evaluationWindowDuration);
     metricAnomalyEventConditionBuilder.setMetricSelection(metricSelection);
     metricAnomalyEventConditionBuilder.addViolationCondition(
         ViolationCondition.newBuilder()

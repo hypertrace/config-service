@@ -7,7 +7,7 @@ package org.hypertrace.alerting.config.service.v1;
 message MetricAnomalyEventCondition {
   MetricSelection metric_selection = 1;
   repeated ViolationCondition violation_condition = 2;
-  string rule_duration = 3; // iso duration string
+  string evaluation_window_duration = 3; // iso duration string
 }
 
 message MetricSelection {
