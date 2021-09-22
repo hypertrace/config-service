@@ -18,7 +18,6 @@ import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsR
 import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsResponse;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesRequest;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesResponse;
-import org.hypertrace.notification.config.service.v1.NewNotificationChannel;
 import org.hypertrace.notification.config.service.v1.NewNotificationRule;
 import org.hypertrace.notification.config.service.v1.NotificationChannel;
 import org.hypertrace.notification.config.service.v1.NotificationChannelMutableData;
@@ -147,14 +146,16 @@ public class NotificationConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       notificationConfigServiceRequestValidator.validateCreateNotificationChannelRequest(
           requestContext, request);
-      NotificationChannelMutableData notificationChannelMutableData = request.getNewNotificationChannel().getNotificationChannelMutableData();
+      NotificationChannelMutableData notificationChannelMutableData =
+          request.getNewNotificationChannel().getNotificationChannelMutableData();
       NotificationChannel.Builder builder =
           NotificationChannel.newBuilder()
               .setId(UUID.randomUUID().toString())
               .setNotificationChannelMutableData(
                   NotificationChannelMutableData.newBuilder()
                       .setChannelName(notificationChannelMutableData.getChannelName())
-                      .setNotificationChannelConfig(notificationChannelMutableData.getNotificationChannelConfig()));
+                      .setNotificationChannelConfig(
+                          notificationChannelMutableData.getNotificationChannelConfig()));
       responseObserver.onNext(
           CreateNotificationChannelResponse.newBuilder()
               .setNotificationChannel(

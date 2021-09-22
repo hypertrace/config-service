@@ -142,8 +142,7 @@ public class NotificationConfigServiceImplTest {
     NotificationChannel channelToUpdate =
         notificationChannel1.toBuilder()
             .setNotificationChannelMutableData(
-                notificationChannel1.getNotificationChannelMutableData()
-                    .toBuilder()
+                notificationChannel1.getNotificationChannelMutableData().toBuilder()
                     .setChannelName("Channel1a"))
             .build();
     NotificationChannel updatedChannel =
@@ -205,9 +204,10 @@ public class NotificationConfigServiceImplTest {
 
   private NewNotificationChannel getNewNotificationChannel(String name) {
     return NewNotificationChannel.newBuilder()
-        .setNotificationChannelMutableData(NotificationChannelMutableData.newBuilder()
-        .setChannelName(name)
-        .setNotificationChannelConfig(NotificationChannelConfig.getDefaultInstance()))
+        .setNotificationChannelMutableData(
+            NotificationChannelMutableData.newBuilder()
+                .setChannelName(name)
+                .setNotificationChannelConfig(NotificationChannelConfig.getDefaultInstance()))
         .build();
   }
 
@@ -216,9 +216,14 @@ public class NotificationConfigServiceImplTest {
     NotificationChannel.Builder builder =
         NotificationChannel.newBuilder()
             .setId(id)
-            .setNotificationChannelMutableData(NotificationChannelMutableData.newBuilder()
-            .setChannelName(newNotificationChannel.getNotificationChannelMutableData().getChannelName())
-            .setNotificationChannelConfig(newNotificationChannel.getNotificationChannelMutableData().getNotificationChannelConfig()));
+            .setNotificationChannelMutableData(
+                NotificationChannelMutableData.newBuilder()
+                    .setChannelName(
+                        newNotificationChannel.getNotificationChannelMutableData().getChannelName())
+                    .setNotificationChannelConfig(
+                        newNotificationChannel
+                            .getNotificationChannelMutableData()
+                            .getNotificationChannelConfig()));
     return builder.build();
   }
 }

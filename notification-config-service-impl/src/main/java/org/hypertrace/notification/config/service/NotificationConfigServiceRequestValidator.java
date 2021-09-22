@@ -61,10 +61,17 @@ public class NotificationConfigServiceRequestValidator {
     Preconditions.checkArgument(
         request.hasNewNotificationChannel(), "Notification channel should be present");
     Preconditions.checkArgument(
-        !request.getNewNotificationChannel().getNotificationChannelMutableData().getChannelName().isBlank(),
+        !request
+            .getNewNotificationChannel()
+            .getNotificationChannelMutableData()
+            .getChannelName()
+            .isBlank(),
         "Channel name should be present");
     Preconditions.checkArgument(
-        request.getNewNotificationChannel().getNotificationChannelMutableData().hasNotificationChannelConfig(),
+        request
+            .getNewNotificationChannel()
+            .getNotificationChannelMutableData()
+            .hasNotificationChannelConfig(),
         "Channel config has to be present");
   }
 
@@ -74,10 +81,17 @@ public class NotificationConfigServiceRequestValidator {
     Preconditions.checkArgument(
         request.hasNotificationChannel(), "Notification channel should be present");
     Preconditions.checkArgument(
-        !request.getNotificationChannel().getNotificationChannelMutableData().getChannelName().isBlank(),
+        !request
+            .getNotificationChannel()
+            .getNotificationChannelMutableData()
+            .getChannelName()
+            .isBlank(),
         "Channel name should be present");
     Preconditions.checkArgument(
-        request.getNotificationChannel().getNotificationChannelMutableData().hasNotificationChannelConfig(),
+        request
+            .getNotificationChannel()
+            .getNotificationChannelMutableData()
+            .hasNotificationChannelConfig(),
         "Channel config has to be present");
     Preconditions.checkArgument(
         !request.getNotificationChannel().getId().isBlank(), "Id cannot be empty");
