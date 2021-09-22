@@ -76,10 +76,13 @@ public class NotificationConfigServiceImplTest {
             .getAllNotificationRules(GetAllNotificationRulesRequest.getDefaultInstance())
             .getNotificationRulesList());
 
-    NotificationRule ruleToUpdate = notificationRule1.toBuilder()
-        .setNotificationRuleData
-            (notificationRule1.getNotificationRuleData().toBuilder().setRuleName("rule1a").build())
-        .build();
+    NotificationRule ruleToUpdate =
+        notificationRule1.toBuilder()
+            .setNotificationRuleData(
+                notificationRule1.getNotificationRuleData().toBuilder()
+                    .setRuleName("rule1a")
+                    .build())
+            .build();
     NotificationRule updatedRule =
         notificationStub
             .updateNotificationRule(
@@ -180,15 +183,16 @@ public class NotificationConfigServiceImplTest {
     NotificationRule.Builder builder =
         NotificationRule.newBuilder()
             .setId(id)
-            .setNotificationRuleData(NotificationRuleMutableData.newBuilder()
-                .setRuleName(newNotificationRule.getNotificationRuleData().getRuleName())
-                .setDescription(newNotificationRule.getNotificationRuleData().getDescription())
-                .setEventConditionId(
-                    newNotificationRule.getNotificationRuleData().getEventConditionId())
-                .setEventConditionType(
-                    newNotificationRule.getNotificationRuleData().getEventConditionType())
-                .setChannelId(newNotificationRule.getNotificationRuleData().getChannelId())
-                .build());
+            .setNotificationRuleData(
+                NotificationRuleMutableData.newBuilder()
+                    .setRuleName(newNotificationRule.getNotificationRuleData().getRuleName())
+                    .setDescription(newNotificationRule.getNotificationRuleData().getDescription())
+                    .setEventConditionId(
+                        newNotificationRule.getNotificationRuleData().getEventConditionId())
+                    .setEventConditionType(
+                        newNotificationRule.getNotificationRuleData().getEventConditionType())
+                    .setChannelId(newNotificationRule.getNotificationRuleData().getChannelId())
+                    .build());
 
     return builder.build();
   }

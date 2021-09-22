@@ -3,7 +3,6 @@ package org.hypertrace.notification.config.service;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
 import com.google.common.base.Preconditions;
-import org.hypertrace.config.validation.GrpcValidatorUtils;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.CreateNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.CreateNotificationRuleRequest;
@@ -22,9 +21,11 @@ public class NotificationConfigServiceRequestValidator {
     Preconditions.checkArgument(
         request.hasNewNotificationRule(), "Notification rule should be present");
     Preconditions.checkArgument(
-        !request.getNewNotificationRule().getNotificationRuleData().getRuleName().isBlank(), "Rule name cannot be empty");
+        !request.getNewNotificationRule().getNotificationRuleData().getRuleName().isBlank(),
+        "Rule name cannot be empty");
     Preconditions.checkArgument(
-        !request.getNewNotificationRule().getNotificationRuleData().getChannelId().isBlank(), "ChannelId cannot be empty");
+        !request.getNewNotificationRule().getNotificationRuleData().getChannelId().isBlank(),
+        "ChannelId cannot be empty");
   }
 
   public void validateUpdateNotificationRuleRequest(
@@ -33,9 +34,11 @@ public class NotificationConfigServiceRequestValidator {
     Preconditions.checkArgument(
         request.hasNotificationRule(), "Notification rule should be present");
     Preconditions.checkArgument(
-        !request.getNotificationRule().getNotificationRuleData().getRuleName().isBlank(), "Rule name cannot be empty");
+        !request.getNotificationRule().getNotificationRuleData().getRuleName().isBlank(),
+        "Rule name cannot be empty");
     Preconditions.checkArgument(
-        !request.getNotificationRule().getNotificationRuleData().getChannelId().isBlank(), "ChannelId cannot be empty");
+        !request.getNotificationRule().getNotificationRuleData().getChannelId().isBlank(),
+        "ChannelId cannot be empty");
   }
 
   public void validateGetAllNotificationRulesRequest(

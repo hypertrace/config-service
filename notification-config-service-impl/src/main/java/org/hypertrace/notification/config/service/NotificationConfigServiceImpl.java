@@ -55,19 +55,25 @@ public class NotificationConfigServiceImpl
       NotificationRule.Builder builder =
           NotificationRule.newBuilder()
               .setId(UUID.randomUUID().toString())
-              .setNotificationRuleData(NotificationRuleMutableData.newBuilder()
-                  .setRuleName(newNotificationRule.getNotificationRuleData().getRuleName())
-                  .setEventConditionId(newNotificationRule.getNotificationRuleData().getEventConditionId())
-                  .setEventConditionType(newNotificationRule.getNotificationRuleData().getEventConditionType())
-                  .setDescription(newNotificationRule.getNotificationRuleData().getDescription())
-                  .setChannelId(newNotificationRule.getNotificationRuleData().getChannelId())
-                  .setRateLimitIntervalDuration(newNotificationRule.getNotificationRuleData().getRateLimitIntervalDuration()));
+              .setNotificationRuleData(
+                  NotificationRuleMutableData.newBuilder()
+                      .setRuleName(newNotificationRule.getNotificationRuleData().getRuleName())
+                      .setEventConditionId(
+                          newNotificationRule.getNotificationRuleData().getEventConditionId())
+                      .setEventConditionType(
+                          newNotificationRule.getNotificationRuleData().getEventConditionType())
+                      .setDescription(
+                          newNotificationRule.getNotificationRuleData().getDescription())
+                      .setChannelId(newNotificationRule.getNotificationRuleData().getChannelId())
+                      .setRateLimitIntervalDuration(
+                          newNotificationRule
+                              .getNotificationRuleData()
+                              .getRateLimitIntervalDuration()));
 
       responseObserver.onNext(
           CreateNotificationRuleResponse.newBuilder()
               .setNotificationRule(
-                  notificationRuleStore.upsertObject(
-                      requestContext, builder.build()))
+                  notificationRuleStore.upsertObject(requestContext, builder.build()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -87,8 +93,7 @@ public class NotificationConfigServiceImpl
       responseObserver.onNext(
           UpdateNotificationRuleResponse.newBuilder()
               .setNotificationRule(
-                  notificationRuleStore.upsertObject(
-                      requestContext, request.getNotificationRule()))
+                  notificationRuleStore.upsertObject(requestContext, request.getNotificationRule()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -107,8 +112,7 @@ public class NotificationConfigServiceImpl
           requestContext, request);
       responseObserver.onNext(
           GetAllNotificationRulesResponse.newBuilder()
-              .addAllNotificationRules(
-                  notificationRuleStore.getAllObjects(requestContext))
+              .addAllNotificationRules(notificationRuleStore.getAllObjects(requestContext))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -125,8 +129,7 @@ public class NotificationConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       notificationConfigServiceRequestValidator.validateDeleteNotificationRuleRequest(
           requestContext, request);
-      notificationRuleStore.deleteObject(
-          requestContext, request.getNotificationRuleId());
+      notificationRuleStore.deleteObject(requestContext, request.getNotificationRuleId());
       responseObserver.onNext(DeleteNotificationRuleResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -152,8 +155,7 @@ public class NotificationConfigServiceImpl
       responseObserver.onNext(
           CreateNotificationChannelResponse.newBuilder()
               .setNotificationChannel(
-                  notificationChannelStore.upsertObject(
-                      requestContext, builder.build()))
+                  notificationChannelStore.upsertObject(requestContext, builder.build()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -213,8 +215,7 @@ public class NotificationConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       notificationConfigServiceRequestValidator.validateDeleteNotificationChannelRequest(
           requestContext, request);
-      notificationChannelStore.deleteObject(
-          requestContext, request.getNotificationChannelId());
+      notificationChannelStore.deleteObject(requestContext, request.getNotificationChannelId());
       responseObserver.onNext(DeleteNotificationChannelResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Exception e) {

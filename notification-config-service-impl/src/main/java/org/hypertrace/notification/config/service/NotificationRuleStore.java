@@ -1,7 +1,7 @@
 package org.hypertrace.notification.config.service;
 
-import static org.hypertrace.notification.config.service.NotificationConfigServiceConstants.NOTIFICATION_RULE_CONFIG_RESOURCE_NAME;
 import static org.hypertrace.notification.config.service.NotificationConfigServiceConstants.NOTIFICATION_CONFIG_NAMESPACE;
+import static org.hypertrace.notification.config.service.NotificationConfigServiceConstants.NOTIFICATION_RULE_CONFIG_RESOURCE_NAME;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
