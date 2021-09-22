@@ -11,7 +11,6 @@ import org.hypertrace.alerting.config.service.v1.DeleteEventConditionResponse;
 import org.hypertrace.alerting.config.service.v1.EventCondition;
 import org.hypertrace.alerting.config.service.v1.EventConditionConfigServiceGrpc;
 import org.hypertrace.alerting.config.service.v1.EventConditionMutableData;
-import org.hypertrace.alerting.config.service.v1.EventConditionMutableData.ConditionCase;
 import org.hypertrace.alerting.config.service.v1.GetAllEventConditionsRequest;
 import org.hypertrace.alerting.config.service.v1.GetAllEventConditionsResponse;
 import org.hypertrace.alerting.config.service.v1.NewEventCondition;
@@ -48,9 +47,7 @@ public class EventConditionConfigServiceImpl
       builder.setId(UUID.randomUUID().toString());
       responseObserver.onNext(
           CreateEventConditionResponse.newBuilder()
-              .setEventCondition(
-                  eventConditionStore.upsertObject(
-                      requestContext, builder.build()))
+              .setEventCondition(eventConditionStore.upsertObject(requestContext, builder.build()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
