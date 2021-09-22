@@ -12,7 +12,7 @@ import org.hypertrace.alerting.config.service.v1.DeleteEventConditionRequest;
 import org.hypertrace.alerting.config.service.v1.EventCondition;
 import org.hypertrace.alerting.config.service.v1.EventConditionConfigServiceGrpc;
 import org.hypertrace.alerting.config.service.v1.EventConditionConfigServiceGrpc.EventConditionConfigServiceBlockingStub;
-import org.hypertrace.alerting.config.service.v1.EventConditionData;
+import org.hypertrace.alerting.config.service.v1.EventConditionMutableData;
 import org.hypertrace.alerting.config.service.v1.Filter;
 import org.hypertrace.alerting.config.service.v1.GetAllEventConditionsRequest;
 import org.hypertrace.alerting.config.service.v1.LeafFilter;
@@ -85,7 +85,7 @@ public class EventConditionConfigServiceImplTest {
     EventCondition eventCondition1ToUpdate =
         eventCondition1.toBuilder()
             .setEventConditionData(
-                EventConditionData.newBuilder()
+                EventConditionMutableData.newBuilder()
                     .setMetricAnomalyEventCondition(getMetricAnomalyEventCondition("PT5M"))
                     .build())
             .build();
@@ -121,7 +121,7 @@ public class EventConditionConfigServiceImplTest {
   private NewEventCondition getNewEventCondition() {
     return NewEventCondition.newBuilder()
         .setEventConditionData(
-            EventConditionData.newBuilder()
+            EventConditionMutableData.newBuilder()
                 .setMetricAnomalyEventCondition(getMetricAnomalyEventCondition("PT1M"))
                 .build())
         .build();

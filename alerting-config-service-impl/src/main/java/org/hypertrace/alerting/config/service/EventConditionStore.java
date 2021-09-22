@@ -7,8 +7,8 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.alerting.config.service.v1.EventCondition;
-import org.hypertrace.alerting.config.service.v1.EventConditionData;
-import org.hypertrace.alerting.config.service.v1.EventConditionData.ConditionCase;
+import org.hypertrace.alerting.config.service.v1.EventConditionMutableData;
+import org.hypertrace.alerting.config.service.v1.EventConditionMutableData.ConditionCase;
 import org.hypertrace.alerting.config.service.v1.NewEventCondition;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
@@ -38,7 +38,7 @@ public class EventConditionStore extends IdentifiedObjectStore<EventCondition> {
     if (newEventCondition.getEventConditionData().getConditionCase()
         == ConditionCase.METRIC_ANOMALY_EVENT_CONDITION) {
       builder.setEventConditionData(
-          EventConditionData.newBuilder()
+          EventConditionMutableData.newBuilder()
               .setMetricAnomalyEventCondition(
                   newEventCondition.getEventConditionData().getMetricAnomalyEventCondition()));
     } else {
