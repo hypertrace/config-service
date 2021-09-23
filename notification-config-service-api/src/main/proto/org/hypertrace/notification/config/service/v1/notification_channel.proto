@@ -4,10 +4,6 @@ option java_multiple_files = true;
 
 package org.hypertrace.notification.config.service.v1;
 
-message NewNotificationChannel {
-  NotificationChannelMutableData notification_channel_mutable_data = 1;
-}
-
 message NotificationChannel {
   string id = 1;
   NotificationChannelMutableData notification_channel_mutable_data = 2;
@@ -15,12 +11,8 @@ message NotificationChannel {
 
 message NotificationChannelMutableData {
   string channel_name = 1;
-  NotificationChannelConfig notification_channel_config = 2;
-}
-
-message NotificationChannelConfig {
-  repeated EmailChannelConfig email_channel_config = 1;
-  repeated WebhookChannelConfig webhook_channel_config = 2;
+  repeated EmailChannelConfig email_channel_config = 2;
+  repeated WebhookChannelConfig webhook_channel_config = 3;
 }
 
 enum WebhookFormat {

@@ -4,10 +4,6 @@ option java_multiple_files = true;
 
 package org.hypertrace.notification.config.service.v1;
 
-message NewNotificationRule {
-  NotificationRuleMutableData notification_rule_data = 1;
-}
-
 message NotificationRule {
   string id = 1;
   NotificationRuleMutableData notification_rule_data = 2;

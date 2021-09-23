@@ -21,7 +21,7 @@ service NotificationConfigService {
 }
 
 message CreateNotificationRuleRequest {
-  NewNotificationRule new_notification_rule = 1;
+  NotificationRuleMutableData notification_rule_mutable_data = 1;
 }
 
 message CreateNotificationRuleResponse {
@@ -49,7 +49,7 @@ message DeleteNotificationRuleRequest {
 message DeleteNotificationRuleResponse {}
 
 message CreateNotificationChannelRequest {
-  NewNotificationChannel new_notification_channel = 1;
+  NotificationChannelMutableData notification_channel_mutable_data = 1;
 }
 
 message CreateNotificationChannelResponse {
