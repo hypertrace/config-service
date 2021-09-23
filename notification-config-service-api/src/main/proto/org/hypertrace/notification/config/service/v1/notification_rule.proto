@@ -6,7 +6,7 @@ package org.hypertrace.notification.config.service.v1;
 
 message NotificationRule {
   string id = 1;
-  NotificationRuleMutableData notification_rule_data = 2;
+  NotificationRuleMutableData notification_rule_mutable_data = 2;
 }
 
 message NotificationRuleMutableData {

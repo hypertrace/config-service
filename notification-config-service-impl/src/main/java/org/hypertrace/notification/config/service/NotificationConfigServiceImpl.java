@@ -51,7 +51,7 @@ public class NotificationConfigServiceImpl
       NotificationRule.Builder builder =
           NotificationRule.newBuilder()
               .setId(UUID.randomUUID().toString())
-              .setNotificationRuleData(request.getNotificationRuleMutableData());
+              .setNotificationRuleMutableData(request.getNotificationRuleMutableData());
 
       responseObserver.onNext(
           CreateNotificationRuleResponse.newBuilder()
