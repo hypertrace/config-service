@@ -32,22 +32,17 @@ public class NotificationConfigServiceRequestValidator {
         request.hasNotificationRule(), "Notification rule should be present");
     Preconditions.checkArgument(
         !request.getNotificationRule().getId().isBlank(), "Id cannot be empty");
-    validateNotificationRuleMutableData(request.getNotificationRule().getNotificationRuleMutableData());
+    validateNotificationRuleMutableData(
+        request.getNotificationRule().getNotificationRuleMutableData());
   }
 
   private void validateNotificationRuleMutableData(NotificationRuleMutableData data) {
+    Preconditions.checkArgument(!data.getRuleName().isBlank(), "Rule name cannot be empty");
+    Preconditions.checkArgument(!data.getChannelId().isBlank(), "ChannelId cannot be empty");
     Preconditions.checkArgument(
-        !data.getRuleName().isBlank(),
-        "Rule name cannot be empty");
+        !data.getEventConditionId().isBlank(), "EventConditionId cannot be empty");
     Preconditions.checkArgument(
-        !data.getChannelId().isBlank(),
-        "ChannelId cannot be empty");
-    Preconditions.checkArgument(
-        !data.getEventConditionId().isBlank(),
-        "EventConditionId cannot be empty");
-    Preconditions.checkArgument(
-        !data.getEventConditionType().isBlank(),
-        "EventConditionType cannot be empty");
+        !data.getEventConditionType().isBlank(), "EventConditionType cannot be empty");
   }
 
   public void validateGetAllNotificationRulesRequest(
@@ -66,7 +61,8 @@ public class NotificationConfigServiceRequestValidator {
       RequestContext requestContext, CreateNotificationChannelRequest request) {
     validateRequestContextOrThrow(requestContext);
     Preconditions.checkArgument(
-        request.hasNotificationChannelMutableData(), "NotificationChannelMutableData should be present");
+        request.hasNotificationChannelMutableData(),
+        "NotificationChannelMutableData should be present");
     validateNotificationChannelMutableData(request.getNotificationChannelMutableData());
   }
 
@@ -77,16 +73,14 @@ public class NotificationConfigServiceRequestValidator {
         request.hasNotificationChannel(), "Notification channel should be present");
     Preconditions.checkArgument(
         !request.getNotificationChannel().getId().isBlank(), "Id cannot be empty");
-    validateNotificationChannelMutableData(request.getNotificationChannel().getNotificationChannelMutableData());
+    validateNotificationChannelMutableData(
+        request.getNotificationChannel().getNotificationChannelMutableData());
   }
 
   private void validateNotificationChannelMutableData(NotificationChannelMutableData data) {
+    Preconditions.checkArgument(!data.getChannelName().isBlank(), "Channel name should be present");
     Preconditions.checkArgument(
-        !data.getChannelName().isBlank(),
-        "Channel name should be present");
-    Preconditions.checkArgument(
-        data.getEmailChannelConfigCount() != 0
-            || data.getWebhookChannelConfigCount() != 0,
+        data.getEmailChannelConfigCount() != 0 || data.getWebhookChannelConfigCount() != 0,
         "Either email or webhook config should be present");
   }
 

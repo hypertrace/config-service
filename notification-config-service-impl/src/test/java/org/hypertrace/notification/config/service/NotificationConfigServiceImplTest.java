@@ -41,7 +41,8 @@ public class NotificationConfigServiceImplTest {
 
   @Test
   void createReadUpdateDeleteNotificationRules() {
-    NotificationChannelMutableData notificationChannelMutableData1 = getNotificationChannelMutableData("channel1");
+    NotificationChannelMutableData notificationChannelMutableData1 =
+        getNotificationChannelMutableData("channel1");
     NotificationChannel channel =
         notificationStub
             .createNotificationChannel(
@@ -49,8 +50,10 @@ public class NotificationConfigServiceImplTest {
                     .setNotificationChannelMutableData(notificationChannelMutableData1)
                     .build())
             .getNotificationChannel();
-    NotificationRuleMutableData notificationRuleMutableData1 = getNotificationRuleMutableData("rule1", channel.getId());
-    NotificationRuleMutableData notificationRuleMutableData2 = getNotificationRuleMutableData("rule2", channel.getId());
+    NotificationRuleMutableData notificationRuleMutableData1 =
+        getNotificationRuleMutableData("rule1", channel.getId());
+    NotificationRuleMutableData notificationRuleMutableData2 =
+        getNotificationRuleMutableData("rule2", channel.getId());
     NotificationRule notificationRule1 =
         notificationStub
             .createNotificationRule(
@@ -59,7 +62,8 @@ public class NotificationConfigServiceImplTest {
                     .build())
             .getNotificationRule();
     assertEquals(
-        getNotificationRule(notificationRuleMutableData1, notificationRule1.getId()), notificationRule1);
+        getNotificationRule(notificationRuleMutableData1, notificationRule1.getId()),
+        notificationRule1);
 
     NotificationRule notificationRule2 =
         notificationStub
@@ -110,8 +114,10 @@ public class NotificationConfigServiceImplTest {
 
   @Test
   void createReadUpdateDeleteNotificationChannels() {
-    NotificationChannelMutableData notificationChannelMutableData1 = getNotificationChannelMutableData("channel1");
-    NotificationChannelMutableData notificationChannelMutableData2 = getNotificationChannelMutableData("channel2");
+    NotificationChannelMutableData notificationChannelMutableData1 =
+        getNotificationChannelMutableData("channel1");
+    NotificationChannelMutableData notificationChannelMutableData2 =
+        getNotificationChannelMutableData("channel2");
     NotificationChannel notificationChannel1 =
         notificationStub
             .createNotificationChannel(
@@ -172,12 +178,12 @@ public class NotificationConfigServiceImplTest {
   private NotificationRuleMutableData getNotificationRuleMutableData(
       String name, String channelId) {
     return NotificationRuleMutableData.newBuilder()
-                .setRuleName(name)
-                .setDescription("sample rule")
-                .setChannelId(channelId)
-                .setEventConditionType("metricAnomalyEventCondition")
-                .setEventConditionId("rule-1")
-                .build();
+        .setRuleName(name)
+        .setDescription("sample rule")
+        .setChannelId(channelId)
+        .setEventConditionType("metricAnomalyEventCondition")
+        .setEventConditionId("rule-1")
+        .build();
   }
 
   private NotificationRule getNotificationRule(
@@ -190,8 +196,10 @@ public class NotificationConfigServiceImplTest {
   }
 
   private NotificationChannelMutableData getNotificationChannelMutableData(String name) {
-    return NotificationChannelMutableData.newBuilder().setChannelName(name).addEmailChannelConfig(
-        EmailChannelConfig.newBuilder().setAddress("localhost")).build();
+    return NotificationChannelMutableData.newBuilder()
+        .setChannelName(name)
+        .addEmailChannelConfig(EmailChannelConfig.newBuilder().setAddress("localhost"))
+        .build();
   }
 
   private NotificationChannel getNotificationChannel(

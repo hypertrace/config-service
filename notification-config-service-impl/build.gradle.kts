@@ -11,13 +11,8 @@ dependencies {
     implementation(projects.objectStore)
     implementation(projects.validationUtils)
 
-    implementation(libs.guava)
-    implementation(libs.rxjava3)
-
     implementation(libs.hypertrace.grpcutils.context)
     implementation(libs.hypertrace.grpcutils.client)
-    implementation(libs.hypertrace.grpcutils.rxserver)
-    implementation(libs.hypertrace.grpcutils.rxclient)
     implementation(libs.slf4j.api)
 
     annotationProcessor(libs.lombok)
