@@ -1,13 +1,15 @@
 package org.hypertrace.label.application.rule.config.service;
 
+import com.google.protobuf.Value;
 import io.grpc.Channel;
 import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
@@ -77,17 +79,12 @@ public class LabelApplicationRuleConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.requestValidator.validateOrThrow(requestContext, request);
-      String ruleId = request.getId();
-      Optional<LabelApplicationRule> optionalLabelApplicationRule =
-          this.labelApplicationRuleStore.getObject(requestContext, ruleId);
-      if (optionalLabelApplicationRule.isEmpty()) {
-        responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
-        return;
-      }
+      LabelApplicationRule rule =
+          this.labelApplicationRuleStore
+              .getObject(requestContext, request.getId())
+              .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       responseObserver.onNext(
-          GetLabelApplicationRuleResponse.newBuilder()
-              .setLabelApplicationRule(optionalLabelApplicationRule.get())
-              .build());
+          GetLabelApplicationRuleResponse.newBuilder().setLabelApplicationRule(rule).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       responseObserver.onError(e);
@@ -120,15 +117,12 @@ public class LabelApplicationRuleConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.requestValidator.validateOrThrow(requestContext, request);
-      String ruleId = request.getId();
-      LabelApplicationRule labelApplicationRule =
-          LabelApplicationRule.newBuilder().setId(ruleId).setData(request.getData()).build();
-      if (this.labelApplicationRuleStore.getObject(requestContext, ruleId).isEmpty()) {
-        responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
-        return;
-      }
+      LabelApplicationRule existingRule =
+          this.labelApplicationRuleStore
+              .getObject(requestContext, request.getId())
+              .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       LabelApplicationRule updateLabelApplicationRule =
-          this.labelApplicationRuleStore.upsertObject(requestContext, labelApplicationRule);
+          existingRule.toBuilder().setData(request.getData()).build();
       responseObserver.onNext(
           UpdateLabelApplicationRuleResponse.newBuilder()
               .setLabelApplicationRule(updateLabelApplicationRule)
@@ -146,17 +140,45 @@ public class LabelApplicationRuleConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.requestValidator.validateOrThrow(requestContext, request);
-      String ruleId = request.getId();
-      if (this.labelApplicationRuleStore.getObject(requestContext, ruleId).isEmpty()) {
-        responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
-        return;
-      }
-      ;
-      this.labelApplicationRuleStore.deleteObject(requestContext, ruleId);
+      this.labelApplicationRuleStore
+          .getObject(requestContext, request.getId())
+          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      this.labelApplicationRuleStore.deleteObject(requestContext, request.getId());
       responseObserver.onNext(DeleteLabelApplicationRuleResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Exception e) {
       responseObserver.onError(e);
+    }
+  }
+
+  private class LabelApplicationRuleStore extends IdentifiedObjectStore<LabelApplicationRule> {
+    LabelApplicationRuleStore(
+        ConfigServiceBlockingStub stub,
+        String labelApplicationRuleNamespace,
+        String labelApplicationRuleName) {
+      super(stub, labelApplicationRuleNamespace, labelApplicationRuleName);
+    }
+
+    @Override
+    protected Optional<LabelApplicationRule> buildObjectFromValue(Value value) {
+      try {
+        LabelApplicationRule.Builder builder = LabelApplicationRule.newBuilder();
+        ConfigProtoConverter.mergeFromValue(value, builder);
+        return Optional.of(builder.build());
+      } catch (Exception e) {
+        return Optional.empty();
+      }
+    }
+
+    @SneakyThrows
+    @Override
+    protected Value buildValueFromObject(LabelApplicationRule object) {
+      return ConfigProtoConverter.convertToValue(object);
+    }
+
+    @Override
+    protected String getContextFromObject(LabelApplicationRule object) {
+      return object.getId();
     }
   }
 }
