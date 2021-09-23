@@ -1,7 +1,6 @@
 package org.hypertrace.notification.config.service;
 
 import static org.hypertrace.notification.config.service.NotificationConfigServiceConstants.NOTIFICATION_CONFIG_NAMESPACE;
-import static org.hypertrace.notification.config.service.NotificationConfigServiceConstants.NOTIFICATION_RULE_CONFIG_RESOURCE_NAME;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
@@ -17,6 +16,8 @@ import org.hypertrace.notification.config.service.v1.NotificationRule;
 
 @Slf4j
 public class NotificationRuleStore extends IdentifiedObjectStore<NotificationRule> {
+
+  private static final String NOTIFICATION_RULE_CONFIG_RESOURCE_NAME = "notificationRuleConfig";
 
   public NotificationRuleStore(Channel channel) {
     super(
