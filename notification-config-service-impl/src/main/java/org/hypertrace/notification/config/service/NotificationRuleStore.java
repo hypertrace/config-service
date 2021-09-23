@@ -35,7 +35,7 @@ public class NotificationRuleStore extends IdentifiedObjectStore<NotificationRul
       return Optional.of(builder.build());
     } catch (InvalidProtocolBufferException e) {
       log.error("Conversion failed. value {}", value, e);
-      throw new RuntimeException(e);
+      return Optional.empty();
     }
   }
 

@@ -4,11 +4,13 @@ import static org.hypertrace.notification.config.service.NotificationConfigServi
 import static org.hypertrace.notification.config.service.NotificationConfigServiceConstants.NOTIFICATION_CONFIG_NAMESPACE;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.Option;
 import com.google.protobuf.Value;
 import io.grpc.Channel;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.nullness.Opt;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -35,7 +37,7 @@ public class NotificationChannelStore extends IdentifiedObjectStore<Notification
       return Optional.of(builder.build());
     } catch (InvalidProtocolBufferException e) {
       log.error("Conversion failed. value {}", value, e);
-      throw new RuntimeException(e);
+      return Optional.empty();
     }
   }
 
