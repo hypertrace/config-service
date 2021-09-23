@@ -1,9 +1,16 @@
 package org.hypertrace.label.application.rule.config.service;
 
 import io.grpc.Channel;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
+import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplicationRuleRequest;
 import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplicationRuleResponse;
@@ -20,11 +27,22 @@ import org.hypertrace.label.application.rule.config.service.v1.UpdateLabelApplic
 
 public class LabelApplicationRuleConfigServiceImpl
     extends LabelApplicationRuleConfigServiceGrpc.LabelApplicationRuleConfigServiceImplBase {
-  private final ConfigServiceCoordinator configServiceCoordinator;
+  public static final String LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAME = "label-config";
+  public static final String LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAMESPACE =
+      "label-application-rules";
+  private final IdentifiedObjectStore<LabelApplicationRule> labelApplicationRuleStore;
   private final LabelApplicationRuleValidator requestValidator;
 
   public LabelApplicationRuleConfigServiceImpl(Channel configChannel) {
-    this.configServiceCoordinator = new ConfigServiceCoordinatorImpl(configChannel);
+    ConfigServiceBlockingStub configServiceBlockingStub =
+        ConfigServiceGrpc.newBlockingStub(configChannel)
+            .withCallCredentials(
+                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+    this.labelApplicationRuleStore =
+        new LabelApplicationRuleStore(
+            configServiceBlockingStub,
+            LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAMESPACE,
+            LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAME);
     this.requestValidator = new LabelApplicationRuleValidatorImpl();
   }
 
@@ -41,7 +59,7 @@ public class LabelApplicationRuleConfigServiceImpl
               .setData(request.getData())
               .build();
       LabelApplicationRule createdLabelApplicationRule =
-          configServiceCoordinator.upsertLabelApplicationRule(requestContext, labelApplicationRule);
+          this.labelApplicationRuleStore.upsertObject(requestContext, labelApplicationRule);
       responseObserver.onNext(
           CreateLabelApplicationRuleResponse.newBuilder()
               .setLabelApplicationRule(createdLabelApplicationRule)
@@ -60,11 +78,15 @@ public class LabelApplicationRuleConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.requestValidator.validateOrThrow(requestContext, request);
       String ruleId = request.getId();
-      LabelApplicationRule labelApplicationRule =
-          configServiceCoordinator.getLabelApplicationRule(requestContext, ruleId);
+      Optional<LabelApplicationRule> optionalLabelApplicationRule =
+          this.labelApplicationRuleStore.getObject(requestContext, ruleId);
+      if (optionalLabelApplicationRule.isEmpty()) {
+        responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
+        return;
+      }
       responseObserver.onNext(
           GetLabelApplicationRuleResponse.newBuilder()
-              .setLabelApplicationRule(labelApplicationRule)
+              .setLabelApplicationRule(optionalLabelApplicationRule.get())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -80,7 +102,7 @@ public class LabelApplicationRuleConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.requestValidator.validateOrThrow(requestContext, request);
       List<LabelApplicationRule> labelApplicationRules =
-          configServiceCoordinator.getLabelApplicationRules(requestContext);
+          this.labelApplicationRuleStore.getAllObjects(requestContext);
       responseObserver.onNext(
           GetLabelApplicationRulesResponse.newBuilder()
               .addAllLabelApplicationRules(labelApplicationRules)
@@ -101,9 +123,12 @@ public class LabelApplicationRuleConfigServiceImpl
       String ruleId = request.getId();
       LabelApplicationRule labelApplicationRule =
           LabelApplicationRule.newBuilder().setId(ruleId).setData(request.getData()).build();
-      configServiceCoordinator.getLabelApplicationRule(requestContext, ruleId);
+      if (this.labelApplicationRuleStore.getObject(requestContext, ruleId).isEmpty()) {
+        responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
+        return;
+      }
       LabelApplicationRule updateLabelApplicationRule =
-          configServiceCoordinator.upsertLabelApplicationRule(requestContext, labelApplicationRule);
+          this.labelApplicationRuleStore.upsertObject(requestContext, labelApplicationRule);
       responseObserver.onNext(
           UpdateLabelApplicationRuleResponse.newBuilder()
               .setLabelApplicationRule(updateLabelApplicationRule)
@@ -122,8 +147,12 @@ public class LabelApplicationRuleConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.requestValidator.validateOrThrow(requestContext, request);
       String ruleId = request.getId();
-      configServiceCoordinator.getLabelApplicationRule(requestContext, ruleId);
-      configServiceCoordinator.deleteLabelApplicationRule(requestContext, ruleId);
+      if (this.labelApplicationRuleStore.getObject(requestContext, ruleId).isEmpty()) {
+        responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
+        return;
+      }
+      ;
+      this.labelApplicationRuleStore.deleteObject(requestContext, ruleId);
       responseObserver.onNext(DeleteLabelApplicationRuleResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Exception e) {

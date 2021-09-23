@@ -1,5 +1,6 @@
 package org.hypertrace.label.application.rule.config.service;
 
+import org.hypertrace.config.validation.GrpcValidatorUtils;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplicationRuleRequest;
 import org.hypertrace.label.application.rule.config.service.v1.DeleteLabelApplicationRuleRequest;
@@ -20,7 +21,7 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
   public void validateOrThrow(
       RequestContext requestContext,
       CreateLabelApplicationRuleRequest createLabelApplicationRuleRequest) {
-    validateRequestContext(requestContext);
+    GrpcValidatorUtils.validateRequestContextOrThrow(requestContext);
     validateLabelApplicationRuleData(createLabelApplicationRuleRequest.getData());
   }
 
@@ -28,21 +29,21 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
   public void validateOrThrow(
       RequestContext requestContext,
       GetLabelApplicationRuleRequest getLabelApplicationRuleRequest) {
-    validateRequestContext(requestContext);
+    GrpcValidatorUtils.validateRequestContextOrThrow(requestContext);
   }
 
   @Override
   public void validateOrThrow(
       RequestContext requestContext,
       GetLabelApplicationRulesRequest getLabelApplicationRulesRequest) {
-    validateRequestContext(requestContext);
+    GrpcValidatorUtils.validateRequestContextOrThrow(requestContext);
   }
 
   @Override
   public void validateOrThrow(
       RequestContext requestContext,
       UpdateLabelApplicationRuleRequest updateLabelApplicationRulesRequest) {
-    validateRequestContext(requestContext);
+    GrpcValidatorUtils.validateRequestContextOrThrow(requestContext);
     validateLabelApplicationRuleData(updateLabelApplicationRulesRequest.getData());
   }
 
@@ -50,13 +51,7 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
   public void validateOrThrow(
       RequestContext requestContext,
       DeleteLabelApplicationRuleRequest deleteLabelApplicationRuleRequest) {
-    validateRequestContext(requestContext);
-  }
-
-  private void validateRequestContext(RequestContext requestContext) {
-    if (requestContext.getTenantId().isEmpty()) {
-      throw new IllegalArgumentException("Missing expected Tenant ID in request");
-    }
+    GrpcValidatorUtils.validateRequestContextOrThrow(requestContext);
   }
 
   private void validateLabelApplicationRuleData(LabelApplicationRuleData labelApplicationRuleData) {

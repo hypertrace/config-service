@@ -7,17 +7,13 @@ plugins {
 dependencies {
     api(projects.labelApplicationRuleConfigServiceApi)
     implementation(projects.configServiceApi)
+    implementation(projects.objectStore)
+    implementation(projects.validationUtils)
     implementation(projects.configProtoConverter)
     implementation(libs.typesafe.config)
     implementation(libs.protobuf.javautil)
-    implementation(libs.slf4j.api)
-    implementation(libs.guava)
-    implementation(libs.rxjava3)
-
     implementation(libs.hypertrace.grpcutils.context)
     implementation(libs.hypertrace.grpcutils.client)
-    implementation(libs.hypertrace.grpcutils.rxserver)
-    implementation(libs.hypertrace.grpcutils.rxclient)
 
     annotationProcessor(libs.lombok)
     compileOnly(libs.lombok)
