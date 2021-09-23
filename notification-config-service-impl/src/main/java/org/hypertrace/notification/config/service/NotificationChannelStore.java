@@ -17,7 +17,8 @@ import org.hypertrace.notification.config.service.v1.NotificationChannel;
 @Slf4j
 public class NotificationChannelStore extends IdentifiedObjectStore<NotificationChannel> {
 
-  private static final String NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME = "notificationChannelConfig";
+  private static final String NOTIFICATION_CHANNEL_CONFIG_RESOURCE_NAME =
+      "notificationChannelConfig";
 
   public NotificationChannelStore(Channel channel) {
     super(
