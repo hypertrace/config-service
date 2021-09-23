@@ -29,8 +29,8 @@ import org.hypertrace.label.application.rule.config.service.v1.UpdateLabelApplic
 
 public class LabelApplicationRuleConfigServiceImpl
     extends LabelApplicationRuleConfigServiceGrpc.LabelApplicationRuleConfigServiceImplBase {
-  public static final String LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAME = "label-config";
-  public static final String LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAMESPACE =
+  private static final String LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAME = "label-config";
+  private static final String LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAMESPACE =
       "label-application-rules";
   private final IdentifiedObjectStore<LabelApplicationRule> labelApplicationRuleStore;
   private final LabelApplicationRuleValidator requestValidator;
@@ -40,11 +40,7 @@ public class LabelApplicationRuleConfigServiceImpl
         ConfigServiceGrpc.newBlockingStub(configChannel)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
-    this.labelApplicationRuleStore =
-        new LabelApplicationRuleStore(
-            configServiceBlockingStub,
-            LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAMESPACE,
-            LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAME);
+    this.labelApplicationRuleStore = new LabelApplicationRuleStore(configServiceBlockingStub);
     this.requestValidator = new LabelApplicationRuleValidatorImpl();
   }
 
@@ -151,12 +147,13 @@ public class LabelApplicationRuleConfigServiceImpl
     }
   }
 
-  private class LabelApplicationRuleStore extends IdentifiedObjectStore<LabelApplicationRule> {
-    LabelApplicationRuleStore(
-        ConfigServiceBlockingStub stub,
-        String labelApplicationRuleNamespace,
-        String labelApplicationRuleName) {
-      super(stub, labelApplicationRuleNamespace, labelApplicationRuleName);
+  private static class LabelApplicationRuleStore
+      extends IdentifiedObjectStore<LabelApplicationRule> {
+    LabelApplicationRuleStore(ConfigServiceBlockingStub stub) {
+      super(
+          stub,
+          LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAMESPACE,
+          LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAME);
     }
 
     @Override
