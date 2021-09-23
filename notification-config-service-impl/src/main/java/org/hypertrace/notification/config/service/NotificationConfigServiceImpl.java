@@ -18,12 +18,9 @@ import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsR
 import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsResponse;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesRequest;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesResponse;
-import org.hypertrace.notification.config.service.v1.NewNotificationRule;
 import org.hypertrace.notification.config.service.v1.NotificationChannel;
-import org.hypertrace.notification.config.service.v1.NotificationChannelMutableData;
 import org.hypertrace.notification.config.service.v1.NotificationConfigServiceGrpc;
 import org.hypertrace.notification.config.service.v1.NotificationRule;
-import org.hypertrace.notification.config.service.v1.NotificationRuleMutableData;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelResponse;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationRuleRequest;
@@ -51,24 +48,10 @@ public class NotificationConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       notificationConfigServiceRequestValidator.validateCreateNotificationRuleRequest(
           requestContext, request);
-      NewNotificationRule newNotificationRule = request.getNewNotificationRule();
       NotificationRule.Builder builder =
           NotificationRule.newBuilder()
               .setId(UUID.randomUUID().toString())
-              .setNotificationRuleData(
-                  NotificationRuleMutableData.newBuilder()
-                      .setRuleName(newNotificationRule.getNotificationRuleData().getRuleName())
-                      .setEventConditionId(
-                          newNotificationRule.getNotificationRuleData().getEventConditionId())
-                      .setEventConditionType(
-                          newNotificationRule.getNotificationRuleData().getEventConditionType())
-                      .setDescription(
-                          newNotificationRule.getNotificationRuleData().getDescription())
-                      .setChannelId(newNotificationRule.getNotificationRuleData().getChannelId())
-                      .setRateLimitIntervalDuration(
-                          newNotificationRule
-                              .getNotificationRuleData()
-                              .getRateLimitIntervalDuration()));
+              .setNotificationRuleData(request.getNotificationRuleMutableData());
 
       responseObserver.onNext(
           CreateNotificationRuleResponse.newBuilder()
@@ -146,16 +129,10 @@ public class NotificationConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       notificationConfigServiceRequestValidator.validateCreateNotificationChannelRequest(
           requestContext, request);
-      NotificationChannelMutableData notificationChannelMutableData =
-          request.getNewNotificationChannel().getNotificationChannelMutableData();
       NotificationChannel.Builder builder =
           NotificationChannel.newBuilder()
               .setId(UUID.randomUUID().toString())
-              .setNotificationChannelMutableData(
-                  NotificationChannelMutableData.newBuilder()
-                      .setChannelName(notificationChannelMutableData.getChannelName())
-                      .setNotificationChannelConfig(
-                          notificationChannelMutableData.getNotificationChannelConfig()));
+              .setNotificationChannelMutableData(request.getNotificationChannelMutableData());
       responseObserver.onNext(
           CreateNotificationChannelResponse.newBuilder()
               .setNotificationChannel(
