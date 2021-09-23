@@ -7,6 +7,8 @@ public class RiskConfigServiceConfig {
 
   private static final String RISK_LEVEL_CONFIG_VALUES = "riskLevelConfigValues";
   private static final String RISK_FACTOR_GRID_CONFIG_VALUES = "riskFactorGridConfigValues";
+  private static final String RISK_LIKELIHOOD_CONFIGS = "riskLikelihoodConfigs";
+  private static final String RISK_IMPACT_CONFIGS = "riskImpactConfigs";
 
   private final Config config;
 
@@ -15,14 +17,22 @@ public class RiskConfigServiceConfig {
   }
 
   public Config getRiskLevelConfigValues() {
-    return config.hasPath(RISK_LEVEL_CONFIG_VALUES)
-        ? config.getConfig(RISK_LEVEL_CONFIG_VALUES)
-        : ConfigFactory.empty();
+    return getConfig(RISK_LEVEL_CONFIG_VALUES);
   }
 
   public Config getRiskFactorGridConfigValues() {
-    return config.hasPath(RISK_FACTOR_GRID_CONFIG_VALUES)
-        ? config.getConfig(RISK_FACTOR_GRID_CONFIG_VALUES)
-        : ConfigFactory.empty();
+    return getConfig(RISK_FACTOR_GRID_CONFIG_VALUES);
+  }
+
+  public Config getRiskLikelihoodConfigs() {
+    return getConfig(RISK_LIKELIHOOD_CONFIGS);
+  }
+
+  public Config getRiskImpactConfigs() {
+    return getConfig(RISK_IMPACT_CONFIGS);
+  }
+
+  private Config getConfig(String path) {
+    return config.hasPath(path) ? config.getConfig(path) : ConfigFactory.empty();
   }
 }

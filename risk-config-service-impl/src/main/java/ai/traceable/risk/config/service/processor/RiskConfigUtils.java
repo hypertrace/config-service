@@ -14,11 +14,9 @@ public abstract class RiskConfigUtils<M extends Message> {
   private static final JsonFormat.Parser JSON_PARSER = JsonFormat.parser().ignoringUnknownFields();
   private static final ConfigRenderOptions CONFIG_RENDER_CONCISE = ConfigRenderOptions.concise();
 
-  @SneakyThrows
   public M mergeConfigs(Config config, String filePath) {
     return mergeConfigs(
-        (M) mergeFromConfig(config, getNewBuilder()).build(),
-        (M) mergeFromConfigFile(filePath, getNewBuilder()).build());
+        (M) buildFromConfig(config).build(), (M) buildFromConfigFile(filePath).build());
   }
 
   public abstract M.Builder getNewBuilder();
@@ -38,13 +36,15 @@ public abstract class RiskConfigUtils<M extends Message> {
   }
 
   @SneakyThrows
-  private M.Builder mergeFromConfig(Config config, M.Builder builder) {
+  private M.Builder buildFromConfig(Config config) {
+    M.Builder builder = getNewBuilder();
     JSON_PARSER.merge(config.root().render(CONFIG_RENDER_CONCISE), builder);
     return builder;
   }
 
   @SneakyThrows
-  private M.Builder mergeFromConfigFile(String filePath, M.Builder builder) {
+  private M.Builder buildFromConfigFile(String filePath) {
+    M.Builder builder = getNewBuilder();
     JSON_PARSER.merge(loadConfigFile(filePath).root().render(CONFIG_RENDER_CONCISE), builder);
     return builder;
   }

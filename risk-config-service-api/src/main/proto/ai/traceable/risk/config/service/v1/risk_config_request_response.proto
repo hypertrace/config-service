@@ -8,16 +8,6 @@ import "ai/traceable/risk/config/service/v1/risk_scoring_configs.proto";
 import "ai/traceable/risk/config/service/v1/risk_factor_configs.proto";
 
 
-message GetAllRiskConfigsRequest {
-}
-
-message GetAllRiskConfigsResponse {
-  RiskLevelConfig risk_level_config = 1;
-  RiskFactorGridConfig risk_factor_grid_config = 2;
-  repeated RiskFactor likelihood_risk_factors = 3;
-  repeated RiskFactor impact_risk_factors = 4;
-}
-
 message GetRiskScoringConfigsRequest {
 }
 
@@ -26,18 +16,18 @@ message GetRiskScoringConfigsResponse {
   RiskFactorGridConfig risk_factor_grid_config = 2;
 }
 
-message GetRiskLikelihoodFactorsRequest {
+message GetRiskLikelihoodConfigsRequest {
 }
 
-message GetRiskLikelihoodFactorsResponse {
-  repeated RiskFactor risk_factors = 1;
+message GetRiskLikelihoodConfigsResponse {
+  RiskContributorConfigs risk_likelihood_configs = 1;
 }
 
-message GetRiskImpactFactorsRequest {
+message GetRiskImpactConfigsRequest {
 }
 
-message GetRiskImpactFactorsResponse {
-  repeated RiskFactor risk_factors = 1;
+message GetRiskImpactConfigsResponse {
+  RiskContributorConfigs risk_impact_configs = 1;
 }
 
 message UpdateRiskLevelConfigRequest {
@@ -56,20 +46,20 @@ message UpdateRiskFactorGridConfigResponse {
   RiskFactorGridConfig risk_factor_grid_config = 1;
 }
 
-message UpdateRiskLikelihoodFactorConfigsRequest {
+message UpdateRiskLikelihoodConfigsRequest {
   repeated RiskFactorConfig risk_factor_configs = 1;
 }
 
-message UpdateRiskLikelihoodFactorConfigsResponse {
-  repeated RiskFactor risk_factors = 1;
+message UpdateRiskLikelihoodConfigsResponse {
+  RiskContributorConfigs risk_likelihood_configs = 1;
 }
 
-message UpdateRiskImpactFactorConfigsRequest {
+message UpdateRiskImpactConfigsRequest {
   repeated RiskFactorConfig risk_factor_configs = 1;
 }
 
-message UpdateRiskImpactFactorConfigsResponse {
-  repeated RiskFactor risk_factors = 1;
+message UpdateRiskImpactConfigsResponse {
+  RiskContributorConfigs risk_impact_configs = 1;
 }
 
 message ResetRiskLevelConfigRequest {
@@ -86,18 +76,22 @@ message ResetRiskFactorGridConfigResponse {
   RiskFactorGridConfig risk_factor_grid_config = 1;
 }
 
-message ResetRiskLikelihoodFactorConfigsRequest {
+message ResetRiskLikelihoodConfigsRequest {
+  RiskContributorConfigsResetFilter filter = 1; // when not set, it means reset all
+}
+
+message ResetRiskLikelihoodConfigsResponse {
+  RiskContributorConfigs risk_likelihood_configs = 1;
+}
+
+message ResetRiskImpactConfigsRequest {
+  RiskContributorConfigsResetFilter filter = 1; // when not set, it means reset all
+}
+
+message ResetRiskImpactConfigsResponse {
+  RiskContributorConfigs risk_impact_configs = 1;
+}
+
+message RiskContributorConfigsResetFilter {
   repeated string risk_factor_ids = 1;
-}
-
-message ResetRiskLikelihoodFactorConfigsResponse {
-  repeated RiskFactor risk_factors = 1;
-}
-
-message ResetRiskImpactFactorConfigsRequest {
-  repeated string risk_factor_ids = 1;
-}
-
-message ResetRiskImpactFactorConfigsResponse {
-  repeated RiskFactor risk_factors = 1;
 }

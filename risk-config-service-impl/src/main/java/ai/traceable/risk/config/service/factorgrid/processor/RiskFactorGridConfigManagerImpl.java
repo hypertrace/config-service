@@ -1,35 +1,34 @@
 package ai.traceable.risk.config.service.factorgrid.processor;
 
 import ai.traceable.risk.config.service.factorgrid.RiskFactorGridConfigManager;
-import ai.traceable.risk.config.service.processor.RiskConfigServiceDao;
 import ai.traceable.risk.config.service.processor.RiskConfigUtils;
 import ai.traceable.risk.config.service.v1.RiskFactorGridConfig;
 import ai.traceable.risk.config.service.v1.RiskFactorGridConfigValues;
 import io.grpc.Status;
 import java.util.Optional;
 import javax.inject.Inject;
+import org.hypertrace.config.objectstore.DefaultObjectStore;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RiskFactorGridConfigManagerImpl implements RiskFactorGridConfigManager {
 
-  private final RiskConfigServiceDao<RiskFactorGridConfigValues> configServiceDao;
+  private final DefaultObjectStore<RiskFactorGridConfigValues> configStore;
   private final RiskConfigUtils<RiskFactorGridConfigValues> configUtils;
   private final RiskFactorGridConfigValues defaultRiskFactorGridConfigValues;
 
   @Inject
   public RiskFactorGridConfigManagerImpl(
-      RiskConfigServiceDao<RiskFactorGridConfigValues> configServiceDao,
+      DefaultObjectStore<RiskFactorGridConfigValues> configStore,
       RiskConfigUtils<RiskFactorGridConfigValues> configUtils,
       RiskFactorGridConfigValues defaultRiskFactorGridConfigValues) {
-    this.configServiceDao = configServiceDao;
+    this.configStore = configStore;
     this.configUtils = configUtils;
     this.defaultRiskFactorGridConfigValues = defaultRiskFactorGridConfigValues;
   }
 
   @Override
   public RiskFactorGridConfig getRiskFactorGridConfig(RequestContext requestContext) {
-    Optional<RiskFactorGridConfigValues> fetchedConfig =
-        configServiceDao.fetchConfig(requestContext);
+    Optional<RiskFactorGridConfigValues> fetchedConfig = configStore.getObject(requestContext);
     if (fetchedConfig.isEmpty()) {
       return buildRiskFactorGridConfig(defaultRiskFactorGridConfigValues, true);
     }
@@ -50,7 +49,7 @@ public class RiskFactorGridConfigManagerImpl implements RiskFactorGridConfigMana
     if (configUtils.isConfigDefault(configValues, defaultRiskFactorGridConfigValues)) {
       return resetRiskFactorGridConfig(requestContext);
     }
-    configValues = configServiceDao.upsertConfig(requestContext, configValues);
+    configValues = configStore.upsertObject(requestContext, configValues);
     return buildRiskFactorGridConfig(
         configUtils.mergeConfigs(configValues, defaultRiskFactorGridConfigValues), false);
   }
@@ -58,7 +57,13 @@ public class RiskFactorGridConfigManagerImpl implements RiskFactorGridConfigMana
   @Override
   public RiskFactorGridConfig resetRiskFactorGridConfig(RequestContext requestContext) {
     // remove specific config if persisted..
-    configServiceDao.deleteConfig(requestContext);
+    try {
+      configStore.deleteObject(requestContext);
+    } catch (Exception e) {
+      if (!Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
+        throw e;
+      }
+    }
     return buildRiskFactorGridConfig(defaultRiskFactorGridConfigValues, true);
   }
 

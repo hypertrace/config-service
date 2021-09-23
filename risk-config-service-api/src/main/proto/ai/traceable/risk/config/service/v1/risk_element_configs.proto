@@ -19,6 +19,7 @@ message RiskElementInfo {
     BooleanPredicate endpoint_external_popular = 8;
     BooleanPredicate endpoint_internal_restricted = 9;
     BooleanPredicate endpoint_internal_popular = 10;
+    StringPredicate label_id = 11;
   }
 }
 

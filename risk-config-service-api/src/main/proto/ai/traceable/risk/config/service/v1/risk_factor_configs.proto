@@ -6,30 +6,35 @@ option java_multiple_files = true;
 
 import "ai/traceable/risk/config/service/v1/risk_element_configs.proto";
 
+message RiskContributorConfigs {
+  repeated RiskFactor risk_factors = 1;
+}
+
 message RiskFactor {
   RiskFactorConfig risk_factor_config = 1;
-  repeated CustomizationOptions customization_options = 2;
-  bool is_default = 3;
+  RiskFactorInfo risk_factor_info = 2;
+  repeated CustomizationOptions customization_options = 3;
+  bool is_default = 4;
 }
 
 message RiskFactorConfig {
   string id = 1;
-  RiskFactorInfo risk_factor_info = 2;
-  RiskFactorScoring risk_factor_scoring = 3;
+  RiskFactorScoring risk_factor_scoring = 2;
+  repeated RiskElementConfig risk_element_configs = 3;
 }
 
 message RiskFactorInfo {
   string name = 1;
   RiskFactorType risk_factor_type = 2;
-  repeated RiskElementConfig risk_element_configs = 3;
 }
 
 enum RiskFactorType {
   RISK_FACTOR_TYPE_UNSPECIFIED = 0;
   RISK_FACTOR_TYPE_CUSTOM_TAGS = 1;
-  RISK_FACTOR_TYPE_SENSITIVE_DATA_EXPOSURE = 2;
-  RISK_FACTOR_TYPE_MOTIVE = 3;
-  RISK_FACTOR_TYPE_EASE_OF_ACCESS = 4;
+  RISK_FACTOR_TYPE_MOTIVE = 2;
+  RISK_FACTOR_TYPE_EASE_OF_ACCESS = 3;
+  RISK_FACTOR_TYPE_SENSITIVE_DATA_EXPOSURE = 4;
+  RISK_FACTOR_TYPE_EXPOSURE_SURFACE = 5;
 }
 
 message RiskFactorScoring {

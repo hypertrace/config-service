@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.risk.config.service.factorgrid.RiskFactorGridConfigManager;
 import ai.traceable.risk.config.service.processor.RiskConfigConverter;
-import ai.traceable.risk.config.service.processor.RiskConfigServiceDao;
 import ai.traceable.risk.config.service.processor.RiskConfigUtils;
 import ai.traceable.risk.config.service.v1.RiskFactorGridCell;
 import ai.traceable.risk.config.service.v1.RiskFactorGridConfig;
@@ -17,6 +16,7 @@ import io.grpc.StatusRuntimeException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.hypertrace.config.objectstore.DefaultObjectStore;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,16 +24,16 @@ import org.junit.jupiter.api.Test;
 
 public class RiskFactorGridConfigManagerTest {
   private RiskFactorGridConfigValues defaultRiskFactorGridConfigValues;
-  private RiskConfigServiceDao<RiskFactorGridConfigValues> configServiceDao;
+  private DefaultObjectStore<RiskFactorGridConfigValues> configStore;
   private RiskFactorGridConfigManager riskFactorGridConfigManager;
 
   @BeforeEach
   public void setup() {
     defaultRiskFactorGridConfigValues = getDefaultConfig();
-    configServiceDao = new MockRiskFactorGridConfigServiceDao(null, null, null);
+    configStore = new MockRiskFactorGridConfigStore(null, null, null);
     riskFactorGridConfigManager =
         new RiskFactorGridConfigManagerImpl(
-            configServiceDao, new RiskFactorGridConfigUtils(), defaultRiskFactorGridConfigValues);
+            configStore, new RiskFactorGridConfigUtils(), defaultRiskFactorGridConfigValues);
   }
 
   @Test
@@ -98,41 +98,6 @@ public class RiskFactorGridConfigManagerTest {
         riskFactorGridConfigManager.getRiskFactorGridConfig(requestContext));
   }
 
-  static class MockRiskFactorGridConfigServiceDao
-      extends RiskConfigServiceDao<RiskFactorGridConfigValues> {
-
-    private Map<String, RiskFactorGridConfigValues> values = new HashMap<>();
-
-    protected MockRiskFactorGridConfigServiceDao(
-        ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
-        RiskConfigConverter<RiskFactorGridConfigValues> configConverter,
-        RiskConfigUtils<RiskFactorGridConfigValues> configUtils) {
-      super(configServiceBlockingStub, configConverter, configUtils);
-    }
-
-    @Override
-    protected String getConfigResourceName() {
-      return "SampleResource";
-    }
-
-    @Override
-    public Optional<RiskFactorGridConfigValues> fetchConfig(RequestContext requestContext) {
-      return Optional.ofNullable(values.get(requestContext.getTenantId().get()));
-    }
-
-    @Override
-    public RiskFactorGridConfigValues upsertConfig(
-        RequestContext requestContext, RiskFactorGridConfigValues config) {
-      values.put(requestContext.getTenantId().get(), config);
-      return config;
-    }
-
-    @Override
-    public void deleteConfig(RequestContext requestContext) {
-      values.remove(requestContext.getTenantId().get());
-    }
-  }
-
   private RiskFactorGridConfigValues getDefaultConfig() {
     return RiskFactorGridConfigValues.newBuilder()
         .addRiskFactorGridCells(
@@ -154,5 +119,34 @@ public class RiskFactorGridConfigManagerTest {
                 .setScore(5)
                 .build())
         .build();
+  }
+
+  static class MockRiskFactorGridConfigStore extends RiskFactorGridConfigStore {
+
+    private Map<String, RiskFactorGridConfigValues> values = new HashMap<>();
+
+    protected MockRiskFactorGridConfigStore(
+        ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
+        RiskConfigConverter<RiskFactorGridConfigValues> configConverter,
+        RiskConfigUtils<RiskFactorGridConfigValues> configUtils) {
+      super(configServiceBlockingStub, configConverter, configUtils);
+    }
+
+    @Override
+    public Optional<RiskFactorGridConfigValues> getObject(RequestContext requestContext) {
+      return Optional.ofNullable(values.get(requestContext.getTenantId().get()));
+    }
+
+    @Override
+    public RiskFactorGridConfigValues upsertObject(
+        RequestContext requestContext, RiskFactorGridConfigValues config) {
+      values.put(requestContext.getTenantId().get(), config);
+      return config;
+    }
+
+    @Override
+    public void deleteObject(RequestContext requestContext) {
+      values.remove(requestContext.getTenantId().get());
+    }
   }
 }

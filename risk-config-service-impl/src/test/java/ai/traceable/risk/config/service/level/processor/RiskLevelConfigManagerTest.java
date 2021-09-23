@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.risk.config.service.level.RiskLevelConfigManager;
 import ai.traceable.risk.config.service.processor.RiskConfigConverter;
-import ai.traceable.risk.config.service.processor.RiskConfigServiceDao;
 import ai.traceable.risk.config.service.processor.RiskConfigUtils;
 import ai.traceable.risk.config.service.v1.RiskLevelConfig;
 import ai.traceable.risk.config.service.v1.RiskLevelConfigValues;
@@ -15,6 +14,7 @@ import io.grpc.StatusRuntimeException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.hypertrace.config.objectstore.DefaultObjectStore;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 public class RiskLevelConfigManagerTest {
   private RiskLevelConfigValues defaultRiskLevelConfigValues;
-  private RiskConfigServiceDao<RiskLevelConfigValues> configServiceDao;
+  private DefaultObjectStore<RiskLevelConfigValues> configStore;
   private RiskLevelConfigManager riskLevelConfigManager;
 
   @BeforeEach
@@ -32,10 +32,10 @@ public class RiskLevelConfigManagerTest {
             .setHighLevelMinScore(5)
             .setCriticalLevelMinScore(8)
             .build();
-    configServiceDao = new MockRiskLevelConfigServiceDao(null, null, null);
+    configStore = new MockRiskLevelConfigStore(null, null, null);
     riskLevelConfigManager =
         new RiskLevelConfigManagerImpl(
-            configServiceDao, new RiskLevelConfigUtils(), defaultRiskLevelConfigValues);
+            configStore, new RiskLevelConfigUtils(), defaultRiskLevelConfigValues);
   }
 
   @Test
@@ -72,11 +72,11 @@ public class RiskLevelConfigManagerTest {
     assertEquals(defaultRiskLevelConfig, riskLevelConfigManager.getRiskLevelConfig(requestContext));
   }
 
-  static class MockRiskLevelConfigServiceDao extends RiskConfigServiceDao<RiskLevelConfigValues> {
+  static class MockRiskLevelConfigStore extends RiskLevelConfigStore {
 
     private Map<String, RiskLevelConfigValues> values = new HashMap<>();
 
-    protected MockRiskLevelConfigServiceDao(
+    protected MockRiskLevelConfigStore(
         ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
         RiskConfigConverter<RiskLevelConfigValues> configConverter,
         RiskConfigUtils<RiskLevelConfigValues> configUtils) {
@@ -84,24 +84,19 @@ public class RiskLevelConfigManagerTest {
     }
 
     @Override
-    protected String getConfigResourceName() {
-      return "SampleResource";
-    }
-
-    @Override
-    public Optional<RiskLevelConfigValues> fetchConfig(RequestContext requestContext) {
+    public Optional<RiskLevelConfigValues> getObject(RequestContext requestContext) {
       return Optional.ofNullable(values.get(requestContext.getTenantId().get()));
     }
 
     @Override
-    public RiskLevelConfigValues upsertConfig(
+    public RiskLevelConfigValues upsertObject(
         RequestContext requestContext, RiskLevelConfigValues config) {
       values.put(requestContext.getTenantId().get(), config);
       return config;
     }
 
     @Override
-    public void deleteConfig(RequestContext requestContext) {
+    public void deleteObject(RequestContext requestContext) {
       values.remove(requestContext.getTenantId().get());
     }
   }

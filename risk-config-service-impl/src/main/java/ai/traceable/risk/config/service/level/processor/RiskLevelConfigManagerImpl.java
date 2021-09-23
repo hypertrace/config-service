@@ -1,34 +1,34 @@
 package ai.traceable.risk.config.service.level.processor;
 
 import ai.traceable.risk.config.service.level.RiskLevelConfigManager;
-import ai.traceable.risk.config.service.processor.RiskConfigServiceDao;
 import ai.traceable.risk.config.service.processor.RiskConfigUtils;
 import ai.traceable.risk.config.service.v1.RiskLevelConfig;
 import ai.traceable.risk.config.service.v1.RiskLevelConfigValues;
 import io.grpc.Status;
 import java.util.Optional;
 import javax.inject.Inject;
+import org.hypertrace.config.objectstore.DefaultObjectStore;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RiskLevelConfigManagerImpl implements RiskLevelConfigManager {
 
-  private final RiskConfigServiceDao<RiskLevelConfigValues> configServiceDao;
+  private final DefaultObjectStore<RiskLevelConfigValues> configStore;
   private final RiskConfigUtils<RiskLevelConfigValues> configUtils;
   private final RiskLevelConfigValues defaultRiskLevelConfigValues;
 
   @Inject
   public RiskLevelConfigManagerImpl(
-      RiskConfigServiceDao<RiskLevelConfigValues> configServiceDao,
+      DefaultObjectStore<RiskLevelConfigValues> configStore,
       RiskConfigUtils<RiskLevelConfigValues> configUtils,
       RiskLevelConfigValues defaultRiskLevelConfigValues) {
-    this.configServiceDao = configServiceDao;
+    this.configStore = configStore;
     this.configUtils = configUtils;
     this.defaultRiskLevelConfigValues = defaultRiskLevelConfigValues;
   }
 
   @Override
   public RiskLevelConfig getRiskLevelConfig(RequestContext requestContext) {
-    Optional<RiskLevelConfigValues> fetchedConfig = configServiceDao.fetchConfig(requestContext);
+    Optional<RiskLevelConfigValues> fetchedConfig = configStore.getObject(requestContext);
     if (fetchedConfig.isEmpty()) {
       return buildRiskLevelConfig(defaultRiskLevelConfigValues, true);
     }
@@ -49,14 +49,20 @@ public class RiskLevelConfigManagerImpl implements RiskLevelConfigManager {
     if (configUtils.isConfigDefault(configValues, defaultRiskLevelConfigValues)) {
       return resetRiskLevelConfig(requestContext);
     }
-    configValues = configServiceDao.upsertConfig(requestContext, configValues);
+    configValues = configStore.upsertObject(requestContext, configValues);
     return buildRiskLevelConfig(configValues, false);
   }
 
   @Override
   public RiskLevelConfig resetRiskLevelConfig(RequestContext requestContext) {
     // remove specific config if persisted..
-    configServiceDao.deleteConfig(requestContext);
+    try {
+      configStore.deleteObject(requestContext);
+    } catch (Exception e) {
+      if (!Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
+        throw e;
+      }
+    }
     return buildRiskLevelConfig(defaultRiskLevelConfigValues, true);
   }
 
