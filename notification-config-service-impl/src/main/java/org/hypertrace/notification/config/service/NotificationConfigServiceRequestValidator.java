@@ -23,16 +23,12 @@ public class NotificationConfigServiceRequestValidator {
   public void validateCreateNotificationRuleRequest(
       RequestContext requestContext, CreateNotificationRuleRequest request) {
     validateRequestContextOrThrow(requestContext);
-    Preconditions.checkArgument(
-        request.hasNotificationRuleMutableData(), "NotificationRuleMutableData should be present");
     validateNotificationRuleMutableData(request.getNotificationRuleMutableData());
   }
 
   public void validateUpdateNotificationRuleRequest(
       RequestContext requestContext, UpdateNotificationRuleRequest request) {
     validateRequestContextOrThrow(requestContext);
-    Preconditions.checkArgument(
-        request.hasNotificationRule(), "Notification rule should be present");
     validateNonDefaultPresenceOrThrow(
         request.getNotificationRule(), NotificationRule.ID_FIELD_NUMBER);
     validateNotificationRuleMutableData(
@@ -62,17 +58,12 @@ public class NotificationConfigServiceRequestValidator {
   public void validateCreateNotificationChannelRequest(
       RequestContext requestContext, CreateNotificationChannelRequest request) {
     validateRequestContextOrThrow(requestContext);
-    Preconditions.checkArgument(
-        request.hasNotificationChannelMutableData(),
-        "NotificationChannelMutableData should be present");
     validateNotificationChannelMutableData(request.getNotificationChannelMutableData());
   }
 
   public void validateUpdateNotificationChannelRequest(
       RequestContext requestContext, UpdateNotificationChannelRequest request) {
     validateRequestContextOrThrow(requestContext);
-    Preconditions.checkArgument(
-        request.hasNotificationChannel(), "Notification channel should be present");
     validateNonDefaultPresenceOrThrow(
         request.getNotificationChannel(), NotificationChannel.ID_FIELD_NUMBER);
     validateNotificationChannelMutableData(
