@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package org.hypertrace.alerting.config.service.v1;
+
+import "org/hypertrace/alerting/config/service/v1/metric_anomaly_event_condition.proto";
+
+message NewEventCondition {
+  EventConditionMutableData event_condition_data = 1;
+}
+
+message EventCondition {
+  string id = 1;
+  EventConditionMutableData event_condition_data = 2;
+}
+
+message EventConditionMutableData {
+  oneof condition {
+    MetricAnomalyEventCondition metric_anomaly_event_condition = 1;
+  }
+}

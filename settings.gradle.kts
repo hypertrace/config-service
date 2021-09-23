@@ -20,11 +20,17 @@ include(":config-service-impl")
 include(":config-service")
 
 include(":config-proto-converter")
+include(":object-store")
+include(":validation-utils")
 
 include(":spaces-config-service-api")
 include(":spaces-config-service-impl")
 
 include(":labels-config-service-api")
 include(":labels-config-service-impl")
+
 include(":label-application-rule-config-service-api")
 include(":label-application-rule-config-service-impl")
+
+include(":alerting-config-service-api")
+include(":alerting-config-service-impl")
