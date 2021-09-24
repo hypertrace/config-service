@@ -2,6 +2,7 @@ package org.hypertrace.label.application.rule.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import io.grpc.StatusRuntimeException;
 import java.util.Arrays;
 import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -79,7 +80,7 @@ public class LabelApplicationRuleValidatorTest {
         buildCreateCreateLabelApplicationRuleRequest("Wrong Key Rule", matchingCondition);
     Throwable exception =
         assertThrows(
-            IllegalArgumentException.class,
+            StatusRuntimeException.class,
             () -> {
               labelApplicationRuleValidator.validateOrThrow(REQUEST_CONTEXT, request);
             });
@@ -99,7 +100,7 @@ public class LabelApplicationRuleValidatorTest {
         buildCreateCreateLabelApplicationRuleRequest("Wrong Value Rule", matchingCondition);
     Throwable exception =
         assertThrows(
-            IllegalArgumentException.class,
+            StatusRuntimeException.class,
             () -> {
               labelApplicationRuleValidator.validateOrThrow(REQUEST_CONTEXT, request);
             });
@@ -119,7 +120,7 @@ public class LabelApplicationRuleValidatorTest {
         buildCreateLabelApplicationRuleRequestNoAction("No Action Rule", matchingCondition);
     Throwable exception =
         assertThrows(
-            IllegalArgumentException.class,
+            StatusRuntimeException.class,
             () -> {
               labelApplicationRuleValidator.validateOrThrow(REQUEST_CONTEXT, noActionRequest);
             });
