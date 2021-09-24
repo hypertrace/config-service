@@ -24,9 +24,9 @@ public class NotificationChannelConfigServiceRequestValidator {
       RequestContext requestContext, UpdateNotificationChannelRequest request) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(
-        request.getNotificationChannel(), NotificationChannel.ID_FIELD_NUMBER);
+        request, UpdateNotificationChannelRequest.ID_FIELD_NUMBER);
     validateNotificationChannelMutableData(
-        request.getNotificationChannel().getNotificationChannelMutableData());
+        request.getNotificationChannelMutableData());
   }
 
   private void validateNotificationChannelMutableData(NotificationChannelMutableData data) {

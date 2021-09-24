@@ -23,9 +23,9 @@ public class NotificationRuleConfigServiceRequestValidator {
       RequestContext requestContext, UpdateNotificationRuleRequest request) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(
-        request.getNotificationRule(), NotificationRule.ID_FIELD_NUMBER);
+        request, UpdateNotificationRuleRequest.ID_FIELD_NUMBER);
     validateNotificationRuleMutableData(
-        request.getNotificationRule().getNotificationRuleMutableData());
+        request.getNotificationRuleMutableData());
   }
 
   private void validateNotificationRuleMutableData(NotificationRuleMutableData data) {
