@@ -62,7 +62,12 @@ public class NotificationRuleConfigServiceImpl
       responseObserver.onNext(
           UpdateNotificationRuleResponse.newBuilder()
               .setNotificationRule(
-                  notificationRuleStore.upsertObject(requestContext, request.getNotificationRule()))
+                  notificationRuleStore.upsertObject(
+                      requestContext,
+                      NotificationRule.newBuilder()
+                          .setId(request.getId())
+                          .setNotificationRuleMutableData(request.getNotificationRuleMutableData())
+                          .build()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {

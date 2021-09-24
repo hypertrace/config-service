@@ -22,7 +22,8 @@ message CreateNotificationRuleResponse {
 }
 
 message UpdateNotificationRuleRequest {
-  NotificationRule notification_rule = 1;
+  string id = 1;
+  NotificationRuleMutableData notification_rule_mutable_data = 2;
 }
 
 message UpdateNotificationRuleResponse {
