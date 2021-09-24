@@ -8,7 +8,6 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.CreateNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.DeleteNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsRequest;
-import org.hypertrace.notification.config.service.v1.NotificationChannel;
 import org.hypertrace.notification.config.service.v1.NotificationChannelMutableData;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelRequest;
 
@@ -23,10 +22,8 @@ public class NotificationChannelConfigServiceRequestValidator {
   public void validateUpdateNotificationChannelRequest(
       RequestContext requestContext, UpdateNotificationChannelRequest request) {
     validateRequestContextOrThrow(requestContext);
-    validateNonDefaultPresenceOrThrow(
-        request, UpdateNotificationChannelRequest.ID_FIELD_NUMBER);
-    validateNotificationChannelMutableData(
-        request.getNotificationChannelMutableData());
+    validateNonDefaultPresenceOrThrow(request, UpdateNotificationChannelRequest.ID_FIELD_NUMBER);
+    validateNotificationChannelMutableData(request.getNotificationChannelMutableData());
   }
 
   private void validateNotificationChannelMutableData(NotificationChannelMutableData data) {

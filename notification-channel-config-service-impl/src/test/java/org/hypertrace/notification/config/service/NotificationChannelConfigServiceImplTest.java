@@ -74,7 +74,9 @@ class NotificationChannelConfigServiceImplTest {
         channelStub
             .updateNotificationChannel(
                 UpdateNotificationChannelRequest.newBuilder()
-                    .setNotificationChannel(channelToUpdate)
+                    .setNotificationChannelMutableData(
+                        channelToUpdate.getNotificationChannelMutableData())
+                    .setId(channelToUpdate.getId())
                     .build())
             .getNotificationChannel();
     assertEquals(channelToUpdate, updatedChannel);
