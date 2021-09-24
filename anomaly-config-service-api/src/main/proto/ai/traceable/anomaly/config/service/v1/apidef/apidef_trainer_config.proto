@@ -132,8 +132,8 @@ message ThresholdsFamilyMetadataApplierConfig {
   optional int64 learning_time_millis = 1;
   optional int32 required_ips_for_diverse_set = 2;
   optional int32 required_user_ids_for_diverse_set = 3;
-  repeated string bad_status_ip = 4;
-  repeated string bad_status_user_id = 5;
+  repeated int32 bad_status_ip = 4;
+  repeated int32 bad_status_user_id = 5;
   optional int32 required_percent_for_authenticated = 6;
   optional int32 thresholds_family_relearn_version = 7;
 }
@@ -166,9 +166,9 @@ message PiiSensitiveDataApplierConfig {
 }
 
 message DlpSchedule {
-  optional string param_age_threshold = 1;
-  optional string low_age_frequency = 2;
-  optional string high_age_frequency = 3;
+  optional string param_age_threshold_duration = 1;
+  optional string low_age_frequency_duration = 2;
+  optional string high_age_frequency_duration = 3;
 }
 
 message RequiredIpValues {

@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.anomaly.config.service.registry.apidef.ApiDefRulesRegistry;
-import ai.traceable.anomaly.config.service.registry.apidef.ApiDefRulesRegistryImpl;
+import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
+import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class AnomalyRuleInfoManagerImplTest {
-  private ApiDefRulesRegistry apiDefRulesRegistry;
+  private ApiDefinitionRegistry apiDefinitionRegistry;
   private ModsecRulesRegistry modsecRulesRegistry;
   private SessionRulesRegistry sessionRulesRegistry;
   private RuleInfoManager ruleInfoManager;
@@ -28,18 +28,18 @@ class AnomalyRuleInfoManagerImplTest {
 
   @BeforeEach
   void setUp() {
-    apiDefRulesRegistry = mock(ApiDefRulesRegistryImpl.class);
+    apiDefinitionRegistry = mock(ApiDefinitionRegistryImpl.class);
     modsecRulesRegistry = mock(ModsecRulesRegistryImpl.class);
     sessionRulesRegistry = mock(SessionRulesRegistryImpl.class);
     ruleInfoManager =
         new AnomalyRuleInfoManagerImpl(
-            apiDefRulesRegistry, modsecRulesRegistry, sessionRulesRegistry);
+            apiDefinitionRegistry, modsecRulesRegistry, sessionRulesRegistry);
     requestContext = RequestContext.forTenantId("default tenant");
   }
 
   @Test
   void getAnomalyRuleInfos() {
-    when(apiDefRulesRegistry.getApiDefRuleInfos())
+    when(apiDefinitionRegistry.getApiDefRuleInfos())
         .thenReturn(
             Map.of("id-0", buildAnomalyRuleInfo("id-0"), "id-00", buildAnomalyRuleInfo("id-0")));
     when(modsecRulesRegistry.getModsecRuleInfos())

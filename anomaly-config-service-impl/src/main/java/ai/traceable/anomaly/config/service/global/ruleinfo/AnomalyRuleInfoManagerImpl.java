@@ -1,6 +1,6 @@
 package ai.traceable.anomaly.config.service.global.ruleinfo;
 
-import ai.traceable.anomaly.config.service.registry.apidef.ApiDefRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
@@ -12,16 +12,16 @@ import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
-  private final ApiDefRulesRegistry apiDefRulesRegistry;
+  private final ApiDefinitionRegistry apiDefinitionRegistry;
   private final ModsecRulesRegistry modsecRulesRegistry;
   private final SessionRulesRegistry sessionRulesRegistry;
 
   @Inject
   AnomalyRuleInfoManagerImpl(
-      ApiDefRulesRegistry apiDefRulesRegistry,
+      ApiDefinitionRegistry apiDefinitionRegistry,
       ModsecRulesRegistry modsecRulesRegistry,
       SessionRulesRegistry sessionRulesRegistry) {
-    this.apiDefRulesRegistry = apiDefRulesRegistry;
+    this.apiDefinitionRegistry = apiDefinitionRegistry;
     this.modsecRulesRegistry = modsecRulesRegistry;
     this.sessionRulesRegistry = sessionRulesRegistry;
   }
@@ -36,7 +36,7 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
             eventFamily -> {
               switch (eventFamily) {
                 case ANOMALY_EVENT_FAMILY_API_DEF:
-                  ruleInfos.addAll(apiDefRulesRegistry.getApiDefRuleInfos().values());
+                  ruleInfos.addAll(apiDefinitionRegistry.getApiDefRuleInfos().values());
                   break;
                 case ANOMALY_EVENT_FAMILY_MODSEC:
                   ruleInfos.addAll(modsecRulesRegistry.getModsecRuleInfos().values());
