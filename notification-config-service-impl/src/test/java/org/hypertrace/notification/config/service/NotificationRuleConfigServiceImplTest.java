@@ -96,7 +96,6 @@ class NotificationRuleConfigServiceImplTest {
             .getNotificationRulesList());
   }
 
-
   private NotificationRuleMutableData getNotificationRuleMutableData(
       String name, String channelId) {
     return NotificationRuleMutableData.newBuilder()

@@ -25,8 +25,7 @@ public class NotificationRuleConfigServiceImpl
 
   public NotificationRuleConfigServiceImpl(Channel channel) {
     this.notificationRuleStore = new NotificationRuleStore(channel);
-    this.validator =
-        new NotificationRuleConfigServiceRequestValidator();
+    this.validator = new NotificationRuleConfigServiceRequestValidator();
   }
 
   @Override
@@ -35,8 +34,7 @@ public class NotificationRuleConfigServiceImpl
       StreamObserver<CreateNotificationRuleResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      validator.validateCreateNotificationRuleRequest(
-          requestContext, request);
+      validator.validateCreateNotificationRuleRequest(requestContext, request);
       NotificationRule.Builder builder =
           NotificationRule.newBuilder()
               .setId(UUID.randomUUID().toString())
@@ -60,8 +58,7 @@ public class NotificationRuleConfigServiceImpl
       StreamObserver<UpdateNotificationRuleResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      validator.validateUpdateNotificationRuleRequest(
-          requestContext, request);
+      validator.validateUpdateNotificationRuleRequest(requestContext, request);
       responseObserver.onNext(
           UpdateNotificationRuleResponse.newBuilder()
               .setNotificationRule(
@@ -80,8 +77,7 @@ public class NotificationRuleConfigServiceImpl
       StreamObserver<GetAllNotificationRulesResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      validator.validateGetAllNotificationRulesRequest(
-          requestContext, request);
+      validator.validateGetAllNotificationRulesRequest(requestContext, request);
       responseObserver.onNext(
           GetAllNotificationRulesResponse.newBuilder()
               .addAllNotificationRules(notificationRuleStore.getAllObjects(requestContext))
@@ -99,8 +95,7 @@ public class NotificationRuleConfigServiceImpl
       StreamObserver<DeleteNotificationRuleResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      validator.validateDeleteNotificationRuleRequest(
-          requestContext, request);
+      validator.validateDeleteNotificationRuleRequest(requestContext, request);
       notificationRuleStore.deleteObject(requestContext, request.getNotificationRuleId());
       responseObserver.onNext(DeleteNotificationRuleResponse.getDefaultInstance());
       responseObserver.onCompleted();

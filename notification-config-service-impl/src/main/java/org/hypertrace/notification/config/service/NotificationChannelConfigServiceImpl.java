@@ -26,8 +26,7 @@ public class NotificationChannelConfigServiceImpl
 
   public NotificationChannelConfigServiceImpl(Channel channel) {
     this.notificationChannelStore = new NotificationChannelStore(channel);
-    this.validator =
-        new NotificationChannelConfigServiceRequestValidator();
+    this.validator = new NotificationChannelConfigServiceRequestValidator();
   }
 
   @Override
@@ -36,8 +35,7 @@ public class NotificationChannelConfigServiceImpl
       StreamObserver<CreateNotificationChannelResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      validator.validateCreateNotificationChannelRequest(
-          requestContext, request);
+      validator.validateCreateNotificationChannelRequest(requestContext, request);
       NotificationChannel.Builder builder =
           NotificationChannel.newBuilder()
               .setId(UUID.randomUUID().toString())
@@ -60,8 +58,7 @@ public class NotificationChannelConfigServiceImpl
       StreamObserver<UpdateNotificationChannelResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      validator.validateUpdateNotificationChannelRequest(
-          requestContext, request);
+      validator.validateUpdateNotificationChannelRequest(requestContext, request);
       responseObserver.onNext(
           UpdateNotificationChannelResponse.newBuilder()
               .setNotificationChannel(
@@ -81,8 +78,7 @@ public class NotificationChannelConfigServiceImpl
       StreamObserver<GetAllNotificationChannelsResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      validator.validateGetAllNotificationChannelsRequest(
-          requestContext, request);
+      validator.validateGetAllNotificationChannelsRequest(requestContext, request);
       List<NotificationChannel> notificationChannels =
           notificationChannelStore.getAllObjects(requestContext);
       GetAllNotificationChannelsResponse getAllNotificationChannelsResponse =
@@ -103,8 +99,7 @@ public class NotificationChannelConfigServiceImpl
       StreamObserver<DeleteNotificationChannelResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      validator.validateDeleteNotificationChannelRequest(
-          requestContext, request);
+      validator.validateDeleteNotificationChannelRequest(requestContext, request);
       notificationChannelStore.deleteObject(requestContext, request.getNotificationChannelId());
       responseObserver.onNext(DeleteNotificationChannelResponse.getDefaultInstance());
       responseObserver.onCompleted();
