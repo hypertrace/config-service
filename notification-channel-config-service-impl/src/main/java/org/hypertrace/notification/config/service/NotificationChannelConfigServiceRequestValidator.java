@@ -4,6 +4,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDef
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
 import com.google.common.base.Preconditions;
+import io.grpc.Status;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.CreateNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.DeleteNotificationChannelRequest;
@@ -32,9 +33,11 @@ public class NotificationChannelConfigServiceRequestValidator {
   private void validateNotificationChannelMutableData(NotificationChannelMutableData data) {
     validateNonDefaultPresenceOrThrow(
         data, NotificationChannelMutableData.CHANNEL_NAME_FIELD_NUMBER);
-    Preconditions.checkArgument(
-        data.getEmailChannelConfigCount() != 0 || data.getWebhookChannelConfigCount() != 0,
-        "Either email or webhook config should be present");
+    if (data.getEmailChannelConfigCount() != 0 || data.getWebhookChannelConfigCount() != 0) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Either email or webhook config should be present")
+          .asRuntimeException();
+    }
   }
 
   public void validateGetAllNotificationChannelsRequest(
