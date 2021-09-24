@@ -65,9 +65,9 @@ public class NotificationChannelConfigServiceImpl
                   notificationChannelStore.upsertObject(
                       requestContext,
                       NotificationChannel.newBuilder()
+                          .setId(request.getId())
                           .setNotificationChannelMutableData(
                               request.getNotificationChannelMutableData())
-                          .setId(request.getId())
                           .build()))
               .build());
       responseObserver.onCompleted();
