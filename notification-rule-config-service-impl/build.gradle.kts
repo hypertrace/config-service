@@ -5,7 +5,7 @@ plugins {
 }
 
 dependencies {
-    api(projects.notificationConfigServiceApi)
+    api(projects.notificationRuleConfigServiceApi)
     implementation(projects.configServiceApi)
     implementation(projects.configProtoConverter)
     implementation(projects.objectStore)
@@ -19,8 +19,6 @@ dependencies {
     compileOnly(libs.lombok)
 
     testImplementation(libs.junit.jupiter)
-    testImplementation(libs.mockito.core)
-    testImplementation(libs.mockito.junit)
     testImplementation(testFixtures(projects.configServiceApi))
 }
 

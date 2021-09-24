@@ -59,7 +59,7 @@ dependencies {
   implementation(projects.spacesConfigServiceImpl)
   implementation(projects.labelsConfigServiceImpl)
   implementation(projects.alertingConfigServiceImpl)
-  implementation(projects.notificationConfigServiceImpl)
+  implementation(projects.notificationRuleConfigServiceImpl)
 
   implementation(libs.hypertrace.grpcutils.server)
   implementation(libs.hypertrace.framework.container)
