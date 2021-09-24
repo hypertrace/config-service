@@ -5,7 +5,8 @@ build:
     - labels-config-service-api/src/main/proto
     - label-application-rule-config-service-api/src/main/proto
     - alerting-config-service-api/src/main/proto
-    - notification-config-service-api/src/main/proto
+    - notification-rule-config-service-api/src/main/proto
+    - notification-channel-config-service-api/src/main/proto
 lint:
   use:
     - DEFAULT
