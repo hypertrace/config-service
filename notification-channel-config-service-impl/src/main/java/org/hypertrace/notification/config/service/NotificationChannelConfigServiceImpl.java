@@ -63,7 +63,12 @@ public class NotificationChannelConfigServiceImpl
           UpdateNotificationChannelResponse.newBuilder()
               .setNotificationChannel(
                   notificationChannelStore.upsertObject(
-                      requestContext, request.getNotificationChannel()))
+                      requestContext,
+                      NotificationChannel.newBuilder()
+                          .setNotificationChannelMutableData(
+                              request.getNotificationChannelMutableData())
+                          .setId(request.getId())
+                          .build()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {

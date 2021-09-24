@@ -22,7 +22,8 @@ message CreateNotificationChannelResponse {
 }
 
 message UpdateNotificationChannelRequest {
-  NotificationChannel notification_channel = 1;
+  string id = 1;
+  NotificationChannelMutableData notification_channel_mutable_data = 2;
 }
 
 message UpdateNotificationChannelResponse {
