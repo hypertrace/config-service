@@ -4,49 +4,14 @@ option java_multiple_files = true;
 
 package org.hypertrace.notification.config.service.v1;
 
-import "org/hypertrace/notification/config/service/v1/notification_rule.proto";
 import "org/hypertrace/notification/config/service/v1/notification_channel.proto";
 
-service NotificationConfigService {
-  rpc CreateNotificationRule(CreateNotificationRuleRequest) returns (CreateNotificationRuleResponse) {}
-  rpc UpdateNotificationRule(UpdateNotificationRuleRequest) returns (UpdateNotificationRuleResponse) {}
-  rpc GetAllNotificationRules(GetAllNotificationRulesRequest) returns (GetAllNotificationRulesResponse) {}
-  rpc DeleteNotificationRule(DeleteNotificationRuleRequest) returns (DeleteNotificationRuleResponse) {}
-
+service NotificationChannelConfigService {
   rpc CreateNotificationChannel(CreateNotificationChannelRequest) returns (CreateNotificationChannelResponse) {}
   rpc UpdateNotificationChannel(UpdateNotificationChannelRequest) returns (UpdateNotificationChannelResponse) {}
   rpc GetAllNotificationChannels(GetAllNotificationChannelsRequest) returns (GetAllNotificationChannelsResponse) {}
   rpc DeleteNotificationChannel(DeleteNotificationChannelRequest) returns (DeleteNotificationChannelResponse) {}
-
 }
-
-message CreateNotificationRuleRequest {
-  NotificationRuleMutableData notification_rule_mutable_data = 1;
-}
-
-message CreateNotificationRuleResponse {
-  NotificationRule notification_rule = 1;
-}
-
-message UpdateNotificationRuleRequest {
-  NotificationRule notification_rule = 1;
-}
-
-message UpdateNotificationRuleResponse {
-  NotificationRule notification_rule = 1;
-}
-
-message GetAllNotificationRulesRequest {}
-
-message GetAllNotificationRulesResponse {
-  repeated NotificationRule notification_rules = 1;
-}
-
-message DeleteNotificationRuleRequest {
-  string notification_rule_id = 1;
-}
-
-message DeleteNotificationRuleResponse {}
 
 message CreateNotificationChannelRequest {
   NotificationChannelMutableData notification_channel_mutable_data = 1;
