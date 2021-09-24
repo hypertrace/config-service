@@ -29,7 +29,7 @@ public class NotificationChannelConfigServiceRequestValidator {
   private void validateNotificationChannelMutableData(NotificationChannelMutableData data) {
     validateNonDefaultPresenceOrThrow(
         data, NotificationChannelMutableData.CHANNEL_NAME_FIELD_NUMBER);
-    if (data.getEmailChannelConfigCount() != 0 || data.getWebhookChannelConfigCount() != 0) {
+    if (data.getEmailChannelConfigCount() == 0 && data.getWebhookChannelConfigCount() == 0) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Either email or webhook config should be present")
           .asRuntimeException();
