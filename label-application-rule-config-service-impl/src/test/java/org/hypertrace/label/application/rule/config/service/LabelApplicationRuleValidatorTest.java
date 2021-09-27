@@ -1,13 +1,16 @@
 package org.hypertrace.label.application.rule.config.service;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.grpc.StatusRuntimeException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplicationRuleRequest;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData;
+import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.Action;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.CompositeCondition;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.Condition;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.JsonCondition;
@@ -77,14 +80,14 @@ public class LabelApplicationRuleValidatorTest {
     Condition matchingCondition =
         Condition.newBuilder().setLeafCondition(errorLeafCondition).build();
     CreateLabelApplicationRuleRequest request =
-        buildCreateCreateLabelApplicationRuleRequest("Wrong Key Rule", matchingCondition);
+        buildCreateCreateLabelApplicationRuleRequest(
+            "Wrong Key Rule", matchingCondition, Optional.empty());
     Throwable exception =
         assertThrows(
             StatusRuntimeException.class,
             () -> {
               labelApplicationRuleValidator.validateOrThrow(REQUEST_CONTEXT, request);
             });
-    System.out.println(exception.getMessage());
   }
 
   @Test
@@ -97,7 +100,8 @@ public class LabelApplicationRuleValidatorTest {
     Condition matchingCondition =
         Condition.newBuilder().setLeafCondition(errorLeafCondition).build();
     CreateLabelApplicationRuleRequest request =
-        buildCreateCreateLabelApplicationRuleRequest("Wrong Value Rule", matchingCondition);
+        buildCreateCreateLabelApplicationRuleRequest(
+            "Wrong Value Rule", matchingCondition, Optional.empty());
     Throwable exception =
         assertThrows(
             StatusRuntimeException.class,
@@ -137,7 +141,8 @@ public class LabelApplicationRuleValidatorTest {
     Condition matchingCondition =
         Condition.newBuilder().setLeafCondition(errorLeafCondition).build();
     CreateLabelApplicationRuleRequest request =
-        buildCreateCreateLabelApplicationRuleRequest("Correct Leaf Rule", matchingCondition);
+        buildCreateCreateLabelApplicationRuleRequest(
+            "Correct Leaf Rule", matchingCondition, Optional.empty());
     labelApplicationRuleValidator.validateOrThrow(REQUEST_CONTEXT, request);
   }
 
@@ -176,21 +181,57 @@ public class LabelApplicationRuleValidatorTest {
     Condition matchingCondition =
         Condition.newBuilder().setCompositeCondition(compositeCondition1).build();
     CreateLabelApplicationRuleRequest request =
-        buildCreateCreateLabelApplicationRuleRequest("Correct Composite Rule", matchingCondition);
+        buildCreateCreateLabelApplicationRuleRequest(
+            "Correct Composite Rule", matchingCondition, Optional.empty());
     labelApplicationRuleValidator.validateOrThrow(REQUEST_CONTEXT, request);
   }
 
-  private CreateLabelApplicationRuleRequest buildCreateCreateLabelApplicationRuleRequest(
-      String name, Condition matchingCondition) {
-    LabelApplicationRuleData data =
-        LabelApplicationRuleData.newBuilder()
-            .setName(name)
-            .setMatchingCondition(matchingCondition)
-            .setLabelAction(buildAction())
+  @Test
+  void validateLabelExpression() {
+    LeafCondition errorLeafCondition =
+        LeafCondition.newBuilder()
+            .setKeyCondition(correctKeyCondition)
+            .setStringCondition(correctStringValueCondition)
             .build();
-    CreateLabelApplicationRuleRequest createLabelApplicationRuleRequest =
-        CreateLabelApplicationRuleRequest.newBuilder().setData(data).build();
-    return createLabelApplicationRuleRequest;
+    Condition matchingCondition =
+        Condition.newBuilder().setLeafCondition(errorLeafCondition).build();
+    CreateLabelApplicationRuleRequest request1 =
+        buildCreateCreateLabelApplicationRuleRequest(
+            "Label Expression Rule", matchingCondition, Optional.of("${status}_{wrong-key}"));
+    Throwable exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> {
+              labelApplicationRuleValidator.validateOrThrow(REQUEST_CONTEXT, request1);
+            });
+    CreateLabelApplicationRuleRequest request2 =
+        buildCreateCreateLabelApplicationRuleRequest(
+            "Label Expression Rule", matchingCondition, Optional.of("${status}_{method}"));
+    assertDoesNotThrow(
+        () -> {
+          labelApplicationRuleValidator.validateOrThrow(REQUEST_CONTEXT, request2);
+        });
+  }
+
+  private CreateLabelApplicationRuleRequest buildCreateCreateLabelApplicationRuleRequest(
+      String name, Condition matchingCondition, Optional<String> labelExpression) {
+    LabelApplicationRuleData data;
+    if (labelExpression.isPresent()) {
+      data =
+          LabelApplicationRuleData.newBuilder()
+              .setName(name)
+              .setMatchingCondition(matchingCondition)
+              .setLabelAction(buildDynamicLabelAction(labelExpression.get()))
+              .build();
+    } else {
+      data =
+          LabelApplicationRuleData.newBuilder()
+              .setName(name)
+              .setMatchingCondition(matchingCondition)
+              .setLabelAction(buildAction())
+              .build();
+    }
+    return CreateLabelApplicationRuleRequest.newBuilder().setData(data).build();
   }
 
   private CreateLabelApplicationRuleRequest buildCreateLabelApplicationRuleRequestNoAction(
@@ -200,9 +241,7 @@ public class LabelApplicationRuleValidatorTest {
             .setName(name)
             .setMatchingCondition(matchingCondition)
             .build();
-    CreateLabelApplicationRuleRequest createLabelApplicationRuleRequest =
-        CreateLabelApplicationRuleRequest.newBuilder().setData(data).build();
-    return createLabelApplicationRuleRequest;
+    return CreateLabelApplicationRuleRequest.newBuilder().setData(data).build();
   }
 
   private LabelApplicationRuleData.Action buildAction() {
@@ -211,5 +250,36 @@ public class LabelApplicationRuleValidatorTest {
         .setOperation(LabelApplicationRuleData.Action.Operation.OPERATION_MERGE)
         .setStaticLabelId("expensive")
         .build();
+  }
+
+  private Action buildDynamicLabelAction(String labelExpression) {
+    return LabelApplicationRuleData.Action.newBuilder()
+        .setEntityType("API")
+        .setOperation(LabelApplicationRuleData.Action.Operation.OPERATION_MERGE)
+        .setDynamicLabel(
+            LabelApplicationRuleData.Action.DynamicLabel.newBuilder()
+                .setLabelExpression(labelExpression)
+                .addTokenExtractionRules(
+                    buildTokenExtractionRule("req.http", "status", Optional.empty()))
+                .addTokenExtractionRules(
+                    buildTokenExtractionRule("req.http", "some key", Optional.of("method")))
+                .build())
+        .build();
+  }
+
+  private Action.DynamicLabel.TokenExtractionRule buildTokenExtractionRule(
+      String jsonPath, String key, Optional<String> alias) {
+    if (alias.isPresent()) {
+      return Action.DynamicLabel.TokenExtractionRule.newBuilder()
+          .setJsonPath(jsonPath)
+          .setKey(key)
+          .setAlias(alias.get())
+          .build();
+    } else {
+      return Action.DynamicLabel.TokenExtractionRule.newBuilder()
+          .setJsonPath(jsonPath)
+          .setKey(key)
+          .build();
+    }
   }
 }

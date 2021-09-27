@@ -6,6 +6,10 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 
 import com.google.protobuf.Message;
 import io.grpc.Status;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplicationRuleRequest;
 import org.hypertrace.label.application.rule.config.service.v1.DeleteLabelApplicationRuleRequest;
@@ -59,13 +63,9 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
   }
 
   private void validateLabelApplicationRuleData(LabelApplicationRuleData labelApplicationRuleData) {
-    if (!labelApplicationRuleData.hasMatchingCondition()) {
-      throwInvalidArgumentException("Missing Matching Condition in request");
-    }
+    validateNonDefaultPresenceOrThrow(
+        labelApplicationRuleData, labelApplicationRuleData.NAME_FIELD_NUMBER);
     validateCondition(labelApplicationRuleData.getMatchingCondition());
-    if (!labelApplicationRuleData.hasLabelAction()) {
-      throwInvalidArgumentException("Missing Label Action in request");
-    }
     validateAction(labelApplicationRuleData.getLabelAction());
   }
 
@@ -85,10 +85,6 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
   }
 
   private void validateLeafCondition(LeafCondition leafCondition) {
-    if (!leafCondition.hasKeyCondition()) {
-      throwInvalidArgumentException(
-          String.format("Missing Key condition in Leaf Condition %s", printMessage(leafCondition)));
-    }
     validateStringCondition(leafCondition.getKeyCondition());
     switch (leafCondition.getConditionCase()) {
       case STRING_CONDITION:
@@ -109,13 +105,7 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
   }
 
   private void validateCompositeCondition(CompositeCondition compositeCondition) {
-    if (compositeCondition.getOperator()
-        == CompositeCondition.LogicalOperator.LOGICAL_OPERATOR_UNSPECIFIED) {
-      throwInvalidArgumentException(
-          String.format(
-              "Invalid Operator value in %s:%n %s",
-              getName(compositeCondition), printMessage(compositeCondition)));
-    }
+    validateNonDefaultPresenceOrThrow(compositeCondition, compositeCondition.OPERATOR_FIELD_NUMBER);
     compositeCondition.getChildrenList().forEach(this::validateCondition);
   }
 
@@ -137,24 +127,16 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
   }
 
   private void validateStringCondition(StringCondition stringCondition) {
-    if (stringCondition.getOperator() == StringCondition.Operator.OPERATOR_UNSPECIFIED) {
-      throwInvalidArgumentException(
-          String.format(
-              "Invalid Operator value in %s:%n %s",
-              getName(stringCondition), printMessage(stringCondition)));
-    }
+    validateNonDefaultPresenceOrThrow(stringCondition, stringCondition.OPERATOR_FIELD_NUMBER);
   }
 
   private void validateUnaryCondition(UnaryCondition unaryCondition) {
-    if (unaryCondition.getOperator() == UnaryCondition.Operator.OPERATOR_UNSPECIFIED) {
-      throwInvalidArgumentException(
-          String.format(
-              "Invalid Operator value in %s:%n %s",
-              getName(unaryCondition), printMessage(unaryCondition)));
-    }
+    validateNonDefaultPresenceOrThrow(unaryCondition, unaryCondition.OPERATOR_FIELD_NUMBER);
   }
 
   private void validateAction(Action action) {
+    validateNonDefaultPresenceOrThrow(action, action.ENTITY_TYPE_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(action, action.OPERATION_FIELD_NUMBER);
     switch (action.getValueCase()) {
       case STATIC_LABEL_ID:
         validateNonDefaultPresenceOrThrow(action, action.STATIC_LABEL_ID_FIELD_NUMBER);
@@ -166,16 +148,37 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
         throwInvalidArgumentException(
             String.format("Unexpected Case in %s:%n %s", getName(action), printMessage(action)));
     }
-    if (action.getOperation() == Action.Operation.OPERATION_UNSPECIFIED) {
-      throwInvalidArgumentException(
-          String.format(
-              "Invalid Operator value in %s:%n %s", getName(action), printMessage(action)));
-    }
   }
 
   private void validateDynamicLabel(Action.DynamicLabel dynamicLabel) {
     validateNonDefaultPresenceOrThrow(dynamicLabel, dynamicLabel.LABEL_EXPRESSION_FIELD_NUMBER);
+    validateLabelExpression(dynamicLabel);
     dynamicLabel.getTokenExtractionRulesList().forEach(this::validateTokenExtractionRule);
+  }
+
+  public void validateLabelExpression(Action.DynamicLabel dynamicLabel) {
+    String labelExpression = dynamicLabel.getLabelExpression();
+    List<String> validKeys = new ArrayList<>();
+    dynamicLabel
+        .getTokenExtractionRulesList()
+        .forEach(
+            tokenExtractionRule -> {
+              validKeys.add(tokenExtractionRule.getKey());
+              if (tokenExtractionRule.hasAlias()) {
+                validKeys.add(tokenExtractionRule.getAlias());
+              }
+            });
+    Pattern pattern = Pattern.compile("\\{(\\\\}|[^}])*}");
+    Matcher matcher = pattern.matcher(labelExpression);
+    int startOffset = 0;
+    while (startOffset < labelExpression.length() && matcher.find(startOffset)) {
+      String match = matcher.group();
+      String key = match.substring(1, match.length() - 1);
+      startOffset = startOffset + matcher.end();
+      if (!validKeys.contains(key)) {
+        throwInvalidArgumentException("Invalid key name in label expression");
+      }
+    }
   }
 
   private void validateTokenExtractionRule(

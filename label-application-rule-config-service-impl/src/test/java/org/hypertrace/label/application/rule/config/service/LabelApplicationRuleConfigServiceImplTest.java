@@ -1,6 +1,7 @@
 package org.hypertrace.label.application.rule.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.grpc.Channel;
@@ -8,7 +9,6 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,35 +58,34 @@ public class LabelApplicationRuleConfigServiceImplTest {
 
   @Test
   void createLabelApplicationRule() {
-    Map<String, LabelApplicationRule> createdRulesById = createRules();
-    Set<LabelApplicationRuleData> createdData =
-        createdRulesById.values().stream()
-            .map(LabelApplicationRule::getData)
-            .collect(Collectors.toSet());
-    Set<LabelApplicationRuleData> expectedData = new HashSet<>();
-    expectedData.add(buildCompositeRuleData());
-    expectedData.add(buildSimpleRuleData("auth", "valid"));
+    LabelApplicationRule simpleRule = createSimpleRule("auth", "valid");
+    LabelApplicationRule compositeRule = createCompositeRule();
+    List<LabelApplicationRule> createdRules = List.of(simpleRule, compositeRule);
+    List<LabelApplicationRuleData> createdData =
+        createdRules.stream().map(LabelApplicationRule::getData).collect(Collectors.toList());
+    List<LabelApplicationRuleData> expectedData =
+        Arrays.asList(buildSimpleRuleData("auth", "valid"), buildCompositeRuleData());
     assertEquals(expectedData, createdData);
   }
 
   @Test
   void getLabelApplicationRule() {
-    Map<String, LabelApplicationRule> createdRulesById = createRules();
-    createdRulesById
-        .keySet()
-        .forEach(
-            id -> {
-              System.out.println(id);
-              GetLabelApplicationRuleRequest request =
-                  GetLabelApplicationRuleRequest.newBuilder().setId(id).build();
-              GetLabelApplicationRuleResponse response =
-                  labelApplicationRuleConfigServiceBlockingStub.getLabelApplicationRule(request);
-              assertEquals(createdRulesById.get(id), response.getLabelApplicationRule());
-            });
+    LabelApplicationRule simpleRule = createSimpleRule("auth", "valid");
+    LabelApplicationRule compositeRule = createCompositeRule();
+    List<LabelApplicationRule> rules = List.of(simpleRule, compositeRule);
+    rules.forEach(
+        (existingRule) -> {
+          GetLabelApplicationRuleRequest request =
+              GetLabelApplicationRuleRequest.newBuilder().setId(existingRule.getId()).build();
+          GetLabelApplicationRuleResponse response =
+              labelApplicationRuleConfigServiceBlockingStub.getLabelApplicationRule(request);
+          assertEquals(existingRule, response.getLabelApplicationRule());
+        });
   }
 
   @Test
   void getLabelApplicationRuleError() {
+    LabelApplicationRule simpleRule = createSimpleRule("auth", "valid");
     GetLabelApplicationRuleRequest request =
         GetLabelApplicationRuleRequest.newBuilder().setId("1").build();
     Throwable exception =
@@ -100,9 +99,9 @@ public class LabelApplicationRuleConfigServiceImplTest {
 
   @Test
   void getLabelApplicationRules() {
-    Map<String, LabelApplicationRule> createdRulesById = createRules();
-    Set<LabelApplicationRule> expectedRules =
-        createdRulesById.values().stream().collect(Collectors.toUnmodifiableSet());
+    LabelApplicationRule simpleRule = createSimpleRule("auth", "valid");
+    LabelApplicationRule compositeRule = createCompositeRule();
+    Set<LabelApplicationRule> expectedRules = Set.of(simpleRule, compositeRule);
     GetLabelApplicationRulesResponse response =
         labelApplicationRuleConfigServiceBlockingStub.getLabelApplicationRules(
             GetLabelApplicationRulesRequest.getDefaultInstance());
@@ -113,9 +112,9 @@ public class LabelApplicationRuleConfigServiceImplTest {
 
   @Test
   void updateLabelApplicationRule() {
-    Map<String, LabelApplicationRule> createdRulesById = createRules();
+    LabelApplicationRule simpleRule = createSimpleRule("auth", "valid");
     LabelApplicationRuleData expectedData = buildSimpleRuleData("auth", "not-valid");
-    String updateRuleId = createdRulesById.keySet().stream().findAny().orElse("default");
+    String updateRuleId = simpleRule.getId();
     UpdateLabelApplicationRuleRequest request =
         UpdateLabelApplicationRuleRequest.newBuilder()
             .setId(updateRuleId)
@@ -128,7 +127,7 @@ public class LabelApplicationRuleConfigServiceImplTest {
 
   @Test
   void updateLabelApplicationRuleError() {
-    Map<String, LabelApplicationRule> createdRulesById = createRules();
+    LabelApplicationRule simpleRule = createSimpleRule("auth", "valid");
     LabelApplicationRuleData expectedData = buildSimpleRuleData("auth", "not-valid");
     UpdateLabelApplicationRuleRequest request =
         UpdateLabelApplicationRuleRequest.newBuilder().setId("1").setData(expectedData).build();
@@ -143,22 +142,20 @@ public class LabelApplicationRuleConfigServiceImplTest {
 
   @Test
   void deleteApplicationRule() {
-    Map<String, LabelApplicationRule> createdRulesById = createRules();
-    createdRulesById
-        .keySet()
-        .forEach(
-            id -> {
-              System.out.println(id);
-              DeleteLabelApplicationRuleRequest request =
-                  DeleteLabelApplicationRuleRequest.newBuilder().setId(id).build();
-              labelApplicationRuleConfigServiceBlockingStub.deleteLabelApplicationRule(request);
-              List<LabelApplicationRule> rulesList =
-                  labelApplicationRuleConfigServiceBlockingStub
-                      .getLabelApplicationRules(
-                          GetLabelApplicationRulesRequest.getDefaultInstance())
-                      .getLabelApplicationRulesList();
-              assertEquals(false, rulesList.contains(createdRulesById.get(id)));
-            });
+    LabelApplicationRule simpleRule = createSimpleRule("auth", "valid");
+    LabelApplicationRule compositeRule = createCompositeRule();
+    List<LabelApplicationRule> rules = List.of(simpleRule, compositeRule);
+    rules.forEach(
+        (existingRule) -> {
+          DeleteLabelApplicationRuleRequest request =
+              DeleteLabelApplicationRuleRequest.newBuilder().setId(existingRule.getId()).build();
+          labelApplicationRuleConfigServiceBlockingStub.deleteLabelApplicationRule(request);
+          List<LabelApplicationRule> rulesList =
+              labelApplicationRuleConfigServiceBlockingStub
+                  .getLabelApplicationRules(GetLabelApplicationRulesRequest.getDefaultInstance())
+                  .getLabelApplicationRulesList();
+          assertFalse(rulesList.contains(existingRule));
+        });
   }
 
   @Test
@@ -267,7 +264,16 @@ public class LabelApplicationRuleConfigServiceImplTest {
         .build();
   }
 
-  private Map<String, LabelApplicationRule> createRules() {
+  private LabelApplicationRule createSimpleRule(String key, String value) {
+    LabelApplicationRuleData simpleRuleData = buildSimpleRuleData(key, value);
+    CreateLabelApplicationRuleRequest simpleRuleRequest =
+        CreateLabelApplicationRuleRequest.newBuilder().setData(simpleRuleData).build();
+    CreateLabelApplicationRuleResponse simpleRuleResponse =
+        labelApplicationRuleConfigServiceBlockingStub.createLabelApplicationRule(simpleRuleRequest);
+    return simpleRuleResponse.getLabelApplicationRule();
+  }
+
+  private LabelApplicationRule createCompositeRule() {
     Map<String, LabelApplicationRule> createdRulesById = new HashMap<>();
 
     LabelApplicationRuleData compositeRuleData = buildCompositeRuleData();
@@ -276,17 +282,7 @@ public class LabelApplicationRuleConfigServiceImplTest {
     CreateLabelApplicationRuleResponse compositeRuleResponse =
         labelApplicationRuleConfigServiceBlockingStub.createLabelApplicationRule(
             compositeRuleRequest);
-    LabelApplicationRule compositeRule = compositeRuleResponse.getLabelApplicationRule();
-    createdRulesById.put(compositeRule.getId(), compositeRule);
-
-    LabelApplicationRuleData simpleRuleData = buildSimpleRuleData("auth", "valid");
-    CreateLabelApplicationRuleRequest simpleRuleRequest =
-        CreateLabelApplicationRuleRequest.newBuilder().setData(simpleRuleData).build();
-    CreateLabelApplicationRuleResponse simpleRuleResponse =
-        labelApplicationRuleConfigServiceBlockingStub.createLabelApplicationRule(simpleRuleRequest);
-    LabelApplicationRule simpleRule = simpleRuleResponse.getLabelApplicationRule();
-    createdRulesById.put(simpleRule.getId(), simpleRule);
-    return createdRulesById;
+    return compositeRuleResponse.getLabelApplicationRule();
   }
 
   private LabelApplicationRuleData.Action buildAction() {
