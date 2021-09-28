@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package org.hypertrace.notification.config.service.v1;
+
+message NotificationRule {
+  string id = 1;
+  NotificationRuleMutableData notification_rule_mutable_data = 2;
+}
+
+message NotificationRuleMutableData {
+  string rule_name = 1;
+  string description = 2;
+
+  string event_condition_id = 3;
+  string event_condition_type = 4;
+
+  string channel_id = 5;
+  string rate_limit_interval_duration = 6;
+}
