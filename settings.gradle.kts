@@ -34,3 +34,4 @@ include(":alerting-config-service-impl")
 
 include(":label-application-rule-config-service-api")
 include(":label-application-rule-config-service-impl")
+

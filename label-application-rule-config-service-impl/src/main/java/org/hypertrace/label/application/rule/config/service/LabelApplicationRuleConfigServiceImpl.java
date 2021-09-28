@@ -14,8 +14,6 @@ import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplic
 import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplicationRuleResponse;
 import org.hypertrace.label.application.rule.config.service.v1.DeleteLabelApplicationRuleRequest;
 import org.hypertrace.label.application.rule.config.service.v1.DeleteLabelApplicationRuleResponse;
-import org.hypertrace.label.application.rule.config.service.v1.GetLabelApplicationRuleRequest;
-import org.hypertrace.label.application.rule.config.service.v1.GetLabelApplicationRuleResponse;
 import org.hypertrace.label.application.rule.config.service.v1.GetLabelApplicationRulesRequest;
 import org.hypertrace.label.application.rule.config.service.v1.GetLabelApplicationRulesResponse;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRule;
@@ -55,25 +53,6 @@ public class LabelApplicationRuleConfigServiceImpl
           CreateLabelApplicationRuleResponse.newBuilder()
               .setLabelApplicationRule(createdLabelApplicationRule)
               .build());
-      responseObserver.onCompleted();
-    } catch (Exception e) {
-      responseObserver.onError(e);
-    }
-  }
-
-  @Override
-  public void getLabelApplicationRule(
-      GetLabelApplicationRuleRequest request,
-      StreamObserver<GetLabelApplicationRuleResponse> responseObserver) {
-    try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
-      this.requestValidator.validateOrThrow(requestContext, request);
-      LabelApplicationRule rule =
-          this.labelApplicationRuleStore
-              .getObject(requestContext, request.getId())
-              .orElseThrow(Status.NOT_FOUND::asRuntimeException);
-      responseObserver.onNext(
-          GetLabelApplicationRuleResponse.newBuilder().setLabelApplicationRule(rule).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       responseObserver.onError(e);

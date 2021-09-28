@@ -13,7 +13,6 @@ import java.util.regex.Pattern;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplicationRuleRequest;
 import org.hypertrace.label.application.rule.config.service.v1.DeleteLabelApplicationRuleRequest;
-import org.hypertrace.label.application.rule.config.service.v1.GetLabelApplicationRuleRequest;
 import org.hypertrace.label.application.rule.config.service.v1.GetLabelApplicationRulesRequest;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.Action;
@@ -31,13 +30,6 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
       CreateLabelApplicationRuleRequest createLabelApplicationRuleRequest) {
     validateRequestContextOrThrow(requestContext);
     validateLabelApplicationRuleData(createLabelApplicationRuleRequest.getData());
-  }
-
-  @Override
-  public void validateOrThrow(
-      RequestContext requestContext,
-      GetLabelApplicationRuleRequest getLabelApplicationRuleRequest) {
-    validateRequestContextOrThrow(requestContext);
   }
 
   @Override

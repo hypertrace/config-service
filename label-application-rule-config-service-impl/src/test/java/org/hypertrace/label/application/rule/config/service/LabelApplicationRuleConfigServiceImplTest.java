@@ -17,8 +17,6 @@ import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplicationRuleRequest;
 import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplicationRuleResponse;
 import org.hypertrace.label.application.rule.config.service.v1.DeleteLabelApplicationRuleRequest;
-import org.hypertrace.label.application.rule.config.service.v1.GetLabelApplicationRuleRequest;
-import org.hypertrace.label.application.rule.config.service.v1.GetLabelApplicationRuleResponse;
 import org.hypertrace.label.application.rule.config.service.v1.GetLabelApplicationRulesRequest;
 import org.hypertrace.label.application.rule.config.service.v1.GetLabelApplicationRulesResponse;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRule;
@@ -66,35 +64,6 @@ public class LabelApplicationRuleConfigServiceImplTest {
     List<LabelApplicationRuleData> expectedData =
         Arrays.asList(buildSimpleRuleData("auth", "valid"), buildCompositeRuleData());
     assertEquals(expectedData, createdData);
-  }
-
-  @Test
-  void getLabelApplicationRule() {
-    LabelApplicationRule simpleRule = createSimpleRule("auth", "valid");
-    LabelApplicationRule compositeRule = createCompositeRule();
-    List<LabelApplicationRule> rules = List.of(simpleRule, compositeRule);
-    rules.forEach(
-        (existingRule) -> {
-          GetLabelApplicationRuleRequest request =
-              GetLabelApplicationRuleRequest.newBuilder().setId(existingRule.getId()).build();
-          GetLabelApplicationRuleResponse response =
-              labelApplicationRuleConfigServiceBlockingStub.getLabelApplicationRule(request);
-          assertEquals(existingRule, response.getLabelApplicationRule());
-        });
-  }
-
-  @Test
-  void getLabelApplicationRuleError() {
-    LabelApplicationRule simpleRule = createSimpleRule("auth", "valid");
-    GetLabelApplicationRuleRequest request =
-        GetLabelApplicationRuleRequest.newBuilder().setId("1").build();
-    Throwable exception =
-        assertThrows(
-            StatusRuntimeException.class,
-            () -> {
-              labelApplicationRuleConfigServiceBlockingStub.getLabelApplicationRule(request);
-            });
-    assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
   }
 
   @Test
