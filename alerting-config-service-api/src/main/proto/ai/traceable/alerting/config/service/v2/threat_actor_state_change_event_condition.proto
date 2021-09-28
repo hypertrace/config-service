@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.alerting.config.service.v2;
+
+message ThreatActorStateChangeEventCondition {
+  repeated ActorState actor_states = 1;
+}
+
+enum ActorState {
+  ACTOR_STATE_UNSPECIFIED = 0;
+  ACTOR_STATE_NORMAL = 1;
+  ACTOR_STATE_THREAT_ACTOR = 2;
+  ACTOR_STATE_RESOLVED = 3;
+  ACTOR_STATE_ALWAYS_ALLOWED = 4;
+  ACTOR_STATE_ALWAYS_DENIED = 5;
+  ACTOR_STATE_SUSPENDED = 6;
+  ACTOR_STATE_SNOOZED = 7;
+}

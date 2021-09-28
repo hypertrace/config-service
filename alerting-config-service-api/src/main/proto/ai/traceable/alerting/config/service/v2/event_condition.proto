@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.alerting.config.service.v2;
+
+import "ai/traceable/alerting/config/service/v2/detected_security_event_condition.proto";
+import "ai/traceable/alerting/config/service/v2/threat_actor_state_change_event_condition.proto";
+import "ai/traceable/alerting/config/service/v2/blocked_event_condition.proto";
+import "org/hypertrace/alerting/config/service/v1/metric_anomaly_event_condition.proto";
+
+message EventCondition {
+  string id = 1;
+  EventConditionMutableData event_condition_mutable_data = 2;
+}
+
+message EventConditionMutableData {
+  oneof condition {
+    DetectedSecurityEventCondition detected_security_event_condition = 1;
+    ThreatActorStateChangeEventCondition threat_actor_state_change_event_condition = 2;
+    BlockedEventCondition blocked_event_condition = 3;
+    org.hypertrace.alerting.config.service.v1.MetricAnomalyEventCondition metric_anomaly_event_condition = 4;
+  }
+}

@@ -52,3 +52,6 @@ include(":risk-config-service-impl")
 include(":config-utils")
 include(":data-config-service-api")
 include(":data-config-service-impl")
+include("alerting-config-service-api")
+include("alerting-config-service-impl")
+

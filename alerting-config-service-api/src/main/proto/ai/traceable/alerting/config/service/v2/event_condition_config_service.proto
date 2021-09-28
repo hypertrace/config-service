@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.alerting.config.service.v2;
+
+import "ai/traceable/alerting/config/service/v2/event_condition.proto";
+
+service EventConditionConfigService {
+  rpc CreateEventCondition(CreateEventConditionRequest) returns (CreateEventConditionResponse) {}
+  rpc UpdateEventCondition(UpdateEventConditionRequest) returns (UpdateEventConditionResponse) {}
+  rpc GetAllEventConditions(GetAllEventConditionsRequest) returns (GetAllEventConditionsResponse) {}
+  rpc DeleteEventCondition(DeleteEventConditionRequest) returns (DeleteEventConditionResponse) {}
+}
+
+message CreateEventConditionRequest {
+  EventConditionMutableData event_condition_mutable_data = 1;
+}
+
+message CreateEventConditionResponse {
+  EventCondition event_condition = 1;
+}
+
+message UpdateEventConditionRequest {
+  string id = 1;
+  EventConditionMutableData event_condition_mutable_data = 2;
+}
+
+message UpdateEventConditionResponse {
+  EventCondition event_condition = 1;
+}
+
+message GetAllEventConditionsRequest {}
+
+message GetAllEventConditionsResponse {
+  repeated EventCondition event_conditions = 1;
+}
+
+message DeleteEventConditionRequest {
+  string event_condition_id = 1;
+}
+
+message DeleteEventConditionResponse {}

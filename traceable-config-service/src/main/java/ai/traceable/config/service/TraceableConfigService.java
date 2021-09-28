@@ -2,6 +2,7 @@ package ai.traceable.config.service;
 
 import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.activity.event.producer.ActivityEventProducerFactory;
+import ai.traceable.alerting.config.service.EventConditionConfigServiceImpl;
 import ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory;
 import ai.traceable.blocking.config.service.BlockingConfigServiceFactory;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceFactory;
@@ -30,6 +31,8 @@ import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.hypertrace.core.grpcutils.server.InterceptorUtil;
 import org.hypertrace.core.serviceframework.PlatformService;
 import org.hypertrace.core.serviceframework.config.ConfigClient;
+import org.hypertrace.notification.config.service.NotificationChannelConfigServiceImpl;
+import org.hypertrace.notification.config.service.NotificationRuleConfigServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,6 +105,13 @@ public class TraceableConfigService extends PlatformService {
     List<BindableService> anomalyConfigServices =
         AnomalyConfigServiceFactory.build(channelRegistry, managedChannel, config);
 
+    EventConditionConfigServiceImpl eventConditionConfigService =
+        new EventConditionConfigServiceImpl(managedChannel);
+    NotificationChannelConfigServiceImpl notificationChannelConfigService =
+        new NotificationChannelConfigServiceImpl(managedChannel);
+    NotificationRuleConfigServiceImpl notificationRuleConfigService =
+        new NotificationRuleConfigServiceImpl(managedChannel);
+
     internalServerBuilder.addServices(
         anomalyConfigServices.stream()
             .map(InterceptorUtil::wrapInterceptors)
@@ -116,7 +126,11 @@ public class TraceableConfigService extends PlatformService {
         .addService(InterceptorUtil.wrapInterceptors(customSignatureConfigService))
         .addService(InterceptorUtil.wrapInterceptors(userAttributionConfigService))
         .addService(InterceptorUtil.wrapInterceptors(threatManagementConfigService))
-        .addService(InterceptorUtil.wrapInterceptors(riskConfigService));
+        .addService(InterceptorUtil.wrapInterceptors(riskConfigService))
+        .addService(InterceptorUtil.wrapInterceptors(eventConditionConfigService))
+        .addService(InterceptorUtil.wrapInterceptors(notificationRuleConfigService))
+        .addService(InterceptorUtil.wrapInterceptors(notificationChannelConfigService));
+
     internalTraceableConfigServer = internalServerBuilder.build();
 
     ServerBuilder<?> externalServerBuilder = ServerBuilder.forPort(externalServerPort);

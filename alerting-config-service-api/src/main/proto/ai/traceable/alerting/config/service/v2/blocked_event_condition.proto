@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.alerting.config.service.v2;
+
+message BlockedEventCondition {
+  repeated BlockedEventType blocked_event_types = 1;
+}
+
+enum BlockedEventType {
+    BLOCKED_EVENT_TYPE_UNSPECIFIED = 0;
+    BLOCKED_EVENT_TYPE_THREAT_ACTOR = 1;
+    BLOCKED_EVENT_TYPE_SIGNATURE_BASED = 2;
+    BLOCKED_EVENT_TYPE_RATE_LIMITING = 3;
+    BLOCKED_EVENT_TYPE_IP_BASED = 4;
+    BLOCKED_EVENT_TYPE_LOCATION_BASED = 5;
+    BLOCKED_EVENT_TYPE_CUSTOM_SIGNATURE_BASED = 6;
+}
