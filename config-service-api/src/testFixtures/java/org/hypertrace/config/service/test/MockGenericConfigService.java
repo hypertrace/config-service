@@ -180,16 +180,24 @@ public class MockGenericConfigService {
               StreamObserver<DeleteConfigResponse> responseStreamObserver =
                   invocation.getArgument(1, StreamObserver.class);
 
-              ContextSpecificConfig configToDelete =
-                  currentValues.get(
-                      ResourceType.of(request.getResourceNamespace(), request.getResourceName()),
-                      request.getContext());
+              Optional<ContextSpecificConfig> configToDelete =
+                  Optional.ofNullable(
+                      currentValues.get(
+                          ResourceType.of(
+                              request.getResourceNamespace(), request.getResourceName()),
+                          request.getContext()));
               currentValues.remove(
                   ResourceType.of(request.getResourceNamespace(), request.getResourceName()),
                   configContextOrDefault(request.getContext()));
-              responseStreamObserver.onNext(
-                  DeleteConfigResponse.newBuilder().setDeletedConfig(configToDelete).build());
-              responseStreamObserver.onCompleted();
+              if (configToDelete.isPresent()) {
+                responseStreamObserver.onNext(
+                    DeleteConfigResponse.newBuilder()
+                        .setDeletedConfig(configToDelete.get())
+                        .build());
+                responseStreamObserver.onCompleted();
+              } else {
+                responseStreamObserver.onError(Status.NOT_FOUND.asException());
+              }
               return null;
             })
         .when(this.mockConfigService)

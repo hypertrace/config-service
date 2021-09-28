@@ -9,6 +9,7 @@ import org.hypertrace.alerting.config.service.EventConditionConfigServiceImpl;
 import org.hypertrace.config.service.store.ConfigStore;
 import org.hypertrace.config.service.store.DocumentConfigStore;
 import org.hypertrace.core.serviceframework.spi.PlatformServiceLifecycle;
+import org.hypertrace.label.application.rule.config.service.LabelApplicationRuleConfigServiceImpl;
 import org.hypertrace.label.config.service.LabelsConfigServiceImpl;
 import org.hypertrace.notification.config.service.NotificationChannelConfigServiceImpl;
 import org.hypertrace.notification.config.service.NotificationRuleConfigServiceImpl;
@@ -33,6 +34,7 @@ public class ConfigServicesFactory {
         new ConfigServiceGrpcImpl(configStore),
         new SpacesConfigServiceImpl(configChannel),
         new LabelsConfigServiceImpl(configChannel, config),
+        new LabelApplicationRuleConfigServiceImpl(configChannel),
         new EventConditionConfigServiceImpl(configChannel),
         new NotificationRuleConfigServiceImpl(configChannel),
         new NotificationChannelConfigServiceImpl(configChannel));
