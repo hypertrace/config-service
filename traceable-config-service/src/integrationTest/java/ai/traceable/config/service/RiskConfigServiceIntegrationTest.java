@@ -5,19 +5,41 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ai.traceable.risk.config.service.v1.CustomizationOptions;
+import ai.traceable.risk.config.service.v1.GetRiskImpactConfigsRequest;
+import ai.traceable.risk.config.service.v1.GetRiskLikelihoodConfigsRequest;
 import ai.traceable.risk.config.service.v1.GetRiskScoringConfigsRequest;
 import ai.traceable.risk.config.service.v1.GetRiskScoringConfigsResponse;
+import ai.traceable.risk.config.service.v1.IntOperator;
+import ai.traceable.risk.config.service.v1.IntPredicate;
 import ai.traceable.risk.config.service.v1.ResetRiskFactorGridConfigRequest;
+import ai.traceable.risk.config.service.v1.ResetRiskImpactConfigsRequest;
 import ai.traceable.risk.config.service.v1.ResetRiskLevelConfigRequest;
+import ai.traceable.risk.config.service.v1.ResetRiskLikelihoodConfigsRequest;
 import ai.traceable.risk.config.service.v1.RiskConfigServiceGrpc;
+import ai.traceable.risk.config.service.v1.RiskContributorConfigs;
+import ai.traceable.risk.config.service.v1.RiskContributorConfigsResetFilter;
+import ai.traceable.risk.config.service.v1.RiskElementConfig;
+import ai.traceable.risk.config.service.v1.RiskElementInfo;
+import ai.traceable.risk.config.service.v1.RiskElementScoring;
+import ai.traceable.risk.config.service.v1.RiskFactor;
+import ai.traceable.risk.config.service.v1.RiskFactorConfig;
 import ai.traceable.risk.config.service.v1.RiskFactorGridCell;
 import ai.traceable.risk.config.service.v1.RiskFactorGridConfig;
 import ai.traceable.risk.config.service.v1.RiskFactorGridConfigValues;
+import ai.traceable.risk.config.service.v1.RiskFactorInfo;
+import ai.traceable.risk.config.service.v1.RiskFactorScoreContribution;
+import ai.traceable.risk.config.service.v1.RiskFactorScoring;
+import ai.traceable.risk.config.service.v1.RiskFactorType;
 import ai.traceable.risk.config.service.v1.RiskLevelConfig;
 import ai.traceable.risk.config.service.v1.RiskLevelConfigValues;
 import ai.traceable.risk.config.service.v1.RiskScoreCategory;
+import ai.traceable.risk.config.service.v1.StringOperator;
+import ai.traceable.risk.config.service.v1.StringPredicate;
 import ai.traceable.risk.config.service.v1.UpdateRiskFactorGridConfigRequest;
+import ai.traceable.risk.config.service.v1.UpdateRiskImpactConfigsRequest;
 import ai.traceable.risk.config.service.v1.UpdateRiskLevelConfigRequest;
+import ai.traceable.risk.config.service.v1.UpdateRiskLikelihoodConfigsRequest;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.junit.jupiter.api.BeforeAll;
@@ -215,5 +237,429 @@ class RiskConfigServiceIntegrationTest extends TraceableConfigServiceIntegration
                 assertEquals(score, cell.getScore());
               }
             });
+  }
+
+  @Test
+  public void testGetUpsertResetRiskLikelihoodConfigs() {
+    RiskContributorConfigs defaultRiskLikelihoodConfigs =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+                TENANT_ID,
+                () ->
+                    riskConfigServiceStub.getRiskLikelihoodConfigs(
+                        GetRiskLikelihoodConfigsRequest.getDefaultInstance()))
+            .getRiskLikelihoodConfigs();
+    assertTrue(
+        defaultRiskLikelihoodConfigs
+            .getRiskFactorsList()
+            .contains(getDefaultCustomTagRiskFactor()));
+    assertTrue(
+        defaultRiskLikelihoodConfigs.getRiskFactorsList().contains(getDefaultMotiveFactor()));
+    RiskContributorConfigs riskLikelihoodConfigs;
+
+    assertThrows(
+        Exception.class,
+        () ->
+            GrpcClientRequestContextUtil.executeInTenantContext(
+                TENANT_ID,
+                () ->
+                    riskConfigServiceStub.updateRiskLikelihoodConfigs(
+                        UpdateRiskLikelihoodConfigsRequest.newBuilder()
+                            .addRiskFactorConfigs(RiskFactorConfig.getDefaultInstance())
+                            .build())));
+    assertThrows(
+        Exception.class,
+        () ->
+            GrpcClientRequestContextUtil.executeInTenantContext(
+                TENANT_ID,
+                () ->
+                    riskConfigServiceStub.updateRiskLikelihoodConfigs(
+                        UpdateRiskLikelihoodConfigsRequest.newBuilder()
+                            .addRiskFactorConfigs(
+                                RiskFactorConfig.newBuilder().setId("random").build())
+                            .build())));
+    assertThrows(
+        Exception.class,
+        () ->
+            GrpcClientRequestContextUtil.executeInTenantContext(
+                TENANT_ID,
+                () ->
+                    riskConfigServiceStub.updateRiskLikelihoodConfigs(
+                        UpdateRiskLikelihoodConfigsRequest.newBuilder()
+                            .addRiskFactorConfigs(
+                                RiskFactorConfig.newBuilder()
+                                    .setId("motive")
+                                    .addRiskElementConfigs(
+                                        RiskElementConfig.newBuilder().setId("random").build())
+                                    .build())
+                            .build())));
+
+    RiskFactorConfig riskFactorConfig1 =
+        RiskFactorConfig.newBuilder()
+            .setId("motive")
+            .addRiskElementConfigs(
+                RiskElementConfig.newBuilder()
+                    .setId("response-has-pii")
+                    .setRiskElementInfo(
+                        RiskElementInfo.newBuilder()
+                            .setResponsePiiCount(
+                                IntPredicate.newBuilder()
+                                    .setOperator(IntOperator.INT_OPERATOR_GREATER_THAN)
+                                    .setValue(0)))
+                    .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(9)))
+            .setRiskFactorScoring(
+                RiskFactorScoring.newBuilder()
+                    .setDisabled(true)
+                    .setScoreContribution(
+                        RiskFactorScoreContribution.RISK_FACTOR_SCORE_CONTRIBUTION_ABSOLUTE))
+            .build();
+    RiskFactorConfig riskFactorConfig2 = getCustomTagUpdatedConfig();
+    RiskFactorConfig updatedRiskFactorConfig1 =
+        riskFactorConfig1.toBuilder()
+            .setRiskFactorScoring(RiskFactorScoring.newBuilder().setDisabled(true))
+            .build();
+
+    GrpcClientRequestContextUtil.executeInTenantContext(
+        TENANT_ID,
+        () ->
+            riskConfigServiceStub.updateRiskLikelihoodConfigs(
+                UpdateRiskLikelihoodConfigsRequest.newBuilder()
+                    .addRiskFactorConfigs(riskFactorConfig1)
+                    .addRiskFactorConfigs(riskFactorConfig2)
+                    .build()));
+    riskLikelihoodConfigs =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+                TENANT_ID,
+                () ->
+                    riskConfigServiceStub.getRiskLikelihoodConfigs(
+                        GetRiskLikelihoodConfigsRequest.getDefaultInstance()))
+            .getRiskLikelihoodConfigs();
+    assertEquals(
+        defaultRiskLikelihoodConfigs.getRiskFactorsCount(),
+        riskLikelihoodConfigs.getRiskFactorsCount());
+    assertTrue(
+        riskLikelihoodConfigs
+            .getRiskFactorsList()
+            .contains(
+                getDefaultMotiveFactor().toBuilder()
+                    .setRiskFactorConfig(updatedRiskFactorConfig1)
+                    .setIsDefault(false)
+                    .build()));
+    assertTrue(
+        riskLikelihoodConfigs
+            .getRiskFactorsList()
+            .contains(
+                getDefaultCustomTagRiskFactor().toBuilder()
+                    .setRiskFactorConfig(riskFactorConfig2)
+                    .setIsDefault(false)
+                    .build()));
+
+    GrpcClientRequestContextUtil.executeInTenantContext(
+        TENANT_ID,
+        () ->
+            riskConfigServiceStub.resetRiskLikelihoodConfigs(
+                ResetRiskLikelihoodConfigsRequest.newBuilder()
+                    .setFilter(
+                        RiskContributorConfigsResetFilter.newBuilder()
+                            .addRiskFactorIds("custom-tag"))
+                    .build()));
+    riskLikelihoodConfigs =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+                TENANT_ID,
+                () ->
+                    riskConfigServiceStub.getRiskLikelihoodConfigs(
+                        GetRiskLikelihoodConfigsRequest.getDefaultInstance()))
+            .getRiskLikelihoodConfigs();
+    assertEquals(
+        defaultRiskLikelihoodConfigs.getRiskFactorsCount(),
+        riskLikelihoodConfigs.getRiskFactorsCount());
+    assertTrue(
+        riskLikelihoodConfigs
+            .getRiskFactorsList()
+            .contains(
+                getDefaultMotiveFactor().toBuilder()
+                    .setRiskFactorConfig(updatedRiskFactorConfig1)
+                    .setIsDefault(false)
+                    .build()));
+    assertTrue(
+        riskLikelihoodConfigs.getRiskFactorsList().contains(getDefaultCustomTagRiskFactor()));
+
+    GrpcClientRequestContextUtil.executeInTenantContext(
+        TENANT_ID,
+        () ->
+            riskConfigServiceStub.resetRiskLikelihoodConfigs(
+                ResetRiskLikelihoodConfigsRequest.getDefaultInstance()));
+    riskLikelihoodConfigs =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+                TENANT_ID,
+                () ->
+                    riskConfigServiceStub.getRiskLikelihoodConfigs(
+                        GetRiskLikelihoodConfigsRequest.getDefaultInstance()))
+            .getRiskLikelihoodConfigs();
+    assertEquals(
+        defaultRiskLikelihoodConfigs.getRiskFactorsCount(),
+        riskLikelihoodConfigs.getRiskFactorsCount());
+    riskLikelihoodConfigs
+        .getRiskFactorsList()
+        .forEach(
+            factor ->
+                assertTrue(defaultRiskLikelihoodConfigs.getRiskFactorsList().contains(factor)));
+  }
+
+  @Test
+  public void testGetUpsertResetRiskImpactConfigs() {
+    RiskContributorConfigs defaultRiskImpactConfigs =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+                TENANT_ID,
+                () ->
+                    riskConfigServiceStub.getRiskImpactConfigs(
+                        GetRiskImpactConfigsRequest.getDefaultInstance()))
+            .getRiskImpactConfigs();
+    assertTrue(
+        defaultRiskImpactConfigs.getRiskFactorsList().contains(getDefaultCustomTagRiskFactor()));
+    assertTrue(
+        defaultRiskImpactConfigs
+            .getRiskFactorsList()
+            .contains(getDefaultSensitiveDataExposureFactor()));
+    RiskContributorConfigs riskImpactConfigs;
+
+    assertThrows(
+        Exception.class,
+        () ->
+            GrpcClientRequestContextUtil.executeInTenantContext(
+                TENANT_ID,
+                () ->
+                    riskConfigServiceStub.updateRiskImpactConfigs(
+                        UpdateRiskImpactConfigsRequest.newBuilder()
+                            .addRiskFactorConfigs(RiskFactorConfig.getDefaultInstance())
+                            .build())));
+    assertThrows(
+        Exception.class,
+        () ->
+            GrpcClientRequestContextUtil.executeInTenantContext(
+                TENANT_ID,
+                () ->
+                    riskConfigServiceStub.updateRiskImpactConfigs(
+                        UpdateRiskImpactConfigsRequest.newBuilder()
+                            .addRiskFactorConfigs(
+                                RiskFactorConfig.newBuilder().setId("random").build())
+                            .build())));
+    assertThrows(
+        Exception.class,
+        () ->
+            GrpcClientRequestContextUtil.executeInTenantContext(
+                TENANT_ID,
+                () ->
+                    riskConfigServiceStub.updateRiskImpactConfigs(
+                        UpdateRiskImpactConfigsRequest.newBuilder()
+                            .addRiskFactorConfigs(
+                                RiskFactorConfig.newBuilder()
+                                    .setId("sensitiveDataExposure")
+                                    .addRiskElementConfigs(
+                                        RiskElementConfig.newBuilder().setId("random").build())
+                                    .build())
+                            .build())));
+
+    RiskFactorConfig riskFactorConfig1 =
+        RiskFactorConfig.newBuilder()
+            .setId("sensitiveDataExposure")
+            .addRiskElementConfigs(
+                RiskElementConfig.newBuilder()
+                    .setId("request-has-params")
+                    .setRiskElementInfo(
+                        RiskElementInfo.newBuilder()
+                            .setRequestParamsCount(
+                                IntPredicate.newBuilder()
+                                    .setOperator(IntOperator.INT_OPERATOR_GREATER_THAN)
+                                    .setValue(5)))
+                    .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(9)))
+            .setRiskFactorScoring(
+                RiskFactorScoring.newBuilder()
+                    .setDisabled(true)
+                    .setScoreContribution(
+                        RiskFactorScoreContribution.RISK_FACTOR_SCORE_CONTRIBUTION_ABSOLUTE))
+            .build();
+    RiskFactorConfig riskFactorConfig2 = getCustomTagUpdatedConfig();
+    RiskFactorConfig updatedRiskFactorConfig1 =
+        riskFactorConfig1.toBuilder()
+            .setRiskFactorScoring(RiskFactorScoring.newBuilder().setDisabled(true))
+            .build();
+
+    GrpcClientRequestContextUtil.executeInTenantContext(
+        TENANT_ID,
+        () ->
+            riskConfigServiceStub.updateRiskImpactConfigs(
+                UpdateRiskImpactConfigsRequest.newBuilder()
+                    .addRiskFactorConfigs(riskFactorConfig1)
+                    .addRiskFactorConfigs(riskFactorConfig2)
+                    .build()));
+    riskImpactConfigs =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+                TENANT_ID,
+                () ->
+                    riskConfigServiceStub.getRiskImpactConfigs(
+                        GetRiskImpactConfigsRequest.getDefaultInstance()))
+            .getRiskImpactConfigs();
+    assertEquals(
+        defaultRiskImpactConfigs.getRiskFactorsCount(), riskImpactConfigs.getRiskFactorsCount());
+    assertTrue(
+        riskImpactConfigs
+            .getRiskFactorsList()
+            .contains(
+                getDefaultSensitiveDataExposureFactor().toBuilder()
+                    .setRiskFactorConfig(updatedRiskFactorConfig1)
+                    .setIsDefault(false)
+                    .build()));
+    assertTrue(
+        riskImpactConfigs
+            .getRiskFactorsList()
+            .contains(
+                getDefaultCustomTagRiskFactor().toBuilder()
+                    .setRiskFactorConfig(riskFactorConfig2)
+                    .setIsDefault(false)
+                    .build()));
+
+    GrpcClientRequestContextUtil.executeInTenantContext(
+        TENANT_ID,
+        () ->
+            riskConfigServiceStub.resetRiskImpactConfigs(
+                ResetRiskImpactConfigsRequest.newBuilder()
+                    .setFilter(
+                        RiskContributorConfigsResetFilter.newBuilder()
+                            .addRiskFactorIds("custom-tag"))
+                    .build()));
+    riskImpactConfigs =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+                TENANT_ID,
+                () ->
+                    riskConfigServiceStub.getRiskImpactConfigs(
+                        GetRiskImpactConfigsRequest.getDefaultInstance()))
+            .getRiskImpactConfigs();
+    assertEquals(
+        defaultRiskImpactConfigs.getRiskFactorsCount(), riskImpactConfigs.getRiskFactorsCount());
+    assertTrue(
+        riskImpactConfigs
+            .getRiskFactorsList()
+            .contains(
+                getDefaultSensitiveDataExposureFactor().toBuilder()
+                    .setRiskFactorConfig(updatedRiskFactorConfig1)
+                    .setIsDefault(false)
+                    .build()));
+    assertTrue(riskImpactConfigs.getRiskFactorsList().contains(getDefaultCustomTagRiskFactor()));
+
+    GrpcClientRequestContextUtil.executeInTenantContext(
+        TENANT_ID,
+        () ->
+            riskConfigServiceStub.resetRiskImpactConfigs(
+                ResetRiskImpactConfigsRequest.getDefaultInstance()));
+    riskImpactConfigs =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+                TENANT_ID,
+                () ->
+                    riskConfigServiceStub.getRiskImpactConfigs(
+                        GetRiskImpactConfigsRequest.getDefaultInstance()))
+            .getRiskImpactConfigs();
+    assertEquals(
+        defaultRiskImpactConfigs.getRiskFactorsCount(), riskImpactConfigs.getRiskFactorsCount());
+    riskImpactConfigs
+        .getRiskFactorsList()
+        .forEach(
+            factor -> assertTrue(defaultRiskImpactConfigs.getRiskFactorsList().contains(factor)));
+  }
+
+  private RiskFactor getDefaultCustomTagRiskFactor() {
+    return RiskFactor.newBuilder()
+        .setIsDefault(true)
+        .addCustomizationOptions(CustomizationOptions.CUSTOMIZATION_OPTIONS_ELEMENT_ADD_DELETE)
+        .addCustomizationOptions(
+            CustomizationOptions.CUSTOMIZATION_OPTIONS_FACTOR_SCORE_CONTRIBUTION)
+        .setRiskFactorInfo(
+            RiskFactorInfo.newBuilder()
+                .setName("custom-tag")
+                .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_CUSTOM_TAGS))
+        .setRiskFactorConfig(
+            RiskFactorConfig.newBuilder()
+                .setId("custom-tag")
+                .addRiskElementConfigs(
+                    RiskElementConfig.newBuilder()
+                        .setId("tag-1")
+                        .setRiskElementInfo(
+                            RiskElementInfo.newBuilder()
+                                .setLabelId(
+                                    StringPredicate.newBuilder()
+                                        .setOperator(StringOperator.STRING_OPERATOR_EQUALS)
+                                        .setValue("tag1")))
+                        .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(3)))
+                .addRiskElementConfigs(
+                    RiskElementConfig.newBuilder()
+                        .setId("tag-2")
+                        .setRiskElementInfo(
+                            RiskElementInfo.newBuilder()
+                                .setLabelId(
+                                    StringPredicate.newBuilder()
+                                        .setOperator(StringOperator.STRING_OPERATOR_EQUALS)
+                                        .setValue("tag2")))
+                        .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(4))))
+        .build();
+  }
+
+  private RiskFactorConfig getCustomTagUpdatedConfig() {
+    return RiskFactorConfig.newBuilder()
+        .setId("custom-tag")
+        .addRiskElementConfigs(
+            RiskElementConfig.newBuilder()
+                .setId("random")
+                .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(9)))
+        .setRiskFactorScoring(
+            RiskFactorScoring.newBuilder()
+                .setDisabled(true)
+                .setScoreContribution(
+                    RiskFactorScoreContribution.RISK_FACTOR_SCORE_CONTRIBUTION_ABSOLUTE))
+        .build();
+  }
+
+  private RiskFactor getDefaultSensitiveDataExposureFactor() {
+    return RiskFactor.newBuilder()
+        .setIsDefault(true)
+        .setRiskFactorInfo(
+            RiskFactorInfo.newBuilder()
+                .setName("sensitiveDataExposure")
+                .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_SENSITIVE_DATA_EXPOSURE))
+        .setRiskFactorConfig(
+            RiskFactorConfig.newBuilder()
+                .setId("sensitiveDataExposure")
+                .addRiskElementConfigs(
+                    RiskElementConfig.newBuilder()
+                        .setId("request-has-params")
+                        .setRiskElementInfo(
+                            RiskElementInfo.newBuilder()
+                                .setRequestParamsCount(
+                                    IntPredicate.newBuilder()
+                                        .setOperator(IntOperator.INT_OPERATOR_GREATER_THAN)
+                                        .setValue(5)))
+                        .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(7))))
+        .build();
+  }
+
+  private RiskFactor getDefaultMotiveFactor() {
+    return RiskFactor.newBuilder()
+        .setIsDefault(true)
+        .setRiskFactorInfo(
+            RiskFactorInfo.newBuilder()
+                .setName("motive")
+                .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_MOTIVE))
+        .setRiskFactorConfig(
+            RiskFactorConfig.newBuilder()
+                .setId("motive")
+                .addRiskElementConfigs(
+                    RiskElementConfig.newBuilder()
+                        .setId("response-has-pii")
+                        .setRiskElementInfo(
+                            RiskElementInfo.newBuilder()
+                                .setResponsePiiCount(
+                                    IntPredicate.newBuilder()
+                                        .setOperator(IntOperator.INT_OPERATOR_GREATER_THAN)
+                                        .setValue(0)))
+                        .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(6))))
+        .build();
   }
 }

@@ -1,0 +1,212 @@
+package ai.traceable.risk.config.service.factors.processor;
+
+import ai.traceable.risk.config.service.processor.RiskConfigConverter;
+import ai.traceable.risk.config.service.processor.RiskConfigUtils;
+import ai.traceable.risk.config.service.v1.CustomizationOptions;
+import ai.traceable.risk.config.service.v1.IntOperator;
+import ai.traceable.risk.config.service.v1.IntPredicate;
+import ai.traceable.risk.config.service.v1.RiskContributorConfigs;
+import ai.traceable.risk.config.service.v1.RiskElementConfig;
+import ai.traceable.risk.config.service.v1.RiskElementInfo;
+import ai.traceable.risk.config.service.v1.RiskElementScoring;
+import ai.traceable.risk.config.service.v1.RiskFactor;
+import ai.traceable.risk.config.service.v1.RiskFactorConfig;
+import ai.traceable.risk.config.service.v1.RiskFactorInfo;
+import ai.traceable.risk.config.service.v1.RiskFactorType;
+import ai.traceable.risk.config.service.v1.StringOperator;
+import ai.traceable.risk.config.service.v1.StringPredicate;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import org.hypertrace.core.grpcutils.context.RequestContext;
+
+public class MockFactorConfigsData {
+
+  static RiskContributorConfigs mockDefaultRiskContributorConfigs() {
+    RiskFactor riskFactor1 = getDefaultCustomTagRiskFactor();
+    RiskFactor riskFactor2 = getDefaultMotiveFactor();
+    return RiskContributorConfigs.newBuilder()
+        .addRiskFactors(riskFactor1)
+        .addRiskFactors(riskFactor2)
+        .build();
+  }
+
+  static RiskContributorConfigs mockDefaultRiskImpactConfigs() {
+    RiskFactor riskFactor1 = getDefaultCustomTagRiskFactor();
+    RiskFactor riskFactor2 = getDefaultSensitiveDataExposureFactor();
+    return RiskContributorConfigs.newBuilder()
+        .addRiskFactors(riskFactor1)
+        .addRiskFactors(riskFactor2)
+        .build();
+  }
+
+  static RiskFactor getDefaultCustomTagRiskFactor() {
+    return RiskFactor.newBuilder()
+        .setIsDefault(true)
+        .addCustomizationOptions(CustomizationOptions.CUSTOMIZATION_OPTIONS_ELEMENT_ADD_DELETE)
+        .addCustomizationOptions(
+            CustomizationOptions.CUSTOMIZATION_OPTIONS_FACTOR_SCORE_CONTRIBUTION)
+        .setRiskFactorInfo(
+            RiskFactorInfo.newBuilder()
+                .setName("custom-tag")
+                .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_CUSTOM_TAGS))
+        .setRiskFactorConfig(
+            RiskFactorConfig.newBuilder()
+                .setId("custom-tag")
+                .addRiskElementConfigs(
+                    RiskElementConfig.newBuilder()
+                        .setId("tag-1")
+                        .setRiskElementInfo(
+                            RiskElementInfo.newBuilder()
+                                .setLabelId(
+                                    StringPredicate.newBuilder()
+                                        .setOperator(StringOperator.STRING_OPERATOR_EQUALS)
+                                        .setValue("tag1")))
+                        .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(3)))
+                .addRiskElementConfigs(
+                    RiskElementConfig.newBuilder()
+                        .setId("tag-2")
+                        .setRiskElementInfo(
+                            RiskElementInfo.newBuilder()
+                                .setLabelId(
+                                    StringPredicate.newBuilder()
+                                        .setOperator(StringOperator.STRING_OPERATOR_EQUALS)
+                                        .setValue("tag2")))
+                        .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(4))))
+        .build();
+  }
+
+  static RiskFactor getDefaultSensitiveDataExposureFactor() {
+    return RiskFactor.newBuilder()
+        .setIsDefault(true)
+        .setRiskFactorInfo(
+            RiskFactorInfo.newBuilder()
+                .setName("sensitive-data-exposure")
+                .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_SENSITIVE_DATA_EXPOSURE))
+        .setRiskFactorConfig(
+            RiskFactorConfig.newBuilder()
+                .setId("sensitive-data-exposure")
+                .addRiskElementConfigs(
+                    RiskElementConfig.newBuilder()
+                        .setId("request-has-params")
+                        .setRiskElementInfo(
+                            RiskElementInfo.newBuilder()
+                                .setRequestParamsCount(
+                                    IntPredicate.newBuilder()
+                                        .setOperator(IntOperator.INT_OPERATOR_GREATER_THAN)
+                                        .setValue(5)))
+                        .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(7))))
+        .build();
+  }
+
+  static RiskFactor getDefaultMotiveFactor() {
+    return RiskFactor.newBuilder()
+        .setIsDefault(true)
+        .setRiskFactorInfo(
+            RiskFactorInfo.newBuilder()
+                .setName("motive")
+                .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_MOTIVE))
+        .setRiskFactorConfig(
+            RiskFactorConfig.newBuilder()
+                .setId("motive")
+                .addRiskElementConfigs(
+                    RiskElementConfig.newBuilder()
+                        .setId("response-has-pii")
+                        .setRiskElementInfo(
+                            RiskElementInfo.newBuilder()
+                                .setResponsePiiCount(
+                                    IntPredicate.newBuilder()
+                                        .setOperator(IntOperator.INT_OPERATOR_GREATER_THAN)
+                                        .setValue(0)))
+                        .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(6))))
+        .build();
+  }
+
+  static class MockRiskFactorConfigStore extends RiskFactorConfigStore {
+
+    private Map<String, Map<String, RiskFactorConfig>> tenantFactorsMap = new HashMap<>();
+
+    protected MockRiskFactorConfigStore(
+        ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
+        RiskConfigConverter<RiskFactorConfig> configConverter,
+        RiskConfigUtils<RiskFactorConfig> configUtils) {
+      super(configServiceBlockingStub, configConverter, configUtils);
+    }
+
+    @Override
+    public List<RiskFactorConfig> getAllObjects(RequestContext requestContext) {
+      String tenantId = requestContext.getTenantId().get();
+      return tenantFactorsMap.containsKey(tenantId)
+          ? new ArrayList<>(tenantFactorsMap.get(tenantId).values())
+          : Collections.emptyList();
+    }
+
+    @Override
+    public Optional<RiskFactorConfig> getObject(RequestContext requestContext, String context) {
+      return Optional.ofNullable(tenantFactorsMap.get(requestContext.getTenantId().get()))
+          .map(factorsMap -> factorsMap.get(context));
+    }
+
+    @Override
+    public RiskFactorConfig upsertObject(RequestContext requestContext, RiskFactorConfig config) {
+      String tenantId = requestContext.getTenantId().get();
+      if (!tenantFactorsMap.containsKey(tenantId)) {
+        tenantFactorsMap.put(tenantId, new HashMap<>());
+      }
+      tenantFactorsMap.get(tenantId).put(config.getId(), config);
+      return config;
+    }
+
+    @Override
+    public void deleteObject(RequestContext requestContext, String context) {
+      Optional.ofNullable(tenantFactorsMap.get(requestContext.getTenantId().get()))
+          .ifPresent(factorsMap -> factorsMap.remove(context));
+    }
+  }
+
+  static class MockRiskElementConfigStore extends RiskElementConfigStore {
+
+    private Map<String, Map<String, RiskElementConfig>> tenantFactorsMap = new HashMap<>();
+
+    protected MockRiskElementConfigStore(
+        ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
+        RiskConfigConverter<RiskElementConfig> configConverter,
+        RiskConfigUtils<RiskElementConfig> configUtils) {
+      super(configServiceBlockingStub, configConverter, configUtils);
+    }
+
+    @Override
+    public List<RiskElementConfig> getAllObjects(RequestContext requestContext) {
+      String tenantId = requestContext.getTenantId().get();
+      return tenantFactorsMap.containsKey(tenantId)
+          ? new ArrayList<>(tenantFactorsMap.get(tenantId).values())
+          : Collections.emptyList();
+    }
+
+    @Override
+    public Optional<RiskElementConfig> getObject(RequestContext requestContext, String context) {
+      return Optional.ofNullable(tenantFactorsMap.get(requestContext.getTenantId().get()))
+          .map(factorsMap -> factorsMap.get(context));
+    }
+
+    @Override
+    public RiskElementConfig upsertObject(RequestContext requestContext, RiskElementConfig config) {
+      String tenantId = requestContext.getTenantId().get();
+      if (!tenantFactorsMap.containsKey(tenantId)) {
+        tenantFactorsMap.put(tenantId, new HashMap<>());
+      }
+      tenantFactorsMap.get(tenantId).put(config.getId(), config);
+      return config;
+    }
+
+    @Override
+    public void deleteObject(RequestContext requestContext, String context) {
+      Optional.ofNullable(tenantFactorsMap.get(requestContext.getTenantId().get()))
+          .ifPresent(factorsMap -> factorsMap.remove(context));
+    }
+  }
+}

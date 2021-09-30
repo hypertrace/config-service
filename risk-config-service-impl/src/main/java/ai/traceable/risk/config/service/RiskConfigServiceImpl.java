@@ -1,18 +1,31 @@
 package ai.traceable.risk.config.service;
 
 import ai.traceable.risk.config.service.factorgrid.RiskFactorGridConfigManager;
+import ai.traceable.risk.config.service.factors.RiskFactorConfigsManager;
 import ai.traceable.risk.config.service.level.RiskLevelConfigManager;
+import ai.traceable.risk.config.service.v1.GetRiskImpactConfigsRequest;
+import ai.traceable.risk.config.service.v1.GetRiskImpactConfigsResponse;
+import ai.traceable.risk.config.service.v1.GetRiskLikelihoodConfigsRequest;
+import ai.traceable.risk.config.service.v1.GetRiskLikelihoodConfigsResponse;
 import ai.traceable.risk.config.service.v1.GetRiskScoringConfigsRequest;
 import ai.traceable.risk.config.service.v1.GetRiskScoringConfigsResponse;
 import ai.traceable.risk.config.service.v1.ResetRiskFactorGridConfigRequest;
 import ai.traceable.risk.config.service.v1.ResetRiskFactorGridConfigResponse;
+import ai.traceable.risk.config.service.v1.ResetRiskImpactConfigsRequest;
+import ai.traceable.risk.config.service.v1.ResetRiskImpactConfigsResponse;
 import ai.traceable.risk.config.service.v1.ResetRiskLevelConfigRequest;
 import ai.traceable.risk.config.service.v1.ResetRiskLevelConfigResponse;
+import ai.traceable.risk.config.service.v1.ResetRiskLikelihoodConfigsRequest;
+import ai.traceable.risk.config.service.v1.ResetRiskLikelihoodConfigsResponse;
 import ai.traceable.risk.config.service.v1.RiskConfigServiceGrpc;
 import ai.traceable.risk.config.service.v1.UpdateRiskFactorGridConfigRequest;
 import ai.traceable.risk.config.service.v1.UpdateRiskFactorGridConfigResponse;
+import ai.traceable.risk.config.service.v1.UpdateRiskImpactConfigsRequest;
+import ai.traceable.risk.config.service.v1.UpdateRiskImpactConfigsResponse;
 import ai.traceable.risk.config.service.v1.UpdateRiskLevelConfigRequest;
 import ai.traceable.risk.config.service.v1.UpdateRiskLevelConfigResponse;
+import ai.traceable.risk.config.service.v1.UpdateRiskLikelihoodConfigsRequest;
+import ai.traceable.risk.config.service.v1.UpdateRiskLikelihoodConfigsResponse;
 import io.grpc.stub.StreamObserver;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -23,13 +36,16 @@ public class RiskConfigServiceImpl extends RiskConfigServiceGrpc.RiskConfigServi
 
   private final RiskLevelConfigManager riskLevelConfigManager;
   private final RiskFactorGridConfigManager riskFactorGridConfigManager;
+  private final RiskFactorConfigsManager riskFactorConfigsManager;
 
   @Inject
   public RiskConfigServiceImpl(
       RiskLevelConfigManager riskLevelConfigManager,
-      RiskFactorGridConfigManager riskFactorGridConfigManager) {
+      RiskFactorGridConfigManager riskFactorGridConfigManager,
+      RiskFactorConfigsManager riskFactorConfigsManager) {
     this.riskLevelConfigManager = riskLevelConfigManager;
     this.riskFactorGridConfigManager = riskFactorGridConfigManager;
+    this.riskFactorConfigsManager = riskFactorConfigsManager;
   }
 
   @Override
@@ -114,6 +130,112 @@ public class RiskConfigServiceImpl extends RiskConfigServiceGrpc.RiskConfigServi
               .setRiskFactorGridConfig(
                   riskFactorGridConfigManager.resetRiskFactorGridConfig(
                       RequestContext.CURRENT.get()))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getRiskLikelihoodConfigs(
+      GetRiskLikelihoodConfigsRequest request,
+      StreamObserver<GetRiskLikelihoodConfigsResponse> responseObserver) {
+    try {
+      responseObserver.onNext(
+          GetRiskLikelihoodConfigsResponse.newBuilder()
+              .setRiskLikelihoodConfigs(
+                  riskFactorConfigsManager.getRiskLikelihoodConfigs(RequestContext.CURRENT.get()))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getRiskImpactConfigs(
+      GetRiskImpactConfigsRequest request,
+      StreamObserver<GetRiskImpactConfigsResponse> responseObserver) {
+    try {
+      responseObserver.onNext(
+          GetRiskImpactConfigsResponse.newBuilder()
+              .setRiskImpactConfigs(
+                  riskFactorConfigsManager.getRiskImpactConfigs(RequestContext.CURRENT.get()))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void updateRiskLikelihoodConfigs(
+      UpdateRiskLikelihoodConfigsRequest request,
+      StreamObserver<UpdateRiskLikelihoodConfigsResponse> responseObserver) {
+    try {
+      responseObserver.onNext(
+          UpdateRiskLikelihoodConfigsResponse.newBuilder()
+              .setRiskLikelihoodConfigs(
+                  riskFactorConfigsManager.updateRiskLikelihoodConfigs(
+                      RequestContext.CURRENT.get(), request.getRiskFactorConfigsList()))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void updateRiskImpactConfigs(
+      UpdateRiskImpactConfigsRequest request,
+      StreamObserver<UpdateRiskImpactConfigsResponse> responseObserver) {
+    try {
+      responseObserver.onNext(
+          UpdateRiskImpactConfigsResponse.newBuilder()
+              .setRiskImpactConfigs(
+                  riskFactorConfigsManager.updateRiskImpactConfigs(
+                      RequestContext.CURRENT.get(), request.getRiskFactorConfigsList()))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void resetRiskLikelihoodConfigs(
+      ResetRiskLikelihoodConfigsRequest request,
+      StreamObserver<ResetRiskLikelihoodConfigsResponse> responseObserver) {
+    try {
+      responseObserver.onNext(
+          ResetRiskLikelihoodConfigsResponse.newBuilder()
+              .setRiskLikelihoodConfigs(
+                  riskFactorConfigsManager.resetRiskLikelihoodConfigs(
+                      RequestContext.CURRENT.get(), request.getFilter()))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void resetRiskImpactConfigs(
+      ResetRiskImpactConfigsRequest request,
+      StreamObserver<ResetRiskImpactConfigsResponse> responseObserver) {
+    try {
+      responseObserver.onNext(
+          ResetRiskImpactConfigsResponse.newBuilder()
+              .setRiskImpactConfigs(
+                  riskFactorConfigsManager.resetRiskImpactConfigs(
+                      RequestContext.CURRENT.get(), request.getFilter()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {

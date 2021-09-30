@@ -1,6 +1,7 @@
 package ai.traceable.risk.config.service;
 
 import ai.traceable.risk.config.service.factorgrid.RiskFactorGridConfigModule;
+import ai.traceable.risk.config.service.factors.RiskFactorConfigsModule;
 import ai.traceable.risk.config.service.level.RiskLevelConfigModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -28,6 +29,7 @@ public class RiskConfigServiceModule extends AbstractModule {
     bind(ManagedChannel.class).toInstance(channel);
     install(new RiskLevelConfigModule());
     install(new RiskFactorGridConfigModule());
+    install(new RiskFactorConfigsModule());
   }
 
   @Provides

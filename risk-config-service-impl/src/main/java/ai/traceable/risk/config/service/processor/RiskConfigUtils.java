@@ -11,6 +11,7 @@ import lombok.SneakyThrows;
 
 public abstract class RiskConfigUtils<M extends Message> {
 
+  // We want to fail if unknown fields are encountered to avoid incorrect configurations being set..
   private static final JsonFormat.Parser JSON_PARSER = JsonFormat.parser().ignoringUnknownFields();
   private static final ConfigRenderOptions CONFIG_RENDER_CONCISE = ConfigRenderOptions.concise();
 
