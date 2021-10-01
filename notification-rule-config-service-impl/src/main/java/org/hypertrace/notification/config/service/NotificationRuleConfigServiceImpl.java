@@ -114,7 +114,7 @@ public class NotificationRuleConfigServiceImpl
   }
 
   @Override
-  public void getNotificationRule(
+  public void getNotificationRuleById(
       GetNotificationRuleByIdRequest request,
       StreamObserver<GetNotificationRuleByIdResponse> responseObserver) {
     try {

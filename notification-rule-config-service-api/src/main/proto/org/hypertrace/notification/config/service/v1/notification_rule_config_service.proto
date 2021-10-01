@@ -11,7 +11,7 @@ service NotificationRuleConfigService {
   rpc UpdateNotificationRule(UpdateNotificationRuleRequest) returns (UpdateNotificationRuleResponse) {}
   rpc GetAllNotificationRules(GetAllNotificationRulesRequest) returns (GetAllNotificationRulesResponse) {}
   rpc DeleteNotificationRule(DeleteNotificationRuleRequest) returns (DeleteNotificationRuleResponse) {}
-  rpc GetNotificationRule(GetNotificationRuleByIdRequest) returns (GetNotificationRuleByIdResponse) {}
+  rpc GetNotificationRuleById(GetNotificationRuleByIdRequest) returns (GetNotificationRuleByIdResponse) {}
 }
 
 message CreateNotificationRuleRequest {

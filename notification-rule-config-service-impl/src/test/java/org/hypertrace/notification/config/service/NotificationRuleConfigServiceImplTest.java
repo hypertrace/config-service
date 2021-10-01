@@ -52,7 +52,7 @@ class NotificationRuleConfigServiceImplTest {
     assertEquals(
         notificationRule1,
         notificationStub
-            .getNotificationRule(
+            .getNotificationRuleById(
                 GetNotificationRuleByIdRequest.newBuilder()
                     .setNotificationRuleId(notificationRule1.getId())
                     .build())
@@ -68,7 +68,7 @@ class NotificationRuleConfigServiceImplTest {
     assertEquals(
         notificationRule2,
         notificationStub
-            .getNotificationRule(
+            .getNotificationRuleById(
                 GetNotificationRuleByIdRequest.newBuilder()
                     .setNotificationRuleId(notificationRule2.getId())
                     .build())
