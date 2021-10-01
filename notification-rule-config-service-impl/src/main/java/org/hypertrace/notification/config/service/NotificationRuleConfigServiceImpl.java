@@ -12,8 +12,8 @@ import org.hypertrace.notification.config.service.v1.DeleteNotificationRuleReque
 import org.hypertrace.notification.config.service.v1.DeleteNotificationRuleResponse;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesRequest;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesResponse;
-import org.hypertrace.notification.config.service.v1.GetNotificationRuleByIdRequest;
-import org.hypertrace.notification.config.service.v1.GetNotificationRuleByIdResponse;
+import org.hypertrace.notification.config.service.v1.GetNotificationRuleRequest;
+import org.hypertrace.notification.config.service.v1.GetNotificationRuleResponse;
 import org.hypertrace.notification.config.service.v1.NotificationRule;
 import org.hypertrace.notification.config.service.v1.NotificationRuleConfigServiceGrpc;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationRuleRequest;
@@ -114,20 +114,18 @@ public class NotificationRuleConfigServiceImpl
   }
 
   @Override
-  public void getNotificationRuleById(
-      GetNotificationRuleByIdRequest request,
-      StreamObserver<GetNotificationRuleByIdResponse> responseObserver) {
+  public void getNotificationRule(
+      GetNotificationRuleRequest request,
+      StreamObserver<GetNotificationRuleResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      validator.validateGetNotificationRuleByIdRequest(requestContext, request);
+      validator.validateGetNotificationRuleRequest(requestContext, request);
       NotificationRule notificationRule =
           notificationRuleStore
               .getObject(requestContext, request.getNotificationRuleId())
               .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       responseObserver.onNext(
-          GetNotificationRuleByIdResponse.newBuilder()
-              .setNotificationRule(notificationRule)
-              .build());
+          GetNotificationRuleResponse.newBuilder().setNotificationRule(notificationRule).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Get Notification Rule by id RPC failed for request:{}", request, e);

@@ -7,7 +7,7 @@ import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.notification.config.service.v1.CreateNotificationRuleRequest;
 import org.hypertrace.notification.config.service.v1.DeleteNotificationRuleRequest;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesRequest;
-import org.hypertrace.notification.config.service.v1.GetNotificationRuleByIdRequest;
+import org.hypertrace.notification.config.service.v1.GetNotificationRuleRequest;
 import org.hypertrace.notification.config.service.v1.NotificationRule;
 import org.hypertrace.notification.config.service.v1.NotificationRuleConfigServiceGrpc;
 import org.hypertrace.notification.config.service.v1.NotificationRuleMutableData;
@@ -52,8 +52,8 @@ class NotificationRuleConfigServiceImplTest {
     assertEquals(
         notificationRule1,
         notificationStub
-            .getNotificationRuleById(
-                GetNotificationRuleByIdRequest.newBuilder()
+            .getNotificationRule(
+                GetNotificationRuleRequest.newBuilder()
                     .setNotificationRuleId(notificationRule1.getId())
                     .build())
             .getNotificationRule());
@@ -68,8 +68,8 @@ class NotificationRuleConfigServiceImplTest {
     assertEquals(
         notificationRule2,
         notificationStub
-            .getNotificationRuleById(
-                GetNotificationRuleByIdRequest.newBuilder()
+            .getNotificationRule(
+                GetNotificationRuleRequest.newBuilder()
                     .setNotificationRuleId(notificationRule2.getId())
                     .build())
             .getNotificationRule());
