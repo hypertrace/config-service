@@ -1,6 +1,7 @@
 package org.hypertrace.notification.config.service;
 
 import io.grpc.Channel;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +12,8 @@ import org.hypertrace.notification.config.service.v1.DeleteNotificationRuleReque
 import org.hypertrace.notification.config.service.v1.DeleteNotificationRuleResponse;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesRequest;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesResponse;
+import org.hypertrace.notification.config.service.v1.GetNotificationRuleByIdRequest;
+import org.hypertrace.notification.config.service.v1.GetNotificationRuleByIdResponse;
 import org.hypertrace.notification.config.service.v1.NotificationRule;
 import org.hypertrace.notification.config.service.v1.NotificationRuleConfigServiceGrpc;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationRuleRequest;
@@ -106,6 +109,26 @@ public class NotificationRuleConfigServiceImpl
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Delete Notification Rule RPC failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getNotificationRule(GetNotificationRuleByIdRequest request,
+      StreamObserver<GetNotificationRuleByIdResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      validator.validateGetNotificationRuleByIdRequest(requestContext, request);
+      NotificationRule notificationRule = notificationRuleStore
+          .getObject(requestContext, request.getNotificationRuleId())
+          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      responseObserver.onNext(
+          GetNotificationRuleByIdResponse.newBuilder()
+              .setNotificationRule(notificationRule)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Get Notification Rule by id RPC failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }
