@@ -7,7 +7,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.CreateNotificationRuleRequest;
 import org.hypertrace.notification.config.service.v1.DeleteNotificationRuleRequest;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesRequest;
-import org.hypertrace.notification.config.service.v1.NotificationRule;
+import org.hypertrace.notification.config.service.v1.GetNotificationRuleRequest;
 import org.hypertrace.notification.config.service.v1.NotificationRuleMutableData;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationRuleRequest;
 
@@ -43,6 +43,14 @@ public class NotificationRuleConfigServiceRequestValidator {
   public void validateDeleteNotificationRuleRequest(
       RequestContext requestContext, DeleteNotificationRuleRequest request) {
     validateRequestContextOrThrow(requestContext);
-    validateNonDefaultPresenceOrThrow(request, NotificationRule.ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        request, DeleteNotificationRuleRequest.NOTIFICATION_RULE_ID_FIELD_NUMBER);
+  }
+
+  public void validateGetNotificationRuleRequest(
+      RequestContext requestContext, GetNotificationRuleRequest request) {
+    validateRequestContextOrThrow(requestContext);
+    validateNonDefaultPresenceOrThrow(
+        request, GetNotificationRuleRequest.NOTIFICATION_RULE_ID_FIELD_NUMBER);
   }
 }
