@@ -2,6 +2,7 @@ package ai.traceable.risk.config.service.factors.processor.utils;
 
 import ai.traceable.risk.config.service.processor.RiskConfigUtils;
 import ai.traceable.risk.config.service.v1.RiskElementConfig;
+import ai.traceable.risk.config.service.v1.RiskElementInfo;
 import io.grpc.Status;
 
 public class RiskElementConfigUtils extends RiskConfigUtils<RiskElementConfig> {
@@ -36,6 +37,9 @@ public class RiskElementConfigUtils extends RiskConfigUtils<RiskElementConfig> {
     }
     if (!isValidScore(config.getRiskElementScoring().getScore())) {
       return Status.OUT_OF_RANGE.withDescription("Score should be between 0 and 10");
+    }
+    if (config.getRiskElementInfo().getItemCase() == RiskElementInfo.ItemCase.ITEM_NOT_SET) {
+      return Status.INVALID_ARGUMENT.withDescription("Element should have a valid predicate set");
     }
     return Status.OK;
   }

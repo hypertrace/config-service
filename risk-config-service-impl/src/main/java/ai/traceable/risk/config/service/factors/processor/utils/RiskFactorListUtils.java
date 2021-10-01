@@ -76,7 +76,9 @@ public class RiskFactorListUtils {
     for (RiskFactorConfig config : factorList) {
       if (!factorMap.containsKey(config.getId())
           || !riskFactorConfigUtils.isConfigDefault(
-              config, factorMap.get(config.getId()).getRiskFactorConfig())) return false;
+              config, factorMap.get(config.getId()).getRiskFactorConfig())) {
+        return false;
+      }
     }
     return true;
   }

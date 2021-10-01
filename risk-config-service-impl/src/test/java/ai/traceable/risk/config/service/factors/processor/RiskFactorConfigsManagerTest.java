@@ -1,5 +1,6 @@
 package ai.traceable.risk.config.service.factors.processor;
 
+import static ai.traceable.risk.config.service.factors.processor.MockFactorConfigsData.getDefaultSensitiveDataExposureFactor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -18,6 +19,8 @@ import ai.traceable.risk.config.service.v1.RiskElementScoring;
 import ai.traceable.risk.config.service.v1.RiskFactorConfig;
 import ai.traceable.risk.config.service.v1.RiskFactorScoreContribution;
 import ai.traceable.risk.config.service.v1.RiskFactorScoring;
+import ai.traceable.risk.config.service.v1.StringOperator;
+import ai.traceable.risk.config.service.v1.StringPredicate;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
@@ -83,8 +86,27 @@ public class RiskFactorConfigsManagerTest {
                         .addRiskElementConfigs(
                             RiskElementConfig.newBuilder().setId("random").build())
                         .build())));
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            configsManager.updateRiskLikelihoodConfigs(
+                requestContext, List.of(getCustomTagUpdatedConfig(false))));
 
     RiskFactorConfig riskFactorConfig1 =
+        RiskFactorConfig.newBuilder()
+            .setId("motive")
+            .addRiskElementConfigs(
+                RiskElementConfig.newBuilder()
+                    .setId("response-has-pii")
+                    .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(9)))
+            .setRiskFactorScoring(
+                RiskFactorScoring.newBuilder()
+                    .setDisabled(true)
+                    .setScoreContribution(
+                        RiskFactorScoreContribution.RISK_FACTOR_SCORE_CONTRIBUTION_ABSOLUTE))
+            .build();
+    RiskFactorConfig riskFactorConfig2 = getCustomTagUpdatedConfig(true);
+    RiskFactorConfig updatedRiskFactorConfig1 =
         RiskFactorConfig.newBuilder()
             .setId("motive")
             .addRiskElementConfigs(
@@ -97,15 +119,6 @@ public class RiskFactorConfigsManagerTest {
                                     .setOperator(IntOperator.INT_OPERATOR_GREATER_THAN)
                                     .setValue(0)))
                     .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(9)))
-            .setRiskFactorScoring(
-                RiskFactorScoring.newBuilder()
-                    .setDisabled(true)
-                    .setScoreContribution(
-                        RiskFactorScoreContribution.RISK_FACTOR_SCORE_CONTRIBUTION_ABSOLUTE))
-            .build();
-    RiskFactorConfig riskFactorConfig2 = getCustomTagUpdatedConfig();
-    RiskFactorConfig updatedRiskFactorConfig1 =
-        riskFactorConfig1.toBuilder()
             .setRiskFactorScoring(RiskFactorScoring.newBuilder().setDisabled(true))
             .build();
 
@@ -198,8 +211,27 @@ public class RiskFactorConfigsManagerTest {
                         .addRiskElementConfigs(
                             RiskElementConfig.newBuilder().setId("random").build())
                         .build())));
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            configsManager.updateRiskImpactConfigs(
+                requestContext, List.of(getCustomTagUpdatedConfig(false))));
 
     RiskFactorConfig riskFactorConfig1 =
+        RiskFactorConfig.newBuilder()
+            .setId("sensitive-data-exposure")
+            .addRiskElementConfigs(
+                RiskElementConfig.newBuilder()
+                    .setId("request-has-params")
+                    .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(9)))
+            .setRiskFactorScoring(
+                RiskFactorScoring.newBuilder()
+                    .setDisabled(true)
+                    .setScoreContribution(
+                        RiskFactorScoreContribution.RISK_FACTOR_SCORE_CONTRIBUTION_ABSOLUTE))
+            .build();
+    RiskFactorConfig riskFactorConfig2 = getCustomTagUpdatedConfig(true);
+    RiskFactorConfig updatedRiskFactorConfig1 =
         RiskFactorConfig.newBuilder()
             .setId("sensitive-data-exposure")
             .addRiskElementConfigs(
@@ -212,15 +244,6 @@ public class RiskFactorConfigsManagerTest {
                                     .setOperator(IntOperator.INT_OPERATOR_GREATER_THAN)
                                     .setValue(5)))
                     .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(9)))
-            .setRiskFactorScoring(
-                RiskFactorScoring.newBuilder()
-                    .setDisabled(true)
-                    .setScoreContribution(
-                        RiskFactorScoreContribution.RISK_FACTOR_SCORE_CONTRIBUTION_ABSOLUTE))
-            .build();
-    RiskFactorConfig riskFactorConfig2 = getCustomTagUpdatedConfig();
-    RiskFactorConfig updatedRiskFactorConfig1 =
-        riskFactorConfig1.toBuilder()
             .setRiskFactorScoring(RiskFactorScoring.newBuilder().setDisabled(true))
             .build();
 
@@ -233,7 +256,7 @@ public class RiskFactorConfigsManagerTest {
         riskImpactConfigs
             .getRiskFactorsList()
             .contains(
-                MockFactorConfigsData.getDefaultSensitiveDataExposureFactor().toBuilder()
+                getDefaultSensitiveDataExposureFactor().toBuilder()
                     .setRiskFactorConfig(updatedRiskFactorConfig1)
                     .setIsDefault(false)
                     .build()));
@@ -256,7 +279,7 @@ public class RiskFactorConfigsManagerTest {
         riskImpactConfigs
             .getRiskFactorsList()
             .contains(
-                MockFactorConfigsData.getDefaultSensitiveDataExposureFactor().toBuilder()
+                getDefaultSensitiveDataExposureFactor().toBuilder()
                     .setRiskFactorConfig(updatedRiskFactorConfig1)
                     .setIsDefault(false)
                     .build()));
@@ -276,18 +299,31 @@ public class RiskFactorConfigsManagerTest {
             factor -> assertTrue(defaultRiskImpactConfigs.getRiskFactorsList().contains(factor)));
   }
 
-  private RiskFactorConfig getCustomTagUpdatedConfig() {
+  private RiskFactorConfig getCustomTagUpdatedConfig(boolean withPredicate) {
     return RiskFactorConfig.newBuilder()
         .setId("custom-tag")
-        .addRiskElementConfigs(
-            RiskElementConfig.newBuilder()
-                .setId("random")
-                .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(9)))
+        .addRiskElementConfigs(randomElement(withPredicate))
         .setRiskFactorScoring(
             RiskFactorScoring.newBuilder()
                 .setDisabled(true)
                 .setScoreContribution(
                     RiskFactorScoreContribution.RISK_FACTOR_SCORE_CONTRIBUTION_ABSOLUTE))
         .build();
+  }
+
+  private RiskElementConfig randomElement(boolean withPredicate) {
+    RiskElementConfig.Builder builder =
+        RiskElementConfig.newBuilder()
+            .setId("random")
+            .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(9));
+    if (withPredicate) {
+      builder.setRiskElementInfo(
+          RiskElementInfo.newBuilder()
+              .setLabelId(
+                  StringPredicate.newBuilder()
+                      .setOperator(StringOperator.STRING_OPERATOR_EQUALS)
+                      .setValue("random")));
+    }
+    return builder.build();
   }
 }

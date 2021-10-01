@@ -292,6 +292,16 @@ class RiskConfigServiceIntegrationTest extends TraceableConfigServiceIntegration
                                         RiskElementConfig.newBuilder().setId("random").build())
                                     .build())
                             .build())));
+    assertThrows(
+        Exception.class,
+        () ->
+            GrpcClientRequestContextUtil.executeInTenantContext(
+                TENANT_ID,
+                () ->
+                    riskConfigServiceStub.updateRiskLikelihoodConfigs(
+                        UpdateRiskLikelihoodConfigsRequest.newBuilder()
+                            .addRiskFactorConfigs(getCustomTagUpdatedConfig(false))
+                            .build())));
 
     RiskFactorConfig riskFactorConfig1 =
         RiskFactorConfig.newBuilder()
@@ -312,7 +322,7 @@ class RiskConfigServiceIntegrationTest extends TraceableConfigServiceIntegration
                     .setScoreContribution(
                         RiskFactorScoreContribution.RISK_FACTOR_SCORE_CONTRIBUTION_ABSOLUTE))
             .build();
-    RiskFactorConfig riskFactorConfig2 = getCustomTagUpdatedConfig();
+    RiskFactorConfig riskFactorConfig2 = getCustomTagUpdatedConfig(true);
     RiskFactorConfig updatedRiskFactorConfig1 =
         riskFactorConfig1.toBuilder()
             .setRiskFactorScoring(RiskFactorScoring.newBuilder().setDisabled(true))
@@ -458,6 +468,16 @@ class RiskConfigServiceIntegrationTest extends TraceableConfigServiceIntegration
                                         RiskElementConfig.newBuilder().setId("random").build())
                                     .build())
                             .build())));
+    assertThrows(
+        Exception.class,
+        () ->
+            GrpcClientRequestContextUtil.executeInTenantContext(
+                TENANT_ID,
+                () ->
+                    riskConfigServiceStub.updateRiskImpactConfigs(
+                        UpdateRiskImpactConfigsRequest.newBuilder()
+                            .addRiskFactorConfigs(getCustomTagUpdatedConfig(false))
+                            .build())));
 
     RiskFactorConfig riskFactorConfig1 =
         RiskFactorConfig.newBuilder()
@@ -478,7 +498,7 @@ class RiskConfigServiceIntegrationTest extends TraceableConfigServiceIntegration
                     .setScoreContribution(
                         RiskFactorScoreContribution.RISK_FACTOR_SCORE_CONTRIBUTION_ABSOLUTE))
             .build();
-    RiskFactorConfig riskFactorConfig2 = getCustomTagUpdatedConfig();
+    RiskFactorConfig riskFactorConfig2 = getCustomTagUpdatedConfig(true);
     RiskFactorConfig updatedRiskFactorConfig1 =
         riskFactorConfig1.toBuilder()
             .setRiskFactorScoring(RiskFactorScoring.newBuilder().setDisabled(true))
@@ -602,19 +622,32 @@ class RiskConfigServiceIntegrationTest extends TraceableConfigServiceIntegration
         .build();
   }
 
-  private RiskFactorConfig getCustomTagUpdatedConfig() {
+  private RiskFactorConfig getCustomTagUpdatedConfig(boolean withPredicate) {
     return RiskFactorConfig.newBuilder()
         .setId("custom-tag")
-        .addRiskElementConfigs(
-            RiskElementConfig.newBuilder()
-                .setId("random")
-                .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(9)))
+        .addRiskElementConfigs(randomElement(withPredicate))
         .setRiskFactorScoring(
             RiskFactorScoring.newBuilder()
                 .setDisabled(true)
                 .setScoreContribution(
                     RiskFactorScoreContribution.RISK_FACTOR_SCORE_CONTRIBUTION_ABSOLUTE))
         .build();
+  }
+
+  private RiskElementConfig randomElement(boolean withPredicate) {
+    RiskElementConfig.Builder builder =
+        RiskElementConfig.newBuilder()
+            .setId("random")
+            .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(9));
+    if (withPredicate) {
+      builder.setRiskElementInfo(
+          RiskElementInfo.newBuilder()
+              .setLabelId(
+                  StringPredicate.newBuilder()
+                      .setOperator(StringOperator.STRING_OPERATOR_EQUALS)
+                      .setValue("random")));
+    }
+    return builder.build();
   }
 
   private RiskFactor getDefaultSensitiveDataExposureFactor() {

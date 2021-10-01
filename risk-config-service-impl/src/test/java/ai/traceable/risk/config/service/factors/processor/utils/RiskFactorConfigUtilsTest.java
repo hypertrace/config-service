@@ -7,11 +7,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.risk.config.service.v1.CustomizationOptions;
 import ai.traceable.risk.config.service.v1.RiskElementConfig;
+import ai.traceable.risk.config.service.v1.RiskElementInfo;
 import ai.traceable.risk.config.service.v1.RiskElementScoring;
 import ai.traceable.risk.config.service.v1.RiskFactor;
 import ai.traceable.risk.config.service.v1.RiskFactorConfig;
 import ai.traceable.risk.config.service.v1.RiskFactorScoreContribution;
 import ai.traceable.risk.config.service.v1.RiskFactorScoring;
+import ai.traceable.risk.config.service.v1.StringOperator;
+import ai.traceable.risk.config.service.v1.StringPredicate;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.Collections;
@@ -274,6 +277,36 @@ public class RiskFactorConfigUtilsTest {
                         RiskElementConfig.newBuilder()
                             .setId("id")
                             .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(13)))
+                    .build())
+            .getCode());
+    assertEquals(
+        Status.INVALID_ARGUMENT.getCode(),
+        configUtils
+            .validateConfig(
+                RiskFactorConfig.newBuilder()
+                    .setId("id")
+                    .addRiskElementConfigs(
+                        RiskElementConfig.newBuilder()
+                            .setId("id")
+                            .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(3)))
+                    .build())
+            .getCode());
+    assertEquals(
+        Status.OK.getCode(),
+        configUtils
+            .validateConfig(
+                RiskFactorConfig.newBuilder()
+                    .setId("id")
+                    .addRiskElementConfigs(
+                        RiskElementConfig.newBuilder()
+                            .setId("id")
+                            .setRiskElementInfo(
+                                RiskElementInfo.newBuilder()
+                                    .setLabelId(
+                                        StringPredicate.newBuilder()
+                                            .setOperator(StringOperator.STRING_OPERATOR_EQUALS)
+                                            .setValue("random")))
+                            .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(3)))
                     .build())
             .getCode());
   }

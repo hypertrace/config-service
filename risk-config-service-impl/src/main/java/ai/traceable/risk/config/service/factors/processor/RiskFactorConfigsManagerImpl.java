@@ -106,39 +106,42 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
       RequestContext requestContext,
       List<RiskFactorConfig> riskFactorConfigs,
       List<RiskFactor> defaultFactors) {
-    Status validationStatus = riskFactorListUtils.validateFactorConfigs(riskFactorConfigs);
-    if (!validationStatus.isOk()) {
-      throw validationStatus.asRuntimeException();
-    }
     Collection<RiskFactor> mergedRiskFactors =
         riskFactorListUtils.mergeFactorConfigs(
             riskFactorConfigs, Collections.emptyList(), defaultFactors);
 
-    mergedRiskFactors.forEach(
-        factor -> {
-          if (!factor.getIsDefault()) {
-            RiskFactorConfig factorConfig = factor.getRiskFactorConfig();
-            if (factor
-                .getCustomizationOptionsList()
-                .contains(CustomizationOptions.CUSTOMIZATION_OPTIONS_ELEMENT_ADD_DELETE)) {
-              factorConfigStore.upsertObject(requestContext, factorConfig);
-            } else {
-              // risk element associations with the factors cannot be modified by user
-              // their configs are stored separately..
-              factorConfigStore.upsertObject(
-                  requestContext,
-                  RiskFactorConfig.newBuilder()
-                      .setId(factorConfig.getId())
-                      .setRiskFactorScoring(factorConfig.getRiskFactorScoring())
-                      .build());
-              factorConfig
-                  .getRiskElementConfigsList()
-                  .forEach(
-                      elementConfig ->
-                          elementConfigStore.upsertObject(requestContext, elementConfig));
-            }
-          }
-        });
+    Status validationStatus =
+        riskFactorListUtils.validateFactorConfigs(
+            mergedRiskFactors.stream()
+                .map(RiskFactor::getRiskFactorConfig)
+                .collect(Collectors.toList()));
+    if (!validationStatus.isOk()) {
+      throw validationStatus.asRuntimeException();
+    }
+
+    for (RiskFactor factor : mergedRiskFactors) {
+      if (!factor.getIsDefault()) {
+        RiskFactorConfig factorConfig = factor.getRiskFactorConfig();
+        if (factor
+            .getCustomizationOptionsList()
+            .contains(CustomizationOptions.CUSTOMIZATION_OPTIONS_ELEMENT_ADD_DELETE)) {
+          factorConfigStore.upsertObject(requestContext, factorConfig);
+        } else {
+          // risk element associations with the factors cannot be modified by user
+          // their configs are stored separately..
+          factorConfigStore.upsertObject(
+              requestContext,
+              RiskFactorConfig.newBuilder()
+                  .setId(factorConfig.getId())
+                  .setRiskFactorScoring(factorConfig.getRiskFactorScoring())
+                  .build());
+          factorConfig
+              .getRiskElementConfigsList()
+              .forEach(
+                  elementConfig -> elementConfigStore.upsertObject(requestContext, elementConfig));
+        }
+      }
+    }
     return mergedRiskFactors;
   }
 
