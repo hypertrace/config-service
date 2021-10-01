@@ -114,14 +114,16 @@ public class NotificationRuleConfigServiceImpl
   }
 
   @Override
-  public void getNotificationRule(GetNotificationRuleByIdRequest request,
+  public void getNotificationRule(
+      GetNotificationRuleByIdRequest request,
       StreamObserver<GetNotificationRuleByIdResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       validator.validateGetNotificationRuleByIdRequest(requestContext, request);
-      NotificationRule notificationRule = notificationRuleStore
-          .getObject(requestContext, request.getNotificationRuleId())
-          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      NotificationRule notificationRule =
+          notificationRuleStore
+              .getObject(requestContext, request.getNotificationRuleId())
+              .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       responseObserver.onNext(
           GetNotificationRuleByIdResponse.newBuilder()
               .setNotificationRule(notificationRule)
