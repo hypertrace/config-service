@@ -129,6 +129,7 @@ public class EventConditionConfigServiceImplTest {
                 .addAllSeverities(
                     Collections.singletonList(SecurityEventSeverity.SECURITY_EVENT_SEVERITY_HIGH))
                 .build())
+        .setEnvironment("dev")
         .build();
   }
 }

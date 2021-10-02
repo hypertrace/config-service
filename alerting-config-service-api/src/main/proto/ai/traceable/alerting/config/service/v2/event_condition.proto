@@ -21,4 +21,5 @@ message EventConditionMutableData {
     BlockedEventCondition blocked_event_condition = 3;
     org.hypertrace.alerting.config.service.v1.MetricAnomalyEventCondition metric_anomaly_event_condition = 4;
   }
+  optional string environment = 5;
 }
