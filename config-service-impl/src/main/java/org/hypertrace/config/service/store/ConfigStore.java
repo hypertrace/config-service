@@ -5,6 +5,7 @@ import com.typesafe.config.Config;
 import java.io.IOException;
 import java.util.List;
 import org.hypertrace.config.service.ConfigResource;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 
 /**
@@ -17,8 +18,9 @@ public interface ConfigStore {
    * Initialize the config store
    *
    * @param config
+   * @param configChangeEventGenerator config change event generator
    */
-  void init(Config config);
+  void init(Config config, ConfigChangeEventGenerator configChangeEventGenerator);
 
   /**
    * Write the config value associated with the specified config resource to the store.

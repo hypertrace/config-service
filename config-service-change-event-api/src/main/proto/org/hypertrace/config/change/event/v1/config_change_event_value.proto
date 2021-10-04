@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package org.hypertrace.config.change.event.v1;
+
+import "google/protobuf/struct.proto";
+
+message ConfigChangeEventValue {
+  oneof event {
+    ConfigCreateEvent create_event = 1;
+    ConfigUpdateEvent update_event = 2;
+    ConfigDeleteEvent delete_event = 3;
+  }
+}
+
+message ConfigCreateEvent {
+  google.protobuf.Value created_config = 1;
+}
+
+message ConfigUpdateEvent {
+  google.protobuf.Value previous_config = 1;
+  google.protobuf.Value latest_config = 2;
+}
+
+message ConfigDeleteEvent {
+  google.protobuf.Value deleted_config = 1;
+}

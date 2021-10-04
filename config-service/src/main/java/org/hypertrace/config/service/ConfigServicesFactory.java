@@ -6,6 +6,8 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import java.util.List;
 import org.hypertrace.alerting.config.service.EventConditionConfigServiceImpl;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
+import org.hypertrace.config.service.change.event.impl.ConfigChangeEventGeneratorFactory;
 import org.hypertrace.config.service.store.ConfigStore;
 import org.hypertrace.config.service.store.DocumentConfigStore;
 import org.hypertrace.core.serviceframework.spi.PlatformServiceLifecycle;
@@ -43,7 +45,11 @@ public class ConfigServicesFactory {
   public static ConfigStore buildConfigStore(Config config) {
     try {
       ConfigStore configStore = new DocumentConfigStore();
-      configStore.init(config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG));
+      Config serviceConfig = config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG);
+      ConfigChangeEventGenerator configChangeEventGenerator =
+          ConfigChangeEventGeneratorFactory.getInstance()
+              .createConfigChangeEventGenerator(serviceConfig);
+      configStore.init(serviceConfig, configChangeEventGenerator);
       return configStore;
     } catch (Exception e) {
       throw new RuntimeException("Error in getting or initializing config store", e);

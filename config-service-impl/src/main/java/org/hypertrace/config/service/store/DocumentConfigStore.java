@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigServiceUtils;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
@@ -49,11 +50,13 @@ public class DocumentConfigStore implements ConfigStore {
 
   private Datastore datastore;
   private Collection collection;
+  private ConfigChangeEventGenerator configChangeEventGenerator;
 
   @Override
-  public void init(Config config) {
+  public void init(Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
     datastore = initDataStore(config);
     this.collection = this.datastore.getCollection(CONFIGURATIONS_COLLECTION);
+    this.configChangeEventGenerator = configChangeEventGenerator;
   }
 
   private Datastore initDataStore(Config config) {
@@ -65,7 +68,7 @@ public class DocumentConfigStore implements ConfigStore {
 
   @Override
   public ContextSpecificConfig writeConfig(
-      ConfigResource configResource, String userId, Value config) throws IOException {
+      ConfigResource configResource, String userId, Value latestConfig) throws IOException {
     // Synchronization is required across different threads trying to write the latest config
     // for the same resource into the document store
     synchronized (configResourceLocks.getUnchecked(configResource)) {
@@ -87,10 +90,11 @@ public class DocumentConfigStore implements ConfigStore {
               configResource.getContext(),
               configVersion,
               userId,
-              config,
+              latestConfig,
               creationTimestamp,
               updateTimestamp);
       collection.upsert(key, configDocument);
+      sendChangeNotification(configResource, existingConfig.getConfig(), latestConfig);
       return getContextSpecificConfig(configDocument);
     }
   }
@@ -179,5 +183,33 @@ public class DocumentConfigStore implements ConfigStore {
         .setCreationTimestamp(configDocument.getCreationTimestamp())
         .setUpdateTimestamp(configDocument.getUpdateTimestamp())
         .build();
+  }
+
+  private void sendChangeNotification(
+      ConfigResource configResource, Value prevConfig, Value latestconfig) {
+    if (ConfigServiceUtils.isNull(latestconfig)) {
+      configChangeEventGenerator.sendDeleteNotification(
+          configResource.getTenantId(),
+          configResource.getResourceName(),
+          configResource.getResourceNamespace(),
+          configResource.getContext(),
+          prevConfig);
+
+    } else if (ConfigServiceUtils.isNull(prevConfig)) {
+      configChangeEventGenerator.sendCreateNotification(
+          configResource.getTenantId(),
+          configResource.getResourceName(),
+          configResource.getResourceNamespace(),
+          configResource.getContext(),
+          latestconfig);
+    } else {
+      configChangeEventGenerator.sendUpdateNotification(
+          configResource.getTenantId(),
+          configResource.getResourceName(),
+          configResource.getResourceNamespace(),
+          configResource.getContext(),
+          prevConfig,
+          latestconfig);
+    }
   }
 }
