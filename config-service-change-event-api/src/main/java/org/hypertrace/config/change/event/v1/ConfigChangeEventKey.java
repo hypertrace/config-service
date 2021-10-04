@@ -16,7 +16,7 @@ public class ConfigChangeEventKey {
   public ConfigChangeEventKey() {}
 
   public ConfigChangeEventKey(
-          String tenantId, String resourceName, String resourceNamespace, String context) {
+      String tenantId, String resourceName, String resourceNamespace, String context) {
     this.tenantId = tenantId;
     this.resourceName = resourceName;
     this.resourceNamespace = resourceNamespace;
@@ -28,7 +28,10 @@ public class ConfigChangeEventKey {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     ConfigChangeEventKey that = (ConfigChangeEventKey) o;
-    return tenantId.equals(that.tenantId) && resourceName.equals(that.resourceName) && resourceNamespace.equals(that.resourceNamespace) && context.equals(that.context);
+    return tenantId.equals(that.tenantId)
+        && resourceName.equals(that.resourceName)
+        && resourceNamespace.equals(that.resourceNamespace)
+        && context.equals(that.context);
   }
 
   @Override
