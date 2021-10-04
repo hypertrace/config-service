@@ -99,7 +99,7 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
     List<RiskFactorConfig> factorConfigs = factorConfigStore.getAllObjects(requestContext);
     List<RiskElementConfig> elementConfigs = elementConfigStore.getAllObjects(requestContext);
     return riskFactorListUtils.mergeFactorConfigs(
-        factorConfigs, elementConfigs, defaultRiskFactors);
+        factorConfigs, elementConfigs, defaultRiskFactors, false);
   }
 
   private Collection<RiskFactor> updateRiskFactors(
@@ -108,7 +108,7 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
       List<RiskFactor> defaultFactors) {
     Collection<RiskFactor> mergedRiskFactors =
         riskFactorListUtils.mergeFactorConfigs(
-            riskFactorConfigs, Collections.emptyList(), defaultFactors);
+            riskFactorConfigs, Collections.emptyList(), defaultFactors, true);
 
     Status validationStatus =
         riskFactorListUtils.validateFactorConfigs(

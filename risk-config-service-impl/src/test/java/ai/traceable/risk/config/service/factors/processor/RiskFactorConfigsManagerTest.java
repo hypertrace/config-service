@@ -1,5 +1,6 @@
 package ai.traceable.risk.config.service.factors.processor;
 
+import static ai.traceable.risk.config.service.factors.processor.MockFactorConfigsData.getDefaultMotiveFactor;
 import static ai.traceable.risk.config.service.factors.processor.MockFactorConfigsData.getDefaultSensitiveDataExposureFactor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -122,6 +123,12 @@ public class RiskFactorConfigsManagerTest {
             .setRiskFactorScoring(RiskFactorScoring.newBuilder().setDisabled(true))
             .build();
 
+    configsManager.updateRiskImpactConfigs(
+        requestContext,
+        List.of(
+            getDefaultSensitiveDataExposureFactor().getRiskFactorConfig().toBuilder()
+                .setRiskFactorScoring(RiskFactorScoring.newBuilder().setDisabled(true))
+                .build()));
     configsManager.updateRiskLikelihoodConfigs(
         requestContext, List.of(riskFactorConfig1, riskFactorConfig2));
     riskLikelihoodConfigs = configsManager.getRiskLikelihoodConfigs(requestContext);
@@ -247,6 +254,12 @@ public class RiskFactorConfigsManagerTest {
             .setRiskFactorScoring(RiskFactorScoring.newBuilder().setDisabled(true))
             .build();
 
+    configsManager.updateRiskLikelihoodConfigs(
+        requestContext,
+        List.of(
+            getDefaultMotiveFactor().getRiskFactorConfig().toBuilder()
+                .setRiskFactorScoring(RiskFactorScoring.newBuilder().setDisabled(true))
+                .build()));
     configsManager.updateRiskImpactConfigs(
         requestContext, List.of(riskFactorConfig1, riskFactorConfig2));
     riskImpactConfigs = configsManager.getRiskImpactConfigs(requestContext);

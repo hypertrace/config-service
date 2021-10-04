@@ -32,7 +32,8 @@ public class RiskFactorListUtils {
   public Collection<RiskFactor> mergeFactorConfigs(
       List<RiskFactorConfig> factorConfigs,
       List<RiskElementConfig> elementConfigs,
-      List<RiskFactor> defaultRiskFactors) {
+      List<RiskFactor> defaultRiskFactors,
+      boolean checkForConfigId) {
 
     Map<String, RiskFactor> factorMap =
         defaultRiskFactors.stream()
@@ -44,7 +45,7 @@ public class RiskFactorListUtils {
       if (factorMap.containsKey(id)) {
         factorMap.put(
             id, riskFactorConfigUtils.mergeConfigs(config, elementConfigs, factorMap.get(id)));
-      } else {
+      } else if (checkForConfigId) {
         throw Status.NOT_FOUND
             .withDescription(String.format("Risk factor id:%s NOT FOUND", id))
             .asRuntimeException();
