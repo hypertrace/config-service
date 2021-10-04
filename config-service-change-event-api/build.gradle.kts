@@ -23,4 +23,6 @@ sourceSets {
 
 dependencies {
   api("com.google.protobuf:protobuf-java:3.18.0")
+
+  api(libs.jackson.databind)
 }

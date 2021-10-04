@@ -3,6 +3,7 @@ package org.hypertrace.config.service.change.event.impl;
 import static org.mockito.Mockito.verify;
 
 import com.google.protobuf.Value;
+import org.hypertrace.config.change.event.v1.ConfigChangeEventKey;
 import org.hypertrace.config.change.event.v1.ConfigChangeEventValue;
 import org.hypertrace.config.change.event.v1.ConfigCreateEvent;
 import org.hypertrace.config.change.event.v1.ConfigDeleteEvent;
@@ -24,7 +25,7 @@ class ConfigChangeEventGeneratorImplTest {
   private static final String TEST_CONTEXT = "test-context";
   private static final String TEST_VALUE = "test-value";
 
-  @Mock EventProducer<String, ConfigChangeEventValue> eventProducer;
+  @Mock EventProducer<ConfigChangeEventKey, ConfigChangeEventValue> eventProducer;
 
   ConfigChangeEventGeneratorImpl changeEventGenerator;
 

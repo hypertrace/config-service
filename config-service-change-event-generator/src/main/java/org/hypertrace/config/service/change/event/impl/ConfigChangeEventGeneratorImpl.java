@@ -4,6 +4,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.Value;
 import com.typesafe.config.Config;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.change.event.v1.ConfigChangeEventKey;
 import org.hypertrace.config.change.event.v1.ConfigChangeEventValue;
 import org.hypertrace.config.change.event.v1.ConfigChangeEventValue.Builder;
 import org.hypertrace.config.change.event.v1.ConfigCreateEvent;
@@ -25,7 +26,8 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
   private static final String CONFIG_CHANGE_EVENTS_PRODUCER_CONFIG =
       "config.change.events.producer";
 
-  private final EventProducer<String, ConfigChangeEventValue> configChangeEventProducer;
+  private final EventProducer<ConfigChangeEventKey, ConfigChangeEventValue>
+      configChangeEventProducer;
 
   ConfigChangeEventGeneratorImpl(Config appConfig) {
     Config config = appConfig.getConfig(EVENT_STORE);
@@ -40,7 +42,7 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
 
   @VisibleForTesting
   ConfigChangeEventGeneratorImpl(
-      EventProducer<String, ConfigChangeEventValue> configChangeEventProducer) {
+      EventProducer<ConfigChangeEventKey, ConfigChangeEventValue> configChangeEventProducer) {
     this.configChangeEventProducer = configChangeEventProducer;
   }
 
