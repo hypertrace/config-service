@@ -45,11 +45,9 @@ public class ConfigServicesFactory {
   public static ConfigStore buildConfigStore(Config config) {
     try {
       ConfigStore configStore = new DocumentConfigStore();
-      Config serviceConfig = config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG);
       ConfigChangeEventGenerator configChangeEventGenerator =
-          ConfigChangeEventGeneratorFactory.getInstance()
-              .createConfigChangeEventGenerator(serviceConfig);
-      configStore.init(serviceConfig, configChangeEventGenerator);
+          ConfigChangeEventGeneratorFactory.getInstance().createConfigChangeEventGenerator(config);
+      configStore.init(config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG), configChangeEventGenerator);
       return configStore;
     } catch (Exception e) {
       throw new RuntimeException("Error in getting or initializing config store", e);

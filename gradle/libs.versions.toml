@@ -37,6 +37,8 @@ grpc-core = { module = "io.grpc:grpc-core", version.ref = "grpc" }
 grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "grpc" }
 protobuf-javautil = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protoc" }
 
+protobuf-serializer = { module = "io.confluent:kafka-protobuf-serializer", version= "6.2.1" }
+
 slf4j-log4jimpl = { module = "org.apache.logging.log4j:log4j-slf4j-impl", version = "2.14.1" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version = "1.7.30" }
 

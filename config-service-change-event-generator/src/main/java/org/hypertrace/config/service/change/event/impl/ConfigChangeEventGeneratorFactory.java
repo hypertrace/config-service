@@ -5,7 +5,8 @@ import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator
 
 public class ConfigChangeEventGeneratorFactory {
 
-  static final String PUBLISH_CHANGE_EVENTS = "publish.change.events";
+  static final String GENERIC_CONFIG_SERVICE_PUBLISH_CHANGE_EVENTS =
+      "generic.config.service.publish.change.events";
 
   private static final ConfigChangeEventGeneratorFactory instance =
       new ConfigChangeEventGeneratorFactory();
@@ -17,7 +18,7 @@ public class ConfigChangeEventGeneratorFactory {
   }
 
   public ConfigChangeEventGenerator createConfigChangeEventGenerator(Config appConfig) {
-    if (appConfig.getBoolean(PUBLISH_CHANGE_EVENTS)) {
+    if (appConfig.getBoolean(GENERIC_CONFIG_SERVICE_PUBLISH_CHANGE_EVENTS)) {
       return new ConfigChangeEventGeneratorImpl(appConfig);
     } else {
       return new NoopConfigChangeEventGenerator();

@@ -60,7 +60,11 @@ class DocumentConfigStoreTest {
     Map<String, Object> dataStoreConfig =
         Map.of(DATA_STORE_TYPE, datastoreType, datastoreType, Map.of());
     Map<String, Object> configMap =
-        Map.of(DOC_STORE_CONFIG_KEY, dataStoreConfig, "publish.change.events", false);
+        Map.of(
+            DOC_STORE_CONFIG_KEY,
+            dataStoreConfig,
+            "generic.config.service.publish.change.events",
+            false);
     Config storeConfig = ConfigFactory.parseMap(configMap);
     configStore.init(
         storeConfig,
