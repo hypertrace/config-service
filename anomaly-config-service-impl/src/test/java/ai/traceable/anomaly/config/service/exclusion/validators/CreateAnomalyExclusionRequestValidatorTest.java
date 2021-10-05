@@ -101,7 +101,7 @@ public class CreateAnomalyExclusionRequestValidatorTest {
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertEquals("missing anomaly actor id", status.getDescription());
 
-    // equivalent to disable rule
+    // All actors + All endpoints + All events not allowed - equivalent to disable global detection
     AnomalyConfigScope customerScope =
         AnomalyConfigScope.newBuilder()
             .setCustomerScope(AnomalyCustomerScope.newBuilder().build())
@@ -118,6 +118,38 @@ public class CreateAnomalyExclusionRequestValidatorTest {
     assertEquals(
         "Excluding all anomaly actors for all APIs is equivalent to disabling detection, operation not supported",
         status.getDescription());
+    // All actors + All endpoints + Event type not allowed - equivalent to disable event detection
+    invalidDataBuilder.setEventExclusionInfo(
+        EventExclusionInfo.newBuilder()
+            .setEventExclusionType(EventExclusionType.EVENT_EXCLUSION_TYPE_EVENT_TYPE)
+            .setEventTypeName("event_name")
+            .setEventTypeId("event_id")
+            .setAnomalyEventFamily(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC)
+            .build());
+    assertEquals(
+        Status.UNIMPLEMENTED.getCode(),
+        validator
+            .validate(
+                CreateAnomalyExclusionRuleRequest.newBuilder()
+                    .setRuleData(invalidDataBuilder.build())
+                    .build())
+            .getCode());
+    // Allowed - All actors + All endpoints + Event sub-type
+    invalidDataBuilder.setEventExclusionInfo(
+        EventExclusionInfo.newBuilder()
+            .setEventExclusionType(EventExclusionType.EVENT_EXCLUSION_TYPE_EVENT_SUBTYPE)
+            .setEventTypeName("event_name")
+            .setEventTypeId("event_sub_id")
+            .setAnomalyEventFamily(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC)
+            .build());
+    assertEquals(
+        Status.OK.getCode(),
+        validator
+            .validate(
+                CreateAnomalyExclusionRuleRequest.newBuilder()
+                    .setRuleData(invalidDataBuilder.build())
+                    .build())
+            .getCode());
 
     // making it valid by setting allowed threat actor
     invalidDataBuilder.setAnomalyActorExclusionInfo(

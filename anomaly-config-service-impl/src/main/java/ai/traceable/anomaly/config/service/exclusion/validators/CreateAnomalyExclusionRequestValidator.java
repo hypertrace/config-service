@@ -70,7 +70,9 @@ public class CreateAnomalyExclusionRequestValidator
     }
 
     // Rule created for all APIs for the customer.
-    if (ScopeCase.CUSTOMER_SCOPE.equals(exclusionRuleData.getAnomalyConfigScope().getScopeCase())) {
+    if (ScopeCase.CUSTOMER_SCOPE.equals(exclusionRuleData.getAnomalyConfigScope().getScopeCase())
+        && !EventExclusionType.EVENT_EXCLUSION_TYPE_EVENT_SUBTYPE.equals(
+            eventExclusionInfo.getEventExclusionType())) {
       // Equivalent to disabling detection for customer.
       if (AnomalyActorExclusionCase.ANOMALYACTOREXCLUSION_NOT_SET.equals(
           exclusionRuleData.getAnomalyActorExclusionInfo().getAnomalyActorExclusionCase())) {
