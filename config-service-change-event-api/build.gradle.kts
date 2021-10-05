@@ -9,7 +9,7 @@ plugins {
 
 protobuf {
   protoc {
-    artifact = "com.google.protobuf:protoc:3.18.0"
+    artifact = "com.google.protobuf:protoc:${libs.versions.protoc.get()}"
   }
 }
 
@@ -22,7 +22,7 @@ sourceSets {
 }
 
 dependencies {
-  api("com.google.protobuf:protobuf-java:3.18.0")
+  api(libs.protobuf.java)
 
   api(libs.jackson.databind)
 }
