@@ -48,6 +48,19 @@ class ConfigChangeEventGeneratorImplTest {
   }
 
   @Test
+  void sendCreateNotificationWithNullContext() {
+    Value config = createStringValue();
+    changeEventGenerator.sendCreateNotification(
+        TEST_TENANT_ID, TEST_RESOURCE, TEST_RESOURCE_NAMESPACE, null, config);
+    verify(eventProducer)
+        .send(
+            KeyUtil.getKey(TEST_TENANT_ID, TEST_RESOURCE, TEST_RESOURCE_NAMESPACE, null),
+            ConfigChangeEventValue.newBuilder()
+                .setCreateEvent(ConfigCreateEvent.newBuilder().setCreatedConfig(config).build())
+                .build());
+  }
+
+  @Test
   void sendDeleteNotification() {
     Value config = createStringValue();
     changeEventGenerator.sendDeleteNotification(

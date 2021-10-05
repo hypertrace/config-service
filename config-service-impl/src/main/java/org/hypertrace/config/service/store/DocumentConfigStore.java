@@ -187,12 +187,16 @@ public class DocumentConfigStore implements ConfigStore {
 
   private void sendChangeNotification(
       ConfigResource configResource, Value prevConfig, Value latestconfig) {
+    String context =
+        ConfigServiceUtils.DEFAULT_CONTEXT.equals(configResource.getContext())
+            ? null
+            : configResource.getContext();
     if (ConfigServiceUtils.isNull(latestconfig)) {
       configChangeEventGenerator.sendDeleteNotification(
           configResource.getTenantId(),
           configResource.getResourceName(),
           configResource.getResourceNamespace(),
-          configResource.getContext(),
+          context,
           prevConfig);
 
     } else if (ConfigServiceUtils.isNull(prevConfig)) {
@@ -200,14 +204,14 @@ public class DocumentConfigStore implements ConfigStore {
           configResource.getTenantId(),
           configResource.getResourceName(),
           configResource.getResourceNamespace(),
-          configResource.getContext(),
+          context,
           latestconfig);
     } else {
       configChangeEventGenerator.sendUpdateNotification(
           configResource.getTenantId(),
           configResource.getResourceName(),
           configResource.getResourceNamespace(),
-          configResource.getContext(),
+          context,
           prevConfig,
           latestconfig);
     }

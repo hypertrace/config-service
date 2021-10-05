@@ -8,6 +8,13 @@ public class KeyUtil {
 
   public static final ConfigChangeEventKey getKey(
       String tenantId, String resourceName, String resourceNamespace, String context) {
-    return new ConfigChangeEventKey(tenantId, resourceName, resourceNamespace, context);
+    ConfigChangeEventKey.Builder builder = ConfigChangeEventKey.newBuilder();
+    builder.setTenantId(tenantId);
+    builder.setResourceName(resourceName);
+    builder.setResourceNamespace(resourceNamespace);
+    if (context != null) {
+      builder.setContext(context);
+    }
+    return builder.build();
   }
 }
