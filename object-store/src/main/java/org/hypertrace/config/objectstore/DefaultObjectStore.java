@@ -72,13 +72,19 @@ public abstract class DefaultObjectStore<T> {
         .orElseThrow(Status.INTERNAL::asRuntimeException);
   }
 
-  public void deleteObject(RequestContext context) {
-    context.call(
-        () ->
-            this.configServiceBlockingStub.deleteConfig(
-                DeleteConfigRequest.newBuilder()
-                    .setResourceName(this.resourceName)
-                    .setResourceNamespace(this.resourceNamespace)
-                    .build()));
+  public T deleteObject(RequestContext context) {
+    Value deletedValue =
+        context
+            .call(
+                () ->
+                    this.configServiceBlockingStub.deleteConfig(
+                        DeleteConfigRequest.newBuilder()
+                            .setResourceName(this.resourceName)
+                            .setResourceNamespace(this.resourceNamespace)
+                            .build()))
+            .getDeletedConfig()
+            .getConfig();
+
+    return this.buildObjectFromValue(deletedValue).orElseThrow(Status.INTERNAL::asRuntimeException);
   }
 }

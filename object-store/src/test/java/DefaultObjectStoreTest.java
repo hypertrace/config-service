@@ -1,4 +1,3 @@
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -12,7 +11,9 @@ import io.grpc.Status;
 import java.util.Optional;
 import org.hypertrace.config.objectstore.DefaultObjectStore;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
+import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
+import org.hypertrace.config.service.v1.DeleteConfigResponse;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
@@ -72,7 +73,13 @@ class DefaultObjectStoreTest {
 
   @Test
   void generatesConfigDeleteRequest() {
-    assertDoesNotThrow(() -> this.store.deleteObject(mockRequestContext));
+
+    when(this.mockStub.deleteConfig(any()))
+        .thenReturn(
+            DeleteConfigResponse.newBuilder()
+                .setDeletedConfig(ContextSpecificConfig.newBuilder().setConfig(Values.of("test")))
+                .build());
+    assertEquals(new TestObject("test"), this.store.deleteObject(mockRequestContext));
 
     verify(this.mockStub)
         .deleteConfig(
