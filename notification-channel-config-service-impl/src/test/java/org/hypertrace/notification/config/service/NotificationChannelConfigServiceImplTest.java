@@ -64,7 +64,7 @@ class NotificationChannelConfigServiceImplTest {
         channelStub
             .getNotificationChannel(
                 GetNotificationChannelRequest.newBuilder()
-                    .setNotificationChannelId("channel1")
+                    .setNotificationChannelId(notificationChannel1.getId())
                     .build())
             .getNotificationChannel());
     assertEquals(
@@ -72,7 +72,7 @@ class NotificationChannelConfigServiceImplTest {
         channelStub
             .getNotificationChannel(
                 GetNotificationChannelRequest.newBuilder()
-                    .setNotificationChannelId("channel2")
+                    .setNotificationChannelId(notificationChannel2.getId())
                     .build())
             .getNotificationChannel());
 
