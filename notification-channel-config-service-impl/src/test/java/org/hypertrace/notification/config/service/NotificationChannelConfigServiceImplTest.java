@@ -8,6 +8,7 @@ import org.hypertrace.notification.config.service.v1.CreateNotificationChannelRe
 import org.hypertrace.notification.config.service.v1.DeleteNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.EmailChannelConfig;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsRequest;
+import org.hypertrace.notification.config.service.v1.GetNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.NotificationChannel;
 import org.hypertrace.notification.config.service.v1.NotificationChannelConfigServiceGrpc;
 import org.hypertrace.notification.config.service.v1.NotificationChannelMutableData;
@@ -57,6 +58,23 @@ class NotificationChannelConfigServiceImplTest {
                     .setNotificationChannelMutableData(notificationChannelMutableData2)
                     .build())
             .getNotificationChannel();
+
+    assertEquals(
+        notificationChannel1,
+        channelStub
+            .getNotificationChannel(
+                GetNotificationChannelRequest.newBuilder()
+                    .setNotificationChannelId(notificationChannel1.getId())
+                    .build())
+            .getNotificationChannel());
+    assertEquals(
+        notificationChannel2,
+        channelStub
+            .getNotificationChannel(
+                GetNotificationChannelRequest.newBuilder()
+                    .setNotificationChannelId(notificationChannel2.getId())
+                    .build())
+            .getNotificationChannel());
 
     assertEquals(
         List.of(notificationChannel2, notificationChannel1),

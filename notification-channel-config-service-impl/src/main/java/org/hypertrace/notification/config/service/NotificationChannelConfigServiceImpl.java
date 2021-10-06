@@ -1,6 +1,7 @@
 package org.hypertrace.notification.config.service;
 
 import io.grpc.Channel;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.UUID;
@@ -12,6 +13,8 @@ import org.hypertrace.notification.config.service.v1.DeleteNotificationChannelRe
 import org.hypertrace.notification.config.service.v1.DeleteNotificationChannelResponse;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsRequest;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsResponse;
+import org.hypertrace.notification.config.service.v1.GetNotificationChannelRequest;
+import org.hypertrace.notification.config.service.v1.GetNotificationChannelResponse;
 import org.hypertrace.notification.config.service.v1.NotificationChannel;
 import org.hypertrace.notification.config.service.v1.NotificationChannelConfigServiceGrpc;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelRequest;
@@ -110,6 +113,28 @@ public class NotificationChannelConfigServiceImpl
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Delete Notification Channel RPC failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getNotificationChannel(
+      GetNotificationChannelRequest request,
+      StreamObserver<GetNotificationChannelResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      validator.validateGetNotificationChannelRequest(requestContext, request);
+      NotificationChannel notificationChannel =
+          notificationChannelStore
+              .getObject(requestContext, request.getNotificationChannelId())
+              .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      responseObserver.onNext(
+          GetNotificationChannelResponse.newBuilder()
+              .setNotificationChannel(notificationChannel)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Get Notification Channel by id RPC failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }
