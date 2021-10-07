@@ -29,6 +29,7 @@ message ApiDefinitionTrainerConfig {
 
 message ApiDefinitionApplierConfig {
   bool disabled = 1;
+  ApplierType applier_type = 2;
   oneof applier_config {
     TypeMetadataApplierConfig type = 6;
     PiiMetadataApplierConfig pii = 7;
@@ -49,7 +50,22 @@ message ApiDefinitionApplierConfig {
     LackOfEncryptionVulnerabilityApplierConfig lack_of_encryption = 22;
     PersistentCookieContainsSensitiveDataVulnerabilityApplierConfig persistent_cookie_contains_sensitive_data = 23;
     PiiSensitiveDataApplierConfig pii_sensitive_data = 24;
+    CountMetadataApplierConfig count = 25;
+    ContentTypeMetadataApplierConfig content_type = 26;
+    UserAgentMetadataApplierConfig user_agent = 27;
+    UserRoleMetadataApplierConfig user_role = 28;
+    IsExternalApiMetadataApplierConfig is_external_api = 29;
+    ApiParamContainsUrlEntityVulnerabilityApplierConfig api_param_contains_url = 30;
+    ServiceUsesBasicAuthVulnerabilityApplierConfig service_uses_basic_auth = 31;
+    HstsSecurityHeaderVulnerabilityApplierConfig hsts_security_header = 32;
+    ContentTypeOptionsSecurityHeaderVulnerabilityApplierConfig content_type_options = 33;
   }
+}
+
+enum ApplierType {
+  APPLIER_TYPE_METADATA = 0;
+  APPLIER_TYPE_VULNERABILITY = 1;
+  APPLIER_TYPE_SENSITIVE_DATA = 2;
 }
 
 message TypeMetadataApplierConfig {
@@ -164,6 +180,24 @@ message PiiSensitiveDataApplierConfig {
   optional bool dlp_use_cached_response = 3;
   DlpSchedule dlp_schedule = 4;
 }
+
+message CountMetadataApplierConfig {}
+
+message ContentTypeMetadataApplierConfig {}
+
+message UserAgentMetadataApplierConfig {}
+
+message UserRoleMetadataApplierConfig {}
+
+message IsExternalApiMetadataApplierConfig {}
+
+message ApiParamContainsUrlEntityVulnerabilityApplierConfig {}
+
+message ServiceUsesBasicAuthVulnerabilityApplierConfig {}
+
+message HstsSecurityHeaderVulnerabilityApplierConfig {}
+
+message ContentTypeOptionsSecurityHeaderVulnerabilityApplierConfig {}
 
 message DlpSchedule {
   optional string param_age_threshold_duration = 1;

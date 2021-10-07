@@ -8,7 +8,7 @@ option java_multiple_files = true;
 import "ai/traceable/anomaly/config/service/v1/apidef/apidef_trainer_config.proto";
 
 
-service ApiDefinitionTrainerConfigService {
+service ApiDefinitionConfigService {
 
   rpc GetApiDefinitionTrainerConfigs (GetApiDefinitionTrainerConfigsRequest) returns (GetApiDefinitionTrainerConfigsResponse) {
   }

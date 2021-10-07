@@ -43,14 +43,20 @@ public class ApiDefinitionRegistryTest {
         new ApiDefinitionRegistryImpl(new ConfigConverter());
     ApiDefinitionTrainerConfig apiDefinitionTrainerConfig =
         apiDefinitionRegistry.getApiDefinitionTrainerConfig();
-    assertEquals(19, apiDefinitionTrainerConfig.getApiDefinitionApplierConfigsCount());
+    assertEquals(28, apiDefinitionTrainerConfig.getApiDefinitionApplierConfigsCount());
     assertEquals(
         "API_ACCESSORS\n"
+            + "API_PARAM_CONTAINS_URL\n"
             + "CONTENT_SIZE\n"
+            + "CONTENT_TYPE\n"
+            + "CONTENT_TYPE_OPTIONS\n"
+            + "COUNT\n"
             + "DEVICE\n"
             + "DIGIT_LENGTH\n"
             + "ENUM\n"
+            + "HSTS_SECURITY_HEADER\n"
             + "HTTP_STATUS\n"
+            + "IS_EXTERNAL_API\n"
             + "JAVA_SERIALIZED_OBJECT\n"
             + "LACK_OF_ENCRYPTION\n"
             + "PARAM_ACCESSORS\n"
@@ -59,15 +65,18 @@ public class ApiDefinitionRegistryTest {
             + "PII\n"
             + "PII_SENSITIVE_DATA\n"
             + "QUERY_PARAM_CONTAINS_SENSITIVE_DATA\n"
+            + "SERVICE_USES_BASIC_AUTH\n"
             + "SPECIAL_CHARS\n"
             + "SSRF_DOMAIN\n"
             + "SSRF_PROTOCOL\n"
             + "THRESHOLDS_FAMILY\n"
-            + "TYPE",
+            + "TYPE\n"
+            + "USER_AGENT\n"
+            + "USER_ROLE",
         apiDefinitionTrainerConfig.getApiDefinitionApplierConfigsList().stream()
             .map(
                 apiDefinitionApplierConfig ->
-                    apiDefinitionApplierConfig.getApplierConfigCase().name())
+                    apiDefinitionApplierConfig.getApplierConfigCase().toString())
             .sorted()
             .collect(Collectors.joining("\n")));
   }
