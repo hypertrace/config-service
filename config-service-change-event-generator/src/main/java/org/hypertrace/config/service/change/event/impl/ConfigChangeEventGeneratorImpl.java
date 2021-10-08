@@ -11,6 +11,7 @@ import org.hypertrace.config.change.event.v1.ConfigChangeEventValue.Builder;
 import org.hypertrace.config.change.event.v1.ConfigCreateEvent;
 import org.hypertrace.config.change.event.v1.ConfigDeleteEvent;
 import org.hypertrace.config.change.event.v1.ConfigUpdateEvent;
+import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.change.event.util.KeyUtil;
 import org.hypertrace.core.eventstore.EventProducer;
@@ -54,7 +55,11 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
     String tenantId = requestContext.getTenantId().get();
     try {
       Builder builder = ConfigChangeEventValue.newBuilder();
-      builder.setCreateEvent(ConfigCreateEvent.newBuilder().setCreatedConfig(config).build());
+      builder.setCreateEvent(
+          ConfigCreateEvent.newBuilder()
+              .setCreatedConfig(ConfigProtoConverter.convertToJsonString(config))
+              .build());
+      requestContext.getUserId().ifPresent(userId -> builder.setUserId(userId));
       configChangeEventProducer.send(
           KeyUtil.getKey(tenantId, configType, context), builder.build());
     } catch (Exception ex) {
@@ -79,9 +84,10 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
       Builder builder = ConfigChangeEventValue.newBuilder();
       builder.setUpdateEvent(
           ConfigUpdateEvent.newBuilder()
-              .setPreviousConfig(prevConfig)
-              .setLatestConfig(latestConfig)
+              .setPreviousConfig(ConfigProtoConverter.convertToJsonString(prevConfig))
+              .setLatestConfig(ConfigProtoConverter.convertToJsonString(latestConfig))
               .build());
+      requestContext.getUserId().ifPresent(userId -> builder.setUserId(userId));
       configChangeEventProducer.send(
           KeyUtil.getKey(tenantId, configType, context), builder.build());
     } catch (Exception ex) {
@@ -100,7 +106,11 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
     String tenantId = requestContext.getTenantId().get();
     try {
       Builder builder = ConfigChangeEventValue.newBuilder();
-      builder.setDeleteEvent(ConfigDeleteEvent.newBuilder().setDeletedConfig(config).build());
+      builder.setDeleteEvent(
+          ConfigDeleteEvent.newBuilder()
+              .setDeletedConfig(ConfigProtoConverter.convertToJsonString(config))
+              .build());
+      requestContext.getUserId().ifPresent(userId -> builder.setUserId(userId));
       configChangeEventProducer.send(
           KeyUtil.getKey(tenantId, configType, context), builder.build());
     } catch (Exception ex) {

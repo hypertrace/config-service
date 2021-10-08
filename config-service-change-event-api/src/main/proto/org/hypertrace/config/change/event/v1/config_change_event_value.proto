@@ -12,17 +12,18 @@ message ConfigChangeEventValue {
     ConfigUpdateEvent update_event = 2;
     ConfigDeleteEvent delete_event = 3;
   }
+  optional string user_id = 4;
 }
 
 message ConfigCreateEvent {
-  google.protobuf.Value created_config = 1;
+  string created_config = 1;
 }
 
 message ConfigUpdateEvent {
-  google.protobuf.Value previous_config = 1;
-  google.protobuf.Value latest_config = 2;
+  string previous_config = 1;
+  string latest_config = 2;
 }
 
 message ConfigDeleteEvent {
-  google.protobuf.Value deleted_config = 1;
+  string deleted_config = 1;
 }

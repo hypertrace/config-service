@@ -9,6 +9,7 @@ dependencies {
   api(libs.typesafe.config)
   api(libs.hypertrace.grpcutils.context)
 
+  implementation(projects.configProtoConverter)
   implementation(libs.hypertrace.eventstore)
   implementation(libs.guava)
   implementation(libs.slf4j.api)

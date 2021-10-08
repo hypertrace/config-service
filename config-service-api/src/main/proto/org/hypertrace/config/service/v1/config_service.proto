@@ -47,7 +47,7 @@ message UpsertConfigResponse {
   int64 update_timestamp = 3;
 
   // prev version of config value in the store
-  optional google.protobuf.Value prevConfig = 4;
+  optional google.protobuf.Value prev_config = 4;
 }
 
 message GetConfigRequest {
@@ -95,7 +95,7 @@ message ContextSpecificConfig {
   int64 update_timestamp = 4;
 
   // prev config value which applies to the above context
-  optional google.protobuf.Value prevConfig = 5;
+  optional google.protobuf.Value prev_config = 5;
 }
 
 message DeleteConfigRequest {
