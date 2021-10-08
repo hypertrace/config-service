@@ -76,7 +76,6 @@ dependencies {
     runtimeOnly("io.netty:netty-codec-http2:4.1.68.Final")
     runtimeOnly("io.netty:netty-handler-proxy:4.1.68.Final")
   }
-  runtimeOnly(libs.kafka.protobuf.serializer)
 
   // Integration test dependencies
   integrationTestImplementation(projects.configServiceImpl)

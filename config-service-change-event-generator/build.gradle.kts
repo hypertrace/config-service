@@ -17,6 +17,8 @@ dependencies {
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
 
+  runtimeOnly(libs.kafka.protobuf.serializer)
+
   testImplementation(libs.junit.jupiter)
   testImplementation(libs.mockito.core)
   testImplementation(libs.mockito.junit)
