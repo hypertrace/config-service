@@ -55,6 +55,7 @@ public class RiskFactorConfigsManagerTest {
   public void testGetUpdateDeleteLikelihoodConfigs() {
     RequestContext requestContext = RequestContext.forTenantId("likelihood-tenant");
 
+    // check for get default configs
     RiskContributorConfigs riskLikelihoodConfigs =
         configsManager.getRiskLikelihoodConfigs(requestContext);
     assertEquals(
@@ -93,6 +94,7 @@ public class RiskFactorConfigsManagerTest {
             configsManager.updateRiskLikelihoodConfigs(
                 requestContext, List.of(getCustomTagUpdatedConfig(false))));
 
+    // update modified configs
     RiskFactorConfig riskFactorConfig1 =
         RiskFactorConfig.newBuilder()
             .setId("motive")
@@ -152,6 +154,19 @@ public class RiskFactorConfigsManagerTest {
                     .setIsDefault(false)
                     .build()));
 
+    // update config back to default config
+    configsManager.updateRiskLikelihoodConfigs(
+        requestContext,
+        List.of(MockFactorConfigsData.getDefaultMotiveFactor().getRiskFactorConfig()));
+    riskLikelihoodConfigs = configsManager.getRiskLikelihoodConfigs(requestContext);
+    assertTrue(
+        riskLikelihoodConfigs
+            .getRiskFactorsList()
+            .contains(MockFactorConfigsData.getDefaultMotiveFactor()));
+
+    // reset config
+    configsManager.updateRiskLikelihoodConfigs(
+        requestContext, List.of(riskFactorConfig1, riskFactorConfig2));
     configsManager.resetRiskLikelihoodConfigs(
         requestContext,
         RiskContributorConfigsResetFilter.newBuilder().addRiskFactorIds("custom-tag").build());
@@ -189,6 +204,7 @@ public class RiskFactorConfigsManagerTest {
   public void testGetUpdateDeleteImpactConfigs() {
     RequestContext requestContext = RequestContext.forTenantId("impact-tenant");
 
+    // check for get default configs
     RiskContributorConfigs riskImpactConfigs = configsManager.getRiskImpactConfigs(requestContext);
     assertEquals(
         defaultRiskImpactConfigs.getRiskFactorsCount(), riskImpactConfigs.getRiskFactorsCount());
@@ -224,6 +240,7 @@ public class RiskFactorConfigsManagerTest {
             configsManager.updateRiskImpactConfigs(
                 requestContext, List.of(getCustomTagUpdatedConfig(false))));
 
+    // update modified configs
     RiskFactorConfig riskFactorConfig1 =
         RiskFactorConfig.newBuilder()
             .setId("sensitive-data-exposure")
@@ -282,6 +299,20 @@ public class RiskFactorConfigsManagerTest {
                     .setIsDefault(false)
                     .build()));
 
+    // update config back to default config
+    configsManager.updateRiskImpactConfigs(
+        requestContext,
+        List.of(
+            MockFactorConfigsData.getDefaultSensitiveDataExposureFactor().getRiskFactorConfig()));
+    riskImpactConfigs = configsManager.getRiskImpactConfigs(requestContext);
+    assertTrue(
+        riskImpactConfigs
+            .getRiskFactorsList()
+            .contains(MockFactorConfigsData.getDefaultSensitiveDataExposureFactor()));
+
+    // reset config
+    configsManager.updateRiskImpactConfigs(
+        requestContext, List.of(riskFactorConfig1, riskFactorConfig2));
     configsManager.resetRiskImpactConfigs(
         requestContext,
         RiskContributorConfigsResetFilter.newBuilder().addRiskFactorIds("custom-tag").build());

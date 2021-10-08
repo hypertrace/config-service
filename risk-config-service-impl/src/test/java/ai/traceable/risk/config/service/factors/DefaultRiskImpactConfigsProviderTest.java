@@ -61,7 +61,7 @@ public class DefaultRiskImpactConfigsProviderTest {
       assertEquals(
           RiskFactorScoring.getDefaultInstance(),
           factor.getRiskFactorConfig().getRiskFactorScoring());
-      assertEquals(2, factor.getRiskFactorConfig().getRiskElementConfigsCount());
+      assertEquals(4, factor.getRiskFactorConfig().getRiskElementConfigsCount());
     }
     {
       RiskFactor factor = factorMap.get("exposureSurface");

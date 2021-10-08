@@ -12,6 +12,7 @@ import ai.traceable.risk.config.service.v1.RiskElementScoring;
 import ai.traceable.risk.config.service.v1.RiskFactor;
 import ai.traceable.risk.config.service.v1.RiskFactorConfig;
 import ai.traceable.risk.config.service.v1.RiskFactorInfo;
+import ai.traceable.risk.config.service.v1.RiskFactorScoring;
 import ai.traceable.risk.config.service.v1.RiskFactorType;
 import ai.traceable.risk.config.service.v1.StringOperator;
 import ai.traceable.risk.config.service.v1.StringPredicate;
@@ -90,6 +91,7 @@ public class MockFactorConfigsData {
         .setRiskFactorConfig(
             RiskFactorConfig.newBuilder()
                 .setId("sensitive-data-exposure")
+                .setRiskFactorScoring(RiskFactorScoring.getDefaultInstance())
                 .addRiskElementConfigs(
                     RiskElementConfig.newBuilder()
                         .setId("request-has-params")
@@ -113,6 +115,7 @@ public class MockFactorConfigsData {
         .setRiskFactorConfig(
             RiskFactorConfig.newBuilder()
                 .setId("motive")
+                .setRiskFactorScoring(RiskFactorScoring.getDefaultInstance())
                 .addRiskElementConfigs(
                     RiskElementConfig.newBuilder()
                         .setId("response-has-pii")

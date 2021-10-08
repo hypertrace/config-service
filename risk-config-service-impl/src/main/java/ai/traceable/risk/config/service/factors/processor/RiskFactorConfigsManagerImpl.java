@@ -120,26 +120,24 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
     }
 
     for (RiskFactor factor : mergedRiskFactors) {
-      if (!factor.getIsDefault()) {
-        RiskFactorConfig factorConfig = factor.getRiskFactorConfig();
-        if (factor
-            .getCustomizationOptionsList()
-            .contains(CustomizationOptions.CUSTOMIZATION_OPTIONS_ELEMENT_ADD_DELETE)) {
-          factorConfigStore.upsertObject(requestContext, factorConfig);
-        } else {
-          // risk element associations with the factors cannot be modified by user
-          // their configs are stored separately..
-          factorConfigStore.upsertObject(
-              requestContext,
-              RiskFactorConfig.newBuilder()
-                  .setId(factorConfig.getId())
-                  .setRiskFactorScoring(factorConfig.getRiskFactorScoring())
-                  .build());
-          factorConfig
-              .getRiskElementConfigsList()
-              .forEach(
-                  elementConfig -> elementConfigStore.upsertObject(requestContext, elementConfig));
-        }
+      RiskFactorConfig factorConfig = factor.getRiskFactorConfig();
+      if (factor
+          .getCustomizationOptionsList()
+          .contains(CustomizationOptions.CUSTOMIZATION_OPTIONS_ELEMENT_ADD_DELETE)) {
+        factorConfigStore.upsertObject(requestContext, factorConfig);
+      } else {
+        // risk element associations with the factors cannot be modified by user
+        // their configs are stored separately..
+        factorConfigStore.upsertObject(
+            requestContext,
+            RiskFactorConfig.newBuilder()
+                .setId(factorConfig.getId())
+                .setRiskFactorScoring(factorConfig.getRiskFactorScoring())
+                .build());
+        factorConfig
+            .getRiskElementConfigsList()
+            .forEach(
+                elementConfig -> elementConfigStore.upsertObject(requestContext, elementConfig));
       }
     }
     return mergedRiskFactors;
