@@ -108,7 +108,9 @@ public class NotificationChannelConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       validator.validateDeleteNotificationChannelRequest(requestContext, request);
-      notificationChannelStore.deleteObject(requestContext, request.getNotificationChannelId());
+      notificationChannelStore
+          .deleteObject(requestContext, request.getNotificationChannelId())
+          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       responseObserver.onNext(DeleteNotificationChannelResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Exception e) {

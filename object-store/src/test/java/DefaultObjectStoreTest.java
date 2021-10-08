@@ -79,7 +79,7 @@ class DefaultObjectStoreTest {
             DeleteConfigResponse.newBuilder()
                 .setDeletedConfig(ContextSpecificConfig.newBuilder().setConfig(Values.of("test")))
                 .build());
-    assertEquals(new TestObject("test"), this.store.deleteObject(mockRequestContext));
+    assertEquals(Optional.of(new TestObject("test")), this.store.deleteObject(mockRequestContext));
 
     verify(this.mockStub)
         .deleteConfig(
@@ -87,6 +87,10 @@ class DefaultObjectStoreTest {
                 .setResourceName(TEST_RESOURCE_NAME)
                 .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
                 .build());
+
+    when(this.mockStub.deleteConfig(any())).thenThrow(Status.NOT_FOUND.asRuntimeException());
+
+    assertEquals(Optional.empty(), this.store.deleteObject(mockRequestContext));
   }
 
   @Test

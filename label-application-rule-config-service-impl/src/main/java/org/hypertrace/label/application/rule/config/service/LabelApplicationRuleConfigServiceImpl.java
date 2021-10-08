@@ -108,7 +108,9 @@ public class LabelApplicationRuleConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.requestValidator.validateOrThrow(requestContext, request);
-      this.labelApplicationRuleStore.deleteObject(requestContext, request.getId());
+      this.labelApplicationRuleStore
+          .deleteObject(requestContext, request.getId())
+          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       responseObserver.onNext(DeleteLabelApplicationRuleResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Exception e) {

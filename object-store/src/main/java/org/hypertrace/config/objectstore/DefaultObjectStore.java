@@ -72,19 +72,27 @@ public abstract class DefaultObjectStore<T> {
         .orElseThrow(Status.INTERNAL::asRuntimeException);
   }
 
-  public T deleteObject(RequestContext context) {
-    Value deletedValue =
-        context
-            .call(
-                () ->
-                    this.configServiceBlockingStub.deleteConfig(
-                        DeleteConfigRequest.newBuilder()
-                            .setResourceName(this.resourceName)
-                            .setResourceNamespace(this.resourceNamespace)
-                            .build()))
-            .getDeletedConfig()
-            .getConfig();
-
-    return this.buildObjectFromValue(deletedValue).orElseThrow(Status.INTERNAL::asRuntimeException);
+  public Optional<T> deleteObject(RequestContext context) {
+    try {
+      Value deletedValue =
+          context
+              .call(
+                  () ->
+                      this.configServiceBlockingStub.deleteConfig(
+                          DeleteConfigRequest.newBuilder()
+                              .setResourceName(this.resourceName)
+                              .setResourceNamespace(this.resourceNamespace)
+                              .build()))
+              .getDeletedConfig()
+              .getConfig();
+      T object =
+          this.buildObjectFromValue(deletedValue).orElseThrow(Status.INTERNAL::asRuntimeException);
+      return Optional.of(object);
+    } catch (Exception exception) {
+      if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
+        return Optional.empty();
+      }
+      throw exception;
+    }
   }
 }

@@ -127,7 +127,7 @@ class IdentifiedObjectStoreTest {
             DeleteConfigResponse.newBuilder()
                 .setDeletedConfig(ContextSpecificConfig.newBuilder().setConfig(OBJECT_1_AS_VALUE))
                 .build());
-    assertEquals(OBJECT_1, this.store.deleteObject(mockRequestContext, "some-id"));
+    assertEquals(Optional.of(OBJECT_1), this.store.deleteObject(mockRequestContext, "some-id"));
 
     verify(this.mockStub)
         .deleteConfig(
@@ -136,6 +136,10 @@ class IdentifiedObjectStoreTest {
                 .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
                 .setContext("some-id")
                 .build());
+
+    when(this.mockStub.deleteConfig(any())).thenThrow(Status.NOT_FOUND.asRuntimeException());
+
+    assertEquals(Optional.empty(), this.store.deleteObject(mockRequestContext, "some-id"));
   }
 
   @Test
