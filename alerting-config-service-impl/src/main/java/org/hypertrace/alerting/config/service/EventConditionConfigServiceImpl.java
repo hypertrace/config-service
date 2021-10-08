@@ -1,6 +1,7 @@
 package org.hypertrace.alerting.config.service;
 
 import io.grpc.Channel;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
@@ -100,7 +101,9 @@ public class EventConditionConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       requestValidator.validateDeleteEventConditionRequest(requestContext, request);
-      eventConditionStore.deleteObject(requestContext, request.getEventConditionId());
+      eventConditionStore
+          .deleteObject(requestContext, request.getEventConditionId())
+          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       responseObserver.onNext(DeleteEventConditionResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Exception e) {

@@ -1,4 +1,3 @@
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -19,6 +18,7 @@ import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
+import org.hypertrace.config.service.v1.DeleteConfigResponse;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.GetConfigRequest;
@@ -121,7 +121,13 @@ class IdentifiedObjectStoreTest {
 
   @Test
   void generatesConfigDeleteRequest() {
-    assertDoesNotThrow(() -> this.store.deleteObject(mockRequestContext, "some-id"));
+
+    when(this.mockStub.deleteConfig(any()))
+        .thenReturn(
+            DeleteConfigResponse.newBuilder()
+                .setDeletedConfig(ContextSpecificConfig.newBuilder().setConfig(OBJECT_1_AS_VALUE))
+                .build());
+    assertEquals(Optional.of(OBJECT_1), this.store.deleteObject(mockRequestContext, "some-id"));
 
     verify(this.mockStub)
         .deleteConfig(
@@ -130,6 +136,10 @@ class IdentifiedObjectStoreTest {
                 .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
                 .setContext("some-id")
                 .build());
+
+    when(this.mockStub.deleteConfig(any())).thenThrow(Status.NOT_FOUND.asRuntimeException());
+
+    assertEquals(Optional.empty(), this.store.deleteObject(mockRequestContext, "some-id"));
   }
 
   @Test

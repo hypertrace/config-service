@@ -104,7 +104,9 @@ public class NotificationRuleConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       validator.validateDeleteNotificationRuleRequest(requestContext, request);
-      notificationRuleStore.deleteObject(requestContext, request.getNotificationRuleId());
+      notificationRuleStore
+          .deleteObject(requestContext, request.getNotificationRuleId())
+          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       responseObserver.onNext(DeleteNotificationRuleResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Exception e) {
