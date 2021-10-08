@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
+import org.hypertrace.config.service.v1.InternalContextSpecificConfig;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.DatastoreProvider;
@@ -71,7 +72,7 @@ class DocumentConfigStoreTest {
     when(collection.search(any(Query.class)))
         .thenReturn(documentList.iterator(), documentList.iterator());
 
-    ContextSpecificConfig contextSpecificConfig =
+    InternalContextSpecificConfig contextSpecificConfig =
         configStore.writeConfig(configResource, USER_ID, config1);
     assertEquals(config1, contextSpecificConfig.getConfig());
     assertEquals(TIMESTAMP1, contextSpecificConfig.getCreationTimestamp());

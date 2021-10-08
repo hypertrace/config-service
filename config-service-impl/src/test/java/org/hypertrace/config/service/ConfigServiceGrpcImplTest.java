@@ -37,6 +37,7 @@ import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
+import org.hypertrace.config.service.v1.InternalContextSpecificConfig;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
@@ -58,7 +59,7 @@ class ConfigServiceGrpcImplTest {
         .thenAnswer(
             invocation -> {
               Value config = invocation.getArgument(2, Value.class);
-              return ContextSpecificConfig.newBuilder()
+              return InternalContextSpecificConfig.newBuilder()
                   .setConfig(config)
                   .setCreationTimestamp(123L)
                   .setUpdateTimestamp(456L)

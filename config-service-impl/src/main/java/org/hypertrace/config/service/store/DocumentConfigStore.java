@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigServiceUtils;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
+import org.hypertrace.config.service.v1.InternalContextSpecificConfig;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.DatastoreProvider;
@@ -64,7 +65,7 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   @Override
-  public ContextSpecificConfig writeConfig(
+  public InternalContextSpecificConfig writeConfig(
       ConfigResource configResource, String userId, Value latestConfig) throws IOException {
     // Synchronization is required across different threads trying to write the latest config
     // for the same resource into the document store
@@ -91,7 +92,7 @@ public class DocumentConfigStore implements ConfigStore {
               creationTimestamp,
               updateTimestamp);
       collection.upsert(key, configDocument);
-      return getContextSpecificConfig(configDocument, existingConfig);
+      return getInternalContextSpecificConfig(configDocument, existingConfig);
     }
   }
 
@@ -181,18 +182,16 @@ public class DocumentConfigStore implements ConfigStore {
         .build();
   }
 
-  private ContextSpecificConfig getContextSpecificConfig(
+  private InternalContextSpecificConfig getInternalContextSpecificConfig(
       ConfigDocument configDocument, ContextSpecificConfig existingConfig) {
-    if (ConfigServiceUtils.isNull(existingConfig.getConfig())) {
-      return getContextSpecificConfig(configDocument);
-    } else {
-      return ContextSpecificConfig.newBuilder()
-          .setConfig(configDocument.getConfig())
-          .setContext(configDocument.getContext())
-          .setCreationTimestamp(configDocument.getCreationTimestamp())
-          .setUpdateTimestamp(configDocument.getUpdateTimestamp())
-          .setPrevConfig(existingConfig.getConfig())
-          .build();
+    InternalContextSpecificConfig.Builder builder = InternalContextSpecificConfig.newBuilder();
+    builder.setConfig(configDocument.getConfig());
+    builder.setContext(configDocument.getContext());
+    builder.setCreationTimestamp(configDocument.getCreationTimestamp());
+    builder.setUpdateTimestamp(configDocument.getUpdateTimestamp());
+    if (!ConfigServiceUtils.isNull(existingConfig.getConfig())) {
+      builder.setPrevConfig(existingConfig.getConfig());
     }
+    return builder.build();
   }
 }

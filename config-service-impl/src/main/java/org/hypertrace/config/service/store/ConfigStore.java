@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.List;
 import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
+import org.hypertrace.config.service.v1.InternalContextSpecificConfig;
 
 /**
  * Abstraction for the backend which stores and serves the configuration data for multiple
@@ -28,8 +29,8 @@ public interface ConfigStore {
    * @param config
    * @return the context specific config written to the store
    */
-  ContextSpecificConfig writeConfig(ConfigResource configResource, String userId, Value config)
-      throws IOException;
+  InternalContextSpecificConfig writeConfig(
+      ConfigResource configResource, String userId, Value config) throws IOException;
 
   /**
    * Get the config with the latest version for the specified resource.

@@ -21,6 +21,7 @@ import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
+import org.hypertrace.config.service.v1.InternalContextSpecificConfig;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -40,15 +41,16 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
       UpsertConfigRequest request, StreamObserver<UpsertConfigResponse> responseObserver) {
     try {
       ConfigResource configResource = getConfigResource(request);
-      ContextSpecificConfig contextSpecificConfig =
+      InternalContextSpecificConfig contextSpecificConfig =
           configStore.writeConfig(configResource, getUserId(), request.getConfig());
-      responseObserver.onNext(
-          UpsertConfigResponse.newBuilder()
-              .setConfig(request.getConfig())
-              .setCreationTimestamp(contextSpecificConfig.getCreationTimestamp())
-              .setUpdateTimestamp(contextSpecificConfig.getUpdateTimestamp())
-              .setPrevConfig(contextSpecificConfig.getPrevConfig())
-              .build());
+      UpsertConfigResponse.Builder builder = UpsertConfigResponse.newBuilder();
+      builder.setConfig(request.getConfig());
+      builder.setCreationTimestamp(contextSpecificConfig.getCreationTimestamp());
+      builder.setUpdateTimestamp(contextSpecificConfig.getUpdateTimestamp());
+      if (contextSpecificConfig.hasPrevConfig()) {
+        builder.setPrevConfig(contextSpecificConfig.getPrevConfig());
+      }
+      responseObserver.onNext(builder.build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Upsert failed for request:{}", request, e);
