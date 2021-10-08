@@ -6,6 +6,7 @@ import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.UUID;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
@@ -26,12 +27,14 @@ public class LabelApplicationRuleConfigServiceImpl
   private final IdentifiedObjectStore<LabelApplicationRule> labelApplicationRuleStore;
   private final LabelApplicationRuleValidator requestValidator;
 
-  public LabelApplicationRuleConfigServiceImpl(Channel configChannel) {
+  public LabelApplicationRuleConfigServiceImpl(
+      Channel configChannel, ConfigChangeEventGenerator configChangeEventGenerator) {
     ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(configChannel)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
-    this.labelApplicationRuleStore = new LabelApplicationRuleStore(configServiceBlockingStub);
+    this.labelApplicationRuleStore =
+        new LabelApplicationRuleStore(configServiceBlockingStub, configChangeEventGenerator);
     this.requestValidator = new LabelApplicationRuleValidatorImpl();
   }
 

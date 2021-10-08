@@ -7,6 +7,7 @@ plugins {
 dependencies {
   api(projects.configServiceChangeEventApi)
   api(libs.typesafe.config)
+  api(libs.hypertrace.grpcutils.context)
 
   implementation(libs.hypertrace.eventstore)
   implementation(libs.guava)

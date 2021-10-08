@@ -3,6 +3,7 @@ package org.hypertrace.label.application.rule.config.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
 import io.grpc.Channel;
 import io.grpc.Status;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplicationRuleRequest;
 import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplicationRuleResponse;
@@ -44,7 +46,10 @@ public class LabelApplicationRuleConfigServiceImplTest {
     mockGenericConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     Channel channel = mockGenericConfigService.channel();
-    mockGenericConfigService.addService(new LabelApplicationRuleConfigServiceImpl(channel)).start();
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    mockGenericConfigService
+        .addService(new LabelApplicationRuleConfigServiceImpl(channel, configChangeEventGenerator))
+        .start();
     labelApplicationRuleConfigServiceBlockingStub =
         LabelApplicationRuleConfigServiceGrpc.newBlockingStub(channel);
   }

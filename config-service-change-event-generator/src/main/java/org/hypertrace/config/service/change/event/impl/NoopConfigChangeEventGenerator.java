@@ -2,6 +2,7 @@ package org.hypertrace.config.service.change.event.impl;
 
 import com.google.protobuf.Value;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 /** No-op implementation of Config change event generator interface. */
 public class NoopConfigChangeEventGenerator implements ConfigChangeEventGenerator {
@@ -10,29 +11,20 @@ public class NoopConfigChangeEventGenerator implements ConfigChangeEventGenerato
 
   @Override
   public void sendCreateNotification(
-      String tenantId,
-      String resourceName,
-      String resourceNamespace,
-      String context,
-      Value config) {
+      RequestContext requestContext, String configType, String context, Value config) {
     // No-op
   }
 
   @Override
   public void sendDeleteNotification(
-      String tenantId,
-      String resourceName,
-      String resourceNamespace,
-      String context,
-      Value config) {
+      RequestContext requestContext, String configType, String context, Value config) {
     // No-op
   }
 
   @Override
   public void sendUpdateNotification(
-      String tenantId,
-      String resourceName,
-      String resourceNamespace,
+      RequestContext requestContext,
+      String configType,
       String context,
       Value prevConfig,
       Value latestConfig) {

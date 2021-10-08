@@ -5,6 +5,7 @@ import java.util.Optional;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRule;
 
@@ -13,11 +14,14 @@ public class LabelApplicationRuleStore extends IdentifiedObjectStore<LabelApplic
   private static final String LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAMESPACE =
       "label-application-rules";
 
-  LabelApplicationRuleStore(ConfigServiceGrpc.ConfigServiceBlockingStub stub) {
+  LabelApplicationRuleStore(
+      ConfigServiceGrpc.ConfigServiceBlockingStub stub,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
         stub,
         LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAMESPACE,
-        LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAME);
+        LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAME,
+        configChangeEventGenerator);
   }
 
   @Override

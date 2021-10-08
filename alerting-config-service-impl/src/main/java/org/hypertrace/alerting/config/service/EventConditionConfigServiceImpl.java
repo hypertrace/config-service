@@ -17,6 +17,7 @@ import org.hypertrace.alerting.config.service.v1.GetAllEventConditionsResponse;
 import org.hypertrace.alerting.config.service.v1.NewEventCondition;
 import org.hypertrace.alerting.config.service.v1.UpdateEventConditionRequest;
 import org.hypertrace.alerting.config.service.v1.UpdateEventConditionResponse;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
@@ -26,8 +27,9 @@ public class EventConditionConfigServiceImpl
   private final EventConditionStore eventConditionStore;
   private final EventConditionConfigServiceRequestValidator requestValidator;
 
-  public EventConditionConfigServiceImpl(Channel configChannel) {
-    this.eventConditionStore = new EventConditionStore(configChannel);
+  public EventConditionConfigServiceImpl(
+      Channel configChannel, ConfigChangeEventGenerator configChangeEventGenerator) {
+    this.eventConditionStore = new EventConditionStore(configChannel, configChangeEventGenerator);
     this.requestValidator = new EventConditionConfigServiceRequestValidator();
   }
 

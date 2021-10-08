@@ -5,6 +5,7 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.CreateNotificationRuleRequest;
 import org.hypertrace.notification.config.service.v1.CreateNotificationRuleResponse;
@@ -26,8 +27,9 @@ public class NotificationRuleConfigServiceImpl
   private final NotificationRuleStore notificationRuleStore;
   private final NotificationRuleConfigServiceRequestValidator validator;
 
-  public NotificationRuleConfigServiceImpl(Channel channel) {
-    this.notificationRuleStore = new NotificationRuleStore(channel);
+  public NotificationRuleConfigServiceImpl(
+      Channel channel, ConfigChangeEventGenerator configChangeEventGenerator) {
+    this.notificationRuleStore = new NotificationRuleStore(channel, configChangeEventGenerator);
     this.validator = new NotificationRuleConfigServiceRequestValidator();
   }
 

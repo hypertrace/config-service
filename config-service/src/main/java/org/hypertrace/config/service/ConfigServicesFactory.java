@@ -32,22 +32,23 @@ public class ConfigServicesFactory {
         ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
     lifecycle.shutdownComplete().thenRun(configChannel::shutdown);
 
+    ConfigChangeEventGenerator configChangeEventGenerator =
+        ConfigChangeEventGeneratorFactory.getInstance().createConfigChangeEventGenerator(config);
+
     return List.of(
         new ConfigServiceGrpcImpl(configStore),
         new SpacesConfigServiceImpl(configChannel),
         new LabelsConfigServiceImpl(configChannel, config),
-        new LabelApplicationRuleConfigServiceImpl(configChannel),
-        new EventConditionConfigServiceImpl(configChannel),
-        new NotificationRuleConfigServiceImpl(configChannel),
-        new NotificationChannelConfigServiceImpl(configChannel));
+        new LabelApplicationRuleConfigServiceImpl(configChannel, configChangeEventGenerator),
+        new EventConditionConfigServiceImpl(configChannel, configChangeEventGenerator),
+        new NotificationRuleConfigServiceImpl(configChannel, configChangeEventGenerator),
+        new NotificationChannelConfigServiceImpl(configChannel, configChangeEventGenerator));
   }
 
   public static ConfigStore buildConfigStore(Config config) {
     try {
       ConfigStore configStore = new DocumentConfigStore();
-      ConfigChangeEventGenerator configChangeEventGenerator =
-          ConfigChangeEventGeneratorFactory.getInstance().createConfigChangeEventGenerator(config);
-      configStore.init(config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG), configChangeEventGenerator);
+      configStore.init(config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG));
       return configStore;
     } catch (Exception e) {
       throw new RuntimeException("Error in getting or initializing config store", e);

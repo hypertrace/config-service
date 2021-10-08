@@ -5,12 +5,14 @@ import io.grpc.Status;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
+import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 /**
@@ -23,14 +25,17 @@ public abstract class IdentifiedObjectStore<T> {
   private final ConfigServiceBlockingStub configServiceBlockingStub;
   private final String resourceNamespace;
   private final String resourceName;
+  private final ConfigChangeEventGenerator configChangeEventGenerator;
 
   protected IdentifiedObjectStore(
       ConfigServiceBlockingStub configServiceBlockingStub,
       String resourceNamespace,
-      String resourceName) {
+      String resourceName,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.resourceNamespace = resourceNamespace;
     this.resourceName = resourceName;
+    this.configChangeEventGenerator = configChangeEventGenerator;
   }
 
   protected abstract Optional<T> buildObjectFromValue(Value value);
@@ -86,21 +91,36 @@ public abstract class IdentifiedObjectStore<T> {
   }
 
   public T upsertObject(RequestContext context, T object) {
-    Value upsertedValue =
+    UpsertConfigResponse response =
         context.call(
             () ->
-                this.configServiceBlockingStub
-                    .upsertConfig(
-                        UpsertConfigRequest.newBuilder()
-                            .setResourceName(this.resourceName)
-                            .setResourceNamespace(this.resourceNamespace)
-                            .setContext(this.getContextFromObject(object))
-                            .setConfig(this.buildValueFromObject(object))
-                            .build())
-                    .getConfig());
+                this.configServiceBlockingStub.upsertConfig(
+                    UpsertConfigRequest.newBuilder()
+                        .setResourceName(this.resourceName)
+                        .setResourceNamespace(this.resourceNamespace)
+                        .setContext(this.getContextFromObject(object))
+                        .setConfig(this.buildValueFromObject(object))
+                        .build()));
 
-    return this.buildObjectFromValue(upsertedValue)
-        .orElseThrow(Status.INTERNAL::asRuntimeException);
+    T upsertedObject =
+        this.buildObjectFromValue(response.getConfig())
+            .orElseThrow(Status.INTERNAL::asRuntimeException);
+
+    if (response.hasPrevConfig()) {
+      configChangeEventGenerator.sendUpdateNotification(
+          context,
+          upsertedObject.getClass().getName(),
+          getContextFromObject(upsertedObject),
+          response.getPrevConfig(),
+          response.getConfig());
+    } else {
+      configChangeEventGenerator.sendCreateNotification(
+          context,
+          upsertedObject.getClass().getName(),
+          getContextFromObject(upsertedObject),
+          response.getConfig());
+    }
+    return upsertedObject;
   }
 
   public Optional<T> deleteObject(RequestContext context, String id) {
@@ -119,6 +139,8 @@ public abstract class IdentifiedObjectStore<T> {
               .getConfig();
       T object =
           this.buildObjectFromValue(deletedValue).orElseThrow(Status.INTERNAL::asRuntimeException);
+      configChangeEventGenerator.sendDeleteNotification(
+          context, object.getClass().getName(), id, deletedValue);
       return Optional.of(object);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {

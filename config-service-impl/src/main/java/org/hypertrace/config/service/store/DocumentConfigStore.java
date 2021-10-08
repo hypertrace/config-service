@@ -24,7 +24,6 @@ import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigServiceUtils;
-import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
@@ -50,13 +49,11 @@ public class DocumentConfigStore implements ConfigStore {
 
   private Datastore datastore;
   private Collection collection;
-  private ConfigChangeEventGenerator configChangeEventGenerator;
 
   @Override
-  public void init(Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
+  public void init(Config config) {
     datastore = initDataStore(config);
     this.collection = this.datastore.getCollection(CONFIGURATIONS_COLLECTION);
-    this.configChangeEventGenerator = configChangeEventGenerator;
   }
 
   private Datastore initDataStore(Config config) {
@@ -94,8 +91,7 @@ public class DocumentConfigStore implements ConfigStore {
               creationTimestamp,
               updateTimestamp);
       collection.upsert(key, configDocument);
-      sendChangeNotification(configResource, existingConfig.getConfig(), latestConfig);
-      return getContextSpecificConfig(configDocument);
+      return getContextSpecificConfig(configDocument, existingConfig);
     }
   }
 
@@ -185,35 +181,33 @@ public class DocumentConfigStore implements ConfigStore {
         .build();
   }
 
-  private void sendChangeNotification(
-      ConfigResource configResource, Value prevConfig, Value latestconfig) {
-    String context =
-        ConfigServiceUtils.DEFAULT_CONTEXT.equals(configResource.getContext())
-            ? null
-            : configResource.getContext();
-    if (ConfigServiceUtils.isNull(latestconfig)) {
-      configChangeEventGenerator.sendDeleteNotification(
-          configResource.getTenantId(),
-          configResource.getResourceName(),
-          configResource.getResourceNamespace(),
-          context,
-          prevConfig);
-
-    } else if (ConfigServiceUtils.isNull(prevConfig)) {
-      configChangeEventGenerator.sendCreateNotification(
-          configResource.getTenantId(),
-          configResource.getResourceName(),
-          configResource.getResourceNamespace(),
-          context,
-          latestconfig);
+  private ContextSpecificConfig getContextSpecificConfig(
+      ConfigDocument configDocument, ContextSpecificConfig existingConfig) {
+    if (ConfigServiceUtils.isNull(existingConfig.getConfig())) {
+      return getContextSpecificConfig(configDocument);
     } else {
-      configChangeEventGenerator.sendUpdateNotification(
-          configResource.getTenantId(),
-          configResource.getResourceName(),
-          configResource.getResourceNamespace(),
-          context,
-          prevConfig,
-          latestconfig);
+      return ContextSpecificConfig.newBuilder()
+          .setConfig(configDocument.getConfig())
+          .setContext(configDocument.getContext())
+          .setCreationTimestamp(configDocument.getCreationTimestamp())
+          .setUpdateTimestamp(configDocument.getUpdateTimestamp())
+          .setPrevConfig(existingConfig.getConfig())
+          .build();
+    }
+  }
+
+  private ContextSpecificConfig getContextSpecificConfig1(
+      ConfigDocument configDocument, ContextSpecificConfig existingConfig) {
+    if (ConfigServiceUtils.isNull(existingConfig.getConfig())) {
+      return getContextSpecificConfig(configDocument);
+    } else {
+      return ContextSpecificConfig.newBuilder()
+          .setConfig(configDocument.getConfig())
+          .setContext(configDocument.getContext())
+          .setCreationTimestamp(configDocument.getCreationTimestamp())
+          .setUpdateTimestamp(configDocument.getUpdateTimestamp())
+          .setPrevConfig(existingConfig.getConfig())
+          .build();
     }
   }
 }

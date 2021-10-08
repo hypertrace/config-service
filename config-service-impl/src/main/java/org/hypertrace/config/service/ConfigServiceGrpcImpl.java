@@ -47,6 +47,7 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
               .setConfig(request.getConfig())
               .setCreationTimestamp(contextSpecificConfig.getCreationTimestamp())
               .setUpdateTimestamp(contextSpecificConfig.getUpdateTimestamp())
+              .setPrevConfig(contextSpecificConfig.getPrevConfig())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {

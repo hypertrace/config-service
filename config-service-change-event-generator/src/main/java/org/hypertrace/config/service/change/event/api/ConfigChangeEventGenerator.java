@@ -1,6 +1,7 @@
 package org.hypertrace.config.service.change.event.api;
 
 import com.google.protobuf.Value;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 /** The interface config change event generator. */
 public interface ConfigChangeEventGenerator {
@@ -8,41 +9,37 @@ public interface ConfigChangeEventGenerator {
   /**
    * Send create notification for newly added config
    *
-   * @param tenantId tenant Id
-   * @param resourceName resource name
-   * @param resourceNamespace resource namespace
+   * @param requestContext requestContext
+   * @param configType config type
    * @param context context
    * @param config newly created config
    */
   void sendCreateNotification(
-      String tenantId, String resourceName, String resourceNamespace, String context, Value config);
+      RequestContext requestContext, String configType, String context, Value config);
 
   /**
    * Send delete notification for deleted config
    *
-   * @param tenantId tenant Id
-   * @param resourceName resource name
-   * @param resourceNamespace resource namespace
+   * @param requestContext tenant Id
+   * @param configType config type
    * @param context context
    * @param config deleted config
    */
   void sendDeleteNotification(
-      String tenantId, String resourceName, String resourceNamespace, String context, Value config);
+      RequestContext requestContext, String configType, String context, Value config);
 
   /**
    * Send update notification for updated config
    *
-   * @param tenantId tenant Id
-   * @param resourceName resource name
-   * @param resourceNamespace resource namespace
+   * @param requestContext tenant Id
+   * @param configType config type
    * @param context context
    * @param prevConfig previous config
    * @param latestConfig latest config
    */
   void sendUpdateNotification(
-      String tenantId,
-      String resourceName,
-      String resourceNamespace,
+      RequestContext requestContext,
+      String configType,
       String context,
       Value prevConfig,
       Value latestConfig);

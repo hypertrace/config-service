@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.hypertrace.config.service.ConfigResource;
-import org.hypertrace.config.service.change.event.impl.ConfigChangeEventGeneratorFactory;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
@@ -59,17 +58,9 @@ class DocumentConfigStoreTest {
     DatastoreProvider.register(datastoreType, MockDatastore.class);
     Map<String, Object> dataStoreConfig =
         Map.of(DATA_STORE_TYPE, datastoreType, datastoreType, Map.of());
-    Map<String, Object> configMap =
-        Map.of(
-            DOC_STORE_CONFIG_KEY,
-            dataStoreConfig,
-            "generic.config.service.publish.change.events",
-            false);
+    Map<String, Object> configMap = Map.of(DOC_STORE_CONFIG_KEY, dataStoreConfig);
     Config storeConfig = ConfigFactory.parseMap(configMap);
-    configStore.init(
-        storeConfig,
-        ConfigChangeEventGeneratorFactory.getInstance()
-            .createConfigChangeEventGenerator(storeConfig));
+    configStore.init(storeConfig);
   }
 
   @Test
