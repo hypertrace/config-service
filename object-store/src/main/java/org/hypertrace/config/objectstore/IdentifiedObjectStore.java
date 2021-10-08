@@ -103,15 +103,29 @@ public abstract class IdentifiedObjectStore<T> {
         .orElseThrow(Status.INTERNAL::asRuntimeException);
   }
 
-  public void deleteObject(RequestContext context, String id) {
-    context.call(
-        () ->
-            this.configServiceBlockingStub.deleteConfig(
-                DeleteConfigRequest.newBuilder()
-                    .setResourceName(this.resourceName)
-                    .setResourceNamespace(this.resourceNamespace)
-                    .setContext(id)
-                    .build()));
+  public Optional<T> deleteObject(RequestContext context, String id) {
+    try {
+      Value deletedValue =
+          context
+              .call(
+                  () ->
+                      this.configServiceBlockingStub.deleteConfig(
+                          DeleteConfigRequest.newBuilder()
+                              .setResourceName(this.resourceName)
+                              .setResourceNamespace(this.resourceNamespace)
+                              .setContext(id)
+                              .build()))
+              .getDeletedConfig()
+              .getConfig();
+      T object =
+          this.buildObjectFromValue(deletedValue).orElseThrow(Status.INTERNAL::asRuntimeException);
+      return Optional.of(object);
+    } catch (Exception exception) {
+      if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
+        return Optional.empty();
+      }
+      throw exception;
+    }
   }
 
   public List<T> upsertObjects(RequestContext context, List<T> objects) {

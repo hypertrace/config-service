@@ -11,6 +11,7 @@ service NotificationChannelConfigService {
   rpc UpdateNotificationChannel(UpdateNotificationChannelRequest) returns (UpdateNotificationChannelResponse) {}
   rpc GetAllNotificationChannels(GetAllNotificationChannelsRequest) returns (GetAllNotificationChannelsResponse) {}
   rpc DeleteNotificationChannel(DeleteNotificationChannelRequest) returns (DeleteNotificationChannelResponse) {}
+  rpc GetNotificationChannel(GetNotificationChannelRequest) returns (GetNotificationChannelResponse) {}
 }
 
 message CreateNotificationChannelRequest {
@@ -41,3 +42,11 @@ message DeleteNotificationChannelRequest {
 }
 
 message DeleteNotificationChannelResponse {}
+
+message GetNotificationChannelRequest {
+  string notification_channel_id = 1;
+}
+
+message GetNotificationChannelResponse {
+  NotificationChannel notification_channel = 1;
+}
