@@ -21,7 +21,7 @@ public abstract class DefaultObjectStore<T> {
   private final ConfigServiceBlockingStub configServiceBlockingStub;
   private final String resourceNamespace;
   private final String resourceName;
-  private final ConfigChangeEventGenerator configChangeEventGenerator;
+  private final Optional<ConfigChangeEventGenerator> configChangeEventGeneratorOptional;
 
   protected DefaultObjectStore(
       ConfigServiceBlockingStub configServiceBlockingStub,
@@ -31,7 +31,17 @@ public abstract class DefaultObjectStore<T> {
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.resourceNamespace = resourceNamespace;
     this.resourceName = resourceName;
-    this.configChangeEventGenerator = configChangeEventGenerator;
+    this.configChangeEventGeneratorOptional = Optional.of(configChangeEventGenerator);
+  }
+
+  protected DefaultObjectStore(
+      ConfigServiceBlockingStub configServiceBlockingStub,
+      String resourceNamespace,
+      String resourceName) {
+    this.configServiceBlockingStub = configServiceBlockingStub;
+    this.resourceNamespace = resourceNamespace;
+    this.resourceName = resourceName;
+    this.configChangeEventGeneratorOptional = Optional.empty();
   }
 
   protected abstract Optional<T> buildObjectFromValue(Value value);
@@ -75,17 +85,19 @@ public abstract class DefaultObjectStore<T> {
         this.buildObjectFromValue(response.getConfig())
             .orElseThrow(Status.INTERNAL::asRuntimeException);
 
-    if (response.hasPrevConfig()) {
-      configChangeEventGenerator.sendUpdateNotification(
-          context,
-          upsertedObject.getClass().getName(),
-          null,
-          response.getPrevConfig(),
-          response.getConfig());
-    } else {
-      configChangeEventGenerator.sendCreateNotification(
-          context, upsertedObject.getClass().getName(), null, response.getConfig());
-    }
+    configChangeEventGeneratorOptional.ifPresent(
+        configChangeEventGenerator -> {
+          if (response.hasPrevConfig()) {
+            configChangeEventGenerator.sendUpdateNotification(
+                context,
+                upsertedObject.getClass().getName(),
+                response.getPrevConfig(),
+                response.getConfig());
+          } else {
+            configChangeEventGenerator.sendCreateNotification(
+                context, upsertedObject.getClass().getName(), response.getConfig());
+          }
+        });
     return upsertedObject;
   }
 
@@ -104,8 +116,10 @@ public abstract class DefaultObjectStore<T> {
               .getConfig();
       T object =
           this.buildObjectFromValue(deletedValue).orElseThrow(Status.INTERNAL::asRuntimeException);
-      configChangeEventGenerator.sendDeleteNotification(
-          context, object.getClass().getName(), null, deletedValue);
+      configChangeEventGeneratorOptional.ifPresent(
+          configChangeEventGenerator ->
+              configChangeEventGenerator.sendDeleteNotification(
+                  context, object.getClass().getName(), deletedValue));
       return Optional.of(object);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {

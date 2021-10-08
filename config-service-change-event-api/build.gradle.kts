@@ -23,6 +23,4 @@ sourceSets {
 
 dependencies {
   api(libs.protobuf.java)
-
-  api(libs.jackson.databind)
 }

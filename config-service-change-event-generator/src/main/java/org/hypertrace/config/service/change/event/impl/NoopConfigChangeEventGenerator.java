@@ -11,6 +11,24 @@ public class NoopConfigChangeEventGenerator implements ConfigChangeEventGenerato
 
   @Override
   public void sendCreateNotification(
+      RequestContext requestContext, String configType, Value config) {
+    // No-op
+  }
+
+  @Override
+  public void sendDeleteNotification(
+      RequestContext requestContext, String configType, Value config) {
+    // No-op
+  }
+
+  @Override
+  public void sendUpdateNotification(
+      RequestContext requestContext, String configType, Value prevConfig, Value latestConfig) {
+    // No-op
+  }
+
+  @Override
+  public void sendCreateNotification(
       RequestContext requestContext, String configType, String context, Value config) {
     // No-op
   }

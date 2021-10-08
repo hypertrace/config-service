@@ -27,6 +27,7 @@ class ConfigChangeEventGeneratorImplTest {
   private static final String TEST_CONFIG_TYPE = String.class.getName();
   private static final String TEST_CONTEXT = "test-context";
   private static final String TEST_VALUE = "test-value";
+  private static final String TEST_NEW_VALUE = "test-new-value";
 
   @Mock EventProducer<ConfigChangeEventKey, ConfigChangeEventValue> eventProducer;
 
@@ -56,9 +57,9 @@ class ConfigChangeEventGeneratorImplTest {
   }
 
   @Test
-  void sendCreateNotificationWithNullContext() throws InvalidProtocolBufferException {
+  void sendCreateNotificationWithNoContext() throws InvalidProtocolBufferException {
     Value config = createStringValue();
-    changeEventGenerator.sendCreateNotification(requestContext, TEST_CONFIG_TYPE, null, config);
+    changeEventGenerator.sendCreateNotification(requestContext, TEST_CONFIG_TYPE, config);
     verify(eventProducer)
         .send(
             KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, null),
@@ -87,9 +88,24 @@ class ConfigChangeEventGeneratorImplTest {
   }
 
   @Test
+  void sendDeleteNotificationWithNoContext() throws InvalidProtocolBufferException {
+    Value config = createStringValue();
+    changeEventGenerator.sendDeleteNotification(requestContext, TEST_CONFIG_TYPE, config);
+    verify(eventProducer)
+        .send(
+            KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, null),
+            ConfigChangeEventValue.newBuilder()
+                .setDeleteEvent(
+                    ConfigDeleteEvent.newBuilder()
+                        .setDeletedConfig(ConfigProtoConverter.convertToJsonString(config))
+                        .build())
+                .build());
+  }
+
+  @Test
   void sendChangeNotification() throws InvalidProtocolBufferException {
     Value prevConfig = createStringValue();
-    Value latestConfig = createStringValue();
+    Value latestConfig = createStringValue(TEST_NEW_VALUE);
 
     changeEventGenerator.sendUpdateNotification(
         requestContext, TEST_CONFIG_TYPE, TEST_CONTEXT, prevConfig, latestConfig);
@@ -105,7 +121,30 @@ class ConfigChangeEventGeneratorImplTest {
                 .build());
   }
 
+  @Test
+  void sendChangeNotificationWithNoContext() throws InvalidProtocolBufferException {
+    Value prevConfig = createStringValue();
+    Value latestConfig = createStringValue(TEST_NEW_VALUE);
+
+    changeEventGenerator.sendUpdateNotification(
+        requestContext, TEST_CONFIG_TYPE, prevConfig, latestConfig);
+    verify(eventProducer)
+        .send(
+            KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, null),
+            ConfigChangeEventValue.newBuilder()
+                .setUpdateEvent(
+                    ConfigUpdateEvent.newBuilder()
+                        .setPreviousConfig(ConfigProtoConverter.convertToJsonString(prevConfig))
+                        .setLatestConfig(ConfigProtoConverter.convertToJsonString(latestConfig))
+                        .build())
+                .build());
+  }
+
   private Value createStringValue() {
-    return Value.newBuilder().setStringValue(TEST_VALUE).build();
+    return createStringValue(TEST_VALUE);
+  }
+
+  private Value createStringValue(String value) {
+    return Value.newBuilder().setStringValue(value).build();
   }
 }

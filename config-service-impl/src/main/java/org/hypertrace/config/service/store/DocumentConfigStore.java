@@ -195,19 +195,4 @@ public class DocumentConfigStore implements ConfigStore {
           .build();
     }
   }
-
-  private ContextSpecificConfig getContextSpecificConfig1(
-      ConfigDocument configDocument, ContextSpecificConfig existingConfig) {
-    if (ConfigServiceUtils.isNull(existingConfig.getConfig())) {
-      return getContextSpecificConfig(configDocument);
-    } else {
-      return ContextSpecificConfig.newBuilder()
-          .setConfig(configDocument.getConfig())
-          .setContext(configDocument.getContext())
-          .setCreationTimestamp(configDocument.getCreationTimestamp())
-          .setUpdateTimestamp(configDocument.getUpdateTimestamp())
-          .setPrevConfig(existingConfig.getConfig())
-          .build();
-    }
-  }
 }
