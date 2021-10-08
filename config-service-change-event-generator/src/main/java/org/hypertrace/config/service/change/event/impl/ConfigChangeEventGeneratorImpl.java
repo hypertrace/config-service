@@ -97,7 +97,7 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
           ConfigCreateEvent.newBuilder()
               .setCreatedConfig(ConfigProtoConverter.convertToJsonString(config))
               .build());
-      requestContext.getUserId().ifPresent(userId -> builder.setUserId(userId));
+      populateUserDetails(requestContext, builder);
       configChangeEventProducer.send(
           KeyUtil.getKey(tenantId, configType, context), builder.build());
     } catch (Exception ex) {
@@ -124,7 +124,7 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
               .setPreviousConfig(ConfigProtoConverter.convertToJsonString(prevConfig))
               .setLatestConfig(ConfigProtoConverter.convertToJsonString(latestConfig))
               .build());
-      requestContext.getUserId().ifPresent(userId -> builder.setUserId(userId));
+      populateUserDetails(requestContext, builder);
       configChangeEventProducer.send(
           KeyUtil.getKey(tenantId, configType, context), builder.build());
     } catch (Exception ex) {
@@ -146,7 +146,7 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
           ConfigDeleteEvent.newBuilder()
               .setDeletedConfig(ConfigProtoConverter.convertToJsonString(config))
               .build());
-      requestContext.getUserId().ifPresent(userId -> builder.setUserId(userId));
+      populateUserDetails(requestContext, builder);
       configChangeEventProducer.send(
           KeyUtil.getKey(tenantId, configType, context), builder.build());
     } catch (Exception ex) {
@@ -157,5 +157,10 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
           context,
           ex);
     }
+  }
+
+  private void populateUserDetails(RequestContext requestContext, Builder builder) {
+    requestContext.getUserId().ifPresent(userId -> builder.setUserId(userId));
+    requestContext.getName().ifPresent(userName -> builder.setUserName(userName));
   }
 }

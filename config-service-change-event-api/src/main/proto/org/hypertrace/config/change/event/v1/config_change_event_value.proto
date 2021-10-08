@@ -13,6 +13,7 @@ message ConfigChangeEventValue {
     ConfigDeleteEvent delete_event = 3;
   }
   optional string user_id = 4;
+  optional string user_name = 5;
 }
 
 message ConfigCreateEvent {
