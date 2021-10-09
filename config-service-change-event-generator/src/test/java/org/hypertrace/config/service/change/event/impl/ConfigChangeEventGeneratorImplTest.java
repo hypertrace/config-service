@@ -4,6 +4,7 @@ import static org.mockito.Mockito.verify;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
+import java.util.Optional;
 import org.hypertrace.config.change.event.v1.ConfigChangeEventKey;
 import org.hypertrace.config.change.event.v1.ConfigChangeEventValue;
 import org.hypertrace.config.change.event.v1.ConfigCreateEvent;
@@ -47,7 +48,7 @@ class ConfigChangeEventGeneratorImplTest {
         requestContext, TEST_CONFIG_TYPE, TEST_CONTEXT, config);
     verify(eventProducer)
         .send(
-            KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, TEST_CONTEXT),
+            KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, Optional.of(TEST_CONTEXT)),
             ConfigChangeEventValue.newBuilder()
                 .setCreateEvent(
                     ConfigCreateEvent.newBuilder()
@@ -62,7 +63,7 @@ class ConfigChangeEventGeneratorImplTest {
     changeEventGenerator.sendCreateNotification(requestContext, TEST_CONFIG_TYPE, config);
     verify(eventProducer)
         .send(
-            KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, null),
+            KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, Optional.empty()),
             ConfigChangeEventValue.newBuilder()
                 .setCreateEvent(
                     ConfigCreateEvent.newBuilder()
@@ -78,7 +79,7 @@ class ConfigChangeEventGeneratorImplTest {
         requestContext, TEST_CONFIG_TYPE, TEST_CONTEXT, config);
     verify(eventProducer)
         .send(
-            KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, TEST_CONTEXT),
+            KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, Optional.of(TEST_CONTEXT)),
             ConfigChangeEventValue.newBuilder()
                 .setDeleteEvent(
                     ConfigDeleteEvent.newBuilder()
@@ -93,7 +94,7 @@ class ConfigChangeEventGeneratorImplTest {
     changeEventGenerator.sendDeleteNotification(requestContext, TEST_CONFIG_TYPE, config);
     verify(eventProducer)
         .send(
-            KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, null),
+            KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, Optional.empty()),
             ConfigChangeEventValue.newBuilder()
                 .setDeleteEvent(
                     ConfigDeleteEvent.newBuilder()
@@ -111,7 +112,7 @@ class ConfigChangeEventGeneratorImplTest {
         requestContext, TEST_CONFIG_TYPE, TEST_CONTEXT, prevConfig, latestConfig);
     verify(eventProducer)
         .send(
-            KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, TEST_CONTEXT),
+            KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, Optional.of(TEST_CONTEXT)),
             ConfigChangeEventValue.newBuilder()
                 .setUpdateEvent(
                     ConfigUpdateEvent.newBuilder()
@@ -130,7 +131,7 @@ class ConfigChangeEventGeneratorImplTest {
         requestContext, TEST_CONFIG_TYPE, prevConfig, latestConfig);
     verify(eventProducer)
         .send(
-            KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, null),
+            KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, Optional.empty()),
             ConfigChangeEventValue.newBuilder()
                 .setUpdateEvent(
                     ConfigUpdateEvent.newBuilder()

@@ -3,6 +3,7 @@ package org.hypertrace.config.service.change.event.impl;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.Value;
 import com.typesafe.config.Config;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.change.event.v1.ConfigChangeEventKey;
 import org.hypertrace.config.change.event.v1.ConfigChangeEventValue;
@@ -51,31 +52,32 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
   @Override
   public void sendCreateNotification(
       RequestContext requestContext, String configType, Value config) {
-    produceCreateNotification(requestContext, configType, null, config);
+    produceCreateNotification(requestContext, configType, Optional.empty(), config);
   }
 
   @Override
   public void sendDeleteNotification(
       RequestContext requestContext, String configType, Value config) {
-    produceDeleteNotification(requestContext, configType, null, config);
+    produceDeleteNotification(requestContext, configType, Optional.empty(), config);
   }
 
   @Override
   public void sendUpdateNotification(
       RequestContext requestContext, String configType, Value prevConfig, Value latestConfig) {
-    produceUpdateNotification(requestContext, configType, null, prevConfig, latestConfig);
+    produceUpdateNotification(
+        requestContext, configType, Optional.empty(), prevConfig, latestConfig);
   }
 
   @Override
   public void sendCreateNotification(
       RequestContext requestContext, String configType, String context, Value config) {
-    produceCreateNotification(requestContext, configType, context, config);
+    produceCreateNotification(requestContext, configType, Optional.of(context), config);
   }
 
   @Override
   public void sendDeleteNotification(
       RequestContext requestContext, String configType, String context, Value config) {
-    produceDeleteNotification(requestContext, configType, context, config);
+    produceDeleteNotification(requestContext, configType, Optional.of(context), config);
   }
 
   @Override
@@ -85,11 +87,15 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
       String context,
       Value prevConfig,
       Value latestConfig) {
-    produceUpdateNotification(requestContext, configType, context, prevConfig, latestConfig);
+    produceUpdateNotification(
+        requestContext, configType, Optional.of(context), prevConfig, latestConfig);
   }
 
   private void produceCreateNotification(
-      RequestContext requestContext, String configType, String context, Value config) {
+      RequestContext requestContext,
+      String configType,
+      Optional<String> contextOptional,
+      Value config) {
     String tenantId = requestContext.getTenantId().get();
     try {
       Builder builder = ConfigChangeEventValue.newBuilder();
@@ -99,13 +105,13 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
               .build());
       populateUserDetails(requestContext, builder);
       configChangeEventProducer.send(
-          KeyUtil.getKey(tenantId, configType, context), builder.build());
+          KeyUtil.getKey(tenantId, configType, contextOptional), builder.build());
     } catch (Exception ex) {
       log.warn(
           "Unable to send create event for config with tenantId {} configType {} context {}",
           tenantId,
           configType,
-          context,
+          contextOptional,
           ex);
     }
   }
@@ -113,7 +119,7 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
   private void produceUpdateNotification(
       RequestContext requestContext,
       String configType,
-      String context,
+      Optional<String> contextOptional,
       Value prevConfig,
       Value latestConfig) {
     String tenantId = requestContext.getTenantId().get();
@@ -126,19 +132,22 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
               .build());
       populateUserDetails(requestContext, builder);
       configChangeEventProducer.send(
-          KeyUtil.getKey(tenantId, configType, context), builder.build());
+          KeyUtil.getKey(tenantId, configType, contextOptional), builder.build());
     } catch (Exception ex) {
       log.warn(
           "Unable to send update event for config with tenantId {} configType {} context {}",
           tenantId,
           configType,
-          context,
+          contextOptional,
           ex);
     }
   }
 
   private void produceDeleteNotification(
-      RequestContext requestContext, String configType, String context, Value config) {
+      RequestContext requestContext,
+      String configType,
+      Optional<String> contextOptional,
+      Value config) {
     String tenantId = requestContext.getTenantId().get();
     try {
       Builder builder = ConfigChangeEventValue.newBuilder();
@@ -148,13 +157,13 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
               .build());
       populateUserDetails(requestContext, builder);
       configChangeEventProducer.send(
-          KeyUtil.getKey(tenantId, configType, context), builder.build());
+          KeyUtil.getKey(tenantId, configType, contextOptional), builder.build());
     } catch (Exception ex) {
       log.warn(
           "Unable to send delete event for config with tenantId {} configType {} context {}",
           tenantId,
           configType,
-          context,
+          contextOptional,
           ex);
     }
   }

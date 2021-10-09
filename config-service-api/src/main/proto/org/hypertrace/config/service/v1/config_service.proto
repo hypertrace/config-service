@@ -95,23 +95,6 @@ message ContextSpecificConfig {
   int64 update_timestamp = 4;
 }
 
-message InternalContextSpecificConfig {
-  // context associated with the below config
-  string context = 1;
-
-  // config value which applies to the above context
-  google.protobuf.Value config = 2;
-
-  // timestamp (in milliseconds since epoch) at which this config was created
-  int64 creation_timestamp = 3;
-
-  // timestamp (in milliseconds since epoch) at which this config was last updated
-  int64 update_timestamp = 4;
-
-  // prev config value which applies to the above context
-  optional google.protobuf.Value prev_config = 5;
-}
-
 message DeleteConfigRequest {
   // required - name of the resource associated with the config
   string resource_name = 1;

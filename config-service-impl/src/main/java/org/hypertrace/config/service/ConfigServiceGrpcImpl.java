@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.store.ConfigStore;
+import org.hypertrace.config.service.store.InternalContextSpecificConfig;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
@@ -21,7 +22,6 @@ import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
-import org.hypertrace.config.service.v1.InternalContextSpecificConfig;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -41,15 +41,15 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
       UpsertConfigRequest request, StreamObserver<UpsertConfigResponse> responseObserver) {
     try {
       ConfigResource configResource = getConfigResource(request);
-      InternalContextSpecificConfig contextSpecificConfig =
+      InternalContextSpecificConfig internalContextSpecificConfig =
           configStore.writeConfig(configResource, getUserId(), request.getConfig());
       UpsertConfigResponse.Builder builder = UpsertConfigResponse.newBuilder();
       builder.setConfig(request.getConfig());
-      builder.setCreationTimestamp(contextSpecificConfig.getCreationTimestamp());
-      builder.setUpdateTimestamp(contextSpecificConfig.getUpdateTimestamp());
-      if (contextSpecificConfig.hasPrevConfig()) {
-        builder.setPrevConfig(contextSpecificConfig.getPrevConfig());
-      }
+      builder.setCreationTimestamp(
+          internalContextSpecificConfig.getContextSpecificConfig().getCreationTimestamp());
+      builder.setUpdateTimestamp(
+          internalContextSpecificConfig.getContextSpecificConfig().getUpdateTimestamp());
+      internalContextSpecificConfig.getPrevConfig().ifPresent(builder::setPrevConfig);
       responseObserver.onNext(builder.build());
       responseObserver.onCompleted();
     } catch (Exception e) {

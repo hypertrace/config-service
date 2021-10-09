@@ -19,13 +19,13 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigServiceUtils;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
-import org.hypertrace.config.service.v1.InternalContextSpecificConfig;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.DatastoreProvider;
@@ -184,14 +184,12 @@ public class DocumentConfigStore implements ConfigStore {
 
   private InternalContextSpecificConfig getInternalContextSpecificConfig(
       ConfigDocument configDocument, ContextSpecificConfig existingConfig) {
-    InternalContextSpecificConfig.Builder builder = InternalContextSpecificConfig.newBuilder();
-    builder.setConfig(configDocument.getConfig());
-    builder.setContext(configDocument.getContext());
-    builder.setCreationTimestamp(configDocument.getCreationTimestamp());
-    builder.setUpdateTimestamp(configDocument.getUpdateTimestamp());
-    if (!ConfigServiceUtils.isNull(existingConfig.getConfig())) {
-      builder.setPrevConfig(existingConfig.getConfig());
+    if (ConfigServiceUtils.isNull(existingConfig.getConfig())) {
+      return new InternalContextSpecificConfig(
+          getContextSpecificConfig(configDocument), Optional.empty());
+    } else {
+      return new InternalContextSpecificConfig(
+          getContextSpecificConfig(configDocument), Optional.of(existingConfig.getConfig()));
     }
-    return builder.build();
   }
 }
