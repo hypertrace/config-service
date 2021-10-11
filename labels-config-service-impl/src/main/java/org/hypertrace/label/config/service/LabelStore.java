@@ -5,6 +5,7 @@ import java.util.Optional;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.label.config.service.v1.Label;
 
@@ -12,8 +13,14 @@ public class LabelStore extends IdentifiedObjectStore<Label> {
   public static final String LABEL_CONFIG_RESOURCE_NAME = "label-config";
   public static final String LABELS_CONFIG_RESOURCE_NAMESPACE = "labels";
 
-  protected LabelStore(ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub) {
-    super(configServiceBlockingStub, LABELS_CONFIG_RESOURCE_NAMESPACE, LABEL_CONFIG_RESOURCE_NAME);
+  protected LabelStore(
+      ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
+    super(
+        configServiceBlockingStub,
+        LABELS_CONFIG_RESOURCE_NAMESPACE,
+        LABEL_CONFIG_RESOURCE_NAME,
+        configChangeEventGenerator);
   }
 
   @Override

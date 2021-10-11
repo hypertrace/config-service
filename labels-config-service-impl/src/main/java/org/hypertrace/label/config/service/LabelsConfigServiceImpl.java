@@ -21,6 +21,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -50,14 +51,16 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
   private final Map<String, Label> systemLabelsKeyLabelMap;
   private final Striped<Lock> stripedLabelsLock;
 
-  public LabelsConfigServiceImpl(Channel configChannel, Config config) {
+  public LabelsConfigServiceImpl(
+      Channel configChannel, Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
     stripedLabelsLock = Striped.lazyWeakLock(LABEL_LOCK_STRIPE_COUNT);
     labelStore =
         new LabelStore(
             ConfigServiceGrpc.newBlockingStub(configChannel)
                 .withCallCredentials(
                     RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider()
-                        .get()));
+                        .get()),
+            configChangeEventGenerator);
     List<? extends ConfigObject> systemLabelsObjectList = null;
     if (config.hasPath(LABELS_CONFIG_SERVICE_CONFIG)) {
       Config labelConfig = config.getConfig(LABELS_CONFIG_SERVICE_CONFIG);
@@ -140,7 +143,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
         label =
             labelStore
                 .getObject(requestContext, labelId)
-                .orElseThrow(() -> new StatusRuntimeException(Status.NOT_FOUND));
+                .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       }
       responseObserver.onNext(GetLabelResponse.newBuilder().setLabel(label).build());
       responseObserver.onCompleted();
@@ -182,7 +185,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
           }
           labelStore
               .getObject(requestContext, updatedLabelInReq.getId())
-              .orElseThrow(() -> new StatusRuntimeException(Status.NOT_FOUND));
+              .orElseThrow(Status.NOT_FOUND::asRuntimeException);
           Label updatedLabelInRes = labelStore.upsertObject(requestContext, updatedLabelInReq);
           responseObserver.onNext(
               UpdateLabelResponse.newBuilder().setLabel(updatedLabelInRes).build());
@@ -215,7 +218,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
           }
           labelStore
               .deleteObject(requestContext, labelId)
-              .orElseThrow(() -> new StatusRuntimeException(Status.NOT_FOUND));
+              .orElseThrow(Status.NOT_FOUND::asRuntimeException);
           responseObserver.onNext(DeleteLabelResponse.newBuilder().build());
           responseObserver.onCompleted();
         } finally {
