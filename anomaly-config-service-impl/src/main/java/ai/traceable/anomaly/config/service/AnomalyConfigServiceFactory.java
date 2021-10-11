@@ -16,6 +16,7 @@ public class AnomalyConfigServiceFactory {
   static final String ANOMALY_GLOBAL_CONFIG_ANNOTATION = "anomalyGlobalConfig";
   static final String ANOMALY_EXCLUSION_CONFIG_ANNOTATION = "anomalyExclusionConfig";
   static final String ANOMALY_MODSEC_CONFIG_ANNOTATION = "anomalyModsecConfig";
+  static final String APIDEF_TRAINER_CONFIG_ANNOTATION = "apidefTrainerConfig";
 
   public static List<BindableService> build(
       GrpcChannelRegistry channelRegistry, ManagedChannel channel, Config config) {
@@ -25,7 +26,8 @@ public class AnomalyConfigServiceFactory {
     return ImmutableList.of(
         getInjectorInstance(injector, ANOMALY_GLOBAL_CONFIG_ANNOTATION),
         getInjectorInstance(injector, ANOMALY_EXCLUSION_CONFIG_ANNOTATION),
-        getInjectorInstance(injector, ANOMALY_MODSEC_CONFIG_ANNOTATION));
+        getInjectorInstance(injector, ANOMALY_MODSEC_CONFIG_ANNOTATION),
+        getInjectorInstance(injector, APIDEF_TRAINER_CONFIG_ANNOTATION));
   }
 
   private static <T> BindableService getInjectorInstance(Injector injector, String annotation) {
