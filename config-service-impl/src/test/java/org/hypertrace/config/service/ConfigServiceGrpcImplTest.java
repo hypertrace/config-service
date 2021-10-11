@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import org.hypertrace.config.service.store.ConfigStore;
 import org.hypertrace.config.service.store.InternalContextSpecificConfig;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
@@ -65,8 +64,7 @@ class ConfigServiceGrpcImplTest {
                       .setConfig(config)
                       .setCreationTimestamp(123L)
                       .setUpdateTimestamp(456L)
-                      .build(),
-                  Optional.empty());
+                      .build());
             });
 
     ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);

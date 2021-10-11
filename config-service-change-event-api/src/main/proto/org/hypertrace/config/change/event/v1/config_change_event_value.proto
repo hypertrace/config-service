@@ -17,14 +17,14 @@ message ConfigChangeEventValue {
 }
 
 message ConfigCreateEvent {
-  string created_config = 1;
+  string created_config_json = 1;
 }
 
 message ConfigUpdateEvent {
-  string previous_config = 1;
-  string latest_config = 2;
+  string previous_config_json = 1;
+  string latest_config_json = 2;
 }
 
 message ConfigDeleteEvent {
-  string deleted_config = 1;
+  string deleted_config_json = 1;
 }

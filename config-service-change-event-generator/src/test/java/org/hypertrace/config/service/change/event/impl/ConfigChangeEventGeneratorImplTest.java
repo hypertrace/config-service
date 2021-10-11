@@ -52,7 +52,7 @@ class ConfigChangeEventGeneratorImplTest {
             ConfigChangeEventValue.newBuilder()
                 .setCreateEvent(
                     ConfigCreateEvent.newBuilder()
-                        .setCreatedConfig(ConfigProtoConverter.convertToJsonString(config))
+                        .setCreatedConfigJson(ConfigProtoConverter.convertToJsonString(config))
                         .build())
                 .build());
   }
@@ -67,7 +67,7 @@ class ConfigChangeEventGeneratorImplTest {
             ConfigChangeEventValue.newBuilder()
                 .setCreateEvent(
                     ConfigCreateEvent.newBuilder()
-                        .setCreatedConfig(ConfigProtoConverter.convertToJsonString(config))
+                        .setCreatedConfigJson(ConfigProtoConverter.convertToJsonString(config))
                         .build())
                 .build());
   }
@@ -83,7 +83,7 @@ class ConfigChangeEventGeneratorImplTest {
             ConfigChangeEventValue.newBuilder()
                 .setDeleteEvent(
                     ConfigDeleteEvent.newBuilder()
-                        .setDeletedConfig(ConfigProtoConverter.convertToJsonString(config))
+                        .setDeletedConfigJson(ConfigProtoConverter.convertToJsonString(config))
                         .build())
                 .build());
   }
@@ -98,7 +98,7 @@ class ConfigChangeEventGeneratorImplTest {
             ConfigChangeEventValue.newBuilder()
                 .setDeleteEvent(
                     ConfigDeleteEvent.newBuilder()
-                        .setDeletedConfig(ConfigProtoConverter.convertToJsonString(config))
+                        .setDeletedConfigJson(ConfigProtoConverter.convertToJsonString(config))
                         .build())
                 .build());
   }
@@ -116,8 +116,8 @@ class ConfigChangeEventGeneratorImplTest {
             ConfigChangeEventValue.newBuilder()
                 .setUpdateEvent(
                     ConfigUpdateEvent.newBuilder()
-                        .setPreviousConfig(ConfigProtoConverter.convertToJsonString(prevConfig))
-                        .setLatestConfig(ConfigProtoConverter.convertToJsonString(latestConfig))
+                        .setPreviousConfigJson(ConfigProtoConverter.convertToJsonString(prevConfig))
+                        .setLatestConfigJson(ConfigProtoConverter.convertToJsonString(latestConfig))
                         .build())
                 .build());
   }
@@ -135,8 +135,8 @@ class ConfigChangeEventGeneratorImplTest {
             ConfigChangeEventValue.newBuilder()
                 .setUpdateEvent(
                     ConfigUpdateEvent.newBuilder()
-                        .setPreviousConfig(ConfigProtoConverter.convertToJsonString(prevConfig))
-                        .setLatestConfig(ConfigProtoConverter.convertToJsonString(latestConfig))
+                        .setPreviousConfigJson(ConfigProtoConverter.convertToJsonString(prevConfig))
+                        .setLatestConfigJson(ConfigProtoConverter.convertToJsonString(latestConfig))
                         .build())
                 .build());
   }

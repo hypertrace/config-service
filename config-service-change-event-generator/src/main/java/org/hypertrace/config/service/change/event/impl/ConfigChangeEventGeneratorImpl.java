@@ -101,7 +101,7 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
       Builder builder = ConfigChangeEventValue.newBuilder();
       builder.setCreateEvent(
           ConfigCreateEvent.newBuilder()
-              .setCreatedConfig(ConfigProtoConverter.convertToJsonString(config))
+              .setCreatedConfigJson(ConfigProtoConverter.convertToJsonString(config))
               .build());
       populateUserDetails(requestContext, builder);
       configChangeEventProducer.send(
@@ -127,8 +127,8 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
       Builder builder = ConfigChangeEventValue.newBuilder();
       builder.setUpdateEvent(
           ConfigUpdateEvent.newBuilder()
-              .setPreviousConfig(ConfigProtoConverter.convertToJsonString(prevConfig))
-              .setLatestConfig(ConfigProtoConverter.convertToJsonString(latestConfig))
+              .setPreviousConfigJson(ConfigProtoConverter.convertToJsonString(prevConfig))
+              .setLatestConfigJson(ConfigProtoConverter.convertToJsonString(latestConfig))
               .build());
       populateUserDetails(requestContext, builder);
       configChangeEventProducer.send(
@@ -153,7 +153,7 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
       Builder builder = ConfigChangeEventValue.newBuilder();
       builder.setDeleteEvent(
           ConfigDeleteEvent.newBuilder()
-              .setDeletedConfig(ConfigProtoConverter.convertToJsonString(config))
+              .setDeletedConfigJson(ConfigProtoConverter.convertToJsonString(config))
               .build());
       populateUserDetails(requestContext, builder);
       configChangeEventProducer.send(

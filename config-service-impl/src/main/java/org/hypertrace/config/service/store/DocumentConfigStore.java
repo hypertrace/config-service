@@ -19,7 +19,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -185,11 +184,10 @@ public class DocumentConfigStore implements ConfigStore {
   private InternalContextSpecificConfig getInternalContextSpecificConfig(
       ConfigDocument configDocument, ContextSpecificConfig existingConfig) {
     if (ConfigServiceUtils.isNull(existingConfig.getConfig())) {
-      return new InternalContextSpecificConfig(
-          getContextSpecificConfig(configDocument), Optional.empty());
+      return new InternalContextSpecificConfig(getContextSpecificConfig(configDocument));
     } else {
       return new InternalContextSpecificConfig(
-          getContextSpecificConfig(configDocument), Optional.of(existingConfig.getConfig()));
+          getContextSpecificConfig(configDocument), existingConfig.getConfig());
     }
   }
 }
