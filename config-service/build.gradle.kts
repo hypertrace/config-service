@@ -56,6 +56,7 @@ tasks.integrationTest {
 
 dependencies {
   implementation(projects.configServiceImpl)
+  implementation(projects.configServiceChangeEventGenerator)
   implementation(projects.spacesConfigServiceImpl)
   implementation(projects.labelsConfigServiceImpl)
   implementation(projects.labelApplicationRuleConfigServiceImpl)

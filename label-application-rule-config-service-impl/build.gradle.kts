@@ -10,6 +10,7 @@ dependencies {
     implementation(projects.objectStore)
     implementation(projects.validationUtils)
     implementation(projects.configProtoConverter)
+    implementation(projects.configServiceChangeEventGenerator)
     implementation(libs.typesafe.config)
     implementation(libs.protobuf.javautil)
     implementation(libs.hypertrace.grpcutils.context)

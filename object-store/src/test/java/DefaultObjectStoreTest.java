@@ -10,6 +10,7 @@ import com.google.protobuf.util.Values;
 import io.grpc.Status;
 import java.util.Optional;
 import org.hypertrace.config.objectstore.DefaultObjectStore;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
@@ -33,6 +34,8 @@ class DefaultObjectStoreTest {
 
   @Mock ConfigServiceBlockingStub mockStub;
 
+  @Mock ConfigChangeEventGenerator configChangeEventGenerator;
+
   @Mock(answer = Answers.CALLS_REAL_METHODS)
   RequestContext mockRequestContext;
 
@@ -41,7 +44,7 @@ class DefaultObjectStoreTest {
   @BeforeEach
   void beforeEach() {
     this.mockStub = mock(ConfigServiceBlockingStub.class);
-    this.store = new TestObjectStore(this.mockStub);
+    this.store = new TestObjectStore(this.mockStub, configChangeEventGenerator);
   }
 
   @Test
@@ -115,8 +118,9 @@ class DefaultObjectStoreTest {
   }
 
   private static class TestObjectStore extends DefaultObjectStore<TestObject> {
-    private TestObjectStore(ConfigServiceBlockingStub stub) {
-      super(stub, TEST_RESOURCE_NAMESPACE, TEST_RESOURCE_NAME);
+    private TestObjectStore(
+        ConfigServiceBlockingStub stub, ConfigChangeEventGenerator configChangeEventGenerator) {
+      super(stub, TEST_RESOURCE_NAMESPACE, TEST_RESOURCE_NAME, configChangeEventGenerator);
     }
 
     @Override

@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.store.ConfigStore;
+import org.hypertrace.config.service.store.InternalContextSpecificConfig;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
@@ -40,14 +41,16 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
       UpsertConfigRequest request, StreamObserver<UpsertConfigResponse> responseObserver) {
     try {
       ConfigResource configResource = getConfigResource(request);
-      ContextSpecificConfig contextSpecificConfig =
+      InternalContextSpecificConfig internalContextSpecificConfig =
           configStore.writeConfig(configResource, getUserId(), request.getConfig());
-      responseObserver.onNext(
-          UpsertConfigResponse.newBuilder()
-              .setConfig(request.getConfig())
-              .setCreationTimestamp(contextSpecificConfig.getCreationTimestamp())
-              .setUpdateTimestamp(contextSpecificConfig.getUpdateTimestamp())
-              .build());
+      UpsertConfigResponse.Builder builder = UpsertConfigResponse.newBuilder();
+      builder.setConfig(request.getConfig());
+      builder.setCreationTimestamp(
+          internalContextSpecificConfig.getContextSpecificConfig().getCreationTimestamp());
+      builder.setUpdateTimestamp(
+          internalContextSpecificConfig.getContextSpecificConfig().getUpdateTimestamp());
+      internalContextSpecificConfig.getPrevConfigOptional().ifPresent(builder::setPrevConfig);
+      responseObserver.onNext(builder.build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Upsert failed for request:{}", request, e);

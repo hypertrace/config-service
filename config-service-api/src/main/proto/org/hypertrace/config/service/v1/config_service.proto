@@ -45,6 +45,9 @@ message UpsertConfigResponse {
 
   // timestamp (in milliseconds since epoch) at which this config was last updated
   int64 update_timestamp = 3;
+
+  // prev version of config value in the store
+  optional google.protobuf.Value prev_config = 4;
 }
 
 message GetConfigRequest {

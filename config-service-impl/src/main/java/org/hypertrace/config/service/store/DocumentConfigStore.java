@@ -64,8 +64,8 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   @Override
-  public ContextSpecificConfig writeConfig(
-      ConfigResource configResource, String userId, Value config) throws IOException {
+  public InternalContextSpecificConfig writeConfig(
+      ConfigResource configResource, String userId, Value latestConfig) throws IOException {
     // Synchronization is required across different threads trying to write the latest config
     // for the same resource into the document store
     synchronized (configResourceLocks.getUnchecked(configResource)) {
@@ -87,11 +87,11 @@ public class DocumentConfigStore implements ConfigStore {
               configResource.getContext(),
               configVersion,
               userId,
-              config,
+              latestConfig,
               creationTimestamp,
               updateTimestamp);
       collection.upsert(key, configDocument);
-      return getContextSpecificConfig(configDocument);
+      return getInternalContextSpecificConfig(configDocument, existingConfig);
     }
   }
 
@@ -179,5 +179,15 @@ public class DocumentConfigStore implements ConfigStore {
         .setCreationTimestamp(configDocument.getCreationTimestamp())
         .setUpdateTimestamp(configDocument.getUpdateTimestamp())
         .build();
+  }
+
+  private InternalContextSpecificConfig getInternalContextSpecificConfig(
+      ConfigDocument configDocument, ContextSpecificConfig existingConfig) {
+    if (ConfigServiceUtils.isNull(existingConfig.getConfig())) {
+      return new InternalContextSpecificConfig(getContextSpecificConfig(configDocument));
+    } else {
+      return new InternalContextSpecificConfig(
+          getContextSpecificConfig(configDocument), existingConfig.getConfig());
+    }
   }
 }

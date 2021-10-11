@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package org.hypertrace.config.change.event.v1;
+
+message ConfigChangeEventKey {
+  string tenant_id = 1;
+  string config_type = 2;
+  optional string context = 3;
+}

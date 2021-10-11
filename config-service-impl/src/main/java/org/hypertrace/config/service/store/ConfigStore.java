@@ -28,8 +28,8 @@ public interface ConfigStore {
    * @param config
    * @return the context specific config written to the store
    */
-  ContextSpecificConfig writeConfig(ConfigResource configResource, String userId, Value config)
-      throws IOException;
+  InternalContextSpecificConfig writeConfig(
+      ConfigResource configResource, String userId, Value config) throws IOException;
 
   /**
    * Get the config with the latest version for the specified resource.

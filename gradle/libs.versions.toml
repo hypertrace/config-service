@@ -22,6 +22,8 @@ hypertrace-framework-metrics = { module = "org.hypertrace.core.serviceframework:
 hypertrace-framework-integrationtest = { module = "org.hypertrace.core.serviceframework:integrationtest-service-framework", version.ref = "hypertrace-framework" }
 
 hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:document-store", version = "0.5.7" }
+hypertrace-eventstore = { module = "org.hypertrace.core.eventstore:event-store", version = "0.1.2"}
+
 guava = { module = "com.google.guava:guava", version = "30.1.1-jre" }
 javax-annotation = { module = "javax.annotation:javax.annotation-api", version = "1.3.2" }
 typesafe-config = { module = "com.typesafe:config", version = "1.4.1" }
@@ -36,6 +38,9 @@ grpc-api = { module = "io.grpc:grpc-api", version.ref = "grpc" }
 grpc-core = { module = "io.grpc:grpc-core", version.ref = "grpc" }
 grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "grpc" }
 protobuf-javautil = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protoc" }
+protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protoc" }
+
+kafka-protobuf-serializer = { module = "io.confluent:kafka-protobuf-serializer", version= "6.2.1" }
 
 slf4j-log4jimpl = { module = "org.apache.logging.log4j:log4j-slf4j-impl", version = "2.14.1" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version = "1.7.30" }

@@ -21,4 +21,5 @@ data:
           {{- end }}
         }
       }
+      publish.change.events = {{ .Values.configServiceConfig.publishChangeEvents }}
     }

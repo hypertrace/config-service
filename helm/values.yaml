@@ -78,6 +78,7 @@ serviceSelectorLabels:
 ###########
 configServiceConfig:
   name: config-service-config
+  publishChangeEvents: false
   dataStoreType: "mongo"
   mongo:
     host: mongo
@@ -91,3 +92,20 @@ logConfig:
   appender:
     rolling:
       enabled: false
+
+kafka-topic-creator:
+  enabled: true
+  jobName: config-service-kafka-topics-creator
+  helmHook: pre-install,pre-upgrade
+  kafka:
+    topics:
+      config-change-events:
+        replicationFactor: 3
+        partitions: 8
+        configs:
+          retention.bytes: 1073741824 # default = -1
+          retention.ms: 86400000 # default = 604800000 (7 days)
+  zookeeper:
+    address: zookeeper:2181
+  imagePullSecrets: []
+  podAnnotations: {}

@@ -21,4 +21,13 @@ public class ConfigProtoConverter {
     JSON_PARSER.merge(JSON_PRINTER.print(messageOrBuilder), valueBuilder);
     return valueBuilder.build();
   }
+
+  public static String convertToJsonString(Value value) throws InvalidProtocolBufferException {
+    return JSON_PRINTER.print(value);
+  }
+
+  public static void mergeFromJsonString(String jsonString, Message.Builder builder)
+      throws InvalidProtocolBufferException {
+    JSON_PARSER.merge(jsonString, builder);
+  }
 }

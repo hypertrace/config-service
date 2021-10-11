@@ -7,6 +7,8 @@ plugins {
 dependencies {
   api(projects.configServiceApi)
 
+  implementation(projects.configServiceChangeEventGenerator)
+
   implementation(libs.jackson.databind)
   implementation(libs.guava)
   implementation(libs.protobuf.javautil)
