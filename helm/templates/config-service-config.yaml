@@ -23,3 +23,11 @@ data:
       }
       publish.change.events = {{ .Values.configServiceConfig.publishChangeEvents }}
     }
+    event.store {
+      type = kafka
+      bootstrap.servers = "bootstrap:9092"
+      config.change.events.producer {
+        bootstrap.servers = "bootstrap:9092"
+        schema.registry.url = "http://schema-registry-service:8081"
+      }
+    }
