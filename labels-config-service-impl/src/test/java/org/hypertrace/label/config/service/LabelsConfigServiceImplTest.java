@@ -2,6 +2,7 @@ package org.hypertrace.label.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.label.config.service.v1.CreateLabel;
 import org.hypertrace.label.config.service.v1.CreateLabelRequest;
@@ -58,7 +60,10 @@ public final class LabelsConfigServiceImplTest {
     configMap.put("labels.config.service", systemLabelsConfigMap);
     config = ConfigFactory.parseMap(configMap);
     Channel channel = mockGenericConfigService.channel();
-    mockGenericConfigService.addService(new LabelsConfigServiceImpl(channel, config)).start();
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    mockGenericConfigService
+        .addService(new LabelsConfigServiceImpl(channel, config, configChangeEventGenerator))
+        .start();
     labelConfigStub = LabelsConfigServiceGrpc.newBlockingStub(channel);
   }
 

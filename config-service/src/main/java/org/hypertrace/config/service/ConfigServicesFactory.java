@@ -38,7 +38,7 @@ public class ConfigServicesFactory {
     return List.of(
         new ConfigServiceGrpcImpl(configStore),
         new SpacesConfigServiceImpl(configChannel),
-        new LabelsConfigServiceImpl(configChannel, config),
+        new LabelsConfigServiceImpl(configChannel, config, configChangeEventGenerator),
         new LabelApplicationRuleConfigServiceImpl(configChannel, configChangeEventGenerator),
         new EventConditionConfigServiceImpl(configChannel, configChangeEventGenerator),
         new NotificationRuleConfigServiceImpl(configChannel, configChangeEventGenerator),

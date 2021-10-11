@@ -6,8 +6,9 @@ plugins {
 
 dependencies {
     api(projects.labelsConfigServiceApi)
-    implementation(projects.configServiceApi)
+    implementation(projects.objectStore)
     implementation(projects.configProtoConverter)
+    implementation(projects.configServiceChangeEventGenerator)
     implementation(libs.typesafe.config)
     implementation(libs.protobuf.javautil)
     implementation(libs.slf4j.api)

@@ -9,6 +9,7 @@ import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.label.config.service.v1.CreateLabel;
 import org.hypertrace.label.config.service.v1.CreateLabelRequest;
@@ -41,15 +45,22 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
   private static final String LABELS_CONFIG_SERVICE_CONFIG = "labels.config.service";
   private static final String SYSTEM_LABELS = "system.labels";
   private static final int LABEL_LOCK_STRIPE_COUNT = 1000;
-  private final ConfigServiceCoordinator configServiceCoordinator;
+  private final LabelStore labelStore;
   private final List<Label> systemLabels;
   private final Map<String, Label> systemLabelsIdLabelMap;
   private final Map<String, Label> systemLabelsKeyLabelMap;
   private final Striped<Lock> stripedLabelsLock;
 
-  public LabelsConfigServiceImpl(Channel configChannel, Config config) {
+  public LabelsConfigServiceImpl(
+      Channel configChannel, Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
     stripedLabelsLock = Striped.lazyWeakLock(LABEL_LOCK_STRIPE_COUNT);
-    configServiceCoordinator = new ConfigServiceCoordinatorImpl(configChannel);
+    labelStore =
+        new LabelStore(
+            ConfigServiceGrpc.newBlockingStub(configChannel)
+                .withCallCredentials(
+                    RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider()
+                        .get()),
+            configChangeEventGenerator);
     List<? extends ConfigObject> systemLabelsObjectList = null;
     if (config.hasPath(LABELS_CONFIG_SERVICE_CONFIG)) {
       Config labelConfig = config.getConfig(LABELS_CONFIG_SERVICE_CONFIG);
@@ -106,7 +117,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
                   .setId(UUID.randomUUID().toString())
                   .setKey(createLabel.getKey())
                   .build();
-          Label createdLabel = configServiceCoordinator.upsertLabel(requestContext, label);
+          Label createdLabel = labelStore.upsertObject(requestContext, label);
           responseObserver.onNext(CreateLabelResponse.newBuilder().setLabel(createdLabel).build());
           responseObserver.onCompleted();
         } finally {
@@ -129,7 +140,10 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
       if (systemLabelsIdLabelMap.containsKey(labelId)) {
         label = systemLabelsIdLabelMap.get(labelId);
       } else {
-        label = configServiceCoordinator.getLabel(requestContext, labelId);
+        label =
+            labelStore
+                .getObject(requestContext, labelId)
+                .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       }
       responseObserver.onNext(GetLabelResponse.newBuilder().setLabel(label).build());
       responseObserver.onCompleted();
@@ -142,9 +156,11 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
   public void getLabels(
       GetLabelsRequest request, StreamObserver<GetLabelsResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
-    List<Label> labelList = configServiceCoordinator.getAllLabels(requestContext);
-    labelList.addAll(systemLabels);
-    responseObserver.onNext(GetLabelsResponse.newBuilder().addAllLabels(labelList).build());
+    List<Label> allLabels = new ArrayList<>();
+    allLabels.addAll(systemLabels);
+    List<Label> tenantLabels = labelStore.getAllObjects(requestContext);
+    allLabels.addAll(tenantLabels);
+    responseObserver.onNext(GetLabelsResponse.newBuilder().addAllLabels(allLabels).build());
     responseObserver.onCompleted();
   }
 
@@ -167,9 +183,10 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
             responseObserver.onError(new StatusRuntimeException(Status.ALREADY_EXISTS));
             return;
           }
-          configServiceCoordinator.getLabel(requestContext, updatedLabelInReq.getId());
-          Label updatedLabelInRes =
-              configServiceCoordinator.upsertLabel(requestContext, updatedLabelInReq);
+          labelStore
+              .getObject(requestContext, updatedLabelInReq.getId())
+              .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+          Label updatedLabelInRes = labelStore.upsertObject(requestContext, updatedLabelInReq);
           responseObserver.onNext(
               UpdateLabelResponse.newBuilder().setLabel(updatedLabelInRes).build());
           responseObserver.onCompleted();
@@ -199,8 +216,9 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
             responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
             return;
           }
-          configServiceCoordinator.getLabel(requestContext, labelId);
-          configServiceCoordinator.deleteLabel(requestContext, labelId);
+          labelStore
+              .deleteObject(requestContext, labelId)
+              .orElseThrow(Status.NOT_FOUND::asRuntimeException);
           responseObserver.onNext(DeleteLabelResponse.newBuilder().build());
           responseObserver.onCompleted();
         } finally {
@@ -216,7 +234,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
 
   private boolean isDuplicateKey(String key) {
     RequestContext requestContext = RequestContext.CURRENT.get();
-    List<Label> labelList = configServiceCoordinator.getAllLabels(requestContext);
+    List<Label> labelList = labelStore.getAllObjects(requestContext);
     Optional<Label> match =
         labelList.stream().filter(label -> label.getKey().equals(key)).findAny();
     return match.isPresent();
