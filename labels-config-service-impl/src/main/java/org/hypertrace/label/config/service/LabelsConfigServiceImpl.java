@@ -9,6 +9,7 @@ import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -132,14 +133,16 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     RequestContext requestContext = RequestContext.CURRENT.get();
     String labelId = request.getId();
     try {
-      Optional<Label> labelOptional;
+      Label label;
       if (systemLabelsIdLabelMap.containsKey(labelId)) {
-        labelOptional = Optional.of(systemLabelsIdLabelMap.get(labelId));
+        label = systemLabelsIdLabelMap.get(labelId);
       } else {
-        labelOptional = labelStore.getObject(requestContext, labelId);
+        label =
+            labelStore
+                .getObject(requestContext, labelId)
+                .orElseThrow(() -> new StatusRuntimeException(Status.NOT_FOUND));
       }
-      labelOptional.ifPresent(
-          label -> responseObserver.onNext(GetLabelResponse.newBuilder().setLabel(label).build()));
+      responseObserver.onNext(GetLabelResponse.newBuilder().setLabel(label).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       responseObserver.onError(e);
@@ -150,9 +153,11 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
   public void getLabels(
       GetLabelsRequest request, StreamObserver<GetLabelsResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
-    List<Label> labelList = labelStore.getAllObjects(requestContext);
-    labelList.addAll(systemLabels);
-    responseObserver.onNext(GetLabelsResponse.newBuilder().addAllLabels(labelList).build());
+    List<Label> allLabels = new ArrayList<>();
+    allLabels.addAll(systemLabels);
+    List<Label> tenantLabels = labelStore.getAllObjects(requestContext);
+    allLabels.addAll(tenantLabels);
+    responseObserver.onNext(GetLabelsResponse.newBuilder().addAllLabels(allLabels).build());
     responseObserver.onCompleted();
   }
 
@@ -175,7 +180,9 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
             responseObserver.onError(new StatusRuntimeException(Status.ALREADY_EXISTS));
             return;
           }
-          labelStore.getObject(requestContext, updatedLabelInReq.getId());
+          labelStore
+              .getObject(requestContext, updatedLabelInReq.getId())
+              .orElseThrow(() -> new StatusRuntimeException(Status.NOT_FOUND));
           Label updatedLabelInRes = labelStore.upsertObject(requestContext, updatedLabelInReq);
           responseObserver.onNext(
               UpdateLabelResponse.newBuilder().setLabel(updatedLabelInRes).build());
@@ -206,8 +213,9 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
             responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
             return;
           }
-          labelStore.getObject(requestContext, labelId);
-          labelStore.deleteObject(requestContext, labelId);
+          labelStore
+              .deleteObject(requestContext, labelId)
+              .orElseThrow(() -> new StatusRuntimeException(Status.NOT_FOUND));
           responseObserver.onNext(DeleteLabelResponse.newBuilder().build());
           responseObserver.onCompleted();
         } finally {

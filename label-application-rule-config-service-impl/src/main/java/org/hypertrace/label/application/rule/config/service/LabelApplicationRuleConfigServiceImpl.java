@@ -91,9 +91,11 @@ public class LabelApplicationRuleConfigServiceImpl
               .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       LabelApplicationRule updateLabelApplicationRule =
           existingRule.toBuilder().setData(request.getData()).build();
+      LabelApplicationRule upsertedLabelApplicationRule =
+          this.labelApplicationRuleStore.upsertObject(requestContext, updateLabelApplicationRule);
       responseObserver.onNext(
           UpdateLabelApplicationRuleResponse.newBuilder()
-              .setLabelApplicationRule(updateLabelApplicationRule)
+              .setLabelApplicationRule(upsertedLabelApplicationRule)
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
