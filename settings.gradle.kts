@@ -15,6 +15,9 @@ plugins {
 enableFeaturePreview("VERSION_CATALOGS")
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
+include(":config-service-change-event-api")
+include(":config-service-change-event-generator")
+
 include(":config-service-api")
 include(":config-service-impl")
 include(":config-service")

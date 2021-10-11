@@ -1,8 +1,10 @@
 package org.hypertrace.notification.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 
 import java.util.List;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.notification.config.service.v1.CreateNotificationRuleRequest;
 import org.hypertrace.notification.config.service.v1.DeleteNotificationRuleRequest;
@@ -25,8 +27,11 @@ class NotificationRuleConfigServiceImplTest {
     mockGenericConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
 
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     mockGenericConfigService
-        .addService(new NotificationRuleConfigServiceImpl(mockGenericConfigService.channel()))
+        .addService(
+            new NotificationRuleConfigServiceImpl(
+                mockGenericConfigService.channel(), configChangeEventGenerator))
         .start();
 
     notificationStub =

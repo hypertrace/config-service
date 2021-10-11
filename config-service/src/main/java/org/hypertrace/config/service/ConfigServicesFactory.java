@@ -6,6 +6,8 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import java.util.List;
 import org.hypertrace.alerting.config.service.EventConditionConfigServiceImpl;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
+import org.hypertrace.config.service.change.event.impl.ConfigChangeEventGeneratorFactory;
 import org.hypertrace.config.service.store.ConfigStore;
 import org.hypertrace.config.service.store.DocumentConfigStore;
 import org.hypertrace.core.serviceframework.spi.PlatformServiceLifecycle;
@@ -30,14 +32,17 @@ public class ConfigServicesFactory {
         ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
     lifecycle.shutdownComplete().thenRun(configChannel::shutdown);
 
+    ConfigChangeEventGenerator configChangeEventGenerator =
+        ConfigChangeEventGeneratorFactory.getInstance().createConfigChangeEventGenerator(config);
+
     return List.of(
         new ConfigServiceGrpcImpl(configStore),
         new SpacesConfigServiceImpl(configChannel),
         new LabelsConfigServiceImpl(configChannel, config),
-        new LabelApplicationRuleConfigServiceImpl(configChannel),
-        new EventConditionConfigServiceImpl(configChannel),
-        new NotificationRuleConfigServiceImpl(configChannel),
-        new NotificationChannelConfigServiceImpl(configChannel));
+        new LabelApplicationRuleConfigServiceImpl(configChannel, configChangeEventGenerator),
+        new EventConditionConfigServiceImpl(configChannel, configChangeEventGenerator),
+        new NotificationRuleConfigServiceImpl(configChannel, configChangeEventGenerator),
+        new NotificationChannelConfigServiceImpl(configChannel, configChangeEventGenerator));
   }
 
   public static ConfigStore buildConfigStore(Config config) {

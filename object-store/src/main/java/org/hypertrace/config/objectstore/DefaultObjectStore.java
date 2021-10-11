@@ -3,10 +3,12 @@ package org.hypertrace.config.objectstore;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import java.util.Optional;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
+import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 /**
@@ -19,6 +21,18 @@ public abstract class DefaultObjectStore<T> {
   private final ConfigServiceBlockingStub configServiceBlockingStub;
   private final String resourceNamespace;
   private final String resourceName;
+  private final Optional<ConfigChangeEventGenerator> configChangeEventGeneratorOptional;
+
+  protected DefaultObjectStore(
+      ConfigServiceBlockingStub configServiceBlockingStub,
+      String resourceNamespace,
+      String resourceName,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
+    this.configServiceBlockingStub = configServiceBlockingStub;
+    this.resourceNamespace = resourceNamespace;
+    this.resourceName = resourceName;
+    this.configChangeEventGeneratorOptional = Optional.of(configChangeEventGenerator);
+  }
 
   protected DefaultObjectStore(
       ConfigServiceBlockingStub configServiceBlockingStub,
@@ -27,6 +41,7 @@ public abstract class DefaultObjectStore<T> {
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.resourceNamespace = resourceNamespace;
     this.resourceName = resourceName;
+    this.configChangeEventGeneratorOptional = Optional.empty();
   }
 
   protected abstract Optional<T> buildObjectFromValue(Value value);
@@ -56,20 +71,34 @@ public abstract class DefaultObjectStore<T> {
   }
 
   public T upsertObject(RequestContext context, T object) {
-    Value upsertedValue =
+    UpsertConfigResponse response =
         context.call(
             () ->
-                this.configServiceBlockingStub
-                    .upsertConfig(
-                        UpsertConfigRequest.newBuilder()
-                            .setResourceName(this.resourceName)
-                            .setResourceNamespace(this.resourceNamespace)
-                            .setConfig(this.buildValueFromObject(object))
-                            .build())
-                    .getConfig());
+                this.configServiceBlockingStub.upsertConfig(
+                    UpsertConfigRequest.newBuilder()
+                        .setResourceName(this.resourceName)
+                        .setResourceNamespace(this.resourceNamespace)
+                        .setConfig(this.buildValueFromObject(object))
+                        .build()));
 
-    return this.buildObjectFromValue(upsertedValue)
-        .orElseThrow(Status.INTERNAL::asRuntimeException);
+    T upsertedObject =
+        this.buildObjectFromValue(response.getConfig())
+            .orElseThrow(Status.INTERNAL::asRuntimeException);
+
+    configChangeEventGeneratorOptional.ifPresent(
+        configChangeEventGenerator -> {
+          if (response.hasPrevConfig()) {
+            configChangeEventGenerator.sendUpdateNotification(
+                context,
+                upsertedObject.getClass().getName(),
+                response.getPrevConfig(),
+                response.getConfig());
+          } else {
+            configChangeEventGenerator.sendCreateNotification(
+                context, upsertedObject.getClass().getName(), response.getConfig());
+          }
+        });
+    return upsertedObject;
   }
 
   public Optional<T> deleteObject(RequestContext context) {
@@ -87,6 +116,10 @@ public abstract class DefaultObjectStore<T> {
               .getConfig();
       T object =
           this.buildObjectFromValue(deletedValue).orElseThrow(Status.INTERNAL::asRuntimeException);
+      configChangeEventGeneratorOptional.ifPresent(
+          configChangeEventGenerator ->
+              configChangeEventGenerator.sendDeleteNotification(
+                  context, object.getClass().getName(), deletedValue));
       return Optional.of(object);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {

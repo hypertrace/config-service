@@ -6,6 +6,7 @@ import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.CreateNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.CreateNotificationChannelResponse;
@@ -27,8 +28,10 @@ public class NotificationChannelConfigServiceImpl
   private final NotificationChannelStore notificationChannelStore;
   private final NotificationChannelConfigServiceRequestValidator validator;
 
-  public NotificationChannelConfigServiceImpl(Channel channel) {
-    this.notificationChannelStore = new NotificationChannelStore(channel);
+  public NotificationChannelConfigServiceImpl(
+      Channel channel, ConfigChangeEventGenerator configChangeEventGenerator) {
+    this.notificationChannelStore =
+        new NotificationChannelStore(channel, configChangeEventGenerator);
     this.validator = new NotificationChannelConfigServiceRequestValidator();
   }
 

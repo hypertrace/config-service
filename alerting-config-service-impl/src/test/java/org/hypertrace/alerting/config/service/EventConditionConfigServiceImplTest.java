@@ -3,6 +3,7 @@ package org.hypertrace.alerting.config.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.mockito.Mockito.mock;
 
 import java.util.List;
 import org.hypertrace.alerting.config.service.v1.Attribute;
@@ -25,6 +26,7 @@ import org.hypertrace.alerting.config.service.v1.RhsExpression;
 import org.hypertrace.alerting.config.service.v1.UpdateEventConditionRequest;
 import org.hypertrace.alerting.config.service.v1.ValueOperator;
 import org.hypertrace.alerting.config.service.v1.ViolationCondition;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,8 +42,11 @@ public class EventConditionConfigServiceImplTest {
     this.mockGenericConfigService =
         new MockGenericConfigService().mockUpsert().mockGetAll().mockDelete();
 
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     this.mockGenericConfigService
-        .addService(new EventConditionConfigServiceImpl(this.mockGenericConfigService.channel()))
+        .addService(
+            new EventConditionConfigServiceImpl(
+                this.mockGenericConfigService.channel(), configChangeEventGenerator))
         .start();
 
     this.eventConditionsStub =

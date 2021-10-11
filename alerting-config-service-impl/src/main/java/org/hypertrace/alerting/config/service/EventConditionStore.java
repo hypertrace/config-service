@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.alerting.config.service.v1.EventCondition;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
@@ -19,13 +20,15 @@ public class EventConditionStore extends IdentifiedObjectStore<EventCondition> {
       "alertingEventConditionConfig";
   private static final String ALERTING_CONFIG_NAMESPACE = "alerting-v1";
 
-  public EventConditionStore(Channel configChannel) {
+  public EventConditionStore(
+      Channel configChannel, ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
         ConfigServiceGrpc.newBlockingStub(configChannel)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get()),
         ALERTING_CONFIG_NAMESPACE,
-        ALERTING_EVENT_CONDITION_CONFIG_RESOURCE_NAME);
+        ALERTING_EVENT_CONDITION_CONFIG_RESOURCE_NAME,
+        configChangeEventGenerator);
   }
 
   @Override

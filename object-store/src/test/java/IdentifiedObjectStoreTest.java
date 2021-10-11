@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
@@ -60,6 +61,8 @@ class IdentifiedObjectStoreTest {
 
   @Mock ConfigServiceBlockingStub mockStub;
 
+  @Mock ConfigChangeEventGenerator configChangeEventGenerator;
+
   @Mock(answer = Answers.CALLS_REAL_METHODS)
   RequestContext mockRequestContext;
 
@@ -68,7 +71,7 @@ class IdentifiedObjectStoreTest {
   @BeforeEach
   void beforeEach() {
     this.mockStub = mock(ConfigServiceBlockingStub.class);
-    this.store = new TestObjectStore(this.mockStub);
+    this.store = new TestObjectStore(this.mockStub, configChangeEventGenerator);
   }
 
   @Test
@@ -194,8 +197,9 @@ class IdentifiedObjectStoreTest {
   }
 
   private static class TestObjectStore extends IdentifiedObjectStore<TestObject> {
-    private TestObjectStore(ConfigServiceBlockingStub stub) {
-      super(stub, TEST_RESOURCE_NAMESPACE, TEST_RESOURCE_NAME);
+    private TestObjectStore(
+        ConfigServiceBlockingStub stub, ConfigChangeEventGenerator configChangeEventGenerator) {
+      super(stub, TEST_RESOURCE_NAMESPACE, TEST_RESOURCE_NAME, configChangeEventGenerator);
     }
 
     @Override

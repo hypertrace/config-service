@@ -10,6 +10,7 @@ dependencies {
     implementation(projects.configProtoConverter)
     implementation(projects.objectStore)
     implementation(projects.validationUtils)
+    implementation(projects.configServiceChangeEventGenerator)
 
     implementation(libs.hypertrace.grpcutils.context)
     implementation(libs.hypertrace.grpcutils.client)
@@ -19,6 +20,7 @@ dependencies {
     compileOnly(libs.lombok)
 
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.mockito.core)
     testImplementation(testFixtures(projects.configServiceApi))
 }
 

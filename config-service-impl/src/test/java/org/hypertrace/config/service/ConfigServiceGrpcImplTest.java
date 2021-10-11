@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.hypertrace.config.service.store.ConfigStore;
+import org.hypertrace.config.service.store.InternalContextSpecificConfig;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.DeleteConfigResponse;
@@ -58,11 +59,12 @@ class ConfigServiceGrpcImplTest {
         .thenAnswer(
             invocation -> {
               Value config = invocation.getArgument(2, Value.class);
-              return ContextSpecificConfig.newBuilder()
-                  .setConfig(config)
-                  .setCreationTimestamp(123L)
-                  .setUpdateTimestamp(456L)
-                  .build();
+              return new InternalContextSpecificConfig(
+                  ContextSpecificConfig.newBuilder()
+                      .setConfig(config)
+                      .setCreationTimestamp(123L)
+                      .setUpdateTimestamp(456L)
+                      .build());
             });
 
     ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);

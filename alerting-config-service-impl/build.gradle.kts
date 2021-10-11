@@ -10,6 +10,7 @@ dependencies {
     implementation(projects.configProtoConverter)
     implementation(projects.objectStore)
     implementation(projects.validationUtils)
+    implementation(projects.configServiceChangeEventGenerator)
 
     implementation(libs.guava)
     implementation(libs.rxjava3)

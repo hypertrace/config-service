@@ -6,7 +6,10 @@ plugins {
 
 dependencies {
   api(projects.configServiceApi)
+  api(projects.configServiceChangeEventApi)
   api(libs.hypertrace.grpcutils.context)
+
+  implementation(projects.configServiceChangeEventGenerator)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
