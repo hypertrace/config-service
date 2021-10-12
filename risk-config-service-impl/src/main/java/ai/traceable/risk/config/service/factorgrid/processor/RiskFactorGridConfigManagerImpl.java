@@ -57,13 +57,7 @@ public class RiskFactorGridConfigManagerImpl implements RiskFactorGridConfigMana
   @Override
   public RiskFactorGridConfig resetRiskFactorGridConfig(RequestContext requestContext) {
     // remove specific config if persisted..
-    try {
-      configStore.deleteObject(requestContext);
-    } catch (Exception e) {
-      if (!Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
-        throw e;
-      }
-    }
+    configStore.deleteObject(requestContext);
     return buildRiskFactorGridConfig(defaultRiskFactorGridConfigValues, true);
   }
 

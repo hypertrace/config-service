@@ -96,8 +96,8 @@ public class RiskLevelConfigManagerTest {
     }
 
     @Override
-    public void deleteObject(RequestContext requestContext) {
-      values.remove(requestContext.getTenantId().get());
+    public Optional<RiskLevelConfigValues> deleteObject(RequestContext requestContext) {
+      return Optional.ofNullable(values.remove(requestContext.getTenantId().get()));
     }
   }
 }

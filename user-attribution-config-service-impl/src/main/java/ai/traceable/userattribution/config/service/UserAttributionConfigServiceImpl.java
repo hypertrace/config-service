@@ -128,7 +128,9 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
-      this.ruleStore.deleteObject(requestContext, request.getRuleId());
+      this.ruleStore
+          .deleteObject(requestContext, request.getRuleId())
+          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       List<UserAttributionRule> rulesAfterDelete = this.ruleStore.getAllObjects(requestContext);
       List<UserAttributionRule> rerankedRules = this.rankCalculator.rankFromOrder(rulesAfterDelete);
 

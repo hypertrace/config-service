@@ -165,9 +165,9 @@ public class MockFactorConfigsData {
     }
 
     @Override
-    public void deleteObject(RequestContext requestContext, String context) {
-      Optional.ofNullable(tenantFactorsMap.get(requestContext.getTenantId().get()))
-          .ifPresent(factorsMap -> factorsMap.remove(context));
+    public Optional<RiskFactorConfig> deleteObject(RequestContext requestContext, String context) {
+      return Optional.ofNullable(
+          tenantFactorsMap.get(requestContext.getTenantId().get()).remove(context));
     }
   }
 
@@ -207,9 +207,9 @@ public class MockFactorConfigsData {
     }
 
     @Override
-    public void deleteObject(RequestContext requestContext, String context) {
-      Optional.ofNullable(tenantFactorsMap.get(requestContext.getTenantId().get()))
-          .ifPresent(factorsMap -> factorsMap.remove(context));
+    public Optional<RiskElementConfig> deleteObject(RequestContext requestContext, String context) {
+      return Optional.ofNullable(
+          tenantFactorsMap.get(requestContext.getTenantId().get()).remove(context));
     }
   }
 }

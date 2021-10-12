@@ -145,7 +145,9 @@ class DataHandlingConfigServiceImpl extends DataHandlingConfigServiceImplBase {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
-      this.ruleStore.deleteObject(requestContext, request.getId());
+      this.ruleStore
+          .deleteObject(requestContext, request.getId())
+          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       List<DataHandlingRule> rulesAfterDelete = this.ruleStore.getAllObjects(requestContext);
       List<DataHandlingRule> rerankedRules = this.rankCalculator.rankFromOrder(rulesAfterDelete);
 

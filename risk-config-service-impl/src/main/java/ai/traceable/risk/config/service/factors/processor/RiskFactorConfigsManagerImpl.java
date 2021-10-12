@@ -164,26 +164,11 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
       RequestContext requestContext, List<RiskFactor> riskFactors) {
     riskFactors.forEach(
         factor -> {
-          try {
-            factorConfigStore.deleteObject(requestContext, factor.getRiskFactorConfig().getId());
-          } catch (Exception e) {
-            if (!Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
-              throw e;
-            }
-          }
+          factorConfigStore.deleteObject(requestContext, factor.getRiskFactorConfig().getId());
           factor
               .getRiskFactorConfig()
               .getRiskElementConfigsList()
-              .forEach(
-                  element -> {
-                    try {
-                      elementConfigStore.deleteObject(requestContext, element.getId());
-                    } catch (Exception e) {
-                      if (!Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
-                        throw e;
-                      }
-                    }
-                  });
+              .forEach(element -> elementConfigStore.deleteObject(requestContext, element.getId()));
         });
   }
 }

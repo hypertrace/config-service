@@ -145,8 +145,8 @@ public class RiskFactorGridConfigManagerTest {
     }
 
     @Override
-    public void deleteObject(RequestContext requestContext) {
-      values.remove(requestContext.getTenantId().get());
+    public Optional<RiskFactorGridConfigValues> deleteObject(RequestContext requestContext) {
+      return Optional.ofNullable(values.remove(requestContext.getTenantId().get()));
     }
   }
 }

@@ -56,13 +56,8 @@ public class RiskLevelConfigManagerImpl implements RiskLevelConfigManager {
   @Override
   public RiskLevelConfig resetRiskLevelConfig(RequestContext requestContext) {
     // remove specific config if persisted..
-    try {
-      configStore.deleteObject(requestContext);
-    } catch (Exception e) {
-      if (!Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
-        throw e;
-      }
-    }
+    configStore.deleteObject(requestContext);
+
     return buildRiskLevelConfig(defaultRiskLevelConfigValues, true);
   }
 

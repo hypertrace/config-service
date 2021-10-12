@@ -8,71 +8,64 @@ import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
+import io.grpc.Status;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
-import org.hypertrace.config.service.v1.ContextSpecificConfig;
-import org.hypertrace.config.service.v1.DeleteConfigRequest;
-import org.hypertrace.config.service.v1.GetAllConfigsRequest;
-import org.hypertrace.config.service.v1.GetConfigRequest;
-import org.hypertrace.config.service.v1.UpsertConfigRequest;
-import org.hypertrace.config.service.v1.UpsertConfigResponse;
-import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-class CustomSignatureRulesManager implements RulesManager {
+class CustomSignatureRulesManager extends IdentifiedObjectStore<CustomSignatureRule>
+    implements RulesManager {
 
-  private final ConfigServiceBlockingStub configServiceBlockingStub;
   private final CustomSignatureRuleConverter customSignatureRuleConverter;
 
   @Inject
   public CustomSignatureRulesManager(
       ConfigServiceBlockingStub configServiceBlockingStub,
       CustomSignatureRuleConverter customSignatureRuleConverter) {
-    this.configServiceBlockingStub = configServiceBlockingStub;
+    super(
+        configServiceBlockingStub,
+        CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE,
+        CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME);
     this.customSignatureRuleConverter = customSignatureRuleConverter;
+  }
+
+  @Override
+  protected Optional<CustomSignatureRule> buildObjectFromValue(Value value) {
+    try {
+      return Optional.of(customSignatureRuleConverter.convert(value));
+    } catch (InvalidProtocolBufferException exception) {
+      log.error("Unable to convert config to custom signature rule for rule: {}", value);
+      return Optional.empty();
+    }
+  }
+
+  @Override
+  @SneakyThrows
+  protected Value buildValueFromObject(CustomSignatureRule object) {
+    return customSignatureRuleConverter.convert(object);
+  }
+
+  @Override
+  protected String getContextFromObject(CustomSignatureRule object) {
+    return object.getId();
   }
 
   @Override
   public List<CustomSignatureRule> getCustomSignatureRules(
       RequestContext requestContext, GetRulesFilter filter) {
 
-    List<CustomSignatureRule> customSignatureRules = new ArrayList<>();
-    GetAllConfigsRequest getAllRuleConfigsRequest =
-        GetAllConfigsRequest.newBuilder()
-            .setResourceNamespace(CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE)
-            .setResourceName(CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME)
-            .build();
+    List<CustomSignatureRule> customSignatureRules = this.getAllObjects(requestContext);
 
-    List<ContextSpecificConfig> contextSpecificConfigs =
-        GrpcClientRequestContextUtil.executeWithHeadersContext(
-            requestContext.getRequestHeaders(),
-            () ->
-                configServiceBlockingStub
-                    .getAllConfigs(getAllRuleConfigsRequest)
-                    .getContextSpecificConfigsList());
-
-    for (ContextSpecificConfig contextSpecificConfig : contextSpecificConfigs) {
-      try {
-        CustomSignatureRule customSignatureRule =
-            customSignatureRuleConverter.convert(contextSpecificConfig.getConfig());
-        customSignatureRules.add(customSignatureRule);
-      } catch (InvalidProtocolBufferException e) {
-        log.error(
-            "Unable to convert config to custom signature rule for rule id: {}",
-            contextSpecificConfig.getContext(),
-            e);
-        throw new RuntimeException(e);
-      }
-    }
-
-    if (filter != GetRulesFilter.getDefaultInstance()) {
+    if (!Objects.equals(filter, GetRulesFilter.getDefaultInstance())) {
       return customSignatureRules.stream()
           .filter(
               rule -> {
@@ -132,39 +125,14 @@ class CustomSignatureRulesManager implements RulesManager {
   }
 
   @Override
-  public CustomSignatureRule deleteCustomSignatureRule(RequestContext requestContext, String id)
-      throws InvalidProtocolBufferException {
-    DeleteConfigRequest deleteConfigRequest =
-        DeleteConfigRequest.newBuilder()
-            .setResourceNamespace(CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE)
-            .setResourceName(CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME)
-            .setContext(id)
-            .build();
-
-    return customSignatureRuleConverter.convert(
-        requestContext.call(
-            () ->
-                configServiceBlockingStub
-                    .deleteConfig(deleteConfigRequest)
-                    .getDeletedConfig()
-                    .getConfig()));
+  public CustomSignatureRule deleteCustomSignatureRule(RequestContext requestContext, String id) {
+    return this.deleteObject(requestContext, id).orElseThrow(Status.NOT_FOUND::asRuntimeException);
   }
 
-  private Optional<Value> getCustomSignatureRule(RequestContext requestContext, String ruleId) {
+  private Optional<CustomSignatureRule> getCustomSignatureRule(
+      RequestContext requestContext, String ruleId) {
     try {
-      GetConfigRequest getConfigRequest =
-          GetConfigRequest.newBuilder()
-              .addContexts(ruleId)
-              .setResourceNamespace(CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE)
-              .setResourceName(CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME)
-              .build();
-
-      return Optional.ofNullable(
-              GrpcClientRequestContextUtil.executeWithHeadersContext(
-                  requestContext.getRequestHeaders(),
-                  () -> configServiceBlockingStub.getConfig(getConfigRequest).getConfig()))
-          .filter(value -> value.getKindCase() != Value.KindCase.KIND_NOT_SET);
-
+      return this.getObject(requestContext, ruleId);
     } catch (Exception e) {
       return Optional.empty();
     }
@@ -172,36 +140,10 @@ class CustomSignatureRulesManager implements RulesManager {
 
   private Optional<CustomSignatureRule> upsertConfig(
       RequestContext requestContext, CustomSignatureRule customSignatureRule) {
-    UpsertConfigRequest upsertConfigRequest;
-
     try {
-      upsertConfigRequest =
-          UpsertConfigRequest.newBuilder()
-              .setResourceNamespace(CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE)
-              .setResourceName(CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME)
-              .setConfig(customSignatureRuleConverter.convert(customSignatureRule))
-              .setContext(customSignatureRule.getId())
-              .build();
-    } catch (InvalidProtocolBufferException e) {
-      log.error("Unable to convert custom signature rule {} to config object", customSignatureRule);
-      return Optional.empty();
-    }
-
-    UpsertConfigResponse response;
-    try {
-      response =
-          GrpcClientRequestContextUtil.executeWithHeadersContext(
-              requestContext.getRequestHeaders(),
-              () -> configServiceBlockingStub.upsertConfig(upsertConfigRequest));
-    } catch (RuntimeException e) {
-      log.error("Unable to update custom signature rule {}", customSignatureRule);
-      return Optional.empty();
-    }
-
-    try {
-      return Optional.ofNullable(customSignatureRuleConverter.convert(response.getConfig()));
-    } catch (InvalidProtocolBufferException e) {
-      log.error("Unable to convert config response {} to custom signature rule", response);
+      return Optional.of(this.upsertObject(requestContext, customSignatureRule));
+    } catch (Exception exception) {
+      log.error("Unable to update custom signature rule {}", customSignatureRule, exception);
       return Optional.empty();
     }
   }

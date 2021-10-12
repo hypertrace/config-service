@@ -12,6 +12,7 @@ import ai.traceable.alerting.config.service.v2.UpdateEventConditionRequest;
 import ai.traceable.alerting.config.service.v2.UpdateEventConditionResponse;
 import ai.traceable.config.utils.UuidGenerator;
 import io.grpc.Channel;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -103,7 +104,9 @@ public class EventConditionConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       validator.validateDeleteEventConditionRequest(requestContext, request);
-      eventConditionStore.deleteObject(requestContext, request.getEventConditionId());
+      eventConditionStore
+          .deleteObject(requestContext, request.getEventConditionId())
+          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       responseObserver.onNext(DeleteEventConditionResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Exception e) {
