@@ -11,9 +11,9 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @Slf4j
 public class ActivityEventProducerImpl implements ActivityEventProducer {
 
-  private final EventProducer<ActivityEvent> activityEventProducer;
+  private final EventProducer<Void, ActivityEvent> activityEventProducer;
 
-  public ActivityEventProducerImpl(EventProducer<ActivityEvent> activityEventProducer) {
+  public ActivityEventProducerImpl(EventProducer<Void, ActivityEvent> activityEventProducer) {
     this.activityEventProducer = activityEventProducer;
   }
 
@@ -30,7 +30,7 @@ public class ActivityEventProducerImpl implements ActivityEventProducer {
               .setSecurityConfigurationChange(securityConfigurationChange);
       requestContext.getUserId().ifPresent(activityEventBuilder::setInitiatorId);
       requestContext.getName().ifPresent(activityEventBuilder::setInitiatorName);
-      activityEventProducer.send(activityEventBuilder.build());
+      activityEventProducer.send(null, activityEventBuilder.build());
     } catch (Exception e) {
       log.error("Failed to publish security configuration change event", e);
     }

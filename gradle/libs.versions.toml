@@ -20,7 +20,7 @@ traceable-platform-jnimodsecurity = { module = "ai.traceable.platform:jni-modsec
 hypertrace-grpcutils-client = { module = "org.hypertrace.core.grpcutils:grpc-client-utils", version.ref = "hypertrace-grpcutils" }
 hypertrace-grpcutils-server = { module = "org.hypertrace.core.grpcutils:grpc-server-utils", version.ref = "hypertrace-grpcutils" }
 hypertrace-grpcutils-context = { module = "org.hypertrace.core.grpcutils:grpc-context-utils", version.ref = "hypertrace-grpcutils" }
-hypertrace-eventstore = { module = "org.hypertrace.core.eventstore:event-store", version = "0.1.1" }
+hypertrace-eventstore = { module = "org.hypertrace.core.eventstore:event-store", version = "0.1.2" }
 hypertrace-configservice-server = { module = "org.hypertrace.config.service:config-service" }
 hypertrace-configservice-impl = { module = "org.hypertrace.config.service:config-service-impl" }
 hypertrace-configservice-api = { module = "org.hypertrace.config.service:config-service-api" }

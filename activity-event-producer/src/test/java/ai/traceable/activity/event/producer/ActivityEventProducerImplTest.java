@@ -1,6 +1,7 @@
 package ai.traceable.activity.event.producer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -15,16 +16,22 @@ import org.hypertrace.core.eventstore.EventProducer;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class ActivityEventProducerImplTest {
 
+  @Mock private EventProducer<Void, ActivityEvent> eventProducer;
+  @Captor private ArgumentCaptor<ActivityEvent> activityEventArgumentCaptor;
+
   private ActivityEventProducer activityEventProducer;
-  private EventProducer<ActivityEvent> eventProducer;
 
   @BeforeEach
   void setUp() {
-    eventProducer = mock(EventProducer.class);
     activityEventProducer = new ActivityEventProducerImpl(eventProducer);
   }
 
@@ -39,9 +46,7 @@ class ActivityEventProducerImplTest {
     activityEventProducer.publishSecurityConfigurationChangeEvent(
         requestContext, securityConfigurationChange);
 
-    ArgumentCaptor<ActivityEvent> activityEventArgumentCaptor =
-        ArgumentCaptor.forClass(ActivityEvent.class);
-    verify(eventProducer, times(1)).send(activityEventArgumentCaptor.capture());
+    verify(eventProducer, times(1)).send(isNull(), activityEventArgumentCaptor.capture());
     ActivityEvent publishedActivityEvent = activityEventArgumentCaptor.getValue();
     assertEquals("tenant1", publishedActivityEvent.getTenantId());
     assertEquals(

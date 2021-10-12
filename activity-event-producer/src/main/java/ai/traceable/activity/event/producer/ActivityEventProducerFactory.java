@@ -20,7 +20,7 @@ public class ActivityEventProducerFactory {
     Config eventStoreConfig = config.getConfig(EVENT_STORE);
     String storeType = eventStoreConfig.getString(EVENT_STORE_TYPE_CONFIG);
     EventStore eventStore = EventStoreProvider.getEventStore(storeType, eventStoreConfig);
-    EventProducer<ActivityEvent> eventProducer =
+    EventProducer<Void, ActivityEvent> eventProducer =
         eventStore.createProducer(
             ACTIVITY_EVENTS_TOPIC,
             new EventProducerConfig(
