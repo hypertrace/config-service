@@ -80,6 +80,7 @@ dependencies {
   implementation(libs.hypertrace.framework.metrics)
   implementation(libs.hypertrace.configservice.notification.rule.impl)
   implementation(libs.hypertrace.configservice.notification.channel.impl)
+  implementation(libs.hypertrace.configservice.changeeventgenerator)
   implementation(libs.traceable.activityevent.api)
   implementation(libs.typesafe.config)
   implementation(libs.slf4j.api)

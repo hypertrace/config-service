@@ -10,6 +10,7 @@ data:
     service.port.external = {{ .Values.externalContainerPort }}
     service.admin.port = {{ .Values.containerAdminPort }}
     generic.config.service {
+      publish.change.events = {{ .Values.traceableConfigServiceConfig.publishChangeEvents }}
       document.store {
         {{- $dst := .Values.traceableConfigServiceConfig.dataStoreType }}
         dataStoreType = {{ $dst }}
@@ -26,6 +27,10 @@ data:
       type = kafka
       bootstrap.servers = "bootstrap:9092"
       activity.events.producer {
+        bootstrap.servers = "bootstrap:9092"
+        schema.registry.url = "http://schema-registry-service:8081"
+      }
+      config.change.events.producer {
         bootstrap.servers = "bootstrap:9092"
         schema.registry.url = "http://schema-registry-service:8081"
       }

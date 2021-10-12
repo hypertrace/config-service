@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.hypertrace.config.service.ConfigServicesFactory;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
+import org.hypertrace.config.service.change.event.impl.ConfigChangeEventGeneratorFactory;
 import org.hypertrace.config.service.store.ConfigStore;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.hypertrace.core.grpcutils.server.InterceptorUtil;
@@ -81,6 +83,8 @@ public class TraceableConfigService extends PlatformService {
         new SensitiveDataConfigServicesProvider(managedChannel, config, channelRegistry);
     ActivityEventProducer activityEventProducer = ActivityEventProducerFactory.build(config);
     this.getLifecycle().shutdownComplete().thenRun(activityEventProducer::close);
+    ConfigChangeEventGenerator configChangeEventGenerator =
+        ConfigChangeEventGeneratorFactory.getInstance().createConfigChangeEventGenerator(config);
 
     BindableService sensitiveDataConfigService =
         sensitiveDataConfigServicesProvider.getSensitiveDataConfigService();
@@ -108,9 +112,9 @@ public class TraceableConfigService extends PlatformService {
     EventConditionConfigServiceImpl eventConditionConfigService =
         new EventConditionConfigServiceImpl(managedChannel);
     NotificationChannelConfigServiceImpl notificationChannelConfigService =
-        new NotificationChannelConfigServiceImpl(managedChannel);
+        new NotificationChannelConfigServiceImpl(managedChannel, configChangeEventGenerator);
     NotificationRuleConfigServiceImpl notificationRuleConfigService =
-        new NotificationRuleConfigServiceImpl(managedChannel);
+        new NotificationRuleConfigServiceImpl(managedChannel, configChangeEventGenerator);
 
     internalServerBuilder.addServices(
         anomalyConfigServices.stream()
