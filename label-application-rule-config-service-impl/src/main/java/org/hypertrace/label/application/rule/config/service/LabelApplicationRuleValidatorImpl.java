@@ -7,7 +7,9 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 import com.google.protobuf.Message;
 import io.grpc.Status;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -127,7 +129,8 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
   }
 
   private void validateAction(Action action) {
-    validateNonDefaultPresenceOrThrow(action, action.ENTITY_TYPE_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(action, action.ENTITY_TYPES_FIELD_NUMBER);
+    validateEntityTypes(action.getEntityTypesList());
     validateNonDefaultPresenceOrThrow(action, action.OPERATION_FIELD_NUMBER);
     switch (action.getValueCase()) {
       case STATIC_LABELS:
@@ -136,8 +139,8 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
       case DYNAMIC_LABEL:
         validateDynamicLabel(action.getDynamicLabel());
         break;
-      case LABEL_REPLACEMENT_TOKEN:
-        validateNonDefaultPresenceOrThrow(action, action.LABEL_REPLACEMENT_TOKEN_FIELD_NUMBER);
+      case DYNAMIC_LABEL_KEY:
+        validateNonDefaultPresenceOrThrow(action, action.DYNAMIC_LABEL_KEY_FIELD_NUMBER);
         break;
       default:
         throwInvalidArgumentException(
@@ -145,10 +148,21 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
     }
   }
 
+  void validateEntityTypes(List<String> entityTypes) {
+    Set<String> entityTypesSet = new HashSet<>(entityTypes);
+    if (entityTypesSet.size() < entityTypes.size()) {
+      throwInvalidArgumentException(String.format("Duplicate entity types %s", entityTypes));
+    }
+  }
+
   void validateStaticLabels(Action.StaticLabels staticLabels) {
-    if (staticLabels.getStaticLabelIdCount() == 0) {
+    if (staticLabels.getStaticLabelIdsCount() == 0) {
+      throwInvalidArgumentException("At least one static label id should be specified");
+    }
+    Set<String> staticLabelsSet = new HashSet<>(staticLabels.getStaticLabelIdsList());
+    if (staticLabelsSet.size() < staticLabels.getStaticLabelIdsCount()) {
       throwInvalidArgumentException(
-          String.format("At least one static label id should be specified"));
+          String.format("Duplicate Static Labels %s", printMessage(staticLabels)));
     }
   }
 

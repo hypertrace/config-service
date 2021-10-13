@@ -261,11 +261,11 @@ public class LabelApplicationRuleConfigServiceImplTest {
 
   private LabelApplicationRuleData.Action buildAction() {
     return LabelApplicationRuleData.Action.newBuilder()
-        .addAllEntityType(List.of("API"))
+        .addAllEntityTypes(List.of("API"))
         .setOperation(LabelApplicationRuleData.Action.Operation.OPERATION_MERGE)
         .setStaticLabels(
             LabelApplicationRuleData.Action.StaticLabels.newBuilder()
-                .addAllStaticLabelId(List.of("expensive")))
+                .addAllStaticLabelIds(List.of("expensive")))
         .build();
   }
 }

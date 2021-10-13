@@ -246,15 +246,15 @@ public class LabelApplicationRuleValidatorTest {
 
   private LabelApplicationRuleData.Action buildAction() {
     return LabelApplicationRuleData.Action.newBuilder()
-        .addAllEntityType(List.of("API"))
+        .addAllEntityTypes(List.of("API"))
         .setOperation(LabelApplicationRuleData.Action.Operation.OPERATION_MERGE)
-        .setLabelReplacementToken("expensive")
+        .setDynamicLabelKey("key")
         .build();
   }
 
   private Action buildDynamicLabelAction(String labelExpression) {
     return LabelApplicationRuleData.Action.newBuilder()
-        .addAllEntityType(List.of("API"))
+        .addAllEntityTypes(List.of("API"))
         .setOperation(LabelApplicationRuleData.Action.Operation.OPERATION_MERGE)
         .setDynamicLabel(
             LabelApplicationRuleData.Action.DynamicLabel.newBuilder()
