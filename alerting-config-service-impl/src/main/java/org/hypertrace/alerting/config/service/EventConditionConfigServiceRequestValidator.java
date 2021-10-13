@@ -25,7 +25,7 @@ public class EventConditionConfigServiceRequestValidator {
     validateRequestContextOrThrow(requestContext);
     Preconditions.checkArgument(request.hasEventCondition(), "EventCondition should be present");
     Preconditions.checkArgument(
-        request.getEventCondition().getEventConditionData().hasMetricAnomalyEventCondition(),
+        request.getEventCondition().getEventConditionMutableData().hasMetricAnomalyEventCondition(),
         "MetricAnomalyEventCondition should be present");
     Preconditions.checkArgument(
         !request.getEventCondition().getId().isBlank(), "EventCondition Id cannot be empty");

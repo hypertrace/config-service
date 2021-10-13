@@ -43,7 +43,7 @@ public class EventConditionConfigServiceImpl
 
       EventCondition.Builder builder = EventCondition.newBuilder();
       NewEventCondition newEventCondition = request.getNewEventCondition();
-      builder.setEventConditionData(
+      builder.setEventConditionMutableData(
           EventConditionMutableData.newBuilder()
               .setMetricAnomalyEventCondition(
                   newEventCondition.getEventConditionData().getMetricAnomalyEventCondition()));

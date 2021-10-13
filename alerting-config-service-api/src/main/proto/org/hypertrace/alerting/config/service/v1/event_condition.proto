@@ -12,7 +12,7 @@ message NewEventCondition {
 
 message EventCondition {
   string id = 1;
-  EventConditionMutableData event_condition_mutable_data = 2;
+  EventConditionMutableData event_condition_mutable_data = 3;
 }
 
 message EventConditionMutableData {
