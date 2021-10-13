@@ -5,6 +5,7 @@ hypertrace-grpcutils = "0.5.2"
 hypertrace-framework = "0.1.29"
 lombok = "1.18.20"
 jackson = "2.12.4"
+kafka = "6.0.1"
 
 junit = "5.7.2"
 mockito = "3.11.2"
@@ -40,7 +41,7 @@ grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "grpc" }
 protobuf-javautil = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protoc" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protoc" }
 
-kafka-protobuf-serializer = { module = "io.confluent:kafka-protobuf-serializer", version= "6.2.1" }
+kafka-protobuf-serializer = { module = "io.confluent:kafka-protobuf-serializer", version.ref = "kafka" }
 
 slf4j-log4jimpl = { module = "org.apache.logging.log4j:log4j-slf4j-impl", version = "2.14.1" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version = "1.7.30" }
