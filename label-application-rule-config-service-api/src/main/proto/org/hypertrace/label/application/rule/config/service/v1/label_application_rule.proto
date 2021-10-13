@@ -84,7 +84,7 @@ message LabelApplicationRuleData {
     }
 
     message StaticLabels{
-      repeated string static_label_ids = 1;
+      repeated string ids = 1;
     }
 
     message DynamicLabel {

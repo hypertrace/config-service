@@ -265,7 +265,7 @@ public class LabelApplicationRuleConfigServiceImplTest {
         .setOperation(LabelApplicationRuleData.Action.Operation.OPERATION_MERGE)
         .setStaticLabels(
             LabelApplicationRuleData.Action.StaticLabels.newBuilder()
-                .addAllStaticLabelIds(List.of("expensive")))
+                .addAllIds(List.of("expensive")))
         .build();
   }
 }

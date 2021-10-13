@@ -156,11 +156,11 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
   }
 
   void validateStaticLabels(Action.StaticLabels staticLabels) {
-    if (staticLabels.getStaticLabelIdsCount() == 0) {
+    if (staticLabels.getIdsCount() == 0) {
       throwInvalidArgumentException("At least one static label id should be specified");
     }
-    Set<String> staticLabelsSet = new HashSet<>(staticLabels.getStaticLabelIdsList());
-    if (staticLabelsSet.size() < staticLabels.getStaticLabelIdsCount()) {
+    Set<String> staticLabelsSet = new HashSet<>(staticLabels.getIdsList());
+    if (staticLabelsSet.size() < staticLabels.getIdsCount()) {
       throwInvalidArgumentException(
           String.format("Duplicate Static Labels %s", printMessage(staticLabels)));
     }
