@@ -145,7 +145,7 @@ jobs:
           args: check jacocoTestReport
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -211,11 +211,10 @@ jobs:
           args: jacocoIntegrationTestReport
 
       - name: Upload Integration Coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: integration
-          fail_ci_if_error: false
 
       - name: Copy test reports
         uses: hypertrace/github-actions/gradle@main
