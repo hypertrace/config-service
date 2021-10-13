@@ -70,16 +70,21 @@ message LabelApplicationRuleData {
   }
 
   message Action {
-    string entity_type = 1; // captures the entity type - "API", "Service"
+    repeated string entity_type = 1; // captures the entity type - "API", "Service"
     Operation operation = 2;
     oneof value {
-      string static_label_id = 3;
+      StaticLabels static_labels = 3;
       DynamicLabel dynamic_label = 4;
+      string label_replacement_token = 5;
     }
 
     enum Operation {
       OPERATION_UNSPECIFIED = 0;
       OPERATION_MERGE = 1;
+    }
+
+    message StaticLabels{
+      repeated string static_label_id = 1;
     }
 
     message DynamicLabel {

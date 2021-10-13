@@ -130,15 +130,25 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
     validateNonDefaultPresenceOrThrow(action, action.ENTITY_TYPE_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(action, action.OPERATION_FIELD_NUMBER);
     switch (action.getValueCase()) {
-      case STATIC_LABEL_ID:
-        validateNonDefaultPresenceOrThrow(action, action.STATIC_LABEL_ID_FIELD_NUMBER);
+      case STATIC_LABELS:
+        validateStaticLabels(action.getStaticLabels());
         break;
       case DYNAMIC_LABEL:
         validateDynamicLabel(action.getDynamicLabel());
         break;
+      case LABEL_REPLACEMENT_TOKEN:
+        validateNonDefaultPresenceOrThrow(action, action.LABEL_REPLACEMENT_TOKEN_FIELD_NUMBER);
+        break;
       default:
         throwInvalidArgumentException(
             String.format("Unexpected Case in %s:%n %s", getName(action), printMessage(action)));
+    }
+  }
+
+  void validateStaticLabels(Action.StaticLabels staticLabels) {
+    if (staticLabels.getStaticLabelIdCount() == 0) {
+      throwInvalidArgumentException(
+          String.format("At least one static label id should be specified"));
     }
   }
 
