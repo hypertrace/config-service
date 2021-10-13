@@ -12,6 +12,7 @@ message NewEventCondition {
 
 message EventCondition {
   reserved 2;
+  reserved "event_condition_data";
   string id = 1;
   EventConditionMutableData event_condition_mutable_data = 3;
 }
