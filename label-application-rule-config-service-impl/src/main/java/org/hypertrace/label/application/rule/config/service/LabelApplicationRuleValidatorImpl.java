@@ -148,13 +148,18 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
   }
 
   void validateEntityTypes(List<String> entityTypes) {
-    validateNoDuplicates(entityTypes, "Duplicate entity types %s", entityTypes.toString());
+    if (Set.copyOf(entityTypes).size() != entityTypes.size()) {
+      throwInvalidArgumentException(String.format("Duplicate entity types %s", entityTypes));
+    }
   }
 
   void validateStaticLabels(Action.StaticLabels staticLabels) {
     validateNonDefaultPresenceOrThrow(staticLabels, staticLabels.IDS_FIELD_NUMBER);
-    validateNoDuplicates(
-        staticLabels.getIdsList(), "Duplicate Static Labels %s", printMessage(staticLabels));
+    List<String> staticLabelIds = staticLabels.getIdsList();
+    if (Set.copyOf(staticLabelIds).size() != staticLabelIds.size()) {
+      throwInvalidArgumentException(
+          String.format("Duplicate Static Labels %s", printMessage(staticLabels)));
+    }
   }
 
   private void validateDynamicLabel(Action.DynamicLabel dynamicLabel) {
