@@ -7,8 +7,16 @@ option java_multiple_files = true;
 message Label {
   string id = 1;
   string key = 2;
+  optional string created_by = 3;
+  optional string created_time = 4;
+  optional string description = 5;
+  optional string color = 6;
+  optional string rule_id = 7;
 }
 
 message CreateLabel {
   string key = 2;
+  optional string description = 3;
+  optional string color = 4;
+  optional string rule_id = 5;
 }
