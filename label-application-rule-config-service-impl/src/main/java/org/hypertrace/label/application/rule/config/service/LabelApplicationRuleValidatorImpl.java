@@ -193,13 +193,6 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
     }
   }
 
-  private void validateNoDuplicates(
-      List<String> inputList, String errorMessage, String... msgArgs) {
-    if (Set.copyOf(inputList).size() != inputList.size()) {
-      throwInvalidArgumentException(String.format(errorMessage, (Object) msgArgs));
-    }
-  }
-
   private void validateTokenExtractionRule(
       Action.DynamicLabel.TokenExtractionRule tokenExtractionRule) {
     validateNonDefaultPresenceOrThrow(tokenExtractionRule, tokenExtractionRule.KEY_FIELD_NUMBER);
