@@ -256,7 +256,7 @@ public class LabelApplicationRuleValidatorTest {
     return LabelApplicationRuleData.Action.newBuilder()
         .addAllEntityTypes(List.of("API"))
         .setOperation(LabelApplicationRuleData.Action.Operation.OPERATION_MERGE)
-        .setDynamicLabel(
+        .setDynamicLabelExpression(
             LabelApplicationRuleData.Action.DynamicLabel.newBuilder()
                 .setLabelExpression(labelExpression)
                 .addTokenExtractionRules(

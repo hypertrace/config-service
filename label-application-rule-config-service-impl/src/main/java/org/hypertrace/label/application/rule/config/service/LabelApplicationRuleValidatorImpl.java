@@ -7,7 +7,6 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 import com.google.protobuf.Message;
 import io.grpc.Status;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -136,8 +135,8 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
       case STATIC_LABELS:
         validateStaticLabels(action.getStaticLabels());
         break;
-      case DYNAMIC_LABEL:
-        validateDynamicLabel(action.getDynamicLabel());
+      case DYNAMIC_LABEL_EXPRESSION:
+        validateDynamicLabel(action.getDynamicLabelExpression());
         break;
       case DYNAMIC_LABEL_KEY:
         validateNonDefaultPresenceOrThrow(action, action.DYNAMIC_LABEL_KEY_FIELD_NUMBER);
@@ -149,21 +148,14 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
   }
 
   void validateEntityTypes(List<String> entityTypes) {
-    Set<String> entityTypesSet = new HashSet<>(entityTypes);
-    if (entityTypesSet.size() < entityTypes.size()) {
-      throwInvalidArgumentException(String.format("Duplicate entity types %s", entityTypes));
-    }
+    validateNoDuplicates(entityTypes, String.format("Duplicate entity types %s", entityTypes));
   }
 
   void validateStaticLabels(Action.StaticLabels staticLabels) {
-    if (staticLabels.getIdsCount() == 0) {
-      throwInvalidArgumentException("At least one static label id should be specified");
-    }
-    Set<String> staticLabelsSet = new HashSet<>(staticLabels.getIdsList());
-    if (staticLabelsSet.size() < staticLabels.getIdsCount()) {
-      throwInvalidArgumentException(
-          String.format("Duplicate Static Labels %s", printMessage(staticLabels)));
-    }
+    validateNonDefaultPresenceOrThrow(staticLabels, staticLabels.IDS_FIELD_NUMBER);
+    validateNoDuplicates(
+        staticLabels.getIdsList(),
+        String.format("Duplicate Static Labels %s", printMessage(staticLabels)));
   }
 
   private void validateDynamicLabel(Action.DynamicLabel dynamicLabel) {
@@ -194,6 +186,12 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
       if (!validKeys.contains(key)) {
         throwInvalidArgumentException("Invalid key name in label expression");
       }
+    }
+  }
+
+  private void validateNoDuplicates(List<String> list, String errorMessage) {
+    if (Set.copyOf(list).size() != list.size()) {
+      throwInvalidArgumentException(errorMessage);
     }
   }
 

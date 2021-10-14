@@ -75,7 +75,7 @@ message LabelApplicationRuleData {
     oneof value {
       StaticLabels static_labels = 3;
       string dynamic_label_key = 4;
-      DynamicLabel dynamic_label = 5;
+      DynamicLabel dynamic_label_expression = 5;
     }
 
     enum Operation {
@@ -83,7 +83,7 @@ message LabelApplicationRuleData {
       OPERATION_MERGE = 1;
     }
 
-    message StaticLabels{
+    message StaticLabels {
       repeated string ids = 1;
     }
 

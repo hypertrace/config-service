@@ -261,7 +261,7 @@ public class LabelApplicationRuleConfigServiceImplTest {
 
   private LabelApplicationRuleData.Action buildAction() {
     return LabelApplicationRuleData.Action.newBuilder()
-        .addAllEntityTypes(List.of("API"))
+        .addEntityTypes("API")
         .setOperation(LabelApplicationRuleData.Action.Operation.OPERATION_MERGE)
         .setStaticLabels(
             LabelApplicationRuleData.Action.StaticLabels.newBuilder()
