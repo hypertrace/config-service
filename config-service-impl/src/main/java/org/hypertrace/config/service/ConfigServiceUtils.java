@@ -1,6 +1,5 @@
 package org.hypertrace.config.service;
 
-import com.google.common.base.Strings;
 import com.google.protobuf.NullValue;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
@@ -14,7 +13,6 @@ import org.hypertrace.config.service.v1.ContextSpecificConfig;
 @Slf4j
 public class ConfigServiceUtils {
 
-  public static final String DEFAULT_CONTEXT = "DEFAULT-CONTEXT";
   private static final Value EMPTY_VALUE =
       Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
 
@@ -54,17 +52,6 @@ public class ConfigServiceUtils {
     } else {
       return overridingConfig;
     }
-  }
-
-  /**
-   * Get the actual context from rawContext. Specifically, it handles the case where rawContext can
-   * be null or empty which is equivalent to default context.
-   *
-   * @param rawContext
-   * @return
-   */
-  public static String getActualContext(String rawContext) {
-    return Strings.isNullOrEmpty(rawContext) ? DEFAULT_CONTEXT : rawContext;
   }
 
   public static boolean isNull(Value value) {
