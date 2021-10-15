@@ -34,7 +34,7 @@ interface ConfigServiceCoordinator {
   List<RedactionRule> getAllRedactionRules(
       RequestContext requestContext, GetAllRedactionRulesRequest.RedactionRuleFilter filter);
 
-  void deleteRedactionRule(RequestContext requestContext, String redactionRuleId);
+  RedactionRule deleteRedactionRule(RequestContext requestContext, String redactionRuleId);
 
   boolean isFullPrivacyModeEnabled(RequestContext requestContext);
 

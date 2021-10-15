@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import com.google.inject.Guice;
 import com.typesafe.config.Config;
 import io.grpc.Channel;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.junit.jupiter.api.Test;
 
@@ -15,10 +16,12 @@ class SensitiveDataModuleTest {
     Channel mockChannel = mock(Channel.class);
     Config mockConfig = mock(Config.class);
     GrpcChannelRegistry mockRegistry = mock(GrpcChannelRegistry.class);
-
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     assertDoesNotThrow(
         () ->
-            Guice.createInjector(new SensitiveDataModule(mockChannel, mockConfig, mockRegistry))
+            Guice.createInjector(
+                    new SensitiveDataModule(
+                        mockChannel, mockConfig, mockRegistry, configChangeEventGenerator))
                 .getAllBindings());
   }
 }

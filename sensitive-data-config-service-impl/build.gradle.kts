@@ -17,6 +17,8 @@ dependencies {
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpcutils.client)
   implementation(libs.hypertrace.configservice.protoconverter)
+  implementation(libs.hypertrace.configservice.objectstore)
+  implementation(libs.hypertrace.configservice.changeeventgenerator)
   implementation(libs.re2j)
   implementation(libs.guice)
   implementation(libs.uuidCreator)

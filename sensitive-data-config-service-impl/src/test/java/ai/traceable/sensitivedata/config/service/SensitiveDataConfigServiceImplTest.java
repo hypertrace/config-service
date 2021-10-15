@@ -36,8 +36,10 @@ import io.grpc.StatusRuntimeException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,12 +61,24 @@ class SensitiveDataConfigServiceImplTest {
         .thenReturn(RedactionStrategy.REDACTION_STRATEGY_RAW);
     when(mockConfig.defaultRedactionRules()).thenReturn(mockDefaultRedactionRules);
 
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    ConfigServiceBlockingStub configServiceBlockingStub =
+        ConfigServiceGrpc.newBlockingStub(mockGenericConfigService.channel());
     mockGenericConfigService
         .addService(
             new SensitiveDataConfigServiceImpl(
                 new ConfigServiceCoordinatorImpl(
-                    ConfigServiceGrpc.newBlockingStub(mockGenericConfigService.channel()),
-                    mockConfig)))
+                    configServiceBlockingStub,
+                    configChangeEventGenerator,
+                    mockConfig,
+                    new RedactionRuleConfigStore(
+                        configServiceBlockingStub, configChangeEventGenerator),
+                    new AutomaticSecretRedactionStrategyConfigStore(
+                        configServiceBlockingStub, configChangeEventGenerator),
+                    new FullPrivacyModeConfigStore(
+                        configServiceBlockingStub, configChangeEventGenerator),
+                    new DefaultRedactionRulePopulationStatusStore(
+                        configServiceBlockingStub, configChangeEventGenerator))))
         .start();
 
     sensitiveDataStub =

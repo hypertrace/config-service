@@ -5,6 +5,7 @@ import com.google.inject.Injector;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.Channel;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 
 public class SensitiveDataConfigServicesProvider {
@@ -12,8 +13,13 @@ public class SensitiveDataConfigServicesProvider {
   private final Injector injector;
 
   public SensitiveDataConfigServicesProvider(
-      Channel channel, Config config, GrpcChannelRegistry channelRegistry) {
-    this.injector = Guice.createInjector(new SensitiveDataModule(channel, config, channelRegistry));
+      Channel channel,
+      Config config,
+      GrpcChannelRegistry channelRegistry,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
+    this.injector =
+        Guice.createInjector(
+            new SensitiveDataModule(channel, config, channelRegistry, configChangeEventGenerator));
   }
 
   public BindableService getSensitiveDataConfigService() {

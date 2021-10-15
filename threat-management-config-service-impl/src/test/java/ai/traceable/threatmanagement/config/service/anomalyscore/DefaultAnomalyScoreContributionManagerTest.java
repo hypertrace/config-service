@@ -10,6 +10,8 @@ import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServic
 import ai.traceable.threatmanagement.config.service.v1.AnomalyScoreContribution;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
+import io.grpc.Status;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
@@ -58,9 +60,13 @@ class DefaultAnomalyScoreContributionManagerTest {
   @BeforeEach
   void setup() {
     configServiceStub = mock(ConfigServiceBlockingStub.class);
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     this.anomalyScoreContributionManager =
         new DefaultAnomalyScoreContributionManager(
-            configServiceStub, config, new AnomalyScoreContributionConverter());
+            configServiceStub,
+            configChangeEventGenerator,
+            config,
+            new AnomalyScoreContributionConverter());
   }
 
   @Test
@@ -72,7 +78,7 @@ class DefaultAnomalyScoreContributionManagerTest {
             .addContexts(TENANT_ID)
             .build();
 
-    when(configServiceStub.getConfig(request)).thenReturn(GetConfigResponse.newBuilder().build());
+    when(configServiceStub.getConfig(request)).thenThrow(Status.NOT_FOUND.asRuntimeException());
     when(this.config.getDefaultAnomalyContributionScore())
         .thenReturn(DEFAULT_ANOMALY_CONTRIBUTION_SCORE);
 

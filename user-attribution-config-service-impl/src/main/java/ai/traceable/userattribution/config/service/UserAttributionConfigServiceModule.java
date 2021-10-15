@@ -8,15 +8,19 @@ import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 class UserAttributionConfigServiceModule extends AbstractModule {
   private final ManagedChannel channel;
+  private final ConfigChangeEventGenerator configChangeEventGenerator;
 
-  UserAttributionConfigServiceModule(ManagedChannel channel) {
+  UserAttributionConfigServiceModule(
+      ManagedChannel channel, ConfigChangeEventGenerator configChangeEventGenerator) {
     this.channel = channel;
+    this.configChangeEventGenerator = configChangeEventGenerator;
   }
 
   @Override
@@ -29,6 +33,7 @@ class UserAttributionConfigServiceModule extends AbstractModule {
                     UserAttributionRule::getRank,
                     UserAttributionRule::getId,
                     (rule, rank) -> rule.toBuilder().setRank(rank).build())));
+    bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
   }
 
   @Provides

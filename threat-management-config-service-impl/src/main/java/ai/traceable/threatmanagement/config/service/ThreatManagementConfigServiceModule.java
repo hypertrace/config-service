@@ -11,6 +11,7 @@ import com.google.inject.Provides;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
@@ -19,12 +20,17 @@ public class ThreatManagementConfigServiceModule extends AbstractModule {
   private final ManagedChannel channel;
   private final Config config;
   private final ActivityEventProducer activityEventProducer;
+  private final ConfigChangeEventGenerator configChangeEventGenerator;
 
   ThreatManagementConfigServiceModule(
-      ManagedChannel channel, Config config, ActivityEventProducer activityEventProducer) {
+      ManagedChannel channel,
+      Config config,
+      ActivityEventProducer activityEventProducer,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     this.channel = channel;
     this.config = config;
     this.activityEventProducer = activityEventProducer;
+    this.configChangeEventGenerator = configChangeEventGenerator;
   }
 
   @Override
@@ -33,6 +39,7 @@ public class ThreatManagementConfigServiceModule extends AbstractModule {
     bind(ThreatManagementConfigServiceConfig.class)
         .toInstance(new ThreatManagementConfigServiceConfig(config));
     bind(ActivityEventProducer.class).toInstance(activityEventProducer);
+    bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
     install(new ThreatScoreModule());
     install(new SecurityEventScoreContributionModule());
     install(new AnomalyScoreContributionModule());

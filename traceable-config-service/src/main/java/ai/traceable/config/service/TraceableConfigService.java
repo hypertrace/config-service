@@ -71,6 +71,9 @@ public class TraceableConfigService extends PlatformService {
     ManagedChannel managedChannel = channelRegistry.forAddress("localhost", internalServerPort);
     this.getLifecycle().shutdownComplete().thenRun(channelRegistry::shutdown);
 
+    ConfigChangeEventGenerator configChangeEventGenerator =
+        ConfigChangeEventGeneratorFactory.getInstance().createConfigChangeEventGenerator(config);
+
     ServerBuilder<?> internalServerBuilder = ServerBuilder.forPort(internalServerPort);
     configStore = ConfigServicesFactory.buildConfigStore(getAppConfig());
 
@@ -80,11 +83,10 @@ public class TraceableConfigService extends PlatformService {
         .map(InterceptorUtil::wrapInterceptors)
         .forEach(internalServerBuilder::addService);
     SensitiveDataConfigServicesProvider sensitiveDataConfigServicesProvider =
-        new SensitiveDataConfigServicesProvider(managedChannel, config, channelRegistry);
+        new SensitiveDataConfigServicesProvider(
+            managedChannel, config, channelRegistry, configChangeEventGenerator);
     ActivityEventProducer activityEventProducer = ActivityEventProducerFactory.build(config);
     this.getLifecycle().shutdownComplete().thenRun(activityEventProducer::close);
-    ConfigChangeEventGenerator configChangeEventGenerator =
-        ConfigChangeEventGeneratorFactory.getInstance().createConfigChangeEventGenerator(config);
 
     BindableService sensitiveDataConfigService =
         sensitiveDataConfigServicesProvider.getSensitiveDataConfigService();
@@ -102,9 +104,10 @@ public class TraceableConfigService extends PlatformService {
     BindableService customSignatureConfigService =
         CustomSignatureConfigServiceFactory.build(managedChannel, config, activityEventProducer);
     BindableService userAttributionConfigService =
-        UserAttributionConfigServiceFactory.build(managedChannel);
+        UserAttributionConfigServiceFactory.build(managedChannel, configChangeEventGenerator);
     BindableService threatManagementConfigService =
-        ThreatManagementConfigServiceFactory.build(managedChannel, config, activityEventProducer);
+        ThreatManagementConfigServiceFactory.build(
+            managedChannel, config, activityEventProducer, configChangeEventGenerator);
     BindableService riskConfigService = RiskConfigServiceFactory.build(managedChannel, config);
     List<BindableService> anomalyConfigServices =
         AnomalyConfigServiceFactory.build(channelRegistry, managedChannel, config);

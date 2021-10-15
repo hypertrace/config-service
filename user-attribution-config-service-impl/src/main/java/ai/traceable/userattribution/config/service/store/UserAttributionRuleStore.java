@@ -11,6 +11,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 
 @Slf4j
@@ -23,11 +24,13 @@ public class UserAttributionRuleStore extends IdentifiedObjectStore<UserAttribut
   @Inject
   public UserAttributionRuleStore(
       ConfigServiceBlockingStub configServiceBlockingStub,
+      ConfigChangeEventGenerator configChangeEventGenerator,
       RankCalculator<UserAttributionRule, String> rankCalculator) {
     super(
         configServiceBlockingStub,
         USER_ATTRIBUTION_RESOURCE_NAMESPACE,
-        USER_ATTRIBUTION_RULE_RESOURCE_NAME);
+        USER_ATTRIBUTION_RULE_RESOURCE_NAME,
+        configChangeEventGenerator);
     this.rankCalculator = rankCalculator;
   }
 

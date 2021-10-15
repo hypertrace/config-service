@@ -18,6 +18,8 @@ dependencies {
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpcutils.client)
   implementation(libs.hypertrace.configservice.protoconverter)
+  implementation(libs.hypertrace.configservice.objectstore)
+  implementation(libs.hypertrace.configservice.changeeventgenerator)
   implementation(libs.traceable.activityevent.api)
 
   annotationProcessor(libs.lombok)

@@ -17,6 +17,7 @@ dependencies {
   implementation(libs.hypertrace.configservice.protoconverter)
   implementation(libs.hypertrace.configservice.objectstore)
   implementation(libs.hypertrace.configservice.validation)
+  implementation(libs.hypertrace.configservice.changeeventgenerator)
   implementation(libs.jackson.yaml)
 
   annotationProcessor(libs.lombok)

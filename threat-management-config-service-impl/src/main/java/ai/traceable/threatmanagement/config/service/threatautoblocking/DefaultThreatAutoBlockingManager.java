@@ -8,85 +8,45 @@ import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionT
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
-import io.grpc.Status;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ContextuallyIdentifiedObjectStore;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
-import org.hypertrace.config.service.v1.GetConfigRequest;
-import org.hypertrace.config.service.v1.UpsertConfigRequest;
-import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-class DefaultThreatAutoBlockingManager implements ThreatAutoBlockingManager {
-  private final ConfigServiceBlockingStub configServiceBlockingStub;
+class DefaultThreatAutoBlockingManager
+    extends ContextuallyIdentifiedObjectStore<ThreatAutoBlockingActionConfig>
+    implements ThreatAutoBlockingManager {
   private final ThreatAutoBlockingActionConfigConverter threatAutoBlockingActionConfigConverter;
   private final ThreatAutoBlockingConverter threatAutoBlockingConverter;
 
   @Inject
   DefaultThreatAutoBlockingManager(
       ConfigServiceBlockingStub configServiceBlockingStub,
+      ConfigChangeEventGenerator configChangeEventGenerator,
       ThreatAutoBlockingActionConfigConverter threatAutoBlockingActionConfigConverter,
       ThreatAutoBlockingConverter threatAutoBlockingConverter) {
-    this.configServiceBlockingStub = configServiceBlockingStub;
+    super(
+        configServiceBlockingStub,
+        THREAT_MANAGEMENT_CONFIG_NAMESPACE,
+        THREAT_AUTO_BLOCKING_CONFIG_RESOURCE_NAME,
+        configChangeEventGenerator);
     this.threatAutoBlockingActionConfigConverter = threatAutoBlockingActionConfigConverter;
     this.threatAutoBlockingConverter = threatAutoBlockingConverter;
   }
 
   @Override
   public ThreatAutoBlockingActionConfig getThreatAutoBlockingAction(RequestContext requestContext) {
-    return getThreatAutoBlockingActionConfig(requestContext)
-        .orElseGet(this::getDefaultThreatAutoBlockingActionConfig);
-  }
-
-  @SneakyThrows
-  private Optional<ThreatAutoBlockingActionConfig> getThreatAutoBlockingActionConfig(
-      RequestContext requestContext) {
-    String configId = getConfigId(requestContext);
-    GetConfigRequest request =
-        GetConfigRequest.newBuilder()
-            .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
-            .setResourceName(THREAT_AUTO_BLOCKING_CONFIG_RESOURCE_NAME)
-            .addContexts(configId)
-            .build();
-
-    try {
-      Value config =
-          requestContext.call(() -> configServiceBlockingStub.getConfig(request).getConfig());
-
-      return threatAutoBlockingConverter.convert(config);
-    } catch (Exception e) {
-      if (Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
-        return Optional.empty();
-      }
-      throw e;
-    }
+    return getObject(requestContext).orElseGet(this::getDefaultThreatAutoBlockingActionConfig);
   }
 
   @Override
   public ThreatAutoBlockingActionConfig upsertThreatAutoBlockingAction(
       RequestContext requestContext, UpdateThreatAutoBlockingConfigRequest request) {
-    return upsertThreatAutoBlockingConfig(requestContext, request)
-        .orElseThrow(Status.INTERNAL::asRuntimeException);
-  }
-
-  @SneakyThrows
-  private Optional<ThreatAutoBlockingActionConfig> upsertThreatAutoBlockingConfig(
-      RequestContext requestContext, UpdateThreatAutoBlockingConfigRequest request) {
-    String configId = getConfigId(requestContext);
-    ThreatAutoBlockingActionConfig threatAutoBlockingActionConfig =
-        threatAutoBlockingActionConfigConverter.convert(request);
-    UpsertConfigRequest upsertConfigRequest =
-        UpsertConfigRequest.newBuilder()
-            .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
-            .setResourceName(THREAT_AUTO_BLOCKING_CONFIG_RESOURCE_NAME)
-            .setConfig(threatAutoBlockingConverter.convert(threatAutoBlockingActionConfig))
-            .setContext(configId)
-            .build();
-
-    UpsertConfigResponse response = configServiceBlockingStub.upsertConfig(upsertConfigRequest);
-    return threatAutoBlockingConverter.convert(response.getConfig());
+    return upsertObject(requestContext, threatAutoBlockingActionConfigConverter.convert(request));
   }
 
   private ThreatAutoBlockingActionConfig getDefaultThreatAutoBlockingActionConfig() {
@@ -95,7 +55,21 @@ class DefaultThreatAutoBlockingManager implements ThreatAutoBlockingManager {
         .build();
   }
 
-  private String getConfigId(RequestContext requestContext) {
+  @SneakyThrows
+  @Override
+  protected Optional<ThreatAutoBlockingActionConfig> buildObjectFromValue(Value value) {
+    return threatAutoBlockingConverter.convert(value);
+  }
+
+  @SneakyThrows
+  @Override
+  protected Value buildValueFromObject(
+      ThreatAutoBlockingActionConfig threatAutoBlockingActionConfig) {
+    return threatAutoBlockingConverter.convert(threatAutoBlockingActionConfig);
+  }
+
+  @Override
+  protected String getConfigContextFromRequestContext(RequestContext requestContext) {
     // Using tenant id as threat auto blocking action config id, since it's tenant scoped
     return requestContext
         .getTenantId()

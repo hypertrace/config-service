@@ -24,8 +24,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -190,13 +192,26 @@ class PiiFilterConfigServiceImplTest {
     when(mockConfig.defaultFullPrivacyMode()).thenReturn(defaultFullPrivacyMode);
     when(mockConfig.defaultRedactionRules()).thenReturn(defaultRedactionRules);
 
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    ConfigServiceBlockingStub configServiceBlockingStub =
+        ConfigServiceGrpc.newBlockingStub(channel);
     mockGenericConfigService
         .addService(new MockInsightsService())
         .addService(
             new PiiFilterConfigServiceImpl(
                 mockConfig,
                 new ConfigServiceCoordinatorImpl(
-                    ConfigServiceGrpc.newBlockingStub(channel), mockConfig),
+                    configServiceBlockingStub,
+                    configChangeEventGenerator,
+                    mockConfig,
+                    new RedactionRuleConfigStore(
+                        configServiceBlockingStub, configChangeEventGenerator),
+                    new AutomaticSecretRedactionStrategyConfigStore(
+                        configServiceBlockingStub, configChangeEventGenerator),
+                    new FullPrivacyModeConfigStore(
+                        configServiceBlockingStub, configChangeEventGenerator),
+                    new DefaultRedactionRulePopulationStatusStore(
+                        configServiceBlockingStub, configChangeEventGenerator)),
                 new InsightsServiceCoordinatorImpl(InsightsServiceGrpc.newBlockingStub(channel)),
                 new UuidGenerator()))
         .start();

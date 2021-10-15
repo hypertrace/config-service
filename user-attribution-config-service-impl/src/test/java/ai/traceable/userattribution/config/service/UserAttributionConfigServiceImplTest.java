@@ -1,6 +1,7 @@
 package ai.traceable.userattribution.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 
 import ai.traceable.config.utils.ObjectDiffer;
 import ai.traceable.config.utils.RankCalculator;
@@ -20,6 +21,7 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.CustomUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.validation.UserAttributionConfigRequestValidator;
 import java.util.List;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
@@ -50,11 +52,13 @@ class UserAttributionConfigServiceImplTest {
                 UserAttributionRule::getId,
                 (rule, rank) -> rule.toBuilder().setRank(rank).build()));
 
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     this.mockGenericConfigService
         .addService(
             new UserAttributionConfigServiceImpl(
                 new UserAttributionConfigRequestValidator(),
-                new UserAttributionRuleStore(genericStub, rankCalculator),
+                new UserAttributionRuleStore(
+                    genericStub, configChangeEventGenerator, rankCalculator),
                 new UserAttributionRuleGenerator(new UuidGenerator()),
                 rankCalculator,
                 new ObjectDiffer()))

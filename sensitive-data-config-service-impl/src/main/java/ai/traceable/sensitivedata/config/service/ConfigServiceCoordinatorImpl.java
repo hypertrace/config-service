@@ -1,12 +1,6 @@
 package ai.traceable.sensitivedata.config.service;
 
-import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.AUTOMATIC_SECRET_REDACTION_STRATEGY_CONFIG;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.CORE_MODE_RULE_CATEGORY;
-import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.DEFAULT_RULE_POPULATION_STATUS;
-import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.FULL_PRIVACY_MODE_CONFIG;
-import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.PARAMETER_TYPE_REDACTION_STRATEGY_CONFIG;
-import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.REDACTION_RULES_CONFIG;
-import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.SENSITIVE_DATA_CONFIGURATION;
 
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest.RedactionRuleFilter;
 import ai.traceable.sensitivedata.config.service.v1.NewRedactionRule;
@@ -19,7 +13,6 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Streams;
 import com.google.common.util.concurrent.Striped;
-import com.google.protobuf.Value;
 import com.google.re2j.Pattern;
 import io.grpc.Status;
 import java.util.List;
@@ -33,13 +26,8 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
-import org.hypertrace.config.service.v1.ContextSpecificConfig;
-import org.hypertrace.config.service.v1.DeleteConfigRequest;
-import org.hypertrace.config.service.v1.GetAllConfigsRequest;
-import org.hypertrace.config.service.v1.GetConfigRequest;
-import org.hypertrace.config.service.v1.UpsertConfigRequest;
-import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -51,6 +39,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   private static final int PREPOPULATION_LOCK_STRIPE_COUNT = 1000;
 
   private final ConfigServiceBlockingStub configServiceBlockingStub;
+  private final ConfigChangeEventGenerator configChangeEventGenerator;
   private final RedactionStrategy defaultParamTypeRedactionStrategy;
   private final Striped<Lock> stripedPrepopulationLock =
       Striped.lazyWeakLock(PREPOPULATION_LOCK_STRIPE_COUNT);
@@ -62,15 +51,31 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
           CacheBuilder.newBuilder()
               .maximumSize(10000)
               .build(CacheLoader.from(key -> this.fetchPrepopulationStatus(key.getContext())));
+  private final RedactionRuleConfigStore redactionRuleConfigStore;
+  private final AutomaticSecretRedactionStrategyConfigStore
+      automaticSecretRedactionStrategyConfigStore;
+  private final FullPrivacyModeConfigStore fullPrivacyModeConfigStore;
+  private final DefaultRedactionRulePopulationStatusStore defaultRedactionRulePopulationStatusStore;
 
   @Inject
   ConfigServiceCoordinatorImpl(
-      ConfigServiceBlockingStub configServiceBlockingStub, SensitiveDataServiceConfig config) {
+      ConfigServiceBlockingStub configServiceBlockingStub,
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      SensitiveDataServiceConfig config,
+      RedactionRuleConfigStore redactionRuleConfigStore,
+      AutomaticSecretRedactionStrategyConfigStore automaticSecretRedactionStrategyConfigStore,
+      FullPrivacyModeConfigStore fullPrivacyModeConfigStore,
+      DefaultRedactionRulePopulationStatusStore defaultRedactionRulePopulationStatusStore) {
     this.configServiceBlockingStub = configServiceBlockingStub;
+    this.configChangeEventGenerator = configChangeEventGenerator;
     this.defaultRedactionRules = config.defaultRedactionRules();
     this.defaultAutomaticSecretRedactionEnabled = config.defaultAutomaticRedactionStrategy();
     this.defaultFullPrivacyModeEnabled = config.defaultFullPrivacyMode();
     this.defaultParamTypeRedactionStrategy = config.defaultParamTypeRedactionStrategy();
+    this.redactionRuleConfigStore = redactionRuleConfigStore;
+    this.automaticSecretRedactionStrategyConfigStore = automaticSecretRedactionStrategyConfigStore;
+    this.fullPrivacyModeConfigStore = fullPrivacyModeConfigStore;
+    this.defaultRedactionRulePopulationStatusStore = defaultRedactionRulePopulationStatusStore;
   }
 
   @Override
@@ -78,57 +83,33 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
       RequestContext requestContext,
       ParamType paramType,
       ParamTypeRedactionStrategyConfig paramTypeRedactionStrategyConfig) {
-    UpsertConfigRequest upsertConfigRequest =
-        UpsertConfigRequest.newBuilder()
-            .setResourceName(PARAMETER_TYPE_REDACTION_STRATEGY_CONFIG)
-            .setResourceNamespace(SENSITIVE_DATA_CONFIGURATION)
-            .setContext(paramType.name())
-            .setConfig(paramTypeRedactionStrategyConfig.toValue())
-            .build();
-    upsertConfig(requestContext, upsertConfigRequest);
+    ParamTypeRedactionStrategyConfigStore.createInstance(
+            configServiceBlockingStub, configChangeEventGenerator, paramType)
+        .upsertObject(requestContext, paramTypeRedactionStrategyConfig);
   }
 
   @Override
   public RedactionStrategy getParamTypeRedactionStrategy(
       RequestContext requestContext, ParamType paramType) {
-    GetConfigRequest getConfigRequest =
-        GetConfigRequest.newBuilder()
-            .setResourceName(PARAMETER_TYPE_REDACTION_STRATEGY_CONFIG)
-            .setResourceNamespace(SENSITIVE_DATA_CONFIGURATION)
-            .addContexts(paramType.name())
-            .build();
-    Optional<ParamTypeRedactionStrategyConfig> paramTypeRedactionStrategyConfig =
-        getConfig(requestContext, getConfigRequest)
-            .flatMap(ParamTypeRedactionStrategyConfig::fromValue);
-    return paramTypeRedactionStrategyConfig.isPresent()
-        ? paramTypeRedactionStrategyConfig.get().getRedactionStrategy()
-        : defaultParamTypeRedactionStrategy;
+    return ParamTypeRedactionStrategyConfigStore.createInstance(
+            configServiceBlockingStub, configChangeEventGenerator, paramType)
+        .getObject(requestContext, paramType.name())
+        .map(ParamTypeRedactionStrategyConfig::getRedactionStrategy)
+        .orElse(defaultParamTypeRedactionStrategy);
   }
 
   @Override
   public void upsertAutomaticSecretRedactionStrategyConfig(
       RequestContext requestContext,
       AutomaticSecretRedactionStrategyConfig automaticSecretRedactionStrategyConfig) {
-    UpsertConfigRequest upsertConfigRequest =
-        UpsertConfigRequest.newBuilder()
-            .setResourceName(AUTOMATIC_SECRET_REDACTION_STRATEGY_CONFIG)
-            .setResourceNamespace(SENSITIVE_DATA_CONFIGURATION)
-            .setConfig(automaticSecretRedactionStrategyConfig.toValue())
-            .build();
-    upsertConfig(requestContext, upsertConfigRequest);
+    this.automaticSecretRedactionStrategyConfigStore.upsertObject(
+        requestContext, automaticSecretRedactionStrategyConfig);
   }
 
   @Override
   public boolean isAutomaticSecretRedactionStrategyEnabled(RequestContext requestContext) {
-    GetConfigRequest getConfigRequest =
-        GetConfigRequest.newBuilder()
-            .setResourceName(AUTOMATIC_SECRET_REDACTION_STRATEGY_CONFIG)
-            .setResourceNamespace(SENSITIVE_DATA_CONFIGURATION)
-            .build();
-    Optional<AutomaticSecretRedactionStrategyConfig> automaticSecretRedactionStrategyConfig =
-        getConfig(requestContext, getConfigRequest)
-            .flatMap(AutomaticSecretRedactionStrategyConfig::fromValue);
-    return automaticSecretRedactionStrategyConfig
+    return this.automaticSecretRedactionStrategyConfigStore
+        .getObject(requestContext)
         .map(AutomaticSecretRedactionStrategyConfig::isEnabled)
         .orElse(defaultAutomaticSecretRedactionEnabled);
   }
@@ -142,15 +123,9 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   private RedactionRule createRedactionRule(
       RequestContext requestContext, RedactionRule newRedactionRule) {
     validateRegex(newRedactionRule.getRegex());
-    UpsertConfigRequest upsertConfigRequest =
-        UpsertConfigRequest.newBuilder()
-            .setResourceName(REDACTION_RULES_CONFIG)
-            .setResourceNamespace(SENSITIVE_DATA_CONFIGURATION)
-            .setContext(newRedactionRule.getId())
-            .setConfig(new RedactionRuleConfig(newRedactionRule).toValue())
-            .build();
-    upsertConfig(requestContext, upsertConfigRequest);
-    return newRedactionRule;
+    return this.redactionRuleConfigStore
+        .upsertObject(requestContext, new RedactionRuleConfig(newRedactionRule))
+        .getRedactionRule();
   }
 
   @Override
@@ -159,15 +134,9 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
     validateRegex(redactionRule.getRegex());
     long creationTimestamp =
         getRedactionRuleConfig(requestContext, redactionRule.getId()).getCreationTimestamp();
-    UpsertConfigRequest upsertConfigRequest =
-        UpsertConfigRequest.newBuilder()
-            .setResourceName(REDACTION_RULES_CONFIG)
-            .setResourceNamespace(SENSITIVE_DATA_CONFIGURATION)
-            .setContext(redactionRule.getId())
-            .setConfig(new RedactionRuleConfig(redactionRule, creationTimestamp).toValue())
-            .build();
-    upsertConfig(requestContext, upsertConfigRequest);
-    return redactionRule;
+    return this.redactionRuleConfigStore
+        .upsertObject(requestContext, new RedactionRuleConfig(redactionRule, creationTimestamp))
+        .getRedactionRule();
   }
 
   @Override
@@ -200,26 +169,17 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   }
 
   @Override
-  public void deleteRedactionRule(RequestContext requestContext, String redactionRuleId) {
-    DeleteConfigRequest deleteConfigRequest =
-        DeleteConfigRequest.newBuilder()
-            .setResourceName(REDACTION_RULES_CONFIG)
-            .setResourceNamespace(SENSITIVE_DATA_CONFIGURATION)
-            .setContext(redactionRuleId)
-            .build();
-    deleteConfig(requestContext, deleteConfigRequest);
+  public RedactionRule deleteRedactionRule(RequestContext requestContext, String redactionRuleId) {
+    return this.redactionRuleConfigStore
+        .deleteObject(requestContext, redactionRuleId)
+        .map(RedactionRuleConfig::getRedactionRule)
+        .orElseThrow(Status.NOT_FOUND::asRuntimeException);
   }
 
   @Override
   public boolean isFullPrivacyModeEnabled(RequestContext requestContext) {
-    GetConfigRequest getConfigRequest =
-        GetConfigRequest.newBuilder()
-            .setResourceName(FULL_PRIVACY_MODE_CONFIG)
-            .setResourceNamespace(SENSITIVE_DATA_CONFIGURATION)
-            .build();
-    Optional<FullPrivacyModeConfig> fullPrivacyModeConfig =
-        getConfig(requestContext, getConfigRequest).flatMap(FullPrivacyModeConfig::fromValue);
-    return fullPrivacyModeConfig
+    return this.fullPrivacyModeConfigStore
+        .getObject(requestContext)
         .map(FullPrivacyModeConfig::isEnabled)
         .orElse(defaultFullPrivacyModeEnabled);
   }
@@ -227,13 +187,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   @Override
   public void upsertFullPrivacyModeConfig(
       RequestContext requestContext, FullPrivacyModeConfig fullPrivacyModeConfig) {
-    UpsertConfigRequest upsertConfigRequest =
-        UpsertConfigRequest.newBuilder()
-            .setResourceName(FULL_PRIVACY_MODE_CONFIG)
-            .setResourceNamespace(SENSITIVE_DATA_CONFIGURATION)
-            .setConfig(fullPrivacyModeConfig.toValue())
-            .build();
-    upsertConfig(requestContext, upsertConfigRequest);
+    this.fullPrivacyModeConfigStore.upsertObject(requestContext, fullPrivacyModeConfig);
   }
 
   private void insertPrepopulatedRulesIfRequired(RequestContext requestContext) {
@@ -322,15 +276,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   }
 
   private List<RedactionRule> fetchPersistedRules(RequestContext requestContext) {
-    GetAllConfigsRequest getAllConfigsRequest =
-        GetAllConfigsRequest.newBuilder()
-            .setResourceName(REDACTION_RULES_CONFIG)
-            .setResourceNamespace(SENSITIVE_DATA_CONFIGURATION)
-            .build();
-
-    return this.fetchAllConfigs(requestContext, getAllConfigsRequest).stream()
-        .map(ContextSpecificConfig::getConfig)
-        .map(RedactionRuleConfig::fromValue)
+    return this.redactionRuleConfigStore.getAllObjects(requestContext).stream()
         .sorted()
         .map(RedactionRuleConfig::getRedactionRule)
         .collect(Collectors.toUnmodifiableList());
@@ -338,14 +284,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
 
   private void updatePrepopulationStatus(
       RequestContext requestContext, DefaultRedactionRulePopulationStatus updatedStatus) {
-    this.upsertConfig(
-        requestContext,
-        UpsertConfigRequest.newBuilder()
-            .setResourceNamespace(SENSITIVE_DATA_CONFIGURATION)
-            .setResourceName(DEFAULT_RULE_POPULATION_STATUS)
-            .setConfig(updatedStatus.toValue())
-            .build());
-
+    this.defaultRedactionRulePopulationStatusStore.upsertObject(requestContext, updatedStatus);
     this.prePopulationStatusCache.put(requestContext.buildContextualKey(), updatedStatus);
   }
 
@@ -366,48 +305,13 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
 
   private DefaultRedactionRulePopulationStatus fetchPrepopulationStatus(
       RequestContext requestContext) {
-    return this.getConfig(
-            requestContext,
-            GetConfigRequest.newBuilder()
-                .setResourceNamespace(SENSITIVE_DATA_CONFIGURATION)
-                .setResourceName(DEFAULT_RULE_POPULATION_STATUS)
-                .build())
-        .map(DefaultRedactionRulePopulationStatus::fromValue)
+    return this.defaultRedactionRulePopulationStatusStore
+        .getObject(requestContext)
         .orElseGet(
             () ->
                 DefaultRedactionRulePopulationStatus.empty()
                     .forAutomaticRedactionState(
                         () -> this.isAutomaticSecretRedactionStrategyEnabled(requestContext)));
-  }
-
-  private Value upsertConfig(RequestContext context, UpsertConfigRequest request) {
-    return GrpcClientRequestContextUtil.executeWithHeadersContext(
-            context.getRequestHeaders(), () -> configServiceBlockingStub.upsertConfig(request))
-        .getConfig();
-  }
-
-  private Optional<Value> getConfig(RequestContext context, GetConfigRequest request) {
-    try {
-      return Optional.of(
-          context.call(() -> configServiceBlockingStub.getConfig(request)).getConfig());
-    } catch (Exception e) {
-      if (Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
-        return Optional.empty();
-      }
-      throw e;
-    }
-  }
-
-  private List<ContextSpecificConfig> fetchAllConfigs(
-      RequestContext context, GetAllConfigsRequest request) {
-    return GrpcClientRequestContextUtil.executeWithHeadersContext(
-            context.getRequestHeaders(), () -> configServiceBlockingStub.getAllConfigs(request))
-        .getContextSpecificConfigsList();
-  }
-
-  private void deleteConfig(RequestContext context, DeleteConfigRequest request) {
-    GrpcClientRequestContextUtil.executeWithHeadersContext(
-        context.getRequestHeaders(), () -> configServiceBlockingStub.deleteConfig(request));
   }
 
   private RedactionRule buildRedactionRuleWithId(NewRedactionRule newRedactionRule) {
@@ -431,13 +335,9 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
 
   private RedactionRuleConfig getRedactionRuleConfig(
       RequestContext requestContext, String redactionRuleId) {
-    GetConfigRequest getConfigRequest =
-        GetConfigRequest.newBuilder()
-            .setResourceName(REDACTION_RULES_CONFIG)
-            .setResourceNamespace(SENSITIVE_DATA_CONFIGURATION)
-            .addContexts(redactionRuleId)
-            .build();
-    return RedactionRuleConfig.fromValue(getConfig(requestContext, getConfigRequest).orElseThrow());
+    return redactionRuleConfigStore
+        .getObject(requestContext, redactionRuleId)
+        .orElseThrow(Status.NOT_FOUND::asRuntimeException);
   }
 
   private void validateRegex(String redactionRuleRegex) {

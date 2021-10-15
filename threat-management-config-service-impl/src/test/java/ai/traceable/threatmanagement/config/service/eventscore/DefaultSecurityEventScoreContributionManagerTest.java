@@ -10,6 +10,8 @@ import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServic
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventScoreContribution;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
+import io.grpc.Status;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
@@ -72,9 +74,13 @@ class DefaultSecurityEventScoreContributionManagerTest {
   @BeforeEach
   void setup() {
     configServiceStub = mock(ConfigServiceBlockingStub.class);
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     this.securityEventScoreContributionManager =
         new DefaultSecurityEventScoreContributionManager(
-            configServiceStub, config, new SecurityEventScoreContributionConverter());
+            configServiceStub,
+            configChangeEventGenerator,
+            config,
+            new SecurityEventScoreContributionConverter());
   }
 
   @Test
@@ -86,7 +92,7 @@ class DefaultSecurityEventScoreContributionManagerTest {
             .addContexts(TENANT_ID)
             .build();
 
-    when(configServiceStub.getConfig(request)).thenReturn(GetConfigResponse.newBuilder().build());
+    when(configServiceStub.getConfig(request)).thenThrow(Status.NOT_FOUND.asRuntimeException());
     when(this.config.getDefaultSecurityEventContributionLowScore())
         .thenReturn(DEFAULT_SECURITY_EVENT_CONTRIBUTION_LOW_SCORE);
     when(this.config.getDefaultSecurityEventContributionMediumScore())

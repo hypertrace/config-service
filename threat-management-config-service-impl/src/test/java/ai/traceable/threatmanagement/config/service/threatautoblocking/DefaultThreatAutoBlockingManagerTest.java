@@ -12,6 +12,8 @@ import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionT
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
+import io.grpc.Status;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
@@ -89,9 +91,13 @@ class DefaultThreatAutoBlockingManagerTest {
   void setup() {
     configServiceStub = mock(ConfigServiceBlockingStub.class);
     this.configConverter = mock(ThreatAutoBlockingActionConfigConverter.class);
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     this.threatAutoBlockingManager =
         new DefaultThreatAutoBlockingManager(
-            configServiceStub, configConverter, new ThreatAutoBlockingConverter());
+            configServiceStub,
+            configChangeEventGenerator,
+            configConverter,
+            new ThreatAutoBlockingConverter());
   }
 
   @Test
@@ -103,7 +109,7 @@ class DefaultThreatAutoBlockingManagerTest {
             .addContexts(TENANT_ID)
             .build();
 
-    when(configServiceStub.getConfig(request)).thenReturn(GetConfigResponse.newBuilder().build());
+    when(configServiceStub.getConfig(request)).thenThrow(Status.NOT_FOUND.asRuntimeException());
 
     assertEquals(
         ThreatAutoBlockingActionConfig.newBuilder()
