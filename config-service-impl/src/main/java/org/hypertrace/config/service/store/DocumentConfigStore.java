@@ -91,7 +91,10 @@ public class DocumentConfigStore implements ConfigStore {
           previousConfigDoc.flatMap(this::convertToContextSpecificConfig);
       long updateTimestamp = clock.millis();
       long creationTimestamp =
-          previousConfigDoc.map(ConfigDocument::getCreationTimestamp).orElse(updateTimestamp);
+          previousConfigDoc
+              .filter(configDocument -> !ConfigServiceUtils.isNull(configDocument.getConfig()))
+              .map(ConfigDocument::getCreationTimestamp)
+              .orElse(updateTimestamp);
       long newVersion =
           previousConfigDoc
               .map(ConfigDocument::getConfigVersion)

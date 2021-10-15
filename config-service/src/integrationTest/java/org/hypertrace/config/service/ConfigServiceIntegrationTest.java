@@ -46,7 +46,6 @@ public class ConfigServiceIntegrationTest {
   private static final String TENANT_2 = "tenant2";
   private static final String CONTEXT_1 = "ctx1";
   private static final String CONTEXT_2 = "ctx2";
-  private static final String DEFAULT_CONTEXT = "DEFAULT-CONTEXT";
   private static final String DATA_STORE_COLLECTION = "configurations";
   private static final Collection CONFIGURATIONS_COLLECTION = getConfigurationsCollection();
 
