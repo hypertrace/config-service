@@ -116,6 +116,10 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
               Label.newBuilder()
                   .setId(UUID.randomUUID().toString())
                   .setKey(createLabel.getKey())
+                  .setCreatedBy(createLabel.getCreatedBy())
+                  .setColor(createLabel.getColor())
+                  .setRuleId(createLabel.getRuleId())
+                  .setDescription(createLabel.getDescription())
                   .build();
           Label createdLabel = labelStore.upsertObject(requestContext, label);
           responseObserver.onNext(CreateLabelResponse.newBuilder().setLabel(createdLabel).build());

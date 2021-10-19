@@ -9,14 +9,15 @@ message Label {
   string key = 2;
   optional string created_by = 3;
   optional string created_time = 4;
-  optional string description = 5;
-  optional string color = 6;
-  optional string rule_id = 7;
+  optional string color = 5;
+  optional string rule_id = 6;
+  optional string description = 7;
 }
 
 message CreateLabel {
   string key = 2;
-  optional string description = 3;
-  optional string color = 4;
-  optional string rule_id = 5;
+  optional string created_by = 3;
+  optional string color = 5;
+  optional string rule_id = 6;
+  optional string description = 7;
 }
