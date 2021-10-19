@@ -1,19 +1,18 @@
 package org.hypertrace.config.service;
 
-import static org.hypertrace.config.service.ConfigServiceUtils.DEFAULT_CONTEXT;
 import static org.hypertrace.config.service.ConfigServiceUtils.emptyValue;
 import static org.hypertrace.config.service.ConfigServiceUtils.filterNull;
-import static org.hypertrace.config.service.ConfigServiceUtils.getActualContext;
 import static org.hypertrace.config.service.ConfigServiceUtils.merge;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.Map.Entry;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.store.ConfigStore;
-import org.hypertrace.config.service.store.InternalContextSpecificConfig;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
@@ -22,6 +21,10 @@ import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
+import org.hypertrace.config.service.v1.UpsertAllConfigsRequest;
+import org.hypertrace.config.service.v1.UpsertAllConfigsRequest.ConfigToUpsert;
+import org.hypertrace.config.service.v1.UpsertAllConfigsResponse;
+import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -40,16 +43,16 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   public void upsertConfig(
       UpsertConfigRequest request, StreamObserver<UpsertConfigResponse> responseObserver) {
     try {
-      ConfigResource configResource = getConfigResource(request);
-      InternalContextSpecificConfig internalContextSpecificConfig =
-          configStore.writeConfig(configResource, getUserId(), request.getConfig());
+      ConfigResourceContext configResourceContext = getConfigResourceContext(request);
+      UpsertedConfig upsertedConfig =
+          configStore.writeConfig(configResourceContext, getUserId(), request.getConfig());
       UpsertConfigResponse.Builder builder = UpsertConfigResponse.newBuilder();
       builder.setConfig(request.getConfig());
-      builder.setCreationTimestamp(
-          internalContextSpecificConfig.getContextSpecificConfig().getCreationTimestamp());
-      builder.setUpdateTimestamp(
-          internalContextSpecificConfig.getContextSpecificConfig().getUpdateTimestamp());
-      internalContextSpecificConfig.getPrevConfigOptional().ifPresent(builder::setPrevConfig);
+      builder.setCreationTimestamp(upsertedConfig.getCreationTimestamp());
+      builder.setUpdateTimestamp(upsertedConfig.getUpdateTimestamp());
+      if (upsertedConfig.hasPrevConfig()) {
+        builder.setPrevConfig(upsertedConfig.getPrevConfig());
+      }
       responseObserver.onNext(builder.build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -62,13 +65,13 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   public void getConfig(
       GetConfigRequest request, StreamObserver<GetConfigResponse> responseObserver) {
     try {
-      Value config = configStore.getConfig(getConfigResource(request)).getConfig();
+      Value config = configStore.getConfig(getConfigResourceContext(request)).getConfig();
 
       // get the configs for the contexts mentioned in the request and merge them in the specified
       // order
       for (String context : request.getContextsList()) {
         Value contextSpecificConfig =
-            configStore.getConfig(getConfigResource(request, context)).getConfig();
+            configStore.getConfig(getConfigResourceContext(request, context)).getConfig();
         config = merge(config, contextSpecificConfig);
       }
 
@@ -93,7 +96,8 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
     try {
       List<ContextSpecificConfig> contextSpecificConfigList =
           configStore.getAllConfigs(
-              request.getResourceName(), request.getResourceNamespace(), getTenantId());
+              new ConfigResource(
+                  request.getResourceName(), request.getResourceNamespace(), getTenantId()));
       responseObserver.onNext(
           GetAllConfigsResponse.newBuilder()
               .addAllContextSpecificConfigs(contextSpecificConfigList)
@@ -109,8 +113,8 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   public void deleteConfig(
       DeleteConfigRequest request, StreamObserver<DeleteConfigResponse> responseObserver) {
     try {
-      ConfigResource configResource = getConfigResource(request);
-      ContextSpecificConfig configToDelete = configStore.getConfig(configResource);
+      ConfigResourceContext configResourceContext = getConfigResourceContext(request);
+      ContextSpecificConfig configToDelete = configStore.getConfig(configResourceContext);
 
       // if configToDelete is null/empty (i.e. config value doesn't exist or is already deleted),
       // then throw NOT_FOUND exception
@@ -120,7 +124,7 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
       }
 
       // write an empty config for the specified config resource. This maintains the versioning.
-      configStore.writeConfig(configResource, getUserId(), emptyValue());
+      configStore.writeConfig(configResourceContext, getUserId(), emptyValue());
       responseObserver.onNext(
           DeleteConfigResponse.newBuilder().setDeletedConfig(configToDelete).build());
       responseObserver.onCompleted();
@@ -130,44 +134,79 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
     }
   }
 
-  private ConfigResource getConfigResource(UpsertConfigRequest upsertConfigRequest) {
-    return new ConfigResource(
-        upsertConfigRequest.getResourceName(),
-        upsertConfigRequest.getResourceNamespace(),
-        getTenantId(),
-        getActualContext(upsertConfigRequest.getContext()));
+  @Override
+  public void upsertAllConfigs(
+      UpsertAllConfigsRequest request, StreamObserver<UpsertAllConfigsResponse> responseObserver) {
+    try {
+      Map<ConfigResourceContext, Value> valuesByContext =
+          request.getConfigsList().stream()
+              .map(
+                  requestedUpsert ->
+                      Map.entry(
+                          this.getConfigResourceContext(requestedUpsert),
+                          requestedUpsert.getConfig()))
+              .collect(ImmutableMap.toImmutableMap(Entry::getKey, Entry::getValue));
+      List<UpsertedConfig> upsertedConfigs =
+          configStore.writeAllConfigs(valuesByContext, getUserId());
+      responseObserver.onNext(
+          UpsertAllConfigsResponse.newBuilder().addAllUpsertedConfigs(upsertedConfigs).build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Upsert all failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
   }
 
-  private ConfigResource getConfigResource(GetConfigRequest getConfigRequest) {
-    return new ConfigResource(
-        getConfigRequest.getResourceName(),
-        getConfigRequest.getResourceNamespace(),
-        getTenantId(),
-        DEFAULT_CONTEXT);
+  private ConfigResourceContext getConfigResourceContext(UpsertConfigRequest upsertConfigRequest) {
+    return new ConfigResourceContext(
+        new ConfigResource(
+            upsertConfigRequest.getResourceName(),
+            upsertConfigRequest.getResourceNamespace(),
+            getTenantId()),
+        upsertConfigRequest.getContext());
   }
 
-  private ConfigResource getConfigResource(GetConfigRequest getConfigRequest, String context) {
-    return new ConfigResource(
-        getConfigRequest.getResourceName(),
-        getConfigRequest.getResourceNamespace(),
-        getTenantId(),
-        getActualContext(context));
+  private ConfigResourceContext getConfigResourceContext(GetConfigRequest getConfigRequest) {
+    return new ConfigResourceContext(
+        new ConfigResource(
+            getConfigRequest.getResourceName(),
+            getConfigRequest.getResourceNamespace(),
+            getTenantId()));
   }
 
-  private ConfigResource getConfigResource(DeleteConfigRequest deleteConfigRequest) {
-    return new ConfigResource(
-        deleteConfigRequest.getResourceName(),
-        deleteConfigRequest.getResourceNamespace(),
-        getTenantId(),
-        getActualContext(deleteConfigRequest.getContext()));
+  private ConfigResourceContext getConfigResourceContext(
+      GetConfigRequest getConfigRequest, String context) {
+    return new ConfigResourceContext(
+        new ConfigResource(
+            getConfigRequest.getResourceName(),
+            getConfigRequest.getResourceNamespace(),
+            getTenantId()),
+        context);
+  }
+
+  private ConfigResourceContext getConfigResourceContext(DeleteConfigRequest deleteConfigRequest) {
+    return new ConfigResourceContext(
+        new ConfigResource(
+            deleteConfigRequest.getResourceName(),
+            deleteConfigRequest.getResourceNamespace(),
+            getTenantId()),
+        deleteConfigRequest.getContext());
+  }
+
+  private ConfigResourceContext getConfigResourceContext(ConfigToUpsert configToUpsert) {
+    return new ConfigResourceContext(
+        new ConfigResource(
+            configToUpsert.getResourceName(), configToUpsert.getResourceNamespace(), getTenantId()),
+        configToUpsert.getContext());
   }
 
   private String getTenantId() {
-    Optional<String> tenantId = RequestContext.CURRENT.get().getTenantId();
-    if (tenantId.isEmpty()) {
-      throw new IllegalArgumentException("Tenant Id is missing in the request.");
-    }
-    return tenantId.get();
+    return RequestContext.CURRENT
+        .get()
+        .getTenantId()
+        .orElseThrow(
+            Status.INVALID_ARGUMENT.withDescription("Tenant ID is missing in the request")
+                ::asRuntimeException);
   }
 
   // TODO : get the userId from the context

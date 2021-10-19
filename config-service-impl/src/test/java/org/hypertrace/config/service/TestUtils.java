@@ -1,7 +1,5 @@
 package org.hypertrace.config.service;
 
-import static org.hypertrace.config.service.ConfigServiceUtils.DEFAULT_CONTEXT;
-
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
@@ -13,12 +11,14 @@ public class TestUtils {
   public static final String TENANT_ID = "tenant1";
   public static final String CONTEXT1 = "ctx1";
 
-  public static ConfigResource getConfigResource() {
-    return new ConfigResource(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID, DEFAULT_CONTEXT);
+  public static ConfigResourceContext getConfigResourceContext() {
+    return new ConfigResourceContext(
+        new ConfigResource(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID));
   }
 
-  public static ConfigResource getConfigResource(String context) {
-    return new ConfigResource(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID, context);
+  public static ConfigResourceContext getConfigResourceContext(String context) {
+    return new ConfigResourceContext(
+        new ConfigResource(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID), context);
   }
 
   /**

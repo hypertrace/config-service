@@ -1,6 +1,5 @@
 package org.hypertrace.config.service.store;
 
-import static org.hypertrace.config.service.ConfigServiceUtils.DEFAULT_CONTEXT;
 import static org.hypertrace.config.service.TestUtils.RESOURCE_NAME;
 import static org.hypertrace.config.service.TestUtils.RESOURCE_NAMESPACE;
 import static org.hypertrace.config.service.TestUtils.TENANT_ID;
@@ -25,7 +24,7 @@ public class ConfigDocumentTest {
             RESOURCE_NAME,
             RESOURCE_NAMESPACE,
             TENANT_ID,
-            DEFAULT_CONTEXT,
+            "context",
             15,
             "user1",
             getConfig1(),
@@ -43,7 +42,7 @@ public class ConfigDocumentTest {
             RESOURCE_NAME,
             RESOURCE_NAMESPACE,
             TENANT_ID,
-            DEFAULT_CONTEXT,
+            "context",
             15,
             "user1",
             nullValue,

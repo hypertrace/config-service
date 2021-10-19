@@ -24,6 +24,10 @@ import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
+import org.hypertrace.config.service.v1.UpsertAllConfigsRequest;
+import org.hypertrace.config.service.v1.UpsertAllConfigsRequest.ConfigToUpsert;
+import org.hypertrace.config.service.v1.UpsertAllConfigsResponse;
+import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -162,30 +166,36 @@ class IdentifiedObjectStoreTest {
 
   @Test
   void generatesUpsertRequestsForUpsertAll() {
-    when(this.mockStub.upsertConfig(any()))
+    when(this.mockStub.upsertAllConfigs(any()))
         .thenAnswer(
-            invocation ->
-                UpsertConfigResponse.newBuilder()
-                    .setConfig(((UpsertConfigRequest) invocation.getArguments()[0]).getConfig())
-                    .build());
+            invocation -> {
+              List<UpsertedConfig> configs =
+                  invocation.<UpsertAllConfigsRequest>getArgument(0).getConfigsList().stream()
+                      .map(
+                          requestedUpsert ->
+                              UpsertedConfig.newBuilder().setConfig(requestedUpsert.getConfig()))
+                      .map(UpsertedConfig.Builder::build)
+                      .collect(Collectors.toUnmodifiableList());
+              return UpsertAllConfigsResponse.newBuilder().addAllUpsertedConfigs(configs).build();
+            });
     assertEquals(
         List.of(OBJECT_1, OBJECT_2),
         this.store.upsertObjects(this.mockRequestContext, List.of(OBJECT_1, OBJECT_2)));
     verify(this.mockStub, times(1))
-        .upsertConfig(
-            UpsertConfigRequest.newBuilder()
-                .setResourceName(TEST_RESOURCE_NAME)
-                .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
-                .setContext("first-id")
-                .setConfig(OBJECT_1_AS_VALUE)
-                .build());
-    verify(this.mockStub, times(1))
-        .upsertConfig(
-            UpsertConfigRequest.newBuilder()
-                .setResourceName(TEST_RESOURCE_NAME)
-                .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
-                .setContext("second-id")
-                .setConfig(OBJECT_2_AS_VALUE)
+        .upsertAllConfigs(
+            UpsertAllConfigsRequest.newBuilder()
+                .addConfigs(
+                    ConfigToUpsert.newBuilder()
+                        .setResourceName(TEST_RESOURCE_NAME)
+                        .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
+                        .setContext("first-id")
+                        .setConfig(OBJECT_1_AS_VALUE))
+                .addConfigs(
+                    ConfigToUpsert.newBuilder()
+                        .setResourceName(TEST_RESOURCE_NAME)
+                        .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
+                        .setContext("second-id")
+                        .setConfig(OBJECT_2_AS_VALUE))
                 .build());
   }
 

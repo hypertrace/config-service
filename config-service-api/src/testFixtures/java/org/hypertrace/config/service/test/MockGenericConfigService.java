@@ -23,6 +23,7 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import java.io.IOException;
+import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
@@ -37,6 +38,9 @@ import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
+import org.hypertrace.config.service.v1.UpsertAllConfigsRequest;
+import org.hypertrace.config.service.v1.UpsertAllConfigsResponse;
+import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -51,6 +55,7 @@ import org.mockito.Mockito;
 public class MockGenericConfigService {
 
   private Server grpcServer;
+  private Clock clock = Clock.systemUTC();
   private final InProcessServerBuilder serverBuilder;
   private final ManagedChannel configChannel;
   private final RequestContext context = RequestContext.forTenantId("default tenant");
@@ -102,6 +107,11 @@ public class MockGenericConfigService {
     this.configChannel.shutdownNow();
   }
 
+  public MockGenericConfigService withClock(Clock clock) {
+    this.clock = clock;
+    return this;
+  }
+
   @SuppressWarnings("unchecked")
   public MockGenericConfigService mockUpsert() {
     Mockito.doAnswer(
@@ -109,28 +119,22 @@ public class MockGenericConfigService {
               UpsertConfigRequest request = invocation.getArgument(0, UpsertConfigRequest.class);
               StreamObserver<UpsertConfigResponse> responseStreamObserver =
                   invocation.getArgument(1, StreamObserver.class);
-              ResourceType resourceType =
-                  ResourceType.of(request.getResourceNamespace(), request.getResourceName());
-              String configContext = configContextOrDefault(request.getContext());
-              ContextSpecificConfig existingConfig = currentValues.get(resourceType, configContext);
-              long updateTimestamp = System.currentTimeMillis();
-              long creationTimestamp =
-                  existingConfig == null ? updateTimestamp : existingConfig.getCreationTimestamp();
-              currentValues.put(
-                  resourceType,
-                  configContext,
-                  ContextSpecificConfig.newBuilder()
-                      .setContext(configContext)
-                      .setConfig(request.getConfig())
-                      .setCreationTimestamp(creationTimestamp)
-                      .setUpdateTimestamp(updateTimestamp)
-                      .build());
-              responseStreamObserver.onNext(
+              UpsertedConfig upsertedConfig =
+                  this.writeToMap(
+                      request.getResourceNamespace(),
+                      request.getResourceName(),
+                      request.getContext(),
+                      request.getConfig());
+              UpsertConfigResponse.Builder responseBuilder =
                   UpsertConfigResponse.newBuilder()
-                      .setConfig(request.getConfig())
-                      .setCreationTimestamp(creationTimestamp)
-                      .setUpdateTimestamp(updateTimestamp)
-                      .build());
+                      .setConfig(upsertedConfig.getConfig())
+                      .setCreationTimestamp(upsertedConfig.getCreationTimestamp())
+                      .setUpdateTimestamp(upsertedConfig.getUpdateTimestamp());
+              if (upsertedConfig.hasPrevConfig()) {
+                responseBuilder.setPrevConfig(upsertedConfig.getPrevConfig());
+              }
+
+              responseStreamObserver.onNext(responseBuilder.build());
               responseStreamObserver.onCompleted();
               return null;
             })
@@ -243,6 +247,35 @@ public class MockGenericConfigService {
     return this;
   }
 
+  public MockGenericConfigService mockUpsertAll() {
+    Mockito.doAnswer(
+            invocation -> {
+              UpsertAllConfigsRequest request =
+                  invocation.getArgument(0, UpsertAllConfigsRequest.class);
+              StreamObserver<UpsertAllConfigsResponse> responseStreamObserver =
+                  invocation.getArgument(1, StreamObserver.class);
+
+              List<UpsertedConfig> configs =
+                  request.getConfigsList().stream()
+                      .map(
+                          configToUpsert ->
+                              this.writeToMap(
+                                  configToUpsert.getResourceNamespace(),
+                                  configToUpsert.getResourceName(),
+                                  configToUpsert.getContext(),
+                                  configToUpsert.getConfig()))
+                      .collect(Collectors.toUnmodifiableList());
+              responseStreamObserver.onNext(
+                  UpsertAllConfigsResponse.newBuilder().addAllUpsertedConfigs(configs).build());
+              responseStreamObserver.onCompleted();
+              return null;
+            })
+        .when(this.mockConfigService)
+        .upsertConfig(ArgumentMatchers.any(), ArgumentMatchers.any());
+
+    return this;
+  }
+
   private Optional<Value> mergeValues(List<Value> values) {
     if (values.isEmpty()) {
       return Optional.empty();
@@ -257,6 +290,40 @@ public class MockGenericConfigService {
 
   private boolean isValidValue(Optional<Value> value) {
     return value.isPresent() && value.get().getKindCase() != Value.KindCase.NULL_VALUE;
+  }
+
+  private UpsertedConfig writeToMap(String namespace, String name, String context, Value config) {
+    ResourceType resourceType = ResourceType.of(namespace, name);
+    String configContext = configContextOrDefault(context);
+    ContextSpecificConfig existingConfig = currentValues.get(resourceType, configContext);
+    long updateTimestamp = clock.millis();
+    long creationTimestamp =
+        Optional.ofNullable(existingConfig)
+            .map(ContextSpecificConfig::getCreationTimestamp)
+            .orElse(updateTimestamp);
+    Optional<Value> previousConfig =
+        Optional.ofNullable(
+                currentValues.put(
+                    resourceType,
+                    configContext,
+                    ContextSpecificConfig.newBuilder()
+                        .setContext(configContext)
+                        .setConfig(config)
+                        .setCreationTimestamp(creationTimestamp)
+                        .setUpdateTimestamp(updateTimestamp)
+                        .build()))
+            .map(ContextSpecificConfig::getConfig);
+
+    UpsertedConfig.Builder resultBuilder =
+        UpsertedConfig.newBuilder()
+            .setConfig(config)
+            .setContext(configContext)
+            .setCreationTimestamp(creationTimestamp)
+            .setUpdateTimestamp(updateTimestamp);
+
+    previousConfig.ifPresent(resultBuilder::setPrevConfig);
+
+    return resultBuilder.build();
   }
 
   private class TestInterceptor implements ServerInterceptor {

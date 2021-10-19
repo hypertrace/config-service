@@ -13,18 +13,24 @@ import com.google.common.cache.LoadingCache;
 import com.google.protobuf.Value;
 import com.typesafe.config.Config;
 import java.io.IOException;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.ConfigResource;
+import org.hypertrace.config.service.ConfigResourceContext;
 import org.hypertrace.config.service.ConfigServiceUtils;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
+import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.DatastoreProvider;
@@ -42,13 +48,23 @@ public class DocumentConfigStore implements ConfigStore {
   static final String DATA_STORE_TYPE = "dataStoreType";
   static final String CONFIGURATIONS_COLLECTION = "configurations";
 
-  private final LoadingCache<ConfigResource, Object> configResourceLocks =
+  private final LoadingCache<ConfigResourceContext, Object> configResourceContextLocks =
       CacheBuilder.newBuilder()
           .expireAfterAccess(10, TimeUnit.MINUTES) // max lock time ever expected
+          .maximumSize(1000)
           .build(CacheLoader.from(Object::new));
+  private final Clock clock;
 
   private Datastore datastore;
   private Collection collection;
+
+  public DocumentConfigStore() {
+    this(Clock.systemUTC());
+  }
+
+  DocumentConfigStore(Clock clock) {
+    this.clock = clock;
+  }
 
   @Override
   public void init(Config config) {
@@ -64,68 +80,69 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   @Override
-  public InternalContextSpecificConfig writeConfig(
-      ConfigResource configResource, String userId, Value latestConfig) throws IOException {
+  public UpsertedConfig writeConfig(
+      ConfigResourceContext configResourceContext, String userId, Value latestConfig)
+      throws IOException {
     // Synchronization is required across different threads trying to write the latest config
     // for the same resource into the document store
-    synchronized (configResourceLocks.getUnchecked(configResource)) {
-      long configVersion = getLatestVersion(configResource) + 1;
-      long updateTimestamp = System.currentTimeMillis();
-      long creationTimestamp;
-      ContextSpecificConfig existingConfig = getConfig(configResource, configVersion - 1);
-      if (ConfigServiceUtils.isNull(existingConfig.getConfig())) {
-        creationTimestamp = updateTimestamp;
-      } else {
-        creationTimestamp = existingConfig.getCreationTimestamp();
-      }
-      Key key = new ConfigDocumentKey(configResource, configVersion);
-      ConfigDocument configDocument =
+    synchronized (configResourceContextLocks.getUnchecked(configResourceContext)) {
+      Optional<ConfigDocument> previousConfigDoc = getLatestVersionConfigDoc(configResourceContext);
+      Optional<ContextSpecificConfig> optionalPreviousConfig =
+          previousConfigDoc.flatMap(this::convertToContextSpecificConfig);
+      long updateTimestamp = clock.millis();
+      long creationTimestamp =
+          previousConfigDoc
+              .filter(configDocument -> !ConfigServiceUtils.isNull(configDocument.getConfig()))
+              .map(ConfigDocument::getCreationTimestamp)
+              .orElse(updateTimestamp);
+      long newVersion =
+          previousConfigDoc
+              .map(ConfigDocument::getConfigVersion)
+              .map(previousVersion -> previousVersion + 1)
+              .orElse(1L);
+      Key latestDocKey = new ConfigDocumentKey(configResourceContext, newVersion);
+      ConfigDocument latestConfigDocument =
           new ConfigDocument(
-              configResource.getResourceName(),
-              configResource.getResourceNamespace(),
-              configResource.getTenantId(),
-              configResource.getContext(),
-              configVersion,
+              configResourceContext.getConfigResource().getResourceName(),
+              configResourceContext.getConfigResource().getResourceNamespace(),
+              configResourceContext.getConfigResource().getTenantId(),
+              configResourceContext.getContext(),
+              newVersion,
               userId,
               latestConfig,
               creationTimestamp,
               updateTimestamp);
-      collection.upsert(key, configDocument);
-      return getInternalContextSpecificConfig(configDocument, existingConfig);
+      collection.upsert(latestDocKey, latestConfigDocument);
+      return optionalPreviousConfig
+          .map(previousConfig -> this.buildUpsertResult(latestConfigDocument, previousConfig))
+          .orElseGet(() -> this.buildUpsertResult(latestConfigDocument));
     }
   }
 
   @Override
-  public ContextSpecificConfig getConfig(ConfigResource configResource) throws IOException {
-    return getConfig(configResource, getLatestVersion(configResource));
+  public List<UpsertedConfig> writeAllConfigs(
+      Map<ConfigResourceContext, Value> resourceContextValueMap, String userId) throws IOException {
+    // TODO keep pushing this down into doc store
+    List<UpsertedConfig> list = new ArrayList<>(resourceContextValueMap.size());
+    for (Entry<ConfigResourceContext, Value> entry : resourceContextValueMap.entrySet()) {
+      list.add(this.writeConfig(entry.getKey(), userId, entry.getValue()));
+    }
+    return Collections.unmodifiableList(list);
   }
 
-  private ContextSpecificConfig getConfig(ConfigResource configResource, long configVersion)
+  @Override
+  public ContextSpecificConfig getConfig(ConfigResourceContext configResourceContext)
       throws IOException {
-    Filter filter =
-        getConfigResourceFilter(configResource).and(Filter.eq(VERSION_FIELD_NAME, configVersion));
-    Query query = new Query();
-    query.setFilter(filter);
-    Iterator<Document> documentIterator = collection.search(query);
-    if (documentIterator.hasNext()) {
-      String documentString = documentIterator.next().toJson();
-      ConfigDocument configDocument = ConfigDocument.fromJson(documentString);
-      if (!ConfigServiceUtils.isNull(configDocument.getConfig())) {
-        return getContextSpecificConfig(configDocument);
-      }
-    }
-    return emptyConfig(configResource.getContext());
+    return getLatestVersionConfigDoc(configResourceContext)
+        .flatMap(this::convertToContextSpecificConfig)
+        .orElseGet(() -> emptyConfig(configResourceContext.getContext()));
   }
 
   @Override
-  public List<ContextSpecificConfig> getAllConfigs(
-      String resourceName, String resourceNamespace, String tenantId) throws IOException {
-    Filter filter =
-        Filter.eq(RESOURCE_FIELD_NAME, resourceName)
-            .and(Filter.eq(RESOURCE_NAMESPACE_FIELD_NAME, resourceNamespace))
-            .and(Filter.eq(TENANT_ID_FIELD_NAME, tenantId));
+  public List<ContextSpecificConfig> getAllConfigs(ConfigResource configResource)
+      throws IOException {
     Query query = new Query();
-    query.setFilter(filter);
+    query.setFilter(this.getConfigResourceFilter(configResource));
     query.addOrderBy(new OrderBy(VERSION_FIELD_NAME, false));
     Iterator<Document> documentIterator = collection.search(query);
     List<ContextSpecificConfig> contextSpecificConfigList = new ArrayList<>();
@@ -134,9 +151,8 @@ public class DocumentConfigStore implements ConfigStore {
       String documentString = documentIterator.next().toJson();
       ConfigDocument configDocument = ConfigDocument.fromJson(documentString);
       String context = configDocument.getContext();
-      Value config = configDocument.getConfig();
-      if (seenContexts.add(context) && !ConfigServiceUtils.isNull(config)) {
-        contextSpecificConfigList.add(getContextSpecificConfig(configDocument));
+      if (seenContexts.add(context)) {
+        convertToContextSpecificConfig(configDocument).ifPresent(contextSpecificConfigList::add);
       }
     }
     Collections.sort(
@@ -150,44 +166,59 @@ public class DocumentConfigStore implements ConfigStore {
     return datastore.healthCheck();
   }
 
-  private long getLatestVersion(ConfigResource configResource) throws IOException {
+  private Optional<ConfigDocument> getLatestVersionConfigDoc(
+      ConfigResourceContext configResourceContext) throws IOException {
     Query query = new Query();
-    query.setFilter(getConfigResourceFilter(configResource));
+    query.setFilter(getConfigResourceContextFilter(configResourceContext));
     query.addOrderBy(new OrderBy(VERSION_FIELD_NAME, false));
     query.setLimit(1);
 
     Iterator<Document> documentIterator = collection.search(query);
     if (documentIterator.hasNext()) {
       String documentString = documentIterator.next().toJson();
-      ConfigDocument documentWithLatestVersion = ConfigDocument.fromJson(documentString);
-      return documentWithLatestVersion.getConfigVersion();
+      return Optional.of(ConfigDocument.fromJson(documentString));
     }
-    return 0;
+    return Optional.empty();
+  }
+
+  private Filter getConfigResourceContextFilter(ConfigResourceContext configResourceContext) {
+    return this.getConfigResourceFilter(configResourceContext.getConfigResource())
+        .and(Filter.eq(CONTEXT_FIELD_NAME, configResourceContext.getContext()));
   }
 
   private Filter getConfigResourceFilter(ConfigResource configResource) {
     return Filter.eq(RESOURCE_FIELD_NAME, configResource.getResourceName())
         .and(Filter.eq(RESOURCE_NAMESPACE_FIELD_NAME, configResource.getResourceNamespace()))
-        .and(Filter.eq(TENANT_ID_FIELD_NAME, configResource.getTenantId()))
-        .and(Filter.eq(CONTEXT_FIELD_NAME, configResource.getContext()));
+        .and(Filter.eq(TENANT_ID_FIELD_NAME, configResource.getTenantId()));
   }
 
-  private ContextSpecificConfig getContextSpecificConfig(ConfigDocument configDocument) {
-    return ContextSpecificConfig.newBuilder()
+  private Optional<ContextSpecificConfig> convertToContextSpecificConfig(
+      ConfigDocument configDocument) {
+    if (ConfigServiceUtils.isNull(configDocument.getConfig())) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        ContextSpecificConfig.newBuilder()
+            .setConfig(configDocument.getConfig())
+            .setContext(configDocument.getContext())
+            .setCreationTimestamp(configDocument.getCreationTimestamp())
+            .setUpdateTimestamp(configDocument.getUpdateTimestamp())
+            .build());
+  }
+
+  private UpsertedConfig buildUpsertResult(
+      ConfigDocument configDocument, ContextSpecificConfig existingConfig) {
+    return this.buildUpsertResult(configDocument).toBuilder()
+        .setPrevConfig(existingConfig.getConfig())
+        .build();
+  }
+
+  private UpsertedConfig buildUpsertResult(ConfigDocument configDocument) {
+    return UpsertedConfig.newBuilder()
         .setConfig(configDocument.getConfig())
         .setContext(configDocument.getContext())
         .setCreationTimestamp(configDocument.getCreationTimestamp())
         .setUpdateTimestamp(configDocument.getUpdateTimestamp())
         .build();
-  }
-
-  private InternalContextSpecificConfig getInternalContextSpecificConfig(
-      ConfigDocument configDocument, ContextSpecificConfig existingConfig) {
-    if (ConfigServiceUtils.isNull(existingConfig.getConfig())) {
-      return new InternalContextSpecificConfig(getContextSpecificConfig(configDocument));
-    } else {
-      return new InternalContextSpecificConfig(
-          getContextSpecificConfig(configDocument), existingConfig.getConfig());
-    }
   }
 }

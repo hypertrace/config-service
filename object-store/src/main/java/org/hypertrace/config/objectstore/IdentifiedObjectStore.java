@@ -11,6 +11,9 @@ import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetConfigRequest;
+import org.hypertrace.config.service.v1.UpsertAllConfigsRequest;
+import org.hypertrace.config.service.v1.UpsertAllConfigsRequest.ConfigToUpsert;
+import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -112,28 +115,8 @@ public abstract class IdentifiedObjectStore<T> {
                         .setConfig(this.buildValueFromObject(object))
                         .build()));
 
-    T upsertedObject =
-        this.buildObjectFromValue(response.getConfig())
-            .orElseThrow(Status.INTERNAL::asRuntimeException);
-
-    configChangeEventGeneratorOptional.ifPresent(
-        configChangeEventGenerator -> {
-          if (response.hasPrevConfig()) {
-            configChangeEventGenerator.sendUpdateNotification(
-                context,
-                upsertedObject.getClass().getName(),
-                getContextFromObject(upsertedObject),
-                response.getPrevConfig(),
-                response.getConfig());
-          } else {
-            configChangeEventGenerator.sendCreateNotification(
-                context,
-                upsertedObject.getClass().getName(),
-                getContextFromObject(upsertedObject),
-                response.getConfig());
-          }
-        });
-    return upsertedObject;
+    return this.processUpsertResult(context, response)
+        .orElseThrow(Status.INTERNAL::asRuntimeException);
   }
 
   public Optional<T> deleteObject(RequestContext context, String id) {
@@ -166,9 +149,75 @@ public abstract class IdentifiedObjectStore<T> {
   }
 
   public List<T> upsertObjects(RequestContext context, List<T> objects) {
-    // TODO push down a bulk upsert API
-    return objects.stream()
-        .map(object -> this.upsertObject(context, object))
+    List<ConfigToUpsert> configs =
+        objects.stream()
+            .map(
+                object ->
+                    ConfigToUpsert.newBuilder()
+                        .setResourceName(this.resourceName)
+                        .setResourceNamespace(this.resourceNamespace)
+                        .setContext(this.getContextFromObject(object))
+                        .setConfig(this.buildValueFromObject(object))
+                        .build())
+            .collect(Collectors.toUnmodifiableList());
+
+    return context
+        .call(
+            () ->
+                this.configServiceBlockingStub.upsertAllConfigs(
+                    UpsertAllConfigsRequest.newBuilder().addAllConfigs(configs).build()))
+        .getUpsertedConfigsList()
+        .stream()
+        .map(upsertedConfig -> this.processUpsertResult(context, upsertedConfig))
+        .flatMap(Optional::stream)
         .collect(Collectors.toUnmodifiableList());
+  }
+
+  private Optional<T> processUpsertResult(
+      RequestContext requestContext, UpsertConfigResponse response) {
+    if (response.hasPrevConfig()) {
+      return this.processUpdateResult(
+          requestContext, response.getConfig(), response.getPrevConfig());
+    }
+    return this.processCreateResult(requestContext, response.getConfig());
+  }
+
+  private Optional<T> processUpsertResult(
+      RequestContext requestContext, UpsertedConfig upsertedConfig) {
+    if (upsertedConfig.hasPrevConfig()) {
+      return this.processUpdateResult(
+          requestContext, upsertedConfig.getConfig(), upsertedConfig.getPrevConfig());
+    }
+    return this.processCreateResult(requestContext, upsertedConfig.getConfig());
+  }
+
+  private Optional<T> processUpdateResult(
+      RequestContext requestContext, Value updatedValue, Value previousValue) {
+    Optional<T> parsedResult = this.buildObjectFromValue(updatedValue);
+    parsedResult.ifPresent(
+        updatedObject ->
+            configChangeEventGeneratorOptional.ifPresent(
+                configChangeEventGenerator ->
+                    configChangeEventGenerator.sendUpdateNotification(
+                        requestContext,
+                        updatedObject.getClass().getName(),
+                        this.getContextFromObject(updatedObject),
+                        previousValue,
+                        updatedValue)));
+    return parsedResult;
+  }
+
+  private Optional<T> processCreateResult(RequestContext requestContext, Value newValue) {
+    Optional<T> parsedResult = this.buildObjectFromValue(newValue);
+    parsedResult.ifPresent(
+        newObject ->
+            configChangeEventGeneratorOptional.ifPresent(
+                configChangeEventGenerator ->
+                    configChangeEventGenerator.sendCreateNotification(
+                        requestContext,
+                        newObject.getClass().getName(),
+                        this.getContextFromObject(newObject),
+                        newValue)));
+    return parsedResult;
   }
 }
