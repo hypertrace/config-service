@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import java.time.Clock;
 import java.util.Map;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.junit.jupiter.api.Test;
@@ -16,7 +17,8 @@ class ConfigChangeEventGeneratorFactoryTest {
     Config config =
         ConfigFactory.parseMap(Map.of(GENERIC_CONFIG_SERVICE_PUBLISH_CHANGE_EVENTS, "false"));
     ConfigChangeEventGenerator configChangeEventGenerator =
-        ConfigChangeEventGeneratorFactory.getInstance().createConfigChangeEventGenerator(config);
+        ConfigChangeEventGeneratorFactory.getInstance()
+            .createConfigChangeEventGenerator(config, Clock.systemUTC());
     assertTrue(configChangeEventGenerator instanceof NoopConfigChangeEventGenerator);
   }
 
@@ -24,7 +26,8 @@ class ConfigChangeEventGeneratorFactoryTest {
   void createConfigChangeEventGeneratorImpl() {
     Config config = getEventStoreConfig();
     ConfigChangeEventGenerator configChangeEventGenerator =
-        ConfigChangeEventGeneratorFactory.getInstance().createConfigChangeEventGenerator(config);
+        ConfigChangeEventGeneratorFactory.getInstance()
+            .createConfigChangeEventGenerator(config, Clock.systemUTC());
     assertTrue(configChangeEventGenerator instanceof ConfigChangeEventGeneratorImpl);
   }
 

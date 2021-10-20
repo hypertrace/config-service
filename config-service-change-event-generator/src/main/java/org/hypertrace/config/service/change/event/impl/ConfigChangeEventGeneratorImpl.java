@@ -3,6 +3,7 @@ package org.hypertrace.config.service.change.event.impl;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.Value;
 import com.typesafe.config.Config;
+import java.time.Clock;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.change.event.v1.ConfigChangeEventKey;
@@ -31,9 +32,11 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
 
   private final EventProducer<ConfigChangeEventKey, ConfigChangeEventValue>
       configChangeEventProducer;
+  private Clock clock;
 
-  ConfigChangeEventGeneratorImpl(Config appConfig) {
+  ConfigChangeEventGeneratorImpl(Config appConfig, Clock clock) {
     Config config = appConfig.getConfig(EVENT_STORE);
+    this.clock = clock;
     String storeType = config.getString(EVENT_STORE_TYPE_CONFIG);
     EventStore eventStore = EventStoreProvider.getEventStore(storeType, config);
     configChangeEventProducer =
@@ -45,7 +48,9 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
 
   @VisibleForTesting
   ConfigChangeEventGeneratorImpl(
-      EventProducer<ConfigChangeEventKey, ConfigChangeEventValue> configChangeEventProducer) {
+      EventProducer<ConfigChangeEventKey, ConfigChangeEventValue> configChangeEventProducer,
+      Clock clock) {
+    this.clock = clock;
     this.configChangeEventProducer = configChangeEventProducer;
   }
 
@@ -103,6 +108,7 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
           ConfigCreateEvent.newBuilder()
               .setCreatedConfigJson(ConfigProtoConverter.convertToJsonString(config))
               .build());
+      builder.setEventTimeMillis(clock.millis());
       populateUserDetails(requestContext, builder);
       configChangeEventProducer.send(
           KeyUtil.getKey(tenantId, configType, contextOptional), builder.build());
@@ -130,6 +136,7 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
               .setPreviousConfigJson(ConfigProtoConverter.convertToJsonString(prevConfig))
               .setLatestConfigJson(ConfigProtoConverter.convertToJsonString(latestConfig))
               .build());
+      builder.setEventTimeMillis(clock.millis());
       populateUserDetails(requestContext, builder);
       configChangeEventProducer.send(
           KeyUtil.getKey(tenantId, configType, contextOptional), builder.build());
@@ -155,6 +162,7 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
           ConfigDeleteEvent.newBuilder()
               .setDeletedConfigJson(ConfigProtoConverter.convertToJsonString(config))
               .build());
+      builder.setEventTimeMillis(clock.millis());
       populateUserDetails(requestContext, builder);
       configChangeEventProducer.send(
           KeyUtil.getKey(tenantId, configType, contextOptional), builder.build());
