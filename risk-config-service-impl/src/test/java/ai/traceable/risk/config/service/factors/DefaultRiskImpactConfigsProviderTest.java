@@ -48,7 +48,7 @@ public class DefaultRiskImpactConfigsProviderTest {
       assertTrue(factor.getIsDefault());
       assertEquals(
           RiskFactorInfo.newBuilder()
-              .setName("Custom Tags")
+              .setName("Tags")
               .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_CUSTOM_TAGS)
               .build(),
           factor.getRiskFactorInfo());
@@ -64,26 +64,26 @@ public class DefaultRiskImpactConfigsProviderTest {
       assertEquals(4, factor.getRiskFactorConfig().getRiskElementConfigsCount());
     }
     {
-      RiskFactor factor = factorMap.get("exposureSurface");
+      RiskFactor factor = factorMap.get("lossOfConfidentiality");
       assertTrue(factor.getIsDefault());
       assertEquals(
           RiskFactorInfo.newBuilder()
-              .setName("Exposure Surface")
-              .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_EXPOSURE_SURFACE)
+              .setName("Loss of Confidentiality")
+              .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_LOSS_OF_CONFIDENTIALITY)
               .build(),
           factor.getRiskFactorInfo());
       assertEquals(0, factor.getCustomizationOptionsCount());
       assertEquals(
           RiskFactorScoring.getDefaultInstance(),
           factor.getRiskFactorConfig().getRiskFactorScoring());
-      assertEquals(5, factor.getRiskFactorConfig().getRiskElementConfigsCount());
+      assertEquals(1, factor.getRiskFactorConfig().getRiskElementConfigsCount());
     }
     {
       RiskFactor factor = factorMap.get("sensitiveDataExposure");
       assertTrue(factor.getIsDefault());
       assertEquals(
           RiskFactorInfo.newBuilder()
-              .setName("Sensitive Data Exposure")
+              .setName("Sensitive Data Exfiltration")
               .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_SENSITIVE_DATA_EXPOSURE)
               .build(),
           factor.getRiskFactorInfo());
@@ -191,19 +191,19 @@ public class DefaultRiskImpactConfigsProviderTest {
       assertEquals(1, factor.getRiskFactorConfig().getRiskElementConfigsCount());
     }
     {
-      RiskFactor factor = factorMap.get("exposureSurface");
+      RiskFactor factor = factorMap.get("lossOfConfidentiality");
       assertTrue(factor.getIsDefault());
       assertEquals(
           RiskFactorInfo.newBuilder()
-              .setName("Exposure Surface")
-              .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_EXPOSURE_SURFACE)
+              .setName("Loss of Confidentiality")
+              .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_LOSS_OF_CONFIDENTIALITY)
               .build(),
           factor.getRiskFactorInfo());
       assertEquals(0, factor.getCustomizationOptionsCount());
       assertEquals(
           RiskFactorScoring.getDefaultInstance(),
           factor.getRiskFactorConfig().getRiskFactorScoring());
-      assertEquals(5, factor.getRiskFactorConfig().getRiskElementConfigsCount());
+      assertEquals(1, factor.getRiskFactorConfig().getRiskElementConfigsCount());
     }
     {
       RiskFactor factor = factorMap.get("sensitiveDataExposure");

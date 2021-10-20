@@ -36,7 +36,7 @@ public class DefaultRiskLikelihoodConfigsProviderTest {
         new DefaultRiskLikelihoodConfigsProvider(
             configUtils, new RiskConfigServiceConfig(ConfigFactory.empty()));
     RiskContributorConfigs configs = provider.get();
-    assertEquals(3, configs.getRiskFactorsCount());
+    assertEquals(4, configs.getRiskFactorsCount());
 
     Map<String, RiskFactor> factorMap =
         configs.getRiskFactorsList().stream()
@@ -48,7 +48,7 @@ public class DefaultRiskLikelihoodConfigsProviderTest {
       assertTrue(factor.getIsDefault());
       assertEquals(
           RiskFactorInfo.newBuilder()
-              .setName("Custom Tags")
+              .setName("Tags")
               .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_CUSTOM_TAGS)
               .build(),
           factor.getRiskFactorInfo());
@@ -92,6 +92,21 @@ public class DefaultRiskLikelihoodConfigsProviderTest {
           RiskFactorScoring.getDefaultInstance(),
           factor.getRiskFactorConfig().getRiskFactorScoring());
       assertEquals(4, factor.getRiskFactorConfig().getRiskElementConfigsCount());
+    }
+    {
+      RiskFactor factor = factorMap.get("exploitSurface");
+      assertTrue(factor.getIsDefault());
+      assertEquals(
+          RiskFactorInfo.newBuilder()
+              .setName("Exploit Surface")
+              .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_EXPLOIT_SURFACE)
+              .build(),
+          factor.getRiskFactorInfo());
+      assertEquals(0, factor.getCustomizationOptionsCount());
+      assertEquals(
+          RiskFactorScoring.getDefaultInstance(),
+          factor.getRiskFactorConfig().getRiskFactorScoring());
+      assertEquals(5, factor.getRiskFactorConfig().getRiskElementConfigsCount());
     }
   }
 
@@ -160,10 +175,86 @@ public class DefaultRiskLikelihoodConfigsProviderTest {
                         + "    riskFactorConfig = {\n"
                         + "      id = \"easeOfAccess\"\n"
                         + "    }\n"
-                        + "  }\n"
-                        + "]}")));
+                        + "  },\n"
+                        + "  {\n"
+                        + "    riskFactorInfo = {\n"
+                        + "      name = \"Exploit Surface\"\n"
+                        + "      riskFactorType = RISK_FACTOR_TYPE_EXPLOIT_SURFACE\n"
+                        + "    }\n"
+                        + "    riskFactorConfig = {\n"
+                        + "      id = \"exploitSurface\"\n"
+                        + "      riskElementConfigs = [\n"
+                        + "        {\n"
+                        + "          id = \"requestNoParams\"\n"
+                        + "          riskElementInfo = {\n"
+                        + "            name = \"Request has No Params\"\n"
+                        + "            requestParamsCount = {\n"
+                        + "              operator = INT_OPERATOR_EQUALS\n"
+                        + "              value = 0\n"
+                        + "            }\n"
+                        + "          }\n"
+                        + "          riskElementScoring = {\n"
+                        + "            score = 0\n"
+                        + "          }\n"
+                        + "        },\n"
+                        + "        {\n"
+                        + "          id = \"request1Param\"\n"
+                        + "          riskElementInfo = {\n"
+                        + "            name = \"Request has only 1 Param\"\n"
+                        + "            requestParamsCount = {\n"
+                        + "              operator = INT_OPERATOR_EQUALS\n"
+                        + "              value = 1\n"
+                        + "            }\n"
+                        + "          }\n"
+                        + "          riskElementScoring = {\n"
+                        + "            score = 1\n"
+                        + "          }\n"
+                        + "        },\n"
+                        + "        {\n"
+                        + "          id = \"request2orMoreParams\"\n"
+                        + "          riskElementInfo = {\n"
+                        + "            name = \"Request has 2 or more Params\"\n"
+                        + "            requestParamsCount = {\n"
+                        + "              operator = INT_OPERATOR_GREATER_THAN_EQUALS\n"
+                        + "              value = 2\n"
+                        + "            }\n"
+                        + "          }\n"
+                        + "          riskElementScoring = {\n"
+                        + "            score = 3\n"
+                        + "          }\n"
+                        + "        },\n"
+                        + "        {\n"
+                        + "          id = \"request5orMoreParams\"\n"
+                        + "          riskElementInfo = {\n"
+                        + "            name = \"Request has 5 or more Params\"\n"
+                        + "            requestParamsCount = {\n"
+                        + "              operator = INT_OPERATOR_GREATER_THAN_EQUALS\n"
+                        + "              value = 5\n"
+                        + "            }\n"
+                        + "          }\n"
+                        + "          riskElementScoring = {\n"
+                        + "            score = 7\n"
+                        + "          }\n"
+                        + "        },\n"
+                        + "        {\n"
+                        + "          id = \"request10orMoreParams\"\n"
+                        + "          riskElementInfo = {\n"
+                        + "            name = \"Request has 10 or more Params\"\n"
+                        + "            requestParamsCount = {\n"
+                        + "              operator = INT_OPERATOR_GREATER_THAN_EQUALS\n"
+                        + "              value = 10\n"
+                        + "            }\n"
+                        + "          }\n"
+                        + "          riskElementScoring = {\n"
+                        + "            score = 10\n"
+                        + "          }\n"
+                        + "        }\n"
+                        + "      ]\n"
+                        + "    }\n"
+                        + "  }"
+                        + "]}\n")));
     RiskContributorConfigs configs = provider.get();
-    assertEquals(4, configs.getRiskFactorsCount());
+    assertEquals(5, configs.getRiskFactorsCount());
 
     Map<String, RiskFactor> factorMap =
         configs.getRiskFactorsList().stream()

@@ -20,6 +20,8 @@ message RiskElementInfo {
     BooleanPredicate endpoint_internal_restricted = 9;
     BooleanPredicate endpoint_internal_popular = 10;
     StringPredicate label_id = 11;
+    IntPredicate response_params_count = 12;
+    BooleanPredicate unauthenticated = 13;
   }
 }
 
