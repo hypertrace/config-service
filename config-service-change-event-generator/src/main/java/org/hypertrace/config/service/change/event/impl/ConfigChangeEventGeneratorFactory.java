@@ -1,6 +1,7 @@
 package org.hypertrace.config.service.change.event.impl;
 
 import com.typesafe.config.Config;
+import java.time.Clock;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 
 public class ConfigChangeEventGeneratorFactory {
@@ -17,9 +18,10 @@ public class ConfigChangeEventGeneratorFactory {
     return instance;
   }
 
-  public ConfigChangeEventGenerator createConfigChangeEventGenerator(Config appConfig) {
+  public ConfigChangeEventGenerator createConfigChangeEventGenerator(
+      Config appConfig, Clock clock) {
     if (appConfig.getBoolean(GENERIC_CONFIG_SERVICE_PUBLISH_CHANGE_EVENTS)) {
-      return new ConfigChangeEventGeneratorImpl(appConfig);
+      return new ConfigChangeEventGeneratorImpl(appConfig, clock);
     } else {
       return new NoopConfigChangeEventGenerator();
     }
