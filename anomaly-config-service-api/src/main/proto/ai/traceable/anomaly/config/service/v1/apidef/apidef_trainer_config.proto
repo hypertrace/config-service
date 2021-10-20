@@ -158,21 +158,25 @@ message ThresholdsFamilyMetadataApplierConfig {
 message QueryParamContainsSensitiveDataVulnerabilityApplierConfig {
   optional int32 min_total_pii_type_occurrences = 1;
   optional int32 min_percent_of_pii_type = 2;
+  Severity severity = 3;
 }
 
 message JavaSerializedObjectVulnerabilityApplierConfig {
   repeated string base64_serialized_strings = 1;
   optional string raw_serialized_string = 2;
+  Severity severity = 3;
 }
 
 message LackOfEncryptionVulnerabilityApplierConfig {
   optional int32 min_percent_of_https_calls = 1;
   optional int32 min_number_of_calls = 2;
+  Severity severity = 3;
 }
 
 message PersistentCookieContainsSensitiveDataVulnerabilityApplierConfig {
   optional int32 min_total_pii_type_occurrences = 1;
   optional int32 min_percent_of_pii_type = 2;
+  Severity severity = 3;
 }
 
 message PiiSensitiveDataApplierConfig {
@@ -192,13 +196,28 @@ message UserRoleMetadataApplierConfig {}
 
 message IsExternalApiMetadataApplierConfig {}
 
-message ApiParamContainsUrlEntityVulnerabilityApplierConfig {}
+message ApiParamContainsUrlEntityVulnerabilityApplierConfig {
+  Severity severity = 1;
+}
 
-message ServiceUsesBasicAuthVulnerabilityApplierConfig {}
+message ServiceUsesBasicAuthVulnerabilityApplierConfig {
+  Severity severity = 1;
+}
 
-message HstsSecurityHeaderVulnerabilityApplierConfig {}
+message HstsSecurityHeaderVulnerabilityApplierConfig {
+  Severity severity = 1;
+}
 
-message ContentTypeOptionsSecurityHeaderVulnerabilityApplierConfig {}
+message ContentTypeOptionsSecurityHeaderVulnerabilityApplierConfig {
+  Severity severity = 1;
+}
+
+enum Severity {
+  SEVERITY_UNSPECIFIED = 0;
+  SEVERITY_LOW = 1;
+  SEVERITY_MEDIUM = 2;
+  SEVERITY_HIGH = 3;
+}
 
 message DlpSchedule {
   optional string param_age_threshold_duration = 1;
