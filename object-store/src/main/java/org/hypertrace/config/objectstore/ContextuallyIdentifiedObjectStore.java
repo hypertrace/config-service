@@ -2,6 +2,7 @@ package org.hypertrace.config.objectstore;
 
 import com.google.protobuf.Value;
 import java.util.Optional;
+import java.util.function.Function;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -33,9 +34,9 @@ public abstract class ContextuallyIdentifiedObjectStore<T> {
     this.configChangeEventGenerator = Optional.empty();
   }
 
-  protected abstract Optional<T> buildObjectFromValue(Value value);
+  protected abstract Optional<T> buildDataFromValue(Value value);
 
-  protected abstract Value buildValueFromObject(T object);
+  protected abstract Value buildValueFromData(T data);
 
   protected abstract String getConfigContextFromRequestContext(RequestContext requestContext);
 
@@ -45,18 +46,19 @@ public abstract class ContextuallyIdentifiedObjectStore<T> {
         .orElseGet(() -> new ContextAwareIdentifiedObjectStoreDelegate(context));
   }
 
-  public Optional<T> getObject(RequestContext context) {
+  public Optional<T> getData(RequestContext context) {
     return this.buildObjectStoreForContext(context)
-        .getObject(context, this.getConfigContextFromRequestContext(context));
+        .getData(context, this.getConfigContextFromRequestContext(context));
   }
 
-  public T upsertObject(RequestContext context, T object) {
-    return this.buildObjectStoreForContext(context).upsertObject(context, object);
+  public ConfigObject<T> upsertObject(RequestContext context, T data) {
+    return this.buildObjectStoreForContext(context).upsertObject(context, data);
   }
 
-  public Optional<T> deleteObject(RequestContext context) {
+  public Optional<ConfigObject<T>> deleteObject(RequestContext context) {
     return this.buildObjectStoreForContext(context)
-        .deleteObject(context, this.getConfigContextFromRequestContext(context));
+        .deleteObject(context, this.getConfigContextFromRequestContext(context))
+        .map(Function.identity());
   }
 
   private class ContextAwareIdentifiedObjectStoreDelegate extends IdentifiedObjectStore<T> {
@@ -75,17 +77,17 @@ public abstract class ContextuallyIdentifiedObjectStore<T> {
     }
 
     @Override
-    protected Optional<T> buildObjectFromValue(Value value) {
-      return ContextuallyIdentifiedObjectStore.this.buildObjectFromValue(value);
+    protected Optional<T> buildDataFromValue(Value value) {
+      return ContextuallyIdentifiedObjectStore.this.buildDataFromValue(value);
     }
 
     @Override
-    protected Value buildValueFromObject(T object) {
-      return ContextuallyIdentifiedObjectStore.this.buildValueFromObject(object);
+    protected Value buildValueFromData(T data) {
+      return ContextuallyIdentifiedObjectStore.this.buildValueFromData(data);
     }
 
     @Override
-    protected String getContextFromObject(T object) {
+    protected String getContextFromData(T data) {
       return ContextuallyIdentifiedObjectStore.this.getConfigContextFromRequestContext(
           requestContext);
     }

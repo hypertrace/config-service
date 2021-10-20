@@ -4,7 +4,9 @@ import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.CreateNotificationRuleRequest;
@@ -48,7 +50,7 @@ public class NotificationRuleConfigServiceImpl
       responseObserver.onNext(
           CreateNotificationRuleResponse.newBuilder()
               .setNotificationRule(
-                  notificationRuleStore.upsertObject(requestContext, builder.build()))
+                  notificationRuleStore.upsertObject(requestContext, builder.build()).getData())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -67,12 +69,15 @@ public class NotificationRuleConfigServiceImpl
       responseObserver.onNext(
           UpdateNotificationRuleResponse.newBuilder()
               .setNotificationRule(
-                  notificationRuleStore.upsertObject(
-                      requestContext,
-                      NotificationRule.newBuilder()
-                          .setId(request.getId())
-                          .setNotificationRuleMutableData(request.getNotificationRuleMutableData())
-                          .build()))
+                  notificationRuleStore
+                      .upsertObject(
+                          requestContext,
+                          NotificationRule.newBuilder()
+                              .setId(request.getId())
+                              .setNotificationRuleMutableData(
+                                  request.getNotificationRuleMutableData())
+                              .build())
+                      .getData())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -90,7 +95,10 @@ public class NotificationRuleConfigServiceImpl
       validator.validateGetAllNotificationRulesRequest(requestContext, request);
       responseObserver.onNext(
           GetAllNotificationRulesResponse.newBuilder()
-              .addAllNotificationRules(notificationRuleStore.getAllObjects(requestContext))
+              .addAllNotificationRules(
+                  notificationRuleStore.getAllObjects(requestContext).stream()
+                      .map(ConfigObject::getData)
+                      .collect(Collectors.toUnmodifiableList()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -126,7 +134,7 @@ public class NotificationRuleConfigServiceImpl
       validator.validateGetNotificationRuleRequest(requestContext, request);
       NotificationRule notificationRule =
           notificationRuleStore
-              .getObject(requestContext, request.getNotificationRuleId())
+              .getData(requestContext, request.getNotificationRuleId())
               .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       responseObserver.onNext(
           GetNotificationRuleResponse.newBuilder().setNotificationRule(notificationRule).build());

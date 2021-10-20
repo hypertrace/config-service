@@ -5,6 +5,7 @@ import io.grpc.Status;
 import java.util.Optional;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
+import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
@@ -44,11 +45,11 @@ public abstract class DefaultObjectStore<T> {
     this.configChangeEventGeneratorOptional = Optional.empty();
   }
 
-  protected abstract Optional<T> buildObjectFromValue(Value value);
+  protected abstract Optional<T> buildDataFromValue(Value value);
 
-  protected abstract Value buildValueFromObject(T object);
+  protected abstract Value buildValueFromData(T data);
 
-  public Optional<T> getObject(RequestContext context) {
+  public Optional<T> getData(RequestContext context) {
     try {
       Value value =
           context.call(
@@ -60,8 +61,8 @@ public abstract class DefaultObjectStore<T> {
                               .setResourceNamespace(this.resourceNamespace)
                               .build())
                       .getConfig());
-      T object = this.buildObjectFromValue(value).orElseThrow(Status.INTERNAL::asRuntimeException);
-      return Optional.of(object);
+      T data = this.buildDataFromValue(value).orElseThrow(Status.INTERNAL::asRuntimeException);
+      return Optional.of(data);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
         return Optional.empty();
@@ -70,7 +71,7 @@ public abstract class DefaultObjectStore<T> {
     }
   }
 
-  public T upsertObject(RequestContext context, T object) {
+  public ConfigObject<T> upsertObject(RequestContext context, T data) {
     UpsertConfigResponse response =
         context.call(
             () ->
@@ -78,11 +79,11 @@ public abstract class DefaultObjectStore<T> {
                     UpsertConfigRequest.newBuilder()
                         .setResourceName(this.resourceName)
                         .setResourceNamespace(this.resourceNamespace)
-                        .setConfig(this.buildValueFromObject(object))
+                        .setConfig(this.buildValueFromData(data))
                         .build()));
 
-    T upsertedObject =
-        this.buildObjectFromValue(response.getConfig())
+    ConfigObject<T> upsertedObject =
+        ConfigObjectImpl.tryBuild(response, this::buildDataFromValue)
             .orElseThrow(Status.INTERNAL::asRuntimeException);
 
     configChangeEventGeneratorOptional.ifPresent(
@@ -90,20 +91,20 @@ public abstract class DefaultObjectStore<T> {
           if (response.hasPrevConfig()) {
             configChangeEventGenerator.sendUpdateNotification(
                 context,
-                upsertedObject.getClass().getName(),
+                upsertedObject.getData().getClass().getName(),
                 response.getPrevConfig(),
                 response.getConfig());
           } else {
             configChangeEventGenerator.sendCreateNotification(
-                context, upsertedObject.getClass().getName(), response.getConfig());
+                context, upsertedObject.getData().getClass().getName(), response.getConfig());
           }
         });
     return upsertedObject;
   }
 
-  public Optional<T> deleteObject(RequestContext context) {
+  public Optional<ConfigObject<T>> deleteObject(RequestContext context) {
     try {
-      Value deletedValue =
+      ContextSpecificConfig deletedConfig =
           context
               .call(
                   () ->
@@ -112,14 +113,14 @@ public abstract class DefaultObjectStore<T> {
                               .setResourceName(this.resourceName)
                               .setResourceNamespace(this.resourceNamespace)
                               .build()))
-              .getDeletedConfig()
-              .getConfig();
-      T object =
-          this.buildObjectFromValue(deletedValue).orElseThrow(Status.INTERNAL::asRuntimeException);
+              .getDeletedConfig();
+      ConfigObject<T> object =
+          ConfigObjectImpl.tryBuild(deletedConfig, this::buildDataFromValue)
+              .orElseThrow(Status.INTERNAL::asRuntimeException);
       configChangeEventGeneratorOptional.ifPresent(
           configChangeEventGenerator ->
               configChangeEventGenerator.sendDeleteNotification(
-                  context, object.getClass().getName(), deletedValue));
+                  context, object.getData().getClass().getName(), deletedConfig.getConfig()));
       return Optional.of(object);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {

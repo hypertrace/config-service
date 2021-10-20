@@ -32,7 +32,7 @@ public class NotificationChannelStore extends IdentifiedObjectStore<Notification
   }
 
   @Override
-  protected Optional<NotificationChannel> buildObjectFromValue(Value value) {
+  protected Optional<NotificationChannel> buildDataFromValue(Value value) {
     NotificationChannel.Builder builder = NotificationChannel.newBuilder();
     try {
       ConfigProtoConverter.mergeFromValue(value, builder);
@@ -45,12 +45,12 @@ public class NotificationChannelStore extends IdentifiedObjectStore<Notification
 
   @SneakyThrows
   @Override
-  protected Value buildValueFromObject(NotificationChannel object) {
+  protected Value buildValueFromData(NotificationChannel object) {
     return ConfigProtoConverter.convertToValue(object);
   }
 
   @Override
-  protected String getContextFromObject(NotificationChannel object) {
+  protected String getContextFromData(NotificationChannel object) {
     return object.getId();
   }
 }

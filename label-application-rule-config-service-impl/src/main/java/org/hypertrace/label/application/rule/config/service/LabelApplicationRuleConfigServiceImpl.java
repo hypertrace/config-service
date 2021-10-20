@@ -5,6 +5,8 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -51,7 +53,9 @@ public class LabelApplicationRuleConfigServiceImpl
               .setData(request.getData())
               .build();
       LabelApplicationRule createdLabelApplicationRule =
-          this.labelApplicationRuleStore.upsertObject(requestContext, labelApplicationRule);
+          this.labelApplicationRuleStore
+              .upsertObject(requestContext, labelApplicationRule)
+              .getData();
       responseObserver.onNext(
           CreateLabelApplicationRuleResponse.newBuilder()
               .setLabelApplicationRule(createdLabelApplicationRule)
@@ -70,7 +74,9 @@ public class LabelApplicationRuleConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.requestValidator.validateOrThrow(requestContext, request);
       List<LabelApplicationRule> labelApplicationRules =
-          this.labelApplicationRuleStore.getAllObjects(requestContext);
+          this.labelApplicationRuleStore.getAllObjects(requestContext).stream()
+              .map(ConfigObject::getData)
+              .collect(Collectors.toUnmodifiableList());
       responseObserver.onNext(
           GetLabelApplicationRulesResponse.newBuilder()
               .addAllLabelApplicationRules(labelApplicationRules)
@@ -90,12 +96,14 @@ public class LabelApplicationRuleConfigServiceImpl
       this.requestValidator.validateOrThrow(requestContext, request);
       LabelApplicationRule existingRule =
           this.labelApplicationRuleStore
-              .getObject(requestContext, request.getId())
+              .getData(requestContext, request.getId())
               .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       LabelApplicationRule updateLabelApplicationRule =
           existingRule.toBuilder().setData(request.getData()).build();
       LabelApplicationRule upsertedLabelApplicationRule =
-          this.labelApplicationRuleStore.upsertObject(requestContext, updateLabelApplicationRule);
+          this.labelApplicationRuleStore
+              .upsertObject(requestContext, updateLabelApplicationRule)
+              .getData();
       responseObserver.onNext(
           UpdateLabelApplicationRuleResponse.newBuilder()
               .setLabelApplicationRule(upsertedLabelApplicationRule)

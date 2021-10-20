@@ -24,7 +24,7 @@ public class LabelStore extends IdentifiedObjectStore<Label> {
   }
 
   @Override
-  protected Optional<Label> buildObjectFromValue(Value value) {
+  protected Optional<Label> buildDataFromValue(Value value) {
     try {
       Label.Builder builder = Label.newBuilder();
       ConfigProtoConverter.mergeFromValue(value, builder);
@@ -36,12 +36,12 @@ public class LabelStore extends IdentifiedObjectStore<Label> {
 
   @Override
   @SneakyThrows
-  protected Value buildValueFromObject(Label object) {
+  protected Value buildValueFromData(Label object) {
     return ConfigProtoConverter.convertToValue(object);
   }
 
   @Override
-  protected String getContextFromObject(Label object) {
+  protected String getContextFromData(Label object) {
     return object.getId();
   }
 }
