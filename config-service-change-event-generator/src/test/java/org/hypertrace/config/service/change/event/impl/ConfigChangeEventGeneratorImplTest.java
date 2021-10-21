@@ -1,9 +1,12 @@
 package org.hypertrace.config.service.change.event.impl;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
+import java.time.Clock;
 import java.util.Optional;
 import org.hypertrace.config.change.event.v1.ConfigChangeEventKey;
 import org.hypertrace.config.change.event.v1.ConfigChangeEventValue;
@@ -29,15 +32,19 @@ class ConfigChangeEventGeneratorImplTest {
   private static final String TEST_CONTEXT = "test-context";
   private static final String TEST_VALUE = "test-value";
   private static final String TEST_NEW_VALUE = "test-new-value";
+  private static final long CURRENT_TIME_MILLIS = 1000;
 
   @Mock EventProducer<ConfigChangeEventKey, ConfigChangeEventValue> eventProducer;
 
   ConfigChangeEventGeneratorImpl changeEventGenerator;
   RequestContext requestContext;
+  private Clock mockClock;
 
   @BeforeEach
   void setup() {
-    changeEventGenerator = new ConfigChangeEventGeneratorImpl(eventProducer);
+    mockClock = mock(Clock.class);
+    when(mockClock.millis()).thenReturn(CURRENT_TIME_MILLIS);
+    changeEventGenerator = new ConfigChangeEventGeneratorImpl(eventProducer, mockClock);
     requestContext = RequestContext.forTenantId(TEST_TENANT_ID_1);
   }
 
@@ -50,6 +57,7 @@ class ConfigChangeEventGeneratorImplTest {
         .send(
             KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, Optional.of(TEST_CONTEXT)),
             ConfigChangeEventValue.newBuilder()
+                .setEventTimeMillis(CURRENT_TIME_MILLIS)
                 .setCreateEvent(
                     ConfigCreateEvent.newBuilder()
                         .setCreatedConfigJson(ConfigProtoConverter.convertToJsonString(config))
@@ -65,6 +73,7 @@ class ConfigChangeEventGeneratorImplTest {
         .send(
             KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, Optional.empty()),
             ConfigChangeEventValue.newBuilder()
+                .setEventTimeMillis(CURRENT_TIME_MILLIS)
                 .setCreateEvent(
                     ConfigCreateEvent.newBuilder()
                         .setCreatedConfigJson(ConfigProtoConverter.convertToJsonString(config))
@@ -81,6 +90,7 @@ class ConfigChangeEventGeneratorImplTest {
         .send(
             KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, Optional.of(TEST_CONTEXT)),
             ConfigChangeEventValue.newBuilder()
+                .setEventTimeMillis(CURRENT_TIME_MILLIS)
                 .setDeleteEvent(
                     ConfigDeleteEvent.newBuilder()
                         .setDeletedConfigJson(ConfigProtoConverter.convertToJsonString(config))
@@ -96,6 +106,7 @@ class ConfigChangeEventGeneratorImplTest {
         .send(
             KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, Optional.empty()),
             ConfigChangeEventValue.newBuilder()
+                .setEventTimeMillis(CURRENT_TIME_MILLIS)
                 .setDeleteEvent(
                     ConfigDeleteEvent.newBuilder()
                         .setDeletedConfigJson(ConfigProtoConverter.convertToJsonString(config))
@@ -114,6 +125,7 @@ class ConfigChangeEventGeneratorImplTest {
         .send(
             KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, Optional.of(TEST_CONTEXT)),
             ConfigChangeEventValue.newBuilder()
+                .setEventTimeMillis(CURRENT_TIME_MILLIS)
                 .setUpdateEvent(
                     ConfigUpdateEvent.newBuilder()
                         .setPreviousConfigJson(ConfigProtoConverter.convertToJsonString(prevConfig))
@@ -133,6 +145,7 @@ class ConfigChangeEventGeneratorImplTest {
         .send(
             KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, Optional.empty()),
             ConfigChangeEventValue.newBuilder()
+                .setEventTimeMillis(CURRENT_TIME_MILLIS)
                 .setUpdateEvent(
                     ConfigUpdateEvent.newBuilder()
                         .setPreviousConfigJson(ConfigProtoConverter.convertToJsonString(prevConfig))

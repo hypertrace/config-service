@@ -4,6 +4,7 @@ import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import java.time.Clock;
 import java.util.List;
 import org.hypertrace.alerting.config.service.EventConditionConfigServiceImpl;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -33,7 +34,8 @@ public class ConfigServicesFactory {
     lifecycle.shutdownComplete().thenRun(configChannel::shutdown);
 
     ConfigChangeEventGenerator configChangeEventGenerator =
-        ConfigChangeEventGeneratorFactory.getInstance().createConfigChangeEventGenerator(config);
+        ConfigChangeEventGeneratorFactory.getInstance()
+            .createConfigChangeEventGenerator(config, Clock.systemUTC());
 
     return List.of(
         new ConfigServiceGrpcImpl(configStore),
