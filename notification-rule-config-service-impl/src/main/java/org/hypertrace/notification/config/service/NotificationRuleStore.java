@@ -31,7 +31,7 @@ public class NotificationRuleStore extends IdentifiedObjectStore<NotificationRul
   }
 
   @Override
-  protected Optional<NotificationRule> buildObjectFromValue(Value value) {
+  protected Optional<NotificationRule> buildDataFromValue(Value value) {
     NotificationRule.Builder builder = NotificationRule.newBuilder();
     try {
       ConfigProtoConverter.mergeFromValue(value, builder);
@@ -44,12 +44,12 @@ public class NotificationRuleStore extends IdentifiedObjectStore<NotificationRul
 
   @SneakyThrows
   @Override
-  protected Value buildValueFromObject(NotificationRule object) {
+  protected Value buildValueFromData(NotificationRule object) {
     return ConfigProtoConverter.convertToValue(object);
   }
 
   @Override
-  protected String getContextFromObject(NotificationRule object) {
+  protected String getContextFromData(NotificationRule object) {
     return object.getId();
   }
 }

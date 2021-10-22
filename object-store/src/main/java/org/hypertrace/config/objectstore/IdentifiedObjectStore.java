@@ -51,17 +51,18 @@ public abstract class IdentifiedObjectStore<T> {
     this.configChangeEventGeneratorOptional = Optional.empty();
   }
 
-  protected abstract Optional<T> buildObjectFromValue(Value value);
+  protected abstract Optional<T> buildDataFromValue(Value value);
 
-  protected abstract Value buildValueFromObject(T object);
+  protected abstract Value buildValueFromData(T data);
 
-  protected abstract String getContextFromObject(T object);
+  protected abstract String getContextFromData(T data);
 
-  protected List<T> orderFetchedObjects(List<T> objects) {
+  protected List<ContextualConfigObject<T>> orderFetchedObjects(
+      List<ContextualConfigObject<T>> objects) {
     return objects;
   }
 
-  public List<T> getAllObjects(RequestContext context) {
+  public List<ContextualConfigObject<T>> getAllObjects(RequestContext context) {
     return context
         .call(
             () ->
@@ -72,15 +73,17 @@ public abstract class IdentifiedObjectStore<T> {
                         .build()))
         .getContextSpecificConfigsList()
         .stream()
-        .map(ContextSpecificConfig::getConfig)
-        .map(this::buildObjectFromValue)
+        .map(
+            contextSpecificConfig ->
+                ContextualConfigObjectImpl.tryBuild(
+                    contextSpecificConfig, this::buildDataFromValue))
         .flatMap(Optional::stream)
         .collect(
             Collectors.collectingAndThen(
                 Collectors.toUnmodifiableList(), this::orderFetchedObjects));
   }
 
-  public Optional<T> getObject(RequestContext context, String id) {
+  public Optional<T> getData(RequestContext context, String id) {
     try {
       Value value =
           context.call(
@@ -93,7 +96,7 @@ public abstract class IdentifiedObjectStore<T> {
                               .addContexts(id)
                               .build())
                       .getConfig());
-      T object = this.buildObjectFromValue(value).orElseThrow(Status.INTERNAL::asRuntimeException);
+      T object = this.buildDataFromValue(value).orElseThrow(Status.INTERNAL::asRuntimeException);
       return Optional.of(object);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
@@ -103,7 +106,7 @@ public abstract class IdentifiedObjectStore<T> {
     }
   }
 
-  public T upsertObject(RequestContext context, T object) {
+  public ContextualConfigObject<T> upsertObject(RequestContext context, T data) {
     UpsertConfigResponse response =
         context.call(
             () ->
@@ -111,17 +114,17 @@ public abstract class IdentifiedObjectStore<T> {
                     UpsertConfigRequest.newBuilder()
                         .setResourceName(this.resourceName)
                         .setResourceNamespace(this.resourceNamespace)
-                        .setContext(this.getContextFromObject(object))
-                        .setConfig(this.buildValueFromObject(object))
+                        .setContext(this.getContextFromData(data))
+                        .setConfig(this.buildValueFromData(data))
                         .build()));
 
     return this.processUpsertResult(context, response)
         .orElseThrow(Status.INTERNAL::asRuntimeException);
   }
 
-  public Optional<T> deleteObject(RequestContext context, String id) {
+  public Optional<ContextualConfigObject<T>> deleteObject(RequestContext context, String id) {
     try {
-      Value deletedValue =
+      ContextSpecificConfig deletedConfig =
           context
               .call(
                   () ->
@@ -131,14 +134,14 @@ public abstract class IdentifiedObjectStore<T> {
                               .setResourceNamespace(this.resourceNamespace)
                               .setContext(id)
                               .build()))
-              .getDeletedConfig()
-              .getConfig();
-      T object =
-          this.buildObjectFromValue(deletedValue).orElseThrow(Status.INTERNAL::asRuntimeException);
+              .getDeletedConfig();
+      ContextualConfigObject<T> object =
+          ContextualConfigObjectImpl.tryBuild(deletedConfig, this::buildDataFromValue)
+              .orElseThrow(Status.INTERNAL::asRuntimeException);
       configChangeEventGeneratorOptional.ifPresent(
           configChangeEventGenerator ->
               configChangeEventGenerator.sendDeleteNotification(
-                  context, object.getClass().getName(), id, deletedValue));
+                  context, object.getData().getClass().getName(), id, deletedConfig.getConfig()));
       return Optional.of(object);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
@@ -148,16 +151,16 @@ public abstract class IdentifiedObjectStore<T> {
     }
   }
 
-  public List<T> upsertObjects(RequestContext context, List<T> objects) {
+  public List<ContextualConfigObject<T>> upsertObjects(RequestContext context, List<T> data) {
     List<ConfigToUpsert> configs =
-        objects.stream()
+        data.stream()
             .map(
-                object ->
+                singleData ->
                     ConfigToUpsert.newBuilder()
                         .setResourceName(this.resourceName)
                         .setResourceNamespace(this.resourceNamespace)
-                        .setContext(this.getContextFromObject(object))
-                        .setConfig(this.buildValueFromObject(object))
+                        .setContext(this.getContextFromData(singleData))
+                        .setConfig(this.buildValueFromData(singleData))
                         .build())
             .collect(Collectors.toUnmodifiableList());
 
@@ -173,51 +176,57 @@ public abstract class IdentifiedObjectStore<T> {
         .collect(Collectors.toUnmodifiableList());
   }
 
-  private Optional<T> processUpsertResult(
+  private Optional<ContextualConfigObject<T>> processUpsertResult(
       RequestContext requestContext, UpsertConfigResponse response) {
-    if (response.hasPrevConfig()) {
-      return this.processUpdateResult(
-          requestContext, response.getConfig(), response.getPrevConfig());
-    }
-    return this.processCreateResult(requestContext, response.getConfig());
+    Optional<ContextualConfigObject<T>> optionalResult =
+        ContextualConfigObjectImpl.tryBuild(
+            response, this::buildDataFromValue, this::getContextFromData);
+    optionalResult.ifPresent(
+        result -> {
+          if (response.hasPrevConfig()) {
+            tryReportUpdate(requestContext, result, response.getPrevConfig());
+          } else {
+            tryReportCreation(requestContext, result);
+          }
+        });
+    return optionalResult;
   }
 
-  private Optional<T> processUpsertResult(
+  private Optional<ContextualConfigObject<T>> processUpsertResult(
       RequestContext requestContext, UpsertedConfig upsertedConfig) {
-    if (upsertedConfig.hasPrevConfig()) {
-      return this.processUpdateResult(
-          requestContext, upsertedConfig.getConfig(), upsertedConfig.getPrevConfig());
-    }
-    return this.processCreateResult(requestContext, upsertedConfig.getConfig());
+    Optional<ContextualConfigObject<T>> optionalResult =
+        ContextualConfigObjectImpl.tryBuild(upsertedConfig, this::buildDataFromValue);
+
+    optionalResult.ifPresent(
+        result -> {
+          if (upsertedConfig.hasPrevConfig()) {
+            tryReportUpdate(requestContext, result, upsertedConfig.getPrevConfig());
+          } else {
+            tryReportCreation(requestContext, result);
+          }
+        });
+    return optionalResult;
   }
 
-  private Optional<T> processUpdateResult(
-      RequestContext requestContext, Value updatedValue, Value previousValue) {
-    Optional<T> parsedResult = this.buildObjectFromValue(updatedValue);
-    parsedResult.ifPresent(
-        updatedObject ->
-            configChangeEventGeneratorOptional.ifPresent(
-                configChangeEventGenerator ->
-                    configChangeEventGenerator.sendUpdateNotification(
-                        requestContext,
-                        updatedObject.getClass().getName(),
-                        this.getContextFromObject(updatedObject),
-                        previousValue,
-                        updatedValue)));
-    return parsedResult;
+  private void tryReportCreation(RequestContext requestContext, ContextualConfigObject<T> result) {
+    configChangeEventGeneratorOptional.ifPresent(
+        configChangeEventGenerator ->
+            configChangeEventGenerator.sendCreateNotification(
+                requestContext,
+                result.getData().getClass().getName(),
+                result.getContext(),
+                this.buildValueFromData(result.getData())));
   }
 
-  private Optional<T> processCreateResult(RequestContext requestContext, Value newValue) {
-    Optional<T> parsedResult = this.buildObjectFromValue(newValue);
-    parsedResult.ifPresent(
-        newObject ->
-            configChangeEventGeneratorOptional.ifPresent(
-                configChangeEventGenerator ->
-                    configChangeEventGenerator.sendCreateNotification(
-                        requestContext,
-                        newObject.getClass().getName(),
-                        this.getContextFromObject(newObject),
-                        newValue)));
-    return parsedResult;
+  private void tryReportUpdate(
+      RequestContext requestContext, ContextualConfigObject<T> result, Value previousValue) {
+    configChangeEventGeneratorOptional.ifPresent(
+        configChangeEventGenerator ->
+            configChangeEventGenerator.sendUpdateNotification(
+                requestContext,
+                result.getData().getClass().getName(),
+                result.getContext(),
+                previousValue,
+                this.buildValueFromData(result.getData())));
   }
 }
