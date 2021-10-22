@@ -18,6 +18,14 @@ dependencies {
   compileOnly(libs.lombok)
 
   runtimeOnly(libs.kafka.protobuf.serializer)
+  constraints {
+    runtimeOnly("org.glassfish.jersey.core:jersey-common:2.34") {
+      because("https://snyk.io/vuln/SNYK-JAVA-ORGGLASSFISHJERSEYCORE-1255637")
+    }
+    runtimeOnly("org.apache.commons:commons-compress:1.21") {
+      because("Multiple vulnerabilities")
+    }
+  }
 
   testImplementation(libs.junit.jupiter)
   testImplementation(libs.mockito.core)
