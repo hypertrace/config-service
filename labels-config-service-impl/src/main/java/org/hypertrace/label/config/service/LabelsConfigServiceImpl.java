@@ -21,6 +21,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
@@ -121,7 +122,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
                   .setRuleId(createLabel.getRuleId())
                   .setDescription(createLabel.getDescription())
                   .build();
-          Label createdLabel = labelStore.upsertObject(requestContext, label);
+          Label createdLabel = labelStore.upsertObject(requestContext, label).getData();
           responseObserver.onNext(CreateLabelResponse.newBuilder().setLabel(createdLabel).build());
           responseObserver.onCompleted();
         } finally {
@@ -146,7 +147,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
       } else {
         label =
             labelStore
-                .getObject(requestContext, labelId)
+                .getData(requestContext, labelId)
                 .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       }
       responseObserver.onNext(GetLabelResponse.newBuilder().setLabel(label).build());
@@ -162,7 +163,10 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     RequestContext requestContext = RequestContext.CURRENT.get();
     List<Label> allLabels = new ArrayList<>();
     allLabels.addAll(systemLabels);
-    List<Label> tenantLabels = labelStore.getAllObjects(requestContext);
+    List<Label> tenantLabels =
+        labelStore.getAllObjects(requestContext).stream()
+            .map(ContextualConfigObject::getData)
+            .collect(Collectors.toUnmodifiableList());
     allLabels.addAll(tenantLabels);
     responseObserver.onNext(GetLabelsResponse.newBuilder().addAllLabels(allLabels).build());
     responseObserver.onCompleted();
@@ -188,9 +192,10 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
             return;
           }
           labelStore
-              .getObject(requestContext, updatedLabelInReq.getId())
+              .getData(requestContext, updatedLabelInReq.getId())
               .orElseThrow(Status.NOT_FOUND::asRuntimeException);
-          Label updatedLabelInRes = labelStore.upsertObject(requestContext, updatedLabelInReq);
+          Label updatedLabelInRes =
+              labelStore.upsertObject(requestContext, updatedLabelInReq).getData();
           responseObserver.onNext(
               UpdateLabelResponse.newBuilder().setLabel(updatedLabelInRes).build());
           responseObserver.onCompleted();
@@ -238,7 +243,10 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
 
   private boolean isDuplicateKey(String key) {
     RequestContext requestContext = RequestContext.CURRENT.get();
-    List<Label> labelList = labelStore.getAllObjects(requestContext);
+    List<Label> labelList =
+        labelStore.getAllObjects(requestContext).stream()
+            .map(ContextualConfigObject::getData)
+            .collect(Collectors.toUnmodifiableList());
     Optional<Label> match =
         labelList.stream().filter(label -> label.getKey().equals(key)).findAny();
     return match.isPresent();

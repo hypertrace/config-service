@@ -8,6 +8,7 @@ import com.google.protobuf.Message;
 import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -127,18 +128,37 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
   }
 
   private void validateAction(Action action) {
-    validateNonDefaultPresenceOrThrow(action, action.ENTITY_TYPE_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(action, action.ENTITY_TYPES_FIELD_NUMBER);
+    validateEntityTypes(action.getEntityTypesList());
     validateNonDefaultPresenceOrThrow(action, action.OPERATION_FIELD_NUMBER);
     switch (action.getValueCase()) {
-      case STATIC_LABEL_ID:
-        validateNonDefaultPresenceOrThrow(action, action.STATIC_LABEL_ID_FIELD_NUMBER);
+      case STATIC_LABELS:
+        validateStaticLabels(action.getStaticLabels());
         break;
-      case DYNAMIC_LABEL:
-        validateDynamicLabel(action.getDynamicLabel());
+      case DYNAMIC_LABEL_EXPRESSION:
+        validateDynamicLabel(action.getDynamicLabelExpression());
+        break;
+      case DYNAMIC_LABEL_KEY:
+        validateNonDefaultPresenceOrThrow(action, action.DYNAMIC_LABEL_KEY_FIELD_NUMBER);
         break;
       default:
         throwInvalidArgumentException(
             String.format("Unexpected Case in %s:%n %s", getName(action), printMessage(action)));
+    }
+  }
+
+  void validateEntityTypes(List<String> entityTypes) {
+    if (Set.copyOf(entityTypes).size() != entityTypes.size()) {
+      throwInvalidArgumentException(String.format("Duplicate entity types %s", entityTypes));
+    }
+  }
+
+  void validateStaticLabels(Action.StaticLabels staticLabels) {
+    validateNonDefaultPresenceOrThrow(staticLabels, staticLabels.IDS_FIELD_NUMBER);
+    List<String> staticLabelIds = staticLabels.getIdsList();
+    if (Set.copyOf(staticLabelIds).size() != staticLabelIds.size()) {
+      throwInvalidArgumentException(
+          String.format("Duplicate Static Labels %s", printMessage(staticLabels)));
     }
   }
 

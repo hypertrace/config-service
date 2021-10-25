@@ -5,7 +5,9 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.CreateNotificationChannelRequest;
@@ -49,7 +51,7 @@ public class NotificationChannelConfigServiceImpl
       responseObserver.onNext(
           CreateNotificationChannelResponse.newBuilder()
               .setNotificationChannel(
-                  notificationChannelStore.upsertObject(requestContext, builder.build()))
+                  notificationChannelStore.upsertObject(requestContext, builder.build()).getData())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -68,13 +70,15 @@ public class NotificationChannelConfigServiceImpl
       responseObserver.onNext(
           UpdateNotificationChannelResponse.newBuilder()
               .setNotificationChannel(
-                  notificationChannelStore.upsertObject(
-                      requestContext,
-                      NotificationChannel.newBuilder()
-                          .setId(request.getId())
-                          .setNotificationChannelMutableData(
-                              request.getNotificationChannelMutableData())
-                          .build()))
+                  notificationChannelStore
+                      .upsertObject(
+                          requestContext,
+                          NotificationChannel.newBuilder()
+                              .setId(request.getId())
+                              .setNotificationChannelMutableData(
+                                  request.getNotificationChannelMutableData())
+                              .build())
+                      .getData())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -91,7 +95,9 @@ public class NotificationChannelConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       validator.validateGetAllNotificationChannelsRequest(requestContext, request);
       List<NotificationChannel> notificationChannels =
-          notificationChannelStore.getAllObjects(requestContext);
+          notificationChannelStore.getAllObjects(requestContext).stream()
+              .map(ConfigObject::getData)
+              .collect(Collectors.toUnmodifiableList());
       GetAllNotificationChannelsResponse getAllNotificationChannelsResponse =
           GetAllNotificationChannelsResponse.newBuilder()
               .addAllNotificationChannels(notificationChannels)
@@ -131,7 +137,7 @@ public class NotificationChannelConfigServiceImpl
       validator.validateGetNotificationChannelRequest(requestContext, request);
       NotificationChannel notificationChannel =
           notificationChannelStore
-              .getObject(requestContext, request.getNotificationChannelId())
+              .getData(requestContext, request.getNotificationChannelId())
               .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       responseObserver.onNext(
           GetNotificationChannelResponse.newBuilder()

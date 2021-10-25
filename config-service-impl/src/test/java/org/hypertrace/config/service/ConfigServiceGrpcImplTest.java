@@ -1,6 +1,5 @@
 package org.hypertrace.config.service;
 
-import static org.hypertrace.config.service.ConfigServiceUtils.DEFAULT_CONTEXT;
 import static org.hypertrace.config.service.ConfigServiceUtils.emptyValue;
 import static org.hypertrace.config.service.TestUtils.CONTEXT1;
 import static org.hypertrace.config.service.TestUtils.RESOURCE_NAME;
@@ -8,7 +7,7 @@ import static org.hypertrace.config.service.TestUtils.RESOURCE_NAMESPACE;
 import static org.hypertrace.config.service.TestUtils.TENANT_ID;
 import static org.hypertrace.config.service.TestUtils.getConfig1;
 import static org.hypertrace.config.service.TestUtils.getConfig2;
-import static org.hypertrace.config.service.TestUtils.getConfigResource;
+import static org.hypertrace.config.service.TestUtils.getConfigResourceContext;
 import static org.hypertrace.config.service.TestUtils.getExpectedMergedConfig;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.hypertrace.config.service.store.ConfigStore;
-import org.hypertrace.config.service.store.InternalContextSpecificConfig;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.DeleteConfigResponse;
@@ -38,6 +36,7 @@ import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
+import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
@@ -49,22 +48,22 @@ class ConfigServiceGrpcImplTest {
   private static Value config1 = getConfig1();
   private static Value config2 = getConfig2();
   private static Value mergedConfig = getExpectedMergedConfig();
-  private static ConfigResource configResourceWithoutContext = getConfigResource();
-  private static ConfigResource configResourceWithContext = getConfigResource(CONTEXT1);
+  private static ConfigResourceContext configResourceWithoutContext = getConfigResourceContext();
+  private static ConfigResourceContext configResourceWithContext =
+      getConfigResourceContext(CONTEXT1);
 
   @Test
   void upsertConfig() throws IOException {
     ConfigStore configStore = mock(ConfigStore.class);
-    when(configStore.writeConfig(any(ConfigResource.class), anyString(), any(Value.class)))
+    when(configStore.writeConfig(any(ConfigResourceContext.class), anyString(), any(Value.class)))
         .thenAnswer(
             invocation -> {
               Value config = invocation.getArgument(2, Value.class);
-              return new InternalContextSpecificConfig(
-                  ContextSpecificConfig.newBuilder()
-                      .setConfig(config)
-                      .setCreationTimestamp(123L)
-                      .setUpdateTimestamp(456L)
-                      .build());
+              return UpsertedConfig.newBuilder()
+                  .setConfig(config)
+                  .setCreationTimestamp(123)
+                  .setUpdateTimestamp(456)
+                  .build();
             });
 
     ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
@@ -101,11 +100,7 @@ class ConfigServiceGrpcImplTest {
   void getConfig() throws IOException {
     ConfigStore configStore = mock(ConfigStore.class);
     when(configStore.getConfig(eq(configResourceWithoutContext)))
-        .thenReturn(
-            ContextSpecificConfig.newBuilder()
-                .setConfig(config1)
-                .setContext(DEFAULT_CONTEXT)
-                .build());
+        .thenReturn(ContextSpecificConfig.newBuilder().setConfig(config1).build());
     when(configStore.getConfig(eq(configResourceWithContext)))
         .thenReturn(
             ContextSpecificConfig.newBuilder().setConfig(config2).setContext(CONTEXT1).build());
@@ -138,11 +133,11 @@ class ConfigServiceGrpcImplTest {
   void getAllConfigs() throws IOException {
     ConfigStore configStore = mock(ConfigStore.class);
     List<ContextSpecificConfig> contextSpecificConfigList = new ArrayList<>();
-    contextSpecificConfigList.add(
-        ContextSpecificConfig.newBuilder().setContext(DEFAULT_CONTEXT).setConfig(config1).build());
+    contextSpecificConfigList.add(ContextSpecificConfig.newBuilder().setConfig(config1).build());
     contextSpecificConfigList.add(
         ContextSpecificConfig.newBuilder().setContext(CONTEXT1).setConfig(config2).build());
-    when(configStore.getAllConfigs(eq(RESOURCE_NAME), eq(RESOURCE_NAMESPACE), eq(TENANT_ID)))
+    when(configStore.getAllConfigs(
+            new ConfigResource(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID)))
         .thenReturn(contextSpecificConfigList);
     ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
     StreamObserver<GetAllConfigsResponse> responseObserver = mock(StreamObserver.class);
@@ -224,7 +219,7 @@ class ConfigServiceGrpcImplTest {
     assertEquals(Status.NOT_FOUND, ((StatusException) throwable).getStatus());
 
     verify(configStore, never())
-        .writeConfig(any(ConfigResource.class), anyString(), any(Value.class));
+        .writeConfig(any(ConfigResourceContext.class), anyString(), any(Value.class));
     verify(responseObserver, never()).onNext(any(DeleteConfigResponse.class));
     verify(responseObserver, never()).onCompleted();
   }

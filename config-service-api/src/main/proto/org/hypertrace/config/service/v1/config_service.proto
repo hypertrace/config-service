@@ -19,6 +19,8 @@ service ConfigService {
 
   // Deletes the config for the specified request
   rpc DeleteConfig(DeleteConfigRequest) returns (DeleteConfigResponse) {}
+
+  rpc UpsertAllConfigs(UpsertAllConfigsRequest) returns (UpsertAllConfigsResponse) {}
 }
 
 message UpsertConfigRequest {
@@ -109,4 +111,27 @@ message DeleteConfigRequest {
 
 message DeleteConfigResponse {
   ContextSpecificConfig deleted_config = 1;
+}
+
+message UpsertAllConfigsRequest {
+  repeated ConfigToUpsert configs = 1;
+
+  message ConfigToUpsert {
+    string resource_name = 1;
+    string resource_namespace = 2;
+    string context = 3;
+    google.protobuf.Value config = 4;
+  }
+}
+
+message UpsertAllConfigsResponse {
+  repeated UpsertedConfig upserted_configs = 1;
+
+  message UpsertedConfig {
+    string context = 1;
+    google.protobuf.Value config = 2;
+    int64 creation_timestamp = 3;
+    int64 update_timestamp = 4;
+    optional google.protobuf.Value prev_config = 5;
+  }
 }

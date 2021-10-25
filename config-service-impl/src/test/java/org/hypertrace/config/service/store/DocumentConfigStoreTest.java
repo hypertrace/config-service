@@ -1,13 +1,12 @@
 package org.hypertrace.config.service.store;
 
-import static org.hypertrace.config.service.ConfigServiceUtils.DEFAULT_CONTEXT;
 import static org.hypertrace.config.service.TestUtils.CONTEXT1;
 import static org.hypertrace.config.service.TestUtils.RESOURCE_NAME;
 import static org.hypertrace.config.service.TestUtils.RESOURCE_NAMESPACE;
 import static org.hypertrace.config.service.TestUtils.TENANT_ID;
 import static org.hypertrace.config.service.TestUtils.getConfig1;
 import static org.hypertrace.config.service.TestUtils.getConfig2;
-import static org.hypertrace.config.service.TestUtils.getConfigResource;
+import static org.hypertrace.config.service.TestUtils.getConfigResourceContext;
 import static org.hypertrace.config.service.store.DocumentConfigStore.CONFIGURATIONS_COLLECTION;
 import static org.hypertrace.config.service.store.DocumentConfigStore.DATA_STORE_TYPE;
 import static org.hypertrace.config.service.store.DocumentConfigStore.DOC_STORE_CONFIG_KEY;
@@ -18,23 +17,29 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterators;
 import com.google.protobuf.Value;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.io.IOException;
+import java.time.Clock;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.hypertrace.config.service.ConfigResource;
+import org.hypertrace.config.service.ConfigResourceContext;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
+import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.DatastoreProvider;
 import org.hypertrace.core.documentstore.Document;
 import org.hypertrace.core.documentstore.Key;
 import org.hypertrace.core.documentstore.Query;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -45,14 +50,15 @@ class DocumentConfigStoreTest {
   private static final long TIMESTAMP1 = 100L;
   private static final long TIMESTAMP2 = 200L;
   private static final long TIMESTAMP3 = 300L;
-  private static DocumentConfigStore configStore = new DocumentConfigStore();
   private static Value config1 = getConfig1();
   private static Value config2 = getConfig2();
-  private static ConfigResource configResource = getConfigResource();
+  private static ConfigResourceContext configResourceContext = getConfigResourceContext();
   private static Collection collection;
+  private DocumentConfigStore configStore;
+  private Clock mockClock;
 
-  @BeforeAll
-  static void init() {
+  @BeforeEach()
+  void beforeEach() {
     collection = mock(Collection.class);
     String datastoreType = "MockDatastore";
     DatastoreProvider.register(datastoreType, MockDatastore.class);
@@ -60,23 +66,28 @@ class DocumentConfigStoreTest {
         Map.of(DATA_STORE_TYPE, datastoreType, datastoreType, Map.of());
     Map<String, Object> configMap = Map.of(DOC_STORE_CONFIG_KEY, dataStoreConfig);
     Config storeConfig = ConfigFactory.parseMap(configMap);
-    configStore.init(storeConfig);
+    this.mockClock = mock(Clock.class);
+    this.configStore = new DocumentConfigStore(mockClock);
+    this.configStore.init(storeConfig);
   }
 
   @Test
   void writeConfig() throws IOException {
     List<Document> documentList =
         Collections.singletonList(
-            getConfigDocument(DEFAULT_CONTEXT, CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP2));
+            getConfigDocument(
+                configResourceContext.getContext(),
+                CONFIG_VERSION,
+                config1,
+                TIMESTAMP1,
+                TIMESTAMP2));
     when(collection.search(any(Query.class)))
         .thenReturn(documentList.iterator(), documentList.iterator());
 
-    InternalContextSpecificConfig internalContextSpecificConfig =
-        configStore.writeConfig(configResource, USER_ID, config1);
-    assertEquals(config1, internalContextSpecificConfig.getContextSpecificConfig().getConfig());
-    assertEquals(
-        TIMESTAMP1,
-        internalContextSpecificConfig.getContextSpecificConfig().getCreationTimestamp());
+    UpsertedConfig upsertedConfig =
+        configStore.writeConfig(configResourceContext, USER_ID, config1);
+    assertEquals(config1, upsertedConfig.getConfig());
+    assertEquals(TIMESTAMP1, upsertedConfig.getCreationTimestamp());
 
     ArgumentCaptor<Key> keyCaptor = ArgumentCaptor.forClass(Key.class);
     ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
@@ -85,10 +96,10 @@ class DocumentConfigStoreTest {
     Key key = keyCaptor.getValue();
     Document document = documentCaptor.getValue();
     long newVersion = CONFIG_VERSION + 1;
-    assertEquals(new ConfigDocumentKey(configResource, newVersion), key);
+    assertEquals(new ConfigDocumentKey(configResourceContext, newVersion), key);
     assertEquals(
         getConfigDocument(
-            DEFAULT_CONTEXT,
+            configResourceContext.getContext(),
             newVersion,
             config1,
             TIMESTAMP1,
@@ -100,18 +111,18 @@ class DocumentConfigStoreTest {
   void getConfig() throws IOException {
     List<Document> documentList =
         Collections.singletonList(
-            getConfigDocument(DEFAULT_CONTEXT, CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP2));
+            getConfigDocument("context", CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP2));
     when(collection.search(any(Query.class)))
         .thenReturn(documentList.iterator(), documentList.iterator());
 
     ContextSpecificConfig expectedConfig =
         ContextSpecificConfig.newBuilder()
             .setConfig(config1)
-            .setContext(DEFAULT_CONTEXT)
+            .setContext("context")
             .setCreationTimestamp(TIMESTAMP1)
             .setUpdateTimestamp(TIMESTAMP2)
             .build();
-    ContextSpecificConfig actualConfig = configStore.getConfig(configResource);
+    ContextSpecificConfig actualConfig = configStore.getConfig(configResourceContext);
     assertEquals(expectedConfig, actualConfig);
   }
 
@@ -120,13 +131,12 @@ class DocumentConfigStoreTest {
     List<Document> documentList =
         List.of(
             getConfigDocument(CONTEXT1, 1L, config2, TIMESTAMP3, TIMESTAMP3),
-            getConfigDocument(DEFAULT_CONTEXT, CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP2),
-            getConfigDocument(
-                DEFAULT_CONTEXT, CONFIG_VERSION - 1, config2, TIMESTAMP1, TIMESTAMP1));
+            getConfigDocument("context", CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP2),
+            getConfigDocument("context", CONFIG_VERSION - 1, config2, TIMESTAMP1, TIMESTAMP1));
     when(collection.search(any(Query.class))).thenReturn(documentList.iterator());
 
     List<ContextSpecificConfig> contextSpecificConfigList =
-        configStore.getAllConfigs(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID);
+        configStore.getAllConfigs(new ConfigResource(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID));
     assertEquals(2, contextSpecificConfigList.size());
     assertEquals(
         ContextSpecificConfig.newBuilder()
@@ -138,12 +148,71 @@ class DocumentConfigStoreTest {
         contextSpecificConfigList.get(0));
     assertEquals(
         ContextSpecificConfig.newBuilder()
-            .setContext(DEFAULT_CONTEXT)
+            .setContext("context")
             .setConfig(config1)
             .setCreationTimestamp(TIMESTAMP1)
             .setUpdateTimestamp(TIMESTAMP2)
             .build(),
         contextSpecificConfigList.get(1));
+  }
+
+  @Test
+  void writeAllConfigs() throws IOException {
+    ConfigResourceContext resourceContext1 = getConfigResourceContext("context-1");
+    ConfigResourceContext resourceContext2 = getConfigResourceContext("context-2");
+    long updateTime = 1234;
+    Iterator<Document> firstGetResult =
+        Iterators.forArray(
+            getConfigDocument(
+                resourceContext1.getContext(), CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP1));
+
+    Iterator<Document> secondGetResult =
+        Iterators.forArray(
+            getConfigDocument(
+                resourceContext2.getContext(), CONFIG_VERSION, config2, TIMESTAMP2, TIMESTAMP2));
+    when(collection.search(any(Query.class))).thenReturn(firstGetResult, secondGetResult);
+    when(this.mockClock.millis()).thenReturn(updateTime);
+    List<UpsertedConfig> upsertedConfigs =
+        // Swap configs between contexts as an update
+        configStore.writeAllConfigs(
+            ImmutableMap.of(resourceContext1, config2, resourceContext2, config1), USER_ID);
+
+    assertEquals(
+        List.of(
+            UpsertedConfig.newBuilder()
+                .setContext(resourceContext1.getContext())
+                .setCreationTimestamp(TIMESTAMP1)
+                .setUpdateTimestamp(updateTime)
+                .setConfig(config2)
+                .setPrevConfig(config1)
+                .build(),
+            UpsertedConfig.newBuilder()
+                .setContext(resourceContext2.getContext())
+                .setCreationTimestamp(TIMESTAMP2)
+                .setUpdateTimestamp(updateTime)
+                .setConfig(config1)
+                .setPrevConfig(config2)
+                .build()),
+        upsertedConfigs);
+
+    verify(collection, times(1))
+        .upsert(
+            new ConfigDocumentKey(resourceContext1, CONFIG_VERSION + 1),
+            getConfigDocument(
+                resourceContext1.getContext(),
+                CONFIG_VERSION + 1,
+                config2,
+                TIMESTAMP1,
+                updateTime));
+    verify(collection, times(1))
+        .upsert(
+            new ConfigDocumentKey(resourceContext2, CONFIG_VERSION + 1),
+            getConfigDocument(
+                resourceContext2.getContext(),
+                CONFIG_VERSION + 1,
+                config1,
+                TIMESTAMP2,
+                updateTime));
   }
 
   private static Document getConfigDocument(

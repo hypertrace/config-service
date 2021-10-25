@@ -4,8 +4,11 @@ import com.google.protobuf.Value;
 import com.typesafe.config.Config;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import org.hypertrace.config.service.ConfigResource;
+import org.hypertrace.config.service.ConfigResourceContext;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
+import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 
 /**
  * Abstraction for the backend which stores and serves the configuration data for multiple
@@ -23,34 +26,42 @@ public interface ConfigStore {
   /**
    * Write the config value associated with the specified config resource to the store.
    *
-   * @param configResource
+   * @param configResourceContext
    * @param userId
    * @param config
-   * @return the context specific config written to the store
+   * @return the config written to the store
    */
-  InternalContextSpecificConfig writeConfig(
-      ConfigResource configResource, String userId, Value config) throws IOException;
+  UpsertedConfig writeConfig(
+      ConfigResourceContext configResourceContext, String userId, Value config) throws IOException;
 
   /**
    * Get the config with the latest version for the specified resource.
    *
-   * @param configResource
+   * @param configResourceContext
    * @return
    */
-  ContextSpecificConfig getConfig(ConfigResource configResource) throws IOException;
+  ContextSpecificConfig getConfig(ConfigResourceContext configResourceContext) throws IOException;
 
   /**
    * Get all the configs with the latest version(along with the context to which it applies) for the
    * specified parameters, sorted in the descending order of their creation time.
    *
-   * @param resourceName
-   * @param resourceNamespace
-   * @param tenantId
+   * @param configResource
    * @return
    * @throws IOException
    */
-  List<ContextSpecificConfig> getAllConfigs(
-      String resourceName, String resourceNamespace, String tenantId) throws IOException;
+  List<ContextSpecificConfig> getAllConfigs(ConfigResource configResource) throws IOException;
+
+  /**
+   * Write each of the provided config value associated with the specified config resource to the
+   * store.
+   *
+   * @param resourceContextValueMap
+   * @param userId
+   * @return the upserted configs
+   */
+  List<UpsertedConfig> writeAllConfigs(
+      Map<ConfigResourceContext, Value> resourceContextValueMap, String userId) throws IOException;
 
   /**
    * Health check for the backend store

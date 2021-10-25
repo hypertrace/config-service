@@ -25,7 +25,7 @@ public class LabelApplicationRuleStore extends IdentifiedObjectStore<LabelApplic
   }
 
   @Override
-  protected Optional<LabelApplicationRule> buildObjectFromValue(Value value) {
+  protected Optional<LabelApplicationRule> buildDataFromValue(Value value) {
     try {
       LabelApplicationRule.Builder builder = LabelApplicationRule.newBuilder();
       ConfigProtoConverter.mergeFromValue(value, builder);
@@ -37,12 +37,12 @@ public class LabelApplicationRuleStore extends IdentifiedObjectStore<LabelApplic
 
   @SneakyThrows
   @Override
-  protected Value buildValueFromObject(LabelApplicationRule object) {
+  protected Value buildValueFromData(LabelApplicationRule object) {
     return ConfigProtoConverter.convertToValue(object);
   }
 
   @Override
-  protected String getContextFromObject(LabelApplicationRule object) {
+  protected String getContextFromData(LabelApplicationRule object) {
     return object.getId();
   }
 }

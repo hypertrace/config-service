@@ -1,3 +1,5 @@
+package org.hypertrace.config.objectstore;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -9,12 +11,12 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 import com.google.protobuf.util.Values;
 import io.grpc.Status;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Builder;
-import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
@@ -24,6 +26,10 @@ import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
+import org.hypertrace.config.service.v1.UpsertAllConfigsRequest;
+import org.hypertrace.config.service.v1.UpsertAllConfigsRequest.ConfigToUpsert;
+import org.hypertrace.config.service.v1.UpsertAllConfigsResponse;
+import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -38,6 +44,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class IdentifiedObjectStoreTest {
   private static final String TEST_RESOURCE_NAMESPACE = "test-namespace";
   private static final String TEST_RESOURCE_NAME = "test-resource";
+  private static final Instant TEST_CREATE_TIMESTAMP_1 = Instant.ofEpochMilli(20);
+  private static final Instant TEST_CREATE_TIMESTAMP_2 = Instant.ofEpochMilli(30);
+  private static final Instant TEST_UPDATE_TIMESTAMP = Instant.ofEpochMilli(40);
 
   private static final TestObject OBJECT_1 = TestObject.builder().id("first-id").rank(1).build();
 
@@ -80,11 +89,25 @@ class IdentifiedObjectStoreTest {
         .thenReturn(
             GetAllConfigsResponse.newBuilder()
                 .addContextSpecificConfigs(
-                    ContextSpecificConfig.newBuilder().setConfig(OBJECT_2_AS_VALUE))
+                    ContextSpecificConfig.newBuilder()
+                        .setConfig(OBJECT_2_AS_VALUE)
+                        .setContext(OBJECT_2.getId())
+                        .setCreationTimestamp(TEST_CREATE_TIMESTAMP_2.toEpochMilli())
+                        .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli()))
                 .addContextSpecificConfigs(
-                    ContextSpecificConfig.newBuilder().setConfig(OBJECT_1_AS_VALUE))
+                    ContextSpecificConfig.newBuilder()
+                        .setConfig(OBJECT_1_AS_VALUE)
+                        .setContext(OBJECT_1.getId())
+                        .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
+                        .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli()))
                 .build());
-    assertEquals(List.of(OBJECT_1, OBJECT_2), this.store.getAllObjects(this.mockRequestContext));
+    assertEquals(
+        List.of(
+            new ContextualConfigObjectImpl<>(
+                OBJECT_1.getId(), OBJECT_1, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP),
+            new ContextualConfigObjectImpl<>(
+                OBJECT_2.getId(), OBJECT_2, TEST_CREATE_TIMESTAMP_2, TEST_UPDATE_TIMESTAMP)),
+        this.store.getAllObjects(this.mockRequestContext));
 
     verify(this.mockStub)
         .getAllConfigs(
@@ -99,7 +122,7 @@ class IdentifiedObjectStoreTest {
     when(this.mockStub.getConfig(any()))
         .thenReturn(GetConfigResponse.newBuilder().setConfig(OBJECT_1_AS_VALUE).build());
 
-    assertEquals(Optional.of(OBJECT_1), this.store.getObject(this.mockRequestContext, "id"));
+    assertEquals(Optional.of(OBJECT_1), this.store.getData(this.mockRequestContext, "id"));
 
     verify(this.mockStub, times(1))
         .getConfig(
@@ -111,7 +134,7 @@ class IdentifiedObjectStoreTest {
 
     when(this.mockStub.getConfig(any())).thenThrow(Status.NOT_FOUND.asRuntimeException());
 
-    assertEquals(Optional.empty(), this.store.getObject(this.mockRequestContext, "second-id"));
+    assertEquals(Optional.empty(), this.store.getData(this.mockRequestContext, "second-id"));
 
     verify(this.mockStub, times(1))
         .getConfig(
@@ -124,13 +147,21 @@ class IdentifiedObjectStoreTest {
 
   @Test
   void generatesConfigDeleteRequest() {
-
     when(this.mockStub.deleteConfig(any()))
         .thenReturn(
             DeleteConfigResponse.newBuilder()
-                .setDeletedConfig(ContextSpecificConfig.newBuilder().setConfig(OBJECT_1_AS_VALUE))
+                .setDeletedConfig(
+                    ContextSpecificConfig.newBuilder()
+                        .setConfig(OBJECT_1_AS_VALUE)
+                        .setContext(OBJECT_1.getId())
+                        .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
+                        .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli()))
                 .build());
-    assertEquals(Optional.of(OBJECT_1), this.store.deleteObject(mockRequestContext, "some-id"));
+    assertEquals(
+        Optional.of(
+            new ContextualConfigObjectImpl<>(
+                OBJECT_1.getId(), OBJECT_1, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP)),
+        this.store.deleteObject(mockRequestContext, "some-id"));
 
     verify(this.mockStub)
         .deleteConfig(
@@ -148,8 +179,16 @@ class IdentifiedObjectStoreTest {
   @Test
   void generatesConfigUpsertRequest() {
     when(this.mockStub.upsertConfig(any()))
-        .thenReturn(UpsertConfigResponse.newBuilder().setConfig(OBJECT_1_AS_VALUE).build());
-    assertEquals(OBJECT_1, this.store.upsertObject(this.mockRequestContext, OBJECT_1));
+        .thenReturn(
+            UpsertConfigResponse.newBuilder()
+                .setConfig(OBJECT_1_AS_VALUE)
+                .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
+                .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                .build());
+    assertEquals(
+        new ContextualConfigObjectImpl<>(
+            OBJECT_1.getId(), OBJECT_1, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP),
+        this.store.upsertObject(this.mockRequestContext, OBJECT_1));
     verify(this.mockStub, times(1))
         .upsertConfig(
             UpsertConfigRequest.newBuilder()
@@ -162,30 +201,44 @@ class IdentifiedObjectStoreTest {
 
   @Test
   void generatesUpsertRequestsForUpsertAll() {
-    when(this.mockStub.upsertConfig(any()))
+    when(this.mockStub.upsertAllConfigs(any()))
         .thenAnswer(
-            invocation ->
-                UpsertConfigResponse.newBuilder()
-                    .setConfig(((UpsertConfigRequest) invocation.getArguments()[0]).getConfig())
-                    .build());
+            invocation -> {
+              List<UpsertedConfig> configs =
+                  invocation.<UpsertAllConfigsRequest>getArgument(0).getConfigsList().stream()
+                      .map(
+                          requestedUpsert ->
+                              UpsertedConfig.newBuilder()
+                                  .setConfig(requestedUpsert.getConfig())
+                                  .setContext(requestedUpsert.getContext())
+                                  .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
+                                  .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli()))
+                      .map(UpsertedConfig.Builder::build)
+                      .collect(Collectors.toUnmodifiableList());
+              return UpsertAllConfigsResponse.newBuilder().addAllUpsertedConfigs(configs).build();
+            });
     assertEquals(
-        List.of(OBJECT_1, OBJECT_2),
+        List.of(
+            new ContextualConfigObjectImpl<>(
+                OBJECT_1.getId(), OBJECT_1, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP),
+            new ContextualConfigObjectImpl<>(
+                OBJECT_2.getId(), OBJECT_2, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP)),
         this.store.upsertObjects(this.mockRequestContext, List.of(OBJECT_1, OBJECT_2)));
     verify(this.mockStub, times(1))
-        .upsertConfig(
-            UpsertConfigRequest.newBuilder()
-                .setResourceName(TEST_RESOURCE_NAME)
-                .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
-                .setContext("first-id")
-                .setConfig(OBJECT_1_AS_VALUE)
-                .build());
-    verify(this.mockStub, times(1))
-        .upsertConfig(
-            UpsertConfigRequest.newBuilder()
-                .setResourceName(TEST_RESOURCE_NAME)
-                .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
-                .setContext("second-id")
-                .setConfig(OBJECT_2_AS_VALUE)
+        .upsertAllConfigs(
+            UpsertAllConfigsRequest.newBuilder()
+                .addConfigs(
+                    ConfigToUpsert.newBuilder()
+                        .setResourceName(TEST_RESOURCE_NAME)
+                        .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
+                        .setContext("first-id")
+                        .setConfig(OBJECT_1_AS_VALUE))
+                .addConfigs(
+                    ConfigToUpsert.newBuilder()
+                        .setResourceName(TEST_RESOURCE_NAME)
+                        .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
+                        .setContext("second-id")
+                        .setConfig(OBJECT_2_AS_VALUE))
                 .build());
   }
 
@@ -203,7 +256,7 @@ class IdentifiedObjectStoreTest {
     }
 
     @Override
-    protected Optional<TestObject> buildObjectFromValue(Value value) {
+    protected Optional<TestObject> buildDataFromValue(Value value) {
       return Optional.of(
           TestObject.builder()
               .rank((int) value.getStructValue().getFieldsOrThrow("rank").getNumberValue())
@@ -212,7 +265,7 @@ class IdentifiedObjectStoreTest {
     }
 
     @Override
-    protected Value buildValueFromObject(TestObject object) {
+    protected Value buildValueFromData(TestObject object) {
       return Value.newBuilder()
           .setStructValue(
               Struct.newBuilder()
@@ -222,14 +275,15 @@ class IdentifiedObjectStoreTest {
     }
 
     @Override
-    protected String getContextFromObject(TestObject object) {
+    protected String getContextFromData(TestObject object) {
       return object.getId();
     }
 
     @Override
-    protected List<TestObject> orderFetchedObjects(List<TestObject> objects) {
+    protected List<ContextualConfigObject<TestObject>> orderFetchedObjects(
+        List<ContextualConfigObject<TestObject>> objects) {
       return objects.stream()
-          .sorted(Comparator.comparing(TestObject::getRank))
+          .sorted(Comparator.comparing(object -> object.getData().getRank()))
           .collect(Collectors.toUnmodifiableList());
     }
   }
