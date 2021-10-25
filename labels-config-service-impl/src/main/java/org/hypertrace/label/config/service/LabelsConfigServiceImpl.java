@@ -9,13 +9,9 @@ import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -123,7 +119,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
                   .setKey(createLabel.getKey())
                   .setCreatedBy(createLabel.getCreatedBy())
                   .setColor(createLabel.getColor())
-                  .setRuleId(createLabel.getRuleId())
+                  .setCreatedByApplicationRuleId(createLabel.getCreatedByApplicationRuleId())
                   .setDescription(createLabel.getDescription())
                   .build();
           Label createdLabel =
@@ -258,11 +254,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
   }
 
   private Label getLabelFromContextualObject(ContextualConfigObject<Label> labelObject) {
-    DateTimeFormatter formatter =
-        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
-            .withLocale(Locale.US)
-            .withZone(ZoneId.systemDefault());
-    String createdTimestamp = formatter.format(labelObject.getCreationTimestamp());
+    long createdTimestamp = labelObject.getCreationTimestamp().toEpochMilli();
     Label label = labelObject.getData();
     return label.toBuilder().setCreatedTime(createdTimestamp).build();
   }
