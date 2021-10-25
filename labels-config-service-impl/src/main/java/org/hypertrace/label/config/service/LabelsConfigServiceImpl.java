@@ -9,9 +9,13 @@ import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -122,7 +126,8 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
                   .setRuleId(createLabel.getRuleId())
                   .setDescription(createLabel.getDescription())
                   .build();
-          Label createdLabel = labelStore.upsertObject(requestContext, label).getData();
+          Label createdLabel =
+              getLabelFromContextualObject(labelStore.upsertObject(requestContext, label));
           responseObserver.onNext(CreateLabelResponse.newBuilder().setLabel(createdLabel).build());
           responseObserver.onCompleted();
         } finally {
@@ -165,7 +170,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     allLabels.addAll(systemLabels);
     List<Label> tenantLabels =
         labelStore.getAllObjects(requestContext).stream()
-            .map(ContextualConfigObject::getData)
+            .map(this::getLabelFromContextualObject)
             .collect(Collectors.toUnmodifiableList());
     allLabels.addAll(tenantLabels);
     responseObserver.onNext(GetLabelsResponse.newBuilder().addAllLabels(allLabels).build());
@@ -250,5 +255,15 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     Optional<Label> match =
         labelList.stream().filter(label -> label.getKey().equals(key)).findAny();
     return match.isPresent();
+  }
+
+  private Label getLabelFromContextualObject(ContextualConfigObject<Label> labelObject) {
+    DateTimeFormatter formatter =
+        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
+            .withLocale(Locale.US)
+            .withZone(ZoneId.systemDefault());
+    String createdTimestamp = formatter.format(labelObject.getCreationTimestamp());
+    Label label = labelObject.getData();
+    return label.toBuilder().setCreatedTime(createdTimestamp).build();
   }
 }

@@ -121,7 +121,10 @@ public final class LabelsConfigServiceImplTest {
 
   @Test
   void test_getLabel() {
-    List<Label> createdLabelsList = createLabels();
+    List<Label> createdLabelsList =
+        createLabels().stream()
+            .map(label -> label.toBuilder().clearCreatedTime().build())
+            .collect(Collectors.toList());
     // Querying each label one by one for the created or inserted labels in the previous step
     List<Label> getLabelList =
         createdLabelsList.stream()
