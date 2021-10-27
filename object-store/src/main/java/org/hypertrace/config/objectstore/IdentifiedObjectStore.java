@@ -214,15 +214,25 @@ public abstract class IdentifiedObjectStore<T> {
         this.buildValueFromData(result.getData()));
   }
 
+  private void tryReportUpdate(
+      RequestContext requestContext, ContextualConfigObject<T> result, Value previousValue) {
+    sendUpdateChangeEvent(
+        requestContext,
+        result.getData().getClass().getName(),
+        result.getContext(),
+        this.buildValueFromData(result.getData()),
+        previousValue);
+  }
+
   protected void sendCreateChangeEvent(
       RequestContext requestContext,
       String objectClass,
       String resultContext,
-      Value upsertedConfig) {
+      Value createdConfig) {
     configChangeEventGeneratorOptional.ifPresent(
         configChangeEventGenerator ->
             configChangeEventGenerator.sendCreateNotification(
-                requestContext, objectClass, resultContext, upsertedConfig));
+                requestContext, objectClass, resultContext, createdConfig));
   }
 
   protected void sendUpdateChangeEvent(
@@ -243,15 +253,5 @@ public abstract class IdentifiedObjectStore<T> {
         configChangeEventGenerator ->
             configChangeEventGenerator.sendDeleteNotification(
                 requestContext, objectClass, id, deletedConfig));
-  }
-
-  private void tryReportUpdate(
-      RequestContext requestContext, ContextualConfigObject<T> result, Value previousValue) {
-    sendUpdateChangeEvent(
-        requestContext,
-        result.getData().getClass().getName(),
-        result.getContext(),
-        this.buildValueFromData(result.getData()),
-        previousValue);
   }
 }
