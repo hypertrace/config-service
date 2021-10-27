@@ -14,7 +14,6 @@ import ai.traceable.risk.config.service.factors.processor.utils.RiskFactorConfig
 import ai.traceable.risk.config.service.factors.processor.utils.RiskFactorListUtils;
 import ai.traceable.risk.config.service.v1.RiskContributorConfigs;
 import ai.traceable.risk.config.service.v1.RiskFactor;
-import ai.traceable.risk.config.service.v1.RiskFactorInfo;
 import ai.traceable.risk.config.service.v1.RiskFactorScoring;
 import ai.traceable.risk.config.service.v1.RiskFactorType;
 import com.typesafe.config.ConfigFactory;
@@ -46,12 +45,11 @@ public class DefaultRiskImpactConfigsProviderTest {
     {
       RiskFactor factor = factorMap.get("customTagsImpact");
       assertTrue(factor.getIsDefault());
+      assertEquals("Tags", factor.getRiskFactorInfo().getName());
       assertEquals(
-          RiskFactorInfo.newBuilder()
-              .setName("Tags")
-              .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_CUSTOM_TAGS)
-              .build(),
-          factor.getRiskFactorInfo());
+          RiskFactorType.RISK_FACTOR_TYPE_CUSTOM_TAGS,
+          factor.getRiskFactorInfo().getRiskFactorType());
+      assertTrue(factor.getRiskFactorInfo().getDescription().length() > 0);
       assertTrue(
           factor
               .getCustomizationOptionsList()
@@ -66,12 +64,11 @@ public class DefaultRiskImpactConfigsProviderTest {
     {
       RiskFactor factor = factorMap.get("lossOfConfidentiality");
       assertTrue(factor.getIsDefault());
+      assertEquals("Loss of Confidentiality", factor.getRiskFactorInfo().getName());
       assertEquals(
-          RiskFactorInfo.newBuilder()
-              .setName("Loss of Confidentiality")
-              .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_LOSS_OF_CONFIDENTIALITY)
-              .build(),
-          factor.getRiskFactorInfo());
+          RiskFactorType.RISK_FACTOR_TYPE_LOSS_OF_CONFIDENTIALITY,
+          factor.getRiskFactorInfo().getRiskFactorType());
+      assertTrue(factor.getRiskFactorInfo().getDescription().length() > 0);
       assertEquals(0, factor.getCustomizationOptionsCount());
       assertEquals(
           RiskFactorScoring.getDefaultInstance(),
@@ -81,12 +78,11 @@ public class DefaultRiskImpactConfigsProviderTest {
     {
       RiskFactor factor = factorMap.get("sensitiveDataExposure");
       assertTrue(factor.getIsDefault());
+      assertEquals("Sensitive Data Exfiltration", factor.getRiskFactorInfo().getName());
       assertEquals(
-          RiskFactorInfo.newBuilder()
-              .setName("Sensitive Data Exfiltration")
-              .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_SENSITIVE_DATA_EXPOSURE)
-              .build(),
-          factor.getRiskFactorInfo());
+          RiskFactorType.RISK_FACTOR_TYPE_SENSITIVE_DATA_EXPOSURE,
+          factor.getRiskFactorInfo().getRiskFactorType());
+      assertTrue(factor.getRiskFactorInfo().getDescription().length() > 0);
       assertEquals(0, factor.getCustomizationOptionsCount());
       assertEquals(
           RiskFactorScoring.getDefaultInstance(),
@@ -173,12 +169,10 @@ public class DefaultRiskImpactConfigsProviderTest {
     {
       RiskFactor factor = factorMap.get("customTagsImpact");
       assertTrue(factor.getIsDefault());
+      assertEquals("Custom Tags", factor.getRiskFactorInfo().getName());
       assertEquals(
-          RiskFactorInfo.newBuilder()
-              .setName("Custom Tags")
-              .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_CUSTOM_TAGS)
-              .build(),
-          factor.getRiskFactorInfo());
+          RiskFactorType.RISK_FACTOR_TYPE_CUSTOM_TAGS,
+          factor.getRiskFactorInfo().getRiskFactorType());
       assertTrue(
           factor
               .getCustomizationOptionsList()
@@ -193,12 +187,10 @@ public class DefaultRiskImpactConfigsProviderTest {
     {
       RiskFactor factor = factorMap.get("lossOfConfidentiality");
       assertTrue(factor.getIsDefault());
+      assertEquals("Loss of Confidentiality", factor.getRiskFactorInfo().getName());
       assertEquals(
-          RiskFactorInfo.newBuilder()
-              .setName("Loss of Confidentiality")
-              .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_LOSS_OF_CONFIDENTIALITY)
-              .build(),
-          factor.getRiskFactorInfo());
+          RiskFactorType.RISK_FACTOR_TYPE_LOSS_OF_CONFIDENTIALITY,
+          factor.getRiskFactorInfo().getRiskFactorType());
       assertEquals(0, factor.getCustomizationOptionsCount());
       assertEquals(
           RiskFactorScoring.getDefaultInstance(),
@@ -208,12 +200,10 @@ public class DefaultRiskImpactConfigsProviderTest {
     {
       RiskFactor factor = factorMap.get("sensitiveDataExposure");
       assertTrue(factor.getIsDefault());
+      assertEquals("Exposure of Sensitive Data", factor.getRiskFactorInfo().getName());
       assertEquals(
-          RiskFactorInfo.newBuilder()
-              .setName("Exposure of Sensitive Data")
-              .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_SENSITIVE_DATA_EXPOSURE)
-              .build(),
-          factor.getRiskFactorInfo());
+          RiskFactorType.RISK_FACTOR_TYPE_SENSITIVE_DATA_EXPOSURE,
+          factor.getRiskFactorInfo().getRiskFactorType());
       assertEquals(0, factor.getCustomizationOptionsCount());
       assertEquals(
           RiskFactorScoring.getDefaultInstance(),

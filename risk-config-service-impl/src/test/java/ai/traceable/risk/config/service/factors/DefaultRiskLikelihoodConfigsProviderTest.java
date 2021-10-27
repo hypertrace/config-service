@@ -14,7 +14,6 @@ import ai.traceable.risk.config.service.factors.processor.utils.RiskFactorConfig
 import ai.traceable.risk.config.service.factors.processor.utils.RiskFactorListUtils;
 import ai.traceable.risk.config.service.v1.RiskContributorConfigs;
 import ai.traceable.risk.config.service.v1.RiskFactor;
-import ai.traceable.risk.config.service.v1.RiskFactorInfo;
 import ai.traceable.risk.config.service.v1.RiskFactorScoring;
 import ai.traceable.risk.config.service.v1.RiskFactorType;
 import com.typesafe.config.ConfigFactory;
@@ -46,12 +45,11 @@ public class DefaultRiskLikelihoodConfigsProviderTest {
     {
       RiskFactor factor = factorMap.get("customTagsLikelihood");
       assertTrue(factor.getIsDefault());
+      assertEquals("Tags", factor.getRiskFactorInfo().getName());
       assertEquals(
-          RiskFactorInfo.newBuilder()
-              .setName("Tags")
-              .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_CUSTOM_TAGS)
-              .build(),
-          factor.getRiskFactorInfo());
+          RiskFactorType.RISK_FACTOR_TYPE_CUSTOM_TAGS,
+          factor.getRiskFactorInfo().getRiskFactorType());
+      assertTrue(factor.getRiskFactorInfo().getDescription().length() > 0);
       assertTrue(
           factor
               .getCustomizationOptionsList()
@@ -66,12 +64,10 @@ public class DefaultRiskLikelihoodConfigsProviderTest {
     {
       RiskFactor factor = factorMap.get("motive");
       assertTrue(factor.getIsDefault());
+      assertEquals("Motive", factor.getRiskFactorInfo().getName());
       assertEquals(
-          RiskFactorInfo.newBuilder()
-              .setName("Motive")
-              .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_MOTIVE)
-              .build(),
-          factor.getRiskFactorInfo());
+          RiskFactorType.RISK_FACTOR_TYPE_MOTIVE, factor.getRiskFactorInfo().getRiskFactorType());
+      assertTrue(factor.getRiskFactorInfo().getDescription().length() > 0);
       assertEquals(0, factor.getCustomizationOptionsCount());
       assertEquals(
           RiskFactorScoring.getDefaultInstance(),
@@ -81,12 +77,11 @@ public class DefaultRiskLikelihoodConfigsProviderTest {
     {
       RiskFactor factor = factorMap.get("easeOfAccess");
       assertTrue(factor.getIsDefault());
+      assertEquals("Ease Of Access", factor.getRiskFactorInfo().getName());
       assertEquals(
-          RiskFactorInfo.newBuilder()
-              .setName("Ease Of Access")
-              .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_EASE_OF_ACCESS)
-              .build(),
-          factor.getRiskFactorInfo());
+          RiskFactorType.RISK_FACTOR_TYPE_EASE_OF_ACCESS,
+          factor.getRiskFactorInfo().getRiskFactorType());
+      assertTrue(factor.getRiskFactorInfo().getDescription().length() > 0);
       assertEquals(0, factor.getCustomizationOptionsCount());
       assertEquals(
           RiskFactorScoring.getDefaultInstance(),
@@ -96,12 +91,11 @@ public class DefaultRiskLikelihoodConfigsProviderTest {
     {
       RiskFactor factor = factorMap.get("exploitSurface");
       assertTrue(factor.getIsDefault());
+      assertEquals("Exploit Surface", factor.getRiskFactorInfo().getName());
       assertEquals(
-          RiskFactorInfo.newBuilder()
-              .setName("Exploit Surface")
-              .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_EXPLOIT_SURFACE)
-              .build(),
-          factor.getRiskFactorInfo());
+          RiskFactorType.RISK_FACTOR_TYPE_EXPLOIT_SURFACE,
+          factor.getRiskFactorInfo().getRiskFactorType());
+      assertTrue(factor.getRiskFactorInfo().getDescription().length() > 0);
       assertEquals(0, factor.getCustomizationOptionsCount());
       assertEquals(
           RiskFactorScoring.getDefaultInstance(),
@@ -264,12 +258,10 @@ public class DefaultRiskLikelihoodConfigsProviderTest {
     {
       RiskFactor factor = factorMap.get("customTagsLikelihood");
       assertTrue(factor.getIsDefault());
+      assertEquals("Custom Tags", factor.getRiskFactorInfo().getName());
       assertEquals(
-          RiskFactorInfo.newBuilder()
-              .setName("Custom Tags")
-              .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_CUSTOM_TAGS)
-              .build(),
-          factor.getRiskFactorInfo());
+          RiskFactorType.RISK_FACTOR_TYPE_CUSTOM_TAGS,
+          factor.getRiskFactorInfo().getRiskFactorType());
       assertTrue(
           factor
               .getCustomizationOptionsList()
@@ -284,12 +276,9 @@ public class DefaultRiskLikelihoodConfigsProviderTest {
     {
       RiskFactor factor = factorMap.get("motive");
       assertTrue(factor.getIsDefault());
+      assertEquals("Motive", factor.getRiskFactorInfo().getName());
       assertEquals(
-          RiskFactorInfo.newBuilder()
-              .setName("Motive")
-              .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_MOTIVE)
-              .build(),
-          factor.getRiskFactorInfo());
+          RiskFactorType.RISK_FACTOR_TYPE_MOTIVE, factor.getRiskFactorInfo().getRiskFactorType());
       assertEquals(0, factor.getCustomizationOptionsCount());
       assertEquals(
           RiskFactorScoring.getDefaultInstance(),
@@ -299,12 +288,10 @@ public class DefaultRiskLikelihoodConfigsProviderTest {
     {
       RiskFactor factor = factorMap.get("easeOfAccess");
       assertTrue(factor.getIsDefault());
+      assertEquals("Ease Of Api Access", factor.getRiskFactorInfo().getName());
       assertEquals(
-          RiskFactorInfo.newBuilder()
-              .setName("Ease Of Api Access")
-              .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_EASE_OF_ACCESS)
-              .build(),
-          factor.getRiskFactorInfo());
+          RiskFactorType.RISK_FACTOR_TYPE_EASE_OF_ACCESS,
+          factor.getRiskFactorInfo().getRiskFactorType());
       assertEquals(0, factor.getCustomizationOptionsCount());
       assertEquals(
           RiskFactorScoring.getDefaultInstance(),

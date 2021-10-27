@@ -26,6 +26,7 @@ message RiskFactorConfig {
 message RiskFactorInfo {
   string name = 1;
   RiskFactorType risk_factor_type = 2;
+  string description = 3;
 }
 
 enum RiskFactorType {
