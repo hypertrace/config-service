@@ -57,6 +57,10 @@ public abstract class IdentifiedObjectStore<T> {
 
   protected abstract String getContextFromData(T data);
 
+  protected Value buildValueForChangeEvent(T data) {
+    return this.buildValueFromData(data);
+  }
+
   protected List<ContextualConfigObject<T>> orderFetchedObjects(
       List<ContextualConfigObject<T>> objects) {
     return objects;
@@ -138,8 +142,10 @@ public abstract class IdentifiedObjectStore<T> {
       ContextualConfigObject<T> object =
           ContextualConfigObjectImpl.tryBuild(deletedConfig, this::buildDataFromValue)
               .orElseThrow(Status.INTERNAL::asRuntimeException);
-      sendDeleteNotification(
-          context, object.getData().getClass().getName(), id, deletedConfig.getConfig());
+      configChangeEventGeneratorOptional.ifPresent(
+          configChangeEventGenerator ->
+              configChangeEventGenerator.sendDeleteNotification(
+                  context, object.getData().getClass().getName(), id, deletedConfig.getConfig()));
       return Optional.of(object);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
@@ -207,42 +213,24 @@ public abstract class IdentifiedObjectStore<T> {
   }
 
   private void tryReportCreation(RequestContext requestContext, ContextualConfigObject<T> result) {
-    sendCreateNotification(requestContext, result);
-  }
-
-  private void tryReportUpdate(
-      RequestContext requestContext, ContextualConfigObject<T> result, Value previousValue) {
-    sendUpdateNotification(requestContext, result, previousValue);
-  }
-
-  protected void sendCreateNotification(
-      RequestContext requestContext, ContextualConfigObject<T> result) {
     configChangeEventGeneratorOptional.ifPresent(
         configChangeEventGenerator ->
             configChangeEventGenerator.sendCreateNotification(
                 requestContext,
                 result.getData().getClass().getName(),
                 result.getContext(),
-                this.buildValueFromData(result.getData())));
+                this.buildValueForChangeEvent(result.getData())));
   }
 
-  protected void sendUpdateNotification(
-      RequestContext requestContext, ContextualConfigObject<T> result, Value previousConfig) {
+  private void tryReportUpdate(
+      RequestContext requestContext, ContextualConfigObject<T> result, Value previousValue) {
     configChangeEventGeneratorOptional.ifPresent(
         configChangeEventGenerator ->
             configChangeEventGenerator.sendUpdateNotification(
                 requestContext,
                 result.getData().getClass().getName(),
                 result.getContext(),
-                previousConfig,
-                this.buildValueFromData(result.getData())));
-  }
-
-  protected void sendDeleteNotification(
-      RequestContext requestContext, String objectClass, String id, Value deletedConfig) {
-    configChangeEventGeneratorOptional.ifPresent(
-        configChangeEventGenerator ->
-            configChangeEventGenerator.sendDeleteNotification(
-                requestContext, objectClass, id, deletedConfig));
+                previousValue,
+                this.buildValueForChangeEvent(result.getData())));
   }
 }
