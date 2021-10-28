@@ -49,6 +49,10 @@ public abstract class DefaultObjectStore<T> {
 
   protected abstract Value buildValueFromData(T data);
 
+  protected Value buildValueForChangeEvent(T data) {
+    return this.buildValueFromData(data);
+  }
+
   public Optional<T> getData(RequestContext context) {
     try {
       Value value =
@@ -79,7 +83,7 @@ public abstract class DefaultObjectStore<T> {
                     UpsertConfigRequest.newBuilder()
                         .setResourceName(this.resourceName)
                         .setResourceNamespace(this.resourceNamespace)
-                        .setConfig(this.buildValueFromData(data))
+                        .setConfig(this.buildValueForChangeEvent(data))
                         .build()));
 
     ConfigObject<T> upsertedObject =
