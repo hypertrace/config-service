@@ -61,6 +61,10 @@ public abstract class IdentifiedObjectStore<T> {
     return this.buildValueFromData(data);
   }
 
+  protected String buildClassNameForChangeEvent(T data) {
+    return data.getClass().getName();
+  }
+
   protected List<ContextualConfigObject<T>> orderFetchedObjects(
       List<ContextualConfigObject<T>> objects) {
     return objects;
@@ -217,7 +221,7 @@ public abstract class IdentifiedObjectStore<T> {
         configChangeEventGenerator ->
             configChangeEventGenerator.sendCreateNotification(
                 requestContext,
-                result.getData().getClass().getName(),
+                this.buildClassNameForChangeEvent(result.getData()),
                 result.getContext(),
                 this.buildValueForChangeEvent(result.getData())));
   }
@@ -228,9 +232,11 @@ public abstract class IdentifiedObjectStore<T> {
         configChangeEventGenerator ->
             configChangeEventGenerator.sendUpdateNotification(
                 requestContext,
-                result.getData().getClass().getName(),
+                this.buildClassNameForChangeEvent(result.getData()),
                 result.getContext(),
-                previousValue,
+                this.buildDataFromValue(previousValue)
+                    .map(this::buildValueForChangeEvent)
+                    .orElseThrow(),
                 this.buildValueForChangeEvent(result.getData())));
   }
 }
