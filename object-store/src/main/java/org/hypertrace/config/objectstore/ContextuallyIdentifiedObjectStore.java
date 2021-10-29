@@ -40,6 +40,8 @@ public abstract class ContextuallyIdentifiedObjectStore<T> {
 
   protected abstract Value buildValueForChangeEvent(T data);
 
+  protected abstract String buildClassNameForChangeEvent(T data);
+
   protected abstract String getConfigContextFromRequestContext(RequestContext requestContext);
 
   private IdentifiedObjectStore<T> buildObjectStoreForContext(RequestContext context) {
@@ -91,6 +93,11 @@ public abstract class ContextuallyIdentifiedObjectStore<T> {
     @Override
     protected Value buildValueForChangeEvent(T data) {
       return ContextuallyIdentifiedObjectStore.this.buildValueFromData(data);
+    }
+
+    @Override
+    protected String buildClassNameForChangeEvent(T data) {
+      return ContextuallyIdentifiedObjectStore.this.buildClassNameForChangeEvent(data);
     }
 
     @Override

@@ -149,7 +149,10 @@ public abstract class IdentifiedObjectStore<T> {
       configChangeEventGeneratorOptional.ifPresent(
           configChangeEventGenerator ->
               configChangeEventGenerator.sendDeleteNotification(
-                  context, object.getData().getClass().getName(), id, deletedConfig.getConfig()));
+                  context,
+                  this.buildClassNameForChangeEvent(object.getData()),
+                  id,
+                  deletedConfig.getConfig()));
       return Optional.of(object);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
@@ -234,9 +237,7 @@ public abstract class IdentifiedObjectStore<T> {
                 requestContext,
                 this.buildClassNameForChangeEvent(result.getData()),
                 result.getContext(),
-                this.buildDataFromValue(previousValue)
-                    .map(this::buildValueForChangeEvent)
-                    .orElseThrow(),
+                this.buildDataFromValue(previousValue).map(this::buildValueForChangeEvent).get(),
                 this.buildValueForChangeEvent(result.getData())));
   }
 }

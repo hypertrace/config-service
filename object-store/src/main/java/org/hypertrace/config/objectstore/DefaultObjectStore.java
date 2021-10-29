@@ -49,6 +49,14 @@ public abstract class DefaultObjectStore<T> {
 
   protected abstract Value buildValueFromData(T data);
 
+  protected Value buildValueForChangeEvent(T data) {
+    return this.buildValueFromData(data);
+  }
+
+  protected String buildClassNameForChangeEvent(T data) {
+    return data.getClass().getName();
+  }
+
   public Optional<T> getData(RequestContext context) {
     try {
       Value value =
@@ -91,12 +99,18 @@ public abstract class DefaultObjectStore<T> {
           if (response.hasPrevConfig()) {
             configChangeEventGenerator.sendUpdateNotification(
                 context,
-                upsertedObject.getData().getClass().getName(),
-                response.getPrevConfig(),
-                response.getConfig());
+                this.buildClassNameForChangeEvent(upsertedObject.getData()),
+                this.buildDataFromValue(response.getPrevConfig())
+                    .map(this::buildValueForChangeEvent)
+                    .get(),
+                this.buildDataFromValue(response.getConfig())
+                    .map(this::buildValueForChangeEvent)
+                    .get());
           } else {
             configChangeEventGenerator.sendCreateNotification(
-                context, upsertedObject.getData().getClass().getName(), response.getConfig());
+                context,
+                this.buildClassNameForChangeEvent(upsertedObject.getData()),
+                response.getConfig());
           }
         });
     return upsertedObject;
@@ -120,7 +134,11 @@ public abstract class DefaultObjectStore<T> {
       configChangeEventGeneratorOptional.ifPresent(
           configChangeEventGenerator ->
               configChangeEventGenerator.sendDeleteNotification(
-                  context, object.getData().getClass().getName(), deletedConfig.getConfig()));
+                  context,
+                  this.buildClassNameForChangeEvent(object.getData()),
+                  this.buildDataFromValue(deletedConfig.getConfig())
+                      .map(this::buildValueForChangeEvent)
+                      .get()));
       return Optional.of(object);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
