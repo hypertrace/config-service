@@ -31,13 +31,13 @@ public class RiskLevelConfigStore extends DefaultObjectStore<RiskLevelConfigValu
 
   @Override
   @SneakyThrows
-  protected Optional<RiskLevelConfigValues> buildObjectFromValue(Value value) {
+  protected Optional<RiskLevelConfigValues> buildDataFromValue(Value value) {
     return Optional.of(configConverter.convert(value, configUtils.getNewBuilder()));
   }
 
   @Override
   @SneakyThrows
-  protected Value buildValueFromObject(RiskLevelConfigValues object) {
-    return configConverter.convert(object);
+  protected Value buildValueFromData(RiskLevelConfigValues data) {
+    return configConverter.convert(data);
   }
 }

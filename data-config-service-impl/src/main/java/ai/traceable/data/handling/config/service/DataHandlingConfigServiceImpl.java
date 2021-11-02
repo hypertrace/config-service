@@ -56,7 +56,7 @@ class DataHandlingConfigServiceImpl extends DataHandlingConfigServiceImplBase {
       this.validator.validateOrThrow(requestContext, request);
       responseObserver.onNext(
           GetDataHandlingRulesResponse.newBuilder()
-              .addAllRules(this.ruleStore.getAllObjects(requestContext))
+              .addAllRules(this.ruleStore.getAllData(requestContext))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -74,7 +74,7 @@ class DataHandlingConfigServiceImpl extends DataHandlingConfigServiceImplBase {
       this.validator.validateOrThrow(requestContext, request);
 
       DataHandlingRule newRule = this.ruleGenerator.generateNewRuleWithoutRank(request);
-      List<DataHandlingRule> existingRules = this.ruleStore.getAllObjects(requestContext);
+      List<DataHandlingRule> existingRules = this.ruleStore.getAllData(requestContext);
       List<DataHandlingRule> mergedAndRankedRules =
           this.rankCalculator.rankAndMergeNewObject(newRule, existingRules);
       this.ruleStore.upsertObjects(
@@ -97,14 +97,14 @@ class DataHandlingConfigServiceImpl extends DataHandlingConfigServiceImplBase {
       this.validator.validateOrThrow(requestContext, request);
       DataHandlingRule existingRule =
           this.ruleStore
-              .getObject(requestContext, request.getId())
+              .getData(requestContext, request.getId())
               .orElseThrow(Status.NOT_FOUND::asException);
 
       DataHandlingRule updatedRule = existingRule.toBuilder().setData(request.getData()).build();
 
       responseObserver.onNext(
           UpdateDataHandlingRuleResponse.newBuilder()
-              .setRule(this.ruleStore.upsertObject(requestContext, updatedRule))
+              .setRule(this.ruleStore.upsertObject(requestContext, updatedRule).getData())
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -120,7 +120,7 @@ class DataHandlingConfigServiceImpl extends DataHandlingConfigServiceImplBase {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
-      List<DataHandlingRule> existingRules = this.ruleStore.getAllObjects(requestContext);
+      List<DataHandlingRule> existingRules = this.ruleStore.getAllData(requestContext);
       List<DataHandlingRule> rerankedRules =
           request.hasPrecedingRuleId()
               ? this.rankCalculator.rerankAfterOtherObject(
@@ -148,7 +148,7 @@ class DataHandlingConfigServiceImpl extends DataHandlingConfigServiceImplBase {
       this.ruleStore
           .deleteObject(requestContext, request.getId())
           .orElseThrow(Status.NOT_FOUND::asRuntimeException);
-      List<DataHandlingRule> rulesAfterDelete = this.ruleStore.getAllObjects(requestContext);
+      List<DataHandlingRule> rulesAfterDelete = this.ruleStore.getAllData(requestContext);
       List<DataHandlingRule> rerankedRules = this.rankCalculator.rankFromOrder(rulesAfterDelete);
 
       this.ruleStore.upsertObjects(

@@ -40,13 +40,14 @@ class DefaultThreatAutoBlockingManager
 
   @Override
   public ThreatAutoBlockingActionConfig getThreatAutoBlockingAction(RequestContext requestContext) {
-    return getObject(requestContext).orElseGet(this::getDefaultThreatAutoBlockingActionConfig);
+    return getData(requestContext).orElseGet(this::getDefaultThreatAutoBlockingActionConfig);
   }
 
   @Override
   public ThreatAutoBlockingActionConfig upsertThreatAutoBlockingAction(
       RequestContext requestContext, UpdateThreatAutoBlockingConfigRequest request) {
-    return upsertObject(requestContext, threatAutoBlockingActionConfigConverter.convert(request));
+    return upsertObject(requestContext, threatAutoBlockingActionConfigConverter.convert(request))
+        .getData();
   }
 
   private ThreatAutoBlockingActionConfig getDefaultThreatAutoBlockingActionConfig() {
@@ -57,13 +58,13 @@ class DefaultThreatAutoBlockingManager
 
   @SneakyThrows
   @Override
-  protected Optional<ThreatAutoBlockingActionConfig> buildObjectFromValue(Value value) {
+  protected Optional<ThreatAutoBlockingActionConfig> buildDataFromValue(Value value) {
     return threatAutoBlockingConverter.convert(value);
   }
 
   @SneakyThrows
   @Override
-  protected Value buildValueFromObject(
+  protected Value buildValueFromData(
       ThreatAutoBlockingActionConfig threatAutoBlockingActionConfig) {
     return threatAutoBlockingConverter.convert(threatAutoBlockingActionConfig);
   }

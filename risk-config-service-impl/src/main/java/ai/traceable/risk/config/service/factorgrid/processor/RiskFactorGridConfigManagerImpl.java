@@ -28,7 +28,7 @@ public class RiskFactorGridConfigManagerImpl implements RiskFactorGridConfigMana
 
   @Override
   public RiskFactorGridConfig getRiskFactorGridConfig(RequestContext requestContext) {
-    Optional<RiskFactorGridConfigValues> fetchedConfig = configStore.getObject(requestContext);
+    Optional<RiskFactorGridConfigValues> fetchedConfig = configStore.getData(requestContext);
     if (fetchedConfig.isEmpty()) {
       return buildRiskFactorGridConfig(defaultRiskFactorGridConfigValues, true);
     }
@@ -49,7 +49,7 @@ public class RiskFactorGridConfigManagerImpl implements RiskFactorGridConfigMana
     if (configUtils.isConfigDefault(configValues, defaultRiskFactorGridConfigValues)) {
       return resetRiskFactorGridConfig(requestContext);
     }
-    configValues = configStore.upsertObject(requestContext, configValues);
+    configValues = configStore.upsertObject(requestContext, configValues).getData();
     return buildRiskFactorGridConfig(
         configUtils.mergeConfigs(configValues, defaultRiskFactorGridConfigValues), false);
   }

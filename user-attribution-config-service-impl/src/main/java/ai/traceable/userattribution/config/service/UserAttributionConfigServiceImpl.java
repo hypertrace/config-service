@@ -55,7 +55,7 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
       this.validator.validateOrThrow(requestContext, request);
       responseObserver.onNext(
           GetUserAttributionRulesResponse.newBuilder()
-              .addAllRules(this.ruleStore.getAllObjects(requestContext))
+              .addAllRules(this.ruleStore.getAllData(requestContext))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -73,7 +73,7 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
       this.validator.validateOrThrow(requestContext, request);
 
       UserAttributionRule newRule = this.ruleGenerator.generateNewRuleWithoutRank(request);
-      List<UserAttributionRule> existingRules = this.ruleStore.getAllObjects(requestContext);
+      List<UserAttributionRule> existingRules = this.ruleStore.getAllData(requestContext);
       List<UserAttributionRule> mergedAndRankedRules =
           this.rankCalculator.rankAndMergeNewObject(newRule, existingRules);
       this.ruleStore.upsertObjects(
@@ -106,13 +106,13 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
       this.validator.validateOrThrow(requestContext, request);
       UserAttributionRule existingRule =
           this.ruleStore
-              .getObject(requestContext, request.getRule().getId())
+              .getData(requestContext, request.getRule().getId())
               .orElseThrow(Status.NOT_FOUND::asException);
       this.validator.validateUpdateOrThrow(existingRule, request.getRule());
 
       responseObserver.onNext(
           UpdateUserAttributionRuleResponse.newBuilder()
-              .setRule(this.ruleStore.upsertObject(requestContext, request.getRule()))
+              .setRule(this.ruleStore.upsertObject(requestContext, request.getRule()).getData())
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -131,7 +131,7 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
       this.ruleStore
           .deleteObject(requestContext, request.getRuleId())
           .orElseThrow(Status.NOT_FOUND::asRuntimeException);
-      List<UserAttributionRule> rulesAfterDelete = this.ruleStore.getAllObjects(requestContext);
+      List<UserAttributionRule> rulesAfterDelete = this.ruleStore.getAllData(requestContext);
       List<UserAttributionRule> rerankedRules = this.rankCalculator.rankFromOrder(rulesAfterDelete);
 
       this.ruleStore.upsertObjects(
@@ -154,7 +154,7 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
-      List<UserAttributionRule> existingRules = this.ruleStore.getAllObjects(requestContext);
+      List<UserAttributionRule> existingRules = this.ruleStore.getAllData(requestContext);
       List<UserAttributionRule> rerankedRules =
           request.hasPrecedingRuleId()
               ? this.rankCalculator.rerankAfterOtherObject(

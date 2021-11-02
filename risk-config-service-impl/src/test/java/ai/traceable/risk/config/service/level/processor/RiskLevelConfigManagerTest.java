@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.risk.config.service.level.RiskLevelConfigManager;
 import ai.traceable.risk.config.service.processor.RiskConfigConverter;
@@ -14,6 +16,7 @@ import io.grpc.StatusRuntimeException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.objectstore.DefaultObjectStore;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -74,7 +77,7 @@ public class RiskLevelConfigManagerTest {
 
   static class MockRiskLevelConfigStore extends RiskLevelConfigStore {
 
-    private Map<String, RiskLevelConfigValues> values = new HashMap<>();
+    private Map<String, ConfigObject<RiskLevelConfigValues>> values = new HashMap<>();
 
     protected MockRiskLevelConfigStore(
         ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
@@ -84,19 +87,23 @@ public class RiskLevelConfigManagerTest {
     }
 
     @Override
-    public Optional<RiskLevelConfigValues> getObject(RequestContext requestContext) {
-      return Optional.ofNullable(values.get(requestContext.getTenantId().get()));
+    public Optional<RiskLevelConfigValues> getData(RequestContext requestContext) {
+      return Optional.ofNullable(values.get(requestContext.getTenantId().get()))
+          .map(ConfigObject::getData);
     }
 
     @Override
-    public RiskLevelConfigValues upsertObject(
+    public ConfigObject<RiskLevelConfigValues> upsertObject(
         RequestContext requestContext, RiskLevelConfigValues config) {
-      values.put(requestContext.getTenantId().get(), config);
-      return config;
+      ConfigObject<RiskLevelConfigValues> mock = mock(ConfigObject.class);
+      when(mock.getData()).thenReturn(config);
+      values.put(requestContext.getTenantId().get(), mock);
+      return mock;
     }
 
     @Override
-    public Optional<RiskLevelConfigValues> deleteObject(RequestContext requestContext) {
+    public Optional<ConfigObject<RiskLevelConfigValues>> deleteObject(
+        RequestContext requestContext) {
       return Optional.ofNullable(values.remove(requestContext.getTenantId().get()));
     }
   }

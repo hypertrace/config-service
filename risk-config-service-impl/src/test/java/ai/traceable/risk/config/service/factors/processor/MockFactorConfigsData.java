@@ -1,5 +1,8 @@
 package ai.traceable.risk.config.service.factors.processor;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import ai.traceable.risk.config.service.processor.RiskConfigConverter;
 import ai.traceable.risk.config.service.processor.RiskConfigUtils;
 import ai.traceable.risk.config.service.v1.CustomizationOptions;
@@ -22,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -131,7 +135,8 @@ public class MockFactorConfigsData {
 
   static class MockRiskFactorConfigStore extends RiskFactorConfigStore {
 
-    private Map<String, Map<String, RiskFactorConfig>> tenantFactorsMap = new HashMap<>();
+    private Map<String, Map<String, ContextualConfigObject<RiskFactorConfig>>> tenantFactorsMap =
+        new HashMap<>();
 
     protected MockRiskFactorConfigStore(
         ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
@@ -141,7 +146,8 @@ public class MockFactorConfigsData {
     }
 
     @Override
-    public List<RiskFactorConfig> getAllObjects(RequestContext requestContext) {
+    public List<ContextualConfigObject<RiskFactorConfig>> getAllObjects(
+        RequestContext requestContext) {
       String tenantId = requestContext.getTenantId().get();
       return tenantFactorsMap.containsKey(tenantId)
           ? new ArrayList<>(tenantFactorsMap.get(tenantId).values())
@@ -149,23 +155,29 @@ public class MockFactorConfigsData {
     }
 
     @Override
-    public Optional<RiskFactorConfig> getObject(RequestContext requestContext, String context) {
+    public Optional<RiskFactorConfig> getData(RequestContext requestContext, String context) {
       return Optional.ofNullable(tenantFactorsMap.get(requestContext.getTenantId().get()))
-          .map(factorsMap -> factorsMap.get(context));
+          .map(factorsMap -> factorsMap.get(context).getData());
     }
 
     @Override
-    public RiskFactorConfig upsertObject(RequestContext requestContext, RiskFactorConfig config) {
+    public ContextualConfigObject<RiskFactorConfig> upsertObject(
+        RequestContext requestContext, RiskFactorConfig config) {
       String tenantId = requestContext.getTenantId().get();
       if (!tenantFactorsMap.containsKey(tenantId)) {
         tenantFactorsMap.put(tenantId, new HashMap<>());
       }
-      tenantFactorsMap.get(tenantId).put(config.getId(), config);
-      return config;
+
+      ContextualConfigObject<RiskFactorConfig> configObject = mock(ContextualConfigObject.class);
+      when(configObject.getData()).thenReturn(config);
+
+      tenantFactorsMap.get(tenantId).put(config.getId(), configObject);
+      return configObject;
     }
 
     @Override
-    public Optional<RiskFactorConfig> deleteObject(RequestContext requestContext, String context) {
+    public Optional<ContextualConfigObject<RiskFactorConfig>> deleteObject(
+        RequestContext requestContext, String context) {
       return Optional.ofNullable(
           tenantFactorsMap.get(requestContext.getTenantId().get()).remove(context));
     }
@@ -173,7 +185,8 @@ public class MockFactorConfigsData {
 
   static class MockRiskElementConfigStore extends RiskElementConfigStore {
 
-    private Map<String, Map<String, RiskElementConfig>> tenantFactorsMap = new HashMap<>();
+    private final Map<String, Map<String, ContextualConfigObject<RiskElementConfig>>>
+        tenantFactorsMap = new HashMap<>();
 
     protected MockRiskElementConfigStore(
         ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
@@ -183,7 +196,8 @@ public class MockFactorConfigsData {
     }
 
     @Override
-    public List<RiskElementConfig> getAllObjects(RequestContext requestContext) {
+    public List<ContextualConfigObject<RiskElementConfig>> getAllObjects(
+        RequestContext requestContext) {
       String tenantId = requestContext.getTenantId().get();
       return tenantFactorsMap.containsKey(tenantId)
           ? new ArrayList<>(tenantFactorsMap.get(tenantId).values())
@@ -191,23 +205,28 @@ public class MockFactorConfigsData {
     }
 
     @Override
-    public Optional<RiskElementConfig> getObject(RequestContext requestContext, String context) {
+    public Optional<RiskElementConfig> getData(RequestContext requestContext, String context) {
       return Optional.ofNullable(tenantFactorsMap.get(requestContext.getTenantId().get()))
-          .map(factorsMap -> factorsMap.get(context));
+          .map(factorsMap -> factorsMap.get(context).getData());
     }
 
     @Override
-    public RiskElementConfig upsertObject(RequestContext requestContext, RiskElementConfig config) {
+    public ContextualConfigObject<RiskElementConfig> upsertObject(
+        RequestContext requestContext, RiskElementConfig config) {
       String tenantId = requestContext.getTenantId().get();
       if (!tenantFactorsMap.containsKey(tenantId)) {
         tenantFactorsMap.put(tenantId, new HashMap<>());
       }
-      tenantFactorsMap.get(tenantId).put(config.getId(), config);
-      return config;
+
+      ContextualConfigObject<RiskElementConfig> configObject = mock(ContextualConfigObject.class);
+      when(configObject.getData()).thenReturn(config);
+      tenantFactorsMap.get(tenantId).put(config.getId(), configObject);
+      return configObject;
     }
 
     @Override
-    public Optional<RiskElementConfig> deleteObject(RequestContext requestContext, String context) {
+    public Optional<ContextualConfigObject<RiskElementConfig>> deleteObject(
+        RequestContext requestContext, String context) {
       return Optional.ofNullable(
           tenantFactorsMap.get(requestContext.getTenantId().get()).remove(context));
     }

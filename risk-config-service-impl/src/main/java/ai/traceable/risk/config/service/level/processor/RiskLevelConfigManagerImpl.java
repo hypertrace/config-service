@@ -28,7 +28,7 @@ public class RiskLevelConfigManagerImpl implements RiskLevelConfigManager {
 
   @Override
   public RiskLevelConfig getRiskLevelConfig(RequestContext requestContext) {
-    Optional<RiskLevelConfigValues> fetchedConfig = configStore.getObject(requestContext);
+    Optional<RiskLevelConfigValues> fetchedConfig = configStore.getData(requestContext);
     if (fetchedConfig.isEmpty()) {
       return buildRiskLevelConfig(defaultRiskLevelConfigValues, true);
     }
@@ -49,7 +49,7 @@ public class RiskLevelConfigManagerImpl implements RiskLevelConfigManager {
     if (configUtils.isConfigDefault(configValues, defaultRiskLevelConfigValues)) {
       return resetRiskLevelConfig(requestContext);
     }
-    configValues = configStore.upsertObject(requestContext, configValues);
+    configValues = configStore.upsertObject(requestContext, configValues).getData();
     return buildRiskLevelConfig(configValues, false);
   }
 

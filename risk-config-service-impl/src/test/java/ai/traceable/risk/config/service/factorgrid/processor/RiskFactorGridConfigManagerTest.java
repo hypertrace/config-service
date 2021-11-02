@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.risk.config.service.factorgrid.RiskFactorGridConfigManager;
 import ai.traceable.risk.config.service.processor.RiskConfigConverter;
@@ -16,6 +18,7 @@ import io.grpc.StatusRuntimeException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.objectstore.DefaultObjectStore;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -123,7 +126,7 @@ public class RiskFactorGridConfigManagerTest {
 
   static class MockRiskFactorGridConfigStore extends RiskFactorGridConfigStore {
 
-    private Map<String, RiskFactorGridConfigValues> values = new HashMap<>();
+    private Map<String, ConfigObject<RiskFactorGridConfigValues>> values = new HashMap<>();
 
     protected MockRiskFactorGridConfigStore(
         ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
@@ -133,19 +136,23 @@ public class RiskFactorGridConfigManagerTest {
     }
 
     @Override
-    public Optional<RiskFactorGridConfigValues> getObject(RequestContext requestContext) {
-      return Optional.ofNullable(values.get(requestContext.getTenantId().get()));
+    public Optional<RiskFactorGridConfigValues> getData(RequestContext requestContext) {
+      return Optional.ofNullable(values.get(requestContext.getTenantId().get()))
+          .map(ConfigObject::getData);
     }
 
     @Override
-    public RiskFactorGridConfigValues upsertObject(
+    public ConfigObject<RiskFactorGridConfigValues> upsertObject(
         RequestContext requestContext, RiskFactorGridConfigValues config) {
-      values.put(requestContext.getTenantId().get(), config);
-      return config;
+      ConfigObject<RiskFactorGridConfigValues> configObject = mock(ConfigObject.class);
+      when(configObject.getData()).thenReturn(config);
+      values.put(requestContext.getTenantId().get(), configObject);
+      return configObject;
     }
 
     @Override
-    public Optional<RiskFactorGridConfigValues> deleteObject(RequestContext requestContext) {
+    public Optional<ConfigObject<RiskFactorGridConfigValues>> deleteObject(
+        RequestContext requestContext) {
       return Optional.ofNullable(values.remove(requestContext.getTenantId().get()));
     }
   }

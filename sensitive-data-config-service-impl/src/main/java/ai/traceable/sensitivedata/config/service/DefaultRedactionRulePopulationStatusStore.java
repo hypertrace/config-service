@@ -25,12 +25,12 @@ class DefaultRedactionRulePopulationStatusStore
   }
 
   @Override
-  protected Optional<DefaultRedactionRulePopulationStatus> buildObjectFromValue(Value value) {
+  protected Optional<DefaultRedactionRulePopulationStatus> buildDataFromValue(Value value) {
     return Optional.of(DefaultRedactionRulePopulationStatus.fromValue(value));
   }
 
   @Override
-  protected Value buildValueFromObject(
+  protected Value buildValueFromData(
       DefaultRedactionRulePopulationStatus defaultRedactionRulePopulationStatus) {
     return defaultRedactionRulePopulationStatus.toValue();
   }

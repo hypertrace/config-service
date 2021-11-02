@@ -73,8 +73,13 @@ public class RankCalculator<T, I> {
   }
 
   public List<T> orderFromRanks(Collection<T> objects) {
+    return this.orderFromRanks(objects, Function.identity());
+  }
+
+  public <V> List<V> orderFromRanks(Collection<V> objects, Function<V, T> mapper) {
     return objects.stream()
-        .sorted(Comparator.comparing(this.config.getRankGetter()))
+        .sorted(
+            Comparator.comparing(object -> this.config.getRankGetter().apply(mapper.apply(object))))
         .collect(Collectors.toUnmodifiableList());
   }
 

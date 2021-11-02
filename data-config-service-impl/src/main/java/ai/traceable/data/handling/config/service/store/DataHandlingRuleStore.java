@@ -6,12 +6,15 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class DataHandlingRuleStore extends IdentifiedObjectStore<DataHandlingRule> {
@@ -30,8 +33,14 @@ public class DataHandlingRuleStore extends IdentifiedObjectStore<DataHandlingRul
     this.rankCalculator = rankCalculator;
   }
 
+  public List<DataHandlingRule> getAllData(RequestContext requestContext) {
+    return this.getAllObjects(requestContext).stream()
+        .map(ContextualConfigObject::getData)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
   @Override
-  protected Optional<DataHandlingRule> buildObjectFromValue(Value value) {
+  protected Optional<DataHandlingRule> buildDataFromValue(Value value) {
     DataHandlingRule.Builder builder = DataHandlingRule.newBuilder();
     try {
       ConfigProtoConverter.mergeFromValue(value, builder);
@@ -44,17 +53,18 @@ public class DataHandlingRuleStore extends IdentifiedObjectStore<DataHandlingRul
 
   @SneakyThrows
   @Override
-  protected Value buildValueFromObject(DataHandlingRule object) {
-    return ConfigProtoConverter.convertToValue(object);
+  protected Value buildValueFromData(DataHandlingRule data) {
+    return ConfigProtoConverter.convertToValue(data);
   }
 
   @Override
-  protected String getContextFromObject(DataHandlingRule rule) {
+  protected String getContextFromData(DataHandlingRule rule) {
     return rule.getId();
   }
 
   @Override
-  protected List<DataHandlingRule> orderFetchedObjects(List<DataHandlingRule> objects) {
-    return this.rankCalculator.orderFromRanks(objects);
+  protected List<ContextualConfigObject<DataHandlingRule>> orderFetchedObjects(
+      List<ContextualConfigObject<DataHandlingRule>> objects) {
+    return this.rankCalculator.orderFromRanks(objects, ContextualConfigObject::getData);
   }
 }

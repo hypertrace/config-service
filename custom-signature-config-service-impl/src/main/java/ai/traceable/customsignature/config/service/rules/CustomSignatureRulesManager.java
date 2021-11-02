@@ -10,13 +10,13 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -39,7 +39,7 @@ class CustomSignatureRulesManager extends IdentifiedObjectStore<CustomSignatureR
   }
 
   @Override
-  protected Optional<CustomSignatureRule> buildObjectFromValue(Value value) {
+  protected Optional<CustomSignatureRule> buildDataFromValue(Value value) {
     try {
       return Optional.of(customSignatureRuleConverter.convert(value));
     } catch (InvalidProtocolBufferException exception) {
@@ -50,44 +50,41 @@ class CustomSignatureRulesManager extends IdentifiedObjectStore<CustomSignatureR
 
   @Override
   @SneakyThrows
-  protected Value buildValueFromObject(CustomSignatureRule object) {
-    return customSignatureRuleConverter.convert(object);
+  protected Value buildValueFromData(CustomSignatureRule data) {
+    return customSignatureRuleConverter.convert(data);
   }
 
   @Override
-  protected String getContextFromObject(CustomSignatureRule object) {
-    return object.getId();
+  protected String getContextFromData(CustomSignatureRule data) {
+    return data.getId();
   }
 
   @Override
   public List<CustomSignatureRule> getCustomSignatureRules(
       RequestContext requestContext, GetRulesFilter filter) {
 
-    List<CustomSignatureRule> customSignatureRules = this.getAllObjects(requestContext);
+    return this.getAllObjects(requestContext).stream()
+        .map(ContextualConfigObject::getData)
+        .filter(rule -> this.ruleMatchesFilter(rule, filter))
+        .collect(ImmutableList.toImmutableList());
+  }
 
-    if (!Objects.equals(filter, GetRulesFilter.getDefaultInstance())) {
-      return customSignatureRules.stream()
-          .filter(
-              rule -> {
-                boolean ruleIdAccept =
-                    filter.getRuleIdsCount() == 0 || filter.getRuleIdsList().contains(rule.getId());
-
-                boolean eventTypeAccept =
-                    filter.getEventTypesList().isEmpty()
-                        || filter.getEventTypesList().contains(rule.getEffect().getEventType());
-
-                boolean disabledAccept =
-                    !(filter.hasDisabled() && rule.getDisabled() != filter.getDisabled());
-
-                boolean internalAccept =
-                    !(filter.hasInternal() && rule.getInternal() != filter.getInternal());
-
-                return ruleIdAccept && eventTypeAccept && disabledAccept && internalAccept;
-              })
-          .collect(ImmutableList.toImmutableList());
+  private boolean ruleMatchesFilter(CustomSignatureRule rule, GetRulesFilter filter) {
+    if (Objects.equals(filter, GetRulesFilter.getDefaultInstance())) {
+      return true;
     }
+    boolean ruleIdAccept =
+        filter.getRuleIdsCount() == 0 || filter.getRuleIdsList().contains(rule.getId());
 
-    return Collections.unmodifiableList(customSignatureRules);
+    boolean eventTypeAccept =
+        filter.getEventTypesList().isEmpty()
+            || filter.getEventTypesList().contains(rule.getEffect().getEventType());
+
+    boolean disabledAccept = !(filter.hasDisabled() && rule.getDisabled() != filter.getDisabled());
+
+    boolean internalAccept = !(filter.hasInternal() && rule.getInternal() != filter.getInternal());
+
+    return ruleIdAccept && eventTypeAccept && disabledAccept && internalAccept;
   }
 
   @Override
@@ -126,13 +123,15 @@ class CustomSignatureRulesManager extends IdentifiedObjectStore<CustomSignatureR
 
   @Override
   public CustomSignatureRule deleteCustomSignatureRule(RequestContext requestContext, String id) {
-    return this.deleteObject(requestContext, id).orElseThrow(Status.NOT_FOUND::asRuntimeException);
+    return this.deleteObject(requestContext, id)
+        .map(ContextualConfigObject::getData)
+        .orElseThrow(Status.NOT_FOUND::asRuntimeException);
   }
 
   private Optional<CustomSignatureRule> getCustomSignatureRule(
       RequestContext requestContext, String ruleId) {
     try {
-      return this.getObject(requestContext, ruleId);
+      return this.getData(requestContext, ruleId);
     } catch (Exception e) {
       return Optional.empty();
     }
@@ -141,7 +140,7 @@ class CustomSignatureRulesManager extends IdentifiedObjectStore<CustomSignatureR
   private Optional<CustomSignatureRule> upsertConfig(
       RequestContext requestContext, CustomSignatureRule customSignatureRule) {
     try {
-      return Optional.of(this.upsertObject(requestContext, customSignatureRule));
+      return Optional.of(this.upsertObject(requestContext, customSignatureRule).getData());
     } catch (Exception exception) {
       log.error("Unable to update custom signature rule {}", customSignatureRule, exception);
       return Optional.empty();

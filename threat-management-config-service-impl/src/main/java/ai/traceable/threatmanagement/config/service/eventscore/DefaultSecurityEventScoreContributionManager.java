@@ -40,14 +40,14 @@ class DefaultSecurityEventScoreContributionManager
   @Override
   public SecurityEventScoreContribution getSecurityEventScoreContribution(
       RequestContext requestContext) {
-    return getObject(requestContext).orElseGet(this::getDefaultSecurityEventScoreContribution);
+    return getData(requestContext).orElseGet(this::getDefaultSecurityEventScoreContribution);
   }
 
   @Override
   public SecurityEventScoreContribution upsertSecurityEventScoreContribution(
       RequestContext requestContext,
       SecurityEventScoreContribution securityEventScoreContribution) {
-    return upsertObject(requestContext, securityEventScoreContribution);
+    return upsertObject(requestContext, securityEventScoreContribution).getData();
   }
 
   @Override
@@ -61,13 +61,13 @@ class DefaultSecurityEventScoreContributionManager
 
   @SneakyThrows
   @Override
-  protected Optional<SecurityEventScoreContribution> buildObjectFromValue(Value value) {
+  protected Optional<SecurityEventScoreContribution> buildDataFromValue(Value value) {
     return securityEventScoreContributionConverter.convert(value);
   }
 
   @SneakyThrows
   @Override
-  protected Value buildValueFromObject(
+  protected Value buildValueFromData(
       SecurityEventScoreContribution securityEventScoreContribution) {
     return securityEventScoreContributionConverter.convert(securityEventScoreContribution);
   }

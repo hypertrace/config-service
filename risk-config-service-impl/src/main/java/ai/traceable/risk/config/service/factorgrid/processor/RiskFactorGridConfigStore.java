@@ -31,13 +31,13 @@ public class RiskFactorGridConfigStore extends DefaultObjectStore<RiskFactorGrid
 
   @Override
   @SneakyThrows
-  protected Optional<RiskFactorGridConfigValues> buildObjectFromValue(Value value) {
+  protected Optional<RiskFactorGridConfigValues> buildDataFromValue(Value value) {
     return Optional.of(configConverter.convert(value, configUtils.getNewBuilder()));
   }
 
   @Override
   @SneakyThrows
-  protected Value buildValueFromObject(RiskFactorGridConfigValues object) {
-    return configConverter.convert(object);
+  protected Value buildValueFromData(RiskFactorGridConfigValues data) {
+    return configConverter.convert(data);
   }
 }

@@ -23,6 +23,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import java.io.IOException;
+import java.time.Clock;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.hypertrace.config.service.ConfigServicesFactory;
@@ -72,7 +73,8 @@ public class TraceableConfigService extends PlatformService {
     this.getLifecycle().shutdownComplete().thenRun(channelRegistry::shutdown);
 
     ConfigChangeEventGenerator configChangeEventGenerator =
-        ConfigChangeEventGeneratorFactory.getInstance().createConfigChangeEventGenerator(config);
+        ConfigChangeEventGeneratorFactory.getInstance()
+            .createConfigChangeEventGenerator(config, Clock.systemUTC());
 
     ServerBuilder<?> internalServerBuilder = ServerBuilder.forPort(internalServerPort);
     configStore = ConfigServicesFactory.buildConfigStore(getAppConfig());

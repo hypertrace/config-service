@@ -14,7 +14,9 @@ import ai.traceable.config.utils.UuidGenerator;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
@@ -41,12 +43,14 @@ public class EventConditionConfigServiceImpl
       responseObserver.onNext(
           CreateEventConditionResponse.newBuilder()
               .setEventCondition(
-                  eventConditionStore.upsertObject(
-                      requestContext,
-                      EventCondition.newBuilder()
-                          .setId(uuidGenerator.generateRandomId())
-                          .setEventConditionMutableData(request.getEventConditionMutableData())
-                          .build()))
+                  eventConditionStore
+                      .upsertObject(
+                          requestContext,
+                          EventCondition.newBuilder()
+                              .setId(uuidGenerator.generateRandomId())
+                              .setEventConditionMutableData(request.getEventConditionMutableData())
+                              .build())
+                      .getData())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -65,12 +69,14 @@ public class EventConditionConfigServiceImpl
       responseObserver.onNext(
           UpdateEventConditionResponse.newBuilder()
               .setEventCondition(
-                  eventConditionStore.upsertObject(
-                      requestContext,
-                      EventCondition.newBuilder()
-                          .setId(request.getId())
-                          .setEventConditionMutableData(request.getEventConditionMutableData())
-                          .build()))
+                  eventConditionStore
+                      .upsertObject(
+                          requestContext,
+                          EventCondition.newBuilder()
+                              .setId(request.getId())
+                              .setEventConditionMutableData(request.getEventConditionMutableData())
+                              .build())
+                      .getData())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -88,7 +94,10 @@ public class EventConditionConfigServiceImpl
       validator.validateGetAllEventConditionsRequest(requestContext, request);
       responseObserver.onNext(
           GetAllEventConditionsResponse.newBuilder()
-              .addAllEventConditions(eventConditionStore.getAllObjects(requestContext))
+              .addAllEventConditions(
+                  eventConditionStore.getAllObjects(requestContext).stream()
+                      .map(ContextualConfigObject::getData)
+                      .collect(Collectors.toUnmodifiableList()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {

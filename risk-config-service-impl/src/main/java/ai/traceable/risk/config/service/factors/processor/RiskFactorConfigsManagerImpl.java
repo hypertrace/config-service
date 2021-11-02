@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
+import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -96,8 +97,14 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
 
   private Collection<RiskFactor> getRiskFactors(
       RequestContext requestContext, List<RiskFactor> defaultRiskFactors) {
-    List<RiskFactorConfig> factorConfigs = factorConfigStore.getAllObjects(requestContext);
-    List<RiskElementConfig> elementConfigs = elementConfigStore.getAllObjects(requestContext);
+    List<RiskFactorConfig> factorConfigs =
+        factorConfigStore.getAllObjects(requestContext).stream()
+            .map(ContextualConfigObject::getData)
+            .collect(Collectors.toUnmodifiableList());
+    List<RiskElementConfig> elementConfigs =
+        elementConfigStore.getAllObjects(requestContext).stream()
+            .map(ContextualConfigObject::getData)
+            .collect(Collectors.toUnmodifiableList());
     return riskFactorListUtils.mergeFactorConfigs(
         factorConfigs, elementConfigs, defaultRiskFactors, false);
   }

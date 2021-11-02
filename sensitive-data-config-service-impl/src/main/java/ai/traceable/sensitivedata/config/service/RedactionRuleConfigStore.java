@@ -26,17 +26,17 @@ class RedactionRuleConfigStore extends IdentifiedObjectStore<RedactionRuleConfig
 
   @SneakyThrows
   @Override
-  protected Optional<RedactionRuleConfig> buildObjectFromValue(Value value) {
+  protected Optional<RedactionRuleConfig> buildDataFromValue(Value value) {
     return Optional.of(RedactionRuleConfig.fromValue(value));
   }
 
   @Override
-  protected Value buildValueFromObject(RedactionRuleConfig redactionRuleConfig) {
+  protected Value buildValueFromData(RedactionRuleConfig redactionRuleConfig) {
     return redactionRuleConfig.toValue();
   }
 
   @Override
-  protected String getContextFromObject(RedactionRuleConfig redactionRuleConfig) {
+  protected String getContextFromData(RedactionRuleConfig redactionRuleConfig) {
     return redactionRuleConfig.getRedactionRule().getId();
   }
 }

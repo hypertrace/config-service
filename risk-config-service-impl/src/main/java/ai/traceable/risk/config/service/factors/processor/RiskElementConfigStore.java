@@ -31,18 +31,18 @@ public class RiskElementConfigStore extends IdentifiedObjectStore<RiskElementCon
 
   @Override
   @SneakyThrows
-  protected Optional<RiskElementConfig> buildObjectFromValue(Value value) {
+  protected Optional<RiskElementConfig> buildDataFromValue(Value value) {
     return Optional.of(configConverter.convert(value, configUtils.getNewBuilder()));
   }
 
   @Override
   @SneakyThrows
-  protected Value buildValueFromObject(RiskElementConfig object) {
-    return configConverter.convert(object);
+  protected Value buildValueFromData(RiskElementConfig data) {
+    return configConverter.convert(data);
   }
 
   @Override
-  protected String getContextFromObject(RiskElementConfig object) {
-    return object.getId();
+  protected String getContextFromData(RiskElementConfig data) {
+    return data.getId();
   }
 }

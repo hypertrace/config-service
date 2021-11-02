@@ -36,18 +36,18 @@ class ParamTypeRedactionStrategyConfigStore
   }
 
   @Override
-  protected Optional<ParamTypeRedactionStrategyConfig> buildObjectFromValue(Value value) {
+  protected Optional<ParamTypeRedactionStrategyConfig> buildDataFromValue(Value value) {
     return ParamTypeRedactionStrategyConfig.fromValue(value);
   }
 
   @Override
-  protected Value buildValueFromObject(
+  protected Value buildValueFromData(
       ParamTypeRedactionStrategyConfig paramTypeRedactionStrategyConfig) {
     return paramTypeRedactionStrategyConfig.toValue();
   }
 
   @Override
-  protected String getContextFromObject(ParamTypeRedactionStrategyConfig object) {
+  protected String getContextFromData(ParamTypeRedactionStrategyConfig data) {
     return paramType.name();
   }
 }

@@ -39,13 +39,13 @@ class DefaultAnomalyScoreContributionManager
 
   @Override
   public AnomalyScoreContribution getAnomalyScoreContribution(RequestContext requestContext) {
-    return getObject(requestContext).orElseGet(this::getDefaultAnomalyScoreContribution);
+    return getData(requestContext).orElseGet(this::getDefaultAnomalyScoreContribution);
   }
 
   @Override
   public AnomalyScoreContribution upsertAnomalyScoreContribution(
       RequestContext requestContext, AnomalyScoreContribution anomalyScoreContribution) {
-    return upsertObject(requestContext, anomalyScoreContribution);
+    return upsertObject(requestContext, anomalyScoreContribution).getData();
   }
 
   @Override
@@ -57,13 +57,13 @@ class DefaultAnomalyScoreContributionManager
 
   @SneakyThrows
   @Override
-  protected Optional<AnomalyScoreContribution> buildObjectFromValue(Value value) {
+  protected Optional<AnomalyScoreContribution> buildDataFromValue(Value value) {
     return anomalyScoreContributionConverter.convert(value);
   }
 
   @SneakyThrows
   @Override
-  protected Value buildValueFromObject(AnomalyScoreContribution anomalyScoreContribution) {
+  protected Value buildValueFromData(AnomalyScoreContribution anomalyScoreContribution) {
     return anomalyScoreContributionConverter.convert(anomalyScoreContribution);
   }
 

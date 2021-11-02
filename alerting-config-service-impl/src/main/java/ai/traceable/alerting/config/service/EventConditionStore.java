@@ -29,7 +29,7 @@ public class EventConditionStore extends IdentifiedObjectStore<EventCondition> {
   }
 
   @Override
-  protected Optional<EventCondition> buildObjectFromValue(Value value) {
+  protected Optional<EventCondition> buildDataFromValue(Value value) {
     EventCondition.Builder builder = EventCondition.newBuilder();
     try {
       ConfigProtoConverter.mergeFromValue(value, builder);
@@ -42,12 +42,12 @@ public class EventConditionStore extends IdentifiedObjectStore<EventCondition> {
 
   @SneakyThrows
   @Override
-  protected Value buildValueFromObject(EventCondition object) {
-    return ConfigProtoConverter.convertToValue(object);
+  protected Value buildValueFromData(EventCondition data) {
+    return ConfigProtoConverter.convertToValue(data);
   }
 
   @Override
-  protected String getContextFromObject(EventCondition object) {
-    return object.getId();
+  protected String getContextFromData(EventCondition data) {
+    return data.getId();
   }
 }

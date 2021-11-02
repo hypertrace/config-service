@@ -25,12 +25,12 @@ class AutomaticSecretRedactionStrategyConfigStore
   }
 
   @Override
-  protected Optional<AutomaticSecretRedactionStrategyConfig> buildObjectFromValue(Value value) {
+  protected Optional<AutomaticSecretRedactionStrategyConfig> buildDataFromValue(Value value) {
     return AutomaticSecretRedactionStrategyConfig.fromValue(value);
   }
 
   @Override
-  protected Value buildValueFromObject(
+  protected Value buildValueFromData(
       AutomaticSecretRedactionStrategyConfig automaticSecretRedactionStrategyConfig) {
     return automaticSecretRedactionStrategyConfig.toValue();
   }

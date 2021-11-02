@@ -6,13 +6,16 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class UserAttributionRuleStore extends IdentifiedObjectStore<UserAttributionRule> {
@@ -34,8 +37,14 @@ public class UserAttributionRuleStore extends IdentifiedObjectStore<UserAttribut
     this.rankCalculator = rankCalculator;
   }
 
+  public List<UserAttributionRule> getAllData(RequestContext requestContext) {
+    return this.getAllObjects(requestContext).stream()
+        .map(ContextualConfigObject::getData)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
   @Override
-  protected Optional<UserAttributionRule> buildObjectFromValue(Value value) {
+  protected Optional<UserAttributionRule> buildDataFromValue(Value value) {
     UserAttributionRule.Builder builder = UserAttributionRule.newBuilder();
     try {
       ConfigProtoConverter.mergeFromValue(value, builder);
@@ -48,17 +57,18 @@ public class UserAttributionRuleStore extends IdentifiedObjectStore<UserAttribut
 
   @SneakyThrows
   @Override
-  protected Value buildValueFromObject(UserAttributionRule object) {
-    return ConfigProtoConverter.convertToValue(object);
+  protected Value buildValueFromData(UserAttributionRule data) {
+    return ConfigProtoConverter.convertToValue(data);
   }
 
   @Override
-  protected String getContextFromObject(UserAttributionRule object) {
-    return object.getId();
+  protected String getContextFromData(UserAttributionRule data) {
+    return data.getId();
   }
 
   @Override
-  protected List<UserAttributionRule> orderFetchedObjects(List<UserAttributionRule> objects) {
-    return this.rankCalculator.orderFromRanks(objects);
+  protected List<ContextualConfigObject<UserAttributionRule>> orderFetchedObjects(
+      List<ContextualConfigObject<UserAttributionRule>> objects) {
+    return this.rankCalculator.orderFromRanks(objects, ContextualConfigObject::getData);
   }
 }

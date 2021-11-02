@@ -29,20 +29,19 @@ public class RiskFactorConfigStore extends IdentifiedObjectStore<RiskFactorConfi
     this.configUtils = configUtils;
   }
 
-  @Override
   @SneakyThrows
-  protected Optional<RiskFactorConfig> buildObjectFromValue(Value value) {
+  protected Optional<RiskFactorConfig> buildDataFromValue(Value value) {
     return Optional.of(configConverter.convert(value, configUtils.getNewBuilder()));
   }
 
   @Override
   @SneakyThrows
-  protected Value buildValueFromObject(RiskFactorConfig object) {
-    return configConverter.convert(object);
+  protected Value buildValueFromData(RiskFactorConfig data) {
+    return configConverter.convert(data);
   }
 
   @Override
-  protected String getContextFromObject(RiskFactorConfig object) {
-    return object.getId();
+  protected String getContextFromData(RiskFactorConfig data) {
+    return data.getId();
   }
 }

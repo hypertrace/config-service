@@ -24,12 +24,12 @@ class FullPrivacyModeConfigStore extends DefaultObjectStore<FullPrivacyModeConfi
   }
 
   @Override
-  protected Optional<FullPrivacyModeConfig> buildObjectFromValue(Value value) {
+  protected Optional<FullPrivacyModeConfig> buildDataFromValue(Value value) {
     return FullPrivacyModeConfig.fromValue(value);
   }
 
   @Override
-  protected Value buildValueFromObject(FullPrivacyModeConfig fullPrivacyModeConfig) {
+  protected Value buildValueFromData(FullPrivacyModeConfig fullPrivacyModeConfig) {
     return fullPrivacyModeConfig.toValue();
   }
 }

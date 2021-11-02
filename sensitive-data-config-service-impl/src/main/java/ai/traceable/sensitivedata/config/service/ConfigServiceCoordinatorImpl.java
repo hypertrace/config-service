@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
@@ -93,7 +94,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
       RequestContext requestContext, ParamType paramType) {
     return ParamTypeRedactionStrategyConfigStore.createInstance(
             configServiceBlockingStub, configChangeEventGenerator, paramType)
-        .getObject(requestContext, paramType.name())
+        .getData(requestContext, paramType.name())
         .map(ParamTypeRedactionStrategyConfig::getRedactionStrategy)
         .orElse(defaultParamTypeRedactionStrategy);
   }
@@ -109,7 +110,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   @Override
   public boolean isAutomaticSecretRedactionStrategyEnabled(RequestContext requestContext) {
     return this.automaticSecretRedactionStrategyConfigStore
-        .getObject(requestContext)
+        .getData(requestContext)
         .map(AutomaticSecretRedactionStrategyConfig::isEnabled)
         .orElse(defaultAutomaticSecretRedactionEnabled);
   }
@@ -125,6 +126,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
     validateRegex(newRedactionRule.getRegex());
     return this.redactionRuleConfigStore
         .upsertObject(requestContext, new RedactionRuleConfig(newRedactionRule))
+        .getData()
         .getRedactionRule();
   }
 
@@ -136,6 +138,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
         getRedactionRuleConfig(requestContext, redactionRule.getId()).getCreationTimestamp();
     return this.redactionRuleConfigStore
         .upsertObject(requestContext, new RedactionRuleConfig(redactionRule, creationTimestamp))
+        .getData()
         .getRedactionRule();
   }
 
@@ -172,6 +175,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   public RedactionRule deleteRedactionRule(RequestContext requestContext, String redactionRuleId) {
     return this.redactionRuleConfigStore
         .deleteObject(requestContext, redactionRuleId)
+        .map(ContextualConfigObject::getData)
         .map(RedactionRuleConfig::getRedactionRule)
         .orElseThrow(Status.NOT_FOUND::asRuntimeException);
   }
@@ -179,7 +183,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   @Override
   public boolean isFullPrivacyModeEnabled(RequestContext requestContext) {
     return this.fullPrivacyModeConfigStore
-        .getObject(requestContext)
+        .getData(requestContext)
         .map(FullPrivacyModeConfig::isEnabled)
         .orElse(defaultFullPrivacyModeEnabled);
   }
@@ -277,6 +281,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
 
   private List<RedactionRule> fetchPersistedRules(RequestContext requestContext) {
     return this.redactionRuleConfigStore.getAllObjects(requestContext).stream()
+        .map(ContextualConfigObject::getData)
         .sorted()
         .map(RedactionRuleConfig::getRedactionRule)
         .collect(Collectors.toUnmodifiableList());
@@ -306,7 +311,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   private DefaultRedactionRulePopulationStatus fetchPrepopulationStatus(
       RequestContext requestContext) {
     return this.defaultRedactionRulePopulationStatusStore
-        .getObject(requestContext)
+        .getData(requestContext)
         .orElseGet(
             () ->
                 DefaultRedactionRulePopulationStatus.empty()
@@ -336,7 +341,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   private RedactionRuleConfig getRedactionRuleConfig(
       RequestContext requestContext, String redactionRuleId) {
     return redactionRuleConfigStore
-        .getObject(requestContext, redactionRuleId)
+        .getData(requestContext, redactionRuleId)
         .orElseThrow(Status.NOT_FOUND::asRuntimeException);
   }
 
