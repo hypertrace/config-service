@@ -3,6 +3,7 @@ package org.hypertrace.config.objectstore;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
@@ -18,6 +19,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
  *
  * @param <T>
  */
+@Slf4j
 public abstract class DefaultObjectStore<T> {
   private final ConfigServiceBlockingStub configServiceBlockingStub;
   private final String resourceNamespace;
@@ -102,7 +104,13 @@ public abstract class DefaultObjectStore<T> {
                 this.buildClassNameForChangeEvent(upsertedObject.getData()),
                 this.buildDataFromValue(response.getPrevConfig())
                     .map(this::buildValueForChangeEvent)
-                    .get(),
+                    .orElseGet(
+                        () -> {
+                          log.error(
+                              "Unable to convert previousValue back to data for change event. Falling back to raw value {}",
+                              response.getPrevConfig());
+                          return response.getPrevConfig();
+                        }),
                 this.buildDataFromValue(response.getConfig())
                     .map(this::buildValueForChangeEvent)
                     .get());
@@ -110,7 +118,7 @@ public abstract class DefaultObjectStore<T> {
             configChangeEventGenerator.sendCreateNotification(
                 context,
                 this.buildClassNameForChangeEvent(upsertedObject.getData()),
-                response.getConfig());
+                this.buildValueForChangeEvent(upsertedObject.getData()));
           }
         });
     return upsertedObject;
@@ -136,7 +144,7 @@ public abstract class DefaultObjectStore<T> {
               configChangeEventGenerator.sendDeleteNotification(
                   context,
                   this.buildClassNameForChangeEvent(object.getData()),
-                  this.buildDataFromValue(deletedConfig.getConfig())
+                  this.buildDataFromValue(this.buildValueForChangeEvent(object.getData()))
                       .map(this::buildValueForChangeEvent)
                       .get()));
       return Optional.of(object);

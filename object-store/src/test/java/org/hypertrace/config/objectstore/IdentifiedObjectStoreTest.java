@@ -249,6 +249,13 @@ class IdentifiedObjectStoreTest {
     int rank;
   }
 
+  @lombok.Value
+  @Builder
+  private static class MyObject {
+    String id;
+    int rank;
+  }
+
   private static class TestObjectStore extends IdentifiedObjectStore<TestObject> {
     private TestObjectStore(
         ConfigServiceBlockingStub stub, ConfigChangeEventGenerator configChangeEventGenerator) {

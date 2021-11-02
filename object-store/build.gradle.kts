@@ -10,6 +10,7 @@ dependencies {
   api(libs.hypertrace.grpcutils.context)
 
   implementation(projects.configServiceChangeEventGenerator)
+  implementation(libs.slf4j.api)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

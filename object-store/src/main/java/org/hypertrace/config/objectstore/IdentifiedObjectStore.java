@@ -5,6 +5,7 @@ import io.grpc.Status;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
@@ -24,6 +25,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
  *
  * @param <T>
  */
+@Slf4j
 public abstract class IdentifiedObjectStore<T> {
   private final ConfigServiceBlockingStub configServiceBlockingStub;
   private final String resourceNamespace;
@@ -152,7 +154,7 @@ public abstract class IdentifiedObjectStore<T> {
                   context,
                   this.buildClassNameForChangeEvent(object.getData()),
                   id,
-                  deletedConfig.getConfig()));
+                  this.buildValueForChangeEvent(object.getData())));
       return Optional.of(object);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
@@ -237,7 +239,15 @@ public abstract class IdentifiedObjectStore<T> {
                 requestContext,
                 this.buildClassNameForChangeEvent(result.getData()),
                 result.getContext(),
-                this.buildDataFromValue(previousValue).map(this::buildValueForChangeEvent).get(),
+                this.buildDataFromValue(previousValue)
+                    .map(this::buildValueForChangeEvent)
+                    .orElseGet(
+                        () -> {
+                          log.error(
+                              "Unable to convert previousValue back to data for change event. Falling back to raw value {}",
+                              previousValue);
+                          return previousValue;
+                        }),
                 this.buildValueForChangeEvent(result.getData())));
   }
 }
