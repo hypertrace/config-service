@@ -194,6 +194,8 @@ public abstract class IdentifiedObjectStore<T> {
     Optional<ContextualConfigObject<T>> optionalResult =
         ContextualConfigObjectImpl.tryBuild(
             response, this::buildDataFromValue, this::getContextFromData);
+
+    System.out.println(optionalResult);
     optionalResult.ifPresent(
         result -> {
           if (response.hasPrevConfig()) {

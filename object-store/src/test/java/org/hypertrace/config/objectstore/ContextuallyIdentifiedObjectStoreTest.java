@@ -157,16 +157,6 @@ class ContextuallyIdentifiedObjectStoreTest {
     }
 
     @Override
-    protected Value buildValueForChangeEvent(TestObject object) {
-      return Values.of(object.getName());
-    }
-
-    @Override
-    protected String buildClassNameForChangeEvent(TestObject object) {
-      return object.getName();
-    }
-
-    @Override
     protected String getConfigContextFromRequestContext(RequestContext requestContext) {
       return requestContext.getTenantId().orElseThrow();
     }
