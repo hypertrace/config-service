@@ -111,9 +111,7 @@ public abstract class DefaultObjectStore<T> {
                               response.getPrevConfig());
                           return response.getPrevConfig();
                         }),
-                this.buildDataFromValue(response.getConfig())
-                    .map(this::buildValueForChangeEvent)
-                    .get());
+                this.buildValueForChangeEvent(upsertedObject.getData()));
           } else {
             configChangeEventGenerator.sendCreateNotification(
                 context,
@@ -144,9 +142,7 @@ public abstract class DefaultObjectStore<T> {
               configChangeEventGenerator.sendDeleteNotification(
                   context,
                   this.buildClassNameForChangeEvent(object.getData()),
-                  this.buildDataFromValue(this.buildValueForChangeEvent(object.getData()))
-                      .map(this::buildValueForChangeEvent)
-                      .get()));
+                  this.buildValueForChangeEvent(object.getData())));
       return Optional.of(object);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
