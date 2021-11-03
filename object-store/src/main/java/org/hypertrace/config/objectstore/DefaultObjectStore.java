@@ -3,6 +3,7 @@ package org.hypertrace.config.objectstore;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
@@ -18,6 +19,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
  *
  * @param <T>
  */
+@Slf4j
 public abstract class DefaultObjectStore<T> {
   private final ConfigServiceBlockingStub configServiceBlockingStub;
   private final String resourceNamespace;
@@ -48,6 +50,14 @@ public abstract class DefaultObjectStore<T> {
   protected abstract Optional<T> buildDataFromValue(Value value);
 
   protected abstract Value buildValueFromData(T data);
+
+  protected Value buildValueForChangeEvent(T data) {
+    return this.buildValueFromData(data);
+  }
+
+  protected String buildClassNameForChangeEvent(T data) {
+    return data.getClass().getName();
+  }
 
   public Optional<T> getData(RequestContext context) {
     try {
@@ -91,12 +101,22 @@ public abstract class DefaultObjectStore<T> {
           if (response.hasPrevConfig()) {
             configChangeEventGenerator.sendUpdateNotification(
                 context,
-                upsertedObject.getData().getClass().getName(),
-                response.getPrevConfig(),
-                response.getConfig());
+                this.buildClassNameForChangeEvent(upsertedObject.getData()),
+                this.buildDataFromValue(response.getPrevConfig())
+                    .map(this::buildValueForChangeEvent)
+                    .orElseGet(
+                        () -> {
+                          log.error(
+                              "Unable to convert previousValue back to data for change event. Falling back to raw value {}",
+                              response.getPrevConfig());
+                          return response.getPrevConfig();
+                        }),
+                this.buildValueForChangeEvent(upsertedObject.getData()));
           } else {
             configChangeEventGenerator.sendCreateNotification(
-                context, upsertedObject.getData().getClass().getName(), response.getConfig());
+                context,
+                this.buildClassNameForChangeEvent(upsertedObject.getData()),
+                this.buildValueForChangeEvent(upsertedObject.getData()));
           }
         });
     return upsertedObject;
@@ -120,7 +140,9 @@ public abstract class DefaultObjectStore<T> {
       configChangeEventGeneratorOptional.ifPresent(
           configChangeEventGenerator ->
               configChangeEventGenerator.sendDeleteNotification(
-                  context, object.getData().getClass().getName(), deletedConfig.getConfig()));
+                  context,
+                  this.buildClassNameForChangeEvent(object.getData()),
+                  this.buildValueForChangeEvent(object.getData())));
       return Optional.of(object);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {

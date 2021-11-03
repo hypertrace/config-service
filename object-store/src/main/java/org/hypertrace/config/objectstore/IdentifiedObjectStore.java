@@ -5,6 +5,7 @@ import io.grpc.Status;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
@@ -24,6 +25,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
  *
  * @param <T>
  */
+@Slf4j
 public abstract class IdentifiedObjectStore<T> {
   private final ConfigServiceBlockingStub configServiceBlockingStub;
   private final String resourceNamespace;
@@ -56,6 +58,14 @@ public abstract class IdentifiedObjectStore<T> {
   protected abstract Value buildValueFromData(T data);
 
   protected abstract String getContextFromData(T data);
+
+  protected Value buildValueForChangeEvent(T data) {
+    return this.buildValueFromData(data);
+  }
+
+  protected String buildClassNameForChangeEvent(T data) {
+    return data.getClass().getName();
+  }
 
   protected List<ContextualConfigObject<T>> orderFetchedObjects(
       List<ContextualConfigObject<T>> objects) {
@@ -141,7 +151,10 @@ public abstract class IdentifiedObjectStore<T> {
       configChangeEventGeneratorOptional.ifPresent(
           configChangeEventGenerator ->
               configChangeEventGenerator.sendDeleteNotification(
-                  context, object.getData().getClass().getName(), id, deletedConfig.getConfig()));
+                  context,
+                  this.buildClassNameForChangeEvent(object.getData()),
+                  id,
+                  this.buildValueForChangeEvent(object.getData())));
       return Optional.of(object);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
@@ -181,6 +194,8 @@ public abstract class IdentifiedObjectStore<T> {
     Optional<ContextualConfigObject<T>> optionalResult =
         ContextualConfigObjectImpl.tryBuild(
             response, this::buildDataFromValue, this::getContextFromData);
+
+    System.out.println(optionalResult);
     optionalResult.ifPresent(
         result -> {
           if (response.hasPrevConfig()) {
@@ -213,9 +228,9 @@ public abstract class IdentifiedObjectStore<T> {
         configChangeEventGenerator ->
             configChangeEventGenerator.sendCreateNotification(
                 requestContext,
-                result.getData().getClass().getName(),
+                this.buildClassNameForChangeEvent(result.getData()),
                 result.getContext(),
-                this.buildValueFromData(result.getData())));
+                this.buildValueForChangeEvent(result.getData())));
   }
 
   private void tryReportUpdate(
@@ -224,9 +239,17 @@ public abstract class IdentifiedObjectStore<T> {
         configChangeEventGenerator ->
             configChangeEventGenerator.sendUpdateNotification(
                 requestContext,
-                result.getData().getClass().getName(),
+                this.buildClassNameForChangeEvent(result.getData()),
                 result.getContext(),
-                previousValue,
-                this.buildValueFromData(result.getData())));
+                this.buildDataFromValue(previousValue)
+                    .map(this::buildValueForChangeEvent)
+                    .orElseGet(
+                        () -> {
+                          log.error(
+                              "Unable to convert previousValue back to data for change event. Falling back to raw value {}",
+                              previousValue);
+                          return previousValue;
+                        }),
+                this.buildValueForChangeEvent(result.getData())));
   }
 }
