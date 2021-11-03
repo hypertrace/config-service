@@ -26,7 +26,6 @@ import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
-import org.hypertrace.label.config.service.v1.CreateLabel;
 import org.hypertrace.label.config.service.v1.CreateLabelRequest;
 import org.hypertrace.label.config.service.v1.CreateLabelResponse;
 import org.hypertrace.label.config.service.v1.DeleteLabelRequest;
@@ -36,6 +35,7 @@ import org.hypertrace.label.config.service.v1.GetLabelResponse;
 import org.hypertrace.label.config.service.v1.GetLabelsRequest;
 import org.hypertrace.label.config.service.v1.GetLabelsResponse;
 import org.hypertrace.label.config.service.v1.Label;
+import org.hypertrace.label.config.service.v1.LabelData;
 import org.hypertrace.label.config.service.v1.LabelsConfigServiceGrpc;
 import org.hypertrace.label.config.service.v1.UpdateLabelRequest;
 import org.hypertrace.label.config.service.v1.UpdateLabelResponse;
@@ -76,7 +76,9 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
               .collect(Collectors.toUnmodifiableMap(Label::getId, Function.identity()));
       systemLabelsKeyLabelMap =
           systemLabels.stream()
-              .collect(Collectors.toUnmodifiableMap(Label::getKey, Function.identity()));
+              .collect(
+                  Collectors.toUnmodifiableMap(
+                      (label) -> label.getData().getKey(), Function.identity()));
     } else {
       systemLabels = Collections.emptyList();
       systemLabelsIdLabelMap = Collections.emptyMap();
@@ -106,24 +108,22 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
       Lock labelsLock = this.stripedLabelsLock.get(requestContext.getTenantId());
       if (labelsLock.tryLock(WAIT_TIME.getSeconds(), TimeUnit.SECONDS)) {
         try {
-          CreateLabel createLabel = request.getLabel();
-          if (systemLabelsKeyLabelMap.containsKey(createLabel.getKey())
-              || isDuplicateKey(createLabel.getKey())) {
+          LabelData labelData = request.getData();
+          if (systemLabelsKeyLabelMap.containsKey(labelData.getKey())
+              || isDuplicateKey(labelData.getKey())) {
             // Creating a label with a name that clashes with one of system labels name
             responseObserver.onError(new StatusRuntimeException(Status.ALREADY_EXISTS));
             return;
           }
           Label label =
-              Label.newBuilder()
-                  .setId(UUID.randomUUID().toString())
-                  .setKey(createLabel.getKey())
-                  .setCreatedBy(createLabel.getCreatedBy())
-                  .setColor(createLabel.getColor())
-                  .setCreatedByApplicationRuleId(createLabel.getCreatedByApplicationRuleId())
-                  .setDescription(createLabel.getDescription())
-                  .build();
-          Label createdLabel =
-              getLabelFromContextualObject(labelStore.upsertObject(requestContext, label));
+              Label.newBuilder().setId(UUID.randomUUID().toString()).setData(labelData).build();
+          if (request.hasCreatedByApplicationRuleId()) {
+            label =
+                label.toBuilder()
+                    .setCreatedByApplicationRuleId(request.getCreatedByApplicationRuleId())
+                    .build();
+          }
+          Label createdLabel = labelStore.upsertObject(requestContext, label).getData();
           responseObserver.onNext(CreateLabelResponse.newBuilder().setLabel(createdLabel).build());
           responseObserver.onCompleted();
         } finally {
@@ -162,11 +162,10 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
   public void getLabels(
       GetLabelsRequest request, StreamObserver<GetLabelsResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
-    List<Label> allLabels = new ArrayList<>();
-    allLabels.addAll(systemLabels);
+    List<Label> allLabels = new ArrayList<>(systemLabels);
     List<Label> tenantLabels =
         labelStore.getAllObjects(requestContext).stream()
-            .map(this::getLabelFromContextualObject)
+            .map(ContextualConfigObject::getData)
             .collect(Collectors.toUnmodifiableList());
     allLabels.addAll(tenantLabels);
     responseObserver.onNext(GetLabelsResponse.newBuilder().addAllLabels(allLabels).build());
@@ -177,28 +176,28 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
   public void updateLabel(
       UpdateLabelRequest request, StreamObserver<UpdateLabelResponse> responseObserver) {
     try {
-      Label updatedLabelInReq = request.getLabel();
+      LabelData newLabelData = request.getData();
       RequestContext requestContext = RequestContext.CURRENT.get();
       Lock labelsLock = this.stripedLabelsLock.get(requestContext.getTenantId());
       if (labelsLock.tryLock(WAIT_TIME.getSeconds(), TimeUnit.SECONDS)) {
         try {
-          if (systemLabelsIdLabelMap.containsKey(updatedLabelInReq.getId())
-              || systemLabelsKeyLabelMap.containsKey(updatedLabelInReq.getKey())) {
+          if (systemLabelsIdLabelMap.containsKey(request.getId())
+              || systemLabelsKeyLabelMap.containsKey(newLabelData.getKey())) {
             // Updating a system label will error
             responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
             return;
           }
-          if (isDuplicateKey(updatedLabelInReq.getKey())) {
+          if (isDuplicateKey(newLabelData.getKey())) {
             responseObserver.onError(new StatusRuntimeException(Status.ALREADY_EXISTS));
             return;
           }
-          labelStore
-              .getData(requestContext, updatedLabelInReq.getId())
-              .orElseThrow(Status.NOT_FOUND::asRuntimeException);
-          Label updatedLabelInRes =
-              labelStore.upsertObject(requestContext, updatedLabelInReq).getData();
-          responseObserver.onNext(
-              UpdateLabelResponse.newBuilder().setLabel(updatedLabelInRes).build());
+          Label oldLabel =
+              labelStore
+                  .getData(requestContext, request.getId())
+                  .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+          Label newLabel = oldLabel.toBuilder().setData(newLabelData).build();
+          Label updatedLabel = labelStore.upsertObject(requestContext, newLabel).getData();
+          responseObserver.onNext(UpdateLabelResponse.newBuilder().setLabel(updatedLabel).build());
           responseObserver.onCompleted();
         } finally {
           labelsLock.unlock();
@@ -248,14 +247,12 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
         labelStore.getAllObjects(requestContext).stream()
             .map(ContextualConfigObject::getData)
             .collect(Collectors.toUnmodifiableList());
-    Optional<Label> match =
-        labelList.stream().filter(label -> label.getKey().equals(key)).findAny();
+    Optional<String> match =
+        labelList.stream()
+            .map(Label::getData)
+            .map(LabelData::getKey)
+            .filter(labelKey -> labelKey.equals(key))
+            .findAny();
     return match.isPresent();
-  }
-
-  private Label getLabelFromContextualObject(ContextualConfigObject<Label> labelObject) {
-    long createdTimestamp = labelObject.getCreationTimestamp().toEpochMilli();
-    Label label = labelObject.getData();
-    return label.toBuilder().setCreatedTime(createdTimestamp).build();
   }
 }
