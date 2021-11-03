@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -176,18 +175,18 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
   public void updateLabel(
       UpdateLabelRequest request, StreamObserver<UpdateLabelResponse> responseObserver) {
     try {
-      LabelData newLabelData = request.getData();
+      LabelData updateLabelData = request.getData();
       RequestContext requestContext = RequestContext.CURRENT.get();
       Lock labelsLock = this.stripedLabelsLock.get(requestContext.getTenantId());
       if (labelsLock.tryLock(WAIT_TIME.getSeconds(), TimeUnit.SECONDS)) {
         try {
           if (systemLabelsIdLabelMap.containsKey(request.getId())
-              || systemLabelsKeyLabelMap.containsKey(newLabelData.getKey())) {
+              || systemLabelsKeyLabelMap.containsKey(updateLabelData.getKey())) {
             // Updating a system label will error
             responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
             return;
           }
-          if (isDuplicateKey(newLabelData.getKey())) {
+          if (isDuplicateKey(updateLabelData.getKey())) {
             responseObserver.onError(new StatusRuntimeException(Status.ALREADY_EXISTS));
             return;
           }
@@ -195,9 +194,10 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
               labelStore
                   .getData(requestContext, request.getId())
                   .orElseThrow(Status.NOT_FOUND::asRuntimeException);
-          Label newLabel = oldLabel.toBuilder().setData(newLabelData).build();
-          Label updatedLabel = labelStore.upsertObject(requestContext, newLabel).getData();
-          responseObserver.onNext(UpdateLabelResponse.newBuilder().setLabel(updatedLabel).build());
+          Label updateLabel = oldLabel.toBuilder().setData(updateLabelData).build();
+          Label updateLabelInRes = labelStore.upsertObject(requestContext, updateLabel).getData();
+          responseObserver.onNext(
+              UpdateLabelResponse.newBuilder().setLabel(updateLabelInRes).build());
           responseObserver.onCompleted();
         } finally {
           labelsLock.unlock();
@@ -247,12 +247,9 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
         labelStore.getAllObjects(requestContext).stream()
             .map(ContextualConfigObject::getData)
             .collect(Collectors.toUnmodifiableList());
-    Optional<String> match =
-        labelList.stream()
-            .map(Label::getData)
-            .map(LabelData::getKey)
-            .filter(labelKey -> labelKey.equals(key))
-            .findAny();
-    return match.isPresent();
+    return labelList.stream()
+        .map(Label::getData)
+        .map(LabelData::getKey)
+        .anyMatch(labelKey -> labelKey.equals(key));
   }
 }
