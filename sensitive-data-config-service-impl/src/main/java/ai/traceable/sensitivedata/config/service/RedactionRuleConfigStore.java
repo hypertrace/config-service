@@ -3,11 +3,13 @@ package ai.traceable.sensitivedata.config.service;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.REDACTION_RULES_CONFIG;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.SENSITIVE_DATA_CONFIGURATION;
 
+import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import com.google.protobuf.Value;
 import java.util.Optional;
 import javax.inject.Inject;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 
@@ -33,6 +35,17 @@ class RedactionRuleConfigStore extends IdentifiedObjectStore<RedactionRuleConfig
   @Override
   protected Value buildValueFromData(RedactionRuleConfig redactionRuleConfig) {
     return redactionRuleConfig.toValue();
+  }
+
+  @Override
+  @SneakyThrows
+  protected Value buildValueForChangeEvent(RedactionRuleConfig redactionRuleConfig) {
+    return ConfigProtoConverter.convertToValue(redactionRuleConfig.getRedactionRule());
+  }
+
+  @Override
+  protected String buildClassNameForChangeEvent(RedactionRuleConfig redactionRuleConfig) {
+    return RedactionRule.class.getName();
   }
 
   @Override
