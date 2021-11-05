@@ -180,7 +180,7 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
                 validKeys.add(tokenExtractionRule.getAlias());
               }
             });
-    Pattern pattern = Pattern.compile("\\{(\\\\}|[^}])*}");
+    Pattern pattern = Pattern.compile("\\$\\{(\\\\}|[^}])*}");
     Matcher matcher = pattern.matcher(labelExpression);
     int startOffset = 0;
     while (startOffset < labelExpression.length() && matcher.find(startOffset)) {
