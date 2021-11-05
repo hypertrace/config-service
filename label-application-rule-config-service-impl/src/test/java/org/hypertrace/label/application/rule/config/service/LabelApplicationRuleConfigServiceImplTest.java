@@ -211,6 +211,7 @@ public class LabelApplicationRuleConfigServiceImplTest {
         .setName("Composite rule")
         .setMatchingCondition(matchingCondition)
         .setLabelAction(buildAction())
+        .setEnabled(true)
         .build();
   }
 
@@ -235,6 +236,7 @@ public class LabelApplicationRuleConfigServiceImplTest {
         .setName("Simple rule")
         .setMatchingCondition(matchingCondition)
         .setLabelAction(buildAction())
+        .setEnabled(true)
         .build();
   }
 
