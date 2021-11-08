@@ -4,14 +4,11 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
-import ai.traceable.alerting.config.service.v2.BlockedEventCondition;
 import ai.traceable.alerting.config.service.v2.CreateEventConditionRequest;
 import ai.traceable.alerting.config.service.v2.DeleteEventConditionRequest;
-import ai.traceable.alerting.config.service.v2.DetectedSecurityEventCondition;
 import ai.traceable.alerting.config.service.v2.EventCondition;
 import ai.traceable.alerting.config.service.v2.EventConditionMutableData;
 import ai.traceable.alerting.config.service.v2.GetAllEventConditionsRequest;
-import ai.traceable.alerting.config.service.v2.ThreatActorStateChangeEventCondition;
 import ai.traceable.alerting.config.service.v2.UpdateEventConditionRequest;
 import io.grpc.Status;
 import org.hypertrace.alerting.config.service.v1.MetricAnomalyEventCondition;
@@ -35,24 +32,6 @@ public class EventConditionConfigServiceRequestValidator {
 
   private void validateEventConditionMutableData(EventConditionMutableData data) {
     switch (data.getConditionCase()) {
-      case BLOCKED_EVENT_CONDITION:
-        validateNonDefaultPresenceOrThrow(
-            data.getBlockedEventCondition(),
-            BlockedEventCondition.BLOCKED_EVENT_TYPES_FIELD_NUMBER);
-        break;
-      case DETECTED_SECURITY_EVENT_CONDITION:
-        validateNonDefaultPresenceOrThrow(
-            data.getDetectedSecurityEventCondition(),
-            DetectedSecurityEventCondition.SEVERITIES_FIELD_NUMBER);
-        validateNonDefaultPresenceOrThrow(
-            data.getDetectedSecurityEventCondition(),
-            DetectedSecurityEventCondition.EVENT_TYPES_FIELD_NUMBER);
-        break;
-      case THREAT_ACTOR_STATE_CHANGE_EVENT_CONDITION:
-        validateNonDefaultPresenceOrThrow(
-            data.getThreatActorStateChangeEventCondition(),
-            ThreatActorStateChangeEventCondition.ACTOR_STATES_FIELD_NUMBER);
-        break;
       case METRIC_ANOMALY_EVENT_CONDITION:
         // todo add detailed check
         validateNonDefaultPresenceOrThrow(
