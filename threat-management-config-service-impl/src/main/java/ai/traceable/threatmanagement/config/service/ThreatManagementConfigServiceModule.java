@@ -1,6 +1,5 @@
 package ai.traceable.threatmanagement.config.service;
 
-import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.threatmanagement.config.service.anomalyscore.AnomalyScoreContributionModule;
 import ai.traceable.threatmanagement.config.service.eventscore.SecurityEventScoreContributionModule;
 import ai.traceable.threatmanagement.config.service.eventtype.SecurityEventTypeContributionModule;
@@ -19,17 +18,14 @@ import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProvide
 public class ThreatManagementConfigServiceModule extends AbstractModule {
   private final ManagedChannel channel;
   private final Config config;
-  private final ActivityEventProducer activityEventProducer;
   private final ConfigChangeEventGenerator configChangeEventGenerator;
 
   ThreatManagementConfigServiceModule(
       ManagedChannel channel,
       Config config,
-      ActivityEventProducer activityEventProducer,
       ConfigChangeEventGenerator configChangeEventGenerator) {
     this.channel = channel;
     this.config = config;
-    this.activityEventProducer = activityEventProducer;
     this.configChangeEventGenerator = configChangeEventGenerator;
   }
 
@@ -38,7 +34,6 @@ public class ThreatManagementConfigServiceModule extends AbstractModule {
     bind(BindableService.class).to(ThreatManagementConfigServiceImpl.class);
     bind(ThreatManagementConfigServiceConfig.class)
         .toInstance(new ThreatManagementConfigServiceConfig(config));
-    bind(ActivityEventProducer.class).toInstance(activityEventProducer);
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
     install(new ThreatScoreModule());
     install(new SecurityEventScoreContributionModule());

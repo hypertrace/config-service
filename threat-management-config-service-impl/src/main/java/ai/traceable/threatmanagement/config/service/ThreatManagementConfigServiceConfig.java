@@ -17,8 +17,6 @@ public class ThreatManagementConfigServiceConfig {
       "threat.management.config.service.security.event.contribution.score.high";
   private static final String DEFAULT_ANOMALY_CONTRIBUTION_SCORE_KEY =
       "threat.management.config.service.anomaly.contribution.score";
-  private static final String SHOULD_PUBLISH_ACTIVITY_EVENTS_CONFIG =
-      "threat.management.config.service.shouldPublishActivityEvents";
 
   private final Config config;
 
@@ -52,9 +50,5 @@ public class ThreatManagementConfigServiceConfig {
 
   public int getDefaultSecurityEventContributionHighScore() {
     return config.getInt(DEFAULT_SECURITY_EVENT_CONTRIBUTION_HIGH_SCORE_KEY);
-  }
-
-  public boolean shouldPublishActivityEvents() {
-    return this.config.getBoolean(SHOULD_PUBLISH_ACTIVITY_EVENTS_CONFIG);
   }
 }

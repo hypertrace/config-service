@@ -5,7 +5,6 @@ plugins {
 }
 
 dependencies {
-  api(projects.activityEventProducer)
   api(projects.threatManagementConfigServiceApi)
   implementation(libs.hypertrace.configservice.api)
 
@@ -20,7 +19,6 @@ dependencies {
   implementation(libs.hypertrace.configservice.protoconverter)
   implementation(libs.hypertrace.configservice.objectstore)
   implementation(libs.hypertrace.configservice.changeeventgenerator)
-  implementation(libs.traceable.activityevent.api)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
