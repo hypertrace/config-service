@@ -197,7 +197,7 @@ public class LabelApplicationRuleValidatorTest {
         Condition.newBuilder().setLeafCondition(errorLeafCondition).build();
     CreateLabelApplicationRuleRequest request1 =
         buildCreateCreateLabelApplicationRuleRequest(
-            "Label Expression Rule", matchingCondition, Optional.of("${status}_{wrong-key}"));
+            "Label Expression Rule", matchingCondition, Optional.of("${status}_${wrong-key}"));
     Throwable exception =
         assertThrows(
             StatusRuntimeException.class,
@@ -206,7 +206,7 @@ public class LabelApplicationRuleValidatorTest {
             });
     CreateLabelApplicationRuleRequest request2 =
         buildCreateCreateLabelApplicationRuleRequest(
-            "Label Expression Rule", matchingCondition, Optional.of("${status}_{method}"));
+            "Label Expression Rule", matchingCondition, Optional.of("${status}_${method}"));
     assertDoesNotThrow(
         () -> {
           labelApplicationRuleValidator.validateOrThrow(REQUEST_CONTEXT, request2);
