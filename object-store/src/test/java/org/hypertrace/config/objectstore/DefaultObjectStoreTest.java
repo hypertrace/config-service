@@ -2,11 +2,13 @@ package org.hypertrace.config.objectstore;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 import com.google.protobuf.util.Values;
 import io.grpc.Status;
@@ -43,7 +45,7 @@ class DefaultObjectStoreTest {
   @Mock(answer = Answers.CALLS_REAL_METHODS)
   RequestContext mockRequestContext;
 
-  DefaultObjectStore<TestObject> store;
+  DefaultObjectStore<TestInternalObject> store;
 
   @BeforeEach
   void beforeEach() {
@@ -56,7 +58,8 @@ class DefaultObjectStoreTest {
     when(this.mockStub.getConfig(any()))
         .thenReturn(GetConfigResponse.newBuilder().setConfig(Values.of("test")).build());
 
-    assertEquals(Optional.of(new TestObject("test")), this.store.getData(this.mockRequestContext));
+    assertEquals(
+        Optional.of(new TestInternalObject("test")), this.store.getData(this.mockRequestContext));
 
     verify(this.mockStub, times(1))
         .getConfig(
@@ -91,7 +94,7 @@ class DefaultObjectStoreTest {
     assertEquals(
         Optional.of(
             new ConfigObjectImpl<>(
-                new TestObject("test"), TEST_CREATE_TIMESTAMP, TEST_UPDATE_TIMESTAMP)),
+                new TestInternalObject("test"), TEST_CREATE_TIMESTAMP, TEST_UPDATE_TIMESTAMP)),
         this.store.deleteObject(mockRequestContext));
 
     verify(this.mockStub)
@@ -104,6 +107,15 @@ class DefaultObjectStoreTest {
     when(this.mockStub.deleteConfig(any())).thenThrow(Status.NOT_FOUND.asRuntimeException());
 
     assertEquals(Optional.empty(), this.store.deleteObject(mockRequestContext));
+
+    verify(this.configChangeEventGenerator, times(1))
+        .sendDeleteNotification(
+            eq(this.mockRequestContext),
+            eq(TestApiObject.class.getName()),
+            eq(
+                Value.newBuilder()
+                    .setStructValue(Struct.newBuilder().putFields("api_name", Values.of("test")))
+                    .build()));
   }
 
   @Test
@@ -115,10 +127,12 @@ class DefaultObjectStoreTest {
                 .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
                 .setConfig(Values.of("updated"))
                 .build());
-    assertEquals(
+    ConfigObject configObject =
         new ConfigObjectImpl<>(
-            new TestObject("updated"), TEST_CREATE_TIMESTAMP, TEST_UPDATE_TIMESTAMP),
-        this.store.upsertObject(this.mockRequestContext, new TestObject("updated")));
+            new TestInternalObject("updated"), TEST_CREATE_TIMESTAMP, TEST_UPDATE_TIMESTAMP);
+    assertEquals(
+        configObject,
+        this.store.upsertObject(this.mockRequestContext, new TestInternalObject("updated")));
     verify(this.mockStub, times(1))
         .upsertConfig(
             UpsertConfigRequest.newBuilder()
@@ -126,27 +140,52 @@ class DefaultObjectStoreTest {
                 .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
                 .setConfig(Values.of("updated"))
                 .build());
+    verify(this.configChangeEventGenerator, times(1))
+        .sendCreateNotification(
+            eq(this.mockRequestContext),
+            eq(TestApiObject.class.getName()),
+            eq(
+                Value.newBuilder()
+                    .setStructValue(Struct.newBuilder().putFields("api_name", Values.of("updated")))
+                    .build()));
   }
 
   @lombok.Value
-  private static class TestObject {
+  private static class TestInternalObject {
     String name;
   }
 
-  private static class TestObjectStore extends DefaultObjectStore<TestObject> {
+  @lombok.Value
+  private static class TestApiObject {
+    String api_name;
+  }
+
+  private static class TestObjectStore extends DefaultObjectStore<TestInternalObject> {
     private TestObjectStore(
         ConfigServiceBlockingStub stub, ConfigChangeEventGenerator configChangeEventGenerator) {
       super(stub, TEST_RESOURCE_NAMESPACE, TEST_RESOURCE_NAME, configChangeEventGenerator);
     }
 
     @Override
-    protected Optional<TestObject> buildDataFromValue(Value value) {
-      return Optional.of(new TestObject(value.getStringValue()));
+    protected Optional<TestInternalObject> buildDataFromValue(Value value) {
+      return Optional.of(new TestInternalObject(value.getStringValue()));
     }
 
     @Override
-    protected Value buildValueFromData(TestObject object) {
+    protected Value buildValueFromData(TestInternalObject object) {
       return Values.of(object.getName());
+    }
+
+    @Override
+    protected Value buildValueForChangeEvent(TestInternalObject object) {
+      return Value.newBuilder()
+          .setStructValue(Struct.newBuilder().putFields("api_name", Values.of(object.getName())))
+          .build();
+    }
+
+    @Override
+    protected String buildClassNameForChangeEvent(TestInternalObject object) {
+      return TestApiObject.class.getName();
     }
   }
 }

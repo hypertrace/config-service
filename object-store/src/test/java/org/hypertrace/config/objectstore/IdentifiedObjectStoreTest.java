@@ -2,6 +2,7 @@ package org.hypertrace.config.objectstore;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -48,9 +49,11 @@ class IdentifiedObjectStoreTest {
   private static final Instant TEST_CREATE_TIMESTAMP_2 = Instant.ofEpochMilli(30);
   private static final Instant TEST_UPDATE_TIMESTAMP = Instant.ofEpochMilli(40);
 
-  private static final TestObject OBJECT_1 = TestObject.builder().id("first-id").rank(1).build();
+  private static final TestInternalObject OBJECT_1 =
+      TestInternalObject.builder().id("first-id").rank(1).build();
 
-  private static final TestObject OBJECT_2 = TestObject.builder().id("second-id").rank(2).build();
+  private static final TestInternalObject OBJECT_2 =
+      TestInternalObject.builder().id("second-id").rank(2).build();
 
   private static final Value OBJECT_1_AS_VALUE =
       Value.newBuilder()
@@ -75,7 +78,7 @@ class IdentifiedObjectStoreTest {
   @Mock(answer = Answers.CALLS_REAL_METHODS)
   RequestContext mockRequestContext;
 
-  IdentifiedObjectStore<TestObject> store;
+  IdentifiedObjectStore<TestInternalObject> store;
 
   @BeforeEach
   void beforeEach() {
@@ -174,6 +177,19 @@ class IdentifiedObjectStoreTest {
     when(this.mockStub.deleteConfig(any())).thenThrow(Status.NOT_FOUND.asRuntimeException());
 
     assertEquals(Optional.empty(), this.store.deleteObject(mockRequestContext, "some-id"));
+
+    verify(this.configChangeEventGenerator, times(1))
+        .sendDeleteNotification(
+            eq(this.mockRequestContext),
+            eq(TestApiObject.class.getName()),
+            eq("some-id"),
+            eq(
+                Value.newBuilder()
+                    .setStructValue(
+                        Struct.newBuilder()
+                            .putFields("api_id", Values.of(OBJECT_1.getId()))
+                            .putFields("api_rank", Values.of(OBJECT_1.getRank())))
+                    .build()));
   }
 
   @Test
@@ -185,10 +201,11 @@ class IdentifiedObjectStoreTest {
                 .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
                 .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
                 .build());
-    assertEquals(
+    ContextualConfigObject contextualConfigObject =
         new ContextualConfigObjectImpl<>(
-            OBJECT_1.getId(), OBJECT_1, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP),
-        this.store.upsertObject(this.mockRequestContext, OBJECT_1));
+            OBJECT_1.getId(), OBJECT_1, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP);
+    assertEquals(
+        contextualConfigObject, this.store.upsertObject(this.mockRequestContext, OBJECT_1));
     verify(this.mockStub, times(1))
         .upsertConfig(
             UpsertConfigRequest.newBuilder()
@@ -197,6 +214,18 @@ class IdentifiedObjectStoreTest {
                 .setContext("first-id")
                 .setConfig(OBJECT_1_AS_VALUE)
                 .build());
+    verify(this.configChangeEventGenerator, times(1))
+        .sendCreateNotification(
+            eq(this.mockRequestContext),
+            eq(TestApiObject.class.getName()),
+            eq(contextualConfigObject.getContext()),
+            eq(
+                Value.newBuilder()
+                    .setStructValue(
+                        Struct.newBuilder()
+                            .putFields("api_id", Values.of(OBJECT_1.getId()))
+                            .putFields("api_rank", Values.of(OBJECT_1.getRank())))
+                    .build()));
   }
 
   @Test
@@ -242,30 +271,42 @@ class IdentifiedObjectStoreTest {
                 .build());
   }
 
+  @Test
+  void buildClassNameForChangeEvent_test() {
+    assertEquals(TestApiObject.class.getName(), this.store.buildClassNameForChangeEvent(OBJECT_1));
+  }
+
   @lombok.Value
   @Builder
-  private static class TestObject {
+  private static class TestInternalObject {
     String id;
     int rank;
   }
 
-  private static class TestObjectStore extends IdentifiedObjectStore<TestObject> {
+  @lombok.Value
+  @Builder
+  private static class TestApiObject {
+    String api_id;
+    int api_rank;
+  }
+
+  private static class TestObjectStore extends IdentifiedObjectStore<TestInternalObject> {
     private TestObjectStore(
         ConfigServiceBlockingStub stub, ConfigChangeEventGenerator configChangeEventGenerator) {
       super(stub, TEST_RESOURCE_NAMESPACE, TEST_RESOURCE_NAME, configChangeEventGenerator);
     }
 
     @Override
-    protected Optional<TestObject> buildDataFromValue(Value value) {
+    protected Optional<TestInternalObject> buildDataFromValue(Value value) {
       return Optional.of(
-          TestObject.builder()
+          TestInternalObject.builder()
               .rank((int) value.getStructValue().getFieldsOrThrow("rank").getNumberValue())
               .id(value.getStructValue().getFieldsOrThrow("id").getStringValue())
               .build());
     }
 
     @Override
-    protected Value buildValueFromData(TestObject object) {
+    protected Value buildValueFromData(TestInternalObject object) {
       return Value.newBuilder()
           .setStructValue(
               Struct.newBuilder()
@@ -275,13 +316,28 @@ class IdentifiedObjectStoreTest {
     }
 
     @Override
-    protected String getContextFromData(TestObject object) {
+    protected Value buildValueForChangeEvent(TestInternalObject object) {
+      return Value.newBuilder()
+          .setStructValue(
+              Struct.newBuilder()
+                  .putFields("api_id", Values.of(object.getId()))
+                  .putFields("api_rank", Values.of(object.getRank())))
+          .build();
+    }
+
+    @Override
+    protected String buildClassNameForChangeEvent(TestInternalObject object) {
+      return TestApiObject.class.getName();
+    }
+
+    @Override
+    protected String getContextFromData(TestInternalObject object) {
       return object.getId();
     }
 
     @Override
-    protected List<ContextualConfigObject<TestObject>> orderFetchedObjects(
-        List<ContextualConfigObject<TestObject>> objects) {
+    protected List<ContextualConfigObject<TestInternalObject>> orderFetchedObjects(
+        List<ContextualConfigObject<TestInternalObject>> objects) {
       return objects.stream()
           .sorted(Comparator.comparing(object -> object.getData().getRank()))
           .collect(Collectors.toUnmodifiableList());

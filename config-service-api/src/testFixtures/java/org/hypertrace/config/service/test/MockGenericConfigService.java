@@ -271,7 +271,7 @@ public class MockGenericConfigService {
               return null;
             })
         .when(this.mockConfigService)
-        .upsertConfig(ArgumentMatchers.any(), ArgumentMatchers.any());
+        .upsertAllConfigs(ArgumentMatchers.any(), ArgumentMatchers.any());
 
     return this;
   }
