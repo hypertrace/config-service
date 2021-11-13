@@ -1,9 +1,9 @@
 [versions]
 protoc = "3.17.3"
-grpc = "1.39.0"
+grpc = "1.42.0"
 lombok = "1.18.20"
 jackson = "2.12.4"
-hypertrace-grpcutils = "0.5.2"
+hypertrace-grpcutils = "0.6.2"
 hypertrace-framework = "0.1.29"
 traceable-platform = "0.1.83"
 kafka = "6.0.1"
