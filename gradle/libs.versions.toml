@@ -1,7 +1,8 @@
 [versions]
 protoc = "3.17.3"
-grpc = "1.39.0"
-hypertrace-grpcutils = "0.5.2"
+grpc = "1.42.0"
+gson = "2.8.9"
+hypertrace-grpcutils = "0.6.2"
 hypertrace-framework = "0.1.29"
 lombok = "1.18.20"
 jackson = "2.12.4"
@@ -40,6 +41,7 @@ grpc-core = { module = "io.grpc:grpc-core", version.ref = "grpc" }
 grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "grpc" }
 protobuf-javautil = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protoc" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protoc" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 
 kafka-protobuf-serializer = { module = "io.confluent:kafka-protobuf-serializer", version.ref = "confluent" }
 
