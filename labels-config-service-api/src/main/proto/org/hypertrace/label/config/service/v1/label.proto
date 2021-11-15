@@ -6,9 +6,12 @@ option java_multiple_files = true;
 
 message Label {
   string id = 1;
-  string key = 2;
+  LabelData data = 2;
+  optional string created_by_application_rule_id = 3;
 }
 
-message CreateLabel {
-  string key = 2;
+message LabelData {
+  string key = 1;
+  optional string color = 2;
+  optional string description = 3;
 }

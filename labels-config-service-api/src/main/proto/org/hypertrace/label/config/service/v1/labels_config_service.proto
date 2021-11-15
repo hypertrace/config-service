@@ -26,7 +26,8 @@ service LabelsConfigService {
 }
 
 message CreateLabelRequest {
-  CreateLabel label = 1;
+  LabelData data = 1;
+  optional string created_by_application_rule_id = 2;
 }
 
 message CreateLabelResponse {
@@ -49,7 +50,8 @@ message GetLabelsResponse {
 }
 
 message UpdateLabelRequest {
-  Label label = 1;
+  string id = 1;
+  LabelData data = 2;
 }
 
 message UpdateLabelResponse {
