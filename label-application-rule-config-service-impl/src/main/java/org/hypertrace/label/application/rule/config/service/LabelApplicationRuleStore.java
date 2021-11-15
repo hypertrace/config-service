@@ -10,9 +10,9 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRule;
 
 public class LabelApplicationRuleStore extends IdentifiedObjectStore<LabelApplicationRule> {
-  private static final String LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAME = "label-config";
-  private static final String LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAMESPACE =
-      "label-application-rules";
+  private static final String LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAME =
+      "label-application-rule-config";
+  private static final String LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAMESPACE = "labels";
 
   LabelApplicationRuleStore(
       ConfigServiceGrpc.ConfigServiceBlockingStub stub,

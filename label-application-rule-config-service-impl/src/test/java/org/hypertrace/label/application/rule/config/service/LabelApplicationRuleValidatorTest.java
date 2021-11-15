@@ -222,6 +222,7 @@ public class LabelApplicationRuleValidatorTest {
               .setName(name)
               .setMatchingCondition(matchingCondition)
               .setLabelAction(buildDynamicLabelAction(labelExpression.get()))
+              .setEnabled(true)
               .build();
     } else {
       data =
@@ -229,6 +230,7 @@ public class LabelApplicationRuleValidatorTest {
               .setName(name)
               .setMatchingCondition(matchingCondition)
               .setLabelAction(buildAction())
+              .setEnabled(true)
               .build();
     }
     return CreateLabelApplicationRuleRequest.newBuilder().setData(data).build();
@@ -240,6 +242,7 @@ public class LabelApplicationRuleValidatorTest {
         LabelApplicationRuleData.newBuilder()
             .setName(name)
             .setMatchingCondition(matchingCondition)
+            .setEnabled(true)
             .build();
     return CreateLabelApplicationRuleRequest.newBuilder().setData(data).build();
   }

@@ -13,6 +13,8 @@ message LabelApplicationRuleData {
   string name = 1;
   Condition matching_condition = 2;
   Action label_action = 3;
+  bool enabled = 4;
+  optional string description = 5;
 
   message Condition {
     oneof condition {
