@@ -1,60 +1,36 @@
 package ai.traceable.localprocessing.config.service.coordinator;
 
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.DEFAULT_PROTECTION_MODE;
-import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.DEFAULT_PROTECTION_MODE_CONFIG;
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG;
-import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.LOCAL_PROCESSING_RULE_RESOURCE_NAME;
-import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.LOCAL_PROCESSING_RULE_RESOURCE_NAMESPACE;
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.SAMPLING_POLICIES;
 
 import ai.traceable.localprocessing.config.service.LocalProcessingConfigServiceConfig;
-import ai.traceable.localprocessing.config.service.v1.LocalProcessingRule;
-import ai.traceable.localprocessing.config.service.v1.LocalProcessingRuleDetails;
-import ai.traceable.localprocessing.config.service.v1.LocalProcessingRuleMetadata;
-import ai.traceable.localprocessing.config.service.v1.NewLocalProcessingRule;
-import ai.traceable.localprocessing.config.service.v1.ProtectionMode;
-import ai.traceable.localprocessing.config.service.v1.SamplingPolicies;
-import ai.traceable.localprocessing.config.service.v1.SamplingPolicy;
+import ai.traceable.localprocessing.config.service.v1.*;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.Value;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.ConfigObject;
-import io.grpc.ManagedChannel;
-import io.grpc.Status;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
+import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
-import org.hypertrace.config.service.v1.ConfigServiceGrpc;
-import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
-import org.hypertrace.config.service.v1.ContextSpecificConfig;
-import org.hypertrace.config.service.v1.DeleteConfigRequest;
-import org.hypertrace.config.service.v1.GetAllConfigsRequest;
-import org.hypertrace.config.service.v1.GetConfigRequest;
-import org.hypertrace.config.service.v1.UpsertConfigRequest;
-import org.hypertrace.config.service.v1.UpsertConfigResponse;
-import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
-import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
-  private final ConfigServiceBlockingStub configServiceBlockingStub;
   private final ProtectionMode defaultProtectionMode;
   private final SamplingPolicies defaultSamplingPolicies;
+  private final DefaultProtectionModeConfigStore defaultProtectionModeConfigStore;
+  private final LocalProcessingRulesConfigStore localProcessingRulesConfigStore;
 
   @Inject
   public ConfigServiceCoordinatorImpl(
-      ManagedChannel channel,
-      LocalProcessingConfigServiceConfig localProcessingConfigServiceConfig) {
-    this.configServiceBlockingStub =
-        ConfigServiceGrpc.newBlockingStub(channel)
-            .withCallCredentials(
-                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+      LocalProcessingConfigServiceConfig localProcessingConfigServiceConfig,
+      DefaultProtectionModeConfigStore defaultProtectionModeConfigStore,
+      LocalProcessingRulesConfigStore localProcessingRulesConfigStore) {
     this.defaultProtectionMode =
         ProtectionMode.valueOf(
             localProcessingConfigServiceConfig
@@ -63,6 +39,8 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
                 .getString(DEFAULT_PROTECTION_MODE));
     this.defaultSamplingPolicies =
         getSamplingPoliciesFromConfig(localProcessingConfigServiceConfig);
+    this.defaultProtectionModeConfigStore = defaultProtectionModeConfigStore;
+    this.localProcessingRulesConfigStore = localProcessingRulesConfigStore;
   }
 
   @Override
@@ -70,88 +48,63 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
       RequestContext requestContext, NewLocalProcessingRule newLocalProcessingRule) {
     LocalProcessingRule localProcessingRule = buildLocalProcessingRule(newLocalProcessingRule);
     validateRule(localProcessingRule);
-    UpsertConfigRequest upsertConfigRequest =
-        UpsertConfigRequest.newBuilder()
-            .setResourceName(LOCAL_PROCESSING_RULE_RESOURCE_NAME)
-            .setResourceNamespace(LOCAL_PROCESSING_RULE_RESOURCE_NAMESPACE)
-            .setContext(localProcessingRule.getId())
-            .setConfig(convertToGeneric(localProcessingRule))
-            .build();
-    UpsertConfigResponse upsertConfigResponse = upsertConfig(requestContext, upsertConfigRequest);
+    ContextualConfigObject<LocalProcessingRule> upsertedLocalProcessingRule =
+        this.localProcessingRulesConfigStore.upsertObject(requestContext, localProcessingRule);
     return buildLocalProcessingRuleDetails(
-        localProcessingRule, upsertConfigResponse.getCreationTimestamp());
+        upsertedLocalProcessingRule.getData(),
+        upsertedLocalProcessingRule.getCreationTimestamp().toEpochMilli());
   }
 
   @Override
   public LocalProcessingRuleDetails updateLocalProcessingRule(
       RequestContext requestContext, LocalProcessingRule localProcessingRule) {
     validateRule(localProcessingRule);
-    UpsertConfigRequest upsertConfigRequest =
-        UpsertConfigRequest.newBuilder()
-            .setResourceName(LOCAL_PROCESSING_RULE_RESOURCE_NAME)
-            .setResourceNamespace(LOCAL_PROCESSING_RULE_RESOURCE_NAMESPACE)
-            .setContext(localProcessingRule.getId())
-            .setConfig(convertToGeneric(localProcessingRule))
-            .build();
-    UpsertConfigResponse upsertConfigResponse = upsertConfig(requestContext, upsertConfigRequest);
+
+    ContextualConfigObject<LocalProcessingRule> upsertedLocalProcessingRule =
+        this.localProcessingRulesConfigStore.upsertObject(requestContext, localProcessingRule);
+
     return buildLocalProcessingRuleDetails(
-        localProcessingRule, upsertConfigResponse.getCreationTimestamp());
+        upsertedLocalProcessingRule.getData(),
+        upsertedLocalProcessingRule.getCreationTimestamp().toEpochMilli());
   }
 
   @Override
   public List<LocalProcessingRuleDetails> getAllLocalProcessingRules(
       RequestContext requestContext) {
-    GetAllConfigsRequest getAllConfigsRequest =
-        GetAllConfigsRequest.newBuilder()
-            .setResourceName(LOCAL_PROCESSING_RULE_RESOURCE_NAME)
-            .setResourceNamespace(LOCAL_PROCESSING_RULE_RESOURCE_NAMESPACE)
-            .build();
-    return getAllConfigs(requestContext, getAllConfigsRequest).stream()
+    return this.localProcessingRulesConfigStore.getAllObjects(requestContext).stream()
         .map(
             contextSpecificConfig ->
                 buildLocalProcessingRuleDetails(
-                    convertLocalProcessingRuleFromGeneric(contextSpecificConfig.getConfig()),
-                    contextSpecificConfig.getCreationTimestamp()))
+                    contextSpecificConfig.getData(),
+                    contextSpecificConfig.getCreationTimestamp().toEpochMilli()))
         .collect(Collectors.toUnmodifiableList());
   }
 
   @Override
   public void deleteLocalProcessingRule(
       RequestContext requestContext, String localProcessingRuleId) {
-    DeleteConfigRequest deleteConfigRequest =
-        DeleteConfigRequest.newBuilder()
-            .setResourceName(LOCAL_PROCESSING_RULE_RESOURCE_NAME)
-            .setResourceNamespace(LOCAL_PROCESSING_RULE_RESOURCE_NAMESPACE)
-            .setContext(localProcessingRuleId)
-            .build();
-    deleteConfig(requestContext, deleteConfigRequest);
+    this.localProcessingRulesConfigStore.deleteObject(requestContext, localProcessingRuleId);
   }
 
   @Override
   public ProtectionMode upsertDefaultProtectionModeConfig(
       RequestContext requestContext, ProtectionMode defaultProtectionMode) {
-
-    UpsertConfigRequest upsertConfigRequest =
-        UpsertConfigRequest.newBuilder()
-            .setResourceName(DEFAULT_PROTECTION_MODE_CONFIG)
-            .setResourceNamespace(LOCAL_PROCESSING_RULE_RESOURCE_NAMESPACE)
-            .setConfig(DefaultProtectionModeConfigConverter.toValue(defaultProtectionMode))
-            .build();
-    return DefaultProtectionModeConfigConverter.fromValue(
-            upsertConfig(requestContext, upsertConfigRequest).getConfig())
-        .orElseThrow(Status.INTERNAL::asRuntimeException);
+    return this.defaultProtectionModeConfigStore
+        .upsertObject(
+            requestContext,
+            DefaultProtectionModeConfig.newBuilder()
+                .setDefaultProtectionMode(defaultProtectionMode)
+                .build())
+        .getData()
+        .getDefaultProtectionMode();
   }
 
   @Override
   public ProtectionMode getDefaultProtectionModeConfig(RequestContext requestContext) {
-    GetConfigRequest getConfigRequest =
-        GetConfigRequest.newBuilder()
-            .setResourceName(DEFAULT_PROTECTION_MODE_CONFIG)
-            .setResourceNamespace(LOCAL_PROCESSING_RULE_RESOURCE_NAMESPACE)
-            .build();
-    Optional<ProtectionMode> defaultProtectionModeConfig =
-        getConfig(requestContext, getConfigRequest);
-    return defaultProtectionModeConfig.orElse(defaultProtectionMode);
+    return this.defaultProtectionModeConfigStore
+        .getData(requestContext)
+        .map(DefaultProtectionModeConfig::getDefaultProtectionMode)
+        .orElse(defaultProtectionMode);
   }
 
   @Override
@@ -163,35 +116,6 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
     Preconditions.checkArgument(
         localProcessingRule.getProtectionMode() != ProtectionMode.PROTECTION_MODE_UNSPECIFIED,
         "Protection mode can't be unspecified");
-  }
-
-  private UpsertConfigResponse upsertConfig(RequestContext context, UpsertConfigRequest request) {
-    return GrpcClientRequestContextUtil.executeWithHeadersContext(
-        context.getRequestHeaders(), () -> configServiceBlockingStub.upsertConfig(request));
-  }
-
-  private Optional<ProtectionMode> getConfig(RequestContext context, GetConfigRequest request) {
-    try {
-      return DefaultProtectionModeConfigConverter.fromValue(
-          context.call(() -> configServiceBlockingStub.getConfig(request)).getConfig());
-    } catch (Exception e) {
-      if (Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
-        return Optional.empty();
-      }
-      throw e;
-    }
-  }
-
-  private List<ContextSpecificConfig> getAllConfigs(
-      RequestContext context, GetAllConfigsRequest request) {
-    return GrpcClientRequestContextUtil.executeWithHeadersContext(
-            context.getRequestHeaders(), () -> configServiceBlockingStub.getAllConfigs(request))
-        .getContextSpecificConfigsList();
-  }
-
-  private void deleteConfig(RequestContext context, DeleteConfigRequest request) {
-    GrpcClientRequestContextUtil.executeWithHeadersContext(
-        context.getRequestHeaders(), () -> configServiceBlockingStub.deleteConfig(request));
   }
 
   private LocalProcessingRule buildLocalProcessingRule(
@@ -214,24 +138,6 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
                 .setCreationTimestamp(creationTimestamp)
                 .build())
         .build();
-  }
-
-  private Value convertToGeneric(MessageOrBuilder messageOrBuilder) {
-    try {
-      return ConfigProtoConverter.convertToValue(messageOrBuilder);
-    } catch (InvalidProtocolBufferException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private LocalProcessingRule convertLocalProcessingRuleFromGeneric(Value config) {
-    LocalProcessingRule.Builder builder = LocalProcessingRule.newBuilder();
-    try {
-      ConfigProtoConverter.mergeFromValue(config, builder);
-    } catch (InvalidProtocolBufferException e) {
-      throw new RuntimeException(e);
-    }
-    return builder.build();
   }
 
   private SamplingPolicy convertSamplingPolicyFromGeneric(Value config) {

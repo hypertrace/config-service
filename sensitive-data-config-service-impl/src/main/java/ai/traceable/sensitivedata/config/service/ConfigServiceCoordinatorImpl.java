@@ -2,6 +2,7 @@ package ai.traceable.sensitivedata.config.service;
 
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.CORE_MODE_RULE_CATEGORY;
 
+import ai.traceable.sensitivedata.config.service.v1.FullPrivacyModeConfig;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest.RedactionRuleFilter;
 import ai.traceable.sensitivedata.config.service.v1.NewRedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.ParamType;
@@ -184,7 +185,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   public boolean isFullPrivacyModeEnabled(RequestContext requestContext) {
     return this.fullPrivacyModeConfigStore
         .getData(requestContext)
-        .map(FullPrivacyModeConfig::isEnabled)
+        .map(FullPrivacyModeConfig::getEnabled)
         .orElse(defaultFullPrivacyModeEnabled);
   }
 
