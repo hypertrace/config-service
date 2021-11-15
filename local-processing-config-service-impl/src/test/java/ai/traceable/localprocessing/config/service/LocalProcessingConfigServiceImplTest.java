@@ -19,6 +19,8 @@ import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGr
 import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc.LicenseStatusConfigServiceBlockingStub;
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinator;
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinatorImpl;
+import ai.traceable.localprocessing.config.service.coordinator.DefaultProtectionModeConfigStore;
+import ai.traceable.localprocessing.config.service.coordinator.LocalProcessingRulesConfigStore;
 import ai.traceable.localprocessing.config.service.customsignature.CustomModsecDetectionManager;
 import ai.traceable.localprocessing.config.service.regularmodsec.RegularModsecDetectionManager;
 import ai.traceable.localprocessing.config.service.ruleservice.LocalProcessingRulesServiceImpl;
@@ -46,7 +48,9 @@ import io.grpc.stub.StreamObserver;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -66,6 +70,10 @@ class LocalProcessingConfigServiceImplTest {
   @BeforeEach
   void setUp() {
     mockGenericConfigService = new MockGenericConfigService().mockUpsert().mockGet().mockGetAll();
+
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub =
+        ConfigServiceGrpc.newBlockingStub(mockGenericConfigService.channel());
 
     Map<String, Map> configMap = new HashMap<>();
     configMap.put(
@@ -108,7 +116,12 @@ class LocalProcessingConfigServiceImplTest {
     uuidGenerator = new UuidGenerator();
 
     ConfigServiceCoordinator configServiceCoordinator =
-        new ConfigServiceCoordinatorImpl(channel, new LocalProcessingConfigServiceConfig(config));
+        new ConfigServiceCoordinatorImpl(
+            new LocalProcessingConfigServiceConfig(config),
+            new DefaultProtectionModeConfigStore(
+                configServiceBlockingStub, configChangeEventGenerator),
+            new LocalProcessingRulesConfigStore(
+                configServiceBlockingStub, configChangeEventGenerator));
     mockGenericConfigService
         .addService(
             new LocalProcessingConfigServiceImpl(

@@ -97,7 +97,8 @@ public class TraceableConfigService extends PlatformService {
     LicenseStatusConfigServiceImpl licenseStatusConfigService =
         new LicenseStatusConfigServiceImpl(managedChannel, config);
     BindableService localProcessingRulesService =
-        LocalProcessingRulesServiceFactory.build(managedChannel, config);
+        LocalProcessingRulesServiceFactory.build(
+            managedChannel, config, configChangeEventGenerator);
     BindableService regionConfigService =
         RegionConfigServiceFactory.build(managedChannel, config, activityEventProducer);
     BindableService ipRangeConfigService =
@@ -146,7 +147,8 @@ public class TraceableConfigService extends PlatformService {
     BindableService piiFilterConfigService =
         sensitiveDataConfigServicesProvider.getPiiFilterConfigService();
     BindableService localProcessingConfigService =
-        LocalProcessingConfigServiceFactory.build(managedChannel, config);
+        LocalProcessingConfigServiceFactory.build(
+            managedChannel, config, configChangeEventGenerator);
     BindableService blockingConfigService = BlockingConfigServiceFactory.build(managedChannel);
     BindableService externalUserAttributionConfigService =
         ExternalUserAttributionConfigServiceFactory.build(managedChannel);

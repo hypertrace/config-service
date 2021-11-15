@@ -4,6 +4,7 @@ import ai.traceable.sensitivedata.config.service.v1.CreateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.CreateRedactionRuleResponse;
 import ai.traceable.sensitivedata.config.service.v1.DeleteRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.DeleteRedactionRuleResponse;
+import ai.traceable.sensitivedata.config.service.v1.FullPrivacyModeConfig;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesResponse;
 import ai.traceable.sensitivedata.config.service.v1.GetAutomaticSecretRedactionStrategyRequest;
@@ -221,7 +222,8 @@ class SensitiveDataConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       boolean fullPrivacyModeEnabled = request.getEnabled();
       configServiceCoordinator.upsertFullPrivacyModeConfig(
-          requestContext, new FullPrivacyModeConfig(fullPrivacyModeEnabled));
+          requestContext,
+          FullPrivacyModeConfig.newBuilder().setEnabled(fullPrivacyModeEnabled).build());
       responseObserver.onNext(UpdateFullPrivacyModeResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Exception e) {

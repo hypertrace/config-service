@@ -122,3 +122,7 @@ message UpdateFullPrivacyModeRequest {
 }
 
 message UpdateFullPrivacyModeResponse {}
+
+message FullPrivacyModeConfig {
+  bool enabled = 1;
+}
