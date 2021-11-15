@@ -6,7 +6,6 @@ import static org.mockito.Mockito.mock;
 import com.google.inject.Guice;
 import com.typesafe.config.Config;
 import io.grpc.ManagedChannel;
-import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.junit.jupiter.api.Test;
 
 class LocalProcessingRulesServiceModuleTest {
@@ -14,14 +13,10 @@ class LocalProcessingRulesServiceModuleTest {
   void testResolveBindings() {
     ManagedChannel mockChannel = mock(ManagedChannel.class);
     Config mockConfig = mock(Config.class);
-    ConfigChangeEventGenerator mockConfigChangeEventGenerator =
-        mock(ConfigChangeEventGenerator.class);
 
     assertDoesNotThrow(
         () ->
-            Guice.createInjector(
-                    new LocalProcessingRulesServiceModule(
-                        mockChannel, mockConfig, mockConfigChangeEventGenerator))
+            Guice.createInjector(new LocalProcessingRulesServiceModule(mockChannel, mockConfig))
                 .getAllBindings());
   }
 }

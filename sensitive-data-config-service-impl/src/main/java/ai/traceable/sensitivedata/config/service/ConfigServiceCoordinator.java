@@ -1,6 +1,5 @@
 package ai.traceable.sensitivedata.config.service;
 
-import ai.traceable.sensitivedata.config.service.v1.FullPrivacyModeConfig;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
 import ai.traceable.sensitivedata.config.service.v1.NewRedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.ParamType;

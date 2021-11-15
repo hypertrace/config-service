@@ -10,7 +10,6 @@ dependencies {
   implementation(projects.customSignatureConfigServiceApi)
   implementation(projects.licenseStatusConfigServiceApi)
   implementation(libs.hypertrace.configservice.api)
-  implementation(libs.hypertrace.configservice.objectstore)
   implementation(libs.guice)
   implementation(libs.guava)
   implementation(libs.protobuf.javautil)
@@ -19,7 +18,6 @@ dependencies {
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpcutils.client)
   implementation(libs.hypertrace.configservice.protoconverter)
-  implementation(libs.hypertrace.configservice.changeeventgenerator)
   implementation(libs.uuidCreator)
 
   annotationProcessor(libs.lombok)

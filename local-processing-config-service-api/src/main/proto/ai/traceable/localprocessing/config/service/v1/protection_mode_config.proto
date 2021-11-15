@@ -22,7 +22,3 @@ message ProtectedEndpoint {
   string url_pattern = 2;
   string host_header = 3;
 }
-
-message DefaultProtectionModeConfig {
-  ProtectionMode default_protection_mode = 1;
-}

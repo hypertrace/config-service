@@ -2,8 +2,11 @@ package ai.traceable.sensitivedata.config.service;
 
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.CORE_MODE_RULE_CATEGORY;
 
-import ai.traceable.sensitivedata.config.service.v1.*;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest.RedactionRuleFilter;
+import ai.traceable.sensitivedata.config.service.v1.NewRedactionRule;
+import ai.traceable.sensitivedata.config.service.v1.ParamType;
+import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
+import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import com.github.f4b6a3.uuid.util.UuidValidator;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -181,7 +184,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   public boolean isFullPrivacyModeEnabled(RequestContext requestContext) {
     return this.fullPrivacyModeConfigStore
         .getData(requestContext)
-        .map(FullPrivacyModeConfig::getEnabled)
+        .map(FullPrivacyModeConfig::isEnabled)
         .orElse(defaultFullPrivacyModeEnabled);
   }
 

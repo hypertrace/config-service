@@ -4,12 +4,9 @@ import static ai.traceable.localprocessing.config.service.constants.LocalProcess
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG;
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.SAMPLING_POLICIES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
 
 import ai.traceable.localprocessing.config.service.LocalProcessingConfigServiceConfig;
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinatorImpl;
-import ai.traceable.localprocessing.config.service.coordinator.DefaultProtectionModeConfigStore;
-import ai.traceable.localprocessing.config.service.coordinator.LocalProcessingRulesConfigStore;
 import ai.traceable.localprocessing.config.service.v1.CreateLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.DeleteLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.GetAllLocalProcessingRulesRequest;
@@ -26,11 +23,10 @@ import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionMod
 import ai.traceable.localprocessing.config.service.v1.UpdateLocalProcessingRuleRequest;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import io.grpc.ManagedChannel;
 import java.util.List;
 import java.util.Map;
-import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
-import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,9 +41,6 @@ class LocalProcessingRulesServiceImplTest {
     mockGenericConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
 
-    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
-    ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub =
-        ConfigServiceGrpc.newBlockingStub(mockGenericConfigService.channel());
     Config config =
         ConfigFactory.parseMap(
             Map.of(
@@ -61,11 +54,8 @@ class LocalProcessingRulesServiceImplTest {
         .addService(
             new LocalProcessingRulesServiceImpl(
                 new ConfigServiceCoordinatorImpl(
-                    new LocalProcessingConfigServiceConfig(config),
-                    new DefaultProtectionModeConfigStore(
-                        configServiceBlockingStub, configChangeEventGenerator),
-                    new LocalProcessingRulesConfigStore(
-                        configServiceBlockingStub, configChangeEventGenerator))))
+                    (ManagedChannel) mockGenericConfigService.channel(),
+                    new LocalProcessingConfigServiceConfig(config))))
         .start();
 
     localProcessingRulesStub =
@@ -168,7 +158,6 @@ class LocalProcessingRulesServiceImplTest {
                 .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
                 .build());
     assertEquals(ProtectionMode.PROTECTION_MODE_CORE, response.getDefaultProtectionMode());
-
     defaultProtectionMode =
         localProcessingRulesStub
             .getDefaultProtectionMode(GetDefaultProtectionModeRequest.newBuilder().build())
