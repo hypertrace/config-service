@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+// buf:lint:ignore PACKAGE_VERSION_SUFFIX
+package ai.traceable.anomaly.config.service.v1.trainer;
+
+option java_multiple_files = true;
+
+import "ai/traceable/anomaly/config/service/v1/trainer/training_config.proto";
+
+
+service TrainerConfigService {
+
+  rpc GetScopedTrainingConfig (GetScopedTrainingConfigRequest) returns (GetScopedTrainingConfigResponse) {
+  }
+
+  rpc GetAllScopedTrainingConfigs (GetAllScopedTrainingConfigsRequest) returns (GetAllScopedTrainingConfigsResponse) {
+  }
+
+  rpc UpdateScopedTrainingConfig (UpdateScopedTrainingConfigRequest) returns (UpdateScopedTrainingConfigResponse) {
+  }
+}

@@ -1,0 +1,221 @@
+syntax = "proto3";
+
+// buf:lint:ignore PACKAGE_VERSION_SUFFIX
+package ai.traceable.anomaly.config.service.v1.trainer;
+import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
+
+option java_multiple_files = true;
+
+enum TrainingConfigType {
+  TRAINING_CONFIG_TYPE_UNSPECIFIED = 0;
+  TRAINING_CONFIG_TYPE_METADATA = 1;
+  TRAINING_CONFIG_TYPE_VULNERABILITY = 2;
+  TRAINING_CONFIG_TYPE_SESSION = 3;
+}
+
+message GetTrainingConfigsFilter {
+  repeated TrainingConfigType training_config_types = 1;
+}
+
+message GetScopedTrainingConfigRequest {
+  AnomalyConfigScope config_scope = 1;
+  GetTrainingConfigsFilter filter = 2;
+}
+
+message GetScopedTrainingConfigResponse {
+  ScopedTrainingConfig scoped_training_config = 1;
+}
+
+message GetAllScopedTrainingConfigsRequest {
+  AnomalyConfigScope config_scope = 1;
+  GetTrainingConfigsFilter filter = 2;
+}
+
+message GetAllScopedTrainingConfigsResponse {
+  repeated ScopedTrainingConfig scoped_training_configs = 1;
+}
+
+message ScopedTrainingConfig {
+  AnomalyConfigScope config_scope = 1;
+  repeated TrainingConfig training_configs = 2;
+}
+
+message UpdateScopedTrainingConfigRequest {
+  ScopedTrainingConfig scoped_training_config = 1;
+}
+
+message UpdateScopedTrainingConfigResponse {
+  ScopedTrainingConfig scoped_training_config = 1;
+}
+
+message TrainingConfig {
+  bool disabled = 1;
+  oneof training_config {
+    MetadataTrainingConfig metadata_training_config = 2;
+    VulnerabilityTrainingConfig vulnerability_training_config = 3;
+    SessionTrainingConfig session_training_config = 4;
+  }
+}
+
+message MetadataTrainingConfig {
+  oneof config {
+    TypeTrainingConfig type = 1;
+    PiiTrainingConfig pii = 2;
+    EnumerationsTrainingConfig enum = 3;
+    DigitLengthTrainingConfig digit_length = 4;
+    SpecialCharactersTrainingConfig special_chars = 5;
+    HttpStatusCodeTrainingConfig http_status = 6;
+    DeviceTrainingConfig device = 7;
+    ContentSizeTrainingConfig content_size = 8;
+    ApiAccessorsTrainingConfig api_accessors = 9;
+    ParamAccessorsTrainingConfig param_accessors = 10;
+    ParamTypeAccessorsTrainingConfig param_type_accessors = 11;
+    SsrfProtocolTrainingConfig ssrf_protocol = 12;
+    SsrfDomainTrainingConfig ssrf_domain = 13;
+    ThresholdsFamilyTrainingConfig thresholds_family = 14;
+  }
+}
+
+message VulnerabilityTrainingConfig {
+  oneof config {
+    QueryParamContainsSensitiveDataTrainingConfig query_param_contains_sensitive_data = 1;
+    JavaSerializedObjectTrainingConfig java_serialized_object = 2;
+    LackOfEncryptionTrainingConfig lack_of_encryption = 3;
+    PersistentCookieContainsSensitiveDataTrainingConfig persistent_cookie_contains_sensitive_data = 4;
+  }
+}
+
+message SessionTrainingConfig {
+  oneof config {
+    ObjectBolaTrainingConfig object_bola = 1;
+    UserIdBolaTrainingConfig user_id_bola = 2;
+  }
+}
+
+message TypeTrainingConfig {
+  optional int32 max_allowed_child_params = 1;
+}
+
+message PiiTrainingConfig {
+  optional int32 dlp_api_request_batch_size = 1;
+  optional int32 max_dlp_api_requests_per_sec = 2;
+  optional string param_age_threshold_duration = 3;
+  optional string low_age_frequency_duration = 4;
+  optional string high_age_frequency_duration = 5;
+}
+
+message EnumerationsTrainingConfig {
+  optional int32 max_enumerations = 1;
+  optional int32 enum_value_max_length = 2;
+  optional int32 min_occurrence_count = 3;
+  // Takes value between 0-100
+  optional double min_enum_occurrence_percent = 4;
+}
+
+message ThresholdCountConfig {
+  optional int32 required_calls_count = 1;
+  optional int32 required_unique_user_ids_count = 2;
+  optional int32 required_unique_ips_count = 3;
+}
+
+message ThresholdFamilyConfig {
+  ThresholdCountConfig diverse_ip_diverse_user_family_config = 1;
+  ThresholdCountConfig diverse_ip_limited_user_family_config = 2;
+  ThresholdCountConfig limited_ip_family_config = 3;
+}
+
+message ThresholdsFamilyTrainingConfig {
+  optional int64 learning_time_millis = 1;
+  optional int32 required_ips_for_diverse_set = 2;
+  optional int32 required_user_ids_for_diverse_set = 3;
+  repeated int32 bad_status_ip = 4;
+  repeated int32 bad_status_user_id = 5;
+  optional int32 required_percent_for_authenticated = 6;
+  optional int32 thresholds_family_relearn_version = 7;
+}
+
+message DigitLengthTrainingConfig {
+  ThresholdFamilyConfig threshold_family_config = 1;
+}
+
+message SpecialCharactersTrainingConfig {
+  ThresholdFamilyConfig threshold_family_config = 1;
+}
+
+message HttpStatusCodeTrainingConfig {
+  ThresholdFamilyConfig threshold_family_config = 1;
+}
+
+message DeviceTrainingConfig {
+  ThresholdFamilyConfig threshold_family_config = 1;
+}
+
+message ContentSizeTrainingConfig {
+  optional int32 request_range_size = 1;
+  optional int32 response_range_size = 2;
+}
+
+message ApiAccessorsTrainingConfig {
+  ThresholdFamilyConfig threshold_family_config = 1;
+}
+
+message ParamAccessorsTrainingConfig {
+  ThresholdFamilyConfig threshold_family_query_param_config = 1;
+  ThresholdFamilyConfig threshold_family_request_body_param_config = 2;
+}
+
+message ParamTypeAccessorsTrainingConfig {
+  ThresholdFamilyConfig threshold_family_config = 1;
+}
+
+message SsrfProtocolTrainingConfig {
+  ThresholdFamilyConfig threshold_family_config = 1;
+}
+
+message SsrfDomainTrainingConfig {
+  optional int32 max_allowed_hosts = 1;
+}
+
+message QueryParamContainsSensitiveDataTrainingConfig {
+  optional int32 min_total_pii_type_occurrences = 1;
+  optional int32 min_percent_of_pii_type = 2;
+}
+
+message JavaSerializedObjectTrainingConfig {
+  repeated string base64_serialized_strings = 1;
+  optional string raw_serialized_string = 2;
+}
+
+message LackOfEncryptionTrainingConfig {
+  optional int32 min_percent_of_https_calls = 1;
+  optional int32 min_number_of_calls = 2;
+}
+
+message PersistentCookieContainsSensitiveDataTrainingConfig {
+  optional int32 min_total_pii_type_occurrences = 1;
+  optional int32 min_percent_of_pii_type = 2;
+}
+
+message ParamSusceptibilityConfig {
+  repeated string prefixes_not_allowed_in_request_param_key = 1;
+  repeated string suffixes_not_allowed_in_request_param_key = 2;
+  optional string request_param_value_regex = 3;
+}
+
+message ObjectBolaTrainingConfig {
+  ParamSusceptibilityConfig param_susceptibility_config = 1;
+  ThresholdCountConfig required_count_config = 2;
+  repeated string prefixes_not_allowed_in_response_param_key = 3;
+  repeated string suffixes_not_allowed_in_response_param_key = 4;
+}
+
+enum UserIdSource {
+  USER_ID_SOURCE_UNSPECIFIED = 0;
+  USER_ID_SOURCE_ANY = 1;
+  USER_ID_SOURCE_JWT = 2;
+}
+
+message UserIdBolaTrainingConfig {
+  UserIdSource user_id_source = 1;
+  ThresholdCountConfig required_count_config = 2;
+}
