@@ -67,21 +67,16 @@ message MetadataTrainingConfig {
     HttpStatusCodeTrainingConfig http_status = 6;
     DeviceTrainingConfig device = 7;
     ContentSizeTrainingConfig content_size = 8;
-    ApiAccessorsTrainingConfig api_accessors = 9;
-    ParamAccessorsTrainingConfig param_accessors = 10;
-    ParamTypeAccessorsTrainingConfig param_type_accessors = 11;
-    SsrfProtocolTrainingConfig ssrf_protocol = 12;
-    SsrfDomainTrainingConfig ssrf_domain = 13;
-    ThresholdsFamilyTrainingConfig thresholds_family = 14;
+    AccessorsTrainingConfig accessors = 9;
+    SsrfTrainingConfig ssrf = 10;
+    ThresholdsFamilyTrainingConfig thresholds_family = 11;
   }
 }
 
 message VulnerabilityTrainingConfig {
   oneof config {
-    QueryParamContainsSensitiveDataTrainingConfig query_param_contains_sensitive_data = 1;
-    JavaSerializedObjectTrainingConfig java_serialized_object = 2;
+    ParamContainsSensitiveDataTrainingConfig param_contains_sensitive_data = 1;
     LackOfEncryptionTrainingConfig lack_of_encryption = 3;
-    PersistentCookieContainsSensitiveDataTrainingConfig persistent_cookie_contains_sensitive_data = 4;
   }
 }
 
@@ -110,18 +105,6 @@ message EnumerationsTrainingConfig {
   optional int32 min_occurrence_count = 3;
   // Takes value between 0-100
   optional double min_enum_occurrence_percent = 4;
-}
-
-message ThresholdCountConfig {
-  optional int32 required_calls_count = 1;
-  optional int32 required_unique_user_ids_count = 2;
-  optional int32 required_unique_ips_count = 3;
-}
-
-message ThresholdFamilyConfig {
-  ThresholdCountConfig diverse_ip_diverse_user_family_config = 1;
-  ThresholdCountConfig diverse_ip_limited_user_family_config = 2;
-  ThresholdCountConfig limited_ip_family_config = 3;
 }
 
 message ThresholdsFamilyTrainingConfig {
@@ -155,51 +138,25 @@ message ContentSizeTrainingConfig {
   optional int32 response_range_size = 2;
 }
 
-message ApiAccessorsTrainingConfig {
-  ThresholdFamilyConfig threshold_family_config = 1;
+message AccessorsTrainingConfig {
+  ThresholdFamilyConfig api_threshold_family_config = 1;
+  ThresholdFamilyConfig query_param_threshold_family_config = 2;
+  ThresholdFamilyConfig request_body_param_threshold_family_config = 3;
+  ThresholdFamilyConfig param_type_threshold_family_config = 4;
 }
 
-message ParamAccessorsTrainingConfig {
-  ThresholdFamilyConfig threshold_family_query_param_config = 1;
-  ThresholdFamilyConfig threshold_family_request_body_param_config = 2;
+message SsrfTrainingConfig {
+  ThresholdFamilyConfig protocol_threshold_family_config = 1;
+  optional int32 max_allowed_hosts = 2;
 }
 
-message ParamTypeAccessorsTrainingConfig {
-  ThresholdFamilyConfig threshold_family_config = 1;
-}
-
-message SsrfProtocolTrainingConfig {
-  ThresholdFamilyConfig threshold_family_config = 1;
-}
-
-message SsrfDomainTrainingConfig {
-  optional int32 max_allowed_hosts = 1;
-}
-
-message QueryParamContainsSensitiveDataTrainingConfig {
-  optional int32 min_total_pii_type_occurrences = 1;
-  optional int32 min_percent_of_pii_type = 2;
-}
-
-message JavaSerializedObjectTrainingConfig {
-  repeated string base64_serialized_strings = 1;
-  optional string raw_serialized_string = 2;
+message ParamContainsSensitiveDataTrainingConfig {
+  MinOccurrenceConfig query_param_pii_type_config = 1;
+  MinOccurrenceConfig persistent_cookie_pii_type_config = 2;
 }
 
 message LackOfEncryptionTrainingConfig {
-  optional int32 min_percent_of_https_calls = 1;
-  optional int32 min_number_of_calls = 2;
-}
-
-message PersistentCookieContainsSensitiveDataTrainingConfig {
-  optional int32 min_total_pii_type_occurrences = 1;
-  optional int32 min_percent_of_pii_type = 2;
-}
-
-message ParamSusceptibilityConfig {
-  repeated string prefixes_not_allowed_in_request_param_key = 1;
-  repeated string suffixes_not_allowed_in_request_param_key = 2;
-  optional string request_param_value_regex = 3;
+  MinOccurrenceConfig https_calls_config = 1;
 }
 
 message ObjectBolaTrainingConfig {
@@ -209,13 +166,36 @@ message ObjectBolaTrainingConfig {
   repeated string suffixes_not_allowed_in_response_param_key = 4;
 }
 
+message UserIdBolaTrainingConfig {
+  UserIdSource user_id_source = 1;
+  ThresholdCountConfig required_count_config = 2;
+}
+
+message ThresholdCountConfig {
+  optional int32 required_calls_count = 1;
+  optional int32 required_unique_user_ids_count = 2;
+  optional int32 required_unique_ips_count = 3;
+}
+
+message ThresholdFamilyConfig {
+  ThresholdCountConfig diverse_ip_diverse_user_family_config = 1;
+  ThresholdCountConfig diverse_ip_limited_user_family_config = 2;
+  ThresholdCountConfig limited_ip_family_config = 3;
+}
+
+message MinOccurrenceConfig {
+  optional int32 min_total_occurrences = 1;
+  optional int32 min_percent = 2;
+}
+
 enum UserIdSource {
   USER_ID_SOURCE_UNSPECIFIED = 0;
   USER_ID_SOURCE_ANY = 1;
   USER_ID_SOURCE_JWT = 2;
 }
 
-message UserIdBolaTrainingConfig {
-  UserIdSource user_id_source = 1;
-  ThresholdCountConfig required_count_config = 2;
+message ParamSusceptibilityConfig {
+  repeated string prefixes_not_allowed_in_request_param_key = 1;
+  repeated string suffixes_not_allowed_in_request_param_key = 2;
+  optional string request_param_value_regex = 3;
 }
