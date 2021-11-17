@@ -9,6 +9,7 @@ import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import java.util.List;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 
 public class AnomalyConfigServiceFactory {
@@ -19,9 +20,14 @@ public class AnomalyConfigServiceFactory {
   static final String APIDEF_TRAINER_CONFIG_ANNOTATION = "apidefTrainerConfig";
 
   public static List<BindableService> build(
-      GrpcChannelRegistry channelRegistry, ManagedChannel channel, Config config) {
+      GrpcChannelRegistry channelRegistry,
+      ManagedChannel channel,
+      Config config,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     Injector injector =
-        Guice.createInjector(new AnomalyConfigServiceModule(channelRegistry, channel, config));
+        Guice.createInjector(
+            new AnomalyConfigServiceModule(
+                channelRegistry, channel, config, configChangeEventGenerator));
 
     return ImmutableList.of(
         getInjectorInstance(injector, ANOMALY_GLOBAL_CONFIG_ANNOTATION),

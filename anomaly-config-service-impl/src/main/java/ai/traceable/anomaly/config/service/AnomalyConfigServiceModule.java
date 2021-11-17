@@ -14,6 +14,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
 import io.grpc.ManagedChannel;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
@@ -26,12 +27,17 @@ public class AnomalyConfigServiceModule extends AbstractModule {
   private final Config config;
   private final GrpcChannelRegistry channelRegistry;
   private final ManagedChannel channel;
+  private final ConfigChangeEventGenerator configChangeEventGenerator;
 
   AnomalyConfigServiceModule(
-      GrpcChannelRegistry channelRegistry, ManagedChannel channel, Config config) {
+      GrpcChannelRegistry channelRegistry,
+      ManagedChannel channel,
+      Config config,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     this.channel = channel;
     this.channelRegistry = channelRegistry;
     this.config = config;
+    this.configChangeEventGenerator = configChangeEventGenerator;
   }
 
   @Override
@@ -39,6 +45,7 @@ public class AnomalyConfigServiceModule extends AbstractModule {
     install(
         new LicenseMeteringServiceModule(
             config.getConfig(LICENSE_METERING_SERVICE_CONFIG_PATH), channelRegistry));
+    bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
     install(new AnomalyGlobalConfigServiceModule(ANOMALY_GLOBAL_CONFIG_ANNOTATION));
     install(new AnomalyExclusionConfigServiceModule(ANOMALY_EXCLUSION_CONFIG_ANNOTATION));
     install(new AnomalyModsecConfigServiceModule(ANOMALY_MODSEC_CONFIG_ANNOTATION));

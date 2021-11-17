@@ -7,6 +7,7 @@ import com.google.inject.Guice;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.ManagedChannel;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +32,11 @@ class AnomalyConfigServiceModuleTest {
     assertDoesNotThrow(
         () ->
             Guice.createInjector(
-                    new AnomalyConfigServiceModule(new GrpcChannelRegistry(), mockChannel, config))
+                    new AnomalyConfigServiceModule(
+                        new GrpcChannelRegistry(),
+                        mockChannel,
+                        config,
+                        mock(ConfigChangeEventGenerator.class)))
                 .getAllBindings());
   }
 }

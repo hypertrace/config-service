@@ -1,7 +1,6 @@
 package ai.traceable.anomaly.config.service.exclusion.handlers;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeMatcher;
-import ai.traceable.anomaly.config.service.exclusion.converters.AnomalyExclusionRuleConfigConverter;
 import ai.traceable.anomaly.config.service.exclusion.utils.FilterUtils;
 import ai.traceable.anomaly.config.service.v1.exclusion.AnomalyExclusionRuleConfig;
 import ai.traceable.anomaly.config.service.v1.exclusion.GetAnomalyExclusionRulesRequest;
@@ -12,32 +11,27 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
-import org.hypertrace.config.service.v1.ContextSpecificConfig;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class GetAnomalyExclusionRuleHandler {
   private final ConfigServiceHandler configServiceHandler;
-  private final AnomalyExclusionRuleConfigConverter anomalyExclusionRuleConfigConverter;
   private final AnomalyConfigScopeMatcher anomalyConfigScopeMatcher;
   private final FilterUtils filterUtils;
 
   @Inject
   GetAnomalyExclusionRuleHandler(
       ConfigServiceHandler configServiceHandler,
-      AnomalyExclusionRuleConfigConverter anomalyExclusionRuleConfigConverter,
       AnomalyConfigScopeMatcher anomalyConfigScopeMatcher,
       FilterUtils filterUtils) {
     this.configServiceHandler = configServiceHandler;
-    this.anomalyExclusionRuleConfigConverter = anomalyExclusionRuleConfigConverter;
     this.anomalyConfigScopeMatcher = anomalyConfigScopeMatcher;
     this.filterUtils = filterUtils;
   }
 
-  public GetAnomalyExclusionRulesResponse getRules(GetAnomalyExclusionRulesRequest request) {
+  public GetAnomalyExclusionRulesResponse getRules(
+      GetAnomalyExclusionRulesRequest request, RequestContext requestContext) {
     List<AnomalyExclusionRuleConfig> anomalyExclusionRuleConfigList =
-        configServiceHandler.getAllExclusionConfigs().getContextSpecificConfigsList().stream()
-            .map(ContextSpecificConfig::getConfig)
-            .map(anomalyExclusionRuleConfigConverter::convert)
-            .collect(Collectors.toUnmodifiableList());
+        configServiceHandler.getAllExclusionConfigs(requestContext);
 
     if (!request.hasFilter()) {
       return GetAnomalyExclusionRulesResponse.newBuilder()

@@ -113,7 +113,8 @@ public class TraceableConfigService extends PlatformService {
             managedChannel, config, configChangeEventGenerator);
     BindableService riskConfigService = RiskConfigServiceFactory.build(managedChannel, config);
     List<BindableService> anomalyConfigServices =
-        AnomalyConfigServiceFactory.build(channelRegistry, managedChannel, config);
+        AnomalyConfigServiceFactory.build(
+            channelRegistry, managedChannel, config, configChangeEventGenerator);
 
     EventConditionConfigServiceImpl eventConditionConfigService =
         new EventConditionConfigServiceImpl(managedChannel);

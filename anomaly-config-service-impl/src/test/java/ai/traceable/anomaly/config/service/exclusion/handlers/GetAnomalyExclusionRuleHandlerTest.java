@@ -8,8 +8,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeMatcher;
-import ai.traceable.anomaly.config.service.exclusion.ExclusionTestUtils;
-import ai.traceable.anomaly.config.service.exclusion.converters.AnomalyExclusionRuleConfigConverter;
 import ai.traceable.anomaly.config.service.exclusion.utils.FilterUtils;
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
@@ -23,13 +21,13 @@ import ai.traceable.anomaly.config.service.v1.exclusion.EventExclusionInfo;
 import ai.traceable.anomaly.config.service.v1.exclusion.EventExclusionType;
 import ai.traceable.anomaly.config.service.v1.exclusion.GetAnomalyExclusionRulesRequest;
 import ai.traceable.anomaly.config.service.v1.exclusion.GetRulesFilter;
-import com.google.protobuf.Value;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,18 +37,22 @@ public class GetAnomalyExclusionRuleHandlerTest {
   private MockGenericConfigService mockConfigService;
   private ConfigServiceBlockingStub configServiceBlockingStub;
   private GetAnomalyExclusionRuleHandler getAnomalyExclusionRuleHandler;
-  private AnomalyExclusionRuleConfigConverter ruleConfigConverter;
   private AnomalyConfigScopeMatcher scopeMatcher;
   private FilterUtils filterUtils;
+  private RequestContext requestContext;
 
   @BeforeEach
   void setUp() {
     mockConfigService =
         new MockGenericConfigService().mockDelete().mockUpsert().mockGetAll().mockGet();
     mockConfigService.start();
+    requestContext = RequestContext.forTenantId("tenant_id");
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
-    configServiceHandler = new ConfigServiceHandler(configServiceBlockingStub);
-    ruleConfigConverter = mock(AnomalyExclusionRuleConfigConverter.class);
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    configServiceHandler =
+        new ConfigServiceHandler(
+            new AnomalyExclusionRuleConfigStore(
+                configServiceBlockingStub, configChangeEventGenerator));
     scopeMatcher = mock(AnomalyConfigScopeMatcher.class);
     filterUtils = mock(FilterUtils.class);
     when(scopeMatcher.isParentScope(any(AnomalyConfigScope.class), any(AnomalyConfigScope.class)))
@@ -60,8 +62,7 @@ public class GetAnomalyExclusionRuleHandlerTest {
     when(filterUtils.filterEventFamilies(any(), anyList())).thenReturn(true);
     when(filterUtils.filterEventIds(any(), anyList())).thenReturn(true);
     getAnomalyExclusionRuleHandler =
-        new GetAnomalyExclusionRuleHandler(
-            configServiceHandler, ruleConfigConverter, scopeMatcher, filterUtils);
+        new GetAnomalyExclusionRuleHandler(configServiceHandler, scopeMatcher, filterUtils);
   }
 
   @AfterEach
@@ -120,15 +121,8 @@ public class GetAnomalyExclusionRuleHandlerTest {
                     .build())
             .build();
 
-    Value mockRule1 = ExclusionTestUtils.mockConfig("rule1_id", "name1");
-    Value mockRule2 = ExclusionTestUtils.mockConfig("rule2_id", "name2");
-    when(ruleConfigConverter.convert(mockRule1)).thenReturn(configRule1);
-    when(ruleConfigConverter.convert(configRule1)).thenReturn(mockRule1);
-    when(ruleConfigConverter.convert(mockRule2)).thenReturn(configRule2);
-    when(ruleConfigConverter.convert(configRule2)).thenReturn(mockRule2);
-
-    ExclusionTestUtils.upsertConfigs(
-        Map.of("rule1_id", mockRule1, "rule2_id", mockRule2), configServiceBlockingStub);
+    configServiceHandler.upsertExclusionConfigByRuleId(configRule1, requestContext);
+    configServiceHandler.upsertExclusionConfigByRuleId(configRule2, requestContext);
     // Filter on Rule-id
     when(filterUtils.filterRuleIds(configRule1, Set.of("rule1_id"))).thenReturn(true);
     when(filterUtils.filterRuleIds(configRule2, Set.of("rule1_id"))).thenReturn(false);
@@ -137,7 +131,8 @@ public class GetAnomalyExclusionRuleHandlerTest {
             .getRules(
                 GetAnomalyExclusionRulesRequest.newBuilder()
                     .setFilter(GetRulesFilter.newBuilder().addAllRuleIds(List.of("rule1_id")))
-                    .build())
+                    .build(),
+                requestContext)
             .getConfigsList();
     assertEquals(1, configs.size());
     assertEquals(configRule1, configs.get(0));
@@ -150,7 +145,8 @@ public class GetAnomalyExclusionRuleHandlerTest {
                 GetAnomalyExclusionRulesRequest.newBuilder()
                     .setFilter(
                         GetRulesFilter.newBuilder().addAllAnomalyActorIds(List.of("some_id")))
-                    .build())
+                    .build(),
+                requestContext)
             .getConfigsList();
     assertEquals(1, configs.size());
     assertEquals(configRule1, configs.get(0));
@@ -161,7 +157,8 @@ public class GetAnomalyExclusionRuleHandlerTest {
             .getRules(
                 GetAnomalyExclusionRulesRequest.newBuilder()
                     .setFilter(GetRulesFilter.newBuilder().addAllEventTypeIds(List.of("hola")))
-                    .build())
+                    .build(),
+                requestContext)
             .getConfigsList();
     assertEquals(2, configs.size());
     when(filterUtils.filterEventIds(configRule2, List.of("hola"))).thenReturn(false);
@@ -170,7 +167,8 @@ public class GetAnomalyExclusionRuleHandlerTest {
             .getRules(
                 GetAnomalyExclusionRulesRequest.newBuilder()
                     .setFilter(GetRulesFilter.newBuilder().addAllEventTypeIds(List.of("hola")))
-                    .build())
+                    .build(),
+                requestContext)
             .getConfigsList();
     assertEquals(1, configs.size());
     assertEquals(configRule1, configs.get(0));
@@ -183,7 +181,8 @@ public class GetAnomalyExclusionRuleHandlerTest {
                     .setFilter(
                         GetRulesFilter.newBuilder()
                             .addEventFamilies(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_SESSION))
-                    .build())
+                    .build(),
+                requestContext)
             .getConfigsList();
     assertEquals(2, configs.size());
     when(filterUtils.filterEventFamilies(
@@ -194,7 +193,8 @@ public class GetAnomalyExclusionRuleHandlerTest {
             .getRules(
                 GetAnomalyExclusionRulesRequest.newBuilder()
                     .setFilter(GetRulesFilter.newBuilder().addAllEventTypeIds(List.of("hola")))
-                    .build())
+                    .build(),
+                requestContext)
             .getConfigsList();
     assertEquals(1, configs.size());
     assertEquals(configRule1, configs.get(0));
@@ -210,7 +210,8 @@ public class GetAnomalyExclusionRuleHandlerTest {
                 GetAnomalyExclusionRulesRequest.newBuilder()
                     .setFilter(
                         GetRulesFilter.newBuilder().setAnomalyConfigScope(requiredScope).build())
-                    .build())
+                    .build(),
+                requestContext)
             .getConfigsList();
     assertEquals(2, configs.size());
     when(scopeMatcher.isParentScope(rule2ConfigScope, requiredScope)).thenReturn(false);
@@ -220,7 +221,8 @@ public class GetAnomalyExclusionRuleHandlerTest {
                 GetAnomalyExclusionRulesRequest.newBuilder()
                     .setFilter(
                         GetRulesFilter.newBuilder().setAnomalyConfigScope(requiredScope).build())
-                    .build())
+                    .build(),
+                requestContext)
             .getConfigsList();
     assertEquals(1, configs.size());
     assertEquals(configRule1, configs.get(0));

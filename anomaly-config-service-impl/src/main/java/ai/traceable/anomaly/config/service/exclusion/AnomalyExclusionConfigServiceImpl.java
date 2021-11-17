@@ -21,6 +21,7 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class AnomalyExclusionConfigServiceImpl extends AnomalyExclusionConfigServiceImplBase {
@@ -64,8 +65,9 @@ public class AnomalyExclusionConfigServiceImpl extends AnomalyExclusionConfigSer
       return;
     }
     try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
       CreateAnomalyExclusionRuleResponse response =
-          createAnomalyExclusionRuleHandler.createRule(request);
+          createAnomalyExclusionRuleHandler.createRule(request, requestContext);
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -86,8 +88,9 @@ public class AnomalyExclusionConfigServiceImpl extends AnomalyExclusionConfigSer
       return;
     }
     try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
       UpdateAnomalyExclusionRuleResponse response =
-          updateAnomalyExclusionRuleHandler.updateRule(request);
+          updateAnomalyExclusionRuleHandler.updateRule(request, requestContext);
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -108,8 +111,9 @@ public class AnomalyExclusionConfigServiceImpl extends AnomalyExclusionConfigSer
       return;
     }
     try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
       DeleteAnomalyExclusionRuleResponse response =
-          deleteAnomalyExclusionRuleHandler.deleteRule(request);
+          deleteAnomalyExclusionRuleHandler.deleteRule(request, requestContext);
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -129,7 +133,9 @@ public class AnomalyExclusionConfigServiceImpl extends AnomalyExclusionConfigSer
       return;
     }
     try {
-      GetAnomalyExclusionRulesResponse response = getAnomalyExclusionRuleHandler.getRules(request);
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      GetAnomalyExclusionRulesResponse response =
+          getAnomalyExclusionRuleHandler.getRules(request, requestContext);
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception e) {

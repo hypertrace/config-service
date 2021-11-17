@@ -1,71 +1,39 @@
 package ai.traceable.anomaly.config.service.exclusion.handlers;
 
-import static ai.traceable.anomaly.config.service.exclusion.AnomalyExclusionConfigServiceConstants.ANOMALY_EXCLUSION_CONFIG_NAMESPACE;
-import static ai.traceable.anomaly.config.service.exclusion.AnomalyExclusionConfigServiceConstants.ANOMALY_EXCLUSION_CONFIG_RESOURCE_NAME;
-
-import ai.traceable.anomaly.config.service.exclusion.AnomalyExclusionConfigServiceConstants;
-import com.google.protobuf.Value;
+import ai.traceable.anomaly.config.service.v1.exclusion.AnomalyExclusionRuleConfig;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
-import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
-import org.hypertrace.config.service.v1.DeleteConfigRequest;
-import org.hypertrace.config.service.v1.DeleteConfigResponse;
-import org.hypertrace.config.service.v1.GetAllConfigsRequest;
-import org.hypertrace.config.service.v1.GetAllConfigsResponse;
-import org.hypertrace.config.service.v1.GetConfigRequest;
-import org.hypertrace.config.service.v1.GetConfigResponse;
-import org.hypertrace.config.service.v1.UpsertConfigRequest;
-import org.hypertrace.config.service.v1.UpsertConfigResponse;
+import org.hypertrace.config.objectstore.ConfigObject;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class ConfigServiceHandler {
-  private final ConfigServiceBlockingStub configServiceBlockingStub;
+  private final AnomalyExclusionRuleConfigStore anomalyExclusionRuleConfigStore;
 
   @Inject
-  ConfigServiceHandler(ConfigServiceBlockingStub configServiceBlockingStub) {
-    this.configServiceBlockingStub = configServiceBlockingStub;
+  ConfigServiceHandler(AnomalyExclusionRuleConfigStore anomalyExclusionRuleConfigStore) {
+    this.anomalyExclusionRuleConfigStore = anomalyExclusionRuleConfigStore;
   }
 
-  public GetConfigResponse getExclusionConfigByRuleId(String ruleId) {
-    GetConfigRequest getConfigRequest =
-        GetConfigRequest.newBuilder()
-            .addContexts(ruleId)
-            .setResourceName(ANOMALY_EXCLUSION_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(ANOMALY_EXCLUSION_CONFIG_NAMESPACE)
-            .build();
-
-    return configServiceBlockingStub.getConfig(getConfigRequest);
+  public AnomalyExclusionRuleConfig getExclusionConfigByRuleId(
+      String ruleId, RequestContext requestContext) {
+    return this.anomalyExclusionRuleConfigStore.getData(requestContext, ruleId).orElseThrow();
   }
 
-  public GetAllConfigsResponse getAllExclusionConfigs() {
-    GetAllConfigsRequest getAllConfigsRequest =
-        GetAllConfigsRequest.newBuilder()
-            .setResourceName(ANOMALY_EXCLUSION_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(ANOMALY_EXCLUSION_CONFIG_NAMESPACE)
-            .build();
-    return configServiceBlockingStub.getAllConfigs(getAllConfigsRequest);
+  public List<AnomalyExclusionRuleConfig> getAllExclusionConfigs(RequestContext requestContext) {
+    return this.anomalyExclusionRuleConfigStore.getAllObjects(requestContext).stream()
+        .map(ConfigObject::getData)
+        .collect(Collectors.toUnmodifiableList());
   }
 
-  public UpsertConfigResponse upsertExclusionConfigByRuleId(String ruleId, Value config) {
-    UpsertConfigRequest upsertConfigRequest =
-        UpsertConfigRequest.newBuilder()
-            .setResourceName(
-                AnomalyExclusionConfigServiceConstants.ANOMALY_EXCLUSION_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(
-                AnomalyExclusionConfigServiceConstants.ANOMALY_EXCLUSION_CONFIG_NAMESPACE)
-            .setContext(ruleId)
-            .setConfig(config)
-            .build();
-    return configServiceBlockingStub.upsertConfig(upsertConfigRequest);
+  public AnomalyExclusionRuleConfig upsertExclusionConfigByRuleId(
+      AnomalyExclusionRuleConfig anomalyExclusionRuleConfig, RequestContext requestContext) {
+    return this.anomalyExclusionRuleConfigStore
+        .upsertObject(requestContext, anomalyExclusionRuleConfig)
+        .getData();
   }
 
-  public DeleteConfigResponse deleteExclusionConfigByRuleId(String ruleId) {
-    DeleteConfigRequest deleteConfigRequest =
-        DeleteConfigRequest.newBuilder()
-            .setContext(ruleId)
-            .setResourceName(
-                AnomalyExclusionConfigServiceConstants.ANOMALY_EXCLUSION_CONFIG_RESOURCE_NAME)
-            .setResourceNamespace(
-                AnomalyExclusionConfigServiceConstants.ANOMALY_EXCLUSION_CONFIG_NAMESPACE)
-            .build();
-    return configServiceBlockingStub.deleteConfig(deleteConfigRequest);
+  public void deleteExclusionConfigByRuleId(String ruleId, RequestContext requestContext) {
+    this.anomalyExclusionRuleConfigStore.deleteObject(requestContext, ruleId);
   }
 }

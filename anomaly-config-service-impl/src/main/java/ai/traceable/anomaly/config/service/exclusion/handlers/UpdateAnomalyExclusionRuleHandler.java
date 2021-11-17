@@ -1,31 +1,25 @@
 package ai.traceable.anomaly.config.service.exclusion.handlers;
 
-import ai.traceable.anomaly.config.service.exclusion.converters.AnomalyExclusionRuleConfigConverter;
 import ai.traceable.anomaly.config.service.v1.exclusion.AnomalyExclusionRuleConfig;
 import ai.traceable.anomaly.config.service.v1.exclusion.AnomalyExclusionRuleData;
 import ai.traceable.anomaly.config.service.v1.exclusion.UpdateAnomalyExclusionRuleRequest;
 import ai.traceable.anomaly.config.service.v1.exclusion.UpdateAnomalyExclusionRuleResponse;
 import javax.inject.Inject;
-import org.hypertrace.config.service.v1.GetConfigResponse;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class UpdateAnomalyExclusionRuleHandler {
   private final ConfigServiceHandler configServiceHandler;
-  private final AnomalyExclusionRuleConfigConverter ruleConfigConverter;
 
   @Inject
-  UpdateAnomalyExclusionRuleHandler(
-      ConfigServiceHandler configServiceHandler,
-      AnomalyExclusionRuleConfigConverter ruleConfigConverter) {
+  UpdateAnomalyExclusionRuleHandler(ConfigServiceHandler configServiceHandler) {
     this.configServiceHandler = configServiceHandler;
-    this.ruleConfigConverter = ruleConfigConverter;
   }
 
-  public UpdateAnomalyExclusionRuleResponse updateRule(UpdateAnomalyExclusionRuleRequest request) {
+  public UpdateAnomalyExclusionRuleResponse updateRule(
+      UpdateAnomalyExclusionRuleRequest request, RequestContext requestContext) {
 
-    GetConfigResponse getConfigResponse =
-        configServiceHandler.getExclusionConfigByRuleId(request.getRuleId());
     AnomalyExclusionRuleConfig anomalyExclusionRuleConfig =
-        ruleConfigConverter.convert(getConfigResponse.getConfig());
+        configServiceHandler.getExclusionConfigByRuleId(request.getRuleId(), requestContext);
 
     AnomalyExclusionRuleData updatedRuleData =
         anomalyExclusionRuleConfig.getRuleData().toBuilder()
@@ -39,8 +33,7 @@ public class UpdateAnomalyExclusionRuleHandler {
             .setConfigStatus(request.getConfigStatus())
             .build();
 
-    configServiceHandler.upsertExclusionConfigByRuleId(
-        request.getRuleId(), ruleConfigConverter.convert(updatedExclusionRuleConfig));
+    configServiceHandler.upsertExclusionConfigByRuleId(updatedExclusionRuleConfig, requestContext);
 
     return UpdateAnomalyExclusionRuleResponse.newBuilder()
         .setConfig(updatedExclusionRuleConfig)
