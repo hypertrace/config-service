@@ -27,8 +27,7 @@ message GetScopedTrainingConfigResponse {
 }
 
 message GetAllScopedTrainingConfigsRequest {
-  AnomalyConfigScope config_scope = 1;
-  GetTrainingConfigsFilter filter = 2;
+  GetTrainingConfigsFilter filter = 1;
 }
 
 message GetAllScopedTrainingConfigsResponse {
