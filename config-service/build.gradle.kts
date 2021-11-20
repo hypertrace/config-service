@@ -73,8 +73,8 @@ dependencies {
   runtimeOnly(libs.slf4j.log4jimpl)
   runtimeOnly(libs.grpc.netty)
   constraints {
-    runtimeOnly("io.netty:netty-codec-http2:4.1.68.Final")
-    runtimeOnly("io.netty:netty-handler-proxy:4.1.68.Final")
+    runtimeOnly(libs.netty.codecHttp2)
+    runtimeOnly(libs.netty.handlerProxy)
   }
 
   // Integration test dependencies
