@@ -19,11 +19,20 @@ dependencies {
 
   runtimeOnly(libs.kafka.protobuf.serializer)
   constraints {
-    runtimeOnly("org.glassfish.jersey.core:jersey-common:2.34") {
+    implementation(libs.jersey.common) {
       because("https://snyk.io/vuln/SNYK-JAVA-ORGGLASSFISHJERSEYCORE-1255637")
     }
-    runtimeOnly("org.apache.commons:commons-compress:1.21") {
+    implementation(libs.commons.compress) {
       because("Multiple vulnerabilities")
+    }
+    implementation(libs.kotlin.stdlib) {
+      because("https://nvd.nist.gov/vuln/detail/CVE-2020-29582")
+    }
+    implementation(libs.kotlin.stdlibJdk7) {
+      because("https://nvd.nist.gov/vuln/detail/CVE-2020-29582")
+    }
+    implementation(libs.kotlin.stdlibJdk8) {
+      because("https://nvd.nist.gov/vuln/detail/CVE-2020-29582")
     }
   }
 
