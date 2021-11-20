@@ -46,4 +46,39 @@
         <!-- no replacement available -->
         <cve>CVE-2020-8908</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: wire-runtime-jvm-3.2.2.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.squareup\.wire/wire\-runtime@.*$</packageUrl>
+        <cpe>cpe:/a:wire:wire</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: wire-schema-jvm-3.2.2.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.squareup\.wire/wire\-schema@.*$</packageUrl>
+        <cpe>cpe:/a:wire:wire</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: kotlin-stdlib-1.4.32.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin\-stdlib.*@.*$</packageUrl>
+        <cpe>cpe:/a:jetbrains:kotlin</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: local-processing-config-service-api-0.17.34-SNAPSHOT.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/ai\.traceable\.config\.service/local\-processing\-config\-service\-api@.*$</packageUrl>
+        <cpe>cpe:/a:processing:processing</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: local-processing-config-service-impl-0.17.34-SNAPSHOT.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/ai\.traceable\.config\.service/local\-processing\-config\-service\-impl@.*$</packageUrl>
+        <cpe>cpe:/a:processing:processing</cpe>
+    </suppress>
 </suppressions>
