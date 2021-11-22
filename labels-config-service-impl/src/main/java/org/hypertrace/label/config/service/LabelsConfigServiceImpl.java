@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -25,6 +26,8 @@ import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.label.config.service.v1.BulkCreateLabelsRequest;
+import org.hypertrace.label.config.service.v1.BulkCreateLabelsResponse;
 import org.hypertrace.label.config.service.v1.CreateLabelRequest;
 import org.hypertrace.label.config.service.v1.CreateLabelResponse;
 import org.hypertrace.label.config.service.v1.DeleteLabelRequest;
@@ -134,6 +137,59 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     } catch (Exception e) {
       responseObserver.onError(e);
     }
+  }
+
+  @Override
+  public void bulkCreateLabels(
+      BulkCreateLabelsRequest bulkCreateLabelsRequest,
+      StreamObserver<BulkCreateLabelsResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      Lock labelsLock = this.stripedLabelsLock.get(requestContext.getTenantId());
+      if (labelsLock.tryLock(WAIT_TIME.getSeconds(), TimeUnit.SECONDS)) {
+        try {
+          List<Label> labels =
+              bulkCreateLabelsRequest.getRequestsList().stream()
+                  .map(this::buildLabelFromRequest)
+                  .filter(Optional::isPresent)
+                  .map(Optional::get)
+                  .collect(Collectors.toList());
+          if (!labels.isEmpty()) {
+            List<Label> createdLabels =
+                labelStore.upsertObjects(requestContext, labels).stream()
+                    .map(org.hypertrace.config.objectstore.ConfigObject::getData)
+                    .collect(Collectors.toList());
+            responseObserver.onNext(
+                BulkCreateLabelsResponse.newBuilder().addAllLabels(createdLabels).build());
+          } else {
+            responseObserver.onNext(BulkCreateLabelsResponse.newBuilder().build());
+          }
+          responseObserver.onCompleted();
+        } finally {
+          labelsLock.unlock();
+        }
+      } else {
+        responseObserver.onError(new StatusRuntimeException(Status.ABORTED));
+      }
+    } catch (Exception e) {
+      responseObserver.onError(e);
+    }
+  }
+
+  private Optional<Label> buildLabelFromRequest(BulkCreateLabelsRequest.LabelRequest request) {
+    LabelData labelData = request.getData();
+    if (systemLabelsKeyLabelMap.containsKey(labelData.getKey())
+        || isDuplicateKey(labelData.getKey())) {
+      // Creating a label with a name that clashes with one of system labels
+      // name. i
+      return Optional.empty();
+    }
+    Label.Builder labelBuilder =
+        Label.newBuilder().setId(UUID.randomUUID().toString()).setData(labelData);
+    if (request.hasCreatedByApplicationRuleId()) {
+      labelBuilder.setCreatedByApplicationRuleId(request.getCreatedByApplicationRuleId());
+    }
+    return Optional.of(labelBuilder.build());
   }
 
   @Override

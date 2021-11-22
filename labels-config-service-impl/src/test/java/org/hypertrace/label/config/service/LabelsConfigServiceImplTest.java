@@ -9,6 +9,7 @@ import com.typesafe.config.ConfigFactory;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -18,6 +19,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
+import org.hypertrace.label.config.service.v1.BulkCreateLabelsRequest;
+import org.hypertrace.label.config.service.v1.BulkCreateLabelsResponse;
 import org.hypertrace.label.config.service.v1.CreateLabelRequest;
 import org.hypertrace.label.config.service.v1.CreateLabelResponse;
 import org.hypertrace.label.config.service.v1.DeleteLabelRequest;
@@ -55,7 +58,12 @@ public final class LabelsConfigServiceImplTest {
   @BeforeEach
   void setUp() {
     mockGenericConfigService =
-        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+        new MockGenericConfigService()
+            .mockUpsert()
+            .mockUpsertAll()
+            .mockGet()
+            .mockGetAll()
+            .mockDelete();
     Map<String, List<Map<String, String>>> systemLabelsConfigMap = new HashMap<>();
     systemLabelsConfigMap.put(
         "system.labels",
@@ -123,6 +131,47 @@ public final class LabelsConfigServiceImplTest {
               });
       assertEquals(Status.ALREADY_EXISTS, Status.fromThrowable(exception));
     }
+  }
+
+  @Test
+  void test_bulkCreateLabels() {
+    List<BulkCreateLabelsRequest.LabelRequest> requests =
+        createLabelDataList.stream()
+            .map(data -> BulkCreateLabelsRequest.LabelRequest.newBuilder().setData(data).build())
+            .collect(Collectors.toList());
+    BulkCreateLabelsResponse bulkCreateLabelsResponse =
+        labelConfigStub.bulkCreateLabels(
+            BulkCreateLabelsRequest.newBuilder().addAllRequests(requests).build());
+    List<LabelData> createdLabelsList =
+        bulkCreateLabelsResponse.getLabelsList().stream()
+            .map(label -> label.getData())
+            .collect(Collectors.toList());
+    assertEquals(createLabelDataList, createdLabelsList);
+  }
+
+  @Test
+  void test_bulkCreateLabelsWithSystemLabels() {
+    List<BulkCreateLabelsRequest.LabelRequest> requests = new ArrayList<>();
+    requests.addAll(
+        createLabelDataList.stream()
+            .map(data -> BulkCreateLabelsRequest.LabelRequest.newBuilder().setData(data).build())
+            .collect(Collectors.toList()));
+    requests.addAll(
+        systemLabels.stream()
+            .map(
+                systemLabel ->
+                    BulkCreateLabelsRequest.LabelRequest.newBuilder()
+                        .setData(systemLabel.getData())
+                        .build())
+            .collect(Collectors.toList()));
+    BulkCreateLabelsResponse bulkCreateLabelsResponse =
+        labelConfigStub.bulkCreateLabels(
+            BulkCreateLabelsRequest.newBuilder().addAllRequests(requests).build());
+    List<LabelData> createdLabelsList =
+        bulkCreateLabelsResponse.getLabelsList().stream()
+            .map(label -> label.getData())
+            .collect(Collectors.toList());
+    assertEquals(createLabelDataList, createdLabelsList);
   }
 
   @Test
