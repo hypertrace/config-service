@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+// buf:lint:ignore PACKAGE_VERSION_SUFFIX
+package ai.traceable.anomaly.config.service.v1.trainer;
+import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
+
+option java_multiple_files = true;
+
+message UpsertTrainingActionRequest {
+  AnomalyConfigScope config_scope = 1;
+  TrainingAction training_action = 2;
+}
+
+message UpsertTrainingActionResponse {
+  TrainingActionConfig training_action_config = 1;
+}
+
+message GetAllTrainingActionsRequest {
+}
+
+message GetAllTrainingActionsResponse {
+  repeated TrainingActionConfig training_action_configs = 1;
+}
+
+message TrainingAction {
+  oneof action {
+    PauseAction pause_action = 1;
+    ResumeAction resume_action = 2;
+    ForceLearnAction force_learn_action = 3;
+    ResetAction reset_action = 4;
+  }
+}
+
+message TrainingActionConfig {
+  AnomalyConfigScope config_scope = 1;
+  TrainingAction training_action = 2;
+  int64 timestamp = 3;
+}
+
+message PauseAction {
+}
+
+message ResumeAction {
+}
+
+message ForceLearnAction {
+  ThresholdFamily threshold_family = 1;
+}
+
+message ResetAction {
+}
+
+enum ThresholdFamily {
+  THRESHOLD_FAMILY_UNSPECIFIED = 0;
+  THRESHOLD_FAMILY_DIVERSE_IP_DIVERSE_USER = 1;
+  THRESHOLD_FAMILY_DIVERSE_IP_LIMITED_USER = 2;
+  THRESHOLD_FAMILY_LIMITED_IP = 3;
+}

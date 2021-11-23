@@ -6,16 +6,18 @@ package ai.traceable.anomaly.config.service.v1.trainer;
 option java_multiple_files = true;
 
 import "ai/traceable/anomaly/config/service/v1/trainer/training_config.proto";
+import "ai/traceable/anomaly/config/service/v1/trainer/training_action.proto";
 
 
 service TrainerConfigService {
 
-  rpc GetScopedTrainingConfig (GetScopedTrainingConfigRequest) returns (GetScopedTrainingConfigResponse) {
-  }
+  rpc GetScopedTrainingConfig(GetScopedTrainingConfigRequest) returns (GetScopedTrainingConfigResponse) {}
 
-  rpc GetAllScopedTrainingConfigs (GetAllScopedTrainingConfigsRequest) returns (GetAllScopedTrainingConfigsResponse) {
-  }
+  rpc GetAllScopedTrainingConfigs(GetAllScopedTrainingConfigsRequest) returns (GetAllScopedTrainingConfigsResponse) {}
 
-  rpc UpdateScopedTrainingConfig (UpdateScopedTrainingConfigRequest) returns (UpdateScopedTrainingConfigResponse) {
-  }
+  rpc UpdateScopedTrainingConfig(UpdateScopedTrainingConfigRequest) returns (UpdateScopedTrainingConfigResponse) {}
+
+  rpc UpsertTrainingAction(UpsertTrainingActionRequest) returns (UpsertTrainingActionResponse) {}
+
+  rpc GetAllTrainingActions(GetAllTrainingActionsRequest) returns (GetAllTrainingActionsResponse) {}
 }
