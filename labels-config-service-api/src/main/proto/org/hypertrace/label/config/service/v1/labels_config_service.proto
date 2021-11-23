@@ -11,8 +11,8 @@ service LabelsConfigService {
   // create label
   rpc CreateLabel(CreateLabelRequest) returns (CreateLabelResponse) {}
 
-  // create labels
-  rpc BulkCreateLabels(BulkCreateLabelsRequest) returns (BulkCreateLabelsResponse) {}
+  // get or create labels
+  rpc GetOrCreateLabels(GetOrCreateLabelsRequest) returns (GetOrCreateLabelsResponse) {}
 
   // get label by id
   rpc GetLabel(GetLabelRequest) returns (GetLabelResponse) {}
@@ -37,7 +37,7 @@ message CreateLabelResponse {
   Label label = 1;
 }
 
-message BulkCreateLabelsRequest {
+message GetOrCreateLabelsRequest {
   repeated LabelRequest requests = 1;
 
   message LabelRequest {
@@ -46,7 +46,7 @@ message BulkCreateLabelsRequest {
   }
 }
 
-message BulkCreateLabelsResponse {
+message GetOrCreateLabelsResponse {
   repeated Label labels = 1;
 }
 

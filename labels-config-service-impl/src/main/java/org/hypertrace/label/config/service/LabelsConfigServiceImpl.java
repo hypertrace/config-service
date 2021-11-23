@@ -1,5 +1,7 @@
 package org.hypertrace.label.config.service;
 
+import static java.util.function.Function.identity;
+
 import com.google.common.util.concurrent.Striped;
 import com.google.protobuf.Duration;
 import com.google.protobuf.util.JsonFormat;
@@ -13,11 +15,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -26,8 +26,6 @@ import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
-import org.hypertrace.label.config.service.v1.BulkCreateLabelsRequest;
-import org.hypertrace.label.config.service.v1.BulkCreateLabelsResponse;
 import org.hypertrace.label.config.service.v1.CreateLabelRequest;
 import org.hypertrace.label.config.service.v1.CreateLabelResponse;
 import org.hypertrace.label.config.service.v1.DeleteLabelRequest;
@@ -36,6 +34,8 @@ import org.hypertrace.label.config.service.v1.GetLabelRequest;
 import org.hypertrace.label.config.service.v1.GetLabelResponse;
 import org.hypertrace.label.config.service.v1.GetLabelsRequest;
 import org.hypertrace.label.config.service.v1.GetLabelsResponse;
+import org.hypertrace.label.config.service.v1.GetOrCreateLabelsRequest;
+import org.hypertrace.label.config.service.v1.GetOrCreateLabelsResponse;
 import org.hypertrace.label.config.service.v1.Label;
 import org.hypertrace.label.config.service.v1.LabelData;
 import org.hypertrace.label.config.service.v1.LabelsConfigServiceGrpc;
@@ -74,13 +74,11 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     if (systemLabelsObjectList != null) {
       systemLabels = buildSystemLabelList(systemLabelsObjectList);
       systemLabelsIdLabelMap =
-          systemLabels.stream()
-              .collect(Collectors.toUnmodifiableMap(Label::getId, Function.identity()));
+          systemLabels.stream().collect(Collectors.toUnmodifiableMap(Label::getId, identity()));
       systemLabelsKeyLabelMap =
           systemLabels.stream()
               .collect(
-                  Collectors.toUnmodifiableMap(
-                      (label) -> label.getData().getKey(), Function.identity()));
+                  Collectors.toUnmodifiableMap((label) -> label.getData().getKey(), identity()));
     } else {
       systemLabels = Collections.emptyList();
       systemLabelsIdLabelMap = Collections.emptyMap();
@@ -140,30 +138,31 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
   }
 
   @Override
-  public void bulkCreateLabels(
-      BulkCreateLabelsRequest bulkCreateLabelsRequest,
-      StreamObserver<BulkCreateLabelsResponse> responseObserver) {
+  public void getOrCreateLabels(
+      GetOrCreateLabelsRequest request,
+      StreamObserver<GetOrCreateLabelsResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       Lock labelsLock = this.stripedLabelsLock.get(requestContext.getTenantId());
       if (labelsLock.tryLock(WAIT_TIME.getSeconds(), TimeUnit.SECONDS)) {
         try {
-          List<Label> labels =
-              bulkCreateLabelsRequest.getRequestsList().stream()
-                  .map(this::buildLabelFromRequest)
-                  .filter(Optional::isPresent)
-                  .map(Optional::get)
-                  .collect(Collectors.toList());
-          if (!labels.isEmpty()) {
+          final Map<String, Label> existingLabelsMap = getLabelsMap();
+          final List<Label> newLabels = new ArrayList<>();
+          final List<Label> allLabels = new ArrayList<>();
+          request.getRequestsList().stream()
+              .forEach(
+                  labelRequest ->
+                      this.buildLabelFromRequest(
+                          labelRequest, existingLabelsMap, newLabels, allLabels));
+          if (!newLabels.isEmpty()) {
             List<Label> createdLabels =
-                labelStore.upsertObjects(requestContext, labels).stream()
+                labelStore.upsertObjects(requestContext, newLabels).stream()
                     .map(org.hypertrace.config.objectstore.ConfigObject::getData)
                     .collect(Collectors.toList());
-            responseObserver.onNext(
-                BulkCreateLabelsResponse.newBuilder().addAllLabels(createdLabels).build());
-          } else {
-            responseObserver.onNext(BulkCreateLabelsResponse.newBuilder().build());
+            allLabels.addAll(createdLabels);
           }
+          responseObserver.onNext(
+              GetOrCreateLabelsResponse.newBuilder().addAllLabels(allLabels).build());
           responseObserver.onCompleted();
         } finally {
           labelsLock.unlock();
@@ -176,20 +175,26 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     }
   }
 
-  private Optional<Label> buildLabelFromRequest(BulkCreateLabelsRequest.LabelRequest request) {
+  private void buildLabelFromRequest(
+      GetOrCreateLabelsRequest.LabelRequest request,
+      Map<String, Label> existingLabelsMap,
+      List<Label> newLabels,
+      List<Label> allLabels) {
     LabelData labelData = request.getData();
-    if (systemLabelsKeyLabelMap.containsKey(labelData.getKey())
-        || isDuplicateKey(labelData.getKey())) {
-      // Creating a label with a name that clashes with one of system labels
-      // name. i
-      return Optional.empty();
+    if (systemLabelsKeyLabelMap.containsKey(labelData.getKey())) {
+      allLabels.add(systemLabelsKeyLabelMap.get(labelData.getKey()));
+      return;
+    }
+    if (existingLabelsMap.containsKey(labelData.getKey())) {
+      allLabels.add(existingLabelsMap.get(labelData.getKey()));
+      return;
     }
     Label.Builder labelBuilder =
         Label.newBuilder().setId(UUID.randomUUID().toString()).setData(labelData);
     if (request.hasCreatedByApplicationRuleId()) {
       labelBuilder.setCreatedByApplicationRuleId(request.getCreatedByApplicationRuleId());
     }
-    return Optional.of(labelBuilder.build());
+    newLabels.add(labelBuilder.build());
   }
 
   @Override
@@ -298,14 +303,13 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
   }
 
   private boolean isDuplicateKey(String key) {
+    return getLabelsMap().containsKey(key);
+  }
+
+  private Map<String, Label> getLabelsMap() {
     RequestContext requestContext = RequestContext.CURRENT.get();
-    List<Label> labelList =
-        labelStore.getAllObjects(requestContext).stream()
-            .map(ContextualConfigObject::getData)
-            .collect(Collectors.toUnmodifiableList());
-    return labelList.stream()
-        .map(Label::getData)
-        .map(LabelData::getKey)
-        .anyMatch(labelKey -> labelKey.equals(key));
+    return labelStore.getAllObjects(requestContext).stream()
+        .map(ContextualConfigObject::getData)
+        .collect(Collectors.toUnmodifiableMap(label -> label.getData().getKey(), identity()));
   }
 }

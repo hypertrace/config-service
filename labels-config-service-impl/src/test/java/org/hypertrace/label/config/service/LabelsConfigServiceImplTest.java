@@ -19,14 +19,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
-import org.hypertrace.label.config.service.v1.BulkCreateLabelsRequest;
-import org.hypertrace.label.config.service.v1.BulkCreateLabelsResponse;
 import org.hypertrace.label.config.service.v1.CreateLabelRequest;
 import org.hypertrace.label.config.service.v1.CreateLabelResponse;
 import org.hypertrace.label.config.service.v1.DeleteLabelRequest;
 import org.hypertrace.label.config.service.v1.GetLabelRequest;
 import org.hypertrace.label.config.service.v1.GetLabelResponse;
 import org.hypertrace.label.config.service.v1.GetLabelsRequest;
+import org.hypertrace.label.config.service.v1.GetOrCreateLabelsRequest;
+import org.hypertrace.label.config.service.v1.GetOrCreateLabelsResponse;
 import org.hypertrace.label.config.service.v1.Label;
 import org.hypertrace.label.config.service.v1.LabelData;
 import org.hypertrace.label.config.service.v1.LabelsConfigServiceGrpc;
@@ -134,44 +134,64 @@ public final class LabelsConfigServiceImplTest {
   }
 
   @Test
-  void test_bulkCreateLabels() {
-    List<BulkCreateLabelsRequest.LabelRequest> requests =
+  void test_getOrCreateLabels() {
+    List<GetOrCreateLabelsRequest.LabelRequest> requests =
         createLabelDataList.stream()
-            .map(data -> BulkCreateLabelsRequest.LabelRequest.newBuilder().setData(data).build())
+            .map(data -> GetOrCreateLabelsRequest.LabelRequest.newBuilder().setData(data).build())
             .collect(Collectors.toList());
-    BulkCreateLabelsResponse bulkCreateLabelsResponse =
-        labelConfigStub.bulkCreateLabels(
-            BulkCreateLabelsRequest.newBuilder().addAllRequests(requests).build());
+    GetOrCreateLabelsResponse response =
+        labelConfigStub.getOrCreateLabels(
+            GetOrCreateLabelsRequest.newBuilder().addAllRequests(requests).build());
     List<LabelData> createdLabelsList =
-        bulkCreateLabelsResponse.getLabelsList().stream()
+        response.getLabelsList().stream()
             .map(label -> label.getData())
             .collect(Collectors.toList());
     assertEquals(createLabelDataList, createdLabelsList);
   }
 
   @Test
-  void test_bulkCreateLabelsWithSystemLabels() {
-    List<BulkCreateLabelsRequest.LabelRequest> requests = new ArrayList<>();
+  void test_getOrCreateLabelsWithExistingAndSystemLabels() {
+    List<Label> initiallyCreatedLabels = createLabels();
+    List<GetOrCreateLabelsRequest.LabelRequest> requests = new ArrayList<>();
     requests.addAll(
         createLabelDataList.stream()
-            .map(data -> BulkCreateLabelsRequest.LabelRequest.newBuilder().setData(data).build())
+            .map(data -> GetOrCreateLabelsRequest.LabelRequest.newBuilder().setData(data).build())
             .collect(Collectors.toList()));
     requests.addAll(
         systemLabels.stream()
             .map(
                 systemLabel ->
-                    BulkCreateLabelsRequest.LabelRequest.newBuilder()
+                    GetOrCreateLabelsRequest.LabelRequest.newBuilder()
                         .setData(systemLabel.getData())
                         .build())
             .collect(Collectors.toList()));
-    BulkCreateLabelsResponse bulkCreateLabelsResponse =
-        labelConfigStub.bulkCreateLabels(
-            BulkCreateLabelsRequest.newBuilder().addAllRequests(requests).build());
-    List<LabelData> createdLabelsList =
-        bulkCreateLabelsResponse.getLabelsList().stream()
-            .map(label -> label.getData())
-            .collect(Collectors.toList());
-    assertEquals(createLabelDataList, createdLabelsList);
+    requests.addAll(
+        Stream.of(5, 6, 7)
+            .map(
+                id ->
+                    GetOrCreateLabelsRequest.LabelRequest.newBuilder()
+                        .setData(LabelData.newBuilder().setKey("Label-" + id))
+                        .build())
+            .collect(Collectors.toList()));
+    GetOrCreateLabelsResponse response =
+        labelConfigStub.getOrCreateLabels(
+            GetOrCreateLabelsRequest.newBuilder().addAllRequests(requests).build());
+    List<Label> expectedLabelsList = new ArrayList<>();
+    expectedLabelsList.addAll(initiallyCreatedLabels);
+    expectedLabelsList.addAll(systemLabels);
+    List<Label> actualLabelsList = response.getLabelsList();
+    assertEquals(3, actualLabelsList.size() - expectedLabelsList.size());
+    int index = 0;
+    while (index < expectedLabelsList.size()) {
+      assertEquals(expectedLabelsList.get(index), actualLabelsList.get(index));
+      index++;
+    }
+    int newLabelId = 5;
+    while (index < actualLabelsList.size()) {
+      assertEquals("Label-" + newLabelId, actualLabelsList.get(index).getData().getKey());
+      index++;
+      newLabelId++;
+    }
   }
 
   @Test
