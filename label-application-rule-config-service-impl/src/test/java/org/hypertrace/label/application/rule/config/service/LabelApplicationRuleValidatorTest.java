@@ -213,8 +213,55 @@ public class LabelApplicationRuleValidatorTest {
         });
   }
 
+  @Test
+  void validateDisabledRule() {
+    // This condition implies foo(key) exists AND foo(key) = bar(value) AND
+    // req.http.headers.auth(key) = valid(value)
+    LeafCondition leafCondition1 =
+        LeafCondition.newBuilder()
+            .setKeyCondition(correctKeyCondition)
+            .setUnaryCondition(correctUnaryValueCondition)
+            .build();
+    Condition condition1 = Condition.newBuilder().setLeafCondition(leafCondition1).build();
+
+    LeafCondition leafCondition2 =
+        LeafCondition.newBuilder()
+            .setKeyCondition(correctKeyCondition)
+            .setStringCondition(correctStringValueCondition)
+            .build();
+    Condition condition2 = Condition.newBuilder().setLeafCondition(leafCondition2).build();
+
+    LeafCondition leafCondition3 =
+        LeafCondition.newBuilder()
+            .setKeyCondition(correctAuthKeyCondition)
+            .setJsonCondition(correctJsonValueCondition)
+            .build();
+    Condition condition3 = Condition.newBuilder().setLeafCondition(leafCondition3).build();
+
+    List<Condition> conditionList = Arrays.asList(condition1, condition2, condition3);
+
+    CompositeCondition compositeCondition1 =
+        CompositeCondition.newBuilder()
+            .setOperator(CompositeCondition.LogicalOperator.LOGICAL_OPERATOR_AND)
+            .addAllChildren(conditionList)
+            .build();
+    Condition matchingCondition =
+        Condition.newBuilder().setCompositeCondition(compositeCondition1).build();
+    CreateLabelApplicationRuleRequest request =
+        buildCreateCreateLabelApplicationRuleRequest(
+            "Correct Composite Rule", false, matchingCondition, Optional.empty());
+    assertDoesNotThrow(
+        () -> labelApplicationRuleValidator.validateOrThrow(REQUEST_CONTEXT, request));
+  }
+
   private CreateLabelApplicationRuleRequest buildCreateCreateLabelApplicationRuleRequest(
       String name, Condition matchingCondition, Optional<String> labelExpression) {
+    return buildCreateCreateLabelApplicationRuleRequest(
+        name, true, matchingCondition, labelExpression);
+  }
+
+  private CreateLabelApplicationRuleRequest buildCreateCreateLabelApplicationRuleRequest(
+      String name, boolean enabled, Condition matchingCondition, Optional<String> labelExpression) {
     LabelApplicationRuleData data;
     if (labelExpression.isPresent()) {
       data =
@@ -222,7 +269,7 @@ public class LabelApplicationRuleValidatorTest {
               .setName(name)
               .setMatchingCondition(matchingCondition)
               .setLabelAction(buildDynamicLabelAction(labelExpression.get()))
-              .setEnabled(true)
+              .setEnabled(enabled)
               .build();
     } else {
       data =
@@ -230,7 +277,7 @@ public class LabelApplicationRuleValidatorTest {
               .setName(name)
               .setMatchingCondition(matchingCondition)
               .setLabelAction(buildAction())
-              .setEnabled(true)
+              .setEnabled(enabled)
               .build();
     }
     return CreateLabelApplicationRuleRequest.newBuilder().setData(data).build();
