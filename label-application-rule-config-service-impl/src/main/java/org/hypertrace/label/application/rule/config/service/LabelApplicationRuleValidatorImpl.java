@@ -60,8 +60,6 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
         labelApplicationRuleData, labelApplicationRuleData.NAME_FIELD_NUMBER);
     validateCondition(labelApplicationRuleData.getMatchingCondition());
     validateAction(labelApplicationRuleData.getLabelAction());
-    validateNonDefaultPresenceOrThrow(
-        labelApplicationRuleData, labelApplicationRuleData.ENABLED_FIELD_NUMBER);
   }
 
   private void validateCondition(LabelApplicationRuleData.Condition condition) {
