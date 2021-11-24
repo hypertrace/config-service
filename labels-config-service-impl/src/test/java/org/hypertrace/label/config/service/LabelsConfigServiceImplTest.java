@@ -154,6 +154,14 @@ public final class LabelsConfigServiceImplTest {
     List<Label> initiallyCreatedLabels = createLabels();
     List<GetOrCreateLabelsRequest.LabelRequest> requests = new ArrayList<>();
     requests.addAll(
+        Stream.of(5, 6, 7)
+            .map(
+                id ->
+                    GetOrCreateLabelsRequest.LabelRequest.newBuilder()
+                        .setData(LabelData.newBuilder().setKey("Label-" + id))
+                        .build())
+            .collect(Collectors.toList()));
+    requests.addAll(
         createLabelDataList.stream()
             .map(data -> GetOrCreateLabelsRequest.LabelRequest.newBuilder().setData(data).build())
             .collect(Collectors.toList()));
@@ -165,33 +173,18 @@ public final class LabelsConfigServiceImplTest {
                         .setData(systemLabel.getData())
                         .build())
             .collect(Collectors.toList()));
-    requests.addAll(
-        Stream.of(5, 6, 7)
-            .map(
-                id ->
-                    GetOrCreateLabelsRequest.LabelRequest.newBuilder()
-                        .setData(LabelData.newBuilder().setKey("Label-" + id))
-                        .build())
-            .collect(Collectors.toList()));
     GetOrCreateLabelsResponse response =
         labelConfigStub.getOrCreateLabels(
             GetOrCreateLabelsRequest.newBuilder().addAllRequests(requests).build());
+    List<Label> actualLabelsList = new ArrayList<>(response.getLabelsList());
+    Stream.of(5, 6, 7)
+        .forEach(
+            newLabelId ->
+                assertEquals("Label-" + newLabelId, actualLabelsList.remove(0).getData().getKey()));
     List<Label> expectedLabelsList = new ArrayList<>();
     expectedLabelsList.addAll(initiallyCreatedLabels);
     expectedLabelsList.addAll(systemLabels);
-    List<Label> actualLabelsList = response.getLabelsList();
-    assertEquals(3, actualLabelsList.size() - expectedLabelsList.size());
-    int index = 0;
-    while (index < expectedLabelsList.size()) {
-      assertEquals(expectedLabelsList.get(index), actualLabelsList.get(index));
-      index++;
-    }
-    int newLabelId = 5;
-    while (index < actualLabelsList.size()) {
-      assertEquals("Label-" + newLabelId, actualLabelsList.get(index).getData().getKey());
-      index++;
-      newLabelId++;
-    }
+    assertEquals(expectedLabelsList, actualLabelsList);
   }
 
   @Test
@@ -328,7 +321,7 @@ public final class LabelsConfigServiceImplTest {
               () -> {
                 labelConfigStub.updateLabel(updateLabelRequest);
               });
-      assertEquals(Status.INVALID_ARGUMENT, Status.fromThrowable(exception));
+      assertEquals(Status.ALREADY_EXISTS, Status.fromThrowable(exception));
     }
   }
 
