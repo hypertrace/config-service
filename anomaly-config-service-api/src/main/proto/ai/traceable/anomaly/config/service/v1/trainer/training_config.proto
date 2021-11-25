@@ -11,6 +11,7 @@ enum TrainingConfigType {
   TRAINING_CONFIG_TYPE_METADATA = 1;
   TRAINING_CONFIG_TYPE_VULNERABILITY = 2;
   TRAINING_CONFIG_TYPE_SESSION = 3;
+  TRAINING_CONFIG_TYPE_API_NAMING = 4;
 }
 
 message GetTrainingConfigsFilter {
@@ -53,6 +54,14 @@ message TrainingConfig {
     MetadataTrainingConfig metadata_training_config = 2;
     VulnerabilityTrainingConfig vulnerability_training_config = 3;
     SessionTrainingConfig session_training_config = 4;
+    ApiNamingTrainingConfig api_naming_training_config = 5;
+  }
+}
+
+message ApiNamingTrainingConfig {
+  oneof config {
+    UrlFilterConfig url_filter_config = 1;
+    TrieModelTrainingConfig trie_model_training_config = 2;
   }
 }
 
@@ -197,4 +206,22 @@ message ParamSusceptibilityConfig {
   repeated string prefixes_not_allowed_in_request_param_key = 1;
   repeated string suffixes_not_allowed_in_request_param_key = 2;
   optional string request_param_value_regex = 3;
+}
+
+message UrlFilterConfig {
+  repeated string url_reject_regex_list = 1;
+}
+
+message TrieModelTrainingConfig {
+  repeated string allow_regex_list = 1;
+  ThresholdRegexConfig ids = 2;
+  ThresholdRegexConfig low_cardinality = 3;
+  ThresholdRegexConfig medium_cardinality = 4;
+  ThresholdRegexConfig high_cardinality = 5;
+  repeated string extensions = 6;
+}
+
+message ThresholdRegexConfig {
+  string threshold = 1;
+  repeated string regex_list = 2;
 }
