@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
+import com.typesafe.config.Config;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -47,8 +48,11 @@ public class LabelApplicationRuleConfigServiceImplTest {
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     Channel channel = mockGenericConfigService.channel();
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    Config mockConfig = mock(Config.class);
     mockGenericConfigService
-        .addService(new LabelApplicationRuleConfigServiceImpl(channel, configChangeEventGenerator))
+        .addService(
+            new LabelApplicationRuleConfigServiceImpl(
+                channel, configChangeEventGenerator, mockConfig))
         .start();
     labelApplicationRuleConfigServiceBlockingStub =
         LabelApplicationRuleConfigServiceGrpc.newBlockingStub(channel);
