@@ -70,7 +70,6 @@ dependencies {
   implementation(libs.typesafe.config)
   implementation(libs.slf4j.api)
 
-  runtimeOnly(libs.slf4j.log4jimpl)
   runtimeOnly(libs.grpc.netty)
   constraints {
     runtimeOnly(libs.netty.codecHttp2)
