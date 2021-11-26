@@ -17,8 +17,6 @@ dependencies {
     implementation(libs.hypertrace.grpcutils.client)
     implementation(libs.slf4j.api)
 
-    runtimeOnly(libs.slf4j.log4jimpl)
-
     annotationProcessor(libs.lombok)
     compileOnly(libs.lombok)
 
