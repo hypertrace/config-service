@@ -9,6 +9,7 @@ import com.typesafe.config.ConfigFactory;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -24,6 +25,8 @@ import org.hypertrace.label.config.service.v1.DeleteLabelRequest;
 import org.hypertrace.label.config.service.v1.GetLabelRequest;
 import org.hypertrace.label.config.service.v1.GetLabelResponse;
 import org.hypertrace.label.config.service.v1.GetLabelsRequest;
+import org.hypertrace.label.config.service.v1.GetOrCreateLabelsRequest;
+import org.hypertrace.label.config.service.v1.GetOrCreateLabelsResponse;
 import org.hypertrace.label.config.service.v1.Label;
 import org.hypertrace.label.config.service.v1.LabelData;
 import org.hypertrace.label.config.service.v1.LabelsConfigServiceGrpc;
@@ -55,7 +58,12 @@ public final class LabelsConfigServiceImplTest {
   @BeforeEach
   void setUp() {
     mockGenericConfigService =
-        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+        new MockGenericConfigService()
+            .mockUpsert()
+            .mockUpsertAll()
+            .mockGet()
+            .mockGetAll()
+            .mockDelete();
     Map<String, List<Map<String, String>>> systemLabelsConfigMap = new HashMap<>();
     systemLabelsConfigMap.put(
         "system.labels",
@@ -123,6 +131,60 @@ public final class LabelsConfigServiceImplTest {
               });
       assertEquals(Status.ALREADY_EXISTS, Status.fromThrowable(exception));
     }
+  }
+
+  @Test
+  void test_getOrCreateLabels() {
+    List<GetOrCreateLabelsRequest.LabelRequest> requests =
+        createLabelDataList.stream()
+            .map(data -> GetOrCreateLabelsRequest.LabelRequest.newBuilder().setData(data).build())
+            .collect(Collectors.toList());
+    GetOrCreateLabelsResponse response =
+        labelConfigStub.getOrCreateLabels(
+            GetOrCreateLabelsRequest.newBuilder().addAllRequests(requests).build());
+    List<LabelData> createdLabelsList =
+        response.getLabelsList().stream()
+            .map(label -> label.getData())
+            .collect(Collectors.toList());
+    assertEquals(createLabelDataList, createdLabelsList);
+  }
+
+  @Test
+  void test_getOrCreateLabelsWithExistingAndSystemLabels() {
+    List<Label> initiallyCreatedLabels = createLabels();
+    List<GetOrCreateLabelsRequest.LabelRequest> requests = new ArrayList<>();
+    requests.addAll(
+        Stream.of(5, 6, 7)
+            .map(
+                id ->
+                    GetOrCreateLabelsRequest.LabelRequest.newBuilder()
+                        .setData(LabelData.newBuilder().setKey("Label-" + id))
+                        .build())
+            .collect(Collectors.toList()));
+    requests.addAll(
+        createLabelDataList.stream()
+            .map(data -> GetOrCreateLabelsRequest.LabelRequest.newBuilder().setData(data).build())
+            .collect(Collectors.toList()));
+    requests.addAll(
+        systemLabels.stream()
+            .map(
+                systemLabel ->
+                    GetOrCreateLabelsRequest.LabelRequest.newBuilder()
+                        .setData(systemLabel.getData())
+                        .build())
+            .collect(Collectors.toList()));
+    GetOrCreateLabelsResponse response =
+        labelConfigStub.getOrCreateLabels(
+            GetOrCreateLabelsRequest.newBuilder().addAllRequests(requests).build());
+    List<Label> actualLabelsList = new ArrayList<>(response.getLabelsList());
+    Stream.of(5, 6, 7)
+        .forEach(
+            newLabelId ->
+                assertEquals("Label-" + newLabelId, actualLabelsList.remove(0).getData().getKey()));
+    List<Label> expectedLabelsList = new ArrayList<>();
+    expectedLabelsList.addAll(initiallyCreatedLabels);
+    expectedLabelsList.addAll(systemLabels);
+    assertEquals(expectedLabelsList, actualLabelsList);
   }
 
   @Test
@@ -259,7 +321,7 @@ public final class LabelsConfigServiceImplTest {
               () -> {
                 labelConfigStub.updateLabel(updateLabelRequest);
               });
-      assertEquals(Status.INVALID_ARGUMENT, Status.fromThrowable(exception));
+      assertEquals(Status.ALREADY_EXISTS, Status.fromThrowable(exception));
     }
   }
 
