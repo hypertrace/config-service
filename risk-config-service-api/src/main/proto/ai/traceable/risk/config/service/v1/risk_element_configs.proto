@@ -22,6 +22,7 @@ message RiskElementInfo {
     StringPredicate label_id = 11;
     IntPredicate response_params_count = 12;
     BooleanPredicate unauthenticated = 13;
+    StringPredicate path_param_type = 14;
   }
 }
 
