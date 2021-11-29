@@ -42,7 +42,7 @@ public class ConfigServicesFactory {
         new SpacesConfigServiceImpl(configChannel),
         new LabelsConfigServiceImpl(configChannel, config, configChangeEventGenerator),
         new LabelApplicationRuleConfigServiceImpl(
-            configChannel, configChangeEventGenerator, config),
+            configChannel, config, configChangeEventGenerator),
         new EventConditionConfigServiceImpl(configChannel, configChangeEventGenerator),
         new NotificationRuleConfigServiceImpl(configChannel, configChangeEventGenerator),
         new NotificationChannelConfigServiceImpl(configChannel, configChangeEventGenerator));

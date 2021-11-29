@@ -22,7 +22,7 @@ data:
         }
       }
       publish.change.events = {{ .Values.configServiceConfig.publishChangeEvents }}
-      maxLabelApplicationRulesPerTenant = {{ .Values.configServiceConfig.maxLabelApplicationRulesPerTenant }}
+      max.label.application.rules.per.tenant = {{ .Values.configServiceConfig.maxLabelApplicationRulesPerTenant }}
     }
     event.store {
       type = kafka

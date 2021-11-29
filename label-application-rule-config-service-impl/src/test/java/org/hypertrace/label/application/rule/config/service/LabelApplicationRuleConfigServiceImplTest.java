@@ -52,7 +52,7 @@ public class LabelApplicationRuleConfigServiceImplTest {
     mockGenericConfigService
         .addService(
             new LabelApplicationRuleConfigServiceImpl(
-                channel, configChangeEventGenerator, mockConfig))
+                channel, mockConfig, configChangeEventGenerator))
         .start();
     labelApplicationRuleConfigServiceBlockingStub =
         LabelApplicationRuleConfigServiceGrpc.newBlockingStub(channel);

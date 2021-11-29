@@ -34,13 +34,14 @@ public class LabelApplicationRuleConfigServiceImpl
   private final int maxLabelApplicationRuleAllowed;
   private static final Logger LOG =
       LoggerFactory.getLogger(LabelApplicationRuleConfigServiceImpl.class);
+  private final int MAX_LABEL_APPLICATION_RULE_CONSTANT = 100;
 
   public LabelApplicationRuleConfigServiceImpl(
-      Channel configChannel, ConfigChangeEventGenerator configChangeEventGenerator, Config config) {
+      Channel configChannel, Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
     this.maxLabelApplicationRuleAllowed =
-        config.hasPath("maxLabelApplicationRulesPerTenant")
-            ? config.getInt("maxLabelApplicationRulesPerTenant")
-            : 100;
+        config.hasPath("max.label.application.rules.per.tenant")
+            ? config.getInt("max.label.application.rules.per.tenant")
+            : MAX_LABEL_APPLICATION_RULE_CONSTANT;
     ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(configChannel)
             .withCallCredentials(
@@ -69,10 +70,7 @@ public class LabelApplicationRuleConfigServiceImpl
           }
         }
         if (dynamicLabelApplicationRules >= maxLabelApplicationRuleAllowed) {
-          LOG.error(
-              "Failed to create Label Application Rule because the limit ({}) for the number of dynamic label application rules allowed has already been reached!",
-              maxLabelApplicationRuleAllowed);
-          responseObserver.onCompleted();
+          responseObserver.onError(Status.RESOURCE_EXHAUSTED.asException());
           return;
         }
       }
