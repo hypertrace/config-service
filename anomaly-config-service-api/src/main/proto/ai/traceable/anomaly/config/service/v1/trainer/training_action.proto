@@ -12,14 +12,24 @@ message UpsertTrainingActionRequest {
 }
 
 message UpsertTrainingActionResponse {
-  TrainingActionConfig training_action_config = 1;
+  ScopedTrainingActionConfig scoped_training_action_config = 1;
 }
 
 message GetAllTrainingActionsRequest {
 }
 
 message GetAllTrainingActionsResponse {
-  repeated TrainingActionConfig training_action_configs = 1;
+  repeated ScopedTrainingActionConfig scoped_training_action_configs = 1;
+}
+
+message ScopedTrainingActionConfig {
+  AnomalyConfigScope config_scope = 1;
+  repeated TrainingActionConfig training_action_config = 2;
+}
+
+message TrainingActionConfig {
+  TrainingAction training_action = 1;
+  int64 timestamp = 2;
 }
 
 message TrainingAction {
@@ -29,12 +39,6 @@ message TrainingAction {
     ForceLearnAction force_learn_action = 3;
     ResetAction reset_action = 4;
   }
-}
-
-message TrainingActionConfig {
-  AnomalyConfigScope config_scope = 1;
-  TrainingAction training_action = 2;
-  int64 timestamp = 3;
 }
 
 message PauseAction {
