@@ -56,16 +56,13 @@ public class LabelApplicationRuleConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.requestValidator.validateOrThrow(requestContext, request);
-      if (request.getData().getLabelAction().hasDynamicLabelKey()
-          || request.getData().getLabelAction().hasDynamicLabelExpression()) {
+      if (checkRequestForDynamicLabel(request)) {
         int dynamicLabelApplicationRules =
             (int)
                 this.labelApplicationRuleStore.getAllObjects(requestContext).stream()
                     .map(configObject -> configObject.getData().getData().getLabelAction())
                     .filter(
-                        ruleDataAction ->
-                            ruleDataAction.hasDynamicLabelExpression()
-                                || ruleDataAction.hasDynamicLabelKey())
+                        action -> action.hasDynamicLabelExpression() || action.hasDynamicLabelKey())
                     .count();
         if (dynamicLabelApplicationRules >= maxLabelApplicationRuleAllowed) {
           responseObserver.onError(Status.RESOURCE_EXHAUSTED.asRuntimeException());
@@ -154,5 +151,10 @@ public class LabelApplicationRuleConfigServiceImpl
     } catch (Exception e) {
       responseObserver.onError(e);
     }
+  }
+
+  private boolean checkRequestForDynamicLabel(CreateLabelApplicationRuleRequest request) {
+    return request.getData().getLabelAction().hasDynamicLabelKey()
+        || request.getData().getLabelAction().hasDynamicLabelExpression();
   }
 }
