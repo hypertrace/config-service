@@ -100,7 +100,8 @@ public class LabelApplicationRuleConfigServiceImplTest {
     Exception exception =
         assertThrows(
             RuntimeException.class,
-            () -> labelApplicationRuleConfigServiceBlockingStub.createLabelApplicationRule(request3));
+            () ->
+                labelApplicationRuleConfigServiceBlockingStub.createLabelApplicationRule(request3));
   }
 
   @Test
