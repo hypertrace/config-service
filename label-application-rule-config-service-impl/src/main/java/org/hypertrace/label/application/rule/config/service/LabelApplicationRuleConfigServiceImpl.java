@@ -27,6 +27,8 @@ import org.hypertrace.label.application.rule.config.service.v1.UpdateLabelApplic
 
 public class LabelApplicationRuleConfigServiceImpl
     extends LabelApplicationRuleConfigServiceGrpc.LabelApplicationRuleConfigServiceImplBase {
+  private static final String MAX_LABEL_APPLICATION_RULES_PER_TENANT =
+      "max.label.application.rules.per.tenant";
   private static final int MAX_LABEL_APPLICATION_RULE_CONSTANT = 100;
   private final IdentifiedObjectStore<LabelApplicationRule> labelApplicationRuleStore;
   private final LabelApplicationRuleValidator requestValidator;
@@ -35,8 +37,8 @@ public class LabelApplicationRuleConfigServiceImpl
   public LabelApplicationRuleConfigServiceImpl(
       Channel configChannel, Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
     this.maxLabelApplicationRuleAllowed =
-        config.hasPath("max.label.application.rules.per.tenant")
-            ? config.getInt("max.label.application.rules.per.tenant")
+        config.hasPath(MAX_LABEL_APPLICATION_RULES_PER_TENANT)
+            ? config.getInt(MAX_LABEL_APPLICATION_RULES_PER_TENANT)
             : MAX_LABEL_APPLICATION_RULE_CONSTANT;
     ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(configChannel)

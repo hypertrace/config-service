@@ -42,6 +42,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class LabelApplicationRuleConfigServiceImplTest {
+  private static final String MAX_LABEL_APPLICATION_RULES_PER_TENANT =
+      "max.label.application.rules.per.tenant";
   MockGenericConfigService mockGenericConfigService;
   LabelApplicationRuleConfigServiceBlockingStub labelApplicationRuleConfigServiceBlockingStub;
 
@@ -52,8 +54,8 @@ public class LabelApplicationRuleConfigServiceImplTest {
     Channel channel = mockGenericConfigService.channel();
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     Config mockConfig = mock(Config.class);
-    when(mockConfig.hasPath("max.label.application.rules.per.tenant")).thenReturn(true);
-    when(mockConfig.getInt("max.label.application.rules.per.tenant")).thenReturn(2);
+    when(mockConfig.hasPath(MAX_LABEL_APPLICATION_RULES_PER_TENANT)).thenReturn(true);
+    when(mockConfig.getInt(MAX_LABEL_APPLICATION_RULES_PER_TENANT)).thenReturn(2);
     mockGenericConfigService
         .addService(
             new LabelApplicationRuleConfigServiceImpl(
