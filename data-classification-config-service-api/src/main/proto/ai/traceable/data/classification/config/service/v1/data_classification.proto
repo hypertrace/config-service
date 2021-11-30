@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package ai.traceable.data.classification.config.service.v1;
+
+option java_multiple_files = true;
+
+message DataType {
+  string id = 1;
+  DataTypeRule rule = 2;
+}
+
+message DataTypeRule {
+  string name = 1;
+  optional string description = 2;
+  oneof matcher {
+    StringMatcher key_matcher = 3;
+    KeyValueMatcher key_value_matcher = 4;
+    ApiParamMatcher api_param_matcher = 5;
+  }
+
+  message StringMatcher {
+    Operator operator = 1;
+    string value = 2;
+  }
+
+  message KeyValueMatcher {
+    StringMatcher key_matcher = 1;
+    StringMatcher value_matcher = 2;
+  }
+
+  message ApiParamMatcher {
+    string api_id = 1;
+    string param_name = 2;
+  }
+
+  enum Operator {
+    OPERATOR_UNSPECIFIED = 0;
+    OPERATOR_EQUALS = 1; // operator to check if the key is equal to the provided value
+    OPERATOR_MATCHES_REGEX = 2; // operator to check if the key matches the provided regex value
+  }
+}
+
+message DataSet {
+  string id = 1;
+  DataSetInfo info = 2;
+}
+
+message DataSetInfo {
+  string name = 1;
+  optional string description = 2;
+  bool enabled = 3;
+  repeated string data_type_ids = 4;
+}
