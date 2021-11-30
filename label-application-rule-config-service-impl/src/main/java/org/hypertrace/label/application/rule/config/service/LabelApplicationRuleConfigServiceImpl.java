@@ -56,19 +56,7 @@ public class LabelApplicationRuleConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.requestValidator.validateOrThrow(requestContext, request);
-      if (checkRequestForDynamicLabel(request)) {
-        int dynamicLabelApplicationRules =
-            (int)
-                this.labelApplicationRuleStore.getAllObjects(requestContext).stream()
-                    .map(configObject -> configObject.getData().getData().getLabelAction())
-                    .filter(
-                        action -> action.hasDynamicLabelExpression() || action.hasDynamicLabelKey())
-                    .count();
-        if (dynamicLabelApplicationRules >= maxLabelApplicationRuleAllowed) {
-          responseObserver.onError(Status.RESOURCE_EXHAUSTED.asRuntimeException());
-          return;
-        }
-      }
+      checkRequestForDynamicLabelsLimit(request, requestContext);
       LabelApplicationRule labelApplicationRule =
           LabelApplicationRule.newBuilder()
               .setId(UUID.randomUUID().toString())
@@ -156,5 +144,21 @@ public class LabelApplicationRuleConfigServiceImpl
   private boolean checkRequestForDynamicLabel(CreateLabelApplicationRuleRequest request) {
     return request.getData().getLabelAction().hasDynamicLabelKey()
         || request.getData().getLabelAction().hasDynamicLabelExpression();
+  }
+
+  private void checkRequestForDynamicLabelsLimit(
+      CreateLabelApplicationRuleRequest request, RequestContext requestContext) {
+    if (checkRequestForDynamicLabel(request)) {
+      int dynamicLabelApplicationRules =
+          (int)
+              this.labelApplicationRuleStore.getAllObjects(requestContext).stream()
+                  .map(configObject -> configObject.getData().getData().getLabelAction())
+                  .filter(
+                      action -> action.hasDynamicLabelExpression() || action.hasDynamicLabelKey())
+                  .count();
+      if (dynamicLabelApplicationRules >= maxLabelApplicationRuleAllowed) {
+        throw Status.RESOURCE_EXHAUSTED.asRuntimeException();
+      }
+    }
   }
 }
