@@ -41,7 +41,8 @@ public class ConfigServicesFactory {
         new ConfigServiceGrpcImpl(configStore),
         new SpacesConfigServiceImpl(configChannel),
         new LabelsConfigServiceImpl(configChannel, config, configChangeEventGenerator),
-        new LabelApplicationRuleConfigServiceImpl(configChannel, configChangeEventGenerator),
+        new LabelApplicationRuleConfigServiceImpl(
+            configChannel, config, configChangeEventGenerator),
         new EventConditionConfigServiceImpl(configChannel, configChangeEventGenerator),
         new NotificationRuleConfigServiceImpl(configChannel, configChangeEventGenerator),
         new NotificationChannelConfigServiceImpl(configChannel, configChangeEventGenerator));

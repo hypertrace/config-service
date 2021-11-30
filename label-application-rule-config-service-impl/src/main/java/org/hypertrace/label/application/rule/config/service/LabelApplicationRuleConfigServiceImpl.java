@@ -1,5 +1,6 @@
 package org.hypertrace.label.application.rule.config.service;
 
+import com.typesafe.config.Config;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -26,11 +27,19 @@ import org.hypertrace.label.application.rule.config.service.v1.UpdateLabelApplic
 
 public class LabelApplicationRuleConfigServiceImpl
     extends LabelApplicationRuleConfigServiceGrpc.LabelApplicationRuleConfigServiceImplBase {
+  private static final String MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT =
+      "max.dynamic.label.application.rules.per.tenant";
+  private static final int MAX_DYNAMIC_LABEL_APPLICATION_RULE_CONSTANT = 100;
   private final IdentifiedObjectStore<LabelApplicationRule> labelApplicationRuleStore;
   private final LabelApplicationRuleValidator requestValidator;
+  private final int maxDynamicLabelApplicationRulesAllowed;
 
   public LabelApplicationRuleConfigServiceImpl(
-      Channel configChannel, ConfigChangeEventGenerator configChangeEventGenerator) {
+      Channel configChannel, Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
+    this.maxDynamicLabelApplicationRulesAllowed =
+        config.hasPath(MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT)
+            ? config.getInt(MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT)
+            : MAX_DYNAMIC_LABEL_APPLICATION_RULE_CONSTANT;
     ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(configChannel)
             .withCallCredentials(
@@ -47,6 +56,7 @@ public class LabelApplicationRuleConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.requestValidator.validateOrThrow(requestContext, request);
+      checkRequestForDynamicLabelsLimit(request, requestContext);
       LabelApplicationRule labelApplicationRule =
           LabelApplicationRule.newBuilder()
               .setId(UUID.randomUUID().toString())
@@ -128,6 +138,23 @@ public class LabelApplicationRuleConfigServiceImpl
       responseObserver.onCompleted();
     } catch (Exception e) {
       responseObserver.onError(e);
+    }
+  }
+
+  private void checkRequestForDynamicLabelsLimit(
+      CreateLabelApplicationRuleRequest request, RequestContext requestContext) {
+    if (request.getData().getLabelAction().hasDynamicLabelKey()
+        || request.getData().getLabelAction().hasDynamicLabelExpression()) {
+      int dynamicLabelApplicationRules =
+          (int)
+              this.labelApplicationRuleStore.getAllObjects(requestContext).stream()
+                  .map(configObject -> configObject.getData().getData().getLabelAction())
+                  .filter(
+                      action -> action.hasDynamicLabelExpression() || action.hasDynamicLabelKey())
+                  .count();
+      if (dynamicLabelApplicationRules >= maxDynamicLabelApplicationRulesAllowed) {
+        throw Status.RESOURCE_EXHAUSTED.asRuntimeException();
+      }
     }
   }
 }
