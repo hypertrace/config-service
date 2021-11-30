@@ -24,17 +24,13 @@ import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationR
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleConfigServiceGrpc;
 import org.hypertrace.label.application.rule.config.service.v1.UpdateLabelApplicationRuleRequest;
 import org.hypertrace.label.application.rule.config.service.v1.UpdateLabelApplicationRuleResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class LabelApplicationRuleConfigServiceImpl
     extends LabelApplicationRuleConfigServiceGrpc.LabelApplicationRuleConfigServiceImplBase {
+  private static final int MAX_LABEL_APPLICATION_RULE_CONSTANT = 100;
   private final IdentifiedObjectStore<LabelApplicationRule> labelApplicationRuleStore;
   private final LabelApplicationRuleValidator requestValidator;
   private final int maxLabelApplicationRuleAllowed;
-  private static final Logger LOG =
-      LoggerFactory.getLogger(LabelApplicationRuleConfigServiceImpl.class);
-  private final int MAX_LABEL_APPLICATION_RULE_CONSTANT = 100;
 
   public LabelApplicationRuleConfigServiceImpl(
       Channel configChannel, Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
@@ -58,19 +54,19 @@ public class LabelApplicationRuleConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.requestValidator.validateOrThrow(requestContext, request);
-      if (request.getData().getLabelAction().hasDynamicLabelExpression()) {
-        List<LabelApplicationRule> labelApplicationRules =
-            this.labelApplicationRuleStore.getAllObjects(requestContext).stream()
-                .map(ConfigObject::getData)
-                .collect(Collectors.toUnmodifiableList());
-        int dynamicLabelApplicationRules = 0;
-        for (LabelApplicationRule rule : labelApplicationRules) {
-          if (rule.getData().getLabelAction().hasDynamicLabelExpression()) {
-            dynamicLabelApplicationRules = dynamicLabelApplicationRules + 1;
-          }
-        }
+      if (request.getData().getLabelAction().hasDynamicLabelKey()
+          || request.getData().getLabelAction().hasDynamicLabelExpression()) {
+        int dynamicLabelApplicationRules =
+            (int)
+                this.labelApplicationRuleStore.getAllObjects(requestContext).stream()
+                    .map(configObject -> configObject.getData().getData().getLabelAction())
+                    .filter(
+                        ruleDataAction ->
+                            ruleDataAction.hasDynamicLabelExpression()
+                                || ruleDataAction.hasDynamicLabelKey())
+                    .count();
         if (dynamicLabelApplicationRules >= maxLabelApplicationRuleAllowed) {
-          responseObserver.onError(Status.RESOURCE_EXHAUSTED.asException());
+          responseObserver.onError(Status.RESOURCE_EXHAUSTED.asRuntimeException());
           return;
         }
       }

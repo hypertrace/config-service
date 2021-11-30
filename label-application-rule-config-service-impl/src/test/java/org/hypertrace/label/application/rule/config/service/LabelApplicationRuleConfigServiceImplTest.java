@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.typesafe.config.Config;
 import io.grpc.Channel;
@@ -26,6 +27,8 @@ import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationR
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleConfigServiceGrpc;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleConfigServiceGrpc.LabelApplicationRuleConfigServiceBlockingStub;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData;
+import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.Action;
+import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.Action.Operation;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.CompositeCondition;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.Condition;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.JsonCondition;
@@ -49,6 +52,8 @@ public class LabelApplicationRuleConfigServiceImplTest {
     Channel channel = mockGenericConfigService.channel();
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     Config mockConfig = mock(Config.class);
+    when(mockConfig.hasPath("max.label.application.rules.per.tenant")).thenReturn(true);
+    when(mockConfig.getInt("max.label.application.rules.per.tenant")).thenReturn(2);
     mockGenericConfigService
         .addService(
             new LabelApplicationRuleConfigServiceImpl(
@@ -73,6 +78,29 @@ public class LabelApplicationRuleConfigServiceImplTest {
     List<LabelApplicationRuleData> expectedData =
         Arrays.asList(buildSimpleRuleData("auth", "valid"), buildCompositeRuleData());
     assertEquals(expectedData, createdData);
+  }
+
+  @Test
+  void createLabelApplicationRuleWithDynamicLabelApplicationRulesLimitReached() {
+    LabelApplicationRuleData simpleRuleData1 = buildSimpleRuleData("auth-1", "valid");
+    LabelApplicationRuleData simpleRuleData2 = buildSimpleRuleData("auth-2", "valid");
+    LabelApplicationRuleData simpleRuleData3 = buildSimpleRuleData("auth-3", "valid");
+    CreateLabelApplicationRuleRequest request1 =
+        CreateLabelApplicationRuleRequest.newBuilder().setData(simpleRuleData1).build();
+    CreateLabelApplicationRuleResponse response1 =
+        labelApplicationRuleConfigServiceBlockingStub.createLabelApplicationRule(request1);
+    assertEquals(simpleRuleData1, response1.getLabelApplicationRule().getData());
+    CreateLabelApplicationRuleRequest request2 =
+        CreateLabelApplicationRuleRequest.newBuilder().setData(simpleRuleData2).build();
+    CreateLabelApplicationRuleResponse response2 =
+        labelApplicationRuleConfigServiceBlockingStub.createLabelApplicationRule(request2);
+    assertEquals(simpleRuleData2, response2.getLabelApplicationRule().getData());
+    CreateLabelApplicationRuleRequest request3 =
+        CreateLabelApplicationRuleRequest.newBuilder().setData(simpleRuleData3).build();
+    Exception exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> labelApplicationRuleConfigServiceBlockingStub.createLabelApplicationRule(request3));
   }
 
   @Test
@@ -266,12 +294,10 @@ public class LabelApplicationRuleConfigServiceImplTest {
   }
 
   private LabelApplicationRuleData.Action buildAction() {
-    return LabelApplicationRuleData.Action.newBuilder()
+    return Action.newBuilder()
         .addEntityTypes("API")
-        .setOperation(LabelApplicationRuleData.Action.Operation.OPERATION_MERGE)
-        .setStaticLabels(
-            LabelApplicationRuleData.Action.StaticLabels.newBuilder()
-                .addAllIds(List.of("expensive")))
+        .setOperation(Operation.OPERATION_MERGE)
+        .setDynamicLabelKey("key")
         .build();
   }
 }
