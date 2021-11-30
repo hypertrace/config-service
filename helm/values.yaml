@@ -83,7 +83,7 @@ configServiceConfig:
   mongo:
     host: mongo
     url: ""
-  maxLabelApplicationRulesPerTenant: 100
+  maxDynamicLabelApplicationRulesPerTenant: 100
 
 logConfig:
   name: config-service-log-config

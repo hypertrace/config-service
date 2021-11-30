@@ -27,19 +27,19 @@ import org.hypertrace.label.application.rule.config.service.v1.UpdateLabelApplic
 
 public class LabelApplicationRuleConfigServiceImpl
     extends LabelApplicationRuleConfigServiceGrpc.LabelApplicationRuleConfigServiceImplBase {
-  private static final String MAX_LABEL_APPLICATION_RULES_PER_TENANT =
-      "max.label.application.rules.per.tenant";
-  private static final int MAX_LABEL_APPLICATION_RULE_CONSTANT = 100;
+  private static final String MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT =
+      "max.dynamic.label.application.rules.per.tenant";
+  private static final int MAX_DYNAMIC_LABEL_APPLICATION_RULE_CONSTANT = 100;
   private final IdentifiedObjectStore<LabelApplicationRule> labelApplicationRuleStore;
   private final LabelApplicationRuleValidator requestValidator;
-  private final int maxLabelApplicationRuleAllowed;
+  private final int maxDynamicLabelApplicationRulesAllowed;
 
   public LabelApplicationRuleConfigServiceImpl(
       Channel configChannel, Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
-    this.maxLabelApplicationRuleAllowed =
-        config.hasPath(MAX_LABEL_APPLICATION_RULES_PER_TENANT)
-            ? config.getInt(MAX_LABEL_APPLICATION_RULES_PER_TENANT)
-            : MAX_LABEL_APPLICATION_RULE_CONSTANT;
+    this.maxDynamicLabelApplicationRulesAllowed =
+        config.hasPath(MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT)
+            ? config.getInt(MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT)
+            : MAX_DYNAMIC_LABEL_APPLICATION_RULE_CONSTANT;
     ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(configChannel)
             .withCallCredentials(
@@ -141,14 +141,10 @@ public class LabelApplicationRuleConfigServiceImpl
     }
   }
 
-  private boolean checkRequestForDynamicLabel(CreateLabelApplicationRuleRequest request) {
-    return request.getData().getLabelAction().hasDynamicLabelKey()
-        || request.getData().getLabelAction().hasDynamicLabelExpression();
-  }
-
   private void checkRequestForDynamicLabelsLimit(
       CreateLabelApplicationRuleRequest request, RequestContext requestContext) {
-    if (checkRequestForDynamicLabel(request)) {
+    if (request.getData().getLabelAction().hasDynamicLabelKey()
+        || request.getData().getLabelAction().hasDynamicLabelExpression()) {
       int dynamicLabelApplicationRules =
           (int)
               this.labelApplicationRuleStore.getAllObjects(requestContext).stream()
@@ -156,7 +152,7 @@ public class LabelApplicationRuleConfigServiceImpl
                   .filter(
                       action -> action.hasDynamicLabelExpression() || action.hasDynamicLabelKey())
                   .count();
-      if (dynamicLabelApplicationRules >= maxLabelApplicationRuleAllowed) {
+      if (dynamicLabelApplicationRules >= maxDynamicLabelApplicationRulesAllowed) {
         throw Status.RESOURCE_EXHAUSTED.asRuntimeException();
       }
     }
