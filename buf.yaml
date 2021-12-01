@@ -12,6 +12,7 @@ build:
     - risk-config-service-api/src/main/proto
     - data-handling-config-service-api/src/main/proto
     - anomaly-config-service-api/src/main/proto
+    - reporting-config-service-api/src/main/proto
     - alerting-config-service-api/src/main/proto
     - hypertrace-config-service/alerting-config-service-api/src/main/proto
 lint:

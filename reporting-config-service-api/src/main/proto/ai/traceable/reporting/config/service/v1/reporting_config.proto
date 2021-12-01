@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.reporting.config.service.v1;
+
+message ReportConfigurationDetails {
+  bool is_enabled = 1;
+  ReportFrequency report_frequency = 2;
+  repeated string channel_ids = 3;
+  repeated string email_addresses = 4;
+
+  message ReportFrequency {
+    oneof frequency {
+      WeeklyFrequency weekly_frequency = 1;
+      DailyFrequency daily_frequency = 2;
+      InstantFrequency instant_frequency = 3;
+    }
+
+    message WeeklyFrequency {
+      DayOfWeek scheduled_day = 1;
+      // Java OffsetTime in String
+      string scheduled_time = 2;
+    }
+
+    message DailyFrequency {
+      string scheduled_time = 1;
+    }
+
+    message InstantFrequency {
+    }
+
+    enum DayOfWeek {
+      DAY_OF_WEEK_UNSPECIFIED = 0;
+      DAY_OF_WEEK_MONDAY = 1;
+      DAY_OF_WEEK_TUESDAY = 2;
+      DAY_OF_WEEK_WEDNESDAY = 3;
+      DAY_OF_WEEK_THURSDAY = 4;
+      DAY_OF_WEEK_FRIDAY = 5;
+      DAY_OF_WEEK_SATURDAY = 6;
+      DAY_OF_WEEK_SUNDAY = 7;
+    }
+  }
+}
+
+message ReportConfiguration {
+  string id = 1;
+  ReportConfigurationDetails report_configuration_details = 2;
+  int64 last_executed_timestamp_millis = 3;
+}

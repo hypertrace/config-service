@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.reporting.config.service.v1;
+
+import "ai/traceable/reporting/config/service/v1/reporting_config.proto";
+
+
+service ReportingConfigService {
+  rpc CreateReportConfiguration(CreateReportConfigurationRequest) returns (CreateReportConfigurationResponse) {}
+  rpc UpdateReportConfiguration(UpdateReportConfigurationRequest) returns (UpdateReportConfigurationResponse) {}
+  rpc UpdateReportExecutionTime(UpdateReportExecutionTimeRequest) returns (UpdateReportExecutionTimeResponse) {}
+  rpc GetAllReportConfigurations(GetAllReportConfigurationsRequest) returns (GetAllReportConfigurationsResponse) {}
+  rpc DeleteReportConfiguration(DeleteReportConfigurationRequest) returns (DeleteReportConfigurationResponse) {}
+}
+
+message CreateReportConfigurationRequest {
+  ReportConfigurationDetails report_configuration_details = 1;
+}
+
+message CreateReportConfigurationResponse {
+  ReportConfiguration report_configuration = 1;
+}
+
+message UpdateReportConfigurationRequest {
+  string id = 1;
+  ReportConfigurationDetails report_configuration_details = 2;
+}
+
+message UpdateReportConfigurationResponse {
+  ReportConfiguration report_configuration = 1;
+}
+
+message GetAllReportConfigurationsRequest {
+}
+
+message GetAllReportConfigurationsResponse {
+  repeated ReportConfiguration report_configurations = 1;
+}
+
+message DeleteReportConfigurationRequest {
+  string id = 1;
+}
+
+message DeleteReportConfigurationResponse {}
+
+message UpdateReportExecutionTimeRequest {
+  string id = 1;
+  int64 last_executed_timestamp_millis = 2;
+}
+
+message UpdateReportExecutionTimeResponse {
+  ReportConfiguration report_configuration = 1;
+}

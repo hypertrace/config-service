@@ -72,6 +72,7 @@ dependencies {
   implementation(projects.anomalyConfigServiceImpl)
   implementation(projects.riskConfigServiceImpl)
   implementation(projects.alertingConfigServiceImpl)
+  implementation(projects.reportingConfigServiceImpl)
   implementation(libs.hypertrace.configservice.server)
   implementation(libs.hypertrace.configservice.impl)
   implementation(libs.hypertrace.grpcutils.server)

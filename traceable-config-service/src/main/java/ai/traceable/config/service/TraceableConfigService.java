@@ -13,6 +13,7 @@ import ai.traceable.localprocessing.config.service.LocalProcessingConfigServiceF
 import ai.traceable.localprocessing.config.service.ruleservice.LocalProcessingRulesServiceFactory;
 import ai.traceable.ratelimiting.service.RateLimitingConfigServiceImpl;
 import ai.traceable.region.config.service.RegionConfigServiceFactory;
+import ai.traceable.reporting.config.service.ReportingConfigServiceFactory;
 import ai.traceable.risk.config.service.RiskConfigServiceFactory;
 import ai.traceable.sensitivedata.config.service.SensitiveDataConfigServicesProvider;
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceFactory;
@@ -122,6 +123,8 @@ public class TraceableConfigService extends PlatformService {
         new NotificationChannelConfigServiceImpl(managedChannel, configChangeEventGenerator);
     NotificationRuleConfigServiceImpl notificationRuleConfigService =
         new NotificationRuleConfigServiceImpl(managedChannel, configChangeEventGenerator);
+    BindableService reportingConfigService =
+        ReportingConfigServiceFactory.build(managedChannel, configChangeEventGenerator);
 
     internalServerBuilder.addServices(
         anomalyConfigServices.stream()
@@ -140,7 +143,8 @@ public class TraceableConfigService extends PlatformService {
         .addService(InterceptorUtil.wrapInterceptors(riskConfigService))
         .addService(InterceptorUtil.wrapInterceptors(eventConditionConfigService))
         .addService(InterceptorUtil.wrapInterceptors(notificationRuleConfigService))
-        .addService(InterceptorUtil.wrapInterceptors(notificationChannelConfigService));
+        .addService(InterceptorUtil.wrapInterceptors(notificationChannelConfigService))
+        .addService(InterceptorUtil.wrapInterceptors(reportingConfigService));
 
     internalTraceableConfigServer = internalServerBuilder.build();
 

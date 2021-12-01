@@ -55,4 +55,5 @@ include(":data-config-service-impl")
 include("alerting-config-service-api")
 include("alerting-config-service-impl")
 include("data-classification-config-service-api")
-
+include("reporting-config-service-api")
+include("reporting-config-service-impl")
