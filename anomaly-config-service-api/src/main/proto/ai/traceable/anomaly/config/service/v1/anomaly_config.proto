@@ -95,3 +95,11 @@ enum AnomalyRuleCategory {
   ANOMALY_RULE_CATEGORY_KNOWN_VULNERABILITIES = 10 [(string_value) = "Known Vulnerabilities"];
   ANOMALY_RULE_CATEGORY_AUTHORIZATION_VIOLATIONS = 11 [(string_value) = "Session Anomalies"];
 }
+
+message StringList {
+  repeated string list = 1;
+}
+
+message IntList {
+  repeated int32 list = 1;
+}

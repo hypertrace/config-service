@@ -119,8 +119,8 @@ message ThresholdsFamilyTrainingConfig {
   optional int64 learning_time_millis = 1;
   optional int32 required_ips_for_diverse_set = 2;
   optional int32 required_user_ids_for_diverse_set = 3;
-  repeated int32 bad_status_ip = 4;
-  repeated int32 bad_status_user_id = 5;
+  IntList bad_status_ips = 4;
+  IntList bad_status_user_ids = 5;
   optional int32 required_percent_for_authenticated = 6;
   optional int32 thresholds_family_relearn_version = 7;
 }
@@ -170,8 +170,8 @@ message LackOfEncryptionTrainingConfig {
 message ObjectBolaTrainingConfig {
   ParamSusceptibilityConfig param_susceptibility_config = 1;
   ThresholdCountConfig required_count_config = 2;
-  repeated string prefixes_not_allowed_in_response_param_key = 3;
-  repeated string suffixes_not_allowed_in_response_param_key = 4;
+  StringList prefixes_not_allowed_in_response_param_key = 3;
+  StringList suffixes_not_allowed_in_response_param_key = 4;
 }
 
 message UserIdBolaTrainingConfig {
@@ -203,25 +203,25 @@ enum UserIdSource {
 }
 
 message ParamSusceptibilityConfig {
-  repeated string prefixes_not_allowed_in_request_param_key = 1;
-  repeated string suffixes_not_allowed_in_request_param_key = 2;
+  StringList prefixes_not_allowed_in_request_param_key = 1;
+  StringList suffixes_not_allowed_in_request_param_key = 2;
   optional string request_param_value_regex = 3;
 }
 
 message UrlFilterConfig {
-  repeated string url_reject_regex_list = 1;
+  StringList url_reject_regex_patterns = 1;
 }
 
 message TrieModelTrainingConfig {
-  repeated string allow_regex_list = 1;
+  StringList allow_regex_list = 1;
   ThresholdRegexConfig ids = 2;
   ThresholdRegexConfig low_cardinality = 3;
   ThresholdRegexConfig medium_cardinality = 4;
   ThresholdRegexConfig high_cardinality = 5;
-  repeated string extensions = 6;
+  StringList extensions = 6;
 }
 
 message ThresholdRegexConfig {
-  string threshold = 1;
-  repeated string regex_list = 2;
+  int64 threshold = 1;
+  StringList regex_list = 2;
 }
