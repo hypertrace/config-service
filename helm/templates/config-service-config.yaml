@@ -22,7 +22,6 @@ data:
         }
       }
       publish.change.events = {{ .Values.configServiceConfig.publishChangeEvents }}
-      max.dynamic.label.application.rules.per.tenant = {{ .Values.configServiceConfig.maxDynamicLabelApplicationRulesPerTenant }}
     }
     event.store {
       type = kafka

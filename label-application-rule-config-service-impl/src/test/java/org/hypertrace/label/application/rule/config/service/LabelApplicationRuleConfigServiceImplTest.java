@@ -1,12 +1,14 @@
 package org.hypertrace.label.application.rule.config.service;
 
+import static org.hypertrace.label.application.rule.config.service.LabelApplicationRuleConfigServiceImpl.LABEL_APPLICATION_RULE_CONFIG_SERVICE_CONFIG;
+import static org.hypertrace.label.application.rule.config.service.LabelApplicationRuleConfigServiceImpl.MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -42,8 +44,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class LabelApplicationRuleConfigServiceImplTest {
-  private static final String MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT =
-      "max.dynamic.label.application.rules.per.tenant";
   MockGenericConfigService mockGenericConfigService;
   LabelApplicationRuleConfigServiceBlockingStub labelApplicationRuleConfigServiceBlockingStub;
 
@@ -53,13 +53,14 @@ public class LabelApplicationRuleConfigServiceImplTest {
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     Channel channel = mockGenericConfigService.channel();
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
-    Config mockConfig = mock(Config.class);
-    when(mockConfig.hasPath(MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT)).thenReturn(true);
-    when(mockConfig.getInt(MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT)).thenReturn(2);
+    Config config =
+        ConfigFactory.parseMap(
+            Map.of(
+                LABEL_APPLICATION_RULE_CONFIG_SERVICE_CONFIG,
+                Map.of(MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT, 2)));
     mockGenericConfigService
         .addService(
-            new LabelApplicationRuleConfigServiceImpl(
-                channel, mockConfig, configChangeEventGenerator))
+            new LabelApplicationRuleConfigServiceImpl(channel, config, configChangeEventGenerator))
         .start();
     labelApplicationRuleConfigServiceBlockingStub =
         LabelApplicationRuleConfigServiceGrpc.newBlockingStub(channel);
@@ -99,11 +100,9 @@ public class LabelApplicationRuleConfigServiceImplTest {
     assertEquals(simpleRuleData2, response2.getLabelApplicationRule().getData());
     CreateLabelApplicationRuleRequest request3 =
         CreateLabelApplicationRuleRequest.newBuilder().setData(simpleRuleData3).build();
-    Exception exception =
-        assertThrows(
-            RuntimeException.class,
-            () ->
-                labelApplicationRuleConfigServiceBlockingStub.createLabelApplicationRule(request3));
+    assertThrows(
+        RuntimeException.class,
+        () -> labelApplicationRuleConfigServiceBlockingStub.createLabelApplicationRule(request3));
   }
 
   @Test
