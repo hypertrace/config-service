@@ -57,6 +57,9 @@ data:
     risk.config.service = {
       include "risk.conf"
     }
+    label.application.rule.config.service {
+      max.dynamic.label.application.rules.per.tenant = {{ int .Values.traceableConfigServiceConfig.labelApplicationRuleConfigServiceConfig.maxDynamicLabelApplicationRulesPerTenant }}
+    }
   anomaly.conf: |-
     global {
       disabled = {{ .Values.anomalyConfigServiceConfig.global.disabled }}

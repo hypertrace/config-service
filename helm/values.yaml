@@ -90,6 +90,8 @@ traceableConfigServiceConfig:
     host: license-metering-service
     port: 51018
     cacheExpiryDuration: 5m
+  labelApplicationRuleConfigServiceConfig:
+    maxDynamicLabelApplicationRulesPerTenant: 100
 
 logConfig:
   name: traceable-config-service-log-config
