@@ -27,19 +27,28 @@ import org.hypertrace.label.application.rule.config.service.v1.UpdateLabelApplic
 
 public class LabelApplicationRuleConfigServiceImpl
     extends LabelApplicationRuleConfigServiceGrpc.LabelApplicationRuleConfigServiceImplBase {
-  private static final String MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT =
+  static final String LABEL_APPLICATION_RULE_CONFIG_SERVICE_CONFIG =
+      "label.application.rule.config.service";
+  static final String MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT =
       "max.dynamic.label.application.rules.per.tenant";
-  private static final int MAX_DYNAMIC_LABEL_APPLICATION_RULE_CONSTANT = 100;
+  static final int DEFAULT_MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT = 100;
   private final IdentifiedObjectStore<LabelApplicationRule> labelApplicationRuleStore;
   private final LabelApplicationRuleValidator requestValidator;
   private final int maxDynamicLabelApplicationRulesAllowed;
 
   public LabelApplicationRuleConfigServiceImpl(
       Channel configChannel, Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
-    this.maxDynamicLabelApplicationRulesAllowed =
-        config.hasPath(MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT)
-            ? config.getInt(MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT)
-            : MAX_DYNAMIC_LABEL_APPLICATION_RULE_CONSTANT;
+    int maxDynamicRules = DEFAULT_MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT;
+    if (config.hasPath(LABEL_APPLICATION_RULE_CONFIG_SERVICE_CONFIG)) {
+      Config labelApplicationRuleConfig =
+          config.getConfig(LABEL_APPLICATION_RULE_CONFIG_SERVICE_CONFIG);
+      if (labelApplicationRuleConfig.hasPath(MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT)) {
+        maxDynamicRules =
+            labelApplicationRuleConfig.getInt(MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT);
+      }
+    }
+    this.maxDynamicLabelApplicationRulesAllowed = maxDynamicRules;
+
     ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(configChannel)
             .withCallCredentials(
