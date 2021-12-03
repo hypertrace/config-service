@@ -1,0 +1,201 @@
+syntax = "proto3";
+
+// buf:lint:ignore PACKAGE_VERSION_SUFFIX
+package ai.traceable.anomaly.config.service.v1.detector;
+import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
+
+option java_multiple_files = true;
+
+enum AnomalyDetectionConfigType {
+  ANOMALY_DETECTION_CONFIG_TYPE_UNSPECIFIED = 0;
+  ANOMALY_DETECTION_CONFIG_TYPE_MODSECURITY = 1;
+  ANOMALY_DETECTION_CONFIG_TYPE_API_DEFINITION = 2;
+  ANOMALY_DETECTION_CONFIG_TYPE_API_STATE_BASED = 3;
+}
+
+message AnomalyCategoryConfig {
+  AnomalyEventScoreCategory event_score_category = 1;
+  AnomalyEventCategory event_category = 2;
+}
+
+enum AnomalyEventScoreCategory {
+  ANOMALY_EVENT_SCORE_CATEGORY_UNSPECIFIED = 0;
+  ANOMALY_EVENT_SCORE_CATEGORY_LOW = 1;
+  ANOMALY_EVENT_SCORE_CATEGORY_MEDIUM = 2;
+  ANOMALY_EVENT_SCORE_CATEGORY_HIGH = 3;
+}
+
+enum AnomalyEventCategory {
+  ANOMALY_EVENT_CATEGORY_UNSPECIFIED = 0;
+  ANOMALY_EVENT_CATEGORY_LATENT = 1;
+  ANOMALY_EVENT_CATEGORY_MALICIOUS = 2;
+}
+
+message GetAnomalyDetectionConfigsFilter {
+  repeated AnomalyDetectionConfigType anomaly_detection_config_types = 1;
+}
+
+message GetScopedAnomalyDetectionConfigRequest {
+  AnomalyConfigScope config_scope = 1;
+  GetAnomalyDetectionConfigsFilter filter = 2;
+}
+
+message GetScopedAnomalyDetectionConfigResponse {
+  ScopedAnomalyDetectionConfig scoped_anomaly_detection_config = 1;
+}
+
+message GetAllScopedAnomalyDetectionConfigsRequest {
+  GetAnomalyDetectionConfigsFilter filter = 1;
+}
+
+message GetAllScopedAnomalyDetectionConfigsResponse {
+  repeated ScopedAnomalyDetectionConfig scoped_anomaly_detection_configs = 1;
+}
+
+message UpdateScopedAnomalyDetectionConfigRequest {
+  ScopedAnomalyDetectionConfig scoped_anomaly_detection_config = 1;
+}
+
+message UpdateScopedAnomalyDetectionConfigResponse {
+  ScopedAnomalyDetectionConfig scoped_anomaly_detection_config = 1;
+}
+
+message ScopedAnomalyDetectionConfig {
+  AnomalyConfigScope config_scope = 1;
+  repeated AnomalyDetectionConfig anomaly_detection_configs = 2;
+}
+
+message AnomalyDetectionConfig {
+  AnomalyConfigStatus config_status = 1;
+  AnomalyCategoryConfig category_config = 2;
+  oneof anomaly_detection_config {
+    ModsecurityAnomalyDetectionConfig modsecurity_anomaly_detection_config = 5;
+    ApiDefinitionMetadataAnomalyDetectionConfig api_definition_metadata_anomaly_detection_config = 6;
+    ApiStateBasedAnomalyDetectionConfig api_state_based_anomaly_detection_config = 7;
+  }
+}
+
+message ModsecurityAnomalyDetectionConfig {
+  string anomaly_rule_id = 1;
+  repeated AnomalySubRuleConfig sub_rule_configs = 2;
+}
+
+message AnomalySubRuleConfig {
+  string sub_rule_id = 1;
+  AnomalyConfigStatus config_status = 2;
+  AnomalyCategoryConfig category_config = 3;
+  optional bool blocking_enabled = 4;
+}
+
+message ApiDefinitionMetadataAnomalyDetectionConfig {
+  string anomaly_rule_id = 1;
+  oneof config {
+    MissingParamAnomalyConfig missing_param = 2;
+    EnumerationsAnomalyConfig enum = 3;
+    IntegerAnomalyConfig integer = 4;
+    TypeAnomalyConfig type = 5;
+    DeviceAnomalyConfig device = 6;
+    HttpStatusAnomalyConfig http_status = 7;
+    ContentTypeAnomalyConfig content_type = 8;
+    ContentSizeAnomalyConfig content_size = 9;
+    PayloadAnomalyConfig payload = 10;
+    XxeAnomalyConfig xxe = 11;
+    SsrfAnomalyConfig ssrf = 12;
+    UnknownParamAnomalyConfig unknown_param = 13;
+  }
+}
+
+message ApiStateBasedAnomalyDetectionConfig {
+  oneof config {
+    UnknownApiAnomalyConfig unknown_api = 1;
+    UnderDiscoveryApiAnomalyConfig under_discovery_api = 2;
+    UnderThresholdLearningApiAnomalyConfig under_threshold_learning_api = 3;
+    LearntApiAnomalyConfig learnt_api = 4;
+  }
+}
+
+message MissingParamAnomalyConfig {
+  optional double min_percent_seen = 1;
+  StringList severe_names = 2;
+  optional bool evaluate_request_body_params = 3;
+  optional bool enabled_for_internal_ips = 4;
+}
+
+message UnknownParamAnomalyConfig {
+  StringList severe_names = 1;
+  optional bool modsecurity_enabled = 2;
+  optional bool enabled_for_internal_ips = 3;
+}
+
+message EnumerationsAnomalyConfig {
+  StringList no_anomaly_strings = 1;
+  optional bool modsecurity_enabled = 2;
+  optional bool enabled_for_internal_ips = 3;
+}
+
+message IntegerAnomalyConfig {
+  optional int32 max_length_difference = 1;
+  optional double threshold_percent = 2;
+}
+
+message TypeAnomalyConfig {
+  optional double min_percent_seen = 1;
+  StringList no_anomaly_strings = 2;
+  optional bool modsecurity_enabled = 3;
+  optional bool enabled_for_internal_ips = 4;
+}
+
+message DeviceAnomalyConfig {
+  optional double min_percent_seen = 1;
+}
+
+message HttpStatusAnomalyConfig {
+  optional double min_percent_seen = 1;
+  StringList valid_http_status_codes = 2;
+  StringList valid_grpc_status_codes = 3;
+}
+
+message ContentTypeAnomalyConfig {
+  optional double min_percent_seen = 1;
+  optional bool modsecurity_enabled = 2;
+  optional bool enabled_for_internal_ips = 3;
+}
+
+message ContentSizeAnomalyConfig {
+  optional double min_percent_seen = 1;
+  optional double max_difference_ratio = 2;
+  optional int32 request_range_size = 3;
+  optional int32 response_range_size = 4;
+  optional bool enabled_for_internal_ips = 5;
+}
+
+message PayloadAnomalyConfig {
+  optional bool modsecurity_enabled = 1;
+}
+
+message XxeAnomalyConfig {
+  optional bool modsecurity_enabled = 1;
+}
+
+message SsrfAnomalyConfig {
+  StringList allowed_protocols = 1;
+  optional int32 required_occurrences_of_host = 2;
+}
+
+message LearntApiAnomalyConfig {
+  optional bool modsecurity_enabled = 1;
+}
+
+message UnderDiscoveryApiAnomalyConfig {
+  optional bool modsecurity_enabled = 1;
+  StringList reject_url_regex_strings = 2;
+}
+
+message UnderThresholdLearningApiAnomalyConfig {
+  optional bool modsecurity_enabled = 1;
+  StringList reject_url_regex_strings = 2;
+}
+
+message UnknownApiAnomalyConfig {
+  optional bool modsecurity_enabled = 1;
+}
