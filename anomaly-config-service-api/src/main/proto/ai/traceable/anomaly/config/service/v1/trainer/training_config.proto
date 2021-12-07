@@ -222,6 +222,6 @@ message TrieModelTrainingConfig {
 }
 
 message ThresholdRegexConfig {
-  int64 threshold = 1;
+  int32 threshold = 1;
   StringList regex_list = 2;
 }

@@ -97,9 +97,9 @@ enum AnomalyRuleCategory {
 }
 
 message StringList {
-  repeated string list = 1;
+  repeated string values = 1;
 }
 
 message IntList {
-  repeated int32 list = 1;
+  repeated int32 values = 1;
 }
