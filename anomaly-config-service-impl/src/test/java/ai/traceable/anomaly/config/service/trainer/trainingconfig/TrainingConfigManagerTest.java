@@ -110,7 +110,7 @@ public class TrainingConfigManagerTest {
     ScopedTrainingConfig customerScopeResolvedConfig =
         getScopedTrainingConfig(resolvedTrainingConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
 
-    configManager.updateScopedTrainingConfig(requestContext, scopedTrainingConfig);
+    updateScopedTrainingConfig(requestContext, scopedTrainingConfig);
 
     assertEquals(
         customerScopeResolvedConfig,
@@ -130,7 +130,7 @@ public class TrainingConfigManagerTest {
     ScopedTrainingConfig serviceScopeResolvedConfig =
         getScopedTrainingConfig(resolvedTrainingConfigs.getConfig(SERVICE_SCOPE_CONFIG));
 
-    configManager.updateScopedTrainingConfig(requestContext, scopedTrainingConfig);
+    updateScopedTrainingConfig(requestContext, scopedTrainingConfig);
 
     assertEquals(
         customerScopeResolvedConfig,
@@ -150,7 +150,7 @@ public class TrainingConfigManagerTest {
     ScopedTrainingConfig apiScopeResolvedConfig =
         getScopedTrainingConfig(resolvedTrainingConfigs.getConfig(API_SCOPE_CONFIG));
 
-    configManager.updateScopedTrainingConfig(requestContext, scopedTrainingConfig);
+    updateScopedTrainingConfig(requestContext, scopedTrainingConfig);
 
     assertEquals(
         customerScopeResolvedConfig,
@@ -223,15 +223,15 @@ public class TrainingConfigManagerTest {
 
     scopedTrainingConfig =
         getScopedTrainingConfig(scopedTrainingConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
-    configManager.updateScopedTrainingConfig(requestContext, scopedTrainingConfig);
+    updateScopedTrainingConfig(requestContext, scopedTrainingConfig);
 
     scopedTrainingConfig =
         getScopedTrainingConfig(scopedTrainingConfigs.getConfig(SERVICE_SCOPE_CONFIG));
-    configManager.updateScopedTrainingConfig(requestContext, scopedTrainingConfig);
+    updateScopedTrainingConfig(requestContext, scopedTrainingConfig);
 
     scopedTrainingConfig =
         getScopedTrainingConfig(scopedTrainingConfigs.getConfig(API_SCOPE_CONFIG));
-    configManager.updateScopedTrainingConfig(requestContext, scopedTrainingConfig);
+    updateScopedTrainingConfig(requestContext, scopedTrainingConfig);
 
     ScopedTrainingConfig customerScopeResolvedConfig =
         getScopedTrainingConfig(resolvedTrainingConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
@@ -248,6 +248,12 @@ public class TrainingConfigManagerTest {
     assertEquals(customerScopeResolvedConfig, getConfig(customerConfigScope, trainingConfigs));
     assertEquals(serviceScopeResolvedConfig, getConfig(serviceConfigScope, trainingConfigs));
     assertEquals(apiScopeResolvedConfig, getConfig(apiConfigScope, trainingConfigs));
+  }
+
+  private void updateScopedTrainingConfig(
+      RequestContext requestContext, ScopedTrainingConfig scopedTrainingConfig) {
+    requestContext.run(
+        () -> configManager.updateScopedTrainingConfig(requestContext, scopedTrainingConfig));
   }
 
   private ScopedTrainingConfig getScopedTrainingConfig(Config config)

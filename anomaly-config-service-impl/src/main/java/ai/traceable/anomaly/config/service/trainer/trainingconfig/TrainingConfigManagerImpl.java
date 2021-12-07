@@ -1,5 +1,8 @@
 package ai.traceable.anomaly.config.service.trainer.trainingconfig;
 
+import static ai.traceable.anomaly.config.service.trainer.trainingconfig.TrainingConfigConstants.TRAINING_CONFIG_NAMESPACE;
+import static ai.traceable.anomaly.config.service.trainer.trainingconfig.TrainingConfigConstants.TRAINING_CONFIG_RESOURCE_NAME;
+
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.trainer.GetTrainingConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
@@ -7,31 +10,52 @@ import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
-import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ConfigObject;
+import org.hypertrace.config.objectstore.ContextualConfigObject;
+import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
-import org.hypertrace.config.service.v1.ContextSpecificConfig;
-import org.hypertrace.config.service.v1.GetAllConfigsRequest;
-import org.hypertrace.config.service.v1.GetConfigRequest;
-import org.hypertrace.config.service.v1.UpsertConfigRequest;
-import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public class TrainingConfigManagerImpl implements TrainingConfigManager {
-  private final ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub;
+@Slf4j
+public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrainingConfig>
+    implements TrainingConfigManager {
   private final TrainingConfigConverter configConverter;
 
   @Inject
   public TrainingConfigManagerImpl(
       TrainingConfigConverter configConverter,
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub) {
+    super(configServiceBlockingStub, TRAINING_CONFIG_NAMESPACE, TRAINING_CONFIG_RESOURCE_NAME);
     this.configConverter = configConverter;
-    this.configServiceBlockingStub = configServiceBlockingStub;
+  }
+
+  @Override
+  protected Optional<ScopedTrainingConfig> buildDataFromValue(Value value) {
+    try {
+      return Optional.of(configConverter.convert(value));
+    } catch (InvalidProtocolBufferException exception) {
+      log.error("Unable to convert config to ScopedTrainingConfig for value: {}", value);
+      return Optional.empty();
+    }
+  }
+
+  @Override
+  @SneakyThrows
+  protected Value buildValueFromData(ScopedTrainingConfig data) {
+    return configConverter.convert(data);
+  }
+
+  @Override
+  protected String getContextFromData(ScopedTrainingConfig data) {
+    return getContextFromAnomalyConfigScope(data.getConfigScope());
   }
 
   @Override
@@ -96,163 +120,12 @@ public class TrainingConfigManagerImpl implements TrainingConfigManager {
   @Override
   public ScopedTrainingConfig updateScopedTrainingConfig(
       RequestContext requestContext, ScopedTrainingConfig scopedTrainingConfig) {
-    String context;
-
-    AnomalyConfigScope configScope = scopedTrainingConfig.getConfigScope();
-
-    switch (configScope.getScopeCase()) {
-      case SCOPE_NOT_SET: // for backward compatibility
-      case CUSTOMER_SCOPE:
-        context =
-            requestContext
-                .getTenantId()
-                .orElseThrow(
-                    () ->
-                        new IllegalArgumentException(
-                            "Unable to get tenant id from request context"));
-        break;
-      case SERVICE_SCOPE:
-        context = configScope.getServiceScope().getId();
-        break;
-      case API_SCOPE:
-        context = configScope.getApiScope().getId();
-        break;
-      default:
-        throw new RuntimeException(
-            String.format("Invalid scope found: {%s}", configScope.getScopeCase()));
-    }
-
-    ScopedTrainingConfig changeToUpsert =
-        configConverter.merge(
-            scopedTrainingConfig,
-            fetchConfig(requestContext, List.of(context))
-                .orElse(ScopedTrainingConfig.getDefaultInstance()));
-
-    return upsertConfig(requestContext, context, changeToUpsert);
-  }
-
-  private Optional<ScopedTrainingConfig> fetchConfig(
-      RequestContext requestContext, List<String> contextsWithIncreasingPriority) {
-
-    return fetchConfigValue(requestContext, contextsWithIncreasingPriority)
-        .map(
-            value -> {
-              try {
-                return configConverter.convert(value);
-              } catch (InvalidProtocolBufferException e) {
-                throw new RuntimeException(e);
-              }
-            });
-  }
-
-  private Optional<Value> fetchConfigValue(
-      RequestContext requestContext, List<String> contextsWithIncreasingPriority) {
-    try {
-      GetConfigRequest getConfigRequest =
-          GetConfigRequest.newBuilder()
-              .addAllContexts(contextsWithIncreasingPriority)
-              .setResourceNamespace(TrainingConfigConstants.TRAINING_CONFIG_NAMESPACE)
-              .setResourceName(TrainingConfigConstants.TRAINING_CONFIG_RESOURCE_NAME)
-              .build();
-
-      Value value =
-          requestContext.call(
-              () -> configServiceBlockingStub.getConfig(getConfigRequest).getConfig());
-      if (value != null && value.getKindCase() != Value.KindCase.KIND_NOT_SET) {
-        return Optional.of(value);
-      }
-    } catch (Exception e) {
-      if (Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
-        return Optional.empty();
-      }
-      throw e;
-    }
-    return Optional.empty();
+    return upsertObject(requestContext, scopedTrainingConfig).getData();
   }
 
   private Map<String, ScopedTrainingConfig> fetchConfigMap(RequestContext requestContext) {
-    return fetchAllConfigValues(requestContext).stream()
-        .collect(
-            Collectors.toMap(
-                ContextSpecificConfig::getContext,
-                contextSpecificConfig -> {
-                  try {
-                    return configConverter.convert(contextSpecificConfig.getConfig());
-                  } catch (InvalidProtocolBufferException e) {
-                    throw new RuntimeException(e);
-                  }
-                }));
-  }
-
-  private List<ContextSpecificConfig> fetchAllConfigValues(RequestContext requestContext) {
-    try {
-      GetAllConfigsRequest getAllConfigsRequest =
-          GetAllConfigsRequest.newBuilder()
-              .setResourceNamespace(TrainingConfigConstants.TRAINING_CONFIG_NAMESPACE)
-              .setResourceName(TrainingConfigConstants.TRAINING_CONFIG_RESOURCE_NAME)
-              .build();
-
-      List<ContextSpecificConfig> contextSpecificConfigs =
-          requestContext.call(
-              () ->
-                  configServiceBlockingStub
-                      .getAllConfigs(getAllConfigsRequest)
-                      .getContextSpecificConfigsList());
-
-      return contextSpecificConfigs.stream()
-          .filter(
-              contextSpecificConfig ->
-                  contextSpecificConfig.getConfig().getKindCase() != Value.KindCase.KIND_NOT_SET)
-          .collect(Collectors.toList());
-
-    } catch (Exception e) {
-      if (Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
-        return List.of();
-      }
-      throw e;
-    }
-  }
-
-  private ScopedTrainingConfig upsertConfig(
-      RequestContext requestContext, String context, ScopedTrainingConfig config) {
-    UpsertConfigRequest.Builder upsertConfigRequestBuilder;
-
-    try {
-      upsertConfigRequestBuilder =
-          UpsertConfigRequest.newBuilder()
-              .setContext(context)
-              .setResourceNamespace(TrainingConfigConstants.TRAINING_CONFIG_NAMESPACE)
-              .setResourceName(TrainingConfigConstants.TRAINING_CONFIG_RESOURCE_NAME)
-              .setConfig(configConverter.convert(config));
-    } catch (Exception e) {
-      throw new RuntimeException(
-          String.format(
-              "Unable to convert ScopedTrainingConfig {%s} to config object for context {%s}",
-              config, context),
-          e);
-    }
-
-    UpsertConfigResponse response;
-    try {
-      response =
-          requestContext.call(
-              () -> configServiceBlockingStub.upsertConfig(upsertConfigRequestBuilder.build()));
-    } catch (Exception e) {
-      throw new RuntimeException(
-          String.format(
-              "Unable to update ScopedTrainingConfig {%s} for context {%s}", config, context),
-          e);
-    }
-
-    try {
-      return configConverter.convert(response.getConfig());
-    } catch (Exception e) {
-      throw new RuntimeException(
-          String.format(
-              "Unable to convert config response {%s} to ScopedTrainingConfig for context {%s}",
-              response, context),
-          e);
-    }
+    return getAllObjects(requestContext).stream()
+        .collect(Collectors.toMap(ContextualConfigObject::getContext, ConfigObject::getData));
   }
 
   private ScopedTrainingConfig filterConfigs(
@@ -314,5 +187,32 @@ public class TrainingConfigManagerImpl implements TrainingConfigManager {
               : trainingConfig;
     }
     return trainingConfig;
+  }
+
+  private String getContextFromAnomalyConfigScope(AnomalyConfigScope anomalyConfigScope) {
+    String context;
+    switch (anomalyConfigScope.getScopeCase()) {
+      case SCOPE_NOT_SET: // for backward compatibility
+      case CUSTOMER_SCOPE:
+        context =
+            RequestContext.CURRENT
+                .get()
+                .getTenantId()
+                .orElseThrow(
+                    () ->
+                        new IllegalArgumentException(
+                            "Unable to get tenant id from request context"));
+        break;
+      case SERVICE_SCOPE:
+        context = anomalyConfigScope.getServiceScope().getId();
+        break;
+      case API_SCOPE:
+        context = anomalyConfigScope.getApiScope().getId();
+        break;
+      default:
+        throw new RuntimeException(
+            String.format("Invalid scope found: {%s}", anomalyConfigScope.getScopeCase()));
+    }
+    return context;
   }
 }
