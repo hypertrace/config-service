@@ -11,6 +11,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
 import ai.traceable.anomaly.config.service.v1.trainer.GetTrainingConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfigType;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
@@ -23,6 +24,7 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -171,14 +173,21 @@ public class TrainingConfigManagerTest {
             .addTrainingConfigTypes(TrainingConfigType.TRAINING_CONFIG_TYPE_VULNERABILITY)
             .addTrainingConfigTypes(TrainingConfigType.TRAINING_CONFIG_TYPE_METADATA)
             .addTrainingConfigTypes(TrainingConfigType.TRAINING_CONFIG_TYPE_SESSION)
+            .addTrainingConfigTypes(TrainingConfigType.TRAINING_CONFIG_TYPE_API_NAMING)
             .build();
 
-    assertEquals(
-        500,
+    TrainingConfig trainingConfig =
         configManager
             .getScopedTrainingConfig(requestContext, customerConfigScope, filter)
             .getTrainingConfigsList()
-            .get(0)
+            .stream()
+            .filter(TrainingConfig::hasVulnerabilityTrainingConfig)
+            .collect(Collectors.toList())
+            .get(0);
+    System.out.println(trainingConfig);
+    assertEquals(
+        500,
+        trainingConfig
             .getVulnerabilityTrainingConfig()
             .getLackOfEncryption()
             .getHttpsCallsConfig()
@@ -203,6 +212,40 @@ public class TrainingConfigManagerTest {
         configManager
             .getScopedTrainingConfig(requestContext, customerConfigScope, filter)
             .getTrainingConfigsList());
+
+    filter =
+        GetTrainingConfigsFilter.newBuilder()
+            .addTrainingConfigTypes(TrainingConfigType.TRAINING_CONFIG_TYPE_API_NAMING)
+            .build();
+    trainingConfig =
+        configManager
+            .getScopedTrainingConfig(requestContext, customerConfigScope, filter)
+            .getTrainingConfigsList()
+            .get(0);
+    System.out.println(trainingConfig);
+    assertEquals(
+        List.of(".com"),
+        trainingConfig
+            .getApiNamingTrainingConfig()
+            .getUrlFilterConfig()
+            .getUrlRejectRegexPatterns()
+            .getValuesList());
+
+    trainingConfig =
+        configManager
+            .getScopedTrainingConfig(requestContext, serviceConfigScope, filter)
+            .getTrainingConfigsList()
+            .stream()
+            .filter(TrainingConfig::hasApiNamingTrainingConfig)
+            .collect(Collectors.toList())
+            .get(0);
+    assertEquals(
+        List.of(".com", ".edu"),
+        trainingConfig
+            .getApiNamingTrainingConfig()
+            .getUrlFilterConfig()
+            .getUrlRejectRegexPatterns()
+            .getValuesList());
   }
 
   @Test

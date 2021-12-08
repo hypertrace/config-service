@@ -1,5 +1,6 @@
 package ai.traceable.anomaly.config.service.trainer.trainingconfig;
 
+import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.GetTrainingConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.trainer.MetadataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
@@ -43,6 +44,10 @@ public class TrainingConfigConverter {
           break;
         case TRAINING_CONFIG_TYPE_SESSION:
           configCases.add(TrainingConfig.TrainingConfigCase.SESSION_TRAINING_CONFIG);
+          break;
+        case TRAINING_CONFIG_TYPE_API_NAMING:
+          configCases.add(TrainingConfig.TrainingConfigCase.API_NAMING_TRAINING_CONFIG);
+          break;
         default:
           break;
       }
@@ -71,6 +76,9 @@ public class TrainingConfigConverter {
     EnumMap<SessionTrainingConfig.ConfigCase, TrainingConfig> sessionTrainingConfigMap =
         new EnumMap<>(SessionTrainingConfig.ConfigCase.class);
 
+    EnumMap<ApiNamingTrainingConfig.ConfigCase, TrainingConfig> apiNamingTrainingConfigMap =
+        new EnumMap<>(ApiNamingTrainingConfig.ConfigCase.class);
+
     preferredConfig
         .getTrainingConfigsList()
         .forEach(
@@ -88,6 +96,10 @@ public class TrainingConfigConverter {
                 case SESSION_TRAINING_CONFIG:
                   sessionTrainingConfigMap.put(
                       trainingConfig.getSessionTrainingConfig().getConfigCase(), trainingConfig);
+                  break;
+                case API_NAMING_TRAINING_CONFIG:
+                  apiNamingTrainingConfigMap.put(
+                      trainingConfig.getApiNamingTrainingConfig().getConfigCase(), trainingConfig);
                   break;
                 default:
                   break;
@@ -117,6 +129,12 @@ public class TrainingConfigConverter {
                       trainingConfig.getSessionTrainingConfig().getConfigCase(),
                       trainingConfig);
                   break;
+                case API_NAMING_TRAINING_CONFIG:
+                  resolve(
+                      apiNamingTrainingConfigMap,
+                      trainingConfig.getApiNamingTrainingConfig().getConfigCase(),
+                      trainingConfig);
+                  break;
                 default:
                   break;
               }
@@ -127,6 +145,7 @@ public class TrainingConfigConverter {
         .addAllTrainingConfigs(metadataTrainingConfigMap.values())
         .addAllTrainingConfigs(vulnerabilityTrainingConfigMap.values())
         .addAllTrainingConfigs(sessionTrainingConfigMap.values())
+        .addAllTrainingConfigs(apiNamingTrainingConfigMap.values())
         .build();
   }
 

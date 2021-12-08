@@ -1,6 +1,7 @@
 package ai.traceable.anomaly.config.service.trainer.trainingconfig;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
+import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.GetScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.MetadataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.SessionTrainingConfig;
@@ -51,6 +52,8 @@ public class TrainingConfigValidator {
     EnumMap<SessionTrainingConfig.ConfigCase, TrainingConfig> sessionTrainingConfigMap =
         new EnumMap<>(SessionTrainingConfig.ConfigCase.class);
 
+    EnumMap<ApiNamingTrainingConfig.ConfigCase, TrainingConfig> apiNamingTrainingConfigMap =
+        new EnumMap<>(ApiNamingTrainingConfig.ConfigCase.class);
     for (TrainingConfig trainingConfig : trainingConfigs) {
 
       switch (trainingConfig.getTrainingConfigCase()) {
@@ -85,6 +88,17 @@ public class TrainingConfigValidator {
                     + sessionTrainingConfigCase);
           } else {
             sessionTrainingConfigMap.put(sessionTrainingConfigCase, trainingConfig);
+          }
+          break;
+        case API_NAMING_TRAINING_CONFIG:
+          ApiNamingTrainingConfig.ConfigCase apiNamingTrainingConfigCase =
+              trainingConfig.getApiNamingTrainingConfig().getConfigCase();
+          if (apiNamingTrainingConfigMap.containsKey(apiNamingTrainingConfigCase)) {
+            return Status.INVALID_ARGUMENT.withDescription(
+                "UpdateScopedTrainingConfigRequest should have only one training config for apiNamingTrainingConfigType: "
+                    + apiNamingTrainingConfigCase);
+          } else {
+            apiNamingTrainingConfigMap.put(apiNamingTrainingConfigCase, trainingConfig);
           }
           break;
         default:

@@ -2,6 +2,8 @@ package ai.traceable.anomaly.config.service.trainer.trainingconfig;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import ai.traceable.anomaly.config.service.v1.StringList;
+import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.EnumerationsTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.LackOfEncryptionTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.MetadataTrainingConfig;
@@ -11,6 +13,7 @@ import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.SessionTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ThresholdCountConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.UrlFilterConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
@@ -39,6 +42,7 @@ class TrainingConfigConverterTest {
                                     .build())
                             .build())
                     .build())
+            .addTrainingConfigs(buildUrlFilterApiNamingTrainerConfig(List.of(".com", ".us")))
             .build();
 
     value = configConverter.convert(config);
@@ -122,11 +126,25 @@ class TrainingConfigConverterTest {
                     .build())
             .build();
 
+    TrainingConfig trainingConfig4 =
+        TrainingConfig.newBuilder()
+            .setApiNamingTrainingConfig(
+                ApiNamingTrainingConfig.newBuilder()
+                    .setUrlFilterConfig(
+                        UrlFilterConfig.newBuilder()
+                            .setUrlRejectRegexPatterns(
+                                StringList.newBuilder()
+                                    .addAllValues(List.of(".edu", ".in"))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
     resultConfig =
         configConverter.merge(
             config,
             ScopedTrainingConfig.newBuilder()
-                .addAllTrainingConfigs(List.of(trainingConfig2, trainingConfig3))
+                .addAllTrainingConfigs(List.of(trainingConfig2, trainingConfig3, trainingConfig4))
                 .build());
 
     trainingConfig =
@@ -153,6 +171,17 @@ class TrainingConfigConverterTest {
             .getObjectBola()
             .getRequiredCountConfig()
             .getRequiredCallsCount());
+
+    trainingConfig =
+        getTrainingConfig(
+            resultConfig, TrainingConfig.TrainingConfigCase.API_NAMING_TRAINING_CONFIG);
+    assertEquals(
+        List.of(".edu", ".in", ".com", ".us"),
+        trainingConfig
+            .getApiNamingTrainingConfig()
+            .getUrlFilterConfig()
+            .getUrlRejectRegexPatterns()
+            .getValuesList());
   }
 
   private TrainingConfig getTrainingConfig(
@@ -163,5 +192,18 @@ class TrainingConfigConverterTest {
       }
     }
     return null;
+  }
+
+  private TrainingConfig buildUrlFilterApiNamingTrainerConfig(List<String> urls) {
+    return TrainingConfig.newBuilder()
+        .setApiNamingTrainingConfig(
+            ApiNamingTrainingConfig.newBuilder()
+                .setUrlFilterConfig(
+                    UrlFilterConfig.newBuilder()
+                        .setUrlRejectRegexPatterns(
+                            StringList.newBuilder().addAllValues(urls).build())
+                        .build())
+                .build())
+        .build();
   }
 }
