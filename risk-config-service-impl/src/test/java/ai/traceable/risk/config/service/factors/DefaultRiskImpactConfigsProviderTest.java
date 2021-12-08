@@ -35,7 +35,7 @@ public class DefaultRiskImpactConfigsProviderTest {
         new DefaultRiskImpactConfigsProvider(
             configUtils, new RiskConfigServiceConfig(ConfigFactory.empty()));
     RiskContributorConfigs configs = provider.get();
-    assertEquals(3, configs.getRiskFactorsCount());
+    assertEquals(4, configs.getRiskFactorsCount());
 
     Map<String, RiskFactor> factorMap =
         configs.getRiskFactorsList().stream()
@@ -89,6 +89,7 @@ public class DefaultRiskImpactConfigsProviderTest {
           factor.getRiskFactorConfig().getRiskFactorScoring());
       assertEquals(2, factor.getRiskFactorConfig().getRiskElementConfigsCount());
     }
+    verifyExposureSurfaceFactor(factorMap.get("exposureSurface"));
   }
 
   @Test
@@ -159,7 +160,7 @@ public class DefaultRiskImpactConfigsProviderTest {
                         + "  }\n"
                         + "]}")));
     RiskContributorConfigs configs = provider.get();
-    assertEquals(4, configs.getRiskFactorsCount());
+    assertEquals(5, configs.getRiskFactorsCount());
 
     Map<String, RiskFactor> factorMap =
         configs.getRiskFactorsList().stream()
@@ -210,6 +211,7 @@ public class DefaultRiskImpactConfigsProviderTest {
           factor.getRiskFactorConfig().getRiskFactorScoring());
       assertEquals(0, factor.getRiskFactorConfig().getRiskElementConfigsCount());
     }
+    verifyExposureSurfaceFactor(factorMap.get("exposureSurface"));
   }
 
   @Test
@@ -262,5 +264,19 @@ public class DefaultRiskImpactConfigsProviderTest {
                             + "    }\n"
                             + "  }\n"
                             + "]}"))));
+  }
+
+  private void verifyExposureSurfaceFactor(RiskFactor factor) {
+    assertTrue(factor.getIsDefault());
+    assertEquals("Exposure Surface", factor.getRiskFactorInfo().getName());
+    assertEquals(
+        RiskFactorType.RISK_FACTOR_TYPE_EXPOSURE_SURFACE,
+        factor.getRiskFactorInfo().getRiskFactorType());
+    assertTrue(factor.getRiskFactorInfo().getDescription().length() > 0);
+    assertEquals(0, factor.getCustomizationOptionsCount());
+    assertEquals(
+        RiskFactorScoring.getDefaultInstance(),
+        factor.getRiskFactorConfig().getRiskFactorScoring());
+    assertEquals(6, factor.getRiskFactorConfig().getRiskElementConfigsCount());
   }
 }

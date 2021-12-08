@@ -35,7 +35,7 @@ public class DefaultRiskLikelihoodConfigsProviderTest {
         new DefaultRiskLikelihoodConfigsProvider(
             configUtils, new RiskConfigServiceConfig(ConfigFactory.empty()));
     RiskContributorConfigs configs = provider.get();
-    assertEquals(4, configs.getRiskFactorsCount());
+    assertEquals(5, configs.getRiskFactorsCount());
 
     Map<String, RiskFactor> factorMap =
         configs.getRiskFactorsList().stream()
@@ -102,6 +102,7 @@ public class DefaultRiskLikelihoodConfigsProviderTest {
           factor.getRiskFactorConfig().getRiskFactorScoring());
       assertEquals(5, factor.getRiskFactorConfig().getRiskElementConfigsCount());
     }
+    verifyEaseOfResourceDiscoveryFactor(factorMap.get("easeOfResourceDiscovery"));
   }
 
   @Test
@@ -248,7 +249,7 @@ public class DefaultRiskLikelihoodConfigsProviderTest {
                         + "  }"
                         + "]}\n")));
     RiskContributorConfigs configs = provider.get();
-    assertEquals(5, configs.getRiskFactorsCount());
+    assertEquals(6, configs.getRiskFactorsCount());
 
     Map<String, RiskFactor> factorMap =
         configs.getRiskFactorsList().stream()
@@ -298,6 +299,7 @@ public class DefaultRiskLikelihoodConfigsProviderTest {
           factor.getRiskFactorConfig().getRiskFactorScoring());
       assertEquals(0, factor.getRiskFactorConfig().getRiskElementConfigsCount());
     }
+    verifyEaseOfResourceDiscoveryFactor(factorMap.get("easeOfResourceDiscovery"));
   }
 
   @Test
@@ -350,5 +352,19 @@ public class DefaultRiskLikelihoodConfigsProviderTest {
                             + "    }\n"
                             + "  }\n"
                             + "]}"))));
+  }
+
+  private void verifyEaseOfResourceDiscoveryFactor(RiskFactor factor) {
+    assertTrue(factor.getIsDefault());
+    assertEquals("Ease of Resource Discovery", factor.getRiskFactorInfo().getName());
+    assertEquals(
+        RiskFactorType.RISK_FACTOR_TYPE_EASE_OF_RESOURCE_DISCOVERY,
+        factor.getRiskFactorInfo().getRiskFactorType());
+    assertTrue(factor.getRiskFactorInfo().getDescription().length() > 0);
+    assertEquals(0, factor.getCustomizationOptionsCount());
+    assertEquals(
+        RiskFactorScoring.getDefaultInstance(),
+        factor.getRiskFactorConfig().getRiskFactorScoring());
+    assertEquals(3, factor.getRiskFactorConfig().getRiskElementConfigsCount());
   }
 }
