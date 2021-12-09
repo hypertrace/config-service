@@ -120,7 +120,13 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
   @Override
   public ScopedTrainingConfig updateScopedTrainingConfig(
       RequestContext requestContext, ScopedTrainingConfig scopedTrainingConfig) {
-    return upsertObject(requestContext, scopedTrainingConfig).getData();
+    Optional<ScopedTrainingConfig> currentConfig =
+        getData(requestContext, getContextFromData(scopedTrainingConfig));
+    ScopedTrainingConfig updatedScopedTrainingConfig =
+        configConverter.merge(
+            scopedTrainingConfig, currentConfig.orElse(ScopedTrainingConfig.getDefaultInstance()));
+
+    return upsertObject(requestContext, updatedScopedTrainingConfig).getData();
   }
 
   private Map<String, ScopedTrainingConfig> fetchConfigMap(RequestContext requestContext) {

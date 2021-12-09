@@ -8,19 +8,22 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
+import ai.traceable.anomaly.config.service.v1.trainer.ContentSizeTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllScopedTrainingConfigsRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.GetScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.LackOfEncryptionTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.MetadataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.MinOccurrenceConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainerConfigServiceGrpc;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig.TrainingConfigCase;
 import ai.traceable.anomaly.config.service.v1.trainer.UpdateScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig;
 import ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase;
 import java.util.List;
-import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -30,15 +33,14 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
       AnomalyServiceScope.newBuilder().setId("service").build();
   private final AnomalyApiScope apiScope =
       AnomalyApiScope.newBuilder().setId("api").setServiceScope(serviceScope).build();
-
+  private final AnomalyConfigScope apiConfigScope =
+      AnomalyConfigScope.newBuilder().setApiScope(apiScope).build();
   private final AnomalyConfigScope customerConfigScope =
       AnomalyConfigScope.newBuilder()
           .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
           .build();
   private final AnomalyConfigScope serviceConfigScope =
       AnomalyConfigScope.newBuilder().setServiceScope(serviceScope).build();
-  private final AnomalyConfigScope apiConfigScope =
-      AnomalyConfigScope.newBuilder().setApiScope(apiScope).build();
 
   @BeforeAll
   static void init() {
@@ -216,6 +218,73 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
   }
 
   @Test
+  void testPartialConfigUpdate() {
+    ScopedTrainingConfig scopedTrainingConfig =
+        ScopedTrainingConfig.newBuilder()
+            .setConfigScope(customerConfigScope)
+            .addTrainingConfigs(
+                TrainingConfig.newBuilder()
+                    .setVulnerabilityTrainingConfig(
+                        VulnerabilityTrainingConfig.newBuilder()
+                            .setLackOfEncryption(
+                                LackOfEncryptionTrainingConfig.newBuilder()
+                                    .setHttpsCallsConfig(
+                                        MinOccurrenceConfig.newBuilder()
+                                            .setMinTotalOccurrences(50)
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    updateTrainerConfig(scopedTrainingConfig);
+    assertEquals(
+        50,
+        fetchTrainerConfig(customerConfigScope)
+            .getTrainingConfigsList()
+            .get(0)
+            .getVulnerabilityTrainingConfig()
+            .getLackOfEncryption()
+            .getHttpsCallsConfig()
+            .getMinTotalOccurrences());
+
+    scopedTrainingConfig =
+        ScopedTrainingConfig.newBuilder()
+            .setConfigScope(customerConfigScope)
+            .addTrainingConfigs(
+                TrainingConfig.newBuilder()
+                    .setMetadataTrainingConfig(
+                        MetadataTrainingConfig.newBuilder()
+                            .setContentSize(
+                                ContentSizeTrainingConfig.newBuilder()
+                                    .setRequestRangeSize(1000)
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    updateTrainerConfig(scopedTrainingConfig);
+    List<TrainingConfig> trainingConfigs =
+        fetchTrainerConfig(customerConfigScope).getTrainingConfigsList();
+    assertEquals(2, trainingConfigs.size());
+    for (TrainingConfig trainingConfig : trainingConfigs) {
+      if (trainingConfig.getTrainingConfigCase() == TrainingConfigCase.METADATA_TRAINING_CONFIG) {
+        assertEquals(
+            1000,
+            trainingConfig.getMetadataTrainingConfig().getContentSize().getRequestRangeSize());
+      } else if (trainingConfig.getTrainingConfigCase()
+          == TrainingConfigCase.VULNERABILITY_TRAINING_CONFIG) {
+        assertEquals(
+            50,
+            trainingConfig
+                .getVulnerabilityTrainingConfig()
+                .getLackOfEncryption()
+                .getHttpsCallsConfig()
+                .getMinTotalOccurrences());
+      }
+    }
+  }
+
+  @Test
   void testGetAllScopedTrainingConfigs() {
     ScopedTrainingConfig scopedTrainingConfig;
 
@@ -349,35 +418,37 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
   }
 
   private ScopedTrainingConfig fetchTrainerConfig(AnomalyConfigScope configScope, String tenantId) {
-    return GrpcClientRequestContextUtil.executeInTenantContext(
-        tenantId,
-        () ->
-            configServiceStub
-                .getScopedTrainingConfig(
-                    GetScopedTrainingConfigRequest.newBuilder().setConfigScope(configScope).build())
-                .getScopedTrainingConfig());
+    return RequestContext.forTenantId(tenantId)
+        .call(
+            () ->
+                configServiceStub
+                    .getScopedTrainingConfig(
+                        GetScopedTrainingConfigRequest.newBuilder()
+                            .setConfigScope(configScope)
+                            .build())
+                    .getScopedTrainingConfig());
   }
 
   private List<ScopedTrainingConfig> fetchAllTrainerConfigs(String tenantId) {
-    return GrpcClientRequestContextUtil.executeInTenantContext(
-        tenantId,
-        () ->
-            configServiceStub
-                .getAllScopedTrainingConfigs(
-                    GetAllScopedTrainingConfigsRequest.newBuilder().build())
-                .getScopedTrainingConfigsList());
+    return RequestContext.forTenantId(tenantId)
+        .call(
+            () ->
+                configServiceStub
+                    .getAllScopedTrainingConfigs(
+                        GetAllScopedTrainingConfigsRequest.newBuilder().build())
+                    .getScopedTrainingConfigsList());
   }
 
   private ScopedTrainingConfig updateTrainerConfig(ScopedTrainingConfig scopedTrainingConfig) {
-    return GrpcClientRequestContextUtil.executeInTenantContext(
-        TENANT_ID,
-        () ->
-            configServiceStub
-                .updateScopedTrainingConfig(
-                    UpdateScopedTrainingConfigRequest.newBuilder()
-                        .setScopedTrainingConfig(scopedTrainingConfig)
-                        .build())
-                .getScopedTrainingConfig());
+    return RequestContext.forTenantId(TENANT_ID)
+        .call(
+            () ->
+                configServiceStub
+                    .updateScopedTrainingConfig(
+                        UpdateScopedTrainingConfigRequest.newBuilder()
+                            .setScopedTrainingConfig(scopedTrainingConfig)
+                            .build())
+                    .getScopedTrainingConfig());
   }
 
   private ScopedTrainingConfig getScopedTrainingConfig(
