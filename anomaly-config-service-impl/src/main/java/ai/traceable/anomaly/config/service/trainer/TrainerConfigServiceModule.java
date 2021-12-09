@@ -1,5 +1,6 @@
 package ai.traceable.anomaly.config.service.trainer;
 
+import ai.traceable.anomaly.config.service.trainer.trainingaction.TrainingActionModule;
 import ai.traceable.anomaly.config.service.trainer.trainingconfig.TrainingConfigModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
@@ -19,5 +20,6 @@ public class TrainerConfigServiceModule extends AbstractModule {
         .annotatedWith(Names.named(bindableServiceAnnotation))
         .to(TrainerConfigServiceImpl.class);
     install(new TrainingConfigModule());
+    install(new TrainingActionModule());
   }
 }

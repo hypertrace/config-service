@@ -8,6 +8,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import ai.traceable.anomaly.config.service.trainer.trainingaction.TrainingActionManager;
+import ai.traceable.anomaly.config.service.trainer.trainingaction.TrainingActionValidator;
 import ai.traceable.anomaly.config.service.trainer.trainingconfig.TrainingConfigManager;
 import ai.traceable.anomaly.config.service.trainer.trainingconfig.TrainingConfigManagerImpl;
 import ai.traceable.anomaly.config.service.trainer.trainingconfig.TrainingConfigValidator;
@@ -24,9 +26,11 @@ import org.junit.jupiter.api.Test;
 
 public class TrainerConfigServiceImplTest {
   private final TrainingConfigValidator validator = mock(TrainingConfigValidator.class);
+  private final TrainingActionValidator actionValidator = mock(TrainingActionValidator.class);
   private final TrainingConfigManager configManager = mock(TrainingConfigManagerImpl.class);
+  private final TrainingActionManager actionManager = mock(TrainingActionManager.class);
   private final TrainerConfigServiceImpl trainerConfigService =
-      new TrainerConfigServiceImpl(validator, configManager);
+      new TrainerConfigServiceImpl(validator, actionValidator, configManager, actionManager);
 
   @Test
   void testGetScopedTrainingConfig() {

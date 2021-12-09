@@ -2,6 +2,7 @@ package ai.traceable.config.service.anomaly;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
@@ -10,18 +11,30 @@ import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
 import ai.traceable.anomaly.config.service.v1.trainer.ContentSizeTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllScopedTrainingConfigsRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.GetAllTrainingActionsRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.GetScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.LackOfEncryptionTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.MetadataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.MinOccurrenceConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.PauseAction;
+import ai.traceable.anomaly.config.service.v1.trainer.ResetAction;
+import ai.traceable.anomaly.config.service.v1.trainer.ResumeAction;
+import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingActionConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainerConfigServiceGrpc;
+import ai.traceable.anomaly.config.service.v1.trainer.TrainingAction;
+import ai.traceable.anomaly.config.service.v1.trainer.TrainingAction.ActionCase;
+import ai.traceable.anomaly.config.service.v1.trainer.TrainingActionConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig.TrainingConfigCase;
 import ai.traceable.anomaly.config.service.v1.trainer.UpdateScopedTrainingConfigRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.UpsertTrainingActionRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig;
 import ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeAll;
@@ -413,6 +426,135 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
             .getMinTotalOccurrences());
   }
 
+  @Test
+  void testUpsertAndGetAllTrainingActions() {
+    // 1. upsert PAUSE training action at tenant level
+    TrainingAction trainingAction =
+        TrainingAction.newBuilder().setPauseAction(PauseAction.newBuilder().build()).build();
+
+    long upsertPauseRequestTime1 = System.currentTimeMillis();
+    upsertTrainingAction(customerConfigScope, trainingAction);
+    // get all trainer actions for tenant and validate
+    List<ScopedTrainingActionConfig> scopedTrainingActionConfigList =
+        getAllTrainerActions(TENANT_ID);
+    assertEquals(1, scopedTrainingActionConfigList.size());
+    Map<AnomalyConfigScope, ScopedTrainingActionConfig> scopedActionConfigMap =
+        getScopedTrainingActionConfigMap(scopedTrainingActionConfigList);
+    assertEquals(1, scopedActionConfigMap.size());
+    // customer scope will have 1 action: PAUSE
+    List<TrainingActionConfig> trainingActionConfigList =
+        scopedActionConfigMap.get(customerConfigScope).getTrainingActionConfigList();
+    Map<TrainingAction.ActionCase, TrainingActionConfig> actionConfigMap =
+        getActionConfigMap(trainingActionConfigList);
+    assertEquals(1, actionConfigMap.size());
+    TrainingActionConfig trainingActionConfig = actionConfigMap.get(ActionCase.PAUSE_ACTION);
+    assertTrue(trainingActionConfig.getTimestamp() >= upsertPauseRequestTime1);
+    long tenantPauseActionTime = trainingActionConfig.getTimestamp();
+
+    // 2. upsert RESUME training action at service level
+    trainingAction =
+        TrainingAction.newBuilder().setResumeAction(ResumeAction.newBuilder().build()).build();
+    long upsertResumeRequestTime2 = System.currentTimeMillis();
+    upsertTrainingAction(serviceConfigScope, trainingAction);
+    // get all trainer actions for tenant and validate
+    scopedTrainingActionConfigList = getAllTrainerActions(TENANT_ID);
+    assertEquals(2, scopedTrainingActionConfigList.size());
+    scopedActionConfigMap = getScopedTrainingActionConfigMap(scopedTrainingActionConfigList);
+    // customer scope will have 1 action: PAUSE
+    trainingActionConfigList =
+        scopedActionConfigMap.get(customerConfigScope).getTrainingActionConfigList();
+    actionConfigMap = getActionConfigMap(trainingActionConfigList);
+    assertEquals(1, actionConfigMap.size());
+    assertEquals(
+        tenantPauseActionTime, actionConfigMap.get(ActionCase.PAUSE_ACTION).getTimestamp());
+    // service scope will have 2 actions: PAUSE and RESUME
+    trainingActionConfigList =
+        scopedActionConfigMap.get(serviceConfigScope).getTrainingActionConfigList();
+    actionConfigMap = getActionConfigMap(trainingActionConfigList);
+    assertEquals(2, actionConfigMap.size());
+    assertEquals(
+        tenantPauseActionTime, actionConfigMap.get(ActionCase.PAUSE_ACTION).getTimestamp());
+    assertTrue(
+        actionConfigMap.get(ActionCase.RESUME_ACTION).getTimestamp() >= upsertResumeRequestTime2);
+    long serviceResumeActionTime = actionConfigMap.get(ActionCase.RESUME_ACTION).getTimestamp();
+
+    // 3. upsert PAUSE training action at api level
+    trainingAction =
+        TrainingAction.newBuilder().setPauseAction(PauseAction.newBuilder().build()).build();
+    long upsertPauseRequestTime2 = System.currentTimeMillis();
+    upsertTrainingAction(apiConfigScope, trainingAction);
+    // get all trainer actions for tenant and validate
+    scopedTrainingActionConfigList = getAllTrainerActions(TENANT_ID);
+    assertEquals(3, scopedTrainingActionConfigList.size());
+    scopedActionConfigMap = getScopedTrainingActionConfigMap(scopedTrainingActionConfigList);
+    // customer scope will have 1 action: PAUSE
+    trainingActionConfigList =
+        scopedActionConfigMap.get(customerConfigScope).getTrainingActionConfigList();
+    actionConfigMap = getActionConfigMap(trainingActionConfigList);
+    assertEquals(1, actionConfigMap.size());
+    assertEquals(
+        tenantPauseActionTime, actionConfigMap.get(ActionCase.PAUSE_ACTION).getTimestamp());
+    // service scope will have 2 actions: PAUSE and RESUME
+    trainingActionConfigList =
+        scopedActionConfigMap.get(serviceConfigScope).getTrainingActionConfigList();
+    actionConfigMap = getActionConfigMap(trainingActionConfigList);
+    assertEquals(2, actionConfigMap.size());
+    assertEquals(
+        tenantPauseActionTime, actionConfigMap.get(ActionCase.PAUSE_ACTION).getTimestamp());
+    assertEquals(
+        serviceResumeActionTime, actionConfigMap.get(ActionCase.RESUME_ACTION).getTimestamp());
+    // api scope will have 2 actions: PAUSE and RESUME. But the PAUSE time will be updated
+    trainingActionConfigList =
+        scopedActionConfigMap.get(apiConfigScope).getTrainingActionConfigList();
+    actionConfigMap = getActionConfigMap(trainingActionConfigList);
+    assertEquals(2, actionConfigMap.size());
+    long apiPauseActionTime = actionConfigMap.get(ActionCase.PAUSE_ACTION).getTimestamp();
+    assertTrue(apiPauseActionTime >= tenantPauseActionTime);
+    assertTrue(apiPauseActionTime >= upsertPauseRequestTime2);
+    assertEquals(
+        serviceResumeActionTime, actionConfigMap.get(ActionCase.RESUME_ACTION).getTimestamp());
+
+    // 4. upsert another RESET training action at tenant level
+    trainingAction =
+        TrainingAction.newBuilder().setResetAction(ResetAction.newBuilder().build()).build();
+    long upsertResetRequestTime = System.currentTimeMillis();
+    upsertTrainingAction(customerConfigScope, trainingAction);
+    // get all trainer actions for tenant and validate
+    scopedTrainingActionConfigList = getAllTrainerActions(TENANT_ID);
+    assertEquals(3, scopedTrainingActionConfigList.size());
+    scopedActionConfigMap = getScopedTrainingActionConfigMap(scopedTrainingActionConfigList);
+    // customer scope will now have 2 actions: PAUSE and RESET
+    trainingActionConfigList =
+        scopedActionConfigMap.get(customerConfigScope).getTrainingActionConfigList();
+    actionConfigMap = getActionConfigMap(trainingActionConfigList);
+    assertEquals(2, actionConfigMap.size());
+    assertEquals(
+        tenantPauseActionTime, actionConfigMap.get(ActionCase.PAUSE_ACTION).getTimestamp());
+    long tenantResetActionTime = actionConfigMap.get(ActionCase.RESET_ACTION).getTimestamp();
+    assertTrue(tenantResetActionTime >= upsertResetRequestTime);
+    // service scope will have 3 actions: PAUSE, RESUME and RESET
+    trainingActionConfigList =
+        scopedActionConfigMap.get(serviceConfigScope).getTrainingActionConfigList();
+    actionConfigMap = getActionConfigMap(trainingActionConfigList);
+    assertEquals(3, actionConfigMap.size());
+    assertEquals(
+        tenantPauseActionTime, actionConfigMap.get(ActionCase.PAUSE_ACTION).getTimestamp());
+    assertEquals(
+        serviceResumeActionTime, actionConfigMap.get(ActionCase.RESUME_ACTION).getTimestamp());
+    assertEquals(
+        tenantResetActionTime, actionConfigMap.get(ActionCase.RESET_ACTION).getTimestamp());
+    // api scope will have 3 actions: PAUSE, RESUME and RESET. The PAUSE time will be updated
+    trainingActionConfigList =
+        scopedActionConfigMap.get(apiConfigScope).getTrainingActionConfigList();
+    actionConfigMap = getActionConfigMap(trainingActionConfigList);
+    assertEquals(3, actionConfigMap.size());
+    assertEquals(apiPauseActionTime, actionConfigMap.get(ActionCase.PAUSE_ACTION).getTimestamp());
+    assertEquals(
+        serviceResumeActionTime, actionConfigMap.get(ActionCase.RESUME_ACTION).getTimestamp());
+    assertEquals(
+        tenantResetActionTime, actionConfigMap.get(ActionCase.RESET_ACTION).getTimestamp());
+  }
+
   private ScopedTrainingConfig fetchTrainerConfig(AnomalyConfigScope configScope) {
     return fetchTrainerConfig(configScope, TENANT_ID);
   }
@@ -459,5 +601,43 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
       }
     }
     return null;
+  }
+
+  private ScopedTrainingActionConfig upsertTrainingAction(
+      AnomalyConfigScope anomalyConfigScope, TrainingAction trainingAction) {
+    return RequestContext.forTenantId(TENANT_ID)
+        .call(
+            () ->
+                configServiceStub
+                    .upsertTrainingAction(
+                        UpsertTrainingActionRequest.newBuilder()
+                            .setConfigScope(anomalyConfigScope)
+                            .setTrainingAction(trainingAction)
+                            .build())
+                    .getScopedTrainingActionConfig());
+  }
+
+  private List<ScopedTrainingActionConfig> getAllTrainerActions(String tenantId) {
+    return RequestContext.forTenantId(tenantId)
+        .call(
+            () ->
+                configServiceStub
+                    .getAllTrainingActions(GetAllTrainingActionsRequest.newBuilder().build())
+                    .getScopedTrainingActionConfigsList());
+  }
+
+  private Map<AnomalyConfigScope, ScopedTrainingActionConfig> getScopedTrainingActionConfigMap(
+      List<ScopedTrainingActionConfig> scopedActionConfigs) {
+    return scopedActionConfigs.stream()
+        .collect(Collectors.toMap(ScopedTrainingActionConfig::getConfigScope, Function.identity()));
+  }
+
+  private Map<TrainingAction.ActionCase, TrainingActionConfig> getActionConfigMap(
+      List<TrainingActionConfig> trainingActionConfigList) {
+    return trainingActionConfigList.stream()
+        .collect(
+            Collectors.toMap(
+                trainingActionConfig -> trainingActionConfig.getTrainingAction().getActionCase(),
+                Function.identity()));
   }
 }
