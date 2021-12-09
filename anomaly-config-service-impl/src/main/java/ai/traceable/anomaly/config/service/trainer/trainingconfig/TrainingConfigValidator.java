@@ -26,7 +26,7 @@ public class TrainingConfigValidator {
       return Status.INVALID_ARGUMENT.withDescription(
           "GetScopedTrainingConfigRequest should have a valid config scope.");
     }
-    return anomalyConfigValidator.validate(request.getConfigScope());
+    return anomalyConfigValidator.validate(request.getConfigScope(), true);
   }
 
   public Status validate(UpdateScopedTrainingConfigRequest request) {
@@ -36,7 +36,8 @@ public class TrainingConfigValidator {
     }
     Status status = validate(request.getScopedTrainingConfig().getTrainingConfigsList());
     if (status == Status.OK) {
-      return anomalyConfigValidator.validate(request.getScopedTrainingConfig().getConfigScope());
+      return anomalyConfigValidator.validate(
+          request.getScopedTrainingConfig().getConfigScope(), true);
     }
     return status;
   }

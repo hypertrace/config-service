@@ -3,10 +3,8 @@ package ai.traceable.anomaly.config.service;
 import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.ANOMALY_EXCLUSION_CONFIG_ANNOTATION;
 import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.ANOMALY_GLOBAL_CONFIG_ANNOTATION;
 import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.ANOMALY_MODSEC_CONFIG_ANNOTATION;
-import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.APIDEF_TRAINER_CONFIG_ANNOTATION;
 import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.TRAINER_CONFIG_ANNOTATION;
 
-import ai.traceable.anomaly.config.service.apidef.ApiDefinitionConfigServiceModule;
 import ai.traceable.anomaly.config.service.common.license.LicenseMeteringServiceModule;
 import ai.traceable.anomaly.config.service.exclusion.AnomalyExclusionConfigServiceModule;
 import ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceModule;
@@ -51,7 +49,6 @@ public class AnomalyConfigServiceModule extends AbstractModule {
     install(new AnomalyGlobalConfigServiceModule(ANOMALY_GLOBAL_CONFIG_ANNOTATION));
     install(new AnomalyExclusionConfigServiceModule(ANOMALY_EXCLUSION_CONFIG_ANNOTATION));
     install(new AnomalyModsecConfigServiceModule(ANOMALY_MODSEC_CONFIG_ANNOTATION));
-    install(new ApiDefinitionConfigServiceModule(APIDEF_TRAINER_CONFIG_ANNOTATION));
     install(new TrainerConfigServiceModule(TRAINER_CONFIG_ANNOTATION));
   }
 

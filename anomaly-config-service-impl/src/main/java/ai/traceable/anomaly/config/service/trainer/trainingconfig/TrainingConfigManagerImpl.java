@@ -77,7 +77,6 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
                     new IllegalArgumentException("Unable to get tenant id from request context")));
 
     switch (configScope.getScopeCase()) {
-      case SCOPE_NOT_SET: // for backward compatibility
       case CUSTOMER_SCOPE:
         break;
       case SERVICE_SCOPE:
@@ -198,7 +197,6 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
   private String getContextFromAnomalyConfigScope(AnomalyConfigScope anomalyConfigScope) {
     String context;
     switch (anomalyConfigScope.getScopeCase()) {
-      case SCOPE_NOT_SET: // for backward compatibility
       case CUSTOMER_SCOPE:
         context =
             RequestContext.CURRENT

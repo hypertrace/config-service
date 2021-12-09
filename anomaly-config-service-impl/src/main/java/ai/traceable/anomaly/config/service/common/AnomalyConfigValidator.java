@@ -28,6 +28,15 @@ public class AnomalyConfigValidator {
     return Status.OK;
   }
 
+  public Status validate(AnomalyConfigScope configScope, boolean checkForCustomerScope) {
+    if (checkForCustomerScope) {
+      if (configScope.getScopeCase() == AnomalyConfigScope.ScopeCase.SCOPE_NOT_SET) {
+        return Status.INVALID_ARGUMENT.withDescription("Anomaly Global Config Scope is not set.");
+      }
+    }
+    return validate(configScope);
+  }
+
   public Status validate(AnomalyConfigStatusChange configStatusChange) {
     if (!configStatusChange.hasDisabled() && !configStatusChange.hasInternal()) {
       return Status.INVALID_ARGUMENT.withDescription(

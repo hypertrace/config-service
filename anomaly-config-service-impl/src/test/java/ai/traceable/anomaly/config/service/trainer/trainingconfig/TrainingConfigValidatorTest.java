@@ -2,15 +2,10 @@ package ai.traceable.anomaly.config.service.trainer.trainingconfig;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.clearInvocations;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.StringList;
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ContentSizeTrainingConfig;
@@ -27,14 +22,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class TrainingConfigValidatorTest {
-  private final AnomalyConfigValidator configValidator = mock(AnomalyConfigValidator.class);
-  private final AnomalyConfigScope configScope = AnomalyConfigScope.newBuilder().build();
+  private final AnomalyConfigValidator configValidator = new AnomalyConfigValidator();
+  private final AnomalyConfigScope configScope =
+      AnomalyConfigScope.newBuilder()
+          .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+          .build();
 
   private TrainingConfigValidator validator;
 
   @BeforeEach
   void setUp() {
-    doReturn(Status.OK).when(configValidator).validate(configScope);
     this.validator = new TrainingConfigValidator(configValidator);
   }
 
@@ -43,13 +40,11 @@ class TrainingConfigValidatorTest {
     Status status = validator.validate(GetScopedTrainingConfigRequest.getDefaultInstance());
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(status.getDescription().contains("valid config scope"));
-    verify(configValidator, times(0)).validate((AnomalyConfigScope) any());
 
     status =
         validator.validate(
             GetScopedTrainingConfigRequest.newBuilder().setConfigScope(configScope).build());
     assertEquals(Status.OK.getCode(), status.getCode());
-    verify(configValidator, times(1)).validate((AnomalyConfigScope) any());
   }
 
   @Test
@@ -57,7 +52,6 @@ class TrainingConfigValidatorTest {
     Status status = validator.validate(UpdateScopedTrainingConfigRequest.getDefaultInstance());
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(status.getDescription().contains("valid config scope"));
-    verify(configValidator, times(0)).validate((AnomalyConfigScope) any());
 
     status =
         validator.validate(
@@ -66,7 +60,6 @@ class TrainingConfigValidatorTest {
                     ScopedTrainingConfig.newBuilder().setConfigScope(configScope).build())
                 .build());
     assertEquals(Status.OK.getCode(), status.getCode());
-    verify(configValidator, times(1)).validate((AnomalyConfigScope) any());
 
     TrainingConfig trainingConfig1 =
         TrainingConfig.newBuilder()
@@ -81,7 +74,6 @@ class TrainingConfigValidatorTest {
                     .setContentSize(ContentSizeTrainingConfig.newBuilder().build()))
             .build();
 
-    clearInvocations(configValidator);
     status =
         validator.validate(
             UpdateScopedTrainingConfigRequest.newBuilder()
@@ -92,7 +84,6 @@ class TrainingConfigValidatorTest {
                 .build());
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(status.getDescription().contains("only one training config"));
-    verify(configValidator, times(0)).validate((AnomalyConfigScope) any());
 
     trainingConfig2 =
         TrainingConfig.newBuilder()
@@ -109,7 +100,6 @@ class TrainingConfigValidatorTest {
                         .addAllTrainingConfigs(List.of(trainingConfig1, trainingConfig2)))
                 .build());
     assertEquals(Status.OK.getCode(), status.getCode());
-    verify(configValidator, times(1)).validate((AnomalyConfigScope) any());
   }
 
   @Test
@@ -132,7 +122,6 @@ class TrainingConfigValidatorTest {
             .getDescription()
             .contains(
                 "UpdateScopedTrainingConfigRequest should have only one training config for apiNamingTrainingConfigType: "));
-    verify(configValidator, times(0)).validate((AnomalyConfigScope) any());
 
     trainingConfigList = List.of(buildUrlFilterApiNamingTrainerConfig(List.of("a", "b")));
     status =
@@ -144,7 +133,6 @@ class TrainingConfigValidatorTest {
                         .addAllTrainingConfigs(trainingConfigList))
                 .build());
     assertEquals(Status.OK.getCode(), status.getCode());
-    verify(configValidator, times(1)).validate((AnomalyConfigScope) any());
   }
 
   private TrainingConfig buildUrlFilterApiNamingTrainerConfig(List<String> urls) {

@@ -124,6 +124,20 @@ public class AnomalyConfigValidatorTest {
                         .setParamName("param"))
                 .build());
     assertEquals(Status.OK.getCode(), status.getCode());
+
+    status = configValidator.validate(AnomalyConfigScope.getDefaultInstance(), true);
+
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("Config Scope is not set"));
+
+    status =
+        configValidator.validate(
+            AnomalyConfigScope.newBuilder()
+                .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+                .build(),
+            true);
+
+    assertEquals(Status.OK.getCode(), status.getCode());
   }
 
   @Test

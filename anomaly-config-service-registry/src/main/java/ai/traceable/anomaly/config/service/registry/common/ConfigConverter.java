@@ -4,7 +4,6 @@ import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleCategory;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.EnumExtension;
-import ai.traceable.anomaly.config.service.v1.apidef.ApiDefinitionTrainerConfig;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
@@ -43,13 +42,6 @@ public class ConfigConverter {
                   .build();
             })
         .collect(Collectors.toUnmodifiableMap(AnomalyRuleInfo::getRuleId, config -> config));
-  }
-
-  public ApiDefinitionTrainerConfig convertApiDefinitionTrainerConfig(Config config) {
-    ApiDefinitionTrainerConfig.Builder apiDefinitionTrainerConfigBuilder =
-        ApiDefinitionTrainerConfig.newBuilder();
-    mergeFromConfig(config, apiDefinitionTrainerConfigBuilder);
-    return apiDefinitionTrainerConfigBuilder.build();
   }
 
   @SneakyThrows

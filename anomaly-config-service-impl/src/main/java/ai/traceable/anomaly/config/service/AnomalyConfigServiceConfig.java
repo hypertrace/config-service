@@ -1,7 +1,6 @@
 package ai.traceable.anomaly.config.service;
 
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
-import ai.traceable.anomaly.config.service.v1.apidef.ApiDefinitionTrainerConfig;
 import com.typesafe.config.Config;
 
 public class AnomalyConfigServiceConfig {
@@ -18,10 +17,5 @@ public class AnomalyConfigServiceConfig {
 
   public Config getAnomalyGlobalConfig() {
     return this.config.getConfig(ANOMALY_GLOBAL_CONFIG_PATH);
-  }
-
-  public ApiDefinitionTrainerConfig getApiDefinitionTrainerConfig() {
-    return configConverter.convertApiDefinitionTrainerConfig(
-        this.config.getConfig(APIDEF_TRAINER_CONFIG_PATH));
   }
 }
