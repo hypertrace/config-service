@@ -12,31 +12,65 @@ message DataType {
 message DataTypeRule {
   string name = 1;
   optional string description = 2;
-  oneof matcher {
-    StringMatcher key_matcher = 3;
-    KeyValueMatcher key_value_matcher = 4;
-    ApiParamMatcher api_param_matcher = 5;
+  repeated ScopedPattern scoped_pattern = 3;
+
+  message ScopedPattern {
+    oneof scope {
+      GlobalScope global_scope = 1;
+      EnvironmentScope environment_scope = 2;
+      ApiScope api_scope = 3;
+    }
+    ParameterType parameter_type = 5;
+    oneof pattern {
+      StringPattern key_pattern = 6;
+      KeyValuePattern key_value_pattern = 7;
+    }
+    Action action = 8;
   }
 
-  message StringMatcher {
+  message GlobalScope {
+  }
+
+  message EnvironmentScope {
+    repeated string environment_ids = 1;
+  }
+
+  message ApiScope {
+    repeated string api_ids = 1;
+  }
+
+  message StringPattern {
     Operator operator = 1;
     string value = 2;
   }
 
-  message KeyValueMatcher {
-    StringMatcher key_matcher = 1;
-    StringMatcher value_matcher = 2;
+  message KeyValuePattern {
+    StringPattern key_pattern = 1;
+    StringPattern value_pattern = 2;
   }
 
-  message ApiParamMatcher {
-    string api_id = 1;
-    string param_name = 2;
+  enum ParameterType {
+    PARAMETER_TYPE_UNSPECIFIED = 0;
+    PARAMETER_TYPE_PATH = 1;
+    PARAMETER_TYPE_QUERY = 2;
+    PARAMETER_TYPE_REQUEST_HEADER = 3;
+    PARAMETER_TYPE_REQUEST_BODY = 4;
+    PARAMETER_TYPE_REQUEST_COOKIE = 5;
+    PARAMETER_TYPE_RESPONSE_HEADER = 6;
+    PARAMETER_TYPE_RESPONSE_BODY = 7;
+    PARAMETER_TYPE_RESPONSE_COOKIE = 8;
   }
 
   enum Operator {
     OPERATOR_UNSPECIFIED = 0;
     OPERATOR_EQUALS = 1; // operator to check if the key is equal to the provided value
     OPERATOR_MATCHES_REGEX = 2; // operator to check if the key matches the provided regex value
+  }
+
+  enum Action {
+    ACTION_UNSPECIFIED = 0;
+    ACTION_MATCH = 1; // action to apply the data type if match is successful
+    ACTION_IGNORE = 2; // action to ignore the data type if match is successful
   }
 }
 
