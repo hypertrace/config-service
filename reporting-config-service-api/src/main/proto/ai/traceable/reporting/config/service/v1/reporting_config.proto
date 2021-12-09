@@ -28,6 +28,12 @@ message ReportConfigurationDetails {
     }
 
     message InstantFrequency {
+      oneof report_time_range {
+        DayRange day_range = 1;
+        WeekRange week_range = 2;
+      }
+      message DayRange {}
+      message WeekRange {}
     }
 
     enum DayOfWeek {
