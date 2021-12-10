@@ -7,7 +7,7 @@ hypertrace-framework = "0.1.29"
 lombok = "1.18.20"
 jackson = "2.12.4"
 confluent = "6.0.1"
-netty = "4.1.68.Final"
+netty = "4.1.71.Final"
 kotlin = "1.4.32"
 
 junit = "5.7.2"
