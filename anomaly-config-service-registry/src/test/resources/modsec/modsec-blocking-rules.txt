@@ -1,7 +1,8 @@
 crs_913100 :: User-Agent associated with security scanner
 crs_913110 :: Request header associated with security scanner
 crs_913120 :: Request filename/argument associated with security scanner
-crs_9210110 :: HTTP Request Smuggling Attack (Request Splitting)
+crs_9210115 :: HTTP Request Smuggling Attack (Content-Length/Transfer-Encoding Confusion)
+crs_9210120 :: HTTP Request Smuggling Attack (Content-Length Confusion)
 crs_921140 :: HTTP Header Injection Attack via headers
 crs_9300120 :: OS File Access Attempt (T120)
 crs_930100 :: Path Traversal Attack (/../) (100)
@@ -25,4 +26,5 @@ crs_941300 :: IE XSS Filters - Attack (Object Tag)
 crs_941350 :: UTF-7 Encoding IE XSS - Attack
 crs_942290 :: Basic MongoDB SQL injection attempts
 crs_943100 :: Possible Session Fixation Attack: Setting Cookie Values in HTML
+crs_9440900 :: Java Log4j: JNDI Exploitation Attempt - T900
 crs_944120 :: Remote Command Execution: Java serialization (CVE-2015-4852) (120)
