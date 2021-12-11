@@ -123,7 +123,7 @@ public class ModsecRulesRegistryTest {
             + "crs_941 :: Cross Site Scripting (XSS)\n"
             + "crs_942 :: SQL Injection\n"
             + "crs_943 :: Session Fixation\n"
-            + "crs_944 :: Java Apache Struts Attacks",
+            + "crs_944 :: Java Application Attacks",
         anomalyRuleInfos.values().stream()
             .map(
                 anomalyRuleInfo ->
