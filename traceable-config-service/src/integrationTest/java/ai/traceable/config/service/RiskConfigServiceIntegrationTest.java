@@ -481,10 +481,10 @@ class RiskConfigServiceIntegrationTest extends TraceableConfigServiceIntegration
 
     RiskFactorConfig riskFactorConfig1 =
         RiskFactorConfig.newBuilder()
-            .setId("sensitiveDataExposure")
+            .setId("sensitive-data-exposure")
             .addRiskElementConfigs(
                 RiskElementConfig.newBuilder()
-                    .setId("request-has-params")
+                    .setId("request-has-5-or-more-params")
                     .setRiskElementInfo(
                         RiskElementInfo.newBuilder()
                             .setRequestParamsCount(
@@ -499,10 +499,7 @@ class RiskConfigServiceIntegrationTest extends TraceableConfigServiceIntegration
                         RiskFactorScoreContribution.RISK_FACTOR_SCORE_CONTRIBUTION_ABSOLUTE))
             .build();
     RiskFactorConfig riskFactorConfig2 = getCustomTagUpdatedConfig(true);
-    RiskFactorConfig updatedRiskFactorConfig1 =
-        riskFactorConfig1.toBuilder()
-            .setRiskFactorScoring(RiskFactorScoring.newBuilder().setDisabled(true))
-            .build();
+    RiskFactorConfig updatedRiskFactorConfig1 = getSensitiveDataExposureFactorConfig(true, 9);
 
     GrpcClientRequestContextUtil.executeInTenantContext(
         TENANT_ID,
@@ -655,21 +652,100 @@ class RiskConfigServiceIntegrationTest extends TraceableConfigServiceIntegration
         .setIsDefault(true)
         .setRiskFactorInfo(
             RiskFactorInfo.newBuilder()
-                .setName("sensitiveDataExposure")
+                .setName("sensitive-data-exposure")
                 .setRiskFactorType(RiskFactorType.RISK_FACTOR_TYPE_SENSITIVE_DATA_EXPOSURE))
         .setRiskFactorConfig(
             RiskFactorConfig.newBuilder()
-                .setId("sensitiveDataExposure")
+                .setId("sensitive-data-exposure")
                 .addRiskElementConfigs(
                     RiskElementConfig.newBuilder()
-                        .setId("request-has-params")
+                        .setId("request-has-1-or-more-params")
+                        .setRiskElementInfo(
+                            RiskElementInfo.newBuilder()
+                                .setRequestParamsCount(
+                                    IntPredicate.newBuilder()
+                                        .setOperator(IntOperator.INT_OPERATOR_GREATER_THAN)
+                                        .setValue(1)))
+                        .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(1)))
+                .addRiskElementConfigs(
+                    RiskElementConfig.newBuilder()
+                        .setId("request-has-3-or-more-params")
+                        .setRiskElementInfo(
+                            RiskElementInfo.newBuilder()
+                                .setRequestParamsCount(
+                                    IntPredicate.newBuilder()
+                                        .setOperator(IntOperator.INT_OPERATOR_GREATER_THAN)
+                                        .setValue(3)))
+                        .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(3)))
+                .addRiskElementConfigs(
+                    RiskElementConfig.newBuilder()
+                        .setId("request-has-5-or-more-params")
                         .setRiskElementInfo(
                             RiskElementInfo.newBuilder()
                                 .setRequestParamsCount(
                                     IntPredicate.newBuilder()
                                         .setOperator(IntOperator.INT_OPERATOR_GREATER_THAN)
                                         .setValue(5)))
-                        .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(7))))
+                        .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(7)))
+                .addRiskElementConfigs(
+                    RiskElementConfig.newBuilder()
+                        .setId("request-has-10-or-more-params")
+                        .setRiskElementInfo(
+                            RiskElementInfo.newBuilder()
+                                .setRequestParamsCount(
+                                    IntPredicate.newBuilder()
+                                        .setOperator(IntOperator.INT_OPERATOR_GREATER_THAN)
+                                        .setValue(10)))
+                        .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(10))))
+        .build();
+  }
+
+  private RiskFactorConfig getSensitiveDataExposureFactorConfig(
+      boolean disabled, int request5orMoreParamsScore) {
+    return RiskFactorConfig.newBuilder()
+        .setId("sensitive-data-exposure")
+        .setRiskFactorScoring(RiskFactorScoring.newBuilder().setDisabled(disabled))
+        .addRiskElementConfigs(
+            RiskElementConfig.newBuilder()
+                .setId("request-has-1-or-more-params")
+                .setRiskElementInfo(
+                    RiskElementInfo.newBuilder()
+                        .setRequestParamsCount(
+                            IntPredicate.newBuilder()
+                                .setOperator(IntOperator.INT_OPERATOR_GREATER_THAN)
+                                .setValue(1)))
+                .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(1)))
+        .addRiskElementConfigs(
+            RiskElementConfig.newBuilder()
+                .setId("request-has-3-or-more-params")
+                .setRiskElementInfo(
+                    RiskElementInfo.newBuilder()
+                        .setRequestParamsCount(
+                            IntPredicate.newBuilder()
+                                .setOperator(IntOperator.INT_OPERATOR_GREATER_THAN)
+                                .setValue(3)))
+                .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(3)))
+        .addRiskElementConfigs(
+            RiskElementConfig.newBuilder()
+                .setId("request-has-5-or-more-params")
+                .setRiskElementInfo(
+                    RiskElementInfo.newBuilder()
+                        .setRequestParamsCount(
+                            IntPredicate.newBuilder()
+                                .setOperator(IntOperator.INT_OPERATOR_GREATER_THAN)
+                                .setValue(5)))
+                .setRiskElementScoring(
+                    RiskElementScoring.newBuilder().setScore(request5orMoreParamsScore)))
+        .addRiskElementConfigs(
+            RiskElementConfig.newBuilder()
+                .setId("request-has-10-or-more-params")
+                .setRiskElementInfo(
+                    RiskElementInfo.newBuilder()
+                        .setRequestParamsCount(
+                            IntPredicate.newBuilder()
+                                .setOperator(IntOperator.INT_OPERATOR_GREATER_THAN)
+                                .setValue(10)))
+                .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(10)))
         .build();
   }
 

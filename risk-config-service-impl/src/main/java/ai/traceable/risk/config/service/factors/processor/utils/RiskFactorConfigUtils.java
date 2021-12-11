@@ -12,6 +12,7 @@ import io.grpc.Status;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -57,31 +58,32 @@ public class RiskFactorConfigUtils extends RiskConfigUtils<RiskFactorConfig> {
                             .contains(CUSTOMIZATION_OPTIONS_FACTOR_SCORE_CONTRIBUTION))
                     : defaultConfig.getRiskFactorConfig().getRiskFactorScoring());
 
-    Map<String, RiskElementConfig> elementConfigMap =
+    Collection<RiskElementConfig> mergedElementConfigs =
         mergeConfigs(
-                specificConfig.getRiskElementConfigsList(),
-                defaultConfig.getRiskFactorConfig().getRiskElementConfigsList(),
-                defaultConfig
-                    .getCustomizationOptionsList()
-                    .contains(CUSTOMIZATION_OPTIONS_ELEMENT_ADD_DELETE),
-                specificConfig.getId())
-            .stream()
+            specificConfig.getRiskElementConfigsList(),
+            defaultConfig.getRiskFactorConfig().getRiskElementConfigsList(),
+            defaultConfig
+                .getCustomizationOptionsList()
+                .contains(CUSTOMIZATION_OPTIONS_ELEMENT_ADD_DELETE),
+            specificConfig.getId());
+
+    Map<String, RiskElementConfig> elementConfigMap =
+        elementConfigs.stream()
             .collect(Collectors.toMap(RiskElementConfig::getId, Function.identity()));
 
     if (!defaultConfig
         .getCustomizationOptionsList()
         .contains(CUSTOMIZATION_OPTIONS_ELEMENT_ADD_DELETE)) {
-      // risk element associations with the factors cannot be modified by user
-      // their configs are stored separately..
-      for (RiskElementConfig config : elementConfigs) {
-        if (elementConfigMap.containsKey(config.getId())) {
-          elementConfigMap.put(config.getId(), config);
-        }
-      }
+      mergedElementConfigs =
+          mergedElementConfigs.stream()
+              .map(
+                  config ->
+                      Optional.ofNullable(elementConfigMap.get(config.getId())).orElse(config))
+              .collect(Collectors.toUnmodifiableList());
     }
 
     RiskFactorConfig mergedConfig =
-        mergedBuilder.addAllRiskElementConfigs(elementConfigMap.values()).build();
+        mergedBuilder.addAllRiskElementConfigs(mergedElementConfigs).build();
 
     return defaultConfig.toBuilder()
         .setRiskFactorConfig(mergedConfig)
@@ -144,22 +146,33 @@ public class RiskFactorConfigUtils extends RiskConfigUtils<RiskFactorConfig> {
       return highPriorityConfigs;
     } else {
       Map<String, RiskElementConfig> elementConfigMap =
-          lowPriorityConfigs.stream()
+          highPriorityConfigs.stream()
               .collect(Collectors.toMap(RiskElementConfig::getId, Function.identity()));
-      for (RiskElementConfig config : highPriorityConfigs) {
-        String id = config.getId();
-        if (elementConfigMap.containsKey(id)) {
-          elementConfigMap.put(
-              config.getId(),
-              riskElementConfigUtils.mergeConfigs(config, elementConfigMap.get(id)));
-        } else {
-          throw Status.NOT_FOUND
-              .withDescription(
-                  String.format("Risk element id:%s NOT FOUND for factor id:%s", id, factorId))
-              .asRuntimeException();
-        }
+
+      Collection<RiskElementConfig> elementConfigs =
+          lowPriorityConfigs.stream()
+              .map(
+                  config -> {
+                    String id = config.getId();
+                    if (elementConfigMap.containsKey(id)) {
+                      RiskElementConfig mergedConfig =
+                          riskElementConfigUtils.mergeConfigs(elementConfigMap.get(id), config);
+                      elementConfigMap.remove(id);
+                      return mergedConfig;
+                    }
+                    return config;
+                  })
+              .collect(Collectors.toUnmodifiableList());
+
+      if (!elementConfigMap.isEmpty()) {
+        throw Status.NOT_FOUND
+            .withDescription(
+                String.format(
+                    "Risk element ids:%s NOT FOUND for factor id:%s",
+                    String.join(",", elementConfigMap.keySet()), factorId))
+            .asRuntimeException();
       }
-      return elementConfigMap.values();
+      return elementConfigs;
     }
   }
 }

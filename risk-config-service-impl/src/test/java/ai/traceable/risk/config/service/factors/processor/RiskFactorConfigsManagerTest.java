@@ -2,6 +2,7 @@ package ai.traceable.risk.config.service.factors.processor;
 
 import static ai.traceable.risk.config.service.factors.processor.MockFactorConfigsData.getDefaultMotiveFactor;
 import static ai.traceable.risk.config.service.factors.processor.MockFactorConfigsData.getDefaultSensitiveDataExposureFactor;
+import static ai.traceable.risk.config.service.factors.processor.MockFactorConfigsData.getSensitiveDataExposureFactorConfig;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -246,7 +247,7 @@ public class RiskFactorConfigsManagerTest {
             .setId("sensitive-data-exposure")
             .addRiskElementConfigs(
                 RiskElementConfig.newBuilder()
-                    .setId("request-has-params")
+                    .setId("request-has-5-or-more-params")
                     .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(9)))
             .setRiskFactorScoring(
                 RiskFactorScoring.newBuilder()
@@ -255,21 +256,7 @@ public class RiskFactorConfigsManagerTest {
                         RiskFactorScoreContribution.RISK_FACTOR_SCORE_CONTRIBUTION_ABSOLUTE))
             .build();
     RiskFactorConfig riskFactorConfig2 = getCustomTagUpdatedConfig(true);
-    RiskFactorConfig updatedRiskFactorConfig1 =
-        RiskFactorConfig.newBuilder()
-            .setId("sensitive-data-exposure")
-            .addRiskElementConfigs(
-                RiskElementConfig.newBuilder()
-                    .setId("request-has-params")
-                    .setRiskElementInfo(
-                        RiskElementInfo.newBuilder()
-                            .setRequestParamsCount(
-                                IntPredicate.newBuilder()
-                                    .setOperator(IntOperator.INT_OPERATOR_GREATER_THAN)
-                                    .setValue(5)))
-                    .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(9)))
-            .setRiskFactorScoring(RiskFactorScoring.newBuilder().setDisabled(true))
-            .build();
+    RiskFactorConfig updatedRiskFactorConfig1 = getSensitiveDataExposureFactorConfig(true, 9);
 
     configsManager.updateRiskLikelihoodConfigs(
         requestContext,
