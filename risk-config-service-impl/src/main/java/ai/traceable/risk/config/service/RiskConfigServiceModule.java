@@ -8,6 +8,7 @@ import com.google.inject.Provides;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
@@ -17,16 +18,22 @@ public class RiskConfigServiceModule extends AbstractModule {
 
   private final Config config;
   private final ManagedChannel channel;
+  private final ConfigChangeEventGenerator configChangeEventGenerator;
 
-  RiskConfigServiceModule(ManagedChannel channel, Config config) {
+  RiskConfigServiceModule(
+      ManagedChannel channel,
+      Config config,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     this.channel = channel;
     this.config = config;
+    this.configChangeEventGenerator = configChangeEventGenerator;
   }
 
   @Override
   protected void configure() {
     bind(BindableService.class).to(RiskConfigServiceImpl.class);
     bind(ManagedChannel.class).toInstance(channel);
+    bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
     install(new RiskLevelConfigModule());
     install(new RiskFactorGridConfigModule());
     install(new RiskFactorConfigsModule());

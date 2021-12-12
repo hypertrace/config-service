@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -220,8 +221,9 @@ public class MockFactorConfigsData {
     protected MockRiskFactorConfigStore(
         ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
         RiskConfigConverter<RiskFactorConfig> configConverter,
-        RiskConfigUtils<RiskFactorConfig> configUtils) {
-      super(configServiceBlockingStub, configConverter, configUtils);
+        RiskConfigUtils<RiskFactorConfig> configUtils,
+        ConfigChangeEventGenerator configChangeEventGenerator) {
+      super(configServiceBlockingStub, configConverter, configUtils, configChangeEventGenerator);
     }
 
     @Override
@@ -270,8 +272,9 @@ public class MockFactorConfigsData {
     protected MockRiskElementConfigStore(
         ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
         RiskConfigConverter<RiskElementConfig> configConverter,
-        RiskConfigUtils<RiskElementConfig> configUtils) {
-      super(configServiceBlockingStub, configConverter, configUtils);
+        RiskConfigUtils<RiskElementConfig> configUtils,
+        ConfigChangeEventGenerator configChangeEventGenerator) {
+      super(configServiceBlockingStub, configConverter, configUtils, configChangeEventGenerator);
     }
 
     @Override

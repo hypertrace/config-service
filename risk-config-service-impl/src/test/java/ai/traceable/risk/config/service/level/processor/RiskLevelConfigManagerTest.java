@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.objectstore.DefaultObjectStore;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +36,8 @@ public class RiskLevelConfigManagerTest {
             .setHighLevelMinScore(5)
             .setCriticalLevelMinScore(8)
             .build();
-    configStore = new MockRiskLevelConfigStore(null, null, null);
+    configStore =
+        new MockRiskLevelConfigStore(null, null, null, mock(ConfigChangeEventGenerator.class));
     riskLevelConfigManager =
         new RiskLevelConfigManagerImpl(
             configStore, new RiskLevelConfigUtils(), defaultRiskLevelConfigValues);
@@ -82,8 +84,9 @@ public class RiskLevelConfigManagerTest {
     protected MockRiskLevelConfigStore(
         ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
         RiskConfigConverter<RiskLevelConfigValues> configConverter,
-        RiskConfigUtils<RiskLevelConfigValues> configUtils) {
-      super(configServiceBlockingStub, configConverter, configUtils);
+        RiskConfigUtils<RiskLevelConfigValues> configUtils,
+        ConfigChangeEventGenerator configChangeEventGenerator) {
+      super(configServiceBlockingStub, configConverter, configUtils, configChangeEventGenerator);
     }
 
     @Override

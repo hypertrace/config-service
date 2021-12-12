@@ -18,6 +18,7 @@ dependencies {
   implementation(libs.hypertrace.grpcutils.client)
   implementation(libs.hypertrace.configservice.protoconverter)
   implementation(libs.hypertrace.configservice.objectstore)
+  implementation(libs.hypertrace.configservice.changeeventgenerator)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

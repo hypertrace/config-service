@@ -6,6 +6,7 @@ import static ai.traceable.risk.config.service.factors.processor.MockFactorConfi
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import ai.traceable.risk.config.service.factors.RiskFactorConfigsManager;
 import ai.traceable.risk.config.service.factors.processor.utils.RiskElementConfigUtils;
@@ -26,6 +27,7 @@ import ai.traceable.risk.config.service.v1.StringPredicate;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,8 +43,12 @@ public class RiskFactorConfigsManagerTest {
   public void setup() {
     defaultRiskContributorConfigs = MockFactorConfigsData.mockDefaultRiskContributorConfigs();
     defaultRiskImpactConfigs = MockFactorConfigsData.mockDefaultRiskImpactConfigs();
-    factorConfigStore = new MockFactorConfigsData.MockRiskFactorConfigStore(null, null, null);
-    elementConfigStore = new MockFactorConfigsData.MockRiskElementConfigStore(null, null, null);
+    factorConfigStore =
+        new MockFactorConfigsData.MockRiskFactorConfigStore(
+            null, null, null, mock(ConfigChangeEventGenerator.class));
+    elementConfigStore =
+        new MockFactorConfigsData.MockRiskElementConfigStore(
+            null, null, null, mock(ConfigChangeEventGenerator.class));
     configsManager =
         new RiskFactorConfigsManagerImpl(
             factorConfigStore,

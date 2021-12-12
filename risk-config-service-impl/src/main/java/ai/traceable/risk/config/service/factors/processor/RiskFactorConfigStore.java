@@ -9,6 +9,7 @@ import java.util.Optional;
 import javax.inject.Inject;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 
 public class RiskFactorConfigStore extends IdentifiedObjectStore<RiskFactorConfig> {
@@ -20,11 +21,13 @@ public class RiskFactorConfigStore extends IdentifiedObjectStore<RiskFactorConfi
   protected RiskFactorConfigStore(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
       RiskConfigConverter<RiskFactorConfig> configConverter,
-      RiskConfigUtils<RiskFactorConfig> configUtils) {
+      RiskConfigUtils<RiskFactorConfig> configUtils,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
         configServiceBlockingStub,
         RiskConfigConstants.RISK_CONFIG_NAMESPACE,
-        RiskConfigConstants.RISK_FACTOR_CONFIG_RESOURCE_NAME);
+        RiskConfigConstants.RISK_FACTOR_CONFIG_RESOURCE_NAME,
+        configChangeEventGenerator);
     this.configConverter = configConverter;
     this.configUtils = configUtils;
   }
