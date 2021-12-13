@@ -24,6 +24,12 @@ message RiskElementInfo {
     BooleanPredicate unauthenticated = 13;
     StringPredicate path_param_type = 14;
     IntPredicate path_params_count = 15;
+    IntRangePredicate request_params_range = 16;
+    IntRangePredicate response_params_range = 17;
+    IntPredicate vulnerabilities_count = 18;
+    BooleanPredicate hsts_not_set_vulnerability = 19;
+    BooleanPredicate basic_auth_used_vulnerability = 20;
+    BooleanPredicate no_encryption_vulnerability = 21;
   }
 }
 
@@ -43,6 +49,11 @@ message BooleanPredicate {
 message IntPredicate {
   IntOperator operator = 1;
   int64 value = 2;
+}
+
+message IntRangePredicate {
+  int64 min_inclusive_value = 1;
+  int64 max_inclusive_value = 2;
 }
 
 message StringPredicate {
