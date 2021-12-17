@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -246,7 +247,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
             responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
             return;
           }
-          if (isDuplicateKey(requestContext, updateLabelData.getKey())) {
+          if (isDuplicateKey(requestContext, request.getId(), updateLabelData.getKey())) {
             responseObserver.onError(new StatusRuntimeException(Status.ALREADY_EXISTS));
             return;
           }
@@ -299,6 +300,11 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     } catch (Exception e) {
       responseObserver.onError(e);
     }
+  }
+
+  private boolean isDuplicateKey(RequestContext requestContext, String id, String key) {
+    return Optional.ofNullable(getLabelsMap(requestContext).get(key)).stream()
+        .anyMatch(label -> !label.getId().equals(id));
   }
 
   private boolean isDuplicateKey(RequestContext requestContext, String key) {

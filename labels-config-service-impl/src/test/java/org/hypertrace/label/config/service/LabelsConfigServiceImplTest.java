@@ -253,7 +253,8 @@ public final class LabelsConfigServiceImplTest {
                       .build());
             });
     assertEquals(Status.ALREADY_EXISTS, Status.fromThrowable(exception1));
-    // Updating the labels by appending the keys of labels with a "new"
+
+    // Updating the labels by adding description
     List<Label> updateLabelsList =
         createdLabelsList.stream()
             .map(
@@ -261,7 +262,10 @@ public final class LabelsConfigServiceImplTest {
                     Label.newBuilder()
                         .setId(label.getId())
                         .setData(
-                            LabelData.newBuilder().setKey(label.getData().getKey() + "new").build())
+                            LabelData.newBuilder()
+                                .setKey(label.getData().getKey())
+                                .setDescription("description")
+                                .build())
                         .build())
             .collect(Collectors.toList());
     List<Label> updatedLabelsList =
@@ -278,6 +282,36 @@ public final class LabelsConfigServiceImplTest {
                 })
             .collect(Collectors.toList());
     assertEquals(updateLabelsList, updatedLabelsList);
+
+    // Updating the labels by appending the keys of labels with a "new"
+    updateLabelsList =
+        createdLabelsList.stream()
+            .map(
+                label ->
+                    Label.newBuilder()
+                        .setId(label.getId())
+                        .setData(
+                            LabelData.newBuilder()
+                                .setKey(label.getData().getKey() + "new")
+                                .setDescription("description")
+                                .build())
+                        .build())
+            .collect(Collectors.toList());
+    updatedLabelsList =
+        updateLabelsList.stream()
+            .map(
+                updateLabel -> {
+                  UpdateLabelResponse response =
+                      labelConfigStub.updateLabel(
+                          UpdateLabelRequest.newBuilder()
+                              .setId(updateLabel.getId())
+                              .setData(updateLabel.getData())
+                              .build());
+                  return response.getLabel();
+                })
+            .collect(Collectors.toList());
+    assertEquals(updateLabelsList, updatedLabelsList);
+
     // Updating a label that does not exist
     Throwable exception =
         assertThrows(
