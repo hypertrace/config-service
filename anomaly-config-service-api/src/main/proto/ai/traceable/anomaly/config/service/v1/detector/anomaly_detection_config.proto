@@ -119,18 +119,21 @@ message MissingParamAnomalyConfig {
   StringList severe_names = 2;
   optional bool evaluate_request_body_params = 3;
   optional bool enabled_for_internal_ips = 4;
+  StringList thresholds_families_excluded = 5;
 }
 
 message UnknownParamAnomalyConfig {
   StringList severe_names = 1;
   optional bool modsecurity_enabled = 2;
   optional bool enabled_for_internal_ips = 3;
+  StringList thresholds_families_excluded = 4;
 }
 
 message EnumerationsAnomalyConfig {
   StringList no_anomaly_strings = 1;
   optional bool modsecurity_enabled = 2;
   optional bool enabled_for_internal_ips = 3;
+  StringList thresholds_families_excluded = 4;
 }
 
 message IntegerAnomalyConfig {
@@ -184,18 +187,22 @@ message SsrfAnomalyConfig {
 
 message LearntApiAnomalyConfig {
   optional bool modsecurity_enabled = 1;
+  optional bool evaluate_all_modsecurity_rules = 2;
 }
 
 message UnderDiscoveryApiAnomalyConfig {
   optional bool modsecurity_enabled = 1;
   StringList reject_url_regex_strings = 2;
+  optional bool evaluate_all_modsecurity_rules = 3;
 }
 
 message UnderThresholdLearningApiAnomalyConfig {
   optional bool modsecurity_enabled = 1;
   StringList reject_url_regex_strings = 2;
+  optional bool evaluate_all_modsecurity_rules = 3;
 }
 
 message UnknownApiAnomalyConfig {
   optional bool modsecurity_enabled = 1;
+  optional bool evaluate_all_modsecurity_rules = 2;
 }
