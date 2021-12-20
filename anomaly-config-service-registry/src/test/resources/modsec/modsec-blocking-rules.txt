@@ -27,4 +27,5 @@ crs_941350 :: UTF-7 Encoding IE XSS - Attack
 crs_942290 :: Basic MongoDB SQL injection attempts
 crs_943100 :: Possible Session Fixation Attack: Setting Cookie Values in HTML
 crs_9440900 :: Java Log4j: JNDI Exploitation (CVE-2021-44228) (T900)
+crs_9440910 :: Java Log4j: RCE DoS Exploitation (CVE-2021-45105) (T910)
 crs_944120 :: Remote Command Execution: Java serialization (CVE-2015-4852) (120)
