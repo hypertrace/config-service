@@ -73,7 +73,7 @@ public class DefaultRiskImpactConfigsProviderTest {
       assertEquals(
           RiskFactorScoring.getDefaultInstance(),
           factor.getRiskFactorConfig().getRiskFactorScoring());
-      assertEquals(1, factor.getRiskFactorConfig().getRiskElementConfigsCount());
+      assertEquals(5, factor.getRiskFactorConfig().getRiskElementConfigsCount());
     }
     {
       RiskFactor factor = factorMap.get("sensitiveDataExposure");
@@ -196,7 +196,7 @@ public class DefaultRiskImpactConfigsProviderTest {
       assertEquals(
           RiskFactorScoring.getDefaultInstance(),
           factor.getRiskFactorConfig().getRiskFactorScoring());
-      assertEquals(1, factor.getRiskFactorConfig().getRiskElementConfigsCount());
+      assertEquals(5, factor.getRiskFactorConfig().getRiskElementConfigsCount());
     }
     {
       RiskFactor factor = factorMap.get("sensitiveDataExposure");
