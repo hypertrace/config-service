@@ -30,6 +30,7 @@ message RiskElementInfo {
     BooleanPredicate hsts_not_set_vulnerability = 19;
     BooleanPredicate basic_auth_used_vulnerability = 20;
     BooleanPredicate no_encryption_vulnerability = 21;
+    BooleanPredicate other_vulnerabilities = 22;
   }
 }
 
