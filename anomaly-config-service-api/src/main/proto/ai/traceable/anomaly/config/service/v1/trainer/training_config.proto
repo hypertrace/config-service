@@ -172,6 +172,7 @@ message ObjectBolaTrainingConfig {
   ThresholdCountConfig required_count_config = 2;
   StringList prefixes_not_allowed_in_response_param_key = 3;
   StringList suffixes_not_allowed_in_response_param_key = 4;
+  optional bool enabled_on_same_api = 5;
 }
 
 message UserIdBolaTrainingConfig {
