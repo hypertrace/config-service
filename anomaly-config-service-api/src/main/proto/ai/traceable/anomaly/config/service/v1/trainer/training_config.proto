@@ -207,6 +207,7 @@ message ParamSusceptibilityConfig {
   StringList prefixes_not_allowed_in_request_param_key = 1;
   StringList suffixes_not_allowed_in_request_param_key = 2;
   optional string request_param_value_regex = 3;
+  StringList susceptible_request_param_keys = 4;
 }
 
 message UrlFilterConfig {
