@@ -112,8 +112,9 @@ class ThreatManagementConfigRequestValidator {
     int lowScore = securityEventScoreContribution.getLowScore();
     int mediumScore = securityEventScoreContribution.getMediumScore();
     int highScore = securityEventScoreContribution.getHighScore();
+    int criticalScore = securityEventScoreContribution.getCriticalScore();
 
-    if (lowScore < 0 || mediumScore < 0 || highScore < 0) {
+    if (lowScore < 0 || mediumScore < 0 || highScore < 0 || criticalScore < 0) {
       throw new IllegalArgumentException(
           "security event score contributions should be non negative");
     }

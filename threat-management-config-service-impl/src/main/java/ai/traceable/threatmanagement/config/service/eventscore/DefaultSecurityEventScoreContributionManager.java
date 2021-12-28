@@ -56,6 +56,7 @@ class DefaultSecurityEventScoreContributionManager
         .setLowScore(this.config.getDefaultSecurityEventContributionLowScore())
         .setMediumScore(this.config.getDefaultSecurityEventContributionMediumScore())
         .setHighScore(this.config.getDefaultSecurityEventContributionHighScore())
+        .setCriticalScore(this.config.getDefaultSecurityEventContributionCriticalScore())
         .build();
   }
 

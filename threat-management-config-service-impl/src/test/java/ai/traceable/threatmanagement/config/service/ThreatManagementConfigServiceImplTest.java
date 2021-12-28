@@ -61,6 +61,7 @@ class ThreatManagementConfigServiceImplTest {
   private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_LOW_SCORE = 1;
   private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_MEDIUM_SCORE = 2;
   private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_HIGH_SCORE = 3;
+  private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_CRITICAL_SCORE = 10;
 
   private static final int DEFAULT_ANOMALY_CONTRIBUTION_SCORE = 1;
 
@@ -85,12 +86,14 @@ class ThreatManagementConfigServiceImplTest {
           .setLowScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_LOW_SCORE)
           .setMediumScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_MEDIUM_SCORE)
           .setHighScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_HIGH_SCORE)
+          .setCriticalScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_CRITICAL_SCORE)
           .build();
   private static final SecurityEventScoreContribution SECURITY_EVENT_SCORE_CONTRIBUTION_1 =
       SecurityEventScoreContribution.newBuilder()
           .setLowScore(10)
           .setMediumScore(20)
           .setHighScore(30)
+          .setCriticalScore(100)
           .build();
   private static final SecurityEventScoreContribution SECURITY_EVENT_SCORE_CONTRIBUTION_2 =
       SecurityEventScoreContribution.newBuilder()

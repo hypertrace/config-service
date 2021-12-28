@@ -32,12 +32,14 @@ class DefaultSecurityEventScoreContributionManagerTest {
   private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_LOW_SCORE = 1;
   private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_MEDIUM_SCORE = 2;
   private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_HIGH_SCORE = 3;
+  private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_CRITICAL_SCORE = 10;
 
   private static final SecurityEventScoreContribution SECURITY_EVENT_SCORE_CONTRIBUTION_1 =
       SecurityEventScoreContribution.newBuilder()
           .setLowScore(10)
           .setMediumScore(20)
           .setHighScore(30)
+          .setCriticalScore(100)
           .build();
 
   private static final Value SECURITY_EVENT_SCORE_CONTRIBUTION_CONFIG_1_VALUE =
@@ -46,7 +48,8 @@ class DefaultSecurityEventScoreContributionManagerTest {
               Struct.newBuilder()
                   .putFields("lowScore", Value.newBuilder().setNumberValue(10).build())
                   .putFields("mediumScore", Value.newBuilder().setNumberValue(20).build())
-                  .putFields("highScore", Value.newBuilder().setNumberValue(30).build()))
+                  .putFields("highScore", Value.newBuilder().setNumberValue(30).build())
+                  .putFields("criticalScore", Value.newBuilder().setNumberValue(100).build()))
           .build();
 
   private static final SecurityEventScoreContribution SECURITY_EVENT_SCORE_CONTRIBUTION_2 =
@@ -54,6 +57,7 @@ class DefaultSecurityEventScoreContributionManagerTest {
           .setLowScore(100)
           .setMediumScore(200)
           .setHighScore(300)
+          .setCriticalScore(1000)
           .build();
 
   private static final Value SECURITY_EVENT_SCORE_CONTRIBUTION_CONFIG_2_VALUE =
@@ -62,7 +66,8 @@ class DefaultSecurityEventScoreContributionManagerTest {
               Struct.newBuilder()
                   .putFields("lowScore", Value.newBuilder().setNumberValue(100).build())
                   .putFields("mediumScore", Value.newBuilder().setNumberValue(200).build())
-                  .putFields("highScore", Value.newBuilder().setNumberValue(300).build()))
+                  .putFields("highScore", Value.newBuilder().setNumberValue(300).build())
+                  .putFields("criticalScore", Value.newBuilder().setNumberValue(1000).build()))
           .build();
 
   @Mock private ConfigServiceBlockingStub configServiceStub;
@@ -99,12 +104,15 @@ class DefaultSecurityEventScoreContributionManagerTest {
         .thenReturn(DEFAULT_SECURITY_EVENT_CONTRIBUTION_MEDIUM_SCORE);
     when(this.config.getDefaultSecurityEventContributionHighScore())
         .thenReturn(DEFAULT_SECURITY_EVENT_CONTRIBUTION_HIGH_SCORE);
+    when(this.config.getDefaultSecurityEventContributionCriticalScore())
+        .thenReturn(DEFAULT_SECURITY_EVENT_CONTRIBUTION_CRITICAL_SCORE);
 
     assertEquals(
         SecurityEventScoreContribution.newBuilder()
             .setLowScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_LOW_SCORE)
             .setMediumScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_MEDIUM_SCORE)
             .setHighScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_HIGH_SCORE)
+            .setCriticalScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_CRITICAL_SCORE)
             .build(),
         securityEventScoreContributionManager.getSecurityEventScoreContribution(REQUEST_CONTEXT));
   }
