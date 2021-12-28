@@ -62,6 +62,7 @@ message ApiNamingTrainingConfig {
   oneof config {
     UrlFilterConfig url_filter_config = 1;
     TrieModelTrainingConfig trie_model_training_config = 2;
+    CustomRulesListConfig custom_rules_list_config = 3;
   }
 }
 
@@ -226,4 +227,13 @@ message TrieModelTrainingConfig {
 message ThresholdRegexConfig {
   optional int32 threshold = 1;
   StringList regex_list = 2;
+}
+
+message CustomRulesListConfig{
+  repeated CustomRuleConfig custom_rules_config = 1;
+}
+
+message CustomRuleConfig{
+  string regex = 1;
+  string url_pattern = 2;
 }
