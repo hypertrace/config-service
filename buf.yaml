@@ -16,6 +16,9 @@ build:
     - alerting-config-service-api/src/main/proto
     - hypertrace-config-service/alerting-config-service-api/src/main/proto
     - data-classification-api/src/main/proto
+    - iprange-config-service-api/src/main/proto
+    - license-status-config-service-api/src/main/proto
+    - threat-management-config-service-api/src/main/proto
 lint:
   use:
     - DEFAULT

@@ -21,7 +21,6 @@ service LocalProcessingRulesService {
 
   // get default protection mode
   rpc GetDefaultProtectionMode(GetDefaultProtectionModeRequest) returns (GetDefaultProtectionModeResponse) {}
-
 }
 
 message CreateLocalProcessingRuleRequest {
