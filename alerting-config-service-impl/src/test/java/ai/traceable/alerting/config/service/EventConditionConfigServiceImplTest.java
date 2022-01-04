@@ -74,6 +74,7 @@ public class EventConditionConfigServiceImplTest {
             .getAllEventConditions(GetAllEventConditionsRequest.getDefaultInstance())
             .getEventConditionsList());
 
+    // update severity of first event from HIGH -> LOW and second event from HIGH -> CRITICAL
     EventCondition eventCondition1ToUpdate =
         eventCondition1.toBuilder()
             .setEventConditionMutableData(
@@ -88,6 +89,20 @@ public class EventConditionConfigServiceImplTest {
                                     SecurityEventSeverity.SECURITY_EVENT_SEVERITY_LOW))
                             .build()))
             .build();
+    EventCondition eventCondition2ToUpdate =
+        eventCondition2.toBuilder()
+            .setEventConditionMutableData(
+                EventConditionMutableData.newBuilder()
+                    .setDetectedSecurityEventCondition(
+                        DetectedSecurityEventCondition.newBuilder()
+                            .addAllEventTypes(
+                                Collections.singletonList(
+                                    SecurityEventType.SECURITY_EVENT_TYPE_SCANNER_DETECTED))
+                            .addAllSeverities(
+                                Collections.singletonList(
+                                    SecurityEventSeverity.SECURITY_EVENT_SEVERITY_CRITICAL))
+                            .build()))
+            .build();
 
     EventCondition updatedEventCondition1 =
         eventConditionsStub
@@ -98,18 +113,28 @@ public class EventConditionConfigServiceImplTest {
                         eventCondition1ToUpdate.getEventConditionMutableData())
                     .build())
             .getEventCondition();
+    EventCondition updatedEventCondition2 =
+        eventConditionsStub
+            .updateEventCondition(
+                UpdateEventConditionRequest.newBuilder()
+                    .setId(eventCondition2ToUpdate.getId())
+                    .setEventConditionMutableData(
+                        eventCondition2ToUpdate.getEventConditionMutableData())
+                    .build())
+            .getEventCondition();
 
     assertEquals(eventCondition1ToUpdate, updatedEventCondition1);
+    assertEquals(eventCondition2ToUpdate, updatedEventCondition2);
 
     assertIterableEquals(
-        List.of(eventCondition2, updatedEventCondition1),
+        List.of(updatedEventCondition2, updatedEventCondition1),
         eventConditionsStub
             .getAllEventConditions(GetAllEventConditionsRequest.getDefaultInstance())
             .getEventConditionsList());
 
     eventConditionsStub.deleteEventCondition(
         DeleteEventConditionRequest.newBuilder()
-            .setEventConditionId(eventCondition2.getId())
+            .setEventConditionId(updatedEventCondition2.getId())
             .build());
 
     assertIterableEquals(
