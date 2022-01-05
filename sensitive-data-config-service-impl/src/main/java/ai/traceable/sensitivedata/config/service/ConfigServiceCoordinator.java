@@ -2,6 +2,7 @@ package ai.traceable.sensitivedata.config.service;
 
 import ai.traceable.sensitivedata.config.service.v1.FullPrivacyModeConfig;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
+import ai.traceable.sensitivedata.config.service.v1.InvalidJsonPolicy;
 import ai.traceable.sensitivedata.config.service.v1.NewRedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.ParamType;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
@@ -24,6 +25,11 @@ interface ConfigServiceCoordinator {
       AutomaticSecretRedactionStrategyConfig automaticSecretRedactionStrategyConfig);
 
   boolean isAutomaticSecretRedactionStrategyEnabled(RequestContext requestContext);
+
+  void upsertInvalidJsonPolicyConfig(
+      RequestContext requestContext, InvalidJsonPolicy invalidJsonPolicy);
+
+  InvalidJsonPolicy getInvalidJsonPolicy(RequestContext requestContext);
 
   RedactionRule createRedactionRule(
       RequestContext requestContext, NewRedactionRule newRedactionRule);

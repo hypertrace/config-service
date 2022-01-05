@@ -21,6 +21,10 @@ service SensitiveDataConfigService {
   // get automatic secret redaction strategy
   rpc GetAutomaticSecretRedactionStrategy(GetAutomaticSecretRedactionStrategyRequest) returns (GetAutomaticSecretRedactionStrategyResponse) {}
 
+  rpc UpdateInvalidJsonPolicy(UpdateInvalidJsonPolicyRequest) returns (UpdateInvalidJsonPolicyResponse) {}
+
+  rpc GetInvalidJsonPolicy(GetInvalidJsonPolicyRequest) returns (GetInvalidJsonPolicyResponse) {}
+
   rpc CreateRedactionRule(CreateRedactionRuleRequest) returns (CreateRedactionRuleResponse) {}
 
   rpc UpdateRedactionRule(UpdateRedactionRuleRequest) returns (UpdateRedactionRuleResponse) {}
@@ -61,6 +65,18 @@ message GetAutomaticSecretRedactionStrategyRequest {}
 
 message GetAutomaticSecretRedactionStrategyResponse {
   bool enabled = 1;
+}
+
+message UpdateInvalidJsonPolicyRequest {
+  InvalidJsonPolicy invalid_json_policy = 1;
+}
+
+message UpdateInvalidJsonPolicyResponse {}
+
+message GetInvalidJsonPolicyRequest {}
+
+message GetInvalidJsonPolicyResponse {
+  InvalidJsonPolicy invalid_json_policy = 1;
 }
 
 message CreateRedactionRuleRequest {

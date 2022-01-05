@@ -11,8 +11,11 @@ import ai.traceable.sensitivedata.config.service.v1.GetAutomaticSecretRedactionS
 import ai.traceable.sensitivedata.config.service.v1.GetAutomaticSecretRedactionStrategyResponse;
 import ai.traceable.sensitivedata.config.service.v1.GetFullPrivacyModeRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetFullPrivacyModeResponse;
+import ai.traceable.sensitivedata.config.service.v1.GetInvalidJsonPolicyRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetInvalidJsonPolicyResponse;
 import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeResponse;
+import ai.traceable.sensitivedata.config.service.v1.InvalidJsonPolicy;
 import ai.traceable.sensitivedata.config.service.v1.ParamType;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
@@ -20,6 +23,8 @@ import ai.traceable.sensitivedata.config.service.v1.UpdateAutomaticSecretRedacti
 import ai.traceable.sensitivedata.config.service.v1.UpdateAutomaticSecretRedactionStrategyResponse;
 import ai.traceable.sensitivedata.config.service.v1.UpdateFullPrivacyModeRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateFullPrivacyModeResponse;
+import ai.traceable.sensitivedata.config.service.v1.UpdateInvalidJsonPolicyRequest;
+import ai.traceable.sensitivedata.config.service.v1.UpdateInvalidJsonPolicyResponse;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionRuleResponse;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeRequest;
@@ -121,6 +126,39 @@ class SensitiveDataConfigServiceImpl
     } catch (Exception e) {
       log.error(
           "Get Automatic Secret Redaction Strategy For Type RPC failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void updateInvalidJsonPolicy(
+      UpdateInvalidJsonPolicyRequest request,
+      StreamObserver<UpdateInvalidJsonPolicyResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      InvalidJsonPolicy invalidJsonPolicy = request.getInvalidJsonPolicy();
+      configServiceCoordinator.upsertInvalidJsonPolicyConfig(requestContext, invalidJsonPolicy);
+      responseObserver.onNext(UpdateInvalidJsonPolicyResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Update Invalid Json Policy For Type RPC failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getInvalidJsonPolicy(
+      GetInvalidJsonPolicyRequest request,
+      StreamObserver<GetInvalidJsonPolicyResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      responseObserver.onNext(
+          GetInvalidJsonPolicyResponse.newBuilder()
+              .setInvalidJsonPolicy(configServiceCoordinator.getInvalidJsonPolicy(requestContext))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Get Invalid Json Policy For Type RPC failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }

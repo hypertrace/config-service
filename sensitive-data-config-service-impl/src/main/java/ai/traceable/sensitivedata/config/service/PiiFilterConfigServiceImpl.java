@@ -91,6 +91,7 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
               .addAllKeyRegexs(keyRegexToPiiElementMap.values())
               .addAllValueRegexs(valueRegexToPiiElementMap.values())
               .addAllComplexData(complexDataMap.values())
+              .setInvalidJsonPolicy(configServiceCoordinator.getInvalidJsonPolicy(requestContext))
               .build();
 
       String responseHash = uuidGenerator.generateId(resultingPiiFilterConfig);

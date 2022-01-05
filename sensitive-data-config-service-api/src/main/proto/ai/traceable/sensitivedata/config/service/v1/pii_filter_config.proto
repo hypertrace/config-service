@@ -11,6 +11,7 @@ message PiiFilterConfig {
   repeated PiiElement key_regexs = 3;
   repeated PiiElement value_regexs = 4;
   repeated ComplexData complex_data = 5;
+  InvalidJsonPolicy invalid_json_policy = 6;
 }
 
 enum RedactionStrategy {
@@ -18,6 +19,15 @@ enum RedactionStrategy {
   REDACTION_STRATEGY_REDACT = 1;
   REDACTION_STRATEGY_HASH = 2;
   REDACTION_STRATEGY_RAW = 3;
+}
+
+message InvalidJsonPolicy {
+  oneof policy {
+    DropUnparsedJsonPolicy drop_unparsed_json_policy = 1;
+  }
+}
+
+message DropUnparsedJsonPolicy {
 }
 
 message PiiElement {

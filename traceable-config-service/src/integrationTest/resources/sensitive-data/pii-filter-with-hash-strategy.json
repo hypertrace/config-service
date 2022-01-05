@@ -96,5 +96,8 @@
       "key": "http.url",
       "type": "urlencoded"
     }
-  ]
+  ],
+  "invalidJsonPolicy": {
+    "dropUnparsedJsonPolicy": {}
+  }
 }

@@ -4,6 +4,7 @@ import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils
 
 import ai.traceable.sensitivedata.config.service.v1.FullPrivacyModeConfig;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest.RedactionRuleFilter;
+import ai.traceable.sensitivedata.config.service.v1.InvalidJsonPolicy;
 import ai.traceable.sensitivedata.config.service.v1.NewRedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.ParamType;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
@@ -46,6 +47,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   private final Striped<Lock> stripedPrepopulationLock =
       Striped.lazyWeakLock(PREPOPULATION_LOCK_STRIPE_COUNT);
   private final boolean defaultAutomaticSecretRedactionEnabled;
+  private final InvalidJsonPolicy deafaultInvalidJsonPolicy;
   private final boolean defaultFullPrivacyModeEnabled;
   private final DefaultRedactionRules defaultRedactionRules;
   private final LoadingCache<ContextualKey<Void>, DefaultRedactionRulePopulationStatus>
@@ -56,6 +58,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   private final RedactionRuleConfigStore redactionRuleConfigStore;
   private final AutomaticSecretRedactionStrategyConfigStore
       automaticSecretRedactionStrategyConfigStore;
+  private final InvalidJsonPolicyConfigStore invalidJsonPolicyConfigStore;
   private final FullPrivacyModeConfigStore fullPrivacyModeConfigStore;
   private final DefaultRedactionRulePopulationStatusStore defaultRedactionRulePopulationStatusStore;
 
@@ -66,16 +69,19 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
       SensitiveDataServiceConfig config,
       RedactionRuleConfigStore redactionRuleConfigStore,
       AutomaticSecretRedactionStrategyConfigStore automaticSecretRedactionStrategyConfigStore,
+      InvalidJsonPolicyConfigStore invalidJsonPolicyConfigStore,
       FullPrivacyModeConfigStore fullPrivacyModeConfigStore,
       DefaultRedactionRulePopulationStatusStore defaultRedactionRulePopulationStatusStore) {
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.configChangeEventGenerator = configChangeEventGenerator;
     this.defaultRedactionRules = config.defaultRedactionRules();
     this.defaultAutomaticSecretRedactionEnabled = config.defaultAutomaticRedactionStrategy();
+    this.deafaultInvalidJsonPolicy = config.defaultInvalidJsonPolicy();
     this.defaultFullPrivacyModeEnabled = config.defaultFullPrivacyMode();
     this.defaultParamTypeRedactionStrategy = config.defaultParamTypeRedactionStrategy();
     this.redactionRuleConfigStore = redactionRuleConfigStore;
     this.automaticSecretRedactionStrategyConfigStore = automaticSecretRedactionStrategyConfigStore;
+    this.invalidJsonPolicyConfigStore = invalidJsonPolicyConfigStore;
     this.fullPrivacyModeConfigStore = fullPrivacyModeConfigStore;
     this.defaultRedactionRulePopulationStatusStore = defaultRedactionRulePopulationStatusStore;
   }
@@ -114,6 +120,19 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
         .getData(requestContext)
         .map(AutomaticSecretRedactionStrategyConfig::isEnabled)
         .orElse(defaultAutomaticSecretRedactionEnabled);
+  }
+
+  @Override
+  public void upsertInvalidJsonPolicyConfig(
+      RequestContext requestContext, InvalidJsonPolicy invalidJsonPolicy) {
+    this.invalidJsonPolicyConfigStore.upsertObject(requestContext, invalidJsonPolicy);
+  }
+
+  @Override
+  public InvalidJsonPolicy getInvalidJsonPolicy(RequestContext requestContext) {
+    return this.invalidJsonPolicyConfigStore
+        .getData(requestContext)
+        .orElse(deafaultInvalidJsonPolicy);
   }
 
   @Override

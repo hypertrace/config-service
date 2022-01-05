@@ -6,12 +6,15 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.sensitivedata.config.service.v1.CreateRedactionRuleRequest;
+import ai.traceable.sensitivedata.config.service.v1.DropUnparsedJsonPolicy;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesResponse;
 import ai.traceable.sensitivedata.config.service.v1.GetAutomaticSecretRedactionStrategyRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetFullPrivacyModeRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetInvalidJsonPolicyRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeRequest;
+import ai.traceable.sensitivedata.config.service.v1.InvalidJsonPolicy;
 import ai.traceable.sensitivedata.config.service.v1.MatchType;
 import ai.traceable.sensitivedata.config.service.v1.NewRedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.ParamType;
@@ -25,6 +28,7 @@ import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGr
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
 import ai.traceable.sensitivedata.config.service.v1.UpdateAutomaticSecretRedactionStrategyRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateFullPrivacyModeRequest;
+import ai.traceable.sensitivedata.config.service.v1.UpdateInvalidJsonPolicyRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeRequest;
 import com.google.common.io.Resources;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -76,6 +80,10 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
     assertTrue(getAutomaticSecretRedactionStrategy());
     updateAutomaticSecretRedactionStrategy(false);
     assertFalse(getAutomaticSecretRedactionStrategy());
+
+    assertTrue(getInvalidJsonPolicy().hasDropUnparsedJsonPolicy());
+    updateInvalidJsonPolicy(InvalidJsonPolicy.getDefaultInstance());
+    assertFalse(getInvalidJsonPolicy().hasDropUnparsedJsonPolicy());
   }
 
   @Test
@@ -93,9 +101,14 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
 
     // disable automatic secret redaction
     updateAutomaticSecretRedactionStrategy(false);
+    updateInvalidJsonPolicy(InvalidJsonPolicy.getDefaultInstance());
     assertMatchesResource(
         "sensitive-data/pii-filter-without-auto-redaction.json", getPiiFilterConfig(false));
     updateAutomaticSecretRedactionStrategy(true);
+    updateInvalidJsonPolicy(
+        InvalidJsonPolicy.newBuilder()
+            .setDropUnparsedJsonPolicy(DropUnparsedJsonPolicy.getDefaultInstance())
+            .build());
     assertMatchesResource(
         "sensitive-data/pii-filter-with-auto-redaction-again.json", getPiiFilterConfig(false));
 
@@ -231,12 +244,25 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
         () -> sensitiveDataConfigServiceStub.updateAutomaticSecretRedactionStrategy(request));
   }
 
+  private void updateInvalidJsonPolicy(InvalidJsonPolicy invalidJsonPolicy) {
+    UpdateInvalidJsonPolicyRequest request =
+        UpdateInvalidJsonPolicyRequest.newBuilder().setInvalidJsonPolicy(invalidJsonPolicy).build();
+    requestContext.call(() -> sensitiveDataConfigServiceStub.updateInvalidJsonPolicy(request));
+  }
+
   private boolean getAutomaticSecretRedactionStrategy() {
     GetAutomaticSecretRedactionStrategyRequest request =
         GetAutomaticSecretRedactionStrategyRequest.newBuilder().build();
     return requestContext
         .call(() -> sensitiveDataConfigServiceStub.getAutomaticSecretRedactionStrategy(request))
         .getEnabled();
+  }
+
+  private InvalidJsonPolicy getInvalidJsonPolicy() {
+    GetInvalidJsonPolicyRequest request = GetInvalidJsonPolicyRequest.newBuilder().build();
+    return requestContext
+        .call(() -> sensitiveDataConfigServiceStub.getInvalidJsonPolicy(request))
+        .getInvalidJsonPolicy();
   }
 
   private RedactionRule createRedactionRule(NewRedactionRule newRedactionRule) {

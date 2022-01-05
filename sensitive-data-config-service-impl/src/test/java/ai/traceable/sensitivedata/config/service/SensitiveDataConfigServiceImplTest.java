@@ -15,11 +15,14 @@ import ai.traceable.sensitivedata.config.service.v1.Condition;
 import ai.traceable.sensitivedata.config.service.v1.Condition.AttributeRegexMatch;
 import ai.traceable.sensitivedata.config.service.v1.CreateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.DeleteRedactionRuleRequest;
+import ai.traceable.sensitivedata.config.service.v1.DropUnparsedJsonPolicy;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest.RedactionRuleFilter;
 import ai.traceable.sensitivedata.config.service.v1.GetAutomaticSecretRedactionStrategyRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetFullPrivacyModeRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetInvalidJsonPolicyRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeRequest;
+import ai.traceable.sensitivedata.config.service.v1.InvalidJsonPolicy;
 import ai.traceable.sensitivedata.config.service.v1.MatchType;
 import ai.traceable.sensitivedata.config.service.v1.NewRedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.ParamType;
@@ -30,6 +33,8 @@ import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGr
 import ai.traceable.sensitivedata.config.service.v1.UpdateAutomaticSecretRedactionStrategyRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateFullPrivacyModeRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateFullPrivacyModeResponse;
+import ai.traceable.sensitivedata.config.service.v1.UpdateInvalidJsonPolicyRequest;
+import ai.traceable.sensitivedata.config.service.v1.UpdateInvalidJsonPolicyResponse;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeRequest;
 import io.grpc.StatusRuntimeException;
@@ -60,6 +65,11 @@ class SensitiveDataConfigServiceImplTest {
     when(mockConfig.defaultParamTypeRedactionStrategy())
         .thenReturn(RedactionStrategy.REDACTION_STRATEGY_RAW);
     when(mockConfig.defaultRedactionRules()).thenReturn(mockDefaultRedactionRules);
+    when(mockConfig.defaultInvalidJsonPolicy())
+        .thenReturn(
+            InvalidJsonPolicy.newBuilder()
+                .setDropUnparsedJsonPolicy(DropUnparsedJsonPolicy.getDefaultInstance())
+                .build());
 
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     ConfigServiceBlockingStub configServiceBlockingStub =
@@ -74,6 +84,8 @@ class SensitiveDataConfigServiceImplTest {
                     new RedactionRuleConfigStore(
                         configServiceBlockingStub, configChangeEventGenerator),
                     new AutomaticSecretRedactionStrategyConfigStore(
+                        configServiceBlockingStub, configChangeEventGenerator),
+                    new InvalidJsonPolicyConfigStore(
                         configServiceBlockingStub, configChangeEventGenerator),
                     new FullPrivacyModeConfigStore(
                         configServiceBlockingStub, configChangeEventGenerator),
@@ -316,6 +328,28 @@ class SensitiveDataConfigServiceImplTest {
             .getFullPrivacyMode(GetFullPrivacyModeRequest.newBuilder().build())
             .getEnabled();
     assertFalse(fullPrivacyMode);
+  }
+
+  @Test
+  void upsertAndGetInvalidJsonPolicyConfig() {
+    InvalidJsonPolicy invalidJsonPolicy =
+        sensitiveDataStub
+            .getInvalidJsonPolicy(GetInvalidJsonPolicyRequest.newBuilder().build())
+            .getInvalidJsonPolicy();
+    assertTrue(invalidJsonPolicy.hasDropUnparsedJsonPolicy());
+
+    // Set to unspecified
+    UpdateInvalidJsonPolicyResponse updateInvalidJsonPolicyResponse =
+        sensitiveDataStub.updateInvalidJsonPolicy(
+            UpdateInvalidJsonPolicyRequest.newBuilder()
+                .setInvalidJsonPolicy(InvalidJsonPolicy.getDefaultInstance())
+                .build());
+    assertNotNull(updateInvalidJsonPolicyResponse);
+    invalidJsonPolicy =
+        sensitiveDataStub
+            .getInvalidJsonPolicy(GetInvalidJsonPolicyRequest.newBuilder().build())
+            .getInvalidJsonPolicy();
+    assertFalse(invalidJsonPolicy.hasDropUnparsedJsonPolicy());
   }
 
   @Test

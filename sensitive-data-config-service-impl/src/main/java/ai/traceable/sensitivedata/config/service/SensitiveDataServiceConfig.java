@@ -1,5 +1,6 @@
 package ai.traceable.sensitivedata.config.service;
 
+import ai.traceable.sensitivedata.config.service.v1.InvalidJsonPolicy;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfig;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import com.typesafe.config.Config;
@@ -54,6 +55,10 @@ class SensitiveDataServiceConfig {
 
   boolean defaultAutomaticRedactionStrategy() {
     return sensitiveDataConfig.getBoolean(DEFAULT_AUTOMATIC_SECRET_REDACTION_ENABLED);
+  }
+
+  InvalidJsonPolicy defaultInvalidJsonPolicy() {
+    return defaultPiiFilterConfig().getInvalidJsonPolicy();
   }
 
   boolean defaultFullPrivacyMode() {

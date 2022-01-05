@@ -9,8 +9,10 @@ import static org.mockito.Mockito.when;
 import ai.traceable.config.service.MockInsightsService;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc;
+import ai.traceable.sensitivedata.config.service.v1.DropUnparsedJsonPolicy;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigResponse;
+import ai.traceable.sensitivedata.config.service.v1.InvalidJsonPolicy;
 import ai.traceable.sensitivedata.config.service.v1.MatchType;
 import ai.traceable.sensitivedata.config.service.v1.NewRedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.PiiElement;
@@ -47,6 +49,11 @@ class PiiFilterConfigServiceImplTest {
     when(mockConfig.defaultParamTypeRedactionStrategy())
         .thenReturn(RedactionStrategy.REDACTION_STRATEGY_HASH);
     when(mockConfig.defaultPiiFilterConfig()).thenReturn(PiiFilterConfig.getDefaultInstance());
+    when(mockConfig.defaultInvalidJsonPolicy())
+        .thenReturn(
+            InvalidJsonPolicy.newBuilder()
+                .setDropUnparsedJsonPolicy(DropUnparsedJsonPolicy.getDefaultInstance())
+                .build());
   }
 
   @AfterEach
@@ -63,6 +70,7 @@ class PiiFilterConfigServiceImplTest {
 
     PiiFilterConfig piiFilterConfig = response.getPiiFilterConfig();
     assertEquals(uuidGenerator.generateId(piiFilterConfig), response.getHash());
+    assertTrue(piiFilterConfig.getInvalidJsonPolicy().hasDropUnparsedJsonPolicy());
     // Only the prepopulated rules + the ones in mock insights service
     Set<PiiElement> expected =
         Set.of(
@@ -207,6 +215,8 @@ class PiiFilterConfigServiceImplTest {
                     new RedactionRuleConfigStore(
                         configServiceBlockingStub, configChangeEventGenerator),
                     new AutomaticSecretRedactionStrategyConfigStore(
+                        configServiceBlockingStub, configChangeEventGenerator),
+                    new InvalidJsonPolicyConfigStore(
                         configServiceBlockingStub, configChangeEventGenerator),
                     new FullPrivacyModeConfigStore(
                         configServiceBlockingStub, configChangeEventGenerator),
