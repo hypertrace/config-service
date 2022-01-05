@@ -6,31 +6,25 @@ option java_multiple_files = true;
 option go_package = "github.com/Traceableai/config-service/localprocessing/v1";
 
 message GetApiNamingModelRequest {
-  repeated ServiceTrieRequest service_trie_requests = 1;
+  repeated ServiceRequest service_requests = 1;
   optional string environment = 2;
-  optional string api_naming_custom_rules_hash = 3;
-  optional string fallback_wildcard_regexes_hash = 4;
-  optional string api_naming_config_hash = 5;
 }
 
-message ServiceTrieRequest {
+message ServiceRequest {
   string service_name = 1;
-  optional string previous_token = 2;
+  optional string trie_token = 2;
+  optional string config_hash = 3;
 }
 
 message GetApiNamingModelResponse {
-  repeated Trie tries = 1;
-  repeated ApiNamingCustomRule api_naming_custom_rules = 2;
-  repeated string fallback_wildcard_regexes = 3;
-  ApiNamingConfig api_naming_config = 4;
-  string api_naming_custom_rules_hash = 5;
-  string fallback_wildcard_regexes_hash = 6;
-  string api_naming_config_hash = 7;
+  repeated ServiceResponse service_responses = 1;
+  repeated string fallback_wildcard_regexes = 2;
 }
 
-message ApiNamingCustomRule {
-  string regex_pattern = 1;
-  string url_pattern = 2;
+message ServiceResponse {
+  Trie trie = 1;
+  ApiNamingConfig config = 2;
+  string service_name = 3;
 }
 
 message Trie {
@@ -38,8 +32,7 @@ message Trie {
     FullTrie full_trie = 1;
     DiffTrie diff_trie = 2;
   }
-  string service_name = 3;
-  string token = 4;
+  string token = 3;
 }
 
 message FullTrie {
@@ -79,10 +72,18 @@ message Wildcard {
 }
 
 message ApiNamingConfig {
-  string hash = 1;
+  repeated ApiNamingCustomRule api_naming_custom_rules = 1;
   repeated WildcardConfig wildcard_configs = 2;
   repeated string url_reject_regexes = 3;
   repeated string extensions = 4;
+  repeated string segment_whitelist_regexes = 5;
+  optional string hash = 6;
+}
+
+message ApiNamingCustomRule {
+  string regex_pattern = 1;
+  string url_pattern = 2;
+  int32 priority = 3;  //Higher the priority will be denoted by smaller rank
 }
 
 message WildcardConfig {
@@ -93,9 +94,8 @@ message WildcardConfig {
 
 enum WildcardType {
   WILDCARD_TYPE_UNSPECIFIED = 0;
-  WILDCARD_TYPE_WHITELIST = 1;
-  WILDCARD_TYPE_ID = 2;
-  WILDCARD_TYPE_LOW_CARDINALITY = 3;
-  WILDCARD_TYPE_MEDIUM_CARDINALITY = 4;
-  WILDCARD_TYPE_HIGH_CARDINALITY = 5;
+  WILDCARD_TYPE_ID = 1;
+  WILDCARD_TYPE_LOW_CARDINALITY = 2;
+  WILDCARD_TYPE_MEDIUM_CARDINALITY = 3;
+  WILDCARD_TYPE_HIGH_CARDINALITY = 4;
 }
