@@ -71,8 +71,6 @@ message DataTypeRule {
     ACTION_UNSPECIFIED = 0;
     ACTION_MATCH = 1; // action to apply the data type if match is successful
     ACTION_IGNORE = 2; // action to ignore the data type if match is successful
-    ACTION_REDACT = 3;
-    ACTION_OBFUSCATE = 4;
   }
 }
 
