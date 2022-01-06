@@ -96,6 +96,10 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
     ScopedTrainingConfig trainingConfig =
         getResolvedConfig(configMap, contextsWithIncreasingPriority);
 
+    if (trainingConfig.equals(ScopedTrainingConfig.getDefaultInstance())) {
+      trainingConfig = ScopedTrainingConfig.newBuilder().setConfigScope(configScope).build();
+    }
+
     Set<TrainingConfig.TrainingConfigCase> configCases = configConverter.convert(filter);
 
     return filterConfigs(trainingConfig, configCases);
