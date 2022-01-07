@@ -84,4 +84,12 @@ message DataSetInfo {
   optional string description = 2;
   bool enabled = 3;
   repeated string data_type_ids = 4;
+  DataSuppression data_suppression = 5;
+
+  enum DataSuppression {
+    DATA_SUPPRESSION_UNSPECIFIED = 0;
+    DATA_SUPPRESSION_RAW = 1;
+    DATA_SUPPRESSION_REDACT = 2;
+    DATA_SUPPRESSION_OBFUSCATE = 3;
+  }
 }
