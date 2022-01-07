@@ -38,11 +38,12 @@ crs_932170 :: Remote Command Execution: Shellshock (CVE-2014-6271) (170)
 crs_932171 :: Remote Command Execution: Shellshock (CVE-2014-6271) (171)
 crs_932180 :: Restricted File Upload Attempt
 crs_934100 :: Node.js Injection Attack
+crs_9410170 :: NoScript XSS InjectionChecker: Attribute Injection (T170)
 crs_941100 :: XSS Attack (100)
 crs_941110 :: XSS Filter - Category 1: Script Tag Vector
 crs_941140 :: XSS Filter - Category 4: Javascript URI Vector
 crs_941160 :: NoScript XSS InjectionChecker: HTML Injection
-crs_941170 :: NoScript XSS InjectionChecker: Attribute Injection
+crs_941170 :: NoScript XSS InjectionChecker: Attribute Injection (170)
 crs_941180 :: Node-Validator Blacklist Keywords
 crs_941190 :: IE XSS Filters - Attack (Style Sheets)
 crs_941200 :: IE XSS Filters - Attack (VML Frames)
@@ -63,6 +64,7 @@ crs_941370 :: JavaScript global variable
 crs_9420190 :: MSSQL code execution and information gathering attempts
 crs_9420230 :: Conditional SQL injection attempts (T230)
 crs_9420290 :: Basic MongoDB SQL injection attempts (Relaxed)
+crs_9420291 :: Basic MongoDB SQL injection attempts (Nested JSON)
 crs_942100 :: SQL Injection Attack (100)
 crs_942140 :: SQL Injection Attack: Common DB Names
 crs_942160 :: Blind sqli tests using sleep() or benchmark()

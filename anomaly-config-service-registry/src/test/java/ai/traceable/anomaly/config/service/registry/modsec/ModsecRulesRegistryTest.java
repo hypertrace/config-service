@@ -86,7 +86,7 @@ public class ModsecRulesRegistryTest {
       assertEquals(
           regularRulesCount - safeRulesCount,
           crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
-      assertEquals(33, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
+      assertEquals(34, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
     }
     {
       String crsRulesBlob =
@@ -104,7 +104,7 @@ public class ModsecRulesRegistryTest {
           regularRulesCount - blockingRulesCount,
           crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
       // few rules in file not marked for blocking
-      assertEquals(60, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
+      assertEquals(62, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
     }
   }
 
