@@ -81,9 +81,12 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
     updateAutomaticSecretRedactionStrategy(false);
     assertFalse(getAutomaticSecretRedactionStrategy());
 
-    assertTrue(getInvalidJsonPolicy().hasDropUnparsedJsonPolicy());
-    updateInvalidJsonPolicy(InvalidJsonPolicy.getDefaultInstance());
     assertFalse(getInvalidJsonPolicy().hasDropUnparsedJsonPolicy());
+    updateInvalidJsonPolicy(
+        InvalidJsonPolicy.newBuilder()
+            .setDropUnparsedJsonPolicy(DropUnparsedJsonPolicy.getDefaultInstance())
+            .build());
+    assertTrue(getInvalidJsonPolicy().hasDropUnparsedJsonPolicy());
   }
 
   @Test
@@ -101,14 +104,14 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
 
     // disable automatic secret redaction
     updateAutomaticSecretRedactionStrategy(false);
-    updateInvalidJsonPolicy(InvalidJsonPolicy.getDefaultInstance());
-    assertMatchesResource(
-        "sensitive-data/pii-filter-without-auto-redaction.json", getPiiFilterConfig(false));
-    updateAutomaticSecretRedactionStrategy(true);
     updateInvalidJsonPolicy(
         InvalidJsonPolicy.newBuilder()
             .setDropUnparsedJsonPolicy(DropUnparsedJsonPolicy.getDefaultInstance())
             .build());
+    assertMatchesResource(
+        "sensitive-data/pii-filter-without-auto-redaction.json", getPiiFilterConfig(false));
+    updateAutomaticSecretRedactionStrategy(true);
+    updateInvalidJsonPolicy(InvalidJsonPolicy.getDefaultInstance());
     assertMatchesResource(
         "sensitive-data/pii-filter-with-auto-redaction-again.json", getPiiFilterConfig(false));
 

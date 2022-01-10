@@ -87,7 +87,5 @@
       "type": "urlencoded"
     }
   ],
-  "invalidJsonPolicy": {
-    "dropUnparsedJsonPolicy": {}
-  }
+  "invalidJsonPolicy": {}
 }
