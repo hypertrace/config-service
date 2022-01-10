@@ -3,6 +3,7 @@ package ai.traceable.anomaly.config.service.detector.anomalydetection;
 import static ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigConstants.ANOMALY_DETECTION_CONFIG_NAMESPACE;
 import static ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigConstants.ANOMALY_DETECTION_CONFIG_RESOURCE_NAME;
 
+import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
@@ -30,16 +31,19 @@ public class AnomalyDetectionConfigManagerImpl
     implements AnomalyDetectionConfigManager {
 
   private final AnomalyDetectionConfigConverter anomalyDetectionConfigConverter;
+  private final List<AnomalyDetectionConfig> defaultModsecConfigs;
 
   @Inject
   public AnomalyDetectionConfigManagerImpl(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
-      AnomalyDetectionConfigConverter anomalyDetectionConfigConverter) {
+      AnomalyDetectionConfigConverter anomalyDetectionConfigConverter,
+      DetectorConfigServiceConfig config) {
     super(
         configServiceBlockingStub,
         ANOMALY_DETECTION_CONFIG_NAMESPACE,
         ANOMALY_DETECTION_CONFIG_RESOURCE_NAME);
     this.anomalyDetectionConfigConverter = anomalyDetectionConfigConverter;
+    this.defaultModsecConfigs = config.getDefaultModsecDetectionConfigs();
   }
 
   @Override
@@ -78,12 +82,7 @@ public class AnomalyDetectionConfigManagerImpl
     Map<String, ScopedAnomalyDetectionConfig> configMap = fetchConfigMap(requestContext);
 
     ScopedAnomalyDetectionConfig anomalyDetectionConfig =
-        getResolvedConfig(configMap, contextsWithIncreasingPriority);
-
-    if (anomalyDetectionConfig.equals(ScopedAnomalyDetectionConfig.getDefaultInstance())) {
-      anomalyDetectionConfig =
-          ScopedAnomalyDetectionConfig.newBuilder().setConfigScope(configScope).build();
-    }
+        getResolvedConfig(configMap, configScope, contextsWithIncreasingPriority);
 
     Set<AnomalyDetectionConfig.AnomalyDetectionConfigCase> configCases =
         anomalyDetectionConfigConverter.convert(filter);
@@ -195,7 +194,8 @@ public class AnomalyDetectionConfigManagerImpl
           break;
       }
 
-      resolvedConfigs.add(getResolvedConfig(configMap, contextsWithIncreasingPriority));
+      resolvedConfigs.add(
+          getResolvedConfig(configMap, anomalyConfigScope, contextsWithIncreasingPriority));
     }
 
     return resolvedConfigs;
@@ -203,9 +203,13 @@ public class AnomalyDetectionConfigManagerImpl
 
   private ScopedAnomalyDetectionConfig getResolvedConfig(
       Map<String, ScopedAnomalyDetectionConfig> configMap,
+      AnomalyConfigScope configScope,
       List<String> contextsWithIncreasingPriority) {
     ScopedAnomalyDetectionConfig anomalyDetectionConfig =
-        ScopedAnomalyDetectionConfig.getDefaultInstance();
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .setConfigScope(configScope)
+            .addAllAnomalyDetectionConfigs(defaultModsecConfigs)
+            .build();
     for (String context : contextsWithIncreasingPriority) {
       anomalyDetectionConfig =
           configMap.containsKey(context)

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.spy;
 
+import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
@@ -78,8 +79,13 @@ public class AnomalyDetectionConfigManagerTest {
     mockConfigService.start();
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     configConverter = new AnomalyDetectionConfigConverter();
+    Config config = ConfigFactory.parseString("modsecDetectionConfigs = []");
     this.configManager =
-        spy(new AnomalyDetectionConfigManagerImpl(configServiceBlockingStub, configConverter));
+        spy(
+            new AnomalyDetectionConfigManagerImpl(
+                configServiceBlockingStub,
+                configConverter,
+                new DetectorConfigServiceConfig(config)));
   }
 
   @AfterEach

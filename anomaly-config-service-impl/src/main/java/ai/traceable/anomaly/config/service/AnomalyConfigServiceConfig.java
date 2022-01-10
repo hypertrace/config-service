@@ -1,15 +1,13 @@
 package ai.traceable.anomaly.config.service;
 
-import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import com.typesafe.config.Config;
 
 public class AnomalyConfigServiceConfig {
 
   private static final String ANOMALY_GLOBAL_CONFIG_PATH = "global";
-  private static final String APIDEF_TRAINER_CONFIG_PATH = "apiDefinitionTrainerConfig";
+  private static final String DETECTOR_CONFIG_SERVICE_PATH = "detector.config.service";
 
   private final Config config;
-  private final ConfigConverter configConverter = new ConfigConverter();
 
   public AnomalyConfigServiceConfig(Config config) {
     this.config = config;
@@ -17,5 +15,9 @@ public class AnomalyConfigServiceConfig {
 
   public Config getAnomalyGlobalConfig() {
     return this.config.getConfig(ANOMALY_GLOBAL_CONFIG_PATH);
+  }
+
+  public Config getDetectorConfigServiceConfig() {
+    return this.config.getConfig(DETECTOR_CONFIG_SERVICE_PATH);
   }
 }
