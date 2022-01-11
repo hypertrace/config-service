@@ -1,17 +1,12 @@
-package ai.traceable.anomaly.config.service.registry.modsec;
+package ai.traceable.anomaly.config.service.utils.modsec;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
 import org.junit.jupiter.api.Test;
 
 public class ModsecRuleUtilsTest {
 
   private final ModsecRuleUtils modsecRuleUtils = new ModsecRuleUtils();
-  public static final String MODSEC_RULE_PREFIX = "crs_";
-  public static final int MODSEC_RULE_PREFIX_LENGTH = MODSEC_RULE_PREFIX.length();
-  // standard crs rules have crs_### as the parent identifier -- hence using 3 digits
-  public static final int MODSEC_PARENT_RULE_ID_LENGTH = 3 + MODSEC_RULE_PREFIX_LENGTH;
 
   @Test
   public void testGetModsecRuleId() {

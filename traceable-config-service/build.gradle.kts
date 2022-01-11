@@ -70,6 +70,7 @@ dependencies {
   implementation(projects.externalUserAttributionConfigServiceImpl)
   implementation(projects.threatManagementConfigServiceImpl)
   implementation(projects.anomalyConfigServiceImpl)
+  implementation(projects.anomalyConfigServiceUtils)
   implementation(projects.riskConfigServiceImpl)
   implementation(projects.alertingConfigServiceImpl)
   implementation(projects.reportingConfigServiceImpl)

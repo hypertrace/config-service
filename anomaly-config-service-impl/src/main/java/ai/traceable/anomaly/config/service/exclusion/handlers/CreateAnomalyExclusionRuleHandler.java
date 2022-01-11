@@ -1,7 +1,7 @@
 package ai.traceable.anomaly.config.service.exclusion.handlers;
 
 import ai.traceable.anomaly.config.service.exclusion.utils.UuidGenerator;
-import ai.traceable.anomaly.config.service.registry.modsec.ModsecRuleUtils;
+import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
 import ai.traceable.anomaly.config.service.v1.exclusion.AnomalyExclusionRuleConfig;

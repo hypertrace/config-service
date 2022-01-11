@@ -10,7 +10,7 @@ import static org.mockito.Mockito.when;
 import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeMatcher;
 import ai.traceable.anomaly.config.service.exclusion.utils.FilterUtils;
 import ai.traceable.anomaly.config.service.exclusion.utils.UuidGenerator;
-import ai.traceable.anomaly.config.service.registry.modsec.ModsecRuleUtils;
+import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
