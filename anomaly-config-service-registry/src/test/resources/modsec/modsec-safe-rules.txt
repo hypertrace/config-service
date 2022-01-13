@@ -1,3 +1,7 @@
+crs_1010100 :: Server Side Request Forgery (SSRF): Cloud Provider Metadata Endpoint
+crs_1010110 :: Server Side Request Forgery (SSRF): Common Collaborators
+crs_1020100 :: XML External Entity Injection: Local/Remote Includes (T100)
+crs_1020110 :: XML External Entity Injection: Entity Tags (T110)
 crs_913100 :: User-Agent associated with security scanner
 crs_913110 :: Request header associated with security scanner
 crs_913120 :: Request filename/argument associated with security scanner
@@ -57,4 +61,3 @@ crs_944100 :: Remote Command Execution: Suspicious Java class
 crs_944110 :: Remote Command Execution: Java process spawn (CVE-2017-9805)
 crs_944120 :: Remote Command Execution: Java serialization (CVE-2015-4852) (120)
 crs_944130 :: Suspicious Java class
-

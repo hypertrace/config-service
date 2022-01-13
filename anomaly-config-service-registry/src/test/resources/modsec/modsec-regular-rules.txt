@@ -1,3 +1,7 @@
+crs_1010100 :: Server Side Request Forgery (SSRF): Cloud Provider Metadata Endpoint
+crs_1010110 :: Server Side Request Forgery (SSRF): Common Collaborators
+crs_1020100 :: XML External Entity Injection: Local/Remote Includes (T100)
+crs_1020110 :: XML External Entity Injection: Entity Tags (T110)
 crs_912120 :: Denial of Service (DoS) attack identified from %{tx.real_ip} (%{tx.dos_block_counter} hits since last alert)
 crs_912170 :: Potential Denial of Service (DoS) Attack from %{tx.real_ip} - # of Request Bursts: %{ip.dos_burst_counter}
 crs_913100 :: User-Agent associated with security scanner
