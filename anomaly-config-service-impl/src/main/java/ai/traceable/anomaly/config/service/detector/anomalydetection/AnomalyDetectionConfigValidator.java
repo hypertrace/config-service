@@ -1,8 +1,10 @@
 package ai.traceable.anomaly.config.service.detector.anomalydetection;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
+import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigRequest;
@@ -15,10 +17,13 @@ import java.util.stream.Collectors;
 
 public class AnomalyDetectionConfigValidator {
   private final AnomalyConfigValidator anomalyConfigValidator;
+  private final Map<String, ApiDefinitionMetadataAnomalyDetectionConfig> apiDefRuleIdToConfigMap;
 
   @Inject
-  public AnomalyDetectionConfigValidator(AnomalyConfigValidator anomalyConfigValidator) {
+  public AnomalyDetectionConfigValidator(
+      AnomalyConfigValidator anomalyConfigValidator, ApiDefinitionRegistry apiDefinitionRegistry) {
     this.anomalyConfigValidator = anomalyConfigValidator;
+    this.apiDefRuleIdToConfigMap = apiDefinitionRegistry.getApiDefRuleIdToDetectionConfigMap();
   }
 
   public Status validate(GetScopedAnomalyDetectionConfigRequest request) {
@@ -50,7 +55,62 @@ public class AnomalyDetectionConfigValidator {
             .map(AnomalyDetectionConfig::getModsecurityAnomalyDetectionConfig)
             .collect(Collectors.toList());
 
-    return validateModsecConfigs(modsecConfigs);
+    Status status = validateModsecConfigs(modsecConfigs);
+
+    if (!status.isOk()) {
+      return status;
+    }
+
+    List<ApiDefinitionMetadataAnomalyDetectionConfig> apiDefinitionDetectionConfigs =
+        detectionConfigs.stream()
+            .filter(AnomalyDetectionConfig::hasApiDefinitionMetadataAnomalyDetectionConfig)
+            .map(AnomalyDetectionConfig::getApiDefinitionMetadataAnomalyDetectionConfig)
+            .collect(Collectors.toList());
+
+    status = validateApiDefinitionConfigs(apiDefinitionDetectionConfigs);
+
+    return status;
+  }
+
+  private Status validateApiDefinitionConfigs(
+      List<ApiDefinitionMetadataAnomalyDetectionConfig> apiDefinitionDetectionConfigs) {
+
+    Map<String, ApiDefinitionMetadataAnomalyDetectionConfig> configMap = new HashMap<>();
+
+    for (ApiDefinitionMetadataAnomalyDetectionConfig detectionConfig :
+        apiDefinitionDetectionConfigs) {
+      String ruleId = detectionConfig.getAnomalyRuleId();
+      ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase configCase =
+          detectionConfig.getConfigCase();
+
+      if (ruleId.isEmpty()) {
+        if (configCase.equals(
+            ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase.CONFIG_NOT_SET)) {
+          return Status.INVALID_ARGUMENT.withDescription("Invalid api definition detection config");
+        }
+      } else {
+        if (!apiDefRuleIdToConfigMap.containsKey(ruleId)) {
+          return Status.INVALID_ARGUMENT.withDescription(
+              "Invalid api definition detection config ruleId: " + ruleId);
+        }
+        if (!configCase.equals(
+                ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase.CONFIG_NOT_SET)
+            && !configCase.equals(apiDefRuleIdToConfigMap.get(ruleId).getConfigCase())) {
+          return Status.INVALID_ARGUMENT.withDescription(
+              "Invalid api definition detection config type for ruleId: " + ruleId);
+        }
+      }
+
+      if (configMap.containsKey(ruleId)) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            "UpdateScopedAnomalyDetectionConfigRequest should have only one api definition detection config for ruleId: "
+                + ruleId);
+      }
+
+      configMap.put(ruleId, detectionConfig);
+    }
+
+    return Status.OK;
   }
 
   private Status validateModsecConfigs(List<ModsecurityAnomalyDetectionConfig> modsecConfigs) {

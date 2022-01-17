@@ -68,6 +68,7 @@ data:
     }
     detector.config.service {
       modsecDetectionConfigs = {{ .Values.anomalyConfigServiceConfig.detectorConfigService.modsecDetectionConfigs | nindent 6 }}
+      apiDefinitionDetectionConfigs = {{ .Values.anomalyConfigServiceConfig.detectorConfigService.apiDefinitionDetectionConfigs | nindent 6 }}
     }
   risk.conf: |-
     {{- if hasKey .Values "riskConfigServiceConfig" }}

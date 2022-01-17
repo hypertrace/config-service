@@ -2,14 +2,19 @@ package ai.traceable.anomaly.config.service.detector.anomalydetection;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
+import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
+import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
+import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfigType;
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
@@ -23,6 +28,7 @@ import io.grpc.Server;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -68,6 +74,7 @@ public class AnomalyDetectionConfigManagerTest {
       ConfigFactory.parseResources(SCOPED_DETECTION_CONFIGS_FILE_PATH);
   private static final Config resolvedDetectionConfigs =
       ConfigFactory.parseResources(RESOLVED_DETECTION_CONFIGS_FILE_PATH);
+  private DetectorConfigServiceConfig detectorConfigServiceConfig;
 
   @BeforeEach
   public void setup() throws IOException {
@@ -79,13 +86,14 @@ public class AnomalyDetectionConfigManagerTest {
     mockConfigService.start();
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     configConverter = new AnomalyDetectionConfigConverter();
-    Config config = ConfigFactory.parseString("modsecDetectionConfigs = []");
+    detectorConfigServiceConfig = mock(DetectorConfigServiceConfig.class);
+    when(detectorConfigServiceConfig.getDefaultModsecDetectionConfigs()).thenReturn(List.of());
+    when(detectorConfigServiceConfig.getDefaultApiDefinitionDetectionConfigs())
+        .thenReturn(List.of());
     this.configManager =
         spy(
             new AnomalyDetectionConfigManagerImpl(
-                configServiceBlockingStub,
-                configConverter,
-                new DetectorConfigServiceConfig(config)));
+                configServiceBlockingStub, configConverter, detectorConfigServiceConfig));
   }
 
   @AfterEach
@@ -218,6 +226,46 @@ public class AnomalyDetectionConfigManagerTest {
     assertEquals(apiScopeResolvedConfig, getConfig(apiConfigScope, scopedAnomalyDetectionConfigs));
   }
 
+  @Test
+  void testDefaultConfig() {
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+    DetectorConfigServiceConfig config = getDefaultConfig();
+    configManager =
+        new AnomalyDetectionConfigManagerImpl(configServiceBlockingStub, configConverter, config);
+
+    List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
+    defaultDetectionConfigs.addAll(config.getDefaultModsecDetectionConfigs());
+    defaultDetectionConfigs.addAll(config.getDefaultApiDefinitionDetectionConfigs());
+
+    List<AnomalyDetectionConfig> detectionConfigs =
+        configManager
+            .getScopedAnomalyDetectionConfig(
+                requestContext,
+                customerConfigScope,
+                GetAnomalyDetectionConfigsFilter.getDefaultInstance())
+            .getAnomalyDetectionConfigsList();
+    assertEquals(defaultDetectionConfigs, detectionConfigs);
+
+    detectionConfigs =
+        configManager
+            .getScopedAnomalyDetectionConfig(
+                requestContext,
+                serviceConfigScope,
+                GetAnomalyDetectionConfigsFilter.getDefaultInstance())
+            .getAnomalyDetectionConfigsList();
+    assertEquals(defaultDetectionConfigs, detectionConfigs);
+
+    detectionConfigs =
+        configManager
+            .getScopedAnomalyDetectionConfig(
+                requestContext,
+                apiConfigScope,
+                GetAnomalyDetectionConfigsFilter.getDefaultInstance())
+            .getAnomalyDetectionConfigsList();
+    assertEquals(defaultDetectionConfigs, detectionConfigs);
+  }
+
   private void updateScopedAnomalyDetectionConfig(
       RequestContext requestContext, ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig) {
     requestContext.run(
@@ -244,5 +292,52 @@ public class AnomalyDetectionConfigManagerTest {
       }
     }
     return null;
+  }
+
+  private DetectorConfigServiceConfig getDefaultConfig() {
+    return new DetectorConfigServiceConfig(
+        ConfigFactory.parseString(
+            "modsecDetectionConfigs =\n"
+                + "    [\n"
+                + "      {\n"
+                + "        configStatus = {\n"
+                + "          disabled = false\n"
+                + "          internal = false\n"
+                + "        }\n"
+                + "        modsecurityAnomalyDetectionConfig = {\n"
+                + "          anomalyRuleId = \"crs_912\"\n"
+                + "        }\n"
+                + "      },\n"
+                + "      {\n"
+                + "        configStatus = {\n"
+                + "          disabled = true\n"
+                + "          internal = false\n"
+                + "        }\n"
+                + "        modsecurityAnomalyDetectionConfig = {\n"
+                + "          anomalyRuleId = \"crs_913\"\n"
+                + "        }\n"
+                + "      }\n"
+                + "    ]\n"
+                + "apiDefinitionDetectionConfigs = [\n"
+                + "    {\n"
+                + "      configStatus = {\n"
+                + "        disabled = false\n"
+                + "        internal = false\n"
+                + "      }\n"
+                + "      apiDefinitionMetadataAnomalyDetectionConfig = {\n"
+                + "        anomalyRuleId = \"missingParam\"\n"
+                + "      }\n"
+                + "    },\n"
+                + "    {\n"
+                + "      configStatus = {\n"
+                + "        disabled = true\n"
+                + "        internal = true\n"
+                + "      }\n"
+                + "      apiDefinitionMetadataAnomalyDetectionConfig = {\n"
+                + "        anomalyRuleId = \"enum\"\n"
+                + "      }\n"
+                + "    }\n"
+                + " ]"),
+        new ApiDefinitionRegistryImpl(new ConfigConverter()));
   }
 }

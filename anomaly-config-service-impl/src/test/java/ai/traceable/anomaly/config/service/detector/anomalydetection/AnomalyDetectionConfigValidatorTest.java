@@ -4,11 +4,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
+import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
+import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ContentSizeAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigRequest;
+import ai.traceable.anomaly.config.service.v1.detector.IntegerAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigRequest;
@@ -20,7 +25,8 @@ public class AnomalyDetectionConfigValidatorTest {
 
   private final AnomalyConfigValidator anomalyConfigValidator = new AnomalyConfigValidator();
   private final AnomalyDetectionConfigValidator validator =
-      new AnomalyDetectionConfigValidator(anomalyConfigValidator);
+      new AnomalyDetectionConfigValidator(
+          anomalyConfigValidator, new ApiDefinitionRegistryImpl(new ConfigConverter()));
   private final AnomalyConfigScope configScope =
       AnomalyConfigScope.newBuilder()
           .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
@@ -135,5 +141,116 @@ public class AnomalyDetectionConfigValidatorTest {
     status = validator.validate(updateRequest);
 
     assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
+  void testApiDefinitionUpdateValidation() {
+    UpdateScopedAnomalyDetectionConfigRequest request;
+
+    AnomalyDetectionConfig detectionConfig1 =
+        AnomalyDetectionConfig.newBuilder()
+            .setApiDefinitionMetadataAnomalyDetectionConfig(
+                ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                    .setAnomalyRuleId("rule1")
+                    .setInteger(IntegerAnomalyConfig.getDefaultInstance()))
+            .build();
+
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig1)))
+            .build();
+
+    Status status = validator.validate(request);
+
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(
+        status.getDescription().contains("Invalid api definition detection config ruleId: rule1"));
+
+    detectionConfig1 =
+        AnomalyDetectionConfig.newBuilder()
+            .setApiDefinitionMetadataAnomalyDetectionConfig(
+                ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                    .setAnomalyRuleId("contentSize")
+                    .setInteger(IntegerAnomalyConfig.getDefaultInstance()))
+            .build();
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig1)))
+            .build();
+
+    status = validator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(
+        status
+            .getDescription()
+            .contains("Invalid api definition detection config type for ruleId: contentSize"));
+
+    detectionConfig1 =
+        AnomalyDetectionConfig.newBuilder()
+            .setApiDefinitionMetadataAnomalyDetectionConfig(
+                ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                    .setAnomalyRuleId("integer")
+                    .setInteger(IntegerAnomalyConfig.getDefaultInstance()))
+            .build();
+
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig1, detectionConfig1)))
+            .build();
+
+    status = validator.validate(request);
+
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(
+        status
+            .getDescription()
+            .contains("should have only one api definition detection config for ruleId: integer"));
+
+    AnomalyDetectionConfig detectionConfig2 =
+        AnomalyDetectionConfig.newBuilder()
+            .setApiDefinitionMetadataAnomalyDetectionConfig(
+                ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                    .setAnomalyRuleId("contentSize")
+                    .setContentSize(ContentSizeAnomalyConfig.getDefaultInstance()))
+            .build();
+
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig1, detectionConfig2)))
+            .build();
+
+    status = validator.validate(request);
+
+    assertEquals(Status.OK.getCode(), status.getCode());
+
+    detectionConfig1 =
+        AnomalyDetectionConfig.newBuilder()
+            .setApiDefinitionMetadataAnomalyDetectionConfig(
+                ApiDefinitionMetadataAnomalyDetectionConfig.getDefaultInstance())
+            .build();
+
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig1)))
+            .build();
+    status = validator.validate(request);
+
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("Invalid api definition detection config"));
   }
 }

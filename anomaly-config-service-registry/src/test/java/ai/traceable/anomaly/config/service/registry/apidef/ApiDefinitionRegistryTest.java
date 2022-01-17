@@ -1,0 +1,120 @@
+package ai.traceable.anomaly.config.service.registry.apidef;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
+import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ContentSizeAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ContentTypeAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.DeviceAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.EnumerationsAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.HttpStatusAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.IntegerAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.MissingParamAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.SsrfAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.TypeAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.UnknownParamAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.XxeAnomalyConfig;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.junit.jupiter.api.Test;
+
+public class ApiDefinitionRegistryTest {
+
+  private final ApiDefinitionRegistry apiDefinitionRegistry =
+      new ApiDefinitionRegistryImpl(new ConfigConverter());
+
+  @Test
+  void testRuleIds() {
+    Set<String> ruleIdsFromApiDefRuleInfos =
+        apiDefinitionRegistry.getApiDefRuleInfos().values().stream()
+            .map(anomalyRuleInfo -> anomalyRuleInfo.getRuleId())
+            .collect(Collectors.toSet());
+
+    Set<String> ruleIdsFromApiDefDetectionConfigs =
+        apiDefinitionRegistry.getApiDefRuleIdToDetectionConfigMap().values().stream()
+            .map(detectionConfig -> detectionConfig.getAnomalyRuleId())
+            .collect(Collectors.toSet());
+
+    assertEquals(ruleIdsFromApiDefRuleInfos, ruleIdsFromApiDefDetectionConfigs);
+  }
+
+  @Test
+  void testRuleIdToConfigMap() {
+    Map<String, ApiDefinitionMetadataAnomalyDetectionConfig> ruleIdToConfigMap =
+        apiDefinitionRegistry.getApiDefRuleIdToDetectionConfigMap();
+
+    Map<String, ApiDefinitionMetadataAnomalyDetectionConfig> expectedMap = new HashMap<>();
+
+    expectedMap.put(
+        "ssrf",
+        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+            .setAnomalyRuleId("ssrf")
+            .setSsrf(SsrfAnomalyConfig.getDefaultInstance())
+            .build());
+    expectedMap.put(
+        "unknownParam",
+        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+            .setAnomalyRuleId("unknownParam")
+            .setUnknownParam(UnknownParamAnomalyConfig.getDefaultInstance())
+            .build());
+    expectedMap.put(
+        "xxe",
+        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+            .setAnomalyRuleId("xxe")
+            .setXxe(XxeAnomalyConfig.getDefaultInstance())
+            .build());
+    expectedMap.put(
+        "httpStatus",
+        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+            .setAnomalyRuleId("httpStatus")
+            .setHttpStatus(HttpStatusAnomalyConfig.getDefaultInstance())
+            .build());
+    expectedMap.put(
+        "contentSize",
+        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+            .setAnomalyRuleId("contentSize")
+            .setContentSize(ContentSizeAnomalyConfig.getDefaultInstance())
+            .build());
+    expectedMap.put(
+        "missingParam",
+        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+            .setAnomalyRuleId("missingParam")
+            .setMissingParam(MissingParamAnomalyConfig.getDefaultInstance())
+            .build());
+    expectedMap.put(
+        "integer",
+        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+            .setAnomalyRuleId("integer")
+            .setInteger(IntegerAnomalyConfig.getDefaultInstance())
+            .build());
+    expectedMap.put(
+        "type",
+        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+            .setAnomalyRuleId("type")
+            .setType(TypeAnomalyConfig.getDefaultInstance())
+            .build());
+    expectedMap.put(
+        "device",
+        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+            .setAnomalyRuleId("device")
+            .setDevice(DeviceAnomalyConfig.getDefaultInstance())
+            .build());
+    expectedMap.put(
+        "contentType",
+        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+            .setAnomalyRuleId("contentType")
+            .setContentType(ContentTypeAnomalyConfig.getDefaultInstance())
+            .build());
+    expectedMap.put(
+        "enum",
+        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+            .setAnomalyRuleId("enum")
+            .setEnum(EnumerationsAnomalyConfig.getDefaultInstance())
+            .build());
+
+    assertEquals(expectedMap, ruleIdToConfigMap);
+  }
+}
