@@ -124,6 +124,7 @@ enum EventSeverity {
   EVENT_SEVERITY_LOW = 1;
   EVENT_SEVERITY_MEDIUM = 2;
   EVENT_SEVERITY_HIGH = 3;
+  EVENT_SEVERITY_CRITICAL = 4;
 }
 
 enum EventType {
