@@ -16,9 +16,9 @@ public class SessionRulesRegistryTest {
         new SessionRulesRegistryImpl(new ConfigConverter());
 
     Map<String, AnomalyRuleInfo> anomalyRuleInfos = sessionRulesRegistry.getSessionRuleInfos();
-    assertEquals(1, anomalyRuleInfos.size());
+    assertEquals(2, anomalyRuleInfos.size());
     assertEquals(
-        "bola :: Authorization Bypass",
+        "bola :: Authorization Bypass\nuserIdBola :: Authorization Bypass - User Level",
         anomalyRuleInfos.values().stream()
             .map(
                 anomalyRuleInfo ->

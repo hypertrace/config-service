@@ -93,7 +93,7 @@ enum AnomalyRuleCategory {
   ANOMALY_RULE_CATEGORY_SESSION_FIXATION = 8 [(string_value) = "Session Fixation"];
   ANOMALY_RULE_CATEGORY_PATH_MANIPULATION = 9 [(string_value) = "Path Manipulation"];
   ANOMALY_RULE_CATEGORY_KNOWN_VULNERABILITIES = 10 [(string_value) = "Known Vulnerabilities"];
-  ANOMALY_RULE_CATEGORY_AUTHORIZATION_VIOLATIONS = 11 [(string_value) = "Session Anomalies"];
+  ANOMALY_RULE_CATEGORY_AUTHORIZATION_VIOLATIONS = 11 [(string_value) = "Session Authorization Anomalies"];
 }
 
 message StringList {
