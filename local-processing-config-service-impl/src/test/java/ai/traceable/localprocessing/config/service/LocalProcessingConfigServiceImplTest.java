@@ -8,6 +8,7 @@ import static ai.traceable.localprocessing.config.service.constants.LocalProcess
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -17,6 +18,8 @@ import ai.traceable.licensestatus.config.service.v1.LicenseLimit;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatus;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc.LicenseStatusConfigServiceBlockingStub;
+import ai.traceable.localprocessing.config.service.apinaming.ApiNamingManager;
+import ai.traceable.localprocessing.config.service.client.EntityDataServiceClient;
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinator;
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinatorImpl;
 import ai.traceable.localprocessing.config.service.coordinator.DefaultProtectionModeConfigStore;
@@ -25,8 +28,11 @@ import ai.traceable.localprocessing.config.service.customsignature.CustomModsecD
 import ai.traceable.localprocessing.config.service.regularmodsec.RegularModsecDetectionManager;
 import ai.traceable.localprocessing.config.service.ruleservice.LocalProcessingRulesServiceImpl;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
+import ai.traceable.localprocessing.config.service.v1.ApiNamingConfig;
 import ai.traceable.localprocessing.config.service.v1.CreateLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.CustomModsecDetectionRules;
+import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelRequest;
+import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelResponse;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigRequest;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigResponse;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc;
@@ -41,6 +47,7 @@ import ai.traceable.localprocessing.config.service.v1.ProtectionModeConfig;
 import ai.traceable.localprocessing.config.service.v1.RegularModsecDetectionRules;
 import ai.traceable.localprocessing.config.service.v1.SamplingPolicies;
 import ai.traceable.localprocessing.config.service.v1.SamplingPolicy;
+import ai.traceable.localprocessing.config.service.v1.ServiceResponse;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.ManagedChannel;
@@ -51,6 +58,7 @@ import java.util.Map;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -65,7 +73,10 @@ class LocalProcessingConfigServiceImplTest {
   LicenseStatus licenseStatus;
   CustomModsecDetectionManager customModsecDetectionManager;
   RegularModsecDetectionManager regularModsecDetectionManager;
+  ApiNamingManager apiNamingManager;
   UuidGenerator uuidGenerator;
+  EntityDataServiceClient entityDataServiceClient;
+  LocalProcessingConfigRequestValidator localProcessingConfigRequestValidator;
 
   @BeforeEach
   void setUp() {
@@ -74,6 +85,8 @@ class LocalProcessingConfigServiceImplTest {
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(mockGenericConfigService.channel());
+    entityDataServiceClient = mock(EntityDataServiceClient.class);
+    localProcessingConfigRequestValidator = mock(LocalProcessingConfigRequestValidator.class);
 
     Map<String, Map> configMap = new HashMap<>();
     configMap.put(
@@ -113,6 +126,7 @@ class LocalProcessingConfigServiceImplTest {
 
     customModsecDetectionManager = mock(CustomModsecDetectionManager.class);
     regularModsecDetectionManager = mock(RegularModsecDetectionManager.class);
+    apiNamingManager = mock(ApiNamingManager.class);
     uuidGenerator = new UuidGenerator();
 
     ConfigServiceCoordinator configServiceCoordinator =
@@ -129,7 +143,9 @@ class LocalProcessingConfigServiceImplTest {
                 configServiceCoordinator,
                 customModsecDetectionManager,
                 regularModsecDetectionManager,
-                uuidGenerator))
+                apiNamingManager,
+                uuidGenerator,
+                localProcessingConfigRequestValidator))
         .addService(new LocalProcessingRulesServiceImpl(configServiceCoordinator))
         .addService(new MockLicenseStatusConfigService())
         .start();
@@ -142,6 +158,32 @@ class LocalProcessingConfigServiceImplTest {
   @AfterEach
   void afterEach() {
     mockGenericConfigService.shutdown();
+  }
+
+  @Test
+  @DisplayName("Test api naming model api naming config part")
+  void getApiNamingModel_ApiNamingConfig() {
+    List<ServiceResponse> serviceResponseList =
+        List.of(
+            ServiceResponse.newBuilder()
+                .setServiceName("serviceName")
+                .setConfig(ApiNamingConfig.newBuilder().setHash("hash").build())
+                .build());
+    List<String> fallbackRegexList = List.of("fallbackRegex");
+    doNothing()
+        .when(localProcessingConfigRequestValidator)
+        .validateOrThrow(any(RequestContext.class), any(GetApiNamingModelRequest.class));
+    when(apiNamingManager.getServiceResponseList(any(), any())).thenReturn(serviceResponseList);
+    when(apiNamingManager.getFallbackWildcardRegexes()).thenReturn(fallbackRegexList);
+
+    GetApiNamingModelResponse expectedResponse =
+        GetApiNamingModelResponse.newBuilder()
+            .addAllServiceResponses(serviceResponseList)
+            .addAllFallbackWildcardRegexes(fallbackRegexList)
+            .build();
+    assertEquals(
+        expectedResponse,
+        localProcessingConfigStub.getApiNamingModel(GetApiNamingModelRequest.newBuilder().build()));
   }
 
   @Test

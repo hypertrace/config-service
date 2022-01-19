@@ -36,6 +36,10 @@ hypertrace-framework-metrics = { module = "org.hypertrace.core.serviceframework:
 hypertrace-framework-integrationtest = { module = "org.hypertrace.core.serviceframework:integrationtest-service-framework", version.ref = "hypertrace-framework" }
 hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:document-store", version = "0.5.7" }
 
+# https://traceableai.atlassian.net/wiki/spaces/Engineering/pages/1746337898/Config+Service+-+Dependency+Hell
+# We would ideally want to segregate config service into 2 services - agent-configuration-service, and config-service and not have config-service depend on entity-service
+hypertrace-entityservice-api = { module = "org.hypertrace.entity.service:entity-service-api", version = "0.8.1" }
+
 guava = { module = "com.google.guava:guava", version = "30.1.1-jre" }
 guice = { module = "com.google.inject:guice", version = "5.0.1" }
 javax-annotation = { module = "javax.annotation:javax.annotation-api", version = "1.3.2" }

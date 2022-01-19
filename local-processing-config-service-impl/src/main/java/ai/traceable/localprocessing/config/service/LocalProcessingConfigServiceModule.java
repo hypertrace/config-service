@@ -1,5 +1,8 @@
 package ai.traceable.localprocessing.config.service;
 
+import ai.traceable.localprocessing.config.service.apinaming.ApiNamingManagerModule;
+import ai.traceable.localprocessing.config.service.config.ApiNamingConfig;
+import ai.traceable.localprocessing.config.service.config.EntityDataServiceConfig;
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinatorModule;
 import ai.traceable.localprocessing.config.service.customsignature.CustomModsecDetectionManagerModule;
 import ai.traceable.localprocessing.config.service.regularmodsec.RegularModsecDetectionManagerModule;
@@ -34,11 +37,22 @@ public class LocalProcessingConfigServiceModule extends AbstractModule {
     install(new ConfigServiceCoordinatorModule());
     install(new CustomModsecDetectionManagerModule());
     install(new RegularModsecDetectionManagerModule());
+    install(new ApiNamingManagerModule());
   }
 
   @Provides
   LocalProcessingConfigServiceConfig providesCustomSignatureServiceConfig() {
     return new LocalProcessingConfigServiceConfig(this.config);
+  }
+
+  @Provides
+  EntityDataServiceConfig providesEntityDataServiceConfig() {
+    return new EntityDataServiceConfig(this.config);
+  }
+
+  @Provides
+  ApiNamingConfig providesDefaultApiNamingConfig() {
+    return new ApiNamingConfig(this.config);
   }
 
   @Provides

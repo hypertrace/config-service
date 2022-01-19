@@ -46,6 +46,10 @@ data:
       host = {{ .Values.traceableConfigServiceConfig.insightsServiceConfig.host }}
       port = {{ .Values.traceableConfigServiceConfig.insightsServiceConfig.port }}
     }
+    entity.service.config = {
+      host = {{ .Values.traceableConfigServiceConfig.entityServiceConfig.host }}
+      port = {{ .Values.traceableConfigServiceConfig.entityServiceConfig.port }}
+    }
     license.metering.service = {
       host = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.host }}
       port = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.port }}

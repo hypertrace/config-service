@@ -1,0 +1,180 @@
+package ai.traceable.localprocessing.config.service.apinaming;
+
+import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
+import ai.traceable.anomaly.config.service.v1.StringList;
+import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.CustomRuleConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.CustomRulesListConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.GetAllScopedTrainingConfigsResponse;
+import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.ThresholdRegexConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.TrieModelTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.UrlFilterConfig;
+import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
+import ai.traceable.localprocessing.config.service.v1.ApiNamingConfig;
+import ai.traceable.localprocessing.config.service.v1.ApiNamingCustomRule;
+import ai.traceable.localprocessing.config.service.v1.WildcardConfig;
+import ai.traceable.localprocessing.config.service.v1.WildcardType;
+import java.util.List;
+import org.hypertrace.entity.constants.v1.CommonAttribute;
+import org.hypertrace.entity.data.service.v1.AttributeValue;
+import org.hypertrace.entity.data.service.v1.ByTypeAndIdentifyingAttributes;
+import org.hypertrace.entity.data.service.v1.Value;
+import org.hypertrace.entity.service.constants.EntityConstants;
+import org.hypertrace.entity.v1.entitytype.EntityType;
+
+public class ApiNamingManagerTestUtils {
+  private static final String SERVICE_ID1 = "serviceId1";
+  private static final String SERVICE_ID2 = "serviceId2";
+
+  public static ApiNamingConfig buildApiNamingConfig() {
+    UuidGenerator uuidGenerator = new UuidGenerator();
+    ApiNamingConfig.Builder apiNamingConfigBuilder = ApiNamingConfig.newBuilder();
+    apiNamingConfigBuilder
+        .addExtensions("extension")
+        .addSegmentWhitelistRegexes("allowRegex")
+        .addUrlRejectRegexes("urlReject")
+        .addApiNamingCustomRules(
+            ApiNamingCustomRule.newBuilder()
+                .setRegexPattern("regex")
+                .setUrlPattern("urlPattern")
+                .build())
+        .addWildcardConfigs(
+            WildcardConfig.newBuilder()
+                .setWildcardType(WildcardType.WILDCARD_TYPE_ID)
+                .setPriority(4)
+                .addIdentificationRegexes("regexId")
+                .build())
+        .addWildcardConfigs(
+            WildcardConfig.newBuilder()
+                .setWildcardType(WildcardType.WILDCARD_TYPE_LOW_CARDINALITY)
+                .setPriority(3)
+                .addIdentificationRegexes("regexLow")
+                .build())
+        .addWildcardConfigs(
+            WildcardConfig.newBuilder()
+                .setWildcardType(WildcardType.WILDCARD_TYPE_MEDIUM_CARDINALITY)
+                .setPriority(1)
+                .addIdentificationRegexes("regexMedium")
+                .build())
+        .addWildcardConfigs(
+            WildcardConfig.newBuilder()
+                .setWildcardType(WildcardType.WILDCARD_TYPE_HIGH_CARDINALITY)
+                .setPriority(2)
+                .addIdentificationRegexes("regexHigh")
+                .build());
+    String hash = uuidGenerator.generateId(apiNamingConfigBuilder.build());
+    return apiNamingConfigBuilder.setHash(hash).build();
+  }
+
+  public static GetAllScopedTrainingConfigsResponse buildGetAllScopedTrainingConfigsResponse() {
+    return GetAllScopedTrainingConfigsResponse.newBuilder()
+        .addAllScopedTrainingConfigs(
+            List.of(
+                buildScopedTrainingConfig(
+                    AnomalyConfigScope.newBuilder()
+                        .setServiceScope(
+                            AnomalyServiceScope.newBuilder().setId(SERVICE_ID1).build())
+                        .build()),
+                buildScopedTrainingConfig(
+                    AnomalyConfigScope.newBuilder()
+                        .setServiceScope(
+                            AnomalyServiceScope.newBuilder().setId(SERVICE_ID2).build())
+                        .build()),
+                buildScopedTrainingConfig(
+                    AnomalyConfigScope.newBuilder()
+                        .setCustomerScope(AnomalyCustomerScope.newBuilder().build())
+                        .build())))
+        .build();
+  }
+
+  public static ByTypeAndIdentifyingAttributes buildGetEntityByTypeAndIdentifyingAttributesRequest(
+      String serviceName) {
+    ByTypeAndIdentifyingAttributes.Builder byTypeAndIdentifyingAttributesBuilder =
+        ByTypeAndIdentifyingAttributes.newBuilder()
+            .setEntityType(EntityType.SERVICE.name())
+            .putIdentifyingAttributes(
+                EntityConstants.getValue(CommonAttribute.COMMON_ATTRIBUTE_FQN),
+                AttributeValue.newBuilder()
+                    .setValue(Value.newBuilder().setString(serviceName).build())
+                    .build())
+            .putIdentifyingAttributes(
+                "ENVIRONMENT",
+                AttributeValue.newBuilder()
+                    .setValue(Value.newBuilder().setString(serviceName).build())
+                    .build());
+    return byTypeAndIdentifyingAttributesBuilder.build();
+  }
+
+  private static ScopedTrainingConfig buildScopedTrainingConfig(
+      AnomalyConfigScope anomalyConfigScope) {
+    return ScopedTrainingConfig.newBuilder()
+        .setConfigScope(anomalyConfigScope)
+        .addTrainingConfigs(
+            TrainingConfig.newBuilder()
+                .setApiNamingTrainingConfig(
+                    ApiNamingTrainingConfig.newBuilder()
+                        .setUrlFilterConfig(
+                            UrlFilterConfig.newBuilder()
+                                .setUrlRejectRegexPatterns(
+                                    StringList.newBuilder().addValues("urlReject").build())
+                                .build())))
+        .addTrainingConfigs(
+            TrainingConfig.newBuilder()
+                .setApiNamingTrainingConfig(
+                    ApiNamingTrainingConfig.newBuilder()
+                        .setCustomRulesListConfig(
+                            CustomRulesListConfig.newBuilder()
+                                .addCustomRulesConfig(
+                                    CustomRuleConfig.newBuilder()
+                                        .setUrlPattern("urlPattern")
+                                        .setRegex("regex")
+                                        .build())
+                                .build())
+                        .build())
+                .build())
+        .addTrainingConfigs(
+            TrainingConfig.newBuilder()
+                .setApiNamingTrainingConfig(
+                    ApiNamingTrainingConfig.newBuilder()
+                        .setTrieModelTrainingConfig(
+                            TrieModelTrainingConfig.newBuilder()
+                                .setAllowRegexList(
+                                    StringList.newBuilder().addValues("allowRegex").build())
+                                .setExtensions(
+                                    StringList.newBuilder().addValues("extension").build())
+                                .setIds(
+                                    ThresholdRegexConfig.newBuilder()
+                                        .setRegexList(
+                                            StringList.newBuilder().addValues("regexId").build())
+                                        .setThreshold(1)
+                                        .build())
+                                .setLowCardinality(
+                                    ThresholdRegexConfig.newBuilder()
+                                        .setRegexList(
+                                            StringList.newBuilder().addValues("regexLow").build())
+                                        .setThreshold(1)
+                                        .build())
+                                .setMediumCardinality(
+                                    ThresholdRegexConfig.newBuilder()
+                                        .setRegexList(
+                                            StringList.newBuilder()
+                                                .addValues("regexMedium")
+                                                .build())
+                                        .setThreshold(1)
+                                        .build())
+                                .setHighCardinality(
+                                    ThresholdRegexConfig.newBuilder()
+                                        .setRegexList(
+                                            StringList.newBuilder().addValues("regexHigh").build())
+                                        .setThreshold(1)
+                                        .build())
+                                .build())
+                        .build())
+                .build())
+        .build();
+  }
+}

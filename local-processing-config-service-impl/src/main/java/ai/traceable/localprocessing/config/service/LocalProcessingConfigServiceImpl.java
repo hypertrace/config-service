@@ -7,10 +7,13 @@ import ai.traceable.licensestatus.config.service.v1.GetLicenseStatusResponse;
 import ai.traceable.licensestatus.config.service.v1.LicenseLimit;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc.LicenseStatusConfigServiceBlockingStub;
+import ai.traceable.localprocessing.config.service.apinaming.ApiNamingManager;
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinator;
 import ai.traceable.localprocessing.config.service.customsignature.CustomModsecDetectionManager;
 import ai.traceable.localprocessing.config.service.regularmodsec.RegularModsecDetectionManager;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
+import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelRequest;
+import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelResponse;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigRequest;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigResponse;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc.LocalProcessingConfigServiceImplBase;
@@ -34,7 +37,9 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
   private final LicenseStatusConfigServiceBlockingStub licenseStatusConfigServiceBlockingStub;
   private final RegularModsecDetectionManager regularModsecDetectionManager;
   private final CustomModsecDetectionManager customModsecDetectionManager;
+  private final ApiNamingManager apiNamingManager;
   private final UuidGenerator uuidGenerator;
+  private final LocalProcessingConfigRequestValidator localProcessingConfigRequestValidator;
 
   @Inject
   public LocalProcessingConfigServiceImpl(
@@ -42,7 +47,9 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
       ConfigServiceCoordinator configServiceCoordinator,
       CustomModsecDetectionManager customModsecDetectionManager,
       RegularModsecDetectionManager regularModsecDetectionManager,
-      UuidGenerator uuidGenerator) {
+      ApiNamingManager apiNamingManager,
+      UuidGenerator uuidGenerator,
+      LocalProcessingConfigRequestValidator localProcessingConfigRequestValidator) {
     this.configServiceCoordinator = configServiceCoordinator;
     this.licenseStatusConfigServiceBlockingStub =
         LicenseStatusConfigServiceGrpc.newBlockingStub(channel)
@@ -50,7 +57,9 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
     this.regularModsecDetectionManager = regularModsecDetectionManager;
     this.customModsecDetectionManager = customModsecDetectionManager;
+    this.apiNamingManager = apiNamingManager;
     this.uuidGenerator = uuidGenerator;
+    this.localProcessingConfigRequestValidator = localProcessingConfigRequestValidator;
   }
 
   @Override
@@ -74,6 +83,27 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Get Local Processing Config RPC failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getApiNamingModel(
+      GetApiNamingModelRequest request,
+      StreamObserver<GetApiNamingModelResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      localProcessingConfigRequestValidator.validateOrThrow(requestContext, request);
+
+      responseObserver.onNext(
+          GetApiNamingModelResponse.newBuilder()
+              .addAllServiceResponses(
+                  apiNamingManager.getServiceResponseList(requestContext, request))
+              .addAllFallbackWildcardRegexes(apiNamingManager.getFallbackWildcardRegexes())
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Get Api Naming Model RPC failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }
