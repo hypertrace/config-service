@@ -2,6 +2,7 @@ package ai.traceable.localprocessing.config.service.ruleservice;
 
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.DEFAULT_PROTECTION_MODE;
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG;
+import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.MODSEC_REDACT_MESSAGES;
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.SAMPLING_POLICIES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -56,7 +57,9 @@ class LocalProcessingRulesServiceImplTest {
                     DEFAULT_PROTECTION_MODE,
                     ProtectionMode.PROTECTION_MODE_ADVANCED.name(),
                     SAMPLING_POLICIES,
-                    List.of())));
+                    List.of(),
+                    MODSEC_REDACT_MESSAGES,
+                    true)));
     mockGenericConfigService
         .addService(
             new LocalProcessingRulesServiceImpl(

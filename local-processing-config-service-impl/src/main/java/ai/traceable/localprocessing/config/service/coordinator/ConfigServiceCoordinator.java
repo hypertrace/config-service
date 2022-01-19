@@ -2,6 +2,7 @@ package ai.traceable.localprocessing.config.service.coordinator;
 
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRuleDetails;
+import ai.traceable.localprocessing.config.service.v1.ModsecConfig;
 import ai.traceable.localprocessing.config.service.v1.NewLocalProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.ProtectionMode;
 import ai.traceable.localprocessing.config.service.v1.SamplingPolicies;
@@ -26,4 +27,6 @@ public interface ConfigServiceCoordinator {
   ProtectionMode getDefaultProtectionModeConfig(RequestContext requestContext);
 
   SamplingPolicies getSamplingPoliciesConfig();
+
+  ModsecConfig getModsecConfig();
 }

@@ -10,5 +10,6 @@ public final class LocalProcessingConstants {
       "local.processing.config.service";
   public static final String DEFAULT_PROTECTION_MODE = "default.protection.mode";
   public static final String SAMPLING_POLICIES = "sampling.policies";
+  public static final String MODSEC_REDACT_MESSAGES = "modsec.redact";
   public static final String SAMPLING_POLICY_RESOURCE_NAME = "sampling-policy";
 }

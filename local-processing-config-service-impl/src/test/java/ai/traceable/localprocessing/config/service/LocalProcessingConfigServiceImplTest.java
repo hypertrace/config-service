@@ -4,6 +4,7 @@ import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_
 import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_LIMIT_EXHAUSTED;
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.DEFAULT_PROTECTION_MODE;
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG;
+import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.MODSEC_REDACT_MESSAGES;
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.SAMPLING_POLICIES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -115,8 +116,9 @@ class LocalProcessingConfigServiceImplTest {
                                 "attribute.key",
                                 "values",
                                 List.of(
-                                    Map.of("stringValue", "true"),
-                                    Map.of("boolValue", true)))))))));
+                                    Map.of("stringValue", "true"), Map.of("boolValue", true))))))),
+            MODSEC_REDACT_MESSAGES,
+            true));
     configMap.put(
         "license.status.config.service",
         Map.of("default.license.limit", "LICENSE_LIMIT_AVAILABLE"));
@@ -219,6 +221,7 @@ class LocalProcessingConfigServiceImplTest {
 
     assertEquals(expectedCustomModsecDetectionRules, response.getCustomModsecDetectionRules());
     assertEquals(expectedRegularModsecDetectionRules, response.getRegularModsecDetectionRules());
+    assertEquals(true, response.getModsecConfig().getRedactMessages());
   }
 
   @Test

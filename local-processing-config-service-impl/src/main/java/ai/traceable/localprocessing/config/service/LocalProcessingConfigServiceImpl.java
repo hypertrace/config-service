@@ -79,6 +79,7 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
                   regularModsecDetectionManager.getDetectionRules(
                       request.getRegularModsecDetectionRulesHash()))
               .setSamplingPolicies(getSamplingPoliciesConfig(request.getSamplingPoliciesHash()))
+              .setModsecConfig(configServiceCoordinator.getModsecConfig())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {

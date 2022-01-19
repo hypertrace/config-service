@@ -28,6 +28,7 @@ message GetLocalProcessingConfigResponse {
   RegularModsecDetectionRules regular_modsec_detection_rules = 2;
   CustomModsecDetectionRules custom_modsec_detection_rules = 3;
   SamplingPolicies sampling_policies = 4;
+  ModsecConfig modsec_config = 5;
 }
 
 message CustomModsecDetectionRules {
@@ -38,4 +39,8 @@ message CustomModsecDetectionRules {
 message RegularModsecDetectionRules {
   string hash = 1;
   optional string regular_modsec_detection_rules_blob = 2;
+}
+
+message ModsecConfig {
+  bool redact_messages = 1;
 }

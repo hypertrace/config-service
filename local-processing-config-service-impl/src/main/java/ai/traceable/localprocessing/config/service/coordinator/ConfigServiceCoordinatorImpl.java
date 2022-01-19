@@ -2,6 +2,7 @@ package ai.traceable.localprocessing.config.service.coordinator;
 
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.DEFAULT_PROTECTION_MODE;
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG;
+import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.MODSEC_REDACT_MESSAGES;
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.SAMPLING_POLICIES;
 
 import ai.traceable.localprocessing.config.service.LocalProcessingConfigServiceConfig;
@@ -25,6 +26,7 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   private final SamplingPolicies defaultSamplingPolicies;
   private final DefaultProtectionModeConfigStore defaultProtectionModeConfigStore;
   private final LocalProcessingRulesConfigStore localProcessingRulesConfigStore;
+  private final ModsecConfig defaultModsecConfig;
 
   @Inject
   public ConfigServiceCoordinatorImpl(
@@ -41,6 +43,14 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
         getSamplingPoliciesFromConfig(localProcessingConfigServiceConfig);
     this.defaultProtectionModeConfigStore = defaultProtectionModeConfigStore;
     this.localProcessingRulesConfigStore = localProcessingRulesConfigStore;
+    this.defaultModsecConfig =
+        ModsecConfig.newBuilder()
+            .setRedactMessages(
+                localProcessingConfigServiceConfig
+                    .getConfig()
+                    .getConfig(LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG)
+                    .getBoolean(MODSEC_REDACT_MESSAGES))
+            .build();
   }
 
   @Override
@@ -110,6 +120,11 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   @Override
   public SamplingPolicies getSamplingPoliciesConfig() {
     return defaultSamplingPolicies;
+  }
+
+  @Override
+  public ModsecConfig getModsecConfig() {
+    return this.defaultModsecConfig;
   }
 
   private void validateRule(LocalProcessingRule localProcessingRule) {
