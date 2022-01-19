@@ -36,7 +36,7 @@ message Trie {
 }
 
 message FullTrie {
-  Node root = 1;
+  repeated Node roots = 1;
 }
 
 message Node {
