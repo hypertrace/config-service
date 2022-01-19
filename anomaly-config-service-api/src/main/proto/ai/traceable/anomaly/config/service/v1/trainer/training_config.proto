@@ -222,6 +222,7 @@ message TrieModelTrainingConfig {
   ThresholdRegexConfig medium_cardinality = 4;
   ThresholdRegexConfig high_cardinality = 5;
   StringList extensions = 6;
+  optional int32 embryonic_threshold = 7;
 }
 
 message ThresholdRegexConfig {
