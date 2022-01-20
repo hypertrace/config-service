@@ -5,7 +5,7 @@ package ai.traceable.localprocessing.config.service.v1;
 option java_multiple_files = true;
 option go_package = "github.com/Traceableai/config-service/localprocessing/v1";
 
-message GetApiNamingModelRequest {
+message GetApiNamingRequest {
   repeated ServiceRequest service_requests = 1;
   optional string environment = 2;
 }
@@ -16,15 +16,19 @@ message ServiceRequest {
   optional string config_hash = 3;
 }
 
-message GetApiNamingModelResponse {
-  repeated ServiceResponse service_responses = 1;
+message GetApiNamingResponse {
+  HttpApiNamingResponse http_api_naming_response = 1;
+}
+
+message HttpApiNamingResponse {
+  repeated HttpServiceResponse http_service_responses = 1;
   repeated string fallback_wildcard_regexes = 2;
 }
 
-message ServiceResponse {
-  Trie trie = 1;
-  ApiNamingConfig config = 2;
-  string service_name = 3;
+message HttpServiceResponse {
+  string service_name = 1;
+  Trie trie = 2;
+  HttpApiNamingConfig http_config = 3;
 }
 
 message Trie {
@@ -71,16 +75,16 @@ message Wildcard {
   optional string extension = 2;
 }
 
-message ApiNamingConfig {
-  repeated ApiNamingCustomRule api_naming_custom_rules = 1;
+message HttpApiNamingConfig {
+  repeated HttpApiNamingCustomRule api_naming_custom_rules = 1;
   repeated WildcardConfig wildcard_configs = 2;
   repeated string url_reject_regexes = 3;
   repeated string extensions = 4;
   repeated string segment_whitelist_regexes = 5;
-  optional string hash = 6;
+  string hash = 6;
 }
 
-message ApiNamingCustomRule {
+message HttpApiNamingCustomRule {
   string regex_pattern = 1;
   string url_pattern = 2;
   int32 priority = 3;  //Higher the priority will be denoted by smaller rank

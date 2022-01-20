@@ -29,13 +29,15 @@ import ai.traceable.localprocessing.config.service.customsignature.CustomModsecD
 import ai.traceable.localprocessing.config.service.regularmodsec.RegularModsecDetectionManager;
 import ai.traceable.localprocessing.config.service.ruleservice.LocalProcessingRulesServiceImpl;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
-import ai.traceable.localprocessing.config.service.v1.ApiNamingConfig;
 import ai.traceable.localprocessing.config.service.v1.CreateLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.CustomModsecDetectionRules;
-import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelRequest;
-import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelResponse;
+import ai.traceable.localprocessing.config.service.v1.GetApiNamingRequest;
+import ai.traceable.localprocessing.config.service.v1.GetApiNamingResponse;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigRequest;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigResponse;
+import ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig;
+import ai.traceable.localprocessing.config.service.v1.HttpApiNamingResponse;
+import ai.traceable.localprocessing.config.service.v1.HttpServiceResponse;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc.LocalProcessingConfigServiceBlockingStub;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRuleDetails;
@@ -48,7 +50,6 @@ import ai.traceable.localprocessing.config.service.v1.ProtectionModeConfig;
 import ai.traceable.localprocessing.config.service.v1.RegularModsecDetectionRules;
 import ai.traceable.localprocessing.config.service.v1.SamplingPolicies;
 import ai.traceable.localprocessing.config.service.v1.SamplingPolicy;
-import ai.traceable.localprocessing.config.service.v1.ServiceResponse;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.ManagedChannel;
@@ -165,27 +166,30 @@ class LocalProcessingConfigServiceImplTest {
   @Test
   @DisplayName("Test api naming model api naming config part")
   void getApiNamingModel_ApiNamingConfig() {
-    List<ServiceResponse> serviceResponseList =
+    List<HttpServiceResponse> serviceResponseList =
         List.of(
-            ServiceResponse.newBuilder()
+            HttpServiceResponse.newBuilder()
                 .setServiceName("serviceName")
-                .setConfig(ApiNamingConfig.newBuilder().setHash("hash").build())
+                .setHttpConfig(HttpApiNamingConfig.newBuilder().setHash("hash").build())
                 .build());
     List<String> fallbackRegexList = List.of("fallbackRegex");
     doNothing()
         .when(localProcessingConfigRequestValidator)
-        .validateOrThrow(any(RequestContext.class), any(GetApiNamingModelRequest.class));
-    when(apiNamingManager.getServiceResponseList(any(), any())).thenReturn(serviceResponseList);
+        .validateOrThrow(any(RequestContext.class), any(GetApiNamingRequest.class));
+    when(apiNamingManager.getHttpServiceResponseList(any(), any())).thenReturn(serviceResponseList);
     when(apiNamingManager.getFallbackWildcardRegexes()).thenReturn(fallbackRegexList);
 
-    GetApiNamingModelResponse expectedResponse =
-        GetApiNamingModelResponse.newBuilder()
-            .addAllServiceResponses(serviceResponseList)
-            .addAllFallbackWildcardRegexes(fallbackRegexList)
+    GetApiNamingResponse expectedResponse =
+        GetApiNamingResponse.newBuilder()
+            .setHttpApiNamingResponse(
+                HttpApiNamingResponse.newBuilder()
+                    .addAllHttpServiceResponses(serviceResponseList)
+                    .addAllFallbackWildcardRegexes(fallbackRegexList)
+                    .build())
             .build();
     assertEquals(
         expectedResponse,
-        localProcessingConfigStub.getApiNamingModel(GetApiNamingModelRequest.newBuilder().build()));
+        localProcessingConfigStub.getApiNamingModel(GetApiNamingRequest.newBuilder().build()));
   }
 
   @Test

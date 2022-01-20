@@ -13,7 +13,7 @@ service LocalProcessingConfigService {
   rpc GetLocalProcessingConfig(GetLocalProcessingConfigRequest) returns (GetLocalProcessingConfigResponse) {}
 
   // get api-naming tries and other rules
-  rpc GetApiNamingModel (GetApiNamingModelRequest) returns (GetApiNamingModelResponse) {}
+  rpc GetApiNamingModel (GetApiNamingRequest) returns (GetApiNamingResponse) {}
 }
 
 message GetLocalProcessingConfigRequest {

@@ -15,10 +15,10 @@ import ai.traceable.anomaly.config.service.v1.trainer.UrlFilterConfig;
 import ai.traceable.localprocessing.config.service.client.EntityDataServiceClient;
 import ai.traceable.localprocessing.config.service.config.ApiNamingConfig;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
-import ai.traceable.localprocessing.config.service.v1.ApiNamingCustomRule;
-import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelRequest;
+import ai.traceable.localprocessing.config.service.v1.GetApiNamingRequest;
+import ai.traceable.localprocessing.config.service.v1.HttpApiNamingCustomRule;
+import ai.traceable.localprocessing.config.service.v1.HttpServiceResponse;
 import ai.traceable.localprocessing.config.service.v1.ServiceRequest;
-import ai.traceable.localprocessing.config.service.v1.ServiceResponse;
 import ai.traceable.localprocessing.config.service.v1.WildcardConfig;
 import ai.traceable.localprocessing.config.service.v1.WildcardType;
 import com.google.inject.Inject;
@@ -64,8 +64,8 @@ class DefaultApiNamingManager implements ApiNamingManager {
     return apiNamingConfig.getFallbackRegexes();
   }
 
-  public List<ServiceResponse> getServiceResponseList(
-      RequestContext requestContext, GetApiNamingModelRequest request) {
+  public List<HttpServiceResponse> getHttpServiceResponseList(
+      RequestContext requestContext, GetApiNamingRequest request) {
     Map<String, ServiceRequest> serviceIdServiceRequestMap = new HashMap<>();
 
     for (ServiceRequest serviceRequest : request.getServiceRequestsList()) {
@@ -94,28 +94,28 @@ class DefaultApiNamingManager implements ApiNamingManager {
       serviceIdServiceRequestMap.put(entity.getEntityId(), serviceRequest);
     }
 
-    List<ServiceResponse> serviceResponses = new ArrayList<>();
+    List<HttpServiceResponse> httpServiceResponses = new ArrayList<>();
     List<ScopedTrainingConfig> scopedTrainingConfigs = getScopedTrainingConfigsList();
     serviceIdServiceRequestMap.forEach(
         (serviceId, serviceRequest) ->
             getTrainingConfigListForService(scopedTrainingConfigs, requestContext, serviceId)
                 .ifPresent(
                     trainingConfigs ->
-                        serviceResponses.add(
-                            ServiceResponse.newBuilder()
+                        httpServiceResponses.add(
+                            HttpServiceResponse.newBuilder()
                                 .setServiceName(serviceRequest.getServiceName())
-                                .setConfig(
+                                .setHttpConfig(
                                     buildApiNamingConfig(
                                         trainingConfigs, serviceRequest.getConfigHash()))
                                 .build())));
-    return Collections.unmodifiableList(serviceResponses);
+    return Collections.unmodifiableList(httpServiceResponses);
   }
 
   private boolean isValidEntity(Entity entity) {
     return entity != null && !entity.getEntityId().isEmpty();
   }
 
-  private Optional<String> getEnvironment(GetApiNamingModelRequest request) {
+  private Optional<String> getEnvironment(GetApiNamingRequest request) {
     if (request.hasEnvironment()) {
       return Optional.of(request.getEnvironment());
     }
@@ -193,10 +193,11 @@ class DefaultApiNamingManager implements ApiNamingManager {
     }
   }
 
-  private ai.traceable.localprocessing.config.service.v1.ApiNamingConfig buildApiNamingConfig(
+  private ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig buildApiNamingConfig(
       List<TrainingConfig> trainingConfigs, String configHash) {
-    ai.traceable.localprocessing.config.service.v1.ApiNamingConfig.Builder apiNamingConfigBuilder =
-        ai.traceable.localprocessing.config.service.v1.ApiNamingConfig.newBuilder();
+    ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig.Builder
+        apiNamingConfigBuilder =
+            ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig.newBuilder();
     Optional<TrieModelTrainingConfig> trieModelTrainingConfigs =
         getTrieModelTrainingConfig(trainingConfigs);
 
@@ -221,7 +222,7 @@ class DefaultApiNamingManager implements ApiNamingManager {
     if (!hash.equals(configHash)) {
       return apiNamingConfigBuilder.setHash(hash).build();
     }
-    return ai.traceable.localprocessing.config.service.v1.ApiNamingConfig.newBuilder()
+    return ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig.newBuilder()
         .setHash(hash)
         .build();
   }
@@ -266,13 +267,13 @@ class DefaultApiNamingManager implements ApiNamingManager {
     }
   }
 
-  private List<ApiNamingCustomRule> convertCustomRules(
+  private List<HttpApiNamingCustomRule> convertCustomRules(
       CustomRulesListConfig customRulesListConfig) {
     // TODO: setting priority once available from training config service APIs
     return customRulesListConfig.getCustomRulesConfigList().stream()
         .map(
             customRuleConfig ->
-                ApiNamingCustomRule.newBuilder()
+                HttpApiNamingCustomRule.newBuilder()
                     .setRegexPattern(customRuleConfig.getRegex())
                     .setUrlPattern(customRuleConfig.getUrlPattern())
                     .build())

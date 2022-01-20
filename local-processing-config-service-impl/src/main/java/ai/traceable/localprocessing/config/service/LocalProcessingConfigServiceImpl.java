@@ -12,10 +12,11 @@ import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoor
 import ai.traceable.localprocessing.config.service.customsignature.CustomModsecDetectionManager;
 import ai.traceable.localprocessing.config.service.regularmodsec.RegularModsecDetectionManager;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
-import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelRequest;
-import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelResponse;
+import ai.traceable.localprocessing.config.service.v1.GetApiNamingRequest;
+import ai.traceable.localprocessing.config.service.v1.GetApiNamingResponse;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigRequest;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigResponse;
+import ai.traceable.localprocessing.config.service.v1.HttpApiNamingResponse;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc.LocalProcessingConfigServiceImplBase;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRuleDetails;
 import ai.traceable.localprocessing.config.service.v1.ProtectedEndpoint;
@@ -90,17 +91,19 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
 
   @Override
   public void getApiNamingModel(
-      GetApiNamingModelRequest request,
-      StreamObserver<GetApiNamingModelResponse> responseObserver) {
+      GetApiNamingRequest request, StreamObserver<GetApiNamingResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       localProcessingConfigRequestValidator.validateOrThrow(requestContext, request);
 
       responseObserver.onNext(
-          GetApiNamingModelResponse.newBuilder()
-              .addAllServiceResponses(
-                  apiNamingManager.getServiceResponseList(requestContext, request))
-              .addAllFallbackWildcardRegexes(apiNamingManager.getFallbackWildcardRegexes())
+          GetApiNamingResponse.newBuilder()
+              .setHttpApiNamingResponse(
+                  HttpApiNamingResponse.newBuilder()
+                      .addAllHttpServiceResponses(
+                          apiNamingManager.getHttpServiceResponseList(requestContext, request))
+                      .addAllFallbackWildcardRegexes(apiNamingManager.getFallbackWildcardRegexes())
+                      .build())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {

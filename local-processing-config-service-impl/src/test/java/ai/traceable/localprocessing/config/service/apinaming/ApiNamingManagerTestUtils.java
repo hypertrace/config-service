@@ -14,8 +14,8 @@ import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrieModelTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.UrlFilterConfig;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
-import ai.traceable.localprocessing.config.service.v1.ApiNamingConfig;
-import ai.traceable.localprocessing.config.service.v1.ApiNamingCustomRule;
+import ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig;
+import ai.traceable.localprocessing.config.service.v1.HttpApiNamingCustomRule;
 import ai.traceable.localprocessing.config.service.v1.WildcardConfig;
 import ai.traceable.localprocessing.config.service.v1.WildcardType;
 import java.util.List;
@@ -30,15 +30,15 @@ public class ApiNamingManagerTestUtils {
   private static final String SERVICE_ID1 = "serviceId1";
   private static final String SERVICE_ID2 = "serviceId2";
 
-  public static ApiNamingConfig buildApiNamingConfig() {
+  public static HttpApiNamingConfig buildApiNamingConfig() {
     UuidGenerator uuidGenerator = new UuidGenerator();
-    ApiNamingConfig.Builder apiNamingConfigBuilder = ApiNamingConfig.newBuilder();
+    HttpApiNamingConfig.Builder apiNamingConfigBuilder = HttpApiNamingConfig.newBuilder();
     apiNamingConfigBuilder
         .addExtensions("extension")
         .addSegmentWhitelistRegexes("allowRegex")
         .addUrlRejectRegexes("urlReject")
         .addApiNamingCustomRules(
-            ApiNamingCustomRule.newBuilder()
+            HttpApiNamingCustomRule.newBuilder()
                 .setRegexPattern("regex")
                 .setUrlPattern("urlPattern")
                 .build())
