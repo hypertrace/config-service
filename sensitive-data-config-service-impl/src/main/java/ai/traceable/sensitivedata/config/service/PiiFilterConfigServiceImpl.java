@@ -1,6 +1,14 @@
 package ai.traceable.sensitivedata.config.service;
 
+import static ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression.DATA_SUPPRESSION_OBFUSCATE;
+import static ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression.DATA_SUPPRESSION_REDACT;
+import static java.util.function.Function.identity;
+
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.data.classification.config.service.v1.DataSet;
+import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
+import ai.traceable.data.classification.config.service.v1.DataType;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.sensitivedata.config.service.v1.ComplexData;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigResponse;
@@ -16,8 +24,10 @@ import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -26,6 +36,17 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterConfigServiceImplBase {
+
+  private static final String SEPARATOR = ".";
+  private static final String HTTP_REQUEST_HEADER = "http.request.header";
+  private static final String RPC_REQUEST_METADATA = "rpc.request.metadata";
+  private static final String HTTP_RESPONSE_HEADER = "http.response.header";
+  private static final String RPC_RESPONSE_METADATA = "rpc.response.metadata";
+  private static final List<String> REQUEST_HEADERS_PREFIXES_LIST =
+      List.of(HTTP_REQUEST_HEADER + SEPARATOR, RPC_REQUEST_METADATA + SEPARATOR);
+  private static final List<String> RESPONSE_HEADERS_PREFIXES_LIST =
+      List.of(HTTP_RESPONSE_HEADER + SEPARATOR, RPC_RESPONSE_METADATA + SEPARATOR);
+  private static final List<String> EMPTY_PREFIXES_LIST = List.of("");
 
   private final ConfigServiceCoordinator configServiceCoordinator;
   private final InsightsServiceCoordinator insightsServiceCoordinator;
@@ -83,6 +104,19 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
         addPiiElements(keyRegexToPiiElementMap, defaultPiiFilterConfig.getKeyRegexsList());
         addPiiElements(valueRegexToPiiElementMap, defaultPiiFilterConfig.getValueRegexsList());
       }
+
+      Map<DataSuppression, Set<DataType>> dataTypesMap =
+          getDataTypesForRedactionOrObfuscation(requestContext);
+      Set<DataType> dataTypesForRedaction = dataTypesMap.get(DATA_SUPPRESSION_REDACT);
+      Set<DataType> dataTypesForObfuscation = dataTypesMap.get(DATA_SUPPRESSION_OBFUSCATE);
+      mergeConfigFromDataTypes(
+          dataTypesForRedaction,
+          RedactionStrategy.REDACTION_STRATEGY_REDACT,
+          keyRegexToPiiElementMap);
+      mergeConfigFromDataTypes(
+          dataTypesForObfuscation,
+          RedactionStrategy.REDACTION_STRATEGY_HASH,
+          keyRegexToPiiElementMap);
 
       PiiFilterConfig resultingPiiFilterConfig =
           PiiFilterConfig.newBuilder()
@@ -173,6 +207,92 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
           break;
         default:
       }
+    }
+  }
+
+  private Map<DataSuppression, Set<DataType>> getDataTypesForRedactionOrObfuscation(
+      RequestContext requestContext) {
+    List<DataSet> dataSets = configServiceCoordinator.getAllDataSets(requestContext);
+    List<DataType> dataTypes = configServiceCoordinator.getAllDataTypes(requestContext);
+    Map<String, DataType> dataTypeToIdMap =
+        dataTypes.stream().collect(Collectors.toUnmodifiableMap(DataType::getId, identity()));
+    Map<String, DataType> redactedDataTypesMap =
+        dataSets.stream()
+            .filter(
+                dataSet ->
+                    dataSet.getInfo().getEnabled()
+                        && dataSet.getInfo().getDataSuppression().equals(DATA_SUPPRESSION_REDACT))
+            .flatMap(dataSet -> dataSet.getInfo().getDataTypeIdsList().stream())
+            .map(dataTypeToIdMap::get)
+            .filter(Objects::nonNull)
+            .collect(
+                Collectors.toMap(DataType::getId, identity(), (x, y) -> y, LinkedHashMap::new));
+    Set<DataType> obfuscatedDataTypes =
+        dataSets.stream()
+            .filter(
+                dataSet ->
+                    dataSet.getInfo().getEnabled()
+                        && dataSet
+                            .getInfo()
+                            .getDataSuppression()
+                            .equals(DATA_SUPPRESSION_OBFUSCATE))
+            .flatMap(dataSet -> dataSet.getInfo().getDataTypeIdsList().stream())
+            .filter(id -> !redactedDataTypesMap.containsKey(id))
+            .map(dataTypeToIdMap::get)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+    return Map.of(
+        DATA_SUPPRESSION_REDACT,
+        new LinkedHashSet<>(redactedDataTypesMap.values()),
+        DATA_SUPPRESSION_OBFUSCATE,
+        obfuscatedDataTypes);
+  }
+
+  private void mergeConfigFromDataTypes(
+      Set<DataType> dataTypes,
+      RedactionStrategy strategy,
+      Map<String, PiiElement> keyRegexToPiiElementMap) {
+    dataTypes.forEach(
+        dataType -> {
+          PiiElement.Builder piiElementBuilder =
+              PiiElement.newBuilder().setRedactionStrategy(strategy).setRuleId(dataType.getId());
+          dataType
+              .getRule()
+              .getScopedPatternList()
+              .forEach(
+                  scopedPattern ->
+                      setRegexForScopedPattern(
+                          scopedPattern, piiElementBuilder, keyRegexToPiiElementMap));
+        });
+  }
+
+  private void setRegexForScopedPattern(
+      ScopedPattern scopedPattern,
+      PiiElement.Builder piiElementBuilder,
+      Map<String, PiiElement> keyRegexToPiiElementMap) {
+    List<String> prefixes = getPrefixesAndUpdateFqn(scopedPattern, piiElementBuilder);
+    // We can have two PiiElement with same regex but different effects.
+    // For ex. one with fqn = true and the other with fqn = false.
+    for (String prefix : prefixes) {
+      if (scopedPattern.hasKeyPattern()) {
+        String keyRegex = prefix + scopedPattern.getKeyPattern().getValue();
+        piiElementBuilder.setRegex(keyRegex);
+        keyRegexToPiiElementMap.putIfAbsent(keyRegex, piiElementBuilder.build());
+      }
+    }
+  }
+
+  private List<String> getPrefixesAndUpdateFqn(
+      ScopedPattern scopedPattern, PiiElement.Builder piiElementBuilder) {
+    switch (scopedPattern.getParameterType()) {
+      case PARAMETER_TYPE_REQUEST_HEADER:
+        piiElementBuilder.setFqn(true);
+        return REQUEST_HEADERS_PREFIXES_LIST;
+      case PARAMETER_TYPE_RESPONSE_HEADER:
+        piiElementBuilder.setFqn(true);
+        return RESPONSE_HEADERS_PREFIXES_LIST;
+      default:
+        return EMPTY_PREFIXES_LIST;
     }
   }
 }

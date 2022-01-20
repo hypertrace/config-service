@@ -11,6 +11,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
+import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
+import ai.traceable.data.classification.config.service.v1.GetDataSetsResponse;
+import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
+import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
 import ai.traceable.sensitivedata.config.service.v1.Condition;
 import ai.traceable.sensitivedata.config.service.v1.Condition.AttributeRegexMatch;
 import ai.traceable.sensitivedata.config.service.v1.CreateRedactionRuleRequest;
@@ -38,6 +43,7 @@ import ai.traceable.sensitivedata.config.service.v1.UpdateInvalidJsonPolicyRespo
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeRequest;
 import io.grpc.StatusRuntimeException;
+import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -90,7 +96,10 @@ class SensitiveDataConfigServiceImplTest {
                     new FullPrivacyModeConfigStore(
                         configServiceBlockingStub, configChangeEventGenerator),
                     new DefaultRedactionRulePopulationStatusStore(
-                        configServiceBlockingStub, configChangeEventGenerator))))
+                        configServiceBlockingStub, configChangeEventGenerator),
+                    DataClassificationConfigServiceGrpc.newBlockingStub(
+                        mockGenericConfigService.channel()))))
+        .addService(new MockDataClassificationConfigService())
         .start();
 
     sensitiveDataStub =
@@ -487,6 +496,24 @@ class SensitiveDataConfigServiceImplTest {
       RedactionRule expected = this.getRedactionRule(expectedRules.get(index), "generated-id");
       RedactionRule actual = actualRules.get(index).toBuilder().setId("generated-id").build();
       assertEquals(expected, actual);
+    }
+  }
+
+  class MockDataClassificationConfigService
+      extends DataClassificationConfigServiceGrpc.DataClassificationConfigServiceImplBase {
+
+    @Override
+    public void getDataSets(
+        GetDataSetsRequest request, StreamObserver<GetDataSetsResponse> responseObserver) {
+      responseObserver.onNext(GetDataSetsResponse.newBuilder().build());
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getDataTypes(
+        GetDataTypesRequest request, StreamObserver<GetDataTypesResponse> responseObserver) {
+      responseObserver.onNext(GetDataTypesResponse.newBuilder().build());
+      responseObserver.onCompleted();
     }
   }
 }

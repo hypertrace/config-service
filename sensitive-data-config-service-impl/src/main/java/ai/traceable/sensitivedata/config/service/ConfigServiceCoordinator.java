@@ -1,5 +1,7 @@
 package ai.traceable.sensitivedata.config.service;
 
+import ai.traceable.data.classification.config.service.v1.DataSet;
+import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.sensitivedata.config.service.v1.FullPrivacyModeConfig;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
 import ai.traceable.sensitivedata.config.service.v1.InvalidJsonPolicy;
@@ -47,4 +49,8 @@ interface ConfigServiceCoordinator {
 
   void upsertFullPrivacyModeConfig(
       RequestContext requestContext, FullPrivacyModeConfig fullPrivacyModeConfig);
+
+  public List<DataType> getAllDataTypes(RequestContext requestContext);
+
+  public List<DataSet> getAllDataSets(RequestContext requestContext);
 }

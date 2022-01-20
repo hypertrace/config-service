@@ -2,6 +2,11 @@ package ai.traceable.sensitivedata.config.service;
 
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.CORE_MODE_RULE_CATEGORY;
 
+import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
+import ai.traceable.data.classification.config.service.v1.DataSet;
+import ai.traceable.data.classification.config.service.v1.DataType;
+import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
+import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.sensitivedata.config.service.v1.FullPrivacyModeConfig;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest.RedactionRuleFilter;
 import ai.traceable.sensitivedata.config.service.v1.InvalidJsonPolicy;
@@ -61,6 +66,8 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   private final InvalidJsonPolicyConfigStore invalidJsonPolicyConfigStore;
   private final FullPrivacyModeConfigStore fullPrivacyModeConfigStore;
   private final DefaultRedactionRulePopulationStatusStore defaultRedactionRulePopulationStatusStore;
+  private final DataClassificationConfigServiceBlockingStub
+      dataClassificationConfigServiceBlockingStub;
 
   @Inject
   ConfigServiceCoordinatorImpl(
@@ -71,7 +78,8 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
       AutomaticSecretRedactionStrategyConfigStore automaticSecretRedactionStrategyConfigStore,
       InvalidJsonPolicyConfigStore invalidJsonPolicyConfigStore,
       FullPrivacyModeConfigStore fullPrivacyModeConfigStore,
-      DefaultRedactionRulePopulationStatusStore defaultRedactionRulePopulationStatusStore) {
+      DefaultRedactionRulePopulationStatusStore defaultRedactionRulePopulationStatusStore,
+      DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceBlockingStub) {
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.configChangeEventGenerator = configChangeEventGenerator;
     this.defaultRedactionRules = config.defaultRedactionRules();
@@ -84,6 +92,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
     this.invalidJsonPolicyConfigStore = invalidJsonPolicyConfigStore;
     this.fullPrivacyModeConfigStore = fullPrivacyModeConfigStore;
     this.defaultRedactionRulePopulationStatusStore = defaultRedactionRulePopulationStatusStore;
+    this.dataClassificationConfigServiceBlockingStub = dataClassificationConfigServiceBlockingStub;
   }
 
   @Override
@@ -372,5 +381,28 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
     } catch (PatternSyntaxException e) {
       throw new IllegalArgumentException("Invalid regex", e);
     }
+  }
+
+  public List<DataType> getAllDataTypes(RequestContext requestContext) {
+    return requestContext
+        .call(
+            () ->
+                dataClassificationConfigServiceBlockingStub.getDataTypes(
+                    GetDataTypesRequest.getDefaultInstance()))
+        .getDataTypesList()
+        .stream()
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  public List<DataSet> getAllDataSets(RequestContext requestContext) {
+    return requestContext
+        .call(
+            () ->
+                dataClassificationConfigServiceBlockingStub.getDataSets(
+                    GetDataSetsRequest.getDefaultInstance()))
+        .getDataSetsList()
+        .stream()
+        .filter(dataSet -> dataSet.getInfo().getEnabled())
+        .collect(Collectors.toUnmodifiableList());
   }
 }

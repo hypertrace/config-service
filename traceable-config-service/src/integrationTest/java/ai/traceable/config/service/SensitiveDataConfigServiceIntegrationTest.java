@@ -5,6 +5,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ai.traceable.data.classification.config.service.v1.CreateDataSetRequest;
+import ai.traceable.data.classification.config.service.v1.CreateDataTypeRequest;
+import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
+import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
+import ai.traceable.data.classification.config.service.v1.DataSet;
+import ai.traceable.data.classification.config.service.v1.DataSetInfo;
+import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
+import ai.traceable.data.classification.config.service.v1.DataType;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.Action;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.GlobalScope;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.ParameterType;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
 import ai.traceable.sensitivedata.config.service.v1.CreateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.DropUnparsedJsonPolicy;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
@@ -51,6 +66,7 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
 
   private static SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceStub;
   private static PiiFilterConfigServiceBlockingStub piiFilterConfigServiceStub;
+  private static DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceStub;
   private RequestContext requestContext;
 
   @BeforeAll
@@ -61,6 +77,10 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
     piiFilterConfigServiceStub =
         PiiFilterConfigServiceGrpc.newBlockingStub(managedChannelForExternalServices)
+            .withCallCredentials(
+                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+    dataClassificationConfigServiceStub =
+        DataClassificationConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }
@@ -206,6 +226,73 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
     // Update to false
     updateFullPrivacyMode(false);
     assertFalse(getFullPrivacyMode());
+  }
+
+  @Test
+  void testConvertDataTypeRuleToPiiElementConfig() {
+    requestContext = RequestContext.forTenantId("testConvertDataTypeRuleToPiiElement");
+    DataType dataType1 =
+        createDataType("datatype-rule-1", ParameterType.PARAMETER_TYPE_REQUEST_HEADER, "^header");
+    DataType dataType2 =
+        createDataType("datatype-rule-2", ParameterType.PARAMETER_TYPE_REQUEST_BODY, "^doby");
+    DataType dataType3 =
+        createDataType("datatype-rule-3", ParameterType.PARAMETER_TYPE_REQUEST_BODY, "body");
+
+    createDataSet(
+        "dataset-1",
+        List.of(dataType1.getId(), dataType2.getId()),
+        DataSuppression.DATA_SUPPRESSION_REDACT);
+    createDataSet(
+        "dataset-2",
+        List.of(dataType2.getId(), dataType3.getId()),
+        DataSuppression.DATA_SUPPRESSION_OBFUSCATE);
+
+    updateInvalidJsonPolicy(
+        InvalidJsonPolicy.newBuilder()
+            .setDropUnparsedJsonPolicy(DropUnparsedJsonPolicy.getDefaultInstance())
+            .build());
+
+    assertMatchesResource(
+        "sensitive-data/pii-filter-with-data-type-rules.json", getPiiFilterConfig(false));
+  }
+
+  private DataSet createDataSet(
+      String name, List<String> datatypeIds, DataSuppression dataSuppression) {
+    CreateDataSetRequest request =
+        CreateDataSetRequest.newBuilder()
+            .setInfo(
+                DataSetInfo.newBuilder()
+                    .setName(name)
+                    .setEnabled(true)
+                    .setDataSuppression(dataSuppression)
+                    .addAllDataTypeIds(datatypeIds))
+            .build();
+
+    return requestContext
+        .call(() -> dataClassificationConfigServiceStub.createDataSet(request))
+        .getDataSet();
+  }
+
+  private DataType createDataType(String name, ParameterType parameterType, String key) {
+    CreateDataTypeRequest request =
+        CreateDataTypeRequest.newBuilder()
+            .setRule(
+                DataTypeRule.newBuilder()
+                    .setName(name)
+                    .addScopedPattern(
+                        ScopedPattern.newBuilder()
+                            .setGlobalScope(GlobalScope.newBuilder())
+                            .setParameterType(parameterType)
+                            .setKeyPattern(
+                                StringPattern.newBuilder()
+                                    .setValue(key)
+                                    .setOperator(Operator.OPERATOR_MATCHES_REGEX))
+                            .setAction(Action.ACTION_MATCH)))
+            .build();
+
+    return requestContext
+        .call(() -> dataClassificationConfigServiceStub.createDataType(request))
+        .getDataType();
   }
 
   private void updateRedactionStrategyForType(

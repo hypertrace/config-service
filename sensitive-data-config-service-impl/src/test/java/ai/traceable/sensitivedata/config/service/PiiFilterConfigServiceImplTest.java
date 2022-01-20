@@ -8,6 +8,22 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.config.service.MockInsightsService;
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
+import ai.traceable.data.classification.config.service.v1.DataSet;
+import ai.traceable.data.classification.config.service.v1.DataSetInfo;
+import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
+import ai.traceable.data.classification.config.service.v1.DataType;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.Action;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.GlobalScope;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.ParameterType;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
+import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
+import ai.traceable.data.classification.config.service.v1.GetDataSetsResponse;
+import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
+import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
 import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.DropUnparsedJsonPolicy;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigRequest;
@@ -22,6 +38,7 @@ import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfigServiceGrpc.P
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import io.grpc.Channel;
+import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,6 +57,7 @@ class PiiFilterConfigServiceImplTest {
   MockGenericConfigService mockGenericConfigService;
   SensitiveDataServiceConfig mockConfig;
   UuidGenerator uuidGenerator = new UuidGenerator();
+  boolean dataClassificationConfigServiceMockFlag;
 
   @BeforeEach
   void setUp() {
@@ -54,6 +72,7 @@ class PiiFilterConfigServiceImplTest {
             InvalidJsonPolicy.newBuilder()
                 .setDropUnparsedJsonPolicy(DropUnparsedJsonPolicy.getDefaultInstance())
                 .build());
+    dataClassificationConfigServiceMockFlag = false;
   }
 
   @AfterEach
@@ -153,6 +172,37 @@ class PiiFilterConfigServiceImplTest {
             .anyMatch(element -> element.getRegex().equals("prepopulated-regex")));
   }
 
+  @Test
+  void testPiiFilterConfigForDataTypes() {
+    dataClassificationConfigServiceMockFlag = true;
+    setupPiiFilterConfigServiceImpl(false, getDefaultRedactionRules());
+
+    PiiFilterConfig piiFilterConfig =
+        piiFilterStub
+            .getPiiFilterConfig(GetPiiFilterConfigRequest.newBuilder().build())
+            .getPiiFilterConfig();
+    // prepopulated rules + mock insights service rules + rules from datatypes in datasets
+    Set<PiiElement> expected =
+        Set.of(
+            getPiiElement("abc123", RedactionStrategy.REDACTION_STRATEGY_UNSPECIFIED, false),
+            getPiiElement("def456", RedactionStrategy.REDACTION_STRATEGY_UNSPECIFIED, false),
+            getPiiElement(
+                "http.request.header.h1", RedactionStrategy.REDACTION_STRATEGY_HASH, true),
+            getPiiElement(
+                "http.request.header.h2", RedactionStrategy.REDACTION_STRATEGY_HASH, true),
+            getPiiElement(
+                "http.request.header.regex-1", RedactionStrategy.REDACTION_STRATEGY_REDACT, true),
+            getPiiElement(
+                "rpc.request.metadata.regex-1", RedactionStrategy.REDACTION_STRATEGY_REDACT, true),
+            getPiiElement("regex-2", RedactionStrategy.REDACTION_STRATEGY_REDACT, false));
+    Set<PiiElement> actual =
+        piiFilterConfig.getKeyRegexsList().stream()
+            // Strip out rule ids for the prepopulated rules since they are random guids
+            .map(piiElement -> PiiElement.newBuilder(piiElement).setRuleId("").build())
+            .collect(Collectors.toSet());
+    assertEquals(expected, actual);
+  }
+
   private PiiElement getPiiElement(String name, RedactionStrategy redactionStrategy, boolean fqn) {
     return PiiElement.newBuilder()
         .setRegex(name)
@@ -221,11 +271,80 @@ class PiiFilterConfigServiceImplTest {
                     new FullPrivacyModeConfigStore(
                         configServiceBlockingStub, configChangeEventGenerator),
                     new DefaultRedactionRulePopulationStatusStore(
-                        configServiceBlockingStub, configChangeEventGenerator)),
+                        configServiceBlockingStub, configChangeEventGenerator),
+                    DataClassificationConfigServiceGrpc.newBlockingStub(channel)),
                 new InsightsServiceCoordinatorImpl(InsightsServiceGrpc.newBlockingStub(channel)),
                 new UuidGenerator()))
+        .addService(new MockDataClassificationConfigService())
         .start();
 
     piiFilterStub = PiiFilterConfigServiceGrpc.newBlockingStub(channel);
+  }
+
+  class MockDataClassificationConfigService
+      extends DataClassificationConfigServiceGrpc.DataClassificationConfigServiceImplBase {
+
+    @Override
+    public void getDataSets(
+        GetDataSetsRequest request, StreamObserver<GetDataSetsResponse> responseObserver) {
+      GetDataSetsResponse.Builder responseBuilder = GetDataSetsResponse.newBuilder();
+      if (dataClassificationConfigServiceMockFlag) {
+        DataSet dataSet =
+            DataSet.newBuilder()
+                .setInfo(
+                    DataSetInfo.newBuilder()
+                        .setName("dataset-1")
+                        .setEnabled(true)
+                        .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
+                        .addAllDataTypeIds(List.of("datatype-1", "datatype-2")))
+                .build();
+        responseBuilder.addDataSets(dataSet);
+      }
+      responseObserver.onNext(responseBuilder.build());
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getDataTypes(
+        GetDataTypesRequest request, StreamObserver<GetDataTypesResponse> responseObserver) {
+      GetDataTypesResponse.Builder responseBuilder = GetDataTypesResponse.newBuilder();
+      if (dataClassificationConfigServiceMockFlag) {
+        DataType dataType1 =
+            DataType.newBuilder()
+                .setId("datatype-1")
+                .setRule(
+                    DataTypeRule.newBuilder()
+                        .setName("datatyperule-1")
+                        .addScopedPattern(
+                            ScopedPattern.newBuilder()
+                                .setGlobalScope(GlobalScope.getDefaultInstance())
+                                .setParameterType(ParameterType.PARAMETER_TYPE_REQUEST_HEADER)
+                                .setKeyPattern(
+                                    StringPattern.newBuilder()
+                                        .setValue("regex-1")
+                                        .setOperator(Operator.OPERATOR_MATCHES_REGEX))
+                                .setAction(Action.ACTION_MATCH)))
+                .build();
+        DataType dataType2 =
+            DataType.newBuilder()
+                .setId("datatype-2")
+                .setRule(
+                    DataTypeRule.newBuilder()
+                        .setName("datatyperule-2")
+                        .addScopedPattern(
+                            ScopedPattern.newBuilder()
+                                .setGlobalScope(GlobalScope.getDefaultInstance())
+                                .setParameterType(ParameterType.PARAMETER_TYPE_REQUEST_BODY)
+                                .setKeyPattern(
+                                    StringPattern.newBuilder()
+                                        .setValue("regex-2")
+                                        .setOperator(Operator.OPERATOR_MATCHES_REGEX))
+                                .setAction(Action.ACTION_MATCH)))
+                .build();
+        responseBuilder.addAllDataTypes(List.of(dataType1, dataType2));
+      }
+      responseObserver.onNext(responseBuilder.build());
+      responseObserver.onCompleted();
+    }
   }
 }

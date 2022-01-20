@@ -7,6 +7,7 @@ plugins {
 dependencies {
   api(projects.sensitiveDataConfigServiceApi)
   implementation(projects.configUtils)
+  implementation(projects.dataClassificationConfigServiceApi)
 
   implementation(libs.hypertrace.configservice.api)
   implementation(libs.traceable.insights.api)
