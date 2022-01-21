@@ -9,6 +9,8 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
+import ai.traceable.anomaly.config.service.v1.StringList;
+import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ContentSizeTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllScopedTrainingConfigsRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllTrainingActionsRequest;
@@ -29,6 +31,7 @@ import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig.TrainingConfigCase;
 import ai.traceable.anomaly.config.service.v1.trainer.UpdateScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.UpsertTrainingActionRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.UrlFilterConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig;
 import ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase;
 import java.util.List;
@@ -68,6 +71,27 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     List<ScopedTrainingConfig> scopedTrainingConfigs = fetchAllTrainerConfigs(TENANT_ID);
     assertEquals(1, scopedTrainingConfigs.size());
     testDefaultApiNamingConfig(scopedTrainingConfigs.get(0));
+    ScopedTrainingConfig updateConfig =
+        ScopedTrainingConfig.newBuilder()
+            .setConfigScope(serviceConfigScope)
+            .addTrainingConfigs(
+                TrainingConfig.newBuilder()
+                    .setApiNamingTrainingConfig(
+                        ApiNamingTrainingConfig.newBuilder()
+                            .setUrlFilterConfig(
+                                UrlFilterConfig.newBuilder()
+                                    .setUrlRejectRegexPatterns(
+                                        StringList.newBuilder()
+                                            .addAllValues(List.of("regex-1"))
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    updateTrainerConfig(updateConfig);
+    scopedTrainingConfigs = fetchAllTrainerConfigs(TENANT_ID);
+    assertEquals(2, scopedTrainingConfigs.size());
+    testDefaultApiNamingConfig(scopedTrainingConfigs.get(1));
   }
 
   @Test

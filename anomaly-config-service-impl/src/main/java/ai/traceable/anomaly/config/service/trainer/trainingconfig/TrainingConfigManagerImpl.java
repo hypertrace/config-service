@@ -188,16 +188,15 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
       resolvedConfigs.add(
           getResolvedConfig(configMap, anomalyConfigScope, contextsWithIncreasingPriority));
     }
-    if (resolvedConfigs.isEmpty()) {
-      resolvedConfigs =
-          List.of(
-              ScopedTrainingConfig.newBuilder()
-                  .setConfigScope(
-                      AnomalyConfigScope.newBuilder()
-                          .setCustomerScope(AnomalyCustomerScope.newBuilder().build())
-                          .build())
-                  .addAllTrainingConfigs(this.defaultApiNamingTrainingConfigs)
-                  .build());
+    if (!configMap.containsKey(tenantId)) {
+      resolvedConfigs.add(
+          ScopedTrainingConfig.newBuilder()
+              .setConfigScope(
+                  AnomalyConfigScope.newBuilder()
+                      .setCustomerScope(AnomalyCustomerScope.newBuilder().build())
+                      .build())
+              .addAllTrainingConfigs(this.defaultApiNamingTrainingConfigs)
+              .build());
     }
     return resolvedConfigs;
   }
