@@ -11,7 +11,7 @@ import ai.traceable.anomaly.config.service.v1.trainer.TrainerConfigServiceGrpc.T
 import ai.traceable.localprocessing.config.service.client.EntityDataServiceClient;
 import ai.traceable.localprocessing.config.service.config.ApiNamingConfig;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
-import ai.traceable.localprocessing.config.service.v1.GetApiNamingRequest;
+import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelRequest;
 import ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig;
 import ai.traceable.localprocessing.config.service.v1.HttpServiceResponse;
 import ai.traceable.localprocessing.config.service.v1.ServiceRequest;
@@ -70,7 +70,7 @@ class DefaultApiNamingManagerTest {
     List<HttpServiceResponse> actualServiceResponseList =
         apiNamingManager.getHttpServiceResponseList(
             RequestContext.forTenantId("tenantId"),
-            GetApiNamingRequest.newBuilder()
+            GetApiNamingModelRequest.newBuilder()
                 .setEnvironment("environment")
                 .addAllServiceRequests(List.of(serviceRequest1, serviceRequest2))
                 .build());

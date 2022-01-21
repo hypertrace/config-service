@@ -15,7 +15,7 @@ import ai.traceable.anomaly.config.service.v1.trainer.UrlFilterConfig;
 import ai.traceable.localprocessing.config.service.client.EntityDataServiceClient;
 import ai.traceable.localprocessing.config.service.config.ApiNamingConfig;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
-import ai.traceable.localprocessing.config.service.v1.GetApiNamingRequest;
+import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelRequest;
 import ai.traceable.localprocessing.config.service.v1.HttpApiNamingCustomRule;
 import ai.traceable.localprocessing.config.service.v1.HttpServiceResponse;
 import ai.traceable.localprocessing.config.service.v1.ServiceRequest;
@@ -65,7 +65,7 @@ class DefaultApiNamingManager implements ApiNamingManager {
   }
 
   public List<HttpServiceResponse> getHttpServiceResponseList(
-      RequestContext requestContext, GetApiNamingRequest request) {
+      RequestContext requestContext, GetApiNamingModelRequest request) {
     Map<String, ServiceRequest> serviceIdServiceRequestMap = new HashMap<>();
 
     for (ServiceRequest serviceRequest : request.getServiceRequestsList()) {
@@ -115,7 +115,7 @@ class DefaultApiNamingManager implements ApiNamingManager {
     return entity != null && !entity.getEntityId().isEmpty();
   }
 
-  private Optional<String> getEnvironment(GetApiNamingRequest request) {
+  private Optional<String> getEnvironment(GetApiNamingModelRequest request) {
     if (request.hasEnvironment()) {
       return Optional.of(request.getEnvironment());
     }

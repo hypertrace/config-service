@@ -31,12 +31,12 @@ import ai.traceable.localprocessing.config.service.ruleservice.LocalProcessingRu
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.CreateLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.CustomModsecDetectionRules;
-import ai.traceable.localprocessing.config.service.v1.GetApiNamingRequest;
-import ai.traceable.localprocessing.config.service.v1.GetApiNamingResponse;
+import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelRequest;
+import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelResponse;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigRequest;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigResponse;
 import ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig;
-import ai.traceable.localprocessing.config.service.v1.HttpApiNamingResponse;
+import ai.traceable.localprocessing.config.service.v1.HttpApiNamingModelResponse;
 import ai.traceable.localprocessing.config.service.v1.HttpServiceResponse;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc.LocalProcessingConfigServiceBlockingStub;
@@ -175,21 +175,21 @@ class LocalProcessingConfigServiceImplTest {
     List<String> fallbackRegexList = List.of("fallbackRegex");
     doNothing()
         .when(localProcessingConfigRequestValidator)
-        .validateOrThrow(any(RequestContext.class), any(GetApiNamingRequest.class));
+        .validateOrThrow(any(RequestContext.class), any(GetApiNamingModelRequest.class));
     when(apiNamingManager.getHttpServiceResponseList(any(), any())).thenReturn(serviceResponseList);
     when(apiNamingManager.getFallbackWildcardRegexes()).thenReturn(fallbackRegexList);
 
-    GetApiNamingResponse expectedResponse =
-        GetApiNamingResponse.newBuilder()
+    GetApiNamingModelResponse expectedResponse =
+        GetApiNamingModelResponse.newBuilder()
             .setHttpApiNamingResponse(
-                HttpApiNamingResponse.newBuilder()
+                HttpApiNamingModelResponse.newBuilder()
                     .addAllHttpServiceResponses(serviceResponseList)
                     .addAllFallbackWildcardRegexes(fallbackRegexList)
                     .build())
             .build();
     assertEquals(
         expectedResponse,
-        localProcessingConfigStub.getApiNamingModel(GetApiNamingRequest.newBuilder().build()));
+        localProcessingConfigStub.getApiNamingModel(GetApiNamingModelRequest.newBuilder().build()));
   }
 
   @Test

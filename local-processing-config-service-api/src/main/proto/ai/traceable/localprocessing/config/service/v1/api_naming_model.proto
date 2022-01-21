@@ -5,7 +5,7 @@ package ai.traceable.localprocessing.config.service.v1;
 option java_multiple_files = true;
 option go_package = "github.com/Traceableai/config-service/localprocessing/v1";
 
-message GetApiNamingRequest {
+message GetApiNamingModelRequest {
   repeated ServiceRequest service_requests = 1;
   optional string environment = 2;
 }
@@ -16,11 +16,11 @@ message ServiceRequest {
   optional string config_hash = 3;
 }
 
-message GetApiNamingResponse {
-  HttpApiNamingResponse http_api_naming_response = 1;
+message GetApiNamingModelResponse {
+  HttpApiNamingModelResponse http_api_naming_response = 1;
 }
 
-message HttpApiNamingResponse {
+message HttpApiNamingModelResponse {
   repeated HttpServiceResponse http_service_responses = 1;
   repeated string fallback_wildcard_regexes = 2;
 }
