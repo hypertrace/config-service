@@ -5,11 +5,13 @@ import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ApiStateBasedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigRequest;
 import com.google.inject.Inject;
 import io.grpc.Status;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,13 +71,34 @@ public class AnomalyDetectionConfigValidator {
 
     status = validateApiDefinitionConfigs(apiDefinitionDetectionConfigs);
 
+    if (!status.isOk()) {
+      return status;
+    }
+
+    List<ApiStateBasedAnomalyDetectionConfig> stateBasedDetectionConfigs =
+        detectionConfigs.stream()
+            .filter(AnomalyDetectionConfig::hasApiStateBasedAnomalyDetectionConfig)
+            .map(AnomalyDetectionConfig::getApiStateBasedAnomalyDetectionConfig)
+            .collect(Collectors.toList());
+
+    status = validateStateBasedDetectionConfigs(stateBasedDetectionConfigs);
     return status;
   }
 
+  /**
+   * @param apiDefinitionDetectionConfigs
+   * @return Status.INVALID_ARGUMENT in case both ruleId and config case are not present, ruleId is
+   *     not present in apiDef registry, mismatch of ruleId and config case or presence of configs
+   *     with same ruleId or configCase. Status.OK in all other cases.
+   */
   private Status validateApiDefinitionConfigs(
       List<ApiDefinitionMetadataAnomalyDetectionConfig> apiDefinitionDetectionConfigs) {
 
-    Map<String, ApiDefinitionMetadataAnomalyDetectionConfig> configMap = new HashMap<>();
+    Map<String, ApiDefinitionMetadataAnomalyDetectionConfig> ruleIdMap = new HashMap<>();
+    EnumMap<
+            ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase,
+            ApiDefinitionMetadataAnomalyDetectionConfig>
+        configCaseMap = new EnumMap<>(ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase.class);
 
     for (ApiDefinitionMetadataAnomalyDetectionConfig detectionConfig :
         apiDefinitionDetectionConfigs) {
@@ -101,18 +124,34 @@ public class AnomalyDetectionConfigValidator {
         }
       }
 
-      if (configMap.containsKey(ruleId)) {
+      if (ruleIdMap.containsKey(ruleId)) {
         return Status.INVALID_ARGUMENT.withDescription(
             "UpdateScopedAnomalyDetectionConfigRequest should have only one api definition detection config for ruleId: "
                 + ruleId);
       }
 
-      configMap.put(ruleId, detectionConfig);
+      if (configCaseMap.containsKey(configCase)) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            "UpdateScopedAnomalyDetectionConfigRequest should have only one api definition detection config for configCase: "
+                + configCase);
+      }
+
+      if (ruleId.isEmpty()) {
+        configCaseMap.put(configCase, detectionConfig);
+      } else {
+        ruleIdMap.put(ruleId, detectionConfig);
+      }
     }
 
     return Status.OK;
   }
 
+  /**
+   * @param modsecConfigs
+   * @return Status.INVALID_ARGUMENT in case of presence of configs with same ruleId or presence of
+   *     subRuleConfigs with same subRuleId for a particular modsec config. Status.OK in all other
+   *     cases.
+   */
   private Status validateModsecConfigs(List<ModsecurityAnomalyDetectionConfig> modsecConfigs) {
     Map<String, Map<String, AnomalySubRuleConfig>> configMap = new HashMap<>();
 
@@ -138,6 +177,25 @@ public class AnomalyDetectionConfigValidator {
         }
         configMap.put(ruleId, subRuleConfigMap);
       }
+    }
+    return Status.OK;
+  }
+
+  /**
+   * @param stateBasedDetectionConfigs
+   * @return Status.INVALID_ARGUMENT in case of presence of configs with same config case. Status.OK
+   *     in all other cases.
+   */
+  private Status validateStateBasedDetectionConfigs(
+      List<ApiStateBasedAnomalyDetectionConfig> stateBasedDetectionConfigs) {
+    try {
+      stateBasedDetectionConfigs.stream()
+          .collect(
+              Collectors.toMap(
+                  ApiStateBasedAnomalyDetectionConfig::getConfigCase,
+                  detectionConfig -> detectionConfig));
+    } catch (IllegalStateException e) {
+      return Status.INVALID_ARGUMENT.withDescription(e.getMessage());
     }
     return Status.OK;
   }

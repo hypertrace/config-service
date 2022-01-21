@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.detector.anomalydetection;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -30,6 +31,7 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -103,20 +105,12 @@ public class AnomalyDetectionConfigManagerTest {
   }
 
   @Test
-  void testGetModsecConfigs() throws InvalidProtocolBufferException {
+  void testGetDetectionConfigs() throws InvalidProtocolBufferException {
     String tenantId = "tenant";
     RequestContext requestContext = RequestContext.forTenantId(tenantId);
     ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig;
 
-    GetAnomalyDetectionConfigsFilter filter =
-        GetAnomalyDetectionConfigsFilter.newBuilder()
-            .addAnomalyDetectionConfigTypes(
-                AnomalyDetectionConfigType.ANOMALY_DETECTION_CONFIG_TYPE_API_STATE_BASED)
-            .addAnomalyDetectionConfigTypes(
-                AnomalyDetectionConfigType.ANOMALY_DETECTION_CONFIG_TYPE_API_DEFINITION)
-            .addAnomalyDetectionConfigTypes(
-                AnomalyDetectionConfigType.ANOMALY_DETECTION_CONFIG_TYPE_MODSECURITY)
-            .build();
+    GetAnomalyDetectionConfigsFilter filter = GetAnomalyDetectionConfigsFilter.getDefaultInstance();
 
     assertThrows(
         RuntimeException.class,
@@ -128,6 +122,9 @@ public class AnomalyDetectionConfigManagerTest {
                     .build(),
                 GetAnomalyDetectionConfigsFilter.getDefaultInstance()));
 
+    scopedAnomalyDetectionConfig =
+        configManager.getScopedAnomalyDetectionConfig(requestContext, customerConfigScope, filter);
+    assertEquals(customerConfigScope, scopedAnomalyDetectionConfig.getConfigScope());
     scopedAnomalyDetectionConfig =
         getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
     updateScopedAnomalyDetectionConfig(requestContext, scopedAnomalyDetectionConfig);
@@ -161,30 +158,39 @@ public class AnomalyDetectionConfigManagerTest {
     filter =
         GetAnomalyDetectionConfigsFilter.newBuilder()
             .addAnomalyDetectionConfigTypes(
-                AnomalyDetectionConfigType.ANOMALY_DETECTION_CONFIG_TYPE_API_DEFINITION)
-            .addAnomalyDetectionConfigTypes(
                 AnomalyDetectionConfigType.ANOMALY_DETECTION_CONFIG_TYPE_API_STATE_BASED)
             .build();
     scopedAnomalyDetectionConfig =
-        configManager.getScopedAnomalyDetectionConfig(requestContext, apiConfigScope, filter);
+        configManager.getScopedAnomalyDetectionConfig(requestContext, customerConfigScope, filter);
     assertEquals(0, scopedAnomalyDetectionConfig.getAnomalyDetectionConfigsCount());
-  }
 
-  @Test
-  void testGetAllModsecConfigs() throws InvalidProtocolBufferException {
-    String tenantId = "tenant";
-    RequestContext requestContext = RequestContext.forTenantId(tenantId);
-    ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig;
-
-    GetAnomalyDetectionConfigsFilter filter =
+    filter =
         GetAnomalyDetectionConfigsFilter.newBuilder()
             .addAnomalyDetectionConfigTypes(
-                AnomalyDetectionConfigType.ANOMALY_DETECTION_CONFIG_TYPE_API_STATE_BASED)
-            .addAnomalyDetectionConfigTypes(
                 AnomalyDetectionConfigType.ANOMALY_DETECTION_CONFIG_TYPE_API_DEFINITION)
+            .build();
+    scopedAnomalyDetectionConfig =
+        configManager.getScopedAnomalyDetectionConfig(requestContext, customerConfigScope, filter);
+    assertEquals(1, scopedAnomalyDetectionConfig.getAnomalyDetectionConfigsCount());
+
+    filter =
+        GetAnomalyDetectionConfigsFilter.newBuilder()
             .addAnomalyDetectionConfigTypes(
                 AnomalyDetectionConfigType.ANOMALY_DETECTION_CONFIG_TYPE_MODSECURITY)
             .build();
+    scopedAnomalyDetectionConfig =
+        configManager.getScopedAnomalyDetectionConfig(requestContext, apiConfigScope, filter);
+    assertEquals(3, scopedAnomalyDetectionConfig.getAnomalyDetectionConfigsCount());
+  }
+
+  @Test
+  void testGetAllDetectionConfigs() throws InvalidProtocolBufferException {
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+    ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig;
+    List<ScopedAnomalyDetectionConfig> scopedAnomalyDetectionConfigs;
+
+    GetAnomalyDetectionConfigsFilter filter = GetAnomalyDetectionConfigsFilter.getDefaultInstance();
 
     assertThrows(
         RuntimeException.class,
@@ -197,15 +203,25 @@ public class AnomalyDetectionConfigManagerTest {
                 GetAnomalyDetectionConfigsFilter.getDefaultInstance()));
 
     scopedAnomalyDetectionConfig =
-        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
-    updateScopedAnomalyDetectionConfig(requestContext, scopedAnomalyDetectionConfig);
-
-    scopedAnomalyDetectionConfig =
         getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(SERVICE_SCOPE_CONFIG));
     updateScopedAnomalyDetectionConfig(requestContext, scopedAnomalyDetectionConfig);
 
     scopedAnomalyDetectionConfig =
         getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(API_SCOPE_CONFIG));
+    updateScopedAnomalyDetectionConfig(requestContext, scopedAnomalyDetectionConfig);
+
+    scopedAnomalyDetectionConfigs =
+        configManager.getAllScopedAnomalyDetectionConfig(requestContext, filter);
+    List<AnomalyConfigScope> configScopes =
+        scopedAnomalyDetectionConfigs.stream()
+            .map(ScopedAnomalyDetectionConfig::getConfigScope)
+            .collect(Collectors.toList());
+
+    assertEquals(3, scopedAnomalyDetectionConfigs.size());
+    assertTrue(configScopes.contains(customerConfigScope));
+
+    scopedAnomalyDetectionConfig =
+        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
     updateScopedAnomalyDetectionConfig(requestContext, scopedAnomalyDetectionConfig);
 
     ScopedAnomalyDetectionConfig customerScopeResolvedConfig =
@@ -215,7 +231,7 @@ public class AnomalyDetectionConfigManagerTest {
     ScopedAnomalyDetectionConfig apiScopeResolvedConfig =
         getScopedAnomalyDetectionConfig(resolvedDetectionConfigs.getConfig(API_SCOPE_CONFIG));
 
-    List<ScopedAnomalyDetectionConfig> scopedAnomalyDetectionConfigs =
+    scopedAnomalyDetectionConfigs =
         configManager.getAllScopedAnomalyDetectionConfig(requestContext, filter);
     assertEquals(3, scopedAnomalyDetectionConfigs.size());
 

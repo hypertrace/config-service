@@ -5,12 +5,16 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalyCategoryConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfigType;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ApiStateBasedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +23,7 @@ import java.util.stream.Collectors;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 
 public class AnomalyDetectionConfigConverter {
+
   public Value convert(ScopedAnomalyDetectionConfig config) throws InvalidProtocolBufferException {
     return ConfigProtoConverter.convertToValue(config);
   }
@@ -38,6 +43,10 @@ public class AnomalyDetectionConfigConverter {
     return ScopedAnomalyDetectionConfig.newBuilder()
         .setConfigScope(preferredConfig.getConfigScope())
         .addAllAnomalyDetectionConfigs(mergeModsecConfigs(preferredConfig, fallbackConfig))
+        .addAllAnomalyDetectionConfigs(
+            mergeStateBasedDetectionConfigs(preferredConfig, fallbackConfig))
+        .addAllAnomalyDetectionConfigs(
+            mergeApiDefinitionDetectionConfigs(preferredConfig, fallbackConfig))
         .build();
   }
 
@@ -71,6 +80,112 @@ public class AnomalyDetectionConfigConverter {
     return configCases;
   }
 
+  /**
+   * @param preferredConfig
+   * @param fallbackConfig
+   * @return List of state based detection configs merged using config case as a key
+   */
+  private List<AnomalyDetectionConfig> mergeStateBasedDetectionConfigs(
+      ScopedAnomalyDetectionConfig preferredConfig, ScopedAnomalyDetectionConfig fallbackConfig) {
+    EnumMap<ApiStateBasedAnomalyDetectionConfig.ConfigCase, AnomalyDetectionConfig> configMap =
+        new EnumMap<>(ApiStateBasedAnomalyDetectionConfig.ConfigCase.class);
+    preferredConfig.getAnomalyDetectionConfigsList().stream()
+        .filter(AnomalyDetectionConfig::hasApiStateBasedAnomalyDetectionConfig)
+        .forEach(
+            detectionConfig ->
+                configMap.put(
+                    detectionConfig.getApiStateBasedAnomalyDetectionConfig().getConfigCase(),
+                    detectionConfig));
+
+    fallbackConfig.getAnomalyDetectionConfigsList().stream()
+        .filter(AnomalyDetectionConfig::hasApiStateBasedAnomalyDetectionConfig)
+        .forEach(
+            detectionConfig -> {
+              ApiStateBasedAnomalyDetectionConfig.ConfigCase configCase =
+                  detectionConfig.getApiStateBasedAnomalyDetectionConfig().getConfigCase();
+              if (configMap.containsKey(configCase)) {
+                configMap.put(
+                    configCase,
+                    detectionConfig.toBuilder().mergeFrom(configMap.get(configCase)).build());
+              } else {
+                configMap.put(configCase, detectionConfig);
+              }
+            });
+
+    return configMap.values().stream().collect(Collectors.toList());
+  }
+
+  /**
+   * @param preferredConfig
+   * @param fallbackConfig
+   * @return List of api definition detection configs merged using ruleId as a key, in case ruleId
+   *     is not present, the config case is used as a key for merging
+   */
+  private List<AnomalyDetectionConfig> mergeApiDefinitionDetectionConfigs(
+      ScopedAnomalyDetectionConfig preferredConfig, ScopedAnomalyDetectionConfig fallbackConfig) {
+    EnumMap<ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase, AnomalyDetectionConfig>
+        configCaseMap = new EnumMap<>(ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase.class);
+    Map<String, AnomalyDetectionConfig> ruleIdMap = new HashMap<>();
+
+    preferredConfig.getAnomalyDetectionConfigsList().stream()
+        .filter(AnomalyDetectionConfig::hasApiDefinitionMetadataAnomalyDetectionConfig)
+        .forEach(
+            detectionConfig -> {
+              String ruleId =
+                  detectionConfig
+                      .getApiDefinitionMetadataAnomalyDetectionConfig()
+                      .getAnomalyRuleId();
+              if (ruleId.isEmpty()) {
+                configCaseMap.put(
+                    detectionConfig
+                        .getApiDefinitionMetadataAnomalyDetectionConfig()
+                        .getConfigCase(),
+                    detectionConfig);
+              } else {
+                ruleIdMap.put(
+                    detectionConfig
+                        .getApiDefinitionMetadataAnomalyDetectionConfig()
+                        .getAnomalyRuleId(),
+                    detectionConfig);
+              }
+            });
+
+    fallbackConfig.getAnomalyDetectionConfigsList().stream()
+        .filter(AnomalyDetectionConfig::hasApiDefinitionMetadataAnomalyDetectionConfig)
+        .forEach(
+            detectionConfig -> {
+              ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase configCase =
+                  detectionConfig.getApiDefinitionMetadataAnomalyDetectionConfig().getConfigCase();
+              String ruleId =
+                  detectionConfig
+                      .getApiDefinitionMetadataAnomalyDetectionConfig()
+                      .getAnomalyRuleId();
+
+              if (configCaseMap.containsKey(configCase)) {
+                configCaseMap.put(
+                    configCase,
+                    detectionConfig.toBuilder().mergeFrom(configCaseMap.get(configCase)).build());
+              } else if (ruleIdMap.containsKey(ruleId)) {
+                ruleIdMap.put(
+                    ruleId, detectionConfig.toBuilder().mergeFrom(ruleIdMap.get(ruleId)).build());
+              } else {
+                configCaseMap.put(configCase, detectionConfig);
+              }
+            });
+
+    List<AnomalyDetectionConfig> resolvedConfigs = new ArrayList<>();
+    resolvedConfigs.addAll(configCaseMap.values());
+    resolvedConfigs.addAll(ruleIdMap.values());
+
+    return resolvedConfigs;
+  }
+
+  /**
+   * @param preferredConfig
+   * @param fallbackConfig
+   * @return List of modsec detection configs merged using ruleId as a key, the subRuleConfigs are
+   *     merged on the basis of their subRuleId for a particular modsec config
+   */
   private List<AnomalyDetectionConfig> mergeModsecConfigs(
       ScopedAnomalyDetectionConfig preferredConfig, ScopedAnomalyDetectionConfig fallbackConfig) {
     Map<String, AnomalyConfigStatus> configStatusMap =

@@ -5,6 +5,7 @@ import static ai.traceable.anomaly.config.service.detector.anomalydetection.Anom
 
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
@@ -174,6 +175,12 @@ public class AnomalyDetectionConfigManagerImpl
     return context;
   }
 
+  /**
+   * @param configMap
+   * @param tenantId
+   * @return List of resolved scopedAnomalyDetectionConfigs for all the anomalyConfigScopes of the
+   *     given tenant
+   */
   private List<ScopedAnomalyDetectionConfig> getResolvedConfigs(
       Map<String, ScopedAnomalyDetectionConfig> configMap, String tenantId) {
 
@@ -200,9 +207,24 @@ public class AnomalyDetectionConfigManagerImpl
           getResolvedConfig(configMap, anomalyConfigScope, contextsWithIncreasingPriority));
     }
 
+    if (!configMap.containsKey(tenantId)) {
+      resolvedConfigs.add(
+          getResolvedConfig(
+              Map.of(),
+              AnomalyConfigScope.newBuilder()
+                  .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+                  .build(),
+              List.of()));
+    }
     return resolvedConfigs;
   }
 
+  /**
+   * @param configMap
+   * @param configScope
+   * @param contextsWithIncreasingPriority
+   * @return ScopedAnomalyDetectionConfig, resolved using the provided context priority.
+   */
   private ScopedAnomalyDetectionConfig getResolvedConfig(
       Map<String, ScopedAnomalyDetectionConfig> configMap,
       AnomalyConfigScope configScope,

@@ -11,11 +11,14 @@ import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ApiStateBasedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ContentSizeAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.IntegerAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.LearntApiAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.UnderDiscoveryApiAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigRequest;
 import io.grpc.Status;
 import java.util.List;
@@ -144,6 +147,59 @@ public class AnomalyDetectionConfigValidatorTest {
   }
 
   @Test
+  void testStateBasedUpdateValidation() {
+    UpdateScopedAnomalyDetectionConfigRequest request;
+
+    AnomalyDetectionConfig detectionConfig1 =
+        AnomalyDetectionConfig.newBuilder()
+            .setApiStateBasedAnomalyDetectionConfig(
+                ApiStateBasedAnomalyDetectionConfig.newBuilder()
+                    .setLearntApi(LearntApiAnomalyConfig.newBuilder().build())
+                    .build())
+            .build();
+
+    AnomalyDetectionConfig detectionConfig2 =
+        AnomalyDetectionConfig.newBuilder()
+            .setApiStateBasedAnomalyDetectionConfig(
+                ApiStateBasedAnomalyDetectionConfig.newBuilder()
+                    .setLearntApi(LearntApiAnomalyConfig.newBuilder().build())
+                    .build())
+            .build();
+
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig1, detectionConfig2)))
+            .build();
+
+    Status status = validator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("Duplicate key LEARNT_API"));
+
+    detectionConfig2 =
+        AnomalyDetectionConfig.newBuilder()
+            .setApiStateBasedAnomalyDetectionConfig(
+                ApiStateBasedAnomalyDetectionConfig.newBuilder()
+                    .setUnderDiscoveryApi(UnderDiscoveryApiAnomalyConfig.getDefaultInstance())
+                    .build())
+            .build();
+
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig1, detectionConfig2)))
+            .build();
+
+    status = validator.validate(request);
+
+    assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
   void testApiDefinitionUpdateValidation() {
     UpdateScopedAnomalyDetectionConfigRequest request;
 
@@ -214,6 +270,30 @@ public class AnomalyDetectionConfigValidatorTest {
         status
             .getDescription()
             .contains("should have only one api definition detection config for ruleId: integer"));
+
+    detectionConfig1 =
+        AnomalyDetectionConfig.newBuilder()
+            .setApiDefinitionMetadataAnomalyDetectionConfig(
+                ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                    .setInteger(IntegerAnomalyConfig.getDefaultInstance()))
+            .build();
+
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig1, detectionConfig1)))
+            .build();
+
+    status = validator.validate(request);
+
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(
+        status
+            .getDescription()
+            .contains(
+                "should have only one api definition detection config for configCase: INTEGER"));
 
     AnomalyDetectionConfig detectionConfig2 =
         AnomalyDetectionConfig.newBuilder()

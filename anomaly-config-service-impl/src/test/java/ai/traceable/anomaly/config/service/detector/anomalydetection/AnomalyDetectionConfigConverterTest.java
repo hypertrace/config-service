@@ -1,6 +1,7 @@
 package ai.traceable.anomaly.config.service.detector.anomalydetection;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
@@ -12,10 +13,16 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyEventCategory;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyEventScoreCategory;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ApiStateBasedAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.EnumerationsAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.IntegerAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.LearntApiAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 public class AnomalyDetectionConfigConverterTest {
@@ -159,5 +166,185 @@ public class AnomalyDetectionConfigConverterTest {
             .getSubRuleConfigsList()
             .get(0)
             .getBlockingEnabled());
+  }
+
+  @Test
+  void testStateBasedDetectionConfigsConvert() throws InvalidProtocolBufferException {
+    ScopedAnomalyDetectionConfig config1 =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setConfigStatus(
+                        AnomalyConfigStatus.newBuilder()
+                            .setDisabled(true)
+                            .setInternal(true)
+                            .build())
+                    .setApiStateBasedAnomalyDetectionConfig(
+                        ApiStateBasedAnomalyDetectionConfig.newBuilder()
+                            .setLearntApi(
+                                LearntApiAnomalyConfig.newBuilder()
+                                    .setModsecurityEnabled(true)
+                                    .setEvaluateAllModsecurityRules(true)
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    ScopedAnomalyDetectionConfig config2 =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setCategoryConfig(
+                        AnomalyCategoryConfig.newBuilder()
+                            .setEventCategory(AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT)
+                            .setEventScoreCategory(
+                                AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW))
+                    .setApiStateBasedAnomalyDetectionConfig(
+                        ApiStateBasedAnomalyDetectionConfig.newBuilder()
+                            .setLearntApi(
+                                LearntApiAnomalyConfig.newBuilder()
+                                    .setEvaluateAllModsecurityRules(false)
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    Value value = detectionConfigConverter.convert(config1);
+    assertEquals(config1, detectionConfigConverter.convert(value));
+
+    ScopedAnomalyDetectionConfig mergedConfig = detectionConfigConverter.merge(config2, config1);
+    AnomalyDetectionConfig detectionConfig = mergedConfig.getAnomalyDetectionConfigsList().get(0);
+
+    assertTrue(detectionConfig.getConfigStatus().getDisabled());
+    assertTrue(detectionConfig.getConfigStatus().getInternal());
+    assertTrue(
+        detectionConfig
+            .getApiStateBasedAnomalyDetectionConfig()
+            .getLearntApi()
+            .getModsecurityEnabled());
+    // overridden values
+    assertFalse(
+        detectionConfig
+            .getApiStateBasedAnomalyDetectionConfig()
+            .getLearntApi()
+            .getEvaluateAllModsecurityRules());
+    assertEquals(
+        AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT,
+        detectionConfig.getCategoryConfig().getEventCategory());
+    assertEquals(
+        AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW,
+        detectionConfig.getCategoryConfig().getEventScoreCategory());
+  }
+
+  @Test
+  void testApiDefinitionDetectionConfigsConvert() throws InvalidProtocolBufferException {
+    ScopedAnomalyDetectionConfig config1 =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setConfigStatus(
+                        AnomalyConfigStatus.newBuilder()
+                            .setDisabled(true)
+                            .setInternal(true)
+                            .build())
+                    .setApiDefinitionMetadataAnomalyDetectionConfig(
+                        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                            .setAnomalyRuleId("integer")
+                            .setInteger(
+                                IntegerAnomalyConfig.newBuilder()
+                                    .setMaxLengthDifference(5)
+                                    .setThresholdPercent(0.1))
+                            .build())
+                    .build())
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setApiDefinitionMetadataAnomalyDetectionConfig(
+                        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                            .setAnomalyRuleId("enum")
+                            .setEnum(EnumerationsAnomalyConfig.getDefaultInstance())
+                            .build())
+                    .build())
+            .build();
+
+    ScopedAnomalyDetectionConfig config2 =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setCategoryConfig(
+                        AnomalyCategoryConfig.newBuilder()
+                            .setEventCategory(AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT)
+                            .setEventScoreCategory(
+                                AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW))
+                    .setApiDefinitionMetadataAnomalyDetectionConfig(
+                        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                            .setInteger(
+                                IntegerAnomalyConfig.newBuilder().setMaxLengthDifference(10))
+                            .build())
+                    .build())
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setConfigStatus(
+                        AnomalyConfigStatus.newBuilder().setInternal(true).setDisabled(false))
+                    .setApiDefinitionMetadataAnomalyDetectionConfig(
+                        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                            .setAnomalyRuleId("enum")
+                            .build())
+                    .build())
+            .build();
+
+    Value value = detectionConfigConverter.convert(config1);
+    assertEquals(config1, detectionConfigConverter.convert(value));
+
+    ScopedAnomalyDetectionConfig mergedConfig = detectionConfigConverter.merge(config2, config1);
+
+    AnomalyDetectionConfig detectionConfig =
+        getAnomalyDetectionConfig(
+            mergedConfig.getAnomalyDetectionConfigsList(),
+            ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase.ENUM);
+
+    assertFalse(detectionConfig.getConfigStatus().getDisabled());
+    assertTrue(detectionConfig.getConfigStatus().getInternal());
+    assertEquals(
+        ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase.ENUM,
+        detectionConfig.getApiDefinitionMetadataAnomalyDetectionConfig().getConfigCase());
+
+    detectionConfig =
+        getAnomalyDetectionConfig(
+            mergedConfig.getAnomalyDetectionConfigsList(),
+            ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase.INTEGER);
+
+    assertTrue(detectionConfig.getConfigStatus().getDisabled());
+    assertTrue(detectionConfig.getConfigStatus().getInternal());
+    assertEquals(
+        0.1,
+        detectionConfig
+            .getApiDefinitionMetadataAnomalyDetectionConfig()
+            .getInteger()
+            .getThresholdPercent());
+    // overridden values
+    assertEquals(
+        10,
+        detectionConfig
+            .getApiDefinitionMetadataAnomalyDetectionConfig()
+            .getInteger()
+            .getMaxLengthDifference());
+    assertEquals(
+        AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT,
+        detectionConfig.getCategoryConfig().getEventCategory());
+    assertEquals(
+        AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW,
+        detectionConfig.getCategoryConfig().getEventScoreCategory());
+  }
+
+  private AnomalyDetectionConfig getAnomalyDetectionConfig(
+      List<AnomalyDetectionConfig> detectionConfigs,
+      ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase configCase) {
+    for (AnomalyDetectionConfig detectionConfig : detectionConfigs) {
+      if (detectionConfig
+          .getApiDefinitionMetadataAnomalyDetectionConfig()
+          .getConfigCase()
+          .equals(configCase)) return detectionConfig;
+    }
+    return null;
   }
 }
