@@ -115,7 +115,7 @@ public class ModsecRulesRegistryTest {
     assertEquals(13, anomalyRuleInfos.size());
     assertEquals(
         "crs_101 :: Server Side Request Forgery (SSRF) Signatures\n"
-            + "crs_102 :: XML External Entities (XXE)\n"
+            + "crs_102 :: XML External Entity Injection (XXE)\n"
             + "crs_912 :: Denial of Service (DOS) attack\n"
             + "crs_913 :: Scanner Detection\n"
             + "crs_921 :: HTTP Protocol Attacks\n"

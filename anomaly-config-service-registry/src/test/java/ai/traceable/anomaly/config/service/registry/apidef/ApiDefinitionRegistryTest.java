@@ -14,7 +14,6 @@ import ai.traceable.anomaly.config.service.v1.detector.MissingParamAnomalyConfig
 import ai.traceable.anomaly.config.service.v1.detector.SsrfAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.TypeAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UnknownParamAnomalyConfig;
-import ai.traceable.anomaly.config.service.v1.detector.XxeAnomalyConfig;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -59,12 +58,6 @@ public class ApiDefinitionRegistryTest {
         ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
             .setAnomalyRuleId("unknownParam")
             .setUnknownParam(UnknownParamAnomalyConfig.getDefaultInstance())
-            .build());
-    expectedMap.put(
-        "xxe",
-        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
-            .setAnomalyRuleId("xxe")
-            .setXxe(XxeAnomalyConfig.getDefaultInstance())
             .build());
     expectedMap.put(
         "httpStatus",
