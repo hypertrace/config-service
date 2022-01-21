@@ -2,8 +2,11 @@ package ai.traceable.anomaly.config.service.trainer.trainingconfig;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
+import ai.traceable.anomaly.config.service.trainer.TrainerConfigServiceConfig;
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
@@ -41,6 +44,7 @@ public class TrainingConfigManagerTest {
 
   private TrainingConfigConverter configConverter;
   private TrainingConfigManager configManager;
+  private TrainerConfigServiceConfig trainerConfigServiceConfig;
 
   private final AnomalyServiceScope serviceScope =
       AnomalyServiceScope.newBuilder().setId("service").build();
@@ -81,8 +85,12 @@ public class TrainingConfigManagerTest {
     mockConfigService.start();
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     configConverter = new TrainingConfigConverter();
+    trainerConfigServiceConfig = mock(TrainerConfigServiceConfig.class);
+    when(trainerConfigServiceConfig.getApiNamingTrainingConfigs()).thenReturn(List.of());
     this.configManager =
-        spy(new TrainingConfigManagerImpl(configConverter, configServiceBlockingStub));
+        spy(
+            new TrainingConfigManagerImpl(
+                configConverter, configServiceBlockingStub, trainerConfigServiceConfig));
   }
 
   @AfterEach

@@ -6,6 +6,7 @@ public class AnomalyConfigServiceConfig {
 
   private static final String ANOMALY_GLOBAL_CONFIG_PATH = "global";
   private static final String DETECTOR_CONFIG_SERVICE_PATH = "detector.config.service";
+  private static final String TRAINER_CONFIG_SERVICE_PATH = "trainer.config.service";
 
   private final Config config;
 
@@ -19,5 +20,9 @@ public class AnomalyConfigServiceConfig {
 
   public Config getDetectorConfigServiceConfig() {
     return this.config.getConfig(DETECTOR_CONFIG_SERVICE_PATH);
+  }
+
+  public Config getTrainerConfigServiceConfig() {
+    return this.config.getConfig(TRAINER_CONFIG_SERVICE_PATH);
   }
 }

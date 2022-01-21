@@ -3,7 +3,9 @@ package ai.traceable.anomaly.config.service.trainer.trainingconfig;
 import static ai.traceable.anomaly.config.service.trainer.trainingconfig.TrainingConfigConstants.TRAINING_CONFIG_NAMESPACE;
 import static ai.traceable.anomaly.config.service.trainer.trainingconfig.TrainingConfigConstants.TRAINING_CONFIG_RESOURCE_NAME;
 
+import ai.traceable.anomaly.config.service.trainer.TrainerConfigServiceConfig;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.trainer.GetTrainingConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
@@ -28,13 +30,16 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrainingConfig>
     implements TrainingConfigManager {
   private final TrainingConfigConverter configConverter;
+  private final List<TrainingConfig> defaultApiNamingTrainingConfigs;
 
   @Inject
   public TrainingConfigManagerImpl(
       TrainingConfigConverter configConverter,
-      ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub) {
+      ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
+      TrainerConfigServiceConfig config) {
     super(configServiceBlockingStub, TRAINING_CONFIG_NAMESPACE, TRAINING_CONFIG_RESOURCE_NAME);
     this.configConverter = configConverter;
+    this.defaultApiNamingTrainingConfigs = config.getApiNamingTrainingConfigs();
   }
 
   @Override
@@ -94,7 +99,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
     Map<String, ScopedTrainingConfig> configMap = fetchConfigMap(requestContext);
 
     ScopedTrainingConfig trainingConfig =
-        getResolvedConfig(configMap, contextsWithIncreasingPriority);
+        getResolvedConfig(configMap, configScope, contextsWithIncreasingPriority);
 
     if (trainingConfig.equals(ScopedTrainingConfig.getDefaultInstance())) {
       trainingConfig = ScopedTrainingConfig.newBuilder().setConfigScope(configScope).build();
@@ -180,15 +185,32 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
           break;
       }
 
-      resolvedConfigs.add(getResolvedConfig(configMap, contextsWithIncreasingPriority));
+      resolvedConfigs.add(
+          getResolvedConfig(configMap, anomalyConfigScope, contextsWithIncreasingPriority));
     }
-
+    if (resolvedConfigs.isEmpty()) {
+      resolvedConfigs =
+          List.of(
+              ScopedTrainingConfig.newBuilder()
+                  .setConfigScope(
+                      AnomalyConfigScope.newBuilder()
+                          .setCustomerScope(AnomalyCustomerScope.newBuilder().build())
+                          .build())
+                  .addAllTrainingConfigs(this.defaultApiNamingTrainingConfigs)
+                  .build());
+    }
     return resolvedConfigs;
   }
 
   private ScopedTrainingConfig getResolvedConfig(
-      Map<String, ScopedTrainingConfig> configMap, List<String> contextsWithIncreasingPriority) {
-    ScopedTrainingConfig trainingConfig = ScopedTrainingConfig.getDefaultInstance();
+      Map<String, ScopedTrainingConfig> configMap,
+      AnomalyConfigScope configScope,
+      List<String> contextsWithIncreasingPriority) {
+    ScopedTrainingConfig trainingConfig =
+        ScopedTrainingConfig.newBuilder()
+            .setConfigScope(configScope)
+            .addAllTrainingConfigs(this.defaultApiNamingTrainingConfigs)
+            .build();
     for (String context : contextsWithIncreasingPriority) {
       trainingConfig =
           configMap.containsKey(context)

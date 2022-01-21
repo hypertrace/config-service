@@ -5,6 +5,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyRuleCategory;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.EnumExtension;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
@@ -51,6 +52,17 @@ public class ConfigConverter {
         .map(
             config -> {
               AnomalyDetectionConfig.Builder builder = AnomalyDetectionConfig.newBuilder();
+              mergeFromConfig(config, builder);
+              return builder.build();
+            })
+        .collect(Collectors.toList());
+  }
+
+  public List<TrainingConfig> convertToTrainingConfigs(List<? extends Config> configList) {
+    return configList.stream()
+        .map(
+            config -> {
+              TrainingConfig.Builder builder = TrainingConfig.newBuilder();
               mergeFromConfig(config, builder);
               return builder.build();
             })

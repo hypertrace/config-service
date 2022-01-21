@@ -64,6 +64,137 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
   }
 
   @Test
+  void testDefaultGetAllScopedTrainingConfig() {
+    List<ScopedTrainingConfig> scopedTrainingConfigs = fetchAllTrainerConfigs(TENANT_ID);
+    assertEquals(1, scopedTrainingConfigs.size());
+    testDefaultApiNamingConfig(scopedTrainingConfigs.get(0));
+  }
+
+  @Test
+  void testDefaultGetScopedTrainingConfig() {
+    ScopedTrainingConfig scopedTrainingConfig = fetchTrainerConfig(serviceConfigScope);
+    testDefaultApiNamingConfig(scopedTrainingConfig);
+  }
+
+  void testDefaultApiNamingConfig(ScopedTrainingConfig scopedTrainingConfig) {
+    assertEquals(
+        List.of(
+            ".*\\.css$",
+            ".*\\.jpg$",
+            ".*\\.svg$",
+            ".*\\.js$",
+            ".*\\.pdf$",
+            ".*\\.jpeg$",
+            ".*\\.gif$",
+            ".*\\.png$",
+            ".*\\.bmp$",
+            ".*\\.tif$",
+            ".*\\.tiff$",
+            ".*\\.mp3$",
+            ".*\\.wma$",
+            ".*\\.wav$",
+            ".*\\.ogg$",
+            ".*\\.mp4$",
+            ".*\\.avi$",
+            ".*\\.mkv$",
+            ".*\\.woff$",
+            ".*\\.woff2$",
+            ".*\\.webp$",
+            ".*\\.html$"),
+        scopedTrainingConfig
+            .getTrainingConfigs(0)
+            .getApiNamingTrainingConfig()
+            .getUrlFilterConfig()
+            .getUrlRejectRegexPatterns()
+            .getValuesList());
+    assertEquals(
+        List.of("v\\d+"),
+        scopedTrainingConfig
+            .getTrainingConfigs(1)
+            .getApiNamingTrainingConfig()
+            .getTrieModelTrainingConfig()
+            .getAllowRegexList()
+            .getValuesList());
+    assertEquals(
+        List.of(
+            "(\\{){0,1}[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}(\\}){0,1}",
+            "\\d+"),
+        scopedTrainingConfig
+            .getTrainingConfigs(1)
+            .getApiNamingTrainingConfig()
+            .getTrieModelTrainingConfig()
+            .getIds()
+            .getRegexList()
+            .getValuesList());
+    assertEquals(
+        List.of(),
+        scopedTrainingConfig
+            .getTrainingConfigs(1)
+            .getApiNamingTrainingConfig()
+            .getTrieModelTrainingConfig()
+            .getLowCardinality()
+            .getRegexList()
+            .getValuesList());
+    assertEquals(
+        List.of("[a-zA-Z]*?([-_+]?[a-zA-Z]+)+[-_+]?"),
+        scopedTrainingConfig
+            .getTrainingConfigs(1)
+            .getApiNamingTrainingConfig()
+            .getTrieModelTrainingConfig()
+            .getHighCardinality()
+            .getRegexList()
+            .getValuesList());
+    assertEquals(
+        List.of("json", "xml"),
+        scopedTrainingConfig
+            .getTrainingConfigs(1)
+            .getApiNamingTrainingConfig()
+            .getTrieModelTrainingConfig()
+            .getExtensions()
+            .getValuesList());
+
+    assertEquals(
+        1,
+        scopedTrainingConfig
+            .getTrainingConfigs(1)
+            .getApiNamingTrainingConfig()
+            .getTrieModelTrainingConfig()
+            .getIds()
+            .getThreshold());
+    assertEquals(
+        10,
+        scopedTrainingConfig
+            .getTrainingConfigs(1)
+            .getApiNamingTrainingConfig()
+            .getTrieModelTrainingConfig()
+            .getLowCardinality()
+            .getThreshold());
+    assertEquals(
+        25,
+        scopedTrainingConfig
+            .getTrainingConfigs(1)
+            .getApiNamingTrainingConfig()
+            .getTrieModelTrainingConfig()
+            .getMediumCardinality()
+            .getThreshold());
+    assertEquals(
+        45,
+        scopedTrainingConfig
+            .getTrainingConfigs(1)
+            .getApiNamingTrainingConfig()
+            .getTrieModelTrainingConfig()
+            .getHighCardinality()
+            .getThreshold());
+    assertEquals(
+        100,
+        scopedTrainingConfig
+            .getTrainingConfigs(1)
+            .getApiNamingTrainingConfig()
+            .getTrieModelTrainingConfig()
+            .getEmbryonicThreshold());
+  }
+
+  @Test
   void testGetAndUpdateScopedTrainingConfig() {
     ScopedTrainingConfig scopedTrainingConfig;
     assertThrows(
@@ -278,7 +409,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     updateTrainerConfig(scopedTrainingConfig);
     List<TrainingConfig> trainingConfigs =
         fetchTrainerConfig(customerConfigScope).getTrainingConfigsList();
-    assertEquals(2, trainingConfigs.size());
+    assertEquals(4, trainingConfigs.size());
     for (TrainingConfig trainingConfig : trainingConfigs) {
       if (trainingConfig.getTrainingConfigCase() == TrainingConfigCase.METADATA_TRAINING_CONFIG) {
         assertEquals(
