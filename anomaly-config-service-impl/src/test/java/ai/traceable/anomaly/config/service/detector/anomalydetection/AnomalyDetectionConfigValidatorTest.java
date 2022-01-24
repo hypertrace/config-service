@@ -16,7 +16,9 @@ import ai.traceable.anomaly.config.service.v1.detector.ContentSizeAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.IntegerAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.LearntApiAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAllDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UnderDiscoveryApiAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigRequest;
@@ -63,12 +65,20 @@ public class AnomalyDetectionConfigValidatorTest {
     anomalyDetectionConfig1 =
         AnomalyDetectionConfig.newBuilder()
             .setModsecurityAnomalyDetectionConfig(
-                ModsecurityAnomalyDetectionConfig.newBuilder().setAnomalyRuleId("rule1").build())
+                ModsecurityAnomalyDetectionConfig.newBuilder()
+                    .setModsecAnomalyRule(
+                        ModsecurityAnomalyRuleConfig.newBuilder()
+                            .setAnomalyRuleId("rule1")
+                            .build()))
             .build();
     anomalyDetectionConfig2 =
         AnomalyDetectionConfig.newBuilder()
             .setModsecurityAnomalyDetectionConfig(
-                ModsecurityAnomalyDetectionConfig.newBuilder().setAnomalyRuleId("rule1").build())
+                ModsecurityAnomalyDetectionConfig.newBuilder()
+                    .setModsecAnomalyRule(
+                        ModsecurityAnomalyRuleConfig.newBuilder()
+                            .setAnomalyRuleId("rule1")
+                            .build()))
             .build();
     updateRequest =
         UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
@@ -93,9 +103,11 @@ public class AnomalyDetectionConfigValidatorTest {
         AnomalyDetectionConfig.newBuilder()
             .setModsecurityAnomalyDetectionConfig(
                 ModsecurityAnomalyDetectionConfig.newBuilder()
-                    .setAnomalyRuleId("rule1")
-                    .addAllSubRuleConfigs(List.of(subRuleConfig1, subRuleConfig2))
-                    .build())
+                    .setModsecAnomalyRule(
+                        ModsecurityAnomalyRuleConfig.newBuilder()
+                            .setAnomalyRuleId("rule1")
+                            .addAllSubRuleConfigs(List.of(subRuleConfig1, subRuleConfig2))
+                            .build()))
             .build();
     updateRequest =
         UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
@@ -115,21 +127,51 @@ public class AnomalyDetectionConfigValidatorTest {
             .contains(
                 "should have only one subRule config with subRuleId: subRule1 in modsec config with ruleId: rule1"));
 
+    AnomalyDetectionConfig modsecAllDetectionConfig =
+        AnomalyDetectionConfig.newBuilder()
+            .setModsecurityAnomalyDetectionConfig(
+                ModsecurityAnomalyDetectionConfig.newBuilder()
+                    .setModsecAllDetection(ModsecurityAllDetectionConfig.getDefaultInstance()))
+            .build();
+
+    updateRequest =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(
+                        List.of(modsecAllDetectionConfig, modsecAllDetectionConfig))
+                    .build())
+            .build();
+
+    status = validator.validate(updateRequest);
+
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(
+        status
+            .getDescription()
+            .contains(
+                "UpdateScopedAnomalyDetectionConfigRequest should have only one modsecAllDetectionConfig"));
+
     anomalyDetectionConfig1 =
         AnomalyDetectionConfig.newBuilder()
             .setModsecurityAnomalyDetectionConfig(
                 ModsecurityAnomalyDetectionConfig.newBuilder()
-                    .setAnomalyRuleId("rule1")
-                    .addSubRuleConfigs(subRuleConfig1)
-                    .build())
+                    .setModsecAnomalyRule(
+                        ModsecurityAnomalyRuleConfig.newBuilder()
+                            .setAnomalyRuleId("rule1")
+                            .addSubRuleConfigs(subRuleConfig1)
+                            .build()))
             .build();
     anomalyDetectionConfig2 =
         AnomalyDetectionConfig.newBuilder()
             .setModsecurityAnomalyDetectionConfig(
                 ModsecurityAnomalyDetectionConfig.newBuilder()
-                    .setAnomalyRuleId("rule2")
-                    .addSubRuleConfigs(subRuleConfig1)
-                    .build())
+                    .setModsecAnomalyRule(
+                        ModsecurityAnomalyRuleConfig.newBuilder()
+                            .setAnomalyRuleId("rule2")
+                            .addSubRuleConfigs(subRuleConfig1)
+                            .build()))
             .build();
     updateRequest =
         UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
@@ -137,7 +179,10 @@ public class AnomalyDetectionConfigValidatorTest {
                 ScopedAnomalyDetectionConfig.newBuilder()
                     .setConfigScope(configScope)
                     .addAllAnomalyDetectionConfigs(
-                        List.of(anomalyDetectionConfig1, anomalyDetectionConfig2))
+                        List.of(
+                            anomalyDetectionConfig1,
+                            anomalyDetectionConfig2,
+                            modsecAllDetectionConfig))
                     .build())
             .build();
 

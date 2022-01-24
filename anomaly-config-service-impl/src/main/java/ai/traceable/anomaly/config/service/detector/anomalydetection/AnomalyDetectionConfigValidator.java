@@ -8,6 +8,7 @@ import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnom
 import ai.traceable.anomaly.config.service.v1.detector.ApiStateBasedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigRequest;
 import com.google.inject.Inject;
 import io.grpc.Status;
@@ -51,13 +52,13 @@ public class AnomalyDetectionConfigValidator {
   }
 
   private Status validate(List<AnomalyDetectionConfig> detectionConfigs) {
-    List<ModsecurityAnomalyDetectionConfig> modsecConfigs =
+    List<ModsecurityAnomalyDetectionConfig> modsecRuleConfigs =
         detectionConfigs.stream()
             .filter(AnomalyDetectionConfig::hasModsecurityAnomalyDetectionConfig)
             .map(AnomalyDetectionConfig::getModsecurityAnomalyDetectionConfig)
             .collect(Collectors.toList());
 
-    Status status = validateModsecConfigs(modsecConfigs);
+    Status status = validateModsecConfigs(modsecRuleConfigs);
 
     if (!status.isOk()) {
       return status;
@@ -154,28 +155,40 @@ public class AnomalyDetectionConfigValidator {
    */
   private Status validateModsecConfigs(List<ModsecurityAnomalyDetectionConfig> modsecConfigs) {
     Map<String, Map<String, AnomalySubRuleConfig>> configMap = new HashMap<>();
-
+    ModsecurityAnomalyDetectionConfig modsecAllDetectionConfig =
+        ModsecurityAnomalyDetectionConfig.getDefaultInstance();
     for (ModsecurityAnomalyDetectionConfig detectionConfig : modsecConfigs) {
-      String ruleId = detectionConfig.getAnomalyRuleId();
-      if (configMap.containsKey(ruleId)) {
-        return Status.INVALID_ARGUMENT.withDescription(
-            "UpdateScopedAnomalyDetectionConfigRequest should have only one modsec config with ruleId: "
-                + ruleId);
-      } else {
-        Map<String, AnomalySubRuleConfig> subRuleConfigMap = new HashMap<>();
-        for (AnomalySubRuleConfig subRuleConfig : detectionConfig.getSubRuleConfigsList()) {
-          String subRuleId = subRuleConfig.getSubRuleId();
-          if (subRuleConfigMap.containsKey(subRuleId)) {
-            return Status.INVALID_ARGUMENT.withDescription(
-                "UpdateScopedAnomalyDetectionConfigRequest should have only one subRule config with subRuleId: "
-                    + subRuleId
-                    + " in modsec config with ruleId: "
-                    + ruleId);
-          } else {
-            subRuleConfigMap.put(subRuleId, subRuleConfig);
+      if (detectionConfig.hasModsecAnomalyRule()) {
+        ModsecurityAnomalyRuleConfig modsecRuleConfig = detectionConfig.getModsecAnomalyRule();
+        String ruleId = modsecRuleConfig.getAnomalyRuleId();
+        if (configMap.containsKey(ruleId)) {
+          return Status.INVALID_ARGUMENT.withDescription(
+              "UpdateScopedAnomalyDetectionConfigRequest should have only one modsec config with ruleId: "
+                  + ruleId);
+        } else {
+          Map<String, AnomalySubRuleConfig> subRuleConfigMap = new HashMap<>();
+          for (AnomalySubRuleConfig subRuleConfig : modsecRuleConfig.getSubRuleConfigsList()) {
+            String subRuleId = subRuleConfig.getSubRuleId();
+            if (subRuleConfigMap.containsKey(subRuleId)) {
+              return Status.INVALID_ARGUMENT.withDescription(
+                  "UpdateScopedAnomalyDetectionConfigRequest should have only one subRule config with subRuleId: "
+                      + subRuleId
+                      + " in modsec config with ruleId: "
+                      + ruleId);
+            } else {
+              subRuleConfigMap.put(subRuleId, subRuleConfig);
+            }
           }
+          configMap.put(ruleId, subRuleConfigMap);
         }
-        configMap.put(ruleId, subRuleConfigMap);
+      } else if (detectionConfig.hasModsecAllDetection()) {
+        if (modsecAllDetectionConfig.equals(
+            ModsecurityAnomalyDetectionConfig.getDefaultInstance())) {
+          modsecAllDetectionConfig = detectionConfig;
+        } else {
+          return Status.INVALID_ARGUMENT.withDescription(
+              "UpdateScopedAnomalyDetectionConfigRequest should have only one modsecAllDetectionConfig");
+        }
       }
     }
     return Status.OK;

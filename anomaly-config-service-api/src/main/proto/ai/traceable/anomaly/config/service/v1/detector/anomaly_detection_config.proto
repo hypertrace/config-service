@@ -79,13 +79,25 @@ message AnomalyDetectionConfig {
 }
 
 message ModsecurityAnomalyDetectionConfig {
+  oneof config {
+    ModsecurityAllDetectionConfig modsec_all_detection = 1;
+    ModsecurityAnomalyRuleConfig modsec_anomaly_rule = 2;
+  }
+}
+
+message ModsecurityAllDetectionConfig {
+  StringList excluded_params = 1;
+  optional bool enabled_on_all_entry_spans = 2;
+}
+
+message ModsecurityAnomalyRuleConfig {
   string anomaly_rule_id = 1;
   repeated AnomalySubRuleConfig sub_rule_configs = 2;
 }
 
 message AnomalySubRuleConfig {
   string sub_rule_id = 1;
-  AnomalyConfigStatus config_status = 2;
+  AnomalyConfigStatusChange config_status = 2;
   AnomalyCategoryConfig category_config = 3;
   optional bool blocking_enabled = 4;
 }

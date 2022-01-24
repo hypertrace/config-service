@@ -27,7 +27,18 @@ public class DetectorConfigServiceConfigTest {
                     + "          internal = false\n"
                     + "        }\n"
                     + "        modsecurityAnomalyDetectionConfig = {\n"
-                    + "          anomalyRuleId = \"crs_912\"\n"
+                    + "           modsecAnomalyRule = {\n"
+                    + "              anomalyRuleId = \"crs_912\"\n"
+                    + "              subRuleConfigs = [\n"
+                    + "              {\n"
+                    + "                subRuleId = \"subRule1\"\n"
+                    + "                configStatus = {\n"
+                    + "                  disabled = true\n"
+                    + "                  internal = true\n"
+                    + "                }\n"
+                    + "              }\n"
+                    + "            ]\n"
+                    + "           }\n"
                     + "        }\n"
                     + "      },\n"
                     + "      {\n"
@@ -36,7 +47,9 @@ public class DetectorConfigServiceConfigTest {
                     + "          internal = false\n"
                     + "        }\n"
                     + "        modsecurityAnomalyDetectionConfig = {\n"
-                    + "          anomalyRuleId = \"crs_913\"\n"
+                    + "           modsecAnomalyRule = {\n"
+                    + "              anomalyRuleId = \"crs_913\"\n"
+                    + "           }\n"
                     + "        }\n"
                     + "      },\n"
                     + "      {\n"
@@ -45,7 +58,9 @@ public class DetectorConfigServiceConfigTest {
                     + "          internal = true\n"
                     + "        }\n"
                     + "        modsecurityAnomalyDetectionConfig = {\n"
-                    + "          anomalyRuleId = \"crs_921\"\n"
+                    + "           modsecAnomalyRule = {\n"
+                    + "              anomalyRuleId = \"crs_921\"\n"
+                    + "           }\n"
                     + "        }\n"
                     + "      }\n"
                     + "    ]\n"
@@ -96,12 +111,24 @@ public class DetectorConfigServiceConfigTest {
         modsecConfigs.stream()
             .map(
                 detectionConfig ->
-                    detectionConfig.getModsecurityAnomalyDetectionConfig().getAnomalyRuleId())
+                    detectionConfig
+                        .getModsecurityAnomalyDetectionConfig()
+                        .getModsecAnomalyRule()
+                        .getAnomalyRuleId())
             .collect(Collectors.toList());
     assertEquals(List.of("crs_912", "crs_913", "crs_921"), ruleIds);
 
     AnomalyDetectionConfig detectionConfig = getModsecConfig(modsecConfigs, "crs_912");
     assertEquals(configStatus1, detectionConfig.getConfigStatus());
+
+    assertEquals(
+        configStatus3,
+        detectionConfig
+            .getModsecurityAnomalyDetectionConfig()
+            .getModsecAnomalyRule()
+            .getSubRuleConfigsList()
+            .get(0)
+            .getConfigStatus());
 
     detectionConfig = getModsecConfig(modsecConfigs, "crs_913");
     assertEquals(configStatus2, detectionConfig.getConfigStatus());
@@ -136,6 +163,7 @@ public class DetectorConfigServiceConfigTest {
     for (AnomalyDetectionConfig detectionConfig : detectionConfigs) {
       if (detectionConfig
           .getModsecurityAnomalyDetectionConfig()
+          .getModsecAnomalyRule()
           .getAnomalyRuleId()
           .equals(ruleId)) {
         return detectionConfig;

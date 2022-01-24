@@ -8,6 +8,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.StringList;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyCategoryConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyEventCategory;
@@ -18,7 +19,9 @@ import ai.traceable.anomaly.config.service.v1.detector.ApiStateBasedAnomalyDetec
 import ai.traceable.anomaly.config.service.v1.detector.EnumerationsAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.IntegerAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.LearntApiAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAllDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
@@ -38,6 +41,7 @@ public class AnomalyDetectionConfigConverterTest {
             .setCategoryConfig(
                 AnomalyCategoryConfig.newBuilder()
                     .setEventCategory(AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_MALICIOUS))
+            .setConfigStatus(AnomalyConfigStatusChange.newBuilder().setInternal(false))
             .setBlockingEnabled(true)
             .build();
 
@@ -50,6 +54,8 @@ public class AnomalyDetectionConfigConverterTest {
                     .setEventScoreCategory(
                         AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_MEDIUM)
                     .build())
+            .setConfigStatus(
+                AnomalyConfigStatusChange.newBuilder().setInternal(true).setDisabled(true))
             .build();
 
     ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig1 =
@@ -68,9 +74,11 @@ public class AnomalyDetectionConfigConverterTest {
                         AnomalyConfigStatusChange.newBuilder().setInternal(true).build())
                     .setModsecurityAnomalyDetectionConfig(
                         ModsecurityAnomalyDetectionConfig.newBuilder()
-                            .setAnomalyRuleId("rule")
-                            .addSubRuleConfigs(subRuleConfig1)
-                            .build())
+                            .setModsecAnomalyRule(
+                                ModsecurityAnomalyRuleConfig.newBuilder()
+                                    .setAnomalyRuleId("rule")
+                                    .addSubRuleConfigs(subRuleConfig1)
+                                    .build()))
                     .build())
             .build();
 
@@ -89,9 +97,24 @@ public class AnomalyDetectionConfigConverterTest {
                             .build())
                     .setModsecurityAnomalyDetectionConfig(
                         ModsecurityAnomalyDetectionConfig.newBuilder()
-                            .setAnomalyRuleId("rule")
-                            .addSubRuleConfigs(subRuleConfig2)
-                            .build())
+                            .setModsecAnomalyRule(
+                                ModsecurityAnomalyRuleConfig.newBuilder()
+                                    .setAnomalyRuleId("rule")
+                                    .addSubRuleConfigs(subRuleConfig2)
+                                    .build()))
+                    .build())
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setModsecurityAnomalyDetectionConfig(
+                        ModsecurityAnomalyDetectionConfig.newBuilder()
+                            .setModsecAllDetection(
+                                ModsecurityAllDetectionConfig.newBuilder()
+                                    .setEnabledOnAllEntrySpans(true)
+                                    .setExcludedParams(
+                                        StringList.newBuilder()
+                                            .addAllValues(List.of("a", "b", "c"))
+                                            .build())
+                                    .build()))
                     .build())
             .build();
 
@@ -125,6 +148,7 @@ public class AnomalyDetectionConfigConverterTest {
             .getAnomalyDetectionConfigsList()
             .get(0)
             .getModsecurityAnomalyDetectionConfig()
+            .getModsecAnomalyRule()
             .getAnomalyRuleId());
 
     assertEquals(
@@ -133,6 +157,7 @@ public class AnomalyDetectionConfigConverterTest {
             .getAnomalyDetectionConfigsList()
             .get(0)
             .getModsecurityAnomalyDetectionConfig()
+            .getModsecAnomalyRule()
             .getSubRuleConfigsList()
             .get(0)
             .getSubRuleId());
@@ -143,6 +168,7 @@ public class AnomalyDetectionConfigConverterTest {
             .getAnomalyDetectionConfigsList()
             .get(0)
             .getModsecurityAnomalyDetectionConfig()
+            .getModsecAnomalyRule()
             .getSubRuleConfigsList()
             .get(0)
             .getCategoryConfig()
@@ -154,6 +180,7 @@ public class AnomalyDetectionConfigConverterTest {
             .getAnomalyDetectionConfigsList()
             .get(0)
             .getModsecurityAnomalyDetectionConfig()
+            .getModsecAnomalyRule()
             .getSubRuleConfigsList()
             .get(0)
             .getCategoryConfig()
@@ -164,9 +191,50 @@ public class AnomalyDetectionConfigConverterTest {
             .getAnomalyDetectionConfigsList()
             .get(0)
             .getModsecurityAnomalyDetectionConfig()
+            .getModsecAnomalyRule()
             .getSubRuleConfigsList()
             .get(0)
             .getBlockingEnabled());
+
+    assertTrue(
+        resultConfig
+            .getAnomalyDetectionConfigsList()
+            .get(0)
+            .getModsecurityAnomalyDetectionConfig()
+            .getModsecAnomalyRule()
+            .getSubRuleConfigsList()
+            .get(0)
+            .getConfigStatus()
+            .getDisabled());
+
+    assertFalse(
+        resultConfig
+            .getAnomalyDetectionConfigsList()
+            .get(0)
+            .getModsecurityAnomalyDetectionConfig()
+            .getModsecAnomalyRule()
+            .getSubRuleConfigsList()
+            .get(0)
+            .getConfigStatus()
+            .getInternal());
+
+    assertTrue(
+        resultConfig
+            .getAnomalyDetectionConfigsList()
+            .get(1)
+            .getModsecurityAnomalyDetectionConfig()
+            .getModsecAllDetection()
+            .getEnabledOnAllEntrySpans());
+
+    assertEquals(
+        List.of("a", "b", "c"),
+        resultConfig
+            .getAnomalyDetectionConfigsList()
+            .get(1)
+            .getModsecurityAnomalyDetectionConfig()
+            .getModsecAllDetection()
+            .getExcludedParams()
+            .getValuesList());
   }
 
   @Test

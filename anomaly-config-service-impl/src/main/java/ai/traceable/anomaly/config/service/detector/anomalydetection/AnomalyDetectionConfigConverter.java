@@ -9,6 +9,7 @@ import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnom
 import ai.traceable.anomaly.config.service.v1.detector.ApiStateBasedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
@@ -191,20 +192,30 @@ public class AnomalyDetectionConfigConverter {
     Map<String, AnomalyConfigStatusChange> configStatusMap =
         preferredConfig.getAnomalyDetectionConfigsList().stream()
             .filter(AnomalyDetectionConfig::hasModsecurityAnomalyDetectionConfig)
+            .filter(
+                detectionConfig ->
+                    detectionConfig.getModsecurityAnomalyDetectionConfig().hasModsecAnomalyRule())
             .collect(
                 Collectors.toMap(
-                    anomalyDetectionConfig ->
-                        anomalyDetectionConfig
+                    detectionConfig ->
+                        detectionConfig
                             .getModsecurityAnomalyDetectionConfig()
+                            .getModsecAnomalyRule()
                             .getAnomalyRuleId(),
                     AnomalyDetectionConfig::getConfigStatus));
 
     fallbackConfig.getAnomalyDetectionConfigsList().stream()
         .filter(AnomalyDetectionConfig::hasModsecurityAnomalyDetectionConfig)
+        .filter(
+            detectionConfig ->
+                detectionConfig.getModsecurityAnomalyDetectionConfig().hasModsecAnomalyRule())
         .forEach(
             anomalyDetectionConfig -> {
               String ruleId =
-                  anomalyDetectionConfig.getModsecurityAnomalyDetectionConfig().getAnomalyRuleId();
+                  anomalyDetectionConfig
+                      .getModsecurityAnomalyDetectionConfig()
+                      .getModsecAnomalyRule()
+                      .getAnomalyRuleId();
               if (!configStatusMap.containsKey(ruleId)) {
                 configStatusMap.put(ruleId, anomalyDetectionConfig.getConfigStatus());
               } else {
@@ -219,20 +230,30 @@ public class AnomalyDetectionConfigConverter {
     Map<String, AnomalyCategoryConfig> configCategoryMap =
         preferredConfig.getAnomalyDetectionConfigsList().stream()
             .filter(AnomalyDetectionConfig::hasModsecurityAnomalyDetectionConfig)
+            .filter(
+                detectionConfig ->
+                    detectionConfig.getModsecurityAnomalyDetectionConfig().hasModsecAnomalyRule())
             .collect(
                 Collectors.toMap(
                     anomalyDetectionConfig ->
                         anomalyDetectionConfig
                             .getModsecurityAnomalyDetectionConfig()
+                            .getModsecAnomalyRule()
                             .getAnomalyRuleId(),
                     AnomalyDetectionConfig::getCategoryConfig));
 
     fallbackConfig.getAnomalyDetectionConfigsList().stream()
         .filter(AnomalyDetectionConfig::hasModsecurityAnomalyDetectionConfig)
+        .filter(
+            detectionConfig ->
+                detectionConfig.getModsecurityAnomalyDetectionConfig().hasModsecAnomalyRule())
         .forEach(
             anomalyDetectionConfig -> {
               String ruleId =
-                  anomalyDetectionConfig.getModsecurityAnomalyDetectionConfig().getAnomalyRuleId();
+                  anomalyDetectionConfig
+                      .getModsecurityAnomalyDetectionConfig()
+                      .getModsecAnomalyRule()
+                      .getAnomalyRuleId();
               if (!configCategoryMap.containsKey(ruleId)) {
                 configCategoryMap.put(ruleId, anomalyDetectionConfig.getCategoryConfig());
               } else {
@@ -245,7 +266,9 @@ public class AnomalyDetectionConfigConverter {
             });
 
     Map<String, Map<String, AnomalySubRuleConfig>> modsecConfigMap =
-        mergeSubRuleConfigs(getModsecConfigs(preferredConfig), getModsecConfigs(fallbackConfig));
+        mergeSubRuleConfigs(
+            getModsecAnomalyRuleConfigs(preferredConfig),
+            getModsecAnomalyRuleConfigs(fallbackConfig));
 
     List<AnomalyDetectionConfig> modsecConfigs = new ArrayList<>();
 
@@ -255,30 +278,54 @@ public class AnomalyDetectionConfigConverter {
       builder.setCategoryConfig(configCategoryMap.get(anomalyRuleId));
       builder.setConfigStatus(configStatusMap.get(anomalyRuleId));
 
-      ModsecurityAnomalyDetectionConfig.Builder modsecConfigBuilder =
-          ModsecurityAnomalyDetectionConfig.newBuilder();
+      ModsecurityAnomalyRuleConfig.Builder modsecConfigBuilder =
+          ModsecurityAnomalyRuleConfig.newBuilder();
       modsecConfigBuilder.setAnomalyRuleId(entry.getKey());
       for (Map.Entry<String, AnomalySubRuleConfig> subRuleConfigEntry :
           entry.getValue().entrySet()) {
         modsecConfigBuilder.addSubRuleConfigs(subRuleConfigEntry.getValue());
       }
 
-      builder.setModsecurityAnomalyDetectionConfig(modsecConfigBuilder);
+      builder.setModsecurityAnomalyDetectionConfig(
+          ModsecurityAnomalyDetectionConfig.newBuilder().setModsecAnomalyRule(modsecConfigBuilder));
 
       modsecConfigs.add(builder.build());
+    }
+
+    AnomalyDetectionConfig modsecurityAllDetectionConfig =
+        AnomalyDetectionConfig.getDefaultInstance();
+
+    for (AnomalyDetectionConfig detectionConfig : fallbackConfig.getAnomalyDetectionConfigsList()) {
+      if (detectionConfig.getModsecurityAnomalyDetectionConfig().hasModsecAllDetection()) {
+        modsecurityAllDetectionConfig = detectionConfig;
+        break;
+      }
+    }
+
+    for (AnomalyDetectionConfig detectionConfig :
+        preferredConfig.getAnomalyDetectionConfigsList()) {
+      if (detectionConfig.getModsecurityAnomalyDetectionConfig().hasModsecAllDetection()) {
+        modsecurityAllDetectionConfig =
+            modsecurityAllDetectionConfig.toBuilder().mergeFrom(detectionConfig).build();
+        break;
+      }
+    }
+
+    if (!modsecurityAllDetectionConfig.equals(AnomalyDetectionConfig.getDefaultInstance())) {
+      modsecConfigs.add(modsecurityAllDetectionConfig);
     }
 
     return modsecConfigs;
   }
 
   private Map<String, Map<String, AnomalySubRuleConfig>> mergeSubRuleConfigs(
-      List<ModsecurityAnomalyDetectionConfig> preferredConfigs,
-      List<ModsecurityAnomalyDetectionConfig> fallbackConfigs) {
+      List<ModsecurityAnomalyRuleConfig> preferredConfigs,
+      List<ModsecurityAnomalyRuleConfig> fallbackConfigs) {
     Map<String, Map<String, AnomalySubRuleConfig>> modsecSubRuleConfigMap =
         preferredConfigs.stream()
             .collect(
                 Collectors.toMap(
-                    ModsecurityAnomalyDetectionConfig::getAnomalyRuleId,
+                    ModsecurityAnomalyRuleConfig::getAnomalyRuleId,
                     this::getModsecSubRuleConfigMap));
 
     fallbackConfigs.forEach(
@@ -312,18 +359,20 @@ public class AnomalyDetectionConfigConverter {
   }
 
   private Map<String, AnomalySubRuleConfig> getModsecSubRuleConfigMap(
-      ModsecurityAnomalyDetectionConfig modsecurityAnomalyDetectionConfig) {
+      ModsecurityAnomalyRuleConfig modsecurityAnomalyDetectionConfig) {
     return modsecurityAnomalyDetectionConfig.getSubRuleConfigsList().stream()
         .collect(
             Collectors.toMap(
                 AnomalySubRuleConfig::getSubRuleId, anomalySubRuleConfig -> anomalySubRuleConfig));
   }
 
-  private List<ModsecurityAnomalyDetectionConfig> getModsecConfigs(
+  private List<ModsecurityAnomalyRuleConfig> getModsecAnomalyRuleConfigs(
       ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig) {
     return scopedAnomalyDetectionConfig.getAnomalyDetectionConfigsList().stream()
         .filter(AnomalyDetectionConfig::hasModsecurityAnomalyDetectionConfig)
         .map(AnomalyDetectionConfig::getModsecurityAnomalyDetectionConfig)
+        .filter(ModsecurityAnomalyDetectionConfig::hasModsecAnomalyRule)
+        .map(ModsecurityAnomalyDetectionConfig::getModsecAnomalyRule)
         .collect(Collectors.toList());
   }
 }

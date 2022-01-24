@@ -16,6 +16,7 @@ import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc
 import ai.traceable.anomaly.config.service.v1.detector.GetAllScopedAnomalyDetectionConfigsRequest;
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigRequest;
 import ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase;
@@ -69,20 +70,23 @@ public class DetectorConfigServiceIntegrationTest
                 AnomalyDetectionConfig.newBuilder()
                     .setModsecurityAnomalyDetectionConfig(
                         ModsecurityAnomalyDetectionConfig.newBuilder()
-                            .setAnomalyRuleId("rule1")
-                            .addSubRuleConfigs(
-                                AnomalySubRuleConfig.newBuilder()
-                                    .setSubRuleId("subRule1")
-                                    .setCategoryConfig(
-                                        AnomalyCategoryConfig.newBuilder()
-                                            .setEventCategory(
-                                                AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT)
-                                            .setEventScoreCategory(
-                                                AnomalyEventScoreCategory
-                                                    .ANOMALY_EVENT_SCORE_CATEGORY_LOW)
+                            .setModsecAnomalyRule(
+                                ModsecurityAnomalyRuleConfig.newBuilder()
+                                    .setAnomalyRuleId("rule1")
+                                    .addSubRuleConfigs(
+                                        AnomalySubRuleConfig.newBuilder()
+                                            .setSubRuleId("subRule1")
+                                            .setCategoryConfig(
+                                                AnomalyCategoryConfig.newBuilder()
+                                                    .setEventCategory(
+                                                        AnomalyEventCategory
+                                                            .ANOMALY_EVENT_CATEGORY_LATENT)
+                                                    .setEventScoreCategory(
+                                                        AnomalyEventScoreCategory
+                                                            .ANOMALY_EVENT_SCORE_CATEGORY_LOW)
+                                                    .build())
                                             .build())
-                                    .build())
-                            .build())
+                                    .build()))
                     .build())
             .build();
 
@@ -119,21 +123,23 @@ public class DetectorConfigServiceIntegrationTest
                 AnomalyDetectionConfig.newBuilder()
                     .setModsecurityAnomalyDetectionConfig(
                         ModsecurityAnomalyDetectionConfig.newBuilder()
-                            .setAnomalyRuleId("rule1")
-                            .addSubRuleConfigs(
-                                AnomalySubRuleConfig.newBuilder()
-                                    .setSubRuleId("subRule1")
-                                    .setCategoryConfig(
-                                        AnomalyCategoryConfig.newBuilder()
-                                            .setEventCategory(
-                                                AnomalyEventCategory
-                                                    .ANOMALY_EVENT_CATEGORY_MALICIOUS)
-                                            .setEventScoreCategory(
-                                                AnomalyEventScoreCategory
-                                                    .ANOMALY_EVENT_SCORE_CATEGORY_HIGH)
+                            .setModsecAnomalyRule(
+                                ModsecurityAnomalyRuleConfig.newBuilder()
+                                    .setAnomalyRuleId("rule1")
+                                    .addSubRuleConfigs(
+                                        AnomalySubRuleConfig.newBuilder()
+                                            .setSubRuleId("subRule1")
+                                            .setCategoryConfig(
+                                                AnomalyCategoryConfig.newBuilder()
+                                                    .setEventCategory(
+                                                        AnomalyEventCategory
+                                                            .ANOMALY_EVENT_CATEGORY_MALICIOUS)
+                                                    .setEventScoreCategory(
+                                                        AnomalyEventScoreCategory
+                                                            .ANOMALY_EVENT_SCORE_CATEGORY_HIGH)
+                                                    .build())
                                             .build())
-                                    .build())
-                            .build())
+                                    .build()))
                     .build())
             .build();
 
@@ -171,20 +177,23 @@ public class DetectorConfigServiceIntegrationTest
                 AnomalyDetectionConfig.newBuilder()
                     .setModsecurityAnomalyDetectionConfig(
                         ModsecurityAnomalyDetectionConfig.newBuilder()
-                            .setAnomalyRuleId("rule1")
-                            .addSubRuleConfigs(
-                                AnomalySubRuleConfig.newBuilder()
-                                    .setSubRuleId("subRule1")
-                                    .setCategoryConfig(
-                                        AnomalyCategoryConfig.newBuilder()
-                                            .setEventCategory(
-                                                AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT)
-                                            .setEventScoreCategory(
-                                                AnomalyEventScoreCategory
-                                                    .ANOMALY_EVENT_SCORE_CATEGORY_MEDIUM)
+                            .setModsecAnomalyRule(
+                                ModsecurityAnomalyRuleConfig.newBuilder()
+                                    .setAnomalyRuleId("rule1")
+                                    .addSubRuleConfigs(
+                                        AnomalySubRuleConfig.newBuilder()
+                                            .setSubRuleId("subRule1")
+                                            .setCategoryConfig(
+                                                AnomalyCategoryConfig.newBuilder()
+                                                    .setEventCategory(
+                                                        AnomalyEventCategory
+                                                            .ANOMALY_EVENT_CATEGORY_LATENT)
+                                                    .setEventScoreCategory(
+                                                        AnomalyEventScoreCategory
+                                                            .ANOMALY_EVENT_SCORE_CATEGORY_MEDIUM)
+                                                    .build())
                                             .build())
-                                    .build())
-                            .build())
+                                    .build()))
                     .build())
             .build();
 
@@ -237,20 +246,23 @@ public class DetectorConfigServiceIntegrationTest
                 AnomalyDetectionConfig.newBuilder()
                     .setModsecurityAnomalyDetectionConfig(
                         ModsecurityAnomalyDetectionConfig.newBuilder()
-                            .setAnomalyRuleId("rule1")
-                            .addSubRuleConfigs(
-                                AnomalySubRuleConfig.newBuilder()
-                                    .setSubRuleId("subRule1")
-                                    .setCategoryConfig(
-                                        AnomalyCategoryConfig.newBuilder()
-                                            .setEventCategory(
-                                                AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT)
-                                            .setEventScoreCategory(
-                                                AnomalyEventScoreCategory
-                                                    .ANOMALY_EVENT_SCORE_CATEGORY_LOW)
+                            .setModsecAnomalyRule(
+                                ModsecurityAnomalyRuleConfig.newBuilder()
+                                    .setAnomalyRuleId("rule1")
+                                    .addSubRuleConfigs(
+                                        AnomalySubRuleConfig.newBuilder()
+                                            .setSubRuleId("subRule1")
+                                            .setCategoryConfig(
+                                                AnomalyCategoryConfig.newBuilder()
+                                                    .setEventCategory(
+                                                        AnomalyEventCategory
+                                                            .ANOMALY_EVENT_CATEGORY_LATENT)
+                                                    .setEventScoreCategory(
+                                                        AnomalyEventScoreCategory
+                                                            .ANOMALY_EVENT_SCORE_CATEGORY_LOW)
+                                                    .build())
                                             .build())
-                                    .build())
-                            .build())
+                                    .build()))
                     .build())
             .build();
 
@@ -274,21 +286,23 @@ public class DetectorConfigServiceIntegrationTest
                 AnomalyDetectionConfig.newBuilder()
                     .setModsecurityAnomalyDetectionConfig(
                         ModsecurityAnomalyDetectionConfig.newBuilder()
-                            .setAnomalyRuleId("rule1")
-                            .addSubRuleConfigs(
-                                AnomalySubRuleConfig.newBuilder()
-                                    .setSubRuleId("subRule1")
-                                    .setCategoryConfig(
-                                        AnomalyCategoryConfig.newBuilder()
-                                            .setEventCategory(
-                                                AnomalyEventCategory
-                                                    .ANOMALY_EVENT_CATEGORY_MALICIOUS)
-                                            .setEventScoreCategory(
-                                                AnomalyEventScoreCategory
-                                                    .ANOMALY_EVENT_SCORE_CATEGORY_HIGH)
+                            .setModsecAnomalyRule(
+                                ModsecurityAnomalyRuleConfig.newBuilder()
+                                    .setAnomalyRuleId("rule1")
+                                    .addSubRuleConfigs(
+                                        AnomalySubRuleConfig.newBuilder()
+                                            .setSubRuleId("subRule1")
+                                            .setCategoryConfig(
+                                                AnomalyCategoryConfig.newBuilder()
+                                                    .setEventCategory(
+                                                        AnomalyEventCategory
+                                                            .ANOMALY_EVENT_CATEGORY_MALICIOUS)
+                                                    .setEventScoreCategory(
+                                                        AnomalyEventScoreCategory
+                                                            .ANOMALY_EVENT_SCORE_CATEGORY_HIGH)
+                                                    .build())
                                             .build())
-                                    .build())
-                            .build())
+                                    .build()))
                     .build())
             .build();
 
@@ -321,20 +335,23 @@ public class DetectorConfigServiceIntegrationTest
                 AnomalyDetectionConfig.newBuilder()
                     .setModsecurityAnomalyDetectionConfig(
                         ModsecurityAnomalyDetectionConfig.newBuilder()
-                            .setAnomalyRuleId("rule1")
-                            .addSubRuleConfigs(
-                                AnomalySubRuleConfig.newBuilder()
-                                    .setSubRuleId("subRule1")
-                                    .setCategoryConfig(
-                                        AnomalyCategoryConfig.newBuilder()
-                                            .setEventCategory(
-                                                AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT)
-                                            .setEventScoreCategory(
-                                                AnomalyEventScoreCategory
-                                                    .ANOMALY_EVENT_SCORE_CATEGORY_MEDIUM)
+                            .setModsecAnomalyRule(
+                                ModsecurityAnomalyRuleConfig.newBuilder()
+                                    .setAnomalyRuleId("rule1")
+                                    .addSubRuleConfigs(
+                                        AnomalySubRuleConfig.newBuilder()
+                                            .setSubRuleId("subRule1")
+                                            .setCategoryConfig(
+                                                AnomalyCategoryConfig.newBuilder()
+                                                    .setEventCategory(
+                                                        AnomalyEventCategory
+                                                            .ANOMALY_EVENT_CATEGORY_LATENT)
+                                                    .setEventScoreCategory(
+                                                        AnomalyEventScoreCategory
+                                                            .ANOMALY_EVENT_SCORE_CATEGORY_MEDIUM)
+                                                    .build())
                                             .build())
-                                    .build())
-                            .build())
+                                    .build()))
                     .build())
             .build();
 
@@ -411,6 +428,7 @@ public class DetectorConfigServiceIntegrationTest
         .getAnomalyDetectionConfigsList()
         .get(0)
         .getModsecurityAnomalyDetectionConfig()
+        .getModsecAnomalyRule()
         .getSubRuleConfigsList()
         .get(0)
         .getCategoryConfig()
@@ -423,6 +441,7 @@ public class DetectorConfigServiceIntegrationTest
         .getAnomalyDetectionConfigsList()
         .get(0)
         .getModsecurityAnomalyDetectionConfig()
+        .getModsecAnomalyRule()
         .getSubRuleConfigsList()
         .get(0)
         .getCategoryConfig()

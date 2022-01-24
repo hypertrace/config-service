@@ -181,7 +181,7 @@ public class AnomalyDetectionConfigManagerTest {
             .build();
     scopedAnomalyDetectionConfig =
         configManager.getScopedAnomalyDetectionConfig(requestContext, apiConfigScope, filter);
-    assertEquals(3, scopedAnomalyDetectionConfig.getAnomalyDetectionConfigsCount());
+    assertEquals(4, scopedAnomalyDetectionConfig.getAnomalyDetectionConfigsCount());
   }
 
   @Test
