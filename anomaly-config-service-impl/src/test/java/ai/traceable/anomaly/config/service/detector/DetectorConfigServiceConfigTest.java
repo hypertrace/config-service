@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
-import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
+import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import com.typesafe.config.ConfigFactory;
 import java.util.List;
@@ -83,12 +83,13 @@ public class DetectorConfigServiceConfigTest {
             new ApiDefinitionRegistryImpl(new ConfigConverter()),
             new SessionRulesRegistryImpl(new ConfigConverter()));
 
-    AnomalyConfigStatus configStatus1 =
-        AnomalyConfigStatus.newBuilder().setDisabled(false).setInternal(false).build();
-    AnomalyConfigStatus configStatus2 =
-        AnomalyConfigStatus.newBuilder().setDisabled(true).setInternal(false).build();
-    AnomalyConfigStatus configStatus3 =
-        AnomalyConfigStatus.newBuilder().setDisabled(true).setInternal(true).build();
+    AnomalyConfigStatusChange configStatus0 = AnomalyConfigStatusChange.newBuilder().build();
+    AnomalyConfigStatusChange configStatus1 =
+        AnomalyConfigStatusChange.newBuilder().setDisabled(false).setInternal(false).build();
+    AnomalyConfigStatusChange configStatus2 =
+        AnomalyConfigStatusChange.newBuilder().setDisabled(true).setInternal(false).build();
+    AnomalyConfigStatusChange configStatus3 =
+        AnomalyConfigStatusChange.newBuilder().setDisabled(true).setInternal(true).build();
 
     List<AnomalyDetectionConfig> modsecConfigs = config.getDefaultModsecDetectionConfigs();
     List<String> ruleIds =
@@ -112,7 +113,7 @@ public class DetectorConfigServiceConfigTest {
         config.getDefaultApiDefinitionDetectionConfigs();
 
     detectionConfig = getApiDefDetectionConfig(apiDefinitionDetectionConfigs, "integer");
-    assertEquals(configStatus1, detectionConfig.getConfigStatus());
+    assertEquals(configStatus0, detectionConfig.getConfigStatus());
 
     detectionConfig = getApiDefDetectionConfig(apiDefinitionDetectionConfigs, "missingParam");
     assertEquals(configStatus2, detectionConfig.getConfigStatus());
@@ -127,7 +128,7 @@ public class DetectorConfigServiceConfigTest {
     assertEquals(configStatus3, detectionConfig.getConfigStatus());
 
     detectionConfig = getSessionDefDetectionConfig(sessionDefinitionDetectionConfigs, "userIdBola");
-    assertEquals(configStatus1, detectionConfig.getConfigStatus());
+    assertEquals(configStatus0, detectionConfig.getConfigStatus());
   }
 
   private AnomalyDetectionConfig getModsecConfig(

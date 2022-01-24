@@ -68,7 +68,7 @@ message ScopedAnomalyDetectionConfig {
 }
 
 message AnomalyDetectionConfig {
-  AnomalyConfigStatus config_status = 1;
+  AnomalyConfigStatusChange config_status = 1;
   AnomalyCategoryConfig category_config = 2;
   oneof anomaly_detection_config {
     ModsecurityAnomalyDetectionConfig modsecurity_anomaly_detection_config = 5;

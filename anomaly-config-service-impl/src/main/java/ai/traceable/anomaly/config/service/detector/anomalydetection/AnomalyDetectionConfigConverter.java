@@ -1,6 +1,6 @@
 package ai.traceable.anomaly.config.service.detector.anomalydetection;
 
-import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
+import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyCategoryConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfigType;
@@ -188,7 +188,7 @@ public class AnomalyDetectionConfigConverter {
    */
   private List<AnomalyDetectionConfig> mergeModsecConfigs(
       ScopedAnomalyDetectionConfig preferredConfig, ScopedAnomalyDetectionConfig fallbackConfig) {
-    Map<String, AnomalyConfigStatus> configStatusMap =
+    Map<String, AnomalyConfigStatusChange> configStatusMap =
         preferredConfig.getAnomalyDetectionConfigsList().stream()
             .filter(AnomalyDetectionConfig::hasModsecurityAnomalyDetectionConfig)
             .collect(

@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
-import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
+import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyCategoryConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
@@ -64,7 +64,8 @@ public class AnomalyDetectionConfigConverterTest {
                         AnomalyCategoryConfig.newBuilder()
                             .setEventCategory(AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT)
                             .build())
-                    .setConfigStatus(AnomalyConfigStatus.newBuilder().setInternal(true).build())
+                    .setConfigStatus(
+                        AnomalyConfigStatusChange.newBuilder().setInternal(true).build())
                     .setModsecurityAnomalyDetectionConfig(
                         ModsecurityAnomalyDetectionConfig.newBuilder()
                             .setAnomalyRuleId("rule")
@@ -175,7 +176,7 @@ public class AnomalyDetectionConfigConverterTest {
             .addAnomalyDetectionConfigs(
                 AnomalyDetectionConfig.newBuilder()
                     .setConfigStatus(
-                        AnomalyConfigStatus.newBuilder()
+                        AnomalyConfigStatusChange.newBuilder()
                             .setDisabled(true)
                             .setInternal(true)
                             .build())
@@ -243,7 +244,7 @@ public class AnomalyDetectionConfigConverterTest {
             .addAnomalyDetectionConfigs(
                 AnomalyDetectionConfig.newBuilder()
                     .setConfigStatus(
-                        AnomalyConfigStatus.newBuilder()
+                        AnomalyConfigStatusChange.newBuilder()
                             .setDisabled(true)
                             .setInternal(true)
                             .build())
@@ -284,7 +285,7 @@ public class AnomalyDetectionConfigConverterTest {
             .addAnomalyDetectionConfigs(
                 AnomalyDetectionConfig.newBuilder()
                     .setConfigStatus(
-                        AnomalyConfigStatus.newBuilder().setInternal(true).setDisabled(false))
+                        AnomalyConfigStatusChange.newBuilder().setInternal(true).setDisabled(false))
                     .setApiDefinitionMetadataAnomalyDetectionConfig(
                         ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
                             .setAnomalyRuleId("enum")
