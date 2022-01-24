@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
+import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
@@ -202,6 +203,11 @@ public class AnomalyDetectionConfigManagerTest {
                     .build(),
                 GetAnomalyDetectionConfigsFilter.getDefaultInstance()));
 
+    scopedAnomalyDetectionConfigs =
+        configManager.getAllScopedAnomalyDetectionConfig(requestContext, filter);
+    assertEquals(1, scopedAnomalyDetectionConfigs.size());
+    assertEquals(customerConfigScope, scopedAnomalyDetectionConfigs.get(0).getConfigScope());
+
     scopedAnomalyDetectionConfig =
         getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(SERVICE_SCOPE_CONFIG));
     updateScopedAnomalyDetectionConfig(requestContext, scopedAnomalyDetectionConfig);
@@ -253,6 +259,7 @@ public class AnomalyDetectionConfigManagerTest {
     List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
     defaultDetectionConfigs.addAll(config.getDefaultModsecDetectionConfigs());
     defaultDetectionConfigs.addAll(config.getDefaultApiDefinitionDetectionConfigs());
+    defaultDetectionConfigs.addAll(config.getDefaultSessionDefinitionDetectionConfigs());
 
     List<AnomalyDetectionConfig> detectionConfigs =
         configManager
@@ -353,7 +360,19 @@ public class AnomalyDetectionConfigManagerTest {
                 + "        anomalyRuleId = \"enum\"\n"
                 + "      }\n"
                 + "    }\n"
-                + " ]"),
-        new ApiDefinitionRegistryImpl(new ConfigConverter()));
+                + " ]\n"
+                + "sessionDefinitionDetectionConfigs = [\n"
+                + " {\n"
+                + "   configStatus = {\n"
+                + "        disabled = false\n"
+                + "        internal = true\n"
+                + "      }\n"
+                + "      sessionDefinitionMetadataAnomalyDetectionConfig = {\n"
+                + "        anomalyRuleId = \"bola\"\n"
+                + "      }\n"
+                + "    }\n"
+                + "]"),
+        new ApiDefinitionRegistryImpl(new ConfigConverter()),
+        new SessionRulesRegistryImpl(new ConfigConverter()));
   }
 }

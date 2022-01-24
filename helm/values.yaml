@@ -138,6 +138,8 @@ anomalyConfigServiceConfig:
           }
         }
       ]
+    sessionDefinitionDetectionConfigs: |-
+      []
 
 hpa:
   enabled: false

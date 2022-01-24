@@ -34,6 +34,7 @@ public class AnomalyDetectionConfigManagerImpl
   private final AnomalyDetectionConfigConverter anomalyDetectionConfigConverter;
   private final List<AnomalyDetectionConfig> defaultModsecConfigs;
   private final List<AnomalyDetectionConfig> defaultApiDefinitionDetectionConfigs;
+  private final List<AnomalyDetectionConfig> defaultSessionDefinitionDetectionConfigs;
 
   @Inject
   public AnomalyDetectionConfigManagerImpl(
@@ -47,6 +48,8 @@ public class AnomalyDetectionConfigManagerImpl
     this.anomalyDetectionConfigConverter = anomalyDetectionConfigConverter;
     this.defaultModsecConfigs = config.getDefaultModsecDetectionConfigs();
     this.defaultApiDefinitionDetectionConfigs = config.getDefaultApiDefinitionDetectionConfigs();
+    this.defaultSessionDefinitionDetectionConfigs =
+        config.getDefaultSessionDefinitionDetectionConfigs();
   }
 
   @Override
@@ -234,6 +237,7 @@ public class AnomalyDetectionConfigManagerImpl
             .setConfigScope(configScope)
             .addAllAnomalyDetectionConfigs(defaultModsecConfigs)
             .addAllAnomalyDetectionConfigs(defaultApiDefinitionDetectionConfigs)
+            .addAllAnomalyDetectionConfigs(defaultSessionDefinitionDetectionConfigs)
             .build();
     for (String context : contextsWithIncreasingPriority) {
       anomalyDetectionConfig =

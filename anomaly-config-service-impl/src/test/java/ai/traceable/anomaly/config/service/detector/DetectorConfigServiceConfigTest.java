@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
+import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import com.typesafe.config.ConfigFactory;
@@ -67,8 +68,20 @@ public class DetectorConfigServiceConfigTest {
                     + "        anomalyRuleId = \"enum\"\n"
                     + "      }\n"
                     + "    }\n"
-                    + " ]"),
-            new ApiDefinitionRegistryImpl(new ConfigConverter()));
+                    + " ]\n"
+                    + "sessionDefinitionDetectionConfigs = [\n"
+                    + " {\n"
+                    + "   configStatus = {\n"
+                    + "        disabled = true\n"
+                    + "        internal = true\n"
+                    + "      }\n"
+                    + "      sessionDefinitionMetadataAnomalyDetectionConfig = {\n"
+                    + "        anomalyRuleId = \"bola\"\n"
+                    + "      }\n"
+                    + "    }\n"
+                    + "]"),
+            new ApiDefinitionRegistryImpl(new ConfigConverter()),
+            new SessionRulesRegistryImpl(new ConfigConverter()));
 
     AnomalyConfigStatus configStatus1 =
         AnomalyConfigStatus.newBuilder().setDisabled(false).setInternal(false).build();
@@ -106,6 +119,15 @@ public class DetectorConfigServiceConfigTest {
 
     detectionConfig = getApiDefDetectionConfig(apiDefinitionDetectionConfigs, "enum");
     assertEquals(configStatus3, detectionConfig.getConfigStatus());
+
+    List<AnomalyDetectionConfig> sessionDefinitionDetectionConfigs =
+        config.getDefaultSessionDefinitionDetectionConfigs();
+
+    detectionConfig = getSessionDefDetectionConfig(sessionDefinitionDetectionConfigs, "bola");
+    assertEquals(configStatus3, detectionConfig.getConfigStatus());
+
+    detectionConfig = getSessionDefDetectionConfig(sessionDefinitionDetectionConfigs, "userIdBola");
+    assertEquals(configStatus1, detectionConfig.getConfigStatus());
   }
 
   private AnomalyDetectionConfig getModsecConfig(
@@ -126,6 +148,19 @@ public class DetectorConfigServiceConfigTest {
     for (AnomalyDetectionConfig detectionConfig : detectionConfigs) {
       if (detectionConfig
           .getApiDefinitionMetadataAnomalyDetectionConfig()
+          .getAnomalyRuleId()
+          .equals(ruleId)) {
+        return detectionConfig;
+      }
+    }
+    return null;
+  }
+
+  private AnomalyDetectionConfig getSessionDefDetectionConfig(
+      List<AnomalyDetectionConfig> detectionConfigs, String ruleId) {
+    for (AnomalyDetectionConfig detectionConfig : detectionConfigs) {
+      if (detectionConfig
+          .getSessionDefinitionMetadataAnomalyDetectionConfig()
           .getAnomalyRuleId()
           .equals(ruleId)) {
         return detectionConfig;
