@@ -79,6 +79,7 @@ message MetadataTrainingConfig {
     AccessorsTrainingConfig accessors = 9;
     SsrfTrainingConfig ssrf = 10;
     ThresholdsFamilyTrainingConfig thresholds_family = 11;
+    DataClassificationTrainingConfig data_classification = 12;
   }
 }
 
@@ -106,6 +107,10 @@ message PiiTrainingConfig {
   optional string param_age_threshold_duration = 3;
   optional string low_age_frequency_duration = 4;
   optional string high_age_frequency_duration = 5;
+}
+
+message DataClassificationTrainingConfig {
+  bool enabled = 1;
 }
 
 message EnumerationsTrainingConfig {
