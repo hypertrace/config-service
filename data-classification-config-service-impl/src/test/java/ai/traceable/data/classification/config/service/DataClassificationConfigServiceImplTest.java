@@ -3,6 +3,7 @@ package ai.traceable.data.classification.config.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.data.classification.config.service.v1.CreateDataSetRequest;
 import ai.traceable.data.classification.config.service.v1.CreateDataSetResponse;
@@ -16,6 +17,7 @@ import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ApiScope;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.ParameterType;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
 import ai.traceable.data.classification.config.service.v1.DeleteDataSetRequest;
@@ -30,6 +32,8 @@ import ai.traceable.data.classification.config.service.v1.UpdateDataSetRequest;
 import ai.traceable.data.classification.config.service.v1.UpdateDataSetResponse;
 import ai.traceable.data.classification.config.service.v1.UpdateDataTypeRequest;
 import ai.traceable.data.classification.config.service.v1.UpdateDataTypeResponse;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
@@ -45,6 +49,11 @@ import org.junit.jupiter.api.Test;
 class DataClassificationConfigServiceImplTest {
   MockGenericConfigService mockGenericConfigService;
   DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceBlockingStub;
+  Config mockConfig;
+  private static final String DATA_CLASSIFICATION_CONFIG_SERVICE =
+      "data.classification.config.service";
+  private static final String SYSTEM_DATASETS = "system.datasets";
+  private static final String SYSTEM_DATATYPES = "system.datatypes";
 
   @BeforeEach
   void setUp() {
@@ -53,13 +62,16 @@ class DataClassificationConfigServiceImplTest {
     ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    mockConfig = mock(Config.class);
+    when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(false);
     mockGenericConfigService
         .addService(
             new DataClassificationConfigServiceImpl(
                 new DataSetStore(genericStub, configChangeEventGenerator),
                 new DataTypeStore(genericStub, configChangeEventGenerator),
                 new DataSetConfigRequestValidator(),
-                new DataTypeConfigRequestValidator()))
+                new DataTypeConfigRequestValidator(),
+                mockConfig))
         .start();
     dataClassificationConfigServiceBlockingStub =
         DataClassificationConfigServiceGrpc.newBlockingStub(
@@ -69,6 +81,118 @@ class DataClassificationConfigServiceImplTest {
   @AfterEach
   void afterEach() {
     mockGenericConfigService.shutdown();
+  }
+
+  @Test
+  void systemDataTypesTest() {
+    mockGenericConfigService.shutdown();
+    mockGenericConfigService =
+        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    ConfigServiceBlockingStub genericStub =
+        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    mockConfig = mock(Config.class);
+    when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(true);
+    String jsonString =
+        "system : {\n"
+            + "datatypes : [\n"
+            + "{\n"
+            + "id : systemdatatype,\n"
+            + "rule : {\n"
+            + "name : systemdatatyperule,\n"
+            + "scoped_pattern : [\n"
+            + "{\n"
+            + "global_scope : {},\n"
+            + "parameter_type : PARAMETER_TYPE_REQUEST_HEADER,\n"
+            + "key_pattern : {operator : OPERATOR_MATCHES_REGEX, value : systemvalue},\n"
+            + "action : ACTION_MATCH\n"
+            + "}\n"
+            + "]\n"
+            + "}\n"
+            + "}\n"
+            + "]\n"
+            + "}";
+    Config dataClassificationConfig = ConfigFactory.parseString(jsonString);
+    when(mockConfig.getConfig(DATA_CLASSIFICATION_CONFIG_SERVICE))
+        .thenReturn(dataClassificationConfig);
+    mockGenericConfigService
+        .addService(
+            new DataClassificationConfigServiceImpl(
+                new DataSetStore(genericStub, configChangeEventGenerator),
+                new DataTypeStore(genericStub, configChangeEventGenerator),
+                new DataSetConfigRequestValidator(),
+                new DataTypeConfigRequestValidator(),
+                mockConfig))
+        .start();
+    dataClassificationConfigServiceBlockingStub =
+        DataClassificationConfigServiceGrpc.newBlockingStub(
+            this.mockGenericConfigService.channel());
+    GetDataTypesRequest getRequest = GetDataTypesRequest.getDefaultInstance();
+    GetDataTypesResponse response =
+        dataClassificationConfigServiceBlockingStub.getDataTypes(getRequest);
+    assertEquals(1, response.getDataTypesCount());
+    assertEquals(
+        ParameterType.PARAMETER_TYPE_REQUEST_HEADER,
+        response
+            .getDataTypesList()
+            .get(0)
+            .getRule()
+            .getScopedPatternList()
+            .get(0)
+            .getParameterType());
+  }
+
+  @Test
+  void systemDataSetsTest() {
+    mockGenericConfigService.shutdown();
+    mockGenericConfigService =
+        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    ConfigServiceBlockingStub genericStub =
+        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    mockConfig = mock(Config.class);
+    when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(true);
+    String jsonString =
+        "{\n"
+            + "  \"system\": {\n"
+            + "    \"datasets\": [\n"
+            + "      {\n"
+            + "        \"id\": \"systemdataset\",\n"
+            + "        \"info\": {\n"
+            + "          \"name\": \"systemdatasetinfo\",\n"
+            + "          \"enabled\": \"true\",\n"
+            + "          \"data_type_ids\": [\n"
+            + "            \"datatype-1\",\n"
+            + "            \"datatype-2\"\n"
+            + "          ],\n"
+            + "          \"data_suppression\": \"DATA_SUPPRESSION_RAW\"\n"
+            + "        }\n"
+            + "      }\n"
+            + "    ]\n"
+            + "  }\n"
+            + "}";
+    Config dataClassificationConfig = ConfigFactory.parseString(jsonString);
+    when(mockConfig.getConfig(DATA_CLASSIFICATION_CONFIG_SERVICE))
+        .thenReturn(dataClassificationConfig);
+    mockGenericConfigService
+        .addService(
+            new DataClassificationConfigServiceImpl(
+                new DataSetStore(genericStub, configChangeEventGenerator),
+                new DataTypeStore(genericStub, configChangeEventGenerator),
+                new DataSetConfigRequestValidator(),
+                new DataTypeConfigRequestValidator(),
+                mockConfig))
+        .start();
+    dataClassificationConfigServiceBlockingStub =
+        DataClassificationConfigServiceGrpc.newBlockingStub(
+            this.mockGenericConfigService.channel());
+    GetDataSetsRequest getRequest = GetDataSetsRequest.getDefaultInstance();
+    GetDataSetsResponse response =
+        dataClassificationConfigServiceBlockingStub.getDataSets(getRequest);
+    assertEquals(1, response.getDataSetsCount());
+    assertEquals(
+        List.of("datatype-1", "datatype-2"),
+        response.getDataSetsList().get(0).getInfo().getDataTypeIdsList());
   }
 
   @Test

@@ -13,6 +13,7 @@ dependencies {
     implementation(libs.hypertrace.configservice.validation)
     implementation(libs.hypertrace.grpcutils.client)
     implementation(libs.guice)
+    implementation(libs.protobuf.javautil)
 
     annotationProcessor(libs.lombok)
     compileOnly(libs.lombok)
