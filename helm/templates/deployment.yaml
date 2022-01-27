@@ -44,6 +44,11 @@ spec:
         - name: log4j-config
           configMap:
             name: {{ .Values.logConfig.name }}
+        {{- if eq $.Values.deepStoreFsScheme "gs" }}
+        - name: service-account-iam
+          secret:
+            secretName: {{ $.Values.iamServiceAccountSecret }}
+        {{- end }}
         {{- if eq $.Values.deepStoreFsScheme "file" }}
         - name: traceable-nfs-deep-store
           persistentVolumeClaim:
@@ -102,6 +107,11 @@ spec:
               subPath: risk.conf
             - name: log4j-config
               mountPath: /var/{{ .Chart.Name }}/log
+            {{- if eq $.Values.deepStoreFsScheme "gs" }}
+            - name: service-account-iam
+              mountPath: "/accounts"
+              readOnly: true
+            {{- end }}
             {{- if eq $.Values.deepStoreFsScheme "file" }}
             - name: traceable-nfs-deep-store
               mountPath: { { $.Values.deepStoreMountPath }}

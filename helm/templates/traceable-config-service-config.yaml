@@ -85,6 +85,7 @@ data:
         {{- end}}
       ]
     {{- end}}
+    }
     feature.flag.service.config = {
       host = {{ .Values.traceableConfigServiceConfig.featureFlagServiceConfig.host }}
       port = {{ .Values.traceableConfigServiceConfig.featureFlagServiceConfig.port }}

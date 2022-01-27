@@ -90,6 +90,8 @@ bucketPrefix: traceable-saas
 s3.config:
   - fs.s3a.endpoint : "s3-us-west-2.amazonaws.com"
 
+iamServiceAccountSecret: gcs-iam-secret
+
 modelStores:
   - deepStoreScheme: "gs"
     readEnabled: true
