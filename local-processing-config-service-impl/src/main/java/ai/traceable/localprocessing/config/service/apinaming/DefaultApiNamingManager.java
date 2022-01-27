@@ -120,14 +120,14 @@ class DefaultApiNamingManager implements ApiNamingManager {
                 .ifPresent(
                     trainingConfigs -> {
                       try {
-                        HttpApiNamingConfig httpApiNamingConfig =
-                            buildHttpApiNamingConfig(
-                                trainingConfigs, serviceRequest.getConfigHash());
+                        HttpApiNamingConfigInfo httpApiNamingConfigInfo =
+                            buildApiNamingConfig(trainingConfigs, serviceRequest.getConfigHash());
                         httpServiceResponses.add(
                             HttpServiceResponse.newBuilder()
                                 .setServiceName(serviceRequest.getServiceName())
-                                .setTrie(getTrie(requestContext, httpApiNamingConfig, serviceId))
-                                .setHttpConfig(httpApiNamingConfig)
+                                .setTrie(
+                                    getTrie(requestContext, httpApiNamingConfigInfo, serviceId))
+                                .setHttpConfig(httpApiNamingConfigInfo.getHttpApiNamingConfig())
                                 .build());
                       } catch (Exception e) {
                         log.error("Could not retrieve trie for request:{}", request, e);
@@ -137,14 +137,16 @@ class DefaultApiNamingManager implements ApiNamingManager {
   }
 
   private Trie getTrie(
-      RequestContext requestContext, HttpApiNamingConfig httpApiNamingConfig, String serviceId)
+      RequestContext requestContext,
+      HttpApiNamingConfigInfo httpApiNamingConfigInfo,
+      String serviceId)
       throws IOException {
     TrieModel trieModel =
         modelStore
             .loadModel(new ServiceScope(requestContext.getTenantId().get(), serviceId))
             .getModel();
     Set<List<Segment>> nonEmbryonicPaths =
-        trieModel.getNonEmbryonicPaths(buildTrieNodeConfig(httpApiNamingConfig));
+        trieModel.getNonEmbryonicPaths(buildTrieNodeConfig(httpApiNamingConfigInfo));
     return Trie.newBuilder().setFullTrie(buildFullTrie(nonEmbryonicPaths)).build();
   }
 
@@ -244,7 +246,8 @@ class DefaultApiNamingManager implements ApiNamingManager {
     }
   }
 
-  private TrieNodeConfig buildTrieNodeConfig(HttpApiNamingConfig httpApiNamingConfig) {
+  private TrieNodeConfig buildTrieNodeConfig(HttpApiNamingConfigInfo httpApiNamingConfigInfo) {
+    HttpApiNamingConfig httpApiNamingConfig = httpApiNamingConfigInfo.getHttpApiNamingConfig();
     return new TrieNodeConfig(
         httpApiNamingConfig.getSegmentWhitelistRegexesList(),
         getWildcardConfigList(
@@ -259,7 +262,7 @@ class DefaultApiNamingManager implements ApiNamingManager {
                 httpApiNamingConfig.getWildcardConfigsList(),
                 WildcardType.WILDCARD_TYPE_HIGH_CARDINALITY)),
         new HashSet<>(httpApiNamingConfig.getExtensionsList()),
-        apiNamingConfig.getEmbryonicThreshold());
+        httpApiNamingConfigInfo.getEmbryonicThreshold());
   }
 
   private Optional<ProtocolStringList> filterWildcardConfigs(
@@ -360,19 +363,25 @@ class DefaultApiNamingManager implements ApiNamingManager {
     }
   }
 
-  private HttpApiNamingConfig buildHttpApiNamingConfig(
+  private HttpApiNamingConfigInfo buildApiNamingConfig(
       List<TrainingConfig> trainingConfigs, String configHash) {
     HttpApiNamingConfig.Builder httpApiNamingConfigBuilder = HttpApiNamingConfig.newBuilder();
-    Optional<TrieModelTrainingConfig> trieModelTrainingConfigs =
+    Optional<TrieModelTrainingConfig> maybeTrieModelTrainingConfig =
         getTrieModelTrainingConfig(trainingConfigs);
 
-    trieModelTrainingConfigs.ifPresent(
+    int embryonicThreshold =
+        maybeTrieModelTrainingConfig
+            .map(TrieModelTrainingConfig::getEmbryonicThreshold)
+            .orElseGet(apiNamingConfig::getDefaultEmbryonicThreshold);
+
+    maybeTrieModelTrainingConfig.ifPresent(
         trieModelTrainingConfig ->
             httpApiNamingConfigBuilder
                 .addAllExtensions(trieModelTrainingConfig.getExtensions().getValuesList())
                 .addAllSegmentWhitelistRegexes(
                     trieModelTrainingConfig.getAllowRegexList().getValuesList())
                 .addAllWildcardConfigs(convertWildcardConfigs(trieModelTrainingConfig)));
+
     getUrlFilterConfig(trainingConfigs)
         .ifPresent(
             urlFilterConfig ->
@@ -386,9 +395,11 @@ class DefaultApiNamingManager implements ApiNamingManager {
 
     String hash = uuidGenerator.generateId(httpApiNamingConfigBuilder.build());
     if (!hash.equals(configHash)) {
-      return httpApiNamingConfigBuilder.setHash(hash).build();
+      return new HttpApiNamingConfigInfo(
+          httpApiNamingConfigBuilder.setHash(hash).build(), embryonicThreshold);
     }
-    return HttpApiNamingConfig.newBuilder().setHash(hash).build();
+    return new HttpApiNamingConfigInfo(
+        HttpApiNamingConfig.newBuilder().setHash(hash).build(), embryonicThreshold);
   }
 
   private List<WildcardConfig> convertWildcardConfigs(
@@ -475,5 +486,11 @@ class DefaultApiNamingManager implements ApiNamingManager {
         .filter(ApiNamingTrainingConfig::hasUrlFilterConfig)
         .map(ApiNamingTrainingConfig::getUrlFilterConfig)
         .findAny();
+  }
+
+  @lombok.Value
+  private static class HttpApiNamingConfigInfo {
+    HttpApiNamingConfig httpApiNamingConfig;
+    int embryonicThreshold;
   }
 }

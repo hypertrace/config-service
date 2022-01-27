@@ -16,7 +16,7 @@ public class ApiNamingConfig {
     return this.config.getStringList("regex.fallbacks");
   }
 
-  public int getEmbryonicThreshold() {
-    return this.config.getInt("embryonic.threshold");
+  public int getDefaultEmbryonicThreshold() {
+    return this.config.getInt("default.embryonic.threshold");
   }
 }

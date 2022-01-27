@@ -23,6 +23,7 @@ import ai.traceable.localprocessing.config.service.v1.WildcardConfig;
 import ai.traceable.localprocessing.config.service.v1.WildcardType;
 import ai.traceable.platform.apientity.Segment;
 import ai.traceable.platform.apientity.TrieNodeType;
+import ai.traceable.platform.apientity.http.model.TrieNodeConfig;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -149,6 +150,7 @@ public class ApiNamingManagerTestUtils {
                     ApiNamingTrainingConfig.newBuilder()
                         .setTrieModelTrainingConfig(
                             TrieModelTrainingConfig.newBuilder()
+                                .setEmbryonicThreshold(123)
                                 .setAllowRegexList(
                                     StringList.newBuilder().addValues("allowRegex").build())
                                 .setExtensions(
@@ -204,6 +206,16 @@ public class ApiNamingManagerTestUtils {
                             .setExtension("e")
                             .build())
                     .build())));
+  }
+
+  public static TrieNodeConfig buildTrieNodeConfig() {
+    return new TrieNodeConfig(
+        List.of("allowRegex"),
+        List.of("regexId"),
+        List.of("regexLow"),
+        List.of("regexHigh"),
+        new HashSet<>(List.of("extension")),
+        123);
   }
 
   public static FullTrie buildExpectedFullTrie() {

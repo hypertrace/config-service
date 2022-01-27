@@ -58,14 +58,15 @@ class DefaultApiNamingManagerTest {
             List.of(
                 "(\\{){0,1}[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}(\\}){0,1}",
                 "\\d+"));
-    when(apiNamingConfig.getEmbryonicThreshold()).thenReturn(100);
+    when(apiNamingConfig.getDefaultEmbryonicThreshold()).thenReturn(100);
     when(modelStore.loadModel(any())).thenReturn(persistedModel);
     when(persistedModel.getModel()).thenReturn(trieModel);
   }
 
   @Test
   void testGetServiceResponseList() {
-    when(trieModel.getNonEmbryonicPaths(any())).thenReturn(new HashSet<>());
+    when(trieModel.getNonEmbryonicPaths(ApiNamingManagerTestUtils.buildTrieNodeConfig()))
+        .thenReturn(new HashSet<>());
     HttpApiNamingConfig httpApiNamingConfig = ApiNamingManagerTestUtils.buildApiNamingConfig();
 
     ServiceRequest serviceRequest1 =
