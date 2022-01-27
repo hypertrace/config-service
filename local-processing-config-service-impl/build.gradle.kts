@@ -22,6 +22,8 @@ dependencies {
   implementation(libs.hypertrace.configservice.changeeventgenerator)
   implementation(libs.uuidCreator)
   implementation(libs.hypertrace.entityservice.api)
+  implementation(libs.traceable.apiNamingModel)
+  implementation(libs.traceable.platformGateway.trainingEvaluationFramework)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

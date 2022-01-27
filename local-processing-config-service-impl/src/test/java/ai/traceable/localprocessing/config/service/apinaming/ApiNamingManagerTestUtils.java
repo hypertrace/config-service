@@ -14,11 +14,18 @@ import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrieModelTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.UrlFilterConfig;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
+import ai.traceable.localprocessing.config.service.v1.FullTrie;
 import ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig;
 import ai.traceable.localprocessing.config.service.v1.HttpApiNamingCustomRule;
+import ai.traceable.localprocessing.config.service.v1.Node;
+import ai.traceable.localprocessing.config.service.v1.Wildcard;
 import ai.traceable.localprocessing.config.service.v1.WildcardConfig;
 import ai.traceable.localprocessing.config.service.v1.WildcardType;
+import ai.traceable.platform.apientity.Segment;
+import ai.traceable.platform.apientity.TrieNodeType;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.hypertrace.entity.constants.v1.CommonAttribute;
 import org.hypertrace.entity.data.service.v1.AttributeValue;
 import org.hypertrace.entity.data.service.v1.ByTypeAndIdentifyingAttributes;
@@ -32,8 +39,8 @@ public class ApiNamingManagerTestUtils {
 
   public static HttpApiNamingConfig buildApiNamingConfig() {
     UuidGenerator uuidGenerator = new UuidGenerator();
-    HttpApiNamingConfig.Builder apiNamingConfigBuilder = HttpApiNamingConfig.newBuilder();
-    apiNamingConfigBuilder
+    HttpApiNamingConfig.Builder httpApiNamingConfigBuilder = HttpApiNamingConfig.newBuilder();
+    httpApiNamingConfigBuilder
         .addExtensions("extension")
         .addSegmentWhitelistRegexes("allowRegex")
         .addUrlRejectRegexes("urlReject")
@@ -66,8 +73,8 @@ public class ApiNamingManagerTestUtils {
                 .setPriority(2)
                 .addIdentificationRegexes("regexHigh")
                 .build());
-    String hash = uuidGenerator.generateId(apiNamingConfigBuilder.build());
-    return apiNamingConfigBuilder.setHash(hash).build();
+    String hash = uuidGenerator.generateId(httpApiNamingConfigBuilder.build());
+    return httpApiNamingConfigBuilder.setHash(hash).build();
   }
 
   public static GetAllScopedTrainingConfigsResponse buildGetAllScopedTrainingConfigsResponse() {
@@ -176,5 +183,81 @@ public class ApiNamingManagerTestUtils {
                         .build())
                 .build())
         .build();
+  }
+
+  public static Set<List<Segment>> buildNonEmbryonicPaths() {
+    return new HashSet<>(
+        Set.of(
+            List.of(
+                Segment.newBuilder().setName("3").build(),
+                Segment.newBuilder().setName("GET").build(),
+                Segment.newBuilder().setName("a").build(),
+                Segment.newBuilder().setName("b").build()),
+            List.of(
+                Segment.newBuilder().setName("3").build(),
+                Segment.newBuilder().setName("POST").build(),
+                Segment.newBuilder().setName("a").build(),
+                Segment.newBuilder()
+                    .setName(
+                        ai.traceable.platform.apientity.Wildcard.newBuilder()
+                            .setWildcardType(TrieNodeType.ID)
+                            .setExtension("e")
+                            .build())
+                    .build())));
+  }
+
+  public static FullTrie buildExpectedFullTrie() {
+    Node rootNode =
+        Node.newBuilder()
+            .setValue(
+                ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
+                    .setName("3")
+                    .build())
+            .addChildren(
+                Node.newBuilder()
+                    .setValue(
+                        ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
+                            .setName("GET")
+                            .build())
+                    .addChildren(
+                        Node.newBuilder()
+                            .setValue(
+                                ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
+                                    .setName("a")
+                                    .build())
+                            .addChildren(
+                                Node.newBuilder()
+                                    .setValue(
+                                        ai.traceable.localprocessing.config.service.v1.Value
+                                            .newBuilder()
+                                            .setName("b")
+                                            .build())))
+                    .build())
+            .addChildren(
+                Node.newBuilder()
+                    .setValue(
+                        ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
+                            .setName("POST")
+                            .build())
+                    .addChildren(
+                        Node.newBuilder()
+                            .setValue(
+                                ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
+                                    .setName("a")
+                                    .build())
+                            .addChildren(
+                                Node.newBuilder()
+                                    .setValue(
+                                        ai.traceable.localprocessing.config.service.v1.Value
+                                            .newBuilder()
+                                            .setWildcard(
+                                                Wildcard.newBuilder()
+                                                    .setExtension("e")
+                                                    .setWildcardType(WildcardType.WILDCARD_TYPE_ID)
+                                                    .build())
+                                            .build())))
+                    .build())
+            .build();
+    return FullTrie.newBuilder().addAllRoots(List.of(rootNode)).build();
   }
 }

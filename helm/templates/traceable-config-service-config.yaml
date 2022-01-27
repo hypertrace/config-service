@@ -55,6 +55,36 @@ data:
       port = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.port }}
       cache.expiry.duration = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.cacheExpiryDuration }}
     }
+    input.data = {
+    {{- if $.Values.modelStores }}
+      model.stores = [
+        {{- range $sk,$sv := $.Values.modelStores }}
+        {
+          deep.store.fs.scheme = {{ $sv.deepStoreScheme }}
+          read.enabled = {{ $sv.readEnabled }}
+          read.priority = {{ $sv.readPriority }}
+          write.disabled = {{ $sv.writeDisabled }}
+          {{- if eq $sv.deepStoreScheme "file" }}
+          directory = {{ printf "%s/%s/customers" $.Values.modelStoreNFSMountPath $.Values.global.env | quote }}
+          {{- end }}
+          {{- if eq $sv.deepStoreScheme "gs" }}
+          gcs.bucket.name = {{ printf "%s-%s" $.Values.bucketPrefix $.Values.global.env | quote }}
+          gcs.key.file = "/accounts/key.json"
+          directory = {{ $.Values.deepStoreFilePath | quote }}
+          {{- end }}
+          {{- if eq $sv.deepStoreScheme "s3" }}
+          directory = {{ $.Values.deepStoreFilePath | quote }}
+          s3.bucket.name = {{ $.Values.s3BucketName | quote }}
+          s3.config = {
+            {{- range $k, $v := $.Values.s3Config }}
+            {{ $k }} = {{ $v | quote }}
+            {{- end }}
+          }
+          {{- end }}
+        },
+        {{- end}}
+      ]
+    {{- end}}
     feature.flag.service.config = {
       host = {{ .Values.traceableConfigServiceConfig.featureFlagServiceConfig.host }}
       port = {{ .Values.traceableConfigServiceConfig.featureFlagServiceConfig.port }}

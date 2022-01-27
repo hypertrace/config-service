@@ -79,6 +79,22 @@ deploymentSelectorMatchLabels:
 serviceSelectorLabels:
   app: traceable-config-service
 
+modelStoreNFSMountPath: "/var/data/models"
+modelStoreNFSClaimName: "traceable-nfs-model-store"
+deepStoreFilePath: "/var/data/customers/"
+deepStoreFsScheme: "gs"
+deepStoreMountPath: "/var/data"
+deepStoreClaimName: "traceable-nfs-deep-store"
+s3BucketName: ""
+bucketPrefix: traceable-saas
+s3.config:
+  - fs.s3a.endpoint : "s3-us-west-2.amazonaws.com"
+
+modelStores:
+  - deepStoreScheme: "gs"
+    readEnabled: true
+    readPriority: 1
+    writeDisabled: false
 ###########
 # Config Maps
 ###########
