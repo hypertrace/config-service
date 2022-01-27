@@ -16,6 +16,7 @@ traceable-insights-api = { module = "ai.traceable.platform:insights-service-api"
 traceable-activityevent-api = { module = "ai.traceable.activity.event.service:activity-event-api", version = "0.3.5" }
 traceable-licensemetering-api = { module = "ai.traceable.license.metering.service:license-metering-service-api", version = "0.1.13" }
 traceable-platform-jnimodsecurity = { module = "ai.traceable.platform:jni-modsecurity", version.ref = "traceable-platform" }
+traceable-featureFlag-futureClient = { module = "ai.traceable.featureflag:feature-flag-future-client", version = "0.3.0" }
 
 hypertrace-grpcutils-client = { module = "org.hypertrace.core.grpcutils:grpc-client-utils", version.ref = "hypertrace-grpcutils" }
 hypertrace-grpcutils-server = { module = "org.hypertrace.core.grpcutils:grpc-server-utils", version.ref = "hypertrace-grpcutils" }
@@ -62,7 +63,6 @@ protobuf-javautil = { module = "com.google.protobuf:protobuf-java-util", version
 
 slf4j-log4jimpl = { module = "org.apache.logging.log4j:log4j-slf4j-impl", version = "2.17.0" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version = "1.7.30" }
-
 
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 

@@ -212,6 +212,9 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
 
   private Map<DataSuppression, Set<DataType>> getDataTypesForRedactionOrObfuscation(
       RequestContext requestContext) {
+    if (!configServiceCoordinator.isDataClassificationEnabled(requestContext)) {
+      return Collections.emptyMap();
+    }
     List<DataSet> dataSets = configServiceCoordinator.getAllDataSets(requestContext);
     List<DataType> dataTypes = configServiceCoordinator.getAllDataTypes(requestContext);
     Map<String, DataType> dataTypeToIdMap =

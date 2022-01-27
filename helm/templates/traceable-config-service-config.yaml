@@ -55,6 +55,10 @@ data:
       port = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.port }}
       cache.expiry.duration = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.cacheExpiryDuration }}
     }
+    feature.flag.service.config = {
+      host = {{ .Values.traceableConfigServiceConfig.featureFlagServiceConfig.host }}
+      port = {{ .Values.traceableConfigServiceConfig.featureFlagServiceConfig.port }}
+    }
     anomaly.config.service = {
       include "anomaly.conf"
     }

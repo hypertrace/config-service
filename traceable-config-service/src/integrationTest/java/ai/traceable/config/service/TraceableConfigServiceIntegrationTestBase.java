@@ -28,6 +28,7 @@ public class TraceableConfigServiceIntegrationTestBase {
   protected static ManagedChannel managedChannelForExternalServices;
   private static Server mockInsightsServer;
   private static Server mockLicenseMeteringServer;
+  private static Server mockFeatureFlagServer;
 
   @BeforeAll
   static void setup() throws IOException {
@@ -48,6 +49,8 @@ public class TraceableConfigServiceIntegrationTestBase {
                     new MockLicenseMeteringService(), new TestInterceptor()))
             .build()
             .start();
+    mockFeatureFlagServer =
+        ServerBuilder.forPort(60097).addService(new MockFeatureFlagService()).build().start();
   }
 
   @AfterAll
@@ -57,6 +60,7 @@ public class TraceableConfigServiceIntegrationTestBase {
     IntegrationTestServerUtil.shutdownServices();
     mockInsightsServer.shutdown();
     mockLicenseMeteringServer.shutdown();
+    mockFeatureFlagServer.shutdown();
   }
 
   private static Collection getConfigurationsCollection() {

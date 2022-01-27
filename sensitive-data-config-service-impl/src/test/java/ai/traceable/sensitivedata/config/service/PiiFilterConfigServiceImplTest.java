@@ -24,6 +24,8 @@ import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataSetsResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
+import ai.traceable.featureflag.client.future.FeatureFlagCurrentValueClient;
+import ai.traceable.featureflag.v1.FeatureFlagValue;
 import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.DropUnparsedJsonPolicy;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigRequest;
@@ -42,6 +44,7 @@ import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -250,6 +253,14 @@ class PiiFilterConfigServiceImplTest {
     when(mockConfig.defaultFullPrivacyMode()).thenReturn(defaultFullPrivacyMode);
     when(mockConfig.defaultRedactionRules()).thenReturn(defaultRedactionRules);
 
+    FeatureFlagCurrentValueClient featureFlagCurrentValueClient =
+        mock(FeatureFlagCurrentValueClient.class);
+    CompletableFuture<Map<String, FeatureFlagValue>> mapCompletableFuture =
+        CompletableFuture.completedFuture(
+            Map.of(
+                "data-classification.mvp", FeatureFlagValue.newBuilder().setBoolean(true).build()));
+    when(featureFlagCurrentValueClient.getCurrentValues(any())).thenReturn(mapCompletableFuture);
+
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(channel);
@@ -272,7 +283,8 @@ class PiiFilterConfigServiceImplTest {
                         configServiceBlockingStub, configChangeEventGenerator),
                     new DefaultRedactionRulePopulationStatusStore(
                         configServiceBlockingStub, configChangeEventGenerator),
-                    DataClassificationConfigServiceGrpc.newBlockingStub(channel)),
+                    DataClassificationConfigServiceGrpc.newBlockingStub(channel),
+                    featureFlagCurrentValueClient),
                 new InsightsServiceCoordinatorImpl(InsightsServiceGrpc.newBlockingStub(channel)),
                 new UuidGenerator()))
         .addService(new MockDataClassificationConfigService())

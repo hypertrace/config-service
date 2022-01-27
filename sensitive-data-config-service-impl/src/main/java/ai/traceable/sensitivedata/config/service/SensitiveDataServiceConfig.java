@@ -16,6 +16,7 @@ class SensitiveDataServiceConfig {
       "sensitive.data.config.service";
 
   private static final String INSIGHTS_SERVICE_CONFIG = "insights.service.config";
+  private static final String FEATURE_FLAG_SERVICE_CONFIG = "feature.flag.service.config";
   private static final String DEFAULT_PII_FILTER_CONFIG = "default.pii.filter.config";
   private static final String DEFAULT_REDACTION_RULES = "default.redaction.rules";
   private static final String PREPOPULATED_REDACTION_RULES = "default.prepopulated.redaction.rules";
@@ -69,6 +70,12 @@ class SensitiveDataServiceConfig {
     return channelRegistry.forAddress(
         config.getConfig(INSIGHTS_SERVICE_CONFIG).getString("host"),
         config.getConfig(INSIGHTS_SERVICE_CONFIG).getInt("port"));
+  }
+
+  Channel featureFlagServiceChannel() {
+    return channelRegistry.forPlaintextAddress(
+        config.getConfig(FEATURE_FLAG_SERVICE_CONFIG).getString("host"),
+        config.getConfig(FEATURE_FLAG_SERVICE_CONFIG).getInt("port"));
   }
 
   private DefaultRedactionRules buildDefaultRedactionRules() {

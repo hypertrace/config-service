@@ -11,6 +11,7 @@ dependencies {
 
   implementation(libs.hypertrace.configservice.api)
   implementation(libs.traceable.insights.api)
+  implementation(libs.traceable.featureFlag.futureClient)
   implementation(libs.guava)
   implementation(libs.protobuf.javautil)
   implementation(libs.typesafe.config)

@@ -53,4 +53,6 @@ interface ConfigServiceCoordinator {
   public List<DataType> getAllDataTypes(RequestContext requestContext);
 
   public List<DataSet> getAllDataSets(RequestContext requestContext);
+
+  boolean isDataClassificationEnabled(RequestContext requestContext);
 }

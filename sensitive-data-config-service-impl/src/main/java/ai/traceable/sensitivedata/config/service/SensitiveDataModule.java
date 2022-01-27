@@ -2,6 +2,7 @@ package ai.traceable.sensitivedata.config.service;
 
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
+import ai.traceable.featureflag.client.future.FeatureFlagCurrentValueClient;
 import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc;
 import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc.InsightsServiceBlockingStub;
 import com.google.inject.AbstractModule;
@@ -60,5 +61,11 @@ class SensitiveDataModule extends AbstractModule {
     return DataClassificationConfigServiceGrpc.newBlockingStub(this.configChannel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  FeatureFlagCurrentValueClient providesFeatureFlagCurrentValueClient(
+      SensitiveDataServiceConfig config) {
+    return new FeatureFlagCurrentValueClient(config.featureFlagServiceChannel());
   }
 }

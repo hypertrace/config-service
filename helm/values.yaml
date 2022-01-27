@@ -99,6 +99,9 @@ traceableConfigServiceConfig:
     host: license-metering-service
     port: 51018
     cacheExpiryDuration: 5m
+  featureFlagServiceConfig:
+    host: feature-flag-service
+    port: 51001
   labelApplicationRuleConfigServiceConfig:
     maxDynamicLabelApplicationRulesPerTenant: 100
 

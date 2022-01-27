@@ -92,6 +92,7 @@ dependencies {
   runtimeOnly(libs.slf4j.log4jimpl)
 
   testFixturesImplementation(libs.traceable.insights.api)
+  testFixturesImplementation(libs.traceable.featureFlag.futureClient)
   testFixturesImplementation(libs.traceable.licensemetering.api)
   testFixturesImplementation(libs.hypertrace.grpcutils.context)
   testFixturesImplementation(libs.hypertrace.grpcutils.client)
@@ -99,6 +100,7 @@ dependencies {
   // Integration test dependencies
   integrationTestImplementation(testFixtures(projects.traceableConfigService))
   integrationTestImplementation(libs.traceable.insights.api)
+  integrationTestImplementation(libs.traceable.featureFlag.futureClient)
   integrationTestImplementation(libs.traceable.licensemetering.api)
   integrationTestImplementation(libs.junit.jupiter)
   integrationTestImplementation(libs.guava)
