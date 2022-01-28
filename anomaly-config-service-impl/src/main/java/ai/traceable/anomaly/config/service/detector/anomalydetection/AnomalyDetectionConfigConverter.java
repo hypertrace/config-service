@@ -7,6 +7,7 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfigTyp
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiStateBasedAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.BlockingMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
@@ -48,6 +49,8 @@ public class AnomalyDetectionConfigConverter {
             mergeStateBasedDetectionConfigs(preferredConfig, fallbackConfig))
         .addAllAnomalyDetectionConfigs(
             mergeApiDefinitionDetectionConfigs(preferredConfig, fallbackConfig))
+        .addAllAnomalyDetectionConfigs(
+            mergeBlockingDetectionConfigs(preferredConfig, fallbackConfig))
         .build();
   }
 
@@ -73,12 +76,53 @@ public class AnomalyDetectionConfigConverter {
               AnomalyDetectionConfig.AnomalyDetectionConfigCase
                   .API_STATE_BASED_ANOMALY_DETECTION_CONFIG);
           break;
+        case ANOMALY_DETECTION_CONFIG_TYPE_BLOCKING_METADATA:
+          configCases.add(
+              AnomalyDetectionConfig.AnomalyDetectionConfigCase
+                  .BLOCKING_METADATA_ANOMALY_DETECTION_CONFIG);
+          break;
         default:
           break;
       }
     }
 
     return configCases;
+  }
+
+  /**
+   * @param preferredConfig
+   * @param fallbackConfig
+   * @return List of blocking detection configs merged using config case as a key
+   */
+  private List<AnomalyDetectionConfig> mergeBlockingDetectionConfigs(
+      ScopedAnomalyDetectionConfig preferredConfig, ScopedAnomalyDetectionConfig fallbackConfig) {
+    EnumMap<BlockingMetadataAnomalyDetectionConfig.ConfigCase, AnomalyDetectionConfig> configMap =
+        new EnumMap<>(BlockingMetadataAnomalyDetectionConfig.ConfigCase.class);
+
+    preferredConfig.getAnomalyDetectionConfigsList().stream()
+        .filter(AnomalyDetectionConfig::hasBlockingMetadataAnomalyDetectionConfig)
+        .forEach(
+            detectionConfig ->
+                configMap.put(
+                    detectionConfig.getBlockingMetadataAnomalyDetectionConfig().getConfigCase(),
+                    detectionConfig));
+
+    fallbackConfig.getAnomalyDetectionConfigsList().stream()
+        .filter(AnomalyDetectionConfig::hasBlockingMetadataAnomalyDetectionConfig)
+        .forEach(
+            detectionConfig -> {
+              BlockingMetadataAnomalyDetectionConfig.ConfigCase configCase =
+                  detectionConfig.getBlockingMetadataAnomalyDetectionConfig().getConfigCase();
+              if (configMap.containsKey(configCase)) {
+                configMap.put(
+                    configCase,
+                    detectionConfig.toBuilder().mergeFrom(configMap.get(configCase)).build());
+              } else {
+                configMap.put(configCase, detectionConfig);
+              }
+            });
+
+    return configMap.values().stream().collect(Collectors.toList());
   }
 
   /**

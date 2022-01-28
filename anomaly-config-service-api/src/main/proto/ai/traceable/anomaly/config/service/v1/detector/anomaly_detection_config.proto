@@ -12,6 +12,7 @@ enum AnomalyDetectionConfigType {
   ANOMALY_DETECTION_CONFIG_TYPE_API_DEFINITION = 2;
   ANOMALY_DETECTION_CONFIG_TYPE_API_STATE_BASED = 3;
   ANOMALY_DETECTION_CONFIG_TYPE_SESSION_DEFINITION = 4;
+  ANOMALY_DETECTION_CONFIG_TYPE_BLOCKING_METADATA = 5;
 }
 
 message AnomalyCategoryConfig {
@@ -75,6 +76,7 @@ message AnomalyDetectionConfig {
     ApiDefinitionMetadataAnomalyDetectionConfig api_definition_metadata_anomaly_detection_config = 6;
     ApiStateBasedAnomalyDetectionConfig api_state_based_anomaly_detection_config = 7;
     SessionDefinitionMetadataAnomalyDetectionConfig session_definition_metadata_anomaly_detection_config = 8;
+    BlockingMetadataAnomalyDetectionConfig blocking_metadata_anomaly_detection_config = 9;
   }
 }
 
@@ -83,23 +85,6 @@ message ModsecurityAnomalyDetectionConfig {
     ModsecurityAllDetectionConfig modsec_all_detection = 1;
     ModsecurityAnomalyRuleConfig modsec_anomaly_rule = 2;
   }
-}
-
-message ModsecurityAllDetectionConfig {
-  StringList excluded_params = 1;
-  optional bool enabled_on_all_entry_spans = 2;
-}
-
-message ModsecurityAnomalyRuleConfig {
-  string anomaly_rule_id = 1;
-  repeated AnomalySubRuleConfig sub_rule_configs = 2;
-}
-
-message AnomalySubRuleConfig {
-  string sub_rule_id = 1;
-  AnomalyConfigStatusChange config_status = 2;
-  AnomalyCategoryConfig category_config = 3;
-  optional bool blocking_enabled = 4;
 }
 
 message ApiDefinitionMetadataAnomalyDetectionConfig {
@@ -135,6 +120,27 @@ message SessionDefinitionMetadataAnomalyDetectionConfig {
     ObjectBolaAnomalyConfig object_bola = 2;
     UserIdBolaAnomalyConfig user_id_bola = 3;
   }
+}
+
+message BlockingMetadataAnomalyDetectionConfig {
+  oneof config {
+    CustomIpAnomalyConfig custom_ip = 1;
+    CustomRegionAnomalyConfig custom_region = 2;
+    CustomSignatureAnomalyConfig custom_signature = 3;
+    RateLimitAnomalyConfig rate_limit = 4;
+    ThreatActorAnomalyConfig threat_actor = 5;
+    SafeCrsAnomalyConfig safe_crs = 6;
+  }
+}
+
+message ModsecurityAllDetectionConfig {
+  StringList excluded_params = 1;
+  optional bool enabled_on_all_entry_spans = 2;
+}
+
+message ModsecurityAnomalyRuleConfig {
+  string anomaly_rule_id = 1;
+  repeated AnomalySubRuleConfig sub_rule_configs = 2;
 }
 
 message MissingParamAnomalyConfig {
@@ -242,6 +248,25 @@ message ObjectBolaAnomalyConfig {
 message UserIdBolaAnomalyConfig {
   optional double min_correlation_probability = 1;
   UserIdSource user_id_source = 2;
+}
+
+message CustomIpAnomalyConfig {}
+
+message CustomRegionAnomalyConfig {}
+
+message CustomSignatureAnomalyConfig {}
+
+message RateLimitAnomalyConfig {}
+
+message ThreatActorAnomalyConfig {}
+
+message SafeCrsAnomalyConfig {}
+
+message AnomalySubRuleConfig {
+  string sub_rule_id = 1;
+  AnomalyConfigStatusChange config_status = 2;
+  AnomalyCategoryConfig category_config = 3;
+  optional bool blocking_enabled = 4;
 }
 
 enum UserIdSource {

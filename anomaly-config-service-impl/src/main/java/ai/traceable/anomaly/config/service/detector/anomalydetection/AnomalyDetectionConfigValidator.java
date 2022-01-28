@@ -6,6 +6,7 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiStateBasedAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.BlockingMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
@@ -83,6 +84,19 @@ public class AnomalyDetectionConfigValidator {
             .collect(Collectors.toList());
 
     status = validateStateBasedDetectionConfigs(stateBasedDetectionConfigs);
+
+    if (!status.isOk()) {
+      return status;
+    }
+
+    List<BlockingMetadataAnomalyDetectionConfig> blockingAnomalyDetectionConfigs =
+        detectionConfigs.stream()
+            .filter(AnomalyDetectionConfig::hasBlockingMetadataAnomalyDetectionConfig)
+            .map(AnomalyDetectionConfig::getBlockingMetadataAnomalyDetectionConfig)
+            .collect(Collectors.toList());
+
+    status = validateBlockingDetectionConfigs(blockingAnomalyDetectionConfigs);
+
     return status;
   }
 
@@ -206,6 +220,25 @@ public class AnomalyDetectionConfigValidator {
           .collect(
               Collectors.toMap(
                   ApiStateBasedAnomalyDetectionConfig::getConfigCase,
+                  detectionConfig -> detectionConfig));
+    } catch (IllegalStateException e) {
+      return Status.INVALID_ARGUMENT.withDescription(e.getMessage());
+    }
+    return Status.OK;
+  }
+
+  /**
+   * @param blockingAnomalyDetectionConfigs
+   * @return Status.INVALID_ARGUMENT in case of presence of configs with same config case. Status.OK
+   *     in all other cases.
+   */
+  private Status validateBlockingDetectionConfigs(
+      List<BlockingMetadataAnomalyDetectionConfig> blockingAnomalyDetectionConfigs) {
+    try {
+      blockingAnomalyDetectionConfigs.stream()
+          .collect(
+              Collectors.toMap(
+                  BlockingMetadataAnomalyDetectionConfig::getConfigCase,
                   detectionConfig -> detectionConfig));
     } catch (IllegalStateException e) {
       return Status.INVALID_ARGUMENT.withDescription(e.getMessage());

@@ -12,7 +12,10 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiStateBasedAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.BlockingMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ContentSizeAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.CustomIpAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.CustomRegionAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.IntegerAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.LearntApiAnomalyConfig;
@@ -377,5 +380,50 @@ public class AnomalyDetectionConfigValidatorTest {
 
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(status.getDescription().contains("Invalid api definition detection config"));
+  }
+
+  @Test
+  void testBlockingUpdateValidation() {
+    UpdateScopedAnomalyDetectionConfigRequest request;
+
+    AnomalyDetectionConfig detectionConfig1 =
+        AnomalyDetectionConfig.newBuilder()
+            .setBlockingMetadataAnomalyDetectionConfig(
+                BlockingMetadataAnomalyDetectionConfig.newBuilder()
+                    .setCustomIp(CustomIpAnomalyConfig.getDefaultInstance())
+                    .build())
+            .build();
+
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig1, detectionConfig1)))
+            .build();
+
+    Status status = validator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("Duplicate key CUSTOM_IP"));
+
+    AnomalyDetectionConfig detectionConfig2 =
+        AnomalyDetectionConfig.newBuilder()
+            .setBlockingMetadataAnomalyDetectionConfig(
+                BlockingMetadataAnomalyDetectionConfig.newBuilder()
+                    .setCustomRegion(CustomRegionAnomalyConfig.getDefaultInstance())
+                    .build())
+            .build();
+
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig1, detectionConfig2)))
+            .build();
+
+    status = validator.validate(request);
+
+    assertEquals(Status.OK.getCode(), status.getCode());
   }
 }
