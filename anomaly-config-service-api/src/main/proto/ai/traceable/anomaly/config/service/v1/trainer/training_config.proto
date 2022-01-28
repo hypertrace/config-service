@@ -49,7 +49,7 @@ message UpdateScopedTrainingConfigResponse {
 }
 
 message TrainingConfig {
-  bool disabled = 1;
+  optional bool disabled = 1;
   oneof training_config {
     MetadataTrainingConfig metadata_training_config = 2;
     VulnerabilityTrainingConfig vulnerability_training_config = 3;
@@ -109,9 +109,7 @@ message PiiTrainingConfig {
   optional string high_age_frequency_duration = 5;
 }
 
-message DataClassificationTrainingConfig {
-  bool enabled = 1;
-}
+message DataClassificationTrainingConfig {}
 
 message EnumerationsTrainingConfig {
   optional int32 max_enumerations = 1;
