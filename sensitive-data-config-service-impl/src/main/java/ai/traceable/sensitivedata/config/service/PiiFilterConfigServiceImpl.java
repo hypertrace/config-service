@@ -107,8 +107,10 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
 
       Map<DataSuppression, Set<DataType>> dataTypesMap =
           getDataTypesForRedactionOrObfuscation(requestContext);
-      Set<DataType> dataTypesForRedaction = dataTypesMap.get(DATA_SUPPRESSION_REDACT);
-      Set<DataType> dataTypesForObfuscation = dataTypesMap.get(DATA_SUPPRESSION_OBFUSCATE);
+      Set<DataType> dataTypesForRedaction =
+          dataTypesMap.getOrDefault(DATA_SUPPRESSION_REDACT, Collections.emptySet());
+      Set<DataType> dataTypesForObfuscation =
+          dataTypesMap.getOrDefault(DATA_SUPPRESSION_OBFUSCATE, Collections.emptySet());
       mergeConfigFromDataTypes(
           dataTypesForRedaction,
           RedactionStrategy.REDACTION_STRATEGY_REDACT,
