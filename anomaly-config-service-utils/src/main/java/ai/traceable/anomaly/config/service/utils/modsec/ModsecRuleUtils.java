@@ -15,6 +15,14 @@ public class ModsecRuleUtils {
     return Long.parseLong(modsecRuleId.substring(MODSEC_RULE_PREFIX_LENGTH));
   }
 
+  public boolean isValidRuleId(String ruleId) {
+    return ruleId.startsWith(MODSEC_RULE_PREFIX);
+  }
+
+  public boolean isValidSubRuleId(String subRuleId, String ruleId) {
+    return subRuleId.startsWith(ruleId);
+  }
+
   public String getModsecParentRuleId(String modsecRuleId) {
     return modsecRuleId.substring(0, MODSEC_PARENT_RULE_ID_LENGTH);
   }

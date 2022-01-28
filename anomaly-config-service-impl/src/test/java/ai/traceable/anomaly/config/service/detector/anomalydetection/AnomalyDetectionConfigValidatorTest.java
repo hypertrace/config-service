@@ -7,6 +7,7 @@ import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
+import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
@@ -31,6 +32,7 @@ import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetect
 import ai.traceable.anomaly.config.service.v1.detector.UserIdBolaAnomalyConfig;
 import io.grpc.Status;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 public class AnomalyDetectionConfigValidatorTest {
@@ -40,7 +42,8 @@ public class AnomalyDetectionConfigValidatorTest {
       new AnomalyDetectionConfigValidator(
           anomalyConfigValidator,
           new ApiDefinitionRegistryImpl(new ConfigConverter()),
-          new SessionRulesRegistryImpl(new ConfigConverter()));
+          new SessionRulesRegistryImpl(new ConfigConverter()),
+          new ModsecRuleUtils());
   private final AnomalyConfigScope configScope =
       AnomalyConfigScope.newBuilder()
           .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
@@ -77,7 +80,7 @@ public class AnomalyDetectionConfigValidatorTest {
                 ModsecurityAnomalyDetectionConfig.newBuilder()
                     .setModsecAnomalyRule(
                         ModsecurityAnomalyRuleConfig.newBuilder()
-                            .setAnomalyRuleId("rule1")
+                            .setAnomalyRuleId("crs_rule1")
                             .build()))
             .build();
     anomalyDetectionConfig2 =
@@ -86,7 +89,7 @@ public class AnomalyDetectionConfigValidatorTest {
                 ModsecurityAnomalyDetectionConfig.newBuilder()
                     .setModsecAnomalyRule(
                         ModsecurityAnomalyRuleConfig.newBuilder()
-                            .setAnomalyRuleId("rule1")
+                            .setAnomalyRuleId("crs_rule1")
                             .build()))
             .build();
     updateRequest =
@@ -103,10 +106,12 @@ public class AnomalyDetectionConfigValidatorTest {
 
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(
-        status.getDescription().contains("should have only one modsec config with ruleId: rule1"));
+        status
+            .getDescription()
+            .contains("should have only one modsec config with ruleId: crs_rule1"));
 
-    subRuleConfig1 = AnomalySubRuleConfig.newBuilder().setSubRuleId("subRule1").build();
-    subRuleConfig2 = AnomalySubRuleConfig.newBuilder().setSubRuleId("subRule1").build();
+    subRuleConfig1 = AnomalySubRuleConfig.newBuilder().setSubRuleId("crs_rule1_sub").build();
+    subRuleConfig2 = AnomalySubRuleConfig.newBuilder().setSubRuleId("crs_rule2_sub").build();
 
     anomalyDetectionConfig1 =
         AnomalyDetectionConfig.newBuilder()
@@ -114,8 +119,8 @@ public class AnomalyDetectionConfigValidatorTest {
                 ModsecurityAnomalyDetectionConfig.newBuilder()
                     .setModsecAnomalyRule(
                         ModsecurityAnomalyRuleConfig.newBuilder()
-                            .setAnomalyRuleId("rule1")
-                            .addAllSubRuleConfigs(List.of(subRuleConfig1, subRuleConfig2))
+                            .setAnomalyRuleId("crs_rule1")
+                            .addAllSubRuleConfigs(List.of(subRuleConfig1, subRuleConfig1))
                             .build()))
             .build();
     updateRequest =
@@ -134,7 +139,7 @@ public class AnomalyDetectionConfigValidatorTest {
         status
             .getDescription()
             .contains(
-                "should have only one subRule config with subRuleId: subRule1 in modsec config with ruleId: rule1"));
+                "should have only one subRule config with subRuleId: crs_rule1_sub in modsec config with ruleId: crs_rule1"));
 
     AnomalyDetectionConfig modsecAllDetectionConfig =
         AnomalyDetectionConfig.newBuilder()
@@ -168,7 +173,7 @@ public class AnomalyDetectionConfigValidatorTest {
                 ModsecurityAnomalyDetectionConfig.newBuilder()
                     .setModsecAnomalyRule(
                         ModsecurityAnomalyRuleConfig.newBuilder()
-                            .setAnomalyRuleId("rule1")
+                            .setAnomalyRuleId("crs_rule1")
                             .addSubRuleConfigs(subRuleConfig1)
                             .build()))
             .build();
@@ -178,8 +183,8 @@ public class AnomalyDetectionConfigValidatorTest {
                 ModsecurityAnomalyDetectionConfig.newBuilder()
                     .setModsecAnomalyRule(
                         ModsecurityAnomalyRuleConfig.newBuilder()
-                            .setAnomalyRuleId("rule2")
-                            .addSubRuleConfigs(subRuleConfig1)
+                            .setAnomalyRuleId("crs_rule2")
+                            .addSubRuleConfigs(subRuleConfig2)
                             .build()))
             .build();
     updateRequest =
@@ -188,16 +193,26 @@ public class AnomalyDetectionConfigValidatorTest {
                 ScopedAnomalyDetectionConfig.newBuilder()
                     .setConfigScope(configScope)
                     .addAllAnomalyDetectionConfigs(
-                        List.of(
-                            anomalyDetectionConfig1,
-                            anomalyDetectionConfig2,
-                            modsecAllDetectionConfig))
+                        List.of(anomalyDetectionConfig1, anomalyDetectionConfig2))
                     .build())
             .build();
 
     status = validator.validate(updateRequest);
 
     assertEquals(Status.OK.getCode(), status.getCode());
+
+    anomalyDetectionConfig2 = buildModSecConfig("rule1", Optional.empty());
+    updateRequest = buildUpdateRequest(List.of(anomalyDetectionConfig2));
+    status = validator.validate(updateRequest);
+    assertTrue(status.getDescription().contains("Invalid modsec ruleId rule1 for rule"));
+
+    anomalyDetectionConfig2 = buildModSecConfig("crs_1", Optional.of("subRule"));
+    updateRequest = buildUpdateRequest(List.of(anomalyDetectionConfig2));
+    status = validator.validate(updateRequest);
+    assertTrue(
+        status
+            .getDescription()
+            .contains("Invalid subRuleId subRule in modsec config with ruleId crs_1"));
   }
 
   @Test
@@ -524,5 +539,27 @@ public class AnomalyDetectionConfigValidatorTest {
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(
         status.getDescription().contains("Invalid session definition metadata detection config"));
+  }
+
+  private AnomalyDetectionConfig buildModSecConfig(String ruleId, Optional<String> subRuleId) {
+    ModsecurityAnomalyRuleConfig.Builder builder =
+        ModsecurityAnomalyRuleConfig.newBuilder().setAnomalyRuleId(ruleId);
+    subRuleId.ifPresent(
+        id -> builder.addSubRuleConfigs(AnomalySubRuleConfig.newBuilder().setSubRuleId(id)));
+    return AnomalyDetectionConfig.newBuilder()
+        .setModsecurityAnomalyDetectionConfig(
+            ModsecurityAnomalyDetectionConfig.newBuilder().setModsecAnomalyRule(builder))
+        .build();
+  }
+
+  private UpdateScopedAnomalyDetectionConfigRequest buildUpdateRequest(
+      List<AnomalyDetectionConfig> anomalyDetectionConfigs) {
+    return UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+        .setScopedAnomalyDetectionConfig(
+            ScopedAnomalyDetectionConfig.newBuilder()
+                .setConfigScope(configScope)
+                .addAllAnomalyDetectionConfigs(anomalyDetectionConfigs)
+                .build())
+        .build();
   }
 }

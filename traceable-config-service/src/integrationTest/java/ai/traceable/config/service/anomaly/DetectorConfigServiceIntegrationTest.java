@@ -114,10 +114,10 @@ public class DetectorConfigServiceIntegrationTest
                         ModsecurityAnomalyDetectionConfig.newBuilder()
                             .setModsecAnomalyRule(
                                 ModsecurityAnomalyRuleConfig.newBuilder()
-                                    .setAnomalyRuleId("rule1")
+                                    .setAnomalyRuleId("crs_rule1")
                                     .addSubRuleConfigs(
                                         AnomalySubRuleConfig.newBuilder()
-                                            .setSubRuleId("subRule1")
+                                            .setSubRuleId("crs_rule1_sub")
                                             .setCategoryConfig(
                                                 AnomalyCategoryConfig.newBuilder()
                                                     .setEventCategory(
@@ -167,10 +167,10 @@ public class DetectorConfigServiceIntegrationTest
                         ModsecurityAnomalyDetectionConfig.newBuilder()
                             .setModsecAnomalyRule(
                                 ModsecurityAnomalyRuleConfig.newBuilder()
-                                    .setAnomalyRuleId("rule1")
+                                    .setAnomalyRuleId("crs_rule1")
                                     .addSubRuleConfigs(
                                         AnomalySubRuleConfig.newBuilder()
-                                            .setSubRuleId("subRule1")
+                                            .setSubRuleId("crs_rule1_sub")
                                             .setCategoryConfig(
                                                 AnomalyCategoryConfig.newBuilder()
                                                     .setEventCategory(
@@ -221,10 +221,10 @@ public class DetectorConfigServiceIntegrationTest
                         ModsecurityAnomalyDetectionConfig.newBuilder()
                             .setModsecAnomalyRule(
                                 ModsecurityAnomalyRuleConfig.newBuilder()
-                                    .setAnomalyRuleId("rule1")
+                                    .setAnomalyRuleId("crs_rule1")
                                     .addSubRuleConfigs(
                                         AnomalySubRuleConfig.newBuilder()
-                                            .setSubRuleId("subRule1")
+                                            .setSubRuleId("crs_rule1_sub")
                                             .setCategoryConfig(
                                                 AnomalyCategoryConfig.newBuilder()
                                                     .setEventCategory(
@@ -290,10 +290,10 @@ public class DetectorConfigServiceIntegrationTest
                         ModsecurityAnomalyDetectionConfig.newBuilder()
                             .setModsecAnomalyRule(
                                 ModsecurityAnomalyRuleConfig.newBuilder()
-                                    .setAnomalyRuleId("rule1")
+                                    .setAnomalyRuleId("crs_rule1")
                                     .addSubRuleConfigs(
                                         AnomalySubRuleConfig.newBuilder()
-                                            .setSubRuleId("subRule1")
+                                            .setSubRuleId("crs_rule1_sub")
                                             .setCategoryConfig(
                                                 AnomalyCategoryConfig.newBuilder()
                                                     .setEventCategory(
@@ -330,10 +330,10 @@ public class DetectorConfigServiceIntegrationTest
                         ModsecurityAnomalyDetectionConfig.newBuilder()
                             .setModsecAnomalyRule(
                                 ModsecurityAnomalyRuleConfig.newBuilder()
-                                    .setAnomalyRuleId("rule1")
+                                    .setAnomalyRuleId("crs_rule1")
                                     .addSubRuleConfigs(
                                         AnomalySubRuleConfig.newBuilder()
-                                            .setSubRuleId("subRule1")
+                                            .setSubRuleId("crs_rule1_sub")
                                             .setCategoryConfig(
                                                 AnomalyCategoryConfig.newBuilder()
                                                     .setEventCategory(
@@ -379,10 +379,10 @@ public class DetectorConfigServiceIntegrationTest
                         ModsecurityAnomalyDetectionConfig.newBuilder()
                             .setModsecAnomalyRule(
                                 ModsecurityAnomalyRuleConfig.newBuilder()
-                                    .setAnomalyRuleId("rule1")
+                                    .setAnomalyRuleId("crs_rule1")
                                     .addSubRuleConfigs(
                                         AnomalySubRuleConfig.newBuilder()
-                                            .setSubRuleId("subRule1")
+                                            .setSubRuleId("crs_rule1_sub")
                                             .setCategoryConfig(
                                                 AnomalyCategoryConfig.newBuilder()
                                                     .setEventCategory(

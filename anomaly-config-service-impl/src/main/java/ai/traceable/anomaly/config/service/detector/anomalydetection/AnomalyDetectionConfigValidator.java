@@ -3,6 +3,7 @@ package ai.traceable.anomaly.config.service.detector.anomalydetection;
 import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
+import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 
 public class AnomalyDetectionConfigValidator {
   private final AnomalyConfigValidator anomalyConfigValidator;
+  private final ModsecRuleUtils modsecRuleUtils;
   private final Map<String, ApiDefinitionMetadataAnomalyDetectionConfig> apiDefRuleIdToConfigMap;
   private final Map<String, SessionDefinitionMetadataAnomalyDetectionConfig>
       sessionDefRuleIdToConfigMap;
@@ -31,11 +33,13 @@ public class AnomalyDetectionConfigValidator {
   public AnomalyDetectionConfigValidator(
       AnomalyConfigValidator anomalyConfigValidator,
       ApiDefinitionRegistry apiDefinitionRegistry,
-      SessionRulesRegistry sessionRulesRegistry) {
+      SessionRulesRegistry sessionRulesRegistry,
+      ModsecRuleUtils modsecRuleUtils) {
     this.anomalyConfigValidator = anomalyConfigValidator;
     this.apiDefRuleIdToConfigMap = apiDefinitionRegistry.getApiDefRuleIdToDetectionConfigMap();
     this.sessionDefRuleIdToConfigMap =
         sessionRulesRegistry.getSessionDefRuleIdToDetectionConfigMap();
+    this.modsecRuleUtils = modsecRuleUtils;
   }
 
   public Status validate(GetScopedAnomalyDetectionConfigRequest request) {
@@ -253,6 +257,9 @@ public class AnomalyDetectionConfigValidator {
           return Status.INVALID_ARGUMENT.withDescription(
               "UpdateScopedAnomalyDetectionConfigRequest should have only one modsec config with ruleId: "
                   + ruleId);
+        } else if (!modsecRuleUtils.isValidRuleId(ruleId)) {
+          return Status.INVALID_ARGUMENT.withDescription(
+              String.format("Invalid modsec ruleId %s for rule %s", ruleId, modsecRuleConfig));
         } else {
           Map<String, AnomalySubRuleConfig> subRuleConfigMap = new HashMap<>();
           for (AnomalySubRuleConfig subRuleConfig : modsecRuleConfig.getSubRuleConfigsList()) {
@@ -263,6 +270,10 @@ public class AnomalyDetectionConfigValidator {
                       + subRuleId
                       + " in modsec config with ruleId: "
                       + ruleId);
+            } else if (!modsecRuleUtils.isValidSubRuleId(subRuleId, ruleId)) {
+              return Status.INVALID_ARGUMENT.withDescription(
+                  String.format(
+                      "Invalid subRuleId %s in modsec config with ruleId %s", subRuleId, ruleId));
             } else {
               subRuleConfigMap.put(subRuleId, subRuleConfig);
             }
