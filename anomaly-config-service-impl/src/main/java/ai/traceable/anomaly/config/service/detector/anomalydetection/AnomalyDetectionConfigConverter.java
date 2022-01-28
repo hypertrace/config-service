@@ -12,6 +12,7 @@ import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfig
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.SessionDefinitionMetadataAnomalyDetectionConfig;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import java.util.ArrayList;
@@ -51,6 +52,8 @@ public class AnomalyDetectionConfigConverter {
             mergeApiDefinitionDetectionConfigs(preferredConfig, fallbackConfig))
         .addAllAnomalyDetectionConfigs(
             mergeBlockingDetectionConfigs(preferredConfig, fallbackConfig))
+        .addAllAnomalyDetectionConfigs(
+            mergeSessionDefinitionMetadataConfigs(preferredConfig, fallbackConfig))
         .build();
   }
 
@@ -76,6 +79,11 @@ public class AnomalyDetectionConfigConverter {
               AnomalyDetectionConfig.AnomalyDetectionConfigCase
                   .API_STATE_BASED_ANOMALY_DETECTION_CONFIG);
           break;
+        case ANOMALY_DETECTION_CONFIG_TYPE_SESSION_DEFINITION:
+          configCases.add(
+              AnomalyDetectionConfig.AnomalyDetectionConfigCase
+                  .SESSION_DEFINITION_METADATA_ANOMALY_DETECTION_CONFIG);
+          break;
         case ANOMALY_DETECTION_CONFIG_TYPE_BLOCKING_METADATA:
           configCases.add(
               AnomalyDetectionConfig.AnomalyDetectionConfigCase
@@ -87,6 +95,63 @@ public class AnomalyDetectionConfigConverter {
     }
 
     return configCases;
+  }
+
+  private List<AnomalyDetectionConfig> mergeSessionDefinitionMetadataConfigs(
+      ScopedAnomalyDetectionConfig preferredConfig, ScopedAnomalyDetectionConfig fallbackConfig) {
+    EnumMap<SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase, AnomalyDetectionConfig>
+        configCaseMap =
+            new EnumMap<>(SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase.class);
+    Map<String, AnomalyDetectionConfig> ruleIdMap = new HashMap<>();
+
+    preferredConfig.getAnomalyDetectionConfigsList().stream()
+        .filter(AnomalyDetectionConfig::hasSessionDefinitionMetadataAnomalyDetectionConfig)
+        .forEach(
+            detectionConfig -> {
+              String ruleId =
+                  detectionConfig
+                      .getSessionDefinitionMetadataAnomalyDetectionConfig()
+                      .getAnomalyRuleId();
+              if (ruleId.isEmpty()) {
+                configCaseMap.put(
+                    detectionConfig
+                        .getSessionDefinitionMetadataAnomalyDetectionConfig()
+                        .getConfigCase(),
+                    detectionConfig);
+              } else {
+                ruleIdMap.put(ruleId, detectionConfig);
+              }
+            });
+
+    fallbackConfig.getAnomalyDetectionConfigsList().stream()
+        .filter(AnomalyDetectionConfig::hasSessionDefinitionMetadataAnomalyDetectionConfig)
+        .forEach(
+            detectionConfig -> {
+              SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase configCase =
+                  detectionConfig
+                      .getSessionDefinitionMetadataAnomalyDetectionConfig()
+                      .getConfigCase();
+              String ruleId =
+                  detectionConfig
+                      .getSessionDefinitionMetadataAnomalyDetectionConfig()
+                      .getAnomalyRuleId();
+              if (configCaseMap.containsKey(configCase)) {
+                configCaseMap.put(
+                    configCase,
+                    detectionConfig.toBuilder().mergeFrom(configCaseMap.get(configCase)).build());
+              } else if (ruleIdMap.containsKey(ruleId)) {
+                ruleIdMap.put(
+                    ruleId, detectionConfig.toBuilder().mergeFrom(ruleIdMap.get(ruleId)).build());
+              } else {
+                configCaseMap.put(configCase, detectionConfig);
+              }
+            });
+
+    List<AnomalyDetectionConfig> resolvedConfigs = new ArrayList<>();
+    resolvedConfigs.addAll(configCaseMap.values());
+    resolvedConfigs.addAll(ruleIdMap.values());
+
+    return resolvedConfigs;
   }
 
   /**

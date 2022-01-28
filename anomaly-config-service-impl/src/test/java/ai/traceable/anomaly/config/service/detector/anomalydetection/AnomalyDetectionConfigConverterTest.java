@@ -24,7 +24,10 @@ import ai.traceable.anomaly.config.service.v1.detector.LearntApiAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAllDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ObjectBolaAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.SessionDefinitionMetadataAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.UserIdBolaAnomalyConfig;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import java.util.List;
@@ -408,6 +411,124 @@ public class AnomalyDetectionConfigConverterTest {
   }
 
   @Test
+  void testSessionDefinitionMetadataDetectionConfigsConvert()
+      throws InvalidProtocolBufferException {
+    ScopedAnomalyDetectionConfig config1 =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setConfigStatus(
+                        AnomalyConfigStatusChange.newBuilder()
+                            .setDisabled(true)
+                            .setInternal(true)
+                            .build())
+                    .setSessionDefinitionMetadataAnomalyDetectionConfig(
+                        SessionDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                            .setObjectBola(
+                                ObjectBolaAnomalyConfig.newBuilder()
+                                    .setMinCorrelationProbability(0.5)
+                                    .setAnySourceCorrelationProbability(0.6)
+                                    .build())
+                            .build())
+                    .build())
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setCategoryConfig(
+                        AnomalyCategoryConfig.newBuilder()
+                            .setEventScoreCategory(
+                                AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW)
+                            .setEventCategory(AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT))
+                    .setSessionDefinitionMetadataAnomalyDetectionConfig(
+                        SessionDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                            .setAnomalyRuleId("userIdBola")
+                            .build()))
+            .build();
+    ScopedAnomalyDetectionConfig config2 =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setCategoryConfig(
+                        AnomalyCategoryConfig.newBuilder()
+                            .setEventCategory(AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_MALICIOUS)
+                            .setEventScoreCategory(
+                                AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_HIGH))
+                    .setSessionDefinitionMetadataAnomalyDetectionConfig(
+                        SessionDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                            .setObjectBola(
+                                ObjectBolaAnomalyConfig.newBuilder()
+                                    .setDisabledForMissingPrecedingParam(true)
+                                    .build())))
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setSessionDefinitionMetadataAnomalyDetectionConfig(
+                        SessionDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                            .setAnomalyRuleId("userIdBola")
+                            .setUserIdBola(
+                                UserIdBolaAnomalyConfig.newBuilder()
+                                    .setMinCorrelationProbability(0.8))))
+            .build();
+    Value value = detectionConfigConverter.convert(config1);
+    assertEquals(config1, detectionConfigConverter.convert(value));
+
+    ScopedAnomalyDetectionConfig mergedConfig = detectionConfigConverter.merge(config2, config1);
+
+    AnomalyDetectionConfig detectionConfig =
+        getAnomalyDetectionConfig(
+            mergedConfig.getAnomalyDetectionConfigsList(),
+            SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase.OBJECT_BOLA);
+
+    assertTrue(detectionConfig.getConfigStatus().getDisabled());
+    assertTrue(detectionConfig.getConfigStatus().getInternal());
+    assertEquals(
+        AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_MALICIOUS,
+        detectionConfig.getCategoryConfig().getEventCategory());
+    assertEquals(
+        AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_HIGH,
+        detectionConfig.getCategoryConfig().getEventScoreCategory());
+    assertEquals(
+        SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase.OBJECT_BOLA,
+        detectionConfig.getSessionDefinitionMetadataAnomalyDetectionConfig().getConfigCase());
+    assertEquals(
+        0.5,
+        detectionConfig
+            .getSessionDefinitionMetadataAnomalyDetectionConfig()
+            .getObjectBola()
+            .getMinCorrelationProbability());
+    assertEquals(
+        0.6,
+        detectionConfig
+            .getSessionDefinitionMetadataAnomalyDetectionConfig()
+            .getObjectBola()
+            .getAnySourceCorrelationProbability());
+    assertTrue(
+        detectionConfig
+            .getSessionDefinitionMetadataAnomalyDetectionConfig()
+            .getObjectBola()
+            .getDisabledForMissingPrecedingParam());
+
+    detectionConfig =
+        getAnomalyDetectionConfig(
+            mergedConfig.getAnomalyDetectionConfigsList(),
+            SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase.USER_ID_BOLA);
+
+    assertEquals(
+        AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT,
+        detectionConfig.getCategoryConfig().getEventCategory());
+    assertEquals(
+        AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW,
+        detectionConfig.getCategoryConfig().getEventScoreCategory());
+    assertEquals(
+        "userIdBola",
+        detectionConfig.getSessionDefinitionMetadataAnomalyDetectionConfig().getAnomalyRuleId());
+    assertEquals(
+        0.8,
+        detectionConfig
+            .getSessionDefinitionMetadataAnomalyDetectionConfig()
+            .getUserIdBola()
+            .getMinCorrelationProbability());
+  }
+
+  @Test
   void testBlockingDetectionConfigsConvert() throws InvalidProtocolBufferException {
     ScopedAnomalyDetectionConfig config1 =
         ScopedAnomalyDetectionConfig.newBuilder()
@@ -464,6 +585,18 @@ public class AnomalyDetectionConfigConverterTest {
     for (AnomalyDetectionConfig detectionConfig : detectionConfigs) {
       if (detectionConfig
           .getApiDefinitionMetadataAnomalyDetectionConfig()
+          .getConfigCase()
+          .equals(configCase)) return detectionConfig;
+    }
+    return null;
+  }
+
+  private AnomalyDetectionConfig getAnomalyDetectionConfig(
+      List<AnomalyDetectionConfig> detectionConfigs,
+      SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase configCase) {
+    for (AnomalyDetectionConfig detectionConfig : detectionConfigs) {
+      if (detectionConfig
+          .getSessionDefinitionMetadataAnomalyDetectionConfig()
           .getConfigCase()
           .equals(configCase)) return detectionConfig;
     }

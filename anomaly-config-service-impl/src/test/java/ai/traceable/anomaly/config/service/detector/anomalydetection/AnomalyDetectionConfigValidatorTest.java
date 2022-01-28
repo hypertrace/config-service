@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
+import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
@@ -22,9 +23,12 @@ import ai.traceable.anomaly.config.service.v1.detector.LearntApiAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAllDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ObjectBolaAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.SessionDefinitionMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UnderDiscoveryApiAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigRequest;
+import ai.traceable.anomaly.config.service.v1.detector.UserIdBolaAnomalyConfig;
 import io.grpc.Status;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -34,7 +38,9 @@ public class AnomalyDetectionConfigValidatorTest {
   private final AnomalyConfigValidator anomalyConfigValidator = new AnomalyConfigValidator();
   private final AnomalyDetectionConfigValidator validator =
       new AnomalyDetectionConfigValidator(
-          anomalyConfigValidator, new ApiDefinitionRegistryImpl(new ConfigConverter()));
+          anomalyConfigValidator,
+          new ApiDefinitionRegistryImpl(new ConfigConverter()),
+          new SessionRulesRegistryImpl(new ConfigConverter()));
   private final AnomalyConfigScope configScope =
       AnomalyConfigScope.newBuilder()
           .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
@@ -425,5 +431,98 @@ public class AnomalyDetectionConfigValidatorTest {
     status = validator.validate(request);
 
     assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
+  void testSessionDefinitionMetadataUpdateValidation() {
+    UpdateScopedAnomalyDetectionConfigRequest request;
+
+    AnomalyDetectionConfig detectionConfig1 =
+        AnomalyDetectionConfig.newBuilder()
+            .setSessionDefinitionMetadataAnomalyDetectionConfig(
+                SessionDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                    .setAnomalyRuleId("rule1")
+                    .setObjectBola(ObjectBolaAnomalyConfig.getDefaultInstance()))
+            .build();
+
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig1)))
+            .build();
+
+    Status status = validator.validate(request);
+
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(
+        status
+            .getDescription()
+            .contains("Invalid session definition metadata detection config ruleId: rule1"));
+
+    detectionConfig1 =
+        AnomalyDetectionConfig.newBuilder()
+            .setSessionDefinitionMetadataAnomalyDetectionConfig(
+                SessionDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                    .setObjectBola(ObjectBolaAnomalyConfig.getDefaultInstance()))
+            .build();
+
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig1, detectionConfig1)))
+            .build();
+
+    status = validator.validate(request);
+
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    System.out.println(status.getDescription());
+    assertTrue(
+        status
+            .getDescription()
+            .contains(
+                "should have only one session definition metadata detection config for configCase: OBJECT_BOLA"));
+
+    AnomalyDetectionConfig detectionConfig2 =
+        AnomalyDetectionConfig.newBuilder()
+            .setSessionDefinitionMetadataAnomalyDetectionConfig(
+                SessionDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                    .setAnomalyRuleId("userIdBola")
+                    .setUserIdBola(UserIdBolaAnomalyConfig.getDefaultInstance()))
+            .build();
+
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig1, detectionConfig2)))
+            .build();
+
+    status = validator.validate(request);
+
+    assertEquals(Status.OK.getCode(), status.getCode());
+
+    detectionConfig1 =
+        AnomalyDetectionConfig.newBuilder()
+            .setSessionDefinitionMetadataAnomalyDetectionConfig(
+                SessionDefinitionMetadataAnomalyDetectionConfig.getDefaultInstance())
+            .build();
+
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig1)))
+            .build();
+    status = validator.validate(request);
+
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(
+        status.getDescription().contains("Invalid session definition metadata detection config"));
   }
 }

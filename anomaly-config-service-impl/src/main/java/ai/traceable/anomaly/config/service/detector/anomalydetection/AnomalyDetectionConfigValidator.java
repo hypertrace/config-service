@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.detector.anomalydetection;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
+import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
@@ -10,6 +11,7 @@ import ai.traceable.anomaly.config.service.v1.detector.BlockingMetadataAnomalyDe
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
+import ai.traceable.anomaly.config.service.v1.detector.SessionDefinitionMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigRequest;
 import com.google.inject.Inject;
 import io.grpc.Status;
@@ -22,12 +24,18 @@ import java.util.stream.Collectors;
 public class AnomalyDetectionConfigValidator {
   private final AnomalyConfigValidator anomalyConfigValidator;
   private final Map<String, ApiDefinitionMetadataAnomalyDetectionConfig> apiDefRuleIdToConfigMap;
+  private final Map<String, SessionDefinitionMetadataAnomalyDetectionConfig>
+      sessionDefRuleIdToConfigMap;
 
   @Inject
   public AnomalyDetectionConfigValidator(
-      AnomalyConfigValidator anomalyConfigValidator, ApiDefinitionRegistry apiDefinitionRegistry) {
+      AnomalyConfigValidator anomalyConfigValidator,
+      ApiDefinitionRegistry apiDefinitionRegistry,
+      SessionRulesRegistry sessionRulesRegistry) {
     this.anomalyConfigValidator = anomalyConfigValidator;
     this.apiDefRuleIdToConfigMap = apiDefinitionRegistry.getApiDefRuleIdToDetectionConfigMap();
+    this.sessionDefRuleIdToConfigMap =
+        sessionRulesRegistry.getSessionDefRuleIdToDetectionConfigMap();
   }
 
   public Status validate(GetScopedAnomalyDetectionConfigRequest request) {
@@ -89,6 +97,19 @@ public class AnomalyDetectionConfigValidator {
       return status;
     }
 
+    List<SessionDefinitionMetadataAnomalyDetectionConfig>
+        sessionDefinitionMetadataDetectionConfigs =
+            detectionConfigs.stream()
+                .filter(AnomalyDetectionConfig::hasSessionDefinitionMetadataAnomalyDetectionConfig)
+                .map(AnomalyDetectionConfig::getSessionDefinitionMetadataAnomalyDetectionConfig)
+                .collect(Collectors.toList());
+
+    status = validateSessionDefinitionMetadataConfigs(sessionDefinitionMetadataDetectionConfigs);
+
+    if (!status.isOk()) {
+      return status;
+    }
+
     List<BlockingMetadataAnomalyDetectionConfig> blockingAnomalyDetectionConfigs =
         detectionConfigs.stream()
             .filter(AnomalyDetectionConfig::hasBlockingMetadataAnomalyDetectionConfig)
@@ -100,6 +121,59 @@ public class AnomalyDetectionConfigValidator {
     return status;
   }
 
+  private Status validateSessionDefinitionMetadataConfigs(
+      List<SessionDefinitionMetadataAnomalyDetectionConfig> sessionDefinitionMetadataConfigs) {
+    Map<String, SessionDefinitionMetadataAnomalyDetectionConfig> ruleIdMap = new HashMap<>();
+    EnumMap<
+            SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase,
+            SessionDefinitionMetadataAnomalyDetectionConfig>
+        configCaseMap =
+            new EnumMap<>(SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase.class);
+
+    for (SessionDefinitionMetadataAnomalyDetectionConfig detectionConfig :
+        sessionDefinitionMetadataConfigs) {
+      String ruleId = detectionConfig.getAnomalyRuleId();
+      SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase configCase =
+          detectionConfig.getConfigCase();
+      if (ruleId.isEmpty()) {
+        if (configCase.equals(
+            SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase.CONFIG_NOT_SET)) {
+          return Status.INVALID_ARGUMENT.withDescription(
+              "Invalid session definition metadata detection config");
+        }
+      } else {
+        if (!sessionDefRuleIdToConfigMap.containsKey(ruleId)) {
+          return Status.INVALID_ARGUMENT.withDescription(
+              "Invalid session definition metadata detection config ruleId: " + ruleId);
+        }
+        if (!configCase.equals(
+                SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase.CONFIG_NOT_SET)
+            && !configCase.equals(sessionDefRuleIdToConfigMap.get(ruleId).getConfigCase())) {
+          return Status.INVALID_ARGUMENT.withDescription(
+              "Invalid session definition metadata detection config type for ruleId: " + ruleId);
+        }
+      }
+
+      if (ruleIdMap.containsKey(ruleId)) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            "UpdateScopedAnomalyDetectionConfigRequest should have only one session definition metadata detection config for ruleId: "
+                + ruleId);
+      }
+
+      if (configCaseMap.containsKey(configCase)) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            "UpdateScopedAnomalyDetectionConfigRequest should have only one session definition metadata detection config for configCase: "
+                + configCase);
+      }
+
+      if (ruleId.isEmpty()) {
+        configCaseMap.put(configCase, detectionConfig);
+      } else {
+        ruleIdMap.put(ruleId, detectionConfig);
+      }
+    }
+    return Status.OK;
+  }
   /**
    * @param apiDefinitionDetectionConfigs
    * @return Status.INVALID_ARGUMENT in case both ruleId and config case are not present, ruleId is

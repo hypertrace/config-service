@@ -2,6 +2,7 @@ package ai.traceable.config.service.anomaly;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
@@ -17,10 +18,13 @@ import ai.traceable.anomaly.config.service.v1.detector.GetAllScopedAnomalyDetect
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ObjectBolaAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.SessionDefinitionMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigRequest;
 import ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeAll;
@@ -48,6 +52,44 @@ public class DetectorConfigServiceIntegrationTest
         DetectorConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Test
+  void testGetAndUpdateSessionDefinitionMetadataConfigs() {
+    ScopedAnomalyDetectionConfig detectionConfig;
+    assertThrows(
+        RuntimeException.class, () -> fetchDetectorConfig(AnomalyConfigScope.newBuilder().build()));
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            updateDetectorConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(AnomalyConfigScope.newBuilder().build())
+                    .build()));
+    detectionConfig =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .setConfigScope(serviceConfigScope)
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setSessionDefinitionMetadataAnomalyDetectionConfig(
+                        SessionDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                            .setObjectBola(
+                                ObjectBolaAnomalyConfig.newBuilder()
+                                    .setAnySourceCorrelationProbability(0.5)
+                                    .setDisabledForMissingPrecedingParam(true)
+                                    .build())
+                            .build()))
+            .build();
+    updateDetectorConfig(detectionConfig);
+    detectionConfig = fetchDetectorConfig(serviceConfigScope);
+    SessionDefinitionMetadataAnomalyDetectionConfig sessionDefinitionConfig =
+        detectionConfig.getAnomalyDetectionConfigsList().stream()
+            .filter(AnomalyDetectionConfig::hasSessionDefinitionMetadataAnomalyDetectionConfig)
+            .map(AnomalyDetectionConfig::getSessionDefinitionMetadataAnomalyDetectionConfig)
+            .collect(Collectors.toList())
+            .get(0);
+    assertEquals(0.5, sessionDefinitionConfig.getObjectBola().getAnySourceCorrelationProbability());
+    assertTrue(sessionDefinitionConfig.getObjectBola().getDisabledForMissingPrecedingParam());
   }
 
   @Test
