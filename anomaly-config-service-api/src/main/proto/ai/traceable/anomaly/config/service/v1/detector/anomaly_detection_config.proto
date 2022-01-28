@@ -130,6 +130,7 @@ message BlockingMetadataAnomalyDetectionConfig {
     RateLimitAnomalyConfig rate_limit = 4;
     ThreatActorAnomalyConfig threat_actor = 5;
     SafeCrsAnomalyConfig safe_crs = 6;
+    InAgentVulnerableLibraryConfig in_agent_vulnerable_library = 7;
   }
 }
 
@@ -261,6 +262,8 @@ message RateLimitAnomalyConfig {}
 message ThreatActorAnomalyConfig {}
 
 message SafeCrsAnomalyConfig {}
+
+message InAgentVulnerableLibraryConfig {}
 
 message AnomalySubRuleConfig {
   string sub_rule_id = 1;
