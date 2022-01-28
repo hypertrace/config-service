@@ -265,8 +265,8 @@ public class AnomalyDetectionConfigConverter {
               } else {
                 configStatusMap.put(
                     ruleId,
-                    configStatusMap.get(ruleId).toBuilder()
-                        .mergeFrom(anomalyDetectionConfig.getConfigStatus())
+                    anomalyDetectionConfig.getConfigStatus().toBuilder()
+                        .mergeFrom(configStatusMap.get(ruleId))
                         .build());
               }
             });
@@ -303,8 +303,8 @@ public class AnomalyDetectionConfigConverter {
               } else {
                 configCategoryMap.put(
                     ruleId,
-                    configCategoryMap.get(ruleId).toBuilder()
-                        .mergeFrom(anomalyDetectionConfig.getCategoryConfig())
+                    anomalyDetectionConfig.getCategoryConfig().toBuilder()
+                        .mergeFrom(configCategoryMap.get(ruleId))
                         .build());
               }
             });
