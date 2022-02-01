@@ -13,6 +13,7 @@ import ai.traceable.data.classification.config.service.v1.DataClassificationConf
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
 import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo;
+import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
 import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ApiScope;
@@ -52,8 +53,6 @@ class DataClassificationConfigServiceImplTest {
   Config mockConfig;
   private static final String DATA_CLASSIFICATION_CONFIG_SERVICE =
       "data.classification.config.service";
-  private static final String SYSTEM_DATASETS = "system.datasets";
-  private static final String SYSTEM_DATATYPES = "system.datatypes";
 
   @BeforeEach
   void setUp() {
@@ -69,9 +68,11 @@ class DataClassificationConfigServiceImplTest {
             new DataClassificationConfigServiceImpl(
                 new DataSetStore(genericStub, configChangeEventGenerator),
                 new DataTypeStore(genericStub, configChangeEventGenerator),
+                new DeletedDataSetStore(genericStub),
                 new DataSetConfigRequestValidator(),
                 new DataTypeConfigRequestValidator(),
-                mockConfig))
+                mockConfig,
+                null))
         .start();
     dataClassificationConfigServiceBlockingStub =
         DataClassificationConfigServiceGrpc.newBlockingStub(
@@ -120,9 +121,11 @@ class DataClassificationConfigServiceImplTest {
             new DataClassificationConfigServiceImpl(
                 new DataSetStore(genericStub, configChangeEventGenerator),
                 new DataTypeStore(genericStub, configChangeEventGenerator),
+                new DeletedDataSetStore(genericStub),
                 new DataSetConfigRequestValidator(),
                 new DataTypeConfigRequestValidator(),
-                mockConfig))
+                mockConfig,
+                null))
         .start();
     dataClassificationConfigServiceBlockingStub =
         DataClassificationConfigServiceGrpc.newBlockingStub(
@@ -179,9 +182,11 @@ class DataClassificationConfigServiceImplTest {
             new DataClassificationConfigServiceImpl(
                 new DataSetStore(genericStub, configChangeEventGenerator),
                 new DataTypeStore(genericStub, configChangeEventGenerator),
+                new DeletedDataSetStore(genericStub),
                 new DataSetConfigRequestValidator(),
                 new DataTypeConfigRequestValidator(),
-                mockConfig))
+                mockConfig,
+                null))
         .start();
     dataClassificationConfigServiceBlockingStub =
         DataClassificationConfigServiceGrpc.newBlockingStub(
@@ -193,6 +198,143 @@ class DataClassificationConfigServiceImplTest {
     assertEquals(
         List.of("datatype-1", "datatype-2"),
         response.getDataSetsList().get(0).getInfo().getDataTypeIdsList());
+  }
+
+  @Test
+  void deleteSystemDataSetTest() {
+    mockGenericConfigService.shutdown();
+    mockGenericConfigService =
+        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    ConfigServiceBlockingStub genericStub =
+        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    mockConfig = mock(Config.class);
+    when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(true);
+    String jsonString =
+        "{\n"
+            + "  \"system\": {\n"
+            + "    \"datasets\": [\n"
+            + "      {\n"
+            + "        \"id\": \"systemdataset\",\n"
+            + "        \"info\": {\n"
+            + "          \"name\": \"systemdatasetinfo\",\n"
+            + "          \"enabled\": \"true\",\n"
+            + "          \"data_type_ids\": [\n"
+            + "            \"datatype-1\",\n"
+            + "            \"datatype-2\"\n"
+            + "          ],\n"
+            + "          \"data_suppression\": \"DATA_SUPPRESSION_RAW\"\n"
+            + "        }\n"
+            + "      }\n"
+            + "    ]\n"
+            + "  }\n"
+            + "}";
+    Config dataClassificationConfig = ConfigFactory.parseString(jsonString);
+    when(mockConfig.getConfig(DATA_CLASSIFICATION_CONFIG_SERVICE))
+        .thenReturn(dataClassificationConfig);
+    mockGenericConfigService
+        .addService(
+            new DataClassificationConfigServiceImpl(
+                new DataSetStore(genericStub, configChangeEventGenerator),
+                new DataTypeStore(genericStub, configChangeEventGenerator),
+                new DeletedDataSetStore(genericStub),
+                new DataSetConfigRequestValidator(),
+                new DataTypeConfigRequestValidator(),
+                mockConfig,
+                null))
+        .start();
+    dataClassificationConfigServiceBlockingStub =
+        DataClassificationConfigServiceGrpc.newBlockingStub(
+            this.mockGenericConfigService.channel());
+    GetDataSetsRequest getRequest = GetDataSetsRequest.getDefaultInstance();
+    GetDataSetsResponse response =
+        dataClassificationConfigServiceBlockingStub.getDataSets(getRequest);
+    assertEquals(1, response.getDataSetsCount());
+    DeleteDataSetRequest deleteRequest =
+        DeleteDataSetRequest.newBuilder().setId("systemdataset").build();
+    dataClassificationConfigServiceBlockingStub.deleteDataSet(deleteRequest);
+    GetDataSetsResponse responseAfterDeletion =
+        dataClassificationConfigServiceBlockingStub.getDataSets(getRequest);
+    assertEquals(0, responseAfterDeletion.getDataSetsCount());
+  }
+
+  @Test
+  void updateDeletedSystemDataSetTest() {
+    mockGenericConfigService.shutdown();
+    mockGenericConfigService =
+        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    ConfigServiceBlockingStub genericStub =
+        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    mockConfig = mock(Config.class);
+    when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(true);
+    String jsonString =
+        "{\n"
+            + "  \"system\": {\n"
+            + "    \"datasets\": [\n"
+            + "      {\n"
+            + "        \"id\": \"systemdataset\",\n"
+            + "        \"info\": {\n"
+            + "          \"name\": \"systemdatasetinfo\",\n"
+            + "          \"enabled\": \"true\",\n"
+            + "          \"data_type_ids\": [\n"
+            + "            \"datatype-1\",\n"
+            + "            \"datatype-2\"\n"
+            + "          ],\n"
+            + "          \"data_suppression\": \"DATA_SUPPRESSION_RAW\"\n"
+            + "        }\n"
+            + "      }\n"
+            + "    ]\n"
+            + "  }\n"
+            + "}";
+    Config dataClassificationConfig = ConfigFactory.parseString(jsonString);
+    when(mockConfig.getConfig(DATA_CLASSIFICATION_CONFIG_SERVICE))
+        .thenReturn(dataClassificationConfig);
+    mockGenericConfigService
+        .addService(
+            new DataClassificationConfigServiceImpl(
+                new DataSetStore(genericStub, configChangeEventGenerator),
+                new DataTypeStore(genericStub, configChangeEventGenerator),
+                new DeletedDataSetStore(genericStub),
+                new DataSetConfigRequestValidator(),
+                new DataTypeConfigRequestValidator(),
+                mockConfig,
+                null))
+        .start();
+    dataClassificationConfigServiceBlockingStub =
+        DataClassificationConfigServiceGrpc.newBlockingStub(
+            this.mockGenericConfigService.channel());
+    UpdateDataSetRequest updateRequest =
+        UpdateDataSetRequest.newBuilder()
+            .setId("systemdataset")
+            .setInfo(
+                DataSetInfo.newBuilder()
+                    .setName("name-1")
+                    .setEnabled(true)
+                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW))
+            .build();
+    UpdateDataSetResponse updateResponse =
+        dataClassificationConfigServiceBlockingStub.updateDataSet(updateRequest);
+    assertEquals("name-1", updateResponse.getDataSet().getInfo().getName());
+    DeleteDataSetRequest deleteRequest =
+        DeleteDataSetRequest.newBuilder().setId("systemdataset").build();
+    dataClassificationConfigServiceBlockingStub.deleteDataSet(deleteRequest);
+    UpdateDataSetRequest updateRequest2 =
+        UpdateDataSetRequest.newBuilder()
+            .setId("systemdataset")
+            .setInfo(
+                DataSetInfo.newBuilder()
+                    .setName("name-2")
+                    .setEnabled(true)
+                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW))
+            .build();
+    Throwable exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> {
+              dataClassificationConfigServiceBlockingStub.updateDataSet(updateRequest2);
+            });
+    assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
   }
 
   @Test

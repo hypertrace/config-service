@@ -1,0 +1,7 @@
+syntax="proto3";
+
+package ai.traceable.data.classification.config.service.impl.v1;
+
+message DeletedSystemDataSet {
+  string id = 1;
+}

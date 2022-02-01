@@ -1,7 +1,9 @@
 package ai.traceable.data.classification.config.service;
 
 import static java.util.function.Function.identity;
+import static org.hypertrace.config.proto.converter.ConfigProtoConverter.convertToValue;
 
+import ai.traceable.data.classification.config.service.impl.v1.DeletedSystemDataset.DeletedSystemDataSet;
 import ai.traceable.data.classification.config.service.v1.CreateDataSetRequest;
 import ai.traceable.data.classification.config.service.v1.CreateDataSetResponse;
 import ai.traceable.data.classification.config.service.v1.CreateDataTypeRequest;
@@ -36,12 +38,15 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.ConfigObject;
+import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 class DataClassificationConfigServiceImpl extends DataClassificationConfigServiceImplBase {
   private final IdentifiedObjectStore<DataSet> dataSetStore;
   private final IdentifiedObjectStore<DataType> dataTypeStore;
+  private final IdentifiedObjectStore<DeletedSystemDataSet> deletedDataSetStore;
   private final DataSetConfigRequestValidator dataSetConfigRequestValidator;
   private final DataTypeConfigRequestValidator dataTypeConfigRequestValidator;
   private static final String DATA_CLASSIFICATION_CONFIG_SERVICE =
@@ -51,18 +56,23 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
   private final List<DataSet> systemDataSets;
   private final List<DataType> systemDataTypes;
   private final Map<String, DataSet> systemDataSetsToIdMap;
+  private final Optional<ConfigChangeEventGenerator> configChangeEventGenerator;
 
   @Inject
   public DataClassificationConfigServiceImpl(
       DataSetStore dataSetStore,
       DataTypeStore dataTypeStore,
+      DeletedDataSetStore deletedDataSetStore,
       DataSetConfigRequestValidator dataSetConfigRequestValidator,
       DataTypeConfigRequestValidator dataTypeConfigRequestValidator,
-      Config config) {
+      Config config,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     this.dataSetStore = dataSetStore;
     this.dataTypeStore = dataTypeStore;
+    this.deletedDataSetStore = deletedDataSetStore;
     this.dataSetConfigRequestValidator = dataSetConfigRequestValidator;
     this.dataTypeConfigRequestValidator = dataTypeConfigRequestValidator;
+    this.configChangeEventGenerator = Optional.ofNullable(configChangeEventGenerator);
     List<? extends com.typesafe.config.ConfigObject> systemDataSetsObjectList = null;
     List<? extends com.typesafe.config.ConfigObject> systemDataTypesObjectList = null;
     if (config.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)) {
@@ -203,10 +213,9 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.dataSetConfigRequestValidator.validateOrThrow(requestContext, request);
       Optional<DataSet> dataSetOptional =
-          this.dataSetStore.getData(requestContext, request.getId());
-      if (dataSetOptional.isEmpty()) {
-        dataSetOptional = Optional.ofNullable(systemDataSetsToIdMap.get(request.getId()));
-      }
+          this.dataSetStore
+              .getData(requestContext, request.getId())
+              .or(() -> this.getSystemDataSet(requestContext, request.getId()));
       DataSet dataSet = dataSetOptional.orElseThrow(Status.NOT_FOUND::asRuntimeException);
       responseObserver.onNext(GetDataSetResponse.newBuilder().setDataSet(dataSet).build());
       responseObserver.onCompleted();
@@ -221,6 +230,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.dataSetConfigRequestValidator.validateOrThrow(requestContext, request);
+      List<String> deletedSystemDataSetsIds = getDeletedSystemDataSets(requestContext);
       List<DataSet> tenantDataSets =
           this.dataSetStore.getAllObjects(requestContext).stream()
               .map(ConfigObject::getData)
@@ -229,7 +239,10 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
           tenantDataSets.stream().collect(Collectors.toUnmodifiableMap(DataSet::getId, identity()));
       List<DataSet> filteredSystemDataSets =
           systemDataSets.stream()
-              .filter(dataSet -> !tenantDataSetsToIdMap.containsKey(dataSet.getId()))
+              .filter(
+                  dataSet ->
+                      !tenantDataSetsToIdMap.containsKey(dataSet.getId())
+                          && !deletedSystemDataSetsIds.contains(dataSet.getId()))
               .collect(Collectors.toUnmodifiableList());
       responseObserver.onNext(
           GetDataSetsResponse.newBuilder()
@@ -248,11 +261,12 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.dataSetConfigRequestValidator.validateOrThrow(requestContext, request);
-      DataSet existingDataSet =
+      Optional<DataSet> existingDataSet =
           this.dataSetStore
               .getData(requestContext, request.getId())
-              .orElseThrow(Status.NOT_FOUND::asRuntimeException);
-      DataSet updatedDataSet = existingDataSet.toBuilder().setInfo(request.getInfo()).build();
+              .or(() -> this.getSystemDataSet(requestContext, request.getId()));
+      DataSet dataSet = existingDataSet.orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      DataSet updatedDataSet = dataSet.toBuilder().setInfo(request.getInfo()).build();
       DataSet upsertedDataSet =
           this.dataSetStore.upsertObject(requestContext, updatedDataSet).getData();
       responseObserver.onNext(
@@ -269,14 +283,58 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.dataSetConfigRequestValidator.validateOrThrow(requestContext, request);
-      this.dataSetStore
-          .deleteObject(requestContext, request.getId())
-          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      Optional<ContextualConfigObject<DataSet>> optionalContextualConfigObject =
+          this.dataSetStore.deleteObject(requestContext, request.getId());
+      Optional<DataSet> systemDataSetOptional = getSystemDataSet(requestContext, request.getId());
+      if (systemDataSetOptional.isPresent()) {
+        DeletedSystemDataSet deletedSystemDataSet =
+            DeletedSystemDataSet.newBuilder().setId(request.getId()).build();
+        this.deletedDataSetStore.upsertObject(requestContext, deletedSystemDataSet);
+        sendSystemDataSetDeletionEvent(
+            requestContext, optionalContextualConfigObject.isEmpty(), systemDataSetOptional.get());
+      } else if (optionalContextualConfigObject.isEmpty()) {
+        throw Status.NOT_FOUND.asRuntimeException();
+      }
       responseObserver.onNext(DeleteDataSetResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Exception e) {
       responseObserver.onError(e);
     }
+  }
+
+  @SneakyThrows
+  private void sendSystemDataSetDeletionEvent(
+      RequestContext requestContext, boolean isObjectEmpty, DataSet systemDataSet) {
+    // send event only in case contextual object is empty
+    // contextual object being empty implies, override doesn't exist,
+    // therefore no datas set deletion event is sent so far
+    if (isObjectEmpty && configChangeEventGenerator.isPresent()) {
+      configChangeEventGenerator
+          .get()
+          .sendDeleteNotification(
+              requestContext,
+              DataSet.class.getName(),
+              systemDataSet.getId(),
+              convertToValue(systemDataSet));
+    }
+  }
+
+  private Optional<DataSet> getSystemDataSet(RequestContext requestContext, String id) {
+    if (systemDataSetsToIdMap.containsKey(id)) {
+      Optional<DeletedSystemDataSet> isSystemDataSetDeleted =
+          this.deletedDataSetStore.getData(requestContext, id);
+      if (isSystemDataSetDeleted.isEmpty()) {
+        return Optional.of(systemDataSetsToIdMap.get(id));
+      }
+    }
+    return Optional.empty();
+  }
+
+  private List<String> getDeletedSystemDataSets(RequestContext requestContext) {
+    return this.deletedDataSetStore.getAllObjects(requestContext).stream()
+        .map(ConfigObject::getData)
+        .map(DeletedSystemDataSet::getId)
+        .collect(Collectors.toList());
   }
 
   private List<DataSet> buildSystemDataSetsList(
