@@ -22,7 +22,6 @@ message GetApiNamingModelResponse {
 
 message HttpApiNamingModelResponse {
   repeated HttpServiceResponse http_service_responses = 1;
-  repeated string fallback_wildcard_regexes = 2;
 }
 
 message HttpServiceResponse {
@@ -81,7 +80,8 @@ message HttpApiNamingConfig {
   repeated string url_reject_regexes = 3;
   repeated string extensions = 4;
   repeated string segment_whitelist_regexes = 5;
-  string hash = 6;
+  repeated string fallback_wildcard_regexes = 6;
+  string hash = 7;
 }
 
 message HttpApiNamingCustomRule {

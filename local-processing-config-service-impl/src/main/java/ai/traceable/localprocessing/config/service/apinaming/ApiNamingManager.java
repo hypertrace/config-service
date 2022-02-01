@@ -8,6 +8,4 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public interface ApiNamingManager {
   List<HttpServiceResponse> getHttpServiceResponseList(
       RequestContext requestContext, GetApiNamingModelRequest request);
-
-  List<String> getFallbackWildcardRegexes();
 }

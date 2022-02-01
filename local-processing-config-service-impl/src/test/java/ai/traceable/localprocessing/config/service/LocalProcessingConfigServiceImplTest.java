@@ -172,19 +172,16 @@ class LocalProcessingConfigServiceImplTest {
                 .setServiceName("serviceName")
                 .setHttpConfig(HttpApiNamingConfig.newBuilder().setHash("hash").build())
                 .build());
-    List<String> fallbackRegexList = List.of("fallbackRegex");
     doNothing()
         .when(localProcessingConfigRequestValidator)
         .validateOrThrow(any(RequestContext.class), any(GetApiNamingModelRequest.class));
     when(apiNamingManager.getHttpServiceResponseList(any(), any())).thenReturn(serviceResponseList);
-    when(apiNamingManager.getFallbackWildcardRegexes()).thenReturn(fallbackRegexList);
 
     GetApiNamingModelResponse expectedResponse =
         GetApiNamingModelResponse.newBuilder()
             .setHttpApiNamingResponse(
                 HttpApiNamingModelResponse.newBuilder()
                     .addAllHttpServiceResponses(serviceResponseList)
-                    .addAllFallbackWildcardRegexes(fallbackRegexList)
                     .build())
             .build();
     assertEquals(
@@ -225,7 +222,7 @@ class LocalProcessingConfigServiceImplTest {
 
     assertEquals(expectedCustomModsecDetectionRules, response.getCustomModsecDetectionRules());
     assertEquals(expectedRegularModsecDetectionRules, response.getRegularModsecDetectionRules());
-    assertEquals(true, response.getModsecConfig().getRedactMessages());
+    assertTrue(response.getModsecConfig().getRedactMessages());
   }
 
   @Test

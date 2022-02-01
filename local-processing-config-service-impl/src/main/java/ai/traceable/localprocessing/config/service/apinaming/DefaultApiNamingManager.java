@@ -78,10 +78,6 @@ class DefaultApiNamingManager implements ApiNamingManager {
     this.uuidGenerator = uuidGenerator;
   }
 
-  public List<String> getFallbackWildcardRegexes() {
-    return apiNamingConfig.getFallbackRegexes();
-  }
-
   public List<HttpServiceResponse> getHttpServiceResponseList(
       RequestContext requestContext, GetApiNamingModelRequest request) {
     Map<String, ServiceRequest> serviceIdServiceRequestMap = new HashMap<>();
@@ -393,6 +389,7 @@ class DefaultApiNamingManager implements ApiNamingManager {
                 httpApiNamingConfigBuilder.addAllApiNamingCustomRules(
                     convertCustomRules(customRulesListConfig)));
 
+    httpApiNamingConfigBuilder.addAllFallbackWildcardRegexes(apiNamingConfig.getFallbackRegexes());
     String hash = uuidGenerator.generateId(httpApiNamingConfigBuilder.build());
     if (!hash.equals(configHash)) {
       return new HttpApiNamingConfigInfo(

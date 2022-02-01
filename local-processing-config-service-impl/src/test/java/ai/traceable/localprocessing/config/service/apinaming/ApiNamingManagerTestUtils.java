@@ -73,7 +73,11 @@ public class ApiNamingManagerTestUtils {
                 .setWildcardType(WildcardType.WILDCARD_TYPE_HIGH_CARDINALITY)
                 .setPriority(2)
                 .addIdentificationRegexes("regexHigh")
-                .build());
+                .build())
+        .addAllFallbackWildcardRegexes(
+            List.of(
+                "(\\{){0,1}[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}(\\}){0,1}",
+                "\\d+"));
     String hash = uuidGenerator.generateId(httpApiNamingConfigBuilder.build());
     return httpApiNamingConfigBuilder.setHash(hash).build();
   }

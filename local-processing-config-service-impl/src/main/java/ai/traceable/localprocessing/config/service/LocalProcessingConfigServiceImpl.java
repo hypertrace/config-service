@@ -103,7 +103,6 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
                   HttpApiNamingModelResponse.newBuilder()
                       .addAllHttpServiceResponses(
                           apiNamingManager.getHttpServiceResponseList(requestContext, request))
-                      .addAllFallbackWildcardRegexes(apiNamingManager.getFallbackWildcardRegexes())
                       .build())
               .build());
       responseObserver.onCompleted();
