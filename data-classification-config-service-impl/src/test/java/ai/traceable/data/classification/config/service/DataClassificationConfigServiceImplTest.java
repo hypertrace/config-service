@@ -1,5 +1,6 @@
 package ai.traceable.data.classification.config.service;
 
+import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_HEADER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -18,7 +19,6 @@ import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ApiScope;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
-import ai.traceable.data.classification.config.service.v1.DataTypeRule.ParameterType;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
 import ai.traceable.data.classification.config.service.v1.DeleteDataSetRequest;
@@ -101,10 +101,10 @@ class DataClassificationConfigServiceImplTest {
             + "id : systemdatatype,\n"
             + "rule : {\n"
             + "name : systemdatatyperule,\n"
-            + "scoped_pattern : [\n"
+            + "scoped_patterns : [\n"
             + "{\n"
             + "global_scope : {},\n"
-            + "parameter_type : PARAMETER_TYPE_REQUEST_HEADER,\n"
+            + "locations : [LOCATION_REQUEST_HEADER],\n"
             + "key_pattern : {operator : OPERATOR_MATCHES_REGEX, value : systemvalue},\n"
             + "action : ACTION_MATCH\n"
             + "}\n"
@@ -135,14 +135,14 @@ class DataClassificationConfigServiceImplTest {
         dataClassificationConfigServiceBlockingStub.getDataTypes(getRequest);
     assertEquals(1, response.getDataTypesCount());
     assertEquals(
-        ParameterType.PARAMETER_TYPE_REQUEST_HEADER,
+        LOCATION_REQUEST_HEADER,
         response
             .getDataTypesList()
             .get(0)
             .getRule()
-            .getScopedPatternList()
+            .getScopedPatternsList()
             .get(0)
-            .getParameterType());
+            .getLocations(0));
   }
 
   @Test
@@ -548,10 +548,10 @@ class DataClassificationConfigServiceImplTest {
   private DataTypeRule createDataTypeRuleForTest(String name, String value) {
     return DataTypeRule.newBuilder()
         .setName(name)
-        .addScopedPattern(
+        .addScopedPatterns(
             ScopedPattern.newBuilder()
                 .setApiScope(ApiScope.newBuilder().addAllApiIds(List.of("1", "2")))
-                .setParameterTypeValue(1)
+                .addLocations(LOCATION_REQUEST_HEADER)
                 .setKeyPattern(
                     StringPattern.newBuilder()
                         .setOperator(Operator.OPERATOR_EQUALS)

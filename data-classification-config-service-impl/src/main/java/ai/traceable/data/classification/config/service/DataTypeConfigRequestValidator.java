@@ -1,5 +1,7 @@
 package ai.traceable.data.classification.config.service;
 
+import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_UNSPECIFIED;
+import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.UNRECOGNIZED;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
@@ -9,12 +11,14 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ApiScope;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.EnvironmentScope;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.KeyValuePattern;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.Location;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
 import ai.traceable.data.classification.config.service.v1.DeleteDataTypeRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.UpdateDataTypeRequest;
 import io.grpc.Status;
+import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 class DataTypeConfigRequestValidator {
@@ -45,16 +49,39 @@ class DataTypeConfigRequestValidator {
   }
 
   private void validateScopedPatternList(DataTypeRule rule) {
-    for (ScopedPattern scopedPattern : rule.getScopedPatternList()) {
+    List<ScopedPattern> scopedPatternList = rule.getScopedPatternsList();
+    if (scopedPatternList.isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("scoped pattern cannot be empty: " + printMessage(rule))
+          .asRuntimeException();
+    }
+    for (ScopedPattern scopedPattern : scopedPatternList) {
       validateScopedPattern(scopedPattern);
     }
   }
 
   private void validateScopedPattern(ScopedPattern scopedPattern) {
     validateScope(scopedPattern);
-    validateNonDefaultPresenceOrThrow(scopedPattern, ScopedPattern.PARAMETER_TYPE_FIELD_NUMBER);
+    validateLocations(scopedPattern);
     validatePattern(scopedPattern);
     validateNonDefaultPresenceOrThrow(scopedPattern, ScopedPattern.ACTION_FIELD_NUMBER);
+  }
+
+  private void validateLocations(ScopedPattern scopedPattern) {
+    List<Location> locationsList = scopedPattern.getLocationsList();
+    if (locationsList.isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("locations cannot be empty: " + printMessage(scopedPattern))
+          .asRuntimeException();
+    }
+    locationsList.forEach(
+        location -> {
+          if (location.equals(UNRECOGNIZED) || location.equals(LOCATION_UNSPECIFIED)) {
+            throw Status.INVALID_ARGUMENT
+                .withDescription("Invalid location: " + printMessage(scopedPattern))
+                .asRuntimeException();
+          }
+        });
   }
 
   private void validatePattern(ScopedPattern scopedPattern) {

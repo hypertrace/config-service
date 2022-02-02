@@ -12,7 +12,7 @@ message DataType {
 message DataTypeRule {
   string name = 1;
   optional string description = 2;
-  repeated ScopedPattern scoped_pattern = 3;
+  repeated ScopedPattern scoped_patterns = 3;
 
   message ScopedPattern {
     oneof scope {
@@ -20,7 +20,7 @@ message DataTypeRule {
       EnvironmentScope environment_scope = 2;
       ApiScope api_scope = 3;
     }
-    ParameterType parameter_type = 5;
+    repeated Location locations = 5;
     oneof pattern {
       StringPattern key_pattern = 6;
       KeyValuePattern key_value_pattern = 7;
@@ -49,16 +49,17 @@ message DataTypeRule {
     StringPattern value_pattern = 2;
   }
 
-  enum ParameterType {
-    PARAMETER_TYPE_UNSPECIFIED = 0;
-    PARAMETER_TYPE_PATH = 1;
-    PARAMETER_TYPE_QUERY = 2;
-    PARAMETER_TYPE_REQUEST_HEADER = 3;
-    PARAMETER_TYPE_REQUEST_BODY = 4;
-    PARAMETER_TYPE_REQUEST_COOKIE = 5;
-    PARAMETER_TYPE_RESPONSE_HEADER = 6;
-    PARAMETER_TYPE_RESPONSE_BODY = 7;
-    PARAMETER_TYPE_RESPONSE_COOKIE = 8;
+  enum Location {
+    LOCATION_UNSPECIFIED = 0;
+    LOCATION_PATH = 1;
+    LOCATION_QUERY = 2;
+    LOCATION_REQUEST_HEADER = 3;
+    LOCATION_REQUEST_BODY = 4;
+    LOCATION_REQUEST_COOKIE = 5;
+    LOCATION_RESPONSE_HEADER = 6;
+    LOCATION_RESPONSE_BODY = 7;
+    LOCATION_RESPONSE_COOKIE = 8;
+    LOCATION_ANY = 9;
   }
 
   enum Operator {

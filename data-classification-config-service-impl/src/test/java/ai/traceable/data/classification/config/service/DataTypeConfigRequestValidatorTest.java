@@ -1,5 +1,7 @@
 package ai.traceable.data.classification.config.service;
 
+import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_HEADER;
+import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_UNSPECIFIED;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.traceable.data.classification.config.service.v1.CreateDataTypeRequest;
@@ -36,13 +38,24 @@ class DataTypeConfigRequestValidatorTest {
   void validateOrThrowNoName() {
     DataTypeRule rule =
         DataTypeRule.newBuilder()
-            .addScopedPattern(
+            .addScopedPatterns(
                 ScopedPattern.newBuilder()
                     .setApiScope(createApiScope())
-                    .setParameterTypeValue(1)
+                    .addLocations(LOCATION_REQUEST_HEADER)
                     .setKeyPattern(createStringPattern())
                     .setActionValue(1))
             .build();
+    CreateDataTypeRequest request = CreateDataTypeRequest.newBuilder().setRule(rule).build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          dataTypeConfigRequestValidator.validateOrThrow(REQUEST_CONTEXT, request);
+        });
+  }
+
+  @Test
+  void validateOrThrowEmptyScopedPattern() {
+    DataTypeRule rule = DataTypeRule.newBuilder().setName("name-1").build();
     CreateDataTypeRequest request = CreateDataTypeRequest.newBuilder().setRule(rule).build();
     assertThrows(
         StatusRuntimeException.class,
@@ -56,9 +69,9 @@ class DataTypeConfigRequestValidatorTest {
     DataTypeRule rule =
         DataTypeRule.newBuilder()
             .setName("name-1")
-            .addScopedPattern(
+            .addScopedPatterns(
                 ScopedPattern.newBuilder()
-                    .setParameterTypeValue(1)
+                    .addLocations(LOCATION_REQUEST_HEADER)
                     .setKeyPattern(createStringPattern())
                     .setActionValue(1))
             .build();
@@ -75,10 +88,10 @@ class DataTypeConfigRequestValidatorTest {
     DataTypeRule rule =
         DataTypeRule.newBuilder()
             .setName("name-1")
-            .addScopedPattern(
+            .addScopedPatterns(
                 ScopedPattern.newBuilder()
                     .setApiScope(ApiScope.newBuilder().build())
-                    .setParameterTypeValue(1)
+                    .addLocations(LOCATION_REQUEST_HEADER)
                     .setKeyPattern(createStringPattern())
                     .setActionValue(1))
             .build();
@@ -91,14 +104,34 @@ class DataTypeConfigRequestValidatorTest {
   }
 
   @Test
-  void validateOrThrowNoParameterType() {
+  void validateOrThrowNoLocation() {
     DataTypeRule rule =
         DataTypeRule.newBuilder()
             .setName("name-1")
-            .addScopedPattern(
+            .addScopedPatterns(
                 ScopedPattern.newBuilder()
                     .setApiScope(createApiScope())
                     .setKeyPattern(createStringPattern())
+                    .setActionValue(1))
+            .build();
+    CreateDataTypeRequest request = CreateDataTypeRequest.newBuilder().setRule(rule).build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          dataTypeConfigRequestValidator.validateOrThrow(REQUEST_CONTEXT, request);
+        });
+  }
+
+  @Test
+  void validateOrThrowUnspecifiedLocation() {
+    DataTypeRule rule =
+        DataTypeRule.newBuilder()
+            .setName("name-1")
+            .addScopedPatterns(
+                ScopedPattern.newBuilder()
+                    .setApiScope(createApiScope())
+                    .setKeyPattern(createStringPattern())
+                    .addLocations(LOCATION_UNSPECIFIED)
                     .setActionValue(1))
             .build();
     CreateDataTypeRequest request = CreateDataTypeRequest.newBuilder().setRule(rule).build();
@@ -114,10 +147,10 @@ class DataTypeConfigRequestValidatorTest {
     DataTypeRule rule =
         DataTypeRule.newBuilder()
             .setName("name-1")
-            .addScopedPattern(
+            .addScopedPatterns(
                 ScopedPattern.newBuilder()
                     .setApiScope(createApiScope())
-                    .setParameterTypeValue(1)
+                    .addLocations(LOCATION_REQUEST_HEADER)
                     .setActionValue(1))
             .build();
     CreateDataTypeRequest request = CreateDataTypeRequest.newBuilder().setRule(rule).build();
@@ -133,10 +166,10 @@ class DataTypeConfigRequestValidatorTest {
     DataTypeRule rule =
         DataTypeRule.newBuilder()
             .setName("name-1")
-            .addScopedPattern(
+            .addScopedPatterns(
                 ScopedPattern.newBuilder()
                     .setApiScope(createApiScope())
-                    .setParameterTypeValue(1)
+                    .addLocations(LOCATION_REQUEST_HEADER)
                     .setKeyPattern(createStringPatternNoValue())
                     .setActionValue(1))
             .build();
@@ -153,10 +186,10 @@ class DataTypeConfigRequestValidatorTest {
     DataTypeRule rule =
         DataTypeRule.newBuilder()
             .setName("name-1")
-            .addScopedPattern(
+            .addScopedPatterns(
                 ScopedPattern.newBuilder()
                     .setApiScope(createApiScope())
-                    .setParameterTypeValue(1)
+                    .addLocations(LOCATION_REQUEST_HEADER)
                     .setKeyPattern(createStringPattern())
                     .setActionValue(1))
             .build();
@@ -169,10 +202,10 @@ class DataTypeConfigRequestValidatorTest {
     DataTypeRule rule =
         DataTypeRule.newBuilder()
             .setName("name-1")
-            .addScopedPattern(
+            .addScopedPatterns(
                 ScopedPattern.newBuilder()
                     .setApiScope(createApiScope())
-                    .setParameterTypeValue(1)
+                    .addLocations(LOCATION_REQUEST_HEADER)
                     .setKeyPattern(StringPattern.newBuilder().build())
                     .setActionValue(1))
             .build();
@@ -189,10 +222,10 @@ class DataTypeConfigRequestValidatorTest {
     DataTypeRule rule =
         DataTypeRule.newBuilder()
             .setName("name-1")
-            .addScopedPattern(
+            .addScopedPatterns(
                 ScopedPattern.newBuilder()
                     .setApiScope(createApiScope())
-                    .setParameterTypeValue(1)
+                    .addLocations(LOCATION_REQUEST_HEADER)
                     .setKeyValuePattern(createKeyValuePatternNoKeyPattern())
                     .setActionValue(1))
             .build();
@@ -209,10 +242,10 @@ class DataTypeConfigRequestValidatorTest {
     DataTypeRule rule =
         DataTypeRule.newBuilder()
             .setName("name-1")
-            .addScopedPattern(
+            .addScopedPatterns(
                 ScopedPattern.newBuilder()
                     .setApiScope(createApiScope())
-                    .setParameterTypeValue(1)
+                    .addLocations(LOCATION_REQUEST_HEADER)
                     .setKeyValuePattern(createKeyValuePattern())
                     .setActionValue(1))
             .build();

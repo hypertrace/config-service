@@ -1,5 +1,7 @@
 package ai.traceable.config.service;
 
+import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_BODY;
+import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_HEADER;
 import static com.google.common.io.Resources.getResource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -16,8 +18,8 @@ import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Action;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.GlobalScope;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.Location;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
-import ai.traceable.data.classification.config.service.v1.DataTypeRule.ParameterType;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
 import ai.traceable.sensitivedata.config.service.v1.CreateRedactionRuleRequest;
@@ -231,12 +233,9 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
   @Test
   void testConvertDataTypeRuleToPiiElementConfig() {
     requestContext = RequestContext.forTenantId("testConvertDataTypeRuleToPiiElement");
-    DataType dataType1 =
-        createDataType("datatype-rule-1", ParameterType.PARAMETER_TYPE_REQUEST_HEADER, "^header");
-    DataType dataType2 =
-        createDataType("datatype-rule-2", ParameterType.PARAMETER_TYPE_REQUEST_BODY, "^doby");
-    DataType dataType3 =
-        createDataType("datatype-rule-3", ParameterType.PARAMETER_TYPE_REQUEST_BODY, "body");
+    DataType dataType1 = createDataType("datatype-rule-1", LOCATION_REQUEST_HEADER, "^header");
+    DataType dataType2 = createDataType("datatype-rule-2", LOCATION_REQUEST_BODY, "^doby");
+    DataType dataType3 = createDataType("datatype-rule-3", LOCATION_REQUEST_BODY, "body");
 
     createDataSet(
         "dataset-1",
@@ -273,16 +272,16 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
         .getDataSet();
   }
 
-  private DataType createDataType(String name, ParameterType parameterType, String key) {
+  private DataType createDataType(String name, Location location, String key) {
     CreateDataTypeRequest request =
         CreateDataTypeRequest.newBuilder()
             .setRule(
                 DataTypeRule.newBuilder()
                     .setName(name)
-                    .addScopedPattern(
+                    .addScopedPatterns(
                         ScopedPattern.newBuilder()
                             .setGlobalScope(GlobalScope.newBuilder())
-                            .setParameterType(parameterType)
+                            .addLocations(location)
                             .setKeyPattern(
                                 StringPattern.newBuilder()
                                     .setValue(key)

@@ -1,5 +1,7 @@
 package ai.traceable.sensitivedata.config.service;
 
+import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_BODY;
+import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_HEADER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -17,7 +19,6 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Action;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.GlobalScope;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
-import ai.traceable.data.classification.config.service.v1.DataTypeRule.ParameterType;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
 import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
@@ -327,10 +328,10 @@ class PiiFilterConfigServiceImplTest {
                 .setRule(
                     DataTypeRule.newBuilder()
                         .setName("datatyperule-1")
-                        .addScopedPattern(
+                        .addScopedPatterns(
                             ScopedPattern.newBuilder()
                                 .setGlobalScope(GlobalScope.getDefaultInstance())
-                                .setParameterType(ParameterType.PARAMETER_TYPE_REQUEST_HEADER)
+                                .addLocations(LOCATION_REQUEST_HEADER)
                                 .setKeyPattern(
                                     StringPattern.newBuilder()
                                         .setValue("regex-1")
@@ -343,10 +344,10 @@ class PiiFilterConfigServiceImplTest {
                 .setRule(
                     DataTypeRule.newBuilder()
                         .setName("datatyperule-2")
-                        .addScopedPattern(
+                        .addScopedPatterns(
                             ScopedPattern.newBuilder()
                                 .setGlobalScope(GlobalScope.getDefaultInstance())
-                                .setParameterType(ParameterType.PARAMETER_TYPE_REQUEST_BODY)
+                                .addLocations(LOCATION_REQUEST_BODY)
                                 .setKeyPattern(
                                     StringPattern.newBuilder()
                                         .setValue("regex-2")

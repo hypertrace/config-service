@@ -8,6 +8,7 @@ import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
 import ai.traceable.data.classification.config.service.v1.DataType;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.Location;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.sensitivedata.config.service.v1.ComplexData;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigRequest;
@@ -263,7 +264,7 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
               PiiElement.newBuilder().setRedactionStrategy(strategy).setRuleId(dataType.getId());
           dataType
               .getRule()
-              .getScopedPatternList()
+              .getScopedPatternsList()
               .forEach(
                   scopedPattern ->
                       setRegexForScopedPattern(
@@ -275,10 +276,26 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
       ScopedPattern scopedPattern,
       PiiElement.Builder piiElementBuilder,
       Map<String, PiiElement> keyRegexToPiiElementMap) {
-    List<String> prefixes = getPrefixesAndUpdateFqn(scopedPattern, piiElementBuilder);
+    List<String> prefixes = new ArrayList<>();
+    // iterate over all locations
+    for (Location location : scopedPattern.getLocationsList()) {
+      List<String> prefixesForLocation = getPrefixes(location);
+      if (prefixesForLocation.equals(EMPTY_PREFIXES_LIST)) {
+        // if prefixes match the empty prefixes list, then we are performing a match in all
+        // locations
+        // in above case, stop the loop and add a single entry to match in all locations
+        prefixes = EMPTY_PREFIXES_LIST;
+        break;
+      }
+      prefixes.addAll(prefixesForLocation);
+    }
     // We can have two PiiElement with same regex but different effects.
     // For ex. one with fqn = true and the other with fqn = false.
     for (String prefix : prefixes) {
+      if (!prefix.isEmpty()) {
+        // if prefix is not empty, then set fqn to true
+        piiElementBuilder.setFqn(true);
+      }
       if (scopedPattern.hasKeyPattern()) {
         String keyRegex = prefix + scopedPattern.getKeyPattern().getValue();
         piiElementBuilder.setRegex(keyRegex);
@@ -287,14 +304,11 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
     }
   }
 
-  private List<String> getPrefixesAndUpdateFqn(
-      ScopedPattern scopedPattern, PiiElement.Builder piiElementBuilder) {
-    switch (scopedPattern.getParameterType()) {
-      case PARAMETER_TYPE_REQUEST_HEADER:
-        piiElementBuilder.setFqn(true);
+  private List<String> getPrefixes(Location location) {
+    switch (location) {
+      case LOCATION_REQUEST_HEADER:
         return REQUEST_HEADERS_PREFIXES_LIST;
-      case PARAMETER_TYPE_RESPONSE_HEADER:
-        piiElementBuilder.setFqn(true);
+      case LOCATION_RESPONSE_HEADER:
         return RESPONSE_HEADERS_PREFIXES_LIST;
       default:
         return EMPTY_PREFIXES_LIST;
