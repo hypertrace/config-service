@@ -8,6 +8,7 @@ import static ai.traceable.external.userattribution.config.service.v1.ExternalUs
 import static ai.traceable.external.userattribution.config.service.v1.ExternalUserAttributionRule.TransformedExternalUserAttributionRule.Type.TYPE_ROLE;
 
 import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttributionRule;
+import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttributionRule.Builder;
 import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttributionRule.RawExternalUserAttributionRule;
 import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttributionRule.TransformedExternalUserAttributionRule;
 import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttributionRule.TransformedExternalUserAttributionRule.Condition;
@@ -49,6 +50,13 @@ class ExternalUserAttributionRuleTranslator {
   }
 
   private Stream<ExternalUserAttributionRule> translateRule(UserAttributionRule rule) {
+    return this.translateRuleContent(rule)
+        .map(ExternalUserAttributionRule::toBuilder)
+        .map(externalRuleBuilder -> externalRuleBuilder.setRuleId(rule.getId()))
+        .map(Builder::build);
+  }
+
+  private Stream<ExternalUserAttributionRule> translateRuleContent(UserAttributionRule rule) {
     try {
       switch (rule.getData().getDataCase()) {
         case CUSTOM_DATA:

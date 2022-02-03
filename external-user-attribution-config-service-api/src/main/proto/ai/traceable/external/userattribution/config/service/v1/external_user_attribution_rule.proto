@@ -10,6 +10,7 @@ message ExternalUserAttributionRules {
 }
 
 message ExternalUserAttributionRule {
+  string rule_id = 10;
   oneof rule {
     RawExternalUserAttributionRule raw_external_user_attribution_rule = 1;
     TransformedExternalUserAttributionRule transformed_external_user_attribution_rule = 2;
