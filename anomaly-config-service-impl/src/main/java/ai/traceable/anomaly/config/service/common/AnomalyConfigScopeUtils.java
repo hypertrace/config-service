@@ -1,8 +1,20 @@
 package ai.traceable.anomaly.config.service.common;
 
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import java.util.ArrayList;
+import java.util.List;
 
-public class AnomalyConfigScopeMatcher {
+public class AnomalyConfigScopeUtils {
+
+  private static final AnomalyConfigScope CUSTOMER_CONFIG_SCOPE =
+      AnomalyConfigScope.newBuilder()
+          .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+          .build();
+
+  public AnomalyConfigScope getDefaultCustomerConfigScope() {
+    return CUSTOMER_CONFIG_SCOPE;
+  }
 
   /**
    * @param configScopeToCheck - config scope to be checked if it's parent scope of the required
@@ -24,6 +36,53 @@ public class AnomalyConfigScopeMatcher {
       default:
         return false;
     }
+  }
+
+  public String getContextFromAnomalyConfigScope(
+      String tenantId, AnomalyConfigScope anomalyConfigScope) {
+    String context;
+    switch (anomalyConfigScope.getScopeCase()) {
+      case CUSTOMER_SCOPE:
+        context = tenantId;
+        break;
+      case SERVICE_SCOPE:
+        context = anomalyConfigScope.getServiceScope().getId();
+        break;
+      case API_SCOPE:
+        context = anomalyConfigScope.getApiScope().getId();
+        break;
+      default:
+        throw new RuntimeException(
+            String.format("Invalid scope found: {%s}", anomalyConfigScope.getScopeCase()));
+    }
+    return context;
+  }
+
+  public List<String> getContextsWithIncreasingPriority(
+      String tenantId, AnomalyConfigScope configScope) {
+    /*
+     * Precedence Order --> apiConfig > serviceConfig > customerConfig > defaultConfig For example, if
+     * apiConfig.disabled = true, we use it; if apiConfig.disabled = false, we use
+     * serviceConfig.disabled value and so on.. Similarly for all other config values
+     */
+    List<String> contextsWithIncreasingPriority = new ArrayList<>();
+    contextsWithIncreasingPriority.add(tenantId);
+
+    switch (configScope.getScopeCase()) {
+      case CUSTOMER_SCOPE:
+        break;
+      case SERVICE_SCOPE:
+        contextsWithIncreasingPriority.add(configScope.getServiceScope().getId());
+        break;
+      case API_SCOPE:
+        contextsWithIncreasingPriority.add(configScope.getApiScope().getServiceScope().getId());
+        contextsWithIncreasingPriority.add(configScope.getApiScope().getId());
+        break;
+      default:
+        throw new RuntimeException(
+            String.format("Invalid scope found: {%s}", configScope.getScopeCase()));
+    }
+    return contextsWithIncreasingPriority;
   }
 
   private boolean isParentOfCustomerScope(

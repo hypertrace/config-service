@@ -8,8 +8,8 @@ import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class AnomalyConfigScopeMatcherTest {
-  private final AnomalyConfigScopeMatcher scopeMatcher = new AnomalyConfigScopeMatcher();
+public class AnomalyConfigScopeUtilsTest {
+  private final AnomalyConfigScopeUtils scopeMatcher = new AnomalyConfigScopeUtils();
 
   @Test
   void test() {

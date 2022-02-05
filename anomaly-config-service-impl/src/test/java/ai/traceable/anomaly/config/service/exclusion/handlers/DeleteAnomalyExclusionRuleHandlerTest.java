@@ -9,7 +9,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeMatcher;
+import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.exclusion.utils.FilterUtils;
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
@@ -40,7 +40,7 @@ public class DeleteAnomalyExclusionRuleHandlerTest {
   private ConfigServiceBlockingStub configServiceBlockingStub;
   private DeleteAnomalyExclusionRuleHandler deleteAnomalyExclusionRuleHandler;
   private RequestContext requestContext;
-  private AnomalyConfigScopeMatcher scopeMatcher;
+  private AnomalyConfigScopeUtils scopeMatcher;
   private FilterUtils filterUtils;
   private GetAnomalyExclusionRuleHandler getAnomalyExclusionRuleHandler;
 
@@ -57,7 +57,7 @@ public class DeleteAnomalyExclusionRuleHandlerTest {
                     configServiceBlockingStub, configChangeEventGenerator)));
     deleteAnomalyExclusionRuleHandler = new DeleteAnomalyExclusionRuleHandler(configServiceHandler);
     requestContext = RequestContext.forTenantId("tenant_id");
-    scopeMatcher = mock(AnomalyConfigScopeMatcher.class);
+    scopeMatcher = mock(AnomalyConfigScopeUtils.class);
     filterUtils = mock(FilterUtils.class);
     when(scopeMatcher.isParentScope(any(AnomalyConfigScope.class), any(AnomalyConfigScope.class)))
         .thenReturn(true);

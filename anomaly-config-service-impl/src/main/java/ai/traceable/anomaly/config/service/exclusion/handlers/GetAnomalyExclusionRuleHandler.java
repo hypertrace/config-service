@@ -1,6 +1,6 @@
 package ai.traceable.anomaly.config.service.exclusion.handlers;
 
-import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeMatcher;
+import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.exclusion.utils.FilterUtils;
 import ai.traceable.anomaly.config.service.v1.exclusion.AnomalyExclusionRuleConfig;
 import ai.traceable.anomaly.config.service.v1.exclusion.GetAnomalyExclusionRulesRequest;
@@ -15,16 +15,16 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class GetAnomalyExclusionRuleHandler {
   private final ConfigServiceHandler configServiceHandler;
-  private final AnomalyConfigScopeMatcher anomalyConfigScopeMatcher;
+  private final AnomalyConfigScopeUtils anomalyConfigScopeUtils;
   private final FilterUtils filterUtils;
 
   @Inject
   GetAnomalyExclusionRuleHandler(
       ConfigServiceHandler configServiceHandler,
-      AnomalyConfigScopeMatcher anomalyConfigScopeMatcher,
+      AnomalyConfigScopeUtils anomalyConfigScopeUtils,
       FilterUtils filterUtils) {
     this.configServiceHandler = configServiceHandler;
-    this.anomalyConfigScopeMatcher = anomalyConfigScopeMatcher;
+    this.anomalyConfigScopeUtils = anomalyConfigScopeUtils;
     this.filterUtils = filterUtils;
   }
 
@@ -59,7 +59,7 @@ public class GetAnomalyExclusionRuleHandler {
                     && filterUtils.filterEventIds(config, ruleFilter.getEventTypeIdsList())
                     && filterUtils.filterEventFamilies(config, ruleFilter.getEventFamiliesList())
                     && (!ruleFilter.hasAnomalyConfigScope()
-                        || anomalyConfigScopeMatcher.isParentScope(
+                        || anomalyConfigScopeUtils.isParentScope(
                             config.getRuleData().getAnomalyConfigScope(),
                             ruleFilter.getAnomalyConfigScope())))
         .collect(Collectors.toUnmodifiableList());

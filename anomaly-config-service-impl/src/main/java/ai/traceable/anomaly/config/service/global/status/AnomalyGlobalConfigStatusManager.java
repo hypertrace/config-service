@@ -25,6 +25,7 @@ import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
+@Deprecated
 public class AnomalyGlobalConfigStatusManager implements ConfigStatusManager {
 
   private final AnomalyGlobalConfigServiceConfig config;

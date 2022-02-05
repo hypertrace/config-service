@@ -4,7 +4,9 @@ import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosRequest;
+import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.UpdateAnomalyGlobalConfigStatusRequest;
+import ai.traceable.anomaly.config.service.v1.global.UpdateScopedAnomalyGlobalConfigStatusRequest;
 import io.grpc.Status;
 import javax.inject.Inject;
 
@@ -38,6 +40,37 @@ public class AnomalyGlobalConfigServiceValidator implements GlobalConfigValidato
     Status status;
     if ((status = anomalyConfigValidator.validate(request.getConfigStatus())) == Status.OK) {
       return anomalyConfigValidator.validate(request.getConfigScope());
+    }
+    return status;
+  }
+
+  @Override
+  public Status validate(GetScopedAnomalyGlobalConfigStatusRequest request) {
+    if (!request.hasConfigScope()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Anomaly Global Config Update request should have a valid config scope.");
+    }
+    return anomalyConfigValidator.validate(request.getConfigScope());
+  }
+
+  @Override
+  public Status validate(UpdateScopedAnomalyGlobalConfigStatusRequest request) {
+    if (!request.hasScopedConfig()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Anomaly Global Config Update request should have a valid scoped config change object.");
+    }
+    if (!request.getScopedConfig().hasConfigStatus()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Anomaly Global Config Update request should have a valid config status.");
+    }
+    if (!request.getScopedConfig().hasConfigScope()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Anomaly Global Config Update request should have a valid config scope.");
+    }
+    Status status;
+    if ((status = anomalyConfigValidator.validate(request.getScopedConfig().getConfigStatus()))
+        == Status.OK) {
+      return anomalyConfigValidator.validate(request.getScopedConfig().getConfigScope());
     }
     return status;
   }

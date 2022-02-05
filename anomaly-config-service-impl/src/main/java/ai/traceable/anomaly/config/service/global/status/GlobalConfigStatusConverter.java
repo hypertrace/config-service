@@ -6,6 +6,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 
+@Deprecated
 public class GlobalConfigStatusConverter {
 
   public AnomalyConfigStatus convert(Value ruleConfig, AnomalyConfigStatus defaultConfig)

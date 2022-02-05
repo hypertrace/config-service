@@ -7,21 +7,48 @@ option java_multiple_files = true;
 
 import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
 
-message UpdateAnomalyGlobalConfigStatusRequest {
+message UpdateAnomalyGlobalConfigStatusRequest  {
+  option deprecated = true;
   AnomalyConfigScope config_scope = 1;
   AnomalyConfigStatusChange config_status = 2;
 }
 
 message UpdateAnomalyGlobalConfigStatusResponse {
+  option deprecated = true;
   AnomalyConfigStatusChange config_status = 1;
 }
 
 message GetAnomalyGlobalConfigStatusRequest {
+  option deprecated = true;
   AnomalyConfigScope config_scope = 1;
 }
 
 message GetAnomalyGlobalConfigStatusResponse {
+  option deprecated = true;
   AnomalyConfigStatus config_status = 1;
+}
+
+message UpdateScopedAnomalyGlobalConfigStatusRequest {
+  ScopedAnomalyConfigStatusChange scoped_config = 1;
+}
+
+message UpdateScopedAnomalyGlobalConfigStatusResponse {
+  ScopedAnomalyConfigStatusChange scoped_config = 1;
+}
+
+message GetScopedAnomalyGlobalConfigStatusRequest {
+  AnomalyConfigScope config_scope = 1;
+}
+
+message GetScopedAnomalyGlobalConfigStatusResponse {
+  ScopedAnomalyConfigStatus scoped_config = 1;
+}
+
+message GetAllScopedAnomalyGlobalConfigStatusRequest {
+}
+
+message GetAllScopedAnomalyGlobalConfigStatusResponse {
+  repeated ScopedAnomalyConfigStatus scoped_configs = 1;
 }
 
 message GetAnomalyRuleInfosRequest {
@@ -30,4 +57,14 @@ message GetAnomalyRuleInfosRequest {
 
 message GetAnomalyRuleInfosResponse {
   repeated AnomalyRuleInfo rule_infos = 1;
+}
+
+message ScopedAnomalyConfigStatus {
+  AnomalyConfigScope config_scope = 1;
+  AnomalyConfigStatus config_status = 2;
+}
+
+message ScopedAnomalyConfigStatusChange {
+  AnomalyConfigScope config_scope = 1;
+  AnomalyConfigStatusChange config_status = 2;
 }

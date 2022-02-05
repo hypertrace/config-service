@@ -14,7 +14,10 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosRequest;
+import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusRequest;
+import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.global.UpdateAnomalyGlobalConfigStatusRequest;
+import ai.traceable.anomaly.config.service.v1.global.UpdateScopedAnomalyGlobalConfigStatusRequest;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import java.util.List;
@@ -90,6 +93,85 @@ class AnomalyGlobalConfigServiceValidatorTest {
               UpdateAnomalyGlobalConfigStatusRequest.newBuilder()
                   .setConfigStatus(configStatusChange)
                   .setConfigScope(configScope)
+                  .build());
+      assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+      verify(configValidator, times(1)).validate((AnomalyConfigStatusChange) any());
+      verify(configValidator, times(0)).validate((AnomalyConfigScope) any());
+    }
+  }
+
+  @Nested
+  class GlobalConfigStatusValidation {
+    @Test
+    void testValidateGetStatusRequest() {
+      Status status =
+          globalValidator.validate(GetScopedAnomalyGlobalConfigStatusRequest.getDefaultInstance());
+      assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+      assertTrue(status.getDescription().contains("valid config scope"));
+      verify(configValidator, times(0)).validate((AnomalyConfigScope) any());
+
+      status =
+          globalValidator.validate(
+              GetScopedAnomalyGlobalConfigStatusRequest.newBuilder()
+                  .setConfigScope(configScope)
+                  .build());
+      assertEquals(Status.OK.getCode(), status.getCode());
+      verify(configValidator, times(1)).validate((AnomalyConfigScope) any());
+    }
+
+    @Test
+    void testValidateUpdateStatusRequest() {
+      Status status =
+          globalValidator.validate(
+              UpdateScopedAnomalyGlobalConfigStatusRequest.getDefaultInstance());
+      assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+      assertTrue(status.getDescription().contains("valid scoped config change object"));
+      verify(configValidator, times(0)).validate((AnomalyConfigStatusChange) any());
+      verify(configValidator, times(0)).validate((AnomalyConfigScope) any());
+
+      status =
+          globalValidator.validate(
+              UpdateScopedAnomalyGlobalConfigStatusRequest.newBuilder()
+                  .setScopedConfig(ScopedAnomalyConfigStatusChange.getDefaultInstance())
+                  .build());
+      assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+      assertTrue(status.getDescription().contains("valid config status"));
+      verify(configValidator, times(0)).validate((AnomalyConfigStatusChange) any());
+      verify(configValidator, times(0)).validate((AnomalyConfigScope) any());
+
+      status =
+          globalValidator.validate(
+              UpdateScopedAnomalyGlobalConfigStatusRequest.newBuilder()
+                  .setScopedConfig(
+                      ScopedAnomalyConfigStatusChange.newBuilder()
+                          .setConfigStatus(configStatusChange))
+                  .build());
+      assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+      assertTrue(status.getDescription().contains("valid config scope"));
+      verify(configValidator, times(0)).validate((AnomalyConfigStatusChange) any());
+      verify(configValidator, times(0)).validate((AnomalyConfigScope) any());
+
+      status =
+          globalValidator.validate(
+              UpdateScopedAnomalyGlobalConfigStatusRequest.newBuilder()
+                  .setScopedConfig(
+                      ScopedAnomalyConfigStatusChange.newBuilder()
+                          .setConfigStatus(configStatusChange)
+                          .setConfigScope(configScope))
+                  .build());
+      assertEquals(Status.OK.getCode(), status.getCode());
+      verify(configValidator, times(1)).validate((AnomalyConfigStatusChange) any());
+      verify(configValidator, times(1)).validate((AnomalyConfigScope) any());
+
+      clearInvocations(configValidator);
+      doReturn(Status.INVALID_ARGUMENT).when(configValidator).validate(configStatusChange);
+      status =
+          globalValidator.validate(
+              UpdateScopedAnomalyGlobalConfigStatusRequest.newBuilder()
+                  .setScopedConfig(
+                      ScopedAnomalyConfigStatusChange.newBuilder()
+                          .setConfigStatus(configStatusChange)
+                          .setConfigScope(configScope))
                   .build());
       assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
       verify(configValidator, times(1)).validate((AnomalyConfigStatusChange) any());

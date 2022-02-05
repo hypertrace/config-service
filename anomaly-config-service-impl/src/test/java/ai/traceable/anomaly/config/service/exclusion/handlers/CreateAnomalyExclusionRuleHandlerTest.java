@@ -7,7 +7,7 @@ import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeMatcher;
+import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.exclusion.utils.FilterUtils;
 import ai.traceable.anomaly.config.service.exclusion.utils.UuidGenerator;
 import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
@@ -41,7 +41,7 @@ public class CreateAnomalyExclusionRuleHandlerTest {
   private ModsecRuleUtils modsecRuleUtils;
   private UuidGenerator uuidGenerator;
   private RequestContext requestContext;
-  private AnomalyConfigScopeMatcher scopeMatcher;
+  private AnomalyConfigScopeUtils scopeMatcher;
   private FilterUtils filterUtils;
   private GetAnomalyExclusionRuleHandler getAnomalyExclusionRuleHandler;
 
@@ -59,7 +59,7 @@ public class CreateAnomalyExclusionRuleHandlerTest {
                 configServiceBlockingStub, configChangeEventGenerator));
     modsecRuleUtils = mock(ModsecRuleUtils.class);
     uuidGenerator = mock(UuidGenerator.class);
-    scopeMatcher = mock(AnomalyConfigScopeMatcher.class);
+    scopeMatcher = mock(AnomalyConfigScopeUtils.class);
     filterUtils = mock(FilterUtils.class);
     when(scopeMatcher.isParentScope(any(AnomalyConfigScope.class), any(AnomalyConfigScope.class)))
         .thenReturn(true);

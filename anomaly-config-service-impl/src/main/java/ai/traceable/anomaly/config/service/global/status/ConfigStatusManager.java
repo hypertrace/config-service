@@ -5,6 +5,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
+@Deprecated
 public interface ConfigStatusManager {
 
   AnomalyConfigStatus getAnomalyConfigStatus(

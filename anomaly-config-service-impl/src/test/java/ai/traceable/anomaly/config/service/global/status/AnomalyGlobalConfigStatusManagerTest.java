@@ -39,6 +39,7 @@ import java.io.IOException;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
+import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -108,7 +109,10 @@ public class AnomalyGlobalConfigStatusManagerTest {
                         + "  call.timeout.ms = 60000\n"
                         + "  cache.expiry.duration = 5m\n"
                         + "  cache.max.size = 5000")),
-            LicenseMeteringServiceGrpc.newBlockingStub(channelForMockServer));
+            LicenseMeteringServiceGrpc.newBlockingStub(channelForMockServer)
+                .withCallCredentials(
+                    RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider()
+                        .get()));
 
     config =
         new AnomalyGlobalConfigServiceConfig(
@@ -152,7 +156,7 @@ public class AnomalyGlobalConfigStatusManagerTest {
                     .build()));
 
     assertEquals(
-        AnomalyConfigStatus.newBuilder().setInternal(false).setDisabled(true).build(),
+        AnomalyConfigStatus.newBuilder().setInternal(false).setDisabled(false).build(),
         configStatusManager.getAnomalyConfigStatus(
             RequestContext.forTenantId(tenantId + "_" + LicenseInfo.Tier.TIER_TEAM_TRIAL),
             customerConfigScope));
