@@ -35,8 +35,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class DefaultApiNamingManagerTest {
-  private static final String BASE_PATH = "/var/tmp";
-  private static final String LOGS_DIRECTORY_NAME = "logs";
 
   private ApiNamingManager apiNamingManager;
   private EntityDataServiceClient entityDataServiceClient;

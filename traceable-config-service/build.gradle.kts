@@ -19,6 +19,7 @@ plugins {
 
 tasks.register<DockerCreateNetwork>("createIntegrationTestNetwork") {
   mustRunAfter("compileIntegrationTestJava")
+  networkId.set("traceable-cfg-svc-int-test")
   networkName.set("traceable-cfg-svc-int-test")
 }
 
@@ -50,10 +51,40 @@ tasks.register<DockerStopContainer>("stopMongoContainer") {
   finalizedBy("removeIntegrationTestNetwork")
 }
 
+tasks.register<DockerPullImage>("pullEntityServiceImage") {
+  image.set(docker.registryCredentials.url.get() + "/hypertrace/entity-service:0.6.6")
+}
+
+tasks.register<DockerCreateContainer>("createEntityServiceContainer") {
+  dependsOn("pullEntityServiceImage")
+  targetImageId(tasks.getByName<DockerPullImage>("pullEntityServiceImage").image)
+  containerName.set("entity-service-local")
+  envVars.put("SERVICE_NAME", "entity-service")
+  envVars.put("mongo_host", tasks.getByName<DockerCreateContainer>("createMongoContainer").containerName)
+  envVars.put("BOOTSTRAP_CONFIG_URI", "file:///app/resources/configs")
+  envVars.put("CLUSTER_NAME", "test")
+  exposePorts("tcp", listOf(60061))
+  hostConfig.portBindings.set(listOf("60061:50061"))
+  hostConfig.binds.put("$projectDir/src/integrationTest/resources/config-entity-service-test/application.conf", "/app/resources/configs/entity-service/test/application.conf")
+  hostConfig.network.set(tasks.getByName<DockerCreateNetwork>("createIntegrationTestNetwork").networkId)
+  hostConfig.autoRemove.set(true)
+}
+
+tasks.register<DockerStartContainer>("startEntityServiceContainer") {
+  dependsOn("startMongoContainer")
+  dependsOn("createEntityServiceContainer")
+  targetContainerId(tasks.getByName<DockerCreateContainer>("createEntityServiceContainer").containerId)
+}
+
+tasks.register<DockerStopContainer>("stopEntityServiceContainer") {
+  targetContainerId(tasks.getByName<DockerCreateContainer>("createEntityServiceContainer").containerId)
+  finalizedBy("stopMongoContainer")
+}
+
 tasks.integrationTest {
   useJUnitPlatform()
-  dependsOn("startMongoContainer")
-  finalizedBy("stopMongoContainer")
+  dependsOn("startEntityServiceContainer")
+  finalizedBy("stopEntityServiceContainer")
 }
 
 dependencies {
@@ -84,7 +115,10 @@ dependencies {
   implementation(libs.hypertrace.configservice.notification.rule.impl)
   implementation(libs.hypertrace.configservice.notification.channel.impl)
   implementation(libs.hypertrace.configservice.changeeventgenerator)
+  implementation(libs.hypertrace.entityservice.api)
   implementation(libs.traceable.activityevent.api)
+  implementation(libs.traceable.apiNamingModel)
+  implementation(libs.traceable.platformGateway.trainingEvaluationFramework)
   implementation(libs.typesafe.config)
   implementation(libs.slf4j.api)
   implementation(libs.kafka.avro.serializer)
@@ -102,12 +136,15 @@ dependencies {
   integrationTestImplementation(libs.traceable.insights.api)
   integrationTestImplementation(libs.traceable.featureFlag.futureClient)
   integrationTestImplementation(libs.traceable.licensemetering.api)
+  integrationTestImplementation(libs.traceable.apiNamingModel)
+  integrationTestImplementation(libs.traceable.platformGateway.trainingEvaluationFramework)
   integrationTestImplementation(libs.junit.jupiter)
   integrationTestImplementation(libs.guava)
   integrationTestImplementation(libs.hypertrace.framework.integrationtest)
   integrationTestImplementation(libs.hypertrace.documentstore)
   integrationTestImplementation(libs.hypertrace.grpcutils.client)
   integrationTestImplementation(libs.hypertrace.grpcutils.context)
+  integrationTestImplementation(libs.hypertrace.entityservice.api)
   integrationTestImplementation(libs.protobuf.javautil)
   integrationTestImplementation(projects.iprangeConfigServiceApi)
   integrationTestImplementation(projects.riskConfigServiceApi)
