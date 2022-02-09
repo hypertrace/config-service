@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+package ai.traceable.span.processing.config.service.v1;
+
+option go_package = "github.com/Traceableai/config-service/spanprocessing/v1";
+option java_multiple_files = true;
+
+service SpanProcessingConfigService {
+  rpc CreateSpanProcessingRule(CreateSpanProcessingRuleRequest) returns (CreateSpanProcessingRuleResponse) {}
+
+  rpc UpdateSpanProcessingRules(UpdateSpanProcessingRulesRequest) returns (UpdateSpanProcessingRulesResponse) {}
+
+  rpc GetAllSpanProcessingRules(GetAllSpanProcessingRulesRequest) returns (GetAllSpanProcessingRulesResponse) {}
+
+  rpc DeleteSpanProcessingRule(DeleteSpanProcessingRuleRequest) returns (DeleteSpanProcessingRuleResponse) {}
+}
+
+message CreateSpanProcessingRuleRequest {
+  SpanProcessingRuleInfo rule_info = 1;
+}
+
+message CreateSpanProcessingRuleResponse {
+  SpanProcessingRule rule = 1;
+}
+
+message GetAllSpanProcessingRulesRequest {}
+
+message GetAllSpanProcessingRulesResponse {
+  repeated SpanProcessingRule rules = 1;
+}
+
+message UpdateSpanProcessingRulesRequest {
+  repeated UpdateSpanProcessingRule rules = 1;
+}
+
+message UpdateSpanProcessingRulesResponse {
+  repeated SpanProcessingRule rules = 1;
+}
+
+message DeleteSpanProcessingRuleRequest {
+  string id = 1;
+}
+
+message DeleteSpanProcessingRuleResponse {}
+
+message SpanProcessingRule {
+  string id = 1;
+  int32 priority = 2;
+  SpanProcessingRuleInfo rule_info = 3;
+}
+
+message UpdateSpanProcessingRule {
+  string id = 1;
+  string name = 2;
+  oneof rule {
+    UpdateExcludeSpanRule exclude_span_rule = 3;
+  }
+}
+
+message SpanProcessingRuleInfo {
+  string name = 1;
+  oneof rule {
+    ExcludeSpanRule exclude_span_rule = 2;
+  }
+}
+
+message ExcludeSpanRule {
+  Filter filter = 1;
+}
+
+message UpdateExcludeSpanRule {
+  Filter filter = 1;
+}
+
+message Filter {
+  oneof filter_expression {
+    LogicalFilterExpression logical_filter = 1;
+    RelationalFilterExpression relational_filter = 2;
+  }
+}
+
+message LogicalFilterExpression {
+  LogicalOperator operator = 1;
+  repeated Filter operands = 2;
+}
+
+message RelationalFilterExpression {
+  oneof left_operand {
+    string span_attribute_key = 1;
+    Field field = 2;
+  }
+  RelationalOperator operator = 3;
+  FilterValue right_operand = 4;
+}
+
+message FilterValue {
+  oneof value {
+    string string_value = 1;
+  }
+}
+
+enum LogicalOperator {
+  LOGICAL_OPERATOR_UNSPECIFIED = 0;
+  LOGICAL_OPERATOR_AND = 1;
+  LOGICAL_OPERATOR_OR = 2;
+}
+
+enum Field {
+  FIELD_UNSPECIFIED = 0;
+  FIELD_URL_PATH = 1;
+  FIELD_SERVICE_NAME = 2;
+  FIELD_ENVIRONMENT_NAME = 3;
+}
+
+enum RelationalOperator {
+  RELATIONAL_OPERATOR_UNSPECIFIED = 0;
+  RELATIONAL_OPERATOR_EQUALS = 1;
+  RELATIONAL_OPERATOR_NOT_EQUALS = 2;
+  RELATIONAL_OPERATOR_CONTAINS = 3;
+  RELATIONAL_OPERATOR_STARTS_WITH = 4;
+  RELATIONAL_OPERATOR_ENDS_WITH = 5;
+  RELATIONAL_OPERATOR_REGEX_MATCH = 6;
+}
