@@ -6,7 +6,7 @@ jackson = "2.12.4"
 hypertrace-grpcutils = "0.6.2"
 hypertrace-framework = "0.1.31"
 traceable-platform = "0.1.83"
-traceable-platformGateway = "0.6.0"
+traceable-platformGateway = "0.6.2"
 kafka = "6.0.1"
 
 junit = "5.7.2"
@@ -18,6 +18,7 @@ traceable-activityevent-api = { module = "ai.traceable.activity.event.service:ac
 traceable-licensemetering-api = { module = "ai.traceable.license.metering.service:license-metering-service-api", version = "0.1.13" }
 traceable-platform-jnimodsecurity = { module = "ai.traceable.platform:jni-modsecurity", version.ref = "traceable-platform" }
 traceable-apiNamingModel = { module = "ai.traceable.platform:api-naming-model", version = "0.7.4"}
+traceable-platformGateway-deepDataStore = { module = "ai.traceable.platform-gateway:deep-data-store", version.ref = "traceable-platformGateway" }
 traceable-platformGateway-trainingEvaluationFramework = { module = "ai.traceable.platform-gateway:training-evaluation-framework", version.ref = "traceable-platformGateway" }
 traceable-featureFlag-futureClient = { module = "ai.traceable.featureflag:feature-flag-future-client", version = "0.3.0" }
 
@@ -63,6 +64,7 @@ grpc-api = { module = "io.grpc:grpc-api", version.ref = "grpc" }
 grpc-core = { module = "io.grpc:grpc-core", version.ref = "grpc" }
 grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "grpc" }
 protobuf-javautil = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protoc" }
+rholder-guava-retrying = { module =  "com.github.rholder:guava-retrying", version = "2.0.0" }
 
 slf4j-log4jimpl = { module = "org.apache.logging.log4j:log4j-slf4j-impl", version = "2.17.0" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version = "1.7.30" }

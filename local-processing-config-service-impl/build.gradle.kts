@@ -23,7 +23,9 @@ dependencies {
   implementation(libs.uuidCreator)
   implementation(libs.hypertrace.entityservice.api)
   implementation(libs.traceable.apiNamingModel)
+  implementation(libs.traceable.platformGateway.deepDataStore)
   implementation(libs.traceable.platformGateway.trainingEvaluationFramework)
+  implementation(libs.rholder.guava.retrying)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

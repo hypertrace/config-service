@@ -14,14 +14,19 @@ import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrieModelTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.UrlFilterConfig;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
+import ai.traceable.localprocessing.config.service.v1.DiffTrie;
 import ai.traceable.localprocessing.config.service.v1.FullTrie;
 import ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig;
 import ai.traceable.localprocessing.config.service.v1.HttpApiNamingCustomRule;
 import ai.traceable.localprocessing.config.service.v1.Node;
+import ai.traceable.localprocessing.config.service.v1.TrieNodePath;
 import ai.traceable.localprocessing.config.service.v1.Wildcard;
 import ai.traceable.localprocessing.config.service.v1.WildcardConfig;
 import ai.traceable.localprocessing.config.service.v1.WildcardType;
+import ai.traceable.platform.apientity.Addition;
+import ai.traceable.platform.apientity.Deletion;
 import ai.traceable.platform.apientity.Segment;
+import ai.traceable.platform.apientity.TrieDiffLog;
 import ai.traceable.platform.apientity.TrieNodeType;
 import ai.traceable.platform.apientity.http.model.TrieNodeConfig;
 import java.util.HashSet;
@@ -191,6 +196,10 @@ public class ApiNamingManagerTestUtils {
         .build();
   }
 
+  public static TrieDiffLog buildTrieDiffLogs() {
+    return TrieDiffLog.newBuilder().build();
+  }
+
   public static Set<List<Segment>> buildNonEmbryonicPaths() {
     return new HashSet<>(
         Set.of(
@@ -275,5 +284,87 @@ public class ApiNamingManagerTestUtils {
                     .build())
             .build();
     return FullTrie.newBuilder().addAllRoots(List.of(rootNode)).build();
+  }
+
+  public static TrieDiffLog buildTrieDiffLog() {
+    return TrieDiffLog.newBuilder()
+        .setPathAdditions(
+            List.of(
+                Addition.newBuilder()
+                    .setSegments(
+                        List.of(
+                            Segment.newBuilder().setName("GET").build(),
+                            Segment.newBuilder()
+                                .setName(
+                                    ai.traceable.platform.apientity.Wildcard.newBuilder()
+                                        .setWildcardType(TrieNodeType.ID)
+                                        .setExtension("e")
+                                        .build())
+                                .build()))
+                    .build()))
+        .setNodeDeletions(
+            List.of(
+                Deletion.newBuilder()
+                    .setSegments(List.of(Segment.newBuilder().setName("GET").build()))
+                    .build(),
+                Deletion.newBuilder()
+                    .setSegments(
+                        List.of(
+                            Segment.newBuilder()
+                                .setName(
+                                    ai.traceable.platform.apientity.Wildcard.newBuilder()
+                                        .setWildcardType(TrieNodeType.ID)
+                                        .setExtension("ex")
+                                        .build())
+                                .build()))
+                    .build()))
+        .build();
+  }
+
+  public static DiffTrie buildExpectedDiffTrie() {
+    return DiffTrie.newBuilder()
+        .addTrieDiffLogs(
+            ai.traceable.localprocessing.config.service.v1.TrieDiffLog.newBuilder()
+                .setPathAddition(
+                    TrieNodePath.newBuilder()
+                        .addValues(
+                            ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
+                                .setName("GET")
+                                .build())
+                        .addValues(
+                            ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
+                                .setWildcard(
+                                    Wildcard.newBuilder()
+                                        .setWildcardType(WildcardType.WILDCARD_TYPE_ID)
+                                        .setExtension("e")
+                                        .build())
+                                .build())
+                        .build())
+                .build())
+        .addTrieDiffLogs(
+            ai.traceable.localprocessing.config.service.v1.TrieDiffLog.newBuilder()
+                .setNodeRemoval(
+                    TrieNodePath.newBuilder()
+                        .addValues(
+                            ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
+                                .setName("GET")
+                                .build())
+                        .build())
+                .build())
+        .addTrieDiffLogs(
+            ai.traceable.localprocessing.config.service.v1.TrieDiffLog.newBuilder()
+                .setNodeRemoval(
+                    TrieNodePath.newBuilder()
+                        .addValues(
+                            ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
+                                .setWildcard(
+                                    Wildcard.newBuilder()
+                                        .setExtension("ex")
+                                        .setWildcardType(WildcardType.WILDCARD_TYPE_ID)
+                                        .build())
+                                .build())
+                        .build())
+                .build())
+        .build();
   }
 }

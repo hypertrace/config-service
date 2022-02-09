@@ -19,4 +19,12 @@ public class ApiNamingConfig {
   public int getDefaultEmbryonicThreshold() {
     return this.config.getInt("default.embryonic.threshold");
   }
+
+  public long getDiffLogsRetentionPeriod() {
+    return this.config.getDuration("trieDiffLog.diff.logs.retention.period").toMillis();
+  }
+
+  public String getBaseDirectory() {
+    return this.config.getString("trieDiffLog.model.store.directory");
+  }
 }

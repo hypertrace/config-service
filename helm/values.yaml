@@ -97,6 +97,12 @@ modelStores:
     readEnabled: true
     readPriority: 1
     writeDisabled: false
+
+trieDiffLog:
+  modelStore:
+    deepStoreScheme: "file"
+  trieDiffLogsRetentionPeriod : 1h
+
 ###########
 # Config Maps
 ###########
