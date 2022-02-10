@@ -17,6 +17,7 @@ import ai.traceable.region.config.service.RegionConfigServiceFactory;
 import ai.traceable.reporting.config.service.ReportingConfigServiceFactory;
 import ai.traceable.risk.config.service.RiskConfigServiceFactory;
 import ai.traceable.sensitivedata.config.service.SensitiveDataConfigServicesProvider;
+import ai.traceable.span.processing.config.service.SpanProcessingConfigServiceFactory;
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceFactory;
 import ai.traceable.userattribution.config.service.UserAttributionConfigServiceFactory;
 import com.typesafe.config.Config;
@@ -118,6 +119,8 @@ public class TraceableConfigService extends PlatformService {
     BindableService dataClassificationConfigService =
         DataClassificationConfigServiceFactory.build(
             managedChannel, configChangeEventGenerator, config);
+    BindableService spanProcessingConfigService =
+        SpanProcessingConfigServiceFactory.build(managedChannel);
     List<BindableService> anomalyConfigServices =
         AnomalyConfigServiceFactory.build(
             channelRegistry, managedChannel, config, configChangeEventGenerator);
@@ -150,7 +153,8 @@ public class TraceableConfigService extends PlatformService {
         .addService(InterceptorUtil.wrapInterceptors(notificationRuleConfigService))
         .addService(InterceptorUtil.wrapInterceptors(notificationChannelConfigService))
         .addService(InterceptorUtil.wrapInterceptors(reportingConfigService))
-        .addService(InterceptorUtil.wrapInterceptors(dataClassificationConfigService));
+        .addService(InterceptorUtil.wrapInterceptors(dataClassificationConfigService))
+        .addService(InterceptorUtil.wrapInterceptors(spanProcessingConfigService));
 
     internalTraceableConfigServer = internalServerBuilder.build();
 
