@@ -1,5 +1,8 @@
 package ai.traceable.data.classification.config.service;
 
+import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_RAW_DATA_SET_DESCRIPTION;
+import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_RAW_DATA_SET_ID;
+import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_RAW_DATA_SET_NAME;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_HEADER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -33,10 +36,19 @@ import ai.traceable.data.classification.config.service.v1.UpdateDataSetRequest;
 import ai.traceable.data.classification.config.service.v1.UpdateDataSetResponse;
 import ai.traceable.data.classification.config.service.v1.UpdateDataTypeRequest;
 import ai.traceable.data.classification.config.service.v1.UpdateDataTypeResponse;
+import ai.traceable.sensitivedata.config.service.v1.ComplexData;
+import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesResponse;
+import ai.traceable.sensitivedata.config.service.v1.MatchType;
+import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
+import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
+import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
+import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -53,6 +65,7 @@ class DataClassificationConfigServiceImplTest {
   Config mockConfig;
   private static final String DATA_CLASSIFICATION_CONFIG_SERVICE =
       "data.classification.config.service";
+  boolean sensitiveDataConfigServiceMockFlag;
 
   @BeforeEach
   void setUp() {
@@ -60,6 +73,8 @@ class DataClassificationConfigServiceImplTest {
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
+        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     mockConfig = mock(Config.class);
     when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(false);
@@ -72,16 +87,148 @@ class DataClassificationConfigServiceImplTest {
                 new DataSetConfigRequestValidator(),
                 new DataTypeConfigRequestValidator(),
                 mockConfig,
-                null))
+                null,
+                new RedactionRulesDao(sensitiveDataConfigServiceBlockingStub)))
+        .addService(new MockSensitiveDataConfigService())
         .start();
     dataClassificationConfigServiceBlockingStub =
         DataClassificationConfigServiceGrpc.newBlockingStub(
             this.mockGenericConfigService.channel());
+    sensitiveDataConfigServiceMockFlag = false;
   }
 
   @AfterEach
   void afterEach() {
     mockGenericConfigService.shutdown();
+  }
+
+  @Test
+  void redactionRulesToDataTypesTest() {
+    mockGenericConfigService.shutdown();
+    sensitiveDataConfigServiceMockFlag = true;
+    mockGenericConfigService =
+        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    ConfigServiceBlockingStub genericStub =
+        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
+        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    mockConfig = mock(Config.class);
+    when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(false);
+    mockGenericConfigService
+        .addService(
+            new DataClassificationConfigServiceImpl(
+                new DataSetStore(genericStub, configChangeEventGenerator),
+                new DataTypeStore(genericStub, configChangeEventGenerator),
+                new DeletedDataSetStore(genericStub),
+                new DataSetConfigRequestValidator(),
+                new DataTypeConfigRequestValidator(),
+                mockConfig,
+                null,
+                new RedactionRulesDao(sensitiveDataConfigServiceBlockingStub)))
+        .addService(new MockSensitiveDataConfigService())
+        .start();
+    dataClassificationConfigServiceBlockingStub =
+        DataClassificationConfigServiceGrpc.newBlockingStub(
+            this.mockGenericConfigService.channel());
+
+    DataType expectedDataType1 =
+        DataType.newBuilder()
+            .setId("id-2")
+            .setRule(DataTypeRule.newBuilder().setName("rule-2").setDescription("description-2"))
+            .build();
+    DataType expectedDataType2 =
+        DataType.newBuilder()
+            .setId("id-3")
+            .setRule(DataTypeRule.newBuilder().setName("rule-3").setDescription("description-3"))
+            .build();
+    GetDataTypesRequest getRequest = GetDataTypesRequest.getDefaultInstance();
+    GetDataTypesResponse response =
+        dataClassificationConfigServiceBlockingStub.getDataTypes(getRequest);
+    assertEquals(2, response.getDataTypesCount());
+    assertEquals(expectedDataType1, response.getDataTypes(0));
+    assertEquals(expectedDataType2, response.getDataTypes(1));
+  }
+
+  @Test
+  void getDataSetsFromRedactionRulesTest() {
+    mockGenericConfigService.shutdown();
+    sensitiveDataConfigServiceMockFlag = true;
+    mockGenericConfigService =
+        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    ConfigServiceBlockingStub genericStub =
+        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
+        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    mockConfig = mock(Config.class);
+    when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(false);
+    mockGenericConfigService
+        .addService(
+            new DataClassificationConfigServiceImpl(
+                new DataSetStore(genericStub, configChangeEventGenerator),
+                new DataTypeStore(genericStub, configChangeEventGenerator),
+                new DeletedDataSetStore(genericStub),
+                new DataSetConfigRequestValidator(),
+                new DataTypeConfigRequestValidator(),
+                mockConfig,
+                null,
+                new RedactionRulesDao(sensitiveDataConfigServiceBlockingStub)))
+        .addService(new MockSensitiveDataConfigService())
+        .start();
+    dataClassificationConfigServiceBlockingStub =
+        DataClassificationConfigServiceGrpc.newBlockingStub(
+            this.mockGenericConfigService.channel());
+
+    GetDataSetsRequest request = GetDataSetsRequest.getDefaultInstance();
+    GetDataSetsResponse response = dataClassificationConfigServiceBlockingStub.getDataSets(request);
+    assertEquals(2, response.getDataSetsCount());
+    assertEquals("id-2", response.getDataSets(0).getInfo().getDataTypeIds(0));
+    assertEquals("id-3", response.getDataSets(1).getInfo().getDataTypeIds(0));
+  }
+
+  @Test
+  void getDataSetFromRedactionRulesTest() {
+    mockGenericConfigService.shutdown();
+    sensitiveDataConfigServiceMockFlag = true;
+    mockGenericConfigService =
+        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    ConfigServiceBlockingStub genericStub =
+        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
+        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    mockConfig = mock(Config.class);
+    when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(false);
+    mockGenericConfigService
+        .addService(
+            new DataClassificationConfigServiceImpl(
+                new DataSetStore(genericStub, configChangeEventGenerator),
+                new DataTypeStore(genericStub, configChangeEventGenerator),
+                new DeletedDataSetStore(genericStub),
+                new DataSetConfigRequestValidator(),
+                new DataTypeConfigRequestValidator(),
+                mockConfig,
+                null,
+                new RedactionRulesDao(sensitiveDataConfigServiceBlockingStub)))
+        .addService(new MockSensitiveDataConfigService())
+        .start();
+    dataClassificationConfigServiceBlockingStub =
+        DataClassificationConfigServiceGrpc.newBlockingStub(
+            this.mockGenericConfigService.channel());
+
+    DataSetInfo expectedDataSetInfo =
+        DataSetInfo.newBuilder()
+            .setName(LEGACY_RAW_DATA_SET_NAME)
+            .setDescription(LEGACY_RAW_DATA_SET_DESCRIPTION)
+            .setEnabled(true)
+            .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW)
+            .addDataTypeIds("id-3")
+            .build();
+    String dataSetId = LEGACY_RAW_DATA_SET_ID;
+    GetDataSetRequest request = GetDataSetRequest.newBuilder().setId(dataSetId).build();
+    GetDataSetResponse response = dataClassificationConfigServiceBlockingStub.getDataSet(request);
+    assertEquals(expectedDataSetInfo, response.getDataSet().getInfo());
   }
 
   @Test
@@ -91,6 +238,8 @@ class DataClassificationConfigServiceImplTest {
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
+        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     mockConfig = mock(Config.class);
     when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(true);
@@ -125,7 +274,9 @@ class DataClassificationConfigServiceImplTest {
                 new DataSetConfigRequestValidator(),
                 new DataTypeConfigRequestValidator(),
                 mockConfig,
-                null))
+                null,
+                new RedactionRulesDao(sensitiveDataConfigServiceBlockingStub)))
+        .addService(new MockSensitiveDataConfigService())
         .start();
     dataClassificationConfigServiceBlockingStub =
         DataClassificationConfigServiceGrpc.newBlockingStub(
@@ -152,6 +303,8 @@ class DataClassificationConfigServiceImplTest {
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
+        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     mockConfig = mock(Config.class);
     when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(true);
@@ -186,7 +339,9 @@ class DataClassificationConfigServiceImplTest {
                 new DataSetConfigRequestValidator(),
                 new DataTypeConfigRequestValidator(),
                 mockConfig,
-                null))
+                null,
+                new RedactionRulesDao(sensitiveDataConfigServiceBlockingStub)))
+        .addService(new MockSensitiveDataConfigService())
         .start();
     dataClassificationConfigServiceBlockingStub =
         DataClassificationConfigServiceGrpc.newBlockingStub(
@@ -207,6 +362,8 @@ class DataClassificationConfigServiceImplTest {
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
+        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     mockConfig = mock(Config.class);
     when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(true);
@@ -241,7 +398,9 @@ class DataClassificationConfigServiceImplTest {
                 new DataSetConfigRequestValidator(),
                 new DataTypeConfigRequestValidator(),
                 mockConfig,
-                null))
+                null,
+                new RedactionRulesDao(sensitiveDataConfigServiceBlockingStub)))
+        .addService(new MockSensitiveDataConfigService())
         .start();
     dataClassificationConfigServiceBlockingStub =
         DataClassificationConfigServiceGrpc.newBlockingStub(
@@ -265,6 +424,8 @@ class DataClassificationConfigServiceImplTest {
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
+        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     mockConfig = mock(Config.class);
     when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(true);
@@ -299,7 +460,8 @@ class DataClassificationConfigServiceImplTest {
                 new DataSetConfigRequestValidator(),
                 new DataTypeConfigRequestValidator(),
                 mockConfig,
-                null))
+                null,
+                new RedactionRulesDao(sensitiveDataConfigServiceBlockingStub)))
         .start();
     dataClassificationConfigServiceBlockingStub =
         DataClassificationConfigServiceGrpc.newBlockingStub(
@@ -558,5 +720,61 @@ class DataClassificationConfigServiceImplTest {
                         .setValue("value-1"))
                 .setActionValue(1))
         .build();
+  }
+
+  class MockSensitiveDataConfigService
+      extends SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceImplBase {
+
+    @Override
+    public void getAllRedactionRules(
+        GetAllRedactionRulesRequest request,
+        StreamObserver<GetAllRedactionRulesResponse> responseObserver) {
+      GetAllRedactionRulesResponse.Builder responseBuilder =
+          GetAllRedactionRulesResponse.newBuilder();
+      if (sensitiveDataConfigServiceMockFlag) {
+        RedactionRule rule1 =
+            RedactionRule.newBuilder()
+                .setId("id-1")
+                .setName("rule-1")
+                .setDescription("description-1")
+                .setCategory("category-1")
+                .setMatchType(MatchType.MATCH_TYPE_KEY)
+                .setComplexData(ComplexData.getDefaultInstance())
+                .setRegex("regex*")
+                .setSessionIdentifier(true)
+                .setFqn(false)
+                .setRedactionStrategy(RedactionStrategy.REDACTION_STRATEGY_REDACT)
+                .build();
+        RedactionRule rule2 =
+            RedactionRule.newBuilder()
+                .setId("id-2")
+                .setName("rule-2")
+                .setDescription("description-2")
+                .setCategory("category-2")
+                .setMatchType(MatchType.MATCH_TYPE_KEY)
+                .setComplexData(ComplexData.getDefaultInstance())
+                .setRegex("reg*ex")
+                .setSessionIdentifier(false)
+                .setFqn(true)
+                .setRedactionStrategy(RedactionStrategy.REDACTION_STRATEGY_HASH)
+                .build();
+        RedactionRule rule3 =
+            RedactionRule.newBuilder()
+                .setId("id-3")
+                .setName("rule-3")
+                .setDescription("description-3")
+                .setCategory("category-3")
+                .setMatchType(MatchType.MATCH_TYPE_KEY)
+                .setComplexData(ComplexData.getDefaultInstance())
+                .setRegex("regex")
+                .setSessionIdentifier(false)
+                .setFqn(false)
+                .setRedactionStrategy(RedactionStrategy.REDACTION_STRATEGY_RAW)
+                .build();
+        responseBuilder.addAllRedactionRules(List.of(rule1, rule2, rule3));
+      }
+      responseObserver.onNext(responseBuilder.build());
+      responseObserver.onCompleted();
+    }
   }
 }

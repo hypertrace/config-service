@@ -420,6 +420,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
                     GetDataTypesRequest.getDefaultInstance()))
         .getDataTypesList()
         .stream()
+        .filter(this::isNotLegacyDataType)
         .collect(Collectors.toUnmodifiableList());
   }
 
@@ -471,6 +472,10 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
         return featureFlagValue.getBoolean();
       }
     };
+  }
+
+  private boolean isNotLegacyDataType(DataType dataType) {
+    return !dataType.getRule().getScopedPatternsList().isEmpty();
   }
 
   private ThreadFactory buildThreadFactory() {

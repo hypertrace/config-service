@@ -57,6 +57,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
   private final List<DataType> systemDataTypes;
   private final Map<String, DataSet> systemDataSetsToIdMap;
   private final Optional<ConfigChangeEventGenerator> configChangeEventGenerator;
+  private final RedactionRulesDao redactionRulesDao;
 
   @Inject
   public DataClassificationConfigServiceImpl(
@@ -66,13 +67,15 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       DataSetConfigRequestValidator dataSetConfigRequestValidator,
       DataTypeConfigRequestValidator dataTypeConfigRequestValidator,
       Config config,
-      ConfigChangeEventGenerator configChangeEventGenerator) {
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      RedactionRulesDao redactionRulesDao) {
     this.dataSetStore = dataSetStore;
     this.dataTypeStore = dataTypeStore;
     this.deletedDataSetStore = deletedDataSetStore;
     this.dataSetConfigRequestValidator = dataSetConfigRequestValidator;
     this.dataTypeConfigRequestValidator = dataTypeConfigRequestValidator;
     this.configChangeEventGenerator = Optional.ofNullable(configChangeEventGenerator);
+    this.redactionRulesDao = redactionRulesDao;
     List<? extends com.typesafe.config.ConfigObject> systemDataSetsObjectList = null;
     List<? extends com.typesafe.config.ConfigObject> systemDataTypesObjectList = null;
     if (config.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)) {
@@ -138,10 +141,13 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
           systemDataTypes.stream()
               .filter(dataType -> !tenantDataTypesToIdMap.containsKey(dataType.getId()))
               .collect(Collectors.toUnmodifiableList());
+      List<DataType> convertedRedactionRules =
+          redactionRulesDao.getAllDataTypesFromRedactionRules(requestContext);
       responseObserver.onNext(
           GetDataTypesResponse.newBuilder()
               .addAllDataTypes(tenantDataTypes)
               .addAllDataTypes(filteredSystemDataTypes)
+              .addAllDataTypes(convertedRedactionRules)
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -215,7 +221,11 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       Optional<DataSet> dataSetOptional =
           this.dataSetStore
               .getData(requestContext, request.getId())
-              .or(() -> this.getSystemDataSet(requestContext, request.getId()));
+              .or(() -> this.getSystemDataSet(requestContext, request.getId()))
+              .or(
+                  () ->
+                      this.redactionRulesDao.getDataSetWithIdFromRedactionRules(
+                          requestContext, request.getId()));
       DataSet dataSet = dataSetOptional.orElseThrow(Status.NOT_FOUND::asRuntimeException);
       responseObserver.onNext(GetDataSetResponse.newBuilder().setDataSet(dataSet).build());
       responseObserver.onCompleted();
@@ -244,10 +254,13 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
                       !tenantDataSetsToIdMap.containsKey(dataSet.getId())
                           && !deletedSystemDataSetsIds.contains(dataSet.getId()))
               .collect(Collectors.toUnmodifiableList());
+      List<DataSet> redactionRulesToDataSets =
+          this.redactionRulesDao.getDataSetsFromRedactionRules(requestContext);
       responseObserver.onNext(
           GetDataSetsResponse.newBuilder()
               .addAllDataSets(tenantDataSets)
               .addAllDataSets(filteredSystemDataSets)
+              .addAllDataSets(redactionRulesToDataSets)
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
