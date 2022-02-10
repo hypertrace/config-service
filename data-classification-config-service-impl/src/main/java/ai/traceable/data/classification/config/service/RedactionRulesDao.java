@@ -122,12 +122,11 @@ public class RedactionRulesDao {
   public void deleteDataSet(RequestContext requestContext, String dataSetId) {
     Optional<DataSet> dataSetOptional =
         getDataSetWithIdFromRedactionRules(requestContext, dataSetId);
-    dataSetOptional.ifPresent(
-        dataSet ->
-            dataSet
-                .getInfo()
-                .getDataTypeIdsList()
-                .forEach(ruleId -> deleteRedactionRule(requestContext, ruleId)));
+    DataSet dataSet = dataSetOptional.orElseThrow(Status.NOT_FOUND::asRuntimeException);
+    dataSet
+        .getInfo()
+        .getDataTypeIdsList()
+        .forEach(ruleId -> deleteRedactionRule(requestContext, ruleId));
   }
 
   private Optional<DataSet> buildDataSet(
