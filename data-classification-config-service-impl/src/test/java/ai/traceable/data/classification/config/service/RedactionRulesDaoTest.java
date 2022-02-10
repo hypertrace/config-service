@@ -6,6 +6,7 @@ import static ai.traceable.data.classification.config.service.RedactionRulesDao.
 import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_RAW_DATA_SET_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo;
@@ -13,6 +14,8 @@ import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppre
 import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
 import ai.traceable.sensitivedata.config.service.v1.ComplexData;
+import ai.traceable.sensitivedata.config.service.v1.DeleteRedactionRuleRequest;
+import ai.traceable.sensitivedata.config.service.v1.DeleteRedactionRuleResponse;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesResponse;
 import ai.traceable.sensitivedata.config.service.v1.MatchType;
@@ -21,8 +24,13 @@ import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
 import io.grpc.stub.StreamObserver;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
@@ -62,11 +70,17 @@ class RedactionRulesDaoTest {
             .setId("id-3")
             .setRule(DataTypeRule.newBuilder().setName("rule-3").setDescription("description-3"))
             .build();
+    DataType expectedDataType3 =
+        DataType.newBuilder()
+            .setId("id-4")
+            .setRule(DataTypeRule.newBuilder().setName("rule-4").setDescription("description-4"))
+            .build();
     List<DataType> actualDataTypes =
         redactionRulesDao.getAllDataTypesFromRedactionRules(REQUEST_CONTEXT);
-    assertEquals(2, actualDataTypes.size());
+    assertEquals(3, actualDataTypes.size());
     assertEquals(expectedDataType1, actualDataTypes.get(0));
     assertEquals(expectedDataType2, actualDataTypes.get(1));
+    assertEquals(expectedDataType3, actualDataTypes.get(2));
   }
 
   @Test
@@ -78,6 +92,7 @@ class RedactionRulesDaoTest {
             .setEnabled(true)
             .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW)
             .addDataTypeIds("id-3")
+            .addDataTypeIds("id-4")
             .build();
     Optional<DataSet> actualDataSet =
         redactionRulesDao.getDataSetWithIdFromRedactionRules(
@@ -96,15 +111,39 @@ class RedactionRulesDaoTest {
     assertEquals("id-3", actualDataSets.get(1).getInfo().getDataTypeIds(0));
   }
 
+  @Test
+  void updateDataSetTest() {
+    DataSetInfo updatedDataSetInfo =
+        DataSetInfo.newBuilder()
+            .setName(LEGACY_RAW_DATA_SET_NAME)
+            .setDescription(LEGACY_RAW_DATA_SET_DESCRIPTION)
+            .setEnabled(true)
+            .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW)
+            .addDataTypeIds("id-3")
+            .build();
+    redactionRulesDao.updateDataSet(REQUEST_CONTEXT, LEGACY_RAW_DATA_SET_ID, updatedDataSetInfo);
+    Optional<DataSet> dataSetOptional =
+        redactionRulesDao.getDataSetWithIdFromRedactionRules(
+            REQUEST_CONTEXT, LEGACY_RAW_DATA_SET_ID);
+    assertTrue(dataSetOptional.isPresent());
+    assertEquals(updatedDataSetInfo, dataSetOptional.get().getInfo());
+  }
+
+  @Test
+  void deleteDataSetTest() {
+    redactionRulesDao.deleteDataSet(REQUEST_CONTEXT, LEGACY_RAW_DATA_SET_ID);
+    Optional<DataSet> dataSetOptional =
+        redactionRulesDao.getDataSetWithIdFromRedactionRules(
+            REQUEST_CONTEXT, LEGACY_RAW_DATA_SET_ID);
+    assertTrue(dataSetOptional.isEmpty());
+  }
+
   class MockSensitiveDataConfigService
       extends SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceImplBase {
 
-    @Override
-    public void getAllRedactionRules(
-        GetAllRedactionRulesRequest request,
-        StreamObserver<GetAllRedactionRulesResponse> responseObserver) {
-      GetAllRedactionRulesResponse.Builder responseBuilder =
-          GetAllRedactionRulesResponse.newBuilder();
+    private final Map<String, RedactionRule> redactionRulesMap;
+
+    public MockSensitiveDataConfigService() {
       RedactionRule rule1 =
           RedactionRule.newBuilder()
               .setId("id-1")
@@ -144,8 +183,44 @@ class RedactionRulesDaoTest {
               .setFqn(false)
               .setRedactionStrategy(RedactionStrategy.REDACTION_STRATEGY_RAW)
               .build();
-      responseBuilder.addAllRedactionRules(List.of(rule1, rule2, rule3));
+      RedactionRule rule4 =
+          RedactionRule.newBuilder()
+              .setId("id-4")
+              .setName("rule-4")
+              .setDescription("description-4")
+              .setCategory("category-4")
+              .setMatchType(MatchType.MATCH_TYPE_KEY)
+              .setComplexData(ComplexData.getDefaultInstance())
+              .setRegex("regex")
+              .setSessionIdentifier(false)
+              .setFqn(false)
+              .setRedactionStrategy(RedactionStrategy.REDACTION_STRATEGY_RAW)
+              .build();
+      redactionRulesMap =
+          Stream.of(rule1, rule2, rule3, rule4)
+              .collect(
+                  Collectors.toMap(
+                      RedactionRule::getId, Function.identity(), (x, y) -> y, LinkedHashMap::new));
+    }
+
+    @Override
+    public void getAllRedactionRules(
+        GetAllRedactionRulesRequest request,
+        StreamObserver<GetAllRedactionRulesResponse> responseObserver) {
+      GetAllRedactionRulesResponse.Builder responseBuilder =
+          GetAllRedactionRulesResponse.newBuilder();
+
+      responseBuilder.addAllRedactionRules(redactionRulesMap.values());
       responseObserver.onNext(responseBuilder.build());
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void deleteRedactionRule(
+        DeleteRedactionRuleRequest request,
+        StreamObserver<DeleteRedactionRuleResponse> responseObserver) {
+      redactionRulesMap.remove(request.getRedactionRuleId());
+      responseObserver.onNext(DeleteRedactionRuleResponse.getDefaultInstance());
       responseObserver.onCompleted();
     }
   }

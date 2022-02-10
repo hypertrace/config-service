@@ -1,5 +1,6 @@
 package ai.traceable.data.classification.config.service;
 
+import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_DATA_SET_IDS;
 import static java.util.function.Function.identity;
 import static org.hypertrace.config.proto.converter.ConfigProtoConverter.convertToValue;
 
@@ -274,14 +275,20 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.dataSetConfigRequestValidator.validateOrThrow(requestContext, request);
-      Optional<DataSet> existingDataSet =
-          this.dataSetStore
-              .getData(requestContext, request.getId())
-              .or(() -> this.getSystemDataSet(requestContext, request.getId()));
-      DataSet dataSet = existingDataSet.orElseThrow(Status.NOT_FOUND::asRuntimeException);
-      DataSet updatedDataSet = dataSet.toBuilder().setInfo(request.getInfo()).build();
-      DataSet upsertedDataSet =
-          this.dataSetStore.upsertObject(requestContext, updatedDataSet).getData();
+      String dataSetId = request.getId();
+      DataSet upsertedDataSet;
+      if (LEGACY_DATA_SET_IDS.contains(dataSetId)) {
+        upsertedDataSet =
+            this.redactionRulesDao.updateDataSet(requestContext, dataSetId, request.getInfo());
+      } else {
+        Optional<DataSet> existingDataSet =
+            this.dataSetStore
+                .getData(requestContext, dataSetId)
+                .or(() -> this.getSystemDataSet(requestContext, dataSetId));
+        DataSet dataSet = existingDataSet.orElseThrow(Status.NOT_FOUND::asRuntimeException);
+        DataSet updatedDataSet = dataSet.toBuilder().setInfo(request.getInfo()).build();
+        upsertedDataSet = this.dataSetStore.upsertObject(requestContext, updatedDataSet).getData();
+      }
       responseObserver.onNext(
           UpdateDataSetResponse.newBuilder().setDataSet(upsertedDataSet).build());
       responseObserver.onCompleted();
@@ -296,17 +303,24 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.dataSetConfigRequestValidator.validateOrThrow(requestContext, request);
-      Optional<ContextualConfigObject<DataSet>> optionalContextualConfigObject =
-          this.dataSetStore.deleteObject(requestContext, request.getId());
-      Optional<DataSet> systemDataSetOptional = getSystemDataSet(requestContext, request.getId());
-      if (systemDataSetOptional.isPresent()) {
-        DeletedSystemDataSet deletedSystemDataSet =
-            DeletedSystemDataSet.newBuilder().setId(request.getId()).build();
-        this.deletedDataSetStore.upsertObject(requestContext, deletedSystemDataSet);
-        sendSystemDataSetDeletionEvent(
-            requestContext, optionalContextualConfigObject.isEmpty(), systemDataSetOptional.get());
-      } else if (optionalContextualConfigObject.isEmpty()) {
-        throw Status.NOT_FOUND.asRuntimeException();
+      String dataSetId = request.getId();
+      if (LEGACY_DATA_SET_IDS.contains(dataSetId)) {
+        this.redactionRulesDao.deleteDataSet(requestContext, dataSetId);
+      } else {
+        Optional<ContextualConfigObject<DataSet>> optionalContextualConfigObject =
+            this.dataSetStore.deleteObject(requestContext, dataSetId);
+        Optional<DataSet> systemDataSetOptional = getSystemDataSet(requestContext, dataSetId);
+        if (systemDataSetOptional.isPresent()) {
+          DeletedSystemDataSet deletedSystemDataSet =
+              DeletedSystemDataSet.newBuilder().setId(dataSetId).build();
+          this.deletedDataSetStore.upsertObject(requestContext, deletedSystemDataSet);
+          sendSystemDataSetDeletionEvent(
+              requestContext,
+              optionalContextualConfigObject.isEmpty(),
+              systemDataSetOptional.get());
+        } else if (optionalContextualConfigObject.isEmpty()) {
+          throw Status.NOT_FOUND.asRuntimeException();
+        }
       }
       responseObserver.onNext(DeleteDataSetResponse.getDefaultInstance());
       responseObserver.onCompleted();

@@ -9,13 +9,16 @@ import ai.traceable.data.classification.config.service.v1.DataSetInfo;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
 import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
+import ai.traceable.sensitivedata.config.service.v1.DeleteRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
 import com.google.inject.Inject;
+import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -33,6 +36,8 @@ public class RedactionRulesDao {
   static final String LEGACY_RAW_DATA_SET_DESCRIPTION =
       "Legacy dataset containing redaction rules with collect strategy";
   static final String LEGACY_RAW_DATA_SET_ID = "legacy-dataset-unsuppressed-id";
+  static final Set<String> LEGACY_DATA_SET_IDS =
+      Set.of(LEGACY_REDACT_DATA_SET_ID, LEGACY_OBFUSCATE_DATA_SET_ID, LEGACY_RAW_DATA_SET_ID);
 
   private final SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub;
 
@@ -61,7 +66,7 @@ public class RedactionRulesDao {
           }
         });
     Optional<DataSet> dataSetForRedact =
-        createDataSet(
+        buildDataSet(
             ruleIdsForRedact,
             LEGACY_REDACT_DATA_SET_ID,
             LEGACY_REDACT_DATA_SET_NAME,
@@ -69,7 +74,7 @@ public class RedactionRulesDao {
             DATA_SUPPRESSION_REDACT);
 
     Optional<DataSet> dataSetForObfuscate =
-        createDataSet(
+        buildDataSet(
             ruleIdsForObfuscate,
             LEGACY_OBFUSCATE_DATA_SET_ID,
             LEGACY_OBFUSCATE_DATA_SET_NAME,
@@ -77,7 +82,7 @@ public class RedactionRulesDao {
             DATA_SUPPRESSION_OBFUSCATE);
 
     Optional<DataSet> dataSetForRaw =
-        createDataSet(
+        buildDataSet(
             rulesIdsForRaw,
             LEGACY_RAW_DATA_SET_ID,
             LEGACY_RAW_DATA_SET_NAME,
@@ -102,7 +107,30 @@ public class RedactionRulesDao {
         .collect(Collectors.toUnmodifiableList());
   }
 
-  private Optional<DataSet> createDataSet(
+  public DataSet updateDataSet(RequestContext requestContext, String dataSetId, DataSetInfo info) {
+    Optional<DataSet> dataSetOptional =
+        getDataSetWithIdFromRedactionRules(requestContext, dataSetId);
+    DataSet dataSet = dataSetOptional.orElseThrow(Status.NOT_FOUND::asRuntimeException);
+    List<String> deleteRuleIds =
+        dataSet.getInfo().getDataTypeIdsList().stream()
+            .filter(ruleId -> !info.getDataTypeIdsList().contains(ruleId))
+            .collect(Collectors.toUnmodifiableList());
+    deleteRuleIds.forEach(ruleId -> deleteRedactionRule(requestContext, ruleId));
+    return DataSet.newBuilder().setId(dataSetId).setInfo(info).build();
+  }
+
+  public void deleteDataSet(RequestContext requestContext, String dataSetId) {
+    Optional<DataSet> dataSetOptional =
+        getDataSetWithIdFromRedactionRules(requestContext, dataSetId);
+    dataSetOptional.ifPresent(
+        dataSet ->
+            dataSet
+                .getInfo()
+                .getDataTypeIdsList()
+                .forEach(ruleId -> deleteRedactionRule(requestContext, ruleId)));
+  }
+
+  private Optional<DataSet> buildDataSet(
       List<String> ruleIds,
       String dataSetId,
       String dataSetName,
@@ -140,5 +168,12 @@ public class RedactionRulesDao {
                 .stream()
                 .filter(redactionRule -> !redactionRule.getSessionIdentifier())
                 .collect(Collectors.toUnmodifiableList()));
+  }
+
+  private void deleteRedactionRule(RequestContext requestContext, String ruleId) {
+    requestContext.call(
+        () ->
+            sensitiveDataConfigServiceBlockingStub.deleteRedactionRule(
+                DeleteRedactionRuleRequest.newBuilder().setRedactionRuleId(ruleId).build()));
   }
 }
