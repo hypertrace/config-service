@@ -21,6 +21,7 @@ message GetLocalProcessingConfigRequest {
   string custom_modsec_detection_rules_hash = 2;
   string protection_mode_hash = 3;
   string sampling_policies_hash = 4;
+  string span_processing_rules_hash = 5;
 }
 
 message GetLocalProcessingConfigResponse {
@@ -29,6 +30,7 @@ message GetLocalProcessingConfigResponse {
   CustomModsecDetectionRules custom_modsec_detection_rules = 3;
   SamplingPolicies sampling_policies = 4;
   ModsecConfig modsec_config = 5;
+  SpanProcessingRules span_processing_rules = 6;
 }
 
 message CustomModsecDetectionRules {
@@ -43,4 +45,58 @@ message RegularModsecDetectionRules {
 
 message ModsecConfig {
   bool redact_messages = 1;
+}
+
+message SpanProcessingRules {
+  string hash = 1;
+  repeated ExcludeSpanProcessingRule exclude_span_rules = 2;
+}
+
+message ExcludeSpanProcessingRule {
+  SpanProcessingRuleInfo span_processing_rule_info = 1;
+}
+
+message SpanProcessingRuleInfo {
+  string id = 1;
+  Filter filter = 2;
+}
+
+message Filter {
+  oneof filter_expression {
+    LogicalFilterExpression logical_filter = 1;
+    RelationalFilterExpression relational_filter = 2;
+  }
+}
+
+message LogicalFilterExpression {
+  LogicalOperator operator = 1;
+  repeated Filter operands = 2;
+}
+
+message RelationalFilterExpression {
+  string span_attribute_key = 1;
+  RelationalOperator operator = 2;
+  FilterValue right_operand = 3;
+}
+
+message FilterValue {
+  oneof value {
+    string string_value = 1;
+  }
+}
+
+enum LogicalOperator {
+  LOGICAL_OPERATOR_UNSPECIFIED = 0;
+  LOGICAL_OPERATOR_AND = 1;
+  LOGICAL_OPERATOR_OR = 2;
+}
+
+enum RelationalOperator {
+  RELATIONAL_OPERATOR_UNSPECIFIED = 0;
+  RELATIONAL_OPERATOR_EQUALS = 1;
+  RELATIONAL_OPERATOR_NOT_EQUALS = 2;
+  RELATIONAL_OPERATOR_CONTAINS = 3;
+  RELATIONAL_OPERATOR_STARTS_WITH = 4;
+  RELATIONAL_OPERATOR_ENDS_WITH = 5;
+  RELATIONAL_OPERATOR_REGEX_MATCH = 6;
 }
