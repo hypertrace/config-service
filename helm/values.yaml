@@ -79,6 +79,11 @@ deploymentSelectorMatchLabels:
 serviceSelectorLabels:
   app: traceable-config-service
 
+serviceAccount:
+  create: false
+  name: traceable-config-service
+  annotations: {}
+
 modelStoreNFSMountPath: "/var/data/models"
 modelStoreNFSClaimName: "traceable-nfs-model-store"
 deepStoreFilePath: "/var/data/customers/"

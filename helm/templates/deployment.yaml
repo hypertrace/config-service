@@ -74,6 +74,9 @@ spec:
       topologySpreadConstraints:
         {{- toYaml . | nindent 8}}
     {{- end }}
+    {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+    {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
