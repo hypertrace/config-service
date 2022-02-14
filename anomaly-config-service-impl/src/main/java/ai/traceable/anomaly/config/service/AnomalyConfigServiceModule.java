@@ -11,6 +11,7 @@ import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceModule;
 import ai.traceable.anomaly.config.service.exclusion.AnomalyExclusionConfigServiceModule;
 import ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceModule;
 import ai.traceable.anomaly.config.service.modsec.AnomalyModsecConfigServiceModule;
+import ai.traceable.anomaly.config.service.registry.AnomalyConfigRegistryModule;
 import ai.traceable.anomaly.config.service.trainer.TrainerConfigServiceModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -53,6 +54,7 @@ public class AnomalyConfigServiceModule extends AbstractModule {
     install(new AnomalyModsecConfigServiceModule(ANOMALY_MODSEC_CONFIG_ANNOTATION));
     install(new TrainerConfigServiceModule(TRAINER_CONFIG_ANNOTATION));
     install(new DetectorConfigServiceModule(DETECTOR_CONFIG_ANNOTATION));
+    install(new AnomalyConfigRegistryModule());
   }
 
   @Provides
