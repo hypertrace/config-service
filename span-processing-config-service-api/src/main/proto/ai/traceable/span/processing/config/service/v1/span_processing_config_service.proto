@@ -6,94 +6,81 @@ option go_package = "github.com/Traceableai/config-service/spanprocessing/v1";
 option java_multiple_files = true;
 
 service SpanProcessingConfigService {
-  rpc CreateSpanProcessingRule(CreateSpanProcessingRuleRequest) returns (CreateSpanProcessingRuleResponse) {}
+  rpc CreateExcludeSpanRule(CreateExcludeSpanRuleRequest) returns (CreateExcludeSpanRuleResponse) {}
 
-  rpc UpdateSpanProcessingRules(UpdateSpanProcessingRulesRequest) returns (UpdateSpanProcessingRulesResponse) {}
+  rpc UpdateExcludeSpanRule(UpdateExcludeSpanRuleRequest) returns (UpdateExcludeSpanRuleResponse) {}
 
-  rpc GetAllSpanProcessingRules(GetAllSpanProcessingRulesRequest) returns (GetAllSpanProcessingRulesResponse) {}
+  rpc GetAllExcludeSpanRules(GetAllExcludeSpanRulesRequest) returns (GetAllExcludeSpanRulesResponse) {}
 
-  rpc DeleteSpanProcessingRule(DeleteSpanProcessingRuleRequest) returns (DeleteSpanProcessingRuleResponse) {}
+  rpc DeleteExcludeSpanRule(DeleteExcludeSpanRuleRequest) returns (DeleteExcludeSpanRuleResponse) {}
 }
 
-message CreateSpanProcessingRuleRequest {
-  SpanProcessingRuleInfo rule_info = 1;
+message CreateExcludeSpanRuleRequest {
+  ExcludeSpanRuleInfo rule_info = 1;
 }
 
-message CreateSpanProcessingRuleResponse {
-  SpanProcessingRule rule = 1;
+message CreateExcludeSpanRuleResponse {
+  ExcludeSpanRule rule = 1;
 }
 
-message GetAllSpanProcessingRulesRequest {}
+message GetAllExcludeSpanRulesRequest {}
 
-message GetAllSpanProcessingRulesResponse {
-  repeated SpanProcessingRule rules = 1;
+message GetAllExcludeSpanRulesResponse {
+  repeated ExcludeSpanRule rules = 1;
 }
 
-message UpdateSpanProcessingRulesRequest {
-  repeated UpdateSpanProcessingRule rules = 1;
+message UpdateExcludeSpanRuleRequest {
+  UpdateExcludeSpanRule rule = 1;
 }
 
-message UpdateSpanProcessingRulesResponse {
-  repeated SpanProcessingRule rules = 1;
+message UpdateExcludeSpanRuleResponse {
+  ExcludeSpanRule rule = 1;
 }
 
-message DeleteSpanProcessingRuleRequest {
+message DeleteExcludeSpanRuleRequest {
   string id = 1;
 }
 
-message DeleteSpanProcessingRuleResponse {}
-
-message SpanProcessingRule {
-  string id = 1;
-  int32 priority = 2;
-  SpanProcessingRuleInfo rule_info = 3;
-}
-
-message UpdateSpanProcessingRule {
-  string id = 1;
-  string name = 2;
-  oneof rule {
-    UpdateExcludeSpanRule exclude_span_rule = 3;
-  }
-}
-
-message SpanProcessingRuleInfo {
-  string name = 1;
-  oneof rule {
-    ExcludeSpanRule exclude_span_rule = 2;
-  }
-}
+message DeleteExcludeSpanRuleResponse {}
 
 message ExcludeSpanRule {
-  Filter filter = 1;
+  string id = 1;
+  ExcludeSpanRuleInfo rule_info = 2;
+}
+
+message ExcludeSpanRuleInfo {
+  string name = 1;
+  SpanFilter filter = 2;
 }
 
 message UpdateExcludeSpanRule {
-  Filter filter = 1;
+  string id = 1;
+  string name = 2;
+  SpanFilter filter = 3;
 }
 
-message Filter {
-  oneof filter_expression {
-    LogicalFilterExpression logical_filter = 1;
-    RelationalFilterExpression relational_filter = 2;
+message SpanFilter {
+  oneof span_filter_expression {
+    LogicalSpanFilterExpression logical_span_filter = 1;
+    RelationalSpanFilterExpression relational_span_filter = 2;
   }
 }
 
-message LogicalFilterExpression {
+message LogicalSpanFilterExpression {
   LogicalOperator operator = 1;
-  repeated Filter operands = 2;
+  repeated SpanFilter operands = 2;
 }
 
-message RelationalFilterExpression {
+message RelationalSpanFilterExpression {
   oneof left_operand {
     string span_attribute_key = 1;
     Field field = 2;
   }
   RelationalOperator operator = 3;
-  FilterValue right_operand = 4;
+  SpanFilterValue right_operand = 4;
 }
 
-message FilterValue {
+message SpanFilterValue {
   oneof value {
     string string_value = 1;
   }

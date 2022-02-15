@@ -4,22 +4,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.config.utils.UuidGenerator;
-import ai.traceable.span.processing.config.service.store.SpanProcessingRulesConfigStore;
-import ai.traceable.span.processing.config.service.v1.CreateSpanProcessingRuleRequest;
-import ai.traceable.span.processing.config.service.v1.DeleteSpanProcessingRuleRequest;
+import ai.traceable.span.processing.config.service.store.ExcludeSpanRulesConfigStore;
+import ai.traceable.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
+import ai.traceable.span.processing.config.service.v1.DeleteExcludeSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.ExcludeSpanRule;
+import ai.traceable.span.processing.config.service.v1.ExcludeSpanRuleInfo;
 import ai.traceable.span.processing.config.service.v1.Field;
-import ai.traceable.span.processing.config.service.v1.Filter;
-import ai.traceable.span.processing.config.service.v1.FilterValue;
-import ai.traceable.span.processing.config.service.v1.GetAllSpanProcessingRulesRequest;
-import ai.traceable.span.processing.config.service.v1.RelationalFilterExpression;
+import ai.traceable.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
 import ai.traceable.span.processing.config.service.v1.RelationalOperator;
+import ai.traceable.span.processing.config.service.v1.RelationalSpanFilterExpression;
+import ai.traceable.span.processing.config.service.v1.SpanFilter;
+import ai.traceable.span.processing.config.service.v1.SpanFilterValue;
 import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
-import ai.traceable.span.processing.config.service.v1.SpanProcessingRule;
-import ai.traceable.span.processing.config.service.v1.SpanProcessingRuleInfo;
 import ai.traceable.span.processing.config.service.v1.UpdateExcludeSpanRule;
-import ai.traceable.span.processing.config.service.v1.UpdateSpanProcessingRule;
-import ai.traceable.span.processing.config.service.v1.UpdateSpanProcessingRulesRequest;
+import ai.traceable.span.processing.config.service.v1.UpdateExcludeSpanRuleRequest;
 import ai.traceable.span.processing.config.service.validation.SpanProcessingConfigRequestValidator;
 import java.util.List;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -49,7 +47,7 @@ class SpanProcessingConfigServiceImplTest {
     this.mockGenericConfigService
         .addService(
             new SpanProcessingConfigServiceImpl(
-                new SpanProcessingRulesConfigStore(genericStub),
+                new ExcludeSpanRulesConfigStore(genericStub),
                 new SpanProcessingConfigRequestValidator(),
                 new UuidGenerator()))
         .start();
@@ -65,102 +63,91 @@ class SpanProcessingConfigServiceImplTest {
 
   @Test
   void testCrud() {
-    SpanProcessingRule firstCreatedSpanProcessingRule =
+    ExcludeSpanRule firstCreatedExcludeSpanRule =
         this.spanProcessingConfigServiceStub
-            .createSpanProcessingRule(
-                CreateSpanProcessingRuleRequest.newBuilder()
+            .createExcludeSpanRule(
+                CreateExcludeSpanRuleRequest.newBuilder()
                     .setRuleInfo(
-                        SpanProcessingRuleInfo.newBuilder()
+                        ExcludeSpanRuleInfo.newBuilder()
                             .setName("ruleName1")
-                            .setExcludeSpanRule(
-                                ExcludeSpanRule.newBuilder()
-                                    .setFilter(
-                                        Filter.newBuilder()
-                                            .setRelationalFilter(
-                                                RelationalFilterExpression.newBuilder()
-                                                    .setField(Field.FIELD_SERVICE_NAME)
-                                                    .setOperator(
-                                                        RelationalOperator
-                                                            .RELATIONAL_OPERATOR_CONTAINS)
-                                                    .setRightOperand(
-                                                        FilterValue.newBuilder()
-                                                            .setStringValue("a"))))))
+                            .setFilter(
+                                SpanFilter.newBuilder()
+                                    .setRelationalSpanFilter(
+                                        RelationalSpanFilterExpression.newBuilder()
+                                            .setField(Field.FIELD_SERVICE_NAME)
+                                            .setOperator(
+                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                            .setRightOperand(
+                                                SpanFilterValue.newBuilder().setStringValue("a")))))
                     .build())
             .getRule();
 
-    SpanProcessingRule secondCreatedSpanProcessingRule =
+    ExcludeSpanRule secondCreatedExcludeSpanRule =
         this.spanProcessingConfigServiceStub
-            .createSpanProcessingRule(
-                CreateSpanProcessingRuleRequest.newBuilder()
+            .createExcludeSpanRule(
+                CreateExcludeSpanRuleRequest.newBuilder()
                     .setRuleInfo(
-                        SpanProcessingRuleInfo.newBuilder()
+                        ExcludeSpanRuleInfo.newBuilder()
                             .setName("ruleName2")
-                            .setExcludeSpanRule(
-                                ExcludeSpanRule.newBuilder()
-                                    .setFilter(
-                                        Filter.newBuilder()
-                                            .setRelationalFilter(
-                                                RelationalFilterExpression.newBuilder()
-                                                    .setField(Field.FIELD_SERVICE_NAME)
-                                                    .setOperator(
-                                                        RelationalOperator
-                                                            .RELATIONAL_OPERATOR_CONTAINS)
-                                                    .setRightOperand(
-                                                        FilterValue.newBuilder()
-                                                            .setStringValue("a"))))))
+                            .setFilter(
+                                SpanFilter.newBuilder()
+                                    .setRelationalSpanFilter(
+                                        RelationalSpanFilterExpression.newBuilder()
+                                            .setField(Field.FIELD_SERVICE_NAME)
+                                            .setOperator(
+                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                            .setRightOperand(
+                                                SpanFilterValue.newBuilder().setStringValue("a")))))
                     .build())
             .getRule();
 
-    List<SpanProcessingRule> spanProcessingRules =
+    List<ExcludeSpanRule> excludeSpanRules =
         this.spanProcessingConfigServiceStub
-            .getAllSpanProcessingRules(GetAllSpanProcessingRulesRequest.newBuilder().build())
+            .getAllExcludeSpanRules(
+                GetAllExcludeSpanRulesRequest.newBuilder().build().newBuilder().build())
             .getRulesList();
-    assertEquals(2, spanProcessingRules.size());
-    assertTrue(spanProcessingRules.contains(firstCreatedSpanProcessingRule));
-    assertTrue(spanProcessingRules.contains(secondCreatedSpanProcessingRule));
+    assertEquals(2, excludeSpanRules.size());
+    assertTrue(excludeSpanRules.contains(firstCreatedExcludeSpanRule));
+    assertTrue(excludeSpanRules.contains(secondCreatedExcludeSpanRule));
 
-    SpanProcessingRule updatedFirstSpanProcessingRule =
+    ExcludeSpanRule updatedFirstExcludeSpanRule =
         this.spanProcessingConfigServiceStub
-            .updateSpanProcessingRules(
-                UpdateSpanProcessingRulesRequest.newBuilder()
-                    .addRules(
-                        UpdateSpanProcessingRule.newBuilder()
-                            .setId(firstCreatedSpanProcessingRule.getId())
+            .updateExcludeSpanRule(
+                UpdateExcludeSpanRuleRequest.newBuilder()
+                    .setRule(
+                        UpdateExcludeSpanRule.newBuilder()
+                            .setId(firstCreatedExcludeSpanRule.getId())
                             .setName("updatedRuleName1")
-                            .setExcludeSpanRule(
-                                UpdateExcludeSpanRule.newBuilder()
-                                    .setFilter(
-                                        Filter.newBuilder()
-                                            .setRelationalFilter(
-                                                RelationalFilterExpression.newBuilder()
-                                                    .setField(Field.FIELD_SERVICE_NAME)
-                                                    .setOperator(
-                                                        RelationalOperator
-                                                            .RELATIONAL_OPERATOR_CONTAINS)
-                                                    .setRightOperand(
-                                                        FilterValue.newBuilder()
-                                                            .setStringValue("a"))))))
+                            .setFilter(
+                                SpanFilter.newBuilder()
+                                    .setRelationalSpanFilter(
+                                        RelationalSpanFilterExpression.newBuilder()
+                                            .setField(Field.FIELD_SERVICE_NAME)
+                                            .setOperator(
+                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                            .setRightOperand(
+                                                SpanFilterValue.newBuilder().setStringValue("a")))))
                     .build())
-            .getRules(0);
-    assertEquals("updatedRuleName1", updatedFirstSpanProcessingRule.getRuleInfo().getName());
+            .getRule();
+    assertEquals("updatedRuleName1", updatedFirstExcludeSpanRule.getRuleInfo().getName());
 
-    spanProcessingRules =
+    excludeSpanRules =
         this.spanProcessingConfigServiceStub
-            .getAllSpanProcessingRules(GetAllSpanProcessingRulesRequest.newBuilder().build())
+            .getAllExcludeSpanRules(GetAllExcludeSpanRulesRequest.newBuilder().build())
             .getRulesList();
-    assertEquals(2, spanProcessingRules.size());
-    assertTrue(spanProcessingRules.contains(updatedFirstSpanProcessingRule));
+    assertEquals(2, excludeSpanRules.size());
+    assertTrue(excludeSpanRules.contains(updatedFirstExcludeSpanRule));
 
-    this.spanProcessingConfigServiceStub.deleteSpanProcessingRule(
-        DeleteSpanProcessingRuleRequest.newBuilder()
-            .setId(firstCreatedSpanProcessingRule.getId())
+    this.spanProcessingConfigServiceStub.deleteExcludeSpanRule(
+        DeleteExcludeSpanRuleRequest.newBuilder()
+            .setId(firstCreatedExcludeSpanRule.getId())
             .build());
 
-    spanProcessingRules =
+    excludeSpanRules =
         this.spanProcessingConfigServiceStub
-            .getAllSpanProcessingRules(GetAllSpanProcessingRulesRequest.newBuilder().build())
+            .getAllExcludeSpanRules(GetAllExcludeSpanRulesRequest.newBuilder().build())
             .getRulesList();
-    assertEquals(1, spanProcessingRules.size());
-    assertEquals(secondCreatedSpanProcessingRule, spanProcessingRules.get(0));
+    assertEquals(1, excludeSpanRules.size());
+    assertEquals(secondCreatedExcludeSpanRule, excludeSpanRules.get(0));
   }
 }

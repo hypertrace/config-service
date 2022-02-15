@@ -1,6 +1,6 @@
 package ai.traceable.span.processing.config.service.store;
 
-import ai.traceable.span.processing.config.service.v1.SpanProcessingRule;
+import ai.traceable.span.processing.config.service.v1.ExcludeSpanRule;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
 import java.util.List;
@@ -13,22 +13,22 @@ import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public class SpanProcessingRulesConfigStore extends IdentifiedObjectStore<SpanProcessingRule> {
+public class ExcludeSpanRulesConfigStore extends IdentifiedObjectStore<ExcludeSpanRule> {
 
-  private static final String SPAN_PROCESSING_RULES_RESOURCE_NAME = "span-processing-rules";
-  private static final String SPAN_PROCESSING_RULES_CONFIG_RESOURCE_NAMESPACE =
-      "span-processing-rules-config";
+  private static final String EXCLUDE_SPAN_RULES_RESOURCE_NAME = "exclude-span-rules";
+  private static final String EXCLUDE_SPAN_RULES_CONFIG_RESOURCE_NAMESPACE =
+      "exclude-span-rules-config";
 
   @Inject
-  public SpanProcessingRulesConfigStore(
+  public ExcludeSpanRulesConfigStore(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub) {
     super(
         configServiceBlockingStub,
-        SPAN_PROCESSING_RULES_CONFIG_RESOURCE_NAMESPACE,
-        SPAN_PROCESSING_RULES_RESOURCE_NAME);
+        EXCLUDE_SPAN_RULES_CONFIG_RESOURCE_NAMESPACE,
+        EXCLUDE_SPAN_RULES_RESOURCE_NAME);
   }
 
-  public List<SpanProcessingRule> getAllData(RequestContext requestContext) {
+  public List<ExcludeSpanRule> getAllData(RequestContext requestContext) {
     return this.getAllObjects(requestContext).stream()
         .map(ContextualConfigObject::getData)
         .collect(Collectors.toUnmodifiableList());
@@ -36,20 +36,20 @@ public class SpanProcessingRulesConfigStore extends IdentifiedObjectStore<SpanPr
 
   @SneakyThrows
   @Override
-  protected Optional<SpanProcessingRule> buildDataFromValue(Value value) {
-    SpanProcessingRule.Builder ruleBuilder = SpanProcessingRule.newBuilder();
+  protected Optional<ExcludeSpanRule> buildDataFromValue(Value value) {
+    ExcludeSpanRule.Builder ruleBuilder = ExcludeSpanRule.newBuilder();
     ConfigProtoConverter.mergeFromValue(value, ruleBuilder);
     return Optional.of(ruleBuilder.build());
   }
 
   @SneakyThrows
   @Override
-  protected Value buildValueFromData(SpanProcessingRule rule) {
+  protected Value buildValueFromData(ExcludeSpanRule rule) {
     return ConfigProtoConverter.convertToValue(rule);
   }
 
   @Override
-  protected String getContextFromData(SpanProcessingRule rule) {
+  protected String getContextFromData(ExcludeSpanRule rule) {
     return rule.getId();
   }
 }

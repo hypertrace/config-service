@@ -4,86 +4,54 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
-import ai.traceable.span.processing.config.service.v1.CreateSpanProcessingRuleRequest;
-import ai.traceable.span.processing.config.service.v1.DeleteSpanProcessingRuleRequest;
-import ai.traceable.span.processing.config.service.v1.Filter;
-import ai.traceable.span.processing.config.service.v1.GetAllSpanProcessingRulesRequest;
-import ai.traceable.span.processing.config.service.v1.SpanProcessingRuleInfo;
-import ai.traceable.span.processing.config.service.v1.UpdateSpanProcessingRule;
-import ai.traceable.span.processing.config.service.v1.UpdateSpanProcessingRulesRequest;
+import ai.traceable.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
+import ai.traceable.span.processing.config.service.v1.DeleteExcludeSpanRuleRequest;
+import ai.traceable.span.processing.config.service.v1.ExcludeSpanRuleInfo;
+import ai.traceable.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
+import ai.traceable.span.processing.config.service.v1.SpanFilter;
+import ai.traceable.span.processing.config.service.v1.UpdateExcludeSpanRule;
+import ai.traceable.span.processing.config.service.v1.UpdateExcludeSpanRuleRequest;
 import io.grpc.Status;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class SpanProcessingConfigRequestValidator {
 
   public void validateOrThrow(
-      RequestContext requestContext, GetAllSpanProcessingRulesRequest request) {
+      RequestContext requestContext, GetAllExcludeSpanRulesRequest request) {
     validateRequestContextOrThrow(requestContext);
   }
 
-  public void validateOrThrow(
-      RequestContext requestContext, CreateSpanProcessingRuleRequest request) {
+  public void validateOrThrow(RequestContext requestContext, CreateExcludeSpanRuleRequest request) {
     validateRequestContextOrThrow(requestContext);
     this.validateData(request.getRuleInfo());
   }
 
-  public void validateOrThrow(
-      RequestContext requestContext, UpdateSpanProcessingRulesRequest request) {
+  public void validateOrThrow(RequestContext requestContext, UpdateExcludeSpanRuleRequest request) {
     validateRequestContextOrThrow(requestContext);
-    if (request.getRulesList().isEmpty()) {
-      throw Status.INVALID_ARGUMENT.withDescription("No rules specified").asRuntimeException();
-    }
-    for (UpdateSpanProcessingRule rule : request.getRulesList()) {
-      this.validateUpdateRule(rule);
-    }
+    this.validateUpdateRule(request.getRule());
   }
 
-  public void validateOrThrow(
-      RequestContext requestContext, DeleteSpanProcessingRuleRequest request) {
+  public void validateOrThrow(RequestContext requestContext, DeleteExcludeSpanRuleRequest request) {
     validateRequestContextOrThrow(requestContext);
-    validateNonDefaultPresenceOrThrow(request, DeleteSpanProcessingRuleRequest.ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(request, DeleteExcludeSpanRuleRequest.ID_FIELD_NUMBER);
   }
 
-  private void validateData(SpanProcessingRuleInfo spanProcessingRuleInfo) {
+  private void validateData(ExcludeSpanRuleInfo excludeSpanRuleInfo) {
+    validateNonDefaultPresenceOrThrow(excludeSpanRuleInfo, ExcludeSpanRuleInfo.NAME_FIELD_NUMBER);
+    this.validateSpanFilter(excludeSpanRuleInfo.getFilter());
+  }
+
+  private void validateUpdateRule(UpdateExcludeSpanRule updateExcludeSpanRule) {
+    validateNonDefaultPresenceOrThrow(updateExcludeSpanRule, UpdateExcludeSpanRule.ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
-        spanProcessingRuleInfo, SpanProcessingRuleInfo.NAME_FIELD_NUMBER);
-    this.validateRule(spanProcessingRuleInfo);
+        updateExcludeSpanRule, UpdateExcludeSpanRule.NAME_FIELD_NUMBER);
+    this.validateSpanFilter(updateExcludeSpanRule.getFilter());
   }
 
-  private void validateRule(SpanProcessingRuleInfo spanProcessingRuleInfo) {
-    switch (spanProcessingRuleInfo.getRuleCase()) {
-      case EXCLUDE_SPAN_RULE:
-        this.validateFilter(spanProcessingRuleInfo.getExcludeSpanRule().getFilter());
-        break;
-      default:
-        throw Status.INVALID_ARGUMENT
-            .withDescription("Unexpected rule info case: " + printMessage(spanProcessingRuleInfo))
-            .asRuntimeException();
-    }
-  }
-
-  private void validateUpdateRule(UpdateSpanProcessingRule updateSpanProcessingRule) {
-    validateNonDefaultPresenceOrThrow(
-        updateSpanProcessingRule, UpdateSpanProcessingRule.ID_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(
-        updateSpanProcessingRule, UpdateSpanProcessingRule.NAME_FIELD_NUMBER);
-    switch (updateSpanProcessingRule.getRuleCase()) {
-      case EXCLUDE_SPAN_RULE:
-        this.validateFilter(updateSpanProcessingRule.getExcludeSpanRule().getFilter());
-        break;
-      default:
-        throw Status.INVALID_ARGUMENT
-            .withDescription(
-                "Unexpected updated span processing rule case: "
-                    + printMessage(updateSpanProcessingRule))
-            .asRuntimeException();
-    }
-  }
-
-  private void validateFilter(Filter filter) {
-    switch (filter.getFilterExpressionCase()) {
-      case LOGICAL_FILTER:
-      case RELATIONAL_FILTER:
+  private void validateSpanFilter(SpanFilter filter) {
+    switch (filter.getSpanFilterExpressionCase()) {
+      case LOGICAL_SPAN_FILTER:
+      case RELATIONAL_SPAN_FILTER:
         break;
       default:
         throw Status.INVALID_ARGUMENT

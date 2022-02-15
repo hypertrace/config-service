@@ -6,19 +6,17 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.span.processing.config.service.v1.CreateSpanProcessingRuleRequest;
-import ai.traceable.span.processing.config.service.v1.DeleteSpanProcessingRuleRequest;
-import ai.traceable.span.processing.config.service.v1.ExcludeSpanRule;
+import ai.traceable.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
+import ai.traceable.span.processing.config.service.v1.DeleteExcludeSpanRuleRequest;
+import ai.traceable.span.processing.config.service.v1.ExcludeSpanRuleInfo;
 import ai.traceable.span.processing.config.service.v1.Field;
-import ai.traceable.span.processing.config.service.v1.Filter;
-import ai.traceable.span.processing.config.service.v1.FilterValue;
-import ai.traceable.span.processing.config.service.v1.GetAllSpanProcessingRulesRequest;
-import ai.traceable.span.processing.config.service.v1.RelationalFilterExpression;
+import ai.traceable.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
 import ai.traceable.span.processing.config.service.v1.RelationalOperator;
-import ai.traceable.span.processing.config.service.v1.SpanProcessingRuleInfo;
+import ai.traceable.span.processing.config.service.v1.RelationalSpanFilterExpression;
+import ai.traceable.span.processing.config.service.v1.SpanFilter;
+import ai.traceable.span.processing.config.service.v1.SpanFilterValue;
 import ai.traceable.span.processing.config.service.v1.UpdateExcludeSpanRule;
-import ai.traceable.span.processing.config.service.v1.UpdateSpanProcessingRule;
-import ai.traceable.span.processing.config.service.v1.UpdateSpanProcessingRulesRequest;
+import ai.traceable.span.processing.config.service.v1.UpdateExcludeSpanRuleRequest;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.Objects;
@@ -44,13 +42,13 @@ class SpanProcessingRequestValidatorTest {
         "Tenant ID",
         () ->
             validator.validateOrThrow(
-                mockRequestContext, GetAllSpanProcessingRulesRequest.newBuilder().build()));
+                mockRequestContext, GetAllExcludeSpanRulesRequest.newBuilder().build()));
 
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
-                mockRequestContext, GetAllSpanProcessingRulesRequest.newBuilder().build()));
+                mockRequestContext, GetAllExcludeSpanRulesRequest.newBuilder().build()));
   }
 
   @Test
@@ -59,21 +57,20 @@ class SpanProcessingRequestValidatorTest {
         "Tenant ID",
         () ->
             validator.validateOrThrow(
-                mockRequestContext, DeleteSpanProcessingRuleRequest.newBuilder().build()));
+                mockRequestContext, DeleteExcludeSpanRuleRequest.newBuilder().build()));
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
 
     assertInvalidArgStatusContaining(
-        "DeleteSpanProcessingRuleRequest.id",
+        "DeleteExcludeSpanRuleRequest.id",
         () ->
             validator.validateOrThrow(
-                mockRequestContext,
-                DeleteSpanProcessingRuleRequest.newBuilder().setId("").build()));
+                mockRequestContext, DeleteExcludeSpanRuleRequest.newBuilder().setId("").build()));
 
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
                 mockRequestContext,
-                DeleteSpanProcessingRuleRequest.newBuilder().setId("rule-id").build()));
+                DeleteExcludeSpanRuleRequest.newBuilder().setId("rule-id").build()));
   }
 
   @Test
@@ -82,52 +79,45 @@ class SpanProcessingRequestValidatorTest {
         "Tenant ID",
         () ->
             validator.validateOrThrow(
-                mockRequestContext, CreateSpanProcessingRuleRequest.newBuilder().build()));
+                mockRequestContext, CreateExcludeSpanRuleRequest.newBuilder().build()));
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
 
     assertInvalidArgStatusContaining(
-        "SpanProcessingRuleInfo",
+        "ExcludeSpanRuleInfo",
         () ->
             validator.validateOrThrow(
                 mockRequestContext,
-                CreateSpanProcessingRuleRequest.newBuilder()
-                    .setRuleInfo(SpanProcessingRuleInfo.newBuilder().build())
+                CreateExcludeSpanRuleRequest.newBuilder()
+                    .setRuleInfo(ExcludeSpanRuleInfo.newBuilder().build())
                     .build()));
 
     assertInvalidArgStatusContaining(
-        "SpanProcessingRuleInfo.name",
+        "ExcludeSpanRuleInfo.name",
         () ->
             validator.validateOrThrow(
                 mockRequestContext,
-                CreateSpanProcessingRuleRequest.newBuilder()
-                    .setRuleInfo(
-                        SpanProcessingRuleInfo.newBuilder()
-                            .setExcludeSpanRule(ExcludeSpanRule.newBuilder().build())
-                            .build())
+                CreateExcludeSpanRuleRequest.newBuilder()
+                    .setRuleInfo(ExcludeSpanRuleInfo.newBuilder().build())
                     .build()));
 
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
                 mockRequestContext,
-                CreateSpanProcessingRuleRequest.newBuilder()
+                CreateExcludeSpanRuleRequest.newBuilder()
                     .setRuleInfo(
-                        SpanProcessingRuleInfo.newBuilder()
+                        ExcludeSpanRuleInfo.newBuilder()
                             .setName("name")
-                            .setExcludeSpanRule(
-                                ExcludeSpanRule.newBuilder()
-                                    .setFilter(
-                                        Filter.newBuilder()
-                                            .setRelationalFilter(
-                                                RelationalFilterExpression.newBuilder()
-                                                    .setField(Field.FIELD_SERVICE_NAME)
-                                                    .setOperator(
-                                                        RelationalOperator
-                                                            .RELATIONAL_OPERATOR_CONTAINS)
-                                                    .setRightOperand(
-                                                        FilterValue.newBuilder()
-                                                            .setStringValue("a")
-                                                            .build())
+                            .setFilter(
+                                SpanFilter.newBuilder()
+                                    .setRelationalSpanFilter(
+                                        RelationalSpanFilterExpression.newBuilder()
+                                            .setField(Field.FIELD_SERVICE_NAME)
+                                            .setOperator(
+                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                            .setRightOperand(
+                                                SpanFilterValue.newBuilder()
+                                                    .setStringValue("a")
                                                     .build())
                                             .build())
                                     .build())
@@ -141,67 +131,46 @@ class SpanProcessingRequestValidatorTest {
         "Tenant ID",
         () ->
             validator.validateOrThrow(
-                mockRequestContext, UpdateSpanProcessingRulesRequest.newBuilder().build()));
+                mockRequestContext, UpdateExcludeSpanRuleRequest.newBuilder().build()));
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
 
     assertInvalidArgStatusContaining(
-        "No rules specified",
-        () ->
-            validator.validateOrThrow(
-                mockRequestContext, UpdateSpanProcessingRulesRequest.newBuilder().build()));
-
-    assertInvalidArgStatusContaining(
-        "UpdateSpanProcessingRule.id",
+        "UpdateExcludeSpanRule.id",
         () ->
             validator.validateOrThrow(
                 mockRequestContext,
-                UpdateSpanProcessingRulesRequest.newBuilder()
-                    .addRules(UpdateSpanProcessingRule.newBuilder().setName("name").build())
+                UpdateExcludeSpanRuleRequest.newBuilder()
+                    .setRule(UpdateExcludeSpanRule.newBuilder().setName("name").build())
                     .build()));
 
     assertInvalidArgStatusContaining(
-        "UpdateSpanProcessingRule.name",
+        "UpdateExcludeSpanRule.name",
         () ->
             validator.validateOrThrow(
                 mockRequestContext,
-                UpdateSpanProcessingRulesRequest.newBuilder()
-                    .addRules(UpdateSpanProcessingRule.newBuilder().setId("id").build())
-                    .build()));
-
-    assertInvalidArgStatusContaining(
-        "UpdateSpanProcessingRule.id",
-        () ->
-            validator.validateOrThrow(
-                mockRequestContext,
-                UpdateSpanProcessingRulesRequest.newBuilder()
-                    .addRules(
-                        UpdateSpanProcessingRule.newBuilder()
-                            .setExcludeSpanRule(UpdateExcludeSpanRule.newBuilder()))
+                UpdateExcludeSpanRuleRequest.newBuilder()
+                    .setRule(UpdateExcludeSpanRule.newBuilder().setId("id").build())
                     .build()));
 
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
                 mockRequestContext,
-                UpdateSpanProcessingRulesRequest.newBuilder()
-                    .addRules(
-                        UpdateSpanProcessingRule.newBuilder()
+                UpdateExcludeSpanRuleRequest.newBuilder()
+                    .setRule(
+                        UpdateExcludeSpanRule.newBuilder()
                             .setId("id")
                             .setName("name")
-                            .setExcludeSpanRule(
-                                UpdateExcludeSpanRule.newBuilder()
-                                    .setFilter(
-                                        Filter.newBuilder()
-                                            .setRelationalFilter(
-                                                RelationalFilterExpression.newBuilder()
-                                                    .setField(Field.FIELD_SERVICE_NAME)
-                                                    .setOperator(
-                                                        RelationalOperator
-                                                            .RELATIONAL_OPERATOR_CONTAINS)
-                                                    .setRightOperand(
-                                                        FilterValue.newBuilder()
-                                                            .setStringValue("a")
-                                                            .build())
+                            .setFilter(
+                                SpanFilter.newBuilder()
+                                    .setRelationalSpanFilter(
+                                        RelationalSpanFilterExpression.newBuilder()
+                                            .setField(Field.FIELD_SERVICE_NAME)
+                                            .setOperator(
+                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                            .setRightOperand(
+                                                SpanFilterValue.newBuilder()
+                                                    .setStringValue("a")
                                                     .build())
                                             .build())
                                     .build())
