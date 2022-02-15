@@ -8,8 +8,10 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
+import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
+import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
@@ -46,7 +48,13 @@ public class AnomalyDetectionConfigManagerTest {
   private static Channel channelForMockServer;
   private ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub;
 
-  private AnomalyDetectionConfigConverter configConverter;
+  private final ConfigConverter configConverter = new ConfigConverter();
+  private final ApiDefinitionRegistry apiDefinitionRegistry =
+      new ApiDefinitionRegistryImpl(configConverter);
+  private final SessionRulesRegistry sessionRulesRegistry =
+      new SessionRulesRegistryImpl(configConverter);
+  private AnomalyDetectionConfigConverter detectionConfigConverter =
+      new AnomalyDetectionConfigConverter(apiDefinitionRegistry, sessionRulesRegistry);
   private AnomalyDetectionConfigManager configManager;
 
   private final AnomalyServiceScope serviceScope =
@@ -88,7 +96,6 @@ public class AnomalyDetectionConfigManagerTest {
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     mockConfigService.start();
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
-    configConverter = new AnomalyDetectionConfigConverter();
     detectorConfigServiceConfig = mock(DetectorConfigServiceConfig.class);
     when(detectorConfigServiceConfig.getDefaultModsecDetectionConfigs()).thenReturn(List.of());
     when(detectorConfigServiceConfig.getDefaultApiDefinitionDetectionConfigs())
@@ -96,7 +103,7 @@ public class AnomalyDetectionConfigManagerTest {
     this.configManager =
         spy(
             new AnomalyDetectionConfigManagerImpl(
-                configServiceBlockingStub, configConverter, detectorConfigServiceConfig));
+                configServiceBlockingStub, detectionConfigConverter, detectorConfigServiceConfig));
   }
 
   @AfterEach
@@ -254,7 +261,8 @@ public class AnomalyDetectionConfigManagerTest {
     RequestContext requestContext = RequestContext.forTenantId(tenantId);
     DetectorConfigServiceConfig config = getDefaultConfig();
     configManager =
-        new AnomalyDetectionConfigManagerImpl(configServiceBlockingStub, configConverter, config);
+        new AnomalyDetectionConfigManagerImpl(
+            configServiceBlockingStub, detectionConfigConverter, config);
 
     List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
     defaultDetectionConfigs.addAll(config.getDefaultModsecDetectionConfigs());

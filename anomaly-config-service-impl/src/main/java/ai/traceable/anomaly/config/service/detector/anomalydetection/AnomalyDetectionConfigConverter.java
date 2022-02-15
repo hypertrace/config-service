@@ -1,5 +1,7 @@
 package ai.traceable.anomaly.config.service.detector.anomalydetection;
 
+import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
+import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyCategoryConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
@@ -13,11 +15,11 @@ import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetecti
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.SessionDefinitionMetadataAnomalyDetectionConfig;
+import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +28,20 @@ import java.util.stream.Collectors;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 
 public class AnomalyDetectionConfigConverter {
+
+  private final Map<String, ApiDefinitionMetadataAnomalyDetectionConfig>
+      apiDefMetadataAnomalyDetectionConfigMap;
+  private final Map<String, SessionDefinitionMetadataAnomalyDetectionConfig>
+      sessionDefAnomalyDetectionConfigMap;
+
+  @Inject
+  public AnomalyDetectionConfigConverter(
+      ApiDefinitionRegistry apiDefinitionRegistry, SessionRulesRegistry sessionRulesRegistry) {
+    this.apiDefMetadataAnomalyDetectionConfigMap =
+        apiDefinitionRegistry.getApiDefRuleIdToDetectionConfigMap();
+    this.sessionDefAnomalyDetectionConfigMap =
+        sessionRulesRegistry.getSessionDefRuleIdToDetectionConfigMap();
+  }
 
   public Value convert(ScopedAnomalyDetectionConfig config) throws InvalidProtocolBufferException {
     return ConfigProtoConverter.convertToValue(config);
@@ -102,25 +118,33 @@ public class AnomalyDetectionConfigConverter {
     EnumMap<SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase, AnomalyDetectionConfig>
         configCaseMap =
             new EnumMap<>(SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase.class);
-    Map<String, AnomalyDetectionConfig> ruleIdMap = new HashMap<>();
 
     preferredConfig.getAnomalyDetectionConfigsList().stream()
         .filter(AnomalyDetectionConfig::hasSessionDefinitionMetadataAnomalyDetectionConfig)
         .forEach(
             detectionConfig -> {
-              String ruleId =
+              SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase configCase =
                   detectionConfig
                       .getSessionDefinitionMetadataAnomalyDetectionConfig()
-                      .getAnomalyRuleId();
-              if (ruleId.isEmpty()) {
-                configCaseMap.put(
-                    detectionConfig
-                        .getSessionDefinitionMetadataAnomalyDetectionConfig()
-                        .getConfigCase(),
-                    detectionConfig);
-              } else {
-                ruleIdMap.put(ruleId, detectionConfig);
+                      .getConfigCase();
+              if (configCase.equals(
+                  SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase.CONFIG_NOT_SET)) {
+                SessionDefinitionMetadataAnomalyDetectionConfig sessionDefAnomalyConfig =
+                    sessionDefAnomalyDetectionConfigMap.get(
+                        detectionConfig
+                            .getSessionDefinitionMetadataAnomalyDetectionConfig()
+                            .getAnomalyRuleId());
+                configCase = sessionDefAnomalyConfig.getConfigCase();
+                detectionConfig =
+                    detectionConfig.toBuilder()
+                        .mergeFrom(
+                            AnomalyDetectionConfig.newBuilder()
+                                .setSessionDefinitionMetadataAnomalyDetectionConfig(
+                                    sessionDefAnomalyConfig)
+                                .build())
+                        .build();
               }
+              configCaseMap.put(configCase, detectionConfig);
             });
 
     fallbackConfig.getAnomalyDetectionConfigsList().stream()
@@ -131,17 +155,10 @@ public class AnomalyDetectionConfigConverter {
                   detectionConfig
                       .getSessionDefinitionMetadataAnomalyDetectionConfig()
                       .getConfigCase();
-              String ruleId =
-                  detectionConfig
-                      .getSessionDefinitionMetadataAnomalyDetectionConfig()
-                      .getAnomalyRuleId();
               if (configCaseMap.containsKey(configCase)) {
                 configCaseMap.put(
                     configCase,
                     detectionConfig.toBuilder().mergeFrom(configCaseMap.get(configCase)).build());
-              } else if (ruleIdMap.containsKey(ruleId)) {
-                ruleIdMap.put(
-                    ruleId, detectionConfig.toBuilder().mergeFrom(ruleIdMap.get(ruleId)).build());
               } else {
                 configCaseMap.put(configCase, detectionConfig);
               }
@@ -149,7 +166,6 @@ public class AnomalyDetectionConfigConverter {
 
     List<AnomalyDetectionConfig> resolvedConfigs = new ArrayList<>();
     resolvedConfigs.addAll(configCaseMap.values());
-    resolvedConfigs.addAll(ruleIdMap.values());
 
     return resolvedConfigs;
   }
@@ -235,29 +251,31 @@ public class AnomalyDetectionConfigConverter {
       ScopedAnomalyDetectionConfig preferredConfig, ScopedAnomalyDetectionConfig fallbackConfig) {
     EnumMap<ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase, AnomalyDetectionConfig>
         configCaseMap = new EnumMap<>(ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase.class);
-    Map<String, AnomalyDetectionConfig> ruleIdMap = new HashMap<>();
 
     preferredConfig.getAnomalyDetectionConfigsList().stream()
         .filter(AnomalyDetectionConfig::hasApiDefinitionMetadataAnomalyDetectionConfig)
         .forEach(
             detectionConfig -> {
-              String ruleId =
-                  detectionConfig
-                      .getApiDefinitionMetadataAnomalyDetectionConfig()
-                      .getAnomalyRuleId();
-              if (ruleId.isEmpty()) {
-                configCaseMap.put(
-                    detectionConfig
-                        .getApiDefinitionMetadataAnomalyDetectionConfig()
-                        .getConfigCase(),
-                    detectionConfig);
-              } else {
-                ruleIdMap.put(
-                    detectionConfig
-                        .getApiDefinitionMetadataAnomalyDetectionConfig()
-                        .getAnomalyRuleId(),
-                    detectionConfig);
+              ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase configCase =
+                  detectionConfig.getApiDefinitionMetadataAnomalyDetectionConfig().getConfigCase();
+              if (configCase.equals(
+                  ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase.CONFIG_NOT_SET)) {
+                ApiDefinitionMetadataAnomalyDetectionConfig apiDefMetadataAnomalyConfig =
+                    apiDefMetadataAnomalyDetectionConfigMap.get(
+                        detectionConfig
+                            .getApiDefinitionMetadataAnomalyDetectionConfig()
+                            .getAnomalyRuleId());
+                configCase = apiDefMetadataAnomalyConfig.getConfigCase();
+                detectionConfig =
+                    detectionConfig.toBuilder()
+                        .mergeFrom(
+                            AnomalyDetectionConfig.newBuilder()
+                                .setApiDefinitionMetadataAnomalyDetectionConfig(
+                                    apiDefMetadataAnomalyConfig)
+                                .build())
+                        .build();
               }
+              configCaseMap.put(configCase, detectionConfig);
             });
 
     fallbackConfig.getAnomalyDetectionConfigsList().stream()
@@ -266,18 +284,10 @@ public class AnomalyDetectionConfigConverter {
             detectionConfig -> {
               ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase configCase =
                   detectionConfig.getApiDefinitionMetadataAnomalyDetectionConfig().getConfigCase();
-              String ruleId =
-                  detectionConfig
-                      .getApiDefinitionMetadataAnomalyDetectionConfig()
-                      .getAnomalyRuleId();
-
               if (configCaseMap.containsKey(configCase)) {
                 configCaseMap.put(
                     configCase,
                     detectionConfig.toBuilder().mergeFrom(configCaseMap.get(configCase)).build());
-              } else if (ruleIdMap.containsKey(ruleId)) {
-                ruleIdMap.put(
-                    ruleId, detectionConfig.toBuilder().mergeFrom(ruleIdMap.get(ruleId)).build());
               } else {
                 configCaseMap.put(configCase, detectionConfig);
               }
@@ -285,7 +295,6 @@ public class AnomalyDetectionConfigConverter {
 
     List<AnomalyDetectionConfig> resolvedConfigs = new ArrayList<>();
     resolvedConfigs.addAll(configCaseMap.values());
-    resolvedConfigs.addAll(ruleIdMap.values());
 
     return resolvedConfigs;
   }

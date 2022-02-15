@@ -4,6 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
+import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
+import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
+import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
@@ -35,8 +40,13 @@ import org.junit.jupiter.api.Test;
 
 public class AnomalyDetectionConfigConverterTest {
 
+  private final ConfigConverter configConverter = new ConfigConverter();
+  private final ApiDefinitionRegistry apiDefinitionRegistry =
+      new ApiDefinitionRegistryImpl(configConverter);
+  private final SessionRulesRegistry sessionRulesRegistry =
+      new SessionRulesRegistryImpl(configConverter);
   private final AnomalyDetectionConfigConverter detectionConfigConverter =
-      new AnomalyDetectionConfigConverter();
+      new AnomalyDetectionConfigConverter(apiDefinitionRegistry, sessionRulesRegistry);
 
   @Test
   void testModsecConfigConvert() throws InvalidProtocolBufferException {
@@ -440,7 +450,7 @@ public class AnomalyDetectionConfigConverterTest {
                             .setEventCategory(AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT))
                     .setSessionDefinitionMetadataAnomalyDetectionConfig(
                         SessionDefinitionMetadataAnomalyDetectionConfig.newBuilder()
-                            .setAnomalyRuleId("userIdBola")
+                            .setUserIdBola(UserIdBolaAnomalyConfig.getDefaultInstance())
                             .build()))
             .build();
     ScopedAnomalyDetectionConfig config2 =
