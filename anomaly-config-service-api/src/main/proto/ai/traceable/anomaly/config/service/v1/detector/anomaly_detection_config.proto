@@ -244,6 +244,7 @@ message ObjectBolaAnomalyConfig {
   optional bool disabled_for_missing_preceding_param = 4;
   optional bool enabled_on_same_api = 5;
   optional int64 preceding_event_look_ahead_time_window = 6;
+  StringList request_param_values_not_allowed = 7;
 }
 
 message UserIdBolaAnomalyConfig {
