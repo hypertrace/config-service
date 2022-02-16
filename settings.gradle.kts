@@ -43,3 +43,5 @@ include(":notification-rule-config-service-impl")
 
 include(":notification-channel-config-service-api")
 include(":notification-channel-config-service-impl")
+include("hypertrace-span-processing-config-service-api")
+include("hypertrace-span-processing-config-service-impl")

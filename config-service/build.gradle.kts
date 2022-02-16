@@ -63,6 +63,7 @@ dependencies {
   implementation(projects.alertingConfigServiceImpl)
   implementation(projects.notificationRuleConfigServiceImpl)
   implementation(projects.notificationChannelConfigServiceImpl)
+  implementation(projects.hypertraceSpanProcessingConfigServiceImpl)
 
   implementation(libs.hypertrace.grpcutils.server)
   implementation(libs.hypertrace.framework.container)
