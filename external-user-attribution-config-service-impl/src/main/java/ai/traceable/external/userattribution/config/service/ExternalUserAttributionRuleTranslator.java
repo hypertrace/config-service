@@ -22,6 +22,7 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.He
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.JwtUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.RequestHeaderUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ResponseBodyUserAttributionRuleData;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -31,11 +32,14 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 class ExternalUserAttributionRuleTranslator {
-  private static final String RESPONSE_BODY_KEY = "http.response.body";
+  private static final List<String> RESPONSE_BODY_KEYS =
+      List.of("http.response.body", "rpc.response.body");
   private static final String COOKIE_HEADER_KEY = "http.request.header.cookie";
-  private static final String AUTH_HEADER_KEY = "http.request.header.authorization";
+  private static final List<String> AUTH_HEADER_KEYS =
+      List.of("http.request.header.authorization", "rpc.request.metadata.authorization");
   private static final String URL_KEY = "http.url";
-  private static final String REQUEST_HEADER_KEY_FORMAT_STRING = "http.request.header.%s";
+  private static final List<String> REQUEST_HEADER_KEY_FORMAT_STRINGS =
+      List.of("http.request.header.%s", "rpc.request.metadata.%s");
 
   ExternalUserAttributionRules translateRules(List<UserAttributionRule> rules) {
     return rules.stream()
@@ -62,13 +66,13 @@ class ExternalUserAttributionRuleTranslator {
         case CUSTOM_DATA:
           return Stream.of(this.translateCustom(rule.getData().getCustomData()));
         case BASIC_AUTHENTICATION_DATA:
-          return Stream.of(this.translateBasicAuth(rule.getData().getBasicAuthenticationData()));
+          return this.translateBasicAuth(rule.getData().getBasicAuthenticationData());
         case JWT_DATA:
-          return Stream.of(this.translateUserJwt(rule.getData().getJwtData()));
+          return this.translateUserJwt(rule.getData().getJwtData());
         case RESPONSE_BODY_DATA:
-          return Stream.of(this.translateUserResponseBody(rule.getData().getResponseBodyData()));
+          return this.translateUserResponseBody(rule.getData().getResponseBodyData());
         case REQUEST_HEADER_DATA:
-          return this.translateUserRequestHeader(rule.getData().getRequestHeaderData()).stream();
+          return this.translateUserRequestHeader(rule.getData().getRequestHeaderData());
         case DATA_NOT_SET:
         default:
           log.error("Unrecognized rule: {}", rule);
@@ -87,29 +91,37 @@ class ExternalUserAttributionRuleTranslator {
         .build();
   }
 
-  private ExternalUserAttributionRule translateBasicAuth(
+  private Stream<ExternalUserAttributionRule> translateBasicAuth(
       BasicAuthenticationUserAttributionRuleData data) {
-    return ExternalUserAttributionRule.newBuilder()
-        .setTransformedExternalUserAttributionRule(
-            TransformedExternalUserAttributionRule.newBuilder()
-                .setAttributeKey(
-                    this.getHeaderAttributeKeyIfSet(data.getLocation()).orElse(AUTH_HEADER_KEY))
-                .setType(TYPE_AUTHHEADER))
-        .build();
+    return this.getHeaderAttributeKeysIfSet(data.getLocation()).orElse(AUTH_HEADER_KEYS).stream()
+        .map(
+            key ->
+                ExternalUserAttributionRule.newBuilder()
+                    .setTransformedExternalUserAttributionRule(
+                        TransformedExternalUserAttributionRule.newBuilder()
+                            .setAttributeKey(key)
+                            .setType(TYPE_AUTHHEADER))
+                    .build());
   }
 
-  private ExternalUserAttributionRule translateUserJwt(JwtUserAttributionRuleData data) {
+  private Stream<ExternalUserAttributionRule> translateUserJwt(JwtUserAttributionRuleData data) {
+
+    return this.getAttributeKeysIfSet(data.getJwtLocation()).orElse(AUTH_HEADER_KEYS).stream()
+        .map(attributeKey -> this.translateUserJwtForAttributeKey(data, attributeKey));
+  }
+
+  private ExternalUserAttributionRule translateUserJwtForAttributeKey(
+      JwtUserAttributionRuleData data, String attributeKey) {
     TransformedExternalUserAttributionRule.Builder ruleBuilder =
         TransformedExternalUserAttributionRule.newBuilder();
 
-    ruleBuilder.setAttributeKey(
-        this.getAttributeKeyIfSet(data.getJwtLocation()).orElse(AUTH_HEADER_KEY));
+    ruleBuilder.setAttributeKey(attributeKey);
     ruleBuilder.setType(
         this.getTypeFromHeaderLocationIfSet(data.getJwtLocation()).orElse(TYPE_AUTHHEADER));
-    ruleBuilder.setEncoding(ENCODING_JWT);
     this.getStringIfSet(data.getJwtLocation().getCookieName())
         .ifPresent(ruleBuilder::setCookieName);
 
+    ruleBuilder.setEncoding(ENCODING_JWT);
     ruleBuilder.addIdClaims(data.getUserIdClaim());
     this.getPathIfSet(data.getUserIdLocation()).ifPresent(ruleBuilder::addIdPaths);
 
@@ -121,36 +133,39 @@ class ExternalUserAttributionRuleTranslator {
         .build();
   }
 
-  private ExternalUserAttributionRule translateUserResponseBody(
+  private Stream<ExternalUserAttributionRule> translateUserResponseBody(
       ResponseBodyUserAttributionRuleData data) {
-    TransformedExternalUserAttributionRule.Builder ruleBuilder =
-        TransformedExternalUserAttributionRule.newBuilder()
-            .setAttributeKey(RESPONSE_BODY_KEY)
-            .setType(TYPE_JSON)
-            .addConditions(
-                Condition.newBuilder()
-                    .setKey(URL_KEY)
-                    .setRegex(data.getCondition().getUrlMatchRegex()))
-            .addIdPaths(this.getPathIfSet(data.getUserIdLocation()).orElseThrow());
+    return RESPONSE_BODY_KEYS.stream()
+        .map(
+            key -> {
+              TransformedExternalUserAttributionRule.Builder ruleBuilder =
+                  TransformedExternalUserAttributionRule.newBuilder()
+                      .setAttributeKey(key)
+                      .setType(TYPE_JSON)
+                      .addConditions(
+                          Condition.newBuilder()
+                              .setKey(URL_KEY)
+                              .setRegex(data.getCondition().getUrlMatchRegex()))
+                      .addIdPaths(this.getPathIfSet(data.getUserIdLocation()).orElseThrow());
 
-    this.getPathIfSet(data.getRoleLocation()).ifPresent(ruleBuilder::addRolePaths);
+              this.getPathIfSet(data.getRoleLocation()).ifPresent(ruleBuilder::addRolePaths);
 
-    return ExternalUserAttributionRule.newBuilder()
-        .setTransformedExternalUserAttributionRule(ruleBuilder)
-        .build();
+              return ExternalUserAttributionRule.newBuilder()
+                  .setTransformedExternalUserAttributionRule(ruleBuilder)
+                  .build();
+            });
   }
 
-  private List<ExternalUserAttributionRule> translateUserRequestHeader(
+  private Stream<ExternalUserAttributionRule> translateUserRequestHeader(
       RequestHeaderUserAttributionRuleData data) {
     return Stream.concat(
-            this.getHeaderRuleIfSet(data.getUserIdLocation(), TYPE_ID).stream(),
-            this.getHeaderRuleIfSet(data.getRoleLocation(), TYPE_ROLE).stream())
-        .collect(Collectors.toUnmodifiableList());
+        this.getHeaderRuleIfSet(data.getUserIdLocation(), TYPE_ID),
+        this.getHeaderRuleIfSet(data.getRoleLocation(), TYPE_ROLE));
   }
 
-  private Optional<ExternalUserAttributionRule> getHeaderRuleIfSet(
+  private Stream<ExternalUserAttributionRule> getHeaderRuleIfSet(
       HeaderLocation headerLocation, Type type) {
-    return this.getHeaderAttributeKeyIfSet(headerLocation)
+    return this.getHeaderAttributeKeysIfSet(headerLocation).orElse(Collections.emptyList()).stream()
         .map(
             headerKey ->
                 ExternalUserAttributionRule.newBuilder()
@@ -161,22 +176,26 @@ class ExternalUserAttributionRuleTranslator {
                     .build());
   }
 
-  private Optional<String> getAttributeKeyIfSet(HeaderLocation headerLocation) {
+  private Optional<List<String>> getAttributeKeysIfSet(HeaderLocation headerLocation) {
     switch (headerLocation.getLocationCase()) {
       case HEADER_NAME:
-        return this.getHeaderAttributeKeyIfSet(headerLocation);
+        return this.getHeaderAttributeKeysIfSet(headerLocation);
       case COOKIE_NAME:
-        return Optional.of(COOKIE_HEADER_KEY);
+        return Optional.of(List.of(COOKIE_HEADER_KEY));
       case LOCATION_NOT_SET:
       default:
         return Optional.empty();
     }
   }
 
-  private Optional<String> getHeaderAttributeKeyIfSet(HeaderLocation headerLocation) {
+  private Optional<List<String>> getHeaderAttributeKeysIfSet(HeaderLocation headerLocation) {
     return this.getStringIfSet(headerLocation.getHeaderName())
         .map(String::toLowerCase)
-        .map(headerName -> String.format(REQUEST_HEADER_KEY_FORMAT_STRING, headerName));
+        .map(
+            headerName ->
+                REQUEST_HEADER_KEY_FORMAT_STRINGS.stream()
+                    .map(formatString -> String.format(formatString, headerName))
+                    .collect(Collectors.toUnmodifiableList()));
   }
 
   private Optional<Type> getTypeFromHeaderLocationIfSet(HeaderLocation headerLocation) {

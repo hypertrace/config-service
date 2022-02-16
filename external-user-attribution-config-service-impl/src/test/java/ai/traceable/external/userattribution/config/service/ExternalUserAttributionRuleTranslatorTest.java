@@ -45,12 +45,19 @@ class ExternalUserAttributionRuleTranslatorTest {
   @Test
   void translatesBasicAuthRule() {
     assertJsonEquals(
-        "{"
-            + "  transformed_external_user_attribution_rule: {\n"
-            + "    attribute_key: \"http.request.header.authorization\",\n"
-            + "    type: TYPE_AUTHHEADER\n"
-            + "  }"
-            + "}",
+        List.of(
+            "{"
+                + "  transformed_external_user_attribution_rule: {\n"
+                + "    attribute_key: \"http.request.header.authorization\",\n"
+                + "    type: TYPE_AUTHHEADER\n"
+                + "  }"
+                + "}",
+            "{"
+                + "  transformed_external_user_attribution_rule: {\n"
+                + "    attribute_key: \"rpc.request.metadata.authorization\",\n"
+                + "    type: TYPE_AUTHHEADER\n"
+                + "  }"
+                + "}"),
         translator.translateRules(
             List.of(
                 UserAttributionRule.newBuilder()
@@ -64,12 +71,19 @@ class ExternalUserAttributionRuleTranslatorTest {
   @Test
   void translatesRequestHeaderRule() {
     assertJsonEquals(
-        "{"
-            + "  transformed_external_user_attribution_rule: {\n"
-            + "    attribute_key: \"http.request.header.id-header\",\n"
-            + "    type: TYPE_ID\n"
-            + "  }"
-            + "}",
+        List.of(
+            "{"
+                + "  transformed_external_user_attribution_rule: {\n"
+                + "    attribute_key: \"http.request.header.id-header\",\n"
+                + "    type: TYPE_ID\n"
+                + "  }"
+                + "}",
+            "{"
+                + "  transformed_external_user_attribution_rule: {\n"
+                + "    attribute_key: \"rpc.request.metadata.id-header\",\n"
+                + "    type: TYPE_ID\n"
+                + "  }"
+                + "}"),
         translator.translateRules(
             List.of(
                 UserAttributionRule.newBuilder()
@@ -91,7 +105,19 @@ class ExternalUserAttributionRuleTranslatorTest {
                 + "}",
             "{"
                 + "  transformed_external_user_attribution_rule: {\n"
+                + "    attribute_key: \"rpc.request.metadata.id-header\",\n"
+                + "    type: TYPE_ID\n"
+                + "  }"
+                + "}",
+            "{"
+                + "  transformed_external_user_attribution_rule: {\n"
                 + "    attribute_key: \"http.request.header.role-header\",\n"
+                + "    type: TYPE_ROLE\n"
+                + "  }"
+                + "}",
+            "{"
+                + "  transformed_external_user_attribution_rule: {\n"
+                + "    attribute_key: \"rpc.request.metadata.role-header\",\n"
                 + "    type: TYPE_ROLE\n"
                 + "  }"
                 + "}"),
@@ -112,17 +138,29 @@ class ExternalUserAttributionRuleTranslatorTest {
   @Test
   void translatesResponseBodyRule() {
     assertJsonEquals(
-        "{"
-            + "  transformed_external_user_attribution_rule: {\n"
-            + "    attribute_key: \"http.response.body\",\n"
-            + "    type: TYPE_JSON,\n"
-            + "    conditions: [{\n"
-            + "      key: \"http.url\",\n"
-            + "      regex: \"my-url\"\n"
-            + "    }],"
-            + "    id_paths: [\"$.somePath\"]"
-            + "  }"
-            + "}",
+        List.of(
+            "{"
+                + "  transformed_external_user_attribution_rule: {\n"
+                + "    attribute_key: \"http.response.body\",\n"
+                + "    type: TYPE_JSON,\n"
+                + "    conditions: [{\n"
+                + "      key: \"http.url\",\n"
+                + "      regex: \"my-url\"\n"
+                + "    }],"
+                + "    id_paths: [\"$.somePath\"]"
+                + "  }"
+                + "}",
+            "{"
+                + "  transformed_external_user_attribution_rule: {\n"
+                + "    attribute_key: \"rpc.response.body\",\n"
+                + "    type: TYPE_JSON,\n"
+                + "    conditions: [{\n"
+                + "      key: \"http.url\",\n"
+                + "      regex: \"my-url\"\n"
+                + "    }],"
+                + "    id_paths: [\"$.somePath\"]"
+                + "  }"
+                + "}"),
         translator.translateRules(
             List.of(
                 UserAttributionRule.newBuilder()
@@ -137,18 +175,31 @@ class ExternalUserAttributionRuleTranslatorTest {
                     .build())));
 
     assertJsonEquals(
-        "{"
-            + "  transformed_external_user_attribution_rule: {\n"
-            + "    attribute_key: \"http.response.body\",\n"
-            + "    type: TYPE_JSON,\n"
-            + "    conditions: [{\n"
-            + "      key: \"http.url\",\n"
-            + "      regex: \"my-url\"\n"
-            + "    }],"
-            + "    id_paths: [\"$.someIdPath\"],"
-            + "    role_paths: [\"$.someRolePath\"]"
-            + "  }"
-            + "}",
+        List.of(
+            "{"
+                + "  transformed_external_user_attribution_rule: {\n"
+                + "    attribute_key: \"http.response.body\",\n"
+                + "    type: TYPE_JSON,\n"
+                + "    conditions: [{\n"
+                + "      key: \"http.url\",\n"
+                + "      regex: \"my-url\"\n"
+                + "    }],"
+                + "    id_paths: [\"$.someIdPath\"],"
+                + "    role_paths: [\"$.someRolePath\"]"
+                + "  }"
+                + "}",
+            "{"
+                + "  transformed_external_user_attribution_rule: {\n"
+                + "    attribute_key: \"rpc.response.body\",\n"
+                + "    type: TYPE_JSON,\n"
+                + "    conditions: [{\n"
+                + "      key: \"http.url\",\n"
+                + "      regex: \"my-url\"\n"
+                + "    }],"
+                + "    id_paths: [\"$.someIdPath\"],"
+                + "    role_paths: [\"$.someRolePath\"]"
+                + "  }"
+                + "}"),
         translator.translateRules(
             List.of(
                 UserAttributionRule.newBuilder()
@@ -170,17 +221,29 @@ class ExternalUserAttributionRuleTranslatorTest {
   @Test
   void translatesJwtRule() {
     assertJsonEquals(
-        "{"
-            + "  transformed_external_user_attribution_rule: {\n"
-            + "    attribute_key: \"http.request.header.authorization\",\n"
-            + "    type: TYPE_AUTHHEADER,\n"
-            + "    encoding: ENCODING_JWT,"
-            + "    id_claims: [\"data-claim\"],"
-            + "    id_paths: [\"$.id\"],"
-            + "    role_claims: [\"data-claim\"],"
-            + "    role_paths: [\"$.role\"]"
-            + "  }"
-            + "}",
+        List.of(
+            "{"
+                + "  transformed_external_user_attribution_rule: {\n"
+                + "    attribute_key: \"http.request.header.authorization\",\n"
+                + "    type: TYPE_AUTHHEADER,\n"
+                + "    encoding: ENCODING_JWT,"
+                + "    id_claims: [\"data-claim\"],"
+                + "    id_paths: [\"$.id\"],"
+                + "    role_claims: [\"data-claim\"],"
+                + "    role_paths: [\"$.role\"]"
+                + "  }"
+                + "}",
+            "{"
+                + "  transformed_external_user_attribution_rule: {\n"
+                + "    attribute_key: \"rpc.request.metadata.authorization\",\n"
+                + "    type: TYPE_AUTHHEADER,\n"
+                + "    encoding: ENCODING_JWT,"
+                + "    id_claims: [\"data-claim\"],"
+                + "    id_paths: [\"$.id\"],"
+                + "    role_claims: [\"data-claim\"],"
+                + "    role_paths: [\"$.role\"]"
+                + "  }"
+                + "}"),
         translator.translateRules(
             List.of(
                 UserAttributionRule.newBuilder()
