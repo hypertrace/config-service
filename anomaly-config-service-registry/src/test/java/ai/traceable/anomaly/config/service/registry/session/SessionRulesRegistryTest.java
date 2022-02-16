@@ -22,7 +22,7 @@ public class SessionRulesRegistryTest {
     Map<String, AnomalyRuleInfo> anomalyRuleInfos = sessionRulesRegistry.getSessionRuleInfos();
     assertEquals(2, anomalyRuleInfos.size());
     assertEquals(
-        "bola :: Authorization Bypass\nuserIdBola :: Authorization Bypass - User Level",
+        "bola :: Authorization Bypass - Object Level\nuserIdBola :: Authorization Bypass - User Level",
         anomalyRuleInfos.values().stream()
             .map(
                 anomalyRuleInfo ->

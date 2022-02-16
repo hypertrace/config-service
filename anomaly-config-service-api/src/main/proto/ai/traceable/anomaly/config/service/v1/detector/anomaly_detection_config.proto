@@ -99,9 +99,8 @@ message ApiDefinitionMetadataAnomalyDetectionConfig {
     ContentTypeAnomalyConfig content_type = 8;
     ContentSizeAnomalyConfig content_size = 9;
     PayloadAnomalyConfig payload = 10;
-    XxeAnomalyConfig xxe = 11;
-    SsrfAnomalyConfig ssrf = 12;
-    UnknownParamAnomalyConfig unknown_param = 13;
+    SsrfAnomalyConfig ssrf = 11;
+    UnknownParamAnomalyConfig unknown_param = 12;
   }
 }
 
@@ -203,10 +202,6 @@ message ContentSizeAnomalyConfig {
 }
 
 message PayloadAnomalyConfig {
-  optional bool modsecurity_enabled = 1;
-}
-
-message XxeAnomalyConfig {
   optional bool modsecurity_enabled = 1;
 }
 
