@@ -57,10 +57,6 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   // Not concerned about memory footprint here
   private static final int PREPOPULATION_LOCK_STRIPE_COUNT = 1000;
   private static final String DATA_CLASSIFICATION_MVP_FLAG = "data-classification.mvp";
-  private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(5);
-  private static final Duration REFRESH_DURATION = Duration.ofMinutes(5);
-  private static final Duration EXPIRY_DURATION = Duration.ofMinutes(15);
-  private static final int MAX_THREAD_POOL_SIZE = 1;
   private static final boolean DEFAULT_DATA_CLASSIFICATION_FEATURE_FLAG_VALUE = false;
 
   private final ConfigServiceBlockingStub configServiceBlockingStub;
@@ -87,6 +83,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
       dataClassificationConfigServiceBlockingStub;
   private final FeatureFlagCurrentValueClient featureFlagCurrentValueClient;
   private final LoadingCache<String, Boolean> dataClassificationEnabledByTenant;
+  private final Duration requestTimeout;
 
   @Inject
   ConfigServiceCoordinatorImpl(
@@ -114,14 +111,16 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
     this.defaultRedactionRulePopulationStatusStore = defaultRedactionRulePopulationStatusStore;
     this.dataClassificationConfigServiceBlockingStub = dataClassificationConfigServiceBlockingStub;
     this.featureFlagCurrentValueClient = featureFlagCurrentValueClient;
+    this.requestTimeout = config.getRequestTimeout();
     this.dataClassificationEnabledByTenant =
         CacheBuilder.newBuilder()
-            .refreshAfterWrite(REFRESH_DURATION)
-            .expireAfterWrite(EXPIRY_DURATION)
+            .refreshAfterWrite(config.getRefreshDuration())
+            .expireAfterWrite(config.getExpirationDuration())
             .build(
                 CacheLoader.asyncReloading(
                     getDataClassificationFeatureFlagCacheLoader(),
-                    Executors.newFixedThreadPool(MAX_THREAD_POOL_SIZE, this.buildThreadFactory())));
+                    Executors.newFixedThreadPool(
+                        config.getThreadPoolSize(), this.buildThreadFactory())));
   }
 
   @Override
@@ -465,7 +464,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
                             SubscribeFlagValuesRequest.newBuilder()
                                 .addFlagKeys(DATA_CLASSIFICATION_MVP_FLAG)
                                 .build()))
-                .get(REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                .get(requestTimeout.toMillis(), TimeUnit.MILLISECONDS);
         FeatureFlagValue featureFlagValue =
             Optional.ofNullable(featureFlagValueMap.get(DATA_CLASSIFICATION_MVP_FLAG))
                 .orElseThrow(IllegalStateException::new);

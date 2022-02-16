@@ -42,6 +42,7 @@ import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import io.grpc.Channel;
 import io.grpc.stub.StreamObserver;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -76,6 +77,10 @@ class PiiFilterConfigServiceImplTest {
             InvalidJsonPolicy.newBuilder()
                 .setDropUnparsedJsonPolicy(DropUnparsedJsonPolicy.getDefaultInstance())
                 .build());
+    when(mockConfig.getExpirationDuration()).thenReturn(Duration.ofMinutes(15));
+    when(mockConfig.getRefreshDuration()).thenReturn(Duration.ofMinutes(5));
+    when(mockConfig.getRequestTimeout()).thenReturn(Duration.ofSeconds(10));
+    when(mockConfig.getThreadPoolSize()).thenReturn(1);
     dataClassificationConfigServiceMockFlag = false;
   }
 
