@@ -31,7 +31,7 @@ message WebhookChannelConfig {
 
 message CustomWebhookChannelConfig {
   string url = 1;
-  repeated WebhookHeader headers = 3;
+  repeated WebhookHeader headers = 2;
 }
 
 message SlackWebhookChannelConfig {
