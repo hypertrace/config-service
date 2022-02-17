@@ -49,7 +49,6 @@ public class ApiNamingManagerTestUtils {
     httpApiNamingConfigBuilder
         .addExtensions("extension")
         .addSegmentWhitelistRegexes("allowRegex")
-        .addUrlRejectRegexes("urlReject")
         .addApiNamingCustomRules(
             HttpApiNamingCustomRule.newBuilder()
                 .setRegexPattern("regex")
@@ -58,26 +57,22 @@ public class ApiNamingManagerTestUtils {
         .addWildcardConfigs(
             WildcardConfig.newBuilder()
                 .setWildcardType(WildcardType.WILDCARD_TYPE_ID)
-                .setPriority(4)
                 .addIdentificationRegexes("regexId")
                 .build())
         .addWildcardConfigs(
             WildcardConfig.newBuilder()
                 .setWildcardType(WildcardType.WILDCARD_TYPE_LOW_CARDINALITY)
-                .setPriority(3)
                 .addIdentificationRegexes("regexLow")
                 .build())
         .addWildcardConfigs(
             WildcardConfig.newBuilder()
-                .setWildcardType(WildcardType.WILDCARD_TYPE_MEDIUM_CARDINALITY)
-                .setPriority(1)
-                .addIdentificationRegexes("regexMedium")
+                .setWildcardType(WildcardType.WILDCARD_TYPE_HIGH_CARDINALITY)
+                .addIdentificationRegexes("regexHigh")
                 .build())
         .addWildcardConfigs(
             WildcardConfig.newBuilder()
-                .setWildcardType(WildcardType.WILDCARD_TYPE_HIGH_CARDINALITY)
-                .setPriority(2)
-                .addIdentificationRegexes("regexHigh")
+                .setWildcardType(WildcardType.WILDCARD_TYPE_MEDIUM_CARDINALITY)
+                .addIdentificationRegexes("regexMedium")
                 .build())
         .addAllFallbackWildcardRegexes(
             List.of(

@@ -77,23 +77,20 @@ message Wildcard {
 message HttpApiNamingConfig {
   repeated HttpApiNamingCustomRule api_naming_custom_rules = 1;
   repeated WildcardConfig wildcard_configs = 2;
-  repeated string url_reject_regexes = 3;
-  repeated string extensions = 4;
-  repeated string segment_whitelist_regexes = 5;
-  repeated string fallback_wildcard_regexes = 6;
-  string hash = 7;
+  repeated string extensions = 3;
+  repeated string segment_whitelist_regexes = 4;
+  repeated string fallback_wildcard_regexes = 5;
+  string hash = 6;
 }
 
 message HttpApiNamingCustomRule {
   string regex_pattern = 1;
   string url_pattern = 2;
-  int32 priority = 3;  //Higher the priority will be denoted by smaller rank
 }
 
 message WildcardConfig {
   WildcardType wildcard_type = 1;
   repeated string identification_regexes = 2;
-  int32 priority = 3;   //Higher the priority will be denoted by smaller rank
 }
 
 enum WildcardType {

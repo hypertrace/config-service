@@ -13,7 +13,6 @@ import ai.traceable.anomaly.config.service.v1.trainer.TrainerConfigServiceGrpc.T
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfigType;
 import ai.traceable.anomaly.config.service.v1.trainer.TrieModelTrainingConfig;
-import ai.traceable.anomaly.config.service.v1.trainer.UrlFilterConfig;
 import ai.traceable.localprocessing.config.service.client.EntityDataServiceClient;
 import ai.traceable.localprocessing.config.service.config.ApiNamingConfig;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
@@ -79,6 +78,7 @@ import org.slf4j.LoggerFactory;
 
 @Slf4j
 class DefaultApiNamingManager implements ApiNamingManager {
+
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultApiNamingManager.class);
 
   private final TrainerConfigServiceBlockingStub configServiceBlockingStub;
@@ -577,11 +577,6 @@ class DefaultApiNamingManager implements ApiNamingManager {
                     trieModelTrainingConfig.getAllowRegexList().getValuesList())
                 .addAllWildcardConfigs(convertWildcardConfigs(trieModelTrainingConfig)));
 
-    getUrlFilterConfig(trainingConfigs)
-        .ifPresent(
-            urlFilterConfig ->
-                httpApiNamingConfigBuilder.addAllUrlRejectRegexes(
-                    getUrlRejectRegex(urlFilterConfig)));
     getCustomRulesListConfig(trainingConfigs)
         .ifPresent(
             customRulesListConfig ->
@@ -600,47 +595,32 @@ class DefaultApiNamingManager implements ApiNamingManager {
 
   private List<WildcardConfig> convertWildcardConfigs(
       TrieModelTrainingConfig trieModelTrainingConfig) {
+    // Ordering of wildcard configs decides the priority
+    // ID > LOW_CARDINALITY > HIGH_CARDINALITY > MEDIUM_CARDINALITY
     return List.of(
         buildWildcardConfig(WildcardType.WILDCARD_TYPE_ID, trieModelTrainingConfig.getIds()),
         buildWildcardConfig(
             WildcardType.WILDCARD_TYPE_LOW_CARDINALITY,
             trieModelTrainingConfig.getLowCardinality()),
         buildWildcardConfig(
-            WildcardType.WILDCARD_TYPE_MEDIUM_CARDINALITY,
-            trieModelTrainingConfig.getMediumCardinality()),
-        buildWildcardConfig(
             WildcardType.WILDCARD_TYPE_HIGH_CARDINALITY,
-            trieModelTrainingConfig.getHighCardinality()));
+            trieModelTrainingConfig.getHighCardinality()),
+        buildWildcardConfig(
+            WildcardType.WILDCARD_TYPE_MEDIUM_CARDINALITY,
+            trieModelTrainingConfig.getMediumCardinality()));
   }
 
   private WildcardConfig buildWildcardConfig(
       WildcardType wildcardType, ThresholdRegexConfig thresholdRegexConfig) {
     return WildcardConfig.newBuilder()
         .setWildcardType(wildcardType)
-        .setPriority(getWildcardPriority(wildcardType))
         .addAllIdentificationRegexes(thresholdRegexConfig.getRegexList().getValuesList())
         .build();
   }
 
-  private int getWildcardPriority(WildcardType wildcardType) {
-    switch (wildcardType) {
-      case WILDCARD_TYPE_ID:
-        return 4;
-      case WILDCARD_TYPE_LOW_CARDINALITY:
-        return 3;
-      case WILDCARD_TYPE_HIGH_CARDINALITY:
-        return 2;
-      case WILDCARD_TYPE_MEDIUM_CARDINALITY:
-        return 1;
-      default:
-        log.error("Unrecognized wildcard type: {}", wildcardType);
-        return 0;
-    }
-  }
-
   private List<HttpApiNamingCustomRule> convertCustomRules(
       CustomRulesListConfig customRulesListConfig) {
-    // TODO: setting priority once available from training config service APIs
+    // TODO: Order the rules, once the priority is available from training config service APIs
     return customRulesListConfig.getCustomRulesConfigList().stream()
         .map(
             customRuleConfig ->
@@ -649,10 +629,6 @@ class DefaultApiNamingManager implements ApiNamingManager {
                     .setUrlPattern(customRuleConfig.getUrlPattern())
                     .build())
         .collect(Collectors.toUnmodifiableList());
-  }
-
-  private List<String> getUrlRejectRegex(UrlFilterConfig urlFilterConfig) {
-    return urlFilterConfig.getUrlRejectRegexPatterns().getValuesList();
   }
 
   private Optional<CustomRulesListConfig> getCustomRulesListConfig(
@@ -672,15 +648,6 @@ class DefaultApiNamingManager implements ApiNamingManager {
         .map(TrainingConfig::getApiNamingTrainingConfig)
         .filter(ApiNamingTrainingConfig::hasTrieModelTrainingConfig)
         .map(ApiNamingTrainingConfig::getTrieModelTrainingConfig)
-        .findAny();
-  }
-
-  private Optional<UrlFilterConfig> getUrlFilterConfig(List<TrainingConfig> trainingConfigs) {
-    return trainingConfigs.stream()
-        .filter(TrainingConfig::hasApiNamingTrainingConfig)
-        .map(TrainingConfig::getApiNamingTrainingConfig)
-        .filter(ApiNamingTrainingConfig::hasUrlFilterConfig)
-        .map(ApiNamingTrainingConfig::getUrlFilterConfig)
         .findAny();
   }
 

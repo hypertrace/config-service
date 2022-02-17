@@ -216,31 +216,6 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
   }
 
   private static void testHttpApiNamingConfig(HttpApiNamingConfig httpApiNamingConfig) {
-    assertEquals(
-        List.of(
-            ".*\\.css$",
-            ".*\\.jpg$",
-            ".*\\.svg$",
-            ".*\\.js$",
-            ".*\\.pdf$",
-            ".*\\.jpeg$",
-            ".*\\.gif$",
-            ".*\\.png$",
-            ".*\\.bmp$",
-            ".*\\.tif$",
-            ".*\\.tiff$",
-            ".*\\.mp3$",
-            ".*\\.wma$",
-            ".*\\.wav$",
-            ".*\\.ogg$",
-            ".*\\.mp4$",
-            ".*\\.avi$",
-            ".*\\.mkv$",
-            ".*\\.woff$",
-            ".*\\.woff2$",
-            ".*\\.webp$",
-            ".*\\.html$"),
-        httpApiNamingConfig.getUrlRejectRegexesList());
     assertEquals(List.of("v\\d+"), httpApiNamingConfig.getSegmentWhitelistRegexesList());
     assertEquals(
         List.of(
