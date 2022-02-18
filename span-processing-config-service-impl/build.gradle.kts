@@ -5,7 +5,7 @@ plugins {
 }
 
 dependencies {
-  api(projects.hypertraceSpanProcessingConfigServiceApi)
+  api(projects.spanProcessingConfigServiceApi)
   implementation(projects.configServiceApi)
   implementation(projects.objectStore)
   implementation(projects.validationUtils)
