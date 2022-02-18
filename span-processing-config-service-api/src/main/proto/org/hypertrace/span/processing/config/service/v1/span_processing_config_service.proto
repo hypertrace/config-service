@@ -93,7 +93,7 @@ enum LogicalOperator {
 
 enum Field {
   FIELD_UNSPECIFIED = 0;
-  FIELD_URL_PATH = 1;
+  FIELD_URL = 1;
   FIELD_SERVICE_NAME = 2;
   FIELD_ENVIRONMENT_NAME = 3;
 }
