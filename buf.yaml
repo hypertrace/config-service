@@ -19,7 +19,6 @@ build:
     - iprange-config-service-api/src/main/proto
     - license-status-config-service-api/src/main/proto
     - threat-management-config-service-api/src/main/proto
-    - span-processing-config-service-api/src/main/proto
 lint:
   use:
     - DEFAULT
