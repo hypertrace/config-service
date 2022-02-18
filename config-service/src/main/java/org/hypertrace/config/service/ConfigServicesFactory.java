@@ -17,6 +17,7 @@ import org.hypertrace.label.config.service.LabelsConfigServiceImpl;
 import org.hypertrace.notification.config.service.NotificationChannelConfigServiceImpl;
 import org.hypertrace.notification.config.service.NotificationRuleConfigServiceImpl;
 import org.hypertrace.space.config.service.SpacesConfigServiceImpl;
+import org.hypertrace.span.processing.config.service.SpanProcessingConfigServiceFactory;
 
 public class ConfigServicesFactory {
   private static final String GENERIC_CONFIG_SERVICE_CONFIG = "generic.config.service";
@@ -45,7 +46,8 @@ public class ConfigServicesFactory {
             configChannel, config, configChangeEventGenerator),
         new EventConditionConfigServiceImpl(configChannel, configChangeEventGenerator),
         new NotificationRuleConfigServiceImpl(configChannel, configChangeEventGenerator),
-        new NotificationChannelConfigServiceImpl(configChannel, configChangeEventGenerator));
+        new NotificationChannelConfigServiceImpl(configChannel, configChangeEventGenerator),
+        SpanProcessingConfigServiceFactory.build(configChannel));
   }
 
   public static ConfigStore buildConfigStore(Config config) {
