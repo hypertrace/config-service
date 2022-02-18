@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.trainer.trainingconfig;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -14,6 +15,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
 import ai.traceable.anomaly.config.service.v1.trainer.GetTrainingConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.SensitiveDataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfigType;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -254,6 +256,21 @@ public class TrainingConfigManagerTest {
             .getUrlFilterConfig()
             .getUrlRejectRegexPatterns()
             .getValuesList());
+
+    filter =
+        GetTrainingConfigsFilter.newBuilder()
+            .addTrainingConfigTypes(TrainingConfigType.TRAINING_CONFIG_TYPE_SENSITIVE_DATA)
+            .build();
+
+    trainingConfig =
+        configManager
+            .getScopedTrainingConfig(requestContext, customerConfigScope, filter)
+            .getTrainingConfigsList()
+            .get(0);
+    assertTrue(trainingConfig.getDisabled());
+    assertEquals(
+        SensitiveDataTrainingConfig.ConfigCase.PII_SENSITIVE_DATA,
+        trainingConfig.getSensitiveDataTrainingConfig().getConfigCase());
   }
 
   @Test

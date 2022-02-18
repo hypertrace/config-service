@@ -4,6 +4,7 @@ import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.GetTrainingConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.trainer.MetadataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.SensitiveDataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.SessionTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfigType;
@@ -48,6 +49,8 @@ public class TrainingConfigConverter {
         case TRAINING_CONFIG_TYPE_API_NAMING:
           configCases.add(TrainingConfig.TrainingConfigCase.API_NAMING_TRAINING_CONFIG);
           break;
+        case TRAINING_CONFIG_TYPE_SENSITIVE_DATA:
+          configCases.add(TrainingConfig.TrainingConfigCase.SENSITIVE_DATA_TRAINING_CONFIG);
         default:
           break;
       }
@@ -79,6 +82,9 @@ public class TrainingConfigConverter {
     EnumMap<ApiNamingTrainingConfig.ConfigCase, TrainingConfig> apiNamingTrainingConfigMap =
         new EnumMap<>(ApiNamingTrainingConfig.ConfigCase.class);
 
+    EnumMap<SensitiveDataTrainingConfig.ConfigCase, TrainingConfig> sensitiveDataTrainingConfigMap =
+        new EnumMap<>(SensitiveDataTrainingConfig.ConfigCase.class);
+
     preferredConfig
         .getTrainingConfigsList()
         .forEach(
@@ -101,6 +107,10 @@ public class TrainingConfigConverter {
                   apiNamingTrainingConfigMap.put(
                       trainingConfig.getApiNamingTrainingConfig().getConfigCase(), trainingConfig);
                   break;
+                case SENSITIVE_DATA_TRAINING_CONFIG:
+                  sensitiveDataTrainingConfigMap.put(
+                      trainingConfig.getSensitiveDataTrainingConfig().getConfigCase(),
+                      trainingConfig);
                 default:
                   break;
               }
@@ -135,6 +145,11 @@ public class TrainingConfigConverter {
                       trainingConfig.getApiNamingTrainingConfig().getConfigCase(),
                       trainingConfig);
                   break;
+                case SENSITIVE_DATA_TRAINING_CONFIG:
+                  resolve(
+                      sensitiveDataTrainingConfigMap,
+                      trainingConfig.getSensitiveDataTrainingConfig().getConfigCase(),
+                      trainingConfig);
                 default:
                   break;
               }
@@ -146,6 +161,7 @@ public class TrainingConfigConverter {
         .addAllTrainingConfigs(vulnerabilityTrainingConfigMap.values())
         .addAllTrainingConfigs(sessionTrainingConfigMap.values())
         .addAllTrainingConfigs(apiNamingTrainingConfigMap.values())
+        .addAllTrainingConfigs(sensitiveDataTrainingConfigMap.values())
         .build();
   }
 

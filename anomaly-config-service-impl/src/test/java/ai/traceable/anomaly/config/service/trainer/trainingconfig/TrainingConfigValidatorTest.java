@@ -12,7 +12,9 @@ import ai.traceable.anomaly.config.service.v1.trainer.ContentSizeTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.DeviceTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.GetScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.MetadataTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.PiiSensitiveDataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.SensitiveDataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.UpdateScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.UrlFilterConfig;
@@ -132,6 +134,47 @@ class TrainingConfigValidatorTest {
                         .setConfigScope(configScope)
                         .addAllTrainingConfigs(trainingConfigList))
                 .build());
+    assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
+  void testUpdateSensitiveDataRequest() {
+    TrainingConfig trainingConfig =
+        TrainingConfig.newBuilder()
+            .setSensitiveDataTrainingConfig(
+                SensitiveDataTrainingConfig.newBuilder()
+                    .setPiiSensitiveData(PiiSensitiveDataTrainingConfig.getDefaultInstance()))
+            .build();
+
+    UpdateScopedTrainingConfigRequest request =
+        UpdateScopedTrainingConfigRequest.newBuilder()
+            .setScopedTrainingConfig(
+                ScopedTrainingConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllTrainingConfigs(List.of(trainingConfig, trainingConfig))
+                    .build())
+            .build();
+
+    Status status = validator.validate(request);
+
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(
+        status
+            .getDescription()
+            .contains(
+                "UpdateScopedTrainingConfigRequest should have only one training config for sensitiveDataTrainingConfigType: "));
+
+    request =
+        UpdateScopedTrainingConfigRequest.newBuilder()
+            .setScopedTrainingConfig(
+                ScopedTrainingConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addTrainingConfigs(trainingConfig)
+                    .build())
+            .build();
+
+    status = validator.validate(request);
+
     assertEquals(Status.OK.getCode(), status.getCode());
   }
 

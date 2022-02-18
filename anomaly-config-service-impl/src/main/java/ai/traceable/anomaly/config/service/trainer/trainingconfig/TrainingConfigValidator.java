@@ -4,6 +4,7 @@ import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.GetScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.MetadataTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.SensitiveDataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.SessionTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.UpdateScopedTrainingConfigRequest;
@@ -55,6 +56,10 @@ public class TrainingConfigValidator {
 
     EnumMap<ApiNamingTrainingConfig.ConfigCase, TrainingConfig> apiNamingTrainingConfigMap =
         new EnumMap<>(ApiNamingTrainingConfig.ConfigCase.class);
+
+    EnumMap<SensitiveDataTrainingConfig.ConfigCase, TrainingConfig> sensitiveDataTrainingConfigMap =
+        new EnumMap<>(SensitiveDataTrainingConfig.ConfigCase.class);
+
     for (TrainingConfig trainingConfig : trainingConfigs) {
 
       switch (trainingConfig.getTrainingConfigCase()) {
@@ -63,8 +68,9 @@ public class TrainingConfigValidator {
               trainingConfig.getMetadataTrainingConfig().getConfigCase();
           if (metadataTrainingConfigMap.containsKey(metadataTrainingConfigCase)) {
             return Status.INVALID_ARGUMENT.withDescription(
-                "UpdateScopedTrainingConfigRequest should have only one training config for metadataTrainingConfigType: "
-                    + metadataTrainingConfigCase);
+                String.format(
+                    "UpdateScopedTrainingConfigRequest should have only one training config for metadataTrainingConfigType: %s",
+                    metadataTrainingConfigCase));
           } else {
             metadataTrainingConfigMap.put(metadataTrainingConfigCase, trainingConfig);
           }
@@ -74,8 +80,9 @@ public class TrainingConfigValidator {
               trainingConfig.getVulnerabilityTrainingConfig().getConfigCase();
           if (vulnerabilityTrainingConfigMap.containsKey(vulnerabilityTrainingConfigCase)) {
             return Status.INVALID_ARGUMENT.withDescription(
-                "UpdateScopedTrainingConfigRequest should have only one training config for vulnerabilityTrainingConfigType: "
-                    + vulnerabilityTrainingConfigCase);
+                String.format(
+                    "UpdateScopedTrainingConfigRequest should have only one training config for vulnerabilityTrainingConfigType: %s",
+                    vulnerabilityTrainingConfigCase));
           } else {
             vulnerabilityTrainingConfigMap.put(vulnerabilityTrainingConfigCase, trainingConfig);
           }
@@ -85,8 +92,9 @@ public class TrainingConfigValidator {
               trainingConfig.getSessionTrainingConfig().getConfigCase();
           if (sessionTrainingConfigMap.containsKey(sessionTrainingConfigCase)) {
             return Status.INVALID_ARGUMENT.withDescription(
-                "UpdateScopedTrainingConfigRequest should have only one training config for sessionTrainingConfigType: "
-                    + sessionTrainingConfigCase);
+                String.format(
+                    "UpdateScopedTrainingConfigRequest should have only one training config for sessionTrainingConfigType: %s",
+                    sessionTrainingConfigCase));
           } else {
             sessionTrainingConfigMap.put(sessionTrainingConfigCase, trainingConfig);
           }
@@ -96,12 +104,26 @@ public class TrainingConfigValidator {
               trainingConfig.getApiNamingTrainingConfig().getConfigCase();
           if (apiNamingTrainingConfigMap.containsKey(apiNamingTrainingConfigCase)) {
             return Status.INVALID_ARGUMENT.withDescription(
-                "UpdateScopedTrainingConfigRequest should have only one training config for apiNamingTrainingConfigType: "
-                    + apiNamingTrainingConfigCase);
+                String.format(
+                    "UpdateScopedTrainingConfigRequest should have only one training config for apiNamingTrainingConfigType: %s",
+                    apiNamingTrainingConfigCase));
           } else {
             apiNamingTrainingConfigMap.put(apiNamingTrainingConfigCase, trainingConfig);
           }
           break;
+        case SENSITIVE_DATA_TRAINING_CONFIG:
+          SensitiveDataTrainingConfig.ConfigCase sensitiveDataTrainingConfigCase =
+              trainingConfig.getSensitiveDataTrainingConfig().getConfigCase();
+          if (sensitiveDataTrainingConfigMap.containsKey(sensitiveDataTrainingConfigCase)) {
+            return Status.INVALID_ARGUMENT.withDescription(
+                String.format(
+                    "UpdateScopedTrainingConfigRequest should have only one training config for sensitiveDataTrainingConfigType: %s",
+                    sensitiveDataTrainingConfigCase));
+          } else {
+            sensitiveDataTrainingConfigMap.put(sensitiveDataTrainingConfigCase, trainingConfig);
+          }
+          break;
+
         default:
           break;
       }

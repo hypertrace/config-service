@@ -12,6 +12,7 @@ enum TrainingConfigType {
   TRAINING_CONFIG_TYPE_VULNERABILITY = 2;
   TRAINING_CONFIG_TYPE_SESSION = 3;
   TRAINING_CONFIG_TYPE_API_NAMING = 4;
+  TRAINING_CONFIG_TYPE_SENSITIVE_DATA = 5;
 }
 
 message GetTrainingConfigsFilter {
@@ -55,6 +56,7 @@ message TrainingConfig {
     VulnerabilityTrainingConfig vulnerability_training_config = 3;
     SessionTrainingConfig session_training_config = 4;
     ApiNamingTrainingConfig api_naming_training_config = 5;
+    SensitiveDataTrainingConfig sensitive_data_training_config = 6;
   }
 }
 
@@ -80,6 +82,15 @@ message MetadataTrainingConfig {
     SsrfTrainingConfig ssrf = 10;
     ThresholdsFamilyTrainingConfig thresholds_family = 11;
     DataClassificationTrainingConfig data_classification = 12;
+    ContentTypeTrainingConfig content_type = 13;
+    CountTrainingConfig count = 14;
+    IsExternalApiTrainingConfig is_external_api = 15;
+    MessagePartStatsTrainingConfig message_part_stats = 16;
+    NoSqlTrainingConfig no_sql = 17;
+    RailsOpenTrainingConfig rails_open = 18;
+    StartTimeTrainingConfig start_time = 19;
+    UserAgentTrainingConfig user_agent = 20;
+    UserRoleTrainingConfig user_role = 21;
   }
 }
 
@@ -87,6 +98,11 @@ message VulnerabilityTrainingConfig {
   oneof config {
     ParamContainsSensitiveDataTrainingConfig param_contains_sensitive_data = 1;
     LackOfEncryptionTrainingConfig lack_of_encryption = 3;
+    ApiParamContainsUrlTrainingConfig api_param_contains_url = 4;
+    ContentTypeOptionsSecurityHeaderTrainingConfig content_type_options_security_header = 5;
+    HstsSecurityHeaderTrainingConfig hsts_security_header = 6;
+    JavaSerializedObjectTrainingConfig java_serialized_object = 7;
+    ServiceUsesBasicAuthTrainingConfig service_uses_basic_auth = 8;
   }
 }
 
@@ -94,6 +110,12 @@ message SessionTrainingConfig {
   oneof config {
     ObjectBolaTrainingConfig object_bola = 1;
     UserIdBolaTrainingConfig user_id_bola = 2;
+  }
+}
+
+message SensitiveDataTrainingConfig {
+  oneof config {
+    PiiSensitiveDataTrainingConfig pii_sensitive_data = 1;
   }
 }
 
@@ -162,6 +184,24 @@ message SsrfTrainingConfig {
   optional int32 max_allowed_hosts = 2;
 }
 
+message ContentTypeTrainingConfig {}
+
+message CountTrainingConfig {}
+
+message IsExternalApiTrainingConfig {}
+
+message MessagePartStatsTrainingConfig {}
+
+message NoSqlTrainingConfig {}
+
+message RailsOpenTrainingConfig {}
+
+message StartTimeTrainingConfig {}
+
+message UserAgentTrainingConfig {}
+
+message UserRoleTrainingConfig {}
+
 message ParamContainsSensitiveDataTrainingConfig {
   MinOccurrenceConfig query_param_pii_type_config = 1;
   MinOccurrenceConfig persistent_cookie_pii_type_config = 2;
@@ -170,6 +210,16 @@ message ParamContainsSensitiveDataTrainingConfig {
 message LackOfEncryptionTrainingConfig {
   MinOccurrenceConfig https_calls_config = 1;
 }
+
+message ApiParamContainsUrlTrainingConfig {}
+
+message ContentTypeOptionsSecurityHeaderTrainingConfig {}
+
+message HstsSecurityHeaderTrainingConfig {}
+
+message JavaSerializedObjectTrainingConfig {}
+
+message ServiceUsesBasicAuthTrainingConfig {}
 
 message ObjectBolaTrainingConfig {
   ParamSusceptibilityConfig param_susceptibility_config = 1;
@@ -183,6 +233,8 @@ message UserIdBolaTrainingConfig {
   UserIdSource user_id_source = 1;
   ThresholdCountConfig required_count_config = 2;
 }
+
+message PiiSensitiveDataTrainingConfig {}
 
 message ThresholdCountConfig {
   optional int32 required_calls_count = 1;
