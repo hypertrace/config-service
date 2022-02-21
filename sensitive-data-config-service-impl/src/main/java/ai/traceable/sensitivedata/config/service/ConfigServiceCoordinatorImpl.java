@@ -7,9 +7,9 @@ import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
-import ai.traceable.featureflag.client.future.FeatureFlagCurrentValueClient;
+import ai.traceable.featureflag.v1.FeatureFlagServiceGrpc.FeatureFlagServiceBlockingStub;
 import ai.traceable.featureflag.v1.FeatureFlagValue;
-import ai.traceable.featureflag.v1.SubscribeFlagValuesRequest;
+import ai.traceable.featureflag.v1.GetCurrentFlagValuesRequest;
 import ai.traceable.sensitivedata.config.service.v1.FullPrivacyModeConfig;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest.RedactionRuleFilter;
 import ai.traceable.sensitivedata.config.service.v1.InvalidJsonPolicy;
@@ -32,11 +32,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -81,7 +79,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   private final DefaultRedactionRulePopulationStatusStore defaultRedactionRulePopulationStatusStore;
   private final DataClassificationConfigServiceBlockingStub
       dataClassificationConfigServiceBlockingStub;
-  private final FeatureFlagCurrentValueClient featureFlagCurrentValueClient;
+  private final FeatureFlagServiceBlockingStub featureFlagServiceBlockingStub;
   private final LoadingCache<String, Boolean> dataClassificationEnabledByTenant;
   private final Duration requestTimeout;
 
@@ -96,7 +94,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
       FullPrivacyModeConfigStore fullPrivacyModeConfigStore,
       DefaultRedactionRulePopulationStatusStore defaultRedactionRulePopulationStatusStore,
       DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceBlockingStub,
-      FeatureFlagCurrentValueClient featureFlagCurrentValueClient) {
+      FeatureFlagServiceBlockingStub featureFlagServiceBlockingStub) {
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.configChangeEventGenerator = configChangeEventGenerator;
     this.defaultRedactionRules = config.defaultRedactionRules();
@@ -110,7 +108,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
     this.fullPrivacyModeConfigStore = fullPrivacyModeConfigStore;
     this.defaultRedactionRulePopulationStatusStore = defaultRedactionRulePopulationStatusStore;
     this.dataClassificationConfigServiceBlockingStub = dataClassificationConfigServiceBlockingStub;
-    this.featureFlagCurrentValueClient = featureFlagCurrentValueClient;
+    this.featureFlagServiceBlockingStub = featureFlagServiceBlockingStub;
     this.requestTimeout = config.getRequestTimeout();
     this.dataClassificationEnabledByTenant =
         CacheBuilder.newBuilder()
@@ -454,17 +452,18 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   private CacheLoader<String, Boolean> getDataClassificationFeatureFlagCacheLoader() {
     return new CacheLoader<>() {
       @Override
-      public Boolean load(String tenantId)
-          throws ExecutionException, InterruptedException, TimeoutException {
+      public Boolean load(String tenantId) {
         Map<String, FeatureFlagValue> featureFlagValueMap =
             RequestContext.forTenantId(tenantId)
                 .call(
                     () ->
-                        featureFlagCurrentValueClient.getCurrentValues(
-                            SubscribeFlagValuesRequest.newBuilder()
-                                .addFlagKeys(DATA_CLASSIFICATION_MVP_FLAG)
-                                .build()))
-                .get(requestTimeout.toMillis(), TimeUnit.MILLISECONDS);
+                        featureFlagServiceBlockingStub
+                            .withDeadlineAfter(requestTimeout.toMillis(), TimeUnit.MILLISECONDS)
+                            .getCurrentFlagValues(
+                                GetCurrentFlagValuesRequest.newBuilder()
+                                    .addFlagKeys(DATA_CLASSIFICATION_MVP_FLAG)
+                                    .build()))
+                .getValuesMap();
         FeatureFlagValue featureFlagValue =
             Optional.ofNullable(featureFlagValueMap.get(DATA_CLASSIFICATION_MVP_FLAG))
                 .orElseThrow(IllegalStateException::new);

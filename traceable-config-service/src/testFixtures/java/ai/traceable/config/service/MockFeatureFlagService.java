@@ -2,23 +2,19 @@ package ai.traceable.config.service;
 
 import ai.traceable.featureflag.v1.FeatureFlagServiceGrpc.FeatureFlagServiceImplBase;
 import ai.traceable.featureflag.v1.FeatureFlagValue;
-import ai.traceable.featureflag.v1.FeatureFlagValueChange;
-import ai.traceable.featureflag.v1.SubscribeFlagValuesRequest;
-import ai.traceable.featureflag.v1.SubscribeFlagValuesResponse;
+import ai.traceable.featureflag.v1.GetCurrentFlagValuesRequest;
+import ai.traceable.featureflag.v1.GetCurrentFlagValuesResponse;
 import io.grpc.stub.StreamObserver;
 
 public class MockFeatureFlagService extends FeatureFlagServiceImplBase {
   @Override
-  public void subscribeFlagValues(
-      SubscribeFlagValuesRequest request,
-      StreamObserver<SubscribeFlagValuesResponse> responseObserver) {
+  public void getCurrentFlagValues(
+      GetCurrentFlagValuesRequest request,
+      StreamObserver<GetCurrentFlagValuesResponse> responseObserver) {
     responseObserver.onNext(
-        SubscribeFlagValuesResponse.newBuilder()
-            .putChanges(
-                "data-classification.mvp",
-                FeatureFlagValueChange.newBuilder()
-                    .setCurrent(FeatureFlagValue.newBuilder().setBoolean(true).build())
-                    .build())
+        GetCurrentFlagValuesResponse.newBuilder()
+            .putValues(
+                "data-classification.mvp", FeatureFlagValue.newBuilder().setBoolean(true).build())
             .build());
     responseObserver.onCompleted();
   }

@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import ai.traceable.config.service.MockInsightsService;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
+import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceImplBase;
 import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
@@ -25,8 +26,11 @@ import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataSetsResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
-import ai.traceable.featureflag.client.future.FeatureFlagCurrentValueClient;
+import ai.traceable.featureflag.v1.FeatureFlagServiceGrpc;
+import ai.traceable.featureflag.v1.FeatureFlagServiceGrpc.FeatureFlagServiceImplBase;
 import ai.traceable.featureflag.v1.FeatureFlagValue;
+import ai.traceable.featureflag.v1.GetCurrentFlagValuesRequest;
+import ai.traceable.featureflag.v1.GetCurrentFlagValuesResponse;
 import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.DropUnparsedJsonPolicy;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigRequest;
@@ -46,7 +50,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -259,14 +262,6 @@ class PiiFilterConfigServiceImplTest {
     when(mockConfig.defaultFullPrivacyMode()).thenReturn(defaultFullPrivacyMode);
     when(mockConfig.defaultRedactionRules()).thenReturn(defaultRedactionRules);
 
-    FeatureFlagCurrentValueClient featureFlagCurrentValueClient =
-        mock(FeatureFlagCurrentValueClient.class);
-    CompletableFuture<Map<String, FeatureFlagValue>> mapCompletableFuture =
-        CompletableFuture.completedFuture(
-            Map.of(
-                "data-classification.mvp", FeatureFlagValue.newBuilder().setBoolean(true).build()));
-    when(featureFlagCurrentValueClient.getCurrentValues(any())).thenReturn(mapCompletableFuture);
-
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(channel);
@@ -290,17 +285,17 @@ class PiiFilterConfigServiceImplTest {
                     new DefaultRedactionRulePopulationStatusStore(
                         configServiceBlockingStub, configChangeEventGenerator),
                     DataClassificationConfigServiceGrpc.newBlockingStub(channel),
-                    featureFlagCurrentValueClient),
+                    FeatureFlagServiceGrpc.newBlockingStub(channel)),
                 new InsightsServiceCoordinatorImpl(InsightsServiceGrpc.newBlockingStub(channel)),
                 new UuidGenerator()))
         .addService(new MockDataClassificationConfigService())
+        .addService(new MockFeatureFlagService())
         .start();
 
     piiFilterStub = PiiFilterConfigServiceGrpc.newBlockingStub(channel);
   }
 
-  class MockDataClassificationConfigService
-      extends DataClassificationConfigServiceGrpc.DataClassificationConfigServiceImplBase {
+  class MockDataClassificationConfigService extends DataClassificationConfigServiceImplBase {
 
     @Override
     public void getDataSets(
@@ -362,6 +357,20 @@ class PiiFilterConfigServiceImplTest {
         responseBuilder.addAllDataTypes(List.of(dataType1, dataType2));
       }
       responseObserver.onNext(responseBuilder.build());
+      responseObserver.onCompleted();
+    }
+  }
+
+  class MockFeatureFlagService extends FeatureFlagServiceImplBase {
+    @Override
+    public void getCurrentFlagValues(
+        GetCurrentFlagValuesRequest request,
+        StreamObserver<GetCurrentFlagValuesResponse> responseObserver) {
+      responseObserver.onNext(
+          GetCurrentFlagValuesResponse.newBuilder()
+              .putValues(
+                  "data-classification.mvp", FeatureFlagValue.newBuilder().setBoolean(true).build())
+              .build());
       responseObserver.onCompleted();
     }
   }
