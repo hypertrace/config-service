@@ -8,6 +8,7 @@ build:
     - alerting-config-service-api/src/main/proto
     - notification-rule-config-service-api/src/main/proto
     - notification-channel-config-service-api/src/main/proto
+    - span-processing-config-service-api/src/main/proto
 lint:
   use:
     - DEFAULT
