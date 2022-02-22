@@ -1,7 +1,5 @@
 package ai.traceable.config.service;
 
-import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_LIMIT_AVAILABLE;
-import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_LIMIT_EXHAUSTED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -27,11 +25,6 @@ import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
-import ai.traceable.licensestatus.config.service.v1.LicenseLimit;
-import ai.traceable.licensestatus.config.service.v1.LicenseStatus;
-import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc;
-import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc.LicenseStatusConfigServiceBlockingStub;
-import ai.traceable.licensestatus.config.service.v1.UpdateLicenseStatusRequest;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.CreateLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.GetDefaultProtectionModeRequest;
@@ -58,7 +51,6 @@ public class LocalProcessingConfigServiceIntegrationTest
     extends TraceableConfigServiceIntegrationTestBase {
   private static LocalProcessingRulesServiceBlockingStub localProcessingRulesStub;
   private static LocalProcessingConfigServiceBlockingStub localProcessingConfigStub;
-  private static LicenseStatusConfigServiceBlockingStub licenseStatusConfigStub;
   private static CustomSignatureConfigServiceBlockingStub customSignatureConfigServiceStub;
   private static final UuidGenerator uuidGenerator = new UuidGenerator();
 
@@ -72,10 +64,6 @@ public class LocalProcessingConfigServiceIntegrationTest
         LocalProcessingConfigServiceGrpc.newBlockingStub(managedChannelForExternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
-    licenseStatusConfigStub =
-        LicenseStatusConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
-            .withCallCredentials(
-                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
     customSignatureConfigServiceStub =
         CustomSignatureConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
             .withCallCredentials(
@@ -84,7 +72,6 @@ public class LocalProcessingConfigServiceIntegrationTest
 
   @Test
   void testLocalProcessingConfigService() {
-    setLicenseStatus(LICENSE_LIMIT_AVAILABLE);
     NewLocalProcessingRule newLocalProcessingRule1 =
         NewLocalProcessingRule.newBuilder()
             .setUrlPattern("/checkout/*")
@@ -112,13 +99,13 @@ public class LocalProcessingConfigServiceIntegrationTest
                 .build());
     ProtectionModeConfig protectionModeConfig =
         ProtectionModeConfig.newBuilder()
-            .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
+            .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_ADVANCED)
             .addAllProtectedEndpoints(protectedEndpoints)
             .build();
 
     ProtectionModeConfig expectedConfig =
         ProtectionModeConfig.newBuilder()
-            .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
+            .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_ADVANCED)
             .setHash(uuidGenerator.generateId(protectionModeConfig))
             .addAllProtectedEndpoints(protectedEndpoints)
             .build();
@@ -138,33 +125,6 @@ public class LocalProcessingConfigServiceIntegrationTest
             .setHash(uuidGenerator.generateId(protectionModeConfig))
             .build();
     actualConfig = getConfig();
-    assertEquals(expectedConfig, actualConfig);
-  }
-
-  @Test
-  void testLocalProcessingConfigServiceWithLimitExhausted() {
-    setLicenseStatus(LICENSE_LIMIT_EXHAUSTED);
-    NewLocalProcessingRule newLocalProcessingRule1 =
-        NewLocalProcessingRule.newBuilder()
-            .setUrlPattern("/checkout/*")
-            .setHostHeader("abc.com")
-            .setProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
-            .build();
-    NewLocalProcessingRule newLocalProcessingRule2 =
-        NewLocalProcessingRule.newBuilder()
-            .setUrlPattern("/orders/**")
-            .setProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
-            .build();
-    createRule(newLocalProcessingRule1);
-    createRule(newLocalProcessingRule2);
-
-    ProtectionModeConfig expectedConfig =
-        ProtectionModeConfig.newBuilder()
-            .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
-            .build();
-    expectedConfig =
-        expectedConfig.toBuilder().setHash(uuidGenerator.generateId(expectedConfig)).build();
-    ProtectionModeConfig actualConfig = getConfig();
     assertEquals(expectedConfig, actualConfig);
   }
 
@@ -321,16 +281,6 @@ public class LocalProcessingConfigServiceIntegrationTest
     return GrpcClientRequestContextUtil.executeInTenantContext(
             TENANT_ID, () -> localProcessingConfigStub.getLocalProcessingConfig(request))
         .getProtectionModeConfig();
-  }
-
-  private void setLicenseStatus(LicenseLimit licenseLimit) {
-    UpdateLicenseStatusRequest request =
-        UpdateLicenseStatusRequest.newBuilder()
-            .setLicenseStatus(
-                LicenseStatus.newBuilder().setTracesLicenseLimit(licenseLimit).build())
-            .build();
-    GrpcClientRequestContextUtil.executeInTenantContext(
-        TENANT_ID, () -> licenseStatusConfigStub.updateLicenseStatus(request));
   }
 
   private void createRule(NewLocalProcessingRule newLocalProcessingRule) {

@@ -1,7 +1,5 @@
 package ai.traceable.localprocessing.config.service;
 
-import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_LIMIT_AVAILABLE;
-import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_LIMIT_EXHAUSTED;
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.DEFAULT_PROTECTION_MODE;
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.LOCAL_PROCESSING_CONFIG_SERVICE_CONFIG;
 import static ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants.MODSEC_REDACT_MESSAGES;
@@ -13,12 +11,6 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.licensestatus.config.service.v1.GetLicenseStatusRequest;
-import ai.traceable.licensestatus.config.service.v1.GetLicenseStatusResponse;
-import ai.traceable.licensestatus.config.service.v1.LicenseLimit;
-import ai.traceable.licensestatus.config.service.v1.LicenseStatus;
-import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc;
-import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc.LicenseStatusConfigServiceBlockingStub;
 import ai.traceable.localprocessing.config.service.apinaming.ApiNamingManager;
 import ai.traceable.localprocessing.config.service.client.EntityDataServiceClient;
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinator;
@@ -53,7 +45,6 @@ import ai.traceable.localprocessing.config.service.v1.SamplingPolicy;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.ManagedChannel;
-import io.grpc.stub.StreamObserver;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,9 +61,7 @@ class LocalProcessingConfigServiceImplTest {
 
   LocalProcessingConfigServiceBlockingStub localProcessingConfigStub;
   LocalProcessingRulesServiceBlockingStub localProcessingRulesStub;
-  LicenseStatusConfigServiceBlockingStub licenseStatusConfigStub;
   MockGenericConfigService mockGenericConfigService;
-  LicenseStatus licenseStatus;
   CustomModsecDetectionManager customModsecDetectionManager;
   RegularModsecDetectionManager regularModsecDetectionManager;
   ApiNamingManager apiNamingManager;
@@ -150,12 +139,10 @@ class LocalProcessingConfigServiceImplTest {
                 uuidGenerator,
                 localProcessingConfigRequestValidator))
         .addService(new LocalProcessingRulesServiceImpl(configServiceCoordinator))
-        .addService(new MockLicenseStatusConfigService())
         .start();
 
     localProcessingConfigStub = LocalProcessingConfigServiceGrpc.newBlockingStub(channel);
     localProcessingRulesStub = LocalProcessingRulesServiceGrpc.newBlockingStub(channel);
-    licenseStatusConfigStub = LicenseStatusConfigServiceGrpc.newBlockingStub(channel);
   }
 
   @AfterEach
@@ -209,7 +196,6 @@ class LocalProcessingConfigServiceImplTest {
     when(regularModsecDetectionManager.getDetectionRules("Regular"))
         .thenReturn(expectedRegularModsecDetectionRules);
 
-    setLicenseStatus(LICENSE_LIMIT_AVAILABLE);
     createLocalProcessingRule("/checkout/*", "abc.com", ProtectionMode.PROTECTION_MODE_CORE);
     createLocalProcessingRule("/orders/**", "xyz.com", ProtectionMode.PROTECTION_MODE_ADVANCED);
 
@@ -233,7 +219,6 @@ class LocalProcessingConfigServiceImplTest {
     when(regularModsecDetectionManager.getDetectionRules(any()))
         .thenReturn(RegularModsecDetectionRules.getDefaultInstance());
 
-    setLicenseStatus(LICENSE_LIMIT_AVAILABLE);
     createLocalProcessingRule("/checkout/*", "abc.com", ProtectionMode.PROTECTION_MODE_CORE);
     createLocalProcessingRule("/orders/**", "xyz.com", ProtectionMode.PROTECTION_MODE_ADVANCED);
 
@@ -285,35 +270,11 @@ class LocalProcessingConfigServiceImplTest {
   }
 
   @Test
-  void getLocalProcessingConfigWithLimitExhausted_protectionConfig() {
-    when(customModsecDetectionManager.getEnabledRules(any()))
-        .thenReturn(CustomModsecDetectionRules.getDefaultInstance());
-    when(regularModsecDetectionManager.getDetectionRules(any()))
-        .thenReturn(RegularModsecDetectionRules.getDefaultInstance());
-
-    setLicenseStatus(LICENSE_LIMIT_EXHAUSTED);
-    createLocalProcessingRule("/checkout/*", "abc.com", ProtectionMode.PROTECTION_MODE_CORE);
-    createLocalProcessingRule("/orders/**", "xyz.com", ProtectionMode.PROTECTION_MODE_ADVANCED);
-    ProtectionModeConfig expectedConfig =
-        ProtectionModeConfig.newBuilder()
-            .setDefaultProtectionMode(ProtectionMode.PROTECTION_MODE_CORE)
-            .build();
-    expectedConfig =
-        expectedConfig.toBuilder().setHash(uuidGenerator.generateId(expectedConfig)).build();
-    ProtectionModeConfig actualConfig =
-        localProcessingConfigStub
-            .getLocalProcessingConfig(GetLocalProcessingConfigRequest.getDefaultInstance())
-            .getProtectionModeConfig();
-    assertEquals(expectedConfig, actualConfig);
-  }
-
-  @Test
   void getSamplingPoliciesConfig() {
     when(customModsecDetectionManager.getEnabledRules(any()))
         .thenReturn(CustomModsecDetectionRules.getDefaultInstance());
     when(regularModsecDetectionManager.getDetectionRules(any()))
         .thenReturn(RegularModsecDetectionRules.getDefaultInstance());
-    setLicenseStatus(LICENSE_LIMIT_AVAILABLE);
 
     SamplingPolicies samplingPolicies =
         localProcessingConfigStub
@@ -390,22 +351,5 @@ class LocalProcessingConfigServiceImplTest {
                 .setNewLocalProcessingRule(newLocalProcessingRule)
                 .build())
         .getLocalProcessingRuleDetails();
-  }
-
-  private void setLicenseStatus(LicenseLimit licenseLimit) {
-    licenseStatus = LicenseStatus.newBuilder().setTracesLicenseLimit(licenseLimit).build();
-  }
-
-  class MockLicenseStatusConfigService
-      extends LicenseStatusConfigServiceGrpc.LicenseStatusConfigServiceImplBase {
-
-    @Override
-    public void getLicenseStatus(
-        GetLicenseStatusRequest request,
-        StreamObserver<GetLicenseStatusResponse> responseObserver) {
-      responseObserver.onNext(
-          GetLicenseStatusResponse.newBuilder().setLicenseStatus(licenseStatus).build());
-      responseObserver.onCompleted();
-    }
   }
 }

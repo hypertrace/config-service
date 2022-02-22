@@ -8,7 +8,6 @@ dependencies {
   api(projects.localProcessingConfigServiceApi)
   implementation(projects.anomalyConfigServiceApi)
   implementation(projects.customSignatureConfigServiceApi)
-  implementation(projects.licenseStatusConfigServiceApi)
   implementation(libs.hypertrace.configservice.api)
   implementation(libs.hypertrace.configservice.objectstore)
   implementation(libs.guice)
