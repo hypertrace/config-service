@@ -177,6 +177,8 @@ message AccessorsTrainingConfig {
   ThresholdFamilyConfig query_param_threshold_family_config = 2;
   ThresholdFamilyConfig request_body_param_threshold_family_config = 3;
   ThresholdFamilyConfig param_type_threshold_family_config = 4;
+  ThresholdFamilyConfig request_header_threshold_family_config = 5;
+  ThresholdFamilyConfig request_cookie_threshold_family_config = 6;
 }
 
 message SsrfTrainingConfig {

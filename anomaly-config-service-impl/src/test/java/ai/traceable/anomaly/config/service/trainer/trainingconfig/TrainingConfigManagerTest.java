@@ -1,6 +1,7 @@
 package ai.traceable.anomaly.config.service.trainer.trainingconfig;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -208,10 +209,46 @@ public class TrainingConfigManagerTest {
             .addTrainingConfigTypes(TrainingConfigType.TRAINING_CONFIG_TYPE_METADATA)
             .build();
     assertEquals(
-        List.of(),
+        1,
         configManager
             .getScopedTrainingConfig(requestContext, customerConfigScope, filter)
-            .getTrainingConfigsList());
+            .getTrainingConfigsList()
+            .size());
+
+    assertNotNull(
+        configManager
+            .getScopedTrainingConfig(requestContext, customerConfigScope, filter)
+            .getTrainingConfigsList()
+            .get(0)
+            .getMetadataTrainingConfig());
+
+    assertNotNull(
+        configManager
+            .getScopedTrainingConfig(requestContext, customerConfigScope, filter)
+            .getTrainingConfigsList()
+            .get(0)
+            .getMetadataTrainingConfig()
+            .getAccessors());
+    assertNotNull(
+        configManager
+            .getScopedTrainingConfig(requestContext, customerConfigScope, filter)
+            .getTrainingConfigsList()
+            .get(0)
+            .getMetadataTrainingConfig()
+            .getAccessors()
+            .getRequestHeaderThresholdFamilyConfig());
+
+    assertEquals(
+        100,
+        configManager
+            .getScopedTrainingConfig(requestContext, customerConfigScope, filter)
+            .getTrainingConfigsList()
+            .get(0)
+            .getMetadataTrainingConfig()
+            .getAccessors()
+            .getRequestHeaderThresholdFamilyConfig()
+            .getDiverseIpDiverseUserFamilyConfig()
+            .getRequiredCallsCount());
 
     filter =
         GetTrainingConfigsFilter.newBuilder()
