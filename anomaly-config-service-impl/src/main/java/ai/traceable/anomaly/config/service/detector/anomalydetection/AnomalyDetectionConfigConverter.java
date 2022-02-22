@@ -26,9 +26,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AnomalyDetectionConfigConverter {
 
+  private static final Logger LOGGER =
+      LoggerFactory.getLogger(AnomalyDetectionConfigConverter.class);
   private final Map<String, ApiDefinitionMetadataAnomalyDetectionConfig>
       apiDefMetadataAnomalyDetectionConfigMap;
   private final Map<String, SessionDefinitionMetadataAnomalyDetectionConfig>
@@ -129,11 +133,18 @@ public class AnomalyDetectionConfigConverter {
                       .getConfigCase();
               if (configCase.equals(
                   SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase.CONFIG_NOT_SET)) {
+                String ruleId =
+                    detectionConfig
+                        .getSessionDefinitionMetadataAnomalyDetectionConfig()
+                        .getAnomalyRuleId();
+                if (!sessionDefAnomalyDetectionConfigMap.containsKey(ruleId)) {
+                  LOGGER.error(
+                      "Invalid ruleId %s for SessionDefinitionMetadataAnomalyDetectionConfig",
+                      ruleId);
+                  return;
+                }
                 SessionDefinitionMetadataAnomalyDetectionConfig sessionDefAnomalyConfig =
-                    sessionDefAnomalyDetectionConfigMap.get(
-                        detectionConfig
-                            .getSessionDefinitionMetadataAnomalyDetectionConfig()
-                            .getAnomalyRuleId());
+                    sessionDefAnomalyDetectionConfigMap.get(ruleId);
                 configCase = sessionDefAnomalyConfig.getConfigCase();
                 detectionConfig =
                     detectionConfig.toBuilder()
@@ -260,6 +271,15 @@ public class AnomalyDetectionConfigConverter {
                   detectionConfig.getApiDefinitionMetadataAnomalyDetectionConfig().getConfigCase();
               if (configCase.equals(
                   ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase.CONFIG_NOT_SET)) {
+                String ruleId =
+                    detectionConfig
+                        .getApiDefinitionMetadataAnomalyDetectionConfig()
+                        .getAnomalyRuleId();
+                if (!apiDefMetadataAnomalyDetectionConfigMap.containsKey(ruleId)) {
+                  LOGGER.error(
+                      "Invalid ruleId %s for ApiDefinitionMetadataAnomalyDetectionConfig", ruleId);
+                  return;
+                }
                 ApiDefinitionMetadataAnomalyDetectionConfig apiDefMetadataAnomalyConfig =
                     apiDefMetadataAnomalyDetectionConfigMap.get(
                         detectionConfig
@@ -393,8 +413,12 @@ public class AnomalyDetectionConfigConverter {
     for (Map.Entry<String, Map<String, AnomalySubRuleConfig>> entry : modsecConfigMap.entrySet()) {
       String anomalyRuleId = entry.getKey();
       AnomalyDetectionConfig.Builder builder = AnomalyDetectionConfig.newBuilder();
-      builder.setCategoryConfig(configCategoryMap.get(anomalyRuleId));
-      builder.setConfigStatus(configStatusMap.get(anomalyRuleId));
+      builder.setCategoryConfig(
+          configCategoryMap.getOrDefault(
+              anomalyRuleId, AnomalyCategoryConfig.getDefaultInstance()));
+      builder.setConfigStatus(
+          configStatusMap.getOrDefault(
+              anomalyRuleId, AnomalyConfigStatusChange.getDefaultInstance()));
 
       ModsecurityAnomalyRuleConfig.Builder modsecConfigBuilder =
           ModsecurityAnomalyRuleConfig.newBuilder();
