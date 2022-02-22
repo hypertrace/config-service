@@ -14,6 +14,8 @@ service LocalProcessingConfigService {
 
   // get api-naming tries and other rules
   rpc GetApiNamingModel (GetApiNamingModelRequest) returns (GetApiNamingModelResponse) {}
+
+  rpc GetSpanProcessingRules(GetSpanProcessingRulesRequest) returns (GetSpanProcessingRulesResponse) {}
 }
 
 message GetLocalProcessingConfigRequest {
@@ -21,7 +23,6 @@ message GetLocalProcessingConfigRequest {
   string custom_modsec_detection_rules_hash = 2;
   string protection_mode_hash = 3;
   string sampling_policies_hash = 4;
-  string span_processing_rules_hash = 5;
 }
 
 message GetLocalProcessingConfigResponse {
@@ -30,7 +31,26 @@ message GetLocalProcessingConfigResponse {
   CustomModsecDetectionRules custom_modsec_detection_rules = 3;
   SamplingPolicies sampling_policies = 4;
   ModsecConfig modsec_config = 5;
-  SpanProcessingRules span_processing_rules = 6;
+}
+
+message GetSpanProcessingRulesRequest {
+  repeated SpanProcessingRulesServiceRequest service_requests = 1;
+  optional string environment = 2;
+}
+
+message SpanProcessingRulesServiceRequest {
+  string service_name = 1;
+  string hash = 2;
+}
+
+message GetSpanProcessingRulesResponse {
+  repeated SpanProcessingRulesServiceResponse span_processing_rules_service_responses = 1;
+}
+
+message SpanProcessingRulesServiceResponse {
+  string service_name = 1;
+  SpanProcessingRules span_processing_rules = 2;
+  string hash = 3;
 }
 
 message CustomModsecDetectionRules {
@@ -48,38 +68,37 @@ message ModsecConfig {
 }
 
 message SpanProcessingRules {
-  string hash = 1;
-  repeated ExcludeSpanProcessingRule exclude_span_rules = 2;
+  repeated ExcludeSpanProcessingRule exclude_span_rules = 1;
 }
 
 message ExcludeSpanProcessingRule {
-  SpanProcessingRuleInfo span_processing_rule_info = 1;
+  ExcludeSpanProcessingRuleInfo exclude_span_processing_rule_info = 1;
 }
 
-message SpanProcessingRuleInfo {
+message ExcludeSpanProcessingRuleInfo {
   string id = 1;
-  Filter filter = 2;
+  SpanFilter filter = 2;
 }
 
-message Filter {
-  oneof filter_expression {
-    LogicalFilterExpression logical_filter = 1;
-    RelationalFilterExpression relational_filter = 2;
+message SpanFilter {
+  oneof span_filter_expression {
+    LogicalSpanFilterExpression logical_filter = 1;
+    RelationalSpanFilterExpression relational_filter = 2;
   }
 }
 
-message LogicalFilterExpression {
+message LogicalSpanFilterExpression {
   LogicalOperator operator = 1;
-  repeated Filter operands = 2;
+  repeated SpanFilter operands = 2;
 }
 
-message RelationalFilterExpression {
+message RelationalSpanFilterExpression {
   string span_attribute_key = 1;
   RelationalOperator operator = 2;
-  FilterValue right_operand = 3;
+  SpanFilterValue right_operand = 3;
 }
 
-message FilterValue {
+message SpanFilterValue {
   oneof value {
     string string_value = 1;
   }
