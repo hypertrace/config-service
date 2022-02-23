@@ -19,13 +19,15 @@ message CreateExcludeSpanRuleRequest {
 }
 
 message CreateExcludeSpanRuleResponse {
-  ExcludeSpanRule rule = 1;
+  ExcludeSpanRule rule = 1[deprecated = true];
+  ExcludeSpanRuleDetails rule_details = 2;
 }
 
 message GetAllExcludeSpanRulesRequest {}
 
 message GetAllExcludeSpanRulesResponse {
-  repeated ExcludeSpanRule rules = 1;
+  repeated ExcludeSpanRule rules = 1[deprecated = true];
+  repeated ExcludeSpanRuleDetails rule_details = 2;
 }
 
 message UpdateExcludeSpanRuleRequest {
@@ -33,7 +35,8 @@ message UpdateExcludeSpanRuleRequest {
 }
 
 message UpdateExcludeSpanRuleResponse {
-  ExcludeSpanRule rule = 1;
+  ExcludeSpanRule rule = 1[deprecated = true];
+  ExcludeSpanRuleDetails rule_details = 2;
 }
 
 message DeleteExcludeSpanRuleRequest {
@@ -47,9 +50,19 @@ message ExcludeSpanRule {
   ExcludeSpanRuleInfo rule_info = 2;
 }
 
+message ExcludeSpanRuleDetails {
+  ExcludeSpanRule rule = 1;
+  ExcludeSpanRuleMetadata metadata = 2;
+}
+
 message ExcludeSpanRuleInfo {
   string name = 1;
   SpanFilter filter = 2;
+}
+
+message ExcludeSpanRuleMetadata {
+  int64 creation_timestamp = 1;
+  int64 last_updated_timestamp = 2;
 }
 
 message UpdateExcludeSpanRule {
