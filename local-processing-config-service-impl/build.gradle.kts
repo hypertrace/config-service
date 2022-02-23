@@ -8,6 +8,7 @@ dependencies {
   api(projects.localProcessingConfigServiceApi)
   implementation(projects.anomalyConfigServiceApi)
   implementation(projects.customSignatureConfigServiceApi)
+
   implementation(libs.hypertrace.configservice.api)
   implementation(libs.hypertrace.configservice.objectstore)
   implementation(libs.guice)
@@ -19,6 +20,7 @@ dependencies {
   implementation(libs.hypertrace.grpcutils.client)
   implementation(libs.hypertrace.configservice.protoconverter)
   implementation(libs.hypertrace.configservice.changeeventgenerator)
+  implementation(libs.hypertrace.configservice.span.processing.api)
   implementation(libs.uuidCreator)
   implementation(libs.hypertrace.entityservice.api)
   implementation(libs.traceable.apiNamingModel)

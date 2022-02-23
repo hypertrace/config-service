@@ -4,11 +4,14 @@ import ai.traceable.localprocessing.config.service.apinaming.ApiNamingManager;
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinator;
 import ai.traceable.localprocessing.config.service.customsignature.CustomModsecDetectionManager;
 import ai.traceable.localprocessing.config.service.regularmodsec.RegularModsecDetectionManager;
+import ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManager;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelRequest;
 import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelResponse;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigRequest;
 import ai.traceable.localprocessing.config.service.v1.GetLocalProcessingConfigResponse;
+import ai.traceable.localprocessing.config.service.v1.GetSpanProcessingRulesRequest;
+import ai.traceable.localprocessing.config.service.v1.GetSpanProcessingRulesResponse;
 import ai.traceable.localprocessing.config.service.v1.HttpApiNamingModelResponse;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc.LocalProcessingConfigServiceImplBase;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRuleDetails;
@@ -30,6 +33,7 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
   private final RegularModsecDetectionManager regularModsecDetectionManager;
   private final CustomModsecDetectionManager customModsecDetectionManager;
   private final ApiNamingManager apiNamingManager;
+  private final SpanProcessingRulesManager spanProcessingRulesManager;
   private final UuidGenerator uuidGenerator;
   private final LocalProcessingConfigRequestValidator localProcessingConfigRequestValidator;
 
@@ -40,12 +44,14 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
       CustomModsecDetectionManager customModsecDetectionManager,
       RegularModsecDetectionManager regularModsecDetectionManager,
       ApiNamingManager apiNamingManager,
+      SpanProcessingRulesManager spanProcessingRulesManager,
       UuidGenerator uuidGenerator,
       LocalProcessingConfigRequestValidator localProcessingConfigRequestValidator) {
     this.configServiceCoordinator = configServiceCoordinator;
     this.regularModsecDetectionManager = regularModsecDetectionManager;
     this.customModsecDetectionManager = customModsecDetectionManager;
     this.apiNamingManager = apiNamingManager;
+    this.spanProcessingRulesManager = spanProcessingRulesManager;
     this.uuidGenerator = uuidGenerator;
     this.localProcessingConfigRequestValidator = localProcessingConfigRequestValidator;
   }
@@ -95,6 +101,23 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Get Api Naming Model RPC failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getSpanProcessingRules(
+      GetSpanProcessingRulesRequest request,
+      StreamObserver<GetSpanProcessingRulesResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      localProcessingConfigRequestValidator.validateOrThrow(requestContext, request);
+
+      // TODO: handle priorities
+      responseObserver.onNext(spanProcessingRulesManager.getSpanProcessingRulesResponse(request));
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Get Span processing rules RPC failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }

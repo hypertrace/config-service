@@ -4,6 +4,7 @@ import ai.traceable.localprocessing.config.service.apinaming.ApiNamingManagerMod
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinatorModule;
 import ai.traceable.localprocessing.config.service.customsignature.CustomModsecDetectionManagerModule;
 import ai.traceable.localprocessing.config.service.regularmodsec.RegularModsecDetectionManagerModule;
+import ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
@@ -37,6 +38,7 @@ public class LocalProcessingConfigServiceModule extends AbstractModule {
     install(new CustomModsecDetectionManagerModule());
     install(new RegularModsecDetectionManagerModule());
     install(new ApiNamingManagerModule(this.config));
+    install(new SpanProcessingRulesManagerModule());
   }
 
   @Provides

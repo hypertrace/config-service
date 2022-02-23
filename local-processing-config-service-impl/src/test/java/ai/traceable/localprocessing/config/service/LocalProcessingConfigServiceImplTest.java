@@ -20,6 +20,7 @@ import ai.traceable.localprocessing.config.service.coordinator.LocalProcessingRu
 import ai.traceable.localprocessing.config.service.customsignature.CustomModsecDetectionManager;
 import ai.traceable.localprocessing.config.service.regularmodsec.RegularModsecDetectionManager;
 import ai.traceable.localprocessing.config.service.ruleservice.LocalProcessingRulesServiceImpl;
+import ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManager;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.CreateLocalProcessingRuleRequest;
 import ai.traceable.localprocessing.config.service.v1.CustomModsecDetectionRules;
@@ -65,6 +66,7 @@ class LocalProcessingConfigServiceImplTest {
   CustomModsecDetectionManager customModsecDetectionManager;
   RegularModsecDetectionManager regularModsecDetectionManager;
   ApiNamingManager apiNamingManager;
+  SpanProcessingRulesManager spanProcessingRulesManager;
   UuidGenerator uuidGenerator;
   EntityDataServiceClient entityDataServiceClient;
   LocalProcessingConfigRequestValidator localProcessingConfigRequestValidator;
@@ -119,6 +121,7 @@ class LocalProcessingConfigServiceImplTest {
     customModsecDetectionManager = mock(CustomModsecDetectionManager.class);
     regularModsecDetectionManager = mock(RegularModsecDetectionManager.class);
     apiNamingManager = mock(ApiNamingManager.class);
+    spanProcessingRulesManager = mock(SpanProcessingRulesManager.class);
     uuidGenerator = new UuidGenerator();
 
     ConfigServiceCoordinator configServiceCoordinator =
@@ -136,6 +139,7 @@ class LocalProcessingConfigServiceImplTest {
                 customModsecDetectionManager,
                 regularModsecDetectionManager,
                 apiNamingManager,
+                spanProcessingRulesManager,
                 uuidGenerator,
                 localProcessingConfigRequestValidator))
         .addService(new LocalProcessingRulesServiceImpl(configServiceCoordinator))
@@ -151,8 +155,8 @@ class LocalProcessingConfigServiceImplTest {
   }
 
   @Test
-  @DisplayName("Test api naming model api naming config part")
-  void getApiNamingModel_ApiNamingConfig() {
+  @DisplayName("Test api naming model")
+  void getApiNamingModel() {
     List<HttpServiceResponse> serviceResponseList =
         List.of(
             HttpServiceResponse.newBuilder()
