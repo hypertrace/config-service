@@ -139,7 +139,7 @@ public class AnomalyDetectionConfigConverter {
                         .getAnomalyRuleId();
                 if (!sessionDefAnomalyDetectionConfigMap.containsKey(ruleId)) {
                   LOGGER.error(
-                      "Invalid ruleId %s for SessionDefinitionMetadataAnomalyDetectionConfig",
+                      "Invalid ruleId {} for SessionDefinitionMetadataAnomalyDetectionConfig",
                       ruleId);
                   return;
                 }
@@ -277,7 +277,7 @@ public class AnomalyDetectionConfigConverter {
                         .getAnomalyRuleId();
                 if (!apiDefMetadataAnomalyDetectionConfigMap.containsKey(ruleId)) {
                   LOGGER.error(
-                      "Invalid ruleId %s for ApiDefinitionMetadataAnomalyDetectionConfig", ruleId);
+                      "Invalid ruleId {} for ApiDefinitionMetadataAnomalyDetectionConfig", ruleId);
                   return;
                 }
                 ApiDefinitionMetadataAnomalyDetectionConfig apiDefMetadataAnomalyConfig =
