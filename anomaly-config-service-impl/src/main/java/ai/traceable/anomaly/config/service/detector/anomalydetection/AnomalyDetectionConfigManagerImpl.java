@@ -4,6 +4,7 @@ import static ai.traceable.anomaly.config.service.detector.anomalydetection.Anom
 import static ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigConstants.ANOMALY_DETECTION_CONFIG_RESOURCE_NAME;
 
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
+import ai.traceable.anomaly.config.service.detector.anomalydetection.converter.AnomalyDetectionConfigConverter;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
@@ -16,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -88,12 +88,9 @@ public class AnomalyDetectionConfigManagerImpl
     Map<String, ScopedAnomalyDetectionConfig> configMap = fetchConfigMap(requestContext);
 
     ScopedAnomalyDetectionConfig anomalyDetectionConfig =
-        getResolvedConfig(configMap, configScope, contextsWithIncreasingPriority);
+        getResolvedConfig(configMap, configScope, contextsWithIncreasingPriority, filter);
 
-    Set<AnomalyDetectionConfig.AnomalyDetectionConfigCase> configCases =
-        anomalyDetectionConfigConverter.convert(filter);
-
-    return filterConfigs(anomalyDetectionConfig, configCases);
+    return anomalyDetectionConfig;
   }
 
   @Override
@@ -116,14 +113,10 @@ public class AnomalyDetectionConfigManagerImpl
         fetchConfigMap(requestContext);
 
     List<ScopedAnomalyDetectionConfig> anomalyDetectionConfigs =
-        getResolvedConfigs(anomalyDetectionConfigMap, requestContext.getTenantId().orElseThrow());
+        getResolvedConfigs(
+            anomalyDetectionConfigMap, requestContext.getTenantId().orElseThrow(), filter);
 
-    Set<AnomalyDetectionConfig.AnomalyDetectionConfigCase> configCases =
-        anomalyDetectionConfigConverter.convert(filter);
-
-    return anomalyDetectionConfigs.stream()
-        .map(detectionConfig -> filterConfigs(detectionConfig, configCases))
-        .collect(Collectors.toList());
+    return anomalyDetectionConfigs;
   }
 
   @Override
@@ -185,7 +178,9 @@ public class AnomalyDetectionConfigManagerImpl
    *     given tenant
    */
   private List<ScopedAnomalyDetectionConfig> getResolvedConfigs(
-      Map<String, ScopedAnomalyDetectionConfig> configMap, String tenantId) {
+      Map<String, ScopedAnomalyDetectionConfig> configMap,
+      String tenantId,
+      GetAnomalyDetectionConfigsFilter filter) {
 
     List<ScopedAnomalyDetectionConfig> resolvedConfigs = new ArrayList<>();
     for (Map.Entry<String, ScopedAnomalyDetectionConfig> entry : configMap.entrySet()) {
@@ -207,7 +202,7 @@ public class AnomalyDetectionConfigManagerImpl
       }
 
       resolvedConfigs.add(
-          getResolvedConfig(configMap, anomalyConfigScope, contextsWithIncreasingPriority));
+          getResolvedConfig(configMap, anomalyConfigScope, contextsWithIncreasingPriority, filter));
     }
 
     if (!configMap.containsKey(tenantId)) {
@@ -217,7 +212,8 @@ public class AnomalyDetectionConfigManagerImpl
               AnomalyConfigScope.newBuilder()
                   .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
                   .build(),
-              List.of()));
+              List.of(),
+              filter));
     }
     return resolvedConfigs;
   }
@@ -231,7 +227,8 @@ public class AnomalyDetectionConfigManagerImpl
   private ScopedAnomalyDetectionConfig getResolvedConfig(
       Map<String, ScopedAnomalyDetectionConfig> configMap,
       AnomalyConfigScope configScope,
-      List<String> contextsWithIncreasingPriority) {
+      List<String> contextsWithIncreasingPriority,
+      GetAnomalyDetectionConfigsFilter filter) {
     ScopedAnomalyDetectionConfig anomalyDetectionConfig =
         ScopedAnomalyDetectionConfig.newBuilder()
             .setConfigScope(configScope)
@@ -243,33 +240,9 @@ public class AnomalyDetectionConfigManagerImpl
       anomalyDetectionConfig =
           configMap.containsKey(context)
               ? anomalyDetectionConfigConverter.merge(
-                  configMap.get(context), anomalyDetectionConfig)
+                  configMap.get(context), anomalyDetectionConfig, filter)
               : anomalyDetectionConfig;
     }
     return anomalyDetectionConfig;
-  }
-
-  private ScopedAnomalyDetectionConfig filterConfigs(
-      ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig,
-      Set<AnomalyDetectionConfig.AnomalyDetectionConfigCase> configCases) {
-    if (configCases.isEmpty()) {
-      return scopedAnomalyDetectionConfig;
-    }
-
-    ScopedAnomalyDetectionConfig.Builder builder = ScopedAnomalyDetectionConfig.newBuilder();
-    builder.setConfigScope(scopedAnomalyDetectionConfig.getConfigScope());
-    List<AnomalyDetectionConfig> anomalyDetectionConfigs =
-        scopedAnomalyDetectionConfig.getAnomalyDetectionConfigsList();
-    List<AnomalyDetectionConfig> filteredConfigs = new ArrayList<>();
-    for (AnomalyDetectionConfig.AnomalyDetectionConfigCase configCase : configCases) {
-      filteredConfigs.addAll(
-          anomalyDetectionConfigs.stream()
-              .filter(
-                  anomalyDetectionConfig ->
-                      anomalyDetectionConfig.getAnomalyDetectionConfigCase() == configCase)
-              .collect(Collectors.toList()));
-    }
-
-    return builder.addAllAnomalyDetectionConfigs(filteredConfigs).build();
   }
 }
