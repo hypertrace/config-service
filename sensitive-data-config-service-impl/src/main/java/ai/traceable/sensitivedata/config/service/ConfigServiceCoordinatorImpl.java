@@ -80,7 +80,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   private final DataClassificationConfigServiceBlockingStub
       dataClassificationConfigServiceBlockingStub;
   private final FeatureFlagServiceBlockingStub featureFlagServiceBlockingStub;
-  private final LoadingCache<String, Boolean> dataClassificationEnabledByTenant;
+  private final LoadingCache<ContextualKey<Void>, Boolean> dataClassificationEnabledByTenant;
   private final Duration requestTimeout;
 
   @Inject
@@ -434,27 +434,25 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   }
 
   public boolean isDataClassificationEnabled(RequestContext requestContext) {
-    Optional<String> tenantIdOptional = requestContext.getTenantId();
-    if (tenantIdOptional.isPresent()) {
-      String tenantId = tenantIdOptional.get();
-      try {
-        return this.dataClassificationEnabledByTenant.getUnchecked(tenantId);
-      } catch (Exception e) {
-        log.error(
-            "Error fetching data classification feature flag from cache for tenant {}",
-            tenantId,
-            e);
-      }
+    ContextualKey<Void> contextualKey = requestContext.buildContextualKey();
+    try {
+      return this.dataClassificationEnabledByTenant.getUnchecked(contextualKey);
+    } catch (Exception e) {
+      log.error(
+          "Error fetching data classification feature flag from cache for tenant {}",
+          requestContext.getTenantId(),
+          e);
     }
     return DEFAULT_DATA_CLASSIFICATION_FEATURE_FLAG_VALUE;
   }
 
-  private CacheLoader<String, Boolean> getDataClassificationFeatureFlagCacheLoader() {
+  private CacheLoader<ContextualKey<Void>, Boolean> getDataClassificationFeatureFlagCacheLoader() {
     return new CacheLoader<>() {
       @Override
-      public Boolean load(String tenantId) {
+      public Boolean load(ContextualKey<Void> contextualKey) {
         Map<String, FeatureFlagValue> featureFlagValueMap =
-            RequestContext.forTenantId(tenantId)
+            contextualKey
+                .getContext()
                 .call(
                     () ->
                         featureFlagServiceBlockingStub
