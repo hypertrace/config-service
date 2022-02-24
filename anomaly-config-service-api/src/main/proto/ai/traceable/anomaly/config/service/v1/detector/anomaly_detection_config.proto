@@ -152,10 +152,11 @@ message MissingParamAnomalyConfig {
 }
 
 message UnknownParamAnomalyConfig {
-  StringList severe_names = 1;
+  StringList severe_names = 1 [deprecated = true];
   optional bool modsecurity_enabled = 2;
   optional bool enabled_for_internal_ips = 3;
   StringList thresholds_families_excluded = 4;
+  StringList severe_regex_strings = 5;
 }
 
 message EnumerationsAnomalyConfig {
