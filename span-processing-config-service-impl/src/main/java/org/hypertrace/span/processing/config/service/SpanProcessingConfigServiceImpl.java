@@ -5,14 +5,18 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.span.processing.config.service.store.ExcludeSpanRulesConfigStore;
+import org.hypertrace.span.processing.config.service.utils.TimestampConverter;
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleResponse;
 import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleResponse;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRule;
+import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleDetails;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleInfo;
+import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleMetadata;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesResponse;
 import org.hypertrace.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
@@ -26,13 +30,16 @@ class SpanProcessingConfigServiceImpl
     extends SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceImplBase {
   private final SpanProcessingConfigRequestValidator validator;
   private final ExcludeSpanRulesConfigStore ruleStore;
+  private final TimestampConverter timestampConverter;
 
   @Inject
   SpanProcessingConfigServiceImpl(
       ExcludeSpanRulesConfigStore ruleStore,
-      SpanProcessingConfigRequestValidator requestValidator) {
+      SpanProcessingConfigRequestValidator requestValidator,
+      TimestampConverter timestampConverter) {
     this.validator = requestValidator;
     this.ruleStore = ruleStore;
+    this.timestampConverter = timestampConverter;
   }
 
   @Override
@@ -45,7 +52,7 @@ class SpanProcessingConfigServiceImpl
 
       responseObserver.onNext(
           GetAllExcludeSpanRulesResponse.newBuilder()
-              .addAllRules(ruleStore.getAllData(requestContext))
+              .addAllRuleDetails(ruleStore.getAllData(requestContext))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -62,7 +69,7 @@ class SpanProcessingConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
 
-      // TODO: need to handle prorities
+      // TODO: need to handle priorities
       ExcludeSpanRule newRule =
           ExcludeSpanRule.newBuilder()
               .setId(UUID.randomUUID().toString())
@@ -71,7 +78,8 @@ class SpanProcessingConfigServiceImpl
 
       responseObserver.onNext(
           CreateExcludeSpanRuleResponse.newBuilder()
-              .setRule(this.ruleStore.upsertObject(requestContext, newRule).getData())
+              .setRuleDetails(
+                  buildExcludeSpanRuleDetails(this.ruleStore.upsertObject(requestContext, newRule)))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -97,7 +105,9 @@ class SpanProcessingConfigServiceImpl
 
       responseObserver.onNext(
           UpdateExcludeSpanRuleResponse.newBuilder()
-              .setRule(this.ruleStore.upsertObject(requestContext, updatedRule).getData())
+              .setRuleDetails(
+                  buildExcludeSpanRuleDetails(
+                      this.ruleStore.upsertObject(requestContext, updatedRule)))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -134,6 +144,20 @@ class SpanProcessingConfigServiceImpl
             ExcludeSpanRuleInfo.newBuilder()
                 .setName(updateExcludeSpanRule.getName())
                 .setFilter(updateExcludeSpanRule.getFilter())
+                .build())
+        .build();
+  }
+
+  private ExcludeSpanRuleDetails buildExcludeSpanRuleDetails(
+      ContextualConfigObject<ExcludeSpanRule> configObject) {
+    return ExcludeSpanRuleDetails.newBuilder()
+        .setRule(configObject.getData())
+        .setMetadata(
+            ExcludeSpanRuleMetadata.newBuilder()
+                .setCreationTimestamp(
+                    timestampConverter.convert(configObject.getCreationTimestamp()))
+                .setLastUpdatedTimestamp(
+                    timestampConverter.convert(configObject.getLastUpdatedTimestamp()))
                 .build())
         .build();
   }
