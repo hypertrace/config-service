@@ -5,14 +5,18 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.span.processing.config.service.store.ExcludeSpanRulesConfigStore;
+import org.hypertrace.span.processing.config.service.utils.TimestampConverter;
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleResponse;
 import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleResponse;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRule;
+import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleDetails;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleInfo;
+import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleMetadata;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesResponse;
 import org.hypertrace.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
@@ -45,7 +49,7 @@ class SpanProcessingConfigServiceImpl
 
       responseObserver.onNext(
           GetAllExcludeSpanRulesResponse.newBuilder()
-              .addAllRules(ruleStore.getAllData(requestContext))
+              .addAllRuleDetails(ruleStore.getAllData(requestContext))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -69,9 +73,24 @@ class SpanProcessingConfigServiceImpl
               .setRuleInfo(request.getRuleInfo())
               .build();
 
+      ContextualConfigObject<ExcludeSpanRule> excludeSpanRuleContextualConfigObject =
+          this.ruleStore.upsertObject(requestContext, newRule);
+
       responseObserver.onNext(
           CreateExcludeSpanRuleResponse.newBuilder()
-              .setRule(this.ruleStore.upsertObject(requestContext, newRule).getData())
+              .setRuleDetails(
+                  ExcludeSpanRuleDetails.newBuilder()
+                      .setRule(excludeSpanRuleContextualConfigObject.getData())
+                      .setMetadata(
+                          ExcludeSpanRuleMetadata.newBuilder()
+                              .setCreationTimestamp(
+                                  TimestampConverter.convert(
+                                      excludeSpanRuleContextualConfigObject.getCreationTimestamp()))
+                              .setLastUpdatedTimestamp(
+                                  TimestampConverter.convert(
+                                      excludeSpanRuleContextualConfigObject
+                                          .getLastUpdatedTimestamp()))
+                              .build()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -95,9 +114,25 @@ class SpanProcessingConfigServiceImpl
               .orElseThrow(Status.NOT_FOUND::asException);
       ExcludeSpanRule updatedRule = buildUpdatedRule(existingRule, updateExcludeSpanRule);
 
+      ContextualConfigObject<ExcludeSpanRule> excludeSpanRuleContextualConfigObject =
+          this.ruleStore.upsertObject(requestContext, updatedRule);
+
       responseObserver.onNext(
           UpdateExcludeSpanRuleResponse.newBuilder()
-              .setRule(this.ruleStore.upsertObject(requestContext, updatedRule).getData())
+              .setRuleDetails(
+                  ExcludeSpanRuleDetails.newBuilder()
+                      .setRule(excludeSpanRuleContextualConfigObject.getData())
+                      .setMetadata(
+                          ExcludeSpanRuleMetadata.newBuilder()
+                              .setCreationTimestamp(
+                                  TimestampConverter.convert(
+                                      excludeSpanRuleContextualConfigObject.getCreationTimestamp()))
+                              .setLastUpdatedTimestamp(
+                                  TimestampConverter.convert(
+                                      excludeSpanRuleContextualConfigObject
+                                          .getLastUpdatedTimestamp()))
+                              .build())
+                      .build())
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {

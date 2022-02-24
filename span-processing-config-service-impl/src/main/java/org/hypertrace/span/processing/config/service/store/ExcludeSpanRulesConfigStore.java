@@ -6,12 +6,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
-import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.span.processing.config.service.utils.TimestampConverter;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRule;
+import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleDetails;
+import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleMetadata;
 
 public class ExcludeSpanRulesConfigStore extends IdentifiedObjectStore<ExcludeSpanRule> {
 
@@ -28,9 +30,22 @@ public class ExcludeSpanRulesConfigStore extends IdentifiedObjectStore<ExcludeSp
         EXCLUDE_SPAN_RULES_RESOURCE_NAME);
   }
 
-  public List<ExcludeSpanRule> getAllData(RequestContext requestContext) {
+  public List<ExcludeSpanRuleDetails> getAllData(RequestContext requestContext) {
     return this.getAllObjects(requestContext).stream()
-        .map(ContextualConfigObject::getData)
+        .map(
+            contextualConfigObject ->
+                ExcludeSpanRuleDetails.newBuilder()
+                    .setRule(contextualConfigObject.getData())
+                    .setMetadata(
+                        ExcludeSpanRuleMetadata.newBuilder()
+                            .setCreationTimestamp(
+                                TimestampConverter.convert(
+                                    contextualConfigObject.getCreationTimestamp()))
+                            .setLastUpdatedTimestamp(
+                                TimestampConverter.convert(
+                                    contextualConfigObject.getLastUpdatedTimestamp()))
+                            .build())
+                    .build())
         .collect(Collectors.toUnmodifiableList());
   }
 

@@ -4,12 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.span.processing.config.service.store.ExcludeSpanRulesConfigStore;
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRule;
+import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleDetails;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.Field;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
@@ -78,6 +80,7 @@ class SpanProcessingConfigServiceImplTest {
                                             .setRightOperand(
                                                 SpanFilterValue.newBuilder().setStringValue("a")))))
                     .build())
+            .getRuleDetails()
             .getRule();
 
     ExcludeSpanRule secondCreatedExcludeSpanRule =
@@ -97,13 +100,16 @@ class SpanProcessingConfigServiceImplTest {
                                             .setRightOperand(
                                                 SpanFilterValue.newBuilder().setStringValue("a")))))
                     .build())
+            .getRuleDetails()
             .getRule();
 
     List<ExcludeSpanRule> excludeSpanRules =
         this.spanProcessingConfigServiceStub
-            .getAllExcludeSpanRules(
-                GetAllExcludeSpanRulesRequest.newBuilder().build().newBuilder().build())
-            .getRulesList();
+            .getAllExcludeSpanRules(GetAllExcludeSpanRulesRequest.newBuilder().build())
+            .getRuleDetailsList()
+            .stream()
+            .map(ExcludeSpanRuleDetails::getRule)
+            .collect(Collectors.toUnmodifiableList());
     assertEquals(2, excludeSpanRules.size());
     assertTrue(excludeSpanRules.contains(firstCreatedExcludeSpanRule));
     assertTrue(excludeSpanRules.contains(secondCreatedExcludeSpanRule));
@@ -126,13 +132,17 @@ class SpanProcessingConfigServiceImplTest {
                                             .setRightOperand(
                                                 SpanFilterValue.newBuilder().setStringValue("a")))))
                     .build())
+            .getRuleDetails()
             .getRule();
     assertEquals("updatedRuleName1", updatedFirstExcludeSpanRule.getRuleInfo().getName());
 
     excludeSpanRules =
         this.spanProcessingConfigServiceStub
             .getAllExcludeSpanRules(GetAllExcludeSpanRulesRequest.newBuilder().build())
-            .getRulesList();
+            .getRuleDetailsList()
+            .stream()
+            .map(ExcludeSpanRuleDetails::getRule)
+            .collect(Collectors.toUnmodifiableList());
     assertEquals(2, excludeSpanRules.size());
     assertTrue(excludeSpanRules.contains(updatedFirstExcludeSpanRule));
 
@@ -144,7 +154,10 @@ class SpanProcessingConfigServiceImplTest {
     excludeSpanRules =
         this.spanProcessingConfigServiceStub
             .getAllExcludeSpanRules(GetAllExcludeSpanRulesRequest.newBuilder().build())
-            .getRulesList();
+            .getRuleDetailsList()
+            .stream()
+            .map(ExcludeSpanRuleDetails::getRule)
+            .collect(Collectors.toUnmodifiableList());
     assertEquals(1, excludeSpanRules.size());
     assertEquals(secondCreatedExcludeSpanRule, excludeSpanRules.get(0));
   }

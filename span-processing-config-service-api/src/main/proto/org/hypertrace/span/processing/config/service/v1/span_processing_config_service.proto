@@ -4,6 +4,8 @@ package org.hypertrace.span.processing.config.service.v1;
 
 option java_multiple_files = true;
 
+import "google/protobuf/timestamp.proto";
+
 service SpanProcessingConfigService {
   rpc CreateExcludeSpanRule(CreateExcludeSpanRuleRequest) returns (CreateExcludeSpanRuleResponse) {}
 
@@ -19,15 +21,13 @@ message CreateExcludeSpanRuleRequest {
 }
 
 message CreateExcludeSpanRuleResponse {
-  ExcludeSpanRule rule = 1[deprecated = true];
-  ExcludeSpanRuleDetails rule_details = 2;
+  ExcludeSpanRuleDetails rule_details = 1;
 }
 
 message GetAllExcludeSpanRulesRequest {}
 
 message GetAllExcludeSpanRulesResponse {
-  repeated ExcludeSpanRule rules = 1[deprecated = true];
-  repeated ExcludeSpanRuleDetails rule_details = 2;
+  repeated ExcludeSpanRuleDetails rule_details = 1;
 }
 
 message UpdateExcludeSpanRuleRequest {
@@ -35,8 +35,7 @@ message UpdateExcludeSpanRuleRequest {
 }
 
 message UpdateExcludeSpanRuleResponse {
-  ExcludeSpanRule rule = 1[deprecated = true];
-  ExcludeSpanRuleDetails rule_details = 2;
+  ExcludeSpanRuleDetails rule_details = 1;
 }
 
 message DeleteExcludeSpanRuleRequest {
@@ -61,8 +60,8 @@ message ExcludeSpanRuleInfo {
 }
 
 message ExcludeSpanRuleMetadata {
-  int64 creation_timestamp = 1;
-  int64 last_updated_timestamp = 2;
+  google.protobuf.Timestamp creation_timestamp = 1;
+  google.protobuf.Timestamp last_updated_timestamp = 2;
 }
 
 message UpdateExcludeSpanRule {
