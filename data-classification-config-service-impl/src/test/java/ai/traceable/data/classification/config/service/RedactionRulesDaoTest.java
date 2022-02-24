@@ -1,9 +1,20 @@
 package ai.traceable.data.classification.config.service;
 
+import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_DESCRIPTION;
+import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID;
+import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_NAME;
+import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE;
+import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE_ID;
 import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_OBFUSCATE_DATA_SET_ID;
 import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_RAW_DATA_SET_DESCRIPTION;
 import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_RAW_DATA_SET_ID;
 import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_RAW_DATA_SET_NAME;
+import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_SENSITIVE_HEADERS_DATA_SET_DESCRIPTION;
+import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_SENSITIVE_HEADERS_DATA_SET_ID;
+import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_SENSITIVE_HEADERS_DATA_SET_NAME;
+import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_SENSITIVE_HEADERS_DATA_TYPE;
+import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_SENSITIVE_HEADERS_DATA_TYPE_ID;
+import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_REDACT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -18,11 +29,19 @@ import ai.traceable.sensitivedata.config.service.v1.DeleteRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.DeleteRedactionRuleResponse;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesResponse;
+import ai.traceable.sensitivedata.config.service.v1.GetAutomaticSecretRedactionStrategyRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetAutomaticSecretRedactionStrategyResponse;
+import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeResponse;
 import ai.traceable.sensitivedata.config.service.v1.MatchType;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
+import ai.traceable.sensitivedata.config.service.v1.UpdateAutomaticSecretRedactionStrategyRequest;
+import ai.traceable.sensitivedata.config.service.v1.UpdateAutomaticSecretRedactionStrategyResponse;
+import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeRequest;
+import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeResponse;
 import io.grpc.stub.StreamObserver;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -77,10 +96,12 @@ class RedactionRulesDaoTest {
             .build();
     List<DataType> actualDataTypes =
         redactionRulesDao.getAllDataTypesFromRedactionRules(REQUEST_CONTEXT);
-    assertEquals(3, actualDataTypes.size());
-    assertEquals(expectedDataType1, actualDataTypes.get(0));
-    assertEquals(expectedDataType2, actualDataTypes.get(1));
-    assertEquals(expectedDataType3, actualDataTypes.get(2));
+    assertEquals(5, actualDataTypes.size());
+    assertEquals(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE, actualDataTypes.get(0));
+    assertEquals(LEGACY_SENSITIVE_HEADERS_DATA_TYPE, actualDataTypes.get(1));
+    assertEquals(expectedDataType1, actualDataTypes.get(2));
+    assertEquals(expectedDataType2, actualDataTypes.get(3));
+    assertEquals(expectedDataType3, actualDataTypes.get(4));
   }
 
   @Test
@@ -104,11 +125,18 @@ class RedactionRulesDaoTest {
   @Test
   void getDataSetsFromRedactionRulesTest() {
     List<DataSet> actualDataSets = redactionRulesDao.getDataSetsFromRedactionRules(REQUEST_CONTEXT);
-    assertEquals(2, actualDataSets.size());
-    assertEquals(LEGACY_OBFUSCATE_DATA_SET_ID, actualDataSets.get(0).getId());
-    assertEquals("id-2", actualDataSets.get(0).getInfo().getDataTypeIds(0));
-    assertEquals(LEGACY_RAW_DATA_SET_ID, actualDataSets.get(1).getId());
-    assertEquals("id-3", actualDataSets.get(1).getInfo().getDataTypeIds(0));
+    assertEquals(4, actualDataSets.size());
+    assertEquals(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID, actualDataSets.get(0).getId());
+    assertEquals(
+        LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE_ID,
+        actualDataSets.get(0).getInfo().getDataTypeIds(0));
+    assertEquals(LEGACY_SENSITIVE_HEADERS_DATA_SET_ID, actualDataSets.get(1).getId());
+    assertEquals(
+        LEGACY_SENSITIVE_HEADERS_DATA_TYPE_ID, actualDataSets.get(1).getInfo().getDataTypeIds(0));
+    assertEquals(LEGACY_OBFUSCATE_DATA_SET_ID, actualDataSets.get(2).getId());
+    assertEquals("id-2", actualDataSets.get(2).getInfo().getDataTypeIds(0));
+    assertEquals(LEGACY_RAW_DATA_SET_ID, actualDataSets.get(3).getId());
+    assertEquals("id-3", actualDataSets.get(3).getInfo().getDataTypeIds(0));
   }
 
   @Test
@@ -130,6 +158,58 @@ class RedactionRulesDaoTest {
   }
 
   @Test
+  void deleteAutomaticSecretRedactionDataSetTest() {
+    redactionRulesDao.deleteDataSet(REQUEST_CONTEXT, LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID);
+    Optional<DataSet> dataSetOptional =
+        redactionRulesDao.getDataSetWithIdFromRedactionRules(
+            REQUEST_CONTEXT, LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID);
+    assertTrue(dataSetOptional.isEmpty());
+  }
+
+  @Test
+  void updateAutomaticSecretRedactionDataSetTest() {
+    DataSetInfo updatedDataSetInfo =
+        DataSetInfo.newBuilder()
+            .setName(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_NAME)
+            .setDescription(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_DESCRIPTION)
+            .setEnabled(true)
+            .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
+            .build();
+    redactionRulesDao.updateDataSet(
+        REQUEST_CONTEXT, LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID, updatedDataSetInfo);
+    Optional<DataSet> dataSetOptional =
+        redactionRulesDao.getDataSetWithIdFromRedactionRules(
+            REQUEST_CONTEXT, LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID);
+    assertTrue(dataSetOptional.isEmpty());
+  }
+
+  @Test
+  void deleteSensitiveHeadersDataSetTest() {
+    redactionRulesDao.deleteDataSet(REQUEST_CONTEXT, LEGACY_SENSITIVE_HEADERS_DATA_SET_ID);
+    Optional<DataSet> dataSetOptional =
+        redactionRulesDao.getDataSetWithIdFromRedactionRules(
+            REQUEST_CONTEXT, LEGACY_SENSITIVE_HEADERS_DATA_SET_ID);
+    assertTrue(dataSetOptional.isEmpty());
+  }
+
+  @Test
+  void updateSensitiveHeadersDataSetTest() {
+    DataSetInfo updatedDataSetInfo =
+        DataSetInfo.newBuilder()
+            .setName(LEGACY_SENSITIVE_HEADERS_DATA_SET_NAME)
+            .setDescription(LEGACY_SENSITIVE_HEADERS_DATA_SET_DESCRIPTION)
+            .setEnabled(true)
+            .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
+            .build();
+    redactionRulesDao.updateDataSet(
+        REQUEST_CONTEXT, LEGACY_SENSITIVE_HEADERS_DATA_SET_ID, updatedDataSetInfo);
+    Optional<DataSet> dataSetOptional =
+        redactionRulesDao.getDataSetWithIdFromRedactionRules(
+            REQUEST_CONTEXT, LEGACY_SENSITIVE_HEADERS_DATA_SET_ID);
+    assertTrue(dataSetOptional.isEmpty());
+  }
+
+  @Test
   void deleteDataSetTest() {
     redactionRulesDao.deleteDataSet(REQUEST_CONTEXT, LEGACY_RAW_DATA_SET_ID);
     Optional<DataSet> dataSetOptional =
@@ -142,6 +222,8 @@ class RedactionRulesDaoTest {
       extends SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceImplBase {
 
     private final Map<String, RedactionRule> redactionRulesMap;
+    private boolean automaticSecretRedaction = true;
+    private RedactionStrategy headerRedactionStrategy = REDACTION_STRATEGY_REDACT;
 
     public MockSensitiveDataConfigService() {
       RedactionRule rule1 =
@@ -155,7 +237,7 @@ class RedactionRulesDaoTest {
               .setRegex("regex*")
               .setSessionIdentifier(true)
               .setFqn(false)
-              .setRedactionStrategy(RedactionStrategy.REDACTION_STRATEGY_REDACT)
+              .setRedactionStrategy(REDACTION_STRATEGY_REDACT)
               .build();
       RedactionRule rule2 =
           RedactionRule.newBuilder()
@@ -221,6 +303,48 @@ class RedactionRulesDaoTest {
         StreamObserver<DeleteRedactionRuleResponse> responseObserver) {
       redactionRulesMap.remove(request.getRedactionRuleId());
       responseObserver.onNext(DeleteRedactionRuleResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getAutomaticSecretRedactionStrategy(
+        GetAutomaticSecretRedactionStrategyRequest request,
+        StreamObserver<GetAutomaticSecretRedactionStrategyResponse> responseObserver) {
+      responseObserver.onNext(
+          GetAutomaticSecretRedactionStrategyResponse.newBuilder()
+              .setEnabled(automaticSecretRedaction)
+              .build());
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void updateAutomaticSecretRedactionStrategy(
+        UpdateAutomaticSecretRedactionStrategyRequest request,
+        StreamObserver<UpdateAutomaticSecretRedactionStrategyResponse> responseObserver) {
+      automaticSecretRedaction = request.getEnabled();
+      responseObserver.onNext(UpdateAutomaticSecretRedactionStrategyResponse.newBuilder().build());
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getRedactionStrategyForType(
+        GetRedactionStrategyForTypeRequest request,
+        StreamObserver<GetRedactionStrategyForTypeResponse> responseObserver) {
+      responseObserver.onNext(
+          GetRedactionStrategyForTypeResponse.newBuilder()
+              .build()
+              .newBuilder()
+              .setRedactionStrategy(headerRedactionStrategy)
+              .build());
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void updateRedactionStrategyForType(
+        UpdateRedactionStrategyForTypeRequest request,
+        StreamObserver<UpdateRedactionStrategyForTypeResponse> responseObserver) {
+      headerRedactionStrategy = request.getRedactionStrategy();
+      responseObserver.onNext(UpdateRedactionStrategyForTypeResponse.newBuilder().build());
       responseObserver.onCompleted();
     }
   }

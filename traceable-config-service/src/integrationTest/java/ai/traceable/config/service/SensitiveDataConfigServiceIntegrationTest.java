@@ -22,6 +22,7 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule.Location;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
+import ai.traceable.data.classification.config.service.v1.DeleteDataSetRequest;
 import ai.traceable.sensitivedata.config.service.v1.CreateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.DropUnparsedJsonPolicy;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
@@ -253,6 +254,56 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
 
     assertMatchesResource(
         "sensitive-data/pii-filter-with-data-type-rules.json", getPiiFilterConfig(false));
+  }
+
+  @Test
+  void testPiiFilterWithLegacyAutoSecretRedactionDataSetDeleted() {
+    requestContext =
+        RequestContext.forTenantId(
+            "testPiiFilterWithLegacyAutoSecretRedactionDataSetDeleted-tenant");
+    // automatic secret redaction is enabled and redaction strategy is set to RAW(default)
+    assertMatchesResource(
+        "sensitive-data/pii-filter-with-auto-redaction.json", getPiiFilterConfig(false));
+
+    // delete legacy automatic secret redaction data set
+    requestContext.call(
+        () ->
+            dataClassificationConfigServiceStub.deleteDataSet(
+                DeleteDataSetRequest.newBuilder()
+                    .setId("legacy-dataset-automatic-secret-redaction-id")
+                    .build()));
+
+    assertMatchesResource(
+        "sensitive-data/pii-filter-without-auto-redaction-without-hash.json",
+        getPiiFilterConfig(false));
+
+    updateAutomaticSecretRedactionStrategy(true);
+  }
+
+  @Test
+  void testPiiFilterWithLegacySensitiveHeadersDataSetDeleted() {
+    requestContext =
+        RequestContext.forTenantId("testPiiFilterWithLegacySensitiveHeadersDataSetDeleted-tenant");
+
+    // set redaction strategy to HASH
+    updateRedactionStrategyForType(
+        ParamType.PARAM_TYPE_HEADER, RedactionStrategy.REDACTION_STRATEGY_HASH);
+    assertMatchesResource(
+        "sensitive-data/pii-filter-with-hash-strategy.json", getPiiFilterConfig(false));
+
+    // delete legacy sensitive headers data set
+    requestContext.call(
+        () ->
+            dataClassificationConfigServiceStub.deleteDataSet(
+                DeleteDataSetRequest.newBuilder()
+                    .setId("legacy-dataset-sensitive-headers-id")
+                    .build()));
+
+    assertMatchesResource(
+        "sensitive-data/pii-filter-with-auto-redaction.json", getPiiFilterConfig(false));
+
+    updateRedactionStrategyForType(
+        ParamType.PARAM_TYPE_HEADER, RedactionStrategy.REDACTION_STRATEGY_RAW);
   }
 
   private DataSet createDataSet(

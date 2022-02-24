@@ -4,6 +4,8 @@ import static ai.traceable.data.classification.config.service.RedactionRulesDao.
 import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_RAW_DATA_SET_ID;
 import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_RAW_DATA_SET_NAME;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_HEADER;
+import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_REDACT;
+import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_UNSPECIFIED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -39,6 +41,10 @@ import ai.traceable.data.classification.config.service.v1.UpdateDataTypeResponse
 import ai.traceable.sensitivedata.config.service.v1.ComplexData;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesResponse;
+import ai.traceable.sensitivedata.config.service.v1.GetAutomaticSecretRedactionStrategyRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetAutomaticSecretRedactionStrategyResponse;
+import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeResponse;
 import ai.traceable.sensitivedata.config.service.v1.MatchType;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
@@ -743,7 +749,7 @@ class DataClassificationConfigServiceImplTest {
                 .setRegex("regex*")
                 .setSessionIdentifier(true)
                 .setFqn(false)
-                .setRedactionStrategy(RedactionStrategy.REDACTION_STRATEGY_REDACT)
+                .setRedactionStrategy(REDACTION_STRATEGY_REDACT)
                 .build();
         RedactionRule rule2 =
             RedactionRule.newBuilder()
@@ -774,6 +780,28 @@ class DataClassificationConfigServiceImplTest {
         responseBuilder.addAllRedactionRules(List.of(rule1, rule2, rule3));
       }
       responseObserver.onNext(responseBuilder.build());
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getAutomaticSecretRedactionStrategy(
+        GetAutomaticSecretRedactionStrategyRequest request,
+        StreamObserver<GetAutomaticSecretRedactionStrategyResponse> responseObserver) {
+      responseObserver.onNext(
+          GetAutomaticSecretRedactionStrategyResponse.newBuilder().setEnabled(false).build());
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getRedactionStrategyForType(
+        GetRedactionStrategyForTypeRequest request,
+        StreamObserver<GetRedactionStrategyForTypeResponse> responseObserver) {
+      responseObserver.onNext(
+          GetRedactionStrategyForTypeResponse.newBuilder()
+              .build()
+              .newBuilder()
+              .setRedactionStrategy(REDACTION_STRATEGY_UNSPECIFIED)
+              .build());
       responseObserver.onCompleted();
     }
   }

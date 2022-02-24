@@ -3,6 +3,10 @@ package ai.traceable.data.classification.config.service;
 import static ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression.DATA_SUPPRESSION_OBFUSCATE;
 import static ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression.DATA_SUPPRESSION_RAW;
 import static ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression.DATA_SUPPRESSION_REDACT;
+import static ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression.DATA_SUPPRESSION_UNSPECIFIED;
+import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_HASH;
+import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_RAW;
+import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_REDACT;
 
 import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo;
@@ -11,8 +15,15 @@ import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
 import ai.traceable.sensitivedata.config.service.v1.DeleteRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetAutomaticSecretRedactionStrategyRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeRequest;
+import ai.traceable.sensitivedata.config.service.v1.ParamType;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
+import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
+import ai.traceable.sensitivedata.config.service.v1.UpdateAutomaticSecretRedactionStrategyRequest;
+import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeRequest;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import java.util.ArrayList;
@@ -36,8 +47,54 @@ public class RedactionRulesDao {
   static final String LEGACY_RAW_DATA_SET_DESCRIPTION =
       "Legacy dataset containing redaction rules with collect strategy";
   static final String LEGACY_RAW_DATA_SET_ID = "legacy-dataset-unsuppressed-id";
+
+  static final String LEGACY_SENSITIVE_HEADERS_DATA_SET_NAME = "Legacy Dataset - Sensitive Headers";
+  static final String LEGACY_SENSITIVE_HEADERS_DATA_SET_DESCRIPTION =
+      "Legacy dataset containing redaction rules for sensitive headers";
+  static final String LEGACY_SENSITIVE_HEADERS_DATA_SET_ID = "legacy-dataset-sensitive-headers-id";
+  static final String LEGACY_SENSITIVE_HEADERS_DATA_TYPE_NAME =
+      "Legacy Datatype - Sensitive Headers";
+  static final String LEGACY_SENSITIVE_HEADERS_DATA_TYPE_DESCRIPTION =
+      "Legacy datatype for sensitive headers";
+  static final String LEGACY_SENSITIVE_HEADERS_DATA_TYPE_ID =
+      "legacy-datatype-sensitive-headers-id";
+  static final DataType LEGACY_SENSITIVE_HEADERS_DATA_TYPE =
+      DataType.newBuilder()
+          .setId(LEGACY_SENSITIVE_HEADERS_DATA_TYPE_ID)
+          .setRule(
+              DataTypeRule.newBuilder()
+                  .setName(LEGACY_SENSITIVE_HEADERS_DATA_TYPE_NAME)
+                  .setDescription(LEGACY_SENSITIVE_HEADERS_DATA_TYPE_DESCRIPTION))
+          .build();
+
+  static final String LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_NAME =
+      "Legacy Dataset - Automatic Secret Redaction";
+  static final String LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_DESCRIPTION =
+      "Legacy dataset representing automatic secret redaction redaction";
+  static final String LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID =
+      "legacy-dataset-automatic-secret-redaction-id";
+  static final String LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE_NAME =
+      "Legacy Datatype - Automatic Secret Redaction";
+  static final String LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE_DESCRIPTION =
+      "Legacy datatype for automatic secret redaction";
+  static final String LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE_ID =
+      "legacy-datatype-automatic-secret-redaction-id";
+  static final DataType LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE =
+      DataType.newBuilder()
+          .setId(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE_ID)
+          .setRule(
+              DataTypeRule.newBuilder()
+                  .setName(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE_NAME)
+                  .setDescription(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE_DESCRIPTION))
+          .build();
+
   static final Set<String> LEGACY_DATA_SET_IDS =
-      Set.of(LEGACY_REDACT_DATA_SET_ID, LEGACY_OBFUSCATE_DATA_SET_ID, LEGACY_RAW_DATA_SET_ID);
+      Set.of(
+          LEGACY_REDACT_DATA_SET_ID,
+          LEGACY_OBFUSCATE_DATA_SET_ID,
+          LEGACY_RAW_DATA_SET_ID,
+          LEGACY_SENSITIVE_HEADERS_DATA_SET_ID,
+          LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID);
 
   private final SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub;
 
@@ -89,44 +146,72 @@ public class RedactionRulesDao {
             LEGACY_RAW_DATA_SET_DESCRIPTION,
             DATA_SUPPRESSION_RAW);
 
-    return Stream.of(dataSetForRedact, dataSetForObfuscate, dataSetForRaw)
+    return Stream.of(
+            getAutomaticSecretRedactionDataSet(requestContext),
+            getSensitiveHeadersDataSet(requestContext),
+            dataSetForRedact,
+            dataSetForObfuscate,
+            dataSetForRaw)
         .flatMap(Optional::stream)
         .collect(Collectors.toUnmodifiableList());
   }
 
   public Optional<DataSet> getDataSetWithIdFromRedactionRules(
       RequestContext requestContext, String id) {
-    return getDataSetsFromRedactionRules(requestContext).stream()
-        .filter(dataSet -> id.equals(dataSet.getId()))
-        .findAny();
+    if (id.equals(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID)) {
+      return getAutomaticSecretRedactionDataSet(requestContext);
+    } else if (id.equals(LEGACY_SENSITIVE_HEADERS_DATA_SET_ID)) {
+      return getSensitiveHeadersDataSet(requestContext);
+    } else {
+      return getDataSetsFromRedactionRules(requestContext).stream()
+          .filter(dataSet -> id.equals(dataSet.getId()))
+          .findAny();
+    }
   }
 
   public List<DataType> getAllDataTypesFromRedactionRules(RequestContext requestContext) {
-    return getAllRedactionRules(requestContext).stream()
-        .map(this::convertRedactionRuleToDataType)
-        .collect(Collectors.toUnmodifiableList());
+    List<DataType> dataTypes = new ArrayList<>();
+    getAutomaticSecretRedactionDataType(requestContext).ifPresent(dataTypes::add);
+    getSensitiveHeadersDataType(requestContext).ifPresent(dataTypes::add);
+    dataTypes.addAll(
+        getAllRedactionRules(requestContext).stream()
+            .map(this::convertRedactionRuleToDataType)
+            .collect(Collectors.toList()));
+    return ImmutableList.copyOf(dataTypes);
   }
 
   public DataSet updateDataSet(RequestContext requestContext, String dataSetId, DataSetInfo info) {
-    Optional<DataSet> dataSetOptional =
-        getDataSetWithIdFromRedactionRules(requestContext, dataSetId);
-    DataSet dataSet = dataSetOptional.orElseThrow(Status.NOT_FOUND::asRuntimeException);
-    List<String> deleteRuleIds =
-        dataSet.getInfo().getDataTypeIdsList().stream()
-            .filter(ruleId -> !info.getDataTypeIdsList().contains(ruleId))
-            .collect(Collectors.toUnmodifiableList());
-    deleteRuleIds.forEach(ruleId -> deleteRedactionRule(requestContext, ruleId));
+    if (dataSetId.equals(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID)) {
+      handleAutomaticSecretRedactionDataSetUpdate(requestContext, info);
+    } else if (dataSetId.equals(LEGACY_SENSITIVE_HEADERS_DATA_SET_ID)) {
+      handleSensitiveHeadersDataSetUpdate(requestContext, info);
+    } else {
+      Optional<DataSet> dataSetOptional =
+          getDataSetWithIdFromRedactionRules(requestContext, dataSetId);
+      DataSet dataSet = dataSetOptional.orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      List<String> deleteRuleIds =
+          dataSet.getInfo().getDataTypeIdsList().stream()
+              .filter(ruleId -> !info.getDataTypeIdsList().contains(ruleId))
+              .collect(Collectors.toUnmodifiableList());
+      deleteRuleIds.forEach(ruleId -> deleteRedactionRule(requestContext, ruleId));
+    }
     return DataSet.newBuilder().setId(dataSetId).setInfo(info).build();
   }
 
   public void deleteDataSet(RequestContext requestContext, String dataSetId) {
-    Optional<DataSet> dataSetOptional =
-        getDataSetWithIdFromRedactionRules(requestContext, dataSetId);
-    DataSet dataSet = dataSetOptional.orElseThrow(Status.NOT_FOUND::asRuntimeException);
-    dataSet
-        .getInfo()
-        .getDataTypeIdsList()
-        .forEach(ruleId -> deleteRedactionRule(requestContext, ruleId));
+    if (dataSetId.equals(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID)) {
+      handleAutomaticSecretRedactionDataSetDelete(requestContext);
+    } else if (dataSetId.equals(LEGACY_SENSITIVE_HEADERS_DATA_SET_ID)) {
+      handleSensitiveHeadersDataSetDelete(requestContext);
+    } else {
+      Optional<DataSet> dataSetOptional =
+          getDataSetWithIdFromRedactionRules(requestContext, dataSetId);
+      DataSet dataSet = dataSetOptional.orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      dataSet
+          .getInfo()
+          .getDataTypeIdsList()
+          .forEach(ruleId -> deleteRedactionRule(requestContext, ruleId));
+    }
   }
 
   private Optional<DataSet> buildDataSet(
@@ -174,5 +259,127 @@ public class RedactionRulesDao {
         () ->
             sensitiveDataConfigServiceBlockingStub.deleteRedactionRule(
                 DeleteRedactionRuleRequest.newBuilder().setRedactionRuleId(ruleId).build()));
+  }
+
+  private Optional<DataSet> getAutomaticSecretRedactionDataSet(RequestContext requestContext) {
+    if (getAutomaticSecretRedactionStrategy(requestContext)) {
+      return buildDataSet(
+          List.of(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE_ID),
+          LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID,
+          LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_NAME,
+          LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_DESCRIPTION,
+          DATA_SUPPRESSION_REDACT);
+    }
+    return Optional.empty();
+  }
+
+  private Optional<DataType> getAutomaticSecretRedactionDataType(RequestContext requestContext) {
+    if (getAutomaticSecretRedactionStrategy(requestContext)) {
+      return Optional.of(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE);
+    }
+    return Optional.empty();
+  }
+
+  private void handleAutomaticSecretRedactionDataSetUpdate(
+      RequestContext requestContext, DataSetInfo dataSetInfo) {
+    // there is only single data type in this data set
+    // if that is removed, then handle it as deletion of data set
+    if (dataSetInfo.getDataTypeIdsList().isEmpty()) {
+      handleAutomaticSecretRedactionDataSetDelete(requestContext);
+    }
+  }
+
+  private void handleAutomaticSecretRedactionDataSetDelete(RequestContext requestContext) {
+    setAutomaticSecretRedactionStrategyToFalse(requestContext);
+  }
+
+  private boolean getAutomaticSecretRedactionStrategy(RequestContext requestContext) {
+    return requestContext.call(
+        () ->
+            sensitiveDataConfigServiceBlockingStub
+                .getAutomaticSecretRedactionStrategy(
+                    GetAutomaticSecretRedactionStrategyRequest.getDefaultInstance())
+                .getEnabled());
+  }
+
+  private void setAutomaticSecretRedactionStrategyToFalse(RequestContext requestContext) {
+    requestContext.call(
+        () ->
+            sensitiveDataConfigServiceBlockingStub.updateAutomaticSecretRedactionStrategy(
+                UpdateAutomaticSecretRedactionStrategyRequest.newBuilder()
+                    .setEnabled(false)
+                    .build()));
+  }
+
+  private Optional<DataSet> getSensitiveHeadersDataSet(RequestContext requestContext) {
+    RedactionStrategy redactionStrategy = getRedactionStrategyForHeaderParamType(requestContext);
+    if (redactionStrategy.equals(REDACTION_STRATEGY_REDACT)
+        || redactionStrategy.equals(REDACTION_STRATEGY_HASH)
+        || redactionStrategy.equals(REDACTION_STRATEGY_RAW)) {
+      return buildDataSet(
+          List.of(LEGACY_SENSITIVE_HEADERS_DATA_TYPE_ID),
+          LEGACY_SENSITIVE_HEADERS_DATA_SET_ID,
+          LEGACY_SENSITIVE_HEADERS_DATA_SET_NAME,
+          LEGACY_SENSITIVE_HEADERS_DATA_SET_DESCRIPTION,
+          mapToDataSuppression(redactionStrategy));
+    }
+    return Optional.empty();
+  }
+
+  private Optional<DataType> getSensitiveHeadersDataType(RequestContext requestContext) {
+    RedactionStrategy redactionStrategy = getRedactionStrategyForHeaderParamType(requestContext);
+    if (redactionStrategy.equals(REDACTION_STRATEGY_REDACT)
+        || redactionStrategy.equals(REDACTION_STRATEGY_HASH)
+        || redactionStrategy.equals(REDACTION_STRATEGY_RAW)) {
+      return Optional.of(LEGACY_SENSITIVE_HEADERS_DATA_TYPE);
+    }
+    return Optional.empty();
+  }
+
+  private void handleSensitiveHeadersDataSetUpdate(
+      RequestContext requestContext, DataSetInfo dataSetInfo) {
+    // there is only single data type in this data set
+    // if that is removed, then handle it as deletion of data set
+    if (dataSetInfo.getDataTypeIdsList().isEmpty()) {
+      handleSensitiveHeadersDataSetDelete(requestContext);
+    }
+  }
+
+  private void handleSensitiveHeadersDataSetDelete(RequestContext requestContext) {
+    setRedactionStrategyForHeaderParamTypeToUnspecified(requestContext);
+  }
+
+  private RedactionStrategy getRedactionStrategyForHeaderParamType(RequestContext requestContext) {
+    return requestContext.call(
+        () ->
+            sensitiveDataConfigServiceBlockingStub
+                .getRedactionStrategyForType(
+                    GetRedactionStrategyForTypeRequest.newBuilder()
+                        .setParamType(ParamType.PARAM_TYPE_HEADER)
+                        .build())
+                .getRedactionStrategy());
+  }
+
+  private void setRedactionStrategyForHeaderParamTypeToUnspecified(RequestContext requestContext) {
+    requestContext.call(
+        () ->
+            sensitiveDataConfigServiceBlockingStub.updateRedactionStrategyForType(
+                UpdateRedactionStrategyForTypeRequest.newBuilder()
+                    .setParamType(ParamType.PARAM_TYPE_HEADER)
+                    .setRedactionStrategy(RedactionStrategy.REDACTION_STRATEGY_UNSPECIFIED)
+                    .build()));
+  }
+
+  private DataSuppression mapToDataSuppression(RedactionStrategy redactionStrategy) {
+    switch (redactionStrategy) {
+      case REDACTION_STRATEGY_REDACT:
+        return DATA_SUPPRESSION_REDACT;
+      case REDACTION_STRATEGY_HASH:
+        return DATA_SUPPRESSION_OBFUSCATE;
+      case REDACTION_STRATEGY_RAW:
+        return DATA_SUPPRESSION_RAW;
+      default:
+        return DATA_SUPPRESSION_UNSPECIFIED;
+    }
   }
 }

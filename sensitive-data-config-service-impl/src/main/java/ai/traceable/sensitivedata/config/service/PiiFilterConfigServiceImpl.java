@@ -2,6 +2,9 @@ package ai.traceable.sensitivedata.config.service;
 
 import static ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression.DATA_SUPPRESSION_OBFUSCATE;
 import static ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression.DATA_SUPPRESSION_REDACT;
+import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_HASH;
+import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_RAW;
+import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_REDACT;
 import static java.util.function.Function.identity;
 
 import ai.traceable.config.utils.UuidGenerator;
@@ -86,14 +89,19 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
           redactionRules, keyRegexToPiiElementMap, valueRegexToPiiElementMap, complexDataMap);
 
       // get pii elements from sensitive headers and add them to key regexs
-      List<Parameter> sensitiveHeaderParameters =
-          insightsServiceCoordinator.getSensitiveHeaderParameters(requestContext);
       RedactionStrategy redactionStrategy =
           configServiceCoordinator.getParamTypeRedactionStrategy(
               requestContext, ParamType.PARAM_TYPE_HEADER);
-      List<PiiElement> piiElements =
-          computePiiElements(sensitiveHeaderParameters, redactionStrategy);
-      addPiiElements(keyRegexToPiiElementMap, piiElements);
+      if (redactionStrategy.equals(REDACTION_STRATEGY_RAW)
+          || redactionStrategy.equals(REDACTION_STRATEGY_HASH)
+          || redactionStrategy.equals(REDACTION_STRATEGY_REDACT)) {
+        List<Parameter> sensitiveHeaderParameters =
+            insightsServiceCoordinator.getSensitiveHeaderParameters(requestContext);
+        List<PiiElement> piiElements =
+            computePiiElements(sensitiveHeaderParameters, redactionStrategy);
+        addPiiElements(keyRegexToPiiElementMap, piiElements);
+      }
+
       // complex data should be included always as it is also needed by default local processing PII
       // rules
       addComplexDataElements(complexDataMap, defaultPiiFilterConfig.getComplexDataList());
@@ -113,13 +121,9 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
       Set<DataType> dataTypesForObfuscation =
           dataTypesMap.getOrDefault(DATA_SUPPRESSION_OBFUSCATE, Collections.emptySet());
       mergeConfigFromDataTypes(
-          dataTypesForRedaction,
-          RedactionStrategy.REDACTION_STRATEGY_REDACT,
-          keyRegexToPiiElementMap);
+          dataTypesForRedaction, REDACTION_STRATEGY_REDACT, keyRegexToPiiElementMap);
       mergeConfigFromDataTypes(
-          dataTypesForObfuscation,
-          RedactionStrategy.REDACTION_STRATEGY_HASH,
-          keyRegexToPiiElementMap);
+          dataTypesForObfuscation, REDACTION_STRATEGY_HASH, keyRegexToPiiElementMap);
 
       PiiFilterConfig resultingPiiFilterConfig =
           PiiFilterConfig.newBuilder()
@@ -154,7 +158,7 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
 
   private List<PiiElement> computePiiElements(
       List<Parameter> sensitiveParameters, RedactionStrategy redactionStrategy) {
-    if (redactionStrategy == RedactionStrategy.REDACTION_STRATEGY_RAW) {
+    if (redactionStrategy == REDACTION_STRATEGY_RAW) {
       return Collections.emptyList();
     }
     Set<String> sensitiveParameterNames =
