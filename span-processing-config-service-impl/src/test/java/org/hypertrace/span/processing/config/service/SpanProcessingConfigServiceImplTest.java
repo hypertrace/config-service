@@ -2,12 +2,17 @@ package org.hypertrace.span.processing.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.google.protobuf.Timestamp;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.span.processing.config.service.store.ExcludeSpanRulesConfigStore;
+import org.hypertrace.span.processing.config.service.utils.TimestampConverter;
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRule;
@@ -31,6 +36,7 @@ class SpanProcessingConfigServiceImplTest {
   SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
       spanProcessingConfigServiceStub;
   MockGenericConfigService mockGenericConfigService;
+  TimestampConverter timestampConverter;
 
   @BeforeEach
   void beforeEach() {
@@ -45,15 +51,20 @@ class SpanProcessingConfigServiceImplTest {
     ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
 
+    this.timestampConverter = mock(TimestampConverter.class);
     this.mockGenericConfigService
         .addService(
             new SpanProcessingConfigServiceImpl(
-                new ExcludeSpanRulesConfigStore(genericStub),
-                new SpanProcessingConfigRequestValidator()))
+                new ExcludeSpanRulesConfigStore(genericStub, this.timestampConverter),
+                new SpanProcessingConfigRequestValidator(),
+                this.timestampConverter))
         .start();
 
     this.spanProcessingConfigServiceStub =
         SpanProcessingConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+
+    when(this.timestampConverter.convert(any()))
+        .thenReturn(Timestamp.newBuilder().setSeconds(100).build());
   }
 
   @AfterEach
@@ -63,7 +74,7 @@ class SpanProcessingConfigServiceImplTest {
 
   @Test
   void testCrud() {
-    ExcludeSpanRule firstCreatedExcludeSpanRule =
+    ExcludeSpanRuleDetails firstCreatedExcludeSpanRuleDetails =
         this.spanProcessingConfigServiceStub
             .createExcludeSpanRule(
                 CreateExcludeSpanRuleRequest.newBuilder()
@@ -80,8 +91,14 @@ class SpanProcessingConfigServiceImplTest {
                                             .setRightOperand(
                                                 SpanFilterValue.newBuilder().setStringValue("a")))))
                     .build())
-            .getRuleDetails()
-            .getRule();
+            .getRuleDetails();
+    ExcludeSpanRule firstCreatedExcludeSpanRule = firstCreatedExcludeSpanRuleDetails.getRule();
+    Timestamp expectedTimestamp = Timestamp.newBuilder().setSeconds(100).build();
+    assertEquals(
+        expectedTimestamp, firstCreatedExcludeSpanRuleDetails.getMetadata().getCreationTimestamp());
+    assertEquals(
+        expectedTimestamp,
+        firstCreatedExcludeSpanRuleDetails.getMetadata().getLastUpdatedTimestamp());
 
     ExcludeSpanRule secondCreatedExcludeSpanRule =
         this.spanProcessingConfigServiceStub

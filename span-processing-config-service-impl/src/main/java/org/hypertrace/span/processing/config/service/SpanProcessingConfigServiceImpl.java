@@ -30,13 +30,16 @@ class SpanProcessingConfigServiceImpl
     extends SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceImplBase {
   private final SpanProcessingConfigRequestValidator validator;
   private final ExcludeSpanRulesConfigStore ruleStore;
+  private final TimestampConverter timestampConverter;
 
   @Inject
   SpanProcessingConfigServiceImpl(
       ExcludeSpanRulesConfigStore ruleStore,
-      SpanProcessingConfigRequestValidator requestValidator) {
+      SpanProcessingConfigRequestValidator requestValidator,
+      TimestampConverter timestampConverter) {
     this.validator = requestValidator;
     this.ruleStore = ruleStore;
+    this.timestampConverter = timestampConverter;
   }
 
   @Override
@@ -152,9 +155,9 @@ class SpanProcessingConfigServiceImpl
         .setMetadata(
             ExcludeSpanRuleMetadata.newBuilder()
                 .setCreationTimestamp(
-                    TimestampConverter.convert(configObject.getCreationTimestamp()))
+                    timestampConverter.convert(configObject.getCreationTimestamp()))
                 .setLastUpdatedTimestamp(
-                    TimestampConverter.convert(configObject.getLastUpdatedTimestamp()))
+                    timestampConverter.convert(configObject.getLastUpdatedTimestamp()))
                 .build())
         .build();
   }

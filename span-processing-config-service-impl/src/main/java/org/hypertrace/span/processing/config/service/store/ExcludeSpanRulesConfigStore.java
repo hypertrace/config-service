@@ -20,14 +20,17 @@ public class ExcludeSpanRulesConfigStore extends IdentifiedObjectStore<ExcludeSp
   private static final String EXCLUDE_SPAN_RULES_RESOURCE_NAME = "exclude-span-rules";
   private static final String EXCLUDE_SPAN_RULES_CONFIG_RESOURCE_NAMESPACE =
       "exclude-span-rules-config";
+  private final TimestampConverter timestampConverter;
 
   @Inject
   public ExcludeSpanRulesConfigStore(
-      ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub) {
+      ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
+      TimestampConverter timestampConverter) {
     super(
         configServiceBlockingStub,
         EXCLUDE_SPAN_RULES_CONFIG_RESOURCE_NAMESPACE,
         EXCLUDE_SPAN_RULES_RESOURCE_NAME);
+    this.timestampConverter = timestampConverter;
   }
 
   public List<ExcludeSpanRuleDetails> getAllData(RequestContext requestContext) {
@@ -39,10 +42,10 @@ public class ExcludeSpanRulesConfigStore extends IdentifiedObjectStore<ExcludeSp
                     .setMetadata(
                         ExcludeSpanRuleMetadata.newBuilder()
                             .setCreationTimestamp(
-                                TimestampConverter.convert(
+                                timestampConverter.convert(
                                     contextualConfigObject.getCreationTimestamp()))
                             .setLastUpdatedTimestamp(
-                                TimestampConverter.convert(
+                                timestampConverter.convert(
                                     contextualConfigObject.getLastUpdatedTimestamp()))
                             .build())
                     .build())
