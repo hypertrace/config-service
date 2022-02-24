@@ -66,31 +66,17 @@ class SpanProcessingConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
 
-      // TODO: need to handle prorities
+      // TODO: need to handle priorities
       ExcludeSpanRule newRule =
           ExcludeSpanRule.newBuilder()
               .setId(UUID.randomUUID().toString())
               .setRuleInfo(request.getRuleInfo())
               .build();
 
-      ContextualConfigObject<ExcludeSpanRule> excludeSpanRuleContextualConfigObject =
-          this.ruleStore.upsertObject(requestContext, newRule);
-
       responseObserver.onNext(
           CreateExcludeSpanRuleResponse.newBuilder()
               .setRuleDetails(
-                  ExcludeSpanRuleDetails.newBuilder()
-                      .setRule(excludeSpanRuleContextualConfigObject.getData())
-                      .setMetadata(
-                          ExcludeSpanRuleMetadata.newBuilder()
-                              .setCreationTimestamp(
-                                  TimestampConverter.convert(
-                                      excludeSpanRuleContextualConfigObject.getCreationTimestamp()))
-                              .setLastUpdatedTimestamp(
-                                  TimestampConverter.convert(
-                                      excludeSpanRuleContextualConfigObject
-                                          .getLastUpdatedTimestamp()))
-                              .build()))
+                  buildExcludeSpanRuleDetails(this.ruleStore.upsertObject(requestContext, newRule)))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -114,25 +100,11 @@ class SpanProcessingConfigServiceImpl
               .orElseThrow(Status.NOT_FOUND::asException);
       ExcludeSpanRule updatedRule = buildUpdatedRule(existingRule, updateExcludeSpanRule);
 
-      ContextualConfigObject<ExcludeSpanRule> excludeSpanRuleContextualConfigObject =
-          this.ruleStore.upsertObject(requestContext, updatedRule);
-
       responseObserver.onNext(
           UpdateExcludeSpanRuleResponse.newBuilder()
               .setRuleDetails(
-                  ExcludeSpanRuleDetails.newBuilder()
-                      .setRule(excludeSpanRuleContextualConfigObject.getData())
-                      .setMetadata(
-                          ExcludeSpanRuleMetadata.newBuilder()
-                              .setCreationTimestamp(
-                                  TimestampConverter.convert(
-                                      excludeSpanRuleContextualConfigObject.getCreationTimestamp()))
-                              .setLastUpdatedTimestamp(
-                                  TimestampConverter.convert(
-                                      excludeSpanRuleContextualConfigObject
-                                          .getLastUpdatedTimestamp()))
-                              .build())
-                      .build())
+                  buildExcludeSpanRuleDetails(
+                      this.ruleStore.upsertObject(requestContext, updatedRule)))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -169,6 +141,20 @@ class SpanProcessingConfigServiceImpl
             ExcludeSpanRuleInfo.newBuilder()
                 .setName(updateExcludeSpanRule.getName())
                 .setFilter(updateExcludeSpanRule.getFilter())
+                .build())
+        .build();
+  }
+
+  private ExcludeSpanRuleDetails buildExcludeSpanRuleDetails(
+      ContextualConfigObject<ExcludeSpanRule> configObject) {
+    return ExcludeSpanRuleDetails.newBuilder()
+        .setRule(configObject.getData())
+        .setMetadata(
+            ExcludeSpanRuleMetadata.newBuilder()
+                .setCreationTimestamp(
+                    TimestampConverter.convert(configObject.getCreationTimestamp()))
+                .setLastUpdatedTimestamp(
+                    TimestampConverter.convert(configObject.getLastUpdatedTimestamp()))
                 .build())
         .build();
   }
