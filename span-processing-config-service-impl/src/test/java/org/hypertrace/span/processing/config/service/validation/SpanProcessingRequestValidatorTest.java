@@ -91,15 +91,6 @@ class SpanProcessingRequestValidatorTest {
                     .setRuleInfo(ExcludeSpanRuleInfo.newBuilder().build())
                     .build()));
 
-    assertInvalidArgStatusContaining(
-        "ExcludeSpanRuleInfo.disabled",
-        () ->
-            validator.validateOrThrow(
-                mockRequestContext,
-                CreateExcludeSpanRuleRequest.newBuilder()
-                    .setRuleInfo(ExcludeSpanRuleInfo.newBuilder().setName("name").build())
-                    .build()));
-
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
