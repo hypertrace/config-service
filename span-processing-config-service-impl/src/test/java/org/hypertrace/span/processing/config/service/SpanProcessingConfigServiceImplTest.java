@@ -1,6 +1,7 @@
 package org.hypertrace.span.processing.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -81,6 +82,7 @@ class SpanProcessingConfigServiceImplTest {
                     .setRuleInfo(
                         ExcludeSpanRuleInfo.newBuilder()
                             .setName("ruleName1")
+                            .setDisabled(true)
                             .setFilter(
                                 SpanFilter.newBuilder()
                                     .setRelationalSpanFilter(
@@ -107,6 +109,7 @@ class SpanProcessingConfigServiceImplTest {
                     .setRuleInfo(
                         ExcludeSpanRuleInfo.newBuilder()
                             .setName("ruleName2")
+                            .setDisabled(true)
                             .setFilter(
                                 SpanFilter.newBuilder()
                                     .setRelationalSpanFilter(
@@ -139,6 +142,7 @@ class SpanProcessingConfigServiceImplTest {
                         UpdateExcludeSpanRule.newBuilder()
                             .setId(firstCreatedExcludeSpanRule.getId())
                             .setName("updatedRuleName1")
+                            .setDisabled(false)
                             .setFilter(
                                 SpanFilter.newBuilder()
                                     .setRelationalSpanFilter(
@@ -152,6 +156,7 @@ class SpanProcessingConfigServiceImplTest {
             .getRuleDetails()
             .getRule();
     assertEquals("updatedRuleName1", updatedFirstExcludeSpanRule.getRuleInfo().getName());
+    assertFalse(updatedFirstExcludeSpanRule.getRuleInfo().getDisabled());
 
     excludeSpanRules =
         this.spanProcessingConfigServiceStub

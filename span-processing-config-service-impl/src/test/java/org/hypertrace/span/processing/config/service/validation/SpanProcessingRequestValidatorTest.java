@@ -83,15 +83,6 @@ class SpanProcessingRequestValidatorTest {
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
 
     assertInvalidArgStatusContaining(
-        "ExcludeSpanRuleInfo",
-        () ->
-            validator.validateOrThrow(
-                mockRequestContext,
-                CreateExcludeSpanRuleRequest.newBuilder()
-                    .setRuleInfo(ExcludeSpanRuleInfo.newBuilder().build())
-                    .build()));
-
-    assertInvalidArgStatusContaining(
         "ExcludeSpanRuleInfo.name",
         () ->
             validator.validateOrThrow(
@@ -108,6 +99,7 @@ class SpanProcessingRequestValidatorTest {
                     .setRuleInfo(
                         ExcludeSpanRuleInfo.newBuilder()
                             .setName("name")
+                            .setDisabled(true)
                             .setFilter(
                                 SpanFilter.newBuilder()
                                     .setRelationalSpanFilter(

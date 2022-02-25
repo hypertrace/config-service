@@ -144,6 +144,7 @@ class SpanProcessingConfigServiceImpl
             ExcludeSpanRuleInfo.newBuilder()
                 .setName(updateExcludeSpanRule.getName())
                 .setFilter(updateExcludeSpanRule.getFilter())
+                .setDisabled(updateExcludeSpanRule.getDisabled())
                 .build())
         .build();
   }

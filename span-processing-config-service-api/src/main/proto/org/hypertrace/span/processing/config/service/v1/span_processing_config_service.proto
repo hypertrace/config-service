@@ -57,6 +57,7 @@ message ExcludeSpanRuleDetails {
 message ExcludeSpanRuleInfo {
   string name = 1;
   SpanFilter filter = 2;
+  bool disabled = 3;
 }
 
 message ExcludeSpanRuleMetadata {
@@ -68,6 +69,7 @@ message UpdateExcludeSpanRule {
   string id = 1;
   string name = 2;
   SpanFilter filter = 3;
+  bool disabled = 4;
 }
 
 message SpanFilter {
