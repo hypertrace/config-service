@@ -45,6 +45,9 @@ public class SpanProcessingConfigRequestValidator {
 
   private void validateUpdateRule(UpdateExcludeSpanRule updateExcludeSpanRule) {
     validateNonDefaultPresenceOrThrow(updateExcludeSpanRule, UpdateExcludeSpanRule.ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        updateExcludeSpanRule, UpdateExcludeSpanRule.NAME_FIELD_NUMBER);
+    this.validateSpanFilter(updateExcludeSpanRule.getFilter());
   }
 
   private void validateSpanFilter(SpanFilter filter) {

@@ -67,9 +67,9 @@ message ExcludeSpanRuleMetadata {
 
 message UpdateExcludeSpanRule {
   string id = 1;
-  optional string name = 2;
+  string name = 2;
   SpanFilter filter = 3;
-  optional bool disabled = 4;
+  bool disabled = 4;
 }
 
 message SpanFilter {

@@ -142,7 +142,16 @@ class SpanProcessingConfigServiceImplTest {
                         UpdateExcludeSpanRule.newBuilder()
                             .setId(firstCreatedExcludeSpanRule.getId())
                             .setName("updatedRuleName1")
-                            .setDisabled(false))
+                            .setDisabled(false)
+                            .setFilter(
+                                SpanFilter.newBuilder()
+                                    .setRelationalSpanFilter(
+                                        RelationalSpanFilterExpression.newBuilder()
+                                            .setField(Field.FIELD_SERVICE_NAME)
+                                            .setOperator(
+                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                            .setRightOperand(
+                                                SpanFilterValue.newBuilder().setStringValue("a")))))
                     .build())
             .getRuleDetails()
             .getRule();
