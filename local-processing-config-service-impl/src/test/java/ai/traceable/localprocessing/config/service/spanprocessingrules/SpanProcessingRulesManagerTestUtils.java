@@ -4,6 +4,7 @@ import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRuleInfo;
 import java.util.List;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRule;
+import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleDetails;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.Field;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesResponse;
@@ -75,108 +76,120 @@ public class SpanProcessingRulesManagerTestUtils {
 
   public static GetAllExcludeSpanRulesResponse buildGetAllExcludeSpanRulesResponse() {
     return GetAllExcludeSpanRulesResponse.newBuilder()
-        .addRules(
-            ExcludeSpanRule.newBuilder()
-                .setId("id")
-                .setRuleInfo(
-                    ExcludeSpanRuleInfo.newBuilder()
-                        .setName("name")
-                        .setFilter(
-                            buildLogicalFilterSpanProcessing(
-                                LogicalOperator.LOGICAL_OPERATOR_AND,
-                                List.of(
+        .addRuleDetails(
+            ExcludeSpanRuleDetails.newBuilder()
+                .setRule(
+                    ExcludeSpanRule.newBuilder()
+                        .setId("id")
+                        .setRuleInfo(
+                            ExcludeSpanRuleInfo.newBuilder()
+                                .setName("name")
+                                .setFilter(
                                     buildLogicalFilterSpanProcessing(
-                                        LogicalOperator.LOGICAL_OPERATOR_OR,
+                                        LogicalOperator.LOGICAL_OPERATOR_AND,
                                         List.of(
+                                            buildLogicalFilterSpanProcessing(
+                                                LogicalOperator.LOGICAL_OPERATOR_OR,
+                                                List.of(
+                                                    buildRelationalFilter(
+                                                        null,
+                                                        "key",
+                                                        RelationalOperator
+                                                            .RELATIONAL_OPERATOR_CONTAINS,
+                                                        "val"),
+                                                    buildRelationalFilter(
+                                                        null,
+                                                        "key",
+                                                        RelationalOperator
+                                                            .RELATIONAL_OPERATOR_CONTAINS,
+                                                        "val"))),
                                             buildRelationalFilter(
+                                                Field.FIELD_URL,
                                                 null,
-                                                "key",
-                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
-                                                "val"),
-                                            buildRelationalFilter(
-                                                null,
-                                                "key",
-                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
-                                                "val"))),
-                                    buildRelationalFilter(
-                                        Field.FIELD_URL,
-                                        null,
-                                        RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
-                                        "url"))))
-                        .build())
-                .build())
+                                                RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                                                "url"))))
+                                .build())
+                        .build()))
         .build();
   }
 
   public static GetAllExcludeSpanRulesResponse
       buildGetAllExcludeSpanRulesResponseEnvironmentFilter() {
     return GetAllExcludeSpanRulesResponse.newBuilder()
-        .addRules(
-            ExcludeSpanRule.newBuilder()
-                .setId("id")
-                .setRuleInfo(
-                    ExcludeSpanRuleInfo.newBuilder()
-                        .setName("name")
-                        .setFilter(
-                            buildLogicalFilterSpanProcessing(
-                                LogicalOperator.LOGICAL_OPERATOR_AND,
-                                List.of(
+        .addRuleDetails(
+            ExcludeSpanRuleDetails.newBuilder()
+                .setRule(
+                    ExcludeSpanRule.newBuilder()
+                        .setId("id")
+                        .setRuleInfo(
+                            ExcludeSpanRuleInfo.newBuilder()
+                                .setName("name")
+                                .setFilter(
                                     buildLogicalFilterSpanProcessing(
-                                        LogicalOperator.LOGICAL_OPERATOR_OR,
+                                        LogicalOperator.LOGICAL_OPERATOR_AND,
                                         List.of(
+                                            buildLogicalFilterSpanProcessing(
+                                                LogicalOperator.LOGICAL_OPERATOR_OR,
+                                                List.of(
+                                                    buildRelationalFilter(
+                                                        null,
+                                                        "key",
+                                                        RelationalOperator
+                                                            .RELATIONAL_OPERATOR_CONTAINS,
+                                                        "val"),
+                                                    buildRelationalFilter(
+                                                        null,
+                                                        "key",
+                                                        RelationalOperator
+                                                            .RELATIONAL_OPERATOR_CONTAINS,
+                                                        "val"))),
                                             buildRelationalFilter(
+                                                Field.FIELD_ENVIRONMENT_NAME,
                                                 null,
-                                                "key",
                                                 RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
-                                                "val"),
-                                            buildRelationalFilter(
-                                                null,
-                                                "key",
-                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
-                                                "val"))),
-                                    buildRelationalFilter(
-                                        Field.FIELD_ENVIRONMENT_NAME,
-                                        null,
-                                        RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
-                                        "val"))))
-                        .build())
-                .build())
+                                                "val"))))
+                                .build())
+                        .build()))
         .build();
   }
 
   public static GetAllExcludeSpanRulesResponse
       buildGetAllExcludeSpanRulesResponseServiceNameFilter() {
     return GetAllExcludeSpanRulesResponse.newBuilder()
-        .addRules(
-            ExcludeSpanRule.newBuilder()
-                .setId("id")
-                .setRuleInfo(
-                    ExcludeSpanRuleInfo.newBuilder()
-                        .setName("name")
-                        .setFilter(
-                            buildLogicalFilterSpanProcessing(
-                                LogicalOperator.LOGICAL_OPERATOR_AND,
-                                List.of(
+        .addRuleDetails(
+            ExcludeSpanRuleDetails.newBuilder()
+                .setRule(
+                    ExcludeSpanRule.newBuilder()
+                        .setId("id")
+                        .setRuleInfo(
+                            ExcludeSpanRuleInfo.newBuilder()
+                                .setName("name")
+                                .setFilter(
                                     buildLogicalFilterSpanProcessing(
-                                        LogicalOperator.LOGICAL_OPERATOR_OR,
+                                        LogicalOperator.LOGICAL_OPERATOR_AND,
                                         List.of(
+                                            buildLogicalFilterSpanProcessing(
+                                                LogicalOperator.LOGICAL_OPERATOR_OR,
+                                                List.of(
+                                                    buildRelationalFilter(
+                                                        null,
+                                                        "key",
+                                                        RelationalOperator
+                                                            .RELATIONAL_OPERATOR_CONTAINS,
+                                                        "val"),
+                                                    buildRelationalFilter(
+                                                        null,
+                                                        "key",
+                                                        RelationalOperator
+                                                            .RELATIONAL_OPERATOR_CONTAINS,
+                                                        "val"))),
                                             buildRelationalFilter(
+                                                Field.FIELD_SERVICE_NAME,
                                                 null,
-                                                "key",
                                                 RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
-                                                "val"),
-                                            buildRelationalFilter(
-                                                null,
-                                                "key",
-                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
-                                                "val"))),
-                                    buildRelationalFilter(
-                                        Field.FIELD_SERVICE_NAME,
-                                        null,
-                                        RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
-                                        "val"))))
-                        .build())
-                .build())
+                                                "val"))))
+                                .build())
+                        .build()))
         .build();
   }
 

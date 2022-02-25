@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRule;
+import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleDetails;
 import org.hypertrace.span.processing.config.service.v1.Field;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.LogicalSpanFilterExpression;
@@ -95,7 +96,10 @@ public class DefaultSpanProcessingRulesManager implements SpanProcessingRulesMan
   private List<ExcludeSpanRule> getAllExcludeSpanRules() {
     return configServiceBlockingStub
         .getAllExcludeSpanRules(GetAllExcludeSpanRulesRequest.newBuilder().build())
-        .getRulesList();
+        .getRuleDetailsList()
+        .stream()
+        .map(ExcludeSpanRuleDetails::getRule)
+        .collect(Collectors.toUnmodifiableList());
   }
 
   // assumption: first class field conditions are ANDed and appear in the first level of the filter
