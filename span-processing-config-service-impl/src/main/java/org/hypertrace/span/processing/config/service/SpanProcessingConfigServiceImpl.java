@@ -139,13 +139,18 @@ class SpanProcessingConfigServiceImpl
 
   private ExcludeSpanRule buildUpdatedRule(
       ExcludeSpanRule existingRule, UpdateExcludeSpanRule updateExcludeSpanRule) {
-    return ExcludeSpanRule.newBuilder(existingRule)
-        .setRuleInfo(
-            ExcludeSpanRuleInfo.newBuilder()
-                .setName(updateExcludeSpanRule.getName())
-                .setFilter(updateExcludeSpanRule.getFilter())
-                .build())
-        .build();
+    ExcludeSpanRuleInfo.Builder excludeSpanRuleInfoBuilder =
+        ExcludeSpanRuleInfo.newBuilder(existingRule.getRuleInfo());
+    if (updateExcludeSpanRule.hasName()) {
+      excludeSpanRuleInfoBuilder.setName(updateExcludeSpanRule.getName());
+    }
+    if (updateExcludeSpanRule.hasFilter()) {
+      excludeSpanRuleInfoBuilder.setFilter(updateExcludeSpanRule.getFilter());
+    }
+    if (updateExcludeSpanRule.hasDisabled()) {
+      excludeSpanRuleInfoBuilder.setDisabled(updateExcludeSpanRule.getDisabled());
+    }
+    return ExcludeSpanRule.newBuilder(existingRule).setRuleInfo(excludeSpanRuleInfoBuilder).build();
   }
 
   private ExcludeSpanRuleDetails buildExcludeSpanRuleDetails(

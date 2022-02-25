@@ -38,14 +38,13 @@ public class SpanProcessingConfigRequestValidator {
 
   private void validateData(ExcludeSpanRuleInfo excludeSpanRuleInfo) {
     validateNonDefaultPresenceOrThrow(excludeSpanRuleInfo, ExcludeSpanRuleInfo.NAME_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        excludeSpanRuleInfo, ExcludeSpanRuleInfo.DISABLED_FIELD_NUMBER);
     this.validateSpanFilter(excludeSpanRuleInfo.getFilter());
   }
 
   private void validateUpdateRule(UpdateExcludeSpanRule updateExcludeSpanRule) {
     validateNonDefaultPresenceOrThrow(updateExcludeSpanRule, UpdateExcludeSpanRule.ID_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(
-        updateExcludeSpanRule, UpdateExcludeSpanRule.NAME_FIELD_NUMBER);
-    this.validateSpanFilter(updateExcludeSpanRule.getFilter());
   }
 
   private void validateSpanFilter(SpanFilter filter) {
