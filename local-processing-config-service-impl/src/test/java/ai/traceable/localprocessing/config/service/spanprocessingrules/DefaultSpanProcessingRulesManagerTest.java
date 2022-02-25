@@ -36,7 +36,7 @@ class DefaultSpanProcessingRulesManagerTest {
   @Test
   void testGetAllExcludeSpanRules() {
     when(configServiceBlockingStub.getAllExcludeSpanRules(any()))
-        .thenReturn(SpanProcessingRulesManagerTestUtils.buildGetAllExcludeSpanRulesResponse());
+        .thenReturn(SpanProcessingRulesManagerTestUtils.buildGetAllExcludeSpanRulesResponse(false));
 
     GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
         spanProcessingRulesManager.getSpanProcessingRulesResponse(
@@ -220,6 +220,40 @@ class DefaultSpanProcessingRulesManagerTest {
                     .setServiceName("vil")
                     .setHash(uuidGenerator.generateId(expectedSpanProcessingRulesSecond))
                     .setSpanProcessingRules(expectedSpanProcessingRulesSecond)
+                    .build())
+            .build(),
+        getSpanProcessingRulesResponse);
+  }
+
+  @Test
+  void testGetAllExcludeSpanRulesRuleDisabled() {
+    when(configServiceBlockingStub.getAllExcludeSpanRules(any()))
+        .thenReturn(SpanProcessingRulesManagerTestUtils.buildGetAllExcludeSpanRulesResponse(true));
+    GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
+        spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            GetSpanProcessingRulesRequest.newBuilder()
+                .addServiceRequests(
+                    SpanProcessingRulesServiceRequest.newBuilder()
+                        .setServiceName("service1")
+                        .build())
+                .build());
+    List<SpanProcessingRulesServiceResponse> spanProcessingRulesServiceResponses =
+        getSpanProcessingRulesResponse.getSpanProcessingRulesServiceResponsesList();
+
+    SpanProcessingRules spanProcessingRules =
+        spanProcessingRulesServiceResponses.get(0).getSpanProcessingRules();
+    List<ExcludeSpanProcessingRule> excludeSpanProcessingRules =
+        spanProcessingRules.getExcludeSpanRulesList();
+
+    SpanProcessingRules expectedSpanProcessingRules = SpanProcessingRules.newBuilder().build();
+    assertEquals(0, excludeSpanProcessingRules.size());
+    assertEquals(
+        GetSpanProcessingRulesResponse.newBuilder()
+            .addSpanProcessingRulesServiceResponses(
+                SpanProcessingRulesServiceResponse.newBuilder()
+                    .setServiceName("service1")
+                    .setHash(uuidGenerator.generateId(expectedSpanProcessingRules))
+                    .setSpanProcessingRules(spanProcessingRules)
                     .build())
             .build(),
         getSpanProcessingRulesResponse);

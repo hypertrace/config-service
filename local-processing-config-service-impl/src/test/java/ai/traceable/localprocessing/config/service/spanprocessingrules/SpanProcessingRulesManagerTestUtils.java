@@ -74,7 +74,8 @@ public class SpanProcessingRulesManagerTestUtils {
         .build();
   }
 
-  public static GetAllExcludeSpanRulesResponse buildGetAllExcludeSpanRulesResponse() {
+  public static GetAllExcludeSpanRulesResponse buildGetAllExcludeSpanRulesResponse(
+      boolean disabled) {
     return GetAllExcludeSpanRulesResponse.newBuilder()
         .addRuleDetails(
             ExcludeSpanRuleDetails.newBuilder()
@@ -84,6 +85,7 @@ public class SpanProcessingRulesManagerTestUtils {
                         .setRuleInfo(
                             ExcludeSpanRuleInfo.newBuilder()
                                 .setName("name")
+                                .setDisabled(disabled)
                                 .setFilter(
                                     buildLogicalFilterSpanProcessing(
                                         LogicalOperator.LOGICAL_OPERATOR_AND,

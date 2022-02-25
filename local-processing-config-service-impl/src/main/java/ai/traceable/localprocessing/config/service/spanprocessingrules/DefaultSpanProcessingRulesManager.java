@@ -106,6 +106,11 @@ public class DefaultSpanProcessingRulesManager implements SpanProcessingRulesMan
   // tree structure
   private Optional<ExcludeSpanProcessingRule> convertExcludeSpanRule(
       ExcludeSpanRule excludeSpanRule, String serviceName, Optional<String> environment) {
+    // check if the rule is disabled
+    if (excludeSpanRule.getRuleInfo().getDisabled()) {
+      return Optional.empty();
+    }
+
     // apply environment filters if any
     if (!matchesEnvironment(excludeSpanRule.getRuleInfo().getFilter(), environment)) {
       return Optional.empty();
