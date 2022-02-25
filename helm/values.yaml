@@ -41,7 +41,7 @@ affinity: {}
 
 topologySpreadConstraints: []
 
-javaOpts: "-XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=60.0 -XX:MaxDirectMemorySize=128M"
+javaOpts: "-XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=60.0 -XX:MaxDirectMemorySize=128M -XX:+ExitOnOutOfMemoryError"
 
 livenessProbe:
   initialDelaySeconds: 10
