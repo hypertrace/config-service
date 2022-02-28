@@ -122,18 +122,21 @@ message ApiNamingRuleDetails {
 message ApiNamingRuleInfo {
   string name = 1;
   SpanFilter filter = 2;
-  string regex = 3;
-  string value = 4;
-  bool disabled = 5;
+  ApiNamingRuleConfig rule_config = 3;
+  bool disabled = 4;
 }
 
 message UpdateApiNamingRule {
   string id = 1;
   string name = 2;
   SpanFilter filter = 3;
-  string regex = 4;
-  string value = 5;
-  bool disabled = 6;
+  ApiNamingRuleConfig rule_config = 4;
+  bool disabled = 5;
+}
+
+message ApiNamingRuleConfig {
+  string regex = 1;
+  string value = 2;
 }
 
 message ApiNamingRuleMetadata {
