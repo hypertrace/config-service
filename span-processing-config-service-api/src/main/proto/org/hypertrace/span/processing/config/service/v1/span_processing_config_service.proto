@@ -4,6 +4,7 @@ package org.hypertrace.span.processing.config.service.v1;
 
 option java_multiple_files = true;
 
+import "org/hypertrace/span/processing/config/service/v1/span_filter.proto";
 import "google/protobuf/timestamp.proto";
 
 service SpanProcessingConfigService {
@@ -14,6 +15,14 @@ service SpanProcessingConfigService {
   rpc GetAllExcludeSpanRules(GetAllExcludeSpanRulesRequest) returns (GetAllExcludeSpanRulesResponse) {}
 
   rpc DeleteExcludeSpanRule(DeleteExcludeSpanRuleRequest) returns (DeleteExcludeSpanRuleResponse) {}
+
+  rpc CreateApiNamingRule(CreateApiNamingRuleRequest) returns (CreateApiNamingRuleResponse) {}
+
+  rpc UpdateApiNamingRule(UpdateApiNamingRuleRequest) returns (UpdateApiNamingRuleResponse) {}
+
+  rpc GetAllApiNamingRules(GetAllApiNamingRulesRequest) returns (GetAllApiNamingRulesResponse) {}
+
+  rpc DeleteApiNamingRule(DeleteApiNamingRuleRequest) returns (DeleteApiNamingRuleResponse) {}
 }
 
 message CreateExcludeSpanRuleRequest {
@@ -72,52 +81,65 @@ message UpdateExcludeSpanRule {
   bool disabled = 4;
 }
 
-message SpanFilter {
-  oneof span_filter_expression {
-    LogicalSpanFilterExpression logical_span_filter = 1;
-    RelationalSpanFilterExpression relational_span_filter = 2;
-  }
+message CreateApiNamingRuleRequest {
+  ApiNamingRuleInfo rule_info = 1;
 }
 
-message LogicalSpanFilterExpression {
-  LogicalOperator operator = 1;
-  repeated SpanFilter operands = 2;
+message CreateApiNamingRuleResponse {
+  ApiNamingRuleDetails rule_details = 1;
 }
 
-message RelationalSpanFilterExpression {
-  oneof left_operand {
-    string span_attribute_key = 1;
-    Field field = 2;
-  }
-  RelationalOperator operator = 3;
-  SpanFilterValue right_operand = 4;
+message GetAllApiNamingRulesRequest {}
+
+message GetAllApiNamingRulesResponse {
+  repeated ApiNamingRuleDetails rule_details = 1;
 }
 
-message SpanFilterValue {
-  oneof value {
-    string string_value = 1;
-  }
+message UpdateApiNamingRuleRequest {
+  UpdateApiNamingRule rule = 1;
 }
 
-enum LogicalOperator {
-  LOGICAL_OPERATOR_UNSPECIFIED = 0;
-  LOGICAL_OPERATOR_AND = 1;
-  LOGICAL_OPERATOR_OR = 2;
+message UpdateApiNamingRuleResponse {
+  ApiNamingRuleDetails rule_details = 1;
 }
 
-enum Field {
-  FIELD_UNSPECIFIED = 0;
-  FIELD_URL = 1;
-  FIELD_SERVICE_NAME = 2;
-  FIELD_ENVIRONMENT_NAME = 3;
+message DeleteApiNamingRuleRequest {
+  string id = 1;
 }
 
-enum RelationalOperator {
-  RELATIONAL_OPERATOR_UNSPECIFIED = 0;
-  RELATIONAL_OPERATOR_EQUALS = 1;
-  RELATIONAL_OPERATOR_NOT_EQUALS = 2;
-  RELATIONAL_OPERATOR_CONTAINS = 3;
-  RELATIONAL_OPERATOR_STARTS_WITH = 4;
-  RELATIONAL_OPERATOR_ENDS_WITH = 5;
-  RELATIONAL_OPERATOR_REGEX_MATCH = 6;
+message DeleteApiNamingRuleResponse {}
+
+message ApiNamingRule {
+  string id = 1;
+  ApiNamingRuleInfo rule_info = 2;
+}
+
+message ApiNamingRuleDetails {
+  ApiNamingRule rule = 1;
+  ApiNamingRuleMetadata metadata = 2;
+}
+
+message ApiNamingRuleInfo {
+  string name = 1;
+  SpanFilter filter = 2;
+  ApiNamingRuleConfig rule_config = 3;
+  bool disabled = 4;
+}
+
+message UpdateApiNamingRule {
+  string id = 1;
+  string name = 2;
+  SpanFilter filter = 3;
+  ApiNamingRuleConfig rule_config = 4;
+  bool disabled = 5;
+}
+
+message ApiNamingRuleConfig {
+  string regex = 1;
+  string value = 2;
+}
+
+message ApiNamingRuleMetadata {
+  google.protobuf.Timestamp creation_timestamp = 1;
+  google.protobuf.Timestamp last_updated_timestamp = 2;
 }
