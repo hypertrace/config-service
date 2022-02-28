@@ -11,6 +11,7 @@ import org.hypertrace.span.processing.config.service.store.ApiNamingRulesConfigS
 import org.hypertrace.span.processing.config.service.store.ExcludeSpanRulesConfigStore;
 import org.hypertrace.span.processing.config.service.utils.TimestampConverter;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRule;
+import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleDetails;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleMetadata;
@@ -285,6 +286,8 @@ class SpanProcessingConfigServiceImpl
                 .setName(updateApiNamingRule.getName())
                 .setFilter(updateApiNamingRule.getFilter())
                 .setDisabled(updateApiNamingRule.getDisabled())
+                .setRuleConfig(
+                    ApiNamingRuleConfig.newBuilder(updateApiNamingRule.getRuleConfig()).build())
                 .build())
         .build();
   }

@@ -11,6 +11,7 @@ import io.grpc.StatusRuntimeException;
 import java.util.Objects;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
@@ -106,19 +107,7 @@ class SpanProcessingRequestValidatorTest {
                         ExcludeSpanRuleInfo.newBuilder()
                             .setName("name")
                             .setDisabled(true)
-                            .setFilter(
-                                SpanFilter.newBuilder()
-                                    .setRelationalSpanFilter(
-                                        RelationalSpanFilterExpression.newBuilder()
-                                            .setField(Field.FIELD_SERVICE_NAME)
-                                            .setOperator(
-                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
-                                            .setRightOperand(
-                                                SpanFilterValue.newBuilder()
-                                                    .setStringValue("a")
-                                                    .build())
-                                            .build())
-                                    .build())
+                            .setFilter(buildTestFilter())
                             .build())
                     .build()));
   }
@@ -159,19 +148,7 @@ class SpanProcessingRequestValidatorTest {
                         UpdateExcludeSpanRule.newBuilder()
                             .setId("id")
                             .setName("name")
-                            .setFilter(
-                                SpanFilter.newBuilder()
-                                    .setRelationalSpanFilter(
-                                        RelationalSpanFilterExpression.newBuilder()
-                                            .setField(Field.FIELD_SERVICE_NAME)
-                                            .setOperator(
-                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
-                                            .setRightOperand(
-                                                SpanFilterValue.newBuilder()
-                                                    .setStringValue("a")
-                                                    .build())
-                                            .build())
-                                    .build())
+                            .setFilter(buildTestFilter())
                             .build())
                     .build()));
   }
@@ -231,6 +208,19 @@ class SpanProcessingRequestValidatorTest {
                     .setRuleInfo(ApiNamingRuleInfo.newBuilder().build())
                     .build()));
 
+    assertInvalidArgStatusContaining(
+        "ApiNamingRuleConfig",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateApiNamingRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ApiNamingRuleInfo.newBuilder()
+                            .setName("name")
+                            .setFilter(buildTestFilter())
+                            .build())
+                    .build()));
+
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
@@ -240,19 +230,12 @@ class SpanProcessingRequestValidatorTest {
                         ApiNamingRuleInfo.newBuilder()
                             .setName("name")
                             .setDisabled(true)
-                            .setFilter(
-                                SpanFilter.newBuilder()
-                                    .setRelationalSpanFilter(
-                                        RelationalSpanFilterExpression.newBuilder()
-                                            .setField(Field.FIELD_SERVICE_NAME)
-                                            .setOperator(
-                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
-                                            .setRightOperand(
-                                                SpanFilterValue.newBuilder()
-                                                    .setStringValue("a")
-                                                    .build())
-                                            .build())
+                            .setRuleConfig(
+                                ApiNamingRuleConfig.newBuilder()
+                                    .setRegex("regex")
+                                    .setValue("value")
                                     .build())
+                            .setFilter(buildTestFilter())
                             .build())
                     .build()));
   }
@@ -284,6 +267,20 @@ class SpanProcessingRequestValidatorTest {
                     .setRule(UpdateApiNamingRule.newBuilder().setId("id").build())
                     .build()));
 
+    assertInvalidArgStatusContaining(
+        "ApiNamingRuleConfig",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                UpdateApiNamingRuleRequest.newBuilder()
+                    .setRule(
+                        UpdateApiNamingRule.newBuilder()
+                            .setId("id")
+                            .setName("name")
+                            .setFilter(buildTestFilter())
+                            .build())
+                    .build()));
+
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
@@ -293,19 +290,12 @@ class SpanProcessingRequestValidatorTest {
                         UpdateApiNamingRule.newBuilder()
                             .setId("id")
                             .setName("name")
-                            .setFilter(
-                                SpanFilter.newBuilder()
-                                    .setRelationalSpanFilter(
-                                        RelationalSpanFilterExpression.newBuilder()
-                                            .setField(Field.FIELD_SERVICE_NAME)
-                                            .setOperator(
-                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
-                                            .setRightOperand(
-                                                SpanFilterValue.newBuilder()
-                                                    .setStringValue("a")
-                                                    .build())
-                                            .build())
+                            .setRuleConfig(
+                                ApiNamingRuleConfig.newBuilder()
+                                    .setRegex("regex")
+                                    .setValue("value")
                                     .build())
+                            .setFilter(buildTestFilter())
                             .build())
                     .build()));
   }
@@ -317,5 +307,16 @@ class SpanProcessingRequestValidatorTest {
     assertTrue(
         Objects.requireNonNull(exception.getStatus().getDescription()).contains(text),
         "Expected arg to contain " + text + " but was " + exception.getMessage());
+  }
+
+  private SpanFilter buildTestFilter() {
+    return SpanFilter.newBuilder()
+        .setRelationalSpanFilter(
+            RelationalSpanFilterExpression.newBuilder()
+                .setField(Field.FIELD_SERVICE_NAME)
+                .setOperator(RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                .setRightOperand(SpanFilterValue.newBuilder().setStringValue("a").build())
+                .build())
+        .build();
   }
 }

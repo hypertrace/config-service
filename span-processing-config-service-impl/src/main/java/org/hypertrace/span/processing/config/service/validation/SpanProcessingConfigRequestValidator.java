@@ -6,6 +6,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 
 import io.grpc.Status;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
@@ -76,12 +77,19 @@ public class SpanProcessingConfigRequestValidator {
   private void validateData(ApiNamingRuleInfo apiNamingRuleInfo) {
     validateNonDefaultPresenceOrThrow(apiNamingRuleInfo, ApiNamingRuleInfo.NAME_FIELD_NUMBER);
     this.validateSpanFilter(apiNamingRuleInfo.getFilter());
+    this.validateDataConfig(apiNamingRuleInfo.getRuleConfig());
+  }
+
+  private void validateDataConfig(ApiNamingRuleConfig apiNamingRuleConfig) {
+    validateNonDefaultPresenceOrThrow(apiNamingRuleConfig, ApiNamingRuleConfig.REGEX_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(apiNamingRuleConfig, ApiNamingRuleConfig.VALUE_FIELD_NUMBER);
   }
 
   private void validateUpdateRule(UpdateApiNamingRule updateApiNamingRule) {
     validateNonDefaultPresenceOrThrow(updateApiNamingRule, UpdateApiNamingRule.ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(updateApiNamingRule, UpdateApiNamingRule.NAME_FIELD_NUMBER);
     this.validateSpanFilter(updateApiNamingRule.getFilter());
+    this.validateDataConfig(updateApiNamingRule.getRuleConfig());
   }
 
   private void validateSpanFilter(SpanFilter filter) {

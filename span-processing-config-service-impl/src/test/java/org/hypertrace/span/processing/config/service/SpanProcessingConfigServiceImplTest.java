@@ -16,6 +16,7 @@ import org.hypertrace.span.processing.config.service.store.ApiNamingRulesConfigS
 import org.hypertrace.span.processing.config.service.store.ExcludeSpanRulesConfigStore;
 import org.hypertrace.span.processing.config.service.utils.TimestampConverter;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRule;
+import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleDetails;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRuleRequest;
@@ -204,6 +205,11 @@ class SpanProcessingConfigServiceImplTest {
                         ApiNamingRuleInfo.newBuilder()
                             .setName("ruleName1")
                             .setDisabled(true)
+                            .setRuleConfig(
+                                ApiNamingRuleConfig.newBuilder()
+                                    .setRegex("regex")
+                                    .setValue("value")
+                                    .build())
                             .setFilter(
                                 SpanFilter.newBuilder()
                                     .setRelationalSpanFilter(
@@ -231,6 +237,11 @@ class SpanProcessingConfigServiceImplTest {
                         ApiNamingRuleInfo.newBuilder()
                             .setName("ruleName2")
                             .setDisabled(true)
+                            .setRuleConfig(
+                                ApiNamingRuleConfig.newBuilder()
+                                    .setRegex("regex")
+                                    .setValue("value")
+                                    .build())
                             .setFilter(
                                 SpanFilter.newBuilder()
                                     .setRelationalSpanFilter(
@@ -264,6 +275,11 @@ class SpanProcessingConfigServiceImplTest {
                             .setId(firstCreatedApiNamingRule.getId())
                             .setName("updatedRuleName1")
                             .setDisabled(false)
+                            .setRuleConfig(
+                                ApiNamingRuleConfig.newBuilder()
+                                    .setRegex("regex")
+                                    .setValue("value")
+                                    .build())
                             .setFilter(
                                 SpanFilter.newBuilder()
                                     .setRelationalSpanFilter(
