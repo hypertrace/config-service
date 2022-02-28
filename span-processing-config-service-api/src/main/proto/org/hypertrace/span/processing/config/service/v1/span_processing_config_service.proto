@@ -122,14 +122,18 @@ message ApiNamingRuleDetails {
 message ApiNamingRuleInfo {
   string name = 1;
   SpanFilter filter = 2;
-  bool disabled = 3;
+  string regex = 3;
+  string value = 4;
+  bool disabled = 5;
 }
 
 message UpdateApiNamingRule {
   string id = 1;
   string name = 2;
   SpanFilter filter = 3;
-  bool disabled = 4;
+  string regex = 4;
+  string value = 5;
+  bool disabled = 6;
 }
 
 message ApiNamingRuleMetadata {
