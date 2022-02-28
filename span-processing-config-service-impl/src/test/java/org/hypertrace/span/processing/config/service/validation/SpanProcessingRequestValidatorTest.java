@@ -11,15 +11,21 @@ import io.grpc.StatusRuntimeException;
 import java.util.Objects;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
+import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
+import org.hypertrace.span.processing.config.service.v1.DeleteApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.Field;
+import org.hypertrace.span.processing.config.service.v1.GetAllApiNamingRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.RelationalOperator;
 import org.hypertrace.span.processing.config.service.v1.RelationalSpanFilterExpression;
 import org.hypertrace.span.processing.config.service.v1.SpanFilter;
 import org.hypertrace.span.processing.config.service.v1.SpanFilterValue;
+import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRule;
+import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.UpdateExcludeSpanRule;
 import org.hypertrace.span.processing.config.service.v1.UpdateExcludeSpanRuleRequest;
 import org.junit.jupiter.api.Test;
@@ -37,7 +43,7 @@ class SpanProcessingRequestValidatorTest {
   @Mock private RequestContext mockRequestContext;
 
   @Test
-  void validatesGetRequest() {
+  void validatesExcludeSpanRulesGetRequest() {
     assertInvalidArgStatusContaining(
         "Tenant ID",
         () ->
@@ -52,7 +58,7 @@ class SpanProcessingRequestValidatorTest {
   }
 
   @Test
-  void validatesDeleteRequest() {
+  void validatesExcludeSpanRuleDeleteRequest() {
     assertInvalidArgStatusContaining(
         "Tenant ID",
         () ->
@@ -74,7 +80,7 @@ class SpanProcessingRequestValidatorTest {
   }
 
   @Test
-  void validatesCreateRequest() {
+  void validatesExcludeSpanRuleCreateRequest() {
     assertInvalidArgStatusContaining(
         "Tenant ID",
         () ->
@@ -118,7 +124,7 @@ class SpanProcessingRequestValidatorTest {
   }
 
   @Test
-  void validatesUpdateRequest() {
+  void validatesExcludeSpanRuleUpdateRequest() {
     assertInvalidArgStatusContaining(
         "Tenant ID",
         () ->
@@ -151,6 +157,140 @@ class SpanProcessingRequestValidatorTest {
                 UpdateExcludeSpanRuleRequest.newBuilder()
                     .setRule(
                         UpdateExcludeSpanRule.newBuilder()
+                            .setId("id")
+                            .setName("name")
+                            .setFilter(
+                                SpanFilter.newBuilder()
+                                    .setRelationalSpanFilter(
+                                        RelationalSpanFilterExpression.newBuilder()
+                                            .setField(Field.FIELD_SERVICE_NAME)
+                                            .setOperator(
+                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                            .setRightOperand(
+                                                SpanFilterValue.newBuilder()
+                                                    .setStringValue("a")
+                                                    .build())
+                                            .build())
+                                    .build())
+                            .build())
+                    .build()));
+  }
+
+  @Test
+  void validatesApiNamingRulesGetRequest() {
+    assertInvalidArgStatusContaining(
+        "Tenant ID",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, GetAllApiNamingRulesRequest.newBuilder().build()));
+
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, GetAllApiNamingRulesRequest.newBuilder().build()));
+  }
+
+  @Test
+  void validatesApiNamingRuleDeleteRequest() {
+    assertInvalidArgStatusContaining(
+        "Tenant ID",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, DeleteApiNamingRuleRequest.newBuilder().build()));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+
+    assertInvalidArgStatusContaining(
+        "DeleteApiNamingRuleRequest.id",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, DeleteApiNamingRuleRequest.newBuilder().setId("").build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                DeleteApiNamingRuleRequest.newBuilder().setId("rule-id").build()));
+  }
+
+  @Test
+  void validatesApiNamingRuleCreateRequest() {
+    assertInvalidArgStatusContaining(
+        "Tenant ID",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, CreateApiNamingRuleRequest.newBuilder().build()));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+
+    assertInvalidArgStatusContaining(
+        "ApiNamingRuleInfo.name",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateApiNamingRuleRequest.newBuilder()
+                    .setRuleInfo(ApiNamingRuleInfo.newBuilder().build())
+                    .build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateApiNamingRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ApiNamingRuleInfo.newBuilder()
+                            .setName("name")
+                            .setDisabled(true)
+                            .setFilter(
+                                SpanFilter.newBuilder()
+                                    .setRelationalSpanFilter(
+                                        RelationalSpanFilterExpression.newBuilder()
+                                            .setField(Field.FIELD_SERVICE_NAME)
+                                            .setOperator(
+                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                            .setRightOperand(
+                                                SpanFilterValue.newBuilder()
+                                                    .setStringValue("a")
+                                                    .build())
+                                            .build())
+                                    .build())
+                            .build())
+                    .build()));
+  }
+
+  @Test
+  void validatesApiNamingRuleUpdateRequest() {
+    assertInvalidArgStatusContaining(
+        "Tenant ID",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, UpdateApiNamingRuleRequest.newBuilder().build()));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+
+    assertInvalidArgStatusContaining(
+        "UpdateApiNamingRule.id",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                UpdateApiNamingRuleRequest.newBuilder()
+                    .setRule(UpdateApiNamingRule.newBuilder().setName("name").build())
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "UpdateApiNamingRule.name",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                UpdateApiNamingRuleRequest.newBuilder()
+                    .setRule(UpdateApiNamingRule.newBuilder().setId("id").build())
+                    .build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                UpdateApiNamingRuleRequest.newBuilder()
+                    .setRule(
+                        UpdateApiNamingRule.newBuilder()
                             .setId("id")
                             .setName("name")
                             .setFilter(
