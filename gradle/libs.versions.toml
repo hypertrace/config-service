@@ -6,7 +6,7 @@ hypertrace-grpcutils = "0.6.2"
 hypertrace-framework = "0.1.29"
 lombok = "1.18.20"
 jackson = "2.12.4"
-confluent = "6.0.1"
+confluent = "6.0.5"
 netty = "4.1.71.Final"
 kotlin = "1.4.32"
 
