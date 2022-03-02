@@ -18,7 +18,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterators;
 import com.google.protobuf.Value;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -33,6 +32,7 @@ import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigResourceContext;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
+import org.hypertrace.core.documentstore.CloseableIterator;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.DatastoreProvider;
@@ -73,16 +73,16 @@ class DocumentConfigStoreTest {
 
   @Test
   void writeConfig() throws IOException {
-    List<Document> documentList =
-        Collections.singletonList(
-            getConfigDocument(
-                configResourceContext.getContext(),
-                CONFIG_VERSION,
-                config1,
-                TIMESTAMP1,
-                TIMESTAMP2));
-    when(collection.search(any(Query.class)))
-        .thenReturn(documentList.iterator(), documentList.iterator());
+    CloseableIteratorImpl iterator =
+        new CloseableIteratorImpl(
+            Collections.singletonList(
+                getConfigDocument(
+                    configResourceContext.getContext(),
+                    CONFIG_VERSION,
+                    config1,
+                    TIMESTAMP1,
+                    TIMESTAMP2)));
+    when(collection.search(any(Query.class))).thenReturn(iterator);
 
     UpsertedConfig upsertedConfig =
         configStore.writeConfig(configResourceContext, USER_ID, config1);
@@ -109,11 +109,11 @@ class DocumentConfigStoreTest {
 
   @Test
   void getConfig() throws IOException {
-    List<Document> documentList =
-        Collections.singletonList(
-            getConfigDocument("context", CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP2));
-    when(collection.search(any(Query.class)))
-        .thenReturn(documentList.iterator(), documentList.iterator());
+    CloseableIteratorImpl iterator =
+        new CloseableIteratorImpl(
+            Collections.singletonList(
+                getConfigDocument("context", CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP2)));
+    when(collection.search(any(Query.class))).thenReturn(iterator);
 
     ContextSpecificConfig expectedConfig =
         ContextSpecificConfig.newBuilder()
@@ -128,12 +128,13 @@ class DocumentConfigStoreTest {
 
   @Test
   void getAllConfigs() throws IOException {
-    List<Document> documentList =
-        List.of(
-            getConfigDocument(CONTEXT1, 1L, config2, TIMESTAMP3, TIMESTAMP3),
-            getConfigDocument("context", CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP2),
-            getConfigDocument("context", CONFIG_VERSION - 1, config2, TIMESTAMP1, TIMESTAMP1));
-    when(collection.search(any(Query.class))).thenReturn(documentList.iterator());
+    CloseableIteratorImpl iterator =
+        new CloseableIteratorImpl(
+            List.of(
+                getConfigDocument(CONTEXT1, 1L, config2, TIMESTAMP3, TIMESTAMP3),
+                getConfigDocument("context", CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP2),
+                getConfigDocument("context", CONFIG_VERSION - 1, config2, TIMESTAMP1, TIMESTAMP1)));
+    when(collection.search(any(Query.class))).thenReturn(iterator);
 
     List<ContextSpecificConfig> contextSpecificConfigList =
         configStore.getAllConfigs(new ConfigResource(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID));
@@ -161,15 +162,25 @@ class DocumentConfigStoreTest {
     ConfigResourceContext resourceContext1 = getConfigResourceContext("context-1");
     ConfigResourceContext resourceContext2 = getConfigResourceContext("context-2");
     long updateTime = 1234;
-    Iterator<Document> firstGetResult =
-        Iterators.forArray(
-            getConfigDocument(
-                resourceContext1.getContext(), CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP1));
+    CloseableIterator<Document> firstGetResult =
+        new CloseableIteratorImpl(
+            List.of(
+                getConfigDocument(
+                    resourceContext1.getContext(),
+                    CONFIG_VERSION,
+                    config1,
+                    TIMESTAMP1,
+                    TIMESTAMP1)));
 
-    Iterator<Document> secondGetResult =
-        Iterators.forArray(
-            getConfigDocument(
-                resourceContext2.getContext(), CONFIG_VERSION, config2, TIMESTAMP2, TIMESTAMP2));
+    CloseableIterator<Document> secondGetResult =
+        new CloseableIteratorImpl(
+            List.of(
+                getConfigDocument(
+                    resourceContext2.getContext(),
+                    CONFIG_VERSION,
+                    config2,
+                    TIMESTAMP2,
+                    TIMESTAMP2)));
     when(collection.search(any(Query.class))).thenReturn(firstGetResult, secondGetResult);
     when(this.mockClock.millis()).thenReturn(updateTime);
     List<UpsertedConfig> upsertedConfigs =
@@ -227,6 +238,29 @@ class DocumentConfigStoreTest {
         config,
         creationTimestamp,
         updateTimestamp);
+  }
+
+  static class CloseableIteratorImpl implements CloseableIterator<Document> {
+    Iterator<Document> documentIterator;
+
+    public CloseableIteratorImpl(List<Document> documents) {
+      documentIterator = documents.iterator();
+    }
+
+    @Override
+    public void close() throws IOException {
+      // nothing to do here
+    }
+
+    @Override
+    public boolean hasNext() {
+      return documentIterator.hasNext();
+    }
+
+    @Override
+    public Document next() {
+      return documentIterator.next();
+    }
   }
 
   public static class MockDatastore implements Datastore {
