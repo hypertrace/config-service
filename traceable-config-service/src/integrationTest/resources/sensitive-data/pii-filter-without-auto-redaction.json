@@ -31,12 +31,14 @@
     {
       "regex": "http.request.header.h1",
       "redactionStrategy": "REDACTION_STRATEGY_HASH",
-      "fqn": true
+      "fqn": true,
+      "ruleId": "placeholder-id"
     },
     {
       "regex": "http.request.header.h2",
       "redactionStrategy": "REDACTION_STRATEGY_HASH",
-      "fqn": true
+      "fqn": true,
+      "ruleId": "placeholder-id"
     }
   ],
   "complexData": [

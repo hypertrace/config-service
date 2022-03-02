@@ -184,36 +184,44 @@
     {
       "regex": "http.request.header.h1",
       "redactionStrategy": "REDACTION_STRATEGY_HASH",
-      "fqn": true
+      "fqn": true,
+      "ruleId": "placeholder-id"
     },
     {
       "regex": "http.request.header.h2",
       "redactionStrategy": "REDACTION_STRATEGY_HASH",
-      "fqn": true
+      "fqn": true,
+      "ruleId": "placeholder-id"
     },
     {
       "regex": "^access_token(\\[\\d+\\])?$",
-      "category": "auth"
+      "category": "auth",
+      "ruleId": "placeholder-id"
     },
     {
       "regex": "^api_key(\\[\\d+\\])?$",
-      "category": "auth"
+      "category": "auth",
+      "ruleId": "placeholder-id"
     },
     {
       "regex": "^apikey(\\[\\d+\\])?$",
-      "category": "auth"
+      "category": "auth",
+      "ruleId": "placeholder-id"
     },
     {
       "regex": "^password(\\[\\d+\\])?$",
-      "category": "auth"
+      "category": "auth",
+      "ruleId": "placeholder-id"
     },
     {
       "regex": "^passwd(\\[\\d+\\])?$",
-      "category": "auth"
+      "category": "auth",
+      "ruleId": "placeholder-id"
     },
     {
       "regex": "^secret(\\[\\d+\\])?$",
-      "category": "auth"
+      "category": "auth",
+      "ruleId": "placeholder-id"
     }
   ],
   "complexData": [
