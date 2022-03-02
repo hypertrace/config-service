@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package ai.traceable.localprocessing.config.service.v1;
+
+option java_multiple_files = true;
+option go_package = "github.com/Traceableai/config-service/localprocessing/v1";
+
+import "google/protobuf/duration.proto";
+
+message RateLimitConfig {
+  RateLimit trace_limit_per_endpoint = 1;
+  RateLimit trace_limit_global = 2;
+  google.protobuf.Duration api_endpoint_cache_duration = 3;
+}
+
+message RateLimit {
+  oneof limit {
+    WindowedRateLimit fixed_window_limit = 1;
+  }
+}
+
+message WindowedRateLimit {
+  int64 quantity_allowed = 1;
+  google.protobuf.Duration window_duration = 2;
+}

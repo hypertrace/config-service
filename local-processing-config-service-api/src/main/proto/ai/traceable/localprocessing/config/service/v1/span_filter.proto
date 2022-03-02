@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package ai.traceable.localprocessing.config.service.v1;
+
+option java_multiple_files = true;
+option go_package = "github.com/Traceableai/config-service/localprocessing/v1";
+
+message SpanFilter {
+  oneof span_filter_expression {
+    LogicalSpanFilterExpression logical_filter = 1;
+    RelationalSpanFilterExpression relational_filter = 2;
+  }
+}
+
+message LogicalSpanFilterExpression {
+  LogicalOperator operator = 1;
+  repeated SpanFilter operands = 2;
+}
+
+message RelationalSpanFilterExpression {
+  string span_attribute_key = 1;
+  RelationalOperator operator = 2;
+  SpanFilterValue right_operand = 3;
+}
+
+message SpanFilterValue {
+  oneof value {
+    string string_value = 1;
+  }
+}
+
+enum LogicalOperator {
+  LOGICAL_OPERATOR_UNSPECIFIED = 0;
+  LOGICAL_OPERATOR_AND = 1;
+  LOGICAL_OPERATOR_OR = 2;
+}
+
+enum RelationalOperator {
+  RELATIONAL_OPERATOR_UNSPECIFIED = 0;
+  RELATIONAL_OPERATOR_EQUALS = 1;
+  RELATIONAL_OPERATOR_NOT_EQUALS = 2;
+  RELATIONAL_OPERATOR_CONTAINS = 3;
+  RELATIONAL_OPERATOR_STARTS_WITH = 4;
+  RELATIONAL_OPERATOR_ENDS_WITH = 5;
+  RELATIONAL_OPERATOR_REGEX_MATCH = 6;
+}

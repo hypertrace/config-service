@@ -8,6 +8,8 @@ option go_package = "github.com/Traceableai/config-service/localprocessing/v1";
 import "ai/traceable/localprocessing/config/service/v1/protection_mode_config.proto";
 import "ai/traceable/localprocessing/config/service/v1/sampling_policies_config.proto";
 import "ai/traceable/localprocessing/config/service/v1/api_naming_model.proto";
+import "ai/traceable/localprocessing/config/service/v1/rate_limit_config.proto";
+import "ai/traceable/localprocessing/config/service/v1/span_filter.proto";
 
 service LocalProcessingConfigService {
   rpc GetLocalProcessingConfig(GetLocalProcessingConfigRequest) returns (GetLocalProcessingConfigResponse) {}
@@ -69,6 +71,7 @@ message ModsecConfig {
 
 message SpanProcessingRules {
   repeated ExcludeSpanProcessingRule exclude_span_rules = 1;
+  optional RateLimitConfig rate_limit_config = 2;
 }
 
 message ExcludeSpanProcessingRule {
@@ -78,44 +81,4 @@ message ExcludeSpanProcessingRule {
 message ExcludeSpanProcessingRuleInfo {
   string id = 1;
   SpanFilter filter = 2;
-}
-
-message SpanFilter {
-  oneof span_filter_expression {
-    LogicalSpanFilterExpression logical_filter = 1;
-    RelationalSpanFilterExpression relational_filter = 2;
-  }
-}
-
-message LogicalSpanFilterExpression {
-  LogicalOperator operator = 1;
-  repeated SpanFilter operands = 2;
-}
-
-message RelationalSpanFilterExpression {
-  string span_attribute_key = 1;
-  RelationalOperator operator = 2;
-  SpanFilterValue right_operand = 3;
-}
-
-message SpanFilterValue {
-  oneof value {
-    string string_value = 1;
-  }
-}
-
-enum LogicalOperator {
-  LOGICAL_OPERATOR_UNSPECIFIED = 0;
-  LOGICAL_OPERATOR_AND = 1;
-  LOGICAL_OPERATOR_OR = 2;
-}
-
-enum RelationalOperator {
-  RELATIONAL_OPERATOR_UNSPECIFIED = 0;
-  RELATIONAL_OPERATOR_EQUALS = 1;
-  RELATIONAL_OPERATOR_NOT_EQUALS = 2;
-  RELATIONAL_OPERATOR_CONTAINS = 3;
-  RELATIONAL_OPERATOR_STARTS_WITH = 4;
-  RELATIONAL_OPERATOR_ENDS_WITH = 5;
-  RELATIONAL_OPERATOR_REGEX_MATCH = 6;
 }
