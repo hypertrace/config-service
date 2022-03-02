@@ -25,7 +25,7 @@ hypertrace-framework-container = { module = "org.hypertrace.core.serviceframewor
 hypertrace-framework-metrics = { module = "org.hypertrace.core.serviceframework:platform-service-framework", version.ref = "hypertrace-framework" }
 hypertrace-framework-integrationtest = { module = "org.hypertrace.core.serviceframework:integrationtest-service-framework", version.ref = "hypertrace-framework" }
 
-hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:document-store", version = "0.5.7" }
+hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:document-store", version = "0.6.10" }
 hypertrace-eventstore = { module = "org.hypertrace.core.eventstore:event-store", version = "0.1.2" }
 
 guava = { module = "com.google.guava:guava", version = "30.1.1-jre" }
