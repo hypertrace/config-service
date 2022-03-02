@@ -44,7 +44,7 @@ class DefaultRegularModsecDetectionManagerTest {
                     List.of(
                         ModsecCrsRulesData.newBuilder()
                             .setModsecCrsRulesBlob("Tester rule blob")
-                            .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR)
+                            .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)
                             .build()))
                 .build());
 

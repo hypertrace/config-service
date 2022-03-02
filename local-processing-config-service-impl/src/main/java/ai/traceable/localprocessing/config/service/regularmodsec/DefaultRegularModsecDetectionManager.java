@@ -23,16 +23,19 @@ class DefaultRegularModsecDetectionManager implements RegularModsecDetectionMana
 
   @Override
   public RegularModsecDetectionRules getDetectionRules(String requestHash) {
+    // https://traceableai.atlassian.net/browse/ENG-15496
+    // Only Safe CRS rules will be evaluated on sensitive params on Traceable Platform Agent due to
+    // perf constraints
     GetModsecCrsRulesResponse response =
         configServiceBlockingStub.getModsecCrsRules(
             GetModsecCrsRulesRequest.newBuilder()
-                .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
+                .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
                 .build());
 
     String regularCrsRulesBlob;
     if (response.getModsecCrsRulesList().size() == 1
         && response.getModsecCrsRulesList().get(0).getSubRuleType()
-            == AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR) {
+            == AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE) {
       // The request was done for only one modsec type so we should be getting only 1 element
       regularCrsRulesBlob = response.getModsecCrsRulesList().get(0).getModsecCrsRulesBlob();
     } else {

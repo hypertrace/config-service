@@ -296,7 +296,7 @@ public class LocalProcessingConfigServiceIntegrationTest
     ModsecCrsRulesHandler modsecCrsRulesHandler = new ModsecCrsRulesHandler(new ModsecRuleUtils());
     ModsecRulesRegistry registry =
         new ModsecRulesRegistryImpl(new ConfigConverter(), modsecCrsRulesHandler);
-    return registry.getModsecCrsRulesBlob(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR);
+    return registry.getModsecCrsRulesBlob(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);
   }
 
   private void createAndGetCustomSignatureRule(EventType eventType) {
