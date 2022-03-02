@@ -40,7 +40,7 @@ hypertrace-configservice-changeeventgenerator = { module = "org.hypertrace.confi
 hypertrace-framework-container = { module = "org.hypertrace.core.serviceframework:platform-service-framework", version.ref = "hypertrace-framework" }
 hypertrace-framework-metrics = { module = "org.hypertrace.core.serviceframework:platform-metrics", version.ref = "hypertrace-framework" }
 hypertrace-framework-integrationtest = { module = "org.hypertrace.core.serviceframework:integrationtest-service-framework", version.ref = "hypertrace-framework" }
-hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:document-store", version = "0.5.7" }
+hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:document-store", version = "0.6.10" }
 
 # https://traceableai.atlassian.net/wiki/spaces/Engineering/pages/1746337898/Config+Service+-+Dependency+Hell
 # We would ideally want to segregate config service into 2 services - agent-configuration-service, and config-service and not have config-service depend on entity-service
