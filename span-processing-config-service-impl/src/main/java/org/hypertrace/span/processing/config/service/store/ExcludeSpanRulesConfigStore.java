@@ -19,7 +19,7 @@ public class ExcludeSpanRulesConfigStore extends IdentifiedObjectStore<ExcludeSp
 
   private static final String EXCLUDE_SPAN_RULES_RESOURCE_NAME = "exclude-span-rules";
   private static final String EXCLUDE_SPAN_RULES_CONFIG_RESOURCE_NAMESPACE =
-      "exclude-span-rules-config";
+      "span-processing-rules-config";
   private final TimestampConverter timestampConverter;
 
   @Inject

@@ -19,7 +19,7 @@ public class ApiNamingRulesConfigStore extends IdentifiedObjectStore<ApiNamingRu
 
   private static final String API_NAMING_RULES_RESOURCE_NAME = "api-naming-rules";
   private static final String API_NAMING_RULES_CONFIG_RESOURCE_NAMESPACE =
-      "api-naming-rules-config";
+      "span-processing-rules-config";
   private final TimestampConverter timestampConverter;
 
   @Inject
