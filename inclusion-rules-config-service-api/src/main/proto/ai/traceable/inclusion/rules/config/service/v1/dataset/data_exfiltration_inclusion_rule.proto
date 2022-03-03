@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+// buf:lint:ignore PACKAGE_VERSION_SUFFIX
+package ai.traceable.inclusion.rules.config.service.v1.dataset;
+
+option java_multiple_files = true;
+
+message DataExfiltrationInclusionRule {
+    repeated DatasetScope dataset_scope = 1;
+}
+message DatasetScope {
+    bool enabled = 1; // true means all data-types within dataset
+    repeated DataTypeScope data_type_scopes = 2;
+}
+
+message DataTypeScope {
+    string data_type_id = 1;
+}
