@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -31,6 +30,7 @@ import org.hypertrace.config.service.ConfigResourceContext;
 import org.hypertrace.config.service.ConfigServiceUtils;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
+import org.hypertrace.core.documentstore.CloseableIterator;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.DatastoreProvider;
@@ -144,15 +144,16 @@ public class DocumentConfigStore implements ConfigStore {
     Query query = new Query();
     query.setFilter(this.getConfigResourceFilter(configResource));
     query.addOrderBy(new OrderBy(VERSION_FIELD_NAME, false));
-    Iterator<Document> documentIterator = collection.search(query);
     List<ContextSpecificConfig> contextSpecificConfigList = new ArrayList<>();
     Set<String> seenContexts = new HashSet<>();
-    while (documentIterator.hasNext()) {
-      String documentString = documentIterator.next().toJson();
-      ConfigDocument configDocument = ConfigDocument.fromJson(documentString);
-      String context = configDocument.getContext();
-      if (seenContexts.add(context)) {
-        convertToContextSpecificConfig(configDocument).ifPresent(contextSpecificConfigList::add);
+    try (CloseableIterator<Document> documentIterator = collection.search(query)) {
+      while (documentIterator.hasNext()) {
+        String documentString = documentIterator.next().toJson();
+        ConfigDocument configDocument = ConfigDocument.fromJson(documentString);
+        String context = configDocument.getContext();
+        if (seenContexts.add(context)) {
+          convertToContextSpecificConfig(configDocument).ifPresent(contextSpecificConfigList::add);
+        }
       }
     }
     Collections.sort(
@@ -173,10 +174,11 @@ public class DocumentConfigStore implements ConfigStore {
     query.addOrderBy(new OrderBy(VERSION_FIELD_NAME, false));
     query.setLimit(1);
 
-    Iterator<Document> documentIterator = collection.search(query);
-    if (documentIterator.hasNext()) {
-      String documentString = documentIterator.next().toJson();
-      return Optional.of(ConfigDocument.fromJson(documentString));
+    try (CloseableIterator<Document> documentIterator = collection.search(query)) {
+      if (documentIterator.hasNext()) {
+        String documentString = documentIterator.next().toJson();
+        return Optional.of(ConfigDocument.fromJson(documentString));
+      }
     }
     return Optional.empty();
   }
