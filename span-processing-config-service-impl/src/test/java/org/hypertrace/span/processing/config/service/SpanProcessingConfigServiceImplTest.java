@@ -31,6 +31,7 @@ import org.hypertrace.span.processing.config.service.v1.GetAllApiNamingRulesRequ
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.RelationalOperator;
 import org.hypertrace.span.processing.config.service.v1.RelationalSpanFilterExpression;
+import org.hypertrace.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 import org.hypertrace.span.processing.config.service.v1.SpanFilter;
 import org.hypertrace.span.processing.config.service.v1.SpanFilterValue;
 import org.hypertrace.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
@@ -207,8 +208,11 @@ class SpanProcessingConfigServiceImplTest {
                             .setDisabled(true)
                             .setRuleConfig(
                                 ApiNamingRuleConfig.newBuilder()
-                                    .setRegex("regex")
-                                    .setValue("value")
+                                    .setSegmentMatchingBasedConfig(
+                                        SegmentMatchingBasedConfig.newBuilder()
+                                            .addAllRegexes(List.of("regex"))
+                                            .addAllValues(List.of("value"))
+                                            .build())
                                     .build())
                             .setFilter(
                                 SpanFilter.newBuilder()
@@ -239,8 +243,11 @@ class SpanProcessingConfigServiceImplTest {
                             .setDisabled(true)
                             .setRuleConfig(
                                 ApiNamingRuleConfig.newBuilder()
-                                    .setRegex("regex")
-                                    .setValue("value")
+                                    .setSegmentMatchingBasedConfig(
+                                        SegmentMatchingBasedConfig.newBuilder()
+                                            .addAllRegexes(List.of("regex"))
+                                            .addAllValues(List.of("value"))
+                                            .build())
                                     .build())
                             .setFilter(
                                 SpanFilter.newBuilder()
@@ -277,8 +284,11 @@ class SpanProcessingConfigServiceImplTest {
                             .setDisabled(false)
                             .setRuleConfig(
                                 ApiNamingRuleConfig.newBuilder()
-                                    .setRegex("regex")
-                                    .setValue("value")
+                                    .setSegmentMatchingBasedConfig(
+                                        SegmentMatchingBasedConfig.newBuilder()
+                                            .addAllRegexes(List.of("regex"))
+                                            .addAllValues(List.of("value"))
+                                            .build())
                                     .build())
                             .setFilter(
                                 SpanFilter.newBuilder()

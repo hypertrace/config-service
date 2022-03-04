@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -23,6 +24,7 @@ import org.hypertrace.span.processing.config.service.v1.GetAllApiNamingRulesRequ
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.RelationalOperator;
 import org.hypertrace.span.processing.config.service.v1.RelationalSpanFilterExpression;
+import org.hypertrace.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 import org.hypertrace.span.processing.config.service.v1.SpanFilter;
 import org.hypertrace.span.processing.config.service.v1.SpanFilterValue;
 import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRule;
@@ -209,7 +211,7 @@ class SpanProcessingRequestValidatorTest {
                     .build()));
 
     assertInvalidArgStatusContaining(
-        "ApiNamingRuleConfig",
+        "Invalid regex count or segment matching count",
         () ->
             validator.validateOrThrow(
                 mockRequestContext,
@@ -218,6 +220,11 @@ class SpanProcessingRequestValidatorTest {
                         ApiNamingRuleInfo.newBuilder()
                             .setName("name")
                             .setFilter(buildTestFilter())
+                            .setRuleConfig(
+                                ApiNamingRuleConfig.newBuilder()
+                                    .setSegmentMatchingBasedConfig(
+                                        SegmentMatchingBasedConfig.newBuilder().build())
+                                    .build())
                             .build())
                     .build()));
 
@@ -232,8 +239,11 @@ class SpanProcessingRequestValidatorTest {
                             .setDisabled(true)
                             .setRuleConfig(
                                 ApiNamingRuleConfig.newBuilder()
-                                    .setRegex("regex")
-                                    .setValue("value")
+                                    .setSegmentMatchingBasedConfig(
+                                        SegmentMatchingBasedConfig.newBuilder()
+                                            .addAllRegexes(List.of("regex"))
+                                            .addAllValues(List.of("value"))
+                                            .build())
                                     .build())
                             .setFilter(buildTestFilter())
                             .build())
@@ -268,7 +278,7 @@ class SpanProcessingRequestValidatorTest {
                     .build()));
 
     assertInvalidArgStatusContaining(
-        "ApiNamingRuleConfig",
+        "Invalid regex count or segment matching count",
         () ->
             validator.validateOrThrow(
                 mockRequestContext,
@@ -278,6 +288,11 @@ class SpanProcessingRequestValidatorTest {
                             .setId("id")
                             .setName("name")
                             .setFilter(buildTestFilter())
+                            .setRuleConfig(
+                                ApiNamingRuleConfig.newBuilder()
+                                    .setSegmentMatchingBasedConfig(
+                                        SegmentMatchingBasedConfig.newBuilder().build())
+                                    .build())
                             .build())
                     .build()));
 
@@ -292,8 +307,11 @@ class SpanProcessingRequestValidatorTest {
                             .setName("name")
                             .setRuleConfig(
                                 ApiNamingRuleConfig.newBuilder()
-                                    .setRegex("regex")
-                                    .setValue("value")
+                                    .setSegmentMatchingBasedConfig(
+                                        SegmentMatchingBasedConfig.newBuilder()
+                                            .addAllRegexes(List.of("regex"))
+                                            .addAllValues(List.of("value"))
+                                            .build())
                                     .build())
                             .setFilter(buildTestFilter())
                             .build())
