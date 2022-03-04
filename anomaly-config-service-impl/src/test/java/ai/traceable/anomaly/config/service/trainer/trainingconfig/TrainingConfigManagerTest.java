@@ -287,7 +287,7 @@ public class TrainingConfigManagerTest {
             .collect(Collectors.toList())
             .get(0);
     assertEquals(
-        List.of(".com", ".edu"),
+        List.of(".abc", ".def"),
         trainingConfig
             .getApiNamingTrainingConfig()
             .getUrlFilterConfig()

@@ -42,7 +42,7 @@ class TrainingConfigConverterTest {
                                     .build())
                             .build())
                     .build())
-            .addTrainingConfigs(buildUrlFilterApiNamingTrainerConfig(List.of(".com", ".us")))
+            .addTrainingConfigs(buildUrlFilterApiNamingTrainerConfig(List.of(".com", ".us", ".au")))
             .build();
 
     value = configConverter.convert(config);
@@ -65,7 +65,6 @@ class TrainingConfigConverterTest {
             .build();
 
     resultConfig = configConverter.merge(config, config1);
-
     assertEquals(
         500,
         resultConfig
@@ -176,7 +175,7 @@ class TrainingConfigConverterTest {
         getTrainingConfig(
             resultConfig, TrainingConfig.TrainingConfigCase.API_NAMING_TRAINING_CONFIG);
     assertEquals(
-        List.of(".edu", ".in", ".com", ".us"),
+        List.of(".com", ".us", ".au"),
         trainingConfig
             .getApiNamingTrainingConfig()
             .getUrlFilterConfig()

@@ -1,5 +1,7 @@
 package ai.traceable.anomaly.config.service.detector.anomalydetection;
 
+import static ai.traceable.anomaly.config.service.common.AnomalyConfigServiceUtils.mergeConfigs;
+
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
@@ -147,13 +149,13 @@ public class AnomalyDetectionConfigConverter {
                     sessionDefAnomalyDetectionConfigMap.get(ruleId);
                 configCase = sessionDefAnomalyConfig.getConfigCase();
                 detectionConfig =
-                    detectionConfig.toBuilder()
-                        .mergeFrom(
+                    (AnomalyDetectionConfig)
+                        mergeConfigs(
+                            detectionConfig,
                             AnomalyDetectionConfig.newBuilder()
                                 .setSessionDefinitionMetadataAnomalyDetectionConfig(
                                     sessionDefAnomalyConfig)
-                                .build())
-                        .build();
+                                .build());
               }
               configCaseMap.put(configCase, detectionConfig);
             });
@@ -167,9 +169,10 @@ public class AnomalyDetectionConfigConverter {
                       .getSessionDefinitionMetadataAnomalyDetectionConfig()
                       .getConfigCase();
               if (configCaseMap.containsKey(configCase)) {
-                configCaseMap.put(
-                    configCase,
-                    detectionConfig.toBuilder().mergeFrom(configCaseMap.get(configCase)).build());
+                AnomalyDetectionConfig mergedDetectionConfig =
+                    (AnomalyDetectionConfig)
+                        mergeConfigs(detectionConfig, configCaseMap.get(configCase));
+                configCaseMap.put(configCase, mergedDetectionConfig);
               } else {
                 configCaseMap.put(configCase, detectionConfig);
               }
@@ -206,9 +209,10 @@ public class AnomalyDetectionConfigConverter {
               BlockingMetadataAnomalyDetectionConfig.ConfigCase configCase =
                   detectionConfig.getBlockingMetadataAnomalyDetectionConfig().getConfigCase();
               if (configMap.containsKey(configCase)) {
-                configMap.put(
-                    configCase,
-                    detectionConfig.toBuilder().mergeFrom(configMap.get(configCase)).build());
+                AnomalyDetectionConfig mergedDetectionConfig =
+                    (AnomalyDetectionConfig)
+                        mergeConfigs(detectionConfig, configMap.get(configCase));
+                configMap.put(configCase, mergedDetectionConfig);
               } else {
                 configMap.put(configCase, detectionConfig);
               }
@@ -241,9 +245,10 @@ public class AnomalyDetectionConfigConverter {
               ApiStateBasedAnomalyDetectionConfig.ConfigCase configCase =
                   detectionConfig.getApiStateBasedAnomalyDetectionConfig().getConfigCase();
               if (configMap.containsKey(configCase)) {
-                configMap.put(
-                    configCase,
-                    detectionConfig.toBuilder().mergeFrom(configMap.get(configCase)).build());
+                AnomalyDetectionConfig mergedDetectionConfig =
+                    (AnomalyDetectionConfig)
+                        mergeConfigs(detectionConfig, configMap.get(configCase));
+                configMap.put(configCase, mergedDetectionConfig);
               } else {
                 configMap.put(configCase, detectionConfig);
               }
@@ -287,13 +292,13 @@ public class AnomalyDetectionConfigConverter {
                             .getAnomalyRuleId());
                 configCase = apiDefMetadataAnomalyConfig.getConfigCase();
                 detectionConfig =
-                    detectionConfig.toBuilder()
-                        .mergeFrom(
+                    (AnomalyDetectionConfig)
+                        mergeConfigs(
+                            detectionConfig,
                             AnomalyDetectionConfig.newBuilder()
                                 .setApiDefinitionMetadataAnomalyDetectionConfig(
                                     apiDefMetadataAnomalyConfig)
-                                .build())
-                        .build();
+                                .build());
               }
               configCaseMap.put(configCase, detectionConfig);
             });
@@ -305,9 +310,10 @@ public class AnomalyDetectionConfigConverter {
               ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase configCase =
                   detectionConfig.getApiDefinitionMetadataAnomalyDetectionConfig().getConfigCase();
               if (configCaseMap.containsKey(configCase)) {
-                configCaseMap.put(
-                    configCase,
-                    detectionConfig.toBuilder().mergeFrom(configCaseMap.get(configCase)).build());
+                AnomalyDetectionConfig mergedDetectionConfig =
+                    (AnomalyDetectionConfig)
+                        mergeConfigs(detectionConfig, configCaseMap.get(configCase));
+                configCaseMap.put(configCase, mergedDetectionConfig);
               } else {
                 configCaseMap.put(configCase, detectionConfig);
               }
@@ -357,11 +363,11 @@ public class AnomalyDetectionConfigConverter {
               if (!configStatusMap.containsKey(ruleId)) {
                 configStatusMap.put(ruleId, anomalyDetectionConfig.getConfigStatus());
               } else {
-                configStatusMap.put(
-                    ruleId,
-                    anomalyDetectionConfig.getConfigStatus().toBuilder()
-                        .mergeFrom(configStatusMap.get(ruleId))
-                        .build());
+                AnomalyConfigStatusChange mergedConfigStatusChange =
+                    (AnomalyConfigStatusChange)
+                        mergeConfigs(
+                            anomalyDetectionConfig.getConfigStatus(), configStatusMap.get(ruleId));
+                configStatusMap.put(ruleId, mergedConfigStatusChange);
               }
             });
 
@@ -395,11 +401,12 @@ public class AnomalyDetectionConfigConverter {
               if (!configCategoryMap.containsKey(ruleId)) {
                 configCategoryMap.put(ruleId, anomalyDetectionConfig.getCategoryConfig());
               } else {
-                configCategoryMap.put(
-                    ruleId,
-                    anomalyDetectionConfig.getCategoryConfig().toBuilder()
-                        .mergeFrom(configCategoryMap.get(ruleId))
-                        .build());
+                AnomalyCategoryConfig mergedCategoryConfig =
+                    (AnomalyCategoryConfig)
+                        mergeConfigs(
+                            anomalyDetectionConfig.getCategoryConfig(),
+                            configCategoryMap.get(ruleId));
+                configCategoryMap.put(ruleId, mergedCategoryConfig);
               }
             });
 
@@ -448,7 +455,7 @@ public class AnomalyDetectionConfigConverter {
         preferredConfig.getAnomalyDetectionConfigsList()) {
       if (detectionConfig.getModsecurityAnomalyDetectionConfig().hasModsecAllDetection()) {
         modsecurityAllDetectionConfig =
-            modsecurityAllDetectionConfig.toBuilder().mergeFrom(detectionConfig).build();
+            (AnomalyDetectionConfig) mergeConfigs(modsecurityAllDetectionConfig, detectionConfig);
         break;
       }
     }
@@ -482,11 +489,10 @@ public class AnomalyDetectionConfigConverter {
                     anomalySubRuleConfig -> {
                       String subRuleId = anomalySubRuleConfig.getSubRuleId();
                       if (subRuleConfigMap.containsKey(subRuleId)) {
-                        subRuleConfigMap.put(
-                            subRuleId,
-                            anomalySubRuleConfig.toBuilder()
-                                .mergeFrom(subRuleConfigMap.get(subRuleId))
-                                .build());
+                        AnomalySubRuleConfig mergedAnomalySubRuleConfig =
+                            (AnomalySubRuleConfig)
+                                mergeConfigs(anomalySubRuleConfig, subRuleConfigMap.get(subRuleId));
+                        subRuleConfigMap.put(subRuleId, mergedAnomalySubRuleConfig);
                       } else {
                         subRuleConfigMap.put(subRuleId, anomalySubRuleConfig);
                       }

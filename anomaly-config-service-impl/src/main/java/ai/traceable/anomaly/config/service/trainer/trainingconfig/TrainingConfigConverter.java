@@ -1,5 +1,7 @@
 package ai.traceable.anomaly.config.service.trainer.trainingconfig;
 
+import static ai.traceable.anomaly.config.service.common.AnomalyConfigServiceUtils.mergeConfigs;
+
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.GetTrainingConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.trainer.MetadataTrainingConfig;
@@ -17,7 +19,6 @@ import java.util.Set;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 
 public class TrainingConfigConverter {
-
   public Value convert(ScopedTrainingConfig config) throws InvalidProtocolBufferException {
     return ConfigProtoConverter.convertToValue(config);
   }
@@ -168,8 +169,9 @@ public class TrainingConfigConverter {
   private <K extends Enum<K>> void resolve(
       EnumMap<K, TrainingConfig> configMap, K configCase, TrainingConfig trainingConfig) {
     if (configMap.containsKey(configCase)) {
-      configMap.put(
-          configCase, trainingConfig.toBuilder().mergeFrom(configMap.get(configCase)).build());
+      TrainingConfig mergedConfig =
+          (TrainingConfig) mergeConfigs(trainingConfig, configMap.get(configCase));
+      configMap.put(configCase, mergedConfig);
     } else {
       configMap.put(configCase, trainingConfig);
     }
