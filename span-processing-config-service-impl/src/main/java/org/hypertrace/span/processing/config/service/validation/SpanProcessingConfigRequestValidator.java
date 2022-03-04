@@ -15,6 +15,7 @@ import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleReq
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.GetAllApiNamingRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
+import org.hypertrace.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 import org.hypertrace.span.processing.config.service.v1.SpanFilter;
 import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRule;
 import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRuleRequest;
@@ -76,20 +77,36 @@ public class SpanProcessingConfigRequestValidator {
 
   private void validateData(ApiNamingRuleInfo apiNamingRuleInfo) {
     validateNonDefaultPresenceOrThrow(apiNamingRuleInfo, ApiNamingRuleInfo.NAME_FIELD_NUMBER);
-    this.validateSpanFilter(apiNamingRuleInfo.getFilter());
-    this.validateDataConfig(apiNamingRuleInfo.getRuleConfig());
-  }
-
-  private void validateDataConfig(ApiNamingRuleConfig apiNamingRuleConfig) {
-    validateNonDefaultPresenceOrThrow(apiNamingRuleConfig, ApiNamingRuleConfig.REGEX_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(apiNamingRuleConfig, ApiNamingRuleConfig.VALUE_FIELD_NUMBER);
+    this.validateConfig(apiNamingRuleInfo.getRuleConfig());
   }
 
   private void validateUpdateRule(UpdateApiNamingRule updateApiNamingRule) {
     validateNonDefaultPresenceOrThrow(updateApiNamingRule, UpdateApiNamingRule.ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(updateApiNamingRule, UpdateApiNamingRule.NAME_FIELD_NUMBER);
-    this.validateSpanFilter(updateApiNamingRule.getFilter());
-    this.validateDataConfig(updateApiNamingRule.getRuleConfig());
+    this.validateConfig(updateApiNamingRule.getRuleConfig());
+  }
+
+  private void validateConfig(ApiNamingRuleConfig ruleConfig) {
+    switch (ruleConfig.getRuleConfigCase()) {
+      case SEGMENT_MATCHING_BASED_CONFIG:
+        SegmentMatchingBasedConfig segmentMatchingBasedConfig =
+            ruleConfig.getSegmentMatchingBasedConfig();
+        if (segmentMatchingBasedConfig.getRegexesCount() == 0
+            || segmentMatchingBasedConfig.getRegexesCount()
+                != segmentMatchingBasedConfig.getValuesCount()) {
+          throw Status.INVALID_ARGUMENT
+              .withDescription(
+                  String.format(
+                      "Invalid regex count or segment matching count : %s",
+                      segmentMatchingBasedConfig))
+              .asRuntimeException();
+        }
+        break;
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Unexpected rule config case: " + printMessage(ruleConfig))
+            .asRuntimeException();
+    }
   }
 
   private void validateSpanFilter(SpanFilter filter) {

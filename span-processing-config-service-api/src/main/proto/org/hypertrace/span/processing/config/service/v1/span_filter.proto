@@ -28,7 +28,12 @@ message RelationalSpanFilterExpression {
 message SpanFilterValue {
   oneof value {
     string string_value = 1;
+    ListValue list_value = 2;
   }
+}
+
+message ListValue {
+  repeated SpanFilterValue values = 1;
 }
 
 enum LogicalOperator {
@@ -52,4 +57,5 @@ enum RelationalOperator {
   RELATIONAL_OPERATOR_STARTS_WITH = 4;
   RELATIONAL_OPERATOR_ENDS_WITH = 5;
   RELATIONAL_OPERATOR_REGEX_MATCH = 6;
+  RELATIONAL_OPERATOR_IN = 7;
 }
