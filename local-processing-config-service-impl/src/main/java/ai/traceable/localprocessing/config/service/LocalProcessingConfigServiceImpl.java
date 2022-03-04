@@ -114,7 +114,8 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
       localProcessingConfigRequestValidator.validateOrThrow(requestContext, request);
 
       // TODO: handle priorities
-      responseObserver.onNext(spanProcessingRulesManager.getSpanProcessingRulesResponse(request));
+      responseObserver.onNext(
+          spanProcessingRulesManager.getSpanProcessingRulesResponse(requestContext, request));
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Get Span processing rules RPC failed for request:{}", request, e);

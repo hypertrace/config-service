@@ -2,7 +2,14 @@ package ai.traceable.localprocessing.config.service.spanprocessingrules;
 
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRuleInfo;
+import ai.traceable.localprocessing.config.service.v1.RateLimit;
+import ai.traceable.localprocessing.config.service.v1.RateLimitConfig;
+import ai.traceable.localprocessing.config.service.v1.WindowedRateLimit;
+import com.google.protobuf.Duration;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import java.util.List;
+import java.util.Map;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRule;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleDetails;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleInfo;
@@ -254,5 +261,70 @@ public class SpanProcessingRulesManagerTestUtils {
                         .build())
                 .build())
         .build();
+  }
+
+  public static RateLimitConfig buildExpectedTenantSpecificRateLimitConfig() {
+    return RateLimitConfig.newBuilder()
+        .setApiEndpointCacheDuration(Duration.newBuilder().setSeconds(200).build())
+        .setTraceLimitPerEndpoint(
+            RateLimit.newBuilder()
+                .setFixedWindowLimit(
+                    WindowedRateLimit.newBuilder()
+                        .setQuantityAllowed(100)
+                        .setWindowDuration(Duration.newBuilder().setSeconds(5).build())
+                        .build())
+                .build())
+        .setTraceLimitGlobal(
+            RateLimit.newBuilder()
+                .setFixedWindowLimit(
+                    WindowedRateLimit.newBuilder()
+                        .setQuantityAllowed(100000)
+                        .setWindowDuration(Duration.newBuilder().setSeconds(10).build())
+                        .build())
+                .build())
+        .build();
+  }
+
+  public static RateLimitConfig buildExpectedDefaultRateLimitConfig() {
+    return RateLimitConfig.newBuilder()
+        .setApiEndpointCacheDuration(Duration.newBuilder().setSeconds(168).build())
+        .setTraceLimitPerEndpoint(
+            RateLimit.newBuilder()
+                .setFixedWindowLimit(
+                    WindowedRateLimit.newBuilder()
+                        .setQuantityAllowed(10)
+                        .setWindowDuration(Duration.newBuilder().setSeconds(1).build())
+                        .build())
+                .build())
+        .setTraceLimitGlobal(
+            RateLimit.newBuilder()
+                .setFixedWindowLimit(
+                    WindowedRateLimit.newBuilder()
+                        .setQuantityAllowed(10000)
+                        .setWindowDuration(Duration.newBuilder().setSeconds(1).build())
+                        .build())
+                .build())
+        .build();
+  }
+
+  public static Config buildConfig() {
+    return ConfigFactory.parseMap(
+        Map.of(
+            "sampling.config",
+            Map.of(
+                "rate.limit.config",
+                Map.of(
+                    "tenant",
+                    Map.of(
+                        "apiEndpointCacheDuration",
+                        "200s",
+                        "traceLimitPerEndpoint",
+                        Map.of(
+                            "fixedWindowLimit",
+                            Map.of("quantityAllowed", 100, "windowDuration", "5s")),
+                        "traceLimitGlobal",
+                        Map.of(
+                            "fixedWindowLimit",
+                            Map.of("quantityAllowed", 100000, "windowDuration", "10s")))))));
   }
 }

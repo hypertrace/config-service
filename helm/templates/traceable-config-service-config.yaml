@@ -121,6 +121,9 @@ data:
     risk.config.service = {
       include "risk.conf"
     }
+    local.processing.config.service = {
+      include "span-processing-rules.conf"
+    }
     label.application.rule.config.service {
       max.dynamic.label.application.rules.per.tenant = {{ int .Values.traceableConfigServiceConfig.labelApplicationRuleConfigServiceConfig.maxDynamicLabelApplicationRulesPerTenant }}
     }
@@ -144,3 +147,25 @@ data:
         riskFactorGridConfigValues = {{ .Values.riskConfigServiceConfig.riskFactorGridConfigValues | nindent 2 }}
       {{- end }}
     {{- end }}
+  span-processing-rules.conf: |-
+    sampling.config {
+      rate.limit.config = {
+        {{- range $k,$v := $.Values.traceableConfigServiceConfig.localProcessingConfigServiceConfig.samplingConfig.rateLimitConfig }}
+        {{ $k }} = {
+          traceLimitPerEndpoint = {
+            {{- if hasKey $v.traceLimitPerEndpoint.fixedWindowLimit}}
+            quantityAllowed = {{ $v.traceLimitPerEndpoint.fixedWindowLimit.quantityAllowed }}
+            windowDuration = {{ $v.traceLimitPerEndpoint.fixedWindowLimit.windowDuration }}
+            {{- end }}
+          }
+          traceLimitGlobal = {
+            {{- if hasKey $v.traceLimitGlobal.fixedWindowLimit }}
+            quantityAllowed = {{ $v.traceLimitGlobal.fixedWindowLimit.quantityAllowed }}
+            windowDuration = {{ $v.traceLimitGlobal.fixedWindowLimit.windowDuration }}
+            {{- end }}
+          }
+          apiEndpointCacheDuration = {{ $v.apiEndpointCacheDuration }}
+        },
+        {{- end }}
+      }
+    }

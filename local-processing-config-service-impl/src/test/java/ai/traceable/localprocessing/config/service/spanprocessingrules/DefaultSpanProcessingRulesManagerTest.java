@@ -5,6 +5,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.localprocessing.config.service.spanprocessingrules.excludespanrules.DefaultExcludeSpanRulesManager;
+import ai.traceable.localprocessing.config.service.spanprocessingrules.excludespanrules.ExcludeSpanRulesManager;
+import ai.traceable.localprocessing.config.service.spanprocessingrules.ratelimitconfig.DefaultRateLimitConfigManager;
+import ai.traceable.localprocessing.config.service.spanprocessingrules.ratelimitconfig.RateLimitConfigManager;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.GetSpanProcessingRulesRequest;
@@ -13,6 +17,7 @@ import ai.traceable.localprocessing.config.service.v1.SpanProcessingRules;
 import ai.traceable.localprocessing.config.service.v1.SpanProcessingRulesServiceRequest;
 import ai.traceable.localprocessing.config.service.v1.SpanProcessingRulesServiceResponse;
 import java.util.List;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,14 +28,22 @@ class DefaultSpanProcessingRulesManagerTest {
   private UuidGenerator uuidGenerator;
   private SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
       configServiceBlockingStub;
+  private RateLimitConfigManager rateLimitConfigManager;
+  private RequestContext requestContext;
 
   @BeforeEach
   void setup() {
     configServiceBlockingStub =
         mock(SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub.class);
     uuidGenerator = new UuidGenerator();
+    ExcludeSpanRulesManager excludeSpanRulesManager =
+        new DefaultExcludeSpanRulesManager(configServiceBlockingStub);
+    rateLimitConfigManager =
+        new DefaultRateLimitConfigManager(SpanProcessingRulesManagerTestUtils.buildConfig());
     spanProcessingRulesManager =
-        new DefaultSpanProcessingRulesManager(configServiceBlockingStub, uuidGenerator);
+        new DefaultSpanProcessingRulesManager(
+            excludeSpanRulesManager, rateLimitConfigManager, uuidGenerator);
+    requestContext = RequestContext.forTenantId("tenant");
   }
 
   @Test
@@ -40,6 +53,7 @@ class DefaultSpanProcessingRulesManagerTest {
 
     GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
         spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            requestContext,
             GetSpanProcessingRulesRequest.newBuilder()
                 .addServiceRequests(
                     SpanProcessingRulesServiceRequest.newBuilder()
@@ -52,10 +66,15 @@ class DefaultSpanProcessingRulesManagerTest {
     String hash =
         uuidGenerator.generateId(
             SpanProcessingRules.newBuilder()
+                .setRateLimitConfig(
+                    SpanProcessingRulesManagerTestUtils
+                        .buildExpectedTenantSpecificRateLimitConfig())
                 .addAllExcludeSpanRules(List.of(expectedExcludeSpanProcessingRule))
                 .build());
     SpanProcessingRules expectedSpanProcessingRules =
         SpanProcessingRules.newBuilder()
+            .setRateLimitConfig(
+                SpanProcessingRulesManagerTestUtils.buildExpectedTenantSpecificRateLimitConfig())
             .addExcludeSpanRules(expectedExcludeSpanProcessingRule)
             .build();
 
@@ -72,6 +91,7 @@ class DefaultSpanProcessingRulesManagerTest {
 
     getSpanProcessingRulesResponse =
         spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            requestContext,
             GetSpanProcessingRulesRequest.newBuilder()
                 .addServiceRequests(
                     SpanProcessingRulesServiceRequest.newBuilder()
@@ -98,6 +118,7 @@ class DefaultSpanProcessingRulesManagerTest {
                 .buildGetAllExcludeSpanRulesResponseEnvironmentFilter());
     GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
         spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            requestContext,
             GetSpanProcessingRulesRequest.newBuilder()
                 .setEnvironment("env")
                 .addServiceRequests(
@@ -114,7 +135,11 @@ class DefaultSpanProcessingRulesManagerTest {
     List<ExcludeSpanProcessingRule> excludeSpanProcessingRules =
         spanProcessingRules.getExcludeSpanRulesList();
 
-    SpanProcessingRules expectedSpanProcessingRules = SpanProcessingRules.newBuilder().build();
+    SpanProcessingRules expectedSpanProcessingRules =
+        SpanProcessingRules.newBuilder()
+            .setRateLimitConfig(
+                SpanProcessingRulesManagerTestUtils.buildExpectedTenantSpecificRateLimitConfig())
+            .build();
     assertEquals(0, excludeSpanProcessingRules.size());
     assertEquals(
         GetSpanProcessingRulesResponse.newBuilder()
@@ -129,6 +154,7 @@ class DefaultSpanProcessingRulesManagerTest {
 
     getSpanProcessingRulesResponse =
         spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            requestContext,
             GetSpanProcessingRulesRequest.newBuilder()
                 .setEnvironment("value")
                 .addServiceRequests(
@@ -148,6 +174,8 @@ class DefaultSpanProcessingRulesManagerTest {
             .buildExpectedExcludeSpanProcessingRuleServiceNamesAndEnvironmentsProcessed();
     expectedSpanProcessingRules =
         SpanProcessingRules.newBuilder()
+            .setRateLimitConfig(
+                SpanProcessingRulesManagerTestUtils.buildExpectedTenantSpecificRateLimitConfig())
             .addExcludeSpanRules(expectedExcludeSpanProcessingRule)
             .build();
 
@@ -172,6 +200,7 @@ class DefaultSpanProcessingRulesManagerTest {
 
     GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
         spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            requestContext,
             GetSpanProcessingRulesRequest.newBuilder()
                 .addServiceRequests(
                     SpanProcessingRulesServiceRequest.newBuilder()
@@ -200,10 +229,14 @@ class DefaultSpanProcessingRulesManagerTest {
 
     SpanProcessingRules expectedSpanProcessingRulesFirst =
         SpanProcessingRules.newBuilder()
+            .setRateLimitConfig(
+                SpanProcessingRulesManagerTestUtils.buildExpectedTenantSpecificRateLimitConfig())
             .addAllExcludeSpanRules(excludeSpanProcessingRulesFirst)
             .build();
     SpanProcessingRules expectedSpanProcessingRulesSecond =
         SpanProcessingRules.newBuilder()
+            .setRateLimitConfig(
+                SpanProcessingRulesManagerTestUtils.buildExpectedTenantSpecificRateLimitConfig())
             .addAllExcludeSpanRules(excludeSpanProcessingRulesSecond)
             .build();
 
@@ -231,6 +264,7 @@ class DefaultSpanProcessingRulesManagerTest {
         .thenReturn(SpanProcessingRulesManagerTestUtils.buildGetAllExcludeSpanRulesResponse(true));
     GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
         spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            requestContext,
             GetSpanProcessingRulesRequest.newBuilder()
                 .addServiceRequests(
                     SpanProcessingRulesServiceRequest.newBuilder()
@@ -245,7 +279,11 @@ class DefaultSpanProcessingRulesManagerTest {
     List<ExcludeSpanProcessingRule> excludeSpanProcessingRules =
         spanProcessingRules.getExcludeSpanRulesList();
 
-    SpanProcessingRules expectedSpanProcessingRules = SpanProcessingRules.newBuilder().build();
+    SpanProcessingRules expectedSpanProcessingRules =
+        SpanProcessingRules.newBuilder()
+            .setRateLimitConfig(
+                SpanProcessingRulesManagerTestUtils.buildExpectedTenantSpecificRateLimitConfig())
+            .build();
     assertEquals(0, excludeSpanProcessingRules.size());
     assertEquals(
         GetSpanProcessingRulesResponse.newBuilder()

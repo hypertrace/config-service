@@ -38,7 +38,7 @@ public class LocalProcessingConfigServiceModule extends AbstractModule {
     install(new CustomModsecDetectionManagerModule());
     install(new RegularModsecDetectionManagerModule());
     install(new ApiNamingManagerModule(this.config));
-    install(new SpanProcessingRulesManagerModule());
+    install(new SpanProcessingRulesManagerModule(this.config));
   }
 
   @Provides

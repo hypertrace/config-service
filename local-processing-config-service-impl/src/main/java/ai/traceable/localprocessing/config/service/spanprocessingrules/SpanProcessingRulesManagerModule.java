@@ -1,23 +1,22 @@
 package ai.traceable.localprocessing.config.service.spanprocessingrules;
 
+import ai.traceable.localprocessing.config.service.spanprocessingrules.excludespanrules.ExcludeSpanRulesManagerModule;
+import ai.traceable.localprocessing.config.service.spanprocessingrules.ratelimitconfig.RateLimitConfigManagerModule;
 import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import io.grpc.ManagedChannel;
-import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
-import org.hypertrace.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
+import com.typesafe.config.Config;
 
 public class SpanProcessingRulesManagerModule extends AbstractModule {
+
+  private final Config config;
+
+  public SpanProcessingRulesManagerModule(Config config) {
+    this.config = config;
+  }
 
   @Override
   protected void configure() {
     bind(SpanProcessingRulesManager.class).to(DefaultSpanProcessingRulesManager.class);
-  }
-
-  @Provides
-  SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
-      providesSpanProcessingConfigServiceBlockingStub(ManagedChannel channel) {
-    return SpanProcessingConfigServiceGrpc.newBlockingStub(channel)
-        .withCallCredentials(
-            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+    install(new ExcludeSpanRulesManagerModule());
+    install(new RateLimitConfigManagerModule(this.config));
   }
 }
