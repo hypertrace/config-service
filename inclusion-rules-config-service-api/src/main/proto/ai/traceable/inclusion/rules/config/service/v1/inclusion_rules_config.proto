@@ -6,6 +6,7 @@ import "ai/traceable/inclusion/rules/config/service/v1/dataset/data_exfiltration
 option java_multiple_files = true;
 
 message GetInclusionRulesRequest {
+   GetInclusionRuleFilter filter = 1;
 }
 
 message GetInclusionRulesResponse {
@@ -35,6 +36,10 @@ message DeleteInclusionRuleRequest {
 
 message DeleteInclusionRuleResponse {
 
+}
+
+message GetInclusionRuleFilter {
+  repeated InclusionRuleType rule_types = 1;
 }
 
 message InclusionRuleConfig {
@@ -70,4 +75,9 @@ message ServiceScope {
 
 message ApiScope {
   string id = 1;
+}
+
+enum InclusionRuleType {
+  INCLUSION_RULE_TYPE_UNSPECIFIED = 0;
+  INCLUSION_RULE_TYPE_DATA_EXFILTRATION = 1;
 }
