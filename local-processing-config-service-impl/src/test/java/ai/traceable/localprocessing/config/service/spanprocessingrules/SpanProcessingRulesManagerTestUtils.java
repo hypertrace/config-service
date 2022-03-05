@@ -10,6 +10,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRule;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleDetails;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleInfo;
@@ -155,8 +156,8 @@ public class SpanProcessingRulesManagerTestUtils {
                                             buildRelationalFilter(
                                                 Field.FIELD_ENVIRONMENT_NAME,
                                                 null,
-                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
-                                                "val"))))
+                                                RelationalOperator.RELATIONAL_OPERATOR_IN,
+                                                List.of("value1", "value")))))
                                 .build())
                         .build()))
         .build();
@@ -245,6 +246,37 @@ public class SpanProcessingRulesManagerTestUtils {
         .build();
   }
 
+  private static SpanFilter buildRelationalFilter(
+      Field field, String spanAttributeKey, RelationalOperator operator, List<String> rhs) {
+    RelationalSpanFilterExpression.Builder relationalSpanFilterExpressionBuilder =
+        RelationalSpanFilterExpression.newBuilder();
+    if (spanAttributeKey == null) {
+      relationalSpanFilterExpressionBuilder.setField(field);
+    } else {
+      relationalSpanFilterExpressionBuilder.setSpanAttributeKey(spanAttributeKey);
+    }
+    return SpanFilter.newBuilder()
+        .setRelationalSpanFilter(
+            relationalSpanFilterExpressionBuilder
+                .setOperator(operator)
+                .setRightOperand(
+                    SpanFilterValue.newBuilder()
+                        .setListValue(
+                            org.hypertrace.span.processing.config.service.v1.ListValue.newBuilder()
+                                .addAllValues(
+                                    rhs.stream()
+                                        .map(
+                                            val ->
+                                                SpanFilterValue.newBuilder()
+                                                    .setStringValue(val)
+                                                    .build())
+                                        .collect(Collectors.toUnmodifiableList()))
+                                .build())
+                        .build())
+                .build())
+        .build();
+  }
+
   private static ai.traceable.localprocessing.config.service.v1.SpanFilter buildRelationalFilter(
       String spanAttributeKey,
       ai.traceable.localprocessing.config.service.v1.RelationalOperator operator,
@@ -280,28 +312,6 @@ public class SpanProcessingRulesManagerTestUtils {
                     WindowedRateLimit.newBuilder()
                         .setQuantityAllowed(100000)
                         .setWindowDuration(Duration.newBuilder().setSeconds(10).build())
-                        .build())
-                .build())
-        .build();
-  }
-
-  public static RateLimitConfig buildExpectedDefaultRateLimitConfig() {
-    return RateLimitConfig.newBuilder()
-        .setApiEndpointCacheDuration(Duration.newBuilder().setSeconds(168).build())
-        .setTraceLimitPerEndpoint(
-            RateLimit.newBuilder()
-                .setFixedWindowLimit(
-                    WindowedRateLimit.newBuilder()
-                        .setQuantityAllowed(10)
-                        .setWindowDuration(Duration.newBuilder().setSeconds(1).build())
-                        .build())
-                .build())
-        .setTraceLimitGlobal(
-            RateLimit.newBuilder()
-                .setFixedWindowLimit(
-                    WindowedRateLimit.newBuilder()
-                        .setQuantityAllowed(10000)
-                        .setWindowDuration(Duration.newBuilder().setSeconds(1).build())
                         .build())
                 .build())
         .build();
