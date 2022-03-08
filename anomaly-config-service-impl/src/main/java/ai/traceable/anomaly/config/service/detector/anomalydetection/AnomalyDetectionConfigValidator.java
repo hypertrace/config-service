@@ -12,7 +12,10 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiStateBasedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.BlockingMetadataAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.DeleteAnomalyConfigOption;
+import ai.traceable.anomaly.config.service.v1.detector.DeleteScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigRequest;
+import ai.traceable.anomaly.config.service.v1.detector.GetUnresolvedScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.SessionDefinitionMetadataAnomalyDetectionConfig;
@@ -53,6 +56,44 @@ public class AnomalyDetectionConfigValidator {
           "GetScopedAnomalyDetectionConfigRequest should have a valid config scope.");
     }
     return anomalyConfigValidator.validate(request.getConfigScope(), true);
+  }
+
+  public Status validate(GetUnresolvedScopedAnomalyDetectionConfigRequest request) {
+    if (!request.hasConfigScope()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "GetUnresolvedScopedAnomalyDetectionConfigRequest should have a valid config scope.");
+    }
+    Status status = anomalyConfigValidator.validate(request.getConfigScope(), true);
+    if (!status.isOk()) {
+      return status;
+    }
+    if (!request.hasFilter()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "GetUnresolvedScopedAnomalyDetectionConfigRequest should have a valid config filter.");
+    }
+
+    return Status.OK;
+  }
+
+  public Status validate(DeleteScopedAnomalyDetectionConfigRequest request) {
+    if (!request.getScopedAnomalyDetectionConfig().hasConfigScope()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "DeleteScopedAnomalyDetectionConfigRequest should have a valid config scope.");
+    }
+    if (request
+        .getDeleteAnomalyConfigOption()
+        .equals(DeleteAnomalyConfigOption.DELETE_ANOMALY_CONFIG_OPTION_UNSPECIFIED)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "DeleteScopedAnomalyDetectionConfigRequest should have a valid delete option.");
+    }
+    Status status =
+        anomalyConfigValidator.validate(
+            request.getScopedAnomalyDetectionConfig().getConfigScope(), true);
+    if (!status.isOk()) {
+      return status;
+    }
+
+    return validate(request.getScopedAnomalyDetectionConfig().getAnomalyDetectionConfigsList());
   }
 
   public Status validate(UpdateScopedAnomalyDetectionConfigRequest request) {

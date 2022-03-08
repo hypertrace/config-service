@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import ai.traceable.anomaly.config.service.detector.anomalydetection.converter.AnomalyDetectionConfigConverter;
+import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.AnomalyDetectionConfigHandler;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
@@ -39,15 +39,15 @@ import com.google.protobuf.Value;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-public class AnomalyDetectionConfigConverterTest {
+public class AnomalyDetectionConfigHandlerTest {
 
   private final ConfigConverter configConverter = new ConfigConverter();
   private final ApiDefinitionRegistry apiDefinitionRegistry =
       new ApiDefinitionRegistryImpl(configConverter);
   private final SessionRulesRegistry sessionRulesRegistry =
       new SessionRulesRegistryImpl(configConverter);
-  private final AnomalyDetectionConfigConverter detectionConfigConverter =
-      new AnomalyDetectionConfigConverter(apiDefinitionRegistry, sessionRulesRegistry);
+  private final AnomalyDetectionConfigHandler detectionConfigConverter =
+      new AnomalyDetectionConfigHandler(apiDefinitionRegistry, sessionRulesRegistry);
 
   @Test
   void testModsecConfigConvert() throws InvalidProtocolBufferException {

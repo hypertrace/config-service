@@ -4,10 +4,11 @@ import static ai.traceable.anomaly.config.service.detector.anomalydetection.Anom
 import static ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigConstants.ANOMALY_DETECTION_CONFIG_RESOURCE_NAME;
 
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
-import ai.traceable.anomaly.config.service.detector.anomalydetection.converter.AnomalyDetectionConfigConverter;
+import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.AnomalyDetectionConfigHandler;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.DeleteAnomalyConfigOption;
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import com.google.inject.Inject;
@@ -31,7 +32,7 @@ public class AnomalyDetectionConfigManagerImpl
     extends IdentifiedObjectStore<ScopedAnomalyDetectionConfig>
     implements AnomalyDetectionConfigManager {
 
-  private final AnomalyDetectionConfigConverter anomalyDetectionConfigConverter;
+  private final AnomalyDetectionConfigHandler anomalyDetectionConfigHandler;
   private final List<AnomalyDetectionConfig> defaultModsecConfigs;
   private final List<AnomalyDetectionConfig> defaultApiDefinitionDetectionConfigs;
   private final List<AnomalyDetectionConfig> defaultSessionDefinitionDetectionConfigs;
@@ -39,13 +40,13 @@ public class AnomalyDetectionConfigManagerImpl
   @Inject
   public AnomalyDetectionConfigManagerImpl(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
-      AnomalyDetectionConfigConverter anomalyDetectionConfigConverter,
+      AnomalyDetectionConfigHandler anomalyDetectionConfigHandler,
       DetectorConfigServiceConfig config) {
     super(
         configServiceBlockingStub,
         ANOMALY_DETECTION_CONFIG_NAMESPACE,
         ANOMALY_DETECTION_CONFIG_RESOURCE_NAME);
-    this.anomalyDetectionConfigConverter = anomalyDetectionConfigConverter;
+    this.anomalyDetectionConfigHandler = anomalyDetectionConfigHandler;
     this.defaultModsecConfigs = config.getDefaultModsecDetectionConfigs();
     this.defaultApiDefinitionDetectionConfigs = config.getDefaultApiDefinitionDetectionConfigs();
     this.defaultSessionDefinitionDetectionConfigs =
@@ -99,7 +100,7 @@ public class AnomalyDetectionConfigManagerImpl
     Optional<ScopedAnomalyDetectionConfig> currentConfig =
         getData(requestContext, getContextFromData(scopedAnomalyDetectionConfig));
     ScopedAnomalyDetectionConfig updatedScopedAnomalyDetectionConfig =
-        anomalyDetectionConfigConverter.merge(
+        anomalyDetectionConfigHandler.merge(
             scopedAnomalyDetectionConfig,
             currentConfig.orElse(ScopedAnomalyDetectionConfig.getDefaultInstance()));
 
@@ -120,9 +121,91 @@ public class AnomalyDetectionConfigManagerImpl
   }
 
   @Override
+  public ScopedAnomalyDetectionConfig getUnresolvedScopedAnomalyDetectionConfig(
+      RequestContext requestContext,
+      AnomalyConfigScope configScope,
+      GetAnomalyDetectionConfigsFilter filter) {
+
+    ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig =
+        getData(requestContext, getContextFromAnomalyConfigScope(configScope))
+            .orElse(ScopedAnomalyDetectionConfig.newBuilder().setConfigScope(configScope).build());
+
+    return anomalyDetectionConfigHandler.merge(
+        scopedAnomalyDetectionConfig, ScopedAnomalyDetectionConfig.getDefaultInstance(), filter);
+  }
+
+  @Override
+  public List<ScopedAnomalyDetectionConfig> getAllUnresolvedScopedAnomalyDetectionConfigs(
+      RequestContext requestContext, GetAnomalyDetectionConfigsFilter filter) {
+
+    String tenantId = requestContext.getTenantId().orElseThrow();
+
+    Map<String, ScopedAnomalyDetectionConfig> anomalyDetectionConfigMap =
+        fetchConfigMap(requestContext);
+
+    List<ScopedAnomalyDetectionConfig> scopedAnomalyDetectionConfigs =
+        new ArrayList<>(anomalyDetectionConfigMap.values());
+    if (!anomalyDetectionConfigMap.containsKey(tenantId)) {
+      scopedAnomalyDetectionConfigs.add(
+          ScopedAnomalyDetectionConfig.newBuilder()
+              .setConfigScope(
+                  AnomalyConfigScope.newBuilder()
+                      .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+                      .build())
+              .build());
+    }
+
+    scopedAnomalyDetectionConfigs.add(
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .setConfigScope(AnomalyConfigScope.getDefaultInstance())
+            .addAllAnomalyDetectionConfigs(defaultModsecConfigs)
+            .addAllAnomalyDetectionConfigs(defaultApiDefinitionDetectionConfigs)
+            .addAllAnomalyDetectionConfigs(defaultSessionDefinitionDetectionConfigs)
+            .build());
+
+    return scopedAnomalyDetectionConfigs.stream()
+        .map(
+            scopedAnomalyDetectionConfig ->
+                anomalyDetectionConfigHandler.merge(
+                    scopedAnomalyDetectionConfig,
+                    ScopedAnomalyDetectionConfig.getDefaultInstance(),
+                    filter))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public ScopedAnomalyDetectionConfig deleteScopedAnomalyDetectionConfig(
+      RequestContext requestContext,
+      ScopedAnomalyDetectionConfig deleteScopedAnomalyDetectionConfig,
+      DeleteAnomalyConfigOption deleteAnomalyConfigOption) {
+
+    AnomalyConfigScope configScope = deleteScopedAnomalyDetectionConfig.getConfigScope();
+    List<AnomalyDetectionConfig> detectionConfigs =
+        deleteScopedAnomalyDetectionConfig.getAnomalyDetectionConfigsList();
+
+    ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig =
+        getData(requestContext, getContextFromData(deleteScopedAnomalyDetectionConfig))
+            .orElse(ScopedAnomalyDetectionConfig.newBuilder().setConfigScope(configScope).build());
+
+    ScopedAnomalyDetectionConfig.Builder deletedConfigBuilder =
+        ScopedAnomalyDetectionConfig.newBuilder();
+    deletedConfigBuilder.setConfigScope(configScope);
+
+    if (deleteAnomalyConfigOption.equals(
+        DeleteAnomalyConfigOption.DELETE_ANOMALY_CONFIG_OPTION_WHOLE_DETECTION_CONFIG)) {
+      upsertObject(
+          requestContext,
+          anomalyDetectionConfigHandler.deleteWholeAnomalyDetectionConfigs(
+              scopedAnomalyDetectionConfig, detectionConfigs, deletedConfigBuilder));
+    }
+
+    return deletedConfigBuilder.build();
+  }
+
+  @Override
   protected Optional<ScopedAnomalyDetectionConfig> buildDataFromValue(Value value) {
     try {
-      return Optional.of(anomalyDetectionConfigConverter.convert(value));
+      return Optional.of(anomalyDetectionConfigHandler.convert(value));
     } catch (InvalidProtocolBufferException e) {
       log.error("Unable to convert config to ScopedAnomalyDetectionConfig for value: {}", value);
       return Optional.empty();
@@ -132,7 +215,7 @@ public class AnomalyDetectionConfigManagerImpl
   @Override
   @SneakyThrows
   protected Value buildValueFromData(ScopedAnomalyDetectionConfig data) {
-    return anomalyDetectionConfigConverter.convert(data);
+    return anomalyDetectionConfigHandler.convert(data);
   }
 
   @Override
@@ -239,7 +322,7 @@ public class AnomalyDetectionConfigManagerImpl
     for (String context : contextsWithIncreasingPriority) {
       anomalyDetectionConfig =
           configMap.containsKey(context)
-              ? anomalyDetectionConfigConverter.merge(
+              ? anomalyDetectionConfigHandler.merge(
                   configMap.get(context), anomalyDetectionConfig, filter)
               : anomalyDetectionConfig;
     }

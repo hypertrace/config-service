@@ -11,10 +11,16 @@ import static org.mockito.Mockito.verify;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManagerImpl;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigValidator;
+import ai.traceable.anomaly.config.service.v1.detector.DeleteScopedAnomalyDetectionConfigRequest;
+import ai.traceable.anomaly.config.service.v1.detector.DeleteScopedAnomalyDetectionConfigResponse;
 import ai.traceable.anomaly.config.service.v1.detector.GetAllScopedAnomalyDetectionConfigsRequest;
 import ai.traceable.anomaly.config.service.v1.detector.GetAllScopedAnomalyDetectionConfigsResponse;
+import ai.traceable.anomaly.config.service.v1.detector.GetAllUnresolvedScopedAnomalyDetectionConfigsRequest;
+import ai.traceable.anomaly.config.service.v1.detector.GetAllUnresolvedScopedAnomalyDetectionConfigsResponse;
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigResponse;
+import ai.traceable.anomaly.config.service.v1.detector.GetUnresolvedScopedAnomalyDetectionConfigRequest;
+import ai.traceable.anomaly.config.service.v1.detector.GetUnresolvedScopedAnomalyDetectionConfigResponse;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigResponse;
@@ -31,7 +37,7 @@ public class DetectorConfigServiceImplTest {
       new DetectorConfigServiceImpl(validator, configManager);
 
   @Test
-  void testGetScopedTrainingConfig() {
+  void testGetScopedDetectionConfig() {
     GetScopedAnomalyDetectionConfigRequest request =
         GetScopedAnomalyDetectionConfigRequest.newBuilder().build();
     StreamObserver<GetScopedAnomalyDetectionConfigResponse> responseObserver =
@@ -63,7 +69,7 @@ public class DetectorConfigServiceImplTest {
   }
 
   @Test
-  void testGetAllScopedTrainingConfig() {
+  void testGetAllScopedDetectionConfig() {
     GetAllScopedAnomalyDetectionConfigsRequest request =
         GetAllScopedAnomalyDetectionConfigsRequest.newBuilder().build();
     StreamObserver<GetAllScopedAnomalyDetectionConfigsResponse> responseObserver =
@@ -88,7 +94,7 @@ public class DetectorConfigServiceImplTest {
   }
 
   @Test
-  void testUpdateScopedTrainingConfig() {
+  void testUpdateScopedDetectionConfig() {
     UpdateScopedAnomalyDetectionConfigRequest request =
         UpdateScopedAnomalyDetectionConfigRequest.newBuilder().build();
     StreamObserver<UpdateScopedAnomalyDetectionConfigResponse> responseObserver =
@@ -115,6 +121,97 @@ public class DetectorConfigServiceImplTest {
         .when(configManager)
         .updateScopedAnomalyDetectionConfig(any(), any());
     detectorConfigService.updateScopedAnomalyDetectionConfig(request, responseObserver);
+    verify(responseObserver, times(1)).onNext(response);
+    verify(responseObserver, times(1)).onCompleted();
+  }
+
+  @Test
+  void testGetUnresolvedScopedDetectionConfig() {
+    GetUnresolvedScopedAnomalyDetectionConfigRequest request =
+        GetUnresolvedScopedAnomalyDetectionConfigRequest.newBuilder().build();
+    StreamObserver<GetUnresolvedScopedAnomalyDetectionConfigResponse> responseObserver =
+        mock(StreamObserver.class);
+
+    doReturn(Status.INVALID_ARGUMENT).when(validator).validate(request);
+    detectorConfigService.getUnresolvedScopedAnomalyDetectionConfig(request, responseObserver);
+    verify(responseObserver, times(1))
+        .onError(
+            argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INVALID_ARGUMENT));
+
+    doReturn(Status.OK).when(validator).validate(request);
+    doThrow(new RuntimeException("msg"))
+        .when(configManager)
+        .getUnresolvedScopedAnomalyDetectionConfig(any(), any(), any());
+    detectorConfigService.getUnresolvedScopedAnomalyDetectionConfig(request, responseObserver);
+    verify(responseObserver, times(1)).onError(argThat(err -> err.getMessage().equals("msg")));
+
+    GetUnresolvedScopedAnomalyDetectionConfigResponse response =
+        GetUnresolvedScopedAnomalyDetectionConfigResponse.newBuilder()
+            .setScopedAnomalyDetectionConfig(ScopedAnomalyDetectionConfig.getDefaultInstance())
+            .build();
+    doReturn(response.getScopedAnomalyDetectionConfig())
+        .when(configManager)
+        .getUnresolvedScopedAnomalyDetectionConfig(any(), any(), any());
+    detectorConfigService.getUnresolvedScopedAnomalyDetectionConfig(request, responseObserver);
+    verify(responseObserver, times(1)).onNext(response);
+    verify(responseObserver, times(1)).onCompleted();
+  }
+
+  @Test
+  void testGetAllUnresolvedScopedDetectionConfig() {
+    GetAllUnresolvedScopedAnomalyDetectionConfigsRequest request =
+        GetAllUnresolvedScopedAnomalyDetectionConfigsRequest.newBuilder().build();
+    StreamObserver<GetAllUnresolvedScopedAnomalyDetectionConfigsResponse> responseObserver =
+        mock(StreamObserver.class);
+
+    doThrow(new RuntimeException("msg"))
+        .when(configManager)
+        .getAllUnresolvedScopedAnomalyDetectionConfigs(any(), any());
+    detectorConfigService.getAllUnresolvedScopedAnomalyDetectionConfigs(request, responseObserver);
+    verify(responseObserver, times(1)).onError(argThat(err -> err.getMessage().equals("msg")));
+
+    GetAllUnresolvedScopedAnomalyDetectionConfigsResponse response =
+        GetAllUnresolvedScopedAnomalyDetectionConfigsResponse.newBuilder()
+            .addScopedAnomalyDetectionConfigs(ScopedAnomalyDetectionConfig.newBuilder().build())
+            .build();
+    doReturn(response.getScopedAnomalyDetectionConfigsList())
+        .when(configManager)
+        .getAllUnresolvedScopedAnomalyDetectionConfigs(any(), any());
+    detectorConfigService.getAllUnresolvedScopedAnomalyDetectionConfigs(request, responseObserver);
+    verify(responseObserver, times(1)).onNext(response);
+    verify(responseObserver, times(1)).onCompleted();
+  }
+
+  @Test
+  void testDeleteScopedDetectionConfig() {
+    DeleteScopedAnomalyDetectionConfigRequest request =
+        DeleteScopedAnomalyDetectionConfigRequest.newBuilder().build();
+    StreamObserver<DeleteScopedAnomalyDetectionConfigResponse> responseObserver =
+        mock(StreamObserver.class);
+
+    doReturn(Status.INVALID_ARGUMENT).when(validator).validate(request);
+    detectorConfigService.deleteScopedAnomalyDetectionConfig(request, responseObserver);
+    verify(responseObserver, times(1))
+        .onError(
+            argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INVALID_ARGUMENT));
+
+    doReturn(Status.OK).when(validator).validate(request);
+    doThrow(new RuntimeException("msg"))
+        .when(configManager)
+        .deleteScopedAnomalyDetectionConfig(any(), any(), any());
+    detectorConfigService.deleteScopedAnomalyDetectionConfig(request, responseObserver);
+    verify(responseObserver, times(1)).onError(argThat(err -> err.getMessage().equals("msg")));
+
+    ScopedAnomalyDetectionConfig deletedScopedAnomalyDetectionConfig =
+        ScopedAnomalyDetectionConfig.getDefaultInstance();
+    DeleteScopedAnomalyDetectionConfigResponse response =
+        DeleteScopedAnomalyDetectionConfigResponse.newBuilder()
+            .setDeletedScopedAnomalyDetectionConfig(deletedScopedAnomalyDetectionConfig)
+            .build();
+    doReturn(deletedScopedAnomalyDetectionConfig)
+        .when(configManager)
+        .deleteScopedAnomalyDetectionConfig(any(), any(), any());
+    detectorConfigService.deleteScopedAnomalyDetectionConfig(request, responseObserver);
     verify(responseObserver, times(1)).onNext(response);
     verify(responseObserver, times(1)).onCompleted();
   }

@@ -34,6 +34,11 @@ enum AnomalyEventCategory {
   ANOMALY_EVENT_CATEGORY_MALICIOUS = 2;
 }
 
+enum DeleteAnomalyConfigOption {
+  DELETE_ANOMALY_CONFIG_OPTION_UNSPECIFIED = 0;
+  DELETE_ANOMALY_CONFIG_OPTION_WHOLE_DETECTION_CONFIG = 1;
+}
+
 message GetAnomalyDetectionConfigsFilter {
   repeated AnomalyDetectionConfigType anomaly_detection_config_types = 1;
 }
@@ -53,6 +58,32 @@ message GetAllScopedAnomalyDetectionConfigsRequest {
 
 message GetAllScopedAnomalyDetectionConfigsResponse {
   repeated ScopedAnomalyDetectionConfig scoped_anomaly_detection_configs = 1;
+}
+
+message GetUnresolvedScopedAnomalyDetectionConfigRequest {
+  AnomalyConfigScope config_scope = 1;
+  GetAnomalyDetectionConfigsFilter filter = 2;
+}
+
+message GetUnresolvedScopedAnomalyDetectionConfigResponse {
+  ScopedAnomalyDetectionConfig scoped_anomaly_detection_config = 1;
+}
+
+message GetAllUnresolvedScopedAnomalyDetectionConfigsRequest {
+  GetAnomalyDetectionConfigsFilter filter = 1;
+}
+
+message GetAllUnresolvedScopedAnomalyDetectionConfigsResponse {
+  repeated ScopedAnomalyDetectionConfig scoped_anomaly_detection_configs = 1;
+}
+
+message DeleteScopedAnomalyDetectionConfigRequest {
+  DeleteAnomalyConfigOption delete_anomaly_config_option = 1;
+  ScopedAnomalyDetectionConfig scoped_anomaly_detection_config = 2;
+}
+
+message DeleteScopedAnomalyDetectionConfigResponse {
+  ScopedAnomalyDetectionConfig deleted_scoped_anomaly_detection_config = 1;
 }
 
 message UpdateScopedAnomalyDetectionConfigRequest {

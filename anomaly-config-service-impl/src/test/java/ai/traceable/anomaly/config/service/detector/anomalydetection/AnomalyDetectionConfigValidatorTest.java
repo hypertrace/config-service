@@ -20,7 +20,11 @@ import ai.traceable.anomaly.config.service.v1.detector.BlockingMetadataAnomalyDe
 import ai.traceable.anomaly.config.service.v1.detector.ContentSizeAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.CustomIpAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.CustomRegionAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.DeleteAnomalyConfigOption;
+import ai.traceable.anomaly.config.service.v1.detector.DeleteScopedAnomalyDetectionConfigRequest;
+import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigRequest;
+import ai.traceable.anomaly.config.service.v1.detector.GetUnresolvedScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.IntegerAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.LearntApiAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAllDetectionConfig;
@@ -65,6 +69,65 @@ public class AnomalyDetectionConfigValidatorTest {
         validator.validate(
             GetScopedAnomalyDetectionConfigRequest.newBuilder()
                 .setConfigScope(configScope)
+                .build());
+    assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
+  void testGetUnresolvedRequest() {
+    Status status =
+        validator.validate(GetUnresolvedScopedAnomalyDetectionConfigRequest.getDefaultInstance());
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("valid config scope"));
+
+    status =
+        validator.validate(
+            GetUnresolvedScopedAnomalyDetectionConfigRequest.newBuilder()
+                .setConfigScope(configScope)
+                .build());
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("valid config filter"));
+
+    status =
+        validator.validate(
+            GetUnresolvedScopedAnomalyDetectionConfigRequest.newBuilder()
+                .setConfigScope(configScope)
+                .setFilter(GetAnomalyDetectionConfigsFilter.getDefaultInstance())
+                .build());
+    assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
+  void testDeleteRequest() {
+    Status status =
+        validator.validate(DeleteScopedAnomalyDetectionConfigRequest.getDefaultInstance());
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("valid config scope"));
+
+    ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .setConfigScope(configScope)
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setApiDefinitionMetadataAnomalyDetectionConfig(
+                        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                            .setInteger(IntegerAnomalyConfig.getDefaultInstance())
+                            .build())
+                    .build())
+            .build();
+    status =
+        validator.validate(
+            DeleteScopedAnomalyDetectionConfigRequest.newBuilder()
+                .setScopedAnomalyDetectionConfig(scopedAnomalyDetectionConfig)
+                .build());
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("valid delete option"));
+    status =
+        validator.validate(
+            DeleteScopedAnomalyDetectionConfigRequest.newBuilder()
+                .setDeleteAnomalyConfigOption(
+                    DeleteAnomalyConfigOption.DELETE_ANOMALY_CONFIG_OPTION_WHOLE_DETECTION_CONFIG)
+                .setScopedAnomalyDetectionConfig(scopedAnomalyDetectionConfig)
                 .build());
     assertEquals(Status.OK.getCode(), status.getCode());
   }

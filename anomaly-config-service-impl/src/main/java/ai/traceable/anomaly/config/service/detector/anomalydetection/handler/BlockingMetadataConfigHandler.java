@@ -1,15 +1,17 @@
-package ai.traceable.anomaly.config.service.detector.anomalydetection.converter;
+package ai.traceable.anomaly.config.service.detector.anomalydetection.handler;
 
 import static ai.traceable.anomaly.config.service.common.AnomalyConfigServiceUtils.mergeConfigs;
 
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.BlockingMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-class BlockingMetadataConfigConverter {
+class BlockingMetadataConfigHandler {
 
   /**
    * @param preferredConfig
@@ -21,16 +23,14 @@ class BlockingMetadataConfigConverter {
     EnumMap<BlockingMetadataAnomalyDetectionConfig.ConfigCase, AnomalyDetectionConfig> configMap =
         new EnumMap<>(BlockingMetadataAnomalyDetectionConfig.ConfigCase.class);
 
-    preferredConfig.getAnomalyDetectionConfigsList().stream()
-        .filter(AnomalyDetectionConfig::hasBlockingMetadataAnomalyDetectionConfig)
+    getBlockingMetadataConfigs(preferredConfig.getAnomalyDetectionConfigsList())
         .forEach(
             detectionConfig ->
                 configMap.put(
                     detectionConfig.getBlockingMetadataAnomalyDetectionConfig().getConfigCase(),
                     detectionConfig));
 
-    fallbackConfig.getAnomalyDetectionConfigsList().stream()
-        .filter(AnomalyDetectionConfig::hasBlockingMetadataAnomalyDetectionConfig)
+    getBlockingMetadataConfigs(fallbackConfig.getAnomalyDetectionConfigsList())
         .forEach(
             detectionConfig -> {
               BlockingMetadataAnomalyDetectionConfig.ConfigCase configCase =
@@ -46,5 +46,37 @@ class BlockingMetadataConfigConverter {
             });
 
     return configMap.values().stream().collect(Collectors.toList());
+  }
+
+  List<AnomalyDetectionConfig> deleteWholeAnomalyDetectionConfigs(
+      List<AnomalyDetectionConfig> anomalyDetectionConfigs,
+      List<AnomalyDetectionConfig> detectionConfigsToDelete,
+      ScopedAnomalyDetectionConfig.Builder deletedConfigBuilder) {
+
+    List<AnomalyDetectionConfig> filteredConfigs = new ArrayList<>();
+    Set<BlockingMetadataAnomalyDetectionConfig.ConfigCase> blockingMetadataConfigCases =
+        getBlockingMetadataConfigs(detectionConfigsToDelete).stream()
+            .map(
+                detectionConfig ->
+                    detectionConfig.getBlockingMetadataAnomalyDetectionConfig().getConfigCase())
+            .collect(Collectors.toSet());
+
+    for (AnomalyDetectionConfig anomalyDetectionConfig : anomalyDetectionConfigs) {
+      if (anomalyDetectionConfig.hasBlockingMetadataAnomalyDetectionConfig()
+          && blockingMetadataConfigCases.contains(
+              anomalyDetectionConfig.getBlockingMetadataAnomalyDetectionConfig().getConfigCase())) {
+        deletedConfigBuilder.addAnomalyDetectionConfigs(anomalyDetectionConfig);
+      } else {
+        filteredConfigs.add(anomalyDetectionConfig);
+      }
+    }
+    return filteredConfigs;
+  }
+
+  private List<AnomalyDetectionConfig> getBlockingMetadataConfigs(
+      List<AnomalyDetectionConfig> detectionConfigs) {
+    return detectionConfigs.stream()
+        .filter(AnomalyDetectionConfig::hasBlockingMetadataAnomalyDetectionConfig)
+        .collect(Collectors.toList());
   }
 }

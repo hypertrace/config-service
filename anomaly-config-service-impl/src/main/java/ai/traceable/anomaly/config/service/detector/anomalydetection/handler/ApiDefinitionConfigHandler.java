@@ -1,4 +1,4 @@
-package ai.traceable.anomaly.config.service.detector.anomalydetection.converter;
+package ai.traceable.anomaly.config.service.detector.anomalydetection.handler;
 
 import static ai.traceable.anomaly.config.service.common.AnomalyConfigServiceUtils.mergeConfigs;
 
@@ -10,16 +10,18 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class ApiDefinitionConfigConverter {
+class ApiDefinitionConfigHandler {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ApiDefinitionConfigConverter.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ApiDefinitionConfigHandler.class);
   private final Map<String, ApiDefinitionMetadataAnomalyDetectionConfig>
       apiDefMetadataAnomalyDetectionConfigMap;
 
-  ApiDefinitionConfigConverter(ApiDefinitionRegistry apiDefinitionRegistry) {
+  ApiDefinitionConfigHandler(ApiDefinitionRegistry apiDefinitionRegistry) {
     this.apiDefMetadataAnomalyDetectionConfigMap =
         apiDefinitionRegistry.getApiDefRuleIdToDetectionConfigMap();
   }
@@ -35,8 +37,7 @@ class ApiDefinitionConfigConverter {
     EnumMap<ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase, AnomalyDetectionConfig>
         configCaseMap = new EnumMap<>(ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase.class);
 
-    preferredConfig.getAnomalyDetectionConfigsList().stream()
-        .filter(AnomalyDetectionConfig::hasApiDefinitionMetadataAnomalyDetectionConfig)
+    getApiDefMetadataConfigs(preferredConfig.getAnomalyDetectionConfigsList())
         .forEach(
             detectionConfig -> {
               ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase configCase =
@@ -72,8 +73,7 @@ class ApiDefinitionConfigConverter {
               configCaseMap.put(configCase, detectionConfig);
             });
 
-    fallbackConfig.getAnomalyDetectionConfigsList().stream()
-        .filter(AnomalyDetectionConfig::hasApiDefinitionMetadataAnomalyDetectionConfig)
+    getApiDefMetadataConfigs(fallbackConfig.getAnomalyDetectionConfigsList())
         .forEach(
             detectionConfig -> {
               ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase configCase =
@@ -92,5 +92,41 @@ class ApiDefinitionConfigConverter {
     resolvedConfigs.addAll(configCaseMap.values());
 
     return resolvedConfigs;
+  }
+
+  List<AnomalyDetectionConfig> deleteWholeAnomalyDetectionConfigs(
+      List<AnomalyDetectionConfig> anomalyDetectionConfigs,
+      List<AnomalyDetectionConfig> detectionConfigsToDelete,
+      ScopedAnomalyDetectionConfig.Builder deletedConfigBuilder) {
+
+    List<AnomalyDetectionConfig> filteredConfigs = new ArrayList<>();
+    Set<ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase> apiDefMetadataConfigCases =
+        getApiDefMetadataConfigs(detectionConfigsToDelete).stream()
+            .map(
+                detectionConfig ->
+                    detectionConfig
+                        .getApiDefinitionMetadataAnomalyDetectionConfig()
+                        .getConfigCase())
+            .collect(Collectors.toSet());
+
+    for (AnomalyDetectionConfig anomalyDetectionConfig : anomalyDetectionConfigs) {
+      if (anomalyDetectionConfig.hasApiDefinitionMetadataAnomalyDetectionConfig()
+          && apiDefMetadataConfigCases.contains(
+              anomalyDetectionConfig
+                  .getApiDefinitionMetadataAnomalyDetectionConfig()
+                  .getConfigCase())) {
+        deletedConfigBuilder.addAnomalyDetectionConfigs(anomalyDetectionConfig);
+      } else {
+        filteredConfigs.add(anomalyDetectionConfig);
+      }
+    }
+    return filteredConfigs;
+  }
+
+  private List<AnomalyDetectionConfig> getApiDefMetadataConfigs(
+      List<AnomalyDetectionConfig> detectionConfigs) {
+    return detectionConfigs.stream()
+        .filter(AnomalyDetectionConfig::hasApiDefinitionMetadataAnomalyDetectionConfig)
+        .collect(Collectors.toList());
   }
 }

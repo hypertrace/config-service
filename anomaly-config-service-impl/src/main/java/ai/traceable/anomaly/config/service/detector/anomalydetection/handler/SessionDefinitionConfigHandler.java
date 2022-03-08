@@ -1,4 +1,4 @@
-package ai.traceable.anomaly.config.service.detector.anomalydetection.converter;
+package ai.traceable.anomaly.config.service.detector.anomalydetection.handler;
 
 import static ai.traceable.anomaly.config.service.common.AnomalyConfigServiceUtils.mergeConfigs;
 
@@ -10,17 +10,19 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class SessionDefinitionConfigConverter {
+class SessionDefinitionConfigHandler {
 
   private static final Logger LOGGER =
-      LoggerFactory.getLogger(SessionDefinitionConfigConverter.class);
+      LoggerFactory.getLogger(SessionDefinitionConfigHandler.class);
   private final Map<String, SessionDefinitionMetadataAnomalyDetectionConfig>
       sessionDefAnomalyDetectionConfigMap;
 
-  SessionDefinitionConfigConverter(SessionRulesRegistry sessionRulesRegistry) {
+  SessionDefinitionConfigHandler(SessionRulesRegistry sessionRulesRegistry) {
     this.sessionDefAnomalyDetectionConfigMap =
         sessionRulesRegistry.getSessionDefRuleIdToDetectionConfigMap();
   }
@@ -31,8 +33,7 @@ class SessionDefinitionConfigConverter {
         configCaseMap =
             new EnumMap<>(SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase.class);
 
-    preferredConfig.getAnomalyDetectionConfigsList().stream()
-        .filter(AnomalyDetectionConfig::hasSessionDefinitionMetadataAnomalyDetectionConfig)
+    getSessionDefConfigs(preferredConfig.getAnomalyDetectionConfigsList())
         .forEach(
             detectionConfig -> {
               SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase configCase =
@@ -67,8 +68,7 @@ class SessionDefinitionConfigConverter {
               configCaseMap.put(configCase, detectionConfig);
             });
 
-    fallbackConfig.getAnomalyDetectionConfigsList().stream()
-        .filter(AnomalyDetectionConfig::hasSessionDefinitionMetadataAnomalyDetectionConfig)
+    getSessionDefConfigs(fallbackConfig.getAnomalyDetectionConfigsList())
         .forEach(
             detectionConfig -> {
               SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase configCase =
@@ -89,5 +89,41 @@ class SessionDefinitionConfigConverter {
     resolvedConfigs.addAll(configCaseMap.values());
 
     return resolvedConfigs;
+  }
+
+  List<AnomalyDetectionConfig> deleteWholeAnomalyDetectionConfigs(
+      List<AnomalyDetectionConfig> anomalyDetectionConfigs,
+      List<AnomalyDetectionConfig> detectionConfigsToDelete,
+      ScopedAnomalyDetectionConfig.Builder deletedConfigBuilder) {
+
+    List<AnomalyDetectionConfig> filteredConfigs = new ArrayList<>();
+    Set<SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase> sessionDefConfigCases =
+        getSessionDefConfigs(detectionConfigsToDelete).stream()
+            .map(
+                detectionConfig ->
+                    detectionConfig
+                        .getSessionDefinitionMetadataAnomalyDetectionConfig()
+                        .getConfigCase())
+            .collect(Collectors.toSet());
+
+    for (AnomalyDetectionConfig anomalyDetectionConfig : anomalyDetectionConfigs) {
+      if (anomalyDetectionConfig.hasSessionDefinitionMetadataAnomalyDetectionConfig()
+          && sessionDefConfigCases.contains(
+              anomalyDetectionConfig
+                  .getSessionDefinitionMetadataAnomalyDetectionConfig()
+                  .getConfigCase())) {
+        deletedConfigBuilder.addAnomalyDetectionConfigs(anomalyDetectionConfig);
+      } else {
+        filteredConfigs.add(anomalyDetectionConfig);
+      }
+    }
+    return filteredConfigs;
+  }
+
+  private List<AnomalyDetectionConfig> getSessionDefConfigs(
+      List<AnomalyDetectionConfig> detectionConfigs) {
+    return detectionConfigs.stream()
+        .filter(AnomalyDetectionConfig::hasSessionDefinitionMetadataAnomalyDetectionConfig)
+        .collect(Collectors.toList());
   }
 }
