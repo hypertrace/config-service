@@ -29,8 +29,11 @@ import ai.traceable.platform.apientity.Segment;
 import ai.traceable.platform.apientity.TrieDiffLog;
 import ai.traceable.platform.apientity.TrieNodeType;
 import ai.traceable.platform.apientity.http.model.TrieNodeConfig;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.hypertrace.entity.constants.v1.CommonAttribute;
 import org.hypertrace.entity.data.service.v1.AttributeValue;
@@ -361,5 +364,14 @@ public class ApiNamingManagerTestUtils {
                         .build())
                 .build())
         .build();
+  }
+
+  public static Config buildFullTrieReloadConfig(String tenantScopedTimestamp) {
+    return ConfigFactory.parseMap(
+        Map.of(
+            "default",
+            Map.of("timestamp", "1970-01-01T00:00:00.000Z", "disabled", false),
+            "tenantId",
+            Map.of("default", Map.of("timestamp", tenantScopedTimestamp, "disabled", false))));
   }
 }

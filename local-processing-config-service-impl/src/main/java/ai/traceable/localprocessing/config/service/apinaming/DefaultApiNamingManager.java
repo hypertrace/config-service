@@ -50,8 +50,10 @@ import com.github.rholder.retry.WaitStrategies;
 import com.google.common.collect.Streams;
 import com.google.inject.Inject;
 import com.google.protobuf.ProtocolStringList;
+import com.typesafe.config.Config;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -86,6 +88,9 @@ class DefaultApiNamingManager implements ApiNamingManager {
   private final EntityDataServiceClient entityDataServiceClient;
   private final ApiNamingConfig apiNamingConfig;
   private static final String ENVIRONMENT_IDENTIFYING_ATTRIBUTE = "ENVIRONMENT";
+  private static final String FULL_TRIE_RELOAD_DEFAULT_CONFIG_KEY = "default";
+  private static final String FULL_TRIE_RELOAD_TIMESTAMP_CONFIG_KEY = "timestamp";
+  private static final String FULL_TRIE_RELOAD_DISABLED_CONFIG_KEY = "disabled";
   private final ModelPersistentStore<TrieDiffLogModel> trieDiffLogModelStore;
   private final ModelPersistentStore<TrieModel> trieModelStore;
 
@@ -189,12 +194,15 @@ class DefaultApiNamingManager implements ApiNamingManager {
       String trieToken)
       throws IOException, ExecutionException, RetryException {
     long agentTimestamp = getAgentTimestamp(trieToken, serviceId, requestContext);
-    ServiceScope serviceScope = new ServiceScope(requestContext.getTenantId().get(), serviceId);
+    String tenantId = requestContext.getTenantId().get();
+    ServiceScope serviceScope = new ServiceScope(tenantId, serviceId);
     List<PersistedModel<TrieDiffLogModel>> trieDiffLogModels = Collections.emptyList();
     List<TrieDiffLog> trieDiffLogs = Collections.emptyList();
     long trieModelTimestamp = trieModelStore.getModelMetadata(serviceScope).getModificationTime();
+    boolean reloadFullTrie = shouldReloadFullTrie(tenantId, serviceId, agentTimestamp);
 
-    if (agentTimestamp != 0
+    if (!reloadFullTrie
+        && agentTimestamp != 0
         && trieModelTimestamp - agentTimestamp <= apiNamingConfig.getDiffLogsRetentionPeriod()) {
       trieDiffLogModels = loadDiffLogModels(serviceScope, buildModelFilter(agentTimestamp));
       trieDiffLogs = getAllTrieDiffLogs(trieDiffLogModels);
@@ -228,6 +236,36 @@ class DefaultApiNamingManager implements ApiNamingManager {
 
   private DiffTrie getDiffTrie(List<TrieDiffLog> allTrieDiffLogs) {
     return DiffTrie.newBuilder().addAllTrieDiffLogs(allTrieDiffLogs).build();
+  }
+
+  private boolean shouldReloadFullTrie(String tenantId, String serviceId, long agentTimestamp) {
+    Config fullTrieReloadConfig = apiNamingConfig.getFullTrieReloadConfig();
+    FullTrieReloadConfigInfo fullTrieReloadConfigInfo;
+    if (fullTrieReloadConfig.hasPath(tenantId)) {
+      Config tenantSpecificConfig = fullTrieReloadConfig.getConfig(tenantId);
+      if (tenantSpecificConfig.hasPath(serviceId)) {
+        fullTrieReloadConfigInfo =
+            getFullTrieReloadConfigInfo(tenantSpecificConfig.getConfig(serviceId));
+      } else {
+        fullTrieReloadConfigInfo =
+            getFullTrieReloadConfigInfo(
+                tenantSpecificConfig.getConfig(FULL_TRIE_RELOAD_DEFAULT_CONFIG_KEY));
+      }
+    } else {
+      fullTrieReloadConfigInfo =
+          getFullTrieReloadConfigInfo(
+              fullTrieReloadConfig.getConfig(FULL_TRIE_RELOAD_DEFAULT_CONFIG_KEY));
+    }
+    if (fullTrieReloadConfigInfo.isDisabled()) {
+      return false;
+    }
+    return agentTimestamp < fullTrieReloadConfigInfo.getTimestamp();
+  }
+
+  private FullTrieReloadConfigInfo getFullTrieReloadConfigInfo(Config config) {
+    return new FullTrieReloadConfigInfo(
+        config.getBoolean(FULL_TRIE_RELOAD_DISABLED_CONFIG_KEY),
+        Instant.parse(config.getString(FULL_TRIE_RELOAD_TIMESTAMP_CONFIG_KEY)).toEpochMilli());
   }
 
   private long getLatestDiffLogTimestamp(List<PersistedModel<TrieDiffLogModel>> persistedModels) {
@@ -655,5 +693,11 @@ class DefaultApiNamingManager implements ApiNamingManager {
   private static class HttpApiNamingConfigInfo {
     HttpApiNamingConfig httpApiNamingConfig;
     int embryonicThreshold;
+  }
+
+  @lombok.Value
+  private static class FullTrieReloadConfigInfo {
+    boolean disabled;
+    long timestamp;
   }
 }

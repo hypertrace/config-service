@@ -1,5 +1,6 @@
 package ai.traceable.localprocessing.config.service.apinaming;
 
+import static ai.traceable.localprocessing.config.service.apinaming.ApiNamingManagerTestUtils.buildFullTrieReloadConfig;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,6 +42,7 @@ class DefaultApiNamingManagerTest {
   private TrieDiffLogModel trieDiffLogModel;
   private TrieModel trieModel;
   private FileMetadata fileMetadata;
+  private ApiNamingConfig apiNamingConfig;
 
   @BeforeEach
   void setup() throws IOException {
@@ -48,7 +50,7 @@ class DefaultApiNamingManagerTest {
         mock(TrainerConfigServiceBlockingStub.class);
     entityDataServiceClient = mock(EntityDataServiceClient.class);
     UuidGenerator uuidGenerator = new UuidGenerator();
-    ApiNamingConfig apiNamingConfig = mock(ApiNamingConfig.class);
+    apiNamingConfig = mock(ApiNamingConfig.class);
     PersistedModel trieDiffLogPersistedModel = mock(PersistedModel.class);
     trieDiffLogModel = mock(TrieDiffLogModel.class);
 
@@ -90,6 +92,8 @@ class DefaultApiNamingManagerTest {
   void testGetServiceResponseList() {
     when(trieModel.getNonEmbryonicPaths(ApiNamingManagerTestUtils.buildTrieNodeConfig()))
         .thenReturn(new HashSet<>());
+    when(apiNamingConfig.getFullTrieReloadConfig())
+        .thenReturn(buildFullTrieReloadConfig("2022-03-09T13:36:33Z"));
     when(trieDiffLogModel.getTrieDiffLog())
         .thenReturn(ai.traceable.platform.apientity.TrieDiffLog.newBuilder().build());
     when(fileMetadata.getModificationTime()).thenReturn(1L);
@@ -150,6 +154,8 @@ class DefaultApiNamingManagerTest {
 
   @Test
   void testTrieConstruction() {
+    when(apiNamingConfig.getFullTrieReloadConfig())
+        .thenReturn(buildFullTrieReloadConfig("2022-03-09T13:36:33Z"));
     when(trieModel.getNonEmbryonicPaths(any()))
         .thenReturn(ApiNamingManagerTestUtils.buildNonEmbryonicPaths());
     when(trieDiffLogModel.getTrieDiffLog())
@@ -194,6 +200,8 @@ class DefaultApiNamingManagerTest {
 
   @Test
   void testTrieDiffLogConstruction() {
+    when(apiNamingConfig.getFullTrieReloadConfig())
+        .thenReturn(buildFullTrieReloadConfig("1970-01-01T00:00:00.000Z"));
     when(trieDiffLogModel.getTrieDiffLog())
         .thenReturn(ApiNamingManagerTestUtils.buildTrieDiffLog());
     when(fileMetadata.getModificationTime()).thenReturn(3L);
@@ -227,5 +235,54 @@ class DefaultApiNamingManagerTest {
     assertTrue(actualTrieDiffLogsList.contains(expectedDiffTrie.getTrieDiffLogs(0)));
     assertTrue(actualTrieDiffLogsList.contains(expectedDiffTrie.getTrieDiffLogs(1)));
     assertTrue(actualTrieDiffLogsList.contains(expectedDiffTrie.getTrieDiffLogs(2)));
+  }
+
+  @Test
+  void testFullTrieReloadConfig() {
+    when(apiNamingConfig.getFullTrieReloadConfig())
+        .thenReturn(buildFullTrieReloadConfig("2022-03-09T13:36:33Z"));
+    when(trieDiffLogModel.getTrieDiffLog())
+        .thenReturn(ApiNamingManagerTestUtils.buildTrieDiffLog());
+    when(fileMetadata.getModificationTime()).thenReturn(3L);
+    when(trieModel.getNonEmbryonicPaths(any()))
+        .thenReturn(ApiNamingManagerTestUtils.buildNonEmbryonicPaths());
+    FullTrie expectedFullTrie = ApiNamingManagerTestUtils.buildExpectedFullTrie();
+
+    ServiceRequest serviceRequest1 =
+        ServiceRequest.newBuilder()
+            .setServiceName("serviceName1")
+            .setConfigHash("")
+            .setTrieToken("1")
+            .build();
+    when(entityDataServiceClient.getByTypeAndIdentifyingProperties(
+            any(),
+            eq(
+                ApiNamingManagerTestUtils.buildGetEntityByTypeAndIdentifyingAttributesRequest(
+                    "serviceName1"))))
+        .thenReturn(Entity.newBuilder().setEntityId("serviceId1").build());
+
+    List<HttpServiceResponse> actualServiceResponseList =
+        apiNamingManager.getHttpServiceResponseList(
+            RequestContext.forTenantId("tenantId"),
+            GetApiNamingModelRequest.newBuilder()
+                .setEnvironment("environment")
+                .addAllServiceRequests(List.of(serviceRequest1))
+                .build());
+
+    assertEquals(1, actualServiceResponseList.size());
+    assertEquals("3", actualServiceResponseList.get(0).getTrie().getToken());
+    List<TrieDiffLog> actualTrieDiffLogsList =
+        actualServiceResponseList.get(0).getTrie().getDiffTrie().getTrieDiffLogsList();
+    assertEquals(0, actualTrieDiffLogsList.size());
+    List<Node> actualNodes =
+        actualServiceResponseList
+            .get(0)
+            .getTrie()
+            .getFullTrie()
+            .getRootsList()
+            .get(0)
+            .getChildrenList();
+    assertTrue(actualNodes.contains(expectedFullTrie.getRoots(0).getChildren(0)));
+    assertTrue(actualNodes.contains(expectedFullTrie.getRoots(0).getChildren(1)));
   }
 }
