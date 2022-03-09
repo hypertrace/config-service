@@ -29,6 +29,7 @@ class DefaultCustomModsecBlockingManager implements CustomModsecBlockingManager 
                 .setFilter(
                     GetRulesFilter.newBuilder()
                         .addEventTypes(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
+                        .addEventTypes(EventType.EVENT_TYPE_ALLOW)
                         .setDisabled(false)
                         .build())
                 .build());
