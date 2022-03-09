@@ -136,11 +136,11 @@ data:
               timestamp = {{ .Values.localApiNamingConfig.fullTrieReloadConfig.default.timestamp }}
             }
           {{- else }}
-          $k = {
-            {{-  range $sk,$sv := $v }}
-              $sk = {
-                disabled = $sv.disabled
-                timestamp = $sv.timestamp
+          {{ $k }} = {
+            {{- range $sk,$sv := $v }}
+              {{ $sk }} = {
+                disabled = {{ $sv.disabled }}
+                timestamp = {{ $sv.timestamp }}
               }
             {{- end}}
           }
@@ -169,24 +169,26 @@ data:
       {{- end }}
     {{- end }}
   span-processing-rules.conf: |-
-    sampling.config {
-      rate.limit.config = {
-        {{- range $k,$v := $.Values.traceableConfigServiceConfig.localProcessingConfigServiceConfig.samplingConfig.rateLimitConfig }}
-        {{ $k }} = {
-          traceLimitPerEndpoint = {
-            {{- if hasKey $v.traceLimitPerEndpoint.fixedWindowLimit}}
-            quantityAllowed = {{ $v.traceLimitPerEndpoint.fixedWindowLimit.quantityAllowed }}
-            windowDuration = {{ $v.traceLimitPerEndpoint.fixedWindowLimit.windowDuration }}
-            {{- end }}
-          }
-          traceLimitGlobal = {
-            {{- if hasKey $v.traceLimitGlobal.fixedWindowLimit }}
-            quantityAllowed = {{ $v.traceLimitGlobal.fixedWindowLimit.quantityAllowed }}
-            windowDuration = {{ $v.traceLimitGlobal.fixedWindowLimit.windowDuration }}
-            {{- end }}
-          }
-          apiEndpointCacheDuration = {{ $v.apiEndpointCacheDuration }}
-        },
-        {{- end }}
+    {{- if hasKey .Values.traceableConfigServiceConfig "localProcessingConfigServiceConfig" }}
+      sampling.config {
+        rate.limit.config = {
+          {{- range $k,$v := $.Values.traceableConfigServiceConfig.localProcessingConfigServiceConfig.samplingConfig.rateLimitConfig }}
+          {{ $k }} = {
+            traceLimitPerEndpoint = {
+              {{- if hasKey $v.traceLimitPerEndpoint.fixedWindowLimit}}
+              quantityAllowed = {{ $v.traceLimitPerEndpoint.fixedWindowLimit.quantityAllowed }}
+              windowDuration = {{ $v.traceLimitPerEndpoint.fixedWindowLimit.windowDuration }}
+              {{- end }}
+            }
+            traceLimitGlobal = {
+              {{- if hasKey $v.traceLimitGlobal.fixedWindowLimit }}
+              quantityAllowed = {{ $v.traceLimitGlobal.fixedWindowLimit.quantityAllowed }}
+              windowDuration = {{ $v.traceLimitGlobal.fixedWindowLimit.windowDuration }}
+              {{- end }}
+            }
+            apiEndpointCacheDuration = {{ $v.apiEndpointCacheDuration }}
+          },
+          {{- end }}
+        }
       }
-    }
+    {{- end }}

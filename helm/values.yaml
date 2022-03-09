@@ -133,9 +133,9 @@ traceableConfigServiceConfig:
     port: 51001
   labelApplicationRuleConfigServiceConfig:
     maxDynamicLabelApplicationRulesPerTenant: 100
-  localProcessingConfigServiceConfig:
-    samplingConfig:
-      rateLimitConfig:
+#  localProcessingConfigServiceConfig:
+#    samplingConfig:
+#      rateLimitConfig:
         #commented config for reference
 #        tenant1:
 #          traceLimitPerEndpoint:
