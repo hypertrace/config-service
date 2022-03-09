@@ -2,7 +2,10 @@ package ai.traceable.anomaly.config.service.trainer.trainingconfig;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.DeleteAnomalyConfigOption;
+import ai.traceable.anomaly.config.service.v1.trainer.DeleteScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.GetScopedTrainingConfigRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.GetUnresolvedScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.MetadataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.SensitiveDataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.SessionTrainingConfig;
@@ -41,6 +44,37 @@ public class TrainingConfigValidator {
           request.getScopedTrainingConfig().getConfigScope(), true);
     }
     return status;
+  }
+
+  public Status validate(GetUnresolvedScopedTrainingConfigRequest request) {
+    if (!request.hasConfigScope()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "GetUnresolvedScopedTrainingConfigRequest should have a valid config scope.");
+    }
+    if (!request.hasFilter()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "GetUnresolvedScopedTrainingConfigRequest should have a valid config filter.");
+    }
+    return anomalyConfigValidator.validate(request.getConfigScope(), true);
+  }
+
+  public Status validate(DeleteScopedTrainingConfigRequest request) {
+    if (!request.getScopedTrainingConfig().hasConfigScope()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "DeleteScopedTrainingConfigRequest should have a valid config scope.");
+    }
+    if (request
+        .getDeleteAnomalyConfigOption()
+        .equals(DeleteAnomalyConfigOption.DELETE_ANOMALY_CONFIG_OPTION_UNSPECIFIED)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "DeleteScopedTrainingConfigRequest should have a valid delete option.");
+    }
+    Status status =
+        anomalyConfigValidator.validate(request.getScopedTrainingConfig().getConfigScope(), true);
+    if (!status.isOk()) {
+      return status;
+    }
+    return validate(request.getScopedTrainingConfig().getTrainingConfigsList());
   }
 
   private Status validate(List<TrainingConfig> trainingConfigs) {

@@ -19,6 +19,11 @@ message GetTrainingConfigsFilter {
   repeated TrainingConfigType training_config_types = 1;
 }
 
+enum DeleteAnomalyConfigOption {
+  DELETE_ANOMALY_CONFIG_OPTION_UNSPECIFIED = 0;
+  DELETE_ANOMALY_CONFIG_OPTION_WHOLE_TRAINING_CONFIG = 1;
+}
+
 message GetScopedTrainingConfigRequest {
   AnomalyConfigScope config_scope = 1;
   GetTrainingConfigsFilter filter = 2;
@@ -36,6 +41,23 @@ message GetAllScopedTrainingConfigsResponse {
   repeated ScopedTrainingConfig scoped_training_configs = 1;
 }
 
+message GetUnresolvedScopedTrainingConfigRequest {
+  AnomalyConfigScope config_scope = 1;
+  GetTrainingConfigsFilter filter = 2;
+}
+
+message GetUnresolvedScopedTrainingConfigResponse {
+  ScopedTrainingConfig scoped_training_config = 1;
+}
+
+message GetAllUnresolvedScopedTrainingConfigRequest {
+  GetTrainingConfigsFilter filter = 1;
+}
+
+message GetAllUnresolvedScopedTrainingConfigResponse {
+  repeated ScopedTrainingConfig scoped_training_configs = 1;
+}
+
 message ScopedTrainingConfig {
   AnomalyConfigScope config_scope = 1;
   repeated TrainingConfig training_configs = 2;
@@ -47,6 +69,15 @@ message UpdateScopedTrainingConfigRequest {
 
 message UpdateScopedTrainingConfigResponse {
   ScopedTrainingConfig scoped_training_config = 1;
+}
+
+message DeleteScopedTrainingConfigRequest {
+  DeleteAnomalyConfigOption delete_anomaly_config_option = 1;
+  ScopedTrainingConfig scoped_training_config = 2;
+}
+
+message DeleteScopedTrainingConfigResponse {
+  ScopedTrainingConfig deleted_scoped_training_config = 1;
 }
 
 message TrainingConfig {

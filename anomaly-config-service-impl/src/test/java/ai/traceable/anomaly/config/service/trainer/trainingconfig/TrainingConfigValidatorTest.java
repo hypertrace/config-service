@@ -9,8 +9,13 @@ import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.StringList;
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ContentSizeTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.DeleteAnomalyConfigOption;
+import ai.traceable.anomaly.config.service.v1.trainer.DeleteScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.DeviceTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.GetScopedTrainingConfigRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.GetTrainingConfigsFilter;
+import ai.traceable.anomaly.config.service.v1.trainer.GetUnresolvedScopedTrainingConfigRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.LackOfEncryptionTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.MetadataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.PiiSensitiveDataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
@@ -18,6 +23,7 @@ import ai.traceable.anomaly.config.service.v1.trainer.SensitiveDataTrainingConfi
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.UpdateScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.UrlFilterConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig;
 import io.grpc.Status;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +52,65 @@ class TrainingConfigValidatorTest {
     status =
         validator.validate(
             GetScopedTrainingConfigRequest.newBuilder().setConfigScope(configScope).build());
+    assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
+  void testGetUnresolvedRequest() {
+    Status status =
+        validator.validate(GetUnresolvedScopedTrainingConfigRequest.getDefaultInstance());
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("valid config scope"));
+
+    status =
+        validator.validate(
+            GetUnresolvedScopedTrainingConfigRequest.newBuilder()
+                .setConfigScope(configScope)
+                .build());
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("valid config filter"));
+
+    status =
+        validator.validate(
+            GetUnresolvedScopedTrainingConfigRequest.newBuilder()
+                .setConfigScope(configScope)
+                .setFilter(GetTrainingConfigsFilter.getDefaultInstance())
+                .build());
+    assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
+  void testDeleteRequest() {
+    Status status = validator.validate(DeleteScopedTrainingConfigRequest.getDefaultInstance());
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("valid config scope"));
+
+    ScopedTrainingConfig scopedTrainingConfig =
+        ScopedTrainingConfig.newBuilder()
+            .setConfigScope(configScope)
+            .addTrainingConfigs(
+                TrainingConfig.newBuilder()
+                    .setVulnerabilityTrainingConfig(
+                        VulnerabilityTrainingConfig.newBuilder()
+                            .setLackOfEncryption(
+                                LackOfEncryptionTrainingConfig.getDefaultInstance())))
+            .build();
+
+    status =
+        validator.validate(
+            DeleteScopedTrainingConfigRequest.newBuilder()
+                .setScopedTrainingConfig(scopedTrainingConfig)
+                .build());
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("valid delete option"));
+
+    status =
+        validator.validate(
+            DeleteScopedTrainingConfigRequest.newBuilder()
+                .setDeleteAnomalyConfigOption(
+                    DeleteAnomalyConfigOption.DELETE_ANOMALY_CONFIG_OPTION_WHOLE_TRAINING_CONFIG)
+                .setScopedTrainingConfig(scopedTrainingConfig)
+                .build());
     assertEquals(Status.OK.getCode(), status.getCode());
   }
 

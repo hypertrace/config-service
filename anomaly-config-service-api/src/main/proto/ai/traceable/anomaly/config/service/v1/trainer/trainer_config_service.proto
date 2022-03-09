@@ -15,9 +15,15 @@ service TrainerConfigService {
 
   rpc GetAllScopedTrainingConfigs(GetAllScopedTrainingConfigsRequest) returns (GetAllScopedTrainingConfigsResponse) {}
 
+  rpc GetUnresolvedScopedTrainingConfig(GetUnresolvedScopedTrainingConfigRequest) returns (GetUnresolvedScopedTrainingConfigResponse) {}
+
+  rpc GetAllUnresolvedScopedTrainingConfig(GetAllUnresolvedScopedTrainingConfigRequest) returns (GetAllUnresolvedScopedTrainingConfigResponse) {}
+
   rpc UpdateScopedTrainingConfig(UpdateScopedTrainingConfigRequest) returns (UpdateScopedTrainingConfigResponse) {}
 
   rpc UpsertTrainingAction(UpsertTrainingActionRequest) returns (UpsertTrainingActionResponse) {}
+
+  rpc DeleteScopedTrainingConfig(DeleteScopedTrainingConfigRequest) returns (DeleteScopedTrainingConfigResponse) {}
 
   rpc GetAllTrainingActions(GetAllTrainingActionsRequest) returns (GetAllTrainingActionsResponse) {}
 }

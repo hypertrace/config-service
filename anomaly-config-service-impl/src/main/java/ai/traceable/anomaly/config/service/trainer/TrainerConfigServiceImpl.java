@@ -4,12 +4,19 @@ import ai.traceable.anomaly.config.service.trainer.trainingaction.TrainingAction
 import ai.traceable.anomaly.config.service.trainer.trainingaction.TrainingActionValidator;
 import ai.traceable.anomaly.config.service.trainer.trainingconfig.TrainingConfigManager;
 import ai.traceable.anomaly.config.service.trainer.trainingconfig.TrainingConfigValidator;
+import ai.traceable.anomaly.config.service.v1.trainer.DeleteScopedTrainingConfigRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.DeleteScopedTrainingConfigResponse;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllScopedTrainingConfigsRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllScopedTrainingConfigsResponse;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllTrainingActionsRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllTrainingActionsResponse;
+import ai.traceable.anomaly.config.service.v1.trainer.GetAllUnresolvedScopedTrainingConfigRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.GetAllUnresolvedScopedTrainingConfigResponse;
 import ai.traceable.anomaly.config.service.v1.trainer.GetScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.GetScopedTrainingConfigResponse;
+import ai.traceable.anomaly.config.service.v1.trainer.GetUnresolvedScopedTrainingConfigRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.GetUnresolvedScopedTrainingConfigResponse;
+import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainerConfigServiceGrpc;
 import ai.traceable.anomaly.config.service.v1.trainer.UpdateScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.UpdateScopedTrainingConfigResponse;
@@ -111,6 +118,78 @@ public class TrainerConfigServiceImpl
     } catch (Exception e) {
       log.error(e.getMessage(), e);
       responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getUnresolvedScopedTrainingConfig(
+      GetUnresolvedScopedTrainingConfigRequest request,
+      StreamObserver<GetUnresolvedScopedTrainingConfigResponse> responseObserver) {
+    Status status = validator.validate(request);
+    if (!status.isOk()) {
+      log.error(
+          "GetUnresolvedScopedTrainingConfigRequest is not valid: {}", status.getDescription());
+      responseObserver.onError(status.asException());
+      return;
+    }
+    try {
+      GetUnresolvedScopedTrainingConfigResponse response =
+          GetUnresolvedScopedTrainingConfigResponse.newBuilder()
+              .setScopedTrainingConfig(
+                  configManager.getUnresolvedTrainingConfig(
+                      RequestContext.CURRENT.get(), request.getConfigScope(), request.getFilter()))
+              .build();
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(exception.getMessage(), exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void getAllUnresolvedScopedTrainingConfig(
+      GetAllUnresolvedScopedTrainingConfigRequest request,
+      StreamObserver<GetAllUnresolvedScopedTrainingConfigResponse> responseObserver) {
+    try {
+      GetAllUnresolvedScopedTrainingConfigResponse response =
+          GetAllUnresolvedScopedTrainingConfigResponse.newBuilder()
+              .addAllScopedTrainingConfigs(
+                  configManager.getAllUnresolvedTrainingConfig(
+                      RequestContext.CURRENT.get(), request.getFilter()))
+              .build();
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(exception.getMessage(), exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void deleteScopedTrainingConfig(
+      DeleteScopedTrainingConfigRequest request,
+      StreamObserver<DeleteScopedTrainingConfigResponse> responseObserver) {
+    Status status = validator.validate(request);
+    if (!status.isOk()) {
+      log.error("DeleteScopedTrainingConfigRequest is not valid: {}", status.getDescription());
+      responseObserver.onError(status.asException());
+      return;
+    }
+    try {
+      ScopedTrainingConfig deletedScopedTrainingConfig =
+          configManager.deleteTrainingConfig(
+              RequestContext.CURRENT.get(),
+              request.getScopedTrainingConfig(),
+              request.getDeleteAnomalyConfigOption());
+      responseObserver.onNext(
+          DeleteScopedTrainingConfigResponse.newBuilder()
+              .setDeletedScopedTrainingConfig(deletedScopedTrainingConfig)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(exception.getMessage(), exception);
+      responseObserver.onError(exception);
     }
   }
 

@@ -15,10 +15,11 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 
-public class TrainingConfigConverter {
+public class TrainingConfigHandler {
   public Value convert(ScopedTrainingConfig config) throws InvalidProtocolBufferException {
     return ConfigProtoConverter.convertToValue(config);
   }
@@ -164,6 +165,65 @@ public class TrainingConfigConverter {
         .addAllTrainingConfigs(apiNamingTrainingConfigMap.values())
         .addAllTrainingConfigs(sensitiveDataTrainingConfigMap.values())
         .build();
+  }
+
+  public ScopedTrainingConfig deleteWholeTrainingConfigs(
+      ScopedTrainingConfig scopedTrainingConfig,
+      List<TrainingConfig> deleteTrainingConfigFilters,
+      ScopedTrainingConfig.Builder deletedConfigBuilder) {
+    ScopedTrainingConfig.Builder filteredConfigBuilder = ScopedTrainingConfig.newBuilder();
+    filteredConfigBuilder.setConfigScope(scopedTrainingConfig.getConfigScope());
+    for (TrainingConfig trainingConfig : scopedTrainingConfig.getTrainingConfigsList()) {
+      if (isPresent(trainingConfig, deleteTrainingConfigFilters)) {
+        deletedConfigBuilder.addTrainingConfigs(trainingConfig);
+      } else {
+        filteredConfigBuilder.addTrainingConfigs(trainingConfig);
+      }
+    }
+    return filteredConfigBuilder.build();
+  }
+
+  private boolean isPresent(TrainingConfig trainingConfig, List<TrainingConfig> configFilter) {
+    switch (trainingConfig.getTrainingConfigCase()) {
+      case METADATA_TRAINING_CONFIG:
+        return configFilter.stream()
+            .filter(TrainingConfig::hasMetadataTrainingConfig)
+            .map(TrainingConfig::getMetadataTrainingConfig)
+            .anyMatch(
+                filter ->
+                    filter
+                        .getConfigCase()
+                        .equals(trainingConfig.getMetadataTrainingConfig().getConfigCase()));
+      case API_NAMING_TRAINING_CONFIG:
+        return configFilter.stream()
+            .filter(TrainingConfig::hasApiNamingTrainingConfig)
+            .map(TrainingConfig::getApiNamingTrainingConfig)
+            .anyMatch(
+                filter ->
+                    filter
+                        .getConfigCase()
+                        .equals(trainingConfig.getApiNamingTrainingConfig().getConfigCase()));
+      case VULNERABILITY_TRAINING_CONFIG:
+        return configFilter.stream()
+            .filter(TrainingConfig::hasVulnerabilityTrainingConfig)
+            .map(TrainingConfig::getVulnerabilityTrainingConfig)
+            .anyMatch(
+                filter ->
+                    filter
+                        .getConfigCase()
+                        .equals(trainingConfig.getVulnerabilityTrainingConfig().getConfigCase()));
+      case SESSION_TRAINING_CONFIG:
+        return configFilter.stream()
+            .filter(TrainingConfig::hasSessionTrainingConfig)
+            .map(TrainingConfig::getSessionTrainingConfig)
+            .anyMatch(
+                filter ->
+                    filter
+                        .getConfigCase()
+                        .equals(trainingConfig.getSessionTrainingConfig().getConfigCase()));
+      default:
+        return false;
+    }
   }
 
   private <K extends Enum<K>> void resolve(

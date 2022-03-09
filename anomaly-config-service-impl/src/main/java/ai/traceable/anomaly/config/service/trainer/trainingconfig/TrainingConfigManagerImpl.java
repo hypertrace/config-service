@@ -6,6 +6,7 @@ import static ai.traceable.anomaly.config.service.trainer.trainingconfig.Trainin
 import ai.traceable.anomaly.config.service.trainer.TrainerConfigServiceConfig;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.trainer.DeleteAnomalyConfigOption;
 import ai.traceable.anomaly.config.service.v1.trainer.GetTrainingConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
@@ -29,23 +30,23 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @Slf4j
 public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrainingConfig>
     implements TrainingConfigManager {
-  private final TrainingConfigConverter configConverter;
+  private final TrainingConfigHandler configHandler;
   private final List<TrainingConfig> defaultApiNamingTrainingConfigs;
 
   @Inject
   public TrainingConfigManagerImpl(
-      TrainingConfigConverter configConverter,
+      TrainingConfigHandler configHandler,
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
       TrainerConfigServiceConfig config) {
     super(configServiceBlockingStub, TRAINING_CONFIG_NAMESPACE, TRAINING_CONFIG_RESOURCE_NAME);
-    this.configConverter = configConverter;
+    this.configHandler = configHandler;
     this.defaultApiNamingTrainingConfigs = config.getApiNamingTrainingConfigs();
   }
 
   @Override
   protected Optional<ScopedTrainingConfig> buildDataFromValue(Value value) {
     try {
-      return Optional.of(configConverter.convert(value));
+      return Optional.of(configHandler.convert(value));
     } catch (InvalidProtocolBufferException exception) {
       log.error("Unable to convert config to ScopedTrainingConfig for value: {}", value);
       return Optional.empty();
@@ -55,7 +56,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
   @Override
   @SneakyThrows
   protected Value buildValueFromData(ScopedTrainingConfig data) {
-    return configConverter.convert(data);
+    return configHandler.convert(data);
   }
 
   @Override
@@ -105,7 +106,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
       trainingConfig = ScopedTrainingConfig.newBuilder().setConfigScope(configScope).build();
     }
 
-    Set<TrainingConfig.TrainingConfigCase> configCases = configConverter.convert(filter);
+    Set<TrainingConfig.TrainingConfigCase> configCases = configHandler.convert(filter);
 
     return filterConfigs(trainingConfig, configCases);
   }
@@ -118,11 +119,66 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
     List<ScopedTrainingConfig> trainingConfigs =
         getResolvedConfigs(trainingConfigMap, requestContext.getTenantId().orElseThrow());
 
-    Set<TrainingConfig.TrainingConfigCase> configCases = configConverter.convert(filter);
+    Set<TrainingConfig.TrainingConfigCase> configCases = configHandler.convert(filter);
 
     return trainingConfigs.stream()
         .map(trainingConfig -> filterConfigs(trainingConfig, configCases))
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public ScopedTrainingConfig getUnresolvedTrainingConfig(
+      RequestContext requestContext,
+      AnomalyConfigScope configScope,
+      GetTrainingConfigsFilter filter) {
+    String context = getContextFromAnomalyConfigScope(configScope);
+    ScopedTrainingConfig scopedTrainingConfig =
+        getData(requestContext, context)
+            .orElse(ScopedTrainingConfig.newBuilder().setConfigScope(configScope).build());
+    Set<TrainingConfig.TrainingConfigCase> configCases = configHandler.convert(filter);
+    return filterConfigs(scopedTrainingConfig, configCases);
+  }
+
+  @Override
+  public List<ScopedTrainingConfig> getAllUnresolvedTrainingConfig(
+      RequestContext requestContext, GetTrainingConfigsFilter filter) {
+    List<ScopedTrainingConfig> scopedTrainingConfigs =
+        new ArrayList<>(fetchConfigMap(requestContext).values());
+    scopedTrainingConfigs.add(
+        ScopedTrainingConfig.newBuilder()
+            .setConfigScope(AnomalyConfigScope.getDefaultInstance())
+            .addAllTrainingConfigs(this.defaultApiNamingTrainingConfigs)
+            .build());
+    Set<TrainingConfig.TrainingConfigCase> configCases = configHandler.convert(filter);
+    return scopedTrainingConfigs.stream()
+        .map(trainingConfig -> filterConfigs(trainingConfig, configCases))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public ScopedTrainingConfig deleteTrainingConfig(
+      RequestContext requestContext,
+      ScopedTrainingConfig deleteScopedTrainingConfig,
+      DeleteAnomalyConfigOption deleteAnomalyConfigOption) {
+    AnomalyConfigScope configScope = deleteScopedTrainingConfig.getConfigScope();
+
+    List<TrainingConfig> deleteTrainingConfigFilters =
+        deleteScopedTrainingConfig.getTrainingConfigsList();
+    ScopedTrainingConfig.Builder deletedConfigsBuilder =
+        ScopedTrainingConfig.newBuilder().setConfigScope(configScope);
+
+    String context = getContextFromAnomalyConfigScope(configScope);
+    ScopedTrainingConfig scopedTrainingConfig =
+        getData(requestContext, context).orElse(ScopedTrainingConfig.getDefaultInstance());
+
+    if (deleteAnomalyConfigOption.equals(
+        DeleteAnomalyConfigOption.DELETE_ANOMALY_CONFIG_OPTION_WHOLE_TRAINING_CONFIG)) {
+      upsertObject(
+          requestContext,
+          configHandler.deleteWholeTrainingConfigs(
+              scopedTrainingConfig, deleteTrainingConfigFilters, deletedConfigsBuilder));
+    }
+    return deletedConfigsBuilder.build();
   }
 
   @Override
@@ -131,7 +187,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
     Optional<ScopedTrainingConfig> currentConfig =
         getData(requestContext, getContextFromData(scopedTrainingConfig));
     ScopedTrainingConfig updatedScopedTrainingConfig =
-        configConverter.merge(
+        configHandler.merge(
             scopedTrainingConfig, currentConfig.orElse(ScopedTrainingConfig.getDefaultInstance()));
 
     return upsertObject(requestContext, updatedScopedTrainingConfig).getData();
@@ -213,7 +269,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
     for (String context : contextsWithIncreasingPriority) {
       trainingConfig =
           configMap.containsKey(context)
-              ? configConverter.merge(configMap.get(context), trainingConfig)
+              ? configHandler.merge(configMap.get(context), trainingConfig)
               : trainingConfig;
     }
     return trainingConfig;

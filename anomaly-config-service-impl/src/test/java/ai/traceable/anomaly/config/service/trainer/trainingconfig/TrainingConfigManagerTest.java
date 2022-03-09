@@ -1,6 +1,7 @@
 package ai.traceable.anomaly.config.service.trainer.trainingconfig;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -14,11 +15,15 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
+import ai.traceable.anomaly.config.service.v1.trainer.DeleteAnomalyConfigOption;
 import ai.traceable.anomaly.config.service.v1.trainer.GetTrainingConfigsFilter;
+import ai.traceable.anomaly.config.service.v1.trainer.LackOfEncryptionTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.MinOccurrenceConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.SensitiveDataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfigType;
+import ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
@@ -45,7 +50,7 @@ public class TrainingConfigManagerTest {
   private static Channel channelForMockServer;
   private ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub;
 
-  private TrainingConfigConverter configConverter;
+  private TrainingConfigHandler configHandler;
   private TrainingConfigManager configManager;
   private TrainerConfigServiceConfig trainerConfigServiceConfig;
 
@@ -87,13 +92,13 @@ public class TrainingConfigManagerTest {
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     mockConfigService.start();
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
-    configConverter = new TrainingConfigConverter();
+    configHandler = new TrainingConfigHandler();
     trainerConfigServiceConfig = mock(TrainerConfigServiceConfig.class);
     when(trainerConfigServiceConfig.getApiNamingTrainingConfigs()).thenReturn(List.of());
     this.configManager =
         spy(
             new TrainingConfigManagerImpl(
-                configConverter, configServiceBlockingStub, trainerConfigServiceConfig));
+                configHandler, configServiceBlockingStub, trainerConfigServiceConfig));
   }
 
   @AfterEach
@@ -353,6 +358,153 @@ public class TrainingConfigManagerTest {
     assertEquals(customerScopeResolvedConfig, getConfig(customerConfigScope, trainingConfigs));
     assertEquals(serviceScopeResolvedConfig, getConfig(serviceConfigScope, trainingConfigs));
     assertEquals(apiScopeResolvedConfig, getConfig(apiConfigScope, trainingConfigs));
+  }
+
+  @Test
+  void testGetUnresolvedTrainingConfig() throws InvalidProtocolBufferException {
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            configManager.getUnresolvedTrainingConfig(
+                requestContext,
+                AnomalyConfigScope.newBuilder()
+                    .setParamScope(AnomalyParamScope.getDefaultInstance())
+                    .build(),
+                GetTrainingConfigsFilter.getDefaultInstance()));
+    ScopedTrainingConfig customerScopedTrainingConfig =
+        getScopedTrainingConfig(scopedTrainingConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
+    updateScopedTrainingConfig(requestContext, customerScopedTrainingConfig);
+
+    ScopedTrainingConfig serviceScopedTrainingConfig =
+        getScopedTrainingConfig(scopedTrainingConfigs.getConfig(SERVICE_SCOPE_CONFIG));
+    updateScopedTrainingConfig(requestContext, serviceScopedTrainingConfig);
+
+    ScopedTrainingConfig apiScopedTrainingConfig =
+        getScopedTrainingConfig(scopedTrainingConfigs.getConfig(API_SCOPE_CONFIG));
+    updateScopedTrainingConfig(requestContext, apiScopedTrainingConfig);
+
+    ScopedTrainingConfig scopedTrainingConfig;
+    scopedTrainingConfig =
+        requestContext.call(
+            () ->
+                configManager.getUnresolvedTrainingConfig(
+                    requestContext,
+                    customerConfigScope,
+                    GetTrainingConfigsFilter.getDefaultInstance()));
+    assertEquals(customerScopedTrainingConfig, scopedTrainingConfig);
+
+    scopedTrainingConfig =
+        requestContext.call(
+            () ->
+                configManager.getUnresolvedTrainingConfig(
+                    requestContext,
+                    serviceConfigScope,
+                    GetTrainingConfigsFilter.getDefaultInstance()));
+    assertEquals(serviceScopedTrainingConfig, scopedTrainingConfig);
+
+    scopedTrainingConfig =
+        requestContext.call(
+            () ->
+                configManager.getUnresolvedTrainingConfig(
+                    requestContext, apiConfigScope, GetTrainingConfigsFilter.getDefaultInstance()));
+    assertEquals(apiScopedTrainingConfig, scopedTrainingConfig);
+  }
+
+  @Test
+  void testGetAllUnresolvedTrainingConfig() throws InvalidProtocolBufferException {
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+    List<ScopedTrainingConfig> scopedTrainingConfigList;
+
+    GetTrainingConfigsFilter filter = GetTrainingConfigsFilter.getDefaultInstance();
+    scopedTrainingConfigList = configManager.getAllUnresolvedTrainingConfig(requestContext, filter);
+    assertEquals(1, scopedTrainingConfigList.size());
+    assertEquals(
+        AnomalyConfigScope.getDefaultInstance(), scopedTrainingConfigList.get(0).getConfigScope());
+
+    ScopedTrainingConfig customerScopedTrainingConfig =
+        getScopedTrainingConfig(scopedTrainingConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
+    updateScopedTrainingConfig(requestContext, customerScopedTrainingConfig);
+
+    ScopedTrainingConfig serviceScopedTrainingConfig =
+        getScopedTrainingConfig(scopedTrainingConfigs.getConfig(SERVICE_SCOPE_CONFIG));
+    updateScopedTrainingConfig(requestContext, serviceScopedTrainingConfig);
+
+    ScopedTrainingConfig apiScopedTrainingConfig =
+        getScopedTrainingConfig(scopedTrainingConfigs.getConfig(API_SCOPE_CONFIG));
+    updateScopedTrainingConfig(requestContext, apiScopedTrainingConfig);
+
+    scopedTrainingConfigList =
+        configManager.getAllUnresolvedTrainingConfig(
+            requestContext, GetTrainingConfigsFilter.getDefaultInstance());
+    List<AnomalyConfigScope> configScopes =
+        scopedTrainingConfigList.stream()
+            .map(ScopedTrainingConfig::getConfigScope)
+            .collect(Collectors.toList());
+    assertEquals(4, configScopes.size());
+    assertEquals(
+        customerScopedTrainingConfig, getConfig(customerConfigScope, scopedTrainingConfigList));
+    assertEquals(
+        serviceScopedTrainingConfig, getConfig(serviceConfigScope, scopedTrainingConfigList));
+    assertEquals(apiScopedTrainingConfig, getConfig(apiConfigScope, scopedTrainingConfigList));
+  }
+
+  @Test
+  void testDeleteTrainingConfig() throws InvalidProtocolBufferException {
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            configManager.deleteTrainingConfig(
+                requestContext,
+                ScopedTrainingConfig.newBuilder()
+                    .setConfigScope(
+                        AnomalyConfigScope.newBuilder()
+                            .setParamScope(AnomalyParamScope.getDefaultInstance())
+                            .build())
+                    .build(),
+                DeleteAnomalyConfigOption.DELETE_ANOMALY_CONFIG_OPTION_WHOLE_TRAINING_CONFIG));
+    ScopedTrainingConfig scopedTrainingConfig;
+    scopedTrainingConfig =
+        getScopedTrainingConfig(scopedTrainingConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
+    updateScopedTrainingConfig(requestContext, scopedTrainingConfig);
+
+    TrainingConfig trainingConfig =
+        TrainingConfig.newBuilder()
+            .setVulnerabilityTrainingConfig(
+                VulnerabilityTrainingConfig.newBuilder()
+                    .setLackOfEncryption(
+                        LackOfEncryptionTrainingConfig.newBuilder()
+                            .setHttpsCallsConfig(
+                                MinOccurrenceConfig.newBuilder()
+                                    .setMinTotalOccurrences(500)
+                                    .build())))
+            .build();
+    assertTrue(scopedTrainingConfig.getTrainingConfigsList().contains(trainingConfig));
+    assertEquals(4, scopedTrainingConfig.getTrainingConfigsCount());
+
+    requestContext.run(
+        () ->
+            configManager.deleteTrainingConfig(
+                requestContext,
+                ScopedTrainingConfig.newBuilder()
+                    .setConfigScope(customerConfigScope)
+                    .addTrainingConfigs(
+                        TrainingConfig.newBuilder()
+                            .setVulnerabilityTrainingConfig(
+                                VulnerabilityTrainingConfig.newBuilder()
+                                    .setLackOfEncryption(
+                                        LackOfEncryptionTrainingConfig.getDefaultInstance())))
+                    .build(),
+                DeleteAnomalyConfigOption.DELETE_ANOMALY_CONFIG_OPTION_WHOLE_TRAINING_CONFIG));
+    scopedTrainingConfig =
+        configManager.getScopedTrainingConfig(
+            requestContext, customerConfigScope, GetTrainingConfigsFilter.getDefaultInstance());
+    assertFalse(scopedTrainingConfig.getTrainingConfigsList().contains(trainingConfig));
+    assertEquals(3, scopedTrainingConfig.getTrainingConfigsCount());
   }
 
   private void updateScopedTrainingConfig(

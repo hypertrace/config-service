@@ -20,8 +20,8 @@ import com.google.protobuf.Value;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-class TrainingConfigConverterTest {
-  private final TrainingConfigConverter configConverter = new TrainingConfigConverter();
+class TrainingConfigHandlerTest {
+  private final TrainingConfigHandler configHandler = new TrainingConfigHandler();
 
   @Test
   void testConvert() throws InvalidProtocolBufferException {
@@ -45,8 +45,8 @@ class TrainingConfigConverterTest {
             .addTrainingConfigs(buildUrlFilterApiNamingTrainerConfig(List.of(".com", ".us", ".au")))
             .build();
 
-    value = configConverter.convert(config);
-    assertEquals(config, configConverter.convert(value));
+    value = configHandler.convert(config);
+    assertEquals(config, configHandler.convert(value));
 
     ScopedTrainingConfig config1 =
         ScopedTrainingConfig.newBuilder()
@@ -64,7 +64,7 @@ class TrainingConfigConverterTest {
                     .build())
             .build();
 
-    resultConfig = configConverter.merge(config, config1);
+    resultConfig = configHandler.merge(config, config1);
     assertEquals(
         500,
         resultConfig
@@ -140,7 +140,7 @@ class TrainingConfigConverterTest {
             .build();
 
     resultConfig =
-        configConverter.merge(
+        configHandler.merge(
             config,
             ScopedTrainingConfig.newBuilder()
                 .addAllTrainingConfigs(List.of(trainingConfig2, trainingConfig3, trainingConfig4))
