@@ -23,4 +23,5 @@ sourceSets {
 
 dependencies {
   api(libs.protobuf.java)
+  api(libs.kafka.clients)
 }
