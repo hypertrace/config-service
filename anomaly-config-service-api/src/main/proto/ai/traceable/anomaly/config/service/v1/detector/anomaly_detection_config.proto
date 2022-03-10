@@ -167,8 +167,7 @@ message BlockingMetadataAnomalyDetectionConfig {
 message ModsecurityAllDetectionConfig {
   StringList excluded_params = 1;
   optional bool enabled_on_all_entry_spans = 2;
-  StringList excluded_modsec_rule_ids_for_html_params = 3;
-  StringList excluded_modsec_rule_ids_for_rich_text_html_params = 4;
+  repeated ParamValueTypeModsecExclude param_value_type_modsec_excludes = 3;
 }
 
 message ModsecurityAnomalyRuleConfig {
@@ -300,6 +299,17 @@ message AnomalySubRuleConfig {
   AnomalyConfigStatusChange config_status = 2;
   AnomalyCategoryConfig category_config = 3;
   optional bool blocking_enabled = 4;
+}
+
+message ParamValueTypeModsecExclude {
+  ParamValueType param_value_type = 1;
+  StringList excluded_modsec_rule_ids = 2;
+}
+
+enum ParamValueType {
+  PARAM_VALUE_TYPE_UNSPECIFIED = 0;
+  PARAM_VALUE_TYPE_HTML = 1;
+  PARAM_VALUE_TYPE_RICH_TEXT_HTML = 2;
 }
 
 enum UserIdSource {
