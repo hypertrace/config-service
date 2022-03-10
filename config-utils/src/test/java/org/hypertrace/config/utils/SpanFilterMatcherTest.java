@@ -93,6 +93,15 @@ class SpanFilterMatcherTest {
             "name",
             buildSpanFilterValue(List.of("first", "last")),
             RelationalOperator.RELATIONAL_OPERATOR_IN));
+
+    assertFalse(
+        this.spanFilterMatcher.matches(
+            "name", buildSpanFilterValue("nam"), RelationalOperator.RELATIONAL_OPERATOR_IN));
+    assertFalse(
+        this.spanFilterMatcher.matches(
+            "name",
+            buildSpanFilterValue(List.of("name", "name1")),
+            RelationalOperator.RELATIONAL_OPERATOR_CONTAINS));
   }
 
   @Test
