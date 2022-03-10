@@ -59,5 +59,5 @@ include("data-classification-config-service-api")
 include("data-classification-config-service-impl")
 include("reporting-config-service-api")
 include("reporting-config-service-impl")
-include("inclusion-rules-config-service-api")
+include("detection-inclusion-rules-config-service-api")
 

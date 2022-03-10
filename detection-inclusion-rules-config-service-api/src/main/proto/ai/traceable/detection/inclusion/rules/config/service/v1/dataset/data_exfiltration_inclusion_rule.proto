@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 // buf:lint:ignore PACKAGE_VERSION_SUFFIX
-package ai.traceable.inclusion.rules.config.service.v1.dataset;
+package ai.traceable.detection.inclusion.rules.config.service.v1.dataset;
 
 option java_multiple_files = true;
 
