@@ -17,7 +17,6 @@ dependencies {
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
 
-  runtimeOnly(libs.kafka.protobuf.serializer)
   constraints {
     implementation(libs.jersey.common) {
       because("https://snyk.io/vuln/SNYK-JAVA-ORGGLASSFISHJERSEYCORE-1255637")

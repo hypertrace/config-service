@@ -6,7 +6,7 @@ hypertrace-grpcutils = "0.6.2"
 hypertrace-framework = "0.1.29"
 lombok = "1.18.20"
 jackson = "2.12.4"
-confluent = "6.0.5"
+kafka = "6.0.1-ccs"
 netty = "4.1.71.Final"
 kotlin = "1.4.32"
 
@@ -48,7 +48,7 @@ gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 netty-codecHttp2 = { module = "io.netty:netty-codec-http2", version.ref = "netty" }
 netty-handlerProxy = { module = "io.netty:netty-handler-proxy", version.ref = "netty" }
 
-kafka-protobuf-serializer = { module = "io.confluent:kafka-protobuf-serializer", version.ref = "confluent" }
+kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlin-stdlibJdk7 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk7", version.ref = "kotlin" }
 kotlin-stdlibJdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
