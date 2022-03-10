@@ -1,6 +1,5 @@
 package org.hypertrace.config.change.event.v1;
 
-import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.Map;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
