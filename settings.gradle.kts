@@ -46,4 +46,5 @@ include(":notification-channel-config-service-impl")
 
 include(":span-processing-config-service-api")
 include(":span-processing-config-service-impl")
-include("config-utils")
+
+include(":config-utils")
