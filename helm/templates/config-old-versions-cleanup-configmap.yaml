@@ -1,0 +1,44 @@
+{{- if .Values.cleanupJob.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-old-versions-cleanup
+  labels:
+    release: {{ .Release.Name }}
+data:
+  config_old_versions_cleanup.js: |
+    try {
+      var cursor = db.configurations.aggregate(
+         [
+           {
+             $group:
+               {
+                 _id: {"resourceNamespace": "$resourceNamespace", "resourceName": "$resourceName", "tenantId": "$tenantId", "context": "$context"},
+                 maxVersion: { $max: "$configVersion" }
+               }
+           },
+           {
+             $match:
+               {
+                 "maxVersion": {$gt: 10}
+               }
+           }
+         ]
+      );
+      cursor.forEach(function (doc){
+        print("tenantId: " + doc._id.tenantId)
+        print("resourceNamespace: " + doc._id.resourceNamespace)
+        print("resourceName: " + doc._id.resourceName)
+        print("context: " + doc._id.context)
+        print("max version: " + doc.maxVersion)
+        var count = db.configurations.count({"resourceNamespace": doc._id.resourceNamespace, "resourceName": doc._id.resourceName, "tenantId": doc._id.tenantId, "context": doc._id.context});
+        print("documents before delete: " + count)
+        db.configurations.deleteMany({"resourceNamespace": doc._id.resourceNamespace, "resourceName": doc._id.resourceName, "tenantId": doc._id.tenantId, "context": doc._id.context, "configVersion": {$lt: doc.maxVersion - 10}});
+        var count2 = db.configurations.count({"resourceNamespace": doc._id.resourceNamespace, "resourceName": doc._id.resourceName, "tenantId": doc._id.tenantId, "context": doc._id.context});
+        print("documents after delete: " + count2)
+        print("-----")
+      });
+    } catch (e) {
+      print(e);
+    }
+{{- end }}

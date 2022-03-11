@@ -203,6 +203,26 @@ hpa:
   maxReplicas: 5
   targetCPUUtilizationPercentage: 80
 
+cleanupJob:
+  enabled: false
+  schedule: "0 * * * *"
+  startingDeadlineSeconds: 18000
+  activeDeadlineSeconds: 18000
+  ttlSecondsAfterFinished: 900
+  concurrencyPolicy: Forbid
+  image:
+    repository: "hypertrace/mongo-curl"
+    tag: "0.1.4"
+    pullPolicy: IfNotPresent
+  mongodb:
+    uri: "mongodb://mongo-primary-0.mongo-headless:27017,mongo-secondary-0.mongo-headless:27017/default_db?replicaSet=rs0"
+  podAnnotations: {}
+  imagePullSecrets: []
+  affinity: []
+  nodeSelector: {}
+  securityContext: {}
+  tolerations: []
+
 kafka-topic-creator:
   enabled: true
   jobName: traceable-config-service-kafka-topics-creator
