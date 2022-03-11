@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+// buf:lint:ignore PACKAGE_VERSION_SUFFIX
+package ai.traceable.anomaly.config.service.v1.aggregator;
+
+option java_multiple_files = true;
+
+import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
+
+message UpdateScopedAnomalyEventAggregationConfigRequest {
+  ScopedAnomalyEventAggregationConfig scoped_anomaly_event_aggregation_config = 1;
+}
+
+message UpdateScopedAnomalyEventAggregationConfigResponse {
+  ScopedAnomalyEventAggregationConfig scoped_anomaly_event_aggregation_config = 1;
+}
+
+message GetAllScopedAnomalyEventAggregationConfigsRequest {}
+
+message GetAllScopedAnomalyEventAggregationConfigsResponse {
+  repeated ScopedAnomalyEventAggregationConfig scoped_anomaly_event_aggregation_configs = 1;
+}
+
+message GetAllUnresolvedScopedAnomalyEventAggregationConfigsRequest {}
+
+message GetAllUnresolvedScopedAnomalyEventAggregationConfigsResponse {
+  repeated ScopedAnomalyEventAggregationConfig scoped_anomaly_event_aggregation_configs = 1;
+}
+
+message GetScopedAnomalyEventAggregationConfigRequest {
+  AnomalyConfigScope config_scope = 1;
+}
+
+message GetScopedAnomalyEventAggregationConfigResponse {
+  ScopedAnomalyEventAggregationConfig scoped_anomaly_event_aggregation_config = 1;
+}
+
+message GetUnresolvedScopedAnomalyEventAggregationConfigRequest {
+  AnomalyConfigScope config_scope = 1;
+}
+
+message GetUnresolvedScopedAnomalyEventAggregationConfigResponse {
+  ScopedAnomalyEventAggregationConfig scoped_anomaly_event_aggregation_config = 1;
+}
+
+message DeleteScopedAnomalyEventAggregationConfigRequest {
+  ScopedAnomalyEventAggregationConfig scoped_anomaly_event_aggregation_config = 1;
+}
+
+message DeleteScopedAnomalyEventAggregationConfigResponse {}
+
+message ScopedAnomalyEventAggregationConfig {
+  AnomalyConfigScope config_scope = 1;
+  EventAggregationConfig event_aggregation_config = 2;
+}
+
+message EventAggregationConfig {
+  EventAggregationGlobalConfig global_config = 1;
+  repeated EventAggregationFamilyConfig family_configs = 2;
+}
+
+message EventAggregationFamilyConfig {
+  AnomalyEventFamily anomaly_event_family = 1;
+  AggregationConfig aggregation_config = 2;
+}
+
+message EventAggregationGlobalConfig {
+  optional string param_name_max_duration = 1;
+  optional string param_value_max_duration = 2;
+  optional string user_max_duration = 3;
+}
+
+message AggregationConfig {
+  optional int32 max_events_with_score_per_param_value = 1;
+  optional int32 max_events_without_score_per_param_value = 2;
+  optional int32 max_events_with_score_per_param_across_values = 3;
+  optional int32 max_events_without_score_per_param_across_values = 4;
+  optional int32 max_events_with_score_per_user_across_params = 5;
+  optional int32 max_events_without_score_per_user_across_params = 6;
+  optional int32 max_users_per_param = 7;
+}

@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+// buf:lint:ignore PACKAGE_VERSION_SUFFIX
+package ai.traceable.anomaly.config.service.v1.aggregator;
+
+option java_multiple_files = true;
+
+import "ai/traceable/anomaly/config/service/v1/aggregator/anomaly_event_aggregation_config.proto";
+
+
+service EventAggregationConfigService {
+
+  rpc UpdateScopedAnomalyEventAggregationConfig(UpdateScopedAnomalyEventAggregationConfigRequest) returns (UpdateScopedAnomalyEventAggregationConfigResponse) {}
+
+  rpc GetAllScopedAnomalyEventAggregationConfigs(GetAllScopedAnomalyEventAggregationConfigsRequest) returns (GetAllScopedAnomalyEventAggregationConfigsResponse) {}
+
+  rpc GetAllUnresolvedScopedAnomalyEventAggregationConfigs(GetAllUnresolvedScopedAnomalyEventAggregationConfigsRequest) returns (GetAllUnresolvedScopedAnomalyEventAggregationConfigsResponse) {}
+
+  rpc GetScopedAnomalyEventAggregationConfig(GetScopedAnomalyEventAggregationConfigRequest) returns (GetScopedAnomalyEventAggregationConfigResponse) {}
+
+  rpc GetUnresolvedScopedAnomalyEventAggregationConfig(GetUnresolvedScopedAnomalyEventAggregationConfigRequest) returns (GetUnresolvedScopedAnomalyEventAggregationConfigResponse) {}
+
+  rpc DeleteScopedAnomalyEventAggregationConfig(DeleteScopedAnomalyEventAggregationConfigRequest) returns (DeleteScopedAnomalyEventAggregationConfigResponse) {}
+
+}
