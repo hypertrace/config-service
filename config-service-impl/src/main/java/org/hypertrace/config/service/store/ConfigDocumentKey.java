@@ -9,9 +9,9 @@ import org.hypertrace.core.documentstore.Key;
 public class ConfigDocumentKey implements Key {
 
   private static final String SEPARATOR = ":";
+  private static final String LATEST_VERSION = "latest";
 
   ConfigResourceContext configResourceContext;
-  long configVersion;
 
   @Override
   public String toString() {
@@ -21,6 +21,6 @@ public class ConfigDocumentKey implements Key {
         configResourceContext.getConfigResource().getResourceNamespace(),
         configResourceContext.getConfigResource().getTenantId(),
         configResourceContext.getContext(),
-        String.valueOf(configVersion));
+        LATEST_VERSION);
   }
 }

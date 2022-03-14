@@ -100,7 +100,7 @@ public class DocumentConfigStore implements ConfigStore {
               .map(ConfigDocument::getConfigVersion)
               .map(previousVersion -> previousVersion + 1)
               .orElse(1L);
-      Key latestDocKey = new ConfigDocumentKey(configResourceContext, newVersion);
+      Key latestDocKey = new ConfigDocumentKey(configResourceContext);
       ConfigDocument latestConfigDocument =
           new ConfigDocument(
               configResourceContext.getConfigResource().getResourceName(),
