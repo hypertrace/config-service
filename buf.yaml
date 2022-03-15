@@ -19,6 +19,7 @@ build:
     - iprange-config-service-api/src/main/proto
     - license-status-config-service-api/src/main/proto
     - threat-management-config-service-api/src/main/proto
+    - external-data-classification-config-service-api/src/main/proto
     - inclusion-rules-config-service-api/src/main/proto
 lint:
   use:

@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package ai.traceable.external.data.classification.config.service.v1;
+import "ai/traceable/external/data/classification/config/service/v1/external_data_classification.proto";
+
+option go_package = "github.com/Traceableai/config-service/gen/go/ai/traceable/external/data/classification/config/service/v1";
+option java_multiple_files = true;
+
+service ExternalDataClassificationService {
+  rpc GetDataClassificationConfig(GetDataClassificationConfigRequest) returns (GetDataClassificationConfigResponse) {}
+}
+
+message GetDataClassificationConfigRequest {
+  OnlyIfChangedFilter change_filter = 1;
+  EnvironmentFilter environment_filter = 2;
+
+  message OnlyIfChangedFilter {
+    string previous_hash = 1;
+  }
+
+  message EnvironmentFilter {
+    oneof match {
+      string environment_name = 1;
+    }
+  }
+}
+
+message GetDataClassificationConfigResponse {
+  string hash = 1;
+  repeated DataType data_types = 2;
+  repeated DataParsingRule data_parsing_rules = 3;
+}
