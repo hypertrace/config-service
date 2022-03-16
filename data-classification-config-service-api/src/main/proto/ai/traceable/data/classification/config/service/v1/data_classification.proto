@@ -86,11 +86,20 @@ message DataSetInfo {
   bool enabled = 3;
   repeated string data_type_ids = 4;
   DataSuppression data_suppression = 5;
+  Sensitivity sensitivity = 6;
 
   enum DataSuppression {
     DATA_SUPPRESSION_UNSPECIFIED = 0;
     DATA_SUPPRESSION_RAW = 1;
     DATA_SUPPRESSION_REDACT = 2;
     DATA_SUPPRESSION_OBFUSCATE = 3;
+  }
+
+  enum Sensitivity {
+    SENSITIVITY_UNSPECIFIED = 0;
+    SENSITIVITY_LOW = 1;
+    SENSITIVITY_MEDIUM = 2;
+    SENSITIVITY_HIGH = 3;
+    SENSITIVITY_CRITICAL = 4;
   }
 }
