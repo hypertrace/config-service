@@ -7,9 +7,6 @@ import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_NAMESP
 import static org.hypertrace.config.service.store.ConfigDocument.TENANT_ID_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.VERSION_FIELD_NAME;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.protobuf.Value;
 import com.typesafe.config.Config;
 import java.io.IOException;
@@ -23,7 +20,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigResourceContext;
@@ -47,12 +43,6 @@ public class DocumentConfigStore implements ConfigStore {
   static final String DOC_STORE_CONFIG_KEY = "document.store";
   static final String DATA_STORE_TYPE = "dataStoreType";
   static final String CONFIGURATIONS_COLLECTION = "configurations";
-
-  private final LoadingCache<ConfigResourceContext, Object> configResourceContextLocks =
-      CacheBuilder.newBuilder()
-          .expireAfterAccess(10, TimeUnit.MINUTES) // max lock time ever expected
-          .maximumSize(1000)
-          .build(CacheLoader.from(Object::new));
   private final Clock clock;
 
   private Datastore datastore;
@@ -83,40 +73,36 @@ public class DocumentConfigStore implements ConfigStore {
   public UpsertedConfig writeConfig(
       ConfigResourceContext configResourceContext, String userId, Value latestConfig)
       throws IOException {
-    // Synchronization is required across different threads trying to write the latest config
-    // for the same resource into the document store
-    synchronized (configResourceContextLocks.getUnchecked(configResourceContext)) {
-      Optional<ConfigDocument> previousConfigDoc = getLatestVersionConfigDoc(configResourceContext);
-      Optional<ContextSpecificConfig> optionalPreviousConfig =
-          previousConfigDoc.flatMap(this::convertToContextSpecificConfig);
-      long updateTimestamp = clock.millis();
-      long creationTimestamp =
-          previousConfigDoc
-              .filter(configDocument -> !ConfigServiceUtils.isNull(configDocument.getConfig()))
-              .map(ConfigDocument::getCreationTimestamp)
-              .orElse(updateTimestamp);
-      long newVersion =
-          previousConfigDoc
-              .map(ConfigDocument::getConfigVersion)
-              .map(previousVersion -> previousVersion + 1)
-              .orElse(1L);
-      Key latestDocKey = new ConfigDocumentKey(configResourceContext);
-      ConfigDocument latestConfigDocument =
-          new ConfigDocument(
-              configResourceContext.getConfigResource().getResourceName(),
-              configResourceContext.getConfigResource().getResourceNamespace(),
-              configResourceContext.getConfigResource().getTenantId(),
-              configResourceContext.getContext(),
-              newVersion,
-              userId,
-              latestConfig,
-              creationTimestamp,
-              updateTimestamp);
-      collection.upsert(latestDocKey, latestConfigDocument);
-      return optionalPreviousConfig
-          .map(previousConfig -> this.buildUpsertResult(latestConfigDocument, previousConfig))
-          .orElseGet(() -> this.buildUpsertResult(latestConfigDocument));
-    }
+    Optional<ConfigDocument> previousConfigDoc = getLatestVersionConfigDoc(configResourceContext);
+    Optional<ContextSpecificConfig> optionalPreviousConfig =
+        previousConfigDoc.flatMap(this::convertToContextSpecificConfig);
+    long updateTimestamp = clock.millis();
+    long creationTimestamp =
+        previousConfigDoc
+            .filter(configDocument -> !ConfigServiceUtils.isNull(configDocument.getConfig()))
+            .map(ConfigDocument::getCreationTimestamp)
+            .orElse(updateTimestamp);
+    long newVersion =
+        previousConfigDoc
+            .map(ConfigDocument::getConfigVersion)
+            .map(previousVersion -> previousVersion + 1)
+            .orElse(1L);
+    Key latestDocKey = new ConfigDocumentKey(configResourceContext);
+    ConfigDocument latestConfigDocument =
+        new ConfigDocument(
+            configResourceContext.getConfigResource().getResourceName(),
+            configResourceContext.getConfigResource().getResourceNamespace(),
+            configResourceContext.getConfigResource().getTenantId(),
+            configResourceContext.getContext(),
+            newVersion,
+            userId,
+            latestConfig,
+            creationTimestamp,
+            updateTimestamp);
+    collection.upsert(latestDocKey, latestConfigDocument);
+    return optionalPreviousConfig
+        .map(previousConfig -> this.buildUpsertResult(latestConfigDocument, previousConfig))
+        .orElseGet(() -> this.buildUpsertResult(latestConfigDocument));
   }
 
   @Override
