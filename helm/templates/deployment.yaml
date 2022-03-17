@@ -117,7 +117,7 @@ spec:
             {{- end }}
             {{- if eq $.Values.deepStoreFsScheme "file" }}
             - name: traceable-nfs-deep-store
-              mountPath: { { $.Values.deepStoreMountPath }}
+              mountPath: {{ $.Values.deepStoreMountPath }}
             {{- end }}
             - name: traceable-nfs-model-store
               mountPath: {{ $.Values.modelStoreNFSMountPath }}
