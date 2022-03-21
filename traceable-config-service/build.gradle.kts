@@ -106,6 +106,7 @@ dependencies {
   implementation(projects.alertingConfigServiceImpl)
   implementation(projects.reportingConfigServiceImpl)
   implementation(projects.dataClassificationConfigServiceImpl)
+  implementation(projects.wafProviderIntegrationServiceImpl)
   implementation(libs.hypertrace.configservice.server)
   implementation(libs.hypertrace.configservice.impl)
   implementation(libs.hypertrace.grpcutils.server)

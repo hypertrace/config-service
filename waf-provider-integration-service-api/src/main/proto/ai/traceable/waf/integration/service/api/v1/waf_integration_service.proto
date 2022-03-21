@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.waf.integration.service.api.v1;
+
+import "ai/traceable/waf/integration/service/api/v1/waf_provider.proto";
+
+service WafProviderService {
+  rpc CreateWafIntegration (CreateWafIntegrationRequest) returns (CreateWafIntegrationResponse) {}
+  rpc GetWafIntegration (GetWafIntegrationRequest) returns (GetWafIntegrationResponse) {}
+  rpc GetWafIntegrations (GetWafIntegrationsRequest) returns (GetWafIntegrationsResponse) {}
+  rpc UpdateWafIntegration (UpdateWafIntegrationRequest) returns (UpdateWafIntegrationResponse) {}
+  rpc DeleteWafIntegration (DeleteWafIntegrationRequest) returns (DeleteWafIntegrationResponse) {}
+}
+
+message CreateWafIntegrationRequest {
+  WafIntegrationDetails waf_integration_details = 1;
+}
+
+message CreateWafIntegrationResponse {
+  WafIntegration waf_integration = 1;
+}
+
+message GetWafIntegrationRequest {
+  string id = 1;
+}
+
+message GetWafIntegrationResponse {
+  WafIntegration waf_integration = 1;
+}
+
+message GetWafIntegrationsRequest {
+  GetWafIntegrationsFilter filter = 1;
+}
+
+message GetWafIntegrationsResponse {
+  repeated WafIntegration waf_integration = 1;
+}
+
+message UpdateWafIntegrationRequest {
+  string id = 1;
+  WafIntegrationDetails waf_integration_details = 2;
+}
+
+message UpdateWafIntegrationResponse {
+  WafIntegration waf_integration = 1;
+}
+
+message DeleteWafIntegrationRequest {
+  string id = 1;
+}
+
+message DeleteWafIntegrationResponse {
+}
+
+message GetWafIntegrationsFilter {
+  repeated string ids = 1;
+  repeated WafProviderType waf_provider_types = 2;
+  enum WafProviderType {
+    WAF_PROVIDER_TYPE_UNSPECIFIED = 0;
+    WAF_PROVIDER_TYPE_CLOUDFLARE = 1;
+  }
+}

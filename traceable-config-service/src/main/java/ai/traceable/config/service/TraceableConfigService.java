@@ -19,6 +19,7 @@ import ai.traceable.risk.config.service.RiskConfigServiceFactory;
 import ai.traceable.sensitivedata.config.service.SensitiveDataConfigServicesProvider;
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceFactory;
 import ai.traceable.userattribution.config.service.UserAttributionConfigServiceFactory;
+import ai.traceable.waf.provider.integration.service.WafIntegrationConfigServiceFactory;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
@@ -118,6 +119,9 @@ public class TraceableConfigService extends PlatformService {
     BindableService dataClassificationConfigService =
         DataClassificationConfigServiceFactory.build(
             managedChannel, configChangeEventGenerator, config);
+    BindableService wafIntegrationConfigService =
+        WafIntegrationConfigServiceFactory.build(
+            managedChannel, config, configChangeEventGenerator);
     List<BindableService> anomalyConfigServices =
         AnomalyConfigServiceFactory.build(
             channelRegistry, managedChannel, config, configChangeEventGenerator);
@@ -150,7 +154,8 @@ public class TraceableConfigService extends PlatformService {
         .addService(InterceptorUtil.wrapInterceptors(notificationRuleConfigService))
         .addService(InterceptorUtil.wrapInterceptors(notificationChannelConfigService))
         .addService(InterceptorUtil.wrapInterceptors(reportingConfigService))
-        .addService(InterceptorUtil.wrapInterceptors(dataClassificationConfigService));
+        .addService(InterceptorUtil.wrapInterceptors(dataClassificationConfigService))
+        .addService(InterceptorUtil.wrapInterceptors(wafIntegrationConfigService));
 
     internalTraceableConfigServer = internalServerBuilder.build();
 

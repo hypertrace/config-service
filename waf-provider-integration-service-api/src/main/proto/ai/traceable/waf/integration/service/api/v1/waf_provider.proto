@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package ai.traceable.waf.integration.service.api.v1;
+
+option java_multiple_files = true;
+
+message WafIntegration {
+  string id = 1;
+  WafIntegrationDetails waf_integration_details = 2;
+}
+
+message WafIntegrationDetails {
+  string name = 1;
+  optional string description = 2;
+  oneof integration_params {
+    CloudflareIntegrationParams cloudflare_integration_params = 3;
+  }
+}
+
+message CloudflareIntegrationParams {
+  string zone = 1;
+  string email = 2;
+  string api_token = 3;
+}
