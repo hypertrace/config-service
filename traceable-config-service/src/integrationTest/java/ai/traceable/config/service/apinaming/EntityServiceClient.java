@@ -1,6 +1,5 @@
 package ai.traceable.config.service.apinaming;
 
-import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -14,7 +13,6 @@ public class EntityServiceClient {
   private final EntityDataServiceBlockingStub entityDataServiceBlockingStub;
   private final EntityTypeServiceGrpc.EntityTypeServiceBlockingStub entityTypeServiceBlockingStub;
 
-  @Inject
   public EntityServiceClient(EntityServiceConfig config, GrpcChannelRegistry channelRegistry) {
     this.entityDataServiceBlockingStub =
         EntityDataServiceGrpc.newBlockingStub(

@@ -1,4 +1,4 @@
-package ai.traceable.localprocessing.config.service.apinaming;
+package ai.traceable.localprocessing.config.service.apinaming.http;
 
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
@@ -35,12 +35,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.hypertrace.entity.constants.v1.CommonAttribute;
-import org.hypertrace.entity.data.service.v1.AttributeValue;
-import org.hypertrace.entity.data.service.v1.ByTypeAndIdentifyingAttributes;
-import org.hypertrace.entity.data.service.v1.Value;
-import org.hypertrace.entity.service.constants.EntityConstants;
-import org.hypertrace.entity.v1.entitytype.EntityType;
 
 public class ApiNamingManagerTestUtils {
   private static final String SERVICE_ID1 = "serviceId1";
@@ -104,24 +98,6 @@ public class ApiNamingManagerTestUtils {
                         .setCustomerScope(AnomalyCustomerScope.newBuilder().build())
                         .build())))
         .build();
-  }
-
-  public static ByTypeAndIdentifyingAttributes buildGetEntityByTypeAndIdentifyingAttributesRequest(
-      String serviceName) {
-    ByTypeAndIdentifyingAttributes.Builder byTypeAndIdentifyingAttributesBuilder =
-        ByTypeAndIdentifyingAttributes.newBuilder()
-            .setEntityType(EntityType.SERVICE.name())
-            .putIdentifyingAttributes(
-                EntityConstants.getValue(CommonAttribute.COMMON_ATTRIBUTE_FQN),
-                AttributeValue.newBuilder()
-                    .setValue(Value.newBuilder().setString(serviceName).build())
-                    .build())
-            .putIdentifyingAttributes(
-                "ENVIRONMENT",
-                AttributeValue.newBuilder()
-                    .setValue(Value.newBuilder().setString(serviceName).build())
-                    .build());
-    return byTypeAndIdentifyingAttributesBuilder.build();
   }
 
   private static ScopedTrainingConfig buildScopedTrainingConfig(
@@ -366,12 +342,16 @@ public class ApiNamingManagerTestUtils {
         .build();
   }
 
-  public static Config buildFullTrieReloadConfig(String tenantScopedTimestamp) {
+  public static Config buildFullTrieReloadConfig(boolean disabled, String tenantScopedTimestamp) {
     return ConfigFactory.parseMap(
         Map.of(
             "default",
-            Map.of("timestamp", "1970-01-01T00:00:00.000Z", "disabled", false),
+            Map.of("timestamp", "1970-01-01T00:00:00.000Z", "disabled", disabled),
             "tenantId",
-            Map.of("default", Map.of("timestamp", tenantScopedTimestamp, "disabled", false))));
+            Map.of("default", Map.of("timestamp", tenantScopedTimestamp, "disabled", disabled))));
+  }
+
+  public static Config buildEntityFetcherConfig() {
+    return ConfigFactory.parseMap(Map.of());
   }
 }

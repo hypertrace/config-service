@@ -14,7 +14,8 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class DefaultRateLimitConfigManager implements RateLimitConfigManager {
 
   private final Config rateLimitConfig;
-  private static final String RATE_LIMIT_CONFIG_PATH = "sampling.config.rate.limit.config";
+  private static final String RATE_LIMIT_CONFIG_PATH =
+      "local.processing.config.service.sampling.config.rate.limit.config";
 
   @Inject
   public DefaultRateLimitConfigManager(Config config) {

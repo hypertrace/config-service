@@ -320,7 +320,7 @@ public class SpanProcessingRulesManagerTestUtils {
   public static Config buildConfig() {
     return ConfigFactory.parseMap(
         Map.of(
-            "sampling.config",
+            "local.processing.config.service.sampling.config",
             Map.of(
                 "rate.limit.config",
                 Map.of(

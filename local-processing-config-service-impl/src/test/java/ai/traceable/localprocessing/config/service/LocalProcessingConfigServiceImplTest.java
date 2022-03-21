@@ -11,7 +11,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.localprocessing.config.service.apinaming.ApiNamingManager;
+import ai.traceable.localprocessing.config.service.apinaming.http.HttpApiNamingManager;
 import ai.traceable.localprocessing.config.service.client.EntityDataServiceClient;
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinator;
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinatorImpl;
@@ -65,7 +65,7 @@ class LocalProcessingConfigServiceImplTest {
   MockGenericConfigService mockGenericConfigService;
   CustomModsecDetectionManager customModsecDetectionManager;
   RegularModsecDetectionManager regularModsecDetectionManager;
-  ApiNamingManager apiNamingManager;
+  HttpApiNamingManager httpApiNamingManager;
   SpanProcessingRulesManager spanProcessingRulesManager;
   UuidGenerator uuidGenerator;
   EntityDataServiceClient entityDataServiceClient;
@@ -120,7 +120,7 @@ class LocalProcessingConfigServiceImplTest {
 
     customModsecDetectionManager = mock(CustomModsecDetectionManager.class);
     regularModsecDetectionManager = mock(RegularModsecDetectionManager.class);
-    apiNamingManager = mock(ApiNamingManager.class);
+    httpApiNamingManager = mock(HttpApiNamingManager.class);
     spanProcessingRulesManager = mock(SpanProcessingRulesManager.class);
     uuidGenerator = new UuidGenerator();
 
@@ -138,7 +138,7 @@ class LocalProcessingConfigServiceImplTest {
                 configServiceCoordinator,
                 customModsecDetectionManager,
                 regularModsecDetectionManager,
-                apiNamingManager,
+                httpApiNamingManager,
                 spanProcessingRulesManager,
                 uuidGenerator,
                 localProcessingConfigRequestValidator))
@@ -166,7 +166,8 @@ class LocalProcessingConfigServiceImplTest {
     doNothing()
         .when(localProcessingConfigRequestValidator)
         .validateOrThrow(any(RequestContext.class), any(GetApiNamingModelRequest.class));
-    when(apiNamingManager.getHttpServiceResponseList(any(), any())).thenReturn(serviceResponseList);
+    when(httpApiNamingManager.getHttpServiceResponseList(any(), any()))
+        .thenReturn(serviceResponseList);
 
     GetApiNamingModelResponse expectedResponse =
         GetApiNamingModelResponse.newBuilder()

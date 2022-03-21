@@ -1,15 +1,15 @@
-package ai.traceable.localprocessing.config.service.config;
+package ai.traceable.localprocessing.config.service.config.http;
 
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import java.util.List;
 
-public class ApiNamingConfig {
+public class HttpApiNamingConfig {
   private final Config config;
   private final Config localApiNamingConfig;
 
   @Inject
-  public ApiNamingConfig(Config config) {
+  public HttpApiNamingConfig(Config config) {
     this.config = config.getConfig("api.naming.config");
     this.localApiNamingConfig = config.getConfig("local.api.naming.config");
   }

@@ -1,6 +1,6 @@
 package ai.traceable.localprocessing.config.service;
 
-import ai.traceable.localprocessing.config.service.apinaming.ApiNamingManager;
+import ai.traceable.localprocessing.config.service.apinaming.http.HttpApiNamingManager;
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinator;
 import ai.traceable.localprocessing.config.service.customsignature.CustomModsecDetectionManager;
 import ai.traceable.localprocessing.config.service.regularmodsec.RegularModsecDetectionManager;
@@ -32,7 +32,7 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
   private final ConfigServiceCoordinator configServiceCoordinator;
   private final RegularModsecDetectionManager regularModsecDetectionManager;
   private final CustomModsecDetectionManager customModsecDetectionManager;
-  private final ApiNamingManager apiNamingManager;
+  private final HttpApiNamingManager httpApiNamingManager;
   private final SpanProcessingRulesManager spanProcessingRulesManager;
   private final UuidGenerator uuidGenerator;
   private final LocalProcessingConfigRequestValidator localProcessingConfigRequestValidator;
@@ -43,14 +43,14 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
       ConfigServiceCoordinator configServiceCoordinator,
       CustomModsecDetectionManager customModsecDetectionManager,
       RegularModsecDetectionManager regularModsecDetectionManager,
-      ApiNamingManager apiNamingManager,
+      HttpApiNamingManager httpApiNamingManager,
       SpanProcessingRulesManager spanProcessingRulesManager,
       UuidGenerator uuidGenerator,
       LocalProcessingConfigRequestValidator localProcessingConfigRequestValidator) {
     this.configServiceCoordinator = configServiceCoordinator;
     this.regularModsecDetectionManager = regularModsecDetectionManager;
     this.customModsecDetectionManager = customModsecDetectionManager;
-    this.apiNamingManager = apiNamingManager;
+    this.httpApiNamingManager = httpApiNamingManager;
     this.spanProcessingRulesManager = spanProcessingRulesManager;
     this.uuidGenerator = uuidGenerator;
     this.localProcessingConfigRequestValidator = localProcessingConfigRequestValidator;
@@ -95,7 +95,7 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
               .setHttpApiNamingResponse(
                   HttpApiNamingModelResponse.newBuilder()
                       .addAllHttpServiceResponses(
-                          apiNamingManager.getHttpServiceResponseList(requestContext, request))
+                          httpApiNamingManager.getHttpServiceResponseList(requestContext, request))
                       .build())
               .build());
       responseObserver.onCompleted();

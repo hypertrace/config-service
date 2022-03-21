@@ -1,8 +1,5 @@
-package ai.traceable.localprocessing.config.service.apinaming;
+package ai.traceable.localprocessing.config.service.apinaming.http.trie;
 
-import ai.traceable.anomaly.config.service.v1.trainer.TrainerConfigServiceGrpc;
-import ai.traceable.localprocessing.config.service.config.ApiNamingConfig;
-import ai.traceable.localprocessing.config.service.config.EntityDataServiceConfig;
 import ai.traceable.platform.apientity.http.difflog.TrieDiffLogModel;
 import ai.traceable.platform.apientity.http.model.TrieModel;
 import ai.traceable.platform.model.store.FileSystemModelStore;
@@ -13,14 +10,11 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.typesafe.config.Config;
-import io.grpc.ManagedChannel;
 import java.util.List;
-import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
-public class ApiNamingManagerModule extends AbstractModule {
-  private static final Logger LOGGER = LoggerFactory.getLogger(ApiNamingManagerModule.class);
+@Slf4j
+public class HttpApiNamingTrieManagerModule extends AbstractModule {
 
   private final Config config;
 
@@ -32,26 +26,13 @@ public class ApiNamingManagerModule extends AbstractModule {
   private static final String TRIE_DIFF_LOG_MODEL_STORE_CONFIG_PATH =
       "api.naming.config.trieDiffLog.model.store";
 
-  public ApiNamingManagerModule(Config config) {
+  public HttpApiNamingTrieManagerModule(Config config) {
     this.config = config;
   }
 
   @Override
   protected void configure() {
-    bind(ApiNamingManager.class).to(DefaultApiNamingManager.class);
-  }
-
-  @Provides
-  TrainerConfigServiceGrpc.TrainerConfigServiceBlockingStub
-      providesTrainerConfigServiceBlockingStub(ManagedChannel channel) {
-    return TrainerConfigServiceGrpc.newBlockingStub(channel)
-        .withCallCredentials(
-            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
-  }
-
-  @Provides
-  EntityDataServiceConfig providesEntityDataServiceConfig() {
-    return new EntityDataServiceConfig(this.config);
+    bind(HttpApiNamingTrieManager.class).to(DefaultHttpApiNamingTrieManager.class);
   }
 
   @Provides
@@ -75,16 +56,11 @@ public class ApiNamingManagerModule extends AbstractModule {
     return modelStore;
   }
 
-  @Provides
-  ApiNamingConfig providesApiNamingConfig() {
-    return new ApiNamingConfig(this.config);
-  }
-
   private MultiFileSystemModelStoreConfig getModelStoreConfig(Config config) {
     List<? extends Config> stores = config.getConfigList(MODEL_STORES_CONFIG_PATH);
     MultiFileSystemModelStoreConfig.Builder configBuilder =
         MultiFileSystemModelStoreConfig.Builder.builder();
-    LOGGER.info("building config for {} file store", stores.size());
+    log.info("building config for {} file store", stores.size());
     for (Config conf : stores) {
       configBuilder.addConfig(
           MultiFileSystemModelStoreConfig.FileSystemModelStoreConfig.Builder.builder()

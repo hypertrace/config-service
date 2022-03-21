@@ -1,6 +1,6 @@
-package ai.traceable.localprocessing.config.service.apinaming;
+package ai.traceable.localprocessing.config.service.apinaming.http;
 
-import static ai.traceable.localprocessing.config.service.apinaming.ApiNamingManagerTestUtils.buildFullTrieReloadConfig;
+import static ai.traceable.localprocessing.config.service.apinaming.http.ApiNamingManagerTestUtils.buildFullTrieReloadConfig;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -9,13 +9,18 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.v1.trainer.TrainerConfigServiceGrpc.TrainerConfigServiceBlockingStub;
+import ai.traceable.localprocessing.config.service.apinaming.http.namingconfig.DefaultHttpApiNamingConfigManager;
+import ai.traceable.localprocessing.config.service.apinaming.http.namingconfig.HttpApiNamingCachedConfigManager;
+import ai.traceable.localprocessing.config.service.apinaming.http.trie.DefaultHttpApiNamingTrieManager;
+import ai.traceable.localprocessing.config.service.apinaming.http.trie.FullTrieManager;
+import ai.traceable.localprocessing.config.service.apinaming.http.trie.TrieDiffLogManager;
+import ai.traceable.localprocessing.config.service.apinaming.http.utils.SegmentConverter;
 import ai.traceable.localprocessing.config.service.client.EntityDataServiceClient;
-import ai.traceable.localprocessing.config.service.config.ApiNamingConfig;
+import ai.traceable.localprocessing.config.service.config.http.HttpApiNamingConfig;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.DiffTrie;
 import ai.traceable.localprocessing.config.service.v1.FullTrie;
 import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelRequest;
-import ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig;
 import ai.traceable.localprocessing.config.service.v1.HttpServiceResponse;
 import ai.traceable.localprocessing.config.service.v1.Node;
 import ai.traceable.localprocessing.config.service.v1.ServiceRequest;
@@ -26,23 +31,27 @@ import ai.traceable.platform.apientity.http.model.TrieModel;
 import ai.traceable.platform.deepstore.FileMetadata;
 import ai.traceable.platform.model.PersistedModel;
 import ai.traceable.platform.model.store.ModelPersistentStore;
+import com.typesafe.config.ConfigFactory;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.entity.data.service.v1.Entity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class DefaultApiNamingManagerTest {
+class DefaultHttpApiNamingManagerTest {
 
-  private ApiNamingManager apiNamingManager;
+  private HttpApiNamingManager httpApiNamingManager;
   private EntityDataServiceClient entityDataServiceClient;
   private TrieDiffLogModel trieDiffLogModel;
   private TrieModel trieModel;
   private FileMetadata fileMetadata;
-  private ApiNamingConfig apiNamingConfig;
+  private HttpApiNamingConfig httpApiNamingConfig;
+  private EntityFetcher entityFetcher;
 
   @BeforeEach
   void setup() throws IOException {
@@ -50,7 +59,8 @@ class DefaultApiNamingManagerTest {
         mock(TrainerConfigServiceBlockingStub.class);
     entityDataServiceClient = mock(EntityDataServiceClient.class);
     UuidGenerator uuidGenerator = new UuidGenerator();
-    apiNamingConfig = mock(ApiNamingConfig.class);
+    httpApiNamingConfig = mock(HttpApiNamingConfig.class);
+
     PersistedModel trieDiffLogPersistedModel = mock(PersistedModel.class);
     trieDiffLogModel = mock(TrieDiffLogModel.class);
 
@@ -59,18 +69,28 @@ class DefaultApiNamingManagerTest {
     PersistedModel persistedModel = mock(PersistedModel.class);
     fileMetadata = mock(FileMetadata.class);
     trieModel = mock(TrieModel.class);
+    SegmentConverter segmentConverter = new SegmentConverter();
+    entityFetcher = mock(EntityFetcher.class);
 
-    apiNamingManager =
-        new DefaultApiNamingManager(
-            configServiceBlockingStub,
-            entityDataServiceClient,
-            apiNamingConfig,
-            trieModelStore,
-            trieDiffLogModelStore,
-            uuidGenerator);
+    httpApiNamingManager =
+        new DefaultHttpApiNamingManager(
+            new DefaultHttpApiNamingConfigManager(httpApiNamingConfig, uuidGenerator),
+            new DefaultHttpApiNamingTrieManager(
+                httpApiNamingConfig,
+                new FullTrieManager(
+                    ConfigFactory.parseMap(Map.of()), trieModelStore, segmentConverter),
+                new TrieDiffLogManager(
+                    ConfigFactory.parseMap(Map.of()),
+                    trieDiffLogModelStore,
+                    httpApiNamingConfig,
+                    segmentConverter)),
+            new HttpApiNamingCachedConfigManager(
+                ConfigFactory.parseMap(Map.of()), configServiceBlockingStub),
+            new LocalApiNamingConfigManager(httpApiNamingConfig),
+            entityFetcher);
     when(configServiceBlockingStub.getAllScopedTrainingConfigs(any()))
         .thenReturn(ApiNamingManagerTestUtils.buildGetAllScopedTrainingConfigsResponse());
-    when(apiNamingConfig.getFallbackRegexes())
+    when(httpApiNamingConfig.getFallbackRegexes())
         .thenReturn(
             List.of(
                 "(\\{){0,1}[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}(\\}){0,1}",
@@ -78,9 +98,9 @@ class DefaultApiNamingManagerTest {
 
     when(trieDiffLogPersistedModel.getModel()).thenReturn(trieDiffLogModel);
     when(trieDiffLogPersistedModel.getMetadata()).thenReturn(fileMetadata);
-    when(apiNamingConfig.getDefaultEmbryonicThreshold()).thenReturn(100);
-    when(apiNamingConfig.getDiffLogsRetentionPeriod()).thenReturn(5L);
-    when(apiNamingConfig.getBaseDirectory()).thenReturn("logs");
+    when(httpApiNamingConfig.getDefaultEmbryonicThreshold()).thenReturn(100);
+    when(httpApiNamingConfig.getDiffLogsRetentionPeriod()).thenReturn(5L);
+    when(httpApiNamingConfig.getBaseDirectory()).thenReturn("logs");
     when(trieDiffLogModelStore.loadModelsInDir(any(), any()))
         .thenReturn(Map.of("model", trieDiffLogPersistedModel));
     when(trieModelStore.loadModel(any())).thenReturn(persistedModel);
@@ -89,15 +109,16 @@ class DefaultApiNamingManagerTest {
   }
 
   @Test
-  void testGetServiceResponseList() {
+  void testGetServiceResponseList() throws ExecutionException {
     when(trieModel.getNonEmbryonicPaths(ApiNamingManagerTestUtils.buildTrieNodeConfig()))
         .thenReturn(new HashSet<>());
-    when(apiNamingConfig.getFullTrieReloadConfig())
-        .thenReturn(buildFullTrieReloadConfig("2022-03-09T13:36:33Z"));
+    when(httpApiNamingConfig.getFullTrieReloadConfig())
+        .thenReturn(buildFullTrieReloadConfig(false, "2022-03-09T13:36:33Z"));
     when(trieDiffLogModel.getTrieDiffLog())
         .thenReturn(ai.traceable.platform.apientity.TrieDiffLog.newBuilder().build());
     when(fileMetadata.getModificationTime()).thenReturn(1L);
-    HttpApiNamingConfig httpApiNamingConfig = ApiNamingManagerTestUtils.buildApiNamingConfig();
+    ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig httpApiNamingConfig =
+        ApiNamingManagerTestUtils.buildApiNamingConfig();
 
     ServiceRequest serviceRequest1 =
         ServiceRequest.newBuilder().setServiceName("serviceName1").setConfigHash("").build();
@@ -106,21 +127,14 @@ class DefaultApiNamingManagerTest {
             .setServiceName("serviceName2")
             .setConfigHash(httpApiNamingConfig.getHash())
             .build();
-    when(entityDataServiceClient.getByTypeAndIdentifyingProperties(
-            any(),
-            eq(
-                ApiNamingManagerTestUtils.buildGetEntityByTypeAndIdentifyingAttributesRequest(
-                    "serviceName1"))))
-        .thenReturn(Entity.newBuilder().setEntityId("serviceId1").build());
-    when(entityDataServiceClient.getByTypeAndIdentifyingProperties(
-            any(),
-            eq(
-                ApiNamingManagerTestUtils.buildGetEntityByTypeAndIdentifyingAttributesRequest(
-                    "serviceName2"))))
-        .thenReturn(Entity.newBuilder().setEntityId("serviceId2").build());
+
+    when(entityFetcher.getEntity(any(), eq("serviceName1"), eq(Optional.of("environment"))))
+        .thenReturn(Optional.of(Entity.newBuilder().setEntityId("serviceId1").build()));
+    when(entityFetcher.getEntity(any(), eq("serviceName2"), eq(Optional.of("environment"))))
+        .thenReturn(Optional.of(Entity.newBuilder().setEntityId("serviceId2").build()));
 
     List<HttpServiceResponse> actualServiceResponseList =
-        apiNamingManager.getHttpServiceResponseList(
+        httpApiNamingManager.getHttpServiceResponseList(
             RequestContext.forTenantId("tenantId"),
             GetApiNamingModelRequest.newBuilder()
                 .setEnvironment("environment")
@@ -148,14 +162,16 @@ class DefaultApiNamingManagerTest {
                         .setFullTrie(FullTrie.newBuilder().build())
                         .build())
                 .setHttpConfig(
-                    HttpApiNamingConfig.newBuilder().setHash(httpApiNamingConfig.getHash()).build())
+                    ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig.newBuilder()
+                        .setHash(httpApiNamingConfig.getHash())
+                        .build())
                 .build()));
   }
 
   @Test
-  void testTrieConstruction() {
-    when(apiNamingConfig.getFullTrieReloadConfig())
-        .thenReturn(buildFullTrieReloadConfig("2022-03-09T13:36:33Z"));
+  void testTrieConstruction() throws ExecutionException {
+    when(httpApiNamingConfig.getFullTrieReloadConfig())
+        .thenReturn(buildFullTrieReloadConfig(false, "2022-03-09T13:36:33Z"));
     when(trieModel.getNonEmbryonicPaths(any()))
         .thenReturn(ApiNamingManagerTestUtils.buildNonEmbryonicPaths());
     when(trieDiffLogModel.getTrieDiffLog())
@@ -169,15 +185,11 @@ class DefaultApiNamingManagerTest {
             .setServiceName("serviceName1")
             .setConfigHash(httpApiNamingConfig.getHash())
             .build();
-    when(entityDataServiceClient.getByTypeAndIdentifyingProperties(
-            any(),
-            eq(
-                ApiNamingManagerTestUtils.buildGetEntityByTypeAndIdentifyingAttributesRequest(
-                    "serviceName1"))))
-        .thenReturn(Entity.newBuilder().setEntityId("serviceId1").build());
+    when(entityFetcher.getEntity(any(), eq("serviceName1"), eq(Optional.of("environment"))))
+        .thenReturn(Optional.of(Entity.newBuilder().setEntityId("serviceId1").build()));
 
     List<HttpServiceResponse> actualServiceResponseList =
-        apiNamingManager.getHttpServiceResponseList(
+        httpApiNamingManager.getHttpServiceResponseList(
             RequestContext.forTenantId("tenantId"),
             GetApiNamingModelRequest.newBuilder()
                 .setEnvironment("environment")
@@ -199,9 +211,9 @@ class DefaultApiNamingManagerTest {
   }
 
   @Test
-  void testTrieDiffLogConstruction() {
-    when(apiNamingConfig.getFullTrieReloadConfig())
-        .thenReturn(buildFullTrieReloadConfig("1970-01-01T00:00:00.000Z"));
+  void testTrieDiffLogConstruction() throws ExecutionException {
+    when(httpApiNamingConfig.getFullTrieReloadConfig())
+        .thenReturn(buildFullTrieReloadConfig(false, "1970-01-01T00:00:00.000Z"));
     when(trieDiffLogModel.getTrieDiffLog())
         .thenReturn(ApiNamingManagerTestUtils.buildTrieDiffLog());
     when(fileMetadata.getModificationTime()).thenReturn(3L);
@@ -213,15 +225,11 @@ class DefaultApiNamingManagerTest {
             .setConfigHash("")
             .setTrieToken("1")
             .build();
-    when(entityDataServiceClient.getByTypeAndIdentifyingProperties(
-            any(),
-            eq(
-                ApiNamingManagerTestUtils.buildGetEntityByTypeAndIdentifyingAttributesRequest(
-                    "serviceName1"))))
-        .thenReturn(Entity.newBuilder().setEntityId("serviceId1").build());
+    when(entityFetcher.getEntity(any(), eq("serviceName1"), eq(Optional.of("environment"))))
+        .thenReturn(Optional.of(Entity.newBuilder().setEntityId("serviceId1").build()));
 
     List<HttpServiceResponse> actualServiceResponseList =
-        apiNamingManager.getHttpServiceResponseList(
+        httpApiNamingManager.getHttpServiceResponseList(
             RequestContext.forTenantId("tenantId"),
             GetApiNamingModelRequest.newBuilder()
                 .setEnvironment("environment")
@@ -238,9 +246,7 @@ class DefaultApiNamingManagerTest {
   }
 
   @Test
-  void testFullTrieReloadConfig() {
-    when(apiNamingConfig.getFullTrieReloadConfig())
-        .thenReturn(buildFullTrieReloadConfig("2022-03-09T13:36:33Z"));
+  void testLocalApiNamingConfig() throws ExecutionException {
     when(trieDiffLogModel.getTrieDiffLog())
         .thenReturn(ApiNamingManagerTestUtils.buildTrieDiffLog());
     when(fileMetadata.getModificationTime()).thenReturn(3L);
@@ -254,15 +260,25 @@ class DefaultApiNamingManagerTest {
             .setConfigHash("")
             .setTrieToken("1")
             .build();
-    when(entityDataServiceClient.getByTypeAndIdentifyingProperties(
-            any(),
-            eq(
-                ApiNamingManagerTestUtils.buildGetEntityByTypeAndIdentifyingAttributesRequest(
-                    "serviceName1"))))
-        .thenReturn(Entity.newBuilder().setEntityId("serviceId1").build());
+    when(entityFetcher.getEntity(any(), eq("serviceName1"), eq(Optional.of("environment"))))
+        .thenReturn(Optional.of(Entity.newBuilder().setEntityId("serviceId1").build()));
 
+    when(httpApiNamingConfig.getFullTrieReloadConfig())
+        .thenReturn(buildFullTrieReloadConfig(true, "2022-03-09T13:36:33Z"));
     List<HttpServiceResponse> actualServiceResponseList =
-        apiNamingManager.getHttpServiceResponseList(
+        httpApiNamingManager.getHttpServiceResponseList(
+            RequestContext.forTenantId("tenantId"),
+            GetApiNamingModelRequest.newBuilder()
+                .setEnvironment("environment")
+                .addAllServiceRequests(List.of(serviceRequest1))
+                .build());
+    // disabled local api naming config
+    assertEquals(0, actualServiceResponseList.size());
+
+    when(httpApiNamingConfig.getFullTrieReloadConfig())
+        .thenReturn(buildFullTrieReloadConfig(false, "2022-03-09T13:36:33Z"));
+    actualServiceResponseList =
+        httpApiNamingManager.getHttpServiceResponseList(
             RequestContext.forTenantId("tenantId"),
             GetApiNamingModelRequest.newBuilder()
                 .setEnvironment("environment")
