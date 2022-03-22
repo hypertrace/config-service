@@ -100,7 +100,9 @@ message MatchExpression {
   MatchKey match_key = 1;
   MatchOperator match_operator = 2;
   string match_value = 3;
+  MatchCategory match_category  = 4;
 }
+
 
 message KeyValueExpression {
   KeyValueTag tag = 1;
@@ -108,6 +110,7 @@ message KeyValueExpression {
   string match_key = 3;
   MatchOperator value_match_operator = 4;
   string match_value = 5;
+  MatchCategory match_category  = 6;
 }
 
 message ExpiryDetails {
@@ -151,6 +154,8 @@ enum MatchKey {
   MATCH_KEY_HEADER_VALUE = 6;
   MATCH_KEY_PARAMETER_NAME = 7;
   MATCH_KEY_PARAMETER_VALUE = 8;
+  MATCH_KEY_STATUS_CODE = 9;
+  MATCH_KEY_BODY = 10;
 }
 
 enum MatchOperator {
@@ -169,4 +174,10 @@ enum KeyValueTag {
   KEY_VALUE_TAG_UNSPECIFIED = 0;
   KEY_VALUE_TAG_HEADER = 1;
   KEY_VALUE_TAG_PARAMETER = 2;
+}
+
+enum MatchCategory {
+  MATCH_CATEGORY_UNSPECIFIED = 0;
+  MATCH_CATEGORY_REQUEST = 1;
+  MATCH_CATEGORY_RESPONSE = 2;
 }
