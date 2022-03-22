@@ -49,7 +49,7 @@ public class SpanProcessingRulesManagerTestUtils {
                                             .RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
                                         "val"))),
                             buildRelationalFilter(
-                                "url",
+                                "http.url",
                                 ai.traceable.localprocessing.config.service.v1.RelationalOperator
                                     .RELATIONAL_OPERATOR_EQUALS,
                                 "url"))))

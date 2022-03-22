@@ -23,8 +23,7 @@ import org.hypertrace.span.processing.config.service.v1.SpanProcessingConfigServ
 @Slf4j
 public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
 
-  // TODO: need to confirm span attribute key for full url
-  private static final String URL_SPAN_ATTRIBUTE_KEY = "url";
+  private static final String URL_SPAN_ATTRIBUTE_KEY = "http.url";
   private final SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
       configServiceBlockingStub;
 
