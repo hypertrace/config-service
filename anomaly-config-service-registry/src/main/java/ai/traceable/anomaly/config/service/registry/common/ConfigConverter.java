@@ -4,6 +4,8 @@ import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleCategory;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.EnumExtension;
+import ai.traceable.anomaly.config.service.v1.aggregator.AggregationConfig;
+import ai.traceable.anomaly.config.service.v1.aggregator.EventAggregationGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import com.google.protobuf.Message;
@@ -12,6 +14,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigRenderOptions;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 
@@ -56,6 +59,25 @@ public class ConfigConverter {
               return builder.build();
             })
         .collect(Collectors.toList());
+  }
+
+  public Optional<AggregationConfig> getAggregationConfig(String configPath, Config config) {
+    if (config.hasPath(configPath)) {
+      AggregationConfig.Builder builder = AggregationConfig.newBuilder();
+      mergeFromConfig(config.getConfig(configPath), builder);
+      return Optional.of(builder.build());
+    }
+    return Optional.empty();
+  }
+
+  public Optional<EventAggregationGlobalConfig> getGlobalAggregationConfig(
+      String configPath, Config config) {
+    if (config.hasPath(configPath)) {
+      EventAggregationGlobalConfig.Builder builder = EventAggregationGlobalConfig.newBuilder();
+      mergeFromConfig(config.getConfig(configPath), builder);
+      return Optional.of(builder.build());
+    }
+    return Optional.empty();
   }
 
   public List<TrainingConfig> convertToTrainingConfigs(List<? extends Config> configList) {

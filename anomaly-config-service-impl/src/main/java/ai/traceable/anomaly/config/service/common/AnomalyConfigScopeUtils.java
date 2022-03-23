@@ -4,6 +4,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import java.util.ArrayList;
 import java.util.List;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class AnomalyConfigScopeUtils {
 
@@ -56,6 +57,16 @@ public class AnomalyConfigScopeUtils {
             String.format("Invalid scope found: {%s}", anomalyConfigScope.getScopeCase()));
     }
     return context;
+  }
+
+  public String getContextFromAnomalyConfigScope(AnomalyConfigScope anomalyConfigScope) {
+    String tenantId =
+        RequestContext.CURRENT
+            .get()
+            .getTenantId()
+            .orElseThrow(
+                () -> new IllegalArgumentException("Unable to get tenant id from request context"));
+    return getContextFromAnomalyConfigScope(tenantId, anomalyConfigScope);
   }
 
   public List<String> getContextsWithIncreasingPriority(

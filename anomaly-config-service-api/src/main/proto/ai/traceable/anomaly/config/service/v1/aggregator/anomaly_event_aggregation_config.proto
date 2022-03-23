@@ -44,7 +44,7 @@ message GetUnresolvedScopedAnomalyEventAggregationConfigResponse {
 }
 
 message DeleteScopedAnomalyEventAggregationConfigRequest {
-  ScopedAnomalyEventAggregationConfig scoped_anomaly_event_aggregation_config = 1;
+  AnomalyConfigScope config_scope = 1;
 }
 
 message DeleteScopedAnomalyEventAggregationConfigResponse {}
