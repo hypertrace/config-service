@@ -504,7 +504,7 @@ public class TrainingConfigManagerTest {
         configManager.getScopedTrainingConfig(
             requestContext, customerConfigScope, GetTrainingConfigsFilter.getDefaultInstance());
     assertFalse(scopedTrainingConfig.getTrainingConfigsList().contains(trainingConfig));
-    assertEquals(3, scopedTrainingConfig.getTrainingConfigsCount());
+    assertEquals(4, scopedTrainingConfig.getTrainingConfigsCount());
   }
 
   private void updateScopedTrainingConfig(

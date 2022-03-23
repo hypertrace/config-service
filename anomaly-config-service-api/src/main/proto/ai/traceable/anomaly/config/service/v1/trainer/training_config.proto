@@ -93,9 +93,10 @@ message TrainingConfig {
 
 message ApiNamingTrainingConfig {
   oneof config {
-    UrlFilterConfig url_filter_config = 1;
+    UrlFilterConfig url_filter_config = 1 [deprecated = true];
     TrieModelTrainingConfig trie_model_training_config = 2;
     CustomRulesListConfig custom_rules_list_config = 3;
+    RejectFilterConfig reject_filter_config = 4;
   }
 }
 
@@ -300,6 +301,32 @@ message ParamSusceptibilityConfig {
   StringList request_param_values_not_allowed = 5;
 }
 
+message RejectFilterConfig {
+  UrlPathFilterConfig url_path_filter_config = 1;
+  SegmentFilterConfig segment_filter_config = 2;
+  UserAgentFilterConfig user_agent_filter_config = 3;
+  StatusCodeFilterConfig status_code_filter_config = 4;
+}
+
+message StatusCodeFilterConfig {
+  repeated IntRangeFilterConfig range_filter_configs = 1;
+}
+
+message IntRangeFilterConfig {
+  optional int32 low = 1;
+  optional int32 high = 2;
+  IntList exclusions = 3;
+}
+
+message SegmentFilterConfig {
+  optional int32 url_parts_threshold = 1;
+  optional int32 segment_length_threshold = 2;
+}
+
+message UrlPathFilterConfig  {
+  StringList url_path_regex_patterns = 1;
+}
+
 message UrlFilterConfig {
   StringList url_reject_regex_patterns = 1;
 }
@@ -312,6 +339,10 @@ message TrieModelTrainingConfig {
   ThresholdRegexConfig high_cardinality = 5;
   StringList extensions = 6;
   optional int32 embryonic_threshold = 7;
+}
+
+message UserAgentFilterConfig {
+  StringList bot_agent_list = 2;
 }
 
 message ThresholdRegexConfig {

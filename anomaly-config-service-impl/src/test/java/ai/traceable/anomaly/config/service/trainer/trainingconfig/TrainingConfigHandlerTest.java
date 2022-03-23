@@ -2,22 +2,30 @@ package ai.traceable.anomaly.config.service.trainer.trainingconfig;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import ai.traceable.anomaly.config.service.v1.IntList;
 import ai.traceable.anomaly.config.service.v1.StringList;
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.EnumerationsTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.IntRangeFilterConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.LackOfEncryptionTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.MetadataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.MinOccurrenceConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ObjectBolaTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.RejectFilterConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.SegmentFilterConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.SessionTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.StatusCodeFilterConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ThresholdCountConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.UrlFilterConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.UrlPathFilterConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.UserAgentFilterConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 class TrainingConfigHandlerTest {
@@ -42,7 +50,8 @@ class TrainingConfigHandlerTest {
                                     .build())
                             .build())
                     .build())
-            .addTrainingConfigs(buildUrlFilterApiNamingTrainerConfig(List.of(".com", ".us", ".au")))
+            .addTrainingConfigs(buildUrlFilterApiNamingTrainerConfig(List.of(".random")))
+            .addTrainingConfigs(buildFilterApiNamingTrainerConfig(List.of(".com", ".us", ".au")))
             .build();
 
     value = configHandler.convert(config);
@@ -171,16 +180,61 @@ class TrainingConfigHandlerTest {
             .getRequiredCountConfig()
             .getRequiredCallsCount());
 
-    trainingConfig =
-        getTrainingConfig(
-            resultConfig, TrainingConfig.TrainingConfigCase.API_NAMING_TRAINING_CONFIG);
+    List<TrainingConfig> apiNamingTrainingConfig =
+        resultConfig.getTrainingConfigsList().stream()
+            .filter(
+                conf ->
+                    conf.getTrainingConfigCase()
+                        .equals(TrainingConfig.TrainingConfigCase.API_NAMING_TRAINING_CONFIG))
+            .collect(Collectors.toList());
     assertEquals(
         List.of(".com", ".us", ".au"),
-        trainingConfig
+        apiNamingTrainingConfig
+            .get(0)
             .getApiNamingTrainingConfig()
             .getUrlFilterConfig()
             .getUrlRejectRegexPatterns()
             .getValuesList());
+
+    assertEquals(
+        List.of(".com", ".us", ".au"),
+        apiNamingTrainingConfig
+            .get(1)
+            .getApiNamingTrainingConfig()
+            .getRejectFilterConfig()
+            .getUrlPathFilterConfig()
+            .getUrlPathRegexPatterns()
+            .getValuesList());
+
+    assertEquals(
+        List.of(302),
+        apiNamingTrainingConfig
+            .get(1)
+            .getApiNamingTrainingConfig()
+            .getRejectFilterConfig()
+            .getStatusCodeFilterConfig()
+            .getRangeFilterConfigs(0)
+            .getExclusions()
+            .getValuesList());
+
+    assertEquals(
+        List.of("bot"),
+        apiNamingTrainingConfig
+            .get(1)
+            .getApiNamingTrainingConfig()
+            .getRejectFilterConfig()
+            .getUserAgentFilterConfig()
+            .getBotAgentList()
+            .getValuesList());
+
+    assertEquals(
+        25,
+        apiNamingTrainingConfig
+            .get(1)
+            .getApiNamingTrainingConfig()
+            .getRejectFilterConfig()
+            .getSegmentFilterConfig()
+            .getUrlPartsThreshold());
   }
 
   private TrainingConfig getTrainingConfig(
@@ -191,6 +245,35 @@ class TrainingConfigHandlerTest {
       }
     }
     return null;
+  }
+
+  private TrainingConfig buildFilterApiNamingTrainerConfig(List<String> urls) {
+    return TrainingConfig.newBuilder()
+        .setApiNamingTrainingConfig(
+            ApiNamingTrainingConfig.newBuilder()
+                .setRejectFilterConfig(
+                    RejectFilterConfig.newBuilder()
+                        .setStatusCodeFilterConfig(
+                            StatusCodeFilterConfig.newBuilder()
+                                .addRangeFilterConfigs(
+                                    IntRangeFilterConfig.newBuilder()
+                                        .setExclusions(IntList.newBuilder().addValues(302).build())
+                                        .build())
+                                .build())
+                        .setSegmentFilterConfig(
+                            SegmentFilterConfig.newBuilder().setUrlPartsThreshold(25).build())
+                        .setUserAgentFilterConfig(
+                            UserAgentFilterConfig.newBuilder()
+                                .setBotAgentList(StringList.newBuilder().addValues("bot").build())
+                                .build())
+                        .setUrlPathFilterConfig(
+                            UrlPathFilterConfig.newBuilder()
+                                .setUrlPathRegexPatterns(
+                                    StringList.newBuilder().addAllValues(urls).build())
+                                .build())
+                        .build())
+                .build())
+        .build();
   }
 
   private TrainingConfig buildUrlFilterApiNamingTrainerConfig(List<String> urls) {

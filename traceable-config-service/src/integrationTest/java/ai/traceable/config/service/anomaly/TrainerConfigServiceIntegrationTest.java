@@ -132,9 +132,141 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
             .getUrlRejectRegexPatterns()
             .getValuesList());
     assertEquals(
-        List.of("v\\d+"),
+        100,
         scopedTrainingConfig
             .getTrainingConfigs(1)
+            .getApiNamingTrainingConfig()
+            .getRejectFilterConfig()
+            .getSegmentFilterConfig()
+            .getUrlPartsThreshold());
+
+    assertEquals(
+        100,
+        scopedTrainingConfig
+            .getTrainingConfigs(1)
+            .getApiNamingTrainingConfig()
+            .getRejectFilterConfig()
+            .getSegmentFilterConfig()
+            .getSegmentLengthThreshold());
+
+    assertEquals(
+        List.of(
+            "bot",
+            "crawler",
+            "baiduspider",
+            "80legs",
+            "ia_archiver",
+            "voyager",
+            "curl",
+            "wget",
+            "yahoo",
+            "slurp",
+            "mediapartners-google",
+            "whiteHat security"),
+        scopedTrainingConfig
+            .getTrainingConfigs(1)
+            .getApiNamingTrainingConfig()
+            .getRejectFilterConfig()
+            .getUserAgentFilterConfig()
+            .getBotAgentList()
+            .getValuesList());
+
+    assertEquals(
+        2,
+        scopedTrainingConfig
+            .getTrainingConfigs(1)
+            .getApiNamingTrainingConfig()
+            .getRejectFilterConfig()
+            .getStatusCodeFilterConfig()
+            .getRangeFilterConfigsList()
+            .size());
+
+    assertEquals(
+        List.of(302, 307),
+        scopedTrainingConfig
+            .getTrainingConfigs(1)
+            .getApiNamingTrainingConfig()
+            .getRejectFilterConfig()
+            .getStatusCodeFilterConfig()
+            .getRangeFilterConfigs(0)
+            .getExclusions()
+            .getValuesList());
+
+    assertEquals(
+        300,
+        scopedTrainingConfig
+            .getTrainingConfigs(1)
+            .getApiNamingTrainingConfig()
+            .getRejectFilterConfig()
+            .getStatusCodeFilterConfig()
+            .getRangeFilterConfigs(0)
+            .getLow());
+
+    assertEquals(
+        599,
+        scopedTrainingConfig
+            .getTrainingConfigs(1)
+            .getApiNamingTrainingConfig()
+            .getRejectFilterConfig()
+            .getStatusCodeFilterConfig()
+            .getRangeFilterConfigs(0)
+            .getHigh());
+
+    assertEquals(
+        0,
+        scopedTrainingConfig
+            .getTrainingConfigs(1)
+            .getApiNamingTrainingConfig()
+            .getRejectFilterConfig()
+            .getStatusCodeFilterConfig()
+            .getRangeFilterConfigs(1)
+            .getLow());
+
+    assertEquals(
+        0,
+        scopedTrainingConfig
+            .getTrainingConfigs(1)
+            .getApiNamingTrainingConfig()
+            .getRejectFilterConfig()
+            .getStatusCodeFilterConfig()
+            .getRangeFilterConfigs(1)
+            .getHigh());
+
+    assertEquals(
+        List.of(
+            ".*\\.css$",
+            ".*\\.jpg$",
+            ".*\\.svg$",
+            ".*\\.js$",
+            ".*\\.pdf$",
+            ".*\\.jpeg$",
+            ".*\\.gif$",
+            ".*\\.png$",
+            ".*\\.bmp$",
+            ".*\\.tif$",
+            ".*\\.tiff$",
+            ".*\\.mp3$",
+            ".*\\.wma$",
+            ".*\\.wav$",
+            ".*\\.ogg$",
+            ".*\\.mp4$",
+            ".*\\.avi$",
+            ".*\\.mkv$",
+            ".*\\.woff$",
+            ".*\\.woff2$",
+            ".*\\.webp$",
+            ".*\\.html$"),
+        scopedTrainingConfig
+            .getTrainingConfigs(1)
+            .getApiNamingTrainingConfig()
+            .getRejectFilterConfig()
+            .getUrlPathFilterConfig()
+            .getUrlPathRegexPatterns()
+            .getValuesList());
+    assertEquals(
+        List.of("v\\d+"),
+        scopedTrainingConfig
+            .getTrainingConfigs(2)
             .getApiNamingTrainingConfig()
             .getTrieModelTrainingConfig()
             .getAllowRegexList()
@@ -144,7 +276,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
             "(\\{){0,1}[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}(\\}){0,1}",
             "\\d+"),
         scopedTrainingConfig
-            .getTrainingConfigs(1)
+            .getTrainingConfigs(2)
             .getApiNamingTrainingConfig()
             .getTrieModelTrainingConfig()
             .getIds()
@@ -153,7 +285,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     assertEquals(
         List.of(),
         scopedTrainingConfig
-            .getTrainingConfigs(1)
+            .getTrainingConfigs(2)
             .getApiNamingTrainingConfig()
             .getTrieModelTrainingConfig()
             .getLowCardinality()
@@ -162,7 +294,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     assertEquals(
         List.of("[a-zA-Z]*?([-_+]?[a-zA-Z]+)+[-_+]?"),
         scopedTrainingConfig
-            .getTrainingConfigs(1)
+            .getTrainingConfigs(2)
             .getApiNamingTrainingConfig()
             .getTrieModelTrainingConfig()
             .getHighCardinality()
@@ -171,7 +303,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     assertEquals(
         List.of("json", "xml"),
         scopedTrainingConfig
-            .getTrainingConfigs(1)
+            .getTrainingConfigs(2)
             .getApiNamingTrainingConfig()
             .getTrieModelTrainingConfig()
             .getExtensions()
@@ -180,7 +312,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     assertEquals(
         1,
         scopedTrainingConfig
-            .getTrainingConfigs(1)
+            .getTrainingConfigs(2)
             .getApiNamingTrainingConfig()
             .getTrieModelTrainingConfig()
             .getIds()
@@ -188,7 +320,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     assertEquals(
         10,
         scopedTrainingConfig
-            .getTrainingConfigs(1)
+            .getTrainingConfigs(2)
             .getApiNamingTrainingConfig()
             .getTrieModelTrainingConfig()
             .getLowCardinality()
@@ -196,7 +328,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     assertEquals(
         25,
         scopedTrainingConfig
-            .getTrainingConfigs(1)
+            .getTrainingConfigs(2)
             .getApiNamingTrainingConfig()
             .getTrieModelTrainingConfig()
             .getMediumCardinality()
@@ -204,7 +336,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     assertEquals(
         45,
         scopedTrainingConfig
-            .getTrainingConfigs(1)
+            .getTrainingConfigs(2)
             .getApiNamingTrainingConfig()
             .getTrieModelTrainingConfig()
             .getHighCardinality()
@@ -212,7 +344,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     assertEquals(
         100,
         scopedTrainingConfig
-            .getTrainingConfigs(1)
+            .getTrainingConfigs(2)
             .getApiNamingTrainingConfig()
             .getTrieModelTrainingConfig()
             .getEmbryonicThreshold());
@@ -433,7 +565,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     updateTrainerConfig(scopedTrainingConfig);
     List<TrainingConfig> trainingConfigs =
         fetchTrainerConfig(customerConfigScope).getTrainingConfigsList();
-    assertEquals(4, trainingConfigs.size());
+    assertEquals(5, trainingConfigs.size());
     for (TrainingConfig trainingConfig : trainingConfigs) {
       if (trainingConfig.getTrainingConfigCase() == TrainingConfigCase.METADATA_TRAINING_CONFIG) {
         assertEquals(
