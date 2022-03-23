@@ -48,7 +48,7 @@ message AttributeOverride {
 
 message ParamTypeOverride {
   string param_name = 1;
-  string param_type = 2;
+  ParamValueType param_value_type = 2;
   ParamTypeAction param_type_action = 3;
 }
 
@@ -56,6 +56,25 @@ enum ParamTypeAction {
   PARAM_TYPE_ACTION_UNSPECIFIED = 0;
   PARAM_TYPE_ACTION_EXCLUDE = 1;
   PARAM_TYPE_ACTION_COLLAPSE = 2;
+}
+
+enum ParamValueType {
+  PARAM_VALUE_TYPE_UNSPECIFIED = 0;
+  PARAM_VALUE_TYPE_BOOLEAN = 1;
+  PARAM_VALUE_TYPE_INTEGER = 2;
+  PARAM_VALUE_TYPE_FLOAT = 3;
+  PARAM_VALUE_TYPE_CHAR = 4;
+  PARAM_VALUE_TYPE_STRING = 5;
+  PARAM_VALUE_TYPE_OBJECT = 6;
+  PARAM_VALUE_TYPE_URL = 7;
+  PARAM_VALUE_TYPE_EMAIL = 8;
+  PARAM_VALUE_TYPE_JSON = 9;
+  PARAM_VALUE_TYPE_CREDIT_CARD = 10;
+  PARAM_VALUE_TYPE_DATE = 11;
+  PARAM_VALUE_TYPE_ARRAY = 12;
+  PARAM_VALUE_TYPE_CLOB = 13;
+  PARAM_VALUE_TYPE_HTML = 14;
+  PARAM_VALUE_TYPE_RICH_TEXT_HTML = 15;
 }
 
 message ApiExternalOverride {
