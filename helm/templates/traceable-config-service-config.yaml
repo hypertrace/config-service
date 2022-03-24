@@ -133,14 +133,14 @@ data:
           {{- if eq $k "default" }}
             default = {
               disabled = {{ .Values.localApiNamingConfig.fullTrieReloadConfig.default.disabled }}
-              timestamp = {{ .Values.localApiNamingConfig.fullTrieReloadConfig.default.timestamp }}
+              timestamp = {{ .Values.localApiNamingConfig.fullTrieReloadConfig.default.timestamp | quote }}
             }
           {{- else }}
           {{ $k }} = {
             {{- range $sk,$sv := $v }}
               {{ $sk }} = {
                 disabled = {{ $sv.disabled }}
-                timestamp = {{ $sv.timestamp }}
+                timestamp = {{ $sv.timestamp | quote}}
               }
             {{- end}}
           }
