@@ -602,7 +602,8 @@ class DataClassificationConfigServiceImplTest {
     CreateDataSetRequest request = CreateDataSetRequest.newBuilder().setInfo(dataSetInfo).build();
     CreateDataSetResponse response =
         dataClassificationConfigServiceBlockingStub.createDataSet(request);
-    assertEquals(dataSetInfo, response.getDataSet().getInfo());
+    assertEquals(
+        getDataSetInfoWithSensitivityForVerification(dataSetInfo), response.getDataSet().getInfo());
   }
 
   @Test
@@ -627,7 +628,9 @@ class DataClassificationConfigServiceImplTest {
     GetDataSetRequest getRequest = GetDataSetRequest.newBuilder().setId(id).build();
     GetDataSetResponse getResponse =
         dataClassificationConfigServiceBlockingStub.getDataSet(getRequest);
-    assertEquals(dataSetInfo, getResponse.getDataSet().getInfo());
+    assertEquals(
+        getDataSetInfoWithSensitivityForVerification(dataSetInfo),
+        getResponse.getDataSet().getInfo());
   }
 
   @Test
@@ -643,7 +646,9 @@ class DataClassificationConfigServiceImplTest {
             GetDataSetsRequest.getDefaultInstance());
     assertEquals(2, response.getDataSetsCount());
     assertEquals(
-        List.of(dataSetInfo2, dataSetInfo1),
+        List.of(
+            getDataSetInfoWithSensitivityForVerification(dataSetInfo2),
+            getDataSetInfoWithSensitivityForVerification(dataSetInfo1)),
         response.getDataSetsList().stream()
             .map(DataSet::getInfo)
             .collect(Collectors.toUnmodifiableList()));
@@ -674,7 +679,9 @@ class DataClassificationConfigServiceImplTest {
     UpdateDataSetResponse updateResponse =
         dataClassificationConfigServiceBlockingStub.updateDataSet(
             UpdateDataSetRequest.newBuilder().setId(updateId).setInfo(dataSetInfo2).build());
-    assertEquals(dataSetInfo2, updateResponse.getDataSet().getInfo());
+    assertEquals(
+        getDataSetInfoWithSensitivityForVerification(dataSetInfo2),
+        updateResponse.getDataSet().getInfo());
   }
 
   @Test
@@ -710,6 +717,12 @@ class DataClassificationConfigServiceImplTest {
         .setName(name)
         .setEnabled(enabled)
         .addAllDataTypeIds(dataTypeIds)
+        .build();
+  }
+
+  private DataSetInfo getDataSetInfoWithSensitivityForVerification(DataSetInfo dataSetInfo) {
+    return dataSetInfo.toBuilder()
+        .setSensitivity(DataSetInfo.Sensitivity.SENSITIVITY_MEDIUM)
         .build();
   }
 
