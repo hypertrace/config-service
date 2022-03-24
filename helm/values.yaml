@@ -148,8 +148,8 @@ traceableConfigServiceConfig:
 #              windowDuration: 60s
 #          apiEndpointCacheDuration: 604800s
 
-localApiNamingConfig:
-  fullTrieReloadConfig:
+#localApiNamingConfig:
+#  fullTrieReloadConfig:
   #commented config for reference
 #    tenant1:
 #      disabled: true
