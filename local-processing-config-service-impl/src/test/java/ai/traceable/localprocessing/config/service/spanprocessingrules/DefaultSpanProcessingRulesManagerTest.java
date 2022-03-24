@@ -17,6 +17,7 @@ import ai.traceable.localprocessing.config.service.v1.SpanProcessingRules;
 import ai.traceable.localprocessing.config.service.v1.SpanProcessingRulesServiceRequest;
 import ai.traceable.localprocessing.config.service.v1.SpanProcessingRulesServiceResponse;
 import java.util.List;
+import org.hypertrace.config.utils.SpanFilterMatcher;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +29,6 @@ class DefaultSpanProcessingRulesManagerTest {
   private UuidGenerator uuidGenerator;
   private SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
       configServiceBlockingStub;
-  private RateLimitConfigManager rateLimitConfigManager;
   private RequestContext requestContext;
 
   @BeforeEach
@@ -37,8 +37,8 @@ class DefaultSpanProcessingRulesManagerTest {
         mock(SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub.class);
     uuidGenerator = new UuidGenerator();
     ExcludeSpanRulesManager excludeSpanRulesManager =
-        new DefaultExcludeSpanRulesManager(configServiceBlockingStub);
-    rateLimitConfigManager =
+        new DefaultExcludeSpanRulesManager(configServiceBlockingStub, new SpanFilterMatcher());
+    RateLimitConfigManager rateLimitConfigManager =
         new DefaultRateLimitConfigManager(SpanProcessingRulesManagerTestUtils.buildConfig());
     spanProcessingRulesManager =
         new DefaultSpanProcessingRulesManager(

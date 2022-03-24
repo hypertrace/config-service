@@ -2,6 +2,7 @@ package ai.traceable.localprocessing.config.service.apinaming.http;
 
 import ai.traceable.localprocessing.config.service.apinaming.http.namingconfig.HttpApiNamingCachedConfigManager;
 import ai.traceable.localprocessing.config.service.apinaming.http.namingconfig.HttpApiNamingConfigManager;
+import ai.traceable.localprocessing.config.service.apinaming.http.namingconfig.HttpCustomApiNamingRulesManager;
 import ai.traceable.localprocessing.config.service.apinaming.http.trie.HttpApiNamingTrieManager;
 import ai.traceable.localprocessing.config.service.apinaming.http.utils.HttpApiNamingConfigInfo;
 import ai.traceable.localprocessing.config.service.apinaming.http.utils.LocalApiNamingConfigInfo;
@@ -19,6 +20,7 @@ import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.entity.data.service.v1.Entity;
+import org.hypertrace.span.processing.config.service.v1.ApiNamingRule;
 
 @Slf4j
 class DefaultHttpApiNamingManager implements HttpApiNamingManager {
@@ -26,6 +28,7 @@ class DefaultHttpApiNamingManager implements HttpApiNamingManager {
   private final HttpApiNamingConfigManager httpApiNamingConfigManager;
   private final HttpApiNamingTrieManager httpApiNamingTrieManager;
   private final HttpApiNamingCachedConfigManager httpApiNamingCachedConfigManager;
+  private final HttpCustomApiNamingRulesManager httpCustomApiNamingRulesManager;
   private final EntityFetcher entityFetcher;
   private final LocalApiNamingConfigManager localApiNamingConfigManager;
 
@@ -34,11 +37,13 @@ class DefaultHttpApiNamingManager implements HttpApiNamingManager {
       HttpApiNamingConfigManager httpApiNamingConfigManager,
       HttpApiNamingTrieManager httpApiNamingTrieManager,
       HttpApiNamingCachedConfigManager httpApiNamingCachedConfigManager,
+      HttpCustomApiNamingRulesManager httpCustomApiNamingRulesManager,
       LocalApiNamingConfigManager localApiNamingConfigManager,
       EntityFetcher entityFetcher) {
     this.httpApiNamingConfigManager = httpApiNamingConfigManager;
     this.httpApiNamingTrieManager = httpApiNamingTrieManager;
     this.httpApiNamingCachedConfigManager = httpApiNamingCachedConfigManager;
+    this.httpCustomApiNamingRulesManager = httpCustomApiNamingRulesManager;
     this.localApiNamingConfigManager = localApiNamingConfigManager;
     this.entityFetcher = entityFetcher;
   }
@@ -79,6 +84,8 @@ class DefaultHttpApiNamingManager implements HttpApiNamingManager {
       RequestContext requestContext,
       Map<String, ServiceRequest> serviceIdServiceRequestMap) {
     List<HttpServiceResponse> httpServiceResponses = new ArrayList<>();
+    Optional<String> maybeEnvironment = getEnvironment(request);
+
     serviceIdServiceRequestMap.forEach(
         (serviceId, serviceRequest) -> {
           try {
@@ -91,9 +98,14 @@ class DefaultHttpApiNamingManager implements HttpApiNamingManager {
                             localApiNamingConfigManager.getLocalApiNamingConfigInfo(
                                 requestContext, serviceId);
                         if (!localApiNamingConfigInfo.isDisabled()) {
+                          List<ApiNamingRule> apiNamingRules =
+                              httpCustomApiNamingRulesManager.getApiNamingRules(
+                                  requestContext,
+                                  serviceRequest.getServiceName(),
+                                  maybeEnvironment);
                           HttpApiNamingConfigInfo httpApiNamingConfigInfo =
                               httpApiNamingConfigManager.getHttpApiNamingConfigInfo(
-                                  trainingConfigs, serviceRequest.getConfigHash());
+                                  trainingConfigs, apiNamingRules, serviceRequest.getConfigHash());
                           httpServiceResponses.add(
                               HttpServiceResponse.newBuilder()
                                   .setServiceName(serviceRequest.getServiceName())

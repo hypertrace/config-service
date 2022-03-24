@@ -36,6 +36,7 @@ hypertrace-configservice-span-processing-api = { module = "org.hypertrace.config
 hypertrace-configservice-protoconverter = { module = "org.hypertrace.config.service:config-proto-converter" }
 hypertrace-configservice-objectstore = { module = "org.hypertrace.config.service:object-store" }
 hypertrace-configservice-validation = { module = "org.hypertrace.config.service:validation-utils" }
+hypertrace-configservice-configUtils = { module = "org.hypertrace.config.service:config-utils" }
 hypertrace-configservice-changeeventgenerator = { module = "org.hypertrace.config.service:config-service-change-event-generator" }
 hypertrace-framework-container = { module = "org.hypertrace.core.serviceframework:platform-service-framework", version.ref = "hypertrace-framework" }
 hypertrace-framework-metrics = { module = "org.hypertrace.core.serviceframework:platform-metrics", version.ref = "hypertrace-framework" }

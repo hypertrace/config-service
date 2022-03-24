@@ -5,8 +5,6 @@ import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
 import ai.traceable.anomaly.config.service.v1.StringList;
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
-import ai.traceable.anomaly.config.service.v1.trainer.CustomRuleConfig;
-import ai.traceable.anomaly.config.service.v1.trainer.CustomRulesListConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllScopedTrainingConfigsResponse;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ThresholdRegexConfig;
@@ -35,6 +33,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.hypertrace.span.processing.config.service.v1.ApiNamingRule;
+import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
+import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleDetails;
+import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
+import org.hypertrace.span.processing.config.service.v1.Field;
+import org.hypertrace.span.processing.config.service.v1.GetAllApiNamingRulesResponse;
+import org.hypertrace.span.processing.config.service.v1.ListValue;
+import org.hypertrace.span.processing.config.service.v1.RelationalOperator;
+import org.hypertrace.span.processing.config.service.v1.RelationalSpanFilterExpression;
+import org.hypertrace.span.processing.config.service.v1.SegmentMatchingBasedConfig;
+import org.hypertrace.span.processing.config.service.v1.SpanFilter;
+import org.hypertrace.span.processing.config.service.v1.SpanFilterValue;
 
 public class ApiNamingManagerTestUtils {
   private static final String SERVICE_ID1 = "serviceId1";
@@ -117,20 +127,6 @@ public class ApiNamingManagerTestUtils {
             TrainingConfig.newBuilder()
                 .setApiNamingTrainingConfig(
                     ApiNamingTrainingConfig.newBuilder()
-                        .setCustomRulesListConfig(
-                            CustomRulesListConfig.newBuilder()
-                                .addCustomRulesConfig(
-                                    CustomRuleConfig.newBuilder()
-                                        .setUrlPattern("urlPattern")
-                                        .setRegex("regex")
-                                        .build())
-                                .build())
-                        .build())
-                .build())
-        .addTrainingConfigs(
-            TrainingConfig.newBuilder()
-                .setApiNamingTrainingConfig(
-                    ApiNamingTrainingConfig.newBuilder()
                         .setTrieModelTrainingConfig(
                             TrieModelTrainingConfig.newBuilder()
                                 .setEmbryonicThreshold(123)
@@ -170,8 +166,47 @@ public class ApiNamingManagerTestUtils {
         .build();
   }
 
-  public static TrieDiffLog buildTrieDiffLogs() {
-    return TrieDiffLog.newBuilder().build();
+  public static GetAllApiNamingRulesResponse buildGetAllApiNamingRuleResponse() {
+    return GetAllApiNamingRulesResponse.newBuilder()
+        .addRuleDetails(
+            ApiNamingRuleDetails.newBuilder()
+                .setRule(
+                    ApiNamingRule.newBuilder()
+                        .setRuleInfo(
+                            ApiNamingRuleInfo.newBuilder()
+                                .setDisabled(false)
+                                .setFilter(
+                                    SpanFilter.newBuilder()
+                                        .setRelationalSpanFilter(
+                                            RelationalSpanFilterExpression.newBuilder()
+                                                .setField(Field.FIELD_ENVIRONMENT_NAME)
+                                                .setOperator(
+                                                    RelationalOperator.RELATIONAL_OPERATOR_IN)
+                                                .setRightOperand(
+                                                    SpanFilterValue.newBuilder()
+                                                        .setListValue(
+                                                            ListValue.newBuilder()
+                                                                .addValues(
+                                                                    SpanFilterValue.newBuilder()
+                                                                        .setStringValue(
+                                                                            "environment")
+                                                                        .build())
+                                                                .build())
+                                                        .build())
+                                                .build())
+                                        .build())
+                                .setRuleConfig(
+                                    ApiNamingRuleConfig.newBuilder()
+                                        .setSegmentMatchingBasedConfig(
+                                            SegmentMatchingBasedConfig.newBuilder()
+                                                .addRegexes("urlPattern")
+                                                .addValues("regex")
+                                                .build())
+                                        .build())
+                                .build())
+                        .build())
+                .build())
+        .build();
   }
 
   public static Set<List<Segment>> buildNonEmbryonicPaths() {

@@ -11,11 +11,11 @@ import static org.mockito.Mockito.when;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainerConfigServiceGrpc.TrainerConfigServiceBlockingStub;
 import ai.traceable.localprocessing.config.service.apinaming.http.namingconfig.DefaultHttpApiNamingConfigManager;
 import ai.traceable.localprocessing.config.service.apinaming.http.namingconfig.HttpApiNamingCachedConfigManager;
+import ai.traceable.localprocessing.config.service.apinaming.http.namingconfig.HttpCustomApiNamingRulesManager;
 import ai.traceable.localprocessing.config.service.apinaming.http.trie.DefaultHttpApiNamingTrieManager;
 import ai.traceable.localprocessing.config.service.apinaming.http.trie.FullTrieManager;
 import ai.traceable.localprocessing.config.service.apinaming.http.trie.TrieDiffLogManager;
 import ai.traceable.localprocessing.config.service.apinaming.http.utils.SegmentConverter;
-import ai.traceable.localprocessing.config.service.client.EntityDataServiceClient;
 import ai.traceable.localprocessing.config.service.config.http.HttpApiNamingConfig;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.DiffTrie;
@@ -37,16 +37,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
+import org.hypertrace.config.utils.SpanFilterMatcher;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.entity.data.service.v1.Entity;
+import org.hypertrace.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class DefaultHttpApiNamingManagerTest {
 
   private HttpApiNamingManager httpApiNamingManager;
-  private EntityDataServiceClient entityDataServiceClient;
   private TrieDiffLogModel trieDiffLogModel;
   private TrieModel trieModel;
   private FileMetadata fileMetadata;
@@ -55,9 +55,11 @@ class DefaultHttpApiNamingManagerTest {
 
   @BeforeEach
   void setup() throws IOException {
-    TrainerConfigServiceBlockingStub configServiceBlockingStub =
+    TrainerConfigServiceBlockingStub trainerConfigServiceBlockingStub =
         mock(TrainerConfigServiceBlockingStub.class);
-    entityDataServiceClient = mock(EntityDataServiceClient.class);
+    SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
+        spanProcessingConfigServiceBlockingStub =
+            mock(SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub.class);
     UuidGenerator uuidGenerator = new UuidGenerator();
     httpApiNamingConfig = mock(HttpApiNamingConfig.class);
 
@@ -69,8 +71,9 @@ class DefaultHttpApiNamingManagerTest {
     PersistedModel persistedModel = mock(PersistedModel.class);
     fileMetadata = mock(FileMetadata.class);
     trieModel = mock(TrieModel.class);
-    SegmentConverter segmentConverter = new SegmentConverter();
     entityFetcher = mock(EntityFetcher.class);
+    SegmentConverter segmentConverter = new SegmentConverter();
+    SpanFilterMatcher spanFilterMatcher = new SpanFilterMatcher();
 
     httpApiNamingManager =
         new DefaultHttpApiNamingManager(
@@ -85,10 +88,14 @@ class DefaultHttpApiNamingManagerTest {
                     httpApiNamingConfig,
                     segmentConverter)),
             new HttpApiNamingCachedConfigManager(
-                ConfigFactory.parseMap(Map.of()), configServiceBlockingStub),
+                ConfigFactory.parseMap(Map.of()), trainerConfigServiceBlockingStub),
+            new HttpCustomApiNamingRulesManager(
+                ConfigFactory.parseMap(Map.of()),
+                spanProcessingConfigServiceBlockingStub,
+                spanFilterMatcher),
             new LocalApiNamingConfigManager(httpApiNamingConfig),
             entityFetcher);
-    when(configServiceBlockingStub.getAllScopedTrainingConfigs(any()))
+    when(trainerConfigServiceBlockingStub.getAllScopedTrainingConfigs(any()))
         .thenReturn(ApiNamingManagerTestUtils.buildGetAllScopedTrainingConfigsResponse());
     when(httpApiNamingConfig.getFallbackRegexes())
         .thenReturn(
@@ -106,10 +113,12 @@ class DefaultHttpApiNamingManagerTest {
     when(trieModelStore.loadModel(any())).thenReturn(persistedModel);
     when(trieModelStore.getModelMetadata(any())).thenReturn(fileMetadata);
     when(persistedModel.getModel()).thenReturn(trieModel);
+    when(spanProcessingConfigServiceBlockingStub.getAllApiNamingRules(any()))
+        .thenReturn(ApiNamingManagerTestUtils.buildGetAllApiNamingRuleResponse());
   }
 
   @Test
-  void testGetServiceResponseList() throws ExecutionException {
+  void testGetServiceResponseList() {
     when(trieModel.getNonEmbryonicPaths(ApiNamingManagerTestUtils.buildTrieNodeConfig()))
         .thenReturn(new HashSet<>());
     when(httpApiNamingConfig.getFullTrieReloadConfig())
@@ -169,7 +178,7 @@ class DefaultHttpApiNamingManagerTest {
   }
 
   @Test
-  void testTrieConstruction() throws ExecutionException {
+  void testTrieConstruction() {
     when(httpApiNamingConfig.getFullTrieReloadConfig())
         .thenReturn(buildFullTrieReloadConfig(false, "2022-03-09T13:36:33Z"));
     when(trieModel.getNonEmbryonicPaths(any()))
@@ -211,7 +220,7 @@ class DefaultHttpApiNamingManagerTest {
   }
 
   @Test
-  void testTrieDiffLogConstruction() throws ExecutionException {
+  void testTrieDiffLogConstruction() {
     when(httpApiNamingConfig.getFullTrieReloadConfig())
         .thenReturn(buildFullTrieReloadConfig(false, "1970-01-01T00:00:00.000Z"));
     when(trieDiffLogModel.getTrieDiffLog())
@@ -246,7 +255,7 @@ class DefaultHttpApiNamingManagerTest {
   }
 
   @Test
-  void testLocalApiNamingConfig() throws ExecutionException {
+  void testLocalApiNamingConfig() {
     when(trieDiffLogModel.getTrieDiffLog())
         .thenReturn(ApiNamingManagerTestUtils.buildTrieDiffLog());
     when(fileMetadata.getModificationTime()).thenReturn(3L);

@@ -11,6 +11,7 @@ dependencies {
 
   implementation(libs.hypertrace.configservice.api)
   implementation(libs.hypertrace.configservice.objectstore)
+  implementation(libs.hypertrace.configservice.configUtils)
   implementation(libs.guice)
   implementation(libs.guava)
   implementation(libs.protobuf.javautil)

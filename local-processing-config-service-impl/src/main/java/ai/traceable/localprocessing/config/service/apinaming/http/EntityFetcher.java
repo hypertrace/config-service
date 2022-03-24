@@ -1,5 +1,6 @@
 package ai.traceable.localprocessing.config.service.apinaming.http;
 
+import ai.traceable.localprocessing.config.service.apinaming.http.utils.ServiceIdentifier;
 import ai.traceable.localprocessing.config.service.client.EntityDataServiceClient;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -11,7 +12,6 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -134,11 +134,5 @@ public class EntityFetcher {
               .build());
     }
     return byTypeAndIdentifyingAttributesBuilder.build();
-  }
-
-  @Value
-  public static class ServiceIdentifier {
-    String serviceName;
-    Optional<String> environment;
   }
 }

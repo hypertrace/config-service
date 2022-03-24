@@ -15,6 +15,9 @@ import com.google.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.hypertrace.span.processing.config.service.v1.ApiNamingRule;
+import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
+import org.hypertrace.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 
 public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigManager {
 
@@ -29,7 +32,7 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
   }
 
   public HttpApiNamingConfigInfo getHttpApiNamingConfigInfo(
-      List<TrainingConfig> trainingConfigs, String configHash) {
+      List<TrainingConfig> trainingConfigs, List<ApiNamingRule> apiNamingRules, String configHash) {
     ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig.Builder
         httpApiNamingConfigBuilder =
             ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig.newBuilder();
@@ -48,6 +51,8 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
                 .addAllSegmentWhitelistRegexes(
                     trieModelTrainingConfig.getAllowRegexList().getValuesList())
                 .addAllWildcardConfigs(convertWildcardConfigs(trieModelTrainingConfig)));
+
+    httpApiNamingConfigBuilder.addAllApiNamingCustomRules(getCustomRulesList(apiNamingRules));
 
     getCustomRulesListConfig(trainingConfigs)
         .ifPresent(
@@ -94,6 +99,17 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
         .build();
   }
 
+  // TODO: get rid of below two methods once done with migration
+  private Optional<CustomRulesListConfig> getCustomRulesListConfig(
+      List<TrainingConfig> trainingConfigs) {
+    return trainingConfigs.stream()
+        .filter(TrainingConfig::hasApiNamingTrainingConfig)
+        .map(TrainingConfig::getApiNamingTrainingConfig)
+        .filter(ApiNamingTrainingConfig::hasCustomRulesListConfig)
+        .map(ApiNamingTrainingConfig::getCustomRulesListConfig)
+        .findAny();
+  }
+
   private List<HttpApiNamingCustomRule> convertCustomRules(
       CustomRulesListConfig customRulesListConfig) {
     // TODO: Order the rules, once the priority is available from training config service APIs
@@ -107,14 +123,26 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
         .collect(Collectors.toUnmodifiableList());
   }
 
-  private Optional<CustomRulesListConfig> getCustomRulesListConfig(
-      List<TrainingConfig> trainingConfigs) {
-    return trainingConfigs.stream()
-        .filter(TrainingConfig::hasApiNamingTrainingConfig)
-        .map(TrainingConfig::getApiNamingTrainingConfig)
-        .filter(ApiNamingTrainingConfig::hasCustomRulesListConfig)
-        .map(ApiNamingTrainingConfig::getCustomRulesListConfig)
-        .findAny();
+  private List<HttpApiNamingCustomRule> getCustomRulesList(List<ApiNamingRule> apiNamingRules) {
+    // TODO: Order the rules, once the priority is available from training config service APIs
+    return apiNamingRules.stream()
+        .map(apiNamingRule -> convertCustomRules(apiNamingRule.getRuleInfo().getRuleConfig()))
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private HttpApiNamingCustomRule convertCustomRules(ApiNamingRuleConfig apiNamingRuleConfig) {
+    String urlPattern = "";
+    String regexPattern = "";
+    if (apiNamingRuleConfig.hasSegmentMatchingBasedConfig()) {
+      SegmentMatchingBasedConfig segmentMatchingBasedConfig =
+          apiNamingRuleConfig.getSegmentMatchingBasedConfig();
+      urlPattern = String.join("/", segmentMatchingBasedConfig.getRegexesList());
+      regexPattern = String.join("/", segmentMatchingBasedConfig.getValuesList());
+    }
+    return HttpApiNamingCustomRule.newBuilder()
+        .setUrlPattern(urlPattern)
+        .setRegexPattern(regexPattern)
+        .build();
   }
 
   private Optional<TrieModelTrainingConfig> getTrieModelTrainingConfig(

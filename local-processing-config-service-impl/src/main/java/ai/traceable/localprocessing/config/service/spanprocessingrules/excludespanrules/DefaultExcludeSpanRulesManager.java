@@ -11,11 +11,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.utils.SpanFilterMatcher;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRule;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleDetails;
-import org.hypertrace.span.processing.config.service.v1.Field;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
-import org.hypertrace.span.processing.config.service.v1.ListValue;
 import org.hypertrace.span.processing.config.service.v1.LogicalSpanFilterExpression;
 import org.hypertrace.span.processing.config.service.v1.RelationalSpanFilterExpression;
 import org.hypertrace.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
@@ -26,12 +25,15 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
   private static final String URL_SPAN_ATTRIBUTE_KEY = "http.url";
   private final SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
       configServiceBlockingStub;
+  private final SpanFilterMatcher spanFilterMatcher;
 
   @Inject
   public DefaultExcludeSpanRulesManager(
       SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
-          configServiceBlockingStub) {
+          configServiceBlockingStub,
+      SpanFilterMatcher spanFilterMatcher) {
     this.configServiceBlockingStub = configServiceBlockingStub;
+    this.spanFilterMatcher = spanFilterMatcher;
   }
 
   public List<ExcludeSpanProcessingRule> getAllExcludeSpanProcessingRules(
@@ -54,17 +56,19 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
   private Optional<ExcludeSpanProcessingRule> convertExcludeSpanRule(
       ExcludeSpanRule excludeSpanRule, String serviceName, Optional<String> environment) {
     // check if the rule is disabled
-    if (excludeSpanRule.getRuleInfo().getDisabled()) {
+    if (!excludeSpanRule.getRuleInfo().hasFilter() || excludeSpanRule.getRuleInfo().getDisabled()) {
       return Optional.empty();
     }
 
     // apply environment filters if any
-    if (!matchesEnvironment(excludeSpanRule.getRuleInfo().getFilter(), environment)) {
+    if (!spanFilterMatcher.matchesEnvironment(
+        excludeSpanRule.getRuleInfo().getFilter(), environment)) {
       return Optional.empty();
     }
 
     // apply service name filters if any
-    if (!matchesServiceName(excludeSpanRule.getRuleInfo().getFilter(), serviceName)) {
+    if (!spanFilterMatcher.matchesServiceName(
+        excludeSpanRule.getRuleInfo().getFilter(), serviceName)) {
       return Optional.empty();
     }
 
@@ -81,112 +85,6 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
                     .setFilter(spanFilter.get())
                     .build())
             .build());
-  }
-
-  private boolean matchesEnvironment(
-      org.hypertrace.span.processing.config.service.v1.SpanFilter spanFilter,
-      Optional<String> environment) {
-    if (spanFilter.hasRelationalSpanFilter()) {
-      return matchesEnvironment(spanFilter.getRelationalSpanFilter(), environment);
-    } else {
-      return spanFilter.getLogicalSpanFilter().getOperandsList().stream()
-          .filter(
-              org.hypertrace.span.processing.config.service.v1.SpanFilter::hasRelationalSpanFilter)
-          .allMatch(filter -> matchesEnvironment(filter.getRelationalSpanFilter(), environment));
-    }
-  }
-
-  private boolean matchesServiceName(
-      org.hypertrace.span.processing.config.service.v1.SpanFilter spanFilter, String serviceName) {
-    if (spanFilter.hasRelationalSpanFilter()) {
-      return matchesServiceName(spanFilter.getRelationalSpanFilter(), serviceName);
-    } else {
-      return spanFilter.getLogicalSpanFilter().getOperandsList().stream()
-          .filter(
-              org.hypertrace.span.processing.config.service.v1.SpanFilter::hasRelationalSpanFilter)
-          .allMatch(filter -> matchesServiceName(filter.getRelationalSpanFilter(), serviceName));
-    }
-  }
-
-  private boolean matchesEnvironment(
-      RelationalSpanFilterExpression relationalSpanFilterExpression, Optional<String> environment) {
-    if (environment.isEmpty()) {
-      return true;
-    }
-    if (relationalSpanFilterExpression.hasField()
-        && relationalSpanFilterExpression.getField().equals(Field.FIELD_ENVIRONMENT_NAME)) {
-      return matches(
-          environment.get(),
-          relationalSpanFilterExpression.getRightOperand(),
-          relationalSpanFilterExpression.getOperator());
-    }
-    return true;
-  }
-
-  private boolean matchesServiceName(
-      RelationalSpanFilterExpression relationalSpanFilterExpression, String serviceName) {
-    if (relationalSpanFilterExpression.hasField()
-        && relationalSpanFilterExpression.getField().equals(Field.FIELD_SERVICE_NAME)) {
-      return matches(
-          serviceName,
-          relationalSpanFilterExpression.getRightOperand(),
-          relationalSpanFilterExpression.getOperator());
-    }
-    return true;
-  }
-
-  private boolean matches(
-      String lhs,
-      String rhs,
-      org.hypertrace.span.processing.config.service.v1.RelationalOperator relationalOperator) {
-    switch (relationalOperator) {
-      case RELATIONAL_OPERATOR_CONTAINS:
-        return lhs.contains(rhs);
-      case RELATIONAL_OPERATOR_EQUALS:
-        return lhs.equals(rhs);
-      case RELATIONAL_OPERATOR_NOT_EQUALS:
-        return !lhs.equals(rhs);
-      case RELATIONAL_OPERATOR_STARTS_WITH:
-        return lhs.startsWith(rhs);
-      case RELATIONAL_OPERATOR_ENDS_WITH:
-        return lhs.endsWith(rhs);
-      case RELATIONAL_OPERATOR_REGEX_MATCH:
-        return lhs.matches(rhs);
-      default:
-        log.error("Unsupported relational operator for string value rhs:{}", relationalOperator);
-        return false;
-    }
-  }
-
-  private boolean matches(
-      String lhs,
-      ListValue rhs,
-      org.hypertrace.span.processing.config.service.v1.RelationalOperator relationalOperator) {
-    switch (relationalOperator) {
-      case RELATIONAL_OPERATOR_IN:
-        return rhs.getValuesList().stream()
-            .map(org.hypertrace.span.processing.config.service.v1.SpanFilterValue::getStringValue)
-            .collect(Collectors.toUnmodifiableList())
-            .contains(lhs);
-      default:
-        log.error("Unsupported relational operator for list value rhs:{}", relationalOperator);
-        return false;
-    }
-  }
-
-  private boolean matches(
-      String lhs,
-      org.hypertrace.span.processing.config.service.v1.SpanFilterValue rhs,
-      org.hypertrace.span.processing.config.service.v1.RelationalOperator relationalOperator) {
-    switch (rhs.getValueCase()) {
-      case STRING_VALUE:
-        return matches(lhs, rhs.getStringValue(), relationalOperator);
-      case LIST_VALUE:
-        return matches(lhs, rhs.getListValue(), relationalOperator);
-      default:
-        log.error("Unknown span filter value type:{}", rhs);
-        return false;
-    }
   }
 
   private Optional<SpanFilter> convertFilter(
