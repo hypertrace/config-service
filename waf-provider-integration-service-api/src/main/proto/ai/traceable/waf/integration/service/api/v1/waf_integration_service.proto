@@ -40,7 +40,7 @@ message GetWafIntegrationsResponse {
 
 message UpdateWafIntegrationRequest {
   string id = 1;
-  WafIntegrationDetails waf_integration_details = 2;
+  UpdatedWafIntegrationDetails updated_waf_integration_details = 2;
 }
 
 message UpdateWafIntegrationResponse {

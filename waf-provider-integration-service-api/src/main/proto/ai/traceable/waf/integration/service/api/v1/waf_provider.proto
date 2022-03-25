@@ -22,3 +22,17 @@ message CloudflareIntegrationParams {
   string email = 2;
   string api_token = 3;
 }
+
+message UpdatedWafIntegrationDetails {
+  string name = 1;
+  optional string description = 2;
+  oneof integration_params {
+    UpdatedCloudflareIntegrationParams updated_cloudflare_integration_params = 3;
+  }
+}
+
+message UpdatedCloudflareIntegrationParams {
+  string zone = 1;
+  string email = 2;
+  optional string api_token = 3;
+}

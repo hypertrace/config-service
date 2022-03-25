@@ -1,5 +1,6 @@
 package ai.traceable.waf.provider.integration.service;
 
+import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationResponse;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
@@ -11,6 +12,7 @@ import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsResponse;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationResponse;
+import ai.traceable.waf.integration.service.api.v1.UpdatedWafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegration;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafProviderServiceGrpc.WafProviderServiceImplBase;
@@ -120,9 +122,27 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
           wafIntegrationStore
               .getData(requestContext, request.getId())
               .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      // We only support cloudflare Integration right now
+      // this will need modification to support other integrations
+      String apiToken =
+          request
+                  .getUpdatedWafIntegrationDetails()
+                  .getUpdatedCloudflareIntegrationParams()
+                  .hasApiToken()
+              ? request
+                  .getUpdatedWafIntegrationDetails()
+                  .getUpdatedCloudflareIntegrationParams()
+                  .getApiToken()
+              : existingWafIntegration
+                  .getWafIntegrationDetails()
+                  .getCloudflareIntegrationParams()
+                  .getApiToken();
+      WafIntegrationDetails updatedWafIntegrationDetails =
+          buildGetWafIntegrationDetailsFromUpdateRequest(
+              request.getUpdatedWafIntegrationDetails(), apiToken);
       WafIntegration updatedWafIntegration =
           existingWafIntegration.toBuilder()
-              .setWafIntegrationDetails(request.getWafIntegrationDetails())
+              .setWafIntegrationDetails(updatedWafIntegrationDetails)
               .build();
       WafIntegration upsertedWafIntegration =
           wafIntegrationStore.upsertObject(requestContext, updatedWafIntegration).getData();
@@ -176,5 +196,20 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
       return true;
     }
     return requiredTypes.contains(type);
+  }
+
+  private WafIntegrationDetails buildGetWafIntegrationDetailsFromUpdateRequest(
+      UpdatedWafIntegrationDetails updateWafIntegrationDetails, String apiToken) {
+    WafIntegrationDetails.Builder builder =
+        WafIntegrationDetails.newBuilder()
+            .setName(updateWafIntegrationDetails.getName())
+            .setDescription(updateWafIntegrationDetails.getDescription());
+    CloudflareIntegrationParams.Builder cloudFlareIntegrationParamsBuilder =
+        CloudflareIntegrationParams.newBuilder()
+            .setEmail(
+                updateWafIntegrationDetails.getUpdatedCloudflareIntegrationParams().getEmail())
+            .setZone(updateWafIntegrationDetails.getUpdatedCloudflareIntegrationParams().getZone())
+            .setApiToken(apiToken);
+    return builder.setCloudflareIntegrationParams(cloudFlareIntegrationParamsBuilder).build();
   }
 }

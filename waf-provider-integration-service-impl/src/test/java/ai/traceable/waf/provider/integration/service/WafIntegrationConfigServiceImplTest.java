@@ -15,6 +15,8 @@ import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsResponse;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationResponse;
+import ai.traceable.waf.integration.service.api.v1.UpdatedCloudflareIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.UpdatedWafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafProviderServiceGrpc;
 import ai.traceable.waf.integration.service.api.v1.WafProviderServiceGrpc.WafProviderServiceBlockingStub;
@@ -135,15 +137,28 @@ class WafIntegrationConfigServiceImplTest {
         wafProviderServiceBlockingStub.createWafIntegration(createRequest);
     String id = createResponse.getWafIntegration().getId();
 
-    WafIntegrationDetails updatedDetails = createWafIntegrationDetails("name1", "email1");
+    UpdatedWafIntegrationDetails updatedDetails =
+        UpdatedWafIntegrationDetails.newBuilder()
+            .setName("name1")
+            .setDescription("des")
+            .setUpdatedCloudflareIntegrationParams(
+                UpdatedCloudflareIntegrationParams.newBuilder().setEmail("email1").setZone("zone"))
+            .build();
     UpdateWafIntegrationRequest updateRequest =
         UpdateWafIntegrationRequest.newBuilder()
             .setId(id)
-            .setWafIntegrationDetails(updatedDetails)
+            .setUpdatedWafIntegrationDetails(updatedDetails)
             .build();
     UpdateWafIntegrationResponse updateResponse =
         wafProviderServiceBlockingStub.updateWafIntegration(updateRequest);
-    assertEquals(updatedDetails, updateResponse.getWafIntegration().getWafIntegrationDetails());
+    assertEquals("name1", updateResponse.getWafIntegration().getWafIntegrationDetails().getName());
+    assertEquals(
+        "email1",
+        updateResponse
+            .getWafIntegration()
+            .getWafIntegrationDetails()
+            .getCloudflareIntegrationParams()
+            .getEmail());
   }
 
   @Test

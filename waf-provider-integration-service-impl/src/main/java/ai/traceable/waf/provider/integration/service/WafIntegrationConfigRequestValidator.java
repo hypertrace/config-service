@@ -12,6 +12,8 @@ import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter.WafProviderType;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
+import ai.traceable.waf.integration.service.api.v1.UpdatedCloudflareIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.UpdatedWafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
 import io.grpc.Status;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -36,7 +38,7 @@ public class WafIntegrationConfigRequestValidator {
   public void validateOrThrow(UpdateWafIntegrationRequest request, RequestContext requestContext) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, UpdateWafIntegrationRequest.ID_FIELD_NUMBER);
-    validateWafIntegrationDetails(request.getWafIntegrationDetails());
+    validateUpdateWafIntegrationDetails(request.getUpdatedWafIntegrationDetails());
   }
 
   public void validateOrThrow(DeleteWafIntegrationRequest request, RequestContext requestContext) {
@@ -51,6 +53,13 @@ public class WafIntegrationConfigRequestValidator {
       }
     }
     filter.getWafProviderTypesList().forEach(this::validateWafProviderType);
+  }
+
+  private void validateUpdateWafIntegrationDetails(
+      UpdatedWafIntegrationDetails updateWafIntegrationDetails) {
+    validateNonDefaultPresenceOrThrow(
+        updateWafIntegrationDetails, UpdatedWafIntegrationDetails.NAME_FIELD_NUMBER);
+    validateUpdateIntegrationParams(updateWafIntegrationDetails);
   }
 
   private void validateWafIntegrationDetails(WafIntegrationDetails wafIntegrationDetails) {
@@ -72,6 +81,22 @@ public class WafIntegrationConfigRequestValidator {
     }
   }
 
+  private void validateUpdateIntegrationParams(
+      UpdatedWafIntegrationDetails updatedWafIntegrationDetails) {
+    switch (updatedWafIntegrationDetails.getIntegrationParamsCase()) {
+      case UPDATED_CLOUDFLARE_INTEGRATION_PARAMS:
+        validateUpdatedCloudFlareIntegrationParams(
+            updatedWafIntegrationDetails.getUpdatedCloudflareIntegrationParams());
+        break;
+      case INTEGRATIONPARAMS_NOT_SET:
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription(
+                "Unexpected integration params case: " + printMessage(updatedWafIntegrationDetails))
+            .asRuntimeException();
+    }
+  }
+
   private void validateIntegrationParams(WafIntegrationDetails wafIntegrationDetails) {
     switch (wafIntegrationDetails.getIntegrationParamsCase()) {
       case CLOUDFLARE_INTEGRATION_PARAMS:
@@ -83,6 +108,20 @@ public class WafIntegrationConfigRequestValidator {
             .withDescription(
                 "Unexpected integration params case: " + printMessage(wafIntegrationDetails))
             .asRuntimeException();
+    }
+  }
+
+  private void validateUpdatedCloudFlareIntegrationParams(
+      UpdatedCloudflareIntegrationParams cloudflareIntegrationParams) {
+    validateNonDefaultPresenceOrThrow(
+        cloudflareIntegrationParams, CloudflareIntegrationParams.ZONE_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        cloudflareIntegrationParams, CloudflareIntegrationParams.EMAIL_FIELD_NUMBER);
+    if (cloudflareIntegrationParams.hasApiToken()
+        && cloudflareIntegrationParams.getApiToken().isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Api token is empty! " + printMessage(cloudflareIntegrationParams))
+          .asRuntimeException();
     }
   }
 

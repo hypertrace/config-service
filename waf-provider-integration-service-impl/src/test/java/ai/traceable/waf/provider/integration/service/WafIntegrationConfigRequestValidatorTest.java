@@ -10,6 +10,8 @@ import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter.WafProviderType;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
+import ai.traceable.waf.integration.service.api.v1.UpdatedCloudflareIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.UpdatedWafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
@@ -78,12 +80,12 @@ class WafIntegrationConfigRequestValidatorTest {
     UpdateWafIntegrationRequest request =
         UpdateWafIntegrationRequest.newBuilder()
             .setId("id-1")
-            .setWafIntegrationDetails(
-                WafIntegrationDetails.newBuilder()
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
                     .setName("name")
                     .setDescription("des")
-                    .setCloudflareIntegrationParams(
-                        CloudflareIntegrationParams.newBuilder().setZone("zone").setEmail("email")))
+                    .setUpdatedCloudflareIntegrationParams(
+                        UpdatedCloudflareIntegrationParams.newBuilder().setEmail("email")))
             .build();
     assertThrows(
         StatusRuntimeException.class,
@@ -152,12 +154,12 @@ class WafIntegrationConfigRequestValidatorTest {
         });
     UpdateWafIntegrationRequest updateRequest =
         UpdateWafIntegrationRequest.newBuilder()
-            .setWafIntegrationDetails(
-                WafIntegrationDetails.newBuilder()
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
                     .setName("name")
                     .setDescription("des")
-                    .setCloudflareIntegrationParams(
-                        CloudflareIntegrationParams.newBuilder()
+                    .setUpdatedCloudflareIntegrationParams(
+                        UpdatedCloudflareIntegrationParams.newBuilder()
                             .setZone("zone")
                             .setEmail("email")
                             .setApiToken("apitoken")))
