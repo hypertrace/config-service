@@ -138,16 +138,11 @@ data:
           }
           {{- else }}
           {{ $k }} = {
-            {{- if hasKey $v "disabled" }}
-            disabled = {{ $v.disabled }}
-            timestamp = {{ $v.timestamp | quote }}
-            {{- else }}
             {{- range $sk,$sv := $v }}
               {{ $sk }} = {
                 disabled = {{ $sv.disabled }}
                 timestamp = {{ $sv.timestamp | quote}}
               }
-            {{- end }}
             {{- end }}
           }
           {{- end }}
