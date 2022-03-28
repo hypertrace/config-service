@@ -87,7 +87,7 @@ public class ModsecRulesRegistryTest {
       assertEquals(
           regularRulesCount - safeRulesCount,
           crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
-      assertEquals(34, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
+      assertEquals(35, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
     }
     {
       String crsRulesBlob =
