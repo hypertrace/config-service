@@ -175,19 +175,27 @@ data:
           {{- range $k,$v := $.Values.traceableConfigServiceConfig.localProcessingConfigServiceConfig.samplingConfig.rateLimitConfig }}
           {{ $k }} = {
             traceLimitPerEndpoint = {
-              {{- if hasKey $v.traceLimitPerEndpoint.fixedWindowLimit "quantityAllowed" }}
-              quantityAllowed = {{ $v.traceLimitPerEndpoint.fixedWindowLimit.quantityAllowed }}
-              {{- end }}
-              {{- if hasKey $v.traceLimitPerEndpoint.fixedWindowLimit "windowDuration" }}
-              windowDuration = {{ $v.traceLimitPerEndpoint.fixedWindowLimit.windowDuration }}
+              {{- if hasKey $v.traceLimitPerEndpoint "fixedWindowLimit" }}
+              fixedWindowLimit = {
+                {{- if hasKey $v.traceLimitPerEndpoint.fixedWindowLimit "quantityAllowed" }}
+                quantityAllowed = {{ $v.traceLimitPerEndpoint.fixedWindowLimit.quantityAllowed }}
+                {{- end }}
+                {{- if hasKey $v.traceLimitPerEndpoint.fixedWindowLimit "windowDuration" }}
+                windowDuration = {{ $v.traceLimitPerEndpoint.fixedWindowLimit.windowDuration }}
+                {{- end }}
+              }
               {{- end }}
             }
             traceLimitGlobal = {
-              {{- if hasKey $v.traceLimitGlobal.fixedWindowLimit "quantityAllowed" }}
-              quantityAllowed = {{ $v.traceLimitGlobal.fixedWindowLimit.quantityAllowed }}
-              {{- end }}
-              {{- if hasKey $v.traceLimitGlobal.fixedWindowLimit "windowDuration" }}
-              windowDuration = {{ $v.traceLimitGlobal.fixedWindowLimit.windowDuration }}
+              {{- if hasKey $v.traceLimitGlobal "fixedWindowLimit" }}
+              fixedWindowLimit = {
+                {{- if hasKey $v.traceLimitGlobal.fixedWindowLimit "quantityAllowed" }}
+                quantityAllowed = {{ $v.traceLimitGlobal.fixedWindowLimit.quantityAllowed }}
+                {{- end }}
+                {{- if hasKey $v.traceLimitGlobal.fixedWindowLimit "windowDuration" }}
+                windowDuration = {{ $v.traceLimitGlobal.fixedWindowLimit.windowDuration }}
+                {{- end }}
+              }
               {{- end }}
             }
             apiEndpointCacheDuration = {{ $v.apiEndpointCacheDuration }}
