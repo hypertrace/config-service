@@ -128,25 +128,32 @@ data:
       max.dynamic.label.application.rules.per.tenant = {{ int .Values.traceableConfigServiceConfig.labelApplicationRuleConfigServiceConfig.maxDynamicLabelApplicationRulesPerTenant }}
     }
     local.api.naming.config = {
+      {{- if hasKey $.Values.localApiNamingConfig "fullTrieReloadConfig" }}
       full.trie.reload.config = {
-        {{- range $k,$v := $.Values.localApiNamingConfig }}
+        {{- range $k,$v := $.Values.localApiNamingConfig.fullTrieReloadConfig }}
           {{- if eq $k "default" }}
-            default = {
-              disabled = {{ .Values.localApiNamingConfig.fullTrieReloadConfig.default.disabled }}
-              timestamp = {{ .Values.localApiNamingConfig.fullTrieReloadConfig.default.timestamp | quote }}
-            }
+          default = {
+            disabled = {{ $.Values.localApiNamingConfig.fullTrieReloadConfig.default.disabled }}
+            timestamp = {{ $.Values.localApiNamingConfig.fullTrieReloadConfig.default.timestamp | quote }}
+          }
           {{- else }}
           {{ $k }} = {
+            {{- if hasKey $v "disabled" }}
+            disabled = {{ $v.disabled }}
+            timestamp = {{ $v.timestamp | quote }}
+            {{- else }}
             {{- range $sk,$sv := $v }}
               {{ $sk }} = {
                 disabled = {{ $sv.disabled }}
                 timestamp = {{ $sv.timestamp | quote}}
               }
-            {{- end}}
+            {{- end }}
+            {{- end }}
           }
           {{- end }}
         {{- end }}
       }
+      {{- end }}
     }
   anomaly.conf: |-
     global {
