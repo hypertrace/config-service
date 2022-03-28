@@ -148,15 +148,15 @@ traceableConfigServiceConfig:
 #              windowDuration: 60s
 #          apiEndpointCacheDuration: 604800s
 
-#localApiNamingConfig:
-#  fullTrieReloadConfig:
+localApiNamingConfig:
+  fullTrieReloadConfig:
   #commented config for reference
 #    tenant1:
 #      disabled: true
 #      timestamp: 2022-03-09T13:36:33Z #in ISO-8601 format
-#    default:
-#      disabled: true
-#      timestamp: 2022-03-09T13:36:33Z
+    default:
+      disabled: true
+      timestamp: "2022-03-09T13:36:33Z"
 
 logConfig:
   name: traceable-config-service-log-config

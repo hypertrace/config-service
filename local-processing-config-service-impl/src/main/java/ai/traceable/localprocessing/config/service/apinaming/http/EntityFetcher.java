@@ -111,7 +111,7 @@ public class EntityFetcher {
   }
 
   private ByTypeAndIdentifyingAttributes buildGetEntityByTypeAndIdentifyingAttributesRequest(
-      String serviceName, Optional<String> environment) {
+      String serviceName, Optional<String> environmentMaybe) {
     ByTypeAndIdentifyingAttributes.Builder byTypeAndIdentifyingAttributesBuilder =
         ByTypeAndIdentifyingAttributes.newBuilder()
             .setEntityType(EntityType.SERVICE.name())
@@ -123,16 +123,16 @@ public class EntityFetcher {
                             .setString(serviceName)
                             .build())
                     .build());
-    if (environment.isPresent()) {
-      byTypeAndIdentifyingAttributesBuilder.putIdentifyingAttributes(
-          ENVIRONMENT_IDENTIFYING_ATTRIBUTE,
-          AttributeValue.newBuilder()
-              .setValue(
-                  org.hypertrace.entity.data.service.v1.Value.newBuilder()
-                      .setString(serviceName)
-                      .build())
-              .build());
-    }
+    environmentMaybe.ifPresent(
+        environment ->
+            byTypeAndIdentifyingAttributesBuilder.putIdentifyingAttributes(
+                ENVIRONMENT_IDENTIFYING_ATTRIBUTE,
+                AttributeValue.newBuilder()
+                    .setValue(
+                        org.hypertrace.entity.data.service.v1.Value.newBuilder()
+                            .setString(environment)
+                            .build())
+                    .build()));
     return byTypeAndIdentifyingAttributesBuilder.build();
   }
 }
