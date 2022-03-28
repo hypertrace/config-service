@@ -7,6 +7,7 @@ import ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory;
 import ai.traceable.blocking.config.service.BlockingConfigServiceFactory;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceFactory;
 import ai.traceable.data.classification.config.service.DataClassificationConfigServiceFactory;
+import ai.traceable.data.exfiltration.config.service.detection.rule.DataExfiltrationDetectionRulesConfigServiceFactory;
 import ai.traceable.external.userattribution.config.service.ExternalUserAttributionConfigServiceFactory;
 import ai.traceable.iprange.config.service.IpRangeConfigServiceFactory;
 import ai.traceable.licensestatus.config.service.LicenseStatusConfigServiceImpl;
@@ -119,9 +120,13 @@ public class TraceableConfigService extends PlatformService {
     BindableService dataClassificationConfigService =
         DataClassificationConfigServiceFactory.build(
             managedChannel, configChangeEventGenerator, config);
+    BindableService dataExfiltrationDetectionRulesConfigService =
+        DataExfiltrationDetectionRulesConfigServiceFactory.build(
+            managedChannel, configChangeEventGenerator);
     BindableService wafIntegrationConfigService =
         WafIntegrationConfigServiceFactory.build(
             managedChannel, config, configChangeEventGenerator);
+
     List<BindableService> anomalyConfigServices =
         AnomalyConfigServiceFactory.build(
             channelRegistry, managedChannel, config, configChangeEventGenerator);
@@ -155,6 +160,7 @@ public class TraceableConfigService extends PlatformService {
         .addService(InterceptorUtil.wrapInterceptors(notificationChannelConfigService))
         .addService(InterceptorUtil.wrapInterceptors(reportingConfigService))
         .addService(InterceptorUtil.wrapInterceptors(dataClassificationConfigService))
+        .addService(InterceptorUtil.wrapInterceptors(dataExfiltrationDetectionRulesConfigService))
         .addService(InterceptorUtil.wrapInterceptors(wafIntegrationConfigService));
 
     internalTraceableConfigServer = internalServerBuilder.build();

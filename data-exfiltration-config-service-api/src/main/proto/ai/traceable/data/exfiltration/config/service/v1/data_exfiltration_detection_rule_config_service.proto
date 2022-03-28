@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+
+package ai.traceable.data.exfiltration.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/data/exfiltration/config/service/v1/data_exfiltration_detection_rule_config.proto";
+
+service DataExfiltrationDetectionRuleConfigService {
+
+  rpc GetDataExfiltrationDetectionRules (GetDataExfiltrationDetectionRulesRequest) returns (GetDataExfiltrationDetectionRulesResponse) {
+  }
+
+  rpc CreateDataExfiltrationDetectionRule (CreateDataExfiltrationDetectionRuleRequest) returns (CreateDataExfiltrationDetectionRuleResponse) {
+  }
+
+  rpc UpdateDataExfiltrationDetectionRule (UpdateDataExfiltrationDetectionRuleRequest) returns (UpdateDataExfiltrationDetectionRuleResponse) {
+  }
+
+  rpc DeleteDataExfiltrationDetectionRule (DeleteDataExfiltrationDetectionRuleRequest) returns (DeleteDataExfiltrationDetectionRuleResponse) {
+  }
+}

@@ -20,7 +20,7 @@ build:
     - license-status-config-service-api/src/main/proto
     - threat-management-config-service-api/src/main/proto
     - external-data-classification-config-service-api/src/main/proto
-    - inclusion-rules-config-service-api/src/main/proto
+    - data-exfiltration-config-service-api/src/main/proto
 lint:
   use:
     - DEFAULT

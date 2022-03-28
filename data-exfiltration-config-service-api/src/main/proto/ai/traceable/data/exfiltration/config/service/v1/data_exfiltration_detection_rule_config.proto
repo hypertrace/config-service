@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package ai.traceable.data.exfiltration.config.service.v1;
+
+option java_multiple_files = true;
+
+message GetDataExfiltrationDetectionRulesRequest {
+}
+
+message GetDataExfiltrationDetectionRulesResponse {
+  repeated DataExfiltrationDetectionRuleConfig configs = 1;
+}
+
+message CreateDataExfiltrationDetectionRuleRequest {
+  DataExfiltrationDetectionRuleData rule_data = 1;
+}
+
+message CreateDataExfiltrationDetectionRuleResponse {
+  DataExfiltrationDetectionRuleConfig config = 1;
+}
+
+message UpdateDataExfiltrationDetectionRuleRequest {
+  DataExfiltrationDetectionRuleConfig rule_config = 1;
+}
+
+message UpdateDataExfiltrationDetectionRuleResponse {
+  DataExfiltrationDetectionRuleConfig config = 1;
+}
+
+message DeleteDataExfiltrationDetectionRuleRequest {
+  string rule_id = 1;
+}
+
+
+message DeleteDataExfiltrationDetectionRuleResponse {
+
+}
+
+message DataExfiltrationDetectionRuleConfig {
+  string id = 1;
+  DataExfiltrationDetectionRuleData rule_data = 2;
+}
+
+message DataExfiltrationDetectionRuleData {
+  string name = 1;
+  repeated Scope scopes = 2;
+  repeated DataScope data_scopes = 3;
+  DetectionConfigStatus config_status = 4;
+}
+
+message DetectionConfigStatus {
+  bool disabled = 1;
+}
+
+message Scope {
+  oneof scope_type {
+    EnvironmentScope environment_scope = 1;
+    EntityScope service_scope = 2;
+    EntityScope api_scope = 3;
+  }
+}
+
+message EnvironmentScope {
+  string id = 1;
+}
+
+message EntityScope {
+  oneof id_type {
+    string label_id = 1;
+    string entity_id = 2;
+  }
+}
+
+
+message DataScope {
+  oneof scope_type {
+    string data_set_id = 1;
+    string data_type_id = 2;
+  }
+}
