@@ -21,6 +21,7 @@ build:
     - threat-management-config-service-api/src/main/proto
     - external-data-classification-config-service-api/src/main/proto
     - data-exfiltration-config-service-api/src/main/proto
+    - waf-provider-integration-service-api/src/main/proto
 lint:
   use:
     - DEFAULT
