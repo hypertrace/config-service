@@ -2,6 +2,7 @@ package ai.traceable.sensitivedata.config.service;
 
 import static ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression.DATA_SUPPRESSION_OBFUSCATE;
 import static ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression.DATA_SUPPRESSION_REDACT;
+import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Action.ACTION_MATCH;
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_HASH;
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_REDACT;
 import static java.util.function.Function.identity;
@@ -289,24 +290,30 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
       Set<DataType> dataTypes,
       RedactionStrategy strategy,
       Map<String, PiiElement> keyRegexToPiiElementMap) {
-    dataTypes.forEach(
-        dataType -> {
-          PiiElement.Builder piiElementBuilder =
-              PiiElement.newBuilder().setRedactionStrategy(strategy).setRuleId(dataType.getId());
-          dataType
-              .getRule()
-              .getScopedPatternsList()
-              .forEach(
-                  scopedPattern ->
-                      setRegexForScopedPattern(
-                          scopedPattern, piiElementBuilder, keyRegexToPiiElementMap));
-        });
+    dataTypes.stream()
+        .filter(dataType -> dataType.getRule().getScopedPatternsList().size() == 1)
+        .forEach(
+            dataType ->
+                setRegexForScopedPattern(
+                    dataType.getId(),
+                    dataType.getRule().getScopedPatterns(0),
+                    strategy,
+                    keyRegexToPiiElementMap));
   }
 
   private void setRegexForScopedPattern(
+      String dataTypeId,
       ScopedPattern scopedPattern,
-      PiiElement.Builder piiElementBuilder,
+      RedactionStrategy strategy,
       Map<String, PiiElement> keyRegexToPiiElementMap) {
+    // ignore scoped pattern which doesn't have key pattern
+    // OR doesn't have action configured as MATCH
+    // OR doesn't have scope set as global scope
+    if (!scopedPattern.hasKeyPattern()
+        || !scopedPattern.getAction().equals(ACTION_MATCH)
+        || !scopedPattern.hasGlobalScope()) {
+      return;
+    }
     List<String> prefixes = new ArrayList<>();
     // iterate over all locations
     for (Location location : scopedPattern.getLocationsList()) {
@@ -323,15 +330,15 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
     // We can have two PiiElement with same regex but different effects.
     // For ex. one with fqn = true and the other with fqn = false.
     for (String prefix : prefixes) {
+      PiiElement.Builder piiElementBuilder =
+          PiiElement.newBuilder().setRedactionStrategy(strategy).setRuleId(dataTypeId);
       if (!prefix.isEmpty()) {
         // if prefix is not empty, then set fqn to true
         piiElementBuilder.setFqn(true);
       }
-      if (scopedPattern.hasKeyPattern()) {
-        String keyRegex = prefix + scopedPattern.getKeyPattern().getValue();
-        piiElementBuilder.setRegex(keyRegex);
-        keyRegexToPiiElementMap.putIfAbsent(keyRegex, piiElementBuilder.build());
-      }
+      String keyRegex = prefix + scopedPattern.getKeyPattern().getValue();
+      piiElementBuilder.setRegex(keyRegex);
+      keyRegexToPiiElementMap.putIfAbsent(keyRegex, piiElementBuilder.build());
     }
   }
 
