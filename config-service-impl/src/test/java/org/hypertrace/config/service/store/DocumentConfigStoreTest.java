@@ -96,7 +96,7 @@ class DocumentConfigStoreTest {
     Key key = keyCaptor.getValue();
     Document document = documentCaptor.getValue();
     long newVersion = CONFIG_VERSION + 1;
-    assertEquals(new ConfigDocumentKey(configResourceContext, newVersion), key);
+    assertEquals(new ConfigDocumentKey(configResourceContext), key);
     assertEquals(
         getConfigDocument(
             configResourceContext.getContext(),
@@ -208,7 +208,7 @@ class DocumentConfigStoreTest {
 
     verify(collection, times(1))
         .upsert(
-            new ConfigDocumentKey(resourceContext1, CONFIG_VERSION + 1),
+            new ConfigDocumentKey(resourceContext1),
             getConfigDocument(
                 resourceContext1.getContext(),
                 CONFIG_VERSION + 1,
@@ -217,7 +217,7 @@ class DocumentConfigStoreTest {
                 updateTime));
     verify(collection, times(1))
         .upsert(
-            new ConfigDocumentKey(resourceContext2, CONFIG_VERSION + 1),
+            new ConfigDocumentKey(resourceContext2),
             getConfigDocument(
                 resourceContext2.getContext(),
                 CONFIG_VERSION + 1,
