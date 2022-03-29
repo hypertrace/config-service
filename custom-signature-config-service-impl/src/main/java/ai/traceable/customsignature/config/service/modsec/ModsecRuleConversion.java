@@ -55,9 +55,12 @@ public class ModsecRuleConversion {
   private String getVariableString(Clause clause) {
     switch (clause.getClauseCase()) {
       case MATCH_EXPRESSION:
-        return modsecRuleMappings.getVariableString(clause.getMatchExpression().getMatchKey());
+        return modsecRuleMappings.getVariableString(
+            clause.getMatchExpression().getMatchCategory(),
+            clause.getMatchExpression().getMatchKey());
       case KEY_VALUE_EXPRESSION:
         return modsecRuleMappings.getVariableString(
+            clause.getKeyValueExpression().getMatchCategory(),
             clause.getKeyValueExpression().getTag(),
             clause.getKeyValueExpression().getMatchKey(),
             clause.getKeyValueExpression().getKeyMatchOperator());

@@ -18,6 +18,7 @@ dependencies {
   implementation(libs.slf4j.api)
   implementation(libs.uuidCreator)
   implementation(libs.re2j)
+  implementation(libs.commons.lang)
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpcutils.client)
   implementation(libs.hypertrace.configservice.protoconverter)
