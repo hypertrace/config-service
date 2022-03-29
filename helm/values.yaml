@@ -87,7 +87,7 @@ serviceAccount:
 modelStoreNFSMountPath: "/var/data/models"
 modelStoreNFSClaimName: "traceable-nfs-model-store"
 deepStoreFilePath: "/var/data/customers/"
-deepStoreFsScheme: "file"
+deepStoreFsScheme: "gs"
 deepStoreMountPath: "/var/data"
 deepStoreClaimName: "traceable-nfs-deep-store"
 s3BucketName: ""
