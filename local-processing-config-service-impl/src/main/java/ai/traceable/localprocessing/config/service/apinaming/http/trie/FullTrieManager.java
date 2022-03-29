@@ -9,6 +9,7 @@ import ai.traceable.localprocessing.config.service.v1.WildcardType;
 import ai.traceable.platform.apientity.Segment;
 import ai.traceable.platform.apientity.http.model.TrieModel;
 import ai.traceable.platform.apientity.http.model.TrieNodeConfig;
+import ai.traceable.platform.deepstore.FileMetadata;
 import ai.traceable.platform.model.PersistedModel;
 import ai.traceable.platform.model.store.ModelPersistentStore;
 import ai.traceable.platform.model.store.ServiceScope;
@@ -111,7 +112,11 @@ public class FullTrieManager {
   }
 
   public long getModelTimestamp(ServiceScope serviceScope) throws IOException {
-    return trieModelStore.getModelMetadata(serviceScope).getModificationTime();
+    FileMetadata modelMetadata = trieModelStore.getModelMetadata(serviceScope);
+    if (modelMetadata == null) {
+      return 0;
+    }
+    return modelMetadata.getModificationTime();
   }
 
   public Optional<FullTrie> getFullTrie(
