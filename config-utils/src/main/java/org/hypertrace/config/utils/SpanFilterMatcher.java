@@ -27,6 +27,9 @@ public class SpanFilterMatcher {
                     ::hasRelationalSpanFilter)
             .allMatch(filter -> matchesEnvironment(filter.getRelationalSpanFilter(), environment));
       } else {
+        if (spanFilter.getLogicalSpanFilter().getOperandsCount() == 0) {
+          return true;
+        }
         return spanFilter.getLogicalSpanFilter().getOperandsList().stream()
             .filter(
                 org.hypertrace.span.processing.config.service.v1.SpanFilter
@@ -51,6 +54,9 @@ public class SpanFilterMatcher {
                     ::hasRelationalSpanFilter)
             .allMatch(filter -> matchesServiceName(filter.getRelationalSpanFilter(), serviceName));
       } else {
+        if (spanFilter.getLogicalSpanFilter().getOperandsCount() == 0) {
+          return true;
+        }
         return spanFilter.getLogicalSpanFilter().getOperandsList().stream()
             .filter(
                 org.hypertrace.span.processing.config.service.v1.SpanFilter

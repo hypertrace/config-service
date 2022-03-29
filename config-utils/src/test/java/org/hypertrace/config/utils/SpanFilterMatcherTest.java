@@ -157,6 +157,47 @@ class SpanFilterMatcherTest {
                         RelationalOperator.RELATIONAL_OPERATOR_STARTS_WITH,
                         buildSpanFilterValue("ice")))),
             "serviceName"));
+
+    assertTrue(
+        this.spanFilterMatcher.matchesServiceName(
+            buildSpanFilter(
+                LogicalOperator.LOGICAL_OPERATOR_AND,
+                List.of(
+                    buildRelationalSpanFilter(
+                        Field.FIELD_SERVICE_NAME,
+                        RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
+                        buildSpanFilterValue("service")))),
+            "serviceName"));
+
+    assertTrue(
+        this.spanFilterMatcher.matchesServiceName(
+            buildSpanFilter(
+                LogicalOperator.LOGICAL_OPERATOR_OR,
+                List.of(
+                    buildRelationalSpanFilter(
+                        Field.FIELD_SERVICE_NAME,
+                        RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
+                        buildSpanFilterValue("service")))),
+            "serviceName"));
+
+    assertTrue(
+        this.spanFilterMatcher.matchesServiceName(
+            buildSpanFilter(
+                LogicalOperator.LOGICAL_OPERATOR_AND,
+                List.of(
+                    buildRelationalSpanFilter(
+                        Field.FIELD_SERVICE_NAME,
+                        RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
+                        buildSpanFilterValue("service")))),
+            "serviceName"));
+
+    assertTrue(
+        this.spanFilterMatcher.matchesServiceName(
+            buildSpanFilter(LogicalOperator.LOGICAL_OPERATOR_AND, List.of()), "serviceName"));
+
+    assertTrue(
+        this.spanFilterMatcher.matchesServiceName(
+            buildSpanFilter(LogicalOperator.LOGICAL_OPERATOR_OR, List.of()), "serviceName"));
   }
 
   @Test
@@ -221,6 +262,36 @@ class SpanFilterMatcherTest {
                         RelationalOperator.RELATIONAL_OPERATOR_STARTS_WITH,
                         buildSpanFilterValue("ice")))),
             Optional.of("env")));
+
+    assertTrue(
+        this.spanFilterMatcher.matchesEnvironment(
+            buildSpanFilter(
+                LogicalOperator.LOGICAL_OPERATOR_AND,
+                List.of(
+                    buildRelationalSpanFilter(
+                        Field.FIELD_ENVIRONMENT_NAME,
+                        RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
+                        buildSpanFilterValue("en")))),
+            Optional.of("env")));
+
+    assertTrue(
+        this.spanFilterMatcher.matchesEnvironment(
+            buildSpanFilter(
+                LogicalOperator.LOGICAL_OPERATOR_OR,
+                List.of(
+                    buildRelationalSpanFilter(
+                        Field.FIELD_ENVIRONMENT_NAME,
+                        RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
+                        buildSpanFilterValue("env")))),
+            Optional.of("env")));
+
+    assertTrue(
+        this.spanFilterMatcher.matchesEnvironment(
+            buildSpanFilter(LogicalOperator.LOGICAL_OPERATOR_AND, List.of()), Optional.of("env")));
+
+    assertTrue(
+        this.spanFilterMatcher.matchesEnvironment(
+            buildSpanFilter(LogicalOperator.LOGICAL_OPERATOR_OR, List.of()), Optional.of("env")));
   }
 
   private SpanFilter buildSpanFilter(
