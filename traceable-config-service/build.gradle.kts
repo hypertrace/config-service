@@ -108,6 +108,7 @@ dependencies {
   implementation(projects.dataClassificationConfigServiceImpl)
   implementation(projects.dataExfiltrationConfigServiceImpl)
   implementation(projects.wafProviderIntegrationServiceImpl)
+  implementation(projects.apiAttributeOverrideServiceImpl)
   implementation(libs.hypertrace.configservice.server)
   implementation(libs.hypertrace.configservice.impl)
   implementation(libs.hypertrace.grpcutils.server)

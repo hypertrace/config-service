@@ -4,6 +4,7 @@ import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.activity.event.producer.ActivityEventProducerFactory;
 import ai.traceable.alerting.config.service.EventConditionConfigServiceImpl;
 import ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory;
+import ai.traceable.api.attribute.override.service.ApiAttributeOverridesServiceFactory;
 import ai.traceable.blocking.config.service.BlockingConfigServiceFactory;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceFactory;
 import ai.traceable.data.classification.config.service.DataClassificationConfigServiceFactory;
@@ -130,6 +131,8 @@ public class TraceableConfigService extends PlatformService {
     List<BindableService> anomalyConfigServices =
         AnomalyConfigServiceFactory.build(
             channelRegistry, managedChannel, config, configChangeEventGenerator);
+    BindableService apiAttributeOverridesService =
+        ApiAttributeOverridesServiceFactory.build(managedChannel);
 
     EventConditionConfigServiceImpl eventConditionConfigService =
         new EventConditionConfigServiceImpl(managedChannel);
@@ -161,7 +164,8 @@ public class TraceableConfigService extends PlatformService {
         .addService(InterceptorUtil.wrapInterceptors(reportingConfigService))
         .addService(InterceptorUtil.wrapInterceptors(dataClassificationConfigService))
         .addService(InterceptorUtil.wrapInterceptors(dataExfiltrationDetectionRulesConfigService))
-        .addService(InterceptorUtil.wrapInterceptors(wafIntegrationConfigService));
+        .addService(InterceptorUtil.wrapInterceptors(wafIntegrationConfigService))
+        .addService(InterceptorUtil.wrapInterceptors(apiAttributeOverridesService));
 
     internalTraceableConfigServer = internalServerBuilder.build();
 

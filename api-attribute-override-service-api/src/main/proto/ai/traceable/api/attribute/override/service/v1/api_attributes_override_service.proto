@@ -13,6 +13,6 @@ service ApiAttributeOverrideService {
   rpc UpsertApiAttributeOverrides (UpsertApiAttributeOverridesRequest) returns (UpsertApiAttributeOverridesResponse) {
   }
 
-  rpc DeleteApiAttributeOverrides (DeleteApiAttributeOverridesRequest) returns (DeleteApiAttributeOverridesResponse) {
+  rpc RemoveApiAttributeOverrides (RemoveApiAttributeOverridesRequest) returns (RemoveApiAttributeOverridesResponse) {
   }
 }
