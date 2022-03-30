@@ -123,6 +123,8 @@ message MetadataTrainingConfig {
     StartTimeTrainingConfig start_time = 19;
     UserAgentTrainingConfig user_agent = 20;
     UserRoleTrainingConfig user_role = 21;
+    HtmlTagsTrainingConfig html_tags = 22;
+    HtmlTagAttributesTrainingConfig html_tag_attributes = 23;
   }
 }
 
@@ -216,6 +218,14 @@ message AccessorsTrainingConfig {
 message SsrfTrainingConfig {
   ThresholdFamilyConfig protocol_threshold_family_config = 1;
   optional int32 max_allowed_hosts = 2;
+}
+
+message HtmlTagsTrainingConfig {
+  ThresholdFamilyConfig threshold_family_config = 1;
+}
+
+message HtmlTagAttributesTrainingConfig {
+  ThresholdFamilyConfig threshold_family_config = 1;
 }
 
 message ContentTypeTrainingConfig {}
