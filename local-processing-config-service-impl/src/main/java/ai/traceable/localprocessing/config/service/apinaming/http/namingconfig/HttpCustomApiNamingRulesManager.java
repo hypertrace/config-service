@@ -33,8 +33,8 @@ public class HttpCustomApiNamingRulesManager {
   private static final String MAXIMUM_CACHE_SIZE =
       "api.naming.config.customRules.cache.maximumCacheSize";
   private static final String CACHE_NAME = "apiNamingRulesCache";
-  private static final Duration CACHE_REFRESH_DURATION_DEFAULT = Duration.ofHours(12);
-  private static final Duration CACHE_EXPIRATION_DURATION_DEFAULT = Duration.ofHours(24);
+  private static final Duration CACHE_REFRESH_DURATION_DEFAULT = Duration.ofSeconds(150);
+  private static final Duration CACHE_EXPIRATION_DURATION_DEFAULT = Duration.ofSeconds(300);
   private static final long MAXIMUM_CACHE_SIZE_DEFAULT = 100;
 
   private final LoadingCache<ContextualKey<ServiceIdentifier>, List<ApiNamingRule>>
