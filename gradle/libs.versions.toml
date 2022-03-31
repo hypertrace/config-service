@@ -36,6 +36,7 @@ lombok = { module = "org.projectlombok:lombok", version = "1.18.20" }
 snakeyaml = { module = "org.yaml:snakeyaml", version = "1.28" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 rxjava3 = { module = "io.reactivex.rxjava3:rxjava", version = "3.0.11" }
+google-re2j = { module = "com.google.re2j:re2j", version = "1.6" }
 
 grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "grpc" }
 grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }

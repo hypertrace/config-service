@@ -8,6 +8,7 @@ plugins {
 dependencies {
   api(projects.spanProcessingConfigServiceApi)
   implementation(libs.slf4j.api)
+  implementation(libs.google.re2j)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
