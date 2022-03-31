@@ -56,6 +56,8 @@ crs_943110 :: Possible Session Fixation Attack: SessionID Parameter Name with Of
 crs_9440210 :: Java Deserialization: Magic Bytes Base64 Encoded
 crs_9440900 :: Java Log4j: JNDI Exploitation (CVE-2021-44228) (T900)
 crs_9440910 :: Java Log4j: RCE DoS Exploitation (CVE-2021-45105) (T910)
+crs_9440920 :: Java Spring Core: RCE (T920)
+crs_9440921 :: Java Spring Core: RCE: Panic Rule (T921)
 crs_944100 :: Remote Command Execution: Suspicious Java class
 crs_944110 :: Remote Command Execution: Java process spawn (CVE-2017-9805)
 crs_944120 :: Remote Command Execution: Java serialization (CVE-2015-4852) (120)

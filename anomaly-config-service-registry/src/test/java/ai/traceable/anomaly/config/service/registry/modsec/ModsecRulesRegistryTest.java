@@ -105,7 +105,7 @@ public class ModsecRulesRegistryTest {
           regularRulesCount - blockingRulesCount,
           crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
       // few rules in file not marked for blocking
-      assertEquals(65, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
+      assertEquals(66, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
     }
   }
 
