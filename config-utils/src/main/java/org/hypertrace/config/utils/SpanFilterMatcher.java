@@ -1,5 +1,6 @@
 package org.hypertrace.config.utils;
 
+import com.google.re2j.Pattern;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -124,7 +125,7 @@ public class SpanFilterMatcher {
       case RELATIONAL_OPERATOR_ENDS_WITH:
         return lhs.endsWith(rhs);
       case RELATIONAL_OPERATOR_REGEX_MATCH:
-        return lhs.matches(rhs);
+        return Pattern.compile(rhs).matcher(lhs).find();
       default:
         log.error("Unsupported relational operator for string value rhs:{}", relationalOperator);
         return false;
