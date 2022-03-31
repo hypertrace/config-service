@@ -73,10 +73,6 @@ dependencies {
 
   runtimeOnly(libs.slf4j.log4jimpl)
   runtimeOnly(libs.grpc.netty)
-  constraints {
-    runtimeOnly(libs.netty.codecHttp2)
-    runtimeOnly(libs.netty.handlerProxy)
-  }
 
   // Integration test dependencies
   integrationTestImplementation(projects.configServiceImpl)
