@@ -271,6 +271,7 @@ message ObjectBolaTrainingConfig {
   StringList prefixes_not_allowed_in_response_param_key = 3;
   StringList suffixes_not_allowed_in_response_param_key = 4;
   optional bool enabled_on_same_api = 5;
+  MultiValuedStringParamRulesList multi_valued_string_param_rules = 6;
 }
 
 message UserIdBolaTrainingConfig {
@@ -367,4 +368,14 @@ message CustomRulesListConfig{
 message CustomRuleConfig{
   string regex = 1;
   string url_pattern = 2;
+}
+
+message MultiValuedStringParamRulesList {
+  repeated MultiValuedStringParamRule rules = 1;
+}
+
+message MultiValuedStringParamRule {
+  string key_regex = 1;
+  string value_delimiter = 2;
+  optional string value_regex = 3;
 }

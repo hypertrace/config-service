@@ -273,6 +273,7 @@ message ObjectBolaAnomalyConfig {
   optional bool enabled_on_same_api = 5;
   optional int64 preceding_event_look_ahead_time_window = 6;
   StringList request_param_values_not_allowed = 7;
+  MultiValuedStringParamRulesList multi_valued_string_param_rules = 8;
 }
 
 message UserIdBolaAnomalyConfig {
@@ -316,4 +317,14 @@ enum UserIdSource {
   USER_ID_SOURCE_UNSPECIFIED = 0;
   USER_ID_SOURCE_ANY = 1;
   USER_ID_SOURCE_JWT = 2;
+}
+
+message MultiValuedStringParamRulesList {
+  repeated MultiValuedStringParamRule rules = 1;
+}
+
+message MultiValuedStringParamRule {
+  string key_regex = 1;
+  string value_delimiter = 2;
+  optional string value_regex = 3;
 }
