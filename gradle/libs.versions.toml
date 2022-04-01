@@ -1,17 +1,16 @@
 [versions]
-protoc = "3.17.3"
-grpc = "1.42.0"
-gson = "2.8.9"
-hypertrace-grpcutils = "0.6.2"
-hypertrace-framework = "0.1.29"
-lombok = "1.18.20"
-jackson = "2.12.4"
+protoc = "3.19.4"
+grpc = "1.45.1"
+gson = "2.9.0"
+hypertrace-grpcutils = "0.7.2"
+hypertrace-framework = "0.1.33"
+lombok = "1.18.22"
+jackson = "2.13.2.2"
 kafka = "6.0.1-ccs"
-netty = "4.1.71.Final"
 kotlin = "1.4.32"
 
-junit = "5.7.2"
-mockito = "3.11.2"
+junit = "5.8.2"
+mockito = "4.4.0"
 
 [libraries]
 
@@ -25,14 +24,14 @@ hypertrace-framework-container = { module = "org.hypertrace.core.serviceframewor
 hypertrace-framework-metrics = { module = "org.hypertrace.core.serviceframework:platform-service-framework", version.ref = "hypertrace-framework" }
 hypertrace-framework-integrationtest = { module = "org.hypertrace.core.serviceframework:integrationtest-service-framework", version.ref = "hypertrace-framework" }
 
-hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:document-store", version = "0.6.10" }
+hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:document-store", version = "0.6.15" }
 hypertrace-eventstore = { module = "org.hypertrace.core.eventstore:event-store", version = "0.1.2" }
 
-guava = { module = "com.google.guava:guava", version = "30.1.1-jre" }
+guava = { module = "com.google.guava:guava", version = "31.1-jre" }
 guice = { module = "com.google.inject:guice", version = "5.0.1" }
 javax-annotation = { module = "javax.annotation:javax.annotation-api", version = "1.3.2" }
 typesafe-config = { module = "com.typesafe:config", version = "1.4.1" }
-lombok = { module = "org.projectlombok:lombok", version = "1.18.20" }
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok"}
 snakeyaml = { module = "org.yaml:snakeyaml", version = "1.28" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 rxjava3 = { module = "io.reactivex.rxjava3:rxjava", version = "3.0.11" }
@@ -46,8 +45,6 @@ grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "grpc" }
 protobuf-javautil = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protoc" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protoc" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
-netty-codecHttp2 = { module = "io.netty:netty-codec-http2", version.ref = "netty" }
-netty-handlerProxy = { module = "io.netty:netty-handler-proxy", version.ref = "netty" }
 
 kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
@@ -56,7 +53,7 @@ kotlin-stdlibJdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", versio
 commons-compress = { module = "org.apache.commons:commons-compress", version = "1.21" }
 jersey-common = { module = "org.glassfish.jersey.core:jersey-common", version = "2.34" }
 
-slf4j-log4jimpl = { module = "org.apache.logging.log4j:log4j-slf4j-impl", version = "2.17.0" }
+slf4j-log4jimpl = { module = "org.apache.logging.log4j:log4j-slf4j-impl", version = "2.17.2" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version = "1.7.30" }
 
 
