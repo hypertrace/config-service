@@ -264,7 +264,56 @@ class RateLimitingConfigServiceImplTest {
     RateLimitingRuleConfig createdRuleConfig = argumentCaptor.getValue().getRule();
     Assertions.assertEquals("changedName", createdRuleConfig.getRuleName());
     Assertions.assertEquals("ruleId1", createdRuleConfig.getRuleId());
+    Assertions.assertFalse(createdRuleConfig.hasStatusCodesMatchingRegex());
+    verify(mockActivityEventProducer, times(1))
+        .publishSecurityConfigurationChangeEvent(
+            any(RequestContext.class),
+            eq(
+                SecurityConfigurationChange.newBuilder()
+                    .setRuleId("ruleId1")
+                    .setRuleName("changedName")
+                    .setSecurityConfigurationType(SecurityConfigurationType.RATE_LIMITING_RULE)
+                    .setSecurityConfigurationAction(SecurityConfigurationAction.UPDATE)
+                    .build()));
+  }
 
+  @Test
+  void updateRuleConfig_withStatusCodeMatchingRegex() throws InvalidProtocolBufferException {
+    StreamObserver<UpdateRuleConfigResponse> responseObserver = mock(StreamObserver.class);
+    mockConfigService.setRateLimitingRuleConfigs(getRuleConfigMap());
+    RateLimitingRuleConfig rateLimitingRuleConfig =
+        RateLimitingRuleConfig.newBuilder()
+            .setRuleId("ruleId1")
+            .setRuleName("changedName")
+            .setDescription("this is rule 1")
+            .setMaxCallCountAllowed(10)
+            .setMaxCallCountDurationMillis(10000)
+            .setRuleViolationAction(RuleViolationAction.RULE_VIOLATION_ACTION_SUSPEND)
+            .setSuspendDurationMillis(1000)
+            .setDisabled(true)
+            .setStatusCodesMatchingRegex("400")
+            .build();
+    UpdateRuleConfigRequest request =
+        UpdateRuleConfigRequest.newBuilder().setRule(rateLimitingRuleConfig).build();
+
+    Runnable runnable = () -> rateLimitingConfigService.updateRuleConfig(request, responseObserver);
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    Assertions.assertEquals(1, mockConfigService.getRateLimitingRuleConfigs().size());
+    Entry<Triple<String, String, String>, Value> updatedEntry =
+        mockConfigService.getRateLimitingRuleConfigs().entrySet().iterator().next();
+    Assertions.assertEquals(
+        rateLimitingRuleConfig,
+        RateLimitingConfigServiceUtils.toRateLimitingRuleConfig(updatedEntry.getValue()));
+
+    ArgumentCaptor<UpdateRuleConfigResponse> argumentCaptor =
+        ArgumentCaptor.forClass(UpdateRuleConfigResponse.class);
+    verify(responseObserver, times(1)).onNext(argumentCaptor.capture());
+    verify(responseObserver, never()).onError(any(Throwable.class));
+    RateLimitingRuleConfig createdRuleConfig = argumentCaptor.getValue().getRule();
+    Assertions.assertEquals("changedName", createdRuleConfig.getRuleName());
+    Assertions.assertEquals("ruleId1", createdRuleConfig.getRuleId());
+    Assertions.assertTrue(createdRuleConfig.hasStatusCodesMatchingRegex());
+    Assertions.assertEquals("400", createdRuleConfig.getStatusCodesMatchingRegex());
     verify(mockActivityEventProducer, times(1))
         .publishSecurityConfigurationChangeEvent(
             any(RequestContext.class),
@@ -326,7 +375,46 @@ class RateLimitingConfigServiceImplTest {
     RateLimitingRuleConfig createdRuleConfig = argumentCaptor.getValue().getRule();
     Assertions.assertEquals("rule1", createdRuleConfig.getRuleName());
     Assertions.assertNotNull(createdRuleConfig.getRuleId());
+    Assertions.assertFalse(createdRuleConfig.hasStatusCodesMatchingRegex());
+    verify(mockActivityEventProducer, times(1))
+        .publishSecurityConfigurationChangeEvent(
+            any(RequestContext.class),
+            eq(
+                SecurityConfigurationChange.newBuilder()
+                    .setRuleId(createdRuleConfig.getRuleId())
+                    .setRuleName("rule1")
+                    .setSecurityConfigurationType(SecurityConfigurationType.RATE_LIMITING_RULE)
+                    .setSecurityConfigurationAction(SecurityConfigurationAction.ADD)
+                    .build()));
+  }
 
+  @Test
+  void createRuleConfig_withStatusCodesMatchRegex() {
+    StreamObserver<CreateRuleConfigResponse> responseObserver = mock(StreamObserver.class);
+    CreateRateLimitingRuleConfig createRateLimitingRuleConfig =
+        CreateRateLimitingRuleConfig.newBuilder()
+            .setRuleName("rule1")
+            .setDescription("this is rule 1")
+            .setMaxCallCountAllowed(10)
+            .setMaxCallCountDurationMillis(10000)
+            .setRuleViolationAction(RuleViolationAction.RULE_VIOLATION_ACTION_SUSPEND)
+            .setSuspendDurationMillis(1000)
+            .setStatusCodesMatchingRegex("^5[0-9]{2}$")
+            .build();
+    CreateRuleConfigRequest request =
+        CreateRuleConfigRequest.newBuilder().setRule(createRateLimitingRuleConfig).build();
+    Runnable runnable = () -> rateLimitingConfigService.createRuleConfig(request, responseObserver);
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    System.out.println(mockConfigService.getRateLimitingRuleConfigs().size());
+    ArgumentCaptor<CreateRuleConfigResponse> argumentCaptor =
+        ArgumentCaptor.forClass(CreateRuleConfigResponse.class);
+    verify(responseObserver, times(1)).onNext(argumentCaptor.capture());
+    verify(responseObserver, never()).onError(any(Throwable.class));
+    RateLimitingRuleConfig createdRuleConfig = argumentCaptor.getValue().getRule();
+    Assertions.assertEquals("rule1", createdRuleConfig.getRuleName());
+    Assertions.assertNotNull(createdRuleConfig.getRuleId());
+    Assertions.assertTrue(createdRuleConfig.hasStatusCodesMatchingRegex());
+    Assertions.assertEquals("^5[0-9]{2}$", createdRuleConfig.getStatusCodesMatchingRegex());
     verify(mockActivityEventProducer, times(1))
         .publishSecurityConfigurationChangeEvent(
             any(RequestContext.class),

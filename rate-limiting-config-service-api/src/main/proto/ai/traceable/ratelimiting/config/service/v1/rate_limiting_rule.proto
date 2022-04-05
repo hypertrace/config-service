@@ -15,6 +15,7 @@ message RateLimitingRuleConfig {
     RuleViolationAction rule_violation_action = 6;
     bool disabled = 7;
     int64 suspend_duration_millis = 8;
+    optional string status_codes_matching_regex = 9;
 }
 
 message CreateRateLimitingRuleConfig {
@@ -24,6 +25,7 @@ message CreateRateLimitingRuleConfig {
     int64 max_call_count_duration_millis = 4;
     RuleViolationAction rule_violation_action = 5;
     int64 suspend_duration_millis = 6;
+    optional string status_codes_matching_regex = 7;
 }
 
 enum RuleViolationAction {

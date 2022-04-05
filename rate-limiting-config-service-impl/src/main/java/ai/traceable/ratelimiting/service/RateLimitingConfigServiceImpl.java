@@ -176,7 +176,7 @@ public class RateLimitingConfigServiceImpl
         throw new IllegalArgumentException("max calls count duration value not allowed");
       }
 
-      RateLimitingRuleConfig createdRuleConfig =
+      RateLimitingRuleConfig.Builder builder =
           RateLimitingRuleConfig.newBuilder()
               .setRuleId(ruleId)
               .setRuleName(ruleConfig.getRuleName())
@@ -185,8 +185,11 @@ public class RateLimitingConfigServiceImpl
               .setMaxCallCountAllowed(ruleConfig.getMaxCallCountAllowed())
               .setMaxCallCountDurationMillis(ruleConfig.getMaxCallCountDurationMillis())
               .setRuleViolationAction(ruleConfig.getRuleViolationAction())
-              .setSuspendDurationMillis(ruleConfig.getSuspendDurationMillis())
-              .build();
+              .setSuspendDurationMillis(ruleConfig.getSuspendDurationMillis());
+      if (ruleConfig.hasStatusCodesMatchingRegex()) {
+        builder.setStatusCodesMatchingRegex(ruleConfig.getStatusCodesMatchingRegex());
+      }
+      RateLimitingRuleConfig createdRuleConfig = builder.build();
 
       UpsertConfigRequest upsertConfigRequest =
           UpsertConfigRequest.newBuilder()
