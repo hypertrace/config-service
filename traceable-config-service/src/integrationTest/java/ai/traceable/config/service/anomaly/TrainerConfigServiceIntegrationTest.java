@@ -150,26 +150,15 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
             .getSegmentLengthThreshold());
 
     assertEquals(
-        List.of(
-            "bot",
-            "crawler",
-            "baiduspider",
-            "80legs",
-            "ia_archiver",
-            "voyager",
-            "curl",
-            "wget",
-            "yahoo",
-            "slurp",
-            "mediapartners-google",
-            "whiteHat security"),
+        0,
         scopedTrainingConfig
             .getTrainingConfigs(1)
             .getApiNamingTrainingConfig()
             .getRejectFilterConfig()
             .getUserAgentFilterConfig()
             .getBotAgentList()
-            .getValuesList());
+            .getValuesList()
+            .size());
 
     assertEquals(
         2,
