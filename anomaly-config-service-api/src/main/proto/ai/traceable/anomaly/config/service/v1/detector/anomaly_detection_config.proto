@@ -149,6 +149,7 @@ message SessionDefinitionMetadataAnomalyDetectionConfig {
   oneof config {
     ObjectBolaAnomalyConfig object_bola = 2;
     UserIdBolaAnomalyConfig user_id_bola = 3;
+    SequenceAnomalyConfig sequence_anomaly = 4;
   }
 }
 
@@ -279,6 +280,21 @@ message ObjectBolaAnomalyConfig {
 message UserIdBolaAnomalyConfig {
   optional double min_correlation_probability = 1;
   UserIdSource user_id_source = 2;
+}
+
+message SequenceAnomalyConfig {
+  oneof config {
+    PredecessorSuccessorApiSequenceConfig predecessor_successor_api_sequence_config = 1;
+  }
+}
+
+message PredecessorSuccessorApiSequenceConfig {
+  repeated PredecessorSuccessorApiConfig predecessor_successor_api_config = 1;
+}
+
+message PredecessorSuccessorApiConfig {
+  string successor_api_id = 1;
+  StringList predecessor_api_ids = 2;
 }
 
 message CustomIpAnomalyConfig {}
