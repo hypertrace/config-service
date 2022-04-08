@@ -185,8 +185,27 @@ public class ModsecRulesRegistryTest {
                         .getSubRuleTypesList()
                         .contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
             .map(
-                anomalySubRuleInfo ->
-                    anomalySubRuleInfo.getRuleId() + " :: " + anomalySubRuleInfo.getRuleName())
+                anomalySubRuleInfo -> {
+                  StringBuilder sb =
+                      new StringBuilder(
+                          anomalySubRuleInfo.getRuleId()
+                              + " :: "
+                              + anomalySubRuleInfo.getRuleName());
+                  String labels =
+                      String.join(
+                          " , ",
+                          anomalySubRuleInfo.getEventLabelsMap().entrySet().stream()
+                              .map(
+                                  entry ->
+                                      String.format("'%s:%s'", entry.getKey(), entry.getValue()))
+                              .collect(Collectors.toList()));
+                  if (!labels.isBlank()) {
+                    sb.append(" :: [ ");
+                    sb.append(labels);
+                    sb.append(" ]");
+                  }
+                  return sb.toString();
+                })
             .sorted()
             .collect(Collectors.toList());
     // assertEquals(subRulesRead, subRulesCollected);

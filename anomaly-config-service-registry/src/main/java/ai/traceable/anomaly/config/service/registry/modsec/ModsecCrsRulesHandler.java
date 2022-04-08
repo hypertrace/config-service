@@ -21,11 +21,14 @@ public class ModsecCrsRulesHandler {
 
   private static final String SEC_RULE = "SecRule";
   private static final String COMMA_DELIMITER = ",";
+  private static final String COLON_DELIMITER = ":";
   private static final String NEWLINE_DELIMITER = "\n";
   private static final Pattern ID_PATTERN = Pattern.compile("id:([0-9]+)");
   private static final Pattern MSG_PATTERN = Pattern.compile("msg:'(.*)'");
   private static final Pattern SUB_RULE_TYPE_TAG_PATTERN =
       Pattern.compile("tag:'traceable/type/(.*)'");
+  private static final Pattern SUB_RULE_LABELS_TAG_PATTERN =
+      Pattern.compile("tag:'traceable/labels/(.*)'");
   private static final String SEC_RULE_REMOVE_BY_ID_FORMAT = "SecRuleRemoveById %d";
 
   private final ModsecRuleUtils modsecRuleUtils;
@@ -48,6 +51,7 @@ public class ModsecCrsRulesHandler {
       Matcher idMatcher = ID_PATTERN.matcher(rule);
       Matcher msgMatcher = MSG_PATTERN.matcher(rule);
       Matcher tagMatcher = SUB_RULE_TYPE_TAG_PATTERN.matcher(rule);
+      Matcher labelMatcher = SUB_RULE_LABELS_TAG_PATTERN.matcher(rule);
 
       if (idMatcher.find() && msgMatcher.find()) {
         long id = Long.parseLong(idMatcher.group(1));
@@ -66,6 +70,12 @@ public class ModsecCrsRulesHandler {
         tagMatcher.find();
         Arrays.asList(tagMatcher.group(1).split(COMMA_DELIMITER))
             .forEach(subRuleType -> builder.addSubRuleTypes(getSubRuleType(subRuleType)));
+        if (labelMatcher.find()) {
+          Arrays.asList(labelMatcher.group(1).split(COMMA_DELIMITER)).stream()
+              .map(labelPairString -> labelPairString.split(COLON_DELIMITER))
+              .filter(labelPair -> labelPair.length == 2)
+              .forEach(labelPair -> builder.putEventLabels(labelPair[0], labelPair[1]));
+        }
 
         if (!modsecRulesMap.containsKey(parentId)) {
           modsecRulesMap.put(parentId, new ArrayList<>());
