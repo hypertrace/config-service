@@ -178,10 +178,11 @@ message ModsecurityAnomalyRuleConfig {
 
 message MissingParamAnomalyConfig {
   optional double min_percent_seen = 1;
-  StringList severe_names = 2;
+  StringList severe_names = 2 [deprecated = true];
   optional bool evaluate_request_body_params = 3;
   optional bool enabled_for_internal_ips = 4;
   StringList thresholds_families_excluded = 5;
+  StringList severe_regex_strings = 6;
 }
 
 message UnknownParamAnomalyConfig {
