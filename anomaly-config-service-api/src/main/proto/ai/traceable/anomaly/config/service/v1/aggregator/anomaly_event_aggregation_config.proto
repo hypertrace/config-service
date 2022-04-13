@@ -62,6 +62,7 @@ message EventAggregationConfig {
 message EventAggregationFamilyConfig {
   AnomalyEventFamily anomaly_event_family = 1;
   AggregationConfig aggregation_config = 2;
+  AggregationExcludeConfig exclude_config = 3;
 }
 
 message EventAggregationGlobalConfig {
@@ -78,4 +79,8 @@ message AggregationConfig {
   optional int32 max_events_with_score_per_user_across_params = 5;
   optional int32 max_events_without_score_per_user_across_params = 6;
   optional int32 max_users_per_param = 7;
+}
+
+message AggregationExcludeConfig {
+  StringList max_users_per_param_exclude_event_type_ids = 1;
 }
