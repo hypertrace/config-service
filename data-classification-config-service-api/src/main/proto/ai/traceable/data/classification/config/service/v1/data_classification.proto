@@ -87,6 +87,7 @@ message DataSetInfo {
   repeated string data_type_ids = 4;
   DataSuppression data_suppression = 5;
   Sensitivity sensitivity = 6;
+  optional string color = 7;
 
   enum DataSuppression {
     DATA_SUPPRESSION_UNSPECIFIED = 0;

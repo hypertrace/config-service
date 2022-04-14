@@ -42,5 +42,8 @@ class DataSetConfigRequestValidator {
     if (info.getDataTypeIdsCount() > 0) {
       validateNonDefaultPresenceOrThrow(info, DataSetInfo.DATA_TYPE_IDS_FIELD_NUMBER);
     }
+    if (info.hasColor()) {
+      validateNonDefaultPresenceOrThrow(info, DataSetInfo.COLOR_FIELD_NUMBER);
+    }
   }
 }

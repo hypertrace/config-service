@@ -47,12 +47,30 @@ class DataSetConfigRequestValidatorTest {
   }
 
   @Test
+  void validateOrThrowNoColor() {
+    DataSetInfo dataSetInfo =
+        DataSetInfo.newBuilder()
+            .setName("name-1")
+            .addAllDataTypeIds(List.of("1", "2"))
+            .setEnabled(true)
+            .setColor("")
+            .build();
+    CreateDataSetRequest request = CreateDataSetRequest.newBuilder().setInfo(dataSetInfo).build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          dataSetConfigRequestValidator.validateOrThrow(REQUEST_CONTEXT, request);
+        });
+  }
+
+  @Test
   void validateOrThrowCompleteDataSetInfo() {
     DataSetInfo dataSetInfo =
         DataSetInfo.newBuilder()
             .addAllDataTypeIds(List.of("1", "2"))
             .setName("name-1")
             .setEnabled(true)
+            .setColor("#F72202")
             .build();
     CreateDataSetRequest request = CreateDataSetRequest.newBuilder().setInfo(dataSetInfo).build();
     dataSetConfigRequestValidator.validateOrThrow(REQUEST_CONTEXT, request);
