@@ -61,10 +61,6 @@ public class ModsecRuleMappingsTest {
     assertEquals(
         "\"@contains value\"",
         modsecRuleMappings.getOperatorString(MatchOperator.MATCH_OPERATOR_CONTAINS, "value"));
-
-    assertEquals(
-        "\"@contains \\\"value\\\"\"",
-        modsecRuleMappings.getOperatorString(MatchOperator.MATCH_OPERATOR_CONTAINS, "\"value\""));
   }
 
   @Test

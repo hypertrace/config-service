@@ -98,9 +98,8 @@ public class ModsecRuleMappings {
       throw new UnsupportedOperationException(
           String.format("Cannot translate unknown match operator '%s'", matchOperator));
     }
-    String escapedValue = value.replaceAll("\"", "\\\\\"");
     return getWrappedString(
-        matchOperatorMappings.get(matchOperator) + SPACE_DELIMITER + escapedValue, "\"");
+        matchOperatorMappings.get(matchOperator) + SPACE_DELIMITER + value, "\"");
   }
 
   private String getWrappedString(String str, String wrapper) {
