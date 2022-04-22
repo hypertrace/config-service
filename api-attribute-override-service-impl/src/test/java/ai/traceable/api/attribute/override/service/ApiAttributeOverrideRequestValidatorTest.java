@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import ai.traceable.api.attribute.override.service.v1.AttributeOverride;
 import ai.traceable.api.attribute.override.service.v1.AttributeOverrideIdentifier;
+import ai.traceable.api.attribute.override.service.v1.BooleanOverride;
+import ai.traceable.api.attribute.override.service.v1.EmptyOverrideIdentifier;
 import ai.traceable.api.attribute.override.service.v1.Filter;
 import ai.traceable.api.attribute.override.service.v1.GetAllApiAttributeOverridesRequest;
 import ai.traceable.api.attribute.override.service.v1.ParamTypeAction;
@@ -78,6 +80,17 @@ public class ApiAttributeOverrideRequestValidatorTest {
                         .build()))
             .build();
     assertEquals(Status.OK.getCode(), requestValidator.validate(request).getCode());
+
+    request =
+        UpsertApiAttributeOverridesRequest.newBuilder()
+            .setApiId("apiId")
+            .addAllAttributeOverrides(
+                List.of(
+                    AttributeOverride.newBuilder()
+                        .setApiExternalOverride(BooleanOverride.newBuilder().build())
+                        .build()))
+            .build();
+    assertEquals(Status.OK.getCode(), requestValidator.validate(request).getCode());
   }
 
   @Test
@@ -109,6 +122,18 @@ public class ApiAttributeOverrideRequestValidatorTest {
                     AttributeOverrideIdentifier.newBuilder()
                         .setParamTypeOverrideIdentifier(
                             ParamTypeOverrideIdentifier.newBuilder().setParamName("param").build())
+                        .build()))
+            .build();
+    assertEquals(Status.OK.getCode(), requestValidator.validate(request).getCode());
+
+    request =
+        RemoveApiAttributeOverridesRequest.newBuilder()
+            .setApiId("apiId")
+            .addAllAttributeOverrideIdentifiers(
+                List.of(
+                    AttributeOverrideIdentifier.newBuilder()
+                        .setApiExternalOverrideIdentifier(
+                            EmptyOverrideIdentifier.newBuilder().build())
                         .build()))
             .build();
     assertEquals(Status.OK.getCode(), requestValidator.validate(request).getCode());

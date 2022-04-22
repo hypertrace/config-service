@@ -3,6 +3,7 @@ package ai.traceable.api.attribute.override.service.handlers;
 import ai.traceable.api.attribute.override.service.v1.ApiAttributeOverrides;
 import ai.traceable.api.attribute.override.service.v1.AttributeOverride;
 import ai.traceable.api.attribute.override.service.v1.AttributeOverride.AttributeOverrideCase;
+import ai.traceable.api.attribute.override.service.v1.BooleanOverride;
 import ai.traceable.api.attribute.override.service.v1.UpsertApiAttributeOverridesRequest;
 import java.util.List;
 import java.util.Optional;
@@ -54,6 +55,8 @@ public class UpsertApiAttributeOverridesHandler {
       List<AttributeOverride> updatedAttributeOverrides) {
     List<AttributeOverride> mergedParamTypeOverrides =
         mergeParamTypeOverride(existingAttributeOverrides, updatedAttributeOverrides);
+    mergedParamTypeOverrides =
+        mergeApiTypeOverride(mergedParamTypeOverrides, updatedAttributeOverrides);
     // merge different type of overrides on top of mergedParamTypeOverrides here.
     return mergedParamTypeOverrides;
   }
@@ -86,6 +89,35 @@ public class UpsertApiAttributeOverridesHandler {
             .collect(Collectors.toList());
     // add the updated overrides.
     filteredAttributeOverrides.addAll(toBeUpsertedParamTypeOverrides);
+    return filteredAttributeOverrides;
+  }
+
+  private List<AttributeOverride> mergeApiTypeOverride(
+      List<AttributeOverride> existingAttributeOverrides,
+      List<AttributeOverride> updatedAttributeOverrides) {
+    List<AttributeOverride> toBeUpsertedApiOverrides =
+        updatedAttributeOverrides.stream()
+            .filter(
+                updatedOverride ->
+                    updatedOverride.getAttributeOverrideCase()
+                        == AttributeOverrideCase.API_EXTERNAL_OVERRIDE)
+            .collect(Collectors.toList());
+
+    Set<BooleanOverride> toBeUpsertedAttributesOverrides =
+        toBeUpsertedApiOverrides.stream()
+            .map(AttributeOverride::getApiExternalOverride)
+            .collect(Collectors.toUnmodifiableSet());
+
+    // From the existing attribute overrides, remove the matching param type overrides.
+    List<AttributeOverride> filteredAttributeOverrides =
+        existingAttributeOverrides.stream()
+            .filter(
+                existingOverride ->
+                    existingOverride.getAttributeOverrideCase()
+                        != AttributeOverrideCase.API_EXTERNAL_OVERRIDE)
+            .collect(Collectors.toList());
+    // add the updated overrides.
+    filteredAttributeOverrides.addAll(toBeUpsertedApiOverrides);
     return filteredAttributeOverrides;
   }
 }

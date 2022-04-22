@@ -8,6 +8,8 @@ import static org.mockito.Mockito.when;
 import ai.traceable.api.attribute.override.service.v1.ApiAttributeOverrides;
 import ai.traceable.api.attribute.override.service.v1.AttributeOverride;
 import ai.traceable.api.attribute.override.service.v1.AttributeOverrideIdentifier;
+import ai.traceable.api.attribute.override.service.v1.BooleanOverride;
+import ai.traceable.api.attribute.override.service.v1.EmptyOverrideIdentifier;
 import ai.traceable.api.attribute.override.service.v1.ParamTypeAction;
 import ai.traceable.api.attribute.override.service.v1.ParamTypeOverride;
 import ai.traceable.api.attribute.override.service.v1.ParamTypeOverrideIdentifier;
@@ -33,7 +35,7 @@ public class RemoveApiAttributeOverrideHandlerTest {
   }
 
   @Test
-  void removeMatchingOverride() {
+  void removeMatchingOverride_param_type() {
     List<AttributeOverride> attributeOverrides =
         List.of(
             AttributeOverride.newBuilder()
@@ -84,6 +86,57 @@ public class RemoveApiAttributeOverrideHandlerTest {
             .getParamTypeAction());
     Assertions.assertEquals(
         "param2",
+        upsertedOverride.getAttributeOverridesList().get(0).getParamTypeOverride().getParamName());
+  }
+
+  @Test
+  void removeMatchingOverride_api_type() {
+    List<AttributeOverride> attributeOverrides =
+        List.of(
+            AttributeOverride.newBuilder()
+                .setParamTypeOverride(
+                    ParamTypeOverride.newBuilder()
+                        .setParamName("param1")
+                        .setParamTypeAction(ParamTypeAction.PARAM_TYPE_ACTION_COLLAPSE))
+                .build(),
+            AttributeOverride.newBuilder()
+                .setApiExternalOverride(BooleanOverride.newBuilder().setValue(true).build())
+                .build());
+    when(configServiceHandler.getApiAttributeOverridesByApiId(any(), any()))
+        .thenReturn(
+            Optional.of(
+                ApiAttributeOverrides.newBuilder()
+                    .addAllAttributeOverrides(attributeOverrides)
+                    .setApiId("api1")
+                    .build()));
+
+    List<AttributeOverrideIdentifier> toRemoveIdentifiers =
+        List.of(
+            AttributeOverrideIdentifier.newBuilder()
+                .setApiExternalOverrideIdentifier(EmptyOverrideIdentifier.newBuilder().build())
+                .build());
+    RemoveApiAttributeOverridesRequest removeRequest =
+        RemoveApiAttributeOverridesRequest.newBuilder()
+            .addAllAttributeOverrideIdentifiers(toRemoveIdentifiers)
+            .setApiId("api1")
+            .build();
+    removeApiAttributeOverridesHandler.removeAttributeOverrides(
+        RequestContext.forTenantId("tenantId"), removeRequest);
+    ArgumentCaptor<ApiAttributeOverrides> apiAttributeOverridesCaptor =
+        ArgumentCaptor.forClass(ApiAttributeOverrides.class);
+    verify(configServiceHandler)
+        .upsertApiAttributeOverrides(any(), apiAttributeOverridesCaptor.capture());
+    ApiAttributeOverrides upsertedOverride = apiAttributeOverridesCaptor.getValue();
+    assertEquals(1, upsertedOverride.getAttributeOverridesList().size());
+    Assertions.assertEquals(
+        ParamTypeAction.PARAM_TYPE_ACTION_COLLAPSE,
+        upsertedOverride
+            .getAttributeOverridesList()
+            .get(0)
+            .getParamTypeOverride()
+            .getParamTypeAction());
+    Assertions.assertEquals(
+        "param1",
         upsertedOverride.getAttributeOverridesList().get(0).getParamTypeOverride().getParamName());
   }
 

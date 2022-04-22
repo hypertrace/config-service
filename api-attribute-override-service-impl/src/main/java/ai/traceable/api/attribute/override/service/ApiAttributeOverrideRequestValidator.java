@@ -61,7 +61,7 @@ public class ApiAttributeOverrideRequestValidator {
         }
         return Status.OK;
       case API_EXTERNAL_OVERRIDE_IDENTIFIER:
-        return Status.UNIMPLEMENTED;
+        return Status.OK;
       default:
         return Status.INVALID_ARGUMENT;
     }
@@ -72,7 +72,7 @@ public class ApiAttributeOverrideRequestValidator {
       case PARAM_TYPE_OVERRIDE:
         return validateParamTypeOverride(attributeOverride.getParamTypeOverride());
       case API_EXTERNAL_OVERRIDE:
-        return Status.UNIMPLEMENTED;
+        return Status.OK;
       default:
         return Status.INVALID_ARGUMENT;
     }
@@ -82,7 +82,8 @@ public class ApiAttributeOverrideRequestValidator {
     if (Strings.isNullOrEmpty(paramTypeOverride.getParamName())) {
       return Status.INVALID_ARGUMENT.withDescription("Param name not found in param Type override");
     }
-    if (paramTypeOverride.getParamTypeAction() == ParamTypeAction.PARAM_TYPE_ACTION_UNSPECIFIED) {
+    if (ParamTypeAction.PARAM_TYPE_ACTION_UNSPECIFIED.equals(
+        paramTypeOverride.getParamTypeAction())) {
       return Status.INVALID_ARGUMENT.withDescription("Unspecified param type action");
     }
     return Status.OK;

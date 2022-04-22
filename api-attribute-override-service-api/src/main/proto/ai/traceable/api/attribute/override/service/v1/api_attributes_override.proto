@@ -42,8 +42,12 @@ message ApiAttributeOverrides {
 message AttributeOverride {
   oneof attribute_override {
     ParamTypeOverride param_type_override = 1;
-    ApiExternalOverride api_external_override = 2;
+    BooleanOverride api_external_override = 2;
   }
+}
+
+message BooleanOverride {
+  bool value = 1;
 }
 
 message ParamTypeOverride {
@@ -77,14 +81,10 @@ enum ParamValueType {
   PARAM_VALUE_TYPE_RICH_TEXT_HTML = 15;
 }
 
-message ApiExternalOverride {
-  bool is_external = 1;
-}
-
 message AttributeOverrideIdentifier {
   oneof attribute_override_identifier {
     ParamTypeOverrideIdentifier param_type_override_identifier = 1;
-    ApiExternalOverrideIdentifier api_external_override_identifier = 2;
+    EmptyOverrideIdentifier api_external_override_identifier = 2;
   }
 }
 
@@ -92,5 +92,5 @@ message ParamTypeOverrideIdentifier {
   string param_name = 1;
 }
 
-message ApiExternalOverrideIdentifier {
+message EmptyOverrideIdentifier {
 }
