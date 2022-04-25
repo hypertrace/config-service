@@ -331,7 +331,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
             .getHighCardinality()
             .getThreshold());
     assertEquals(
-        100,
+        10,
         scopedTrainingConfig
             .getTrainingConfigs(2)
             .getApiNamingTrainingConfig()

@@ -377,16 +377,12 @@ public class ApiNamingManagerTestUtils {
         .build();
   }
 
-  public static Config buildFullTrieReloadConfig(boolean disabled, String tenantScopedTimestamp) {
+  public static Config buildFullTrieReloadConfig(boolean disabled, String tenantScopedVersion) {
     return ConfigFactory.parseMap(
         Map.of(
             "default",
-            Map.of("timestamp", "1970-01-01T00:00:00.000Z", "disabled", disabled),
+            Map.of("version", "0.0.0", "disabled", disabled),
             "tenantId",
-            Map.of("default", Map.of("timestamp", tenantScopedTimestamp, "disabled", disabled))));
-  }
-
-  public static Config buildEntityFetcherConfig() {
-    return ConfigFactory.parseMap(Map.of());
+            Map.of("default", Map.of("version", tenantScopedVersion, "disabled", disabled))));
   }
 }

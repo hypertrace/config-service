@@ -13,6 +13,6 @@ public interface HttpApiNamingTrieManager {
       HttpApiNamingConfigInfo httpApiNamingConfigInfo,
       String serviceId,
       String trieToken,
-      long fullTrieReloadTimestamp)
+      String platformTrieVersion)
       throws IOException, ExecutionException, RetryException;
 }

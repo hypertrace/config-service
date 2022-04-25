@@ -15,6 +15,8 @@ import ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc;
 import ai.traceable.localprocessing.config.service.v1.Node;
 import ai.traceable.localprocessing.config.service.v1.ServiceRequest;
+import ai.traceable.localprocessing.config.service.v1.TrieDiffLog;
+import ai.traceable.localprocessing.config.service.v1.TrieNodePath;
 import ai.traceable.localprocessing.config.service.v1.WildcardType;
 import ai.traceable.platform.apientity.http.difflog.TrieDiffLogModel;
 import ai.traceable.platform.apientity.http.model.TrieModel;
@@ -110,13 +112,12 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
   void testHttpApiNamingResponse() {
     TrieModel trieModel = new TrieModel();
     TrieModelTrainerConfig trieModelTrainerConfig = buildTrieModelTrainerConfig();
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 10; i++) {
       trieModel.insert(trieModelTrainerConfig, "GET/sports/cricket");
     }
-
     trieModelFileSystemModelStore.storeModel(
         new ServiceScope(TENANT_ID, createdEntity.getEntityId()), trieModel);
-    GetApiNamingModelResponse getApiNamingModelResponse = getApiNamingModel();
+    GetApiNamingModelResponse getApiNamingModelResponse = getApiNamingModel("1.2.3");
     testHttpApiNamingConfig(
         getApiNamingModelResponse
             .getHttpApiNamingResponse()
@@ -130,35 +131,46 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
             .getFullTrie());
 
     TrieModel trieModel1 = new TrieModel();
-    trieModel1.insert(trieModelTrainerConfig, "GET/sports/tennis");
-    TrieDiffLogModel trieDiffLogModel = new TrieDiffLogModel();
-    trieDiffLogModel.computeDiffLog(
+    for (int i = 0; i < 10; i++) {
+      trieModel1.insert(trieModelTrainerConfig, "GET/sports/tennis");
+    }
+    TrieDiffLogModel trieDiffLogModel1 = new TrieDiffLogModel();
+    trieDiffLogModel1.computeDiffLog(
         trieModel, trieModel1, buildTrieModelTrainerConfig().getTrieNodeConfig());
-    long timestamp = System.currentTimeMillis();
-    DateScope dateScope =
+    DateScope dateScope1 =
         new DateScope(
-            timestamp,
+            System.currentTimeMillis() - 10,
             new ServiceScope(TENANT_ID, createdEntity.getEntityId()),
             DATE_TIME_FORMATTER);
-    trieDiffLogModelFileSystemModelStore.storeModel(dateScope, trieDiffLogModel);
-    getApiNamingModelResponse = getApiNamingModel();
+    trieDiffLogModelFileSystemModelStore.storeModel(dateScope1, trieDiffLogModel1);
+    getApiNamingModelResponse = getApiNamingModel("1.2.3");
     testDiffTrie(
         getApiNamingModelResponse
             .getHttpApiNamingResponse()
             .getHttpServiceResponses(0)
             .getTrie()
             .getDiffTrie());
+
+    // Forced full trie in-case the version is changed
+    getApiNamingModelResponse = getApiNamingModel("1.0.0");
+    testFullTrie(
+        getApiNamingModelResponse
+            .getHttpApiNamingResponse()
+            .getHttpServiceResponses(0)
+            .getTrie()
+            .getFullTrie());
+
     deleteDirectory(new File(BASE_DIR));
     deleteDirectory(new File(DIFF_LOGS_BASE_DIR));
   }
 
-  private GetApiNamingModelResponse getApiNamingModel() {
+  private GetApiNamingModelResponse getApiNamingModel(String version) {
     GetApiNamingModelRequest request =
         GetApiNamingModelRequest.newBuilder()
             .addServiceRequests(
                 ServiceRequest.newBuilder()
                     .setServiceName("serviceName")
-                    .setTrieToken(String.valueOf(System.currentTimeMillis() - 1000))
+                    .setTrieToken("t=" + (System.currentTimeMillis() - 1000) + ";v=" + version)
                     .build())
             .build();
     return RequestContext.forTenantId(TENANT_ID)
@@ -168,39 +180,57 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
   private static void testDiffTrie(DiffTrie diffTrie) {
     assertTrue(
         diffTrie
-            .getTrieDiffLogs(0)
-            .getNodeRemoval()
-            .getValuesList()
+            .getTrieDiffLogsList()
             .contains(
-                ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
-                    .setName("3")
+                TrieDiffLog.newBuilder()
+                    .setNodeRemoval(
+                        TrieNodePath.newBuilder()
+                            .addAllValues(
+                                List.of(
+                                    ai.traceable.localprocessing.config.service.v1.Value
+                                        .newBuilder()
+                                        .setName("3")
+                                        .build(),
+                                    ai.traceable.localprocessing.config.service.v1.Value
+                                        .newBuilder()
+                                        .setName("GET")
+                                        .build(),
+                                    ai.traceable.localprocessing.config.service.v1.Value
+                                        .newBuilder()
+                                        .setName("sports")
+                                        .build(),
+                                    ai.traceable.localprocessing.config.service.v1.Value
+                                        .newBuilder()
+                                        .setName("cricket")
+                                        .build()))
+                            .build())
                     .build()));
     assertTrue(
         diffTrie
-            .getTrieDiffLogs(0)
-            .getNodeRemoval()
-            .getValuesList()
+            .getTrieDiffLogsList()
             .contains(
-                ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
-                    .setName("GET")
-                    .build()));
-    assertTrue(
-        diffTrie
-            .getTrieDiffLogs(0)
-            .getNodeRemoval()
-            .getValuesList()
-            .contains(
-                ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
-                    .setName("sports")
-                    .build()));
-    assertTrue(
-        diffTrie
-            .getTrieDiffLogs(0)
-            .getNodeRemoval()
-            .getValuesList()
-            .contains(
-                ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
-                    .setName("cricket")
+                TrieDiffLog.newBuilder()
+                    .setPathAddition(
+                        TrieNodePath.newBuilder()
+                            .addAllValues(
+                                List.of(
+                                    ai.traceable.localprocessing.config.service.v1.Value
+                                        .newBuilder()
+                                        .setName("3")
+                                        .build(),
+                                    ai.traceable.localprocessing.config.service.v1.Value
+                                        .newBuilder()
+                                        .setName("GET")
+                                        .build(),
+                                    ai.traceable.localprocessing.config.service.v1.Value
+                                        .newBuilder()
+                                        .setName("sports")
+                                        .build(),
+                                    ai.traceable.localprocessing.config.service.v1.Value
+                                        .newBuilder()
+                                        .setName("tennis")
+                                        .build()))
+                            .build())
                     .build()));
   }
 
@@ -295,7 +325,7 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
                     .build())
             .setExtensions(StringList.newBuilder().addValues("e").build())
             .setAllowRegexList(StringList.newBuilder().addValues("f").build())
-            .setEmbryonicThreshold(100)
+            .setEmbryonicThreshold(10)
             .build(),
         ConfigFactory.parseMap(Map.of()));
   }

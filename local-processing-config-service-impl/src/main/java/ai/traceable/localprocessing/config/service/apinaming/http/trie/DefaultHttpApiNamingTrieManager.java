@@ -34,13 +34,16 @@ public class DefaultHttpApiNamingTrieManager implements HttpApiNamingTrieManager
   }
 
   /**
-   * Sends full trie based on the following conditions
+   *
    *
    * <ul>
-   *   <li>Agent timestamp is 0 i.e agent makes request for the first time
+   *   <li>Agent token is 0 i.e agent makes request for the first time
    *   <li>Agent timestamp is 1hr(configurable) behind trie model timestamp i.e. agent timestamp is
    *       older than the retention period of diff log models
    *   <li>No diff logs and agent timestamp < trie model timestamp
+   *   <li>Sends full trie based on the following conditions Trie token - is timestamp of agent and
+   *       version of trie separated by a comma
+   *   <li>If version of platform trie is not equal to agent version full trie is sent
    * </ul>
    */
   public Trie getTrie(
@@ -48,14 +51,15 @@ public class DefaultHttpApiNamingTrieManager implements HttpApiNamingTrieManager
       HttpApiNamingConfigInfo httpApiNamingConfigInfo,
       String serviceId,
       String trieToken,
-      long fullTrieReloadTimestamp)
+      String platformTrieVersion)
       throws IOException, ExecutionException {
-    long agentTimestampMillis = getAgentTimestampMillis(trieToken, serviceId, requestContext);
     String tenantId = requestContext.getTenantId().orElseThrow();
     ServiceScope serviceScope = new ServiceScope(tenantId, serviceId);
     List<TrieDiffLog> trieDiffLogs = Collections.emptyList();
     long trieModelTimestampMillis = fullTrieManager.getModelTimestamp(serviceScope);
-    boolean reloadFullTrie = agentTimestampMillis < fullTrieReloadTimestamp;
+    long agentTimestampMillis = getAgentTimestampMillis(trieToken, serviceId, requestContext);
+    boolean reloadFullTrie =
+        !platformTrieVersion.equals(getAgentVersion(trieToken, serviceId, requestContext));
 
     if (!reloadFullTrie
         && agentTimestampMillis != 0
@@ -69,9 +73,11 @@ public class DefaultHttpApiNamingTrieManager implements HttpApiNamingTrieManager
       return Trie.newBuilder()
           .setDiffTrie(getDiffTrie(trieDiffLogs))
           .setToken(
-              String.valueOf(
-                  trieDiffLogManager.getLatestDiffLogTimestamp(
-                      requestContext, serviceScope, agentTimestampMillis)))
+              "t="
+                  + trieDiffLogManager.getLatestDiffLogTimestamp(
+                      requestContext, serviceScope, agentTimestampMillis)
+                  + ";v="
+                  + platformTrieVersion)
           .build();
     } else {
       if (agentTimestampMillis < trieModelTimestampMillis) {
@@ -86,7 +92,7 @@ public class DefaultHttpApiNamingTrieManager implements HttpApiNamingTrieManager
         }
         return Trie.newBuilder()
             .setFullTrie(fullTrieMaybe.get())
-            .setToken(String.valueOf(trieModelTimestampMillis))
+            .setToken("t=" + trieModelTimestampMillis + ";v=" + platformTrieVersion)
             .build();
       } else {
         return Trie.newBuilder().setToken(trieToken).build();
@@ -101,14 +107,30 @@ public class DefaultHttpApiNamingTrieManager implements HttpApiNamingTrieManager
   private long getAgentTimestampMillis(
       String trieToken, String serviceId, RequestContext requestContext) {
     try {
-      return Long.parseLong(trieToken);
+      String[] tokens = trieToken.split(";");
+      return Long.parseLong(tokens[0].substring(2));
     } catch (NumberFormatException e) {
       log.error(
-          "Could not parse trieToken:{}, for serviceId:{}, and requestContext:{}",
+          "Could not parse timestamp from trieToken:{}, for serviceId:{}, and requestContext:{}",
           trieToken,
           serviceId,
           requestContext);
       return 0;
+    }
+  }
+
+  private String getAgentVersion(
+      String trieToken, String serviceId, RequestContext requestContext) {
+    try {
+      String[] tokens = trieToken.split(";");
+      return tokens[1].substring(2);
+    } catch (ArrayIndexOutOfBoundsException e) {
+      log.error(
+          "Could not parse version from trieToken:{}, for serviceId:{}, and requestContext:{}",
+          trieToken,
+          serviceId,
+          requestContext);
+      return "0.0.0";
     }
   }
 }
