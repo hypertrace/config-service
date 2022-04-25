@@ -1,14 +1,14 @@
 package ai.traceable.localprocessing.config.service.apinaming.http.trie;
 
 import ai.traceable.localprocessing.config.service.apinaming.http.utils.HttpApiNamingConfigInfo;
-import ai.traceable.localprocessing.config.service.v1.Trie;
+import ai.traceable.localprocessing.config.service.v1.ApiNamingPatterns;
 import com.github.rholder.retry.RetryException;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public interface HttpApiNamingTrieManager {
-  Trie getTrie(
+  ApiNamingPatterns getApiNamingPatterns(
       RequestContext requestContext,
       HttpApiNamingConfigInfo httpApiNamingConfigInfo,
       String serviceId,

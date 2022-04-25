@@ -10,17 +10,14 @@ import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ThresholdRegexConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrieModelTrainingConfig;
-import ai.traceable.anomaly.config.service.v1.trainer.UrlFilterConfig;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
-import ai.traceable.localprocessing.config.service.v1.DiffTrie;
-import ai.traceable.localprocessing.config.service.v1.FullTrie;
+import ai.traceable.localprocessing.config.service.v1.ApiNamingPattern;
+import ai.traceable.localprocessing.config.service.v1.DiffLog;
+import ai.traceable.localprocessing.config.service.v1.DiffPattern;
+import ai.traceable.localprocessing.config.service.v1.FullPattern;
 import ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig;
 import ai.traceable.localprocessing.config.service.v1.HttpApiNamingCustomRule;
-import ai.traceable.localprocessing.config.service.v1.Node;
-import ai.traceable.localprocessing.config.service.v1.TrieNodePath;
 import ai.traceable.localprocessing.config.service.v1.Wildcard;
-import ai.traceable.localprocessing.config.service.v1.WildcardConfig;
-import ai.traceable.localprocessing.config.service.v1.WildcardType;
 import ai.traceable.platform.apientity.Addition;
 import ai.traceable.platform.apientity.Deletion;
 import ai.traceable.platform.apientity.Segment;
@@ -54,32 +51,21 @@ public class ApiNamingManagerTestUtils {
     UuidGenerator uuidGenerator = new UuidGenerator();
     HttpApiNamingConfig.Builder httpApiNamingConfigBuilder = HttpApiNamingConfig.newBuilder();
     httpApiNamingConfigBuilder
-        .addExtensions("extension")
         .addSegmentWhitelistRegexes("allowRegex")
         .addApiNamingCustomRules(
             HttpApiNamingCustomRule.newBuilder()
-                .setRegexPattern("regex")
-                .setUrlPattern("urlPattern")
-                .build())
-        .addWildcardConfigs(
-            WildcardConfig.newBuilder()
-                .setWildcardType(WildcardType.WILDCARD_TYPE_ID)
-                .addIdentificationRegexes("regexId")
-                .build())
-        .addWildcardConfigs(
-            WildcardConfig.newBuilder()
-                .setWildcardType(WildcardType.WILDCARD_TYPE_LOW_CARDINALITY)
-                .addIdentificationRegexes("regexLow")
-                .build())
-        .addWildcardConfigs(
-            WildcardConfig.newBuilder()
-                .setWildcardType(WildcardType.WILDCARD_TYPE_HIGH_CARDINALITY)
-                .addIdentificationRegexes("regexHigh")
-                .build())
-        .addWildcardConfigs(
-            WildcardConfig.newBuilder()
-                .setWildcardType(WildcardType.WILDCARD_TYPE_MEDIUM_CARDINALITY)
-                .addIdentificationRegexes("regexMedium")
+                .setApiNamingPattern(
+                    ApiNamingPattern.newBuilder()
+                        .addAllSegments(
+                            List.of(
+                                ai.traceable.localprocessing.config.service.v1.Segment.newBuilder()
+                                    .setWildcard(
+                                        Wildcard.newBuilder()
+                                            .setIdentificationRegex("id-regex")
+                                            .setReplacementPattern("replacement-value")
+                                            .build())
+                                    .build()))
+                        .build())
                 .build())
         .addAllFallbackWildcardRegexes(
             List.of(
@@ -116,13 +102,7 @@ public class ApiNamingManagerTestUtils {
         .setConfigScope(anomalyConfigScope)
         .addTrainingConfigs(
             TrainingConfig.newBuilder()
-                .setApiNamingTrainingConfig(
-                    ApiNamingTrainingConfig.newBuilder()
-                        .setUrlFilterConfig(
-                            UrlFilterConfig.newBuilder()
-                                .setUrlRejectRegexPatterns(
-                                    StringList.newBuilder().addValues("urlReject").build())
-                                .build())))
+                .setApiNamingTrainingConfig(ApiNamingTrainingConfig.newBuilder().build()))
         .addTrainingConfigs(
             TrainingConfig.newBuilder()
                 .setApiNamingTrainingConfig(
@@ -199,8 +179,8 @@ public class ApiNamingManagerTestUtils {
                                     ApiNamingRuleConfig.newBuilder()
                                         .setSegmentMatchingBasedConfig(
                                             SegmentMatchingBasedConfig.newBuilder()
-                                                .addRegexes("urlPattern")
-                                                .addValues("regex")
+                                                .addRegexes("id-regex")
+                                                .addValues("replacement-value")
                                                 .build())
                                         .build())
                                 .build())
@@ -240,59 +220,47 @@ public class ApiNamingManagerTestUtils {
         123);
   }
 
-  public static FullTrie buildExpectedFullTrie() {
-    Node rootNode =
-        Node.newBuilder()
-            .setValue(
-                ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
-                    .setName("3")
-                    .build())
-            .addChildren(
-                Node.newBuilder()
-                    .setValue(
-                        ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
-                            .setName("GET")
-                            .build())
-                    .addChildren(
-                        Node.newBuilder()
-                            .setValue(
-                                ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
-                                    .setName("a")
-                                    .build())
-                            .addChildren(
-                                Node.newBuilder()
-                                    .setValue(
-                                        ai.traceable.localprocessing.config.service.v1.Value
-                                            .newBuilder()
-                                            .setName("b")
-                                            .build())))
-                    .build())
-            .addChildren(
-                Node.newBuilder()
-                    .setValue(
-                        ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
-                            .setName("POST")
-                            .build())
-                    .addChildren(
-                        Node.newBuilder()
-                            .setValue(
-                                ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
-                                    .setName("a")
-                                    .build())
-                            .addChildren(
-                                Node.newBuilder()
-                                    .setValue(
-                                        ai.traceable.localprocessing.config.service.v1.Value
-                                            .newBuilder()
-                                            .setWildcard(
-                                                Wildcard.newBuilder()
-                                                    .setExtension("e")
-                                                    .setWildcardType(WildcardType.WILDCARD_TYPE_ID)
-                                                    .build())
-                                            .build())))
-                    .build())
+  public static FullPattern buildExpectedFullPattern() {
+    // TODO: remove length of segment
+    ApiNamingPattern pattern1 =
+        ApiNamingPattern.newBuilder()
+            .addAllSegments(
+                List.of(
+                    ai.traceable.localprocessing.config.service.v1.Segment.newBuilder()
+                        .setName("3")
+                        .build(),
+                    ai.traceable.localprocessing.config.service.v1.Segment.newBuilder()
+                        .setName("GET")
+                        .build(),
+                    ai.traceable.localprocessing.config.service.v1.Segment.newBuilder()
+                        .setName("a")
+                        .build(),
+                    ai.traceable.localprocessing.config.service.v1.Segment.newBuilder()
+                        .setName("b")
+                        .build()))
             .build();
-    return FullTrie.newBuilder().addAllRoots(List.of(rootNode)).build();
+    ApiNamingPattern pattern2 =
+        ApiNamingPattern.newBuilder()
+            .addAllSegments(
+                List.of(
+                    ai.traceable.localprocessing.config.service.v1.Segment.newBuilder()
+                        .setName("3")
+                        .build(),
+                    ai.traceable.localprocessing.config.service.v1.Segment.newBuilder()
+                        .setName("POST")
+                        .build(),
+                    ai.traceable.localprocessing.config.service.v1.Segment.newBuilder()
+                        .setName("a")
+                        .build(),
+                    ai.traceable.localprocessing.config.service.v1.Segment.newBuilder()
+                        .setWildcard(
+                            Wildcard.newBuilder()
+                                .setIdentificationRegex("regexId.e")
+                                .setReplacementPattern("*.e")
+                                .build())
+                        .build()))
+            .build();
+    return FullPattern.newBuilder().addAllApiNamingPatterns(List.of(pattern1, pattern2)).build();
   }
 
   public static TrieDiffLog buildTrieDiffLog() {
@@ -330,46 +298,46 @@ public class ApiNamingManagerTestUtils {
         .build();
   }
 
-  public static DiffTrie buildExpectedDiffTrie() {
-    return DiffTrie.newBuilder()
-        .addTrieDiffLogs(
-            ai.traceable.localprocessing.config.service.v1.TrieDiffLog.newBuilder()
-                .setPathAddition(
-                    TrieNodePath.newBuilder()
-                        .addValues(
-                            ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
+  public static DiffPattern buildExpectedDiffTrie() {
+    return DiffPattern.newBuilder()
+        .addDiffLogs(
+            DiffLog.newBuilder()
+                .setApiNamingPatternAddition(
+                    ApiNamingPattern.newBuilder()
+                        .addSegments(
+                            ai.traceable.localprocessing.config.service.v1.Segment.newBuilder()
                                 .setName("GET")
                                 .build())
-                        .addValues(
-                            ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
+                        .addSegments(
+                            ai.traceable.localprocessing.config.service.v1.Segment.newBuilder()
                                 .setWildcard(
                                     Wildcard.newBuilder()
-                                        .setWildcardType(WildcardType.WILDCARD_TYPE_ID)
-                                        .setExtension("e")
+                                        .setIdentificationRegex("regexId.e")
+                                        .setReplacementPattern("*.e")
                                         .build())
                                 .build())
                         .build())
                 .build())
-        .addTrieDiffLogs(
-            ai.traceable.localprocessing.config.service.v1.TrieDiffLog.newBuilder()
-                .setNodeRemoval(
-                    TrieNodePath.newBuilder()
-                        .addValues(
-                            ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
+        .addDiffLogs(
+            DiffLog.newBuilder()
+                .setApiNamingPatternDeletion(
+                    ApiNamingPattern.newBuilder()
+                        .addSegments(
+                            ai.traceable.localprocessing.config.service.v1.Segment.newBuilder()
                                 .setName("GET")
                                 .build())
                         .build())
                 .build())
-        .addTrieDiffLogs(
-            ai.traceable.localprocessing.config.service.v1.TrieDiffLog.newBuilder()
-                .setNodeRemoval(
-                    TrieNodePath.newBuilder()
-                        .addValues(
-                            ai.traceable.localprocessing.config.service.v1.Value.newBuilder()
+        .addDiffLogs(
+            DiffLog.newBuilder()
+                .setApiNamingPatternDeletion(
+                    ApiNamingPattern.newBuilder()
+                        .addSegments(
+                            ai.traceable.localprocessing.config.service.v1.Segment.newBuilder()
                                 .setWildcard(
                                     Wildcard.newBuilder()
-                                        .setExtension("ex")
-                                        .setWildcardType(WildcardType.WILDCARD_TYPE_ID)
+                                        .setIdentificationRegex("regexId.ex")
+                                        .setReplacementPattern("*.ex")
                                         .build())
                                 .build())
                         .build())

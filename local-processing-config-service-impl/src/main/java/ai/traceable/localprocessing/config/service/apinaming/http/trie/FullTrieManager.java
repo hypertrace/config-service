@@ -2,11 +2,10 @@ package ai.traceable.localprocessing.config.service.apinaming.http.trie;
 
 import ai.traceable.localprocessing.config.service.apinaming.http.utils.HttpApiNamingConfigInfo;
 import ai.traceable.localprocessing.config.service.apinaming.http.utils.SegmentConverter;
-import ai.traceable.localprocessing.config.service.v1.FullTrie;
-import ai.traceable.localprocessing.config.service.v1.Node;
-import ai.traceable.localprocessing.config.service.v1.WildcardConfig;
-import ai.traceable.localprocessing.config.service.v1.WildcardType;
+import ai.traceable.localprocessing.config.service.v1.ApiNamingPattern;
+import ai.traceable.localprocessing.config.service.v1.FullPattern;
 import ai.traceable.platform.apientity.Segment;
+import ai.traceable.platform.apientity.TrieNodeType;
 import ai.traceable.platform.apientity.http.model.TrieModel;
 import ai.traceable.platform.apientity.http.model.TrieNodeConfig;
 import ai.traceable.platform.deepstore.FileMetadata;
@@ -20,8 +19,8 @@ import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -119,7 +118,7 @@ public class FullTrieManager {
     return modelMetadata.getModificationTime();
   }
 
-  public Optional<FullTrie> getFullTrie(
+  public Optional<FullPattern> getFullPattern(
       RequestContext requestContext,
       ServiceScope serviceScope,
       HttpApiNamingConfigInfo httpApiNamingConfigInfo) {
@@ -128,85 +127,39 @@ public class FullTrieManager {
       return Optional.empty();
     }
     Set<List<Segment>> nonEmbryonicPaths =
-        trieModelMaybe.get().getNonEmbryonicPaths(buildTrieNodeConfig(httpApiNamingConfigInfo));
-    return Optional.of(buildFullTrie(nonEmbryonicPaths));
+        trieModelMaybe
+            .get()
+            .getNonEmbryonicWildcardPaths(buildTrieNodeConfig(httpApiNamingConfigInfo));
+    return Optional.of(
+        buildFullPattern(nonEmbryonicPaths, httpApiNamingConfigInfo.getWildcardConfigMap()));
   }
 
-  private FullTrie buildFullTrie(Set<List<Segment>> paths) {
-    ArrayList<Node> roots = new ArrayList<>();
-    for (List<Segment> segments : paths) {
-      roots = insertIntoTrie(roots, segments, 0);
+  private FullPattern buildFullPattern(
+      Set<List<Segment>> paths, EnumMap<TrieNodeType, String> wildcardConfigMap) {
+    FullPattern.Builder fullPatternBuilder = FullPattern.newBuilder();
+    for (List<Segment> path : paths) {
+      fullPatternBuilder.addApiNamingPatterns(convertPath(path, wildcardConfigMap));
     }
-    return FullTrie.newBuilder().addAllRoots(roots).build();
+    return fullPatternBuilder.build();
   }
 
-  private ArrayList<Node> insertIntoTrie(ArrayList<Node> roots, List<Segment> segments, int index) {
-    if (segments.size() == index) {
-      return new ArrayList<>();
-    }
-
-    ai.traceable.localprocessing.config.service.v1.Value segmentValue =
-        segmentConverter.convertSegmentToValue(segments.get(index));
-    Optional<Node> maybeNode = getNode(roots, segmentValue);
-    if (maybeNode.isPresent()) {
-      Node currentNode = maybeNode.get();
-      Node newNode =
-          Node.newBuilder(currentNode)
-              .clearChildren()
-              .addAllChildren(
-                  insertIntoTrie(
-                      new ArrayList<>(currentNode.getChildrenList()), segments, index + 1))
-              .build();
-      roots.remove(currentNode);
-      roots.add(newNode);
-    } else {
-      roots.add(
-          Node.newBuilder()
-              .setValue(segmentValue)
-              .addAllChildren(insertIntoTrie(new ArrayList<>(), segments, index + 1))
-              .build());
-    }
-    return roots;
-  }
-
-  private Optional<Node> getNode(
-      List<Node> nodes, ai.traceable.localprocessing.config.service.v1.Value segmentValue) {
-    return nodes.stream().filter(node -> segmentValue.equals(node.getValue())).findFirst();
+  private ApiNamingPattern convertPath(
+      List<Segment> path, EnumMap<TrieNodeType, String> wildcardConfigMap) {
+    ApiNamingPattern.Builder apiNamingPatternBuilder = ApiNamingPattern.newBuilder();
+    path.forEach(
+        segment ->
+            apiNamingPatternBuilder.addSegments(
+                segmentConverter.convertSegment(segment, wildcardConfigMap)));
+    return apiNamingPatternBuilder.build();
   }
 
   private TrieNodeConfig buildTrieNodeConfig(HttpApiNamingConfigInfo httpApiNamingConfigInfo) {
-    ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig httpApiNamingConfig =
-        httpApiNamingConfigInfo.getHttpApiNamingConfig();
     return new TrieNodeConfig(
-        httpApiNamingConfig.getSegmentWhitelistRegexesList(),
-        getWildcardConfigList(
-            filterWildcardConfigs(
-                httpApiNamingConfig.getWildcardConfigsList(), WildcardType.WILDCARD_TYPE_ID)),
-        getWildcardConfigList(
-            filterWildcardConfigs(
-                httpApiNamingConfig.getWildcardConfigsList(),
-                WildcardType.WILDCARD_TYPE_LOW_CARDINALITY)),
-        getWildcardConfigList(
-            filterWildcardConfigs(
-                httpApiNamingConfig.getWildcardConfigsList(),
-                WildcardType.WILDCARD_TYPE_HIGH_CARDINALITY)),
-        new HashSet<>(httpApiNamingConfig.getExtensionsList()),
+        httpApiNamingConfigInfo.getSegmentWhitelistRegexes(),
+        List.of(httpApiNamingConfigInfo.getWildcardConfigMap().get(TrieNodeType.ID)),
+        List.of(httpApiNamingConfigInfo.getWildcardConfigMap().get(TrieNodeType.LOW_CARDINALITY)),
+        List.of(httpApiNamingConfigInfo.getWildcardConfigMap().get(TrieNodeType.HIGH_CARDINALITY)),
+        new HashSet<>(httpApiNamingConfigInfo.getExtensions()),
         httpApiNamingConfigInfo.getEmbryonicThreshold());
-  }
-
-  private Optional<List<String>> filterWildcardConfigs(
-      List<WildcardConfig> wildcardConfigs, WildcardType wildcardType) {
-    return wildcardConfigs.stream()
-        .filter(wildcardConfig -> wildcardConfig.getWildcardType().equals(wildcardType))
-        .map(WildcardConfig::getIdentificationRegexesList)
-        .map(List::copyOf)
-        .findAny();
-  }
-
-  private List<String> getWildcardConfigList(Optional<List<String>> protocolStringListOptional) {
-    if (protocolStringListOptional.isEmpty()) {
-      return Collections.emptyList();
-    }
-    return protocolStringListOptional.get();
   }
 }

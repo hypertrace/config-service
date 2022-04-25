@@ -29,14 +29,6 @@ public class TrainerConfigServiceConfigTest {
 
     assertFalse(apiNamingTrainingConfigs.get(0).getDisabled());
     assertEquals(
-        List.of(".css", ".html"),
-        apiNamingTrainingConfigs
-            .get(0)
-            .getApiNamingTrainingConfig()
-            .getUrlFilterConfig()
-            .getUrlRejectRegexPatterns()
-            .getValuesList());
-    assertEquals(
         List.of("v\\d+"),
         apiNamingTrainingConfigs
             .get(1)

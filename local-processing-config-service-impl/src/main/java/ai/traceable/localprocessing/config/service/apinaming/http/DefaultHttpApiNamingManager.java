@@ -53,6 +53,7 @@ class DefaultHttpApiNamingManager implements HttpApiNamingManager {
     Map<String, ServiceRequest> serviceIdServiceRequestMap = new HashMap<>();
     Optional<String> maybeEnvironment = getEnvironment(request);
     for (ServiceRequest serviceRequest : request.getServiceRequestsList()) {
+
       Optional<Entity> entityMaybe =
           entityFetcher.getEntity(
               requestContext, serviceRequest.getServiceName(), maybeEnvironment);
@@ -108,13 +109,13 @@ class DefaultHttpApiNamingManager implements HttpApiNamingManager {
                           httpServiceResponses.add(
                               HttpServiceResponse.newBuilder()
                                   .setServiceName(serviceRequest.getServiceName())
-                                  .setTrie(
-                                      httpApiNamingTrieManager.getTrie(
+                                  .setApiNamingPatterns(
+                                      httpApiNamingTrieManager.getApiNamingPatterns(
                                           requestContext,
                                           httpApiNamingConfigInfo,
                                           serviceId,
-                                          serviceRequest.hasTrieToken()
-                                              ? serviceRequest.getTrieToken()
+                                          serviceRequest.hasToken()
+                                              ? serviceRequest.getToken()
                                               : "t=0;v=0.0.0",
                                           localApiNamingConfigInfo.getVersion()))
                                   .setHttpConfig(httpApiNamingConfigInfo.getHttpApiNamingConfig())

@@ -1,23 +1,21 @@
 package ai.traceable.config.service.apinaming;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.anomaly.config.service.v1.StringList;
+import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ThresholdRegexConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrieModelTrainingConfig;
 import ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase;
-import ai.traceable.localprocessing.config.service.v1.DiffTrie;
-import ai.traceable.localprocessing.config.service.v1.FullTrie;
+import ai.traceable.localprocessing.config.service.v1.ApiNamingPattern;
+import ai.traceable.localprocessing.config.service.v1.DiffLog;
 import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelRequest;
 import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelResponse;
-import ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServiceGrpc;
-import ai.traceable.localprocessing.config.service.v1.Node;
+import ai.traceable.localprocessing.config.service.v1.Segment;
 import ai.traceable.localprocessing.config.service.v1.ServiceRequest;
-import ai.traceable.localprocessing.config.service.v1.TrieDiffLog;
-import ai.traceable.localprocessing.config.service.v1.TrieNodePath;
-import ai.traceable.localprocessing.config.service.v1.WildcardType;
+import ai.traceable.localprocessing.config.service.v1.Wildcard;
 import ai.traceable.platform.apientity.http.difflog.TrieDiffLogModel;
 import ai.traceable.platform.apientity.http.model.TrieModel;
 import ai.traceable.platform.apientity.http.model.TrieModelTrainerConfig;
@@ -29,7 +27,6 @@ import com.typesafe.config.ConfigFactory;
 import java.io.File;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
@@ -114,51 +111,136 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
     TrieModelTrainerConfig trieModelTrainerConfig = buildTrieModelTrainerConfig();
     for (int i = 0; i < 10; i++) {
       trieModel.insert(trieModelTrainerConfig, "GET/sports/cricket");
+      trieModel.insert(trieModelTrainerConfig, "GET/sports/hockey");
+      trieModel.insert(trieModelTrainerConfig, "GET/sports/tennis");
     }
+    trieModel.train(buildTrieModelTrainerConfig());
+
     trieModelFileSystemModelStore.storeModel(
         new ServiceScope(TENANT_ID, createdEntity.getEntityId()), trieModel);
     GetApiNamingModelResponse getApiNamingModelResponse = getApiNamingModel("1.2.3");
-    testHttpApiNamingConfig(
+
+    // Since there would be only one path GET/sports/*
+    assertEquals(
+        1,
         getApiNamingModelResponse
             .getHttpApiNamingResponse()
             .getHttpServiceResponses(0)
-            .getHttpConfig());
-    testFullTrie(
+            .getApiNamingPatterns()
+            .getFullPattern()
+            .getApiNamingPatternsCount());
+    assertEquals(
+        ApiNamingPattern.newBuilder()
+            .addSegments(Segment.newBuilder().setName("GET").build())
+            .addSegments(Segment.newBuilder().setName("sports").build())
+            .addSegments(
+                Segment.newBuilder()
+                    .setWildcard(
+                        Wildcard.newBuilder()
+                            .setIdentificationRegex("")
+                            .setReplacementPattern("*")
+                            .build())
+                    .build())
+            .build(),
         getApiNamingModelResponse
             .getHttpApiNamingResponse()
             .getHttpServiceResponses(0)
-            .getTrie()
-            .getFullTrie());
+            .getApiNamingPatterns()
+            .getFullPattern()
+            .getApiNamingPatterns(0));
 
     TrieModel trieModel1 = new TrieModel();
     for (int i = 0; i < 10; i++) {
-      trieModel1.insert(trieModelTrainerConfig, "GET/sports/tennis");
+      trieModel1.insert(trieModelTrainerConfig, "GET/fruits/apple");
+      trieModel1.insert(trieModelTrainerConfig, "GET/fruits/mango");
+      trieModel1.insert(trieModelTrainerConfig, "GET/fruits/peach");
     }
-    TrieDiffLogModel trieDiffLogModel1 = new TrieDiffLogModel();
-    trieDiffLogModel1.computeDiffLog(
-        trieModel, trieModel1, buildTrieModelTrainerConfig().getTrieNodeConfig());
-    DateScope dateScope1 =
+    trieModel1.train(buildTrieModelTrainerConfig());
+
+    TrieDiffLogModel trieDiffLogModel = new TrieDiffLogModel();
+    trieDiffLogModel.computeDiffLog(
+        trieModel.getNonEmbryonicWildcardPaths(buildTrieModelTrainerConfig().getTrieNodeConfig()),
+        trieModel1.getNonEmbryonicWildcardPaths(buildTrieModelTrainerConfig().getTrieNodeConfig()));
+    long timestamp = System.currentTimeMillis() - 10;
+    DateScope dateScope =
         new DateScope(
-            System.currentTimeMillis() - 10,
+            timestamp,
             new ServiceScope(TENANT_ID, createdEntity.getEntityId()),
             DATE_TIME_FORMATTER);
-    trieDiffLogModelFileSystemModelStore.storeModel(dateScope1, trieDiffLogModel1);
-    getApiNamingModelResponse = getApiNamingModel("1.2.3");
-    testDiffTrie(
-        getApiNamingModelResponse
+    trieDiffLogModelFileSystemModelStore.storeModel(dateScope, trieDiffLogModel);
+
+    GetApiNamingModelResponse getApiNamingModelResponse1 = getApiNamingModel("1.2.3");
+    assertEquals(
+        2,
+        getApiNamingModelResponse1
             .getHttpApiNamingResponse()
             .getHttpServiceResponses(0)
-            .getTrie()
-            .getDiffTrie());
+            .getApiNamingPatterns()
+            .getDiffPattern()
+            .getDiffLogsCount());
+
+    assertEquals(
+        DiffLog.newBuilder()
+            .setApiNamingPatternAddition(
+                ApiNamingPattern.newBuilder()
+                    .addSegments(Segment.newBuilder().setName("GET").build())
+                    .addSegments(Segment.newBuilder().setName("fruits").build())
+                    .addSegments(
+                        Segment.newBuilder()
+                            .setWildcard(
+                                Wildcard.newBuilder()
+                                    .setIdentificationRegex("")
+                                    .setReplacementPattern("*")
+                                    .build())
+                            .build()))
+            .build(),
+        getApiNamingModelResponse1
+            .getHttpApiNamingResponse()
+            .getHttpServiceResponses(0)
+            .getApiNamingPatterns()
+            .getDiffPattern()
+            .getDiffLogs(0));
+
+    assertEquals(
+        DiffLog.newBuilder()
+            .setApiNamingPatternDeletion(
+                ApiNamingPattern.newBuilder()
+                    .addSegments(Segment.newBuilder().setName("GET").build())
+                    .addSegments(Segment.newBuilder().setName("sports").build())
+                    .addSegments(
+                        Segment.newBuilder()
+                            .setWildcard(
+                                Wildcard.newBuilder()
+                                    .setIdentificationRegex("")
+                                    .setReplacementPattern("*")
+                                    .build())
+                            .build()))
+            .build(),
+        getApiNamingModelResponse1
+            .getHttpApiNamingResponse()
+            .getHttpServiceResponses(0)
+            .getApiNamingPatterns()
+            .getDiffPattern()
+            .getDiffLogs(1));
 
     // Forced full trie in-case the version is changed
-    getApiNamingModelResponse = getApiNamingModel("1.0.0");
-    testFullTrie(
+    var getApiNamingModelResponse2 = getApiNamingModel("0.1.2");
+    assertEquals(
+        0,
+        getApiNamingModelResponse2
+            .getHttpApiNamingResponse()
+            .getHttpServiceResponses(0)
+            .getApiNamingPatterns()
+            .getDiffPattern()
+            .getDiffLogsCount());
+    assertEquals(
+        1,
         getApiNamingModelResponse
             .getHttpApiNamingResponse()
             .getHttpServiceResponses(0)
-            .getTrie()
-            .getFullTrie());
+            .getApiNamingPatterns()
+            .getFullPattern()
+            .getApiNamingPatternsCount());
 
     deleteDirectory(new File(BASE_DIR));
     deleteDirectory(new File(DIFF_LOGS_BASE_DIR));
@@ -170,118 +252,11 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
             .addServiceRequests(
                 ServiceRequest.newBuilder()
                     .setServiceName("serviceName")
-                    .setTrieToken("t=" + (System.currentTimeMillis() - 1000) + ";v=" + version)
+                    .setToken("t=" + (System.currentTimeMillis() - 10000) + ";v=" + version)
                     .build())
             .build();
     return RequestContext.forTenantId(TENANT_ID)
         .call(() -> localProcessingConfigStub.getApiNamingModel(request));
-  }
-
-  private static void testDiffTrie(DiffTrie diffTrie) {
-    assertTrue(
-        diffTrie
-            .getTrieDiffLogsList()
-            .contains(
-                TrieDiffLog.newBuilder()
-                    .setNodeRemoval(
-                        TrieNodePath.newBuilder()
-                            .addAllValues(
-                                List.of(
-                                    ai.traceable.localprocessing.config.service.v1.Value
-                                        .newBuilder()
-                                        .setName("3")
-                                        .build(),
-                                    ai.traceable.localprocessing.config.service.v1.Value
-                                        .newBuilder()
-                                        .setName("GET")
-                                        .build(),
-                                    ai.traceable.localprocessing.config.service.v1.Value
-                                        .newBuilder()
-                                        .setName("sports")
-                                        .build(),
-                                    ai.traceable.localprocessing.config.service.v1.Value
-                                        .newBuilder()
-                                        .setName("cricket")
-                                        .build()))
-                            .build())
-                    .build()));
-    assertTrue(
-        diffTrie
-            .getTrieDiffLogsList()
-            .contains(
-                TrieDiffLog.newBuilder()
-                    .setPathAddition(
-                        TrieNodePath.newBuilder()
-                            .addAllValues(
-                                List.of(
-                                    ai.traceable.localprocessing.config.service.v1.Value
-                                        .newBuilder()
-                                        .setName("3")
-                                        .build(),
-                                    ai.traceable.localprocessing.config.service.v1.Value
-                                        .newBuilder()
-                                        .setName("GET")
-                                        .build(),
-                                    ai.traceable.localprocessing.config.service.v1.Value
-                                        .newBuilder()
-                                        .setName("sports")
-                                        .build(),
-                                    ai.traceable.localprocessing.config.service.v1.Value
-                                        .newBuilder()
-                                        .setName("tennis")
-                                        .build()))
-                            .build())
-                    .build()));
-  }
-
-  private static void testFullTrie(FullTrie fullTrie) {
-    Node node = fullTrie.getRoots(0);
-    assertEquals("3", node.getValue().getName());
-    node = node.getChildren(0);
-    assertEquals("GET", node.getValue().getName());
-    node = node.getChildren(0);
-    assertEquals("sports", node.getValue().getName());
-    node = node.getChildren(0);
-    assertEquals("cricket", node.getValue().getName());
-  }
-
-  private static void testHttpApiNamingConfig(HttpApiNamingConfig httpApiNamingConfig) {
-    assertEquals(List.of("v\\d+"), httpApiNamingConfig.getSegmentWhitelistRegexesList());
-    assertEquals(
-        List.of(
-            "(\\{){0,1}[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}(\\}){0,1}",
-            "\\d+"),
-        httpApiNamingConfig.getWildcardConfigsList().stream()
-            .filter(
-                wildcardConfig ->
-                    wildcardConfig.getWildcardType().equals(WildcardType.WILDCARD_TYPE_ID))
-            .findAny()
-            .get()
-            .getIdentificationRegexesList());
-
-    assertEquals(
-        List.of(),
-        httpApiNamingConfig.getWildcardConfigsList().stream()
-            .filter(
-                wildcardConfig ->
-                    wildcardConfig
-                        .getWildcardType()
-                        .equals(WildcardType.WILDCARD_TYPE_LOW_CARDINALITY))
-            .findAny()
-            .get()
-            .getIdentificationRegexesList());
-    assertEquals(
-        List.of("[a-zA-Z]*?([-_+]?[a-zA-Z]+)+[-_+]?"),
-        httpApiNamingConfig.getWildcardConfigsList().stream()
-            .filter(
-                wildcardConfig ->
-                    wildcardConfig
-                        .getWildcardType()
-                        .equals(WildcardType.WILDCARD_TYPE_HIGH_CARDINALITY))
-            .findAny()
-            .get()
-            .getIdentificationRegexesList());
-    assertEquals(List.of("json", "xml"), httpApiNamingConfig.getExtensionsList());
   }
 
   private static Config buildConfig() {
@@ -302,30 +277,37 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
 
   private static TrieModelTrainerConfig buildTrieModelTrainerConfig() {
     return new TrieModelTrainerConfig(
-        TrieModelTrainingConfig.newBuilder()
-            .setIds(
-                ThresholdRegexConfig.newBuilder()
-                    .setThreshold(1)
-                    .setRegexList(StringList.newBuilder().addValues("a").build())
+        TrainingConfig.newBuilder()
+            .setDisabled(false)
+            .setApiNamingTrainingConfig(
+                ApiNamingTrainingConfig.newBuilder()
+                    .setTrieModelTrainingConfig(
+                        TrieModelTrainingConfig.newBuilder()
+                            .setIds(
+                                ThresholdRegexConfig.newBuilder()
+                                    .setThreshold(10)
+                                    .setRegexList(StringList.newBuilder().addValues("a*").build())
+                                    .build())
+                            .setLowCardinality(
+                                ThresholdRegexConfig.newBuilder()
+                                    .setThreshold(10)
+                                    .setRegexList(StringList.newBuilder().addValues("b*").build())
+                                    .build())
+                            .setHighCardinality(
+                                ThresholdRegexConfig.newBuilder()
+                                    .setThreshold(10)
+                                    .setRegexList(StringList.newBuilder().addValues("c*").build())
+                                    .build())
+                            .setMediumCardinality(
+                                ThresholdRegexConfig.newBuilder()
+                                    .setThreshold(3)
+                                    .setRegexList(StringList.newBuilder().addValues("d*").build())
+                                    .build())
+                            .setExtensions(StringList.newBuilder().addValues("e").build())
+                            .setAllowRegexList(StringList.newBuilder().addValues("f").build())
+                            .setEmbryonicThreshold(10)
+                            .build())
                     .build())
-            .setLowCardinality(
-                ThresholdRegexConfig.newBuilder()
-                    .setThreshold(1)
-                    .setRegexList(StringList.newBuilder().addValues("b").build())
-                    .build())
-            .setHighCardinality(
-                ThresholdRegexConfig.newBuilder()
-                    .setThreshold(1)
-                    .setRegexList(StringList.newBuilder().addValues("c").build())
-                    .build())
-            .setMediumCardinality(
-                ThresholdRegexConfig.newBuilder()
-                    .setThreshold(1)
-                    .setRegexList(StringList.newBuilder().addValues("d").build())
-                    .build())
-            .setExtensions(StringList.newBuilder().addValues("e").build())
-            .setAllowRegexList(StringList.newBuilder().addValues("f").build())
-            .setEmbryonicThreshold(10)
             .build(),
         ConfigFactory.parseMap(Map.of()));
   }

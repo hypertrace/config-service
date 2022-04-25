@@ -8,17 +8,24 @@ import ai.traceable.anomaly.config.service.v1.trainer.TrieModelTrainingConfig;
 import ai.traceable.localprocessing.config.service.apinaming.http.utils.HttpApiNamingConfigInfo;
 import ai.traceable.localprocessing.config.service.config.http.HttpApiNamingConfig;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
+import ai.traceable.localprocessing.config.service.v1.ApiNamingPattern;
 import ai.traceable.localprocessing.config.service.v1.HttpApiNamingCustomRule;
-import ai.traceable.localprocessing.config.service.v1.WildcardConfig;
-import ai.traceable.localprocessing.config.service.v1.WildcardType;
+import ai.traceable.localprocessing.config.service.v1.Segment;
+import ai.traceable.localprocessing.config.service.v1.Wildcard;
+import ai.traceable.platform.apientity.TrieNodeType;
 import com.google.inject.Inject;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRule;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
 import org.hypertrace.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 
+@Slf4j
 public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigManager {
 
   private final UuidGenerator uuidGenerator;
@@ -44,59 +51,63 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
             .map(TrieModelTrainingConfig::getEmbryonicThreshold)
             .orElseGet(httpApiNamingConfig::getDefaultEmbryonicThreshold);
 
-    maybeTrieModelTrainingConfig.ifPresent(
-        trieModelTrainingConfig ->
-            httpApiNamingConfigBuilder
-                .addAllExtensions(trieModelTrainingConfig.getExtensions().getValuesList())
-                .addAllSegmentWhitelistRegexes(
-                    trieModelTrainingConfig.getAllowRegexList().getValuesList())
-                .addAllWildcardConfigs(convertWildcardConfigs(trieModelTrainingConfig)));
-
+    List<String> segmentWhitelistRegexes = new ArrayList<>();
+    List<String> extensions = new ArrayList<>();
+    EnumMap<TrieNodeType, String> wildcardConfigsMap = new EnumMap<>(TrieNodeType.class);
+    if (maybeTrieModelTrainingConfig.isPresent()) {
+      TrieModelTrainingConfig trieModelTrainingConfig = maybeTrieModelTrainingConfig.get();
+      extensions = trieModelTrainingConfig.getExtensions().getValuesList();
+      segmentWhitelistRegexes = trieModelTrainingConfig.getAllowRegexList().getValuesList();
+      wildcardConfigsMap = buildWildcardConfigMap(trieModelTrainingConfig);
+    }
+    httpApiNamingConfigBuilder.addAllSegmentWhitelistRegexes(segmentWhitelistRegexes);
     httpApiNamingConfigBuilder.addAllApiNamingCustomRules(getCustomRulesList(apiNamingRules));
-
     getCustomRulesListConfig(trainingConfigs)
         .ifPresent(
             customRulesListConfig ->
                 httpApiNamingConfigBuilder.addAllApiNamingCustomRules(
-                    convertCustomRules(customRulesListConfig)));
+                    convertCustomRule(customRulesListConfig)));
 
     httpApiNamingConfigBuilder.addAllFallbackWildcardRegexes(
         httpApiNamingConfig.getFallbackRegexes());
     String hash = uuidGenerator.generateId(httpApiNamingConfigBuilder.build());
     if (!hash.equals(configHash)) {
       return new HttpApiNamingConfigInfo(
-          httpApiNamingConfigBuilder.setHash(hash).build(), embryonicThreshold);
+          httpApiNamingConfigBuilder.setHash(hash).build(),
+          embryonicThreshold,
+          wildcardConfigsMap,
+          segmentWhitelistRegexes,
+          extensions);
     }
     return new HttpApiNamingConfigInfo(
         ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig.newBuilder()
             .setHash(hash)
             .build(),
-        embryonicThreshold);
+        embryonicThreshold,
+        wildcardConfigsMap,
+        segmentWhitelistRegexes,
+        extensions);
   }
 
-  private List<WildcardConfig> convertWildcardConfigs(
+  private EnumMap<TrieNodeType, String> buildWildcardConfigMap(
       TrieModelTrainingConfig trieModelTrainingConfig) {
-    // Ordering of wildcard configs decides the priority
-    // ID > LOW_CARDINALITY > HIGH_CARDINALITY > MEDIUM_CARDINALITY
-    return List.of(
-        buildWildcardConfig(WildcardType.WILDCARD_TYPE_ID, trieModelTrainingConfig.getIds()),
-        buildWildcardConfig(
-            WildcardType.WILDCARD_TYPE_LOW_CARDINALITY,
-            trieModelTrainingConfig.getLowCardinality()),
-        buildWildcardConfig(
-            WildcardType.WILDCARD_TYPE_HIGH_CARDINALITY,
-            trieModelTrainingConfig.getHighCardinality()),
-        buildWildcardConfig(
-            WildcardType.WILDCARD_TYPE_MEDIUM_CARDINALITY,
-            trieModelTrainingConfig.getMediumCardinality()));
+    EnumMap<TrieNodeType, String> wildcardConfigMap = new EnumMap<>(TrieNodeType.class);
+    wildcardConfigMap.put(
+        TrieNodeType.ID, buildWildcardIdentificationRegex(trieModelTrainingConfig.getIds()));
+    wildcardConfigMap.put(
+        TrieNodeType.LOW_CARDINALITY,
+        buildWildcardIdentificationRegex(trieModelTrainingConfig.getLowCardinality()));
+    wildcardConfigMap.put(
+        TrieNodeType.MEDIUM_CARDINALITY,
+        buildWildcardIdentificationRegex(trieModelTrainingConfig.getMediumCardinality()));
+    wildcardConfigMap.put(
+        TrieNodeType.HIGH_CARDINALITY,
+        buildWildcardIdentificationRegex(trieModelTrainingConfig.getHighCardinality()));
+    return wildcardConfigMap;
   }
 
-  private WildcardConfig buildWildcardConfig(
-      WildcardType wildcardType, ThresholdRegexConfig thresholdRegexConfig) {
-    return WildcardConfig.newBuilder()
-        .setWildcardType(wildcardType)
-        .addAllIdentificationRegexes(thresholdRegexConfig.getRegexList().getValuesList())
-        .build();
+  private String buildWildcardIdentificationRegex(ThresholdRegexConfig thresholdRegexConfig) {
+    return String.join("|", thresholdRegexConfig.getRegexList().getValuesList());
   }
 
   // TODO: get rid of below two methods once done with migration
@@ -110,38 +121,77 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
         .findAny();
   }
 
-  private List<HttpApiNamingCustomRule> convertCustomRules(
+  private List<HttpApiNamingCustomRule> convertCustomRule(
       CustomRulesListConfig customRulesListConfig) {
     // TODO: Order the rules, once the priority is available from training config service APIs
     return customRulesListConfig.getCustomRulesConfigList().stream()
         .map(
-            customRuleConfig ->
-                HttpApiNamingCustomRule.newBuilder()
-                    .setRegexPattern(customRuleConfig.getRegex())
-                    .setUrlPattern(customRuleConfig.getUrlPattern())
-                    .build())
+            customRuleConfig -> {
+              String[] regexes = customRuleConfig.getRegex().split("/");
+              String[] values = customRuleConfig.getUrlPattern().split("/");
+              List<Segment> segments = new ArrayList<>();
+              for (int i = 0; i < regexes.length && i < values.length; i++) {
+                String regex = regexes[i];
+                String value = values[i];
+                if (regex.equals(value)) {
+                  segments.add(Segment.newBuilder().setName(regex).build());
+                } else {
+                  segments.add(
+                      Segment.newBuilder()
+                          .setWildcard(
+                              Wildcard.newBuilder()
+                                  .setIdentificationRegex(regex)
+                                  .setReplacementPattern(value)
+                                  .build())
+                          .build());
+                }
+              }
+              return HttpApiNamingCustomRule.newBuilder()
+                  .setApiNamingPattern(
+                      ApiNamingPattern.newBuilder().addAllSegments(segments).build())
+                  .build();
+            })
         .collect(Collectors.toUnmodifiableList());
   }
 
   private List<HttpApiNamingCustomRule> getCustomRulesList(List<ApiNamingRule> apiNamingRules) {
     // TODO: Order the rules, once the priority is available from training config service APIs
     return apiNamingRules.stream()
-        .map(apiNamingRule -> convertCustomRules(apiNamingRule.getRuleInfo().getRuleConfig()))
+        .map(
+            apiNamingRule ->
+                convertCustomRule(
+                    apiNamingRule.getId(), apiNamingRule.getRuleInfo().getRuleConfig()))
         .collect(Collectors.toUnmodifiableList());
   }
 
-  private HttpApiNamingCustomRule convertCustomRules(ApiNamingRuleConfig apiNamingRuleConfig) {
-    String urlPattern = "";
-    String regexPattern = "";
+  private HttpApiNamingCustomRule convertCustomRule(
+      String customRuleId, ApiNamingRuleConfig apiNamingRuleConfig) {
+    List<Segment> segmentList = new ArrayList<>();
     if (apiNamingRuleConfig.hasSegmentMatchingBasedConfig()) {
       SegmentMatchingBasedConfig segmentMatchingBasedConfig =
           apiNamingRuleConfig.getSegmentMatchingBasedConfig();
-      urlPattern = String.join("/", segmentMatchingBasedConfig.getRegexesList());
-      regexPattern = String.join("/", segmentMatchingBasedConfig.getValuesList());
+      Iterator<String> regexItr = segmentMatchingBasedConfig.getRegexesList().iterator();
+      Iterator<String> valueItr = segmentMatchingBasedConfig.getValuesList().iterator();
+      while (regexItr.hasNext() && valueItr.hasNext()) {
+        String regex = regexItr.next();
+        String value = valueItr.next();
+        if (regex.equals(value)) {
+          segmentList.add(Segment.newBuilder().setName(regex).build());
+        } else {
+          segmentList.add(
+              Segment.newBuilder()
+                  .setWildcard(
+                      Wildcard.newBuilder()
+                          .setIdentificationRegex(regex)
+                          .setReplacementPattern(value)
+                          .build())
+                  .build());
+        }
+      }
     }
     return HttpApiNamingCustomRule.newBuilder()
-        .setUrlPattern(urlPattern)
-        .setRegexPattern(regexPattern)
+        .setId(customRuleId)
+        .setApiNamingPattern(ApiNamingPattern.newBuilder().addAllSegments(segmentList).build())
         .build();
   }
 

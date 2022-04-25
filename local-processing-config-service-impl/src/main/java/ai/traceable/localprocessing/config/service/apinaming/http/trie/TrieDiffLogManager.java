@@ -4,10 +4,13 @@ import static java.util.function.Predicate.not;
 
 import ai.traceable.localprocessing.config.service.apinaming.http.utils.SegmentConverter;
 import ai.traceable.localprocessing.config.service.config.http.HttpApiNamingConfig;
-import ai.traceable.localprocessing.config.service.v1.TrieDiffLog;
-import ai.traceable.localprocessing.config.service.v1.TrieNodePath;
+import ai.traceable.localprocessing.config.service.v1.ApiNamingPattern;
+import ai.traceable.localprocessing.config.service.v1.DiffLog;
+import ai.traceable.localprocessing.config.service.v1.Segment;
 import ai.traceable.platform.apientity.Addition;
 import ai.traceable.platform.apientity.Deletion;
+import ai.traceable.platform.apientity.TrieDiffLog;
+import ai.traceable.platform.apientity.TrieNodeType;
 import ai.traceable.platform.apientity.http.difflog.TrieDiffLogModel;
 import ai.traceable.platform.model.PersistedModel;
 import ai.traceable.platform.model.filter.ModelFilter;
@@ -29,6 +32,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -127,10 +131,14 @@ public class TrieDiffLogManager {
             new DiffLogIdentifier(diffLogDirPath, buildModelFilter(agentTimestampMillis))));
   }
 
-  public List<TrieDiffLog> getAllTrieDiffLogs(
-      RequestContext requestContext, ModelScope scope, long agentTimestampMillis)
+  public List<DiffLog> getAllTrieDiffLogs(
+      RequestContext requestContext,
+      ModelScope scope,
+      long agentTimestampMillis,
+      Map<TrieNodeType, String> wildcardConfigMap)
       throws ExecutionException {
-    return getAllTrieDiffLogs(getTrieDiffLogModels(requestContext, scope, agentTimestampMillis));
+    return getAllTrieDiffLogs(
+        getTrieDiffLogModels(requestContext, scope, agentTimestampMillis), wildcardConfigMap);
   }
 
   public long getLatestDiffLogTimestamp(
@@ -169,60 +177,67 @@ public class TrieDiffLogManager {
     }
   }
 
-  private List<TrieDiffLog> getAllTrieDiffLogs(
-      List<PersistedModel<TrieDiffLogModel>> persistedModels) {
+  private List<DiffLog> getAllTrieDiffLogs(
+      List<PersistedModel<TrieDiffLogModel>> persistedModels,
+      Map<TrieNodeType, String> wildcardConfigMap) {
     return persistedModels.stream()
         .map(PersistedModel::getModel)
-        .map(trieDiffLogModel -> getTrieDiffLogs(trieDiffLogModel.getTrieDiffLog()))
+        .map(
+            trieDiffLogModel ->
+                getTrieDiffLogs(trieDiffLogModel.getTrieDiffLog(), wildcardConfigMap))
         .flatMap(List::stream)
         .collect(Collectors.toUnmodifiableList());
   }
 
-  private List<TrieDiffLog> getTrieDiffLogs(
-      ai.traceable.platform.apientity.TrieDiffLog trieDiffLog) {
-    List<TrieDiffLog> pathAdditionTrieDiffLogs =
-        convertPathAdditions(trieDiffLog.getPathAdditions());
-    List<TrieDiffLog> nodeDeletionTrieDiffLogs =
-        convertNodeDeletions(trieDiffLog.getNodeDeletions());
+  private List<DiffLog> getTrieDiffLogs(
+      TrieDiffLog trieDiffLog, Map<TrieNodeType, String> wildcardConfigMap) {
+    List<DiffLog> pathAdditionTrieDiffLogs =
+        convertPathAdditions(trieDiffLog.getPathAdditions(), wildcardConfigMap);
+    List<DiffLog> nodeDeletionTrieDiffLogs =
+        convertNodeDeletions(trieDiffLog.getNodeDeletions(), wildcardConfigMap);
     return Streams.concat(pathAdditionTrieDiffLogs.stream(), nodeDeletionTrieDiffLogs.stream())
         .collect(Collectors.toUnmodifiableList());
   }
 
-  private List<TrieDiffLog> convertPathAdditions(List<Addition> additions) {
+  private List<DiffLog> convertPathAdditions(
+      List<Addition> additions, Map<TrieNodeType, String> wildcardConfigMap) {
     return additions.stream()
-        .map(this::convertAdditionToValues)
+        .map(addition -> convertAdditionToValues(addition, wildcardConfigMap))
         .filter(not(List::isEmpty))
         .map(
-            values ->
-                TrieDiffLog.newBuilder()
-                    .setPathAddition(TrieNodePath.newBuilder().addAllValues(values).build())
+            segments ->
+                DiffLog.newBuilder()
+                    .setApiNamingPatternAddition(
+                        ApiNamingPattern.newBuilder().addAllSegments(segments).build())
                     .build())
         .collect(Collectors.toUnmodifiableList());
   }
 
-  private List<TrieDiffLog> convertNodeDeletions(List<Deletion> deletions) {
+  private List<DiffLog> convertNodeDeletions(
+      List<Deletion> deletions, Map<TrieNodeType, String> wildcardConfigMap) {
     return deletions.stream()
-        .map(this::convertDeletionToValues)
+        .map(deletion -> convertDeletionToValues(deletion, wildcardConfigMap))
         .filter(not(List::isEmpty))
         .map(
-            values ->
-                TrieDiffLog.newBuilder()
-                    .setNodeRemoval(TrieNodePath.newBuilder().addAllValues(values).build())
+            segments ->
+                DiffLog.newBuilder()
+                    .setApiNamingPatternDeletion(
+                        ApiNamingPattern.newBuilder().addAllSegments(segments).build())
                     .build())
         .collect(Collectors.toUnmodifiableList());
   }
 
-  private List<ai.traceable.localprocessing.config.service.v1.Value> convertAdditionToValues(
-      Addition addition) {
+  private List<Segment> convertAdditionToValues(
+      Addition addition, Map<TrieNodeType, String> wildcardConfigMap) {
     return addition.getSegments().stream()
-        .map(segmentConverter::convertSegmentToValue)
+        .map(segment -> segmentConverter.convertSegment(segment, wildcardConfigMap))
         .collect(Collectors.toUnmodifiableList());
   }
 
-  private List<ai.traceable.localprocessing.config.service.v1.Value> convertDeletionToValues(
-      Deletion deletion) {
+  private List<Segment> convertDeletionToValues(
+      Deletion deletion, Map<TrieNodeType, String> wildcardConfigMap) {
     return deletion.getSegments().stream()
-        .map(segmentConverter::convertSegmentToValue)
+        .map(segment -> segmentConverter.convertSegment(segment, wildcardConfigMap))
         .collect(Collectors.toUnmodifiableList());
   }
 

@@ -12,7 +12,7 @@ message GetApiNamingModelRequest {
 
 message ServiceRequest {
   string service_name = 1;
-  optional string trie_token = 2;
+  optional string token = 2;
   optional string config_hash = 3;
 }
 
@@ -26,77 +26,58 @@ message HttpApiNamingModelResponse {
 
 message HttpServiceResponse {
   string service_name = 1;
-  Trie trie = 2;
+  ApiNamingPatterns api_naming_patterns = 2;
   HttpApiNamingConfig http_config = 3;
 }
 
-message Trie {
-  oneof trie {
-    FullTrie full_trie = 1;
-    DiffTrie diff_trie = 2;
+message ApiNamingPatterns {
+  oneof api_naming_patterns {
+    FullPattern full_pattern = 1;
+    DiffPattern diff_pattern = 2;
   }
   string token = 3;
 }
 
-message FullTrie {
-  repeated Node roots = 1;
+message FullPattern {
+  repeated ApiNamingPattern api_naming_patterns = 1;
 }
 
-message Node {
-  Value value = 1;
-  repeated Node children = 2;
+message DiffPattern {
+  repeated DiffLog diff_logs = 1;
 }
 
-message DiffTrie {
-  repeated TrieDiffLog trie_diff_logs = 1;
-}
-
-message TrieDiffLog {
+message DiffLog {
   oneof change {
-    TrieNodePath path_addition = 1;
-    TrieNodePath node_removal = 2;
+    ApiNamingPattern api_naming_pattern_addition = 1;
+    ApiNamingPattern api_naming_pattern_deletion = 2;
   }
 }
 
-message TrieNodePath {
-  repeated Value values = 1;
+message ApiNamingPattern {
+  repeated Segment segments = 1;
 }
 
-message Value {
-  oneof segment {
+message Segment {
+  oneof value {
     string name = 1;
     Wildcard wildcard = 2;
   }
 }
 
-message Wildcard {
-  WildcardType wildcard_type = 1;
-  optional string extension = 2;
-}
-
 message HttpApiNamingConfig {
   repeated HttpApiNamingCustomRule api_naming_custom_rules = 1;
-  repeated WildcardConfig wildcard_configs = 2;
-  repeated string extensions = 3;
-  repeated string segment_whitelist_regexes = 4;
-  repeated string fallback_wildcard_regexes = 5;
-  string hash = 6;
+  repeated string segment_whitelist_regexes = 2;
+  repeated string fallback_wildcard_regexes = 3;
+  string hash = 4;
 }
 
+message Wildcard {
+  string identification_regex = 1;
+  string replacement_pattern = 2;
+}
+
+// Set of segments includes HTTP method
 message HttpApiNamingCustomRule {
-  string regex_pattern = 1;
-  string url_pattern = 2;
-}
-
-message WildcardConfig {
-  WildcardType wildcard_type = 1;
-  repeated string identification_regexes = 2;
-}
-
-enum WildcardType {
-  WILDCARD_TYPE_UNSPECIFIED = 0;
-  WILDCARD_TYPE_ID = 1;
-  WILDCARD_TYPE_LOW_CARDINALITY = 2;
-  WILDCARD_TYPE_MEDIUM_CARDINALITY = 3;
-  WILDCARD_TYPE_HIGH_CARDINALITY = 4;
+  string id = 1;
+  ApiNamingPattern api_naming_pattern = 2;
 }

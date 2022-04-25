@@ -2,10 +2,10 @@ package ai.traceable.localprocessing.config.service.apinaming.http.trie;
 
 import ai.traceable.localprocessing.config.service.apinaming.http.utils.HttpApiNamingConfigInfo;
 import ai.traceable.localprocessing.config.service.config.http.HttpApiNamingConfig;
-import ai.traceable.localprocessing.config.service.v1.DiffTrie;
-import ai.traceable.localprocessing.config.service.v1.FullTrie;
-import ai.traceable.localprocessing.config.service.v1.Trie;
-import ai.traceable.localprocessing.config.service.v1.TrieDiffLog;
+import ai.traceable.localprocessing.config.service.v1.ApiNamingPatterns;
+import ai.traceable.localprocessing.config.service.v1.DiffLog;
+import ai.traceable.localprocessing.config.service.v1.DiffPattern;
+import ai.traceable.localprocessing.config.service.v1.FullPattern;
 import ai.traceable.platform.model.store.ServiceScope;
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -46,7 +46,7 @@ public class DefaultHttpApiNamingTrieManager implements HttpApiNamingTrieManager
    *   <li>If version of platform trie is not equal to agent version full trie is sent
    * </ul>
    */
-  public Trie getTrie(
+  public ApiNamingPatterns getApiNamingPatterns(
       RequestContext requestContext,
       HttpApiNamingConfigInfo httpApiNamingConfigInfo,
       String serviceId,
@@ -55,7 +55,7 @@ public class DefaultHttpApiNamingTrieManager implements HttpApiNamingTrieManager
       throws IOException, ExecutionException {
     String tenantId = requestContext.getTenantId().orElseThrow();
     ServiceScope serviceScope = new ServiceScope(tenantId, serviceId);
-    List<TrieDiffLog> trieDiffLogs = Collections.emptyList();
+    List<DiffLog> diffLogs = Collections.emptyList();
     long trieModelTimestampMillis = fullTrieManager.getModelTimestamp(serviceScope);
     long agentTimestampMillis = getAgentTimestampMillis(trieToken, serviceId, requestContext);
     boolean reloadFullTrie =
@@ -65,13 +65,17 @@ public class DefaultHttpApiNamingTrieManager implements HttpApiNamingTrieManager
         && agentTimestampMillis != 0
         && trieModelTimestampMillis - agentTimestampMillis
             <= httpApiNamingConfig.getDiffLogsRetentionPeriod()) {
-      trieDiffLogs =
-          trieDiffLogManager.getAllTrieDiffLogs(requestContext, serviceScope, agentTimestampMillis);
+      diffLogs =
+          trieDiffLogManager.getAllTrieDiffLogs(
+              requestContext,
+              serviceScope,
+              agentTimestampMillis,
+              httpApiNamingConfigInfo.getWildcardConfigMap());
     }
 
-    if (!trieDiffLogs.isEmpty()) {
-      return Trie.newBuilder()
-          .setDiffTrie(getDiffTrie(trieDiffLogs))
+    if (!diffLogs.isEmpty()) {
+      return ApiNamingPatterns.newBuilder()
+          .setDiffPattern(getDiffPatterns(diffLogs))
           .setToken(
               "t="
                   + trieDiffLogManager.getLatestDiffLogTimestamp(
@@ -81,27 +85,27 @@ public class DefaultHttpApiNamingTrieManager implements HttpApiNamingTrieManager
           .build();
     } else {
       if (agentTimestampMillis < trieModelTimestampMillis) {
-        Optional<FullTrie> fullTrieMaybe =
-            fullTrieManager.getFullTrie(requestContext, serviceScope, httpApiNamingConfigInfo);
-        if (fullTrieMaybe.isEmpty()) {
+        Optional<FullPattern> fullPatternMaybe =
+            fullTrieManager.getFullPattern(requestContext, serviceScope, httpApiNamingConfigInfo);
+        if (fullPatternMaybe.isEmpty()) {
           log.error(
               "Could not fetch full trie for request context:{}, service scope:{}",
               requestContext,
               serviceId);
-          return Trie.newBuilder().setToken(trieToken).build();
+          return ApiNamingPatterns.newBuilder().setToken(trieToken).build();
         }
-        return Trie.newBuilder()
-            .setFullTrie(fullTrieMaybe.get())
+        return ApiNamingPatterns.newBuilder()
+            .setFullPattern(fullPatternMaybe.get())
             .setToken("t=" + trieModelTimestampMillis + ";v=" + platformTrieVersion)
             .build();
       } else {
-        return Trie.newBuilder().setToken(trieToken).build();
+        return ApiNamingPatterns.newBuilder().setToken(trieToken).build();
       }
     }
   }
 
-  private DiffTrie getDiffTrie(List<TrieDiffLog> allTrieDiffLogs) {
-    return DiffTrie.newBuilder().addAllTrieDiffLogs(allTrieDiffLogs).build();
+  private DiffPattern getDiffPatterns(List<DiffLog> allDiffLogs) {
+    return DiffPattern.newBuilder().addAllDiffLogs(allDiffLogs).build();
   }
 
   private long getAgentTimestampMillis(
