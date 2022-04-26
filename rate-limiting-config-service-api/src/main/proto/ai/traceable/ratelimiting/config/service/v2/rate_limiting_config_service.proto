@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.ratelimiting.config.service.v2;
+
+import "ai/traceable/ratelimiting/config/service/v2/rate_limiting_rule.proto";
+
+service RateLimitingConfigService {
+  rpc GetRateLimitingRules (GetRateLimitingRulesRequest) returns (GetRateLimitingRulesResponse) {
+  }
+  rpc UpdateRateLimitingRule (UpdateRateLimitingRuleRequest) returns (UpdateRateLimitingRuleResponse) {
+  }
+  rpc DeleteRateLimitingRule (DeleteRateLimitingRuleRequest) returns (DeleteRateLimitingRuleResponse) {
+  }
+  rpc CreateRateLimitingRule (CreateRateLimitingRuleRequest) returns (CreateRateLimitingRuleResponse) {
+  }
+}
+
+message GetRateLimitingRulesRequest {
+  GetRulesByCategoryFilter filter = 1;
+}
+
+message GetRulesByCategoryFilter {
+  repeated Category categories = 1;
+}
+
+message GetRateLimitingRulesResponse {
+  repeated RateLimitingRule rules = 1;
+}
+
+message UpdateRateLimitingRuleRequest {
+  string rule_id = 1;
+  RateLimitingRuleData data = 2;
+}
+
+message UpdateRateLimitingRuleResponse {
+  RateLimitingRule rule = 1;
+}
+
+message DeleteRateLimitingRuleRequest {
+  string rule_id = 1;
+}
+
+message DeleteRateLimitingRuleResponse {
+}
+
+message CreateRateLimitingRuleRequest {
+  RateLimitingRuleData data = 1;
+}
+
+message CreateRateLimitingRuleResponse {
+  RateLimitingRule rule = 1;
+}

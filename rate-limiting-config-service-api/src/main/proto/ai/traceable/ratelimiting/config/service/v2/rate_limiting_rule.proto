@@ -1,0 +1,192 @@
+syntax = "proto3";
+
+package ai.traceable.ratelimiting.config.service.v2;
+
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+
+message RateLimitingRule {
+  string id = 1;
+  RateLimitingRuleData data = 2;
+}
+
+message RateLimitingRuleData {
+  Category category = 1;
+  string name = 2;
+  string description = 3;
+  bool enabled = 4;
+  Condition condition = 5;
+  repeated ThresholdActionConfig threshold_action_configs = 6;
+  ExpirationDetails expiration_details = 7;
+}
+
+message Condition {
+  oneof condition {
+    CompositeCondition composite_condition = 1;
+    LeafCondition leaf_condition = 2;
+  }
+}
+
+message CompositeCondition {
+  LogicalOperator operator = 1;
+  repeated Condition children = 2;
+
+  enum LogicalOperator {
+    LOGICAL_OPERATOR_UNSPECIFIED = 0;
+    LOGICAL_OPERATOR_AND = 1;
+    LOGICAL_OPERATOR_OR = 2;
+  }
+}
+
+message LeafCondition {
+  oneof condition {
+    ScopeCondition scope_condition = 1;
+    KeyValueCondition key_value_condition = 2;
+    DatatypeCondition datatype_condition = 3;
+    RegionCondition region_condition = 4;
+    LocationTypeCondition location_type_condition = 5;
+    IpAddressCondition ip_address_condition = 6;
+    UserIdCondition user_id_condition = 7;
+  }
+}
+
+message ScopeCondition {
+  oneof scope {
+    EntityScope entity_scope = 1;
+    LabelScope label_scope = 2;
+  }
+
+  message EntityScope {
+    EntityType entity_type = 1;
+    repeated string entity_ids = 2;
+  }
+
+  message LabelScope {
+    LabelType label_type = 1;
+    repeated string label_ids = 2;
+  }
+
+  enum EntityType {
+    ENTITY_TYPE_UNSPECIFIED = 0;
+    ENTITY_TYPE_ENVIRONMENT = 1;
+    ENTITY_TYPE_SERVICE = 2;
+    ENTITY_TYPE_API = 3;
+  }
+
+  enum LabelType {
+    LABEL_TYPE_UNSPECIFIED = 0;
+    LABEL_TYPE_SERVICE = 1;
+    LABEL_TYPE_API = 2;
+  }
+}
+
+message KeyValueCondition {
+  Type type = 1;
+  StringCondition key_condition = 2;
+  StringCondition value_condition = 3;
+
+  message StringCondition {
+    MatchOperator operator = 1;
+    string value = 2;
+  }
+
+  enum Type {
+    TYPE_UNSPECIFIED = 0;
+    TYPE_URL = 1;
+    TYPE_HOST = 2;
+    TYPE_HTTP_METHOD = 3;
+    TYPE_USER_AGENT = 4;
+    TYPE_STATUS_CODE = 5;
+    TYPE_REQUEST_BODY = 6;
+    TYPE_RESPONSE_BODY = 7;
+    TYPE_REQUEST_HEADER = 8;
+    TYPE_RESPONSE_HEADER = 9;
+    TYPE_REQUEST_PARAMETER = 10;
+    TYPE_RESPONSE_PARAMETER = 11;
+  }
+
+  enum MatchOperator {
+    MATCH_OPERATOR_UNSPECIFIED = 0;
+    MATCH_OPERATOR_EQUALS = 1;
+    MATCH_OPERATOR_NOT_EQUAL = 2;
+    MATCH_OPERATOR_MATCHES_REGEX = 3;
+    MATCH_OPERATOR_NOT_MATCH_REGEX = 4;
+    MATCH_OPERATOR_GREATER_THAN = 5;
+    MATCH_OPERATOR_LESS_THAN = 6;
+    MATCH_OPERATOR_CONTAINS = 7;
+    MATCH_OPERATOR_NOT_CONTAIN = 8;
+  }
+}
+
+message DatatypeCondition {
+  repeated string dataset_ids = 1;
+  repeated string datatype_ids = 2;
+}
+
+message RegionCondition {
+  repeated string regions = 1;
+}
+
+message LocationTypeCondition {
+ repeated string location_types = 1;
+}
+
+message IpAddressCondition {
+  repeated string cidr_ip_ranges = 1;
+  repeated string ip_addresses = 2;
+}
+
+message UserIdCondition {
+  repeated string user_id_regexes = 1;
+}
+
+message ThresholdActionConfig {
+  repeated ResourceAccessThresholdConfig resource_access_threshold_configs = 1;
+  repeated Action actions = 2;
+}
+
+message ResourceAccessThresholdConfig {
+  oneof threshold_config {
+    RollingWindowThresholdConfig rolling_window_threshold_config = 1;
+  }
+
+  message RollingWindowThresholdConfig {
+    int64 count_allowed = 1;
+    string duration_iso = 2;
+  }
+}
+
+message Action {
+  oneof action {
+    Block block = 1;
+    Alert alert = 2;
+  }
+
+  message Block {
+    EventSeverity event_severity = 1;
+    optional string duration_iso = 2;
+  }
+
+  message Alert {
+    EventSeverity event_severity = 1;
+  }
+
+  enum EventSeverity {
+    EVENT_SEVERITY_UNSPECIFIED = 0;
+    EVENT_SEVERITY_LOW = 1;
+    EVENT_SEVERITY_MEDIUM = 2;
+    EVENT_SEVERITY_HIGH = 3;
+    EVENT_SEVERITY_CRITICAL = 4;
+  }
+}
+
+message ExpirationDetails {
+  google.protobuf.Timestamp expiration_timestamp = 1;
+}
+
+enum Category {
+  CATEGORY_UNSPECIFIED = 0;
+  CATEGORY_RATE_LIMITING = 1;
+  CATEGORY_DATA_EXFILTRATION = 2;
+}
