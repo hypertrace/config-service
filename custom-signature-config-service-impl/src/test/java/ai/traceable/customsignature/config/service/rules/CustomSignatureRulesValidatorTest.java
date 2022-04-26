@@ -2,7 +2,11 @@ package ai.traceable.customsignature.config.service.rules;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
@@ -30,11 +34,14 @@ public class CustomSignatureRulesValidatorTest {
   private static final String ZERO_EXPIRY_DURATION = "P0DT0H0M";
   private static final String NON_ZERO_EXPIRY_DURATION = "P2DT3H4M";
 
+  private ModsecRulesManager modsecRulesManager;
   private CustomSignatureRulesValidator rulesValidator;
 
   @BeforeEach
   public void setup() {
-    this.rulesValidator = new CustomSignatureRulesValidator();
+    this.modsecRulesManager = mock(ModsecRulesManager.class);
+    when(modsecRulesManager.validateModsecRule(any(), any())).thenReturn(Status.OK);
+    this.rulesValidator = new CustomSignatureRulesValidator(modsecRulesManager);
   }
 
   @Test
@@ -432,6 +439,11 @@ public class CustomSignatureRulesValidatorTest {
             .build();
     status = rulesValidator.validate(request);
     assertEquals(Code.OK, status.getCode());
+
+    when(modsecRulesManager.validateModsecRule(request.getName(), request.getDefinition()))
+        .thenReturn(Status.INTERNAL);
+    status = rulesValidator.validate(request);
+    assertEquals(Code.INTERNAL, status.getCode());
   }
 
   @Test
@@ -832,10 +844,15 @@ public class CustomSignatureRulesValidatorTest {
             .setBlockingExpiryDetails(
                 ExpiryDetails.newBuilder().setExpiryDuration(ZERO_EXPIRY_DURATION).build())
             .build();
-    status =
-        rulesValidator.validate(
-            UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
+    UpdateCustomSignatureRuleRequest request =
+        UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build();
+    status = rulesValidator.validate(request);
     assertEquals(Code.OK, status.getCode());
+
+    when(modsecRulesManager.validateModsecRule(rule.getName(), rule.getDefinition()))
+        .thenReturn(Status.INTERNAL);
+    status = rulesValidator.validate(request);
+    assertEquals(Code.INTERNAL, status.getCode());
   }
 
   public void testValidateDeleteRule() {

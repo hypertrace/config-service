@@ -21,6 +21,7 @@ traceable-apiNamingModel = { module = "ai.traceable.platform:api-naming-model", 
 traceable-platformGateway-deepDataStore = { module = "ai.traceable.platform-gateway:deep-data-store", version.ref = "traceable-platformGateway" }
 traceable-platformGateway-trainingEvaluationFramework = { module = "ai.traceable.platform-gateway:training-evaluation-framework", version.ref = "traceable-platformGateway" }
 traceable-featureFlag-futureClient = { module = "ai.traceable.featureflag:feature-flag-future-client", version = "0.4.0" }
+traceable-platform-jniModsecurity = { module = "ai.traceable.platform:jni-modsecurity", version = "0.1.96" }
 
 hypertrace-grpcutils-client = { module = "org.hypertrace.core.grpcutils:grpc-client-utils", version.ref = "hypertrace-grpcutils" }
 hypertrace-grpcutils-server = { module = "org.hypertrace.core.grpcutils:grpc-server-utils", version.ref = "hypertrace-grpcutils" }

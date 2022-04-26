@@ -1,5 +1,6 @@
 package ai.traceable.customsignature.config.service.rules;
 
+import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
@@ -22,8 +23,17 @@ import com.google.re2j.PatternSyntaxException;
 import io.grpc.Status;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
+import javax.inject.Inject;
 
 class CustomSignatureRulesValidator implements RulesValidator {
+
+  private final ModsecRulesManager modsecRulesManager;
+
+  @Inject
+  public CustomSignatureRulesValidator(ModsecRulesManager modsecRulesManager) {
+    this.modsecRulesManager = modsecRulesManager;
+  }
+
   @Override
   public Status validate(CreateCustomSignatureRuleRequest request) {
     if (request.getName().isEmpty()) {
@@ -53,7 +63,7 @@ class CustomSignatureRulesValidator implements RulesValidator {
       return status;
     }
 
-    return Status.OK;
+    return modsecRulesManager.validateModsecRule(request.getName(), request.getDefinition());
   }
 
   @Override
@@ -90,7 +100,7 @@ class CustomSignatureRulesValidator implements RulesValidator {
       return status;
     }
 
-    return Status.OK;
+    return modsecRulesManager.validateModsecRule(rule.getName(), rule.getDefinition());
   }
 
   @Override

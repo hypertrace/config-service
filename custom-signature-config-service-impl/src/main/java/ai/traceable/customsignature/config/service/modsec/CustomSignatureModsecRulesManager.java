@@ -7,16 +7,33 @@ import ai.traceable.customsignature.config.service.v1.ClauseOperator;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRuleDetails;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
+import ai.traceable.customsignature.config.service.v1.RuleDefinition;
+import ai.traceable.modsecurity.RuleEngine;
+import io.grpc.Status;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
-
   private static final long MODSEC_ID_SEED = 10000000;
+  private static final String RANDOM_RULE_ID = UUID.randomUUID().toString();
   private static final String NEW_LINES_DELIMITER = "\n\n";
+
+  private static final boolean loadNativeLibrarySuccess = loadNativeRuleEngineLibrary();
+
+  private static boolean loadNativeRuleEngineLibrary() {
+    try {
+      RuleEngine.loadNativeLibrary();
+      return true;
+    } catch (IOException e) {
+      log.warn("Failed loading rule engine native library with error:", e);
+      return false;
+    }
+  }
 
   private final ModsecRuleConversion modsecRuleConversion;
   private final String modsecConfigDirectives;
@@ -37,38 +54,29 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
     long modsecIdAssignment = MODSEC_ID_SEED + 1;
 
     for (CustomSignatureRule rule : customSignatureRules) {
-      ClauseGroup clauseGroup = rule.getDefinition().getClauseGroup();
-      if (clauseGroup.getClauseOperator() != ClauseOperator.CLAUSE_OPERATOR_AND) {
-        log.error(
-            "Clause Operator {} is not supported for Rule {} (only AND clauses are supported)",
-            clauseGroup.getClauseOperator(),
-            rule.getId());
-        continue;
-      }
-      if (clauseGroup.getClausesList().isEmpty()) {
-        log.warn(
-            "Clauses List is empty. So no modsec conversion possible for Rule {}", rule.getId());
-        continue;
-      }
+      String modsecRule;
       try {
-        ModsecActions modsecActions =
-            new ModsecActions(modsecIdAssignment, rule.getId(), rule.getName());
-        modsecRules.add(
-            modsecRuleConversion.getModsecRuleForANDClauses(
-                clauseGroup.getClausesList(), modsecActions));
-        ruleDetailsList.add(
-            CustomSignatureRuleDetails.newBuilder()
-                .setId(rule.getId())
-                .setName(rule.getName())
-                .setEffect(rule.getEffect())
-                .setDisabled(rule.getDisabled())
-                .setInternal(rule.getInternal())
-                .setBlockingExpiryDetails(rule.getBlockingExpiryDetails())
-                .build());
-        modsecIdAssignment++;
-      } catch (Exception e) {
-        log.error("Error in modsec conversion for Rule {} : {}", rule.getId(), e);
+        modsecRule =
+            getModsecRule(rule.getId(), rule.getName(), rule.getDefinition(), modsecIdAssignment);
+      } catch (Exception ex) {
+        log.warn(
+            "Modsec rule could not be created for rule: {}, exception: {}", rule.getName(), ex);
+        continue;
       }
+      if (modsecRule == null || modsecRule.isBlank()) {
+        continue;
+      }
+      modsecRules.add(modsecRule);
+      ruleDetailsList.add(
+          CustomSignatureRuleDetails.newBuilder()
+              .setId(rule.getId())
+              .setName(rule.getName())
+              .setEffect(rule.getEffect())
+              .setDisabled(rule.getDisabled())
+              .setInternal(rule.getInternal())
+              .setBlockingExpiryDetails(rule.getBlockingExpiryDetails())
+              .build());
+      modsecIdAssignment++;
     }
 
     if (ruleDetailsList.isEmpty()) {
@@ -79,5 +87,54 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
         .setModsecRulesBlob(modsecConfigDirectives + String.join(NEW_LINES_DELIMITER, modsecRules))
         .addAllRules(ruleDetailsList)
         .build();
+  }
+
+  public Status validateModsecRule(String ruleName, RuleDefinition ruleDefinition) {
+    if (loadNativeRuleEngineLibrary() == false) {
+      log.warn("Skipping modsec validation.. Native libraries for rule engine not loaded!");
+      return Status.OK;
+    }
+    String modsecRule;
+    try {
+      modsecRule = getModsecRule(RANDOM_RULE_ID, ruleName, ruleDefinition, MODSEC_ID_SEED);
+    } catch (Exception ex) {
+      return Status.INTERNAL
+          .withCause(ex)
+          .withDescription(
+              String.format("Modsec rule could not be created for rule: [%s]", ruleName));
+    }
+
+    try {
+      RuleEngine ruleEngine = RuleEngine.create(modsecRule);
+      RuleEngine.destroy(ruleEngine);
+      return Status.OK;
+    } catch (Exception ex) {
+      return Status.INTERNAL
+          .withCause(ex)
+          .withDescription(
+              String.format(
+                  "Invalid modsec rule: [%s] for rule:[%s]. Rule Engine could not be created.",
+                  modsecRule, ruleName));
+    }
+  }
+
+  private String getModsecRule(
+      String ruleId, String ruleName, RuleDefinition ruleDefinition, long modsecIdAssignment)
+      throws Exception {
+    ClauseGroup clauseGroup = ruleDefinition.getClauseGroup();
+    if (clauseGroup.getClauseOperator() != ClauseOperator.CLAUSE_OPERATOR_AND) {
+      log.error(
+          "Clause Operator {} is not supported for Rule {} (only AND clauses are supported)",
+          clauseGroup.getClauseOperator(),
+          ruleId);
+      return null;
+    }
+    if (clauseGroup.getClausesList().isEmpty()) {
+      log.warn("Clauses List is empty. So no modsec conversion possible for Rule {}", ruleId);
+      return null;
+    }
+    ModsecActions modsecActions = new ModsecActions(modsecIdAssignment, ruleId, ruleName);
+    return modsecRuleConversion.getModsecRuleForANDClauses(
+        clauseGroup.getClausesList(), modsecActions);
   }
 }
