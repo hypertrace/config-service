@@ -101,9 +101,8 @@ public class SpanProcessingConfigRequestValidator {
                       segmentMatchingBasedConfig))
               .asRuntimeException();
         }
-        if (segmentMatchingBasedConfig.getRegexesList().stream().anyMatch(regex -> regex.equals(""))
-            || segmentMatchingBasedConfig.getValuesList().stream()
-                .anyMatch(value -> value.equals(""))) {
+        if (segmentMatchingBasedConfig.getRegexesList().stream().anyMatch(String::isEmpty)
+            || segmentMatchingBasedConfig.getValuesList().stream().anyMatch(String::isEmpty)) {
           throw Status.INVALID_ARGUMENT
               .withDescription(
                   String.format(
