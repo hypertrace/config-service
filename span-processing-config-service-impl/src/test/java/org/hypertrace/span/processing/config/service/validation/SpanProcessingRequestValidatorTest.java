@@ -228,6 +228,27 @@ class SpanProcessingRequestValidatorTest {
                             .build())
                     .build()));
 
+    assertInvalidArgStatusContaining(
+        "Invalid regex or value segment",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateApiNamingRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ApiNamingRuleInfo.newBuilder()
+                            .setName("name")
+                            .setFilter(buildTestFilter())
+                            .setRuleConfig(
+                                ApiNamingRuleConfig.newBuilder()
+                                    .setSegmentMatchingBasedConfig(
+                                        SegmentMatchingBasedConfig.newBuilder()
+                                            .addAllRegexes(List.of("regex", ""))
+                                            .addAllValues(List.of("value1", "value2"))
+                                            .build())
+                                    .build())
+                            .build())
+                    .build()));
+
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
@@ -292,6 +313,28 @@ class SpanProcessingRequestValidatorTest {
                                 ApiNamingRuleConfig.newBuilder()
                                     .setSegmentMatchingBasedConfig(
                                         SegmentMatchingBasedConfig.newBuilder().build())
+                                    .build())
+                            .build())
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Invalid regex or value segment",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                UpdateApiNamingRuleRequest.newBuilder()
+                    .setRule(
+                        UpdateApiNamingRule.newBuilder()
+                            .setId("id")
+                            .setName("name")
+                            .setFilter(buildTestFilter())
+                            .setRuleConfig(
+                                ApiNamingRuleConfig.newBuilder()
+                                    .setSegmentMatchingBasedConfig(
+                                        SegmentMatchingBasedConfig.newBuilder()
+                                            .addRegexes("regex")
+                                            .addValues("")
+                                            .build())
                                     .build())
                             .build())
                     .build()));

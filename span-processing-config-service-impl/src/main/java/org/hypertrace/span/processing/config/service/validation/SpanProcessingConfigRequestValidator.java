@@ -101,6 +101,15 @@ public class SpanProcessingConfigRequestValidator {
                       segmentMatchingBasedConfig))
               .asRuntimeException();
         }
+        if (segmentMatchingBasedConfig.getRegexesList().stream().anyMatch(String::isEmpty)
+            || segmentMatchingBasedConfig.getValuesList().stream().anyMatch(String::isEmpty)) {
+          throw Status.INVALID_ARGUMENT
+              .withDescription(
+                  String.format(
+                      "Invalid regex or value segment : %s. Regex/value segment must not be empty",
+                      segmentMatchingBasedConfig))
+              .asRuntimeException();
+        }
         break;
       default:
         throw Status.INVALID_ARGUMENT
