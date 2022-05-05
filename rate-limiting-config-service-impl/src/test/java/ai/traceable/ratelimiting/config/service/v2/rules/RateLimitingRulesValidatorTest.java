@@ -1,0 +1,189 @@
+package ai.traceable.ratelimiting.config.service.v2.rules;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import ai.traceable.ratelimiting.config.service.v2.Action;
+import ai.traceable.ratelimiting.config.service.v2.Category;
+import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
+import ai.traceable.ratelimiting.config.service.v2.Condition;
+import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
+import ai.traceable.ratelimiting.config.service.v2.DatatypeCondition;
+import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
+import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
+import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
+import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig;
+import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
+import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesValidator;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
+import java.util.List;
+import java.util.Objects;
+import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+public class RateLimitingRulesValidatorTest {
+  private RequestContext requestContext;
+  private RateLimitingRulesValidator rulesValidator;
+
+  @BeforeEach
+  void setUp() {
+    requestContext = RequestContext.forTenantId("default tenant");
+    rulesValidator = new RateLimitingRulesValidator();
+  }
+
+  @Test
+  void testCategoryNotSet() {
+    RateLimitingRuleData ruleData = RateLimitingRuleData.getDefaultInstance();
+    CreateRateLimitingRuleRequest request =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    Throwable throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request));
+    Status status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(
+        Objects.requireNonNull(status.getDescription())
+            .contains(
+                String.format(
+                    "Expected field value %s but not present",
+                    RateLimitingRuleData.getDescriptor()
+                        .findFieldByNumber(RateLimitingRuleData.CATEGORY_FIELD_NUMBER))));
+  }
+
+  @Test
+  void testNoAction() {
+    RateLimitingRuleData ruleData =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule1")
+            .setCategory(Category.CATEGORY_RATE_LIMITING)
+            .setEnabled(true)
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setRegionCondition(
+                                RegionCondition.newBuilder().addAllRegions(List.of("IND", "US")))))
+            .build();
+    CreateRateLimitingRuleRequest request =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    Throwable throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request));
+    Status status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(
+        Objects.requireNonNull(status.getDescription())
+            .contains(
+                String.format(
+                    "Expected at least 1 value for repeated field %s but not present",
+                    RateLimitingRuleData.getDescriptor()
+                        .findFieldByNumber(
+                            RateLimitingRuleData.THRESHOLD_ACTION_CONFIGS_FIELD_NUMBER))));
+  }
+
+  @Test
+  void testRollingWindowDurationNotSet() {
+    RateLimitingRuleData ruleData =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule1")
+            .setCategory(Category.CATEGORY_RATE_LIMITING)
+            .setEnabled(true)
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setRegionCondition(
+                                RegionCondition.newBuilder().addAllRegions(List.of("IND", "US")))))
+            .addThresholdActionConfigs(
+                ThresholdActionConfig.newBuilder()
+                    .addResourceAccessThresholdConfigs(
+                        ResourceAccessThresholdConfig.newBuilder()
+                            .setRollingWindowThresholdConfig(
+                                ResourceAccessThresholdConfig.RollingWindowThresholdConfig
+                                    .newBuilder()
+                                    .setCountAllowed(1000)
+                                    .build())
+                            .build()))
+            .build();
+    CreateRateLimitingRuleRequest request =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    Throwable throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request));
+    Status status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(
+        Objects.requireNonNull(status.getDescription())
+            .contains(
+                String.format(
+                    "Expected field value %s but not present",
+                    ResourceAccessThresholdConfig.RollingWindowThresholdConfig.getDescriptor()
+                        .findFieldByNumber(
+                            ResourceAccessThresholdConfig.RollingWindowThresholdConfig
+                                .DURATION_ISO_FIELD_NUMBER))));
+  }
+
+  @Test
+  void testValidRule() {
+    RateLimitingRuleData ruleData =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule1")
+            .setCategory(Category.CATEGORY_RATE_LIMITING)
+            .setEnabled(true)
+            .setCondition(
+                Condition.newBuilder()
+                    .setCompositeCondition(
+                        CompositeCondition.newBuilder()
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setRegionCondition(
+                                                buildRegionCondition(List.of("IND", "US")))))
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setDatatypeCondition(
+                                                buildDatatypeCondition(List.of("id1", "id2")))))
+                            .setOperator(CompositeCondition.LogicalOperator.LOGICAL_OPERATOR_AND))
+                    .build())
+            .addThresholdActionConfigs(
+                ThresholdActionConfig.newBuilder()
+                    .addActions(
+                        Action.newBuilder()
+                            .setBlock(
+                                Action.Block.newBuilder()
+                                    .setEventSeverity(Action.EventSeverity.EVENT_SEVERITY_LOW)
+                                    .build())
+                            .build())
+                    .addResourceAccessThresholdConfigs(
+                        ResourceAccessThresholdConfig.newBuilder()
+                            .setRollingWindowThresholdConfig(
+                                ResourceAccessThresholdConfig.RollingWindowThresholdConfig
+                                    .newBuilder()
+                                    .setCountAllowed(1000)
+                                    .setDurationIso("P3Y6M4DT12H30M5S")
+                                    .build())
+                            .build()))
+            .build();
+    CreateRateLimitingRuleRequest request =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request));
+  }
+
+  private RegionCondition buildRegionCondition(List<String> regions) {
+    return RegionCondition.newBuilder().addAllRegions(regions).build();
+  }
+
+  private DatatypeCondition buildDatatypeCondition(List<String> datasetIds) {
+    return DatatypeCondition.newBuilder().addAllDatasetIds(datasetIds).build();
+  }
+}

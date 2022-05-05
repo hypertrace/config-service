@@ -7,12 +7,19 @@ plugins {
 dependencies {
   api(projects.rateLimitingConfigServiceApi)
   api(libs.hypertrace.configservice.api)
+
   implementation(projects.activityEventProducer)
+  implementation(projects.configUtils)
+
   implementation(libs.typesafe.config)
   implementation(libs.slf4j.api)
+  implementation(libs.guice)
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpcutils.client)
   implementation(libs.hypertrace.configservice.protoconverter)
+  implementation(libs.hypertrace.configservice.objectstore)
+  implementation(libs.hypertrace.configservice.validation)
+
   implementation(libs.traceable.activityevent.api)
 
   annotationProcessor(libs.lombok)
@@ -23,6 +30,8 @@ dependencies {
   testImplementation(libs.hypertrace.grpcutils.client)
   testImplementation(libs.commons.lang)
   testImplementation(libs.grpc.core)
+  testImplementation(libs.hypertrace.grpcutils.client)
+  testImplementation(testFixtures(libs.hypertrace.configservice.api))
 }
 
 tasks.test {

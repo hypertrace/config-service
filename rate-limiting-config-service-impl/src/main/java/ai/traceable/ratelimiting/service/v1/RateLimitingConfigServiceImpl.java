@@ -1,11 +1,11 @@
-package ai.traceable.ratelimiting.service;
+package ai.traceable.ratelimiting.service.v1;
 
-import static ai.traceable.ratelimiting.service.RateLimitingConfigConstants.RATE_LIMITING_NAMESPACE;
-import static ai.traceable.ratelimiting.service.RateLimitingConfigConstants.RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME;
-import static ai.traceable.ratelimiting.service.RateLimitingConfigConstants.RULE_RATE_LIMITED_ENTITY_ASSOCIATION_RESOURCE_NAME;
-import static ai.traceable.ratelimiting.service.RateLimitingConfigServiceUtils.getRuleRateLimitedEntityContext;
-import static ai.traceable.ratelimiting.service.RateLimitingConfigServiceUtils.toRateLimitingRuleConfig;
-import static ai.traceable.ratelimiting.service.RateLimitingConfigServiceUtils.toValue;
+import static ai.traceable.ratelimiting.service.v1.RateLimitingConfigConstants.RATE_LIMITING_NAMESPACE;
+import static ai.traceable.ratelimiting.service.v1.RateLimitingConfigConstants.RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME;
+import static ai.traceable.ratelimiting.service.v1.RateLimitingConfigConstants.RULE_RATE_LIMITED_ENTITY_ASSOCIATION_RESOURCE_NAME;
+import static ai.traceable.ratelimiting.service.v1.RateLimitingConfigServiceUtils.getRuleRateLimitedEntityContext;
+import static ai.traceable.ratelimiting.service.v1.RateLimitingConfigServiceUtils.toRateLimitingRuleConfig;
+import static ai.traceable.ratelimiting.service.v1.RateLimitingConfigServiceUtils.toValue;
 
 import ai.traceable.activity.event.SecurityConfigurationAction;
 import ai.traceable.activity.event.SecurityConfigurationChange;

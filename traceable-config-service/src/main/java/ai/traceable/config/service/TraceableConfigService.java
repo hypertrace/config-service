@@ -14,7 +14,8 @@ import ai.traceable.iprange.config.service.IpRangeConfigServiceFactory;
 import ai.traceable.licensestatus.config.service.LicenseStatusConfigServiceImpl;
 import ai.traceable.localprocessing.config.service.LocalProcessingConfigServiceFactory;
 import ai.traceable.localprocessing.config.service.ruleservice.LocalProcessingRulesServiceFactory;
-import ai.traceable.ratelimiting.service.RateLimitingConfigServiceImpl;
+import ai.traceable.ratelimiting.service.v1.RateLimitingConfigServiceImpl;
+import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceFactory;
 import ai.traceable.region.config.service.RegionConfigServiceFactory;
 import ai.traceable.reporting.config.service.ReportingConfigServiceFactory;
 import ai.traceable.risk.config.service.RiskConfigServiceFactory;
@@ -97,8 +98,6 @@ public class TraceableConfigService extends PlatformService {
 
     BindableService sensitiveDataConfigService =
         sensitiveDataConfigServicesProvider.getSensitiveDataConfigService();
-    RateLimitingConfigServiceImpl rateLimitingConfigService =
-        new RateLimitingConfigServiceImpl(managedChannel, config, activityEventProducer);
     LicenseStatusConfigServiceImpl licenseStatusConfigService =
         new LicenseStatusConfigServiceImpl(managedChannel, config);
     BindableService localProcessingRulesService =
@@ -127,6 +126,10 @@ public class TraceableConfigService extends PlatformService {
     BindableService wafIntegrationConfigService =
         WafIntegrationConfigServiceFactory.build(
             managedChannel, config, configChangeEventGenerator);
+    RateLimitingConfigServiceImpl rateLimitingConfigServiceV1 =
+        new RateLimitingConfigServiceImpl(managedChannel, config, activityEventProducer);
+    BindableService rateLimitingConfigServiceV2 =
+        RateLimitingConfigServiceFactory.build(managedChannel, config, activityEventProducer);
 
     List<BindableService> anomalyConfigServices =
         AnomalyConfigServiceFactory.build(
@@ -149,7 +152,8 @@ public class TraceableConfigService extends PlatformService {
             .collect(Collectors.toUnmodifiableList()));
     internalServerBuilder
         .addService(InterceptorUtil.wrapInterceptors(sensitiveDataConfigService))
-        .addService(InterceptorUtil.wrapInterceptors(rateLimitingConfigService))
+        .addService(InterceptorUtil.wrapInterceptors(rateLimitingConfigServiceV1))
+        .addService(InterceptorUtil.wrapInterceptors(rateLimitingConfigServiceV2))
         .addService(InterceptorUtil.wrapInterceptors(licenseStatusConfigService))
         .addService(InterceptorUtil.wrapInterceptors(localProcessingRulesService))
         .addService(InterceptorUtil.wrapInterceptors(regionConfigService))

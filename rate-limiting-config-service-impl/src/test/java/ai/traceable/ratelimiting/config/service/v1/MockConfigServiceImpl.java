@@ -1,7 +1,7 @@
-package ai.traceable.ratelimiting.config.service;
+package ai.traceable.ratelimiting.config.service.v1;
 
-import static ai.traceable.ratelimiting.service.RateLimitingConfigConstants.RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME;
-import static ai.traceable.ratelimiting.service.RateLimitingConfigConstants.RULE_RATE_LIMITED_ENTITY_ASSOCIATION_RESOURCE_NAME;
+import static ai.traceable.ratelimiting.service.v1.RateLimitingConfigConstants.RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME;
+import static ai.traceable.ratelimiting.service.v1.RateLimitingConfigConstants.RULE_RATE_LIMITED_ENTITY_ASSOCIATION_RESOURCE_NAME;
 
 import com.google.protobuf.Value;
 import io.grpc.stub.StreamObserver;

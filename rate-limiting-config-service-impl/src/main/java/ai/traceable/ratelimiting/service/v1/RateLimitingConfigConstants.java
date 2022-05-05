@@ -1,4 +1,4 @@
-package ai.traceable.ratelimiting.service;
+package ai.traceable.ratelimiting.service.v1;
 
 public interface RateLimitingConfigConstants {
   // For Rule to RateLimitedEntity association record.

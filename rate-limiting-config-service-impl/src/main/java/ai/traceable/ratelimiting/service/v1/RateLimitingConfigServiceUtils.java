@@ -1,4 +1,4 @@
-package ai.traceable.ratelimiting.service;
+package ai.traceable.ratelimiting.service.v1;
 
 import ai.traceable.ratelimiting.config.service.v1.RateLimitedEntity;
 import ai.traceable.ratelimiting.config.service.v1.RateLimitingRuleConfig;
