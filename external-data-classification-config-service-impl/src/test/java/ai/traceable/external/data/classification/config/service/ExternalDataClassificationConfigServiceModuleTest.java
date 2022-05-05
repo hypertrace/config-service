@@ -6,21 +6,18 @@ import static org.mockito.Mockito.mock;
 import com.google.inject.Guice;
 import com.typesafe.config.Config;
 import io.grpc.ManagedChannel;
-import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.junit.jupiter.api.Test;
 
 public class ExternalDataClassificationConfigServiceModuleTest {
   @Test
   void testResolveBindings() {
     ManagedChannel mockChannel = mock(ManagedChannel.class);
-    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     Config mockConfig = mock(Config.class);
 
     assertDoesNotThrow(
         () ->
             Guice.createInjector(
-                    new ExternalDataClassificationConfigServiceModule(
-                        mockChannel, configChangeEventGenerator, mockConfig))
+                    new ExternalDataClassificationConfigServiceModule(mockChannel, mockConfig))
                 .getAllBindings());
   }
 }

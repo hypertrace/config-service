@@ -68,7 +68,13 @@ public class RedactionRulesTranslatorTest {
         translatedDataTypes.get(2).getTransformation());
 
     assertEquals(
-        "regex-1", translatedDataTypes.get(0).getMatchRules(0).getKeyPredicate().getValue());
+        "regex-1",
+        translatedDataTypes
+            .get(0)
+            .getMatchRules(0)
+            .getPathPredicate()
+            .getPathSegmentPredicate()
+            .getValue());
 
     assertEquals(
         "key-1",
@@ -77,7 +83,7 @@ public class RedactionRulesTranslatorTest {
             .getMatchRules(0)
             .getSpanFilter()
             .getRequiredMatchingAttributes(0)
-            .getKeyPredicate()
+            .getNamePredicate()
             .getValue());
     assertEquals(
         "reg-1",

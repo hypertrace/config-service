@@ -156,21 +156,28 @@ public class DataClassificationRulesTranslatorTest {
         translatedDataTypes.get(0).getMatchRules(0).getAttributeFilter().getPrefixesList());
 
     assertEquals(
-        "value-2", translatedDataTypes.get(1).getMatchRules(0).getKeyPredicate().getValue());
+        "value-2",
+        translatedDataTypes
+            .get(1)
+            .getMatchRules(0)
+            .getPathPredicate()
+            .getPathSegmentPredicate()
+            .getValue());
     assertEquals(
         "key-3",
         translatedDataTypes
             .get(0)
             .getMatchRules(0)
-            .getKeyValuePredicate()
-            .getKeyPredicate()
+            .getPathValuePredicate()
+            .getPathPredicate()
+            .getPathSegmentPredicate()
             .getValue());
     assertEquals(
         "value-3",
         translatedDataTypes
             .get(0)
             .getMatchRules(0)
-            .getKeyValuePredicate()
+            .getPathValuePredicate()
             .getValuePredicate()
             .getValue());
   }

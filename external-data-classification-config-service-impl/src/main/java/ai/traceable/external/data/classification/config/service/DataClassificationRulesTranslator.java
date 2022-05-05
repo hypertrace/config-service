@@ -8,14 +8,18 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule.Location;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
 import ai.traceable.external.data.classification.config.service.v1.AttributeFilter;
+import ai.traceable.external.data.classification.config.service.v1.AttributePredicate;
 import ai.traceable.external.data.classification.config.service.v1.DataType;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTransformation;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTypeMatchRule;
 import ai.traceable.external.data.classification.config.service.v1.DataType.Result;
-import ai.traceable.external.data.classification.config.service.v1.KeyValuePredicate;
 import ai.traceable.external.data.classification.config.service.v1.Operator;
+import ai.traceable.external.data.classification.config.service.v1.PathPredicate;
+import ai.traceable.external.data.classification.config.service.v1.PathValuePredicate;
 import ai.traceable.external.data.classification.config.service.v1.SpanFilter;
 import ai.traceable.external.data.classification.config.service.v1.StringPredicate;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -52,6 +56,18 @@ class DataClassificationRulesTranslator {
       List.of(HTTP_REQUEST_HEADER + SEPARATOR, RPC_REQUEST_METADATA + SEPARATOR);
   private static final List<String> RESPONSE_HEADERS_PREFIXES_LIST =
       List.of(HTTP_RESPONSE_HEADER + SEPARATOR, RPC_RESPONSE_METADATA + SEPARATOR);
+
+  // Any lccation really means any of the other defined locations rather than any possible location
+  private static final List<String> ANY_LOCATION_PREFIXES_LIST =
+      ImmutableList.copyOf(
+          Iterables.concat(
+              REQUEST_HEADERS_PREFIXES_LIST,
+              RESPONSE_HEADERS_PREFIXES_LIST,
+              List.of(HTTP_REQUEST_COOKIE),
+              List.of(HTTP_RESPONSE_COOKIE),
+              List.of(HTTP_REQUEST_QUERY_PARAM),
+              REQUEST_BODY_PREFIXES_LIST,
+              RESPONSE_BODY_PREFIXES_LIST));
   private static final List<String> EMPTY_PREFIXES_LIST = List.of("");
 
   List<DataType> translateDataTypes(
@@ -93,19 +109,25 @@ class DataClassificationRulesTranslator {
     translateLocations(scopedPattern.getLocationsList())
         .ifPresent(dataTypeMatchRuleBuilder::setAttributeFilter);
     dataTypeMatchRuleBuilder.setResult(translateAction(scopedPattern.getAction()));
-    if (scopedPattern.hasKeyPattern()) {
-      dataTypeMatchRuleBuilder.setKeyPredicate(
-          translateStringPattern(scopedPattern.getKeyPattern()));
-    } else if (scopedPattern.hasKeyValuePattern()) {
-      dataTypeMatchRuleBuilder.setKeyValuePredicate(
-          translateKeyValuePattern(scopedPattern.getKeyValuePattern()));
+    switch (scopedPattern.getPatternCase()) {
+      case KEY_PATTERN:
+        return dataTypeMatchRuleBuilder
+            .setPathPredicate(translatePathPattern(scopedPattern.getKeyPattern()))
+            .build();
+      case KEY_VALUE_PATTERN:
+        return dataTypeMatchRuleBuilder
+            .setPathValuePredicate(translatePathValuePattern(scopedPattern.getKeyValuePattern()))
+            .build();
+      case PATTERN_NOT_SET:
+      default:
+        log.error("Unsupported scoped pattern type: {}", scopedPattern);
+        return dataTypeMatchRuleBuilder.build();
     }
-    return dataTypeMatchRuleBuilder.build();
   }
 
-  private KeyValuePredicate translateKeyValuePattern(KeyValuePattern keyValuePattern) {
-    return KeyValuePredicate.newBuilder()
-        .setKeyPredicate(translateStringPattern(keyValuePattern.getKeyPattern()))
+  private PathValuePredicate translatePathValuePattern(KeyValuePattern keyValuePattern) {
+    return PathValuePredicate.newBuilder()
+        .setPathPredicate(translatePathPattern(keyValuePattern.getKeyPattern()))
         .setValuePredicate(translateStringPattern(keyValuePattern.getValuePattern()))
         .build();
   }
@@ -117,12 +139,20 @@ class DataClassificationRulesTranslator {
         .build();
   }
 
+  private PathPredicate translatePathPattern(StringPattern pathPattern) {
+    return PathPredicate.newBuilder()
+        .setPathSegmentPredicate(this.translateStringPattern(pathPattern))
+        .build();
+  }
+
   private Operator translateOperator(DataTypeRule.Operator operator) {
     switch (operator) {
       case OPERATOR_EQUALS:
         return Operator.OPERATOR_EQUALS;
       case OPERATOR_MATCHES_REGEX:
         return Operator.OPERATOR_MATCHES_REGEX;
+      case OPERATOR_UNSPECIFIED:
+      case UNRECOGNIZED:
       default:
         return Operator.OPERATOR_UNSPECIFIED;
     }
@@ -134,6 +164,8 @@ class DataClassificationRulesTranslator {
         return Result.RESULT_MATCH;
       case ACTION_IGNORE:
         return Result.RESULT_IGNORE;
+      case ACTION_UNSPECIFIED:
+      case UNRECOGNIZED:
       default:
         return Result.RESULT_UNSPECIFIED;
     }
@@ -164,7 +196,13 @@ class DataClassificationRulesTranslator {
         return REQUEST_BODY_PREFIXES_LIST;
       case LOCATION_RESPONSE_BODY:
         return RESPONSE_BODY_PREFIXES_LIST;
+      case LOCATION_ANY:
+        return ANY_LOCATION_PREFIXES_LIST;
+      case LOCATION_PATH:
+      case LOCATION_UNSPECIFIED:
+      case UNRECOGNIZED:
       default:
+        log.error("Received unsupported location for translation: {}", location);
         return EMPTY_PREFIXES_LIST;
     }
   }
@@ -182,8 +220,8 @@ class DataClassificationRulesTranslator {
               .setValue(regex_for_all_environment_ids)
               .build();
       spanFilterBuilder.addRequiredMatchingAttributes(
-          KeyValuePredicate.newBuilder()
-              .setKeyPredicate(KEY_PREDICATE_FOR_ENVIRONMENT_SCOPE)
+          AttributePredicate.newBuilder()
+              .setNamePredicate(KEY_PREDICATE_FOR_ENVIRONMENT_SCOPE)
               .setValuePredicate(valuePredicate)
               .build());
       return Optional.of(spanFilterBuilder.build());
@@ -198,6 +236,8 @@ class DataClassificationRulesTranslator {
       case DATA_SUPPRESSION_OBFUSCATE:
         return Optional.of(DataTransformation.DATA_TRANSFORMATION_OBFUSCATE);
       case DATA_SUPPRESSION_RAW:
+      case UNRECOGNIZED:
+      case DATA_SUPPRESSION_UNSPECIFIED:
       default:
         return Optional.empty();
     }

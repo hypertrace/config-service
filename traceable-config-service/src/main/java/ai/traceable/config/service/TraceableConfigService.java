@@ -9,6 +9,7 @@ import ai.traceable.blocking.config.service.BlockingConfigServiceFactory;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceFactory;
 import ai.traceable.data.classification.config.service.DataClassificationConfigServiceFactory;
 import ai.traceable.data.exfiltration.config.service.detection.rule.DataExfiltrationDetectionRulesConfigServiceFactory;
+import ai.traceable.external.data.classification.config.service.ExternalDataClassificationConfigServiceFactory;
 import ai.traceable.external.userattribution.config.service.ExternalUserAttributionConfigServiceFactory;
 import ai.traceable.iprange.config.service.IpRangeConfigServiceFactory;
 import ai.traceable.licensestatus.config.service.LicenseStatusConfigServiceImpl;
@@ -182,11 +183,14 @@ public class TraceableConfigService extends PlatformService {
     BindableService blockingConfigService = BlockingConfigServiceFactory.build(managedChannel);
     BindableService externalUserAttributionConfigService =
         ExternalUserAttributionConfigServiceFactory.build(managedChannel);
+    BindableService externalDataClassificationConfigService =
+        ExternalDataClassificationConfigServiceFactory.build(managedChannel, config);
     externalServerBuilder
         .addService(InterceptorUtil.wrapInterceptors(piiFilterConfigService))
         .addService(InterceptorUtil.wrapInterceptors(localProcessingConfigService))
         .addService(InterceptorUtil.wrapInterceptors(blockingConfigService))
-        .addService(InterceptorUtil.wrapInterceptors(externalUserAttributionConfigService));
+        .addService(InterceptorUtil.wrapInterceptors(externalUserAttributionConfigService))
+        .addService(InterceptorUtil.wrapInterceptors(externalDataClassificationConfigService));
     externalTraceableConfigServer = externalServerBuilder.build();
   }
 

@@ -4,18 +4,12 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
-import io.grpc.ManagedChannel;
-import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
+import io.grpc.Channel;
 
 public class ExternalDataClassificationConfigServiceFactory {
-  public static BindableService build(
-      ManagedChannel channel,
-      ConfigChangeEventGenerator configChangeEventGenerator,
-      Config config) {
+  public static BindableService build(Channel channel, Config config) {
     Injector injector =
-        Guice.createInjector(
-            new ExternalDataClassificationConfigServiceModule(
-                channel, configChangeEventGenerator, config));
+        Guice.createInjector(new ExternalDataClassificationConfigServiceModule(channel, config));
     return injector.getInstance(BindableService.class);
   }
 }

@@ -42,8 +42,8 @@ message DataType {
     AttributeFilter attribute_filter = 2;
     Result result = 3;
     oneof predicate {
-      StringPredicate key_predicate = 5;
-      KeyValuePredicate key_value_predicate = 6;
+      PathPredicate path_predicate = 5;
+      PathValuePredicate path_value_predicate = 6;
     }
   }
 
@@ -57,7 +57,7 @@ message DataType {
 message SpanFilter {
   // TODO - this could include things like API scoping in the future
   // This supports things like matching a url before checking for a particular param name
-  repeated KeyValuePredicate required_matching_attributes = 1;
+  repeated AttributePredicate required_matching_attributes = 1;
 }
 
 message AttributeFilter {
@@ -70,8 +70,20 @@ message StringPredicate {
   string value = 2;
 }
 
-message KeyValuePredicate {
-  StringPredicate key_predicate = 1;
+message PathPredicate {
+  oneof path {
+    string json_path = 1;
+    StringPredicate path_segment_predicate = 2;
+  }
+}
+
+message AttributePredicate {
+  StringPredicate name_predicate = 1;
+  StringPredicate value_predicate = 2;
+}
+
+message PathValuePredicate {
+  PathPredicate path_predicate = 1;
   StringPredicate value_predicate = 2;
 }
 
