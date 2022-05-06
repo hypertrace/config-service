@@ -88,8 +88,7 @@ class ExternalDataClassificationConfigServiceImpl
               .filter(dataType -> !redactionRulesIds.contains(dataType.getId()))
               .collect(Collectors.toUnmodifiableList());
       List<DataSet> dataSets = this.dataClassificationRulesDao.getAllDataSets(requestContext);
-
-      dataSets.stream().sorted(
+      dataSets.sort(
           new Comparator<>() {
             @Override
             public int compare(DataSet o1, DataSet o2) {
