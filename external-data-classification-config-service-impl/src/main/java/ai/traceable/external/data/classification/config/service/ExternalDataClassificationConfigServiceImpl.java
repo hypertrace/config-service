@@ -87,15 +87,10 @@ class ExternalDataClassificationConfigServiceImpl
           this.dataClassificationRulesDao.getAllDataTypes(requestContext).stream()
               .filter(dataType -> !redactionRulesIds.contains(dataType.getId()))
               .collect(Collectors.toUnmodifiableList());
-      List<DataSet> dataSets = this.dataClassificationRulesDao.getAllDataSets(requestContext);
-      dataSets.sort(
-          new Comparator<>() {
-            @Override
-            public int compare(DataSet o1, DataSet o2) {
-              return Integer.compare(
-                  comparatorUtility(o1.getInfo()), comparatorUtility(o2.getInfo()));
-            }
-          });
+      List<DataSet> dataSets =
+          this.dataClassificationRulesDao.getAllDataSets(requestContext).stream()
+              .sorted(Comparator.comparingInt(o -> comparatorUtility(o.getInfo())))
+              .collect(Collectors.toUnmodifiableList());
       Map<String, DataType> dataTypesToIdMap =
           dataTypes.stream()
               .collect(Collectors.toUnmodifiableMap(DataType::getId, Function.identity()));
