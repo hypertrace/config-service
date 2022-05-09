@@ -111,9 +111,12 @@ public class DefaultHttpApiNamingTrieManager implements HttpApiNamingTrieManager
   private long getAgentTimestampMillis(
       String trieToken, String serviceId, RequestContext requestContext) {
     try {
+      if (trieToken.equals("")) {
+        return 0;
+      }
       String[] tokens = trieToken.split(";");
       return Long.parseLong(tokens[0].substring(2));
-    } catch (NumberFormatException e) {
+    } catch (Exception e) {
       log.error(
           "Could not parse timestamp from trieToken:{}, for serviceId:{}, and requestContext:{}",
           trieToken,
@@ -126,9 +129,12 @@ public class DefaultHttpApiNamingTrieManager implements HttpApiNamingTrieManager
   private String getAgentVersion(
       String trieToken, String serviceId, RequestContext requestContext) {
     try {
+      if (trieToken.equals("")) {
+        return "0.0.0";
+      }
       String[] tokens = trieToken.split(";");
       return tokens[1].substring(2);
-    } catch (ArrayIndexOutOfBoundsException e) {
+    } catch (Exception e) {
       log.error(
           "Could not parse version from trieToken:{}, for serviceId:{}, and requestContext:{}",
           trieToken,
