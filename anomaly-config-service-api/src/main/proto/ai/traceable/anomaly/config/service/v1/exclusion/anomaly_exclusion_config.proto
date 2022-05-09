@@ -61,6 +61,7 @@ message AnomalyExclusionRuleData {
   EventExclusionInfo event_exclusion_info = 3;
   AnomalyActorExclusionInfo anomaly_actor_exclusion_info = 4;
   AnomalyConfigScope anomaly_config_scope = 5;
+  AnomalyConfigScope source_config_scope = 6;
 }
 
 message EventExclusionInfo {

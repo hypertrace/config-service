@@ -18,17 +18,34 @@ message AnomalyConfigStatus {
 
 message AnomalyConfigScope {
   AnomalyConfigScopeType scope_type = 1 [deprecated = true];
-  oneof scope { // empty if scope_type = ANOMALY_CONFIG_SCOPE_TYPE_CUSTOMER
-    AnomalyServiceScope service_scope = 2; // set if scope_type = ANOMALY_CONFIG_SCOPE_TYPE_SERVICE
-    AnomalyApiScope api_scope = 3; // set if scope_type = ANOMALY_CONFIG_SCOPE_TYPE_API
-    AnomalyParamScope param_scope = 4; // set if scope_type = ANOMALY_CONFIG_SCOPE_TYPE_PARAM
+  oneof scope {
+    AnomalyServiceScope service_scope = 2;
+    AnomalyApiScope api_scope = 3;
+    AnomalyParamScope param_scope = 4;
     AnomalyCustomerScope customer_scope = 5;
   }
 }
 
 message AnomalyParamScope {
-  string param_name = 1;
-  AnomalyApiScope api_scope = 2;
+  string param_name = 1 [deprecated = true];
+  AnomalyApiScope api_scope = 2 [deprecated = true];
+  AnomalyParamInfoScope scope = 3;
+  AnomalyParamInfo param_info = 4;
+}
+
+message AnomalyParamInfoScope {
+  oneof scope {
+    AnomalyApiScope api_scope = 1;
+    AnomalyServiceScope service_scope = 2;
+    AnomalyCustomerScope customer_scope = 3;
+  }
+}
+
+message AnomalyParamInfo {
+  oneof param_details {
+    string param_name = 1;
+    string param_regex = 2;
+  }
 }
 
 message AnomalyApiScope {
