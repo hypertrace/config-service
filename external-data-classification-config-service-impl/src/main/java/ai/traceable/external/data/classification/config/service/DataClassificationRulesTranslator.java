@@ -57,7 +57,7 @@ class DataClassificationRulesTranslator {
   private static final List<String> RESPONSE_HEADERS_PREFIXES_LIST =
       List.of(HTTP_RESPONSE_HEADER + SEPARATOR, RPC_RESPONSE_METADATA + SEPARATOR);
 
-  // Any lccation really means any of the other defined locations rather than any possible location
+  // Any location really means any of the other defined locations rather than any possible location
   private static final List<String> ANY_LOCATION_PREFIXES_LIST =
       ImmutableList.copyOf(
           Iterables.concat(

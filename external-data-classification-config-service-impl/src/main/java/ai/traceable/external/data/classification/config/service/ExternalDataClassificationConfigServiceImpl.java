@@ -89,11 +89,9 @@ class ExternalDataClassificationConfigServiceImpl
               .collect(Collectors.toUnmodifiableList());
       List<DataSet> dataSets =
           this.dataClassificationRulesDao.getAllDataSets(requestContext).stream()
+              .filter(dataSet -> dataSet.getInfo().getEnabled())
               .sorted(Comparator.comparingInt(o -> comparatorUtility(o.getInfo())))
               .collect(Collectors.toUnmodifiableList());
-      Map<String, DataType> dataTypesToIdMap =
-          dataTypes.stream()
-              .collect(Collectors.toUnmodifiableMap(DataType::getId, Function.identity()));
       Map<String, DataSuppression> dataTypesToDataSuppressionMap = new HashMap<>();
       for (DataSet dataSet : dataSets) {
         for (String dataTypeId : dataSet.getInfo().getDataTypeIdsList()) {
@@ -103,6 +101,10 @@ class ExternalDataClassificationConfigServiceImpl
           }
         }
       }
+      Map<String, DataType> dataTypesToIdMap =
+          dataTypes.stream()
+              .filter(dataType -> dataTypesToDataSuppressionMap.containsKey(dataType.getId()))
+              .collect(Collectors.toUnmodifiableMap(DataType::getId, Function.identity()));
       List<ai.traceable.external.data.classification.config.service.v1.DataType> externalDataTypes =
           new ArrayList<>();
       externalDataTypes.addAll(redactionRulesTranslator.translateRedactionRules(redactionRules));

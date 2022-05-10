@@ -1,6 +1,7 @@
 package ai.traceable.external.data.classification.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
 import ai.traceable.data.classification.config.service.v1.DataType;
@@ -12,7 +13,15 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule.Location;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
+import ai.traceable.external.data.classification.config.service.v1.AttributeFilter;
+import ai.traceable.external.data.classification.config.service.v1.AttributePredicate;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTransformation;
+import ai.traceable.external.data.classification.config.service.v1.DataType.DataTypeMatchRule;
+import ai.traceable.external.data.classification.config.service.v1.DataType.Result;
+import ai.traceable.external.data.classification.config.service.v1.PathPredicate;
+import ai.traceable.external.data.classification.config.service.v1.PathValuePredicate;
+import ai.traceable.external.data.classification.config.service.v1.SpanFilter;
+import ai.traceable.external.data.classification.config.service.v1.StringPredicate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +31,13 @@ public class DataClassificationRulesTranslatorTest {
   private static final String SEPARATOR = ".";
   private static final String HTTP_REQUEST_HEADER = "http.request.header";
   private static final String RPC_REQUEST_METADATA = "rpc.request.metadata";
+  private static final String HTTP_REQUEST_QUERY_PARAM = "http.request.query.param";
+  private static final StringPredicate KEY_PREDICATE_FOR_ENVIRONMENT_SCOPE =
+      StringPredicate.newBuilder()
+          .setOperator(
+              ai.traceable.external.data.classification.config.service.v1.Operator.OPERATOR_EQUALS)
+          .setValue("deployment.environment")
+          .build();
   private static final List<String> REQUEST_HEADERS_PREFIXES_LIST =
       List.of(HTTP_REQUEST_HEADER + SEPARATOR, RPC_REQUEST_METADATA + SEPARATOR);
   private final DataClassificationRulesTranslator dataClassificationRulesTranslator =
@@ -121,64 +137,138 @@ public class DataClassificationRulesTranslatorTest {
     dataTypesToDataSuppressionMap.put("id-3", DataSuppression.DATA_SUPPRESSION_OBFUSCATE);
     dataTypesToDataSuppressionMap.put("id-4", DataSuppression.DATA_SUPPRESSION_RAW);
 
+    ai.traceable.external.data.classification.config.service.v1.DataType expectedDataType1 =
+        ai.traceable.external.data.classification.config.service.v1.DataType.newBuilder()
+            .setDataTypeId("id-1")
+            .setTransformation(DataTransformation.DATA_TRANSFORMATION_REDACT)
+            .addMatchRules(
+                DataTypeMatchRule.newBuilder()
+                    .setSpanFilter(
+                        SpanFilter.newBuilder()
+                            .addRequiredMatchingAttributes(
+                                AttributePredicate.newBuilder()
+                                    .setNamePredicate(KEY_PREDICATE_FOR_ENVIRONMENT_SCOPE)
+                                    .setValuePredicate(
+                                        StringPredicate.newBuilder()
+                                            .setOperator(
+                                                ai.traceable.external.data.classification.config
+                                                    .service.v1.Operator.OPERATOR_MATCHES_REGEX)
+                                            .setValue("(en\\|v\\-1|env\\-2)"))))
+                    .setAttributeFilter(
+                        AttributeFilter.newBuilder()
+                            .addAllPrefixes(List.of("", HTTP_REQUEST_QUERY_PARAM)))
+                    .setResult(Result.RESULT_MATCH)
+                    .setPathPredicate(
+                        PathPredicate.newBuilder()
+                            .setPathSegmentPredicate(
+                                StringPredicate.newBuilder()
+                                    .setValue("value-1")
+                                    .setOperator(
+                                        ai.traceable.external.data.classification.config.service.v1
+                                            .Operator.OPERATOR_EQUALS))))
+            .build();
+
+    ai.traceable.external.data.classification.config.service.v1.DataType expectedDataType2 =
+        ai.traceable.external.data.classification.config.service.v1.DataType.newBuilder()
+            .setDataTypeId("id-2")
+            .setTransformation(DataTransformation.DATA_TRANSFORMATION_REDACT)
+            .addMatchRules(
+                DataTypeMatchRule.newBuilder()
+                    .setSpanFilter(
+                        SpanFilter.newBuilder()
+                            .addRequiredMatchingAttributes(
+                                AttributePredicate.newBuilder()
+                                    .setNamePredicate(KEY_PREDICATE_FOR_ENVIRONMENT_SCOPE)
+                                    .setValuePredicate(
+                                        StringPredicate.newBuilder()
+                                            .setOperator(
+                                                ai.traceable.external.data.classification.config
+                                                    .service.v1.Operator.OPERATOR_MATCHES_REGEX)
+                                            .setValue("(env\\-1)"))))
+                    .setResult(Result.RESULT_MATCH)
+                    .setPathPredicate(
+                        PathPredicate.newBuilder()
+                            .setPathSegmentPredicate(
+                                StringPredicate.newBuilder()
+                                    .setValue("value-2")
+                                    .setOperator(
+                                        ai.traceable.external.data.classification.config.service.v1
+                                            .Operator.OPERATOR_EQUALS))))
+            .build();
+
+    ai.traceable.external.data.classification.config.service.v1.DataType expectedDataType3 =
+        ai.traceable.external.data.classification.config.service.v1.DataType.newBuilder()
+            .setDataTypeId("id-3")
+            .setTransformation(DataTransformation.DATA_TRANSFORMATION_OBFUSCATE)
+            .addMatchRules(
+                DataTypeMatchRule.newBuilder()
+                    .setSpanFilter(
+                        SpanFilter.newBuilder()
+                            .addRequiredMatchingAttributes(
+                                AttributePredicate.newBuilder()
+                                    .setNamePredicate(KEY_PREDICATE_FOR_ENVIRONMENT_SCOPE)
+                                    .setValuePredicate(
+                                        StringPredicate.newBuilder()
+                                            .setOperator(
+                                                ai.traceable.external.data.classification.config
+                                                    .service.v1.Operator.OPERATOR_MATCHES_REGEX)
+                                            .setValue("(env\\-1)"))))
+                    .setAttributeFilter(
+                        AttributeFilter.newBuilder().addAllPrefixes(REQUEST_HEADERS_PREFIXES_LIST))
+                    .setResult(Result.RESULT_MATCH)
+                    .setPathValuePredicate(
+                        PathValuePredicate.newBuilder()
+                            .setPathPredicate(
+                                PathPredicate.newBuilder()
+                                    .setPathSegmentPredicate(
+                                        StringPredicate.newBuilder()
+                                            .setValue("key-3")
+                                            .setOperator(
+                                                ai.traceable.external.data.classification.config
+                                                    .service.v1.Operator.OPERATOR_EQUALS)))
+                            .setValuePredicate(
+                                StringPredicate.newBuilder()
+                                    .setValue("value-3")
+                                    .setOperator(
+                                        ai.traceable.external.data.classification.config.service.v1
+                                            .Operator.OPERATOR_EQUALS))))
+            .build();
+
+    ai.traceable.external.data.classification.config.service.v1.DataType expectedDataType4 =
+        ai.traceable.external.data.classification.config.service.v1.DataType.newBuilder()
+            .setDataTypeId("id-4")
+            .addMatchRules(
+                DataTypeMatchRule.newBuilder()
+                    .setSpanFilter(
+                        SpanFilter.newBuilder()
+                            .addRequiredMatchingAttributes(
+                                AttributePredicate.newBuilder()
+                                    .setNamePredicate(KEY_PREDICATE_FOR_ENVIRONMENT_SCOPE)
+                                    .setValuePredicate(
+                                        StringPredicate.newBuilder()
+                                            .setOperator(
+                                                ai.traceable.external.data.classification.config
+                                                    .service.v1.Operator.OPERATOR_MATCHES_REGEX)
+                                            .setValue("(env\\-1)"))))
+                    .setResult(Result.RESULT_MATCH)
+                    .setPathPredicate(
+                        PathPredicate.newBuilder()
+                            .setPathSegmentPredicate(
+                                StringPredicate.newBuilder()
+                                    .setValue("value-4")
+                                    .setOperator(
+                                        ai.traceable.external.data.classification.config.service.v1
+                                            .Operator.OPERATOR_MATCHES_REGEX))))
+            .build();
+
     List<ai.traceable.external.data.classification.config.service.v1.DataType> translatedDataTypes =
         dataClassificationRulesTranslator.translateDataTypes(
             dataTypesToIdMap, dataTypesToDataSuppressionMap);
-    assertEquals("id-3", translatedDataTypes.get(0).getDataTypeId());
-    assertEquals(
-        DataTransformation.DATA_TRANSFORMATION_OBFUSCATE,
-        translatedDataTypes.get(0).getTransformation());
-    assertEquals("id-2", translatedDataTypes.get(1).getDataTypeId());
-    assertEquals(
-        DataTransformation.DATA_TRANSFORMATION_REDACT,
-        translatedDataTypes.get(1).getTransformation());
-    assertEquals("id-4", translatedDataTypes.get(2).getDataTypeId());
-    assertEquals(
-        DataTransformation.DATA_TRANSFORMATION_UNSPECIFIED,
-        translatedDataTypes.get(2).getTransformation());
-    assertEquals("id-1", translatedDataTypes.get(3).getDataTypeId());
-    assertEquals(
-        DataTransformation.DATA_TRANSFORMATION_REDACT,
-        translatedDataTypes.get(3).getTransformation());
 
-    assertEquals(
-        "(en\\|v\\-1|env\\-2)",
-        translatedDataTypes
-            .get(3)
-            .getMatchRules(0)
-            .getSpanFilter()
-            .getRequiredMatchingAttributes(0)
-            .getValuePredicate()
-            .getValue());
-
-    assertEquals(
-        REQUEST_HEADERS_PREFIXES_LIST,
-        translatedDataTypes.get(0).getMatchRules(0).getAttributeFilter().getPrefixesList());
-
-    assertEquals(
-        "value-2",
-        translatedDataTypes
-            .get(1)
-            .getMatchRules(0)
-            .getPathPredicate()
-            .getPathSegmentPredicate()
-            .getValue());
-    assertEquals(
-        "key-3",
-        translatedDataTypes
-            .get(0)
-            .getMatchRules(0)
-            .getPathValuePredicate()
-            .getPathPredicate()
-            .getPathSegmentPredicate()
-            .getValue());
-    assertEquals(
-        "value-3",
-        translatedDataTypes
-            .get(0)
-            .getMatchRules(0)
-            .getPathValuePredicate()
-            .getValuePredicate()
-            .getValue());
+    assertEquals(4, translatedDataTypes.size());
+    assertTrue(translatedDataTypes.contains(expectedDataType1));
+    assertTrue(translatedDataTypes.contains(expectedDataType2));
+    assertTrue(translatedDataTypes.contains(expectedDataType3));
+    assertTrue(translatedDataTypes.contains(expectedDataType4));
   }
 }

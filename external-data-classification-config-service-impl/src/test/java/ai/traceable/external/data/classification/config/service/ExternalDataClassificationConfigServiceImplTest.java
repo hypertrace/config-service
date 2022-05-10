@@ -14,7 +14,9 @@ import ai.traceable.data.classification.config.service.v1.DataSetInfo.Sensitivit
 import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Action;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.EnvironmentScope;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.GlobalScope;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.KeyValuePattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Location;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
@@ -136,6 +138,17 @@ public class ExternalDataClassificationConfigServiceImplTest {
                       .addDataTypeIds("datatype-1")
                       .addDataTypeIds("datatype-2"))
               .build();
+      DataSet dataSet4 =
+          DataSet.newBuilder()
+              .setId("dataset-4")
+              .setInfo(
+                  DataSetInfo.newBuilder()
+                      .setName("datatsetname-4")
+                      .setEnabled(false)
+                      .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW)
+                      .setSensitivity(Sensitivity.SENSITIVITY_LOW)
+                      .addDataTypeIds("datatype-3"))
+              .build();
       responseObserver.onNext(
           GetDataSetsResponse.newBuilder()
               .addAllDataSets(List.of(dataSet1, dataSet2, dataSet3))
@@ -180,8 +193,34 @@ public class ExternalDataClassificationConfigServiceImplTest {
                               .setAction(Action.ACTION_MATCH)))
               .build();
 
+      DataType dataType3 =
+          DataType.newBuilder()
+              .setId("id-3")
+              .setRule(
+                  DataTypeRule.newBuilder()
+                      .setName("datatype-3")
+                      .addScopedPatterns(
+                          ScopedPattern.newBuilder()
+                              .setEnvironmentScope(
+                                  EnvironmentScope.newBuilder().addEnvironmentIds("env-1"))
+                              .addLocations(Location.LOCATION_REQUEST_HEADER)
+                              .setKeyValuePattern(
+                                  KeyValuePattern.newBuilder()
+                                      .setKeyPattern(
+                                          StringPattern.newBuilder()
+                                              .setValue("key-3")
+                                              .setOperator(Operator.OPERATOR_EQUALS))
+                                      .setValuePattern(
+                                          StringPattern.newBuilder()
+                                              .setValue("value-3")
+                                              .setOperator(Operator.OPERATOR_EQUALS)))
+                              .setAction(Action.ACTION_MATCH)))
+              .build();
+
       responseObserver.onNext(
-          GetDataTypesResponse.newBuilder().addAllDataTypes(List.of(dataType1, dataType2)).build());
+          GetDataTypesResponse.newBuilder()
+              .addAllDataTypes(List.of(dataType1, dataType2, dataType3))
+              .build());
       responseObserver.onCompleted();
     }
   }
