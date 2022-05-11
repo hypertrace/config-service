@@ -21,6 +21,7 @@ import ai.traceable.external.data.classification.config.service.v1.StringPredica
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -36,26 +37,27 @@ class DataClassificationRulesTranslator {
           .setOperator(Operator.OPERATOR_EQUALS)
           .setValue("deployment.environment")
           .build();
-  private static final String SEPARATOR = ".";
   private static final String HTTP_REQUEST_HEADER = "http.request.header";
   private static final String RPC_REQUEST_METADATA = "rpc.request.metadata";
   private static final String HTTP_RESPONSE_HEADER = "http.response.header";
   private static final String RPC_RESPONSE_METADATA = "rpc.response.metadata";
-  private static final String HTTP_REQUEST_QUERY_PARAM = "http.request.query.param";
+  // The agent does not break down the query params to separate attributes, instead the url is
+  // matched by a data parsing rule which breaks down the query params into child keys
+  private static final String HTTP_REQUEST_QUERY_PARAM = "http.url";
   private static final String HTTP_REQUEST_BODY = "http.request.body";
   private static final String HTTP_RESPONSE_BODY = "http.response.body";
   private static final String RPC_REQUEST_BODY = "rpc.request.body";
   private static final String RPC_RESPONSE_BODY = "rpc.response.body";
-  private static final String HTTP_REQUEST_COOKIE = "http.request.cookie";
-  private static final String HTTP_RESPONSE_COOKIE = "http.response.cookie";
+  private static final String HTTP_REQUEST_COOKIE = "http.request.header.cookie";
+  private static final String HTTP_RESPONSE_COOKIE = "http.response.header.set-cookie";
   private static final List<String> REQUEST_BODY_PREFIXES_LIST =
       List.of(HTTP_REQUEST_BODY, RPC_REQUEST_BODY);
   private static final List<String> RESPONSE_BODY_PREFIXES_LIST =
       List.of(HTTP_RESPONSE_BODY, RPC_RESPONSE_BODY);
   private static final List<String> REQUEST_HEADERS_PREFIXES_LIST =
-      List.of(HTTP_REQUEST_HEADER + SEPARATOR, RPC_REQUEST_METADATA + SEPARATOR);
+      List.of(HTTP_REQUEST_HEADER, RPC_REQUEST_METADATA);
   private static final List<String> RESPONSE_HEADERS_PREFIXES_LIST =
-      List.of(HTTP_RESPONSE_HEADER + SEPARATOR, RPC_RESPONSE_METADATA + SEPARATOR);
+      List.of(HTTP_RESPONSE_HEADER, RPC_RESPONSE_METADATA);
 
   // Any location really means any of the other defined locations rather than any possible location
   private static final List<String> ANY_LOCATION_PREFIXES_LIST =
@@ -68,7 +70,7 @@ class DataClassificationRulesTranslator {
               List.of(HTTP_REQUEST_QUERY_PARAM),
               REQUEST_BODY_PREFIXES_LIST,
               RESPONSE_BODY_PREFIXES_LIST));
-  private static final List<String> EMPTY_PREFIXES_LIST = List.of("");
+  private static final List<String> EMPTY_PREFIXES_LIST = List.of();
 
   List<DataType> translateDataTypes(
       Map<String, ai.traceable.data.classification.config.service.v1.DataType> dataTypesToIdMap,
@@ -172,11 +174,15 @@ class DataClassificationRulesTranslator {
   }
 
   private Optional<AttributeFilter> translateLocations(List<Location> locations) {
-    if (locations.contains(Location.LOCATION_ANY)) {
+    List<String> prefixes =
+        locations.stream()
+            .map(this::translateLocation)
+            .flatMap(Collection::stream)
+            .distinct()
+            .collect(Collectors.toUnmodifiableList());
+    if (prefixes.isEmpty()) {
       return Optional.empty();
     }
-    List<String> prefixes = new ArrayList<>();
-    locations.forEach(location -> prefixes.addAll(translateLocation(location)));
     return Optional.of(AttributeFilter.newBuilder().addAllPrefixes(prefixes).build());
   }
 

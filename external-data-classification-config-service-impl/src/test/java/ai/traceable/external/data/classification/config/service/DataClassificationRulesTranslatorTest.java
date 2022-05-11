@@ -1,7 +1,6 @@
 package ai.traceable.external.data.classification.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
 import ai.traceable.data.classification.config.service.v1.DataType;
@@ -25,21 +24,16 @@ import ai.traceable.external.data.classification.config.service.v1.StringPredica
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 public class DataClassificationRulesTranslatorTest {
-  private static final String SEPARATOR = ".";
-  private static final String HTTP_REQUEST_HEADER = "http.request.header";
-  private static final String RPC_REQUEST_METADATA = "rpc.request.metadata";
-  private static final String HTTP_REQUEST_QUERY_PARAM = "http.request.query.param";
   private static final StringPredicate KEY_PREDICATE_FOR_ENVIRONMENT_SCOPE =
       StringPredicate.newBuilder()
           .setOperator(
               ai.traceable.external.data.classification.config.service.v1.Operator.OPERATOR_EQUALS)
           .setValue("deployment.environment")
           .build();
-  private static final List<String> REQUEST_HEADERS_PREFIXES_LIST =
-      List.of(HTTP_REQUEST_HEADER + SEPARATOR, RPC_REQUEST_METADATA + SEPARATOR);
   private final DataClassificationRulesTranslator dataClassificationRulesTranslator =
       new DataClassificationRulesTranslator();
 
@@ -57,7 +51,7 @@ public class DataClassificationRulesTranslatorTest {
                                 EnvironmentScope.newBuilder()
                                     .addAllEnvironmentIds(List.of("en|v-1", "env-2")))
                             .addAllLocations(
-                                List.of(Location.LOCATION_PATH, Location.LOCATION_QUERY))
+                                List.of(Location.LOCATION_REQUEST_HEADER, Location.LOCATION_QUERY))
                             .setKeyPattern(
                                 StringPattern.newBuilder()
                                     .setValue("value-1")
@@ -117,6 +111,7 @@ public class DataClassificationRulesTranslatorTest {
                         ScopedPattern.newBuilder()
                             .setEnvironmentScope(
                                 EnvironmentScope.newBuilder().addEnvironmentIds("env-1"))
+                            .addLocations(Location.LOCATION_REQUEST_HEADER)
                             .addLocations(Location.LOCATION_ANY)
                             .setKeyPattern(
                                 StringPattern.newBuilder()
@@ -156,7 +151,8 @@ public class DataClassificationRulesTranslatorTest {
                                             .setValue("(en\\|v\\-1|env\\-2)"))))
                     .setAttributeFilter(
                         AttributeFilter.newBuilder()
-                            .addAllPrefixes(List.of("", HTTP_REQUEST_QUERY_PARAM)))
+                            .addAllPrefixes(
+                                List.of("http.request.header", "rpc.request.metadata", "http.url")))
                     .setResult(Result.RESULT_MATCH)
                     .setPathPredicate(
                         PathPredicate.newBuilder()
@@ -185,6 +181,21 @@ public class DataClassificationRulesTranslatorTest {
                                                 ai.traceable.external.data.classification.config
                                                     .service.v1.Operator.OPERATOR_MATCHES_REGEX)
                                             .setValue("(env\\-1)"))))
+                    .setAttributeFilter(
+                        AttributeFilter.newBuilder()
+                            .addAllPrefixes(
+                                List.of(
+                                    "http.request.header",
+                                    "rpc.request.metadata",
+                                    "http.response.header",
+                                    "rpc.response.metadata",
+                                    "http.request.header.cookie",
+                                    "http.response.header.set-cookie",
+                                    "http.url",
+                                    "http.request.body",
+                                    "rpc.request.body",
+                                    "http.response.body",
+                                    "rpc.response.body")))
                     .setResult(Result.RESULT_MATCH)
                     .setPathPredicate(
                         PathPredicate.newBuilder()
@@ -214,7 +225,8 @@ public class DataClassificationRulesTranslatorTest {
                                                     .service.v1.Operator.OPERATOR_MATCHES_REGEX)
                                             .setValue("(env\\-1)"))))
                     .setAttributeFilter(
-                        AttributeFilter.newBuilder().addAllPrefixes(REQUEST_HEADERS_PREFIXES_LIST))
+                        AttributeFilter.newBuilder()
+                            .addAllPrefixes(List.of("http.request.header", "rpc.request.metadata")))
                     .setResult(Result.RESULT_MATCH)
                     .setPathValuePredicate(
                         PathValuePredicate.newBuilder()
@@ -250,6 +262,21 @@ public class DataClassificationRulesTranslatorTest {
                                                 ai.traceable.external.data.classification.config
                                                     .service.v1.Operator.OPERATOR_MATCHES_REGEX)
                                             .setValue("(env\\-1)"))))
+                    .setAttributeFilter(
+                        AttributeFilter.newBuilder()
+                            .addAllPrefixes(
+                                List.of(
+                                    "http.request.header",
+                                    "rpc.request.metadata",
+                                    "http.response.header",
+                                    "rpc.response.metadata",
+                                    "http.request.header.cookie",
+                                    "http.response.header.set-cookie",
+                                    "http.url",
+                                    "http.request.body",
+                                    "rpc.request.body",
+                                    "http.response.body",
+                                    "rpc.response.body")))
                     .setResult(Result.RESULT_MATCH)
                     .setPathPredicate(
                         PathPredicate.newBuilder()
@@ -265,10 +292,8 @@ public class DataClassificationRulesTranslatorTest {
         dataClassificationRulesTranslator.translateDataTypes(
             dataTypesToIdMap, dataTypesToDataSuppressionMap);
 
-    assertEquals(4, translatedDataTypes.size());
-    assertTrue(translatedDataTypes.contains(expectedDataType1));
-    assertTrue(translatedDataTypes.contains(expectedDataType2));
-    assertTrue(translatedDataTypes.contains(expectedDataType3));
-    assertTrue(translatedDataTypes.contains(expectedDataType4));
+    assertEquals(
+        Set.of(expectedDataType1, expectedDataType2, expectedDataType3, expectedDataType4),
+        Set.copyOf(translatedDataTypes));
   }
 }
