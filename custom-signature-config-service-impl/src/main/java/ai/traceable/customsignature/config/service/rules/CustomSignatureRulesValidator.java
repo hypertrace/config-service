@@ -27,6 +27,8 @@ import javax.inject.Inject;
 
 class CustomSignatureRulesValidator implements RulesValidator {
 
+  private static final String UTF_8_REGEX_PREFIX = "(*UTF8)";
+
   private final ModsecRulesManager modsecRulesManager;
 
   @Inject
@@ -220,13 +222,17 @@ class CustomSignatureRulesValidator implements RulesValidator {
   }
 
   private Status validateRegex(String regexPattern) {
+    if (regexPattern.startsWith(UTF_8_REGEX_PREFIX)) {
+      return Status.OK;
+    }
     // compiling an invalid regex throws PatternSyntaxException
     try {
       Pattern.compile(regexPattern);
+      return Status.OK;
     } catch (PatternSyntaxException e) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Invalid Regex Value for the custom signature rule expression");
+      return Status.INVALID_ARGUMENT
+          .withCause(e)
+          .withDescription("Invalid Regex Value for the custom signature rule expression");
     }
-    return Status.OK;
   }
 }
