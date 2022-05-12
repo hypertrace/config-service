@@ -22,11 +22,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -73,18 +71,12 @@ class DataClassificationRulesTranslator {
   private static final List<String> EMPTY_PREFIXES_LIST = List.of();
 
   List<DataType> translateDataTypes(
-      Map<String, ai.traceable.data.classification.config.service.v1.DataType> dataTypesToIdMap,
+      List<ai.traceable.data.classification.config.service.v1.DataType> dataTypes,
       Map<String, DataSuppression> dataTypesToDataSuppressionMap) {
     List<DataType> translatedDataTypes = new ArrayList<>();
-    Set<String> translatedDataTypesIds = new HashSet<>();
-    for (String dataTypeId : dataTypesToIdMap.keySet()) {
-      if (translatedDataTypesIds.contains(dataTypeId)) {
-        continue;
-      }
+    for (ai.traceable.data.classification.config.service.v1.DataType dataType : dataTypes) {
       translatedDataTypes.add(
-          translateDataType(
-              dataTypesToIdMap.get(dataTypeId), dataTypesToDataSuppressionMap.get(dataTypeId)));
-      translatedDataTypesIds.add(dataTypeId);
+          translateDataType(dataType, dataTypesToDataSuppressionMap.get(dataType.getId())));
     }
     return translatedDataTypes;
   }

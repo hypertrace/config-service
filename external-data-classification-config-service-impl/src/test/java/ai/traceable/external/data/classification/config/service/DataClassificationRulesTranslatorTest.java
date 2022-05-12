@@ -24,7 +24,6 @@ import ai.traceable.external.data.classification.config.service.v1.StringPredica
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 public class DataClassificationRulesTranslatorTest {
@@ -119,12 +118,6 @@ public class DataClassificationRulesTranslatorTest {
                                     .setOperator(Operator.OPERATOR_MATCHES_REGEX))
                             .setAction(Action.ACTION_MATCH)))
             .build();
-
-    Map<String, DataType> dataTypesToIdMap = new HashMap<>();
-    dataTypesToIdMap.put("id-1", dataType1);
-    dataTypesToIdMap.put("id-2", dataType2);
-    dataTypesToIdMap.put("id-3", dataType3);
-    dataTypesToIdMap.put("id-4", dataType4);
 
     Map<String, DataSuppression> dataTypesToDataSuppressionMap = new HashMap<>();
     dataTypesToDataSuppressionMap.put("id-1", DataSuppression.DATA_SUPPRESSION_REDACT);
@@ -290,10 +283,11 @@ public class DataClassificationRulesTranslatorTest {
 
     List<ai.traceable.external.data.classification.config.service.v1.DataType> translatedDataTypes =
         dataClassificationRulesTranslator.translateDataTypes(
-            dataTypesToIdMap, dataTypesToDataSuppressionMap);
+            List.of(dataType1, dataType2, dataType3, dataType4), dataTypesToDataSuppressionMap);
 
-    assertEquals(
-        Set.of(expectedDataType1, expectedDataType2, expectedDataType3, expectedDataType4),
-        Set.copyOf(translatedDataTypes));
+    List<ai.traceable.external.data.classification.config.service.v1.DataType> expectedDataTypes =
+        List.of(expectedDataType1, expectedDataType2, expectedDataType3, expectedDataType4);
+
+    assertEquals(expectedDataTypes, translatedDataTypes);
   }
 }

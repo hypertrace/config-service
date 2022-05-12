@@ -83,10 +83,11 @@ class ExternalDataClassificationConfigServiceImpl
       // filter out redaction rules from data classification rules
       Set<String> redactionRulesIds =
           redactionRules.stream().map(RedactionRule::getId).collect(Collectors.toUnmodifiableSet());
-      List<DataType> dataTypes =
+      Map<String, DataType> dataTypesWithoutTranslatedRedactionRulesToIdMap =
           this.dataClassificationRulesDao.getAllDataTypes(requestContext).stream()
               .filter(dataType -> !redactionRulesIds.contains(dataType.getId()))
-              .collect(Collectors.toUnmodifiableList());
+              .collect(Collectors.toUnmodifiableMap(DataType::getId, Function.identity()));
+      List<DataType> dataTypes = new ArrayList<>();
       List<DataSet> dataSets =
           this.dataClassificationRulesDao.getAllDataSets(requestContext).stream()
               .filter(dataSet -> dataSet.getInfo().getEnabled())
@@ -94,23 +95,22 @@ class ExternalDataClassificationConfigServiceImpl
               .collect(Collectors.toUnmodifiableList());
       Map<String, DataSuppression> dataTypesToDataSuppressionMap = new HashMap<>();
       for (DataSet dataSet : dataSets) {
+        DataSuppression dataSuppression = dataSet.getInfo().getDataSuppression();
         for (String dataTypeId : dataSet.getInfo().getDataTypeIdsList()) {
-          DataSuppression dataSuppression = dataSet.getInfo().getDataSuppression();
-          if (!dataTypesToDataSuppressionMap.containsKey(dataTypeId)) {
+          if (dataTypesWithoutTranslatedRedactionRulesToIdMap.containsKey(dataTypeId)
+              && !dataTypesToDataSuppressionMap.containsKey(dataTypeId)) {
             dataTypesToDataSuppressionMap.put(dataTypeId, dataSuppression);
+            dataTypes.add(dataTypesWithoutTranslatedRedactionRulesToIdMap.get(dataTypeId));
           }
         }
       }
-      Map<String, DataType> dataTypesToIdMap =
-          dataTypes.stream()
-              .filter(dataType -> dataTypesToDataSuppressionMap.containsKey(dataType.getId()))
-              .collect(Collectors.toUnmodifiableMap(DataType::getId, Function.identity()));
+      dataTypes = Collections.unmodifiableList(dataTypes);
       List<ai.traceable.external.data.classification.config.service.v1.DataType> externalDataTypes =
           new ArrayList<>();
       externalDataTypes.addAll(redactionRulesTranslator.translateRedactionRules(redactionRules));
       externalDataTypes.addAll(
           dataClassificationRulesTranslator.translateDataTypes(
-              dataTypesToIdMap, dataTypesToDataSuppressionMap));
+              dataTypes, dataTypesToDataSuppressionMap));
 
       responseObserver.onNext(
           this.responseBuilder.buildResponse(
