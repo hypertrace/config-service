@@ -13,6 +13,7 @@ dependencies {
     implementation(libs.protobuf.javautil)
     implementation(libs.slf4j.api)
     implementation(libs.guava)
+    implementation(libs.rholder.guava.retrying)
     implementation(libs.rxjava3)
 
     implementation(libs.hypertrace.grpcutils.context)
