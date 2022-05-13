@@ -1,5 +1,7 @@
 package ai.traceable.anomaly.config.service.exclusion.handlers;
 
+import static ai.traceable.anomaly.config.service.exclusion.utils.ParamScopeUtils.populateParamScope;
+
 import ai.traceable.anomaly.config.service.exclusion.utils.UuidGenerator;
 import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
@@ -33,7 +35,7 @@ public class CreateAnomalyExclusionRuleHandler {
 
   public CreateAnomalyExclusionRuleResponse createRule(
       CreateAnomalyExclusionRuleRequest request, RequestContext requestContext) {
-    AnomalyExclusionRuleData anomalyExclusionRuleData = request.getRuleData();
+    AnomalyExclusionRuleData anomalyExclusionRuleData = populateParamScope(request.getRuleData());
     String ruleId = uuidGenerator.generateId(anomalyExclusionRuleData);
 
     boolean configAlreadyExists = true;

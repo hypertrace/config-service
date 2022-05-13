@@ -12,6 +12,9 @@ import ai.traceable.anomaly.config.service.exclusion.utils.FilterUtils;
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
+import ai.traceable.anomaly.config.service.v1.AnomalyParamInfo;
+import ai.traceable.anomaly.config.service.v1.AnomalyParamInfoScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
 import ai.traceable.anomaly.config.service.v1.exclusion.AnomalyActor;
 import ai.traceable.anomaly.config.service.v1.exclusion.AnomalyActorExclusionInfo;
@@ -226,5 +229,75 @@ public class GetAnomalyExclusionRuleHandlerTest {
             .getConfigsList();
     assertEquals(1, configs.size());
     assertEquals(configRule1, configs.get(0));
+  }
+
+  @Test
+  void testGetParamScopeRule() {
+
+    AnomalyExclusionRuleConfig configRule1 =
+        AnomalyExclusionRuleConfig.newBuilder()
+            .setId("rule1_id")
+            .setRuleData(
+                AnomalyExclusionRuleData.newBuilder()
+                    .setName("rule1")
+                    .setEventExclusionInfo(
+                        EventExclusionInfo.newBuilder()
+                            .setEventExclusionType(
+                                EventExclusionType.EVENT_EXCLUSION_TYPE_ALL_EVENTS)
+                            .build())
+                    .setAnomalyActorExclusionInfo(AnomalyActorExclusionInfo.newBuilder().build())
+                    .setAnomalyConfigScope(
+                        AnomalyConfigScope.newBuilder()
+                            .setParamScope(
+                                AnomalyParamScope.newBuilder()
+                                    .setParamName("paramName")
+                                    .setApiScope(AnomalyApiScope.newBuilder().setId("apiId"))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    configServiceHandler.upsertExclusionConfigByRuleId(configRule1, requestContext);
+
+    AnomalyExclusionRuleConfig config =
+        getAnomalyExclusionRuleHandler
+            .getRules(GetAnomalyExclusionRulesRequest.newBuilder().build(), requestContext)
+            .getConfigsList()
+            .get(0);
+
+    AnomalyParamScope paramScope =
+        AnomalyParamScope.newBuilder()
+            .setScope(
+                AnomalyParamInfoScope.newBuilder()
+                    .setApiScope(AnomalyApiScope.newBuilder().setId("apiId"))
+                    .build())
+            .setParamInfo(AnomalyParamInfo.newBuilder().setParamName("paramName").build())
+            .build();
+
+    AnomalyExclusionRuleConfig expectedConfig =
+        configRule1.toBuilder()
+            .mergeFrom(
+                AnomalyExclusionRuleConfig.newBuilder()
+                    .setRuleData(
+                        AnomalyExclusionRuleData.newBuilder()
+                            .setAnomalyConfigScope(
+                                AnomalyConfigScope.newBuilder().setParamScope(paramScope).build())
+                            .build())
+                    .build())
+            .build();
+
+    assertEquals(
+        "apiId",
+        config
+            .getRuleData()
+            .getAnomalyConfigScope()
+            .getParamScope()
+            .getScope()
+            .getApiScope()
+            .getId());
+    assertEquals(
+        "paramName",
+        config.getRuleData().getAnomalyConfigScope().getParamScope().getParamInfo().getParamName());
+    assertEquals(expectedConfig, config);
   }
 }

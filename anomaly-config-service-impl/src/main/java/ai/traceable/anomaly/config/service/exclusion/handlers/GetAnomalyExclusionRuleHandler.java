@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.exclusion.handlers;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.exclusion.utils.FilterUtils;
+import ai.traceable.anomaly.config.service.exclusion.utils.ParamScopeUtils;
 import ai.traceable.anomaly.config.service.v1.exclusion.AnomalyExclusionRuleConfig;
 import ai.traceable.anomaly.config.service.v1.exclusion.GetAnomalyExclusionRulesRequest;
 import ai.traceable.anomaly.config.service.v1.exclusion.GetAnomalyExclusionRulesResponse;
@@ -31,7 +32,9 @@ public class GetAnomalyExclusionRuleHandler {
   public GetAnomalyExclusionRulesResponse getRules(
       GetAnomalyExclusionRulesRequest request, RequestContext requestContext) {
     List<AnomalyExclusionRuleConfig> anomalyExclusionRuleConfigList =
-        configServiceHandler.getAllExclusionConfigs(requestContext);
+        configServiceHandler.getAllExclusionConfigs(requestContext).stream()
+            .map(ParamScopeUtils::populateParamScope)
+            .collect(Collectors.toList());
 
     if (!request.hasFilter()) {
       return GetAnomalyExclusionRulesResponse.newBuilder()
