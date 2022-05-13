@@ -79,6 +79,7 @@ enum ParamValueType {
   PARAM_VALUE_TYPE_CLOB = 13;
   PARAM_VALUE_TYPE_HTML = 14;
   PARAM_VALUE_TYPE_RICH_TEXT_HTML = 15;
+  PARAM_VALUE_TYPE_FREE_TEXT = 16;
 }
 
 message AttributeOverrideIdentifier {
