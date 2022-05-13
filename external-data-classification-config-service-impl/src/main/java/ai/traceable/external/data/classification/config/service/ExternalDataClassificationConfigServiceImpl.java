@@ -20,7 +20,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
@@ -40,6 +39,7 @@ class ExternalDataClassificationConfigServiceImpl
   private static final String DATA_PARSING_RULES = "data.parsing.rules";
   private static final String EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE =
       "external.data.classification.config.service";
+  private static final String LEGACY_DATASET_ID_PREFIX = "legacy-";
   private final List<DataParsingRule> dataParsingRulesList;
 
   @Inject
@@ -80,27 +80,26 @@ class ExternalDataClassificationConfigServiceImpl
           requestContext, request);
       List<RedactionRule> redactionRules =
           this.redactionRulesDao.getAllRedactionRules(requestContext);
-      // filter out redaction rules from data classification rules
-      Set<String> redactionRulesIds =
-          redactionRules.stream().map(RedactionRule::getId).collect(Collectors.toUnmodifiableSet());
-      Map<String, DataType> dataTypesWithoutTranslatedRedactionRulesToIdMap =
+      Map<String, DataType> dataTypesToIdMap =
           this.dataClassificationRulesDao.getAllDataTypes(requestContext).stream()
-              .filter(dataType -> !redactionRulesIds.contains(dataType.getId()))
               .collect(Collectors.toUnmodifiableMap(DataType::getId, Function.identity()));
       List<DataType> dataTypes = new ArrayList<>();
       List<DataSet> dataSets =
           this.dataClassificationRulesDao.getAllDataSets(requestContext).stream()
-              .filter(dataSet -> dataSet.getInfo().getEnabled())
+              .filter(
+                  dataSet ->
+                      dataSet.getInfo().getEnabled()
+                          && !dataSet.getId().startsWith(LEGACY_DATASET_ID_PREFIX))
               .sorted(Comparator.comparingInt(o -> comparatorUtility(o.getInfo())))
               .collect(Collectors.toUnmodifiableList());
       Map<String, DataSuppression> dataTypesToDataSuppressionMap = new HashMap<>();
       for (DataSet dataSet : dataSets) {
         DataSuppression dataSuppression = dataSet.getInfo().getDataSuppression();
         for (String dataTypeId : dataSet.getInfo().getDataTypeIdsList()) {
-          if (dataTypesWithoutTranslatedRedactionRulesToIdMap.containsKey(dataTypeId)
+          if (dataTypesToIdMap.containsKey(dataTypeId)
               && !dataTypesToDataSuppressionMap.containsKey(dataTypeId)) {
             dataTypesToDataSuppressionMap.put(dataTypeId, dataSuppression);
-            dataTypes.add(dataTypesWithoutTranslatedRedactionRulesToIdMap.get(dataTypeId));
+            dataTypes.add(dataTypesToIdMap.get(dataTypeId));
           }
         }
       }

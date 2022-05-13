@@ -138,12 +138,12 @@ public class ExternalDataClassificationConfigServiceImplTest {
                       .addDataTypeIds("datatype-1")
                       .addDataTypeIds("datatype-2"))
               .build();
-      DataSet dataSet4 =
+      DataSet legacyDataSet =
           DataSet.newBuilder()
-              .setId("dataset-4")
+              .setId("legacy-dataset")
               .setInfo(
                   DataSetInfo.newBuilder()
-                      .setName("datatsetname-4")
+                      .setName("legacy-dataset-1")
                       .setEnabled(false)
                       .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW)
                       .setSensitivity(Sensitivity.SENSITIVITY_LOW)
@@ -151,7 +151,7 @@ public class ExternalDataClassificationConfigServiceImplTest {
               .build();
       responseObserver.onNext(
           GetDataSetsResponse.newBuilder()
-              .addAllDataSets(List.of(dataSet1, dataSet2, dataSet3))
+              .addAllDataSets(List.of(dataSet1, dataSet2, dataSet3, legacyDataSet))
               .build());
       responseObserver.onCompleted();
     }
