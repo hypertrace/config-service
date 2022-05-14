@@ -28,6 +28,8 @@ import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
 import ai.traceable.external.data.classification.config.service.v1.ExternalDataClassificationServiceGrpc;
 import ai.traceable.external.data.classification.config.service.v1.ExternalDataClassificationServiceGrpc.ExternalDataClassificationServiceBlockingStub;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest;
+import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest.EnvironmentFilter;
+import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest.OnlyIfChangedFilter;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigResponse;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesResponse;
@@ -97,6 +99,14 @@ public class ExternalDataClassificationConfigServiceImplTest {
         externalDataClassificationServiceBlockingStub.getDataClassificationConfig(
             GetDataClassificationConfigRequest.getDefaultInstance());
     assertEquals(2, response.getDataTypesCount());
+
+    response =
+        externalDataClassificationServiceBlockingStub.getDataClassificationConfig(
+            GetDataClassificationConfigRequest.newBuilder()
+                .setChangeFilter(OnlyIfChangedFilter.getDefaultInstance())
+                .setEnvironmentFilter(EnvironmentFilter.newBuilder().setEnvironmentName("random"))
+                .build());
+    assertEquals(1, response.getDataTypesCount());
   }
 
   class MockDataClassificationConfigService
@@ -184,7 +194,8 @@ public class ExternalDataClassificationConfigServiceImplTest {
                       .setName("datatypename-2")
                       .addScopedPatterns(
                           ScopedPattern.newBuilder()
-                              .setGlobalScope(GlobalScope.newBuilder().build())
+                              .setEnvironmentScope(
+                                  EnvironmentScope.newBuilder().addEnvironmentIds("env-1"))
                               .addLocations(Location.LOCATION_ANY)
                               .setKeyPattern(
                                   StringPattern.newBuilder()

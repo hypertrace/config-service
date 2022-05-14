@@ -8,7 +8,6 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule.Location;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
 import ai.traceable.external.data.classification.config.service.v1.AttributeFilter;
-import ai.traceable.external.data.classification.config.service.v1.AttributePredicate;
 import ai.traceable.external.data.classification.config.service.v1.DataType;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTransformation;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTypeMatchRule;
@@ -16,7 +15,6 @@ import ai.traceable.external.data.classification.config.service.v1.DataType.Resu
 import ai.traceable.external.data.classification.config.service.v1.Operator;
 import ai.traceable.external.data.classification.config.service.v1.PathPredicate;
 import ai.traceable.external.data.classification.config.service.v1.PathValuePredicate;
-import ai.traceable.external.data.classification.config.service.v1.SpanFilter;
 import ai.traceable.external.data.classification.config.service.v1.StringPredicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -30,11 +28,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 class DataClassificationRulesTranslator {
-  private static final StringPredicate KEY_PREDICATE_FOR_ENVIRONMENT_SCOPE =
-      StringPredicate.newBuilder()
-          .setOperator(Operator.OPERATOR_EQUALS)
-          .setValue("deployment.environment")
-          .build();
   private static final String HTTP_REQUEST_HEADER = "http.request.header";
   private static final String RPC_REQUEST_METADATA = "rpc.request.metadata";
   private static final String HTTP_RESPONSE_HEADER = "http.response.header";
@@ -72,18 +65,21 @@ class DataClassificationRulesTranslator {
 
   List<DataType> translateDataTypes(
       List<ai.traceable.data.classification.config.service.v1.DataType> dataTypes,
-      Map<String, DataSuppression> dataTypesToDataSuppressionMap) {
-    List<DataType> translatedDataTypes = new ArrayList<>();
-    for (ai.traceable.data.classification.config.service.v1.DataType dataType : dataTypes) {
-      translatedDataTypes.add(
-          translateDataType(dataType, dataTypesToDataSuppressionMap.get(dataType.getId())));
-    }
-    return translatedDataTypes;
+      Map<String, DataSuppression> dataTypesToDataSuppressionMap,
+      Optional<String> environmentName) {
+    return dataTypes.stream()
+        .map(
+            dataType ->
+                translateDataType(
+                    dataType, dataTypesToDataSuppressionMap.get(dataType.getId()), environmentName))
+        .flatMap(Optional::stream)
+        .collect(Collectors.toUnmodifiableList());
   }
 
-  private DataType translateDataType(
+  private Optional<DataType> translateDataType(
       ai.traceable.data.classification.config.service.v1.DataType dataType,
-      DataSuppression dataSuppression) {
+      DataSuppression dataSuppression,
+      Optional<String> environmentName) {
     DataType.Builder dataTypeBuilder = DataType.newBuilder();
     dataTypeBuilder.setDataTypeId(dataType.getId());
     translateDataSuppression(dataSuppression).ifPresent(dataTypeBuilder::setTransformation);
@@ -91,15 +87,29 @@ class DataClassificationRulesTranslator {
     dataType
         .getRule()
         .getScopedPatternsList()
-        .forEach(scopedPattern -> matchRules.add(translateScopedPattern(scopedPattern)));
+        .forEach(
+            scopedPattern -> {
+              if (environmentName.isEmpty()
+                  || scopedPattern.hasGlobalScope()
+                  || (scopedPattern.hasEnvironmentScope()
+                      && scopedPattern
+                          .getEnvironmentScope()
+                          .getEnvironmentIdsList()
+                          .contains(environmentName.get()))) {
+                matchRules.add(translateScopedPattern(scopedPattern));
+              }
+            });
+    if (matchRules.isEmpty()) {
+      return Optional.empty();
+    }
     dataTypeBuilder.addAllMatchRules(matchRules);
-    return dataTypeBuilder.build();
+    return Optional.of(dataTypeBuilder.build());
   }
 
   private DataTypeMatchRule translateScopedPattern(ScopedPattern scopedPattern) {
     DataTypeMatchRule.Builder dataTypeMatchRuleBuilder = DataTypeMatchRule.newBuilder();
-    // scope is mapped to span_filter
-    translateScope(scopedPattern).ifPresent(dataTypeMatchRuleBuilder::setSpanFilter);
+    // environment filter is already taken care of.
+    // TODO may need to support API scope in the future.
     translateLocations(scopedPattern.getLocationsList())
         .ifPresent(dataTypeMatchRuleBuilder::setAttributeFilter);
     dataTypeMatchRuleBuilder.setResult(translateAction(scopedPattern.getAction()));
@@ -205,28 +215,6 @@ class DataClassificationRulesTranslator {
     }
   }
 
-  private Optional<SpanFilter> translateScope(ScopedPattern scopedPattern) {
-    // TODO Api scope is not supported
-    if (scopedPattern.hasEnvironmentScope()
-        && !scopedPattern.getEnvironmentScope().getEnvironmentIdsList().isEmpty()) {
-      SpanFilter.Builder spanFilterBuilder = SpanFilter.newBuilder();
-      String regex_for_all_environment_ids =
-          buildRegexForEnvironmentIds(scopedPattern.getEnvironmentScope().getEnvironmentIdsList());
-      StringPredicate valuePredicate =
-          StringPredicate.newBuilder()
-              .setOperator(Operator.OPERATOR_MATCHES_REGEX)
-              .setValue(regex_for_all_environment_ids)
-              .build();
-      spanFilterBuilder.addRequiredMatchingAttributes(
-          AttributePredicate.newBuilder()
-              .setNamePredicate(KEY_PREDICATE_FOR_ENVIRONMENT_SCOPE)
-              .setValuePredicate(valuePredicate)
-              .build());
-      return Optional.of(spanFilterBuilder.build());
-    }
-    return Optional.empty();
-  }
-
   private Optional<DataTransformation> translateDataSuppression(DataSuppression dataSuppression) {
     switch (dataSuppression) {
       case DATA_SUPPRESSION_REDACT:
@@ -239,19 +227,5 @@ class DataClassificationRulesTranslator {
       default:
         return Optional.empty();
     }
-  }
-
-  private String buildRegexForEnvironmentIds(List<String> environmentIdsList) {
-    String regex =
-        environmentIdsList.stream()
-            .map(this::escapeSpecialCharsForRegex)
-            .collect(Collectors.joining("|"));
-    return "(" + regex + ")";
-  }
-
-  private String escapeSpecialCharsForRegex(String original) {
-    // escapes all the special chars for regex control
-    return original.replaceAll(
-        "[\\<\\(\\[\\{\\\\\\^\\-\\=\\$\\!\\|\\]\\}\\)\\?\\*\\+\\.\\>]", "\\\\$0");
   }
 }

@@ -13,26 +13,19 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
 import ai.traceable.external.data.classification.config.service.v1.AttributeFilter;
-import ai.traceable.external.data.classification.config.service.v1.AttributePredicate;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTransformation;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTypeMatchRule;
 import ai.traceable.external.data.classification.config.service.v1.DataType.Result;
 import ai.traceable.external.data.classification.config.service.v1.PathPredicate;
 import ai.traceable.external.data.classification.config.service.v1.PathValuePredicate;
-import ai.traceable.external.data.classification.config.service.v1.SpanFilter;
 import ai.traceable.external.data.classification.config.service.v1.StringPredicate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 public class DataClassificationRulesTranslatorTest {
-  private static final StringPredicate KEY_PREDICATE_FOR_ENVIRONMENT_SCOPE =
-      StringPredicate.newBuilder()
-          .setOperator(
-              ai.traceable.external.data.classification.config.service.v1.Operator.OPERATOR_EQUALS)
-          .setValue("deployment.environment")
-          .build();
   private final DataClassificationRulesTranslator dataClassificationRulesTranslator =
       new DataClassificationRulesTranslator();
 
@@ -131,17 +124,6 @@ public class DataClassificationRulesTranslatorTest {
             .setTransformation(DataTransformation.DATA_TRANSFORMATION_REDACT)
             .addMatchRules(
                 DataTypeMatchRule.newBuilder()
-                    .setSpanFilter(
-                        SpanFilter.newBuilder()
-                            .addRequiredMatchingAttributes(
-                                AttributePredicate.newBuilder()
-                                    .setNamePredicate(KEY_PREDICATE_FOR_ENVIRONMENT_SCOPE)
-                                    .setValuePredicate(
-                                        StringPredicate.newBuilder()
-                                            .setOperator(
-                                                ai.traceable.external.data.classification.config
-                                                    .service.v1.Operator.OPERATOR_MATCHES_REGEX)
-                                            .setValue("(en\\|v\\-1|env\\-2)"))))
                     .setAttributeFilter(
                         AttributeFilter.newBuilder()
                             .addAllPrefixes(
@@ -163,17 +145,6 @@ public class DataClassificationRulesTranslatorTest {
             .setTransformation(DataTransformation.DATA_TRANSFORMATION_REDACT)
             .addMatchRules(
                 DataTypeMatchRule.newBuilder()
-                    .setSpanFilter(
-                        SpanFilter.newBuilder()
-                            .addRequiredMatchingAttributes(
-                                AttributePredicate.newBuilder()
-                                    .setNamePredicate(KEY_PREDICATE_FOR_ENVIRONMENT_SCOPE)
-                                    .setValuePredicate(
-                                        StringPredicate.newBuilder()
-                                            .setOperator(
-                                                ai.traceable.external.data.classification.config
-                                                    .service.v1.Operator.OPERATOR_MATCHES_REGEX)
-                                            .setValue("(env\\-1)"))))
                     .setAttributeFilter(
                         AttributeFilter.newBuilder()
                             .addAllPrefixes(
@@ -206,17 +177,6 @@ public class DataClassificationRulesTranslatorTest {
             .setTransformation(DataTransformation.DATA_TRANSFORMATION_OBFUSCATE)
             .addMatchRules(
                 DataTypeMatchRule.newBuilder()
-                    .setSpanFilter(
-                        SpanFilter.newBuilder()
-                            .addRequiredMatchingAttributes(
-                                AttributePredicate.newBuilder()
-                                    .setNamePredicate(KEY_PREDICATE_FOR_ENVIRONMENT_SCOPE)
-                                    .setValuePredicate(
-                                        StringPredicate.newBuilder()
-                                            .setOperator(
-                                                ai.traceable.external.data.classification.config
-                                                    .service.v1.Operator.OPERATOR_MATCHES_REGEX)
-                                            .setValue("(env\\-1)"))))
                     .setAttributeFilter(
                         AttributeFilter.newBuilder()
                             .addAllPrefixes(List.of("http.request.header", "rpc.request.metadata")))
@@ -244,17 +204,6 @@ public class DataClassificationRulesTranslatorTest {
             .setDataTypeId("id-4")
             .addMatchRules(
                 DataTypeMatchRule.newBuilder()
-                    .setSpanFilter(
-                        SpanFilter.newBuilder()
-                            .addRequiredMatchingAttributes(
-                                AttributePredicate.newBuilder()
-                                    .setNamePredicate(KEY_PREDICATE_FOR_ENVIRONMENT_SCOPE)
-                                    .setValuePredicate(
-                                        StringPredicate.newBuilder()
-                                            .setOperator(
-                                                ai.traceable.external.data.classification.config
-                                                    .service.v1.Operator.OPERATOR_MATCHES_REGEX)
-                                            .setValue("(env\\-1)"))))
                     .setAttributeFilter(
                         AttributeFilter.newBuilder()
                             .addAllPrefixes(
@@ -283,11 +232,21 @@ public class DataClassificationRulesTranslatorTest {
 
     List<ai.traceable.external.data.classification.config.service.v1.DataType> translatedDataTypes =
         dataClassificationRulesTranslator.translateDataTypes(
-            List.of(dataType1, dataType2, dataType3, dataType4), dataTypesToDataSuppressionMap);
+            List.of(dataType1, dataType2, dataType3, dataType4),
+            dataTypesToDataSuppressionMap,
+            Optional.empty());
 
     List<ai.traceable.external.data.classification.config.service.v1.DataType> expectedDataTypes =
         List.of(expectedDataType1, expectedDataType2, expectedDataType3, expectedDataType4);
 
+    assertEquals(expectedDataTypes, translatedDataTypes);
+
+    translatedDataTypes =
+        dataClassificationRulesTranslator.translateDataTypes(
+            List.of(dataType1, dataType2, dataType3, dataType4),
+            dataTypesToDataSuppressionMap,
+            Optional.of("en|v-1"));
+    expectedDataTypes = List.of(expectedDataType1);
     assertEquals(expectedDataTypes, translatedDataTypes);
   }
 }
