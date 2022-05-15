@@ -32,9 +32,8 @@ class DataClassificationRulesTranslator {
   private static final String RPC_REQUEST_METADATA = "rpc.request.metadata";
   private static final String HTTP_RESPONSE_HEADER = "http.response.header";
   private static final String RPC_RESPONSE_METADATA = "rpc.response.metadata";
-  // The agent does not break down the query params to separate attributes, instead the url is
-  // matched by a data parsing rule which breaks down the query params into child keys
-  private static final String HTTP_REQUEST_QUERY_PARAM = "http.url";
+  private static final String HTTP_URL = "http.url";
+  private static final String HTTP_TARGET = "http.target";
   private static final String HTTP_REQUEST_BODY = "http.request.body";
   private static final String HTTP_RESPONSE_BODY = "http.response.body";
   private static final String RPC_REQUEST_BODY = "rpc.request.body";
@@ -49,6 +48,9 @@ class DataClassificationRulesTranslator {
       List.of(HTTP_REQUEST_HEADER, RPC_REQUEST_METADATA);
   private static final List<String> RESPONSE_HEADERS_PREFIXES_LIST =
       List.of(HTTP_RESPONSE_HEADER, RPC_RESPONSE_METADATA);
+  // The agent does not break down the query params to separate attributes, instead the url is
+  // matched by a data parsing rule which breaks down the query params into child keys
+  private static final List<String> HTTP_URL_LIST = List.of(HTTP_URL, HTTP_TARGET);
 
   // Any location really means any of the other defined locations rather than any possible location
   private static final List<String> ANY_LOCATION_PREFIXES_LIST =
@@ -58,7 +60,7 @@ class DataClassificationRulesTranslator {
               RESPONSE_HEADERS_PREFIXES_LIST,
               List.of(HTTP_REQUEST_COOKIE),
               List.of(HTTP_RESPONSE_COOKIE),
-              List.of(HTTP_REQUEST_QUERY_PARAM),
+              HTTP_URL_LIST,
               REQUEST_BODY_PREFIXES_LIST,
               RESPONSE_BODY_PREFIXES_LIST));
   private static final List<String> EMPTY_PREFIXES_LIST = List.of();
@@ -199,7 +201,7 @@ class DataClassificationRulesTranslator {
       case LOCATION_RESPONSE_COOKIE:
         return List.of(HTTP_RESPONSE_COOKIE);
       case LOCATION_QUERY:
-        return List.of(HTTP_REQUEST_QUERY_PARAM);
+        return HTTP_URL_LIST;
       case LOCATION_REQUEST_BODY:
         return REQUEST_BODY_PREFIXES_LIST;
       case LOCATION_RESPONSE_BODY:
