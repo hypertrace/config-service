@@ -3,7 +3,7 @@ package ai.traceable.localprocessing.config.service.apinaming.http;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainerConfigServiceGrpc;
 import ai.traceable.localprocessing.config.service.apinaming.http.namingconfig.HttpApiNamingConfigManagerModule;
 import ai.traceable.localprocessing.config.service.apinaming.http.trie.HttpApiNamingTrieManagerModule;
-import ai.traceable.localprocessing.config.service.config.EntityDataServiceConfig;
+import ai.traceable.localprocessing.config.service.config.EntityQueryServiceConfig;
 import ai.traceable.localprocessing.config.service.config.http.HttpApiNamingConfig;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -34,8 +34,8 @@ public class HttpApiNamingManagerModule extends AbstractModule {
   }
 
   @Provides
-  EntityDataServiceConfig providesEntityDataServiceConfig() {
-    return new EntityDataServiceConfig(this.config);
+  EntityQueryServiceConfig providesEntityDataServiceConfig() {
+    return new EntityQueryServiceConfig(this.config);
   }
 
   @Provides

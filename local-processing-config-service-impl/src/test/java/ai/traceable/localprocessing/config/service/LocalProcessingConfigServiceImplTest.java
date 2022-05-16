@@ -12,7 +12,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.localprocessing.config.service.apinaming.http.HttpApiNamingManager;
-import ai.traceable.localprocessing.config.service.client.EntityDataServiceClient;
+import ai.traceable.localprocessing.config.service.client.EntityQueryServiceClient;
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinator;
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinatorImpl;
 import ai.traceable.localprocessing.config.service.coordinator.DefaultProtectionModeConfigStore;
@@ -49,6 +49,7 @@ import io.grpc.ManagedChannel;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -68,7 +69,7 @@ class LocalProcessingConfigServiceImplTest {
   HttpApiNamingManager httpApiNamingManager;
   SpanProcessingRulesManager spanProcessingRulesManager;
   UuidGenerator uuidGenerator;
-  EntityDataServiceClient entityDataServiceClient;
+  EntityQueryServiceClient entityQueryServiceClient;
   LocalProcessingConfigRequestValidator localProcessingConfigRequestValidator;
 
   @BeforeEach
@@ -78,7 +79,7 @@ class LocalProcessingConfigServiceImplTest {
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(mockGenericConfigService.channel());
-    entityDataServiceClient = mock(EntityDataServiceClient.class);
+    entityQueryServiceClient = mock(EntityQueryServiceClient.class);
     localProcessingConfigRequestValidator = mock(LocalProcessingConfigRequestValidator.class);
 
     Map<String, Map> configMap = new HashMap<>();
@@ -156,7 +157,7 @@ class LocalProcessingConfigServiceImplTest {
 
   @Test
   @DisplayName("Test api naming model")
-  void getApiNamingModel() {
+  void getApiNamingModel() throws ExecutionException {
     List<HttpServiceResponse> serviceResponseList =
         List.of(
             HttpServiceResponse.newBuilder()

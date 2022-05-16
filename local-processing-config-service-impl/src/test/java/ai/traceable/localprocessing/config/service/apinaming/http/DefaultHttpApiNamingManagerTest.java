@@ -37,9 +37,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import org.hypertrace.config.utils.SpanFilterMatcher;
 import org.hypertrace.core.grpcutils.context.RequestContext;
-import org.hypertrace.entity.data.service.v1.Entity;
 import org.hypertrace.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -118,7 +118,7 @@ class DefaultHttpApiNamingManagerTest {
   }
 
   @Test
-  void testGetServiceResponseList() {
+  void testGetServiceResponseList() throws ExecutionException {
     when(trieModel.getNonEmbryonicWildcardPaths(ApiNamingManagerTestUtils.buildTrieNodeConfig()))
         .thenReturn(new HashSet<>());
     when(httpApiNamingConfig.getFullTrieReloadConfig())
@@ -137,10 +137,14 @@ class DefaultHttpApiNamingManagerTest {
             .setConfigHash(httpApiNamingConfig.getHash())
             .build();
 
-    when(entityFetcher.getEntity(any(), eq("serviceName1"), eq(Optional.of("environment"))))
-        .thenReturn(Optional.of(Entity.newBuilder().setEntityId("serviceId1").build()));
-    when(entityFetcher.getEntity(any(), eq("serviceName2"), eq(Optional.of("environment"))))
-        .thenReturn(Optional.of(Entity.newBuilder().setEntityId("serviceId2").build()));
+    when(entityFetcher.getServiceIds(
+            any(), eq(List.of(serviceRequest1, serviceRequest2)), eq(Optional.of("environment"))))
+        .thenReturn(
+            Map.of(
+                serviceRequest1,
+                Optional.of("serviceId1"),
+                serviceRequest2,
+                Optional.of("serviceId2")));
 
     List<HttpServiceResponse> actualServiceResponseList =
         httpApiNamingManager.getHttpServiceResponseList(
@@ -178,7 +182,7 @@ class DefaultHttpApiNamingManagerTest {
   }
 
   @Test
-  void testTrieConstruction() {
+  void testTrieConstruction() throws ExecutionException {
     when(httpApiNamingConfig.getFullTrieReloadConfig())
         .thenReturn(buildFullTrieReloadConfig(false, "0.0.0"));
     when(trieModel.getNonEmbryonicWildcardPaths(any()))
@@ -194,8 +198,9 @@ class DefaultHttpApiNamingManagerTest {
             .setServiceName("serviceName1")
             .setConfigHash(httpApiNamingConfig.getHash())
             .build();
-    when(entityFetcher.getEntity(any(), eq("serviceName1"), eq(Optional.of("environment"))))
-        .thenReturn(Optional.of(Entity.newBuilder().setEntityId("serviceId1").build()));
+    when(entityFetcher.getServiceIds(
+            any(), eq(List.of(serviceRequest)), eq(Optional.of("environment"))))
+        .thenReturn(Map.of(serviceRequest, Optional.of("serviceId1")));
 
     List<HttpServiceResponse> actualServiceResponseList =
         httpApiNamingManager.getHttpServiceResponseList(
@@ -218,7 +223,7 @@ class DefaultHttpApiNamingManagerTest {
   }
 
   @Test
-  void testTrieDiffLogConstruction() {
+  void testTrieDiffLogConstruction() throws ExecutionException {
     when(httpApiNamingConfig.getFullTrieReloadConfig())
         .thenReturn(buildFullTrieReloadConfig(false, "0.0.0"));
     when(trieDiffLogModel.getTrieDiffLog())
@@ -232,8 +237,9 @@ class DefaultHttpApiNamingManagerTest {
             .setConfigHash("")
             .setToken("t=1;v=0.0.0")
             .build();
-    when(entityFetcher.getEntity(any(), eq("serviceName1"), eq(Optional.of("environment"))))
-        .thenReturn(Optional.of(Entity.newBuilder().setEntityId("serviceId1").build()));
+    when(entityFetcher.getServiceIds(
+            any(), eq(List.of(serviceRequest1)), eq(Optional.of("environment"))))
+        .thenReturn(Map.of(serviceRequest1, Optional.of("serviceId1")));
 
     List<HttpServiceResponse> actualServiceResponseList =
         httpApiNamingManager.getHttpServiceResponseList(
@@ -253,7 +259,7 @@ class DefaultHttpApiNamingManagerTest {
   }
 
   @Test
-  void testLocalApiNamingConfig() {
+  void testLocalApiNamingConfig() throws ExecutionException {
     when(trieDiffLogModel.getTrieDiffLog())
         .thenReturn(ApiNamingManagerTestUtils.buildTrieDiffLog());
     when(fileMetadata.getModificationTime()).thenReturn(3L);
@@ -267,9 +273,10 @@ class DefaultHttpApiNamingManagerTest {
             .setConfigHash("")
             .setToken("t=1;v=0.0.0")
             .build();
-    when(entityFetcher.getEntity(any(), eq("serviceName1"), eq(Optional.of("environment"))))
-        .thenReturn(Optional.of(Entity.newBuilder().setEntityId("serviceId1").build()));
 
+    when(entityFetcher.getServiceIds(
+            any(), eq(List.of(serviceRequest1)), eq(Optional.of("environment"))))
+        .thenReturn(Map.of(serviceRequest1, Optional.of("serviceId1")));
     when(httpApiNamingConfig.getFullTrieReloadConfig())
         .thenReturn(buildFullTrieReloadConfig(true, "1.0.0"));
     List<HttpServiceResponse> actualServiceResponseList =
