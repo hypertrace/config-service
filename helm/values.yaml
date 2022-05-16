@@ -98,16 +98,43 @@ s3.config:
 
 iamServiceAccountSecret: gcs-iam-secret
 
-modelStores:
-  - deepStoreScheme: "file"
-    readEnabled: true
-    readPriority: 1
-    writeDisabled: false
+trieModels:
+  modelStores:
+    - deepStoreScheme: "file"
+      readEnabled: true
+      readPriority: 1
+      writeDisabled: false
+  cache:
+    refreshAfterWriteDuration: 150s
+    expireAfterWriteDuration: 300s
+    maximumSize: 100
 
 trieDiffLog:
   modelStore:
     deepStoreScheme: "file"
   trieDiffLogsRetentionPeriod : 1h
+  cache:
+    refreshAfterWriteDuration : 150s
+    expireAfterWriteDuration : 300s
+    maximumSize : 100
+
+entityFetcher:
+  cache:
+    refreshAfterWriteDuration : 12h
+    expireAfterWriteDuration : 24h
+    maximumSize : 1000
+
+apiNamingCustomRules:
+  cache:
+    refreshAfterWriteDuration : 150s
+    expireAfterWriteDuration : 300s
+    maximumSize : 100
+
+apiNamingConfigs:
+  cache:
+    refreshAfterWriteDuration : 12h
+    expireAfterWriteDuration : 24h
+    maximumSize : 100
 
 ###########
 # Config Maps

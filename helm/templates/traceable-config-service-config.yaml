@@ -57,9 +57,9 @@ data:
     }
     api.naming.config {
       trieModels = {
-        {{- if $.Values.modelStores }}
+        {{- if $.Values.trieModels.modelStores }}
         model.stores = [
-          {{- range $sk,$sv := $.Values.modelStores }}
+          {{- range $sk,$sv := $.Values.trieModels.modelStores }}
           {
             deep.store.fs.scheme = {{ $sv.deepStoreScheme }}
             read.enabled = {{ $sv.readEnabled }}
@@ -85,7 +85,12 @@ data:
           },
           {{- end}}
         ]
-      {{- end}}
+        {{- end}}
+        cache = {
+          refreshAfterWriteDuration = {{ .Values.trieModels.cache.refreshAfterWriteDuration }}
+          expireAfterWriteDuration = {{ .Values.trieModels.cache.expireAfterWriteDuration }}
+          maximumSize = {{ .Values.trieModels.cache.maximumSize }}
+        }
       }
       trieDiffLog = {
         model.store = {
@@ -109,6 +114,32 @@ data:
           {{- end }}
         }
         diff.logs.retention.period = {{ .Values.trieDiffLog.trieDiffLogsRetentionPeriod }}
+        cache = {
+          refreshAfterWriteDuration = {{ .Values.trieDiffLog.cache.refreshAfterWriteDuration }}
+          expireAfterWriteDuration = {{ .Values.trieDiffLog.cache.expireAfterWriteDuration }}
+          maximumSize = {{ .Values.trieDiffLog.cache.maximumSize }}
+        }
+      }
+      entity.fetcher = {
+        cache = {
+          refreshAfterWriteDuration = {{ .Values.entityFetcher.cache.refreshAfterWriteDuration }}
+          expireAfterWriteDuration = {{ .Values.entityFetcher.cache.expireAfterWriteDuration }}
+          maximumSize = {{ .Values.entityFetcher.cache.maximumSize }}
+        }
+      }
+      customRules = {
+        cache = {
+          refreshAfterWriteDuration = {{ .Values.apiNamingCustomRules.cache.refreshAfterWriteDuration }}
+          expireAfterWriteDuration = {{ .Values.apiNamingCustomRules.cache.expireAfterWriteDuration }}
+          maximumSize = {{ .Values.apiNamingCustomRules.cache.maximumSize }}
+        }
+      }
+      configs = {
+        cache = {
+          refreshAfterWriteDuration = {{ .Values.apiNamingConfigs.cache.refreshAfterWriteDuration }}
+          expireAfterWriteDuration = {{ .Values.apiNamingConfigs.cache.expireAfterWriteDuration }}
+          maximumSize = {{ .Values.apiNamingConfigs.cache.maximumSize }}
+        }
       }
     }
     feature.flag.service.config = {
