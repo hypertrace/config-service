@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import com.google.inject.Guice;
 import com.typesafe.config.Config;
 import io.grpc.ManagedChannel;
+import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.junit.jupiter.api.Test;
 
 public class ExternalDataClassificationConfigServiceModuleTest {
@@ -13,11 +14,13 @@ public class ExternalDataClassificationConfigServiceModuleTest {
   void testResolveBindings() {
     ManagedChannel mockChannel = mock(ManagedChannel.class);
     Config mockConfig = mock(Config.class);
+    GrpcChannelRegistry channelRegistry = mock(GrpcChannelRegistry.class);
 
     assertDoesNotThrow(
         () ->
             Guice.createInjector(
-                    new ExternalDataClassificationConfigServiceModule(mockChannel, mockConfig))
+                    new ExternalDataClassificationConfigServiceModule(
+                        mockChannel, mockConfig, channelRegistry))
                 .getAllBindings());
   }
 }

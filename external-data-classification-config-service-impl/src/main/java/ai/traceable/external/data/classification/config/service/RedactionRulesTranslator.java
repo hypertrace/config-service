@@ -15,18 +15,83 @@ import ai.traceable.external.data.classification.config.service.v1.SpanFilter;
 import ai.traceable.external.data.classification.config.service.v1.StringPredicate;
 import ai.traceable.sensitivedata.config.service.v1.Condition;
 import ai.traceable.sensitivedata.config.service.v1.Condition.AttributeRegexMatch;
+import ai.traceable.sensitivedata.config.service.v1.Parameter;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 class RedactionRulesTranslator {
+
+  // this should be in sync with id in PiiFilterConfigServiceImpl in sensitive data config service
+  // impl and id in RedactionRulesDao in data classification config service impl
+  private static final String LEGACY_SENSITIVE_HEADERS_DATA_TYPE_ID =
+      "legacy-datatype-sensitive-headers-id";
+  private static final List<String> SENSITIVE_HEADERS_PREFIXES_LIST =
+      List.of(
+          "rpc.response.metadata",
+          "http.response.header",
+          "rpc.request.metadata",
+          "http.request.header");
 
   public List<DataType> translateRedactionRules(List<RedactionRule> redactionRules) {
     return redactionRules.stream()
         .map(this::translateRedactionRule)
         .collect(Collectors.toUnmodifiableList());
+  }
+
+  public Optional<DataType> translateDataTypeForSensitiveHeaders(
+      List<Parameter> sensitiveHeaderParameters, RedactionStrategy redactionStrategy) {
+    Optional<DataTransformation> maybeDataTransformation =
+        translateRedactionStrategyForHeaders(redactionStrategy);
+    List<DataTypeMatchRule> matchRules =
+        sensitiveHeaderParameters.stream()
+            .map(Parameter::getName)
+            .distinct()
+            .map(this::translateHeaderNameToMatchRule)
+            .collect(Collectors.toUnmodifiableList());
+    return maybeDataTransformation
+        .filter(transformation -> !matchRules.isEmpty())
+        .map(
+            transformation ->
+                DataType.newBuilder()
+                    .setDataTypeId(LEGACY_SENSITIVE_HEADERS_DATA_TYPE_ID)
+                    .setTransformation(transformation)
+                    .addAllMatchRules(matchRules)
+                    .build());
+  }
+
+  private Optional<DataTransformation> translateRedactionStrategyForHeaders(
+      RedactionStrategy redactionStrategy) {
+    switch (redactionStrategy) {
+      case REDACTION_STRATEGY_HASH:
+        return Optional.of(DataTransformation.DATA_TRANSFORMATION_OBFUSCATE);
+      case REDACTION_STRATEGY_REDACT:
+        return Optional.of(DataTransformation.DATA_TRANSFORMATION_REDACT);
+      case REDACTION_STRATEGY_RAW:
+        return Optional.empty();
+      case REDACTION_STRATEGY_UNSPECIFIED:
+      default:
+        log.error(
+            "This redaction strategy is not supported for sensitive headers! {}",
+            redactionStrategy);
+        return Optional.empty();
+    }
+  }
+
+  private DataTypeMatchRule translateHeaderNameToMatchRule(String name) {
+    return DataTypeMatchRule.newBuilder()
+        .setResult(Result.RESULT_MATCH)
+        .setPathPredicate(
+            PathPredicate.newBuilder()
+                .setPathSegmentPredicate(
+                    StringPredicate.newBuilder().setValue(name).setOperator(OPERATOR_EQUALS)))
+        .setAttributeFilter(
+            AttributeFilter.newBuilder().addAllPrefixes(SENSITIVE_HEADERS_PREFIXES_LIST))
+        .build();
   }
 
   private DataType translateRedactionRule(RedactionRule redactionRule) {

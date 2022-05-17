@@ -2,6 +2,8 @@ package ai.traceable.external.data.classification.config.service;
 
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
+import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc;
+import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc.InsightsServiceBlockingStub;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
 import com.google.inject.AbstractModule;
@@ -9,20 +11,26 @@ import com.google.inject.Provides;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.Channel;
+import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 public class ExternalDataClassificationConfigServiceModule extends AbstractModule {
   private final Channel channel;
   private final Config config;
+  private final GrpcChannelRegistry channelRegistry;
+  private static final String INSIGHTS_SERVICE_CONFIG = "insights.service.config";
 
-  ExternalDataClassificationConfigServiceModule(Channel channel, Config config) {
+  ExternalDataClassificationConfigServiceModule(
+      Channel channel, Config config, GrpcChannelRegistry channelRegistry) {
     this.channel = channel;
     this.config = config;
+    this.channelRegistry = channelRegistry;
   }
 
   @Override
   protected void configure() {
     bind(BindableService.class).to(ExternalDataClassificationConfigServiceImpl.class);
+    bind(InsightsServiceCoordinator.class).to(InsightsServiceCoordinatorImpl.class);
     bind(Config.class).toInstance(config);
   }
 
@@ -36,6 +44,16 @@ public class ExternalDataClassificationConfigServiceModule extends AbstractModul
   @Provides
   DataClassificationConfigServiceBlockingStub provideDataClassificationConfigService() {
     return DataClassificationConfigServiceGrpc.newBlockingStub(this.channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  InsightsServiceBlockingStub providesInsightsService(Config config) {
+    return InsightsServiceGrpc.newBlockingStub(
+            channelRegistry.forAddress(
+                config.getConfig(INSIGHTS_SERVICE_CONFIG).getString("host"),
+                config.getConfig(INSIGHTS_SERVICE_CONFIG).getInt("port")))
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

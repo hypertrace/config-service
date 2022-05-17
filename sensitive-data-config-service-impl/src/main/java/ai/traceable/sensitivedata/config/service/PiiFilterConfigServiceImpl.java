@@ -52,6 +52,7 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
       List.of(HTTP_RESPONSE_HEADER + SEPARATOR, RPC_RESPONSE_METADATA + SEPARATOR);
   private static final List<String> EMPTY_PREFIXES_LIST = List.of("");
   // this should be in sync with id in RedactionRulesDao in data classification config service impl
+  // and id in RedactionRulesTranslator in external data classification config service impl
   private static final String LEGACY_SENSITIVE_HEADERS_DATA_TYPE_ID =
       "legacy-datatype-sensitive-headers-id";
   // this should be in sync with id in RedactionRulesDao in data classification config service impl

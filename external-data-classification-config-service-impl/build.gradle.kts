@@ -12,6 +12,7 @@ dependencies {
 
   implementation(projects.dataClassificationConfigServiceApi)
   implementation(projects.sensitiveDataConfigServiceApi)
+  implementation(libs.traceable.insights.api)
   implementation(libs.hypertrace.grpcutils.client)
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.configservice.validation)

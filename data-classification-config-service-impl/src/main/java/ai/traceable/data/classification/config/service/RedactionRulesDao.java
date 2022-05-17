@@ -57,7 +57,7 @@ public class RedactionRulesDao {
   static final String LEGACY_SENSITIVE_HEADERS_DATA_TYPE_DESCRIPTION =
       "Legacy datatype for sensitive headers";
   // this should be in sync with id in PiiFilterConfigServiceImpl in sensitive data config service
-  // impl
+  // impl and id in RedactionRulesTranslator in external data classification config service impl
   static final String LEGACY_SENSITIVE_HEADERS_DATA_TYPE_ID =
       "legacy-datatype-sensitive-headers-id";
   static final DataType LEGACY_SENSITIVE_HEADERS_DATA_TYPE =

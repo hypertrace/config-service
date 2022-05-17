@@ -1,18 +1,29 @@
 package ai.traceable.external.data.classification.config.service;
 
+import static ai.traceable.external.data.classification.config.service.v1.Operator.OPERATOR_EQUALS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import ai.traceable.external.data.classification.config.service.v1.AttributeFilter;
 import ai.traceable.external.data.classification.config.service.v1.DataType;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTransformation;
+import ai.traceable.external.data.classification.config.service.v1.DataType.DataTypeMatchRule;
+import ai.traceable.external.data.classification.config.service.v1.DataType.Result;
+import ai.traceable.external.data.classification.config.service.v1.PathPredicate;
+import ai.traceable.external.data.classification.config.service.v1.StringPredicate;
 import ai.traceable.sensitivedata.config.service.v1.Condition;
 import ai.traceable.sensitivedata.config.service.v1.Condition.AttributeRegexMatch;
+import ai.traceable.sensitivedata.config.service.v1.ParamType;
+import ai.traceable.sensitivedata.config.service.v1.Parameter;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 public class RedactionRulesTranslatorTest {
   private final RedactionRulesTranslator redactionRulesTranslator = new RedactionRulesTranslator();
+  private static final String LEGACY_SENSITIVE_HEADERS_DATA_TYPE_ID =
+      "legacy-datatype-sensitive-headers-id";
 
   @Test
   void translateRedactionRulesTest() {
@@ -96,5 +107,52 @@ public class RedactionRulesTranslatorTest {
             .getValue());
     assertEquals(
         "prefix", translatedDataTypes.get(1).getMatchRules(0).getAttributeFilter().getPrefixes(0));
+  }
+
+  @Test
+  void translateDataTypesForSensitiveHeadersTest() {
+    Parameter parameter1 =
+        Parameter.newBuilder().setName("name-1").setParamType(ParamType.PARAM_TYPE_HEADER).build();
+    Parameter parameter2 =
+        Parameter.newBuilder().setName("name-2").setParamType(ParamType.PARAM_TYPE_HEADER).build();
+    Parameter parameter3 =
+        Parameter.newBuilder().setName("name-3").setParamType(ParamType.PARAM_TYPE_HEADER).build();
+    DataType expectedDataType =
+        DataType.newBuilder()
+            .setDataTypeId(LEGACY_SENSITIVE_HEADERS_DATA_TYPE_ID)
+            .setTransformation(DataTransformation.DATA_TRANSFORMATION_REDACT)
+            .addMatchRules(buildMatchRule("name-1"))
+            .addMatchRules(buildMatchRule("name-2"))
+            .addMatchRules(buildMatchRule("name-3"))
+            .build();
+
+    Optional<DataType> actualDataType =
+        redactionRulesTranslator.translateDataTypeForSensitiveHeaders(
+            List.of(parameter1, parameter2, parameter3),
+            RedactionStrategy.REDACTION_STRATEGY_REDACT);
+    assertEquals(Optional.of(expectedDataType), actualDataType);
+
+    actualDataType =
+        redactionRulesTranslator.translateDataTypeForSensitiveHeaders(
+            List.of(parameter3, parameter2, parameter1), RedactionStrategy.REDACTION_STRATEGY_RAW);
+    assertEquals(Optional.empty(), actualDataType);
+  }
+
+  private DataTypeMatchRule buildMatchRule(String name) {
+    return DataTypeMatchRule.newBuilder()
+        .setResult(Result.RESULT_MATCH)
+        .setPathPredicate(
+            PathPredicate.newBuilder()
+                .setPathSegmentPredicate(
+                    StringPredicate.newBuilder().setValue(name).setOperator(OPERATOR_EQUALS)))
+        .setAttributeFilter(
+            AttributeFilter.newBuilder()
+                .addAllPrefixes(
+                    List.of(
+                        "rpc.response.metadata",
+                        "http.response.header",
+                        "rpc.request.metadata",
+                        "http.request.header")))
+        .build();
   }
 }

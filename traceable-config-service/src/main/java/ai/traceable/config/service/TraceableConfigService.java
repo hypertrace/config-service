@@ -184,7 +184,8 @@ public class TraceableConfigService extends PlatformService {
     BindableService externalUserAttributionConfigService =
         ExternalUserAttributionConfigServiceFactory.build(managedChannel);
     BindableService externalDataClassificationConfigService =
-        ExternalDataClassificationConfigServiceFactory.build(managedChannel, config);
+        ExternalDataClassificationConfigServiceFactory.build(
+            managedChannel, config, channelRegistry);
     externalServerBuilder
         .addService(InterceptorUtil.wrapInterceptors(piiFilterConfigService))
         .addService(InterceptorUtil.wrapInterceptors(localProcessingConfigService))

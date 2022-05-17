@@ -33,12 +33,16 @@ import ai.traceable.external.data.classification.config.service.v1.GetDataClassi
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigResponse;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesResponse;
+import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeRequest;
+import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeResponse;
+import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
 import com.typesafe.config.Config;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import org.hypertrace.config.service.test.MockGenericConfigService;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,6 +54,7 @@ public class ExternalDataClassificationConfigServiceImplTest {
   ExternalDataClassificationServiceBlockingStub externalDataClassificationServiceBlockingStub;
   SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub;
   DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceBlockingStub;
+  InsightsServiceCoordinator insightsServiceCoordinator;
   UuidGenerator uuidGenerator;
   private static final String EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE =
       "external.data.classification.config.service";
@@ -70,6 +75,9 @@ public class ExternalDataClassificationConfigServiceImplTest {
     when(mockConfig.getConfig(EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE))
         .thenReturn(mockExternalDataClassificationConfig);
     when(mockExternalDataClassificationConfig.getObjectList(DATA_PARSING_RULES)).thenReturn(null);
+    insightsServiceCoordinator = mock(InsightsServiceCoordinatorImpl.class);
+    when(insightsServiceCoordinator.getSensitiveHeaderParameters(RequestContext.CURRENT.get()))
+        .thenReturn(List.of());
     mockGenericConfigService
         .addService(
             new ExternalDataClassificationConfigServiceImpl(
@@ -79,7 +87,8 @@ public class ExternalDataClassificationConfigServiceImplTest {
                 new DataClassificationRulesDao(dataClassificationConfigServiceBlockingStub),
                 new RedactionRulesTranslator(),
                 new DataClassificationRulesTranslator(),
-                new ExternalDataClassificationRuleResponseBuilder(uuidGenerator)))
+                new ExternalDataClassificationRuleResponseBuilder(uuidGenerator),
+                insightsServiceCoordinator))
         .addService(new MockSensitiveDataConfigService())
         .addService(new MockDataClassificationConfigService())
         .start();
@@ -246,6 +255,17 @@ public class ExternalDataClassificationConfigServiceImplTest {
       GetAllRedactionRulesResponse.Builder responseBuilder =
           GetAllRedactionRulesResponse.newBuilder();
       responseObserver.onNext(responseBuilder.build());
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getRedactionStrategyForType(
+        GetRedactionStrategyForTypeRequest request,
+        StreamObserver<GetRedactionStrategyForTypeResponse> responseObserver) {
+      responseObserver.onNext(
+          GetRedactionStrategyForTypeResponse.newBuilder()
+              .setRedactionStrategy(RedactionStrategy.REDACTION_STRATEGY_RAW)
+              .build());
       responseObserver.onCompleted();
     }
   }

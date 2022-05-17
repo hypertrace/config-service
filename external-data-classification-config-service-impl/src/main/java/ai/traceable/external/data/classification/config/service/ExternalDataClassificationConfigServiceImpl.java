@@ -1,5 +1,8 @@
 package ai.traceable.external.data.classification.config.service;
 
+import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_HASH;
+import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_REDACT;
+
 import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
@@ -8,7 +11,9 @@ import ai.traceable.external.data.classification.config.service.v1.DataParsingRu
 import ai.traceable.external.data.classification.config.service.v1.ExternalDataClassificationServiceGrpc.ExternalDataClassificationServiceImplBase;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigResponse;
+import ai.traceable.sensitivedata.config.service.v1.Parameter;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
+import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import com.google.inject.Inject;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
@@ -37,6 +42,7 @@ class ExternalDataClassificationConfigServiceImpl
   private final RedactionRulesTranslator redactionRulesTranslator;
   private final DataClassificationRulesTranslator dataClassificationRulesTranslator;
   private final ExternalDataClassificationRuleResponseBuilder responseBuilder;
+  private final InsightsServiceCoordinator insightsServiceCoordinator;
   private static final String DATA_PARSING_RULES = "data.parsing.rules";
   private static final String EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE =
       "external.data.classification.config.service";
@@ -52,7 +58,8 @@ class ExternalDataClassificationConfigServiceImpl
       DataClassificationRulesDao dataClassificationRulesDao,
       RedactionRulesTranslator redactionRulesTranslator,
       DataClassificationRulesTranslator dataClassificationRulesTranslator,
-      ExternalDataClassificationRuleResponseBuilder responseBuilder) {
+      ExternalDataClassificationRuleResponseBuilder responseBuilder,
+      InsightsServiceCoordinator insightsServiceCoordinator) {
     this.externalDataClassificationConfigRequestValidator =
         externalDataClassificationConfigRequestValidator;
     this.redactionRulesDao = redactionRulesDao;
@@ -60,6 +67,7 @@ class ExternalDataClassificationConfigServiceImpl
     this.redactionRulesTranslator = redactionRulesTranslator;
     this.dataClassificationRulesTranslator = dataClassificationRulesTranslator;
     this.responseBuilder = responseBuilder;
+    this.insightsServiceCoordinator = insightsServiceCoordinator;
     List<? extends ConfigObject> dataParsingRulesObjectList = null;
     Config externalDataClassificationConfig =
         config.getConfig(EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE);
@@ -114,6 +122,18 @@ class ExternalDataClassificationConfigServiceImpl
               dataTypesToDataSuppressionMap,
               Optional.of(request.getEnvironmentFilter().getEnvironmentName())
                   .filter(envName -> !envName.isBlank())));
+
+      // sensitive headers
+      RedactionStrategy redactionStrategy =
+          redactionRulesDao.getParamTypeHeaderRedactionStrategy(requestContext);
+      if (redactionStrategy.equals(REDACTION_STRATEGY_HASH)
+          || redactionStrategy.equals(REDACTION_STRATEGY_REDACT)) {
+        List<Parameter> sensitiveHeaderParameters =
+            insightsServiceCoordinator.getSensitiveHeaderParameters(requestContext);
+        redactionRulesTranslator
+            .translateDataTypeForSensitiveHeaders(sensitiveHeaderParameters, redactionStrategy)
+            .ifPresent(externalDataTypes::add);
+      }
 
       responseObserver.onNext(
           this.responseBuilder.buildResponse(
