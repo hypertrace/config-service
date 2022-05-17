@@ -102,5 +102,6 @@ message DataSetInfo {
     SENSITIVITY_MEDIUM = 2;
     SENSITIVITY_HIGH = 3;
     SENSITIVITY_CRITICAL = 4;
+    SENSITIVITY_NONE = 5;
   }
 }
