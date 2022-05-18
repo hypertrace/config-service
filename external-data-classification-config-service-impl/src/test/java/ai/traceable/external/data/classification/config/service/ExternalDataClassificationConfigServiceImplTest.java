@@ -1,6 +1,7 @@
 package ai.traceable.external.data.classification.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -27,12 +28,16 @@ import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataSetsResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
+import ai.traceable.external.data.classification.config.service.v1.DataType.DataTypeMatchRule;
+import ai.traceable.external.data.classification.config.service.v1.DataType.Result;
 import ai.traceable.external.data.classification.config.service.v1.ExternalDataClassificationServiceGrpc;
 import ai.traceable.external.data.classification.config.service.v1.ExternalDataClassificationServiceGrpc.ExternalDataClassificationServiceBlockingStub;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest.EnvironmentFilter;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest.OnlyIfChangedFilter;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigResponse;
+import ai.traceable.external.data.classification.config.service.v1.PathPredicate;
+import ai.traceable.external.data.classification.config.service.v1.StringPredicate;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesResponse;
 import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeRequest;
@@ -40,7 +45,6 @@ import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeR
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
-import com.typesafe.config.Config;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -51,24 +55,19 @@ import org.junit.jupiter.api.Test;
 
 public class ExternalDataClassificationConfigServiceImplTest {
   MockGenericConfigService mockGenericConfigService;
-  Config mockConfig;
-  Config mockExternalDataClassificationConfig;
   ExternalDataClassificationServiceBlockingStub externalDataClassificationServiceBlockingStub;
   SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub;
   DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceBlockingStub;
   InsightsServiceCoordinator insightsServiceCoordinator;
   UuidGenerator uuidGenerator;
   FeatureCachingClient featureCachingClient;
-  private static final String EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE =
-      "external.data.classification.config.service";
-  private static final String DATA_PARSING_RULES = "data.parsing.rules";
+
+  ExternalDataClassificationConfig externalDataClassificationConfig;
 
   @BeforeEach
   void setup() {
     mockGenericConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
-    mockConfig = mock(Config.class);
-    mockExternalDataClassificationConfig = mock(Config.class);
     sensitiveDataConfigServiceBlockingStub =
         SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     dataClassificationConfigServiceBlockingStub =
@@ -77,16 +76,14 @@ public class ExternalDataClassificationConfigServiceImplTest {
     uuidGenerator = new UuidGenerator();
     featureCachingClient = mock(FeatureCachingClient.class);
     when(featureCachingClient.isDataClassificationRp2Enabled(any())).thenReturn(true);
-    when(mockConfig.getConfig(EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE))
-        .thenReturn(mockExternalDataClassificationConfig);
-    when(mockExternalDataClassificationConfig.getObjectList(DATA_PARSING_RULES)).thenReturn(null);
     insightsServiceCoordinator = mock(InsightsServiceCoordinatorImpl.class);
     when(insightsServiceCoordinator.getSensitiveHeaderParameters(RequestContext.CURRENT.get()))
         .thenReturn(List.of());
+    externalDataClassificationConfig = mock(ExternalDataClassificationConfig.class);
     mockGenericConfigService
         .addService(
             new ExternalDataClassificationConfigServiceImpl(
-                mockConfig,
+                externalDataClassificationConfig,
                 new ExternalDataClassificationConfigRequestValidator(),
                 new RedactionRulesDao(sensitiveDataConfigServiceBlockingStub),
                 new DataClassificationRulesDao(dataClassificationConfigServiceBlockingStub),
@@ -131,6 +128,33 @@ public class ExternalDataClassificationConfigServiceImplTest {
         GetDataClassificationConfigResponse.newBuilder().setEnabled(false).build(),
         externalDataClassificationServiceBlockingStub.getDataClassificationConfig(
             GetDataClassificationConfigRequest.getDefaultInstance()));
+  }
+
+  @Test
+  void returnsDefaultRule() {
+    ai.traceable.external.data.classification.config.service.v1.DataType defaultDataType =
+        ai.traceable.external.data.classification.config.service.v1.DataType.newBuilder()
+            .addMatchRules(
+                DataTypeMatchRule.newBuilder()
+                    .setResult(Result.RESULT_MATCH)
+                    .setPathPredicate(
+                        PathPredicate.newBuilder()
+                            .setPathSegmentPredicate(
+                                StringPredicate.newBuilder()
+                                    .setValue("default-key")
+                                    .setOperator(
+                                        ai.traceable.external.data.classification.config.service.v1
+                                            .Operator.OPERATOR_EQUALS))))
+            .build();
+
+    when(this.externalDataClassificationConfig.getDefaultExternalDataTypes())
+        .thenReturn(List.of(defaultDataType));
+
+    assertTrue(
+        externalDataClassificationServiceBlockingStub
+            .getDataClassificationConfig(GetDataClassificationConfigRequest.getDefaultInstance())
+            .getDataTypesList()
+            .contains(defaultDataType));
   }
 
   class MockDataClassificationConfigService

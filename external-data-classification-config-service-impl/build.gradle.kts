@@ -16,8 +16,8 @@ dependencies {
   implementation(libs.hypertrace.grpcutils.client)
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.configservice.validation)
+  implementation(libs.hypertrace.configservice.protoconverter)
   implementation(libs.slf4j.api)
-  implementation(libs.protobuf.javautil)
   implementation(libs.guice)
   implementation(projects.configUtils)
 

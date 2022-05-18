@@ -8,7 +8,6 @@ import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
 import ai.traceable.data.classification.config.service.v1.DataType;
-import ai.traceable.external.data.classification.config.service.v1.DataParsingRule;
 import ai.traceable.external.data.classification.config.service.v1.ExternalDataClassificationServiceGrpc.ExternalDataClassificationServiceImplBase;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigResponse;
@@ -16,9 +15,6 @@ import ai.traceable.sensitivedata.config.service.v1.Parameter;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import com.google.inject.Inject;
-import com.google.protobuf.util.JsonFormat;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigObject;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,13 +25,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 class ExternalDataClassificationConfigServiceImpl
     extends ExternalDataClassificationServiceImplBase {
+  private final ExternalDataClassificationConfig externalDataClassificationConfig;
   private final ExternalDataClassificationConfigRequestValidator
       externalDataClassificationConfigRequestValidator;
   private final RedactionRulesDao redactionRulesDao;
@@ -44,16 +40,12 @@ class ExternalDataClassificationConfigServiceImpl
   private final DataClassificationRulesTranslator dataClassificationRulesTranslator;
   private final ExternalDataClassificationRuleResponseBuilder responseBuilder;
   private final InsightsServiceCoordinator insightsServiceCoordinator;
-  private FeatureCachingClient featureCachingClient;
-  private static final String DATA_PARSING_RULES = "data.parsing.rules";
-  private static final String EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE =
-      "external.data.classification.config.service";
+  private final FeatureCachingClient featureCachingClient;
   private static final String LEGACY_DATASET_ID_PREFIX = "legacy-";
-  private final List<DataParsingRule> dataParsingRulesList;
 
   @Inject
   public ExternalDataClassificationConfigServiceImpl(
-      Config config,
+      ExternalDataClassificationConfig externalDataClassificationConfig,
       ExternalDataClassificationConfigRequestValidator
           externalDataClassificationConfigRequestValidator,
       RedactionRulesDao redactionRulesDao,
@@ -63,6 +55,7 @@ class ExternalDataClassificationConfigServiceImpl
       ExternalDataClassificationRuleResponseBuilder responseBuilder,
       InsightsServiceCoordinator insightsServiceCoordinator,
       FeatureCachingClient featureCachingClient) {
+    this.externalDataClassificationConfig = externalDataClassificationConfig;
     this.externalDataClassificationConfigRequestValidator =
         externalDataClassificationConfigRequestValidator;
     this.redactionRulesDao = redactionRulesDao;
@@ -72,15 +65,6 @@ class ExternalDataClassificationConfigServiceImpl
     this.responseBuilder = responseBuilder;
     this.insightsServiceCoordinator = insightsServiceCoordinator;
     this.featureCachingClient = featureCachingClient;
-    List<? extends ConfigObject> dataParsingRulesObjectList = null;
-    Config externalDataClassificationConfig =
-        config.getConfig(EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE);
-    dataParsingRulesObjectList = externalDataClassificationConfig.getObjectList(DATA_PARSING_RULES);
-    if (dataParsingRulesObjectList != null) {
-      this.dataParsingRulesList = this.buildDataParsingRulesList(dataParsingRulesObjectList);
-    } else {
-      this.dataParsingRulesList = Collections.emptyList();
-    }
   }
 
   @Override
@@ -151,29 +135,18 @@ class ExternalDataClassificationConfigServiceImpl
             .ifPresent(externalDataTypes::add);
       }
 
+      // Default external-only types
+      externalDataTypes.addAll(this.externalDataClassificationConfig.getDefaultExternalDataTypes());
       responseObserver.onNext(
           this.responseBuilder.buildEnabledResponse(
-              request, externalDataTypes, this.dataParsingRulesList));
+              request,
+              externalDataTypes,
+              this.externalDataClassificationConfig.getDefaultDataParsingRules()));
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Unable to get external data classification rules", e);
       responseObserver.onError(e);
     }
-  }
-
-  private List<DataParsingRule> buildDataParsingRulesList(
-      List<? extends ConfigObject> configObjectList) {
-    return configObjectList.stream()
-        .map(ExternalDataClassificationConfigServiceImpl::buildDataParsingRuleFromConfig)
-        .collect(Collectors.toUnmodifiableList());
-  }
-
-  @SneakyThrows
-  private static DataParsingRule buildDataParsingRuleFromConfig(ConfigObject configObject) {
-    String jsonString = configObject.render();
-    DataParsingRule.Builder builder = DataParsingRule.newBuilder();
-    JsonFormat.parser().merge(jsonString, builder);
-    return builder.build();
   }
 
   private static int comparatorUtility(DataSetInfo dataSetInfo) {

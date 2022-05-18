@@ -19,7 +19,7 @@ public class ExternalDataClassificationConfigServiceModule extends AbstractModul
   private final Channel channel;
   private final Config config;
   private final GrpcChannelRegistry channelRegistry;
-  private FeatureCachingClient featureCachingClient;
+  private final FeatureCachingClient featureCachingClient;
   private static final String INSIGHTS_SERVICE_CONFIG = "insights.service.config";
 
   ExternalDataClassificationConfigServiceModule(
@@ -37,7 +37,8 @@ public class ExternalDataClassificationConfigServiceModule extends AbstractModul
   protected void configure() {
     bind(BindableService.class).to(ExternalDataClassificationConfigServiceImpl.class);
     bind(InsightsServiceCoordinator.class).to(InsightsServiceCoordinatorImpl.class);
-    bind(Config.class).toInstance(this.config);
+    bind(ExternalDataClassificationConfig.class)
+        .toInstance(new ExternalDataClassificationConfig(this.config));
     bind(FeatureCachingClient.class).toInstance(this.featureCachingClient);
   }
 
@@ -56,11 +57,11 @@ public class ExternalDataClassificationConfigServiceModule extends AbstractModul
   }
 
   @Provides
-  InsightsServiceBlockingStub providesInsightsService(Config config) {
+  InsightsServiceBlockingStub providesInsightsService() {
     return InsightsServiceGrpc.newBlockingStub(
             channelRegistry.forAddress(
-                config.getConfig(INSIGHTS_SERVICE_CONFIG).getString("host"),
-                config.getConfig(INSIGHTS_SERVICE_CONFIG).getInt("port")))
+                this.config.getConfig(INSIGHTS_SERVICE_CONFIG).getString("host"),
+                this.config.getConfig(INSIGHTS_SERVICE_CONFIG).getInt("port")))
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }
