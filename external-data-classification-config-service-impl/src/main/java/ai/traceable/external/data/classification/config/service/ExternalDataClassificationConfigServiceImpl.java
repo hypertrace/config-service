@@ -88,7 +88,14 @@ class ExternalDataClassificationConfigServiceImpl
       this.externalDataClassificationConfigRequestValidator.validateOrThrow(
           requestContext, request);
       List<RedactionRule> redactionRules =
-          this.redactionRulesDao.getAllRedactionRules(requestContext);
+          this.redactionRulesDao.getAllRedactionRules(requestContext).stream()
+              .filter(
+                  redactionRule ->
+                      redactionRule.getRedactionStrategy()
+                              == RedactionStrategy.REDACTION_STRATEGY_REDACT
+                          || redactionRule.getRedactionStrategy()
+                              == RedactionStrategy.REDACTION_STRATEGY_HASH)
+              .collect(Collectors.toUnmodifiableList());
       Map<String, DataType> dataTypesToIdMap =
           this.dataClassificationRulesDao.getAllDataTypes(requestContext).stream()
               .collect(Collectors.toUnmodifiableMap(DataType::getId, Function.identity()));
