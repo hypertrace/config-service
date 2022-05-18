@@ -45,6 +45,7 @@ data:
     insights.service.config = {
       host = {{ .Values.traceableConfigServiceConfig.insightsServiceConfig.host }}
       port = {{ .Values.traceableConfigServiceConfig.insightsServiceConfig.port }}
+      request.timeout = {{ .Values.traceableConfigServiceConfig.insightsServiceConfig.request.timeout }}
     }
     entity.service.config = {
       host = {{ .Values.traceableConfigServiceConfig.entityServiceConfig.host }}
@@ -145,6 +146,12 @@ data:
     feature.flag.service.config = {
       host = {{ .Values.traceableConfigServiceConfig.featureFlagServiceConfig.host }}
       port = {{ .Values.traceableConfigServiceConfig.featureFlagServiceConfig.port }}
+      request.timeout = {{ .Values.traceableConfigServiceConfig.featureFlagServiceConfig.request.timeout }}
+      cache {
+        refresh.duration = {{ .Values.traceableConfigServiceConfig.featureFlagServiceConfig.cache.refresh.duration }}
+        expiration.duration = {{ .Values.traceableConfigServiceConfig.featureFlagServiceConfig.cache.expiration.duration }}
+        thread.pool.size = {{ .Values.traceableConfigServiceConfig.featureFlagServiceConfig.cache.thread.pool.size }}
+      }
     }
     anomaly.config.service = {
       include "anomaly.conf"

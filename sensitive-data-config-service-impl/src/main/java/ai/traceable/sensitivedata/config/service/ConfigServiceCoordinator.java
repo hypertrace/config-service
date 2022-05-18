@@ -50,9 +50,7 @@ interface ConfigServiceCoordinator {
   void upsertFullPrivacyModeConfig(
       RequestContext requestContext, FullPrivacyModeConfig fullPrivacyModeConfig);
 
-  public List<DataType> getAllDataTypes(RequestContext requestContext);
+  List<DataType> getAllDataTypes(RequestContext requestContext);
 
-  public List<DataSet> getAllDataSets(RequestContext requestContext);
-
-  boolean isDataClassificationEnabled(RequestContext requestContext);
+  List<DataSet> getAllDataSets(RequestContext requestContext);
 }

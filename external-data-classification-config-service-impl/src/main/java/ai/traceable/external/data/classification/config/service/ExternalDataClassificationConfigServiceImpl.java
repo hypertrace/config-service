@@ -3,6 +3,7 @@ package ai.traceable.external.data.classification.config.service;
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_HASH;
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_REDACT;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
@@ -43,6 +44,7 @@ class ExternalDataClassificationConfigServiceImpl
   private final DataClassificationRulesTranslator dataClassificationRulesTranslator;
   private final ExternalDataClassificationRuleResponseBuilder responseBuilder;
   private final InsightsServiceCoordinator insightsServiceCoordinator;
+  private FeatureCachingClient featureCachingClient;
   private static final String DATA_PARSING_RULES = "data.parsing.rules";
   private static final String EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE =
       "external.data.classification.config.service";
@@ -59,7 +61,8 @@ class ExternalDataClassificationConfigServiceImpl
       RedactionRulesTranslator redactionRulesTranslator,
       DataClassificationRulesTranslator dataClassificationRulesTranslator,
       ExternalDataClassificationRuleResponseBuilder responseBuilder,
-      InsightsServiceCoordinator insightsServiceCoordinator) {
+      InsightsServiceCoordinator insightsServiceCoordinator,
+      FeatureCachingClient featureCachingClient) {
     this.externalDataClassificationConfigRequestValidator =
         externalDataClassificationConfigRequestValidator;
     this.redactionRulesDao = redactionRulesDao;
@@ -68,6 +71,7 @@ class ExternalDataClassificationConfigServiceImpl
     this.dataClassificationRulesTranslator = dataClassificationRulesTranslator;
     this.responseBuilder = responseBuilder;
     this.insightsServiceCoordinator = insightsServiceCoordinator;
+    this.featureCachingClient = featureCachingClient;
     List<? extends ConfigObject> dataParsingRulesObjectList = null;
     Config externalDataClassificationConfig =
         config.getConfig(EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE);
@@ -87,6 +91,11 @@ class ExternalDataClassificationConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.externalDataClassificationConfigRequestValidator.validateOrThrow(
           requestContext, request);
+      if (!this.featureCachingClient.isDataClassificationRp2Enabled(requestContext)) {
+        responseObserver.onNext(this.responseBuilder.buildDisabledResponse());
+        responseObserver.onCompleted();
+        return;
+      }
       List<RedactionRule> redactionRules =
           this.redactionRulesDao.getAllRedactionRules(requestContext).stream()
               .filter(
@@ -143,7 +152,7 @@ class ExternalDataClassificationConfigServiceImpl
       }
 
       responseObserver.onNext(
-          this.responseBuilder.buildResponse(
+          this.responseBuilder.buildEnabledResponse(
               request, externalDataTypes, this.dataParsingRulesList));
       responseObserver.onCompleted();
     } catch (Exception e) {

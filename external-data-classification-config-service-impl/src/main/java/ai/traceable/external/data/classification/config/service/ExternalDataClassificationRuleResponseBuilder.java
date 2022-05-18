@@ -16,12 +16,17 @@ class ExternalDataClassificationRuleResponseBuilder {
     this.uuidGenerator = uuidGenerator;
   }
 
-  GetDataClassificationConfigResponse buildResponse(
+  GetDataClassificationConfigResponse buildDisabledResponse() {
+    return GetDataClassificationConfigResponse.newBuilder().setEnabled(false).build();
+  }
+
+  GetDataClassificationConfigResponse buildEnabledResponse(
       GetDataClassificationConfigRequest request,
       List<DataType> dataTypes,
       List<DataParsingRule> dataParsingRules) {
     GetDataClassificationConfigResponse.Builder responseBuilder =
         GetDataClassificationConfigResponse.newBuilder()
+            .setEnabled(true)
             .addAllDataTypes(dataTypes)
             .addAllDataParsingRules(dataParsingRules);
 

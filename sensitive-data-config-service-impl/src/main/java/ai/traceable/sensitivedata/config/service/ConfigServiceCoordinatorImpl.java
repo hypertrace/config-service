@@ -7,9 +7,6 @@ import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
-import ai.traceable.featureflag.v1.FeatureFlagServiceGrpc.FeatureFlagServiceBlockingStub;
-import ai.traceable.featureflag.v1.FeatureFlagValue;
-import ai.traceable.featureflag.v1.GetCurrentFlagValuesRequest;
 import ai.traceable.sensitivedata.config.service.v1.FullPrivacyModeConfig;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest.RedactionRuleFilter;
 import ai.traceable.sensitivedata.config.service.v1.InvalidJsonPolicy;
@@ -23,18 +20,12 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Streams;
 import com.google.common.util.concurrent.Striped;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.re2j.Pattern;
 import io.grpc.Status;
-import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -54,8 +45,6 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
 
   // Not concerned about memory footprint here
   private static final int PREPOPULATION_LOCK_STRIPE_COUNT = 1000;
-  private static final String DATA_CLASSIFICATION_MVP_FLAG = "data-classification.mvp";
-  private static final boolean DEFAULT_DATA_CLASSIFICATION_FEATURE_FLAG_VALUE = false;
 
   private final ConfigServiceBlockingStub configServiceBlockingStub;
   private final ConfigChangeEventGenerator configChangeEventGenerator;
@@ -79,9 +68,6 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   private final DefaultRedactionRulePopulationStatusStore defaultRedactionRulePopulationStatusStore;
   private final DataClassificationConfigServiceBlockingStub
       dataClassificationConfigServiceBlockingStub;
-  private final FeatureFlagServiceBlockingStub featureFlagServiceBlockingStub;
-  private final LoadingCache<ContextualKey<Void>, Boolean> dataClassificationEnabledByTenant;
-  private final Duration requestTimeout;
 
   @Inject
   ConfigServiceCoordinatorImpl(
@@ -93,8 +79,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
       InvalidJsonPolicyConfigStore invalidJsonPolicyConfigStore,
       FullPrivacyModeConfigStore fullPrivacyModeConfigStore,
       DefaultRedactionRulePopulationStatusStore defaultRedactionRulePopulationStatusStore,
-      DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceBlockingStub,
-      FeatureFlagServiceBlockingStub featureFlagServiceBlockingStub) {
+      DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceBlockingStub) {
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.configChangeEventGenerator = configChangeEventGenerator;
     this.defaultRedactionRules = config.defaultRedactionRules();
@@ -108,17 +93,6 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
     this.fullPrivacyModeConfigStore = fullPrivacyModeConfigStore;
     this.defaultRedactionRulePopulationStatusStore = defaultRedactionRulePopulationStatusStore;
     this.dataClassificationConfigServiceBlockingStub = dataClassificationConfigServiceBlockingStub;
-    this.featureFlagServiceBlockingStub = featureFlagServiceBlockingStub;
-    this.requestTimeout = config.getRequestTimeout();
-    this.dataClassificationEnabledByTenant =
-        CacheBuilder.newBuilder()
-            .refreshAfterWrite(config.getRefreshDuration())
-            .expireAfterWrite(config.getExpirationDuration())
-            .build(
-                CacheLoader.asyncReloading(
-                    getDataClassificationFeatureFlagCacheLoader(),
-                    Executors.newFixedThreadPool(
-                        config.getThreadPoolSize(), this.buildThreadFactory())));
   }
 
   @Override
@@ -433,51 +407,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
         .collect(Collectors.toUnmodifiableList());
   }
 
-  public boolean isDataClassificationEnabled(RequestContext requestContext) {
-    ContextualKey<Void> contextualKey = requestContext.buildContextualKey();
-    try {
-      return this.dataClassificationEnabledByTenant.getUnchecked(contextualKey);
-    } catch (Exception e) {
-      log.error(
-          "Error fetching data classification feature flag from cache for tenant {}",
-          requestContext.getTenantId(),
-          e);
-    }
-    return DEFAULT_DATA_CLASSIFICATION_FEATURE_FLAG_VALUE;
-  }
-
-  private CacheLoader<ContextualKey<Void>, Boolean> getDataClassificationFeatureFlagCacheLoader() {
-    return new CacheLoader<>() {
-      @Override
-      public Boolean load(ContextualKey<Void> contextualKey) {
-        Map<String, FeatureFlagValue> featureFlagValueMap =
-            contextualKey
-                .getContext()
-                .call(
-                    () ->
-                        featureFlagServiceBlockingStub
-                            .withDeadlineAfter(requestTimeout.toMillis(), TimeUnit.MILLISECONDS)
-                            .getCurrentFlagValues(
-                                GetCurrentFlagValuesRequest.newBuilder()
-                                    .addFlagKeys(DATA_CLASSIFICATION_MVP_FLAG)
-                                    .build()))
-                .getValuesMap();
-        FeatureFlagValue featureFlagValue =
-            Optional.ofNullable(featureFlagValueMap.get(DATA_CLASSIFICATION_MVP_FLAG))
-                .orElseThrow(IllegalStateException::new);
-        return featureFlagValue.getBoolean();
-      }
-    };
-  }
-
   private boolean isNotLegacyDataType(DataType dataType) {
     return !dataType.getRule().getScopedPatternsList().isEmpty();
-  }
-
-  private ThreadFactory buildThreadFactory() {
-    return new ThreadFactoryBuilder()
-        .setDaemon(true)
-        .setNameFormat("feature-flag-cache-%d")
-        .build();
   }
 }

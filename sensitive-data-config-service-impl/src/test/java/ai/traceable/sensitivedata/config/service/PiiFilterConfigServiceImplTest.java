@@ -9,6 +9,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.service.MockInsightsService;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceImplBase;
@@ -26,11 +27,6 @@ import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataSetsResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
-import ai.traceable.featureflag.v1.FeatureFlagServiceGrpc;
-import ai.traceable.featureflag.v1.FeatureFlagServiceGrpc.FeatureFlagServiceImplBase;
-import ai.traceable.featureflag.v1.FeatureFlagValue;
-import ai.traceable.featureflag.v1.GetCurrentFlagValuesRequest;
-import ai.traceable.featureflag.v1.GetCurrentFlagValuesResponse;
 import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.DropUnparsedJsonPolicy;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigRequest;
@@ -46,7 +42,6 @@ import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import io.grpc.Channel;
 import io.grpc.stub.StreamObserver;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -65,13 +60,15 @@ class PiiFilterConfigServiceImplTest {
   MockGenericConfigService mockGenericConfigService;
   SensitiveDataServiceConfig mockConfig;
   UuidGenerator uuidGenerator = new UuidGenerator();
-  boolean dataClassificationConfigServiceMockFlag;
+  FeatureCachingClient mockFeatureClient;
+  boolean dataClassificationRp1Enabled;
 
   @BeforeEach
   void setUp() {
     mockGenericConfigService = new MockGenericConfigService().mockUpsert().mockGet().mockGetAll();
 
     mockConfig = mock(SensitiveDataServiceConfig.class);
+    mockFeatureClient = mock(FeatureCachingClient.class);
     when(mockConfig.defaultParamTypeRedactionStrategy())
         .thenReturn(RedactionStrategy.REDACTION_STRATEGY_HASH);
     when(mockConfig.defaultPiiFilterConfig()).thenReturn(PiiFilterConfig.getDefaultInstance());
@@ -80,11 +77,7 @@ class PiiFilterConfigServiceImplTest {
             InvalidJsonPolicy.newBuilder()
                 .setDropUnparsedJsonPolicy(DropUnparsedJsonPolicy.getDefaultInstance())
                 .build());
-    when(mockConfig.getExpirationDuration()).thenReturn(Duration.ofMinutes(15));
-    when(mockConfig.getRefreshDuration()).thenReturn(Duration.ofMinutes(5));
-    when(mockConfig.getRequestTimeout()).thenReturn(Duration.ofSeconds(10));
-    when(mockConfig.getThreadPoolSize()).thenReturn(1);
-    dataClassificationConfigServiceMockFlag = false;
+    dataClassificationRp1Enabled = false;
   }
 
   @AfterEach
@@ -127,6 +120,7 @@ class PiiFilterConfigServiceImplTest {
     assertEquals(
         GetPiiFilterConfigResponse.newBuilder()
             .setHash(uuidGenerator.generateId(piiFilterConfig))
+            .setEnabled(true)
             .build(),
         response);
   }
@@ -185,8 +179,32 @@ class PiiFilterConfigServiceImplTest {
   }
 
   @Test
+  void testEmptyResponseIfDataClassificationRp2EnabledAndAgentSupports() {
+    dataClassificationRp1Enabled = true;
+    when(mockFeatureClient.isDataClassificationRp2Enabled(any())).thenReturn(true);
+    setupPiiFilterConfigServiceImpl(false, getDefaultRedactionRules());
+    assertEquals(
+        GetPiiFilterConfigResponse.newBuilder().setEnabled(false).build(),
+        piiFilterStub.getPiiFilterConfig(
+            GetPiiFilterConfigRequest.newBuilder().setDataClassificationSupported(true).build()));
+  }
+
+  @Test
+  void testRealResponseIfDataClassificationRp2EnabledAndNoAgentSupport() {
+    dataClassificationRp1Enabled = true;
+    when(mockFeatureClient.isDataClassificationRp2Enabled(any())).thenReturn(true);
+    setupPiiFilterConfigServiceImpl(false, getDefaultRedactionRules());
+    GetPiiFilterConfigResponse response =
+        piiFilterStub.getPiiFilterConfig(GetPiiFilterConfigRequest.newBuilder().build());
+    // We're not testing what it returns in this test, just that it returns something
+    assertTrue(response.getEnabled());
+    assertTrue(response.hasPiiFilterConfig());
+    assertTrue(response.getHash().length() > 0);
+  }
+
+  @Test
   void testPiiFilterConfigForDataTypes() {
-    dataClassificationConfigServiceMockFlag = true;
+    dataClassificationRp1Enabled = true;
     setupPiiFilterConfigServiceImpl(false, getDefaultRedactionRules());
 
     PiiFilterConfig piiFilterConfig =
@@ -262,6 +280,8 @@ class PiiFilterConfigServiceImplTest {
     when(mockConfig.defaultFullPrivacyMode()).thenReturn(defaultFullPrivacyMode);
     when(mockConfig.defaultRedactionRules()).thenReturn(defaultRedactionRules);
 
+    when(mockFeatureClient.isDataClassificationRp1Enabled(any()))
+        .thenAnswer(unused -> this.dataClassificationRp1Enabled);
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(channel);
@@ -284,12 +304,11 @@ class PiiFilterConfigServiceImplTest {
                         configServiceBlockingStub, configChangeEventGenerator),
                     new DefaultRedactionRulePopulationStatusStore(
                         configServiceBlockingStub, configChangeEventGenerator),
-                    DataClassificationConfigServiceGrpc.newBlockingStub(channel),
-                    FeatureFlagServiceGrpc.newBlockingStub(channel)),
+                    DataClassificationConfigServiceGrpc.newBlockingStub(channel)),
                 new InsightsServiceCoordinatorImpl(InsightsServiceGrpc.newBlockingStub(channel)),
-                new UuidGenerator()))
+                new UuidGenerator(),
+                mockFeatureClient))
         .addService(new MockDataClassificationConfigService())
-        .addService(new MockFeatureFlagService())
         .start();
 
     piiFilterStub = PiiFilterConfigServiceGrpc.newBlockingStub(channel);
@@ -301,7 +320,7 @@ class PiiFilterConfigServiceImplTest {
     public void getDataSets(
         GetDataSetsRequest request, StreamObserver<GetDataSetsResponse> responseObserver) {
       GetDataSetsResponse.Builder responseBuilder = GetDataSetsResponse.newBuilder();
-      if (dataClassificationConfigServiceMockFlag) {
+      if (dataClassificationRp1Enabled) {
         DataSet dataSet =
             DataSet.newBuilder()
                 .setInfo(
@@ -321,7 +340,7 @@ class PiiFilterConfigServiceImplTest {
     public void getDataTypes(
         GetDataTypesRequest request, StreamObserver<GetDataTypesResponse> responseObserver) {
       GetDataTypesResponse.Builder responseBuilder = GetDataTypesResponse.newBuilder();
-      if (dataClassificationConfigServiceMockFlag) {
+      if (dataClassificationRp1Enabled) {
         DataType dataType1 =
             DataType.newBuilder()
                 .setId("datatype-1")
@@ -357,20 +376,6 @@ class PiiFilterConfigServiceImplTest {
         responseBuilder.addAllDataTypes(List.of(dataType1, dataType2));
       }
       responseObserver.onNext(responseBuilder.build());
-      responseObserver.onCompleted();
-    }
-  }
-
-  class MockFeatureFlagService extends FeatureFlagServiceImplBase {
-    @Override
-    public void getCurrentFlagValues(
-        GetCurrentFlagValuesRequest request,
-        StreamObserver<GetCurrentFlagValuesResponse> responseObserver) {
-      responseObserver.onNext(
-          GetCurrentFlagValuesResponse.newBuilder()
-              .putValues(
-                  "data-classification.mvp", FeatureFlagValue.newBuilder().setBoolean(true).build())
-              .build());
       responseObserver.onCompleted();
     }
   }

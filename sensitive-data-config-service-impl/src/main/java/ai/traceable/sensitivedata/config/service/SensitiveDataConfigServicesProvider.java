@@ -1,5 +1,6 @@
 package ai.traceable.sensitivedata.config.service;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
@@ -16,10 +17,16 @@ public class SensitiveDataConfigServicesProvider {
       Channel channel,
       Config config,
       GrpcChannelRegistry channelRegistry,
-      ConfigChangeEventGenerator configChangeEventGenerator) {
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      FeatureCachingClient featureCachingClient) {
     this.injector =
         Guice.createInjector(
-            new SensitiveDataModule(channel, config, channelRegistry, configChangeEventGenerator));
+            new SensitiveDataModule(
+                channel,
+                config,
+                channelRegistry,
+                configChangeEventGenerator,
+                featureCachingClient));
   }
 
   public BindableService getSensitiveDataConfigService() {

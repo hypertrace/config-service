@@ -5,10 +5,10 @@ plugins {
 }
 
 dependencies {
-  api(libs.guice)
   api(libs.grpc.api)
   api(libs.typesafe.config)
   api(projects.externalDataClassificationConfigServiceApi)
+  api(projects.featureCachingClient)
 
   implementation(projects.dataClassificationConfigServiceApi)
   implementation(projects.sensitiveDataConfigServiceApi)
@@ -18,6 +18,7 @@ dependencies {
   implementation(libs.hypertrace.configservice.validation)
   implementation(libs.slf4j.api)
   implementation(libs.protobuf.javautil)
+  implementation(libs.guice)
   implementation(projects.configUtils)
 
   annotationProcessor(libs.lombok)

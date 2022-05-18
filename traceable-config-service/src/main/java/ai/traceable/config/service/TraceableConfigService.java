@@ -6,6 +6,8 @@ import ai.traceable.alerting.config.service.EventConditionConfigServiceImpl;
 import ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory;
 import ai.traceable.api.attribute.override.service.ApiAttributeOverridesServiceFactory;
 import ai.traceable.blocking.config.service.BlockingConfigServiceFactory;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClientConfig;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceFactory;
 import ai.traceable.data.classification.config.service.DataClassificationConfigServiceFactory;
 import ai.traceable.data.exfiltration.config.service.detection.rule.DataExfiltrationDetectionRulesConfigServiceFactory;
@@ -76,12 +78,15 @@ public class TraceableConfigService extends PlatformService {
         externalServerPort);
 
     GrpcChannelRegistry channelRegistry = new GrpcChannelRegistry();
-    ManagedChannel managedChannel = channelRegistry.forAddress("localhost", internalServerPort);
+    ManagedChannel managedChannel =
+        channelRegistry.forPlaintextAddress("localhost", internalServerPort);
     this.getLifecycle().shutdownComplete().thenRun(channelRegistry::shutdown);
 
     ConfigChangeEventGenerator configChangeEventGenerator =
         ConfigChangeEventGeneratorFactory.getInstance()
             .createConfigChangeEventGenerator(config, Clock.systemUTC());
+    FeatureCachingClient featureCachingClient =
+        new FeatureCachingClient(FeatureCachingClientConfig.fromConfig(config), channelRegistry);
 
     ServerBuilder<?> internalServerBuilder = ServerBuilder.forPort(internalServerPort);
     configStore = ConfigServicesFactory.buildConfigStore(getAppConfig());
@@ -93,7 +98,11 @@ public class TraceableConfigService extends PlatformService {
         .forEach(internalServerBuilder::addService);
     SensitiveDataConfigServicesProvider sensitiveDataConfigServicesProvider =
         new SensitiveDataConfigServicesProvider(
-            managedChannel, config, channelRegistry, configChangeEventGenerator);
+            managedChannel,
+            config,
+            channelRegistry,
+            configChangeEventGenerator,
+            featureCachingClient);
     ActivityEventProducer activityEventProducer = ActivityEventProducerFactory.build(config);
     this.getLifecycle().shutdownComplete().thenRun(activityEventProducer::close);
 
@@ -185,7 +194,7 @@ public class TraceableConfigService extends PlatformService {
         ExternalUserAttributionConfigServiceFactory.build(managedChannel);
     BindableService externalDataClassificationConfigService =
         ExternalDataClassificationConfigServiceFactory.build(
-            managedChannel, config, channelRegistry);
+            managedChannel, config, channelRegistry, featureCachingClient);
     externalServerBuilder
         .addService(InterceptorUtil.wrapInterceptors(piiFilterConfigService))
         .addService(InterceptorUtil.wrapInterceptors(localProcessingConfigService))

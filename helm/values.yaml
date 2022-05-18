@@ -1,4 +1,3 @@
-
 # Default values for the helm chart.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
@@ -53,12 +52,12 @@ readinessProbe:
   periodSeconds: 5
 
 resources:
-   requests:
-     cpu: 0.1
-     memory: 1.25Gi
-   limits:
-     cpu: 0.5
-     memory: 1.25Gi
+  requests:
+    cpu: 0.1
+    memory: 1.25Gi
+  limits:
+    cpu: 0.5
+    memory: 1.25Gi
 
 deploymentLabels:
   app: traceable-config-service
@@ -94,7 +93,7 @@ deepStoreClaimName: "traceable-nfs-deep-store"
 s3BucketName: ""
 bucketPrefix: traceable-saas
 s3.config:
-  - fs.s3a.endpoint : "s3-us-west-2.amazonaws.com"
+  - fs.s3a.endpoint: "s3-us-west-2.amazonaws.com"
 
 iamServiceAccountSecret: gcs-iam-secret
 
@@ -112,29 +111,29 @@ trieModels:
 trieDiffLog:
   modelStore:
     deepStoreScheme: "file"
-  trieDiffLogsRetentionPeriod : 1h
+  trieDiffLogsRetentionPeriod: 1h
   cache:
-    refreshAfterWriteDuration : 150s
-    expireAfterWriteDuration : 300s
-    maximumSize : 100
+    refreshAfterWriteDuration: 150s
+    expireAfterWriteDuration: 300s
+    maximumSize: 100
 
 entityFetcher:
   cache:
-    refreshAfterWriteDuration : 12h
-    expireAfterWriteDuration : 24h
-    maximumSize : 1000
+    refreshAfterWriteDuration: 12h
+    expireAfterWriteDuration: 24h
+    maximumSize: 1000
 
 apiNamingCustomRules:
   cache:
-    refreshAfterWriteDuration : 150s
-    expireAfterWriteDuration : 300s
-    maximumSize : 100
+    refreshAfterWriteDuration: 150s
+    expireAfterWriteDuration: 300s
+    maximumSize: 100
 
 apiNamingConfigs:
   cache:
-    refreshAfterWriteDuration : 12h
-    expireAfterWriteDuration : 24h
-    maximumSize : 100
+    refreshAfterWriteDuration: 12h
+    expireAfterWriteDuration: 24h
+    maximumSize: 100
 
 ###########
 # Config Maps
@@ -149,6 +148,8 @@ traceableConfigServiceConfig:
   insightsServiceConfig:
     host: insights-service
     port: 50098
+    request:
+      timeout: 10s
   entityServiceConfig:
     host: entity-service
     port: 50061
@@ -159,12 +160,23 @@ traceableConfigServiceConfig:
   featureFlagServiceConfig:
     host: feature-flag-service
     port: 51001
+    request:
+      timeout: 10s
+    cache:
+      refresh:
+        duration: 5m
+      expiration:
+        duration: 15m
+      thread:
+        pool:
+          size: 2
+
   labelApplicationRuleConfigServiceConfig:
     maxDynamicLabelApplicationRulesPerTenant: 100
-#  localProcessingConfigServiceConfig:
-#    samplingConfig:
-#      rateLimitConfig:
-        #commented config for reference
+      #  localProcessingConfigServiceConfig:
+      #    samplingConfig:
+      #      rateLimitConfig:
+    #commented config for reference
 #        tenant1:
 #          traceLimitPerEndpoint:
 #            fixedWindowLimit:
@@ -178,10 +190,10 @@ traceableConfigServiceConfig:
 
 localApiNamingConfig:
   fullTrieReloadConfig:
-  #commented config for reference
-#    tenant1:
-#      disabled: true
-#      timestamp: 2022-03-09T13:36:33Z #in ISO-8601 format
+    #commented config for reference
+    #    tenant1:
+    #      disabled: true
+    #      timestamp: 2022-03-09T13:36:33Z #in ISO-8601 format
     default:
       disabled: true
       version: "1.2.4"

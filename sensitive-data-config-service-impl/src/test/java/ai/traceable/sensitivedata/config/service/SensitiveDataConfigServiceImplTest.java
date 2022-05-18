@@ -17,11 +17,6 @@ import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataSetsResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
-import ai.traceable.featureflag.v1.FeatureFlagServiceGrpc;
-import ai.traceable.featureflag.v1.FeatureFlagServiceGrpc.FeatureFlagServiceImplBase;
-import ai.traceable.featureflag.v1.FeatureFlagValue;
-import ai.traceable.featureflag.v1.GetCurrentFlagValuesRequest;
-import ai.traceable.featureflag.v1.GetCurrentFlagValuesResponse;
 import ai.traceable.sensitivedata.config.service.v1.Condition;
 import ai.traceable.sensitivedata.config.service.v1.Condition.AttributeRegexMatch;
 import ai.traceable.sensitivedata.config.service.v1.CreateRedactionRuleRequest;
@@ -50,7 +45,6 @@ import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeRequest;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -83,11 +77,6 @@ class SensitiveDataConfigServiceImplTest {
             InvalidJsonPolicy.newBuilder()
                 .setDropUnparsedJsonPolicy(DropUnparsedJsonPolicy.getDefaultInstance())
                 .build());
-    when(mockConfig.getExpirationDuration()).thenReturn(Duration.ofMinutes(15));
-    when(mockConfig.getRefreshDuration()).thenReturn(Duration.ofMinutes(5));
-    when(mockConfig.getRequestTimeout()).thenReturn(Duration.ofSeconds(10));
-    when(mockConfig.getThreadPoolSize()).thenReturn(1);
-
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(mockGenericConfigService.channel());
@@ -109,10 +98,8 @@ class SensitiveDataConfigServiceImplTest {
                     new DefaultRedactionRulePopulationStatusStore(
                         configServiceBlockingStub, configChangeEventGenerator),
                     DataClassificationConfigServiceGrpc.newBlockingStub(
-                        mockGenericConfigService.channel()),
-                    FeatureFlagServiceGrpc.newBlockingStub(mockGenericConfigService.channel()))))
+                        mockGenericConfigService.channel()))))
         .addService(new MockDataClassificationConfigService())
-        .addService(new MockFeatureFlagService())
         .start();
 
     sensitiveDataStub =
@@ -525,20 +512,6 @@ class SensitiveDataConfigServiceImplTest {
     public void getDataTypes(
         GetDataTypesRequest request, StreamObserver<GetDataTypesResponse> responseObserver) {
       responseObserver.onNext(GetDataTypesResponse.newBuilder().build());
-      responseObserver.onCompleted();
-    }
-  }
-
-  class MockFeatureFlagService extends FeatureFlagServiceImplBase {
-    @Override
-    public void getCurrentFlagValues(
-        GetCurrentFlagValuesRequest request,
-        StreamObserver<GetCurrentFlagValuesResponse> responseObserver) {
-      responseObserver.onNext(
-          GetCurrentFlagValuesResponse.newBuilder()
-              .putValues(
-                  "data-classification.mvp", FeatureFlagValue.newBuilder().setBoolean(true).build())
-              .build());
       responseObserver.onCompleted();
     }
   }

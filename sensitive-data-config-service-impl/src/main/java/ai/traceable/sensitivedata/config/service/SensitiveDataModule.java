@@ -1,9 +1,8 @@
 package ai.traceable.sensitivedata.config.service;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
-import ai.traceable.featureflag.v1.FeatureFlagServiceGrpc;
-import ai.traceable.featureflag.v1.FeatureFlagServiceGrpc.FeatureFlagServiceBlockingStub;
 import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc;
 import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc.InsightsServiceBlockingStub;
 import com.google.inject.AbstractModule;
@@ -22,16 +21,19 @@ class SensitiveDataModule extends AbstractModule {
   private final Config config;
   private final GrpcChannelRegistry channelRegistry;
   private final ConfigChangeEventGenerator configChangeEventGenerator;
+  private final FeatureCachingClient featureCachingClient;
 
   SensitiveDataModule(
       Channel configChannel,
       Config config,
       GrpcChannelRegistry channelRegistry,
-      ConfigChangeEventGenerator configChangeEventGenerator) {
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      FeatureCachingClient featureCachingClient) {
     this.configChannel = configChannel;
     this.config = config;
     this.channelRegistry = channelRegistry;
     this.configChangeEventGenerator = configChangeEventGenerator;
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
@@ -40,7 +42,8 @@ class SensitiveDataModule extends AbstractModule {
     bind(GrpcChannelRegistry.class).toInstance(this.channelRegistry);
     bind(ConfigServiceCoordinator.class).to(ConfigServiceCoordinatorImpl.class);
     bind(InsightsServiceCoordinator.class).to(InsightsServiceCoordinatorImpl.class);
-    bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
+    bind(ConfigChangeEventGenerator.class).toInstance(this.configChangeEventGenerator);
+    bind(FeatureCachingClient.class).toInstance(this.featureCachingClient);
   }
 
   @Provides
@@ -52,7 +55,7 @@ class SensitiveDataModule extends AbstractModule {
 
   @Provides
   InsightsServiceBlockingStub providesInsightsService(SensitiveDataServiceConfig config) {
-    return InsightsServiceGrpc.newBlockingStub(config.insightsChannel())
+    return InsightsServiceGrpc.newBlockingStub(config.insightsClientConfig().getChannel())
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }
@@ -60,14 +63,6 @@ class SensitiveDataModule extends AbstractModule {
   @Provides
   DataClassificationConfigServiceBlockingStub providesDataClassificationConfigService() {
     return DataClassificationConfigServiceGrpc.newBlockingStub(this.configChannel)
-        .withCallCredentials(
-            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
-  }
-
-  @Provides
-  FeatureFlagServiceBlockingStub providesFeatureFlagServiceBlockingStub(
-      SensitiveDataServiceConfig config) {
-    return FeatureFlagServiceGrpc.newBlockingStub(config.featureFlagServiceChannel())
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

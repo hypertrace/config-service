@@ -1,9 +1,11 @@
 package ai.traceable.external.data.classification.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
@@ -56,6 +58,7 @@ public class ExternalDataClassificationConfigServiceImplTest {
   DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceBlockingStub;
   InsightsServiceCoordinator insightsServiceCoordinator;
   UuidGenerator uuidGenerator;
+  FeatureCachingClient featureCachingClient;
   private static final String EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE =
       "external.data.classification.config.service";
   private static final String DATA_PARSING_RULES = "data.parsing.rules";
@@ -72,6 +75,8 @@ public class ExternalDataClassificationConfigServiceImplTest {
         DataClassificationConfigServiceGrpc.newBlockingStub(
             this.mockGenericConfigService.channel());
     uuidGenerator = new UuidGenerator();
+    featureCachingClient = mock(FeatureCachingClient.class);
+    when(featureCachingClient.isDataClassificationRp2Enabled(any())).thenReturn(true);
     when(mockConfig.getConfig(EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE))
         .thenReturn(mockExternalDataClassificationConfig);
     when(mockExternalDataClassificationConfig.getObjectList(DATA_PARSING_RULES)).thenReturn(null);
@@ -88,7 +93,8 @@ public class ExternalDataClassificationConfigServiceImplTest {
                 new RedactionRulesTranslator(),
                 new DataClassificationRulesTranslator(),
                 new ExternalDataClassificationRuleResponseBuilder(uuidGenerator),
-                insightsServiceCoordinator))
+                insightsServiceCoordinator,
+                featureCachingClient))
         .addService(new MockSensitiveDataConfigService())
         .addService(new MockDataClassificationConfigService())
         .start();
@@ -116,6 +122,15 @@ public class ExternalDataClassificationConfigServiceImplTest {
                 .setEnvironmentFilter(EnvironmentFilter.newBuilder().setEnvironmentName("random"))
                 .build());
     assertEquals(1, response.getDataTypesCount());
+  }
+
+  @Test
+  void returnsEmptyDisabledResponseIfDisabled() {
+    when(featureCachingClient.isDataClassificationRp2Enabled(any())).thenReturn(false);
+    assertEquals(
+        GetDataClassificationConfigResponse.newBuilder().setEnabled(false).build(),
+        externalDataClassificationServiceBlockingStub.getDataClassificationConfig(
+            GetDataClassificationConfigRequest.getDefaultInstance()));
   }
 
   class MockDataClassificationConfigService

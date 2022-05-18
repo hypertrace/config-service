@@ -1,6 +1,7 @@
 package ai.traceable.external.data.classification.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.when;
 
@@ -36,12 +37,15 @@ public class ExternalDataClassificationRuleResponseBuilderTest {
   @Test
   void emptyRulesIfMatchHash() {
     GetDataClassificationConfigResponse getResponse =
-        GetDataClassificationConfigResponse.newBuilder().addDataTypes(mockDataType).build();
+        GetDataClassificationConfigResponse.newBuilder()
+            .setEnabled(true)
+            .addDataTypes(mockDataType)
+            .build();
     when(this.mockUuidGenerator.generateId(getResponse))
         .thenReturn(mockRequest.getChangeFilter().getPreviousHash());
 
     GetDataClassificationConfigResponse response =
-        this.responseBuilder.buildResponse(mockRequest, List.of(mockDataType), List.of());
+        this.responseBuilder.buildEnabledResponse(mockRequest, List.of(mockDataType), List.of());
     assertEquals(0, response.getDataParsingRulesCount());
     assertEquals(0, response.getDataTypesCount());
     assertEquals(mockRequest.getChangeFilter().getPreviousHash(), response.getHash());
@@ -50,14 +54,22 @@ public class ExternalDataClassificationRuleResponseBuilderTest {
   @Test
   void returnsRulesIfDifferentHash() {
     GetDataClassificationConfigResponse getResponse =
-        GetDataClassificationConfigResponse.newBuilder().addDataTypes(mockDataType).build();
+        GetDataClassificationConfigResponse.newBuilder()
+            .setEnabled(true)
+            .addDataTypes(mockDataType)
+            .build();
     String differentHash = "different-hash";
     when(this.mockUuidGenerator.generateId(getResponse)).thenReturn(differentHash);
 
     GetDataClassificationConfigResponse response =
-        this.responseBuilder.buildResponse(mockRequest, List.of(mockDataType), List.of());
+        this.responseBuilder.buildEnabledResponse(mockRequest, List.of(mockDataType), List.of());
     assertSame(mockDataType, response.getDataTypes(0));
     assertEquals(0, response.getDataParsingRulesCount());
     assertEquals(differentHash, response.getHash());
+  }
+
+  @Test
+  void returnsDisabledResponse() {
+    assertFalse(this.responseBuilder.buildDisabledResponse().getEnabled());
   }
 }

@@ -1,0 +1,110 @@
+package ai.traceable.config.service.feature.caching.client;
+
+import static java.util.Objects.requireNonNull;
+
+import ai.traceable.featureflag.v1.FeatureFlagServiceGrpc;
+import ai.traceable.featureflag.v1.FeatureFlagServiceGrpc.FeatureFlagServiceBlockingStub;
+import ai.traceable.featureflag.v1.GetCurrentFlagValuesRequest;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.inject.Inject;
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
+import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
+import org.hypertrace.core.grpcutils.context.ContextualKey;
+import org.hypertrace.core.grpcutils.context.RequestContext;
+
+@Slf4j
+public class FeatureCachingClient {
+  private static final boolean DEFAULT_DATA_CLASSIFICATION_RP1_FLAG_VALUE = true;
+
+  private static final boolean DEFAULT_DATA_CLASSIFICATION_RP2_FLAG_VALUE = false;
+  private static final String DATA_CLASSIFICATION_RP1_FLAG = "data-classification.mvp";
+  private static final String DATA_CLASSIFICATION_RP2_FLAG = "data-classification.rp2";
+  private static final List<String> ALL_FLAGS_TO_FETCH =
+      List.of(DATA_CLASSIFICATION_RP1_FLAG, DATA_CLASSIFICATION_RP2_FLAG);
+  private final FeatureFlagServiceBlockingStub featureFlagStub;
+  private final LoadingCache<ContextualKey<Void>, Map<String, Boolean>> featureFlagCache;
+  private final Duration featureFlagRequestTimeout;
+
+  @Inject
+  public FeatureCachingClient(
+      FeatureCachingClientConfig config, GrpcChannelRegistry channelRegistry) {
+    this.featureFlagStub =
+        FeatureFlagServiceGrpc.newBlockingStub(
+                channelRegistry.forPlaintextAddress(config.getHost(), config.getPort()))
+            .withCallCredentials(
+                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+    this.featureFlagRequestTimeout = config.getRequestTimeout();
+    this.featureFlagCache =
+        CacheBuilder.newBuilder()
+            .refreshAfterWrite(config.getRefreshDuration())
+            .expireAfterWrite(config.getExpirationDuration())
+            .build(
+                CacheLoader.asyncReloading(
+                    CacheLoader.from(this::getFeatureFlagMap),
+                    Executors.newFixedThreadPool(
+                        config.getThreadPoolSize(), this.buildThreadFactory())));
+  }
+
+  public boolean isDataClassificationRp1Enabled(RequestContext requestContext) {
+    try {
+      return requireNonNull(
+          this.featureFlagCache
+              .get(requestContext.buildInternalContextualKey())
+              .get(DATA_CLASSIFICATION_RP1_FLAG));
+    } catch (Exception exception) {
+      log.error(
+          "Failed to retrieve current feature flag value for Data Classification RP1", exception);
+      return DEFAULT_DATA_CLASSIFICATION_RP1_FLAG_VALUE;
+    }
+  }
+
+  public boolean isDataClassificationRp2Enabled(RequestContext requestContext) {
+    try {
+      return requireNonNull(
+          this.featureFlagCache
+              .get(requestContext.buildInternalContextualKey())
+              .get(DATA_CLASSIFICATION_RP2_FLAG));
+    } catch (Exception exception) {
+      log.error(
+          "Failed to retrieve current feature flag value for Data Classification RP2", exception);
+      return DEFAULT_DATA_CLASSIFICATION_RP2_FLAG_VALUE;
+    }
+  }
+
+  private ThreadFactory buildThreadFactory() {
+    return new ThreadFactoryBuilder()
+        .setDaemon(true)
+        .setNameFormat("feature-flag-cache-%d")
+        .build();
+  }
+
+  private Map<String, Boolean> getFeatureFlagMap(ContextualKey<?> key) {
+    return key
+        .callInContext(
+            () ->
+                this.featureFlagStub
+                    .withDeadlineAfter(
+                        this.featureFlagRequestTimeout.toMillis(), TimeUnit.MILLISECONDS)
+                    .getCurrentFlagValues(
+                        GetCurrentFlagValuesRequest.newBuilder()
+                            .addAllFlagKeys(ALL_FLAGS_TO_FETCH)
+                            .build()))
+        .getValuesMap()
+        .entrySet()
+        .stream()
+        .collect(
+            Collectors.toUnmodifiableMap(Entry::getKey, entry -> entry.getValue().getBoolean()));
+  }
+}

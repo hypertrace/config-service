@@ -1,5 +1,6 @@
 package ai.traceable.external.data.classification.config.service;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
 import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc;
@@ -18,20 +19,26 @@ public class ExternalDataClassificationConfigServiceModule extends AbstractModul
   private final Channel channel;
   private final Config config;
   private final GrpcChannelRegistry channelRegistry;
+  private FeatureCachingClient featureCachingClient;
   private static final String INSIGHTS_SERVICE_CONFIG = "insights.service.config";
 
   ExternalDataClassificationConfigServiceModule(
-      Channel channel, Config config, GrpcChannelRegistry channelRegistry) {
+      Channel channel,
+      Config config,
+      GrpcChannelRegistry channelRegistry,
+      FeatureCachingClient featureCachingClient) {
     this.channel = channel;
     this.config = config;
     this.channelRegistry = channelRegistry;
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
   protected void configure() {
     bind(BindableService.class).to(ExternalDataClassificationConfigServiceImpl.class);
     bind(InsightsServiceCoordinator.class).to(InsightsServiceCoordinatorImpl.class);
-    bind(Config.class).toInstance(config);
+    bind(Config.class).toInstance(this.config);
+    bind(FeatureCachingClient.class).toInstance(this.featureCachingClient);
   }
 
   @Provides

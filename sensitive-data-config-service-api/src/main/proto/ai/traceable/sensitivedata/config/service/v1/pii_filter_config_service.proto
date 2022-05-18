@@ -14,9 +14,11 @@ service PiiFilterConfigService {
 message GetPiiFilterConfigRequest {
   bool include_conditional_rules = 1;
   string hash = 2;
+  bool data_classification_supported = 3;
 }
 
 message GetPiiFilterConfigResponse {
   PiiFilterConfig pii_filter_config = 1;
   string hash = 2;
+  bool enabled = 3;
 }

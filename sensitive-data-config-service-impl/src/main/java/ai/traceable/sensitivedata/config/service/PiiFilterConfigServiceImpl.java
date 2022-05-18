@@ -7,6 +7,7 @@ import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.RED
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_REDACT;
 import static java.util.function.Function.identity;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
@@ -63,17 +64,20 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
   private final InsightsServiceCoordinator insightsServiceCoordinator;
   private final PiiFilterConfig defaultPiiFilterConfig;
   private final UuidGenerator uuidGenerator;
+  private final FeatureCachingClient featureCachingClient;
 
   @Inject
   PiiFilterConfigServiceImpl(
       SensitiveDataServiceConfig sensitiveDataServiceConfig,
       ConfigServiceCoordinator configServiceCoordinator,
       InsightsServiceCoordinator insightsServiceCoordinator,
-      UuidGenerator uuidGenerator) {
+      UuidGenerator uuidGenerator,
+      FeatureCachingClient featureCachingClient) {
     this.configServiceCoordinator = configServiceCoordinator;
     this.insightsServiceCoordinator = insightsServiceCoordinator;
     this.defaultPiiFilterConfig = sensitiveDataServiceConfig.defaultPiiFilterConfig();
     this.uuidGenerator = uuidGenerator;
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
@@ -82,6 +86,13 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
       StreamObserver<GetPiiFilterConfigResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
+      if (request.getDataClassificationSupported()
+          && this.featureCachingClient.isDataClassificationRp2Enabled(requestContext)) {
+        // Disable this config and short circuit if RP2 enabled
+        responseObserver.onNext(GetPiiFilterConfigResponse.newBuilder().setEnabled(false).build());
+        responseObserver.onCompleted();
+        return;
+      }
 
       Map<String, PiiElement> keyRegexToPiiElementMap = new LinkedHashMap<>();
       Map<String, PiiElement> valueRegexToPiiElementMap = new LinkedHashMap<>();
@@ -95,8 +106,8 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
       mergeConfigFromRedactionRules(
           redactionRules, keyRegexToPiiElementMap, valueRegexToPiiElementMap, complexDataMap);
 
-      boolean isDataClassificationEnabled =
-          configServiceCoordinator.isDataClassificationEnabled(requestContext);
+      boolean isDataClassificationRp1Enabled =
+          this.featureCachingClient.isDataClassificationRp1Enabled(requestContext);
 
       // get pii elements from sensitive headers and add them to key regexs
       RedactionStrategy redactionStrategy =
@@ -108,7 +119,7 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
             insightsServiceCoordinator.getSensitiveHeaderParameters(requestContext);
         List<PiiElement> piiElements =
             computePiiElements(
-                sensitiveHeaderParameters, redactionStrategy, isDataClassificationEnabled);
+                sensitiveHeaderParameters, redactionStrategy, isDataClassificationRp1Enabled);
         addPiiElements(keyRegexToPiiElementMap, piiElements);
       }
 
@@ -120,7 +131,7 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
       boolean automaticSecretRedactionStrategyEnabled =
           configServiceCoordinator.isAutomaticSecretRedactionStrategyEnabled(requestContext);
       if (automaticSecretRedactionStrategyEnabled) {
-        if (isDataClassificationEnabled) {
+        if (isDataClassificationRp1Enabled) {
           addPiiElements(
               keyRegexToPiiElementMap,
               addRuleIdToDefaultRegexes(defaultPiiFilterConfig.getKeyRegexsList()));
@@ -134,7 +145,7 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
       }
 
       Map<DataSuppression, Set<DataType>> dataTypesMap =
-          isDataClassificationEnabled
+          isDataClassificationRp1Enabled
               ? getDataTypesForRedactionOrObfuscation(requestContext)
               : Collections.emptyMap();
       Set<DataType> dataTypesForRedaction =
@@ -158,7 +169,7 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
 
       String responseHash = uuidGenerator.generateId(resultingPiiFilterConfig);
       GetPiiFilterConfigResponse.Builder responseBuilder =
-          GetPiiFilterConfigResponse.newBuilder().setHash(responseHash);
+          GetPiiFilterConfigResponse.newBuilder().setHash(responseHash).setEnabled(true);
       if (!responseHash.equals(request.getHash())) {
         responseBuilder.setPiiFilterConfig(resultingPiiFilterConfig);
       }

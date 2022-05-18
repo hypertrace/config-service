@@ -29,4 +29,5 @@ message GetDataClassificationConfigResponse {
   string hash = 1;
   repeated DataType data_types = 2;
   repeated DataParsingRule data_parsing_rules = 3;
+  bool enabled = 4;
 }

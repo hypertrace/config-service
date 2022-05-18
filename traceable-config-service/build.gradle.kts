@@ -110,6 +110,7 @@ dependencies {
   implementation(projects.wafProviderIntegrationServiceImpl)
   implementation(projects.apiAttributeOverrideServiceImpl)
   implementation(projects.externalDataClassificationConfigServiceImpl)
+  implementation(projects.featureCachingClient)
   implementation(libs.hypertrace.configservice.server)
   implementation(libs.hypertrace.configservice.impl)
   implementation(libs.hypertrace.grpcutils.server)
@@ -130,7 +131,7 @@ dependencies {
   runtimeOnly(libs.slf4j.log4jimpl)
 
   testFixturesImplementation(libs.traceable.insights.api)
-  testFixturesImplementation(libs.traceable.featureFlag.futureClient)
+  testFixturesImplementation(libs.traceable.featureFlag.api)
   testFixturesImplementation(libs.traceable.licensemetering.api)
   testFixturesImplementation(libs.hypertrace.grpcutils.context)
   testFixturesImplementation(libs.hypertrace.grpcutils.client)
@@ -138,7 +139,7 @@ dependencies {
   // Integration test dependencies
   integrationTestImplementation(testFixtures(projects.traceableConfigService))
   integrationTestImplementation(libs.traceable.insights.api)
-  integrationTestImplementation(libs.traceable.featureFlag.futureClient)
+  integrationTestImplementation(libs.traceable.featureFlag.api)
   integrationTestImplementation(libs.traceable.licensemetering.api)
   integrationTestImplementation(libs.traceable.apiNamingModel)
   integrationTestImplementation(libs.traceable.platformGateway.trainingEvaluationFramework)

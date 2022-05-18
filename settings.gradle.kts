@@ -67,4 +67,6 @@ include(":api-attribute-override-service-api")
 include(":api-attribute-override-service-impl")
 include(":waf-provider-integration-service-api")
 include(":waf-provider-integration-service-impl")
+include(":feature-caching-client")
+
 include(":mock-config-service")
