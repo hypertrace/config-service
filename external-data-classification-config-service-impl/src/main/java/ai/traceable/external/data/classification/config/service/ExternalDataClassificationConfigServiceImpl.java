@@ -81,14 +81,7 @@ class ExternalDataClassificationConfigServiceImpl
         return;
       }
       List<RedactionRule> redactionRules =
-          this.redactionRulesDao.getAllRedactionRules(requestContext).stream()
-              .filter(
-                  redactionRule ->
-                      redactionRule.getRedactionStrategy()
-                              == RedactionStrategy.REDACTION_STRATEGY_REDACT
-                          || redactionRule.getRedactionStrategy()
-                              == RedactionStrategy.REDACTION_STRATEGY_HASH)
-              .collect(Collectors.toUnmodifiableList());
+          this.redactionRulesDao.getAllRedactionRules(requestContext);
       Map<String, DataType> dataTypesToIdMap =
           this.dataClassificationRulesDao.getAllDataTypes(requestContext).stream()
               .collect(Collectors.toUnmodifiableMap(DataType::getId, Function.identity()));
