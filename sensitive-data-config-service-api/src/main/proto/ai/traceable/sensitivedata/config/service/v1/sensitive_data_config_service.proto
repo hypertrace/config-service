@@ -99,7 +99,8 @@ message GetAllRedactionRulesRequest {
   RedactionRuleFilter filter = 1;
 
   message RedactionRuleFilter {
-    optional bool is_persisted = 1; // true for persisted rules only, false for unpersisted only, omit for all rules - the default.
+    // is_persisted has always been a misnomer - it's intent was actually to filter rules that should not be displayed, but now deprecated as such rules have been removed
+    optional bool is_persisted = 1 [deprecated = true];
     optional bool is_conditional = 2;
     optional bool is_sensitive = 3;
   }

@@ -38,7 +38,6 @@ import ai.traceable.sensitivedata.config.service.v1.PiiElement;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfig;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfigServiceGrpc.PiiFilterConfigServiceBlockingStub;
-import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import io.grpc.Channel;
 import io.grpc.stub.StreamObserver;
@@ -138,8 +137,6 @@ class PiiFilterConfigServiceImplTest {
         Set.of(
             getPiiElement("abc123", RedactionStrategy.REDACTION_STRATEGY_UNSPECIFIED, false),
             getPiiElement("def456", RedactionStrategy.REDACTION_STRATEGY_UNSPECIFIED, false),
-            getPiiElement("uvw789", RedactionStrategy.REDACTION_STRATEGY_UNSPECIFIED, false),
-            getPiiElement("xyz101112", RedactionStrategy.REDACTION_STRATEGY_UNSPECIFIED, false),
             getPiiElement(
                 "http.request.header.h1", RedactionStrategy.REDACTION_STRATEGY_HASH, true),
             getPiiElement(
@@ -150,56 +147,6 @@ class PiiFilterConfigServiceImplTest {
             .map(piiElement -> PiiElement.newBuilder(piiElement).setRuleId("").build())
             .collect(Collectors.toSet());
     assertEquals(expected, actual);
-  }
-
-  @Test
-  void prepopulatesFilterConfig() {
-    setupPiiFilterConfigServiceImpl(false, mock(DefaultRedactionRules.class));
-
-    when(mockConfig.defaultRedactionRules().isPrepopulationComplete(any())).thenReturn(false);
-    when(mockConfig.defaultRedactionRules().completedPrepopulationStatus(any()))
-        .thenReturn(DefaultRedactionRulePopulationStatus.of(Set.of("key")));
-    when(mockConfig.defaultRedactionRules().getRulesToPrepopulate(any()))
-        .thenReturn(
-            Map.of(
-                "other-key",
-                NewRedactionRule.newBuilder()
-                    .setMatchType(MatchType.MATCH_TYPE_KEY)
-                    .setRegex("prepopulated-regex")
-                    .build()));
-
-    PiiFilterConfig piiFilterConfig =
-        piiFilterStub
-            .getPiiFilterConfig(GetPiiFilterConfigRequest.newBuilder().build())
-            .getPiiFilterConfig();
-
-    assertTrue(
-        piiFilterConfig.getKeyRegexsList().stream()
-            .anyMatch(element -> element.getRegex().equals("prepopulated-regex")));
-  }
-
-  @Test
-  void testEmptyResponseIfDataClassificationRp2EnabledAndAgentSupports() {
-    dataClassificationRp1Enabled = true;
-    when(mockFeatureClient.isDataClassificationRp2Enabled(any())).thenReturn(true);
-    setupPiiFilterConfigServiceImpl(false, getDefaultRedactionRules());
-    assertEquals(
-        GetPiiFilterConfigResponse.newBuilder().setEnabled(false).build(),
-        piiFilterStub.getPiiFilterConfig(
-            GetPiiFilterConfigRequest.newBuilder().setDataClassificationSupported(true).build()));
-  }
-
-  @Test
-  void testRealResponseIfDataClassificationRp2EnabledAndNoAgentSupport() {
-    dataClassificationRp1Enabled = true;
-    when(mockFeatureClient.isDataClassificationRp2Enabled(any())).thenReturn(true);
-    setupPiiFilterConfigServiceImpl(false, getDefaultRedactionRules());
-    GetPiiFilterConfigResponse response =
-        piiFilterStub.getPiiFilterConfig(GetPiiFilterConfigRequest.newBuilder().build());
-    // We're not testing what it returns in this test, just that it returns something
-    assertTrue(response.getEnabled());
-    assertTrue(response.hasPiiFilterConfig());
-    assertTrue(response.getHash().length() > 0);
   }
 
   @Test
@@ -243,35 +190,22 @@ class PiiFilterConfigServiceImplTest {
 
   private DefaultRedactionRules getDefaultRedactionRules() {
     // prepopulated rules
-    Map<String, NewRedactionRule> prepopulationRules =
+    Map<String, NewRedactionRule> defaultRules =
         Map.of(
-            "pre-populated-1",
+            "default-1",
             NewRedactionRule.newBuilder()
-                .setName("Prepopulated Rule 1")
+                .setName("Rule 1")
                 .setMatchType(MatchType.MATCH_TYPE_KEY)
                 .setRegex("abc123")
                 .build(),
-            "pre-populated-2",
+            "default-2",
             NewRedactionRule.newBuilder()
-                .setName("Prepopulated Rule 2")
+                .setName("Rule 2")
                 .setMatchType(MatchType.MATCH_TYPE_HEADER)
                 .setRegex("def456")
                 .build());
-    // full privacy mode rules
-    List<RedactionRule> defaultRedactionRules =
-        List.of(
-            RedactionRule.newBuilder()
-                .setName("Rule 1")
-                .setMatchType(MatchType.MATCH_TYPE_KEY)
-                .setRegex("uvw789")
-                .build(),
-            RedactionRule.newBuilder()
-                .setName("Rule 2")
-                .setMatchType(MatchType.MATCH_TYPE_KEY)
-                .setRegex("xyz101112")
-                .build());
 
-    return new DefaultRedactionRules(prepopulationRules, defaultRedactionRules);
+    return new DefaultRedactionRules(defaultRules);
   }
 
   private void setupPiiFilterConfigServiceImpl(
@@ -302,7 +236,7 @@ class PiiFilterConfigServiceImplTest {
                         configServiceBlockingStub, configChangeEventGenerator),
                     new FullPrivacyModeConfigStore(
                         configServiceBlockingStub, configChangeEventGenerator),
-                    new DefaultRedactionRulePopulationStatusStore(
+                    new DefaultRedactionRulePersistenceStatusStore(
                         configServiceBlockingStub, configChangeEventGenerator),
                     DataClassificationConfigServiceGrpc.newBlockingStub(channel)),
                 new InsightsServiceCoordinatorImpl(InsightsServiceGrpc.newBlockingStub(channel)),

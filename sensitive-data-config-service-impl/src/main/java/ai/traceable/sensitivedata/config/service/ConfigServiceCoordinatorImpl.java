@@ -15,18 +15,11 @@ import ai.traceable.sensitivedata.config.service.v1.ParamType;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import com.github.f4b6a3.uuid.util.UuidValidator;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Streams;
-import com.google.common.util.concurrent.Striped;
 import com.google.re2j.Pattern;
 import io.grpc.Status;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.locks.Lock;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,36 +29,25 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
-import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 @Singleton
 class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
-
-  // Not concerned about memory footprint here
-  private static final int PREPOPULATION_LOCK_STRIPE_COUNT = 1000;
-
   private final ConfigServiceBlockingStub configServiceBlockingStub;
   private final ConfigChangeEventGenerator configChangeEventGenerator;
   private final RedactionStrategy defaultParamTypeRedactionStrategy;
-  private final Striped<Lock> stripedPrepopulationLock =
-      Striped.lazyWeakLock(PREPOPULATION_LOCK_STRIPE_COUNT);
   private final boolean defaultAutomaticSecretRedactionEnabled;
-  private final InvalidJsonPolicy deafaultInvalidJsonPolicy;
+  private final InvalidJsonPolicy defaultInvalidJsonPolicy;
   private final boolean defaultFullPrivacyModeEnabled;
   private final DefaultRedactionRules defaultRedactionRules;
-  private final LoadingCache<ContextualKey<Void>, DefaultRedactionRulePopulationStatus>
-      prePopulationStatusCache =
-          CacheBuilder.newBuilder()
-              .maximumSize(10000)
-              .build(CacheLoader.from(key -> this.fetchPrepopulationStatus(key.getContext())));
   private final RedactionRuleConfigStore redactionRuleConfigStore;
   private final AutomaticSecretRedactionStrategyConfigStore
       automaticSecretRedactionStrategyConfigStore;
   private final InvalidJsonPolicyConfigStore invalidJsonPolicyConfigStore;
   private final FullPrivacyModeConfigStore fullPrivacyModeConfigStore;
-  private final DefaultRedactionRulePopulationStatusStore defaultRedactionRulePopulationStatusStore;
+  private final DefaultRedactionRulePersistenceStatusStore
+      defaultRedactionRulePersistenceStatusStore;
   private final DataClassificationConfigServiceBlockingStub
       dataClassificationConfigServiceBlockingStub;
 
@@ -78,20 +60,20 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
       AutomaticSecretRedactionStrategyConfigStore automaticSecretRedactionStrategyConfigStore,
       InvalidJsonPolicyConfigStore invalidJsonPolicyConfigStore,
       FullPrivacyModeConfigStore fullPrivacyModeConfigStore,
-      DefaultRedactionRulePopulationStatusStore defaultRedactionRulePopulationStatusStore,
+      DefaultRedactionRulePersistenceStatusStore defaultRedactionRulePersistenceStatusStore,
       DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceBlockingStub) {
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.configChangeEventGenerator = configChangeEventGenerator;
     this.defaultRedactionRules = config.defaultRedactionRules();
     this.defaultAutomaticSecretRedactionEnabled = config.defaultAutomaticRedactionStrategy();
-    this.deafaultInvalidJsonPolicy = config.defaultInvalidJsonPolicy();
+    this.defaultInvalidJsonPolicy = config.defaultInvalidJsonPolicy();
     this.defaultFullPrivacyModeEnabled = config.defaultFullPrivacyMode();
     this.defaultParamTypeRedactionStrategy = config.defaultParamTypeRedactionStrategy();
     this.redactionRuleConfigStore = redactionRuleConfigStore;
     this.automaticSecretRedactionStrategyConfigStore = automaticSecretRedactionStrategyConfigStore;
     this.invalidJsonPolicyConfigStore = invalidJsonPolicyConfigStore;
     this.fullPrivacyModeConfigStore = fullPrivacyModeConfigStore;
-    this.defaultRedactionRulePopulationStatusStore = defaultRedactionRulePopulationStatusStore;
+    this.defaultRedactionRulePersistenceStatusStore = defaultRedactionRulePersistenceStatusStore;
     this.dataClassificationConfigServiceBlockingStub = dataClassificationConfigServiceBlockingStub;
   }
 
@@ -141,7 +123,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   public InvalidJsonPolicy getInvalidJsonPolicy(RequestContext requestContext) {
     return this.invalidJsonPolicyConfigStore
         .getData(requestContext)
-        .orElse(deafaultInvalidJsonPolicy);
+        .orElse(defaultInvalidJsonPolicy);
   }
 
   @Override
@@ -163,8 +145,26 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   public RedactionRule updateRedactionRule(
       RequestContext requestContext, RedactionRule redactionRule) {
     validateRegex(redactionRule.getRegex());
+    DefaultRedactionRulePersistenceStatus priorRulePersistence =
+        this.getDefaultRulePersistence(requestContext);
+    if (this.defaultRedactionRules.isDefaultRuleId(redactionRule.getId())
+        && !priorRulePersistence.hasRuleBeenPersisted(redactionRule.getId())) {
+      this.updateDefaultRulePersistenceStatus(
+          requestContext,
+          priorRulePersistence.withAdditionalPersistedRuleId(redactionRule.getId()));
+      // Default timestamp to 0 if persisting an OOTB rule, also give it a unique ID
+      RedactionRuleConfig ruleConfig =
+          new RedactionRuleConfig(
+              redactionRule.toBuilder().setId(UUID.randomUUID().toString()).build(), 0);
+      return this.redactionRuleConfigStore
+          .upsertObject(requestContext, ruleConfig)
+          .getData()
+          .getRedactionRule();
+    }
+
     long creationTimestamp =
         getRedactionRuleConfig(requestContext, redactionRule.getId()).getCreationTimestamp();
+
     return this.redactionRuleConfigStore
         .upsertObject(requestContext, new RedactionRuleConfig(redactionRule, creationTimestamp))
         .getData()
@@ -174,16 +174,10 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   @Override
   public List<RedactionRule> getRedactionRules(
       RequestContext requestContext, boolean includeConditionalRules) {
-    this.insertPrepopulatedRulesIfRequired(requestContext);
 
     RedactionRuleFilter.Builder filterBuilder = RedactionRuleFilter.newBuilder();
     if (!includeConditionalRules) {
       filterBuilder.setIsConditional(false);
-    }
-
-    if (!this.isFullPrivacyModeEnabled(requestContext)) {
-      // Unpersisted rules are for full privacy
-      filterBuilder.setIsPersisted(true);
     }
 
     return this.gatherUnfilteredRedactionRules(requestContext)
@@ -194,7 +188,6 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   @Override
   public List<RedactionRule> getAllRedactionRules(
       RequestContext requestContext, RedactionRuleFilter filter) {
-    this.insertPrepopulatedRulesIfRequired(requestContext);
     return this.gatherUnfilteredRedactionRules(requestContext)
         .filter(rule -> this.redactionRuleMatchesFilter(rule, filter))
         .collect(Collectors.toUnmodifiableList());
@@ -202,6 +195,20 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
 
   @Override
   public RedactionRule deleteRedactionRule(RequestContext requestContext, String redactionRuleId) {
+    if (this.defaultRedactionRules.isDefaultRuleId(redactionRuleId)
+        && !this.getDefaultRulePersistence(requestContext).hasRuleBeenPersisted(redactionRuleId)) {
+      // Just mark as persisted, so we don't return it from config again
+      RedactionRule rule =
+          this.defaultRedactionRules
+              .getRule(redactionRuleId)
+              .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      this.updateDefaultRulePersistenceStatus(
+          requestContext,
+          this.getDefaultRulePersistence(requestContext)
+              .withAdditionalPersistedRuleId(redactionRuleId));
+      return rule;
+    }
+
     return this.redactionRuleConfigStore
         .deleteObject(requestContext, redactionRuleId)
         .map(ContextualConfigObject::getData)
@@ -223,58 +230,14 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
     this.fullPrivacyModeConfigStore.upsertObject(requestContext, fullPrivacyModeConfig);
   }
 
-  private void insertPrepopulatedRulesIfRequired(RequestContext requestContext) {
-    Lock prepopulationLock = this.stripedPrepopulationLock.get(requestContext.getTenantId());
-    prepopulationLock.lock();
-    try {
-      DefaultRedactionRulePopulationStatus status = this.getPrepopulationStatus(requestContext);
-
-      if (this.defaultRedactionRules.isPrepopulationComplete(status)) {
-        return;
-      }
-
-      this.defaultRedactionRules
-          .getRulesToPrepopulate(status)
-          .forEach(
-              (defaultId, rule) -> {
-                log.info("Prepopulating rule {} for tenant {}", rule, requestContext.getTenantId());
-                RedactionRule insertedRule = this.createRedactionRule(requestContext, rule);
-                try {
-                  this.updatePrepopulationStatus(
-                      requestContext, status.withAdditionalPopulatedRules(Set.of(defaultId)));
-                } catch (Exception exception) {
-                  log.error(
-                      "Failed to update status for prepopulated rule {} for tenant {}, attempting to delete",
-                      insertedRule,
-                      requestContext.getTenantId(),
-                      exception);
-
-                  this.deleteRedactionRule(requestContext, insertedRule.getId());
-                  log.error("Delete successful: rule id {} removed", insertedRule.getId());
-                }
-              });
-
-      DefaultRedactionRulePopulationStatus completedStatus =
-          this.defaultRedactionRules.completedPrepopulationStatus(status);
-
-      this.updatePrepopulationStatus(requestContext, completedStatus);
-
-      log.info(
-          "Prepopulation complete: {} for tenant: {}",
-          completedStatus,
-          requestContext.getTenantId());
-    } finally {
-      prepopulationLock.unlock();
-    }
-  }
-
-  private List<RedactionRule> getUnpersistedDefaultRules() {
-    return this.defaultRedactionRules.getDefaultRules();
+  private List<RedactionRule> getUnpersistedDefaultRules(RequestContext requestContext) {
+    return this.defaultRedactionRules.getUnpersistedRules(
+        this.getDefaultRulePersistence(requestContext));
   }
 
   private Stream<RedactionRule> gatherUnfilteredRedactionRules(RequestContext requestContext) {
     return Streams.concat(
-        this.getUnpersistedDefaultRules().stream(),
+        this.getUnpersistedDefaultRules(requestContext).stream(),
         this.fetchPersistedRules(requestContext).stream());
   }
 
@@ -316,36 +279,16 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
         .collect(Collectors.toUnmodifiableList());
   }
 
-  private void updatePrepopulationStatus(
-      RequestContext requestContext, DefaultRedactionRulePopulationStatus updatedStatus) {
-    this.defaultRedactionRulePopulationStatusStore.upsertObject(requestContext, updatedStatus);
-    this.prePopulationStatusCache.put(requestContext.buildContextualKey(), updatedStatus);
+  private void updateDefaultRulePersistenceStatus(
+      RequestContext requestContext, DefaultRedactionRulePersistenceStatus updatedStatus) {
+    this.defaultRedactionRulePersistenceStatusStore.upsertObject(requestContext, updatedStatus);
   }
 
-  private DefaultRedactionRulePopulationStatus getPrepopulationStatus(
+  private DefaultRedactionRulePersistenceStatus getDefaultRulePersistence(
       RequestContext requestContext) {
-    // Prepopulation's write status is only dependent on tenant
-    ContextualKey<Void> key =
-        RequestContext.forTenantId(requestContext.getTenantId().orElseThrow()).buildContextualKey();
-    // If populated with a complete value use it, else invalidate and refetch
-    return Optional.ofNullable(this.prePopulationStatusCache.getIfPresent(key))
-        .filter(this.defaultRedactionRules::isPrepopulationComplete)
-        .orElseGet(
-            () -> {
-              this.prePopulationStatusCache.invalidate(key);
-              return this.prePopulationStatusCache.getUnchecked(key);
-            });
-  }
-
-  private DefaultRedactionRulePopulationStatus fetchPrepopulationStatus(
-      RequestContext requestContext) {
-    return this.defaultRedactionRulePopulationStatusStore
+    return this.defaultRedactionRulePersistenceStatusStore
         .getData(requestContext)
-        .orElseGet(
-            () ->
-                DefaultRedactionRulePopulationStatus.empty()
-                    .forAutomaticRedactionState(
-                        () -> this.isAutomaticSecretRedactionStrategyEnabled(requestContext)));
+        .orElseGet(DefaultRedactionRulePersistenceStatus::empty);
   }
 
   private RedactionRule buildRedactionRuleWithId(NewRedactionRule newRedactionRule) {

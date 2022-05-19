@@ -10,11 +10,11 @@ import org.hypertrace.config.objectstore.DefaultObjectStore;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 
-class DefaultRedactionRulePopulationStatusStore
-    extends DefaultObjectStore<DefaultRedactionRulePopulationStatus> {
+class DefaultRedactionRulePersistenceStatusStore
+    extends DefaultObjectStore<DefaultRedactionRulePersistenceStatus> {
 
   @Inject
-  DefaultRedactionRulePopulationStatusStore(
+  DefaultRedactionRulePersistenceStatusStore(
       ConfigServiceBlockingStub configServiceBlockingStub,
       ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
@@ -25,13 +25,13 @@ class DefaultRedactionRulePopulationStatusStore
   }
 
   @Override
-  protected Optional<DefaultRedactionRulePopulationStatus> buildDataFromValue(Value value) {
-    return Optional.of(DefaultRedactionRulePopulationStatus.fromValue(value));
+  protected Optional<DefaultRedactionRulePersistenceStatus> buildDataFromValue(Value value) {
+    return Optional.of(DefaultRedactionRulePersistenceStatus.fromValue(value));
   }
 
   @Override
   protected Value buildValueFromData(
-      DefaultRedactionRulePopulationStatus defaultRedactionRulePopulationStatus) {
+      DefaultRedactionRulePersistenceStatus defaultRedactionRulePopulationStatus) {
     return defaultRedactionRulePopulationStatus.toValue();
   }
 }

@@ -53,12 +53,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeAll;
@@ -158,61 +153,6 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
     updateFullPrivacyMode(false);
     assertMatchesResource(
         "sensitive-data/pii-filter-with-full-privacy-mode-disabled.json", getPiiFilterConfig(true));
-  }
-
-  @Test
-  void testDefaultPopulationConcurrency() throws InterruptedException {
-    requestContext = RequestContext.forTenantId("testDefaultPopulationConcurrency-tenant");
-    ExecutorService executorService = Executors.newFixedThreadPool(10);
-    List<Callable<GetAllRedactionRulesResponse>> calls =
-        Stream.generate(
-                () -> (Callable<GetAllRedactionRulesResponse>) () -> this.getRedactionRules(true))
-            .limit(10)
-            .collect(Collectors.toList());
-    List<Future<GetAllRedactionRulesResponse>> responses = executorService.invokeAll(calls);
-
-    responses.forEach(
-        response -> {
-          try {
-            assertMatchesResource(
-                "sensitive-data/get-all-redaction-rules-prepop-response.json", response.get());
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-        });
-
-    calls =
-        Stream.generate(
-                () -> (Callable<GetAllRedactionRulesResponse>) () -> this.getRedactionRules(false))
-            .limit(10)
-            .collect(Collectors.toList());
-    responses = executorService.invokeAll(calls);
-
-    responses.forEach(
-        response -> {
-          try {
-            assertMatchesResource(
-                "sensitive-data/get-all-redaction-rules-unpersisted-response.json", response.get());
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-        });
-
-    calls =
-        Stream.generate(() -> (Callable<GetAllRedactionRulesResponse>) this::getAllRedactionRules)
-            .limit(10)
-            .collect(Collectors.toList());
-    responses = executorService.invokeAll(calls);
-
-    responses.forEach(
-        response -> {
-          try {
-            assertMatchesResource(
-                "sensitive-data/get-all-redaction-rules-response.json", response.get());
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-        });
   }
 
   @Test

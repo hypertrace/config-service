@@ -7,7 +7,6 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import io.grpc.Channel;
 import java.time.Duration;
-import java.util.List;
 import javax.inject.Inject;
 import lombok.Builder;
 import lombok.Value;
@@ -23,7 +22,6 @@ class SensitiveDataServiceConfig {
       INSIGHTS_SERVICE_CONFIG + ".request.timeout";
   private static final String DEFAULT_PII_FILTER_CONFIG = "default.pii.filter.config";
   private static final String DEFAULT_REDACTION_RULES = "default.redaction.rules";
-  private static final String PREPOPULATED_REDACTION_RULES = "default.prepopulated.redaction.rules";
   private static final String DEFAULT_PARAM_TYPE_REDACTION_STRATEGY =
       "default.param.type.redaction.strategy";
   private static final String DEFAULT_AUTOMATIC_SECRET_REDACTION_ENABLED =
@@ -81,10 +79,8 @@ class SensitiveDataServiceConfig {
   }
 
   private DefaultRedactionRules buildDefaultRedactionRules() {
-    List<? extends ConfigObject> defaultRules =
-        sensitiveDataConfig.getObjectList(DEFAULT_REDACTION_RULES);
-    ConfigObject prepopulatedRules = sensitiveDataConfig.getObject(PREPOPULATED_REDACTION_RULES);
-    return new DefaultRedactionRules(prepopulatedRules, defaultRules);
+    ConfigObject defaultRules = sensitiveDataConfig.getObject(DEFAULT_REDACTION_RULES);
+    return new DefaultRedactionRules(defaultRules);
   }
 
   @Value
