@@ -19,6 +19,7 @@ dependencies {
   implementation(projects.localProcessingConfigServiceApi)
   implementation(projects.blockingConfigServiceApi)
   implementation(projects.externalUserAttributionConfigServiceApi)
+  implementation(projects.externalDataClassificationConfigServiceApi)
 }
 
 application {

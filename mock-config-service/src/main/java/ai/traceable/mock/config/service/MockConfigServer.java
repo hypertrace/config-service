@@ -18,6 +18,7 @@ public class MockConfigServer {
             .addService(new LocalProcessingConfigServiceImpl())
             .addService(new BlockingConfigServiceImpl())
             .addService(new ExternalUserAttributionConfigServiceImpl())
+            .addService(new ExternalDataClassificationConfigServiceImpl())
             .build()
             .start();
   }
