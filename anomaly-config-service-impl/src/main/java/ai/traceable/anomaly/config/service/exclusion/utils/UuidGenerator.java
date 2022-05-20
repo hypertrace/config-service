@@ -17,6 +17,7 @@ public class UuidGenerator {
   public String generateId(AnomalyExclusionRuleData exclusionRuleData) {
     return List.of(
             exclusionRuleData.getAnomalyConfigScope(),
+            exclusionRuleData.getSourceConfigScope(),
             exclusionRuleData.getEventExclusionInfo(),
             exclusionRuleData.getAnomalyActorExclusionInfo())
         .stream()
