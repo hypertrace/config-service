@@ -4,6 +4,7 @@ import static ai.traceable.localprocessing.config.service.apinaming.http.ApiNami
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -33,7 +34,7 @@ import ai.traceable.platform.model.PersistedModel;
 import ai.traceable.platform.model.store.ModelPersistentStore;
 import com.typesafe.config.ConfigFactory;
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -106,6 +107,7 @@ class DefaultHttpApiNamingManagerTest {
     when(trieDiffLogPersistedModel.getModel()).thenReturn(trieDiffLogModel);
     when(trieDiffLogPersistedModel.getMetadata()).thenReturn(fileMetadata);
     when(httpApiNamingConfig.getDefaultEmbryonicThreshold()).thenReturn(100);
+    when(httpApiNamingConfig.getDefaultMaxNumberOfTriePaths()).thenReturn(10000);
     when(httpApiNamingConfig.getDiffLogsRetentionPeriod()).thenReturn(5L);
     when(httpApiNamingConfig.getBaseDirectory()).thenReturn("logs");
     when(trieDiffLogModelStore.loadModelsInDir(any(), any()))
@@ -119,8 +121,9 @@ class DefaultHttpApiNamingManagerTest {
 
   @Test
   void testGetServiceResponseList() throws ExecutionException {
-    when(trieModel.getNonEmbryonicWildcardPaths(ApiNamingManagerTestUtils.buildTrieNodeConfig()))
-        .thenReturn(new HashSet<>());
+    when(trieModel.getNonEmbryonicWildcardPaths(
+            ApiNamingManagerTestUtils.buildTrieNodeConfig(), 10))
+        .thenReturn(new ArrayList<>());
     when(httpApiNamingConfig.getFullTrieReloadConfig())
         .thenReturn(buildFullTrieReloadConfig(false, "2.3.0"));
     when(trieDiffLogModel.getTrieDiffLog())
@@ -185,7 +188,7 @@ class DefaultHttpApiNamingManagerTest {
   void testTrieConstruction() throws ExecutionException {
     when(httpApiNamingConfig.getFullTrieReloadConfig())
         .thenReturn(buildFullTrieReloadConfig(false, "0.0.0"));
-    when(trieModel.getNonEmbryonicWildcardPaths(any()))
+    when(trieModel.getNonEmbryonicWildcardPaths(any(), anyInt()))
         .thenReturn(ApiNamingManagerTestUtils.buildNonEmbryonicPaths());
     when(trieDiffLogModel.getTrieDiffLog())
         .thenReturn(ai.traceable.platform.apientity.TrieDiffLog.newBuilder().build());
@@ -263,7 +266,7 @@ class DefaultHttpApiNamingManagerTest {
     when(trieDiffLogModel.getTrieDiffLog())
         .thenReturn(ApiNamingManagerTestUtils.buildTrieDiffLog());
     when(fileMetadata.getModificationTime()).thenReturn(3L);
-    when(trieModel.getNonEmbryonicWildcardPaths(any()))
+    when(trieModel.getNonEmbryonicWildcardPaths(any(), anyInt()))
         .thenReturn(ApiNamingManagerTestUtils.buildNonEmbryonicPaths());
     FullPattern expectedFullPattern = ApiNamingManagerTestUtils.buildExpectedFullPattern();
 

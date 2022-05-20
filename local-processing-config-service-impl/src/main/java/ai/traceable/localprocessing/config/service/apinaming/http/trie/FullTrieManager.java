@@ -24,7 +24,6 @@ import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
@@ -126,16 +125,18 @@ public class FullTrieManager {
     if (trieModelMaybe.isEmpty()) {
       return Optional.empty();
     }
-    Set<List<Segment>> nonEmbryonicPaths =
+    List<List<Segment>> nonEmbryonicPaths =
         trieModelMaybe
             .get()
-            .getNonEmbryonicWildcardPaths(buildTrieNodeConfig(httpApiNamingConfigInfo));
+            .getNonEmbryonicWildcardPaths(
+                buildTrieNodeConfig(httpApiNamingConfigInfo),
+                httpApiNamingConfigInfo.getMaxNumberOfTriePaths());
     return Optional.of(
         buildFullPattern(nonEmbryonicPaths, httpApiNamingConfigInfo.getWildcardConfigMap()));
   }
 
   private FullPattern buildFullPattern(
-      Set<List<Segment>> paths, EnumMap<TrieNodeType, String> wildcardConfigMap) {
+      List<List<Segment>> paths, EnumMap<TrieNodeType, String> wildcardConfigMap) {
     FullPattern.Builder fullPatternBuilder = FullPattern.newBuilder();
     for (List<Segment> path : paths) {
       fullPatternBuilder.addApiNamingPatterns(convertPath(path, wildcardConfigMap));

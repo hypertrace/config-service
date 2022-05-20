@@ -13,4 +13,5 @@ public class HttpApiNamingConfigInfo {
   EnumMap<TrieNodeType, String> wildcardConfigMap;
   List<String> segmentWhitelistRegexes;
   List<String> extensions;
+  int maxNumberOfTriePaths;
 }

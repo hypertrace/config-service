@@ -22,6 +22,10 @@ public class HttpApiNamingConfig {
     return this.config.getInt("default.embryonic.threshold");
   }
 
+  public int getDefaultMaxNumberOfTriePaths() {
+    return this.config.getInt("default.max.number.of.trie.paths");
+  }
+
   public long getDiffLogsRetentionPeriod() {
     return this.config.getDuration("trieDiffLog.diff.logs.retention.period").toMillis();
   }

@@ -51,6 +51,11 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
             .map(TrieModelTrainingConfig::getEmbryonicThreshold)
             .orElseGet(httpApiNamingConfig::getDefaultEmbryonicThreshold);
 
+    int maxNumberOfTriePaths =
+        maybeTrieModelTrainingConfig
+            .map(TrieModelTrainingConfig::getMaxNumberOfTriePaths)
+            .orElseGet(httpApiNamingConfig::getDefaultMaxNumberOfTriePaths);
+
     List<String> segmentWhitelistRegexes = new ArrayList<>();
     List<String> extensions = new ArrayList<>();
     EnumMap<TrieNodeType, String> wildcardConfigsMap = new EnumMap<>(TrieNodeType.class);
@@ -77,7 +82,8 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
           embryonicThreshold,
           wildcardConfigsMap,
           segmentWhitelistRegexes,
-          extensions);
+          extensions,
+          maxNumberOfTriePaths);
     }
     return new HttpApiNamingConfigInfo(
         ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig.newBuilder()
@@ -86,7 +92,8 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
         embryonicThreshold,
         wildcardConfigsMap,
         segmentWhitelistRegexes,
-        extensions);
+        extensions,
+        maxNumberOfTriePaths);
   }
 
   private EnumMap<TrieNodeType, String> buildWildcardConfigMap(

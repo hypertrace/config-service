@@ -159,8 +159,10 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
 
     TrieDiffLogModel trieDiffLogModel = new TrieDiffLogModel();
     trieDiffLogModel.computeDiffLog(
-        trieModel.getNonEmbryonicWildcardPaths(buildTrieModelTrainerConfig().getTrieNodeConfig()),
-        trieModel1.getNonEmbryonicWildcardPaths(buildTrieModelTrainerConfig().getTrieNodeConfig()));
+        trieModel.getNonEmbryonicWildcardPaths(
+            buildTrieModelTrainerConfig().getTrieNodeConfig(), 1000),
+        trieModel1.getNonEmbryonicWildcardPaths(
+            buildTrieModelTrainerConfig().getTrieNodeConfig(), 1000));
     long timestamp = System.currentTimeMillis() - 10;
     DateScope dateScope =
         new DateScope(
@@ -306,6 +308,7 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
                             .setExtensions(StringList.newBuilder().addValues("e").build())
                             .setAllowRegexList(StringList.newBuilder().addValues("f").build())
                             .setEmbryonicThreshold(10)
+                            .setMaxNumberOfTriePaths(3)
                             .build())
                     .build())
             .build(),

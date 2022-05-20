@@ -113,5 +113,12 @@ public class TrainerConfigServiceConfigTest {
             .getApiNamingTrainingConfig()
             .getTrieModelTrainingConfig()
             .getEmbryonicThreshold());
+    assertEquals(
+        10000,
+        apiNamingTrainingConfigs
+            .get(1)
+            .getApiNamingTrainingConfig()
+            .getTrieModelTrainingConfig()
+            .getMaxNumberOfTriePaths());
   }
 }

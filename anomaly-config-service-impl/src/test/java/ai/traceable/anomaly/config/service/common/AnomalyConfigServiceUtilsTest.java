@@ -25,6 +25,7 @@ public class AnomalyConfigServiceUtilsTest {
                     .setTrieModelTrainingConfig(
                         TrieModelTrainingConfig.newBuilder()
                             .setEmbryonicThreshold(100)
+                            .setMaxNumberOfTriePaths(10000)
                             .setLowCardinality(
                                 buildThresholdRegexConfig(10, List.of("low-1", "low-2")))
                             .setHighCardinality(
@@ -41,6 +42,7 @@ public class AnomalyConfigServiceUtilsTest {
                     .setTrieModelTrainingConfig(
                         TrieModelTrainingConfig.newBuilder()
                             .setEmbryonicThreshold(50)
+                            .setMaxNumberOfTriePaths(1000)
                             .setMediumCardinality(
                                 buildThresholdRegexConfig(50, List.of("med-1", "med-2")))
                             .setHighCardinality(
@@ -57,6 +59,7 @@ public class AnomalyConfigServiceUtilsTest {
                     .setTrieModelTrainingConfig(
                         TrieModelTrainingConfig.newBuilder()
                             .setEmbryonicThreshold(50)
+                            .setMaxNumberOfTriePaths(1000)
                             .setAllowRegexList(buildStringList(List.of("url-1", "url-2")))
                             .setLowCardinality(
                                 buildThresholdRegexConfig(10, List.of("low-1", "low-2")))

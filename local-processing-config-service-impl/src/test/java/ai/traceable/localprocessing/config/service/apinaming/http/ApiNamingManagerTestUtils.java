@@ -29,7 +29,6 @@ import com.typesafe.config.ConfigFactory;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRule;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleDetails;
@@ -110,6 +109,7 @@ public class ApiNamingManagerTestUtils {
                         .setTrieModelTrainingConfig(
                             TrieModelTrainingConfig.newBuilder()
                                 .setEmbryonicThreshold(123)
+                                .setMaxNumberOfTriePaths(1234)
                                 .setAllowRegexList(
                                     StringList.newBuilder().addValues("allowRegex").build())
                                 .setExtensions(
@@ -189,25 +189,24 @@ public class ApiNamingManagerTestUtils {
         .build();
   }
 
-  public static Set<List<Segment>> buildNonEmbryonicPaths() {
-    return new HashSet<>(
-        Set.of(
-            List.of(
-                Segment.newBuilder().setName("3").build(),
-                Segment.newBuilder().setName("GET").build(),
-                Segment.newBuilder().setName("a").build(),
-                Segment.newBuilder().setName("b").build()),
-            List.of(
-                Segment.newBuilder().setName("3").build(),
-                Segment.newBuilder().setName("POST").build(),
-                Segment.newBuilder().setName("a").build(),
-                Segment.newBuilder()
-                    .setName(
-                        ai.traceable.platform.apientity.Wildcard.newBuilder()
-                            .setWildcardType(TrieNodeType.ID)
-                            .setExtension("e")
-                            .build())
-                    .build())));
+  public static List<List<Segment>> buildNonEmbryonicPaths() {
+    return List.of(
+        List.of(
+            Segment.newBuilder().setName("3").build(),
+            Segment.newBuilder().setName("GET").build(),
+            Segment.newBuilder().setName("a").build(),
+            Segment.newBuilder().setName("b").build()),
+        List.of(
+            Segment.newBuilder().setName("3").build(),
+            Segment.newBuilder().setName("POST").build(),
+            Segment.newBuilder().setName("a").build(),
+            Segment.newBuilder()
+                .setName(
+                    ai.traceable.platform.apientity.Wildcard.newBuilder()
+                        .setWildcardType(TrieNodeType.ID)
+                        .setExtension("e")
+                        .build())
+                .build()));
   }
 
   public static TrieNodeConfig buildTrieNodeConfig() {
