@@ -48,11 +48,13 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
 
     int embryonicThreshold =
         maybeTrieModelTrainingConfig
+            .filter(TrieModelTrainingConfig::hasEmbryonicThreshold)
             .map(TrieModelTrainingConfig::getEmbryonicThreshold)
             .orElseGet(httpApiNamingConfig::getDefaultEmbryonicThreshold);
 
     int maxNumberOfTriePaths =
         maybeTrieModelTrainingConfig
+            .filter(TrieModelTrainingConfig::hasMaxNumberOfTriePaths)
             .map(TrieModelTrainingConfig::getMaxNumberOfTriePaths)
             .orElseGet(httpApiNamingConfig::getDefaultMaxNumberOfTriePaths);
 
