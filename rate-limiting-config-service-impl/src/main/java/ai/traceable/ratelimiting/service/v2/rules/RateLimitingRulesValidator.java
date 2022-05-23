@@ -14,14 +14,12 @@ import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
-import ai.traceable.ratelimiting.config.service.v2.LocationTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig;
 import ai.traceable.ratelimiting.config.service.v2.ScopeCondition;
 import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
 import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleRequest;
-import ai.traceable.ratelimiting.config.service.v2.UserIdCondition;
 import com.google.protobuf.Message;
 import io.grpc.Status;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -87,9 +85,6 @@ public class RateLimitingRulesValidator implements RulesValidator {
       case KEY_VALUE_CONDITION:
         validateKeyValueCondition(leafCondition.getKeyValueCondition());
         break;
-      case USER_ID_CONDITION:
-        validateUserIdCondition(leafCondition.getUserIdCondition());
-        break;
       case DATATYPE_CONDITION:
         validateDatatypeCondition(leafCondition.getDatatypeCondition());
         break;
@@ -98,9 +93,6 @@ public class RateLimitingRulesValidator implements RulesValidator {
         break;
       case IP_ADDRESS_CONDITION:
         validateIpAddressCondition(leafCondition.getIpAddressCondition());
-        break;
-      case LOCATION_TYPE_CONDITION:
-        validateLocationTypeCondition(leafCondition.getLocationTypeCondition());
         break;
       default:
         throwInvalidArgumentException(
@@ -160,11 +152,6 @@ public class RateLimitingRulesValidator implements RulesValidator {
         stringCondition, KeyValueCondition.StringCondition.VALUE_FIELD_NUMBER);
   }
 
-  private void validateUserIdCondition(UserIdCondition userIdCondition) {
-    validateNonDefaultPresenceOrThrow(
-        userIdCondition, UserIdCondition.USER_ID_REGEXES_FIELD_NUMBER);
-  }
-
   private void validateDatatypeCondition(DatatypeCondition datatypeCondition) {
     if (datatypeCondition.getDatasetIdsList().isEmpty()
         && datatypeCondition.getDatatypeIdsList().isEmpty()) {
@@ -189,11 +176,6 @@ public class RateLimitingRulesValidator implements RulesValidator {
     }
   }
 
-  private void validateLocationTypeCondition(LocationTypeCondition locationTypeCondition) {
-    validateNonDefaultPresenceOrThrow(
-        locationTypeCondition, LocationTypeCondition.LOCATION_TYPES_FIELD_NUMBER);
-  }
-
   private void validateCompositeCondition(CompositeCondition compositeCondition) {
     validateNonDefaultPresenceOrThrow(compositeCondition, CompositeCondition.OPERATOR_FIELD_NUMBER);
     compositeCondition.getChildrenList().forEach(this::validateCondition);
@@ -213,6 +195,12 @@ public class RateLimitingRulesValidator implements RulesValidator {
 
   private void validateResourceAccessThresholdConfig(
       ResourceAccessThresholdConfig resourceAccessThresholdConfig) {
+    validateNonDefaultPresenceOrThrow(
+        resourceAccessThresholdConfig,
+        ResourceAccessThresholdConfig.USER_AGGREGATE_TYPE_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        resourceAccessThresholdConfig,
+        ResourceAccessThresholdConfig.API_AGGREGATE_TYPE_FIELD_NUMBER);
     switch (resourceAccessThresholdConfig.getThresholdConfigCase()) {
       case ROLLING_WINDOW_THRESHOLD_CONFIG:
         validateRollingWindowThresholdConfig(

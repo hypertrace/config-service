@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.ratelimiting.config.service.v2.Action;
+import ai.traceable.ratelimiting.config.service.v2.ApiAggregateType;
 import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
@@ -16,6 +17,7 @@ import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig;
 import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
+import ai.traceable.ratelimiting.config.service.v2.UserAggregateType;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesValidator;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -104,6 +106,8 @@ public class RateLimitingRulesValidatorTest {
                 ThresholdActionConfig.newBuilder()
                     .addResourceAccessThresholdConfigs(
                         ResourceAccessThresholdConfig.newBuilder()
+                            .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                            .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
                             .setRollingWindowThresholdConfig(
                                 ResourceAccessThresholdConfig.RollingWindowThresholdConfig
                                     .newBuilder()
@@ -166,6 +170,8 @@ public class RateLimitingRulesValidatorTest {
                             .build())
                     .addResourceAccessThresholdConfigs(
                         ResourceAccessThresholdConfig.newBuilder()
+                            .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                            .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
                             .setRollingWindowThresholdConfig(
                                 ResourceAccessThresholdConfig.RollingWindowThresholdConfig
                                     .newBuilder()

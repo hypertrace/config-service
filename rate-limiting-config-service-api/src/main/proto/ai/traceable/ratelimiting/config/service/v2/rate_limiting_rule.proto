@@ -18,7 +18,6 @@ message RateLimitingRuleData {
   bool enabled = 4;
   Condition condition = 5;
   repeated ThresholdActionConfig threshold_action_configs = 6;
-  ExpirationDetails expiration_details = 7;
 }
 
 message Condition {
@@ -45,9 +44,7 @@ message LeafCondition {
     KeyValueCondition key_value_condition = 2;
     DatatypeCondition datatype_condition = 3;
     RegionCondition region_condition = 4;
-    LocationTypeCondition location_type_condition = 5;
-    IpAddressCondition ip_address_condition = 6;
-    UserIdCondition user_id_condition = 7;
+    IpAddressCondition ip_address_condition = 5;
   }
 }
 
@@ -69,9 +66,7 @@ message ScopeCondition {
 
   enum EntityType {
     ENTITY_TYPE_UNSPECIFIED = 0;
-    ENTITY_TYPE_ENVIRONMENT = 1;
-    ENTITY_TYPE_SERVICE = 2;
-    ENTITY_TYPE_API = 3;
+    ENTITY_TYPE_API = 1;
   }
 
   enum LabelType {
@@ -102,8 +97,11 @@ message KeyValueCondition {
     TYPE_RESPONSE_BODY = 7;
     TYPE_REQUEST_HEADER = 8;
     TYPE_RESPONSE_HEADER = 9;
-    TYPE_REQUEST_PARAMETER = 10;
-    TYPE_RESPONSE_PARAMETER = 11;
+    TYPE_REQUEST_COOKIE = 10;
+    TYPE_RESPONSE_COOKIE = 11;
+    TYPE_QUERY_PARAMETER = 12;
+    TYPE_REQUEST_BODY_PARAMETER = 13;
+    TYPE_RESPONSE_BODY_PARAMETER = 14;
   }
 
   enum MatchOperator {
@@ -112,10 +110,8 @@ message KeyValueCondition {
     MATCH_OPERATOR_NOT_EQUAL = 2;
     MATCH_OPERATOR_MATCHES_REGEX = 3;
     MATCH_OPERATOR_NOT_MATCH_REGEX = 4;
-    MATCH_OPERATOR_GREATER_THAN = 5;
-    MATCH_OPERATOR_LESS_THAN = 6;
-    MATCH_OPERATOR_CONTAINS = 7;
-    MATCH_OPERATOR_NOT_CONTAIN = 8;
+    MATCH_OPERATOR_CONTAINS = 5;
+    MATCH_OPERATOR_NOT_CONTAIN = 6;
   }
 }
 
@@ -126,10 +122,6 @@ message DatatypeCondition {
 
 message RegionCondition {
   repeated string regions = 1;
-}
-
-message LocationTypeCondition {
- repeated string location_types = 1;
 }
 
 message IpAddressCondition {
@@ -147,8 +139,10 @@ message ThresholdActionConfig {
 }
 
 message ResourceAccessThresholdConfig {
+  UserAggregateType user_aggregate_type = 1;
+  ApiAggregateType api_aggregate_type = 2;
   oneof threshold_config {
-    RollingWindowThresholdConfig rolling_window_threshold_config = 1;
+    RollingWindowThresholdConfig rolling_window_threshold_config = 3;
   }
 
   message RollingWindowThresholdConfig {
@@ -181,12 +175,20 @@ message Action {
   }
 }
 
-message ExpirationDetails {
-  google.protobuf.Timestamp expiration_timestamp = 1;
-}
-
 enum Category {
   CATEGORY_UNSPECIFIED = 0;
   CATEGORY_RATE_LIMITING = 1;
   CATEGORY_DATA_EXFILTRATION = 2;
+}
+
+enum UserAggregateType {
+  USER_AGGREGATE_TYPE_UNSPECIFIED = 0;
+  USER_AGGREGATE_TYPE_PER_USER = 1;
+  USER_AGGREGATE_TYPE_ACROSS_USERS = 2;
+}
+
+enum ApiAggregateType {
+  API_AGGREGATE_TYPE_UNSPECIFIED = 0;
+  API_AGGREGATE_TYPE_PER_ENDPOINT = 1;
+  API_AGGREGATE_TYPE_ACROSS_ENDPOINTS = 2;
 }
