@@ -17,7 +17,9 @@ import static ai.traceable.data.classification.config.service.RedactionRulesDao.
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_REDACT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo;
@@ -42,6 +44,8 @@ import ai.traceable.sensitivedata.config.service.v1.UpdateAutomaticSecretRedacti
 import ai.traceable.sensitivedata.config.service.v1.UpdateAutomaticSecretRedactionStrategyResponse;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeResponse;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,7 +54,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,11 +71,17 @@ class RedactionRulesDaoTest {
   void setUp() {
     mockGenericConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
+        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
         SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     mockGenericConfigService.addService(new MockSensitiveDataConfigService()).start();
 
-    redactionRulesDao = new RedactionRulesDao(sensitiveDataConfigServiceBlockingStub);
+    redactionRulesDao =
+        new RedactionRulesDao(
+            sensitiveDataConfigServiceBlockingStub,
+            new LegacyDataSetStore(genericStub, configChangeEventGenerator));
   }
 
   @AfterEach
@@ -164,6 +176,75 @@ class RedactionRulesDaoTest {
         redactionRulesDao.getDataSetWithIdFromRedactionRules(
             REQUEST_CONTEXT, LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID);
     assertTrue(dataSetOptional.isEmpty());
+    Throwable exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                redactionRulesDao.deleteDataSet(
+                    REQUEST_CONTEXT, LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID));
+    assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
+  }
+
+  @Test
+  void disableAutomaticSecretRedactionDataSetTest() {
+    // disable automatic secret redaction data set
+    DataSetInfo updatedDataSetInfo =
+        DataSetInfo.newBuilder()
+            .setName(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_NAME)
+            .setDescription(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_DESCRIPTION)
+            .setEnabled(false)
+            .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
+            .addDataTypeIds(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE_ID)
+            .build();
+    redactionRulesDao.updateDataSet(
+        REQUEST_CONTEXT, LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID, updatedDataSetInfo);
+    Optional<DataSet> dataSetOptional =
+        redactionRulesDao.getDataSetWithIdFromRedactionRules(
+            REQUEST_CONTEXT, LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID);
+    assertTrue(dataSetOptional.isPresent());
+    assertEquals(updatedDataSetInfo, dataSetOptional.get().getInfo());
+
+    // re-enable automatic secret redaction data set
+    updatedDataSetInfo =
+        DataSetInfo.newBuilder()
+            .setName(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_NAME)
+            .setDescription(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_DESCRIPTION)
+            .setEnabled(true)
+            .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
+            .addDataTypeIds(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE_ID)
+            .build();
+    redactionRulesDao.updateDataSet(
+        REQUEST_CONTEXT, LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID, updatedDataSetInfo);
+    dataSetOptional =
+        redactionRulesDao.getDataSetWithIdFromRedactionRules(
+            REQUEST_CONTEXT, LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID);
+    assertTrue(dataSetOptional.isPresent());
+    assertEquals(updatedDataSetInfo, dataSetOptional.get().getInfo());
+
+    // delete the automatic secret redaction data set
+    // update of deleted data set should fail
+    redactionRulesDao.deleteDataSet(REQUEST_CONTEXT, LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID);
+    dataSetOptional =
+        redactionRulesDao.getDataSetWithIdFromRedactionRules(
+            REQUEST_CONTEXT, LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID);
+    assertTrue(dataSetOptional.isEmpty());
+    final DataSetInfo updatedDataSetInfo1 =
+        DataSetInfo.newBuilder()
+            .setName(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_NAME)
+            .setDescription(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_DESCRIPTION)
+            .setEnabled(false)
+            .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
+            .addDataTypeIds(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE_ID)
+            .build();
+    Throwable exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                redactionRulesDao.updateDataSet(
+                    REQUEST_CONTEXT,
+                    LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID,
+                    updatedDataSetInfo1));
+    assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
   }
 
   @Test

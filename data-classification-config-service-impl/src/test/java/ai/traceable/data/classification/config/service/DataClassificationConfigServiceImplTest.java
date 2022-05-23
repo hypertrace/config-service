@@ -94,7 +94,9 @@ class DataClassificationConfigServiceImplTest {
                 new DataTypeConfigRequestValidator(),
                 mockConfig,
                 null,
-                new RedactionRulesDao(sensitiveDataConfigServiceBlockingStub)))
+                new RedactionRulesDao(
+                    sensitiveDataConfigServiceBlockingStub,
+                    new LegacyDataSetStore(genericStub, configChangeEventGenerator))))
         .addService(new MockSensitiveDataConfigService())
         .start();
     dataClassificationConfigServiceBlockingStub =
@@ -131,7 +133,9 @@ class DataClassificationConfigServiceImplTest {
                 new DataTypeConfigRequestValidator(),
                 mockConfig,
                 null,
-                new RedactionRulesDao(sensitiveDataConfigServiceBlockingStub)))
+                new RedactionRulesDao(
+                    sensitiveDataConfigServiceBlockingStub,
+                    new LegacyDataSetStore(genericStub, configChangeEventGenerator))))
         .addService(new MockSensitiveDataConfigService())
         .start();
     dataClassificationConfigServiceBlockingStub =
@@ -179,7 +183,9 @@ class DataClassificationConfigServiceImplTest {
                 new DataTypeConfigRequestValidator(),
                 mockConfig,
                 null,
-                new RedactionRulesDao(sensitiveDataConfigServiceBlockingStub)))
+                new RedactionRulesDao(
+                    sensitiveDataConfigServiceBlockingStub,
+                    new LegacyDataSetStore(genericStub, configChangeEventGenerator))))
         .addService(new MockSensitiveDataConfigService())
         .start();
     dataClassificationConfigServiceBlockingStub =
@@ -216,7 +222,9 @@ class DataClassificationConfigServiceImplTest {
                 new DataTypeConfigRequestValidator(),
                 mockConfig,
                 null,
-                new RedactionRulesDao(sensitiveDataConfigServiceBlockingStub)))
+                new RedactionRulesDao(
+                    sensitiveDataConfigServiceBlockingStub,
+                    new LegacyDataSetStore(genericStub, configChangeEventGenerator))))
         .addService(new MockSensitiveDataConfigService())
         .start();
     dataClassificationConfigServiceBlockingStub =
@@ -281,7 +289,9 @@ class DataClassificationConfigServiceImplTest {
                 new DataTypeConfigRequestValidator(),
                 mockConfig,
                 null,
-                new RedactionRulesDao(sensitiveDataConfigServiceBlockingStub)))
+                new RedactionRulesDao(
+                    sensitiveDataConfigServiceBlockingStub,
+                    new LegacyDataSetStore(genericStub, configChangeEventGenerator))))
         .addService(new MockSensitiveDataConfigService())
         .start();
     dataClassificationConfigServiceBlockingStub =
@@ -346,7 +356,9 @@ class DataClassificationConfigServiceImplTest {
                 new DataTypeConfigRequestValidator(),
                 mockConfig,
                 null,
-                new RedactionRulesDao(sensitiveDataConfigServiceBlockingStub)))
+                new RedactionRulesDao(
+                    sensitiveDataConfigServiceBlockingStub,
+                    new LegacyDataSetStore(genericStub, configChangeEventGenerator))))
         .addService(new MockSensitiveDataConfigService())
         .start();
     dataClassificationConfigServiceBlockingStub =
@@ -405,7 +417,9 @@ class DataClassificationConfigServiceImplTest {
                 new DataTypeConfigRequestValidator(),
                 mockConfig,
                 null,
-                new RedactionRulesDao(sensitiveDataConfigServiceBlockingStub)))
+                new RedactionRulesDao(
+                    sensitiveDataConfigServiceBlockingStub,
+                    new LegacyDataSetStore(genericStub, configChangeEventGenerator))))
         .addService(new MockSensitiveDataConfigService())
         .start();
     dataClassificationConfigServiceBlockingStub =
@@ -467,7 +481,9 @@ class DataClassificationConfigServiceImplTest {
                 new DataTypeConfigRequestValidator(),
                 mockConfig,
                 null,
-                new RedactionRulesDao(sensitiveDataConfigServiceBlockingStub)))
+                new RedactionRulesDao(
+                    sensitiveDataConfigServiceBlockingStub,
+                    new LegacyDataSetStore(genericStub, configChangeEventGenerator))))
         .start();
     dataClassificationConfigServiceBlockingStub =
         DataClassificationConfigServiceGrpc.newBlockingStub(

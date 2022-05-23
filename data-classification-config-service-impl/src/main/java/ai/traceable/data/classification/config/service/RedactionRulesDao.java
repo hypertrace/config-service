@@ -28,10 +28,12 @@ import com.google.inject.Inject;
 import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RedactionRulesDao {
@@ -101,14 +103,23 @@ public class RedactionRulesDao {
           LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID);
 
   private final SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub;
+  private final LegacyDataSetStore legacyDataSetStore;
 
   @Inject
   public RedactionRulesDao(
-      SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub) {
+      SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub,
+      LegacyDataSetStore legacyDataSetStore) {
     this.sensitiveDataConfigServiceBlockingStub = sensitiveDataConfigServiceBlockingStub;
+    this.legacyDataSetStore = legacyDataSetStore;
   }
 
   public List<DataSet> getDataSetsFromRedactionRules(RequestContext requestContext) {
+    Map<String, Boolean> legacyDataEnabledMap =
+        this.legacyDataSetStore.getAllObjects(requestContext).stream()
+            .map(ConfigObject::getData)
+            .collect(
+                Collectors.toUnmodifiableMap(
+                    DataSet::getId, dataSet -> dataSet.getInfo().getEnabled()));
     List<RedactionRule> allRedactionRules = getAllRedactionRules(requestContext);
     List<String> ruleIdsForRedact = new ArrayList<>();
     List<String> ruleIdsForObfuscate = new ArrayList<>();
@@ -132,7 +143,8 @@ public class RedactionRulesDao {
             LEGACY_REDACT_DATA_SET_ID,
             LEGACY_REDACT_DATA_SET_NAME,
             LEGACY_REDACT_DATA_SET_DESCRIPTION,
-            DATA_SUPPRESSION_REDACT);
+            DATA_SUPPRESSION_REDACT,
+            legacyDataEnabledMap);
 
     Optional<DataSet> dataSetForObfuscate =
         buildDataSet(
@@ -140,7 +152,8 @@ public class RedactionRulesDao {
             LEGACY_OBFUSCATE_DATA_SET_ID,
             LEGACY_OBFUSCATE_DATA_SET_NAME,
             LEGACY_OBFUSCATE_DATA_SET_DESCRIPTION,
-            DATA_SUPPRESSION_OBFUSCATE);
+            DATA_SUPPRESSION_OBFUSCATE,
+            legacyDataEnabledMap);
 
     Optional<DataSet> dataSetForRaw =
         buildDataSet(
@@ -148,11 +161,12 @@ public class RedactionRulesDao {
             LEGACY_RAW_DATA_SET_ID,
             LEGACY_RAW_DATA_SET_NAME,
             LEGACY_RAW_DATA_SET_DESCRIPTION,
-            DATA_SUPPRESSION_RAW);
+            DATA_SUPPRESSION_RAW,
+            legacyDataEnabledMap);
 
     return Stream.of(
-            getAutomaticSecretRedactionDataSet(requestContext),
-            getSensitiveHeadersDataSet(requestContext),
+            getAutomaticSecretRedactionDataSet(requestContext, legacyDataEnabledMap),
+            getSensitiveHeadersDataSet(requestContext, legacyDataEnabledMap),
             dataSetForRedact,
             dataSetForObfuscate,
             dataSetForRaw)
@@ -162,15 +176,9 @@ public class RedactionRulesDao {
 
   public Optional<DataSet> getDataSetWithIdFromRedactionRules(
       RequestContext requestContext, String id) {
-    if (id.equals(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID)) {
-      return getAutomaticSecretRedactionDataSet(requestContext);
-    } else if (id.equals(LEGACY_SENSITIVE_HEADERS_DATA_SET_ID)) {
-      return getSensitiveHeadersDataSet(requestContext);
-    } else {
-      return getDataSetsFromRedactionRules(requestContext).stream()
-          .filter(dataSet -> id.equals(dataSet.getId()))
-          .findAny();
-    }
+    return getDataSetsFromRedactionRules(requestContext).stream()
+        .filter(dataSet -> id.equals(dataSet.getId()))
+        .findAny();
   }
 
   public List<DataType> getAllDataTypesFromRedactionRules(RequestContext requestContext) {
@@ -185,32 +193,34 @@ public class RedactionRulesDao {
   }
 
   public DataSet updateDataSet(RequestContext requestContext, String dataSetId, DataSetInfo info) {
+    Optional<DataSet> dataSetOptional =
+        getDataSetWithIdFromRedactionRules(requestContext, dataSetId);
+    DataSet dataSet = dataSetOptional.orElseThrow(Status.NOT_FOUND::asRuntimeException);
     if (dataSetId.equals(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID)) {
       handleAutomaticSecretRedactionDataSetUpdate(requestContext, info);
     } else if (dataSetId.equals(LEGACY_SENSITIVE_HEADERS_DATA_SET_ID)) {
       handleSensitiveHeadersDataSetUpdate(requestContext, info);
     } else {
-      Optional<DataSet> dataSetOptional =
-          getDataSetWithIdFromRedactionRules(requestContext, dataSetId);
-      DataSet dataSet = dataSetOptional.orElseThrow(Status.NOT_FOUND::asRuntimeException);
       List<String> deleteRuleIds =
           dataSet.getInfo().getDataTypeIdsList().stream()
               .filter(ruleId -> !info.getDataTypeIdsList().contains(ruleId))
               .collect(Collectors.toUnmodifiableList());
       deleteRuleIds.forEach(ruleId -> deleteRedactionRule(requestContext, ruleId));
     }
+    // handle dataset enable/disable part
+    handleLegacyDataSetEnabledFlag(requestContext, dataSetId, info);
     return DataSet.newBuilder().setId(dataSetId).setInfo(info).build();
   }
 
   public void deleteDataSet(RequestContext requestContext, String dataSetId) {
+    Optional<DataSet> dataSetOptional =
+        getDataSetWithIdFromRedactionRules(requestContext, dataSetId);
+    DataSet dataSet = dataSetOptional.orElseThrow(Status.NOT_FOUND::asRuntimeException);
     if (dataSetId.equals(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID)) {
       handleAutomaticSecretRedactionDataSetDelete(requestContext);
     } else if (dataSetId.equals(LEGACY_SENSITIVE_HEADERS_DATA_SET_ID)) {
       handleSensitiveHeadersDataSetDelete(requestContext);
     } else {
-      Optional<DataSet> dataSetOptional =
-          getDataSetWithIdFromRedactionRules(requestContext, dataSetId);
-      DataSet dataSet = dataSetOptional.orElseThrow(Status.NOT_FOUND::asRuntimeException);
       dataSet
           .getInfo()
           .getDataTypeIdsList()
@@ -223,7 +233,8 @@ public class RedactionRulesDao {
       String dataSetId,
       String dataSetName,
       String dataSetDescription,
-      DataSuppression dataSuppression) {
+      DataSuppression dataSuppression,
+      Map<String, Boolean> legacyDataEnabledMap) {
     if (!ruleIds.isEmpty()) {
       return Optional.of(
           DataSet.newBuilder()
@@ -232,7 +243,8 @@ public class RedactionRulesDao {
                   DataSetInfo.newBuilder()
                       .setName(dataSetName)
                       .setDescription(dataSetDescription)
-                      .setEnabled(true)
+                      .setEnabled(
+                          Optional.ofNullable(legacyDataEnabledMap.get(dataSetId)).orElse(true))
                       .setDataSuppression(dataSuppression)
                       .addAllDataTypeIds(ruleIds))
               .build());
@@ -265,14 +277,16 @@ public class RedactionRulesDao {
                 DeleteRedactionRuleRequest.newBuilder().setRedactionRuleId(ruleId).build()));
   }
 
-  private Optional<DataSet> getAutomaticSecretRedactionDataSet(RequestContext requestContext) {
+  private Optional<DataSet> getAutomaticSecretRedactionDataSet(
+      RequestContext requestContext, Map<String, Boolean> legacyDataEnabledMap) {
     if (getAutomaticSecretRedactionStrategy(requestContext)) {
       return buildDataSet(
           List.of(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE_ID),
           LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID,
           LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_NAME,
           LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_DESCRIPTION,
-          DATA_SUPPRESSION_REDACT);
+          DATA_SUPPRESSION_REDACT,
+          legacyDataEnabledMap);
     }
     return Optional.empty();
   }
@@ -315,7 +329,8 @@ public class RedactionRulesDao {
                     .build()));
   }
 
-  private Optional<DataSet> getSensitiveHeadersDataSet(RequestContext requestContext) {
+  private Optional<DataSet> getSensitiveHeadersDataSet(
+      RequestContext requestContext, Map<String, Boolean> legacyDataEnabledMap) {
     RedactionStrategy redactionStrategy = getRedactionStrategyForHeaderParamType(requestContext);
     if (redactionStrategy.equals(REDACTION_STRATEGY_REDACT)
         || redactionStrategy.equals(REDACTION_STRATEGY_HASH)
@@ -325,7 +340,8 @@ public class RedactionRulesDao {
           LEGACY_SENSITIVE_HEADERS_DATA_SET_ID,
           LEGACY_SENSITIVE_HEADERS_DATA_SET_NAME,
           LEGACY_SENSITIVE_HEADERS_DATA_SET_DESCRIPTION,
-          mapToDataSuppression(redactionStrategy));
+          mapToDataSuppression(redactionStrategy),
+          legacyDataEnabledMap);
     }
     return Optional.empty();
   }
@@ -384,6 +400,24 @@ public class RedactionRulesDao {
         return DATA_SUPPRESSION_RAW;
       default:
         return DATA_SUPPRESSION_UNSPECIFIED;
+    }
+  }
+
+  private void handleLegacyDataSetEnabledFlag(
+      RequestContext requestContext, String dataSetId, DataSetInfo newDataSetInfo) {
+    // by default legacy datasets are enabled
+    boolean isExistingDataSetEnabled = true;
+    Optional<DataSet> existingDataSet = this.legacyDataSetStore.getData(requestContext, dataSetId);
+    if (existingDataSet.isPresent()) {
+      isExistingDataSetEnabled = existingDataSet.get().getInfo().getEnabled();
+    }
+    if (isExistingDataSetEnabled != newDataSetInfo.getEnabled()) {
+      this.legacyDataSetStore.upsertObject(
+          requestContext,
+          DataSet.newBuilder()
+              .setId(dataSetId)
+              .setInfo(DataSetInfo.newBuilder().setEnabled(newDataSetInfo.getEnabled()))
+              .build());
     }
   }
 }
