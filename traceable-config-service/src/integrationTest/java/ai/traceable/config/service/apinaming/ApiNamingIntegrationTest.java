@@ -137,7 +137,7 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
                 Segment.newBuilder()
                     .setWildcard(
                         Wildcard.newBuilder()
-                            .setIdentificationRegex("")
+                            .setIdentificationRegex(".*")
                             .setReplacementPattern("*")
                             .build())
                     .build())
@@ -191,7 +191,7 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
                         Segment.newBuilder()
                             .setWildcard(
                                 Wildcard.newBuilder()
-                                    .setIdentificationRegex("")
+                                    .setIdentificationRegex(".*")
                                     .setReplacementPattern("*")
                                     .build())
                             .build()))
@@ -213,7 +213,7 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
                         Segment.newBuilder()
                             .setWildcard(
                                 Wildcard.newBuilder()
-                                    .setIdentificationRegex("")
+                                    .setIdentificationRegex(".*")
                                     .setReplacementPattern("*")
                                     .build())
                             .build()))

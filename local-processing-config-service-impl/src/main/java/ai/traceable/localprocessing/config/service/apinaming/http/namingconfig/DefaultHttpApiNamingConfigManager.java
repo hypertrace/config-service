@@ -30,6 +30,7 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
 
   private final UuidGenerator uuidGenerator;
   private final HttpApiNamingConfig httpApiNamingConfig;
+  private static final String DEFAULT_MEDIUM_CARDINALITY_WILDCARD_IDENTIFICATION_REGEX = ".*";
 
   @Inject
   public DefaultHttpApiNamingConfigManager(
@@ -108,15 +109,25 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
         buildWildcardIdentificationRegex(trieModelTrainingConfig.getLowCardinality()));
     wildcardConfigMap.put(
         TrieNodeType.MEDIUM_CARDINALITY,
-        buildWildcardIdentificationRegex(trieModelTrainingConfig.getMediumCardinality()));
+        buildMediumCardinalityWildcardIdentificationRegex(
+            trieModelTrainingConfig.getMediumCardinality()));
     wildcardConfigMap.put(
         TrieNodeType.HIGH_CARDINALITY,
         buildWildcardIdentificationRegex(trieModelTrainingConfig.getHighCardinality()));
+
     return wildcardConfigMap;
   }
 
   private String buildWildcardIdentificationRegex(ThresholdRegexConfig thresholdRegexConfig) {
     return String.join("|", thresholdRegexConfig.getRegexList().getValuesList());
+  }
+
+  private String buildMediumCardinalityWildcardIdentificationRegex(
+      ThresholdRegexConfig thresholdRegexConfig) {
+    if (thresholdRegexConfig.getRegexList().getValuesCount() == 0) {
+      return DEFAULT_MEDIUM_CARDINALITY_WILDCARD_IDENTIFICATION_REGEX;
+    }
+    return buildWildcardIdentificationRegex(thresholdRegexConfig);
   }
 
   // TODO: get rid of below two methods once done with migration
