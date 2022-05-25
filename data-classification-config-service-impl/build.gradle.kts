@@ -19,6 +19,8 @@ protobuf {
 
 dependencies {
     api(projects.dataClassificationConfigServiceApi)
+    api(projects.featureCachingClient)
+
     implementation(projects.sensitiveDataConfigServiceApi)
     implementation(libs.hypertrace.configservice.objectstore)
     implementation(libs.hypertrace.configservice.api)

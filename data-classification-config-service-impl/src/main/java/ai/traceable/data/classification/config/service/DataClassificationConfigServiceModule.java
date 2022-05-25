@@ -1,5 +1,6 @@
 package ai.traceable.data.classification.config.service;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
 import com.google.inject.AbstractModule;
@@ -16,12 +17,17 @@ class DataClassificationConfigServiceModule extends AbstractModule {
   private final Channel channel;
   private final ConfigChangeEventGenerator configChangeEventGenerator;
   private final Config config;
+  private final FeatureCachingClient featureCachingClient;
 
   DataClassificationConfigServiceModule(
-      Channel channel, ConfigChangeEventGenerator configChangeEventGenerator, Config config) {
+      Channel channel,
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      Config config,
+      FeatureCachingClient featureCachingClient) {
     this.channel = channel;
     this.configChangeEventGenerator = configChangeEventGenerator;
     this.config = config;
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
@@ -29,6 +35,7 @@ class DataClassificationConfigServiceModule extends AbstractModule {
     bind(BindableService.class).to(DataClassificationConfigServiceImpl.class);
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
     bind(Config.class).toInstance(config);
+    bind(FeatureCachingClient.class).toInstance(this.featureCachingClient);
   }
 
   @Provides

@@ -4,6 +4,7 @@ import static ai.traceable.data.classification.config.service.RedactionRulesDao.
 import static java.util.function.Function.identity;
 import static org.hypertrace.config.proto.converter.ConfigProtoConverter.convertToValue;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.data.classification.config.service.impl.v1.DeletedSystemDataset.DeletedSystemDataSet;
 import ai.traceable.data.classification.config.service.v1.CreateDataSetRequest;
 import ai.traceable.data.classification.config.service.v1.CreateDataSetResponse;
@@ -52,13 +53,19 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
   private final DataTypeConfigRequestValidator dataTypeConfigRequestValidator;
   private static final String DATA_CLASSIFICATION_CONFIG_SERVICE =
       "data.classification.config.service";
-  private static final String SYSTEM_DATASETS = "system.datasets";
-  private static final String SYSTEM_DATATYPES = "system.datatypes";
-  private final List<DataSet> systemDataSets;
-  private final List<DataType> systemDataTypes;
-  private final Map<String, DataSet> systemDataSetsToIdMap;
+  private static final String SYSTEM_DATASETS_RP1 = "system.datasets.rp1";
+  private static final String SYSTEM_DATATYPES_RP1 = "system.datatypes.rp1";
+  private static final String SYSTEM_DATASETS_RP2 = "system.datasets.rp2";
+  private static final String SYSTEM_DATATYPES_RP2 = "system.datatypes.rp2";
+  private final List<DataSet> systemDataSetsRp1;
+  private final List<DataType> systemDataTypesRp1;
+  private final List<DataSet> systemDataSetsRp2;
+  private final List<DataType> systemDataTypesRp2;
+  private final Map<String, DataSet> systemDataSetsRp1ToIdMap;
+  private final Map<String, DataSet> systemDataSetsRp2ToIdMap;
   private final Optional<ConfigChangeEventGenerator> configChangeEventGenerator;
   private final RedactionRulesDao redactionRulesDao;
+  private final FeatureCachingClient featureCachingClient;
 
   @Inject
   public DataClassificationConfigServiceImpl(
@@ -69,7 +76,8 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       DataTypeConfigRequestValidator dataTypeConfigRequestValidator,
       Config config,
       ConfigChangeEventGenerator configChangeEventGenerator,
-      RedactionRulesDao redactionRulesDao) {
+      RedactionRulesDao redactionRulesDao,
+      FeatureCachingClient featureCachingClient) {
     this.dataSetStore = dataSetStore;
     this.dataTypeStore = dataTypeStore;
     this.deletedDataSetStore = deletedDataSetStore;
@@ -79,29 +87,56 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
     this.redactionRulesDao = redactionRulesDao;
     List<? extends com.typesafe.config.ConfigObject> systemDataSetsObjectList = null;
     List<? extends com.typesafe.config.ConfigObject> systemDataTypesObjectList = null;
+    List<? extends com.typesafe.config.ConfigObject> systemDataSetsRp2ObjectList = null;
+    List<? extends com.typesafe.config.ConfigObject> systemDataTypesRp2ObjectList = null;
     if (config.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)) {
       Config dataClassificationConfig = config.getConfig(DATA_CLASSIFICATION_CONFIG_SERVICE);
-      if (dataClassificationConfig.hasPath(SYSTEM_DATASETS)) {
-        systemDataSetsObjectList = dataClassificationConfig.getObjectList(SYSTEM_DATASETS);
+      if (dataClassificationConfig.hasPath(SYSTEM_DATASETS_RP1)) {
+        systemDataSetsObjectList = dataClassificationConfig.getObjectList(SYSTEM_DATASETS_RP1);
       }
-      if (dataClassificationConfig.hasPath(SYSTEM_DATATYPES)) {
-        systemDataTypesObjectList = dataClassificationConfig.getObjectList(SYSTEM_DATATYPES);
+      if (dataClassificationConfig.hasPath(SYSTEM_DATATYPES_RP1)) {
+        systemDataTypesObjectList = dataClassificationConfig.getObjectList(SYSTEM_DATATYPES_RP1);
+      }
+      if (dataClassificationConfig.hasPath(SYSTEM_DATASETS_RP2)) {
+        systemDataSetsRp2ObjectList = dataClassificationConfig.getObjectList(SYSTEM_DATASETS_RP2);
+      }
+      if (dataClassificationConfig.hasPath(SYSTEM_DATATYPES_RP2)) {
+        systemDataTypesRp2ObjectList = dataClassificationConfig.getObjectList(SYSTEM_DATATYPES_RP2);
       }
     }
     if (systemDataSetsObjectList != null) {
-      systemDataSets = buildSystemDataSetsList(systemDataSetsObjectList);
-      systemDataSetsToIdMap =
-          systemDataSets.stream().collect(Collectors.toUnmodifiableMap(DataSet::getId, identity()));
+      systemDataSetsRp1 = buildSystemDataSetsList(systemDataSetsObjectList);
+      systemDataSetsRp1ToIdMap =
+          systemDataSetsRp1.stream()
+              .collect(Collectors.toUnmodifiableMap(DataSet::getId, identity()));
     } else {
-      systemDataSets = Collections.emptyList();
-      systemDataSetsToIdMap = Collections.emptyMap();
+      systemDataSetsRp1 = Collections.emptyList();
+      systemDataSetsRp1ToIdMap = Collections.emptyMap();
     }
 
     if (systemDataTypesObjectList != null) {
-      systemDataTypes = buildSystemDataTypesList(systemDataTypesObjectList);
+      systemDataTypesRp1 = buildSystemDataTypesList(systemDataTypesObjectList);
     } else {
-      systemDataTypes = Collections.emptyList();
+      systemDataTypesRp1 = Collections.emptyList();
     }
+
+    if (systemDataSetsRp2ObjectList != null) {
+      systemDataSetsRp2 = buildSystemDataSetsList(systemDataSetsRp2ObjectList);
+      systemDataSetsRp2ToIdMap =
+          systemDataSetsRp2.stream()
+              .collect(Collectors.toUnmodifiableMap(DataSet::getId, identity()));
+    } else {
+      systemDataSetsRp2 = Collections.emptyList();
+      systemDataSetsRp2ToIdMap = Collections.emptyMap();
+    }
+
+    if (systemDataTypesRp2ObjectList != null) {
+      systemDataTypesRp2 = buildSystemDataTypesList(systemDataTypesRp2ObjectList);
+    } else {
+      systemDataTypesRp2 = Collections.emptyList();
+    }
+
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
@@ -139,7 +174,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
           tenantDataTypes.stream()
               .collect(Collectors.toUnmodifiableMap(DataType::getId, identity()));
       List<DataType> filteredSystemDataTypes =
-          systemDataTypes.stream()
+          getSystemDataTypes(requestContext).stream()
               .filter(dataType -> !tenantDataTypesToIdMap.containsKey(dataType.getId()))
               .collect(Collectors.toUnmodifiableList());
       List<DataType> convertedRedactionRules =
@@ -249,7 +284,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       Map<String, DataSet> tenantDataSetsToIdMap =
           tenantDataSets.stream().collect(Collectors.toUnmodifiableMap(DataSet::getId, identity()));
       List<DataSet> filteredSystemDataSets =
-          systemDataSets.stream()
+          getSystemDataSets(requestContext).stream()
               .filter(
                   dataSet ->
                       !tenantDataSetsToIdMap.containsKey(dataSet.getId())
@@ -347,11 +382,12 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
   }
 
   private Optional<DataSet> getSystemDataSet(RequestContext requestContext, String id) {
-    if (systemDataSetsToIdMap.containsKey(id)) {
+    Map<String, DataSet> dataSetMap = getSystemDataSetsToIdMap(requestContext);
+    if (dataSetMap.containsKey(id)) {
       Optional<DeletedSystemDataSet> isSystemDataSetDeleted =
           this.deletedDataSetStore.getData(requestContext, id);
       if (isSystemDataSetDeleted.isEmpty()) {
-        return Optional.of(systemDataSetsToIdMap.get(id));
+        return Optional.of(dataSetMap.get(id));
       }
     }
     return Optional.empty();
@@ -392,5 +428,26 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
     DataSet.Builder builder = DataSet.newBuilder();
     JsonFormat.parser().merge(jsonString, builder);
     return builder.build();
+  }
+
+  private List<DataType> getSystemDataTypes(RequestContext requestContext) {
+    if (featureCachingClient.isDataClassificationRp2Enabled(requestContext)) {
+      return systemDataTypesRp2;
+    }
+    return systemDataTypesRp1;
+  }
+
+  private List<DataSet> getSystemDataSets(RequestContext requestContext) {
+    if (featureCachingClient.isDataClassificationRp2Enabled(requestContext)) {
+      return systemDataSetsRp2;
+    }
+    return systemDataSetsRp1;
+  }
+
+  private Map<String, DataSet> getSystemDataSetsToIdMap(RequestContext requestContext) {
+    if (featureCachingClient.isDataClassificationRp2Enabled(requestContext)) {
+      return systemDataSetsRp2ToIdMap;
+    }
+    return systemDataSetsRp1ToIdMap;
   }
 }

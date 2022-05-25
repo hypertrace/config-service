@@ -8,9 +8,11 @@ import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.RED
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_UNSPECIFIED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.data.classification.config.service.v1.CreateDataSetRequest;
 import ai.traceable.data.classification.config.service.v1.CreateDataSetResponse;
 import ai.traceable.data.classification.config.service.v1.CreateDataTypeRequest;
@@ -96,7 +98,8 @@ class DataClassificationConfigServiceImplTest {
                 null,
                 new RedactionRulesDao(
                     sensitiveDataConfigServiceBlockingStub,
-                    new LegacyDataSetStore(genericStub, configChangeEventGenerator))))
+                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
+                mock(FeatureCachingClient.class)))
         .addService(new MockSensitiveDataConfigService())
         .start();
     dataClassificationConfigServiceBlockingStub =
@@ -135,7 +138,8 @@ class DataClassificationConfigServiceImplTest {
                 null,
                 new RedactionRulesDao(
                     sensitiveDataConfigServiceBlockingStub,
-                    new LegacyDataSetStore(genericStub, configChangeEventGenerator))))
+                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
+                mock(FeatureCachingClient.class)))
         .addService(new MockSensitiveDataConfigService())
         .start();
     dataClassificationConfigServiceBlockingStub =
@@ -185,7 +189,8 @@ class DataClassificationConfigServiceImplTest {
                 null,
                 new RedactionRulesDao(
                     sensitiveDataConfigServiceBlockingStub,
-                    new LegacyDataSetStore(genericStub, configChangeEventGenerator))))
+                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
+                mock(FeatureCachingClient.class)))
         .addService(new MockSensitiveDataConfigService())
         .start();
     dataClassificationConfigServiceBlockingStub =
@@ -224,7 +229,8 @@ class DataClassificationConfigServiceImplTest {
                 null,
                 new RedactionRulesDao(
                     sensitiveDataConfigServiceBlockingStub,
-                    new LegacyDataSetStore(genericStub, configChangeEventGenerator))))
+                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
+                mock(FeatureCachingClient.class)))
         .addService(new MockSensitiveDataConfigService())
         .start();
     dataClassificationConfigServiceBlockingStub =
@@ -259,11 +265,28 @@ class DataClassificationConfigServiceImplTest {
     when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(true);
     String jsonString =
         "system : {\n"
-            + "datatypes : [\n"
+            + "datatypes : {\n"
+            + "rp1 : [\n"
             + "{\n"
-            + "id : systemdatatype,\n"
+            + "id : systemdatatyperp1,\n"
             + "rule : {\n"
-            + "name : systemdatatyperule,\n"
+            + "name : systemdatatyperulerp1,\n"
+            + "scoped_patterns : [\n"
+            + "{\n"
+            + "global_scope : {},\n"
+            + "locations : [LOCATION_REQUEST_HEADER],\n"
+            + "key_pattern : {operator : OPERATOR_MATCHES_REGEX, value : systemvalue},\n"
+            + "action : ACTION_MATCH\n"
+            + "}\n"
+            + "]\n"
+            + "}\n"
+            + "}\n"
+            + "],\n"
+            + "rp2 : [\n"
+            + "{\n"
+            + "id : systemdatatyperp2,\n"
+            + "rule : {\n"
+            + "name : systemdatatyperulerp2,\n"
             + "scoped_patterns : [\n"
             + "{\n"
             + "global_scope : {},\n"
@@ -275,10 +298,15 @@ class DataClassificationConfigServiceImplTest {
             + "}\n"
             + "}\n"
             + "]\n"
+            + "}\n"
             + "}";
     Config dataClassificationConfig = ConfigFactory.parseString(jsonString);
     when(mockConfig.getConfig(DATA_CLASSIFICATION_CONFIG_SERVICE))
         .thenReturn(dataClassificationConfig);
+    FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
+    when(featureCachingClient.isDataClassificationRp2Enabled(any()))
+        .thenReturn(false)
+        .thenReturn(true);
     mockGenericConfigService
         .addService(
             new DataClassificationConfigServiceImpl(
@@ -291,16 +319,38 @@ class DataClassificationConfigServiceImplTest {
                 null,
                 new RedactionRulesDao(
                     sensitiveDataConfigServiceBlockingStub,
-                    new LegacyDataSetStore(genericStub, configChangeEventGenerator))))
+                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
+                featureCachingClient))
         .addService(new MockSensitiveDataConfigService())
         .start();
     dataClassificationConfigServiceBlockingStub =
         DataClassificationConfigServiceGrpc.newBlockingStub(
             this.mockGenericConfigService.channel());
     GetDataTypesRequest getRequest = GetDataTypesRequest.getDefaultInstance();
+
+    // RP1 case
     GetDataTypesResponse response =
         dataClassificationConfigServiceBlockingStub.getDataTypes(getRequest);
     assertEquals(1, response.getDataTypesCount());
+    DataType actualDataType = response.getDataTypes(0);
+    assertEquals("systemdatatyperp1", actualDataType.getId());
+    assertEquals("systemdatatyperulerp1", actualDataType.getRule().getName());
+    assertEquals(
+        LOCATION_REQUEST_HEADER,
+        response
+            .getDataTypesList()
+            .get(0)
+            .getRule()
+            .getScopedPatternsList()
+            .get(0)
+            .getLocations(0));
+
+    // RP2 case
+    response = dataClassificationConfigServiceBlockingStub.getDataTypes(getRequest);
+    assertEquals(1, response.getDataTypesCount());
+    actualDataType = response.getDataTypes(0);
+    assertEquals("systemdatatyperp2", actualDataType.getId());
+    assertEquals("systemdatatyperulerp2", actualDataType.getRule().getName());
     assertEquals(
         LOCATION_REQUEST_HEADER,
         response
@@ -327,25 +377,45 @@ class DataClassificationConfigServiceImplTest {
     String jsonString =
         "{\n"
             + "  \"system\": {\n"
-            + "    \"datasets\": [\n"
+            + "    \"datasets\": {\n"
+            + "    \"rp1\": [\n"
             + "      {\n"
-            + "        \"id\": \"systemdataset\",\n"
+            + "        \"id\": \"systemdatasetrp1\",\n"
             + "        \"info\": {\n"
-            + "          \"name\": \"systemdatasetinfo\",\n"
+            + "          \"name\": \"systemdatasetinforp1\",\n"
             + "          \"enabled\": \"true\",\n"
             + "          \"data_type_ids\": [\n"
-            + "            \"datatype-1\",\n"
-            + "            \"datatype-2\"\n"
+            + "            \"datatyperp1-1\",\n"
+            + "            \"datatyperp1-2\"\n"
+            + "          ],\n"
+            + "          \"data_suppression\": \"DATA_SUPPRESSION_RAW\"\n"
+            + "        }\n"
+            + "      }\n"
+            + "    ],\n"
+            + "    \"rp2\": [\n"
+            + "      {\n"
+            + "        \"id\": \"systemdatasetrp2\",\n"
+            + "        \"info\": {\n"
+            + "          \"name\": \"systemdatasetinforp2\",\n"
+            + "          \"enabled\": \"true\",\n"
+            + "          \"data_type_ids\": [\n"
+            + "            \"datatyperp2-1\",\n"
+            + "            \"datatyperp2-2\"\n"
             + "          ],\n"
             + "          \"data_suppression\": \"DATA_SUPPRESSION_RAW\"\n"
             + "        }\n"
             + "      }\n"
             + "    ]\n"
             + "  }\n"
+            + "  }\n"
             + "}";
     Config dataClassificationConfig = ConfigFactory.parseString(jsonString);
     when(mockConfig.getConfig(DATA_CLASSIFICATION_CONFIG_SERVICE))
         .thenReturn(dataClassificationConfig);
+    FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
+    when(featureCachingClient.isDataClassificationRp2Enabled(any()))
+        .thenReturn(false)
+        .thenReturn(true);
     mockGenericConfigService
         .addService(
             new DataClassificationConfigServiceImpl(
@@ -358,19 +428,33 @@ class DataClassificationConfigServiceImplTest {
                 null,
                 new RedactionRulesDao(
                     sensitiveDataConfigServiceBlockingStub,
-                    new LegacyDataSetStore(genericStub, configChangeEventGenerator))))
+                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
+                featureCachingClient))
         .addService(new MockSensitiveDataConfigService())
         .start();
     dataClassificationConfigServiceBlockingStub =
         DataClassificationConfigServiceGrpc.newBlockingStub(
             this.mockGenericConfigService.channel());
     GetDataSetsRequest getRequest = GetDataSetsRequest.getDefaultInstance();
+
+    // RP1 case
     GetDataSetsResponse response =
         dataClassificationConfigServiceBlockingStub.getDataSets(getRequest);
     assertEquals(1, response.getDataSetsCount());
+    DataSet actualDataSet = response.getDataSets(0);
+    assertEquals("systemdatasetrp1", actualDataSet.getId());
+    assertEquals("systemdatasetinforp1", actualDataSet.getInfo().getName());
     assertEquals(
-        List.of("datatype-1", "datatype-2"),
-        response.getDataSetsList().get(0).getInfo().getDataTypeIdsList());
+        List.of("datatyperp1-1", "datatyperp1-2"), actualDataSet.getInfo().getDataTypeIdsList());
+
+    // RP2 case
+    response = dataClassificationConfigServiceBlockingStub.getDataSets(getRequest);
+    assertEquals(1, response.getDataSetsCount());
+    actualDataSet = response.getDataSets(0);
+    assertEquals("systemdatasetrp2", actualDataSet.getId());
+    assertEquals("systemdatasetinforp2", actualDataSet.getInfo().getName());
+    assertEquals(
+        List.of("datatyperp2-1", "datatyperp2-2"), actualDataSet.getInfo().getDataTypeIdsList());
   }
 
   @Test
@@ -388,7 +472,8 @@ class DataClassificationConfigServiceImplTest {
     String jsonString =
         "{\n"
             + "  \"system\": {\n"
-            + "    \"datasets\": [\n"
+            + "  \"datasets\": {\n"
+            + "    \"rp1\": [\n"
             + "      {\n"
             + "        \"id\": \"systemdataset\",\n"
             + "        \"info\": {\n"
@@ -402,6 +487,7 @@ class DataClassificationConfigServiceImplTest {
             + "        }\n"
             + "      }\n"
             + "    ]\n"
+            + "  }\n"
             + "  }\n"
             + "}";
     Config dataClassificationConfig = ConfigFactory.parseString(jsonString);
@@ -419,7 +505,8 @@ class DataClassificationConfigServiceImplTest {
                 null,
                 new RedactionRulesDao(
                     sensitiveDataConfigServiceBlockingStub,
-                    new LegacyDataSetStore(genericStub, configChangeEventGenerator))))
+                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
+                mock(FeatureCachingClient.class)))
         .addService(new MockSensitiveDataConfigService())
         .start();
     dataClassificationConfigServiceBlockingStub =
@@ -452,7 +539,8 @@ class DataClassificationConfigServiceImplTest {
     String jsonString =
         "{\n"
             + "  \"system\": {\n"
-            + "    \"datasets\": [\n"
+            + "  \"datasets\": {\n"
+            + "    \"rp1\": [\n"
             + "      {\n"
             + "        \"id\": \"systemdataset\",\n"
             + "        \"info\": {\n"
@@ -466,6 +554,7 @@ class DataClassificationConfigServiceImplTest {
             + "        }\n"
             + "      }\n"
             + "    ]\n"
+            + "  }\n"
             + "  }\n"
             + "}";
     Config dataClassificationConfig = ConfigFactory.parseString(jsonString);
@@ -483,7 +572,8 @@ class DataClassificationConfigServiceImplTest {
                 null,
                 new RedactionRulesDao(
                     sensitiveDataConfigServiceBlockingStub,
-                    new LegacyDataSetStore(genericStub, configChangeEventGenerator))))
+                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
+                mock(FeatureCachingClient.class)))
         .start();
     dataClassificationConfigServiceBlockingStub =
         DataClassificationConfigServiceGrpc.newBlockingStub(

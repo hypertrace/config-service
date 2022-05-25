@@ -129,7 +129,7 @@ public class TraceableConfigService extends PlatformService {
         RiskConfigServiceFactory.build(managedChannel, config, configChangeEventGenerator);
     BindableService dataClassificationConfigService =
         DataClassificationConfigServiceFactory.build(
-            managedChannel, configChangeEventGenerator, config);
+            managedChannel, configChangeEventGenerator, config, featureCachingClient);
     BindableService dataExfiltrationDetectionRulesConfigService =
         DataExfiltrationDetectionRulesConfigServiceFactory.build(
             managedChannel, configChangeEventGenerator);

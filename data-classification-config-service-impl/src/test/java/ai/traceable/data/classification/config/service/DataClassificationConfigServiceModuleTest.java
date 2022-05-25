@@ -3,6 +3,7 @@ package ai.traceable.data.classification.config.service;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.mock;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.inject.Guice;
 import com.typesafe.config.Config;
 import io.grpc.ManagedChannel;
@@ -15,12 +16,13 @@ class DataClassificationConfigServiceModuleTest {
     ManagedChannel mockChannel = mock(ManagedChannel.class);
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     Config mockConfig = mock(Config.class);
+    FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
 
     assertDoesNotThrow(
         () ->
             Guice.createInjector(
                     new DataClassificationConfigServiceModule(
-                        mockChannel, configChangeEventGenerator, mockConfig))
+                        mockChannel, configChangeEventGenerator, mockConfig, featureCachingClient))
                 .getAllBindings());
   }
 }

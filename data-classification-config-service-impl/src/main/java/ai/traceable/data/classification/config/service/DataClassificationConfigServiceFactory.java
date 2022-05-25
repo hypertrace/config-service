@@ -1,5 +1,6 @@
 package ai.traceable.data.classification.config.service;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
@@ -11,10 +12,12 @@ public class DataClassificationConfigServiceFactory {
   public static BindableService build(
       ManagedChannel channel,
       ConfigChangeEventGenerator configChangeEventGenerator,
-      Config config) {
+      Config config,
+      FeatureCachingClient featureCachingClient) {
     Injector injector =
         Guice.createInjector(
-            new DataClassificationConfigServiceModule(channel, configChangeEventGenerator, config));
+            new DataClassificationConfigServiceModule(
+                channel, configChangeEventGenerator, config, featureCachingClient));
     return injector.getInstance(BindableService.class);
   }
 }
