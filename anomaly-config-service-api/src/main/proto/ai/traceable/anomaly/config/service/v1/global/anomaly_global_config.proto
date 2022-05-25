@@ -62,9 +62,18 @@ message GetAnomalyRuleInfosResponse {
 message ScopedAnomalyConfigStatus {
   AnomalyConfigScope config_scope = 1;
   AnomalyConfigStatus config_status = 2;
+  ExcludedEventsGenerationConfig excluded_events_config = 3;
 }
 
 message ScopedAnomalyConfigStatusChange {
   AnomalyConfigScope config_scope = 1;
   AnomalyConfigStatusChange config_status = 2;
+  ExcludedEventsGenerationConfig excluded_events_config = 3;
+}
+
+message ExcludedEventsGenerationConfig {
+  oneof config {
+    bool enabled_for_all = 1;
+    StringList exclusion_rule_ids = 2;
+  }
 }
