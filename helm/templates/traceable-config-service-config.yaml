@@ -126,6 +126,11 @@ data:
           refreshAfterWriteDuration = {{ .Values.entityFetcher.cache.refreshAfterWriteDuration }}
           expireAfterWriteDuration = {{ .Values.entityFetcher.cache.expireAfterWriteDuration }}
           maximumSize = {{ .Values.entityFetcher.cache.maximumSize }}
+          delegate = {
+            refreshAfterWriteDuration = {{ .Values.entityFetcher.cache.delegate.refreshAfterWriteDuration }}
+            expireAfterWriteDuration = {{ .Values.entityFetcher.cache.delegate.expireAfterWriteDuration }}
+            maximumSize = {{ .Values.entityFetcher.cache.delegate.maximumSize }}
+          }
         }
       }
       customRules = {

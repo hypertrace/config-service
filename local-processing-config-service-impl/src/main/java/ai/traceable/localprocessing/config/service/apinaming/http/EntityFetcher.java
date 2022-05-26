@@ -24,20 +24,21 @@ import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 @Slf4j
 public class EntityFetcher {
   private static final String CACHE_REFRESH_DURATION =
-      "api.naming.config.entity.fetcher.cache.refreshAfterWriteDuration";
+      "api.naming.config.entity.fetcher.cache.delegate.refreshAfterWriteDuration";
   private static final String CACHE_EXPIRATION_DURATION =
-      "api.naming.config.entity.fetcher.cache.expireAfterWriteDuration";
+      "api.naming.config.entity.fetcher.cache.delegate.expireAfterWriteDuration";
   private static final String MAXIMUM_CACHE_SIZE =
-      "api.naming.config.entity.fetcher.cache.maximumCacheSize";
-  private static final String CACHE_NAME = "serviceEntityCache";
-  private static final Duration CACHE_REFRESH_DURATION_DEFAULT = Duration.ofHours(12);
-  private static final Duration CACHE_EXPIRATION_DURATION_DEFAULT = Duration.ofHours(24);
+      "api.naming.config.entity.fetcher.cache.delegate.maximumCacheSize";
+  private static final String DELEGATE_SERVICE_ENTITY_CACHE_NAME = "delegateServiceEntityCache";
+  private static final Duration CACHE_REFRESH_DURATION_DEFAULT = Duration.ofMinutes(10);
+  private static final Duration CACHE_EXPIRATION_DURATION_DEFAULT = Duration.ofMinutes(20);
   private static final long MAXIMUM_CACHE_SIZE_DEFAULT = 1000;
 
-  private final LoadingCache<ContextualKey<ServiceIdentifier>, Optional<String>> serviceEntityCache;
+  private final LoadingCache<ContextualKey<ServiceIdentifier>, Optional<String>>
+      delegateServiceEntityCache;
 
   @Inject
-  public EntityFetcher(Config config, EntityCacheLoader entityCacheLoader) {
+  public EntityFetcher(Config config, DelegateEntityCacheLoader delegateEntityCacheLoader) {
     Duration cacheRefreshDuration =
         config.hasPath(CACHE_REFRESH_DURATION)
             ? config.getDuration(CACHE_REFRESH_DURATION)
@@ -51,14 +52,16 @@ public class EntityFetcher {
             ? config.getLong(MAXIMUM_CACHE_SIZE)
             : MAXIMUM_CACHE_SIZE_DEFAULT;
 
-    this.serviceEntityCache =
+    this.delegateServiceEntityCache =
         CacheBuilder.newBuilder()
             .refreshAfterWrite(cacheRefreshDuration.toMillis(), TimeUnit.MILLISECONDS)
             .expireAfterWrite(cacheExpiryDuration.toMillis(), TimeUnit.MILLISECONDS)
             .maximumSize(maximumCacheSize)
             .recordStats()
-            .build(entityCacheLoader);
-    PlatformMetricsRegistry.registerCache(CACHE_NAME, serviceEntityCache, Collections.emptyMap());
+            .build(delegateEntityCacheLoader);
+
+    PlatformMetricsRegistry.registerCache(
+        DELEGATE_SERVICE_ENTITY_CACHE_NAME, delegateServiceEntityCache, Collections.emptyMap());
   }
 
   public Map<ServiceRequest, Optional<String>> getServiceIds(
@@ -74,7 +77,7 @@ public class EntityFetcher {
       ContextualKey<ServiceIdentifier> serviceIdentifierContextualKey =
           buildServiceIdentifierContextualKey(requestContext, serviceRequest, environment);
       Optional<String> serviceIdMaybe =
-          serviceEntityCache.getIfPresent(serviceIdentifierContextualKey);
+          delegateServiceEntityCache.getIfPresent(serviceIdentifierContextualKey);
       if (serviceIdMaybe == null || serviceIdMaybe.isEmpty()) {
         serviceIdentifierContextualKeys.add(serviceIdentifierContextualKey);
         contextualKeyServiceRequestMap.put(serviceIdentifierContextualKey, serviceRequest);
@@ -88,11 +91,11 @@ public class EntityFetcher {
       }
     }
     ImmutableMap<ContextualKey<ServiceIdentifier>, Optional<String>> loadedServiceIdMap =
-        serviceEntityCache.getAll(serviceIdentifierContextualKeys);
+        delegateServiceEntityCache.getAll(serviceIdentifierContextualKeys);
     for (ServiceRequest serviceRequest : serviceRequests) {
       // some entities may have been created without environment as identifying attribute and later
       // when environment was available, they were not updated. So, we have the following backup
-      // plan to get the serviceID. If for a request with environment, we do not obtain any entity,
+      // plan to get the serviceId. If for a request with environment, we do not obtain any entity,
       // we look for the same without environment as backup
       ContextualKey<ServiceIdentifier> serviceIdentifierContextualKey =
           buildServiceIdentifierContextualKey(requestContext, serviceRequest, environment);
