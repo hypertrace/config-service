@@ -91,7 +91,15 @@ class ExternalDataClassificationConfigServiceImpl
               .filter(
                   dataSet ->
                       dataSet.getInfo().getEnabled()
-                          && !dataSet.getId().startsWith(LEGACY_DATASET_ID_PREFIX))
+                          && !dataSet.getId().startsWith(LEGACY_DATASET_ID_PREFIX)
+                          && (dataSet
+                                  .getInfo()
+                                  .getDataSuppression()
+                                  .equals(DataSuppression.DATA_SUPPRESSION_REDACT)
+                              || dataSet
+                                  .getInfo()
+                                  .getDataSuppression()
+                                  .equals(DataSuppression.DATA_SUPPRESSION_OBFUSCATE)))
               .sorted(Comparator.comparingInt(o -> comparatorUtility(o.getInfo())))
               .collect(Collectors.toUnmodifiableList());
       Map<String, DataSuppression> dataTypesToDataSuppressionMap = new HashMap<>();
