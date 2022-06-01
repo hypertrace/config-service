@@ -2,6 +2,7 @@ package ai.traceable.external.data.classification.config.service;
 
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_HASH;
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_REDACT;
+import static java.util.function.Function.identity;
 
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.data.classification.config.service.v1.DataSet;
@@ -20,10 +21,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -31,6 +33,16 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @Slf4j
 class ExternalDataClassificationConfigServiceImpl
     extends ExternalDataClassificationServiceImplBase {
+
+  private static final String LEGACY_DATASET_ID_PREFIX = "legacy-";
+  // this should be in sync with id in RedactionRulesDao in data classification config service impl
+  private static final String LEGACY_REDACT_DATA_SET_ID = "legacy-dataset-redacted-id";
+  // this should be in sync with id in RedactionRulesDao in data classification config service impl
+  private static final String LEGACY_OBFUSCATE_DATA_SET_ID = "legacy-dataset-obfuscated-id";
+  // this should be in sync with id in RedactionRulesDao in data classification config service impl
+  private static final String LEGACY_SENSITIVE_HEADERS_DATA_SET_ID =
+      "legacy-dataset-sensitive-headers-id";
+
   private final ExternalDataClassificationConfig externalDataClassificationConfig;
   private final ExternalDataClassificationConfigRequestValidator
       externalDataClassificationConfigRequestValidator;
@@ -41,7 +53,6 @@ class ExternalDataClassificationConfigServiceImpl
   private final ExternalDataClassificationRuleResponseBuilder responseBuilder;
   private final InsightsServiceCoordinator insightsServiceCoordinator;
   private final FeatureCachingClient featureCachingClient;
-  private static final String LEGACY_DATASET_ID_PREFIX = "legacy-";
 
   @Inject
   public ExternalDataClassificationConfigServiceImpl(
@@ -84,14 +95,16 @@ class ExternalDataClassificationConfigServiceImpl
           this.redactionRulesDao.getAllRedactionRules(requestContext);
       Map<String, DataType> dataTypesToIdMap =
           this.dataClassificationRulesDao.getAllDataTypes(requestContext).stream()
-              .collect(Collectors.toUnmodifiableMap(DataType::getId, Function.identity()));
-      List<DataType> dataTypes = new ArrayList<>();
-      List<DataSet> dataSets =
+              .collect(Collectors.toUnmodifiableMap(DataType::getId, identity()));
+      Map<String, DataSet> enabledDataSetMap =
           this.dataClassificationRulesDao.getAllDataSets(requestContext).stream()
+              .filter(dataSet -> dataSet.getInfo().getEnabled())
+              .collect(Collectors.toUnmodifiableMap(DataSet::getId, identity()));
+      List<DataSet> dataSetsToTranslate =
+          enabledDataSetMap.values().stream()
               .filter(
                   dataSet ->
-                      dataSet.getInfo().getEnabled()
-                          && !dataSet.getId().startsWith(LEGACY_DATASET_ID_PREFIX)
+                      !dataSet.getId().startsWith(LEGACY_DATASET_ID_PREFIX)
                           && (dataSet
                                   .getInfo()
                                   .getDataSuppression()
@@ -102,8 +115,9 @@ class ExternalDataClassificationConfigServiceImpl
                                   .equals(DataSuppression.DATA_SUPPRESSION_OBFUSCATE)))
               .sorted(Comparator.comparingInt(o -> comparatorUtility(o.getInfo())))
               .collect(Collectors.toUnmodifiableList());
+      List<DataType> dataTypes = new ArrayList<>();
       Map<String, DataSuppression> dataTypesToDataSuppressionMap = new HashMap<>();
-      for (DataSet dataSet : dataSets) {
+      for (DataSet dataSet : dataSetsToTranslate) {
         DataSuppression dataSuppression = dataSet.getInfo().getDataSuppression();
         for (String dataTypeId : dataSet.getInfo().getDataTypeIdsList()) {
           if (dataTypesToIdMap.containsKey(dataTypeId)
@@ -116,7 +130,9 @@ class ExternalDataClassificationConfigServiceImpl
       dataTypes = Collections.unmodifiableList(dataTypes);
       List<ai.traceable.external.data.classification.config.service.v1.DataType> externalDataTypes =
           new ArrayList<>();
-      externalDataTypes.addAll(redactionRulesTranslator.translateRedactionRules(redactionRules));
+      externalDataTypes.addAll(
+          redactionRulesTranslator.translateRedactionRules(
+              redactionRules, getAllowedRedactionStrategy(enabledDataSetMap)));
       externalDataTypes.addAll(
           dataClassificationRulesTranslator.translateDataTypes(
               dataTypes,
@@ -127,8 +143,9 @@ class ExternalDataClassificationConfigServiceImpl
       // sensitive headers
       RedactionStrategy redactionStrategy =
           redactionRulesDao.getParamTypeHeaderRedactionStrategy(requestContext);
-      if (redactionStrategy.equals(REDACTION_STRATEGY_HASH)
-          || redactionStrategy.equals(REDACTION_STRATEGY_REDACT)) {
+      if (enabledDataSetMap.containsKey(LEGACY_SENSITIVE_HEADERS_DATA_SET_ID)
+          && (redactionStrategy.equals(REDACTION_STRATEGY_HASH)
+              || redactionStrategy.equals(REDACTION_STRATEGY_REDACT))) {
         List<Parameter> sensitiveHeaderParameters =
             insightsServiceCoordinator.getSensitiveHeaderParameters(requestContext);
         redactionRulesTranslator
@@ -148,6 +165,16 @@ class ExternalDataClassificationConfigServiceImpl
       log.error("Unable to get external data classification rules", e);
       responseObserver.onError(e);
     }
+  }
+
+  private Set<RedactionStrategy> getAllowedRedactionStrategy(
+      Map<String, DataSet> enabledDataSetMap) {
+    Set<RedactionStrategy> allowedRedactionStrategy = new HashSet<>();
+    Optional.ofNullable(enabledDataSetMap.get(LEGACY_REDACT_DATA_SET_ID))
+        .ifPresent(ds -> allowedRedactionStrategy.add(REDACTION_STRATEGY_REDACT));
+    Optional.ofNullable(enabledDataSetMap.get(LEGACY_OBFUSCATE_DATA_SET_ID))
+        .ifPresent(ds -> allowedRedactionStrategy.add(REDACTION_STRATEGY_HASH));
+    return Collections.unmodifiableSet(allowedRedactionStrategy);
   }
 
   private static int comparatorUtility(DataSetInfo dataSetInfo) {
