@@ -669,6 +669,105 @@ class DataClassificationConfigServiceImplTest {
   }
 
   @Test
+  void updateSystemDataTypeTest() {
+    mockGenericConfigService.shutdown();
+    mockGenericConfigService =
+        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    ConfigServiceBlockingStub genericStub =
+        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
+        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    mockConfig = mock(Config.class);
+    when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(true);
+    String jsonString =
+        "system : {\n"
+            + "datatypes : {\n"
+            + "rp1 : [\n"
+            + "{\n"
+            + "id : systemdatatyperp1,\n"
+            + "rule : {\n"
+            + "name : systemdatatyperulerp1,\n"
+            + "scoped_patterns : [\n"
+            + "{\n"
+            + "global_scope : {},\n"
+            + "locations : [LOCATION_REQUEST_HEADER],\n"
+            + "key_pattern : {operator : OPERATOR_MATCHES_REGEX, value : systemvalue},\n"
+            + "action : ACTION_MATCH\n"
+            + "}\n"
+            + "]\n"
+            + "}\n"
+            + "}\n"
+            + "],\n"
+            + "rp2 : [\n"
+            + "{\n"
+            + "id : systemdatatyperp2,\n"
+            + "rule : {\n"
+            + "name : systemdatatyperulerp2,\n"
+            + "scoped_patterns : [\n"
+            + "{\n"
+            + "global_scope : {},\n"
+            + "locations : [LOCATION_REQUEST_HEADER],\n"
+            + "key_pattern : {operator : OPERATOR_MATCHES_REGEX, value : systemvalue},\n"
+            + "action : ACTION_MATCH\n"
+            + "}\n"
+            + "]\n"
+            + "}\n"
+            + "}\n"
+            + "]\n"
+            + "}\n"
+            + "}";
+    Config dataClassificationConfig = ConfigFactory.parseString(jsonString);
+    when(mockConfig.getConfig(DATA_CLASSIFICATION_CONFIG_SERVICE))
+        .thenReturn(dataClassificationConfig);
+    FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
+    when(featureCachingClient.isDataClassificationRp2Enabled(any()))
+        .thenReturn(false)
+        .thenReturn(true);
+    mockGenericConfigService
+        .addService(
+            new DataClassificationConfigServiceImpl(
+                new DataSetStore(genericStub, configChangeEventGenerator),
+                new DataTypeStore(genericStub, configChangeEventGenerator),
+                new DeletedDataSetStore(genericStub),
+                new DataSetConfigRequestValidator(),
+                new DataTypeConfigRequestValidator(),
+                mockConfig,
+                null,
+                new RedactionRulesDao(
+                    sensitiveDataConfigServiceBlockingStub,
+                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
+                featureCachingClient))
+        .addService(new MockSensitiveDataConfigService())
+        .start();
+    dataClassificationConfigServiceBlockingStub =
+        DataClassificationConfigServiceGrpc.newBlockingStub(
+            this.mockGenericConfigService.channel());
+
+    // update rp1 system data type
+    DataTypeRule updatedSystemDataTypeRule =
+        createDataTypeRuleForTest("updatedsystemdatatyperp1", "value-rp1");
+    UpdateDataTypeRequest request =
+        UpdateDataTypeRequest.newBuilder()
+            .setId("systemdatatyperp1")
+            .setRule(updatedSystemDataTypeRule)
+            .build();
+    UpdateDataTypeResponse updateresponse =
+        dataClassificationConfigServiceBlockingStub.updateDataType(request);
+    assertEquals(updatedSystemDataTypeRule, updateresponse.getDataType().getRule());
+
+    // update rp2 system data type
+    updatedSystemDataTypeRule = createDataTypeRuleForTest("updatedsystemdatatyperp2", "value-rp2");
+    request =
+        UpdateDataTypeRequest.newBuilder()
+            .setId("systemdatatyperp2")
+            .setRule(updatedSystemDataTypeRule)
+            .build();
+    updateresponse = dataClassificationConfigServiceBlockingStub.updateDataType(request);
+    assertEquals(updatedSystemDataTypeRule, updateresponse.getDataType().getRule());
+  }
+
+  @Test
   void deleteDataTypeNotExisting() {
     DeleteDataTypeRequest request = DeleteDataTypeRequest.newBuilder().setId("random-id").build();
     Throwable exception =

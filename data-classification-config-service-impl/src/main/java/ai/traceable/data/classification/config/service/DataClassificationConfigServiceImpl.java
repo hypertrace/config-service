@@ -39,12 +39,14 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
+@Slf4j
 class DataClassificationConfigServiceImpl extends DataClassificationConfigServiceImplBase {
   private final IdentifiedObjectStore<DataSet> dataSetStore;
   private final IdentifiedObjectStore<DataType> dataTypeStore;
@@ -59,6 +61,8 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
   private static final String SYSTEM_DATATYPES_RP2 = "system.datatypes.rp2";
   private final List<DataSet> systemDataSetsRp1;
   private final List<DataType> systemDataTypesRp1;
+  private final Map<String, DataType> systemDataTypesRp1ToIdMap;
+  private final Map<String, DataType> systemDataTypesRp2ToIdMap;
   private final List<DataSet> systemDataSetsRp2;
   private final List<DataType> systemDataTypesRp2;
   private final Map<String, DataSet> systemDataSetsRp1ToIdMap;
@@ -116,8 +120,12 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
 
     if (systemDataTypesObjectList != null) {
       systemDataTypesRp1 = buildSystemDataTypesList(systemDataTypesObjectList);
+      systemDataTypesRp1ToIdMap =
+          systemDataTypesRp1.stream()
+              .collect(Collectors.toUnmodifiableMap(DataType::getId, identity()));
     } else {
       systemDataTypesRp1 = Collections.emptyList();
+      systemDataTypesRp1ToIdMap = Collections.emptyMap();
     }
 
     if (systemDataSetsRp2ObjectList != null) {
@@ -132,8 +140,12 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
 
     if (systemDataTypesRp2ObjectList != null) {
       systemDataTypesRp2 = buildSystemDataTypesList(systemDataTypesRp2ObjectList);
+      systemDataTypesRp2ToIdMap =
+          systemDataTypesRp2.stream()
+              .collect(Collectors.toUnmodifiableMap(DataType::getId, identity()));
     } else {
       systemDataTypesRp2 = Collections.emptyList();
+      systemDataTypesRp2ToIdMap = Collections.emptyMap();
     }
 
     this.featureCachingClient = featureCachingClient;
@@ -156,6 +168,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
           CreateDataTypeResponse.newBuilder().setDataType(createdDataType).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
+      log.error("Unable to create data type - {}", request, e);
       responseObserver.onError(e);
     }
   }
@@ -187,6 +200,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
+      log.error("Unable to get data types - {}", request, e);
       responseObserver.onError(e);
     }
   }
@@ -200,6 +214,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       DataType existingDataType =
           this.dataTypeStore
               .getData(requestContext, request.getId())
+              .or(() -> getSystemDataType(requestContext, request.getId()))
               .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       DataType updatedDataType = existingDataType.toBuilder().setRule(request.getRule()).build();
       DataType upsertedDataType =
@@ -208,6 +223,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
           UpdateDataTypeResponse.newBuilder().setDataType(upsertedDataType).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
+      log.error("Unable to update data type - {}", request, e);
       responseObserver.onError(e);
     }
   }
@@ -218,12 +234,15 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.dataTypeConfigRequestValidator.validateOrThrow(requestContext, request);
+      // Need to check deletion of system datatype. Currently we are not checking system datatypes
+      // for deletion of datatype
       this.dataTypeStore
           .deleteObject(requestContext, request.getId())
           .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       responseObserver.onNext(DeleteDataTypeResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Exception e) {
+      log.error("Unable to delete data type - {}", request, e);
       responseObserver.onError(e);
     }
   }
@@ -244,6 +263,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
           CreateDataSetResponse.newBuilder().setDataSet(createdDataSet).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
+      log.error("Unable to create data set - {}", request, e);
       responseObserver.onError(e);
     }
   }
@@ -266,6 +286,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       responseObserver.onNext(GetDataSetResponse.newBuilder().setDataSet(dataSet).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
+      log.error("Unable to get data set - {}", request, e);
       responseObserver.onError(e);
     }
   }
@@ -300,6 +321,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
+      log.error("Unable to get data sets - {}", request, e);
       responseObserver.onError(e);
     }
   }
@@ -328,6 +350,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
           UpdateDataSetResponse.newBuilder().setDataSet(upsertedDataSet).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
+      log.error("Unable to update data set - {}", request, e);
       responseObserver.onError(e);
     }
   }
@@ -360,6 +383,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       responseObserver.onNext(DeleteDataSetResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Exception e) {
+      log.error("Unable to delete data set - {}", request, e);
       responseObserver.onError(e);
     }
   }
@@ -435,6 +459,16 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       return systemDataTypesRp2;
     }
     return systemDataTypesRp1;
+  }
+
+  private Optional<DataType> getSystemDataType(RequestContext requestContext, String dataTypeId) {
+    Map<String, DataType> dataTypesMap;
+    if (featureCachingClient.isDataClassificationRp2Enabled(requestContext)) {
+      dataTypesMap = systemDataTypesRp2ToIdMap;
+    } else {
+      dataTypesMap = systemDataTypesRp1ToIdMap;
+    }
+    return Optional.ofNullable(dataTypesMap.get(dataTypeId));
   }
 
   private List<DataSet> getSystemDataSets(RequestContext requestContext) {
