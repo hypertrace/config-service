@@ -4,6 +4,7 @@ import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.Resources;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -86,7 +87,7 @@ public class ModsecCrsRulesHandler {
     return Collections.unmodifiableMap(modsecRulesMap);
   }
 
-  String getModsecBlockingCrsBlob(
+  String getModsecCrsBlob(
       String modsecCrsDirectivesFilePath,
       String modsecCrsInitializationRulesFilePath,
       String modsecCrsRulesFilePath,
@@ -97,9 +98,7 @@ public class ModsecCrsRulesHandler {
     modsecRules.values().stream()
         .map(AnomalyRuleInfo::getSubRuleInfosList)
         .flatMap(List::stream)
-        .filter(
-            anomalySubRuleInfo ->
-                !anomalySubRuleInfo.getSubRuleTypesList().contains(anomalySubRuleType))
+        .filter(anomalySubRuleInfo -> !matchModsecRule(anomalySubRuleInfo, anomalySubRuleType))
         .forEach(
             anomalySubRuleInfo ->
                 idsToBeRemoved.add(
@@ -139,6 +138,18 @@ public class ModsecCrsRulesHandler {
         return AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK;
       default:
         return AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSPECIFIED;
+    }
+  }
+
+  @VisibleForTesting
+  boolean matchModsecRule(
+      AnomalySubRuleInfo anomalySubRuleInfo, AnomalySubRuleType anomalySubRuleType) {
+    List<AnomalySubRuleType> anomalySubRuleTypeList = anomalySubRuleInfo.getSubRuleTypesList();
+    if (anomalySubRuleType == AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSAFE) {
+      return anomalySubRuleTypeList.contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR)
+          && !anomalySubRuleTypeList.contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);
+    } else {
+      return anomalySubRuleTypeList.contains(anomalySubRuleType);
     }
   }
 }

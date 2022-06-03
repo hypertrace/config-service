@@ -1,12 +1,14 @@
 package ai.traceable.anomaly.config.service.registry.modsec;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
+import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -67,6 +69,29 @@ class ModsecCrsRulesHandlerTest {
                 fail();
               }
             });
+  }
+
+  @Test
+  public void testFilterMatchedModsecRules() {
+    ModsecCrsRulesHandler modsecCrsRulesHandler = new ModsecCrsRulesHandler(new ModsecRuleUtils());
+    AnomalySubRuleInfo anomalySubRuleInfo =
+        AnomalySubRuleInfo.newBuilder()
+            .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
+            .build();
+    assertTrue(
+        modsecCrsRulesHandler.matchModsecRule(
+            anomalySubRuleInfo, AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSAFE));
+
+    anomalySubRuleInfo =
+        AnomalySubRuleInfo.newBuilder()
+            .addAllSubRuleTypes(
+                List.of(
+                    AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR,
+                    AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
+            .build();
+    assertFalse(
+        modsecCrsRulesHandler.matchModsecRule(
+            anomalySubRuleInfo, AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSAFE));
   }
 
   @Test

@@ -32,6 +32,7 @@ public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
       ImmutableList.of(
           AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR,
           AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
+          AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSAFE,
           AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK);
 
   private final ConfigConverter configConverter;
@@ -58,7 +59,7 @@ public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
       throw new IllegalArgumentException(
           String.format("Invalid SubRuleType %s to fetch Modsec CRS rules", subRuleType));
     }
-    return modsecCrsRulesHandler.getModsecBlockingCrsBlob(
+    return modsecCrsRulesHandler.getModsecCrsBlob(
         MODSEC_CRS_DIRECTIVES_FILE_PATH,
         MODSEC_CRS_INITIALIZATION_RULES_FILE_PATH,
         MODSEC_CRS_RULES_FILE_PATH,
