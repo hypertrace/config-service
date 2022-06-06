@@ -212,7 +212,7 @@ public class ModsecRuleConversionTest {
         "SecRule "
             + "RESPONSE_STATUS "
             + "\"@streq 200\" "
-            + "\"id:10000005,phase:2,capture,block,t:none,"
+            + "\"id:10000005,phase:4,capture,block,t:none,"
             + "msg:'MATCH_KEY_STATUS_CODE : MATCH_OPERATOR_EQUALS',"
             + "logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',"
             + "tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',"
@@ -236,7 +236,7 @@ public class ModsecRuleConversionTest {
 
     assertEquals(
         "SecRule RESPONSE_HEADERS_NAMES \"@streq cookie\" "
-            + "\"id:10000105,phase:2,capture,t:none,"
+            + "\"id:10000105,phase:4,capture,t:none,"
             + "msg:'Chained rule with ids: 10000001 , 10000011 , 10000081',"
             + "logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',"
             + "tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',"

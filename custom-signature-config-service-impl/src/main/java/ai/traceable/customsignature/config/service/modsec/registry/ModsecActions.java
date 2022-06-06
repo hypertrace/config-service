@@ -10,6 +10,7 @@ public class ModsecActions {
   private static final String RULE_UUID_TAG_FORMAT = "tag:'rule-uuid/%s'";
 
   private static final String DEFAULT_PHASE = String.format(PHASE_FORMAT, 2);
+  private static final String RESPONSE_PHASE = String.format(PHASE_FORMAT, 4);
   private static final String DEFAULT_PARANOIA_LEVEL = String.format(PARANOIA_LEVEL_TAG_FORMAT, 1);
 
   private static final String CAPTURE = "capture";
@@ -31,12 +32,12 @@ public class ModsecActions {
     this.ruleUuid = ruleUuid;
   }
 
-  public String getSingularRuleActionsString() {
+  public String getSingularRuleActionsString(boolean responsePhase) {
     return "\""
         + String.join(
             COMMA_DELIMITER,
             String.format(ID_FORMAT, id),
-            DEFAULT_PHASE,
+            responsePhase ? RESPONSE_PHASE : DEFAULT_PHASE,
             CAPTURE,
             BLOCK,
             TRANSFORMATION_NONE,
@@ -49,12 +50,12 @@ public class ModsecActions {
         + "\"";
   }
 
-  public String getChainedRulePrimaryActionsString() {
+  public String getChainedRulePrimaryActionsString(boolean responsePhase) {
     return "\""
         + String.join(
             COMMA_DELIMITER,
             String.format(ID_FORMAT, id),
-            DEFAULT_PHASE,
+            responsePhase ? RESPONSE_PHASE : DEFAULT_PHASE,
             CAPTURE,
             TRANSFORMATION_NONE,
             String.format(MSG_FORMAT, msg),
