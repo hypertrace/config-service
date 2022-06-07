@@ -26,6 +26,7 @@ class DefaultModsecBlockingManager implements ModsecBlockingManager {
         configServiceBlockingStub.getModsecCrsRules(
             GetModsecCrsRulesRequest.newBuilder()
                 .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK))
+                .setRemoveDisabledRules(true)
                 .build());
 
     String blockingCrsRulesBlob;

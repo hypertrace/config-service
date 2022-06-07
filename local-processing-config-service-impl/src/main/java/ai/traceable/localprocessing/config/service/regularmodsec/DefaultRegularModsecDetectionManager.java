@@ -30,6 +30,7 @@ class DefaultRegularModsecDetectionManager implements RegularModsecDetectionMana
         configServiceBlockingStub.getModsecCrsRules(
             GetModsecCrsRulesRequest.newBuilder()
                 .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
+                .setRemoveDisabledRules(true)
                 .build());
 
     String regularCrsRulesBlob;

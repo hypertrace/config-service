@@ -39,7 +39,9 @@ public class AnomalyModsecConfigServiceImpl extends AnomalyModsecConfigServiceIm
           GetModsecCrsRulesResponse.newBuilder()
               .addAllModsecCrsRules(
                   manager.getModsecCrsRules(
-                      RequestContext.CURRENT.get(), request.getSubRuleTypesList()))
+                      RequestContext.CURRENT.get(),
+                      request.getSubRuleTypesList(),
+                      request.getRemoveDisabledRules()))
               .build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();

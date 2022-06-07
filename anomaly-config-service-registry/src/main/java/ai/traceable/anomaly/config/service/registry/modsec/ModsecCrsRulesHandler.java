@@ -12,10 +12,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 public class ModsecCrsRulesHandler {
@@ -31,7 +34,7 @@ public class ModsecCrsRulesHandler {
   private static final Pattern SUB_RULE_LABELS_TAG_PATTERN =
       Pattern.compile("tag:'traceable/labels/(.*)'");
   private static final String SEC_RULE_REMOVE_BY_ID_FORMAT = "SecRuleRemoveById %d";
-
+  private static final String EMPTY_STRING = "";
   private final ModsecRuleUtils modsecRuleUtils;
 
   @Inject
@@ -92,12 +95,23 @@ public class ModsecCrsRulesHandler {
       String modsecCrsInitializationRulesFilePath,
       String modsecCrsRulesFilePath,
       Map<String, AnomalyRuleInfo> modsecRules,
-      AnomalySubRuleType anomalySubRuleType) {
+      AnomalySubRuleType anomalySubRuleType,
+      Set<String> disabledModsecRuleIds) {
 
-    List<String> idsToBeRemoved = new ArrayList<>();
-    modsecRules.values().stream()
-        .map(AnomalyRuleInfo::getSubRuleInfosList)
-        .flatMap(List::stream)
+    Set<String> idsToBeRemoved = new HashSet<>();
+    disabledModsecRuleIds.forEach(
+        ruleId ->
+            idsToBeRemoved.add(
+                String.format(
+                    SEC_RULE_REMOVE_BY_ID_FORMAT,
+                    modsecRuleUtils.getModsecCrsRuleIdNumber(ruleId))));
+
+    List<AnomalySubRuleInfo> anomalySubRuleInfoList =
+        modsecRules.values().stream()
+            .flatMap(ruleInfo -> ruleInfo.getSubRuleInfosList().stream())
+            .collect(Collectors.toList());
+
+    anomalySubRuleInfoList.stream()
         .filter(anomalySubRuleInfo -> !matchModsecRule(anomalySubRuleInfo, anomalySubRuleType))
         .forEach(
             anomalySubRuleInfo ->
@@ -105,6 +119,11 @@ public class ModsecCrsRulesHandler {
                     String.format(
                         SEC_RULE_REMOVE_BY_ID_FORMAT,
                         modsecRuleUtils.getModsecCrsRuleIdNumber(anomalySubRuleInfo.getRuleId()))));
+
+    if (anomalySubRuleInfoList.size() == idsToBeRemoved.size()) {
+      return EMPTY_STRING;
+    }
+
     return String.join(
         NEWLINE_DELIMITER,
         loadModsecCrsFileContents(modsecCrsDirectivesFilePath),

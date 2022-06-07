@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.modsec;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -63,7 +64,8 @@ class AnomalyModsecConfigServiceImplTest {
 
     reset(responseStreamObserver);
 
-    when(modsecManager.getModsecCrsRules(any(), any())).thenReturn(List.of(rule1, rule2));
+    when(modsecManager.getModsecCrsRules(any(), any(), eq(false)))
+        .thenReturn(List.of(rule1, rule2));
 
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseStreamObserver, times(1))
@@ -95,7 +97,8 @@ class AnomalyModsecConfigServiceImplTest {
   @DisplayName("Should propagate expection on occured manager")
   void should_propagate_error() {
     when(modsecValidator.validate(any())).thenReturn(Status.OK);
-    when(modsecManager.getModsecCrsRules(any(), any())).thenThrow(RuntimeException.class);
+    when(modsecManager.getModsecCrsRules(any(), any(), eq(false)))
+        .thenThrow(RuntimeException.class);
 
     StreamObserver<GetModsecCrsRulesResponse> responseStreamObserver = mock(StreamObserver.class);
 

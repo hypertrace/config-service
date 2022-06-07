@@ -13,7 +13,7 @@ public class AnomalyConfigScopeUtils {
           .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
           .build();
 
-  public AnomalyConfigScope getDefaultCustomerConfigScope() {
+  public static AnomalyConfigScope getDefaultCustomerConfigScope() {
     return CUSTOMER_CONFIG_SCOPE;
   }
 

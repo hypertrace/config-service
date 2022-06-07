@@ -9,6 +9,7 @@ import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
 
 message GetModsecCrsRulesRequest {
   repeated AnomalySubRuleType sub_rule_types = 1;
+  bool remove_disabled_rules = 2;
 }
 
 message GetModsecCrsRulesResponse {

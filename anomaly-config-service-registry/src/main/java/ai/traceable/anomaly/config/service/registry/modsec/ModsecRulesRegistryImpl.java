@@ -10,6 +10,7 @@ import com.typesafe.config.ConfigFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 
@@ -54,7 +55,8 @@ public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
   }
 
   @Override
-  public String getModsecCrsRulesBlob(AnomalySubRuleType subRuleType) {
+  public String getModsecCrsRulesBlob(
+      AnomalySubRuleType subRuleType, Set<String> disabledModsecRuleIds) {
     if (!SUPPORTED_SUB_RULE_TYPES.contains(subRuleType)) {
       throw new IllegalArgumentException(
           String.format("Invalid SubRuleType %s to fetch Modsec CRS rules", subRuleType));
@@ -64,7 +66,8 @@ public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
         MODSEC_CRS_INITIALIZATION_RULES_FILE_PATH,
         MODSEC_CRS_RULES_FILE_PATH,
         modsecRules,
-        subRuleType);
+        subRuleType,
+        disabledModsecRuleIds);
   }
 
   @Override

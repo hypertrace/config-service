@@ -42,6 +42,7 @@ import ai.traceable.localprocessing.config.service.v1.SamplingPolicies;
 import ai.traceable.localprocessing.config.service.v1.SamplingPolicy;
 import ai.traceable.localprocessing.config.service.v1.UpdateDefaultProtectionModeRequest;
 import java.util.List;
+import java.util.Set;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.junit.jupiter.api.BeforeAll;
@@ -296,7 +297,7 @@ public class LocalProcessingConfigServiceIntegrationTest
     ModsecCrsRulesHandler modsecCrsRulesHandler = new ModsecCrsRulesHandler(new ModsecRuleUtils());
     ModsecRulesRegistry registry =
         new ModsecRulesRegistryImpl(new ConfigConverter(), modsecCrsRulesHandler);
-    return registry.getModsecCrsRulesBlob(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);
+    return registry.getModsecCrsRulesBlob(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE, Set.of());
   }
 
   private void createAndGetCustomSignatureRule(EventType eventType) {

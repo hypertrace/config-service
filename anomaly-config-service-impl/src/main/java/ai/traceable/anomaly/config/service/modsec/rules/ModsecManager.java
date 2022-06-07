@@ -7,5 +7,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public interface ModsecManager {
   List<ModsecCrsRulesData> getModsecCrsRules(
-      RequestContext requestContext, List<AnomalySubRuleType> requestTypes);
+      RequestContext requestContext,
+      List<AnomalySubRuleType> requestTypes,
+      boolean removeDisabledRules);
 }

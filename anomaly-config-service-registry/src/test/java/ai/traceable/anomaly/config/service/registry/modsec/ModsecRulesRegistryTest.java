@@ -40,20 +40,20 @@ public class ModsecRulesRegistryTest {
       assertNotNull(
           RuleEngine.create(
               modsecRulesRegistry.getModsecCrsRulesBlob(
-                  AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR)));
+                  AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR, Set.of())));
       assertNotNull(
           RuleEngine.create(
               modsecRulesRegistry.getModsecCrsRulesBlob(
-                  AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)));
+                  AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE, Set.of())));
       assertNotNull(
           RuleEngine.create(
               modsecRulesRegistry.getModsecCrsRulesBlob(
-                  AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSAFE)));
+                  AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSAFE, Set.of())));
 
       assertNotNull(
           RuleEngine.create(
               modsecRulesRegistry.getModsecCrsRulesBlob(
-                  AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)));
+                  AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK, Set.of())));
     }
 
     String secRuleRemoveByIdKeyword = "SecRuleRemoveById";
@@ -93,13 +93,14 @@ public class ModsecRulesRegistryTest {
     {
       String crsRulesBlob =
           modsecRulesRegistry.getModsecCrsRulesBlob(
-              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR);
+              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR, Set.of());
       // all rules in file used
       assertEquals(1, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
     }
     {
       String crsRulesBlob =
-          modsecRulesRegistry.getModsecCrsRulesBlob(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);
+          modsecRulesRegistry.getModsecCrsRulesBlob(
+              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE, Set.of());
       // few rules in file not marked safe
       assertEquals(
           regularRulesCount - safeRulesCount,
@@ -109,7 +110,7 @@ public class ModsecRulesRegistryTest {
     {
       String crsRulesBlob =
           modsecRulesRegistry.getModsecCrsRulesBlob(
-              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSAFE);
+              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSAFE, Set.of());
       assertEquals(
           regularRulesCount - unsafeRulesCount,
           crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
@@ -117,7 +118,8 @@ public class ModsecRulesRegistryTest {
     }
     {
       String crsRulesBlob =
-          modsecRulesRegistry.getModsecCrsRulesBlob(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK);
+          modsecRulesRegistry.getModsecCrsRulesBlob(
+              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK, Set.of());
       long blockingRulesCount =
           subRules.stream()
               .filter(
@@ -132,6 +134,13 @@ public class ModsecRulesRegistryTest {
           crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
       // few rules in file not marked for blocking
       assertEquals(66, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
+    }
+    {
+      // crs_912170 is disabled
+      String crsRulesBlob =
+          modsecRulesRegistry.getModsecCrsRulesBlob(
+              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR, Set.of("crs_912170"));
+      assertTrue(crsRulesBlob.contains("SecRuleRemoveById 912170"));
     }
   }
 
