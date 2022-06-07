@@ -36,10 +36,13 @@ class ExternalDataClassificationConfigServiceImpl
 
   private static final String LEGACY_DATASET_ID_PREFIX = "legacy-";
   // this should be in sync with id in RedactionRulesDao in data classification config service impl
+  // and with id in PiiFilterConfigServiceImpl in sensitive data config service
   private static final String LEGACY_REDACT_DATA_SET_ID = "legacy-dataset-redacted-id";
   // this should be in sync with id in RedactionRulesDao in data classification config service impl
+  // and with id in PiiFilterConfigServiceImpl in sensitive data config service
   private static final String LEGACY_OBFUSCATE_DATA_SET_ID = "legacy-dataset-obfuscated-id";
   // this should be in sync with id in RedactionRulesDao in data classification config service impl
+  // and with id in PiiFilterConfigServiceImpl in sensitive data config service
   private static final String LEGACY_SENSITIVE_HEADERS_DATA_SET_ID =
       "legacy-dataset-sensitive-headers-id";
 

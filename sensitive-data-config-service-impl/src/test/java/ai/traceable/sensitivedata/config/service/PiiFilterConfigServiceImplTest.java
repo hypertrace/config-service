@@ -2,6 +2,14 @@ package ai.traceable.sensitivedata.config.service;
 
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_BODY;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_HEADER;
+import static ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl.LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID;
+import static ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl.LEGACY_OBFUSCATE_DATA_SET_ID;
+import static ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl.LEGACY_REDACT_DATA_SET_ID;
+import static ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl.LEGACY_SENSITIVE_HEADERS_DATA_SET_ID;
+import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_HASH;
+import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_RAW;
+import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_REDACT;
+import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_UNSPECIFIED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,6 +49,7 @@ import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfigServiceGrpc.P
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import io.grpc.Channel;
 import io.grpc.stub.StreamObserver;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -61,6 +70,8 @@ class PiiFilterConfigServiceImplTest {
   UuidGenerator uuidGenerator = new UuidGenerator();
   FeatureCachingClient mockFeatureClient;
   boolean dataClassificationRp1Enabled;
+  boolean customDataSetEnabled;
+  List<DataSet> legacyDataSets;
 
   @BeforeEach
   void setUp() {
@@ -68,15 +79,21 @@ class PiiFilterConfigServiceImplTest {
 
     mockConfig = mock(SensitiveDataServiceConfig.class);
     mockFeatureClient = mock(FeatureCachingClient.class);
-    when(mockConfig.defaultParamTypeRedactionStrategy())
-        .thenReturn(RedactionStrategy.REDACTION_STRATEGY_HASH);
-    when(mockConfig.defaultPiiFilterConfig()).thenReturn(PiiFilterConfig.getDefaultInstance());
+    when(mockConfig.defaultParamTypeRedactionStrategy()).thenReturn(REDACTION_STRATEGY_HASH);
+    when(mockConfig.defaultAutomaticRedactionStrategy()).thenReturn(true);
+    when(mockConfig.defaultPiiFilterConfig())
+        .thenReturn(
+            PiiFilterConfig.newBuilder()
+                .addKeyRegexs(PiiElement.newBuilder().setRegex("secret-1"))
+                .build());
     when(mockConfig.defaultInvalidJsonPolicy())
         .thenReturn(
             InvalidJsonPolicy.newBuilder()
                 .setDropUnparsedJsonPolicy(DropUnparsedJsonPolicy.getDefaultInstance())
                 .build());
     dataClassificationRp1Enabled = false;
+    customDataSetEnabled = true;
+    legacyDataSets = Collections.emptyList();
   }
 
   @AfterEach
@@ -97,12 +114,13 @@ class PiiFilterConfigServiceImplTest {
     // Only the prepopulated rules + the ones in mock insights service
     Set<PiiElement> expected =
         Set.of(
-            getPiiElement("abc123", RedactionStrategy.REDACTION_STRATEGY_UNSPECIFIED, false),
-            getPiiElement("def456", RedactionStrategy.REDACTION_STRATEGY_UNSPECIFIED, false),
-            getPiiElement(
-                "http.request.header.h1", RedactionStrategy.REDACTION_STRATEGY_HASH, true),
-            getPiiElement(
-                "http.request.header.h2", RedactionStrategy.REDACTION_STRATEGY_HASH, true));
+            getPiiElement("secret-1", REDACTION_STRATEGY_UNSPECIFIED, false),
+            getPiiElement("session-id", REDACTION_STRATEGY_HASH, false, true),
+            getPiiElement("abc123", REDACTION_STRATEGY_REDACT, false),
+            getPiiElement("def456", REDACTION_STRATEGY_HASH, false),
+            getPiiElement("ghi789", REDACTION_STRATEGY_RAW, false),
+            getPiiElement("http.request.header.h1", REDACTION_STRATEGY_HASH, true),
+            getPiiElement("http.request.header.h2", REDACTION_STRATEGY_HASH, true));
 
     Set<PiiElement> actual =
         piiFilterConfig.getKeyRegexsList().stream()
@@ -135,12 +153,13 @@ class PiiFilterConfigServiceImplTest {
     // full privacy mode rules + prepopulated rules + mock insights service rules
     Set<PiiElement> expected =
         Set.of(
-            getPiiElement("abc123", RedactionStrategy.REDACTION_STRATEGY_UNSPECIFIED, false),
-            getPiiElement("def456", RedactionStrategy.REDACTION_STRATEGY_UNSPECIFIED, false),
-            getPiiElement(
-                "http.request.header.h1", RedactionStrategy.REDACTION_STRATEGY_HASH, true),
-            getPiiElement(
-                "http.request.header.h2", RedactionStrategy.REDACTION_STRATEGY_HASH, true));
+            getPiiElement("secret-1", REDACTION_STRATEGY_UNSPECIFIED, false),
+            getPiiElement("session-id", REDACTION_STRATEGY_HASH, false, true),
+            getPiiElement("abc123", REDACTION_STRATEGY_REDACT, false),
+            getPiiElement("def456", REDACTION_STRATEGY_HASH, false),
+            getPiiElement("ghi789", REDACTION_STRATEGY_RAW, false),
+            getPiiElement("http.request.header.h1", REDACTION_STRATEGY_HASH, true),
+            getPiiElement("http.request.header.h2", REDACTION_STRATEGY_HASH, true));
     Set<PiiElement> actual =
         piiFilterConfig.getKeyRegexsList().stream()
             // Strip out rule ids for the prepopulated rules since they are random guids
@@ -152,6 +171,12 @@ class PiiFilterConfigServiceImplTest {
   @Test
   void testPiiFilterConfigForDataTypes() {
     dataClassificationRp1Enabled = true;
+    legacyDataSets =
+        List.of(
+            createDataSet(LEGACY_REDACT_DATA_SET_ID, true),
+            createDataSet(LEGACY_OBFUSCATE_DATA_SET_ID, true),
+            createDataSet(LEGACY_SENSITIVE_HEADERS_DATA_SET_ID, true),
+            createDataSet(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID, true));
     setupPiiFilterConfigServiceImpl(false, getDefaultRedactionRules());
 
     PiiFilterConfig piiFilterConfig =
@@ -161,17 +186,207 @@ class PiiFilterConfigServiceImplTest {
     // prepopulated rules + mock insights service rules + rules from datatypes in datasets
     Set<PiiElement> expected =
         Set.of(
-            getPiiElement("abc123", RedactionStrategy.REDACTION_STRATEGY_UNSPECIFIED, false),
-            getPiiElement("def456", RedactionStrategy.REDACTION_STRATEGY_UNSPECIFIED, false),
-            getPiiElement(
-                "http.request.header.h1", RedactionStrategy.REDACTION_STRATEGY_HASH, true),
-            getPiiElement(
-                "http.request.header.h2", RedactionStrategy.REDACTION_STRATEGY_HASH, true),
-            getPiiElement(
-                "http.request.header.regex-1", RedactionStrategy.REDACTION_STRATEGY_REDACT, true),
-            getPiiElement(
-                "rpc.request.metadata.regex-1", RedactionStrategy.REDACTION_STRATEGY_REDACT, true),
-            getPiiElement("regex-2", RedactionStrategy.REDACTION_STRATEGY_REDACT, false));
+            getPiiElement("secret-1", REDACTION_STRATEGY_UNSPECIFIED, false),
+            getPiiElement("session-id", REDACTION_STRATEGY_HASH, false, true),
+            getPiiElement("abc123", REDACTION_STRATEGY_REDACT, false),
+            getPiiElement("def456", REDACTION_STRATEGY_HASH, false),
+            getPiiElement("http.request.header.h1", REDACTION_STRATEGY_HASH, true),
+            getPiiElement("http.request.header.h2", REDACTION_STRATEGY_HASH, true),
+            getPiiElement("http.request.header.regex-1", REDACTION_STRATEGY_REDACT, true),
+            getPiiElement("rpc.request.metadata.regex-1", REDACTION_STRATEGY_REDACT, true),
+            getPiiElement("regex-2", REDACTION_STRATEGY_REDACT, false));
+    Set<PiiElement> actual =
+        piiFilterConfig.getKeyRegexsList().stream()
+            // Strip out rule ids for the prepopulated rules since they are random guids
+            .map(piiElement -> PiiElement.newBuilder(piiElement).setRuleId("").build())
+            .collect(Collectors.toSet());
+    assertEquals(expected, actual);
+  }
+
+  @Test
+  void testPiiFilterConfigForDataTypesWithoutLegacyDataSets() {
+    dataClassificationRp1Enabled = true;
+    setupPiiFilterConfigServiceImpl(false, getDefaultRedactionRules());
+
+    PiiFilterConfig piiFilterConfig =
+        piiFilterStub
+            .getPiiFilterConfig(GetPiiFilterConfigRequest.newBuilder().build())
+            .getPiiFilterConfig();
+    // prepopulated rules + mock insights service rules + rules from datatypes in datasets
+    Set<PiiElement> expected =
+        Set.of(
+            getPiiElement("session-id", REDACTION_STRATEGY_HASH, false, true),
+            getPiiElement("http.request.header.regex-1", REDACTION_STRATEGY_REDACT, true),
+            getPiiElement("rpc.request.metadata.regex-1", REDACTION_STRATEGY_REDACT, true),
+            getPiiElement("regex-2", REDACTION_STRATEGY_REDACT, false));
+    Set<PiiElement> actual =
+        piiFilterConfig.getKeyRegexsList().stream()
+            // Strip out rule ids for the prepopulated rules since they are random guids
+            .map(piiElement -> PiiElement.newBuilder(piiElement).setRuleId("").build())
+            .collect(Collectors.toSet());
+    assertEquals(expected, actual);
+  }
+
+  @Test
+  void testPiiFilterConfigForDataTypesWithoutCustomDataSets() {
+    dataClassificationRp1Enabled = true;
+    customDataSetEnabled = false;
+    legacyDataSets =
+        List.of(
+            createDataSet(LEGACY_REDACT_DATA_SET_ID, true),
+            createDataSet(LEGACY_OBFUSCATE_DATA_SET_ID, true),
+            createDataSet(LEGACY_SENSITIVE_HEADERS_DATA_SET_ID, true),
+            createDataSet(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID, true));
+    setupPiiFilterConfigServiceImpl(false, getDefaultRedactionRules());
+
+    PiiFilterConfig piiFilterConfig =
+        piiFilterStub
+            .getPiiFilterConfig(GetPiiFilterConfigRequest.newBuilder().build())
+            .getPiiFilterConfig();
+    // prepopulated rules + mock insights service rules + rules from datatypes in datasets
+    Set<PiiElement> expected =
+        Set.of(
+            getPiiElement("secret-1", REDACTION_STRATEGY_UNSPECIFIED, false),
+            getPiiElement("session-id", REDACTION_STRATEGY_HASH, false, true),
+            getPiiElement("abc123", REDACTION_STRATEGY_REDACT, false),
+            getPiiElement("def456", REDACTION_STRATEGY_HASH, false),
+            getPiiElement("http.request.header.h1", REDACTION_STRATEGY_HASH, true),
+            getPiiElement("http.request.header.h2", REDACTION_STRATEGY_HASH, true));
+    Set<PiiElement> actual =
+        piiFilterConfig.getKeyRegexsList().stream()
+            // Strip out rule ids for the prepopulated rules since they are random guids
+            .map(piiElement -> PiiElement.newBuilder(piiElement).setRuleId("").build())
+            .collect(Collectors.toSet());
+    assertEquals(expected, actual);
+  }
+
+  @Test
+  void testPiiFilterConfigForDataTypesWithoutSensitiveHeadersDataSet() {
+    dataClassificationRp1Enabled = true;
+    legacyDataSets =
+        List.of(
+            createDataSet(LEGACY_REDACT_DATA_SET_ID, true),
+            createDataSet(LEGACY_OBFUSCATE_DATA_SET_ID, true),
+            createDataSet(LEGACY_SENSITIVE_HEADERS_DATA_SET_ID, false),
+            createDataSet(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID, true));
+    setupPiiFilterConfigServiceImpl(false, getDefaultRedactionRules());
+
+    PiiFilterConfig piiFilterConfig =
+        piiFilterStub
+            .getPiiFilterConfig(GetPiiFilterConfigRequest.newBuilder().build())
+            .getPiiFilterConfig();
+    // prepopulated rules + mock insights service rules + rules from datatypes in datasets
+    Set<PiiElement> expected =
+        Set.of(
+            getPiiElement("secret-1", REDACTION_STRATEGY_UNSPECIFIED, false),
+            getPiiElement("session-id", REDACTION_STRATEGY_HASH, false, true),
+            getPiiElement("abc123", REDACTION_STRATEGY_REDACT, false),
+            getPiiElement("def456", REDACTION_STRATEGY_HASH, false),
+            getPiiElement("http.request.header.regex-1", REDACTION_STRATEGY_REDACT, true),
+            getPiiElement("rpc.request.metadata.regex-1", REDACTION_STRATEGY_REDACT, true),
+            getPiiElement("regex-2", REDACTION_STRATEGY_REDACT, false));
+    Set<PiiElement> actual =
+        piiFilterConfig.getKeyRegexsList().stream()
+            // Strip out rule ids for the prepopulated rules since they are random guids
+            .map(piiElement -> PiiElement.newBuilder(piiElement).setRuleId("").build())
+            .collect(Collectors.toSet());
+    assertEquals(expected, actual);
+  }
+
+  @Test
+  void testPiiFilterConfigForDataTypesWithoutAutoSecretRedactionDataSet() {
+    dataClassificationRp1Enabled = true;
+    legacyDataSets =
+        List.of(
+            createDataSet(LEGACY_REDACT_DATA_SET_ID, true),
+            createDataSet(LEGACY_OBFUSCATE_DATA_SET_ID, true),
+            createDataSet(LEGACY_SENSITIVE_HEADERS_DATA_SET_ID, true),
+            createDataSet(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID, false));
+    setupPiiFilterConfigServiceImpl(false, getDefaultRedactionRules());
+
+    PiiFilterConfig piiFilterConfig =
+        piiFilterStub
+            .getPiiFilterConfig(GetPiiFilterConfigRequest.newBuilder().build())
+            .getPiiFilterConfig();
+    // prepopulated rules + mock insights service rules + rules from datatypes in datasets
+    Set<PiiElement> expected =
+        Set.of(
+            getPiiElement("session-id", REDACTION_STRATEGY_HASH, false, true),
+            getPiiElement("abc123", REDACTION_STRATEGY_REDACT, false),
+            getPiiElement("def456", REDACTION_STRATEGY_HASH, false),
+            getPiiElement("http.request.header.h1", REDACTION_STRATEGY_HASH, true),
+            getPiiElement("http.request.header.h2", REDACTION_STRATEGY_HASH, true),
+            getPiiElement("http.request.header.regex-1", REDACTION_STRATEGY_REDACT, true),
+            getPiiElement("rpc.request.metadata.regex-1", REDACTION_STRATEGY_REDACT, true),
+            getPiiElement("regex-2", REDACTION_STRATEGY_REDACT, false));
+    Set<PiiElement> actual =
+        piiFilterConfig.getKeyRegexsList().stream()
+            // Strip out rule ids for the prepopulated rules since they are random guids
+            .map(piiElement -> PiiElement.newBuilder(piiElement).setRuleId("").build())
+            .collect(Collectors.toSet());
+    assertEquals(expected, actual);
+  }
+
+  @Test
+  void testPiiFilterConfigForDataTypesWithoutRedactDataSet() {
+    dataClassificationRp1Enabled = true;
+    legacyDataSets =
+        List.of(
+            createDataSet(LEGACY_REDACT_DATA_SET_ID, false),
+            createDataSet(LEGACY_OBFUSCATE_DATA_SET_ID, true),
+            createDataSet(LEGACY_SENSITIVE_HEADERS_DATA_SET_ID, true),
+            createDataSet(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID, true));
+    setupPiiFilterConfigServiceImpl(false, getDefaultRedactionRules());
+
+    PiiFilterConfig piiFilterConfig =
+        piiFilterStub
+            .getPiiFilterConfig(GetPiiFilterConfigRequest.newBuilder().build())
+            .getPiiFilterConfig();
+    // prepopulated rules + mock insights service rules + rules from datatypes in datasets
+    Set<PiiElement> expected =
+        Set.of(
+            getPiiElement("secret-1", REDACTION_STRATEGY_UNSPECIFIED, false),
+            getPiiElement("session-id", REDACTION_STRATEGY_HASH, false, true),
+            getPiiElement("def456", REDACTION_STRATEGY_HASH, false),
+            getPiiElement("http.request.header.h1", REDACTION_STRATEGY_HASH, true),
+            getPiiElement("http.request.header.h2", REDACTION_STRATEGY_HASH, true),
+            getPiiElement("http.request.header.regex-1", REDACTION_STRATEGY_REDACT, true),
+            getPiiElement("rpc.request.metadata.regex-1", REDACTION_STRATEGY_REDACT, true),
+            getPiiElement("regex-2", REDACTION_STRATEGY_REDACT, false));
+    Set<PiiElement> actual =
+        piiFilterConfig.getKeyRegexsList().stream()
+            // Strip out rule ids for the prepopulated rules since they are random guids
+            .map(piiElement -> PiiElement.newBuilder(piiElement).setRuleId("").build())
+            .collect(Collectors.toSet());
+    assertEquals(expected, actual);
+  }
+
+  @Test
+  void testPiiFilterConfigForDataTypesWithoutObfuscateDataSet() {
+    dataClassificationRp1Enabled = true;
+    legacyDataSets =
+        List.of(
+            createDataSet(LEGACY_REDACT_DATA_SET_ID, true),
+            createDataSet(LEGACY_OBFUSCATE_DATA_SET_ID, false),
+            createDataSet(LEGACY_SENSITIVE_HEADERS_DATA_SET_ID, true),
+            createDataSet(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID, true));
+    setupPiiFilterConfigServiceImpl(false, getDefaultRedactionRules());
+
+    PiiFilterConfig piiFilterConfig =
+        piiFilterStub
+            .getPiiFilterConfig(GetPiiFilterConfigRequest.newBuilder().build())
+            .getPiiFilterConfig();
+    // prepopulated rules + mock insights service rules + rules from datatypes in datasets
+    Set<PiiElement> expected =
+        Set.of(
+            getPiiElement("secret-1", REDACTION_STRATEGY_UNSPECIFIED, false),
+            getPiiElement("session-id", REDACTION_STRATEGY_HASH, false, true),
+            getPiiElement("abc123", REDACTION_STRATEGY_REDACT, false),
+            getPiiElement("http.request.header.h1", REDACTION_STRATEGY_HASH, true),
+            getPiiElement("http.request.header.h2", REDACTION_STRATEGY_HASH, true),
+            getPiiElement("http.request.header.regex-1", REDACTION_STRATEGY_REDACT, true),
+            getPiiElement("rpc.request.metadata.regex-1", REDACTION_STRATEGY_REDACT, true),
+            getPiiElement("regex-2", REDACTION_STRATEGY_REDACT, false));
     Set<PiiElement> actual =
         piiFilterConfig.getKeyRegexsList().stream()
             // Strip out rule ids for the prepopulated rules since they are random guids
@@ -188,6 +403,16 @@ class PiiFilterConfigServiceImplTest {
         .build();
   }
 
+  private PiiElement getPiiElement(
+      String name, RedactionStrategy redactionStrategy, boolean fqn, boolean sessionIdentifier) {
+    return PiiElement.newBuilder()
+        .setRegex(name)
+        .setRedactionStrategy(redactionStrategy)
+        .setFqn(fqn)
+        .setSessionIdentifier(sessionIdentifier)
+        .build();
+  }
+
   private DefaultRedactionRules getDefaultRedactionRules() {
     // prepopulated rules
     Map<String, NewRedactionRule> defaultRules =
@@ -197,15 +422,39 @@ class PiiFilterConfigServiceImplTest {
                 .setName("Rule 1")
                 .setMatchType(MatchType.MATCH_TYPE_KEY)
                 .setRegex("abc123")
+                .setRedactionStrategy(REDACTION_STRATEGY_REDACT)
                 .build(),
             "default-2",
             NewRedactionRule.newBuilder()
                 .setName("Rule 2")
                 .setMatchType(MatchType.MATCH_TYPE_HEADER)
                 .setRegex("def456")
+                .setRedactionStrategy(REDACTION_STRATEGY_HASH)
+                .build(),
+            "default-3",
+            NewRedactionRule.newBuilder()
+                .setName("Rule 3")
+                .setMatchType(MatchType.MATCH_TYPE_HEADER)
+                .setRegex("ghi789")
+                .setRedactionStrategy(REDACTION_STRATEGY_RAW)
+                .build(),
+            "default-session-id-1",
+            NewRedactionRule.newBuilder()
+                .setName("Rule 4")
+                .setMatchType(MatchType.MATCH_TYPE_HEADER)
+                .setRegex("session-id")
+                .setRedactionStrategy(REDACTION_STRATEGY_HASH)
+                .setSessionIdentifier(true)
                 .build());
 
     return new DefaultRedactionRules(defaultRules);
+  }
+
+  private DataSet createDataSet(String dataSetId, boolean enabled) {
+    return DataSet.newBuilder()
+        .setId(dataSetId)
+        .setInfo(DataSetInfo.newBuilder().setEnabled(enabled))
+        .build();
   }
 
   private void setupPiiFilterConfigServiceImpl(
@@ -254,18 +503,17 @@ class PiiFilterConfigServiceImplTest {
     public void getDataSets(
         GetDataSetsRequest request, StreamObserver<GetDataSetsResponse> responseObserver) {
       GetDataSetsResponse.Builder responseBuilder = GetDataSetsResponse.newBuilder();
-      if (dataClassificationRp1Enabled) {
-        DataSet dataSet =
-            DataSet.newBuilder()
-                .setInfo(
-                    DataSetInfo.newBuilder()
-                        .setName("dataset-1")
-                        .setEnabled(true)
-                        .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
-                        .addAllDataTypeIds(List.of("datatype-1", "datatype-2")))
-                .build();
-        responseBuilder.addDataSets(dataSet);
-      }
+      DataSet dataSet =
+          DataSet.newBuilder()
+              .setInfo(
+                  DataSetInfo.newBuilder()
+                      .setName("dataset-1")
+                      .setEnabled(customDataSetEnabled)
+                      .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
+                      .addAllDataTypeIds(List.of("datatype-1", "datatype-2")))
+              .build();
+      responseBuilder.addDataSets(dataSet);
+      responseBuilder.addAllDataSets(legacyDataSets);
       responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();
     }
@@ -274,41 +522,39 @@ class PiiFilterConfigServiceImplTest {
     public void getDataTypes(
         GetDataTypesRequest request, StreamObserver<GetDataTypesResponse> responseObserver) {
       GetDataTypesResponse.Builder responseBuilder = GetDataTypesResponse.newBuilder();
-      if (dataClassificationRp1Enabled) {
-        DataType dataType1 =
-            DataType.newBuilder()
-                .setId("datatype-1")
-                .setRule(
-                    DataTypeRule.newBuilder()
-                        .setName("datatyperule-1")
-                        .addScopedPatterns(
-                            ScopedPattern.newBuilder()
-                                .setGlobalScope(GlobalScope.getDefaultInstance())
-                                .addLocations(LOCATION_REQUEST_HEADER)
-                                .setKeyPattern(
-                                    StringPattern.newBuilder()
-                                        .setValue("regex-1")
-                                        .setOperator(Operator.OPERATOR_MATCHES_REGEX))
-                                .setAction(Action.ACTION_MATCH)))
-                .build();
-        DataType dataType2 =
-            DataType.newBuilder()
-                .setId("datatype-2")
-                .setRule(
-                    DataTypeRule.newBuilder()
-                        .setName("datatyperule-2")
-                        .addScopedPatterns(
-                            ScopedPattern.newBuilder()
-                                .setGlobalScope(GlobalScope.getDefaultInstance())
-                                .addLocations(LOCATION_REQUEST_BODY)
-                                .setKeyPattern(
-                                    StringPattern.newBuilder()
-                                        .setValue("regex-2")
-                                        .setOperator(Operator.OPERATOR_MATCHES_REGEX))
-                                .setAction(Action.ACTION_MATCH)))
-                .build();
-        responseBuilder.addAllDataTypes(List.of(dataType1, dataType2));
-      }
+      DataType dataType1 =
+          DataType.newBuilder()
+              .setId("datatype-1")
+              .setRule(
+                  DataTypeRule.newBuilder()
+                      .setName("datatyperule-1")
+                      .addScopedPatterns(
+                          ScopedPattern.newBuilder()
+                              .setGlobalScope(GlobalScope.getDefaultInstance())
+                              .addLocations(LOCATION_REQUEST_HEADER)
+                              .setKeyPattern(
+                                  StringPattern.newBuilder()
+                                      .setValue("regex-1")
+                                      .setOperator(Operator.OPERATOR_MATCHES_REGEX))
+                              .setAction(Action.ACTION_MATCH)))
+              .build();
+      DataType dataType2 =
+          DataType.newBuilder()
+              .setId("datatype-2")
+              .setRule(
+                  DataTypeRule.newBuilder()
+                      .setName("datatyperule-2")
+                      .addScopedPatterns(
+                          ScopedPattern.newBuilder()
+                              .setGlobalScope(GlobalScope.getDefaultInstance())
+                              .addLocations(LOCATION_REQUEST_BODY)
+                              .setKeyPattern(
+                                  StringPattern.newBuilder()
+                                      .setValue("regex-2")
+                                      .setOperator(Operator.OPERATOR_MATCHES_REGEX))
+                              .setAction(Action.ACTION_MATCH)))
+              .build();
+      responseBuilder.addAllDataTypes(List.of(dataType1, dataType2));
       responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();
     }
