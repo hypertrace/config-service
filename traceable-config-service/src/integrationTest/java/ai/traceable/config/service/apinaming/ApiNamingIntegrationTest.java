@@ -27,7 +27,9 @@ import com.typesafe.config.ConfigFactory;
 import java.io.File;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -106,19 +108,22 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
   }
 
   @Test
-  void testHttpApiNamingResponse() {
+  void testHttpApiNamingResponse() throws InterruptedException {
     TrieModel trieModel = new TrieModel();
     TrieModelTrainerConfig trieModelTrainerConfig = buildTrieModelTrainerConfig();
     for (int i = 0; i < 10; i++) {
+      // Medium cardinality threshold is 4
       trieModel.insert(trieModelTrainerConfig, "GET/sports/cricket");
       trieModel.insert(trieModelTrainerConfig, "GET/sports/hockey");
       trieModel.insert(trieModelTrainerConfig, "GET/sports/tennis");
+      trieModel.insert(trieModelTrainerConfig, "GET/sports/badminton");
     }
     trieModel.train(buildTrieModelTrainerConfig());
 
     trieModelFileSystemModelStore.storeModel(
         new ServiceScope(TENANT_ID, createdEntity.getEntityId()), trieModel);
-    GetApiNamingModelResponse getApiNamingModelResponse = getApiNamingModel("1.2.3");
+    GetApiNamingModelResponse getApiNamingModelResponse =
+        getApiNamingModel(System.currentTimeMillis() - 1000, "1.2.3");
 
     // Since there would be only one path GET/sports/*
     assertEquals(
@@ -151,19 +156,23 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
 
     TrieModel trieModel1 = new TrieModel();
     for (int i = 0; i < 10; i++) {
+      // Medium cardinality threshold is 4
       trieModel1.insert(trieModelTrainerConfig, "GET/fruits/apple");
       trieModel1.insert(trieModelTrainerConfig, "GET/fruits/mango");
       trieModel1.insert(trieModelTrainerConfig, "GET/fruits/peach");
+      trieModel1.insert(trieModelTrainerConfig, "GET/fruits/banana");
     }
     trieModel1.train(buildTrieModelTrainerConfig());
 
     TrieDiffLogModel trieDiffLogModel = new TrieDiffLogModel();
     trieDiffLogModel.computeDiffLog(
         trieModel.getNonEmbryonicWildcardPaths(
-            buildTrieModelTrainerConfig().getTrieNodeConfig(), 1000),
+            buildTrieModelTrainerConfig().getTrieNodeConfig(),
+            buildTrieModelTrainerConfig().getMaxNumberOfTriePaths()),
         trieModel1.getNonEmbryonicWildcardPaths(
-            buildTrieModelTrainerConfig().getTrieNodeConfig(), 1000));
-    long timestamp = System.currentTimeMillis() - 10;
+            buildTrieModelTrainerConfig().getTrieNodeConfig(),
+            buildTrieModelTrainerConfig().getMaxNumberOfTriePaths()));
+    long timestamp = System.currentTimeMillis() - 2500;
     DateScope dateScope =
         new DateScope(
             timestamp,
@@ -171,7 +180,8 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
             DATE_TIME_FORMATTER);
     trieDiffLogModelFileSystemModelStore.storeModel(dateScope, trieDiffLogModel);
 
-    GetApiNamingModelResponse getApiNamingModelResponse1 = getApiNamingModel("1.2.3");
+    GetApiNamingModelResponse getApiNamingModelResponse1 =
+        getApiNamingModel(System.currentTimeMillis() - 3000, "1.2.3");
     assertEquals(
         2,
         getApiNamingModelResponse1
@@ -226,7 +236,8 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
             .getDiffLogs(1));
 
     // Forced full trie in-case the version is changed
-    var getApiNamingModelResponse2 = getApiNamingModel("0.1.2");
+    GetApiNamingModelResponse getApiNamingModelResponse2 =
+        getApiNamingModel(System.currentTimeMillis() - 3000, "0.1.2");
     assertEquals(
         0,
         getApiNamingModelResponse2
@@ -244,17 +255,123 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
             .getFullPattern()
             .getApiNamingPatternsCount());
 
+    // Testing if max number of trie path nodes is honoured
+    TrieModel trieModel2 = new TrieModel();
+    for (int i = 0; i < 10; i++) {
+      // Medium cardinality threshold is 4
+      trieModel2.insert(trieModelTrainerConfig, "GET/sports/cricket");
+      trieModel2.insert(trieModelTrainerConfig, "GET/sports/hockey");
+      trieModel2.insert(trieModelTrainerConfig, "GET/sports/tennis");
+      trieModel2.insert(trieModelTrainerConfig, "GET/sports/badminton");
+
+      // Medium cardinality threshold is 4
+      trieModel2.insert(trieModelTrainerConfig, "GET/city/London");
+      trieModel2.insert(trieModelTrainerConfig, "GET/city/Tokyo");
+      trieModel2.insert(trieModelTrainerConfig, "GET/city/Delhi");
+      trieModel2.insert(trieModelTrainerConfig, "GET/city/Paris");
+      trieModel2.insert(trieModelTrainerConfig, "GET/city/Madrid");
+
+      // Medium cardinality threshold is 4
+      trieModel2.insert(trieModelTrainerConfig, "GET/fruits/apple");
+      trieModel2.insert(trieModelTrainerConfig, "GET/fruits/mango");
+      trieModel2.insert(trieModelTrainerConfig, "GET/fruits/peach");
+      trieModel2.insert(trieModelTrainerConfig, "GET/fruits/banana");
+      trieModel2.insert(trieModelTrainerConfig, "GET/fruits/pineapple");
+    }
+    trieModel2.train(buildTrieModelTrainerConfig());
+
+    List<List<ai.traceable.platform.apientity.Segment>> curr_paths =
+        trieModel2.getNonEmbryonicWildcardPaths(
+            buildTrieModelTrainerConfig().getTrieNodeConfig(),
+            buildTrieModelTrainerConfig().getMaxNumberOfTriePaths());
+    List<List<ai.traceable.platform.apientity.Segment>> previous_paths =
+        trieModel.getNonEmbryonicWildcardPaths(
+            buildTrieModelTrainerConfig().getTrieNodeConfig(),
+            buildTrieModelTrainerConfig().getMaxNumberOfTriePaths());
+    TrieDiffLogModel trieDiffLogModel1 = new TrieDiffLogModel();
+    trieDiffLogModel1.computeDiffLog(previous_paths, curr_paths);
+
+    // Added delay to not consider the previous diffLog
+    TimeUnit.SECONDS.sleep(1);
+
+    dateScope =
+        new DateScope(
+            System.currentTimeMillis(),
+            new ServiceScope(TENANT_ID, createdEntity.getEntityId()),
+            DATE_TIME_FORMATTER);
+    trieDiffLogModelFileSystemModelStore.storeModel(dateScope, trieDiffLogModel1);
+
+    GetApiNamingModelResponse getApiNamingModelResponse3 =
+        getApiNamingModel(System.currentTimeMillis() - 1000, "1.2.3");
+
+    List<DiffLog> diffLogs =
+        getApiNamingModelResponse3
+            .getHttpApiNamingResponse()
+            .getHttpServiceResponses(0)
+            .getApiNamingPatterns()
+            .getDiffPattern()
+            .getDiffLogsList();
+
+    assertEquals(3, diffLogs.size());
+    assertEquals(
+        DiffLog.newBuilder()
+            .setApiNamingPatternAddition(
+                ApiNamingPattern.newBuilder()
+                    .addSegments(Segment.newBuilder().setName("GET").build())
+                    .addSegments(Segment.newBuilder().setName("fruits").build())
+                    .addSegments(
+                        Segment.newBuilder()
+                            .setWildcard(
+                                Wildcard.newBuilder()
+                                    .setIdentificationRegex(".*")
+                                    .setReplacementPattern("*")
+                                    .build())
+                            .build()))
+            .build(),
+        diffLogs.get(0));
+    assertEquals(
+        DiffLog.newBuilder()
+            .setApiNamingPatternAddition(
+                ApiNamingPattern.newBuilder()
+                    .addSegments(Segment.newBuilder().setName("GET").build())
+                    .addSegments(Segment.newBuilder().setName("city").build())
+                    .addSegments(
+                        Segment.newBuilder()
+                            .setWildcard(
+                                Wildcard.newBuilder()
+                                    .setIdentificationRegex(".*")
+                                    .setReplacementPattern("*")
+                                    .build())
+                            .build()))
+            .build(),
+        diffLogs.get(1));
+    assertEquals(
+        DiffLog.newBuilder()
+            .setApiNamingPatternDeletion(
+                ApiNamingPattern.newBuilder()
+                    .addSegments(Segment.newBuilder().setName("GET").build())
+                    .addSegments(Segment.newBuilder().setName("sports").build())
+                    .addSegments(
+                        Segment.newBuilder()
+                            .setWildcard(
+                                Wildcard.newBuilder()
+                                    .setIdentificationRegex(".*")
+                                    .setReplacementPattern("*")
+                                    .build())
+                            .build()))
+            .build(),
+        diffLogs.get(2));
     deleteDirectory(new File(BASE_DIR));
     deleteDirectory(new File(DIFF_LOGS_BASE_DIR));
   }
 
-  private GetApiNamingModelResponse getApiNamingModel(String version) {
+  private GetApiNamingModelResponse getApiNamingModel(long timestamp, String version) {
     GetApiNamingModelRequest request =
         GetApiNamingModelRequest.newBuilder()
             .addServiceRequests(
                 ServiceRequest.newBuilder()
                     .setServiceName("serviceName")
-                    .setToken("t=" + (System.currentTimeMillis() - 10000) + ";v=" + version)
+                    .setToken("t=" + timestamp + ";v=" + version)
                     .build())
             .build();
     return RequestContext.forTenantId(TENANT_ID)
@@ -302,13 +419,13 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
                                     .build())
                             .setMediumCardinality(
                                 ThresholdRegexConfig.newBuilder()
-                                    .setThreshold(3)
+                                    .setThreshold(4)
                                     .setRegexList(StringList.newBuilder().addValues("d*").build())
                                     .build())
                             .setExtensions(StringList.newBuilder().addValues("e").build())
                             .setAllowRegexList(StringList.newBuilder().addValues("f").build())
                             .setEmbryonicThreshold(10)
-                            .setMaxNumberOfTriePaths(3)
+                            .setMaxNumberOfTriePaths(2)
                             .build())
                     .build())
             .build(),

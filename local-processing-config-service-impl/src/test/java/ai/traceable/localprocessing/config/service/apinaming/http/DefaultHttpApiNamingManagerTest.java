@@ -121,8 +121,7 @@ class DefaultHttpApiNamingManagerTest {
 
   @Test
   void testGetServiceResponseList() throws ExecutionException {
-    when(trieModel.getNonEmbryonicWildcardPaths(
-            ApiNamingManagerTestUtils.buildTrieNodeConfig(), 10))
+    when(trieModel.getNonEmbryonicWildcardPaths(ApiNamingManagerTestUtils.builtTrieNodeConfig, 10))
         .thenReturn(new ArrayList<>());
     when(httpApiNamingConfig.getFullTrieReloadConfig())
         .thenReturn(buildFullTrieReloadConfig(false, "2.3.0"));
@@ -189,13 +188,13 @@ class DefaultHttpApiNamingManagerTest {
     when(httpApiNamingConfig.getFullTrieReloadConfig())
         .thenReturn(buildFullTrieReloadConfig(false, "0.0.0"));
     when(trieModel.getNonEmbryonicWildcardPaths(any(), anyInt()))
-        .thenReturn(ApiNamingManagerTestUtils.buildNonEmbryonicPaths());
+        .thenReturn(ApiNamingManagerTestUtils.builtNonEmbryonicPaths);
     when(trieDiffLogModel.getTrieDiffLog())
         .thenReturn(ai.traceable.platform.apientity.TrieDiffLog.newBuilder().build());
     when(fileMetadata.getModificationTime()).thenReturn(2L);
     ai.traceable.localprocessing.config.service.v1.HttpApiNamingConfig httpApiNamingConfig =
         ApiNamingManagerTestUtils.buildApiNamingConfig();
-    FullPattern expectedFullPattern = ApiNamingManagerTestUtils.buildExpectedFullPattern();
+    FullPattern expectedFullPattern = ApiNamingManagerTestUtils.builtExpectedFullPattern;
     ServiceRequest serviceRequest =
         ServiceRequest.newBuilder()
             .setServiceName("serviceName1")
@@ -229,10 +228,9 @@ class DefaultHttpApiNamingManagerTest {
   void testTrieDiffLogConstruction() throws ExecutionException {
     when(httpApiNamingConfig.getFullTrieReloadConfig())
         .thenReturn(buildFullTrieReloadConfig(false, "0.0.0"));
-    when(trieDiffLogModel.getTrieDiffLog())
-        .thenReturn(ApiNamingManagerTestUtils.buildTrieDiffLog());
+    when(trieDiffLogModel.getTrieDiffLog()).thenReturn(ApiNamingManagerTestUtils.builtTrieDiffLog);
     when(fileMetadata.getModificationTime()).thenReturn(3L);
-    DiffPattern expectedDiffPattern = ApiNamingManagerTestUtils.buildExpectedDiffTrie();
+    DiffPattern expectedDiffPattern = ApiNamingManagerTestUtils.builtExpectedDiffTrie;
 
     ServiceRequest serviceRequest1 =
         ServiceRequest.newBuilder()
@@ -263,12 +261,11 @@ class DefaultHttpApiNamingManagerTest {
 
   @Test
   void testLocalApiNamingConfig() throws ExecutionException {
-    when(trieDiffLogModel.getTrieDiffLog())
-        .thenReturn(ApiNamingManagerTestUtils.buildTrieDiffLog());
+    when(trieDiffLogModel.getTrieDiffLog()).thenReturn(ApiNamingManagerTestUtils.builtTrieDiffLog);
     when(fileMetadata.getModificationTime()).thenReturn(3L);
     when(trieModel.getNonEmbryonicWildcardPaths(any(), anyInt()))
-        .thenReturn(ApiNamingManagerTestUtils.buildNonEmbryonicPaths());
-    FullPattern expectedFullPattern = ApiNamingManagerTestUtils.buildExpectedFullPattern();
+        .thenReturn(ApiNamingManagerTestUtils.builtNonEmbryonicPaths);
+    FullPattern expectedFullPattern = ApiNamingManagerTestUtils.builtExpectedFullPattern;
 
     ServiceRequest serviceRequest1 =
         ServiceRequest.newBuilder()
