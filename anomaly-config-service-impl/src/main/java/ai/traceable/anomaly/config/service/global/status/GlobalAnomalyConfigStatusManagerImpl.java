@@ -115,14 +115,10 @@ public class GlobalAnomalyConfigStatusManagerImpl
     return upsertObject(
             requestContext,
             getData(requestContext, getContextFromData(scopedConfigStatusChange))
-                .map(ScopedAnomalyConfigStatusChange::getConfigStatus)
                 .map(
-                    existingConfig ->
-                        scopedConfigStatusChange.toBuilder()
-                            .setConfigStatus(
-                                configConverter.merge(
-                                    scopedConfigStatusChange.getConfigStatus(), existingConfig))
-                            .build())
+                    existingScopedConfigStatusChange ->
+                        configConverter.merge(
+                            scopedConfigStatusChange, existingScopedConfigStatusChange))
                 .orElse(scopedConfigStatusChange))
         .getData();
   }
@@ -133,17 +129,19 @@ public class GlobalAnomalyConfigStatusManagerImpl
       AnomalyConfigScope configScope,
       List<String> contextsWithIncreasingPriority) {
     AnomalyConfigStatusChange configStatusChange = AnomalyConfigStatusChange.getDefaultInstance();
+    ScopedAnomalyConfigStatusChange.Builder scopedAnomalyConfigBuilder =
+        ScopedAnomalyConfigStatusChange.newBuilder();
     for (String context : contextsWithIncreasingPriority) {
-      configStatusChange =
-          configMap.containsKey(context)
-              ? configConverter.merge(configMap.get(context).getConfigStatus(), configStatusChange)
-              : configStatusChange;
+      if (configMap.containsKey(context)) {
+        configStatusChange =
+            configConverter.merge(configMap.get(context).getConfigStatus(), configStatusChange);
+        scopedAnomalyConfigBuilder = scopedAnomalyConfigBuilder.mergeFrom(configMap.get(context));
+      }
     }
-    return ScopedAnomalyConfigStatus.newBuilder()
-        .setConfigScope(configScope)
-        .setConfigStatus(
-            configConverter.merge(configStatusChange, getDefaultTierConfig(requestContext)))
-        .build();
+    scopedAnomalyConfigBuilder.setConfigScope(configScope);
+    return configConverter.convertScopedConfig(
+        scopedAnomalyConfigBuilder.build(),
+        configConverter.merge(configStatusChange, getDefaultTierConfig(requestContext)));
   }
 
   private Map<String, ScopedAnomalyConfigStatusChange> fetchConfigMap(

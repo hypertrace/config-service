@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.global.status;
 
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
+import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
@@ -22,6 +23,21 @@ public class ScopedGlobalConfigStatusChangeConverter {
       ConfigProtoConverter.mergeFromValue(config, builder);
     }
     return builder.build();
+  }
+
+  public ScopedAnomalyConfigStatus convertScopedConfig(
+      ScopedAnomalyConfigStatusChange config, AnomalyConfigStatus configStatus) {
+    return ScopedAnomalyConfigStatus.newBuilder()
+        .setConfigScope(config.getConfigScope())
+        .setConfigStatus(configStatus)
+        .setExcludedEventsConfig(config.getExcludedEventsConfig())
+        .build();
+  }
+
+  public ScopedAnomalyConfigStatusChange merge(
+      ScopedAnomalyConfigStatusChange highPriorityConfig,
+      ScopedAnomalyConfigStatusChange lowPriorityConfig) {
+    return lowPriorityConfig.toBuilder().mergeFrom(highPriorityConfig).build();
   }
 
   public AnomalyConfigStatusChange merge(
