@@ -12,6 +12,7 @@ import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueTag;
+import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
 import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
@@ -23,11 +24,14 @@ import com.google.re2j.PatternSyntaxException;
 import io.grpc.Status;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 import javax.inject.Inject;
 
 class CustomSignatureRulesValidator implements RulesValidator {
 
   private static final String UTF_8_REGEX_PREFIX = "(*UTF8)";
+  private static final List<EventType> INVALID_RESPONSE_EVENT_TYPES =
+      List.of(EventType.EVENT_TYPE_ALLOW, EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
 
   private final ModsecRulesManager modsecRulesManager;
 
@@ -45,11 +49,13 @@ class CustomSignatureRulesValidator implements RulesValidator {
 
     Status status;
 
+    boolean responseCategory =
+        hasMatchCategoryResponse(request.getDefinition().getClauseGroup().getClausesList());
     if (!request.hasEffect()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Create custom signature rule should have a valid effect.");
     }
-    if ((status = validateRuleEffect(request.getEffect())) != Status.OK) {
+    if ((status = validateRuleEffect(request.getEffect(), responseCategory)) != Status.OK) {
       return status;
     }
 
@@ -82,11 +88,13 @@ class CustomSignatureRulesValidator implements RulesValidator {
 
     Status status;
 
+    boolean responseCategory =
+        hasMatchCategoryResponse(rule.getDefinition().getClauseGroup().getClausesList());
     if (!rule.hasEffect()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Create custom signature rule should have a valid effect.");
     }
-    if ((status = validateRuleEffect(rule.getEffect())) != Status.OK) {
+    if ((status = validateRuleEffect(rule.getEffect(), responseCategory)) != Status.OK) {
       return status;
     }
 
@@ -116,7 +124,7 @@ class CustomSignatureRulesValidator implements RulesValidator {
     return Status.OK;
   }
 
-  private Status validateRuleEffect(RuleEffect ruleEffect) {
+  private Status validateRuleEffect(RuleEffect ruleEffect, boolean responseCategory) {
     if (ruleEffect.getEventType() == EventType.EVENT_TYPE_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule Effect should have a valid event type.");
@@ -124,6 +132,12 @@ class CustomSignatureRulesValidator implements RulesValidator {
     if (ruleEffect.getEventSeverity() == EventSeverity.EVENT_SEVERITY_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule Effect should have a valid event severity.");
+    }
+    if (responseCategory && INVALID_RESPONSE_EVENT_TYPES.contains(ruleEffect.getEventType())) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          String.format(
+              "Custom signature rule with a response category is not compatible with the specified event type %s.",
+              ruleEffect.getEventType()));
     }
     return Status.OK;
   }
@@ -234,5 +248,19 @@ class CustomSignatureRulesValidator implements RulesValidator {
           .withCause(e)
           .withDescription("Invalid Regex Value for the custom signature rule expression");
     }
+  }
+
+  private boolean hasMatchCategoryResponse(List<Clause> clauses) {
+    return clauses.stream()
+        .anyMatch(
+            clause ->
+                clause
+                        .getMatchExpression()
+                        .getMatchCategory()
+                        .equals(MatchCategory.MATCH_CATEGORY_RESPONSE)
+                    || clause
+                        .getKeyValueExpression()
+                        .getMatchCategory()
+                        .equals(MatchCategory.MATCH_CATEGORY_RESPONSE));
   }
 }

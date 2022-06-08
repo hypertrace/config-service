@@ -18,6 +18,7 @@ import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueTag;
+import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
 import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
@@ -79,6 +80,41 @@ public class CustomSignatureRulesValidatorTest {
     status = rulesValidator.validate(request);
     assertEquals(Code.INVALID_ARGUMENT, status.getCode());
     assertTrue(status.getDescription().contains("valid event severity"));
+
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setKeyValueExpression(
+                                        KeyValueExpression.newBuilder()
+                                            .setMatchCategory(MatchCategory.MATCH_CATEGORY_RESPONSE)
+                                            .setTag(KeyValueTag.KEY_VALUE_TAG_HEADER)
+                                            .setKeyMatchOperator(
+                                                MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setMatchKey("name")
+                                            .setValueMatchOperator(
+                                                MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setMatchValue("traceable")
+                                            .build()))
+                            .build()))
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .setEventType(EventType.EVENT_TYPE_ALLOW)
+                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW))
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    assertTrue(
+        status
+            .getDescription()
+            .contains(
+                "Custom signature rule with a response category is not compatible with the specified event type"));
 
     RuleEffect ruleEffect =
         RuleEffect.newBuilder()
@@ -524,6 +560,39 @@ public class CustomSignatureRulesValidatorTest {
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
     assertEquals(Code.INVALID_ARGUMENT, status.getCode());
     assertTrue(status.getDescription().contains("valid event severity"));
+
+    rule =
+        CustomSignatureRule.newBuilder()
+            .setId("id")
+            .setName("name")
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setMatchExpression(
+                                        MatchExpression.newBuilder()
+                                            .setMatchCategory(MatchCategory.MATCH_CATEGORY_RESPONSE)
+                                            .setMatchKey(MatchKey.MATCH_KEY_HOST)
+                                            .setMatchValue("traceable")
+                                            .build()))
+                            .build()))
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
+                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW))
+            .build();
+    status =
+        rulesValidator.validate(
+            UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    assertTrue(
+        status
+            .getDescription()
+            .contains(
+                "Custom signature rule with a response category is not compatible with the specified event type"));
 
     RuleEffect ruleEffect =
         RuleEffect.newBuilder()
