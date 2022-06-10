@@ -5,6 +5,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
+import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc;
+import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc.DetectorConfigServiceBlockingStub;
+import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigRequest;
 import ai.traceable.blocking.config.service.UuidGenerator;
 import ai.traceable.blocking.config.service.v1.BlockingConfigServiceGrpc;
 import ai.traceable.blocking.config.service.v1.BlockingConfigServiceGrpc.BlockingConfigServiceBlockingStub;
@@ -44,6 +54,7 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
   private static RegionConfigServiceBlockingStub regionConfigServiceStub;
   private static CustomSignatureConfigServiceBlockingStub customSignatureConfigServiceStub;
   private static BlockingConfigServiceBlockingStub blockingConfigServiceStub;
+  private static DetectorConfigServiceBlockingStub detectorConfigServiceStub;
   private static final UuidGenerator uuidGenerator = new UuidGenerator();
 
   @BeforeAll
@@ -62,6 +73,12 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
         BlockingConfigServiceGrpc.newBlockingStub(managedChannelForExternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+
+    detectorConfigServiceStub =
+        DetectorConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+            .withCallCredentials(
+                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+    enableBlockingOnAModsecRule();
   }
 
   @Test
@@ -90,8 +107,8 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
             .isEmpty()); // rules actually empty
 
     final String modsecCrsBlockingRulesHash = response.getSafeCrsBlockingRules().getHash();
-    assertEquals(emptyValueUuid, modsecCrsBlockingRulesHash);
-    assertTrue(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
+    assertNotEquals(emptyValueUuid, modsecCrsBlockingRulesHash);
+    assertFalse(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
 
     int numRegions = createAndGetRegions();
     createAndGetCustomSignatureRule();
@@ -138,10 +155,10 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
         response.getCustomModsecBlockingRules().getHash()); // not changed
     assertTrue(response.getCustomModsecBlockingRules().getCustomModsecRulesBlob().isEmpty());
 
-    assertEquals(
+    assertNotEquals(
         emptyValueUuid,
         response.getSafeCrsBlockingRules().getHash()); // we had given empty request hash
-    assertTrue(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
+    assertFalse(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
   }
 
   private int createAndGetRegions() {
@@ -228,5 +245,35 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
                                 .build())
                         .build()))
         .getRule();
+  }
+
+  private static void enableBlockingOnAModsecRule() {
+    GrpcClientRequestContextUtil.executeInTenantContext(
+        TENANT_ID,
+        () ->
+            detectorConfigServiceStub.updateScopedAnomalyDetectionConfig(
+                UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+                    .setScopedAnomalyDetectionConfig(
+                        ScopedAnomalyDetectionConfig.newBuilder()
+                            .setConfigScope(
+                                AnomalyConfigScope.newBuilder()
+                                    .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+                                    .build())
+                            .addAnomalyDetectionConfigs(
+                                AnomalyDetectionConfig.newBuilder()
+                                    .setModsecurityAnomalyDetectionConfig(
+                                        ModsecurityAnomalyDetectionConfig.newBuilder()
+                                            .setModsecAnomalyRule(
+                                                ModsecurityAnomalyRuleConfig.newBuilder()
+                                                    .setAnomalyRuleId("crs_913")
+                                                    .addSubRuleConfigs(
+                                                        AnomalySubRuleConfig.newBuilder()
+                                                            .setSubRuleId("crs_913100")
+                                                            .setBlockingEnabled(true)
+                                                            .build()))
+                                            .build())
+                                    .build())
+                            .build())
+                    .build()));
   }
 }
