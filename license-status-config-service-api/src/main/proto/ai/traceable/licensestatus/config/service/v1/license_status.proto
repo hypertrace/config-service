@@ -6,6 +6,21 @@ option java_multiple_files = true;
 
 message LicenseStatus {
   LicenseLimit traces_license_limit = 1;
+  License api_catalog_license = 2;
+  License protection_license = 3;
+
+  message License {
+    LicenseTier license_tier = 1;
+
+    enum LicenseTier {
+      LICENSE_TIER_UNSPECIFIED = 0;
+      LICENSE_TIER_INTERNAL = 1; // For traceable account
+      LICENSE_TIER_FREE = 2;
+      LICENSE_TIER_TRIAL = 3;
+      LICENSE_TIER_TEAM = 4;
+      LICENSE_TIER_ENTERPRISE = 5;
+    }
+  }
 }
 
 enum LicenseLimit {
