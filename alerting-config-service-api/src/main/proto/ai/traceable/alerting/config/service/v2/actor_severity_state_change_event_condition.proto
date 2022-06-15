@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.alerting.config.service.v2;
+
+message ActorSeverityStateChangeEventCondition {
+  repeated ActorSeverity actor_severity_types = 1;
+}
+
+enum ActorSeverity {
+    ACTOR_SEVERITY_TYPE_UNSPECIFIED = 0;
+    ACTOR_SEVERITY_TYPE_LOW = 1;
+    ACTOR_SEVERITY_TYPE_MEDIUM = 2;
+    ACTOR_SEVERITY_TYPE_HIGH = 3;
+    ACTOR_SEVERITY_TYPE_CRITICAL = 4;
+}
