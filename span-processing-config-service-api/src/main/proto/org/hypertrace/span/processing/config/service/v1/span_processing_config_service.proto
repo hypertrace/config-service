@@ -5,6 +5,7 @@ package org.hypertrace.span.processing.config.service.v1;
 option java_multiple_files = true;
 
 import "org/hypertrace/span/processing/config/service/v1/span_filter.proto";
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
 service SpanProcessingConfigService {
@@ -148,4 +149,47 @@ message SegmentMatchingBasedConfig {
 message ApiNamingRuleMetadata {
   google.protobuf.Timestamp creation_timestamp = 1;
   google.protobuf.Timestamp last_updated_timestamp = 2;
+}
+
+message SamplingConfig {
+  string id = 1;
+  Scope scope = 2;
+  RateLimitConfig rate_limit_config = 3;
+  SpanFilter filter = 4;
+  bool disabled = 5;
+}
+
+enum Scope {
+  SCOPE_UNSPECIFIED = 0;
+  SCOPE_API = 1;
+  SCOPE_ENVIRONMENT = 2;
+  SCOPE_TENANT = 3;// if no sampling config,use default
+}
+
+message RateLimitConfig {
+  RateLimit trace_limit_per_endpoint = 1;
+  RateLimit trace_limit_global = 2;
+  google.protobuf.Duration api_endpoint_cache_duration = 3;
+}
+
+message RateLimit {
+  oneof limit {
+    WindowedRateLimit fixed_window_limit = 1;
+  }
+}
+
+message WindowedRateLimit {
+  int64 quantity_allowed = 1;
+  google.protobuf.Duration window_duration = 2;
+}
+
+message IncludeSpanRule {
+  string id = 1;
+  IncludeSpanRuleInfo rule_info = 2;
+}
+
+message IncludeSpanRuleInfo {
+  string name = 1;
+  SpanFilter filter = 2;
+  bool disabled = 4;
 }
