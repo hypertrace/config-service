@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package ai.traceable.threatmanagement.config.service.v1;
+
+option java_multiple_files = true;
+
+message GetIpReputationThreatScoreConfigRequest {
+}
+
+message GetIpReputationThreatScoreConfigResponse {
+  IpReputationThreatScoreConfig ip_reputation_threat_score_config = 1;
+  IpReputationThreatScoreConfig default_ip_reputation_threat_score_config = 2;
+}
+
+message UpdateIpReputationThreatScoreConfigRequest {
+  IpReputationThreatScoreConfig ip_reputation_threat_score_config = 1;
+}
+
+message UpdateIpReputationThreatScoreConfigResponse {
+  IpReputationThreatScoreConfig ip_reputation_threat_score_config = 1;
+  IpReputationThreatScoreConfig default_ip_reputation_threat_score_config = 2;
+}
+
+message IpReputationThreatScoreConfig {
+  int32 critical_ip_reputation_threat_score_increment = 1;
+  int32 high_ip_reputation_threat_score_increment = 2;
+  int32 medium_ip_reputation_threat_score_increment = 3;
+  int32 low_ip_reputation_threat_score_increment = 4;
+}

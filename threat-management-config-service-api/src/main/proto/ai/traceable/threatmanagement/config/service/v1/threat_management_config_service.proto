@@ -9,6 +9,9 @@ import "ai/traceable/threatmanagement/config/service/v1/security_event_score_con
 import "ai/traceable/threatmanagement/config/service/v1/anomaly_score_contribution.proto";
 import "ai/traceable/threatmanagement/config/service/v1/security_event_type_contribution.proto";
 import "ai/traceable/threatmanagement/config/service/v1/threat_auto_blocking.proto";
+import "ai/traceable/threatmanagement/config/service/v1/ip_reputation_score_contribution.proto";
+import "ai/traceable/threatmanagement/config/service/v1/status_code_score_contribution.proto";
+import "ai/traceable/threatmanagement/config/service/v1/threat_score_config.proto";
 
 service ThreatManagementConfigService {
   rpc GetThreatScoreBound (GetThreatScoreBoundRequest) returns (GetThreatScoreBoundResponse) {
@@ -39,5 +42,20 @@ service ThreatManagementConfigService {
   }
 
   rpc UpdateThreatAutoBlockingConfig (UpdateThreatAutoBlockingConfigRequest) returns (UpdateThreatAutoBlockingConfigResponse) {
+  }
+
+  rpc GetIpReputationThreatScoreConfig (GetIpReputationThreatScoreConfigRequest) returns (GetIpReputationThreatScoreConfigResponse) {
+  }
+
+  rpc UpdateIpReputationThreatScoreConfig (UpdateIpReputationThreatScoreConfigRequest) returns (UpdateIpReputationThreatScoreConfigResponse) {
+  }
+
+  rpc GetStatusCodeThreatScoreConfigs (GetStatusCodeThreatScoreConfigsRequest) returns (GetStatusCodeThreatScoreConfigsResponse) {
+  }
+
+  rpc UpdateStatusCodeThreatScoreConfigs (UpdateStatusCodeThreatScoreConfigsRequest) returns (UpdateStatusCodeThreatScoreConfigsResponse) {
+  }
+
+  rpc GetThreatScoreConfig (GetThreatScoreConfigRequest) returns (GetThreatScoreConfigResponse) {
   }
 }

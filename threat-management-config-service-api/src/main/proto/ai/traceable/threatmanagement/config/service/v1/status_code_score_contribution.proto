@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package ai.traceable.threatmanagement.config.service.v1;
+
+option java_multiple_files = true;
+
+message GetStatusCodeThreatScoreConfigsRequest {
+}
+
+message GetStatusCodeThreatScoreConfigsResponse {
+  StatusCodeThreatScoreConfigs status_code_threat_score_configs = 1;
+}
+
+message UpdateStatusCodeThreatScoreConfigsRequest {
+  StatusCodeThreatScoreConfigs status_code_threat_score_configs = 1;
+}
+
+message UpdateStatusCodeThreatScoreConfigsResponse {
+  StatusCodeThreatScoreConfigs status_code_threat_score_configs = 1;
+}
+
+enum SeverityDowngradePolicy {
+  SEVERITY_DOWNGRADE_POLICY_UNSPECIFIED = 0;
+  SEVERITY_DOWNGRADE_POLICY_IGNORE_SCORE = 1;
+  SEVERITY_DOWNGRADE_POLICY_ONE_STEP = 2;
+  SEVERITY_DOWNGRADE_POLICY_TWO_STEPS = 3;
+}
+
+enum Protocol {
+  PROTOCOL_UNSPECIFIED = 0;
+  PROTOCOL_HTTP = 1;
+  PROTOCOL_GRPC = 2;
+}
+
+message StatusCodeThreatScoreConfigs {
+  repeated StatusCodeThreatScoreConfig configs = 1;
+}
+
+message StatusCodeThreatScoreConfig {
+  Protocol protocol = 1;
+  string error_status_code_regex = 2;
+  SeverityDowngradePolicy severity_downgrade_policy = 3;
+}
