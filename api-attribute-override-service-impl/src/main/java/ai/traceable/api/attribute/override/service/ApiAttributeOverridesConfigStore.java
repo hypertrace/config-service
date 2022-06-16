@@ -9,6 +9,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 
 @Slf4j
@@ -16,11 +17,13 @@ public class ApiAttributeOverridesConfigStore extends IdentifiedObjectStore<ApiA
 
   @Inject
   public ApiAttributeOverridesConfigStore(
-      ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub) {
+      ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
         configServiceBlockingStub,
         ApiAttributeOverrideConstants.RESOURCE_NAMESPACE,
-        ApiAttributeOverrideConstants.RESOURCE_NAME);
+        ApiAttributeOverrideConstants.RESOURCE_NAME,
+        configChangeEventGenerator);
   }
 
   @Override

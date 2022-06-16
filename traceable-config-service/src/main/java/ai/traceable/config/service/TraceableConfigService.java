@@ -145,7 +145,7 @@ public class TraceableConfigService extends PlatformService {
         AnomalyConfigServiceFactory.build(
             channelRegistry, managedChannel, config, configChangeEventGenerator);
     BindableService apiAttributeOverridesService =
-        ApiAttributeOverridesServiceFactory.build(managedChannel);
+        ApiAttributeOverridesServiceFactory.build(managedChannel, configChangeEventGenerator);
 
     EventConditionConfigServiceImpl eventConditionConfigService =
         new EventConditionConfigServiceImpl(managedChannel);
