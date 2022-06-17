@@ -56,7 +56,6 @@ public class RateLimitingRulesValidator implements RulesValidator {
   private void validateRateLimitingRuleData(RateLimitingRuleData data) {
     validateNonDefaultPresenceOrThrow(data, RateLimitingRuleData.CATEGORY_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(data, RateLimitingRuleData.NAME_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(data, RateLimitingRuleData.ENABLED_FIELD_NUMBER);
     validateCondition(data.getCondition());
     validateNonDefaultPresenceOrThrow(
         data, RateLimitingRuleData.THRESHOLD_ACTION_CONFIGS_FIELD_NUMBER);
