@@ -99,12 +99,12 @@ class ExternalDataClassificationConfigServiceImpl
       Map<String, DataType> dataTypesToIdMap =
           this.dataClassificationRulesDao.getAllDataTypes(requestContext).stream()
               .collect(Collectors.toUnmodifiableMap(DataType::getId, identity()));
-      Map<String, DataSet> enabledDataSetMap =
+      List<DataSet> enabledDataSets =
           this.dataClassificationRulesDao.getAllDataSets(requestContext).stream()
               .filter(dataSet -> dataSet.getInfo().getEnabled())
-              .collect(Collectors.toUnmodifiableMap(DataSet::getId, identity()));
+              .collect(Collectors.toUnmodifiableList());
       List<DataSet> dataSetsToTranslate =
-          enabledDataSetMap.values().stream()
+          enabledDataSets.stream()
               .filter(
                   dataSet ->
                       !dataSet.getId().startsWith(LEGACY_DATASET_ID_PREFIX)
@@ -131,6 +131,9 @@ class ExternalDataClassificationConfigServiceImpl
         }
       }
       dataTypes = Collections.unmodifiableList(dataTypes);
+      Map<String, DataSet> enabledDataSetMap =
+          enabledDataSets.stream()
+              .collect(Collectors.toUnmodifiableMap(DataSet::getId, identity()));
       List<ai.traceable.external.data.classification.config.service.v1.DataType> externalDataTypes =
           new ArrayList<>();
       externalDataTypes.addAll(

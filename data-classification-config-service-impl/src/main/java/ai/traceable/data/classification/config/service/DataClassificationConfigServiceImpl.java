@@ -302,20 +302,30 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
           this.dataSetStore.getAllObjects(requestContext).stream()
               .map(ConfigObject::getData)
               .collect(Collectors.toUnmodifiableList());
+      Map<String, DataSet> systemDataSetsToIdMap = getSystemDataSetsToIdMap(requestContext);
+      // filter out system data sets as we need to maintain order of system data sets
+      List<DataSet> filteredTenantDataSets =
+          tenantDataSets.stream()
+              .filter(dataSet -> !systemDataSetsToIdMap.containsKey(dataSet.getId()))
+              .collect(Collectors.toUnmodifiableList());
       Map<String, DataSet> tenantDataSetsToIdMap =
           tenantDataSets.stream().collect(Collectors.toUnmodifiableMap(DataSet::getId, identity()));
+      // filter out deleted system data sets
+      // also if overridden by tenant, then pick the overridden one
       List<DataSet> filteredSystemDataSets =
           getSystemDataSets(requestContext).stream()
-              .filter(
-                  dataSet ->
-                      !tenantDataSetsToIdMap.containsKey(dataSet.getId())
-                          && !deletedSystemDataSetsIds.contains(dataSet.getId()))
+              .filter(dataSet -> !deletedSystemDataSetsIds.contains(dataSet.getId()))
+              .map(
+                  systemDataSet ->
+                      tenantDataSetsToIdMap.containsKey(systemDataSet.getId())
+                          ? tenantDataSetsToIdMap.get(systemDataSet.getId())
+                          : systemDataSet)
               .collect(Collectors.toUnmodifiableList());
       List<DataSet> redactionRulesToDataSets =
           this.redactionRulesDao.getDataSetsFromRedactionRules(requestContext);
       responseObserver.onNext(
           GetDataSetsResponse.newBuilder()
-              .addAllDataSets(tenantDataSets)
+              .addAllDataSets(filteredTenantDataSets)
               .addAllDataSets(filteredSystemDataSets)
               .addAllDataSets(redactionRulesToDataSets)
               .build());

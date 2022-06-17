@@ -415,6 +415,8 @@ class DataClassificationConfigServiceImplTest {
     FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
     when(featureCachingClient.isDataClassificationRp2Enabled(any()))
         .thenReturn(false)
+        .thenReturn(false)
+        .thenReturn(true)
         .thenReturn(true);
     mockGenericConfigService
         .addService(
@@ -842,8 +844,11 @@ class DataClassificationConfigServiceImplTest {
   void getDataSetsTest() {
     DataSetInfo dataSetInfo1 = createDataSetInfoForTest("data-set-1", true, List.of("1", "2"));
     DataSetInfo dataSetInfo2 = createDataSetInfoForTest("data-set-2", true, List.of("1", "3"));
-    dataClassificationConfigServiceBlockingStub.createDataSet(
-        CreateDataSetRequest.newBuilder().setInfo(dataSetInfo1).build());
+    String dataSetId1 =
+        dataClassificationConfigServiceBlockingStub
+            .createDataSet(CreateDataSetRequest.newBuilder().setInfo(dataSetInfo1).build())
+            .getDataSet()
+            .getId();
     dataClassificationConfigServiceBlockingStub.createDataSet(
         CreateDataSetRequest.newBuilder().setInfo(dataSetInfo2).build());
     GetDataSetsResponse response =
@@ -854,6 +859,22 @@ class DataClassificationConfigServiceImplTest {
         List.of(
             getDataSetInfoWithSensitivityForVerification(dataSetInfo2),
             getDataSetInfoWithSensitivityForVerification(dataSetInfo1)),
+        response.getDataSetsList().stream()
+            .map(DataSet::getInfo)
+            .collect(Collectors.toUnmodifiableList()));
+
+    // ensure order is maintained post update
+    DataSetInfo updateDataSetInfo1 = dataSetInfo1.toBuilder().setEnabled(false).build();
+    dataClassificationConfigServiceBlockingStub.updateDataSet(
+        UpdateDataSetRequest.newBuilder().setId(dataSetId1).setInfo(updateDataSetInfo1).build());
+    response =
+        dataClassificationConfigServiceBlockingStub.getDataSets(
+            GetDataSetsRequest.getDefaultInstance());
+    assertEquals(2, response.getDataSetsCount());
+    assertEquals(
+        List.of(
+            getDataSetInfoWithSensitivityForVerification(dataSetInfo2),
+            getDataSetInfoWithSensitivityForVerification(updateDataSetInfo1)),
         response.getDataSetsList().stream()
             .map(DataSet::getInfo)
             .collect(Collectors.toUnmodifiableList()));
