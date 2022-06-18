@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -82,7 +83,9 @@ public class ModsecManagerImpl implements ModsecManager {
       AnomalySubRuleType subRuleType,
       Set<String> configStatusDisabledModsecRuleIds,
       Set<String> blockingDisabledModsecRuleIds) {
-    Set<String> disabledModsecRuleIds = new HashSet<>(configStatusDisabledModsecRuleIds);
+    // The disabled modsec rule ids should be ordered to ensure the blob doesn't keep changing on
+    // repeated calls
+    Set<String> disabledModsecRuleIds = new TreeSet<>(configStatusDisabledModsecRuleIds);
 
     if (subRuleType.equals(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)) {
       disabledModsecRuleIds.addAll(blockingDisabledModsecRuleIds);
