@@ -242,6 +242,6 @@ message RateLimit {
 }
 
 message WindowedRateLimit {
-  int64 max_count_allowed = 1;
+  int64 quantity_allowed = 1;
   google.protobuf.Duration window_duration = 2;
 }
