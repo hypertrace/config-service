@@ -5,6 +5,7 @@ package org.hypertrace.span.processing.config.service.v1;
 option java_multiple_files = true;
 
 import "org/hypertrace/span/processing/config/service/v1/span_filter.proto";
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
 service SpanProcessingConfigService {
@@ -23,6 +24,16 @@ service SpanProcessingConfigService {
   rpc GetAllApiNamingRules(GetAllApiNamingRulesRequest) returns (GetAllApiNamingRulesResponse) {}
 
   rpc DeleteApiNamingRule(DeleteApiNamingRuleRequest) returns (DeleteApiNamingRuleResponse) {}
+
+  rpc CreateIncludeSpanRule(CreateIncludeSpanRuleRequest) returns (CreateIncludeSpanRuleResponse) {}
+
+  rpc UpdateIncludeSpanRule(UpdateIncludeSpanRuleRequest) returns (UpdateIncludeSpanRuleResponse) {}
+
+  rpc GetAllIncludeSpanRules(GetAllIncludeSpanRulesRequest) returns (GetAllIncludeSpanRulesResponse) {}
+
+  rpc DeleteIncludeSpanRule(DeleteIncludeSpanRuleRequest) returns (DeleteIncludeSpanRuleResponse) {}
+
+  rpc GetAllSamplingConfigs(GetAllSamplingConfigsRequest) returns (GetAllSamplingConfigsResponse) {}
 }
 
 message CreateExcludeSpanRuleRequest {
@@ -148,4 +159,89 @@ message SegmentMatchingBasedConfig {
 message ApiNamingRuleMetadata {
   google.protobuf.Timestamp creation_timestamp = 1;
   google.protobuf.Timestamp last_updated_timestamp = 2;
+}
+
+
+message CreateIncludeSpanRuleRequest {
+  IncludeSpanRuleInfo rule_info = 1;
+}
+
+message CreateIncludeSpanRuleResponse {
+  IncludeSpanRuleDetails rule_details = 1;
+}
+
+message GetAllIncludeSpanRulesRequest {}
+
+message GetAllIncludeSpanRulesResponse {
+  repeated IncludeSpanRuleDetails rule_details = 1;
+}
+
+message UpdateIncludeSpanRuleRequest {
+  UpdateIncludeSpanRule rule = 1;
+}
+
+message UpdateIncludeSpanRuleResponse {
+  IncludeSpanRuleDetails rule_details = 1;
+}
+
+message DeleteIncludeSpanRuleRequest {
+  string id = 1;
+}
+
+message DeleteIncludeSpanRuleResponse {}
+
+message IncludeSpanRule {
+  string id = 1;
+  IncludeSpanRuleInfo rule_info = 2;
+}
+
+message IncludeSpanRuleDetails {
+  IncludeSpanRule rule = 1;
+  IncludeSpanRuleMetadata metadata = 2;
+}
+
+message IncludeSpanRuleInfo {
+  string name = 1;
+  SpanFilter filter = 2;
+  bool disabled = 3;
+}
+
+message IncludeSpanRuleMetadata {
+  google.protobuf.Timestamp creation_timestamp = 1;
+  google.protobuf.Timestamp last_updated_timestamp = 2;
+}
+
+message UpdateIncludeSpanRule {
+  string id = 1;
+  string name = 2;
+  SpanFilter filter = 3;
+  bool disabled = 4;
+}
+
+message GetAllSamplingConfigsRequest {}
+
+message GetAllSamplingConfigsResponse {
+  repeated SamplingConfig sampling_configs = 1;
+}
+
+message SamplingConfig {
+  RateLimitConfig rate_limit_config = 1;
+  SpanFilter filter = 2;
+}
+
+message RateLimitConfig {
+  RateLimit trace_limit_per_endpoint = 1;
+  RateLimit trace_limit_global = 2;
+  google.protobuf.Duration api_endpoint_cache_duration = 3;
+}
+
+message RateLimit {
+  oneof limit {
+    WindowedRateLimit fixed_window_limit = 1;
+  }
+}
+
+message WindowedRateLimit {
+  int64 quantity_allowed = 1;
+  google.protobuf.Duration window_duration = 2;
 }
