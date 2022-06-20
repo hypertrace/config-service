@@ -10,17 +10,24 @@ import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
+import org.hypertrace.span.processing.config.service.v1.CreateIncludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleRequest;
+import org.hypertrace.span.processing.config.service.v1.DeleteIncludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.GetAllApiNamingRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
+import org.hypertrace.span.processing.config.service.v1.GetAllIncludeSpanRulesRequest;
+import org.hypertrace.span.processing.config.service.v1.GetAllSamplingConfigsRequest;
+import org.hypertrace.span.processing.config.service.v1.IncludeSpanRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 import org.hypertrace.span.processing.config.service.v1.SpanFilter;
 import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRule;
 import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.UpdateExcludeSpanRule;
 import org.hypertrace.span.processing.config.service.v1.UpdateExcludeSpanRuleRequest;
+import org.hypertrace.span.processing.config.service.v1.UpdateIncludeSpanRule;
+import org.hypertrace.span.processing.config.service.v1.UpdateIncludeSpanRuleRequest;
 
 public class SpanProcessingConfigRequestValidator {
 
@@ -54,6 +61,38 @@ public class SpanProcessingConfigRequestValidator {
     validateNonDefaultPresenceOrThrow(
         updateExcludeSpanRule, UpdateExcludeSpanRule.NAME_FIELD_NUMBER);
     this.validateSpanFilter(updateExcludeSpanRule.getFilter());
+  }
+
+  public void validateOrThrow(
+      RequestContext requestContext, GetAllIncludeSpanRulesRequest request) {
+    validateRequestContextOrThrow(requestContext);
+  }
+
+  public void validateOrThrow(RequestContext requestContext, CreateIncludeSpanRuleRequest request) {
+    validateRequestContextOrThrow(requestContext);
+    this.validateData(request.getRuleInfo());
+  }
+
+  public void validateOrThrow(RequestContext requestContext, UpdateIncludeSpanRuleRequest request) {
+    validateRequestContextOrThrow(requestContext);
+    this.validateUpdateRule(request.getRule());
+  }
+
+  public void validateOrThrow(RequestContext requestContext, DeleteIncludeSpanRuleRequest request) {
+    validateRequestContextOrThrow(requestContext);
+    validateNonDefaultPresenceOrThrow(request, DeleteIncludeSpanRuleRequest.ID_FIELD_NUMBER);
+  }
+
+  private void validateData(IncludeSpanRuleInfo includeSpanRuleInfo) {
+    validateNonDefaultPresenceOrThrow(includeSpanRuleInfo, IncludeSpanRuleInfo.NAME_FIELD_NUMBER);
+    this.validateSpanFilter(includeSpanRuleInfo.getFilter());
+  }
+
+  private void validateUpdateRule(UpdateIncludeSpanRule updateIncludeSpanRule) {
+    validateNonDefaultPresenceOrThrow(updateIncludeSpanRule, UpdateIncludeSpanRule.ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        updateIncludeSpanRule, UpdateIncludeSpanRule.NAME_FIELD_NUMBER);
+    this.validateSpanFilter(updateIncludeSpanRule.getFilter());
   }
 
   public void validateOrThrow(RequestContext requestContext, GetAllApiNamingRulesRequest request) {
@@ -128,5 +167,9 @@ public class SpanProcessingConfigRequestValidator {
             .withDescription("Unexpected filter case: " + printMessage(filter))
             .asRuntimeException();
     }
+  }
+
+  public void validateOrThrow(RequestContext requestContext, GetAllSamplingConfigsRequest request) {
+    validateRequestContextOrThrow(requestContext);
   }
 }
