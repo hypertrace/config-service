@@ -33,7 +33,13 @@ service SpanProcessingConfigService {
 
   rpc DeleteIncludeSpanRule(DeleteIncludeSpanRuleRequest) returns (DeleteIncludeSpanRuleResponse) {}
 
+  rpc CreateSamplingConfig(CreateSamplingConfigRequest) returns (CreateSamplingConfigResponse) {}
+
+  rpc UpdateSamplingConfig(UpdateSamplingConfigRequest) returns (UpdateSamplingConfigResponse) {}
+
   rpc GetAllSamplingConfigs(GetAllSamplingConfigsRequest) returns (GetAllSamplingConfigsResponse) {}
+
+  rpc DeleteSamplingConfig(DeleteSamplingConfigRequest) returns (DeleteSamplingConfigResponse) {}
 }
 
 message CreateExcludeSpanRuleRequest {
@@ -221,12 +227,27 @@ message UpdateIncludeSpanRule {
 message GetAllSamplingConfigsRequest {}
 
 message GetAllSamplingConfigsResponse {
-  repeated SamplingConfig sampling_configs = 1;
+  repeated SamplingConfigDetails sampling_config_details = 1;
 }
 
 message SamplingConfig {
+  string id = 1;
+  SamplingConfigInfo sampling_config_info = 2;
+}
+
+message SamplingConfigInfo {
   RateLimitConfig rate_limit_config = 1;
   SpanFilter filter = 2;
+}
+
+message SamplingConfigDetails {
+  SamplingConfig sampling_config = 1;
+  SamplingConfigMetadata metadata = 2;
+}
+
+message SamplingConfigMetadata {
+  google.protobuf.Timestamp creation_timestamp = 1;
+  google.protobuf.Timestamp last_updated_timestamp = 2;
 }
 
 message RateLimitConfig {
@@ -245,3 +266,31 @@ message WindowedRateLimit {
   int64 quantity_allowed = 1;
   google.protobuf.Duration window_duration = 2;
 }
+
+message CreateSamplingConfigRequest {
+  SamplingConfigInfo sampling_config_info = 1;
+}
+
+message CreateSamplingConfigResponse {
+  SamplingConfigDetails sampling_config_details = 1;
+}
+
+message UpdateSamplingConfigRequest {
+  UpdateSamplingConfig sampling_config = 1;
+}
+
+message UpdateSamplingConfigResponse {
+  SamplingConfigDetails sampling_config_details = 1;
+}
+
+message UpdateSamplingConfig {
+  string id = 1;
+  RateLimitConfig rate_limit_config = 2;
+  SpanFilter filter = 3;
+}
+
+message DeleteSamplingConfigRequest {
+  string id = 1;
+}
+
+message DeleteSamplingConfigResponse {}
