@@ -38,8 +38,6 @@ import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRe
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesResponse;
 import org.hypertrace.span.processing.config.service.v1.GetAllIncludeSpanRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.GetAllIncludeSpanRulesResponse;
-import org.hypertrace.span.processing.config.service.v1.GetAllSamplingConfigsRequest;
-import org.hypertrace.span.processing.config.service.v1.GetAllSamplingConfigsResponse;
 import org.hypertrace.span.processing.config.service.v1.IncludeSpanRule;
 import org.hypertrace.span.processing.config.service.v1.IncludeSpanRuleDetails;
 import org.hypertrace.span.processing.config.service.v1.IncludeSpanRuleInfo;
@@ -445,21 +443,5 @@ class SpanProcessingConfigServiceImpl
                 .setDisabled(updateIncludeSpanRule.getDisabled())
                 .build())
         .build();
-  }
-
-  @Override
-  public void getAllSamplingConfigs(
-      GetAllSamplingConfigsRequest request,
-      StreamObserver<GetAllSamplingConfigsResponse> responseObserver) {
-    try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
-      this.validator.validateOrThrow(requestContext, request);
-
-      responseObserver.onNext(GetAllSamplingConfigsResponse.newBuilder().build());
-      responseObserver.onCompleted();
-    } catch (Exception e) {
-      log.error("Unable to get all sampling configs for request: {}", request, e);
-      responseObserver.onError(e);
-    }
   }
 }
