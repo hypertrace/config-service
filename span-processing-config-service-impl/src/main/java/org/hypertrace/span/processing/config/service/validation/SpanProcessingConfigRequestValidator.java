@@ -11,15 +11,20 @@ import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateIncludeSpanRuleRequest;
+import org.hypertrace.span.processing.config.service.v1.CreateSamplingConfigRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteIncludeSpanRuleRequest;
+import org.hypertrace.span.processing.config.service.v1.DeleteSamplingConfigRequest;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.GetAllApiNamingRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.GetAllIncludeSpanRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.GetAllSamplingConfigsRequest;
 import org.hypertrace.span.processing.config.service.v1.IncludeSpanRuleInfo;
+import org.hypertrace.span.processing.config.service.v1.RateLimit;
+import org.hypertrace.span.processing.config.service.v1.RateLimitConfig;
+import org.hypertrace.span.processing.config.service.v1.SamplingConfigInfo;
 import org.hypertrace.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 import org.hypertrace.span.processing.config.service.v1.SpanFilter;
 import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRule;
@@ -28,6 +33,8 @@ import org.hypertrace.span.processing.config.service.v1.UpdateExcludeSpanRule;
 import org.hypertrace.span.processing.config.service.v1.UpdateExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.UpdateIncludeSpanRule;
 import org.hypertrace.span.processing.config.service.v1.UpdateIncludeSpanRuleRequest;
+import org.hypertrace.span.processing.config.service.v1.UpdateSamplingConfig;
+import org.hypertrace.span.processing.config.service.v1.UpdateSamplingConfigRequest;
 
 public class SpanProcessingConfigRequestValidator {
 
@@ -157,6 +164,52 @@ public class SpanProcessingConfigRequestValidator {
     }
   }
 
+  public void validateOrThrow(RequestContext requestContext, GetAllSamplingConfigsRequest request) {
+    validateRequestContextOrThrow(requestContext);
+  }
+
+  public void validateOrThrow(RequestContext requestContext, CreateSamplingConfigRequest request) {
+    validateRequestContextOrThrow(requestContext);
+    this.validateData(request.getSamplingConfigInfo());
+  }
+
+  public void validateOrThrow(RequestContext requestContext, UpdateSamplingConfigRequest request) {
+    validateRequestContextOrThrow(requestContext);
+    this.validateUpdateSamplingConfig(request.getSamplingConfig());
+  }
+
+  public void validateOrThrow(RequestContext requestContext, DeleteSamplingConfigRequest request) {
+    validateRequestContextOrThrow(requestContext);
+    validateNonDefaultPresenceOrThrow(request, DeleteSamplingConfigRequest.ID_FIELD_NUMBER);
+  }
+
+  private void validateData(SamplingConfigInfo samplingConfigInfo) {
+    this.validateRateLimitConfig(samplingConfigInfo.getRateLimitConfig());
+    this.validateSpanFilter(samplingConfigInfo.getFilter());
+  }
+
+  private void validateUpdateSamplingConfig(UpdateSamplingConfig updateSamplingConfig) {
+    validateNonDefaultPresenceOrThrow(updateSamplingConfig, UpdateSamplingConfig.ID_FIELD_NUMBER);
+    this.validateSpanFilter(updateSamplingConfig.getFilter());
+    this.validateRateLimitConfig(updateSamplingConfig.getRateLimitConfig());
+  }
+
+  private void validateRateLimitConfig(RateLimitConfig rateLimitConfig) {
+    this.validateRateLimit(rateLimitConfig.getTraceLimitGlobal());
+    this.validateRateLimit(rateLimitConfig.getTraceLimitPerEndpoint());
+  }
+
+  private void validateRateLimit(RateLimit rateLimit) {
+    switch (rateLimit.getLimitCase()) {
+      case FIXED_WINDOW_LIMIT:
+        break;
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Unexpected rate limit case: " + printMessage(rateLimit))
+            .asRuntimeException();
+    }
+  }
+
   private void validateSpanFilter(SpanFilter filter) {
     switch (filter.getSpanFilterExpressionCase()) {
       case LOGICAL_SPAN_FILTER:
@@ -167,9 +220,5 @@ public class SpanProcessingConfigRequestValidator {
             .withDescription("Unexpected filter case: " + printMessage(filter))
             .asRuntimeException();
     }
-  }
-
-  public void validateOrThrow(RequestContext requestContext, GetAllSamplingConfigsRequest request) {
-    validateRequestContextOrThrow(requestContext);
   }
 }

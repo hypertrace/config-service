@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+import com.google.protobuf.Duration;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
@@ -17,9 +18,11 @@ import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateIncludeSpanRuleRequest;
+import org.hypertrace.span.processing.config.service.v1.CreateSamplingConfigRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteIncludeSpanRuleRequest;
+import org.hypertrace.span.processing.config.service.v1.DeleteSamplingConfigRequest;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.Field;
 import org.hypertrace.span.processing.config.service.v1.GetAllApiNamingRulesRequest;
@@ -27,8 +30,11 @@ import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRe
 import org.hypertrace.span.processing.config.service.v1.GetAllIncludeSpanRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.GetAllSamplingConfigsRequest;
 import org.hypertrace.span.processing.config.service.v1.IncludeSpanRuleInfo;
+import org.hypertrace.span.processing.config.service.v1.RateLimit;
+import org.hypertrace.span.processing.config.service.v1.RateLimitConfig;
 import org.hypertrace.span.processing.config.service.v1.RelationalOperator;
 import org.hypertrace.span.processing.config.service.v1.RelationalSpanFilterExpression;
+import org.hypertrace.span.processing.config.service.v1.SamplingConfigInfo;
 import org.hypertrace.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 import org.hypertrace.span.processing.config.service.v1.SpanFilter;
 import org.hypertrace.span.processing.config.service.v1.SpanFilterValue;
@@ -38,6 +44,9 @@ import org.hypertrace.span.processing.config.service.v1.UpdateExcludeSpanRule;
 import org.hypertrace.span.processing.config.service.v1.UpdateExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.UpdateIncludeSpanRule;
 import org.hypertrace.span.processing.config.service.v1.UpdateIncludeSpanRuleRequest;
+import org.hypertrace.span.processing.config.service.v1.UpdateSamplingConfig;
+import org.hypertrace.span.processing.config.service.v1.UpdateSamplingConfigRequest;
+import org.hypertrace.span.processing.config.service.v1.WindowedRateLimit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
@@ -493,6 +502,82 @@ class SpanProcessingRequestValidatorTest {
                 mockRequestContext, GetAllSamplingConfigsRequest.newBuilder().build()));
   }
 
+  @Test
+  void validatesSamplingConfigCreateRequest() {
+    assertInvalidArgStatusContaining(
+        "Tenant ID",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, CreateSamplingConfigRequest.newBuilder().build()));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setRateLimitConfig(buildTestRateLimitConfig())
+                            .setFilter(buildTestFilter())
+                            .build())
+                    .build()));
+  }
+
+  @Test
+  void validatesSamplingConfigUpdateRequest() {
+    assertInvalidArgStatusContaining(
+        "Tenant ID",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, UpdateSamplingConfigRequest.newBuilder().build()));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+
+    assertInvalidArgStatusContaining(
+        "UpdateSamplingConfig.id",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                UpdateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfig(UpdateSamplingConfig.newBuilder().build())
+                    .build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                UpdateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfig(
+                        UpdateSamplingConfig.newBuilder()
+                            .setId("id")
+                            .setRateLimitConfig(buildTestRateLimitConfig())
+                            .setFilter(buildTestFilter())
+                            .build())
+                    .build()));
+  }
+
+  @Test
+  void validatesSamplingConfigDeleteRequest() {
+    assertInvalidArgStatusContaining(
+        "Tenant ID",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, DeleteSamplingConfigRequest.newBuilder().build()));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+
+    assertInvalidArgStatusContaining(
+        "DeleteSamplingConfigRequest.id",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, DeleteSamplingConfigRequest.newBuilder().setId("").build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                DeleteSamplingConfigRequest.newBuilder().setId("sampling-config-id").build()));
+  }
+
   private void assertInvalidArgStatusContaining(String text, Executable executable) {
     StatusRuntimeException exception = assertThrows(StatusRuntimeException.class, executable);
     assertEquals(Status.Code.INVALID_ARGUMENT, exception.getStatus().getCode());
@@ -510,6 +595,28 @@ class SpanProcessingRequestValidatorTest {
                 .setOperator(RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
                 .setRightOperand(SpanFilterValue.newBuilder().setStringValue("a").build())
                 .build())
+        .build();
+  }
+
+  private RateLimitConfig buildTestRateLimitConfig() {
+    return RateLimitConfig.newBuilder()
+        .setTraceLimitGlobal(
+            RateLimit.newBuilder()
+                .setFixedWindowLimit(
+                    WindowedRateLimit.newBuilder()
+                        .setQuantityAllowed(100)
+                        .setWindowDuration(Duration.newBuilder().setSeconds(60).build())
+                        .build())
+                .build())
+        .setTraceLimitPerEndpoint(
+            RateLimit.newBuilder()
+                .setFixedWindowLimit(
+                    WindowedRateLimit.newBuilder()
+                        .setQuantityAllowed(100)
+                        .setWindowDuration(Duration.newBuilder().setSeconds(60).build())
+                        .build())
+                .build())
+        .setApiEndpointCacheDuration(Duration.newBuilder().setSeconds(100).setNanos(100).build())
         .build();
   }
 }
