@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.google.protobuf.Duration;
 import com.google.protobuf.Timestamp;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,6 +16,7 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.span.processing.config.service.store.ApiNamingRulesConfigStore;
 import org.hypertrace.span.processing.config.service.store.ExcludeSpanRulesConfigStore;
 import org.hypertrace.span.processing.config.service.store.IncludeSpanRulesConfigStore;
+import org.hypertrace.span.processing.config.service.store.SamplingConfigsConfigStore;
 import org.hypertrace.span.processing.config.service.utils.TimestampConverter;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRule;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
@@ -23,9 +25,11 @@ import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateIncludeSpanRuleRequest;
+import org.hypertrace.span.processing.config.service.v1.CreateSamplingConfigRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteIncludeSpanRuleRequest;
+import org.hypertrace.span.processing.config.service.v1.DeleteSamplingConfigRequest;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRule;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleDetails;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleInfo;
@@ -33,11 +37,17 @@ import org.hypertrace.span.processing.config.service.v1.Field;
 import org.hypertrace.span.processing.config.service.v1.GetAllApiNamingRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.GetAllIncludeSpanRulesRequest;
+import org.hypertrace.span.processing.config.service.v1.GetAllSamplingConfigsRequest;
 import org.hypertrace.span.processing.config.service.v1.IncludeSpanRule;
 import org.hypertrace.span.processing.config.service.v1.IncludeSpanRuleDetails;
 import org.hypertrace.span.processing.config.service.v1.IncludeSpanRuleInfo;
+import org.hypertrace.span.processing.config.service.v1.RateLimit;
+import org.hypertrace.span.processing.config.service.v1.RateLimitConfig;
 import org.hypertrace.span.processing.config.service.v1.RelationalOperator;
 import org.hypertrace.span.processing.config.service.v1.RelationalSpanFilterExpression;
+import org.hypertrace.span.processing.config.service.v1.SamplingConfig;
+import org.hypertrace.span.processing.config.service.v1.SamplingConfigDetails;
+import org.hypertrace.span.processing.config.service.v1.SamplingConfigInfo;
 import org.hypertrace.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 import org.hypertrace.span.processing.config.service.v1.SpanFilter;
 import org.hypertrace.span.processing.config.service.v1.SpanFilterValue;
@@ -48,6 +58,9 @@ import org.hypertrace.span.processing.config.service.v1.UpdateExcludeSpanRule;
 import org.hypertrace.span.processing.config.service.v1.UpdateExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.UpdateIncludeSpanRule;
 import org.hypertrace.span.processing.config.service.v1.UpdateIncludeSpanRuleRequest;
+import org.hypertrace.span.processing.config.service.v1.UpdateSamplingConfig;
+import org.hypertrace.span.processing.config.service.v1.UpdateSamplingConfigRequest;
+import org.hypertrace.span.processing.config.service.v1.WindowedRateLimit;
 import org.hypertrace.span.processing.config.service.validation.SpanProcessingConfigRequestValidator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -79,6 +92,7 @@ class SpanProcessingConfigServiceImplTest {
                 new ExcludeSpanRulesConfigStore(genericStub, this.timestampConverter),
                 new IncludeSpanRulesConfigStore(genericStub, this.timestampConverter),
                 new ApiNamingRulesConfigStore(genericStub, this.timestampConverter),
+                new SamplingConfigsConfigStore(genericStub, this.timestampConverter),
                 new SpanProcessingConfigRequestValidator(),
                 this.timestampConverter))
         .start();
@@ -448,5 +462,210 @@ class SpanProcessingConfigServiceImplTest {
             .collect(Collectors.toUnmodifiableList());
     assertEquals(1, apiNamingRules.size());
     assertEquals(secondCreatedApiNamingRule, apiNamingRules.get(0));
+  }
+
+  @Test
+  void testSamplingConfigsCrud() {
+    SamplingConfigDetails firstCreatedSamplingConfigDetails =
+        this.spanProcessingConfigServiceStub
+            .createSamplingConfig(
+                CreateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setRateLimitConfig(
+                                RateLimitConfig.newBuilder()
+                                    .setTraceLimitGlobal(
+                                        RateLimit.newBuilder()
+                                            .setFixedWindowLimit(
+                                                WindowedRateLimit.newBuilder()
+                                                    .setQuantityAllowed(100)
+                                                    .setWindowDuration(
+                                                        Duration.newBuilder()
+                                                            .setSeconds(60)
+                                                            .build())
+                                                    .build())
+                                            .build())
+                                    .setTraceLimitPerEndpoint(
+                                        RateLimit.newBuilder()
+                                            .setFixedWindowLimit(
+                                                WindowedRateLimit.newBuilder()
+                                                    .setQuantityAllowed(100)
+                                                    .setWindowDuration(
+                                                        Duration.newBuilder()
+                                                            .setSeconds(60)
+                                                            .build())
+                                                    .build())
+                                            .build())
+                                    .setApiEndpointCacheDuration(
+                                        Duration.newBuilder().setSeconds(100).setNanos(100).build())
+                                    .build())
+                            .setFilter(
+                                SpanFilter.newBuilder()
+                                    .setRelationalSpanFilter(
+                                        RelationalSpanFilterExpression.newBuilder()
+                                            .setField(Field.FIELD_SERVICE_NAME)
+                                            .setOperator(
+                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                            .setRightOperand(
+                                                SpanFilterValue.newBuilder().setStringValue("a")))))
+                    .build())
+            .getSamplingConfigDetails();
+    SamplingConfig firstCreatedSamplingConfig =
+        firstCreatedSamplingConfigDetails.getSamplingConfig();
+    Timestamp expectedTimestamp = Timestamp.newBuilder().setSeconds(100).build();
+    assertEquals(
+        expectedTimestamp, firstCreatedSamplingConfigDetails.getMetadata().getCreationTimestamp());
+    assertEquals(
+        expectedTimestamp,
+        firstCreatedSamplingConfigDetails.getMetadata().getLastUpdatedTimestamp());
+
+    SamplingConfig secondCreatedSamplingConfig =
+        this.spanProcessingConfigServiceStub
+            .createSamplingConfig(
+                CreateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setRateLimitConfig(
+                                RateLimitConfig.newBuilder()
+                                    .setTraceLimitGlobal(
+                                        RateLimit.newBuilder()
+                                            .setFixedWindowLimit(
+                                                WindowedRateLimit.newBuilder()
+                                                    .setQuantityAllowed(200)
+                                                    .setWindowDuration(
+                                                        Duration.newBuilder()
+                                                            .setSeconds(60)
+                                                            .build())
+                                                    .build())
+                                            .build())
+                                    .setTraceLimitPerEndpoint(
+                                        RateLimit.newBuilder()
+                                            .setFixedWindowLimit(
+                                                WindowedRateLimit.newBuilder()
+                                                    .setQuantityAllowed(200)
+                                                    .setWindowDuration(
+                                                        Duration.newBuilder()
+                                                            .setSeconds(60)
+                                                            .build())
+                                                    .build())
+                                            .build())
+                                    .setApiEndpointCacheDuration(
+                                        Duration.newBuilder().setSeconds(100).setNanos(100).build())
+                                    .build())
+                            .setFilter(
+                                SpanFilter.newBuilder()
+                                    .setRelationalSpanFilter(
+                                        RelationalSpanFilterExpression.newBuilder()
+                                            .setField(Field.FIELD_SERVICE_NAME)
+                                            .setOperator(
+                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                            .setRightOperand(
+                                                SpanFilterValue.newBuilder().setStringValue("b")))))
+                    .build())
+            .getSamplingConfigDetails()
+            .getSamplingConfig();
+
+    List<SamplingConfig> samplingConfigs =
+        this.spanProcessingConfigServiceStub
+            .getAllSamplingConfigs(GetAllSamplingConfigsRequest.newBuilder().build())
+            .getSamplingConfigDetailsList()
+            .stream()
+            .map(SamplingConfigDetails::getSamplingConfig)
+            .collect(Collectors.toUnmodifiableList());
+    assertEquals(2, samplingConfigs.size());
+    assertTrue(samplingConfigs.contains(firstCreatedSamplingConfig));
+    assertTrue(samplingConfigs.contains(secondCreatedSamplingConfig));
+
+    SamplingConfig updatedFirstSamplingConfig =
+        this.spanProcessingConfigServiceStub
+            .updateSamplingConfig(
+                UpdateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfig(
+                        UpdateSamplingConfig.newBuilder()
+                            .setId(firstCreatedSamplingConfig.getId())
+                            .setRateLimitConfig(
+                                RateLimitConfig.newBuilder()
+                                    .setTraceLimitGlobal(
+                                        RateLimit.newBuilder()
+                                            .setFixedWindowLimit(
+                                                WindowedRateLimit.newBuilder()
+                                                    .setQuantityAllowed(300)
+                                                    .setWindowDuration(
+                                                        Duration.newBuilder()
+                                                            .setSeconds(60)
+                                                            .build())
+                                                    .build())
+                                            .build())
+                                    .setTraceLimitPerEndpoint(
+                                        RateLimit.newBuilder()
+                                            .setFixedWindowLimit(
+                                                WindowedRateLimit.newBuilder()
+                                                    .setQuantityAllowed(100)
+                                                    .setWindowDuration(
+                                                        Duration.newBuilder()
+                                                            .setSeconds(60)
+                                                            .build())
+                                                    .build())
+                                            .build())
+                                    .setApiEndpointCacheDuration(
+                                        Duration.newBuilder().setSeconds(100).setNanos(100).build())
+                                    .build())
+                            .setFilter(
+                                SpanFilter.newBuilder()
+                                    .setRelationalSpanFilter(
+                                        RelationalSpanFilterExpression.newBuilder()
+                                            .setField(Field.FIELD_SERVICE_NAME)
+                                            .setOperator(
+                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                            .setRightOperand(
+                                                SpanFilterValue.newBuilder().setStringValue("a")))))
+                    .build())
+            .getSamplingConfigDetails()
+            .getSamplingConfig();
+    assertEquals(
+        RateLimitConfig.newBuilder()
+            .setTraceLimitGlobal(
+                RateLimit.newBuilder()
+                    .setFixedWindowLimit(
+                        WindowedRateLimit.newBuilder()
+                            .setQuantityAllowed(300)
+                            .setWindowDuration(Duration.newBuilder().setSeconds(60).build())
+                            .build())
+                    .build())
+            .setTraceLimitPerEndpoint(
+                RateLimit.newBuilder()
+                    .setFixedWindowLimit(
+                        WindowedRateLimit.newBuilder()
+                            .setQuantityAllowed(100)
+                            .setWindowDuration(Duration.newBuilder().setSeconds(60).build())
+                            .build())
+                    .build())
+            .setApiEndpointCacheDuration(
+                Duration.newBuilder().setSeconds(100).setNanos(100).build())
+            .build(),
+        updatedFirstSamplingConfig.getSamplingConfigInfo().getRateLimitConfig());
+
+    samplingConfigs =
+        this.spanProcessingConfigServiceStub
+            .getAllSamplingConfigs(GetAllSamplingConfigsRequest.newBuilder().build())
+            .getSamplingConfigDetailsList()
+            .stream()
+            .map(SamplingConfigDetails::getSamplingConfig)
+            .collect(Collectors.toUnmodifiableList());
+    assertEquals(2, samplingConfigs.size());
+    assertTrue(samplingConfigs.contains(updatedFirstSamplingConfig));
+
+    this.spanProcessingConfigServiceStub.deleteSamplingConfig(
+        DeleteSamplingConfigRequest.newBuilder().setId(firstCreatedSamplingConfig.getId()).build());
+
+    samplingConfigs =
+        this.spanProcessingConfigServiceStub
+            .getAllSamplingConfigs(GetAllSamplingConfigsRequest.newBuilder().build())
+            .getSamplingConfigDetailsList()
+            .stream()
+            .map(SamplingConfigDetails::getSamplingConfig)
+            .collect(Collectors.toUnmodifiableList());
+    assertEquals(1, samplingConfigs.size());
+    assertEquals(secondCreatedSamplingConfig, samplingConfigs.get(0));
   }
 }
