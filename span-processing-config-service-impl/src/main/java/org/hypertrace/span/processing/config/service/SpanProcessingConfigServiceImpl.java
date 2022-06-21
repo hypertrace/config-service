@@ -535,7 +535,7 @@ class SpanProcessingConfigServiceImpl
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
-      log.error("Error updating include span rule: {}", request, exception);
+      log.error("Error updating sampling config: {}", request, exception);
       responseObserver.onError(exception);
     }
   }
