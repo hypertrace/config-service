@@ -45,6 +45,7 @@ message LeafCondition {
     DatatypeCondition datatype_condition = 3;
     RegionCondition region_condition = 4;
     IpAddressCondition ip_address_condition = 5;
+    IpLocationTypeCondition ip_location_type_condition = 6;
   }
 }
 
@@ -129,6 +130,10 @@ message IpAddressCondition {
   repeated string ip_addresses = 2;
 }
 
+message IpLocationTypeCondition {
+  repeated IpLocationType ip_location_types = 1;
+}
+
 message UserIdCondition {
   repeated string user_id_regexes = 1;
 }
@@ -173,6 +178,16 @@ message Action {
     EVENT_SEVERITY_HIGH = 3;
     EVENT_SEVERITY_CRITICAL = 4;
   }
+}
+
+enum IpLocationType {
+  IP_LOCATION_TYPE_UNSPECIFIED = 0;
+  IP_LOCATION_TYPE_RESIDENTIAL = 1;
+  IP_LOCATION_TYPE_ANONYMOUS = 2;
+  IP_LOCATION_TYPE_ANONYMOUS_VPN = 3;
+  IP_LOCATION_TYPE_HOSTING_PROVIDER = 4;
+  IP_LOCATION_TYPE_PUBLIC_PROXY = 5;
+  IP_LOCATION_TYPE_TOR_EXIT_NODE = 6;
 }
 
 enum Category {
