@@ -43,7 +43,7 @@ class StatusCodeThreatScoreConfigsManagerImpl
   @Override
   protected Optional<StatusCodeThreatScoreConfigs> buildDataFromValue(Value value) {
     try {
-      return Optional.of(StatusCodeThreatScoreConfigsConverter.convert(value));
+      return StatusCodeThreatScoreConfigsConverter.convert(value);
     } catch (InvalidProtocolBufferException e) {
       log.error("Unable to convert Value:{} to StatusCodeThreatScoreConfigs", value, e);
       return Optional.empty();

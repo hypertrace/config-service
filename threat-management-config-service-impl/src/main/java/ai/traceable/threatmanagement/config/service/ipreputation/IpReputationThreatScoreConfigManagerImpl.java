@@ -61,7 +61,7 @@ class IpReputationThreatScoreConfigManagerImpl
   @Override
   protected Optional<IpReputationThreatScoreConfig> buildDataFromValue(Value value) {
     try {
-      return Optional.of(IpReputationThreatScoreConfigConverter.convert(value));
+      return IpReputationThreatScoreConfigConverter.convert(value);
     } catch (InvalidProtocolBufferException e) {
       log.error("Unable to convert Value:{} to IpReputationThreatScoreConfig", value, e);
       return Optional.empty();
