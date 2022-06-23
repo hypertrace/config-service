@@ -12,32 +12,50 @@ import static org.mockito.Mockito.when;
 import ai.traceable.threatmanagement.config.service.anomalyscore.AnomalyScoreContributionManager;
 import ai.traceable.threatmanagement.config.service.eventscore.SecurityEventScoreContributionManager;
 import ai.traceable.threatmanagement.config.service.eventtype.SecurityEventTypeContributionManager;
+import ai.traceable.threatmanagement.config.service.ipreputation.IpReputationThreatScoreConfigManager;
+import ai.traceable.threatmanagement.config.service.statuscode.StatusCodeThreatScoreConfigsManager;
 import ai.traceable.threatmanagement.config.service.threatautoblocking.ThreatAutoBlockingManager;
 import ai.traceable.threatmanagement.config.service.threatscore.ThreatScoreManager;
 import ai.traceable.threatmanagement.config.service.v1.AnomalyScoreContribution;
 import ai.traceable.threatmanagement.config.service.v1.GetAnomalyScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetAnomalyScoreContributionResponse;
+import ai.traceable.threatmanagement.config.service.v1.GetIpReputationThreatScoreConfigRequest;
+import ai.traceable.threatmanagement.config.service.v1.GetIpReputationThreatScoreConfigResponse;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventScoreContributionResponse;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventTypeContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventTypeContributionResponse;
+import ai.traceable.threatmanagement.config.service.v1.GetStatusCodeThreatScoreConfigsRequest;
+import ai.traceable.threatmanagement.config.service.v1.GetStatusCodeThreatScoreConfigsResponse;
 import ai.traceable.threatmanagement.config.service.v1.GetThreatAutoBlockingConfigRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetThreatAutoBlockingConfigResponse;
 import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreBoundRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreBoundResponse;
+import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreConfigRequest;
+import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreConfigResponse;
+import ai.traceable.threatmanagement.config.service.v1.IpReputationThreatScoreConfig;
+import ai.traceable.threatmanagement.config.service.v1.Protocol;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventScoreContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution.SecurityEventTypeContributionKind;
+import ai.traceable.threatmanagement.config.service.v1.SeverityDowngradePolicy;
+import ai.traceable.threatmanagement.config.service.v1.StatusCodeThreatScoreConfig;
+import ai.traceable.threatmanagement.config.service.v1.StatusCodeThreatScoreConfigs;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionConfig.ExpirationDetails;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionType;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
+import ai.traceable.threatmanagement.config.service.v1.ThreatScoreConfig;
 import ai.traceable.threatmanagement.config.service.v1.UpdateAnomalyScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateAnomalyScoreContributionResponse;
+import ai.traceable.threatmanagement.config.service.v1.UpdateIpReputationThreatScoreConfigRequest;
+import ai.traceable.threatmanagement.config.service.v1.UpdateIpReputationThreatScoreConfigResponse;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventScoreContributionResponse;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventTypeContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventTypeContributionResponse;
+import ai.traceable.threatmanagement.config.service.v1.UpdateStatusCodeThreatScoreConfigsRequest;
+import ai.traceable.threatmanagement.config.service.v1.UpdateStatusCodeThreatScoreConfigsResponse;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigResponse;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatScoreBoundRequest;
@@ -134,12 +152,38 @@ class ThreatManagementConfigServiceImplTest {
               ExpirationDetails.newBuilder().setDuration("PT1H2M34S").setTimestampMillis(3754000))
           .build();
 
+  private static final IpReputationThreatScoreConfig DEFAULT_IP_REPUTATION_THREAT_SCORE_CONFIG =
+      IpReputationThreatScoreConfig.newBuilder()
+          .setCriticalIpReputationThreatScoreIncrement(3)
+          .setHighIpReputationThreatScoreIncrement(2)
+          .setMediumIpReputationThreatScoreIncrement(1)
+          .build();
+  private static final IpReputationThreatScoreConfig IP_REPUTATION_THREAT_SCORE_CONFIG_1 =
+      IpReputationThreatScoreConfig.newBuilder()
+          .setCriticalIpReputationThreatScoreIncrement(4)
+          .setHighIpReputationThreatScoreIncrement(3)
+          .setMediumIpReputationThreatScoreIncrement(2)
+          .setLowIpReputationThreatScoreIncrement(1)
+          .build();
+
+  private static final StatusCodeThreatScoreConfigs STATUS_CODE_THREAT_SCORE_CONFIGS =
+      StatusCodeThreatScoreConfigs.newBuilder()
+          .addConfigs(
+              StatusCodeThreatScoreConfig.newBuilder()
+                  .setProtocol(Protocol.PROTOCOL_HTTP)
+                  .setErrorStatusCodeRegex("400")
+                  .setSeverityDowngradePolicy(
+                      SeverityDowngradePolicy.SEVERITY_DOWNGRADE_POLICY_IGNORE_SCORE))
+          .build();
+
   @Mock private ThreatManagementConfigRequestValidator requestValidator;
   @Mock private ThreatScoreManager threatScoreManager;
   @Mock private SecurityEventScoreContributionManager securityEventScoreContributionManager;
   @Mock private AnomalyScoreContributionManager anomalyScoreContributionManager;
   @Mock private SecurityEventTypeContributionManager securityEventTypeContributionManager;
   @Mock private ThreatAutoBlockingManager threatAutoBlockingManager;
+  @Mock private IpReputationThreatScoreConfigManager ipReputationThreatScoreConfigManager;
+  @Mock private StatusCodeThreatScoreConfigsManager statusCodeThreatScoreConfigsManager;
 
   private ThreatManagementConfigServiceImpl threatManagementConfigService;
   private ThreatManagementConfigServiceConfig mockConfig;
@@ -177,6 +221,13 @@ class ThreatManagementConfigServiceImplTest {
     this.securityEventTypeContributionManager = mock(SecurityEventTypeContributionManager.class);
 
     this.threatAutoBlockingManager = mock(ThreatAutoBlockingManager.class);
+
+    this.ipReputationThreatScoreConfigManager = mock(IpReputationThreatScoreConfigManager.class);
+    when(this.ipReputationThreatScoreConfigManager.getDefaultIpReputationThreatScoreConfig())
+        .thenReturn(DEFAULT_IP_REPUTATION_THREAT_SCORE_CONFIG);
+
+    this.statusCodeThreatScoreConfigsManager = mock(StatusCodeThreatScoreConfigsManager.class);
+
     this.mockConfig = mock(ThreatManagementConfigServiceConfig.class);
     this.threatManagementConfigService =
         new ThreatManagementConfigServiceImpl(
@@ -186,7 +237,8 @@ class ThreatManagementConfigServiceImplTest {
             anomalyScoreContributionManager,
             securityEventTypeContributionManager,
             threatAutoBlockingManager,
-            mockConfig);
+            ipReputationThreatScoreConfigManager,
+            statusCodeThreatScoreConfigsManager);
   }
 
   @Nested
@@ -564,6 +616,203 @@ class ThreatManagementConfigServiceImplTest {
 
       verify(responseObserver, times(1))
           .onError(argThat(err -> Status.fromThrowable(err).getCode() == Code.UNKNOWN));
+    }
+  }
+
+  @Nested
+  class IpReputationThreatScoreConfigTest {
+    @Test
+    void getIpReputationThreatScoreConfig() {
+      when(ipReputationThreatScoreConfigManager.getIpReputationThreatScoreConfig(
+              any(RequestContext.class)))
+          .thenReturn(IP_REPUTATION_THREAT_SCORE_CONFIG_1);
+
+      StreamObserver<GetIpReputationThreatScoreConfigResponse> responseObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () ->
+              threatManagementConfigService.getIpReputationThreatScoreConfig(
+                  GetIpReputationThreatScoreConfigRequest.getDefaultInstance(), responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1))
+          .onNext(
+              GetIpReputationThreatScoreConfigResponse.newBuilder()
+                  .setIpReputationThreatScoreConfig(IP_REPUTATION_THREAT_SCORE_CONFIG_1)
+                  .setDefaultIpReputationThreatScoreConfig(
+                      DEFAULT_IP_REPUTATION_THREAT_SCORE_CONFIG)
+                  .build());
+      verify(responseObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    void updateIpReputationThreatScoreConfig() {
+      when(ipReputationThreatScoreConfigManager.updateIpReputationThreatScoreConfig(
+              any(RequestContext.class), eq(IP_REPUTATION_THREAT_SCORE_CONFIG_1)))
+          .thenReturn(IP_REPUTATION_THREAT_SCORE_CONFIG_1);
+
+      StreamObserver<UpdateIpReputationThreatScoreConfigResponse> responseObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () ->
+              threatManagementConfigService.updateIpReputationThreatScoreConfig(
+                  UpdateIpReputationThreatScoreConfigRequest.newBuilder()
+                      .setIpReputationThreatScoreConfig(IP_REPUTATION_THREAT_SCORE_CONFIG_1)
+                      .build(),
+                  responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1))
+          .onNext(
+              UpdateIpReputationThreatScoreConfigResponse.newBuilder()
+                  .setIpReputationThreatScoreConfig(IP_REPUTATION_THREAT_SCORE_CONFIG_1)
+                  .setDefaultIpReputationThreatScoreConfig(
+                      DEFAULT_IP_REPUTATION_THREAT_SCORE_CONFIG)
+                  .build());
+      verify(responseObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    void skipUpdateIpReputationThreatScoreConfig() {
+      when(ipReputationThreatScoreConfigManager.updateIpReputationThreatScoreConfig(
+              any(RequestContext.class), eq(IP_REPUTATION_THREAT_SCORE_CONFIG_1)))
+          .thenThrow(IllegalArgumentException.class);
+
+      StreamObserver<UpdateIpReputationThreatScoreConfigResponse> responseObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () ->
+              threatManagementConfigService.updateIpReputationThreatScoreConfig(
+                  UpdateIpReputationThreatScoreConfigRequest.newBuilder()
+                      .setIpReputationThreatScoreConfig(IP_REPUTATION_THREAT_SCORE_CONFIG_1)
+                      .build(),
+                  responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1))
+          .onError(argThat(err -> Status.fromThrowable(err).getCode() == Code.UNKNOWN));
+    }
+  }
+
+  @Nested
+  class StatusCodeThreatScoreConfigsTest {
+    @Test
+    void getStatusCodeThreatScoreConfigs() {
+      when(statusCodeThreatScoreConfigsManager.getStatusCodeThreatScoreConfigs(
+              any(RequestContext.class)))
+          .thenReturn(STATUS_CODE_THREAT_SCORE_CONFIGS);
+
+      StreamObserver<GetStatusCodeThreatScoreConfigsResponse> responseObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () ->
+              threatManagementConfigService.getStatusCodeThreatScoreConfigs(
+                  GetStatusCodeThreatScoreConfigsRequest.getDefaultInstance(), responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1))
+          .onNext(
+              GetStatusCodeThreatScoreConfigsResponse.newBuilder()
+                  .setStatusCodeThreatScoreConfigs(STATUS_CODE_THREAT_SCORE_CONFIGS)
+                  .build());
+      verify(responseObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    void updateStatusCodeThreatScoreConfigs() {
+      when(statusCodeThreatScoreConfigsManager.updateStatusCodeThreatScoreConfigs(
+              any(RequestContext.class), eq(STATUS_CODE_THREAT_SCORE_CONFIGS)))
+          .thenReturn(STATUS_CODE_THREAT_SCORE_CONFIGS);
+
+      StreamObserver<UpdateStatusCodeThreatScoreConfigsResponse> responseObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () ->
+              threatManagementConfigService.updateStatusCodeThreatScoreConfigs(
+                  UpdateStatusCodeThreatScoreConfigsRequest.newBuilder()
+                      .setStatusCodeThreatScoreConfigs(STATUS_CODE_THREAT_SCORE_CONFIGS)
+                      .build(),
+                  responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1))
+          .onNext(
+              UpdateStatusCodeThreatScoreConfigsResponse.newBuilder()
+                  .setStatusCodeThreatScoreConfigs(STATUS_CODE_THREAT_SCORE_CONFIGS)
+                  .build());
+      verify(responseObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    void skipUpdateStatusCodeThreatScoreConfigs() {
+      when(statusCodeThreatScoreConfigsManager.updateStatusCodeThreatScoreConfigs(
+              any(RequestContext.class), eq(STATUS_CODE_THREAT_SCORE_CONFIGS)))
+          .thenThrow(IllegalArgumentException.class);
+
+      StreamObserver<UpdateStatusCodeThreatScoreConfigsResponse> responseObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () ->
+              threatManagementConfigService.updateStatusCodeThreatScoreConfigs(
+                  UpdateStatusCodeThreatScoreConfigsRequest.newBuilder()
+                      .setStatusCodeThreatScoreConfigs(STATUS_CODE_THREAT_SCORE_CONFIGS)
+                      .build(),
+                  responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1))
+          .onError(argThat(err -> Status.fromThrowable(err).getCode() == Code.UNKNOWN));
+    }
+  }
+
+  @Nested
+  class ThreatScoreConfigTest {
+    @Test
+    void getThreatScoreConfig() {
+      when(anomalyScoreContributionManager.getAnomalyScoreContribution(any(RequestContext.class)))
+          .thenReturn(ANOMALY_SCORE_CONTRIBUTION_1);
+      when(securityEventScoreContributionManager.getSecurityEventScoreContribution(
+              any(RequestContext.class)))
+          .thenReturn(SECURITY_EVENT_SCORE_CONTRIBUTION_1);
+      when(securityEventTypeContributionManager.getSecurityEventTypeContribution(
+              any(RequestContext.class)))
+          .thenReturn(SECURITY_EVENT_TYPE_CONTRIBUTION_1);
+      when(ipReputationThreatScoreConfigManager.getIpReputationThreatScoreConfig(
+              any(RequestContext.class)))
+          .thenReturn(IP_REPUTATION_THREAT_SCORE_CONFIG_1);
+      when(threatScoreManager.getThreatScoreBound(any(RequestContext.class)))
+          .thenReturn(THREAT_SCORE_BOUND_1);
+      when(statusCodeThreatScoreConfigsManager.getStatusCodeThreatScoreConfigs(
+              any(RequestContext.class)))
+          .thenReturn(STATUS_CODE_THREAT_SCORE_CONFIGS);
+
+      StreamObserver<GetThreatScoreConfigResponse> responseObserver = mock(StreamObserver.class);
+
+      Runnable runnable =
+          () ->
+              threatManagementConfigService.getThreatScoreConfig(
+                  GetThreatScoreConfigRequest.getDefaultInstance(), responseObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseObserver, times(1))
+          .onNext(
+              GetThreatScoreConfigResponse.newBuilder()
+                  .setThreatScoreConfig(
+                      ThreatScoreConfig.newBuilder()
+                          .setAnomalyScoreContribution(ANOMALY_SCORE_CONTRIBUTION_1)
+                          .setSecurityEventScoreContribution(SECURITY_EVENT_SCORE_CONTRIBUTION_1)
+                          .setSecurityEventTypeContribution(SECURITY_EVENT_TYPE_CONTRIBUTION_1)
+                          .setIpReputationThreatScoreConfig(IP_REPUTATION_THREAT_SCORE_CONFIG_1)
+                          .setStatusCodeThreatScoreConfigs(STATUS_CODE_THREAT_SCORE_CONFIGS)
+                          .setThreatScoreBound(THREAT_SCORE_BOUND_1))
+                  .build());
+      verify(responseObserver, times(1)).onCompleted();
     }
   }
 }

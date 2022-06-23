@@ -19,6 +19,14 @@ public class ThreatManagementConfigServiceConfig {
       "threat.management.config.service.security.event.contribution.score.critical";
   private static final String DEFAULT_ANOMALY_CONTRIBUTION_SCORE_KEY =
       "threat.management.config.service.anomaly.contribution.score";
+  private static final String DEFAULT_CRITICAL_IP_REPUTATION_THREAT_SCORE_INCREMENT =
+      "threat.management.config.service.ip.reputation.threat.score.increment.critical";
+  private static final String DEFAULT_HIGH_IP_REPUTATION_THREAT_SCORE_INCREMENT =
+      "threat.management.config.service.ip.reputation.threat.score.increment.high";
+  private static final String DEFAULT_MEDIUM_IP_REPUTATION_THREAT_SCORE_INCREMENT =
+      "threat.management.config.service.ip.reputation.threat.score.increment.medium";
+  private static final String DEFAULT_LOW_IP_REPUTATION_THREAT_SCORE_INCREMENT =
+      "threat.management.config.service.ip.reputation.threat.score.increment.low";
 
   private final Config config;
 
@@ -56,5 +64,21 @@ public class ThreatManagementConfigServiceConfig {
 
   public int getDefaultSecurityEventContributionCriticalScore() {
     return config.getInt(DEFAULT_SECURITY_EVENT_CONTRIBUTION_CRITICAL_SCORE_KEY);
+  }
+
+  public int getDefaultCriticalIpReputationThreatScoreIncrement() {
+    return config.getInt(DEFAULT_CRITICAL_IP_REPUTATION_THREAT_SCORE_INCREMENT);
+  }
+
+  public int getDefaultHighIpReputationThreatScoreIncrement() {
+    return config.getInt(DEFAULT_HIGH_IP_REPUTATION_THREAT_SCORE_INCREMENT);
+  }
+
+  public int getDefaultMediumIpReputationThreatScoreIncrement() {
+    return config.getInt(DEFAULT_MEDIUM_IP_REPUTATION_THREAT_SCORE_INCREMENT);
+  }
+
+  public int getDefaultLowIpReputationThreatScoreIncrement() {
+    return config.getInt(DEFAULT_LOW_IP_REPUTATION_THREAT_SCORE_INCREMENT);
   }
 }

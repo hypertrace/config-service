@@ -6,21 +6,43 @@ import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventScoreCont
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventTypeContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetThreatAutoBlockingConfigRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreBoundRequest;
+import ai.traceable.threatmanagement.config.service.v1.IpReputationThreatScoreConfig;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventScoreContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution.SecurityEventTypeContributionKind;
+import ai.traceable.threatmanagement.config.service.v1.StatusCodeThreatScoreConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionType;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
 import ai.traceable.threatmanagement.config.service.v1.UpdateAnomalyScoreContributionRequest;
+import ai.traceable.threatmanagement.config.service.v1.UpdateIpReputationThreatScoreConfigRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventTypeContributionRequest;
+import ai.traceable.threatmanagement.config.service.v1.UpdateStatusCodeThreatScoreConfigsRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest.ExpirationDetails;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatScoreBoundRequest;
 import java.time.Duration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 class ThreatManagementConfigRequestValidator {
+
+  public void validateOrThrow(
+      RequestContext requestContext, UpdateStatusCodeThreatScoreConfigsRequest request) {
+    this.validateRequestContext(requestContext);
+    this.validateStatusCodeThreatScoreConfig(
+        request.getStatusCodeThreatScoreConfigs().getConfigsList());
+  }
+
+  public void validateOrThrow(
+      RequestContext requestContext, UpdateIpReputationThreatScoreConfigRequest request) {
+    this.validateRequestContext(requestContext);
+    this.validateIpReputationThreatScoreConfig(request.getIpReputationThreatScoreConfig());
+  }
+
   public void validateOrThrow(RequestContext requestContext, GetThreatScoreBoundRequest request) {
     this.validateRequestContext(requestContext);
   }
@@ -85,6 +107,12 @@ class ThreatManagementConfigRequestValidator {
       case THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK:
         this.validateThreatAutoBlockingExpirationDetails(request.getExpirationDetails());
       default:
+    }
+  }
+
+  public void validateRequestContext(RequestContext requestContext) {
+    if (requestContext.getTenantId().isEmpty()) {
+      throw new IllegalArgumentException("Missing expected Tenant ID in request");
     }
   }
 
@@ -166,9 +194,38 @@ class ThreatManagementConfigRequestValidator {
     }
   }
 
-  private void validateRequestContext(RequestContext requestContext) {
-    if (requestContext.getTenantId().isEmpty()) {
-      throw new IllegalArgumentException("Missing expected Tenant ID in request");
+  private void validateIpReputationThreatScoreConfig(IpReputationThreatScoreConfig config) {
+    if (config.getCriticalIpReputationThreatScoreIncrement() < 0
+        || config.getHighIpReputationThreatScoreIncrement() < 0
+        || config.getMediumIpReputationThreatScoreIncrement() < 0
+        || config.getLowIpReputationThreatScoreIncrement() < 0) {
+      throw new IllegalArgumentException(
+          "ip reputation score contributions should be non negative");
     }
+  }
+
+  private void validateStatusCodeThreatScoreConfig(List<StatusCodeThreatScoreConfig> configs) {
+    Set<StatusCodeThreatScoreConfig> statusCodeThreatScoreConfigSet = new HashSet<>();
+
+    configs.forEach(
+        config -> {
+          if (statusCodeThreatScoreConfigSet.contains(config)) {
+            throw new IllegalArgumentException(
+                String.format("Duplicate StatusCodeThreatScoreConfig %s found", config));
+          }
+          statusCodeThreatScoreConfigSet.add(config);
+        });
+
+    configs.forEach(
+        config -> {
+          try {
+            Pattern.compile(config.getErrorStatusCodeRegex());
+          } catch (Exception e) {
+            throw new IllegalArgumentException(
+                String.format(
+                    "Invalid regex \"%s\" in StatusCodeThreatScoreConfig:%s",
+                    config.getErrorStatusCodeRegex(), config));
+          }
+        });
   }
 }

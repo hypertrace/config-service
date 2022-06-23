@@ -3,30 +3,45 @@ package ai.traceable.threatmanagement.config.service;
 import ai.traceable.threatmanagement.config.service.anomalyscore.AnomalyScoreContributionManager;
 import ai.traceable.threatmanagement.config.service.eventscore.SecurityEventScoreContributionManager;
 import ai.traceable.threatmanagement.config.service.eventtype.SecurityEventTypeContributionManager;
+import ai.traceable.threatmanagement.config.service.ipreputation.IpReputationThreatScoreConfigManager;
+import ai.traceable.threatmanagement.config.service.statuscode.StatusCodeThreatScoreConfigsManager;
 import ai.traceable.threatmanagement.config.service.threatautoblocking.ThreatAutoBlockingManager;
 import ai.traceable.threatmanagement.config.service.threatscore.ThreatScoreManager;
 import ai.traceable.threatmanagement.config.service.v1.AnomalyScoreContribution;
 import ai.traceable.threatmanagement.config.service.v1.GetAnomalyScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetAnomalyScoreContributionResponse;
+import ai.traceable.threatmanagement.config.service.v1.GetIpReputationThreatScoreConfigRequest;
+import ai.traceable.threatmanagement.config.service.v1.GetIpReputationThreatScoreConfigResponse;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventScoreContributionResponse;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventTypeContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventTypeContributionResponse;
+import ai.traceable.threatmanagement.config.service.v1.GetStatusCodeThreatScoreConfigsRequest;
+import ai.traceable.threatmanagement.config.service.v1.GetStatusCodeThreatScoreConfigsResponse;
 import ai.traceable.threatmanagement.config.service.v1.GetThreatAutoBlockingConfigRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetThreatAutoBlockingConfigResponse;
 import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreBoundRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreBoundResponse;
+import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreConfigRequest;
+import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreConfigResponse;
+import ai.traceable.threatmanagement.config.service.v1.IpReputationThreatScoreConfig;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventScoreContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution;
+import ai.traceable.threatmanagement.config.service.v1.StatusCodeThreatScoreConfigs;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatManagementConfigServiceGrpc.ThreatManagementConfigServiceImplBase;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
+import ai.traceable.threatmanagement.config.service.v1.ThreatScoreConfig;
 import ai.traceable.threatmanagement.config.service.v1.UpdateAnomalyScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateAnomalyScoreContributionResponse;
+import ai.traceable.threatmanagement.config.service.v1.UpdateIpReputationThreatScoreConfigRequest;
+import ai.traceable.threatmanagement.config.service.v1.UpdateIpReputationThreatScoreConfigResponse;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventScoreContributionResponse;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventTypeContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventTypeContributionResponse;
+import ai.traceable.threatmanagement.config.service.v1.UpdateStatusCodeThreatScoreConfigsRequest;
+import ai.traceable.threatmanagement.config.service.v1.UpdateStatusCodeThreatScoreConfigsResponse;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigResponse;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatScoreBoundRequest;
@@ -44,6 +59,8 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
   private final AnomalyScoreContributionManager anomalyScoreContributionManager;
   private final SecurityEventTypeContributionManager securityEventTypeContributionManager;
   private final ThreatAutoBlockingManager threatAutoBlockingManager;
+  private final IpReputationThreatScoreConfigManager ipReputationThreatScoreConfigManager;
+  private final StatusCodeThreatScoreConfigsManager statusCodeThreatScoreConfigsManager;
 
   @Inject
   ThreatManagementConfigServiceImpl(
@@ -53,13 +70,16 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
       AnomalyScoreContributionManager anomalyScoreContributionManager,
       SecurityEventTypeContributionManager securityEventTypeContributionManager,
       ThreatAutoBlockingManager threatAutoBlockingManager,
-      ThreatManagementConfigServiceConfig config) {
+      IpReputationThreatScoreConfigManager ipReputationThreatScoreConfigManager,
+      StatusCodeThreatScoreConfigsManager statusCodeThreatScoreConfigsManager) {
     this.requestValidator = requestValidator;
     this.threatScoreManager = threatScoreManager;
     this.securityEventScoreContributionManager = securityEventScoreContributionManager;
     this.anomalyScoreContributionManager = anomalyScoreContributionManager;
     this.securityEventTypeContributionManager = securityEventTypeContributionManager;
     this.threatAutoBlockingManager = threatAutoBlockingManager;
+    this.ipReputationThreatScoreConfigManager = ipReputationThreatScoreConfigManager;
+    this.statusCodeThreatScoreConfigsManager = statusCodeThreatScoreConfigsManager;
   }
 
   @Override
@@ -297,6 +317,137 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
 
     } catch (Exception e) {
       log.error("Unable to update threat auto blocking action config for request {}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getIpReputationThreatScoreConfig(
+      GetIpReputationThreatScoreConfigRequest request,
+      StreamObserver<GetIpReputationThreatScoreConfigResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      requestValidator.validateRequestContext(requestContext);
+
+      IpReputationThreatScoreConfig ipReputationThreatScoreConfig =
+          ipReputationThreatScoreConfigManager.getIpReputationThreatScoreConfig(requestContext);
+
+      responseObserver.onNext(
+          GetIpReputationThreatScoreConfigResponse.newBuilder()
+              .setIpReputationThreatScoreConfig(ipReputationThreatScoreConfig)
+              .setDefaultIpReputationThreatScoreConfig(
+                  ipReputationThreatScoreConfigManager.getDefaultIpReputationThreatScoreConfig())
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to get ip reputation threat score config for request: {}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void updateIpReputationThreatScoreConfig(
+      UpdateIpReputationThreatScoreConfigRequest request,
+      StreamObserver<UpdateIpReputationThreatScoreConfigResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      requestValidator.validateOrThrow(requestContext, request);
+
+      IpReputationThreatScoreConfig ipReputationThreatScoreConfig =
+          ipReputationThreatScoreConfigManager.updateIpReputationThreatScoreConfig(
+              requestContext, request.getIpReputationThreatScoreConfig());
+
+      responseObserver.onNext(
+          UpdateIpReputationThreatScoreConfigResponse.newBuilder()
+              .setIpReputationThreatScoreConfig(ipReputationThreatScoreConfig)
+              .setDefaultIpReputationThreatScoreConfig(
+                  ipReputationThreatScoreConfigManager.getDefaultIpReputationThreatScoreConfig())
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to update ip reputation threat score config for request: {}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getStatusCodeThreatScoreConfigs(
+      GetStatusCodeThreatScoreConfigsRequest request,
+      StreamObserver<GetStatusCodeThreatScoreConfigsResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      requestValidator.validateRequestContext(requestContext);
+
+      StatusCodeThreatScoreConfigs statusCodeThreatScoreConfigs =
+          statusCodeThreatScoreConfigsManager.getStatusCodeThreatScoreConfigs(requestContext);
+
+      responseObserver.onNext(
+          GetStatusCodeThreatScoreConfigsResponse.newBuilder()
+              .setStatusCodeThreatScoreConfigs(statusCodeThreatScoreConfigs)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to get status code threat score configs for request: {}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void updateStatusCodeThreatScoreConfigs(
+      UpdateStatusCodeThreatScoreConfigsRequest request,
+      StreamObserver<UpdateStatusCodeThreatScoreConfigsResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      requestValidator.validateOrThrow(requestContext, request);
+
+      StatusCodeThreatScoreConfigs statusCodeThreatScoreConfigs =
+          statusCodeThreatScoreConfigsManager.updateStatusCodeThreatScoreConfigs(
+              requestContext, request.getStatusCodeThreatScoreConfigs());
+
+      responseObserver.onNext(
+          UpdateStatusCodeThreatScoreConfigsResponse.newBuilder()
+              .setStatusCodeThreatScoreConfigs(statusCodeThreatScoreConfigs)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to update status code threat score configs for request: {}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getThreatScoreConfig(
+      GetThreatScoreConfigRequest request,
+      StreamObserver<GetThreatScoreConfigResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      requestValidator.validateRequestContext(requestContext);
+
+      responseObserver.onNext(
+          GetThreatScoreConfigResponse.newBuilder()
+              .setThreatScoreConfig(
+                  ThreatScoreConfig.newBuilder()
+                      .setAnomalyScoreContribution(
+                          anomalyScoreContributionManager.getAnomalyScoreContribution(
+                              requestContext))
+                      .setSecurityEventScoreContribution(
+                          securityEventScoreContributionManager.getSecurityEventScoreContribution(
+                              requestContext))
+                      .setSecurityEventTypeContribution(
+                          securityEventTypeContributionManager.getSecurityEventTypeContribution(
+                              requestContext))
+                      .setIpReputationThreatScoreConfig(
+                          ipReputationThreatScoreConfigManager.getIpReputationThreatScoreConfig(
+                              requestContext))
+                      .setStatusCodeThreatScoreConfigs(
+                          statusCodeThreatScoreConfigsManager.getStatusCodeThreatScoreConfigs(
+                              requestContext))
+                      .setThreatScoreBound(threatScoreManager.getThreatScoreBound(requestContext))
+                      .build())
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to get threat score config for request: {}", request, e);
       responseObserver.onError(e);
     }
   }

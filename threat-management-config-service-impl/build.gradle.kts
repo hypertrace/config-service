@@ -27,6 +27,7 @@ dependencies {
   testImplementation(libs.mockito.core)
   testImplementation(libs.mockito.inline)
   testImplementation(libs.mockito.junit)
+  testImplementation(libs.grpc.core)
   testImplementation(testFixtures(libs.hypertrace.configservice.api))
   testAnnotationProcessor(libs.lombok)
   testCompileOnly(libs.lombok)

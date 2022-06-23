@@ -3,6 +3,8 @@ package ai.traceable.threatmanagement.config.service;
 import ai.traceable.threatmanagement.config.service.anomalyscore.AnomalyScoreContributionModule;
 import ai.traceable.threatmanagement.config.service.eventscore.SecurityEventScoreContributionModule;
 import ai.traceable.threatmanagement.config.service.eventtype.SecurityEventTypeContributionModule;
+import ai.traceable.threatmanagement.config.service.ipreputation.IpReputationThreatScoreConfigModule;
+import ai.traceable.threatmanagement.config.service.statuscode.StatusCodeThreatScoreConfigsModule;
 import ai.traceable.threatmanagement.config.service.threatautoblocking.ThreatAutoBlockingModule;
 import ai.traceable.threatmanagement.config.service.threatscore.ThreatScoreModule;
 import com.google.inject.AbstractModule;
@@ -40,6 +42,8 @@ public class ThreatManagementConfigServiceModule extends AbstractModule {
     install(new AnomalyScoreContributionModule());
     install(new SecurityEventTypeContributionModule());
     install(new ThreatAutoBlockingModule());
+    install(new StatusCodeThreatScoreConfigsModule());
+    install(new IpReputationThreatScoreConfigModule());
   }
 
   @Provides

@@ -1,16 +1,24 @@
 package ai.traceable.threatmanagement.config.service;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.traceable.threatmanagement.config.service.v1.AnomalyScoreContribution;
+import ai.traceable.threatmanagement.config.service.v1.IpReputationThreatScoreConfig;
+import ai.traceable.threatmanagement.config.service.v1.Protocol;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventScoreContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution.SecurityEventTypeContributionKind;
+import ai.traceable.threatmanagement.config.service.v1.SeverityDowngradePolicy;
+import ai.traceable.threatmanagement.config.service.v1.StatusCodeThreatScoreConfig;
+import ai.traceable.threatmanagement.config.service.v1.StatusCodeThreatScoreConfigs;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionType;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
 import ai.traceable.threatmanagement.config.service.v1.UpdateAnomalyScoreContributionRequest;
+import ai.traceable.threatmanagement.config.service.v1.UpdateIpReputationThreatScoreConfigRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventTypeContributionRequest;
+import ai.traceable.threatmanagement.config.service.v1.UpdateStatusCodeThreatScoreConfigsRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest.ExpirationDetails;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatScoreBoundRequest;
@@ -187,5 +195,98 @@ class ThreatManagementConfigRequestValidatorTest {
                         ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK)
                     .setExpirationDetails(ExpirationDetails.newBuilder().setDuration("PT").build())
                     .build()));
+  }
+
+  @Test
+  void validateUpdateIpReputationThreatScoreConfigRequest() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            this.requestValidator.validateOrThrow(
+                REQUEST_CONTEXT, getUpdateIpReputationThreatScoreConfigRequest(1, 1, 1, -1)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            this.requestValidator.validateOrThrow(
+                REQUEST_CONTEXT, getUpdateIpReputationThreatScoreConfigRequest(1, 1, -1, 1)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            this.requestValidator.validateOrThrow(
+                REQUEST_CONTEXT, getUpdateIpReputationThreatScoreConfigRequest(1, -1, 1, 1)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            this.requestValidator.validateOrThrow(
+                REQUEST_CONTEXT, getUpdateIpReputationThreatScoreConfigRequest(-1, 1, 1, 1)));
+    assertDoesNotThrow(
+        () ->
+            this.requestValidator.validateOrThrow(
+                REQUEST_CONTEXT, getUpdateIpReputationThreatScoreConfigRequest(1, 1, 1, 1)));
+  }
+
+  @Test
+  void validateUpdateStatusCodeThreatScoreConfigsRequest() {
+
+    // duplicate config
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            requestValidator.validateOrThrow(
+                REQUEST_CONTEXT,
+                UpdateStatusCodeThreatScoreConfigsRequest.newBuilder()
+                    .setStatusCodeThreatScoreConfigs(
+                        StatusCodeThreatScoreConfigs.newBuilder()
+                            .addConfigs(
+                                getStatusCodeThreatScoreConfig(
+                                    Protocol.PROTOCOL_HTTP,
+                                    "400",
+                                    SeverityDowngradePolicy.SEVERITY_DOWNGRADE_POLICY_ONE_STEP))
+                            .addConfigs(
+                                getStatusCodeThreatScoreConfig(
+                                    Protocol.PROTOCOL_HTTP,
+                                    "400",
+                                    SeverityDowngradePolicy.SEVERITY_DOWNGRADE_POLICY_ONE_STEP))
+                            .build())
+                    .build()));
+
+    // invalid regex
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            requestValidator.validateOrThrow(
+                REQUEST_CONTEXT,
+                UpdateStatusCodeThreatScoreConfigsRequest.newBuilder()
+                    .setStatusCodeThreatScoreConfigs(
+                        StatusCodeThreatScoreConfigs.newBuilder()
+                            .addConfigs(
+                                getStatusCodeThreatScoreConfig(
+                                    Protocol.PROTOCOL_HTTP,
+                                    "[",
+                                    SeverityDowngradePolicy.SEVERITY_DOWNGRADE_POLICY_ONE_STEP))
+                            .build())
+                    .build()));
+  }
+
+  private UpdateIpReputationThreatScoreConfigRequest getUpdateIpReputationThreatScoreConfigRequest(
+      int lowScore, int mediumScore, int highScore, int criticalScore) {
+    return UpdateIpReputationThreatScoreConfigRequest.newBuilder()
+        .setIpReputationThreatScoreConfig(
+            IpReputationThreatScoreConfig.newBuilder()
+                .setCriticalIpReputationThreatScoreIncrement(criticalScore)
+                .setHighIpReputationThreatScoreIncrement(highScore)
+                .setMediumIpReputationThreatScoreIncrement(mediumScore)
+                .setLowIpReputationThreatScoreIncrement(lowScore)
+                .build())
+        .build();
+  }
+
+  private StatusCodeThreatScoreConfig getStatusCodeThreatScoreConfig(
+      Protocol protocol, String regex, SeverityDowngradePolicy downgradePolicy) {
+    return StatusCodeThreatScoreConfig.newBuilder()
+        .setProtocol(protocol)
+        .setErrorStatusCodeRegex(regex)
+        .setSeverityDowngradePolicy(downgradePolicy)
+        .build();
   }
 }
