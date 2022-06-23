@@ -8,14 +8,16 @@ option go_package = "github.com/Traceableai/config-service/blocking/v1";
 message GetBlockingRulesRequest {
     string region_blocking_rules_hash = 1;
     string custom_modsec_blocking_rules_hash = 2;
-// Safe_crs_blocking_rule is same as block_crs_rule
+    // Safe_crs_blocking_rule is same as block_crs_rule
     string safe_crs_blocking_rules_hash = 3;
+    string blocking_policy_configuration_hash = 4;
 }
 
 message GetBlockingRulesResponse {
     RegionBlockingRules region_blocking_rules = 1;
     CustomModsecBlockingRules custom_modsec_blocking_rules = 2;
     SafeCrsBlockingRules safe_crs_blocking_rules = 3;
+    BlockingPolicyConfiguration blocking_policy_configuration = 4;
 }
 
 message RegionBlockingRules {
@@ -34,6 +36,11 @@ message SafeCrsBlockingRules {
     optional string safe_crs_rules_blob = 2;
 }
 
+message BlockingPolicyConfiguration {
+    string hash = 1;
+    repeated BlockingDetails blocking_details_list = 2;
+}
+
 message RegionIpBlockingRule {
     repeated IpRange ip_ranges = 1;
     string region_id = 2;
@@ -48,4 +55,51 @@ message IpRange {
 message IpV4Range {
     int64 start_ip = 1;
     int64 end_ip = 2;
+}
+
+message BlockingDetails {
+    BlockingCategory category = 1;
+    BlockingRuleType blocking_rule_type = 2;
+    string info = 3;
+    optional int64 expiration_timestamp = 4;
+    oneof details {
+        IpDetails ip_details = 5;
+        ModsecDetails modsec_details = 6;
+        CustomSignatureDetails custom_signature_details = 7;
+        RegionDetails region_details = 8;
+    }
+}
+
+message ModsecDetails {
+    string rule_id = 1;
+}
+
+message IpDetails {
+    repeated string ip_addresses = 1;
+    repeated string ip_ranges = 2;
+}
+
+message CustomSignatureDetails {
+    string rule_id = 1;
+}
+
+message RegionDetails {
+    repeated string regions = 1;
+}
+
+enum BlockingCategory {
+    BLOCKING_CATEGORY_UNSPECIFIED = 0;
+    BLOCKING_CATEGORY_THREAT_ACTOR = 1;
+    BLOCKING_CATEGORY_RATE_LIMIT = 2;
+    BLOCKING_CATEGORY_MODSECURITY = 3;
+    BLOCKING_CATEGORY_CUSTOM_IP_RULE = 4;
+    BLOCKING_CATEGORY_CUSTOM_REGION_RULE = 5;
+    BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE = 6;
+}
+
+enum BlockingRuleType{
+    BLOCKING_RULE_TYPE_UNSPECIFIED = 0;
+    BLOCKING_RULE_TYPE_ALLOW = 1;
+    BLOCKING_RULE_TYPE_BLOCK = 2 ;
+    BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT = 3;
 }

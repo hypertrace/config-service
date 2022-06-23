@@ -263,14 +263,20 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
       trieModel2.insert(trieModelTrainerConfig, "GET/sports/hockey");
       trieModel2.insert(trieModelTrainerConfig, "GET/sports/tennis");
       trieModel2.insert(trieModelTrainerConfig, "GET/sports/badminton");
+    }
 
+    TimeUnit.MICROSECONDS.sleep(250);
+    for (int i = 0; i < 10; i++) {
       // Medium cardinality threshold is 4
       trieModel2.insert(trieModelTrainerConfig, "GET/city/London");
       trieModel2.insert(trieModelTrainerConfig, "GET/city/Tokyo");
       trieModel2.insert(trieModelTrainerConfig, "GET/city/Delhi");
       trieModel2.insert(trieModelTrainerConfig, "GET/city/Paris");
       trieModel2.insert(trieModelTrainerConfig, "GET/city/Madrid");
+    }
 
+    TimeUnit.MICROSECONDS.sleep(250);
+    for (int i = 0; i < 10; i++) {
       // Medium cardinality threshold is 4
       trieModel2.insert(trieModelTrainerConfig, "GET/fruits/apple");
       trieModel2.insert(trieModelTrainerConfig, "GET/fruits/mango");
@@ -278,6 +284,8 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
       trieModel2.insert(trieModelTrainerConfig, "GET/fruits/banana");
       trieModel2.insert(trieModelTrainerConfig, "GET/fruits/pineapple");
     }
+
+    TimeUnit.MICROSECONDS.sleep(250);
     trieModel2.train(buildTrieModelTrainerConfig());
 
     List<List<ai.traceable.platform.apientity.Segment>> curr_paths =
