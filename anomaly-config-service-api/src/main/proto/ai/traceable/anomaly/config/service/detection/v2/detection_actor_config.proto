@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package ai.traceable.anomaly.config.service.detection.v2;
+
+import "ai/traceable/anomaly/config/service/detection/v2/detection_common_configs.proto";
+
+option java_multiple_files = true;
+
+message DetectionActorConfig {
+  oneof config{
+    StringList actor_entity_ids = 1;
+  }
+}

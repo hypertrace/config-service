@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package ai.traceable.anomaly.config.service.detection.v2;
+
+
+option java_multiple_files = true;
+
+
+message StringList {
+  repeated string values = 1;
+}
+
+message DetectionConfidence{
+  DetectionConfidenceLevel confidence_level = 1;
+}
+
+enum DetectionConfidenceLevel {
+  DETECTION_CONFIDENCE_LEVEL_UNSPECIFIED = 0;
+  DETECTION_CONFIDENCE_LEVEL_LOW = 1;
+  DETECTION_CONFIDENCE_LEVEL_MEDIUM = 2;
+  DETECTION_CONFIDENCE_LEVEL_HIGH = 3;
+}
+
+enum DetectionFamily {
+  DETECTION_FAMILY_UNSPECIFIED = 0;
+  DETECTION_FAMILY_API_DEF = 1;
+  DETECTION_FAMILY_MODSEC = 2;
+  DETECTION_FAMILY_SESSION = 3;
+}
+
+message DetectionConfigAction {
+  DetectionConfigActionType action_type = 1;
+}
+
+enum DetectionConfigActionType {
+  DETECTION_CONFIG_ACTION_TYPE_UNSPECIFIED = 0;
+  DETECTION_CONFIG_ACTION_TYPE_DISABLE_DETECTION = 1;
+  DETECTION_CONFIG_ACTION_TYPE_ENABLE_DETECTION = 2;
+  DETECTION_CONFIG_ACTION_TYPE_INTERNAL_DETECTION = 3;
+}

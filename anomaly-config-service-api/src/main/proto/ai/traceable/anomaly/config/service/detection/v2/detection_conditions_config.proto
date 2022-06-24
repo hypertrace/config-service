@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package ai.traceable.anomaly.config.service.detection.v2;
+
+import "ai/traceable/anomaly/config/service/detection/v2/detection_common_configs.proto";
+
+option java_multiple_files = true;
+
+message DetectionConditionsConfig {
+  MatchConditionsClauseGroup match_conditions_clause_group = 1;
+}
+
+message MatchConditionsClauseGroup {
+  repeated MatchConditionClause conditions = 1;
+  MatchConditionClauseOperator clause_type = 2;
+}
+
+enum MatchConditionClauseOperator {
+  MATCH_CONDITION_CLAUSE_OPERATOR_UNSPECIFIED = 0;
+  MATCH_CONDITION_CLAUSE_OPERATOR_AND = 1;
+  // later can add other operators like OR
+}
+
+message MatchConditionClause {
+  oneof condition {
+    KeyValueMatchCondition key_value_condition = 1;
+    // later can add MatchConditionClauseGroup to support complex conditions
+  }
+}
+
+message KeyValueMatchCondition {
+  KeyMatchCondition key_match_condition = 1;
+  MatchCondition value_match_condition = 2;
+}
+
+message KeyMatchCondition {
+  KeyMetadata metadata = 1;
+  MatchCondition match_condition = 2; // optional, depending on the metadata
+}
+
+enum KeyMetadata {
+  KEY_METADATA_UNSPECIFIED = 0;
+  KEY_METADATA_QUERY_PARAMETER = 1;
+  KEY_METADATA_BODY_PARAMETER = 2;
+}
+
+message MatchCondition {
+  MatchOperator operator = 1;
+  MatchValue value = 2;
+}
+
+enum MatchOperator {
+  MATCH_OPERATOR_UNSPECIFIED = 0;
+  MATCH_OPERATOR_EQUALS = 1;
+  MATCH_OPERATOR_MATCHES_REGEX = 2;
+}
+
+message MatchValue {
+  oneof value {
+    string string_value = 1;
+    StringList list_value = 2;
+  }
+}

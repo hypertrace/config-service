@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package ai.traceable.anomaly.config.service.detection.v2;
+
+import "ai/traceable/anomaly/config/service/detection/v2/detection_common_configs.proto";
+import "ai/traceable/anomaly/config/service/detection/v2/detection_scope_config.proto";
+import "ai/traceable/anomaly/config/service/detection/v2/detection_threat_activity_config.proto";
+import "ai/traceable/anomaly/config/service/detection/v2/detection_actor_config.proto";
+import "ai/traceable/anomaly/config/service/detection/v2/detection_conditions_config.proto";
+
+option java_multiple_files = true;
+
+
+message DetectionBlockingRule {
+  string id = 1;
+  string description = 2;
+  DetectionBlockingRuleConfig config = 3;
+}
+
+message DetectionBlockingRuleConfig {
+  DetectionBlockingConfigCriteria blocking_criteria = 1;
+  DetectionBlockingConfigStatus config_status = 2;
+}
+
+message DetectionBlockingConfigCriteria {
+  DetectionBlockingScopeConfig scope = 1;
+  DetectionAnomalousBehaviours behaviors = 2;
+}
+
+message DetectionBlockingScopeConfig {
+  oneof scope {
+    DetectionTenantScope tenant_scope = 1;
+    DetectionEnvironmentScope environment_scope = 2;
+  }
+}
+
+message DetectionBlockingConfigStatus {
+  bool rule_disabled = 1;
+}
+
+message GetAllDetectionBlockingRulesRequest {
+}
+
+message GetAllDetectionBlockingRulesResponse {
+  repeated DetectionBlockingRule rules = 1;
+}
+
+message CreateDetectionBlockingRuleConfigRequest {
+  string description = 1;
+  DetectionBlockingRuleConfig config = 2;
+}
+
+message CreateDetectionBlockingRuleConfigResponse {
+  DetectionBlockingRule rule = 1;
+}
+
+message UpdateDetectionBlockingRuleRequest {
+  DetectionBlockingRule rule = 1;
+}
+
+message UpdateDetectionBlockingRuleResponse {
+  DetectionBlockingRule rule = 1;
+}
+
+message DeleteDetectionBlockingRuleRequest {
+  string rule_id = 1;
+}
+
+message DeleteDetectionBlockingRuleResponse {
+}

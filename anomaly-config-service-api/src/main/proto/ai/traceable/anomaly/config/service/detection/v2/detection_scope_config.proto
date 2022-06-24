@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package ai.traceable.anomaly.config.service.detection.v2;
+
+import "ai/traceable/anomaly/config/service/detection/v2/detection_common_configs.proto";
+
+option java_multiple_files = true;
+
+
+message DetectionScopeConfig {
+  oneof scope {
+    DetectionTenantScope tenant_scope = 1;
+    DetectionEnvironmentScope environment_scope = 2;
+    DetectionServiceScope service_scope = 3;
+    DetectionApiScope api_scope = 4;
+  }
+}
+
+message DetectionTenantScope {
+}
+
+message DetectionEnvironmentScope {
+  repeated string environment_ids = 1;
+}
+
+message DetectionServiceScope {
+  oneof scope {
+    StringList service_labels = 1;
+    StringList service_ids = 2;
+  }
+}
+
+message DetectionApiScope {
+  oneof scope {
+    StringList api_labels = 1;
+    StringList api_ids = 2;
+  }
+}

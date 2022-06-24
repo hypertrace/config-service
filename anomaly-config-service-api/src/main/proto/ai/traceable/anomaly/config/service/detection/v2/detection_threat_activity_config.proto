@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package ai.traceable.anomaly.config.service.detection.v2;
+
+import "ai/traceable/anomaly/config/service/detection/v2/detection_common_configs.proto";
+
+option java_multiple_files = true;
+
+message DetectionThreatActivityConfig {
+  oneof config {
+    DetectionConfidence confidence = 1;
+    DetectionThreatTypes threat_types = 2;
+    DetectionAnomalousBehaviours anomalous_behaviours = 3;
+  }
+}
+
+message DetectionThreatTypes {
+  repeated DetectionThreatType threat_types = 1;
+}
+
+message DetectionThreatType {
+  DetectionFamily event_family = 1;
+  string threat_type = 2;
+}
+
+message DetectionAnomalousBehaviours {
+  repeated DetectionAnomalousBehaviour behaviours = 1;
+}
+
+message DetectionAnomalousBehaviour {
+  DetectionThreatType threat_type = 1;
+  repeated string behaviour_id = 2;
+}
