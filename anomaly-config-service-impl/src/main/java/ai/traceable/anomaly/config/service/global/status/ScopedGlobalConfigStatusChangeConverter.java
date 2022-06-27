@@ -1,5 +1,6 @@
 package ai.traceable.anomaly.config.service.global.status;
 
+import ai.traceable.anomaly.config.service.v1.AnomalyConfidenceLevel;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
@@ -26,11 +27,17 @@ public class ScopedGlobalConfigStatusChangeConverter {
   }
 
   public ScopedAnomalyConfigStatus convertScopedConfig(
-      ScopedAnomalyConfigStatusChange config, AnomalyConfigStatus configStatus) {
+      ScopedAnomalyConfigStatusChange config,
+      AnomalyConfidenceLevel defaultConfidenceLevel,
+      AnomalyConfigStatus configStatus) {
     return ScopedAnomalyConfigStatus.newBuilder()
         .setConfigScope(config.getConfigScope())
         .setConfigStatus(configStatus)
         .setExcludedEventsConfig(config.getExcludedEventsConfig())
+        .setMinConfidenceLevel(
+            config.hasMinConfidenceLevel()
+                ? config.getMinConfidenceLevel()
+                : defaultConfidenceLevel)
         .build();
   }
 

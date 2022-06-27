@@ -118,6 +118,13 @@ enum AnomalyRuleCategory {
   ANOMALY_RULE_CATEGORY_ATTACKER = 14 [(string_value) = "Attacker"];
 }
 
+enum AnomalyConfidenceLevel {
+  ANOMALY_CONFIDENCE_LEVEL_UNSPECIFIED = 0;
+  ANOMALY_CONFIDENCE_LEVEL_LOW = 1;
+  ANOMALY_CONFIDENCE_LEVEL_MEDIUM = 2;
+  ANOMALY_CONFIDENCE_LEVEL_HIGH = 3;
+}
+
 message StringList {
   repeated string values = 1;
 }

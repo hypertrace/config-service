@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyConfidenceLevel;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
@@ -21,6 +22,7 @@ import ai.traceable.anomaly.config.service.v1.global.UpdateScopedAnomalyGlobalCo
 import ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase;
 import ai.traceable.license.metering.service.api.v1.LicenseInfo;
 import java.util.List;
+import java.util.Optional;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -179,6 +181,9 @@ public class AnomalyGlobalConfigServiceIntegrationTest
       assertEquals(1, scopedConfigs.size());
       assertEquals(customerConfigScope, scopedConfigs.get(0).getConfigScope());
       assertEquals(expectedCustomerStatus, scopedConfigs.get(0).getConfigStatus());
+      assertEquals(
+          AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_HIGH,
+          scopedConfigs.get(0).getMinConfidenceLevel());
     }
     {
       RequestContext teamTrialRequestContext =
@@ -193,10 +198,14 @@ public class AnomalyGlobalConfigServiceIntegrationTest
       assertEquals(1, scopedConfigs.size());
       assertEquals(customerConfigScope, scopedConfigs.get(0).getConfigScope());
       assertEquals(expectedCustomerStatus, scopedConfigs.get(0).getConfigStatus());
+      assertEquals(
+          AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_HIGH,
+          scopedConfigs.get(0).getMinConfidenceLevel());
     }
     {
       configStatusChange = AnomalyConfigStatusChange.newBuilder().setDisabled(false).build();
-      updateScopedAnomalyConfigStatus(requestContext, customerConfigScope, configStatusChange);
+      updateScopedAnomalyConfigStatus(
+          requestContext, customerConfigScope, configStatusChange, Optional.empty());
       expectedCustomerStatus =
           AnomalyConfigStatus.newBuilder().setInternal(false).setDisabled(false).build();
       assertEquals(
@@ -212,10 +221,17 @@ public class AnomalyGlobalConfigServiceIntegrationTest
       assertEquals(1, scopedConfigs.size());
       assertEquals(customerConfigScope, scopedConfigs.get(0).getConfigScope());
       assertEquals(expectedCustomerStatus, scopedConfigs.get(0).getConfigStatus());
+      assertEquals(
+          AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_HIGH,
+          scopedConfigs.get(0).getMinConfidenceLevel());
     }
     {
       configStatusChange = AnomalyConfigStatusChange.newBuilder().setInternal(true).build();
-      updateScopedAnomalyConfigStatus(requestContext, apiConfigScope, configStatusChange);
+      updateScopedAnomalyConfigStatus(
+          requestContext,
+          apiConfigScope,
+          configStatusChange,
+          Optional.of(AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_MEDIUM));
       expectedApiStatus =
           AnomalyConfigStatus.newBuilder().setInternal(true).setDisabled(false).build();
       assertEquals(
@@ -234,12 +250,19 @@ public class AnomalyGlobalConfigServiceIntegrationTest
       assertEquals(2, scopedConfigs.size());
       assertEquals(apiConfigScope, scopedConfigs.get(0).getConfigScope());
       assertEquals(expectedApiStatus, scopedConfigs.get(0).getConfigStatus());
+      assertEquals(
+          AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_MEDIUM,
+          scopedConfigs.get(0).getMinConfidenceLevel());
       assertEquals(customerConfigScope, scopedConfigs.get(1).getConfigScope());
       assertEquals(expectedCustomerStatus, scopedConfigs.get(1).getConfigStatus());
+      assertEquals(
+          AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_HIGH,
+          scopedConfigs.get(1).getMinConfidenceLevel());
     }
     {
       configStatusChange = AnomalyConfigStatusChange.newBuilder().setDisabled(true).build();
-      updateScopedAnomalyConfigStatus(requestContext, serviceConfigScope, configStatusChange);
+      updateScopedAnomalyConfigStatus(
+          requestContext, serviceConfigScope, configStatusChange, Optional.empty());
       expectedCustomerStatus =
           AnomalyConfigStatus.newBuilder().setInternal(false).setDisabled(false).build();
       expectedServiceStatus =
@@ -259,10 +282,19 @@ public class AnomalyGlobalConfigServiceIntegrationTest
       assertEquals(3, scopedConfigs.size());
       assertEquals(serviceConfigScope, scopedConfigs.get(0).getConfigScope());
       assertEquals(expectedServiceStatus, scopedConfigs.get(0).getConfigStatus());
+      assertEquals(
+          AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_HIGH,
+          scopedConfigs.get(0).getMinConfidenceLevel());
       assertEquals(apiConfigScope, scopedConfigs.get(1).getConfigScope());
       assertEquals(expectedApiStatus, scopedConfigs.get(1).getConfigStatus());
+      assertEquals(
+          AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_MEDIUM,
+          scopedConfigs.get(1).getMinConfidenceLevel());
       assertEquals(customerConfigScope, scopedConfigs.get(2).getConfigScope());
       assertEquals(expectedCustomerStatus, scopedConfigs.get(2).getConfigStatus());
+      assertEquals(
+          AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_HIGH,
+          scopedConfigs.get(2).getMinConfidenceLevel());
     }
   }
 
@@ -278,7 +310,8 @@ public class AnomalyGlobalConfigServiceIntegrationTest
                 AnomalyConfigScope.newBuilder()
                     .setParamScope(AnomalyParamScope.getDefaultInstance())
                     .build(),
-                AnomalyConfigStatusChange.getDefaultInstance()));
+                AnomalyConfigStatusChange.getDefaultInstance(),
+                Optional.empty()));
 
     AnomalyConfigStatusChange configStatusChange;
     AnomalyConfigStatus expectedCustomerStatus;
@@ -286,7 +319,8 @@ public class AnomalyGlobalConfigServiceIntegrationTest
       configStatusChange = AnomalyConfigStatusChange.newBuilder().setInternal(true).build();
       assertEquals(
           configStatusChange,
-          updateScopedAnomalyConfigStatus(requestContext, customerConfigScope, configStatusChange));
+          updateScopedAnomalyConfigStatus(
+              requestContext, customerConfigScope, configStatusChange, Optional.empty()));
       expectedCustomerStatus =
           AnomalyConfigStatus.newBuilder().setInternal(true).setDisabled(false).build();
       assertEquals(
@@ -302,7 +336,8 @@ public class AnomalyGlobalConfigServiceIntegrationTest
       configStatusChange = AnomalyConfigStatusChange.newBuilder().setDisabled(true).build();
       assertEquals(
           AnomalyConfigStatusChange.newBuilder().setDisabled(true).setInternal(true).build(),
-          updateScopedAnomalyConfigStatus(requestContext, customerConfigScope, configStatusChange));
+          updateScopedAnomalyConfigStatus(
+              requestContext, customerConfigScope, configStatusChange, Optional.empty()));
       expectedCustomerStatus =
           AnomalyConfigStatus.newBuilder().setDisabled(true).setInternal(true).build();
       assertEquals(
@@ -313,7 +348,8 @@ public class AnomalyGlobalConfigServiceIntegrationTest
     configStatusChange = AnomalyConfigStatusChange.newBuilder().setDisabled(true).build();
     assertEquals(
         configStatusChange,
-        updateScopedAnomalyConfigStatus(requestContext, serviceConfigScope, configStatusChange));
+        updateScopedAnomalyConfigStatus(
+            requestContext, serviceConfigScope, configStatusChange, Optional.empty()));
     AnomalyConfigStatus expectedServiceStatus =
         AnomalyConfigStatus.newBuilder().setInternal(true).setDisabled(true).build();
     assertEquals(
@@ -329,7 +365,8 @@ public class AnomalyGlobalConfigServiceIntegrationTest
     configStatusChange = AnomalyConfigStatusChange.newBuilder().setInternal(false).build();
     assertEquals(
         configStatusChange,
-        updateScopedAnomalyConfigStatus(requestContext, apiConfigScope, configStatusChange));
+        updateScopedAnomalyConfigStatus(
+            requestContext, apiConfigScope, configStatusChange, Optional.empty()));
     AnomalyConfigStatus expectedApiStatus =
         AnomalyConfigStatus.newBuilder().setInternal(false).setDisabled(true).build();
     assertEquals(
@@ -396,21 +433,23 @@ public class AnomalyGlobalConfigServiceIntegrationTest
   }
 
   private AnomalyConfigStatusChange updateScopedAnomalyConfigStatus(
-      RequestContext requestContext, AnomalyConfigScope scope, AnomalyConfigStatusChange status) {
-    ScopedAnomalyConfigStatusChange scopedConfig =
+      RequestContext requestContext,
+      AnomalyConfigScope scope,
+      AnomalyConfigStatusChange status,
+      Optional<AnomalyConfidenceLevel> confidenceLevel) {
+    ScopedAnomalyConfigStatusChange.Builder scopedConfigBuilder =
+        ScopedAnomalyConfigStatusChange.newBuilder().setConfigScope(scope).setConfigStatus(status);
+    confidenceLevel.ifPresent(scopedConfigBuilder::setMinConfidenceLevel);
+    ScopedAnomalyConfigStatusChange updatedConfig =
         requestContext
             .call(
                 () ->
                     configServiceStub.updateScopedAnomalyGlobalConfigStatus(
                         UpdateScopedAnomalyGlobalConfigStatusRequest.newBuilder()
-                            .setScopedConfig(
-                                ScopedAnomalyConfigStatusChange.newBuilder()
-                                    .setConfigScope(scope)
-                                    .setConfigStatus(status)
-                                    .build())
+                            .setScopedConfig(scopedConfigBuilder)
                             .build()))
             .getScopedConfig();
-    assertEquals(scope, scopedConfig.getConfigScope());
-    return scopedConfig.getConfigStatus();
+    assertEquals(scope, updatedConfig.getConfigScope());
+    return updatedConfig.getConfigStatus();
   }
 }

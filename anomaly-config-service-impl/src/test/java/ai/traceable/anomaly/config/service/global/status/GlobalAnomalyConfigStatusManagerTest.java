@@ -1,5 +1,8 @@
 package ai.traceable.anomaly.config.service.global.status;
 
+import static ai.traceable.anomaly.config.service.v1.AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_HIGH;
+import static ai.traceable.anomaly.config.service.v1.AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_LOW;
+import static ai.traceable.anomaly.config.service.v1.AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_MEDIUM;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.spy;
@@ -10,6 +13,7 @@ import ai.traceable.anomaly.config.service.common.license.LicenseMeteringService
 import ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceConfig;
 import ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceConstants;
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyConfidenceLevel;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
@@ -120,6 +124,7 @@ public class GlobalAnomalyConfigStatusManagerTest {
             ConfigFactory.parseString(
                 "disabled = true\n"
                     + "  internal = false\n"
+                    + "  minConfidenceLevel = ANOMALY_CONFIDENCE_LEVEL_MEDIUM\n"
                     + "  licenseTiers = [\n"
                     + "    {\n"
                     + "        tier = TIER_TEAM_TRIAL\n"
@@ -178,6 +183,7 @@ public class GlobalAnomalyConfigStatusManagerTest {
       assertEquals(1, scopedConfigs.size());
       assertEquals(customerConfigScope, scopedConfigs.get(0).getConfigScope());
       assertEquals(expectedCustomerStatus, scopedConfigs.get(0).getConfigStatus());
+      assertEquals(ANOMALY_CONFIDENCE_LEVEL_MEDIUM, scopedConfigs.get(0).getMinConfidenceLevel());
     }
     {
       RequestContext teamTrialRequestContext =
@@ -194,6 +200,7 @@ public class GlobalAnomalyConfigStatusManagerTest {
       assertEquals(1, scopedConfigs.size());
       assertEquals(customerConfigScope, scopedConfigs.get(0).getConfigScope());
       assertEquals(expectedCustomerStatus, scopedConfigs.get(0).getConfigStatus());
+      assertEquals(ANOMALY_CONFIDENCE_LEVEL_MEDIUM, scopedConfigs.get(0).getMinConfidenceLevel());
     }
     {
       configStatusChange = AnomalyConfigStatusChange.newBuilder().setDisabled(false).build();
@@ -207,12 +214,18 @@ public class GlobalAnomalyConfigStatusManagerTest {
           configStatusManager.getScopedAnomalyConfigStatus(requestContext, customerConfigScope);
       assertEquals(expectedCustomerStatus, scopedAnomalyConfigStatus.getConfigStatus());
       assertEquals(
+          customerScopedConfig.getMinConfidenceLevel(),
+          scopedAnomalyConfigStatus.getMinConfidenceLevel());
+      assertEquals(
           customerScopedConfig.getExcludedEventsConfig(),
           scopedAnomalyConfigStatus.getExcludedEventsConfig());
 
       scopedAnomalyConfigStatus =
           configStatusManager.getScopedAnomalyConfigStatus(requestContext, serviceConfigScope);
       assertEquals(expectedCustomerStatus, scopedAnomalyConfigStatus.getConfigStatus());
+      assertEquals(
+          customerScopedConfig.getMinConfidenceLevel(),
+          scopedAnomalyConfigStatus.getMinConfidenceLevel());
       assertEquals(
           customerScopedConfig.getExcludedEventsConfig(),
           scopedAnomalyConfigStatus.getExcludedEventsConfig());
@@ -221,6 +234,9 @@ public class GlobalAnomalyConfigStatusManagerTest {
           configStatusManager.getScopedAnomalyConfigStatus(requestContext, apiConfigScope);
       assertEquals(expectedCustomerStatus, scopedAnomalyConfigStatus.getConfigStatus());
       assertEquals(
+          customerScopedConfig.getMinConfidenceLevel(),
+          scopedAnomalyConfigStatus.getMinConfidenceLevel());
+      assertEquals(
           customerScopedConfig.getExcludedEventsConfig(),
           scopedAnomalyConfigStatus.getExcludedEventsConfig());
 
@@ -228,6 +244,9 @@ public class GlobalAnomalyConfigStatusManagerTest {
       assertEquals(1, scopedConfigs.size());
       assertEquals(customerConfigScope, scopedConfigs.get(0).getConfigScope());
       assertEquals(expectedCustomerStatus, scopedConfigs.get(0).getConfigStatus());
+      assertEquals(
+          customerScopedConfig.getMinConfidenceLevel(),
+          scopedConfigs.get(0).getMinConfidenceLevel());
       assertEquals(
           customerScopedConfig.getExcludedEventsConfig(),
           scopedConfigs.get(0).getExcludedEventsConfig());
@@ -243,6 +262,9 @@ public class GlobalAnomalyConfigStatusManagerTest {
           configStatusManager.getScopedAnomalyConfigStatus(requestContext, apiConfigScope);
       assertEquals(expectedApiStatus, scopedAnomalyConfigStatus.getConfigStatus());
       assertEquals(
+          apiScopedConfig.getMinConfidenceLevel(),
+          scopedAnomalyConfigStatus.getMinConfidenceLevel());
+      assertEquals(
           apiScopedConfig.getExcludedEventsConfig(),
           scopedAnomalyConfigStatus.getExcludedEventsConfig());
 
@@ -251,10 +273,13 @@ public class GlobalAnomalyConfigStatusManagerTest {
           AnomalyConfigStatus.newBuilder().setInternal(false).setDisabled(false).build();
       ExcludedEventsGenerationConfig expectedCustomerExcludedEventsConfig =
           ExcludedEventsGenerationConfig.newBuilder().setEnabledForAll(true).build();
+      AnomalyConfidenceLevel expectedCustomerMinConfidenceLevel = ANOMALY_CONFIDENCE_LEVEL_HIGH;
 
       scopedAnomalyConfigStatus =
           configStatusManager.getScopedAnomalyConfigStatus(requestContext, customerConfigScope);
       assertEquals(expectedCustomerStatus, scopedAnomalyConfigStatus.getConfigStatus());
+      assertEquals(
+          expectedCustomerMinConfidenceLevel, scopedAnomalyConfigStatus.getMinConfidenceLevel());
       assertEquals(
           expectedCustomerExcludedEventsConfig,
           scopedAnomalyConfigStatus.getExcludedEventsConfig());
@@ -262,6 +287,8 @@ public class GlobalAnomalyConfigStatusManagerTest {
       scopedAnomalyConfigStatus =
           configStatusManager.getScopedAnomalyConfigStatus(requestContext, serviceConfigScope);
       assertEquals(expectedCustomerStatus, scopedAnomalyConfigStatus.getConfigStatus());
+      assertEquals(
+          expectedCustomerMinConfidenceLevel, scopedAnomalyConfigStatus.getMinConfidenceLevel());
       assertEquals(
           expectedCustomerExcludedEventsConfig,
           scopedAnomalyConfigStatus.getExcludedEventsConfig());
@@ -271,10 +298,14 @@ public class GlobalAnomalyConfigStatusManagerTest {
       assertEquals(apiConfigScope, scopedConfigs.get(0).getConfigScope());
       assertEquals(expectedApiStatus, scopedConfigs.get(0).getConfigStatus());
       assertEquals(
+          apiScopedConfig.getMinConfidenceLevel(), scopedConfigs.get(0).getMinConfidenceLevel());
+      assertEquals(
           apiScopedConfig.getExcludedEventsConfig(),
           scopedConfigs.get(0).getExcludedEventsConfig());
       assertEquals(customerConfigScope, scopedConfigs.get(1).getConfigScope());
       assertEquals(expectedCustomerStatus, scopedConfigs.get(1).getConfigStatus());
+      assertEquals(
+          expectedCustomerMinConfidenceLevel, scopedConfigs.get(1).getMinConfidenceLevel());
       assertEquals(
           expectedCustomerExcludedEventsConfig, scopedConfigs.get(1).getExcludedEventsConfig());
     }
@@ -432,6 +463,7 @@ public class GlobalAnomalyConfigStatusManagerTest {
                 ExcludedEventsGenerationConfig.newBuilder()
                     .setExclusionRuleIds(
                         StringList.newBuilder().addAllValues(List.of("rule1", "rule2"))))
+            .setMinConfidenceLevel(ANOMALY_CONFIDENCE_LEVEL_LOW)
             .build();
     configServiceBlockingStub.upsertConfig(
         UpsertConfigRequest.newBuilder()
@@ -472,6 +504,7 @@ public class GlobalAnomalyConfigStatusManagerTest {
             .setConfigScope(customerConfigScope)
             .setExcludedEventsConfig(
                 ExcludedEventsGenerationConfig.newBuilder().setEnabledForAll(true))
+            .setMinConfidenceLevel(ANOMALY_CONFIDENCE_LEVEL_HIGH)
             .build();
     RequestContext.forTenantId(tenantId)
         .call(

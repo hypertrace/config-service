@@ -1,5 +1,6 @@
 package ai.traceable.anomaly.config.service.global;
 
+import ai.traceable.anomaly.config.service.v1.AnomalyConfidenceLevel;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.license.metering.service.api.v1.LicenseInfo;
 import com.typesafe.config.Config;
@@ -11,16 +12,24 @@ public class AnomalyGlobalConfigServiceConfig {
 
   private static final String DISABLED_CONFIG_PATH = "disabled";
   private static final String INTERNAL_CONFIG_PATH = "internal";
+  private static final String CONFIDENCE_CONFIG_PATH = "minConfidenceLevel";
   private static final String LICENSE_TIERS_CONFIG_PATH = "licenseTiers";
   private static final String TIER_CONFIG_PATH = "tier";
 
   private final boolean disabled;
   private final boolean internal;
+  private final AnomalyConfidenceLevel minConfidenceLevel;
   private final Map<LicenseInfo.Tier, Boolean> licenseTiersConfigStatusMap;
 
   public AnomalyGlobalConfigServiceConfig(Config config) {
     this.disabled = config.getBoolean(DISABLED_CONFIG_PATH);
     this.internal = config.getBoolean(INTERNAL_CONFIG_PATH);
+    if (config.hasPath(CONFIDENCE_CONFIG_PATH)) {
+      this.minConfidenceLevel =
+          config.getEnum(AnomalyConfidenceLevel.class, CONFIDENCE_CONFIG_PATH);
+    } else {
+      this.minConfidenceLevel = AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_HIGH;
+    }
     if (config.hasPath(LICENSE_TIERS_CONFIG_PATH)) {
       licenseTiersConfigStatusMap =
           config.getConfigList(LICENSE_TIERS_CONFIG_PATH).stream()
@@ -41,5 +50,9 @@ public class AnomalyGlobalConfigServiceConfig {
                 : disabled)
         .setInternal(internal)
         .build();
+  }
+
+  public AnomalyConfidenceLevel getMinConfidenceLevel() {
+    return minConfidenceLevel;
   }
 }

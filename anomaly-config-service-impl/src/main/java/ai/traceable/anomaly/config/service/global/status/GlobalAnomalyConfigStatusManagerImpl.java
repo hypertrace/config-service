@@ -93,6 +93,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
           ScopedAnomalyConfigStatus.newBuilder()
               .setConfigScope(anomalyConfigScopeUtils.getDefaultCustomerConfigScope())
               .setConfigStatus(getDefaultTierConfig(requestContext))
+              .setMinConfidenceLevel(config.getMinConfidenceLevel())
               .build());
     }
     return Collections.unmodifiableList(resolvedConfigs);
@@ -141,6 +142,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
     scopedAnomalyConfigBuilder.setConfigScope(configScope);
     return configConverter.convertScopedConfig(
         scopedAnomalyConfigBuilder.build(),
+        config.getMinConfidenceLevel(),
         configConverter.merge(configStatusChange, getDefaultTierConfig(requestContext)));
   }
 
