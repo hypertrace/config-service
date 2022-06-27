@@ -70,38 +70,6 @@ public class SpanProcessingConfigRequestValidator {
     this.validateSpanFilter(updateExcludeSpanRule.getFilter());
   }
 
-  public void validateOrThrow(
-      RequestContext requestContext, GetAllIncludeSpanRulesRequest request) {
-    validateRequestContextOrThrow(requestContext);
-  }
-
-  public void validateOrThrow(RequestContext requestContext, CreateIncludeSpanRuleRequest request) {
-    validateRequestContextOrThrow(requestContext);
-    this.validateData(request.getRuleInfo());
-  }
-
-  public void validateOrThrow(RequestContext requestContext, UpdateIncludeSpanRuleRequest request) {
-    validateRequestContextOrThrow(requestContext);
-    this.validateUpdateRule(request.getRule());
-  }
-
-  public void validateOrThrow(RequestContext requestContext, DeleteIncludeSpanRuleRequest request) {
-    validateRequestContextOrThrow(requestContext);
-    validateNonDefaultPresenceOrThrow(request, DeleteIncludeSpanRuleRequest.ID_FIELD_NUMBER);
-  }
-
-  private void validateData(IncludeSpanRuleInfo includeSpanRuleInfo) {
-    validateNonDefaultPresenceOrThrow(includeSpanRuleInfo, IncludeSpanRuleInfo.NAME_FIELD_NUMBER);
-    this.validateSpanFilter(includeSpanRuleInfo.getFilter());
-  }
-
-  private void validateUpdateRule(UpdateIncludeSpanRule updateIncludeSpanRule) {
-    validateNonDefaultPresenceOrThrow(updateIncludeSpanRule, UpdateIncludeSpanRule.ID_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(
-        updateIncludeSpanRule, UpdateIncludeSpanRule.NAME_FIELD_NUMBER);
-    this.validateSpanFilter(updateIncludeSpanRule.getFilter());
-  }
-
   public void validateOrThrow(RequestContext requestContext, GetAllApiNamingRulesRequest request) {
     validateRequestContextOrThrow(requestContext);
   }
@@ -160,52 +128,6 @@ public class SpanProcessingConfigRequestValidator {
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription("Unexpected rule config case: " + printMessage(ruleConfig))
-            .asRuntimeException();
-    }
-  }
-
-  public void validateOrThrow(RequestContext requestContext, GetAllSamplingConfigsRequest request) {
-    validateRequestContextOrThrow(requestContext);
-  }
-
-  public void validateOrThrow(RequestContext requestContext, CreateSamplingConfigRequest request) {
-    validateRequestContextOrThrow(requestContext);
-    this.validateData(request.getSamplingConfigInfo());
-  }
-
-  public void validateOrThrow(RequestContext requestContext, UpdateSamplingConfigRequest request) {
-    validateRequestContextOrThrow(requestContext);
-    this.validateUpdateSamplingConfig(request.getSamplingConfig());
-  }
-
-  public void validateOrThrow(RequestContext requestContext, DeleteSamplingConfigRequest request) {
-    validateRequestContextOrThrow(requestContext);
-    validateNonDefaultPresenceOrThrow(request, DeleteSamplingConfigRequest.ID_FIELD_NUMBER);
-  }
-
-  private void validateData(SamplingConfigInfo samplingConfigInfo) {
-    this.validateRateLimitConfig(samplingConfigInfo.getRateLimitConfig());
-    this.validateSpanFilter(samplingConfigInfo.getFilter());
-  }
-
-  private void validateUpdateSamplingConfig(UpdateSamplingConfig updateSamplingConfig) {
-    validateNonDefaultPresenceOrThrow(updateSamplingConfig, UpdateSamplingConfig.ID_FIELD_NUMBER);
-    this.validateSpanFilter(updateSamplingConfig.getFilter());
-    this.validateRateLimitConfig(updateSamplingConfig.getRateLimitConfig());
-  }
-
-  private void validateRateLimitConfig(RateLimitConfig rateLimitConfig) {
-    this.validateRateLimit(rateLimitConfig.getTraceLimitGlobal());
-    this.validateRateLimit(rateLimitConfig.getTraceLimitPerEndpoint());
-  }
-
-  private void validateRateLimit(RateLimit rateLimit) {
-    switch (rateLimit.getLimitCase()) {
-      case FIXED_WINDOW_LIMIT:
-        break;
-      default:
-        throw Status.INVALID_ARGUMENT
-            .withDescription("Unexpected rate limit case: " + printMessage(rateLimit))
             .asRuntimeException();
     }
   }

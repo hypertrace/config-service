@@ -9,8 +9,6 @@ import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.span.processing.config.service.store.ApiNamingRulesConfigStore;
 import org.hypertrace.span.processing.config.service.store.ExcludeSpanRulesConfigStore;
-import org.hypertrace.span.processing.config.service.store.IncludeSpanRulesConfigStore;
-import org.hypertrace.span.processing.config.service.store.SamplingConfigsConfigStore;
 import org.hypertrace.span.processing.config.service.utils.TimestampConverter;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRule;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
@@ -73,24 +71,18 @@ class SpanProcessingConfigServiceImpl
     extends SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceImplBase {
   private final SpanProcessingConfigRequestValidator validator;
   private final ExcludeSpanRulesConfigStore excludeSpanRulesConfigStore;
-  private final IncludeSpanRulesConfigStore includeSpanRulesConfigStore;
   private final ApiNamingRulesConfigStore apiNamingRulesConfigStore;
-  private final SamplingConfigsConfigStore samplingConfigsConfigStore;
   private final TimestampConverter timestampConverter;
 
   @Inject
   SpanProcessingConfigServiceImpl(
       ExcludeSpanRulesConfigStore excludeSpanRulesConfigStore,
-      IncludeSpanRulesConfigStore includeSpanRulesConfigStore,
       ApiNamingRulesConfigStore apiNamingRulesConfigStore,
-      SamplingConfigsConfigStore samplingConfigsConfigStore,
       SpanProcessingConfigRequestValidator requestValidator,
       TimestampConverter timestampConverter) {
     this.validator = requestValidator;
     this.excludeSpanRulesConfigStore = excludeSpanRulesConfigStore;
-    this.includeSpanRulesConfigStore = includeSpanRulesConfigStore;
     this.apiNamingRulesConfigStore = apiNamingRulesConfigStore;
-    this.samplingConfigsConfigStore = samplingConfigsConfigStore;
     this.timestampConverter = timestampConverter;
   }
 
@@ -336,252 +328,6 @@ class SpanProcessingConfigServiceImpl
                     timestampConverter.convert(configObject.getCreationTimestamp()))
                 .setLastUpdatedTimestamp(
                     timestampConverter.convert(configObject.getLastUpdatedTimestamp()))
-                .build())
-        .build();
-  }
-
-  @Override
-  public void getAllIncludeSpanRules(
-      GetAllIncludeSpanRulesRequest request,
-      StreamObserver<GetAllIncludeSpanRulesResponse> responseObserver) {
-    try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
-      this.validator.validateOrThrow(requestContext, request);
-
-      responseObserver.onNext(
-          GetAllIncludeSpanRulesResponse.newBuilder()
-              .addAllRuleDetails(includeSpanRulesConfigStore.getAllData(requestContext))
-              .build());
-      responseObserver.onCompleted();
-    } catch (Exception e) {
-      log.error("Unable to get all include span rules for request: {}", request, e);
-      responseObserver.onError(e);
-    }
-  }
-
-  @Override
-  public void createIncludeSpanRule(
-      CreateIncludeSpanRuleRequest request,
-      StreamObserver<CreateIncludeSpanRuleResponse> responseObserver) {
-    try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
-      this.validator.validateOrThrow(requestContext, request);
-
-      // TODO: need to handle priorities
-      IncludeSpanRule newRule =
-          IncludeSpanRule.newBuilder()
-              .setId(UUID.randomUUID().toString())
-              .setRuleInfo(request.getRuleInfo())
-              .build();
-
-      responseObserver.onNext(
-          CreateIncludeSpanRuleResponse.newBuilder()
-              .setRuleDetails(
-                  buildIncludeSpanRuleDetails(
-                      this.includeSpanRulesConfigStore.upsertObject(requestContext, newRule)))
-              .build());
-      responseObserver.onCompleted();
-    } catch (Exception exception) {
-      log.error("Error creating include span rule {}", request, exception);
-      responseObserver.onError(exception);
-    }
-  }
-
-  @Override
-  public void updateIncludeSpanRule(
-      UpdateIncludeSpanRuleRequest request,
-      StreamObserver<UpdateIncludeSpanRuleResponse> responseObserver) {
-    try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
-      this.validator.validateOrThrow(requestContext, request);
-
-      UpdateIncludeSpanRule updateIncludeSpanRule = request.getRule();
-      IncludeSpanRule existingRule =
-          this.includeSpanRulesConfigStore
-              .getData(requestContext, updateIncludeSpanRule.getId())
-              .orElseThrow(Status.NOT_FOUND::asException);
-      IncludeSpanRule updatedRule = buildUpdatedRule(existingRule, updateIncludeSpanRule);
-
-      responseObserver.onNext(
-          UpdateIncludeSpanRuleResponse.newBuilder()
-              .setRuleDetails(
-                  buildIncludeSpanRuleDetails(
-                      this.includeSpanRulesConfigStore.upsertObject(requestContext, updatedRule)))
-              .build());
-      responseObserver.onCompleted();
-    } catch (Exception exception) {
-      log.error("Error updating include span rule: {}", request, exception);
-      responseObserver.onError(exception);
-    }
-  }
-
-  @Override
-  public void deleteIncludeSpanRule(
-      DeleteIncludeSpanRuleRequest request,
-      StreamObserver<DeleteIncludeSpanRuleResponse> responseObserver) {
-    try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
-      this.validator.validateOrThrow(requestContext, request);
-
-      // TODO: need to handle priorities
-      this.includeSpanRulesConfigStore
-          .deleteObject(requestContext, request.getId())
-          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
-
-      responseObserver.onNext(DeleteIncludeSpanRuleResponse.newBuilder().build());
-      responseObserver.onCompleted();
-    } catch (Exception exception) {
-      log.error("Error deleting include span rule: {}", request, exception);
-      responseObserver.onError(exception);
-    }
-  }
-
-  private IncludeSpanRuleDetails buildIncludeSpanRuleDetails(
-      ContextualConfigObject<IncludeSpanRule> configObject) {
-    return IncludeSpanRuleDetails.newBuilder()
-        .setRule(configObject.getData())
-        .setMetadata(
-            IncludeSpanRuleMetadata.newBuilder()
-                .setCreationTimestamp(
-                    timestampConverter.convert(configObject.getCreationTimestamp()))
-                .setLastUpdatedTimestamp(
-                    timestampConverter.convert(configObject.getLastUpdatedTimestamp()))
-                .build())
-        .build();
-  }
-
-  private IncludeSpanRule buildUpdatedRule(
-      IncludeSpanRule existingRule, UpdateIncludeSpanRule updateIncludeSpanRule) {
-    return IncludeSpanRule.newBuilder(existingRule)
-        .setRuleInfo(
-            IncludeSpanRuleInfo.newBuilder()
-                .setName(updateIncludeSpanRule.getName())
-                .setFilter(updateIncludeSpanRule.getFilter())
-                .setDisabled(updateIncludeSpanRule.getDisabled())
-                .build())
-        .build();
-  }
-
-  @Override
-  public void getAllSamplingConfigs(
-      GetAllSamplingConfigsRequest request,
-      StreamObserver<GetAllSamplingConfigsResponse> responseObserver) {
-    try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
-      this.validator.validateOrThrow(requestContext, request);
-
-      responseObserver.onNext(
-          GetAllSamplingConfigsResponse.newBuilder()
-              .addAllSamplingConfigDetails(samplingConfigsConfigStore.getAllData(requestContext))
-              .build());
-      responseObserver.onCompleted();
-    } catch (Exception e) {
-      log.error("Unable to get all sampling configs for request: {}", request, e);
-      responseObserver.onError(e);
-    }
-  }
-
-  @Override
-  public void createSamplingConfig(
-      CreateSamplingConfigRequest request,
-      StreamObserver<CreateSamplingConfigResponse> responseObserver) {
-    try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
-      this.validator.validateOrThrow(requestContext, request);
-
-      // TODO: need to handle priorities
-      SamplingConfig newSamplingConfig =
-          SamplingConfig.newBuilder()
-              .setId(UUID.randomUUID().toString())
-              .setSamplingConfigInfo(request.getSamplingConfigInfo())
-              .build();
-
-      responseObserver.onNext(
-          CreateSamplingConfigResponse.newBuilder()
-              .setSamplingConfigDetails(
-                  buildSamplingConfigDetails(
-                      this.samplingConfigsConfigStore.upsertObject(
-                          requestContext, newSamplingConfig)))
-              .build());
-      responseObserver.onCompleted();
-    } catch (Exception exception) {
-      log.error("Error creating sampling config {}", request, exception);
-      responseObserver.onError(exception);
-    }
-  }
-
-  @Override
-  public void updateSamplingConfig(
-      UpdateSamplingConfigRequest request,
-      StreamObserver<UpdateSamplingConfigResponse> responseObserver) {
-    try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
-      this.validator.validateOrThrow(requestContext, request);
-
-      UpdateSamplingConfig updateSamplingConfig = request.getSamplingConfig();
-      SamplingConfig existingSamplingConfig =
-          this.samplingConfigsConfigStore
-              .getData(requestContext, updateSamplingConfig.getId())
-              .orElseThrow(Status.NOT_FOUND::asException);
-      SamplingConfig updatedSamplingConfig =
-          buildUpdatedSamplingConfig(existingSamplingConfig, updateSamplingConfig);
-
-      responseObserver.onNext(
-          UpdateSamplingConfigResponse.newBuilder()
-              .setSamplingConfigDetails(
-                  buildSamplingConfigDetails(
-                      this.samplingConfigsConfigStore.upsertObject(
-                          requestContext, updatedSamplingConfig)))
-              .build());
-      responseObserver.onCompleted();
-    } catch (Exception exception) {
-      log.error("Error updating sampling config: {}", request, exception);
-      responseObserver.onError(exception);
-    }
-  }
-
-  @Override
-  public void deleteSamplingConfig(
-      DeleteSamplingConfigRequest request,
-      StreamObserver<DeleteSamplingConfigResponse> responseObserver) {
-    try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
-      this.validator.validateOrThrow(requestContext, request);
-
-      // TODO: need to handle priorities
-      this.samplingConfigsConfigStore
-          .deleteObject(requestContext, request.getId())
-          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
-
-      responseObserver.onNext(DeleteSamplingConfigResponse.newBuilder().build());
-      responseObserver.onCompleted();
-    } catch (Exception exception) {
-      log.error("Error deleting sampling config: {}", request, exception);
-      responseObserver.onError(exception);
-    }
-  }
-
-  private SamplingConfigDetails buildSamplingConfigDetails(
-      ContextualConfigObject<SamplingConfig> configObject) {
-    return SamplingConfigDetails.newBuilder()
-        .setSamplingConfig(configObject.getData())
-        .setMetadata(
-            SamplingConfigMetadata.newBuilder()
-                .setCreationTimestamp(
-                    timestampConverter.convert(configObject.getCreationTimestamp()))
-                .setLastUpdatedTimestamp(
-                    timestampConverter.convert(configObject.getLastUpdatedTimestamp()))
-                .build())
-        .build();
-  }
-
-  private SamplingConfig buildUpdatedSamplingConfig(
-      SamplingConfig existingSamplingConfig, UpdateSamplingConfig updateSamplingConfig) {
-    return SamplingConfig.newBuilder(existingSamplingConfig)
-        .setSamplingConfigInfo(
-            SamplingConfigInfo.newBuilder()
-                .setRateLimitConfig(updateSamplingConfig.getRateLimitConfig())
-                .setFilter(updateSamplingConfig.getFilter())
                 .build())
         .build();
   }
