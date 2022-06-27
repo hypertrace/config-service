@@ -23,6 +23,7 @@ import ai.traceable.region.config.service.RegionConfigServiceFactory;
 import ai.traceable.reporting.config.service.ReportingConfigServiceFactory;
 import ai.traceable.risk.config.service.RiskConfigServiceFactory;
 import ai.traceable.sensitivedata.config.service.SensitiveDataConfigServicesProvider;
+import ai.traceable.span.processing.config.service.SpanProcessingConfigServiceFactory;
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceFactory;
 import ai.traceable.userattribution.config.service.UserAttributionConfigServiceFactory;
 import ai.traceable.waf.provider.integration.service.WafIntegrationConfigServiceFactory;
@@ -140,6 +141,8 @@ public class TraceableConfigService extends PlatformService {
         new RateLimitingConfigServiceImpl(managedChannel, config, activityEventProducer);
     BindableService rateLimitingConfigServiceV2 =
         RateLimitingConfigServiceFactory.build(managedChannel, config, activityEventProducer);
+    BindableService spanProcessingConfigService =
+        SpanProcessingConfigServiceFactory.build(managedChannel);
 
     List<BindableService> anomalyConfigServices =
         AnomalyConfigServiceFactory.build(
@@ -179,7 +182,8 @@ public class TraceableConfigService extends PlatformService {
         .addService(InterceptorUtil.wrapInterceptors(dataClassificationConfigService))
         .addService(InterceptorUtil.wrapInterceptors(dataExfiltrationDetectionRulesConfigService))
         .addService(InterceptorUtil.wrapInterceptors(wafIntegrationConfigService))
-        .addService(InterceptorUtil.wrapInterceptors(apiAttributeOverridesService));
+        .addService(InterceptorUtil.wrapInterceptors(apiAttributeOverridesService))
+        .addService(InterceptorUtil.wrapInterceptors(spanProcessingConfigService));
 
     internalTraceableConfigServer = internalServerBuilder.build();
 

@@ -110,6 +110,7 @@ dependencies {
   implementation(projects.wafProviderIntegrationServiceImpl)
   implementation(projects.apiAttributeOverrideServiceImpl)
   implementation(projects.externalDataClassificationConfigServiceImpl)
+  implementation(projects.spanProcessingConfigServiceImpl)
   implementation(projects.featureCachingClient)
   implementation(libs.hypertrace.configservice.server)
   implementation(libs.hypertrace.configservice.impl)

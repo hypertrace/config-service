@@ -32,7 +32,6 @@ protobuf {
 
 dependencies {
   api(libs.bundles.grpc.api)
-  protobuf(libs.hypertrace.configservice.span.processing.api) { isTransitive = false }
 }
 
 sourceSets {

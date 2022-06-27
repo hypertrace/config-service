@@ -4,16 +4,123 @@ package ai.traceable.span.processing.config.service.v1;
 
 option java_multiple_files = true;
 
-import "org/hypertrace/span/processing/config/service/v1/sampling_configs.proto";
+import "ai/traceable/span/processing/config/service/v1/sampling_configs.proto";
+import "ai/traceable/span/processing/config/service/v1/span_filter.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
 service SpanProcessingConfigService {
+  rpc CreateProtectionSpanRule(CreateProtectionSpanRuleRequest) returns (CreateProtectionSpanRuleResponse) {}
+
+  rpc UpdateProtectionSpanRule(UpdateProtectionSpanRuleRequest) returns (UpdateProtectionSpanRuleResponse) {}
+
+  rpc GetAllProtectionSpanRules(GetAllProtectionSpanRulesRequest) returns (GetAllProtectionSpanRulesResponse) {}
+
+  rpc DeleteProtectionSpanRule(DeleteProtectionSpanRuleRequest) returns (DeleteProtectionSpanRuleResponse) {}
+
+  rpc CreateSamplingConfig(CreateSamplingConfigRequest) returns (CreateSamplingConfigResponse) {}
+
+  rpc UpdateSamplingConfig(UpdateSamplingConfigRequest) returns (UpdateSamplingConfigResponse) {}
+
+  rpc GetAllSamplingConfigs(GetAllSamplingConfigsRequest) returns (GetAllSamplingConfigsResponse) {}
+
+  rpc DeleteSamplingConfig(DeleteSamplingConfigRequest) returns (DeleteSamplingConfigResponse) {}
+
   rpc GetAllResolvedSamplingConfigs(GetAllResolvedSamplingConfigsRequest) returns (GetAllResolvedSamplingConfigsResponse) {}
 }
 
 message GetAllResolvedSamplingConfigsRequest {}
 
 message GetAllResolvedSamplingConfigsResponse {
-  repeated org.hypertrace.span.processing.config.service.v1.SamplingConfig sampling_configs = 1;
+  repeated SamplingConfig sampling_configs = 1;
 }
+
+message CreateProtectionSpanRuleRequest {
+  ProtectionSpanRuleInfo rule_info = 1;
+}
+
+message CreateProtectionSpanRuleResponse {
+  ProtectionSpanRuleDetails rule_details = 1;
+}
+
+message GetAllProtectionSpanRulesRequest {}
+
+message GetAllProtectionSpanRulesResponse {
+  repeated ProtectionSpanRuleDetails rule_details = 1;
+}
+
+message UpdateProtectionSpanRuleRequest {
+  UpdateProtectionSpanRule rule = 1;
+}
+
+message UpdateProtectionSpanRuleResponse {
+  ProtectionSpanRuleDetails rule_details = 1;
+}
+
+message DeleteProtectionSpanRuleRequest {
+  string id = 1;
+}
+
+message DeleteProtectionSpanRuleResponse {}
+
+message ProtectionSpanRule {
+  string id = 1;
+  ProtectionSpanRuleInfo rule_info = 2;
+}
+
+message ProtectionSpanRuleDetails {
+  ProtectionSpanRule rule = 1;
+  ProtectionSpanRuleMetadata metadata = 2;
+}
+
+message ProtectionSpanRuleInfo {
+  string name = 1;
+  SpanFilter filter = 2;
+  bool disabled = 3;
+}
+
+message ProtectionSpanRuleMetadata {
+  google.protobuf.Timestamp creation_timestamp = 1;
+  google.protobuf.Timestamp last_updated_timestamp = 2;
+}
+
+message UpdateProtectionSpanRule {
+  string id = 1;
+  string name = 2;
+  SpanFilter filter = 3;
+  bool disabled = 4;
+}
+
+message GetAllSamplingConfigsRequest {}
+
+message GetAllSamplingConfigsResponse {
+  repeated SamplingConfigDetails sampling_config_details = 1;
+}
+
+message CreateSamplingConfigRequest {
+  SamplingConfigInfo sampling_config_info = 1;
+}
+
+message CreateSamplingConfigResponse {
+  SamplingConfigDetails sampling_config_details = 1;
+}
+
+message UpdateSamplingConfigRequest {
+  UpdateSamplingConfig sampling_config = 1;
+}
+
+message UpdateSamplingConfigResponse {
+  SamplingConfigDetails sampling_config_details = 1;
+}
+
+message UpdateSamplingConfig {
+  string id = 1;
+  RateLimitConfig rate_limit_config = 2;
+  SpanFilter filter = 3;
+}
+
+message DeleteSamplingConfigRequest {
+  string id = 1;
+}
+
+message DeleteSamplingConfigResponse {}
