@@ -12,31 +12,17 @@ import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
-import org.hypertrace.span.processing.config.service.v1.CreateIncludeSpanRuleRequest;
-import org.hypertrace.span.processing.config.service.v1.CreateSamplingConfigRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleRequest;
-import org.hypertrace.span.processing.config.service.v1.DeleteIncludeSpanRuleRequest;
-import org.hypertrace.span.processing.config.service.v1.DeleteSamplingConfigRequest;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.GetAllApiNamingRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
-import org.hypertrace.span.processing.config.service.v1.GetAllIncludeSpanRulesRequest;
-import org.hypertrace.span.processing.config.service.v1.GetAllSamplingConfigsRequest;
-import org.hypertrace.span.processing.config.service.v1.IncludeSpanRuleInfo;
-import org.hypertrace.span.processing.config.service.v1.RateLimit;
-import org.hypertrace.span.processing.config.service.v1.RateLimitConfig;
-import org.hypertrace.span.processing.config.service.v1.SamplingConfigInfo;
 import org.hypertrace.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 import org.hypertrace.span.processing.config.service.v1.SpanFilter;
 import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRule;
 import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.UpdateExcludeSpanRule;
 import org.hypertrace.span.processing.config.service.v1.UpdateExcludeSpanRuleRequest;
-import org.hypertrace.span.processing.config.service.v1.UpdateIncludeSpanRule;
-import org.hypertrace.span.processing.config.service.v1.UpdateIncludeSpanRuleRequest;
-import org.hypertrace.span.processing.config.service.v1.UpdateSamplingConfig;
-import org.hypertrace.span.processing.config.service.v1.UpdateSamplingConfigRequest;
 
 public class SpanProcessingConfigRequestValidator {
 
