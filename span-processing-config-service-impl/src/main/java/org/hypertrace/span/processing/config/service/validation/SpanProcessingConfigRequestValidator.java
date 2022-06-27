@@ -4,7 +4,9 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
+import com.google.re2j.Pattern;
 import io.grpc.Status;
+import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
@@ -124,6 +126,7 @@ public class SpanProcessingConfigRequestValidator {
                       segmentMatchingBasedConfig))
               .asRuntimeException();
         }
+        validateRegex(segmentMatchingBasedConfig.getRegexesList());
         break;
       default:
         throw Status.INVALID_ARGUMENT
@@ -141,6 +144,16 @@ public class SpanProcessingConfigRequestValidator {
         throw Status.INVALID_ARGUMENT
             .withDescription("Unexpected filter case: " + printMessage(filter))
             .asRuntimeException();
+    }
+  }
+
+  private void validateRegex(List<String> regexes) {
+    try {
+      Pattern pattern = Pattern.compile(String.join("/", regexes));
+    } catch (Exception e) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(String.format("Invalid regexes : %s.", regexes))
+          .asRuntimeException();
     }
   }
 }
