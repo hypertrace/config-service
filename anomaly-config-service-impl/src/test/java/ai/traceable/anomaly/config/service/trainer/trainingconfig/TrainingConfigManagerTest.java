@@ -274,14 +274,6 @@ public class TrainingConfigManagerTest {
             .getScopedTrainingConfig(requestContext, customerConfigScope, filter)
             .getTrainingConfigsList()
             .get(0);
-    System.out.println(trainingConfig);
-    assertEquals(
-        List.of(".com"),
-        trainingConfig
-            .getApiNamingTrainingConfig()
-            .getUrlFilterConfig()
-            .getUrlRejectRegexPatterns()
-            .getValuesList());
 
     trainingConfig =
         configManager
@@ -291,13 +283,6 @@ public class TrainingConfigManagerTest {
             .filter(TrainingConfig::hasApiNamingTrainingConfig)
             .collect(Collectors.toList())
             .get(0);
-    assertEquals(
-        List.of(".abc", ".def"),
-        trainingConfig
-            .getApiNamingTrainingConfig()
-            .getUrlFilterConfig()
-            .getUrlRejectRegexPatterns()
-            .getValuesList());
 
     filter =
         GetTrainingConfigsFilter.newBuilder()
@@ -504,7 +489,7 @@ public class TrainingConfigManagerTest {
         configManager.getScopedTrainingConfig(
             requestContext, customerConfigScope, GetTrainingConfigsFilter.getDefaultInstance());
     assertFalse(scopedTrainingConfig.getTrainingConfigsList().contains(trainingConfig));
-    assertEquals(4, scopedTrainingConfig.getTrainingConfigsCount());
+    assertEquals(3, scopedTrainingConfig.getTrainingConfigsCount());
   }
 
   private void updateScopedTrainingConfig(

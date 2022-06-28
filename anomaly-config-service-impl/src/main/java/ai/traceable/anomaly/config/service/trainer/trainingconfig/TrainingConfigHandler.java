@@ -11,7 +11,6 @@ import ai.traceable.anomaly.config.service.v1.trainer.SensitiveDataTrainingConfi
 import ai.traceable.anomaly.config.service.v1.trainer.SessionTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfigType;
-import ai.traceable.anomaly.config.service.v1.trainer.UrlFilterConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
@@ -173,32 +172,6 @@ public class TrainingConfigHandler {
       TrainingConfig trainingConfig) {
     switch (trainingConfig.getApiNamingTrainingConfig().getConfigCase()) {
       case REJECT_FILTER_CONFIG:
-        // URLFilterConfig has been deprecated in the ApiNamingTrainerConfig.
-        // Now its part of FilterConfig, but to maintain the backward compatibility,
-        // this has been done so that but fields are populated till we migrate them all.
-        if (trainingConfig
-            .getApiNamingTrainingConfig()
-            .getRejectFilterConfigOrBuilder()
-            .hasUrlPathFilterConfig()) {
-          TrainingConfig.Builder urlFilterApiNamingConfig =
-              TrainingConfig.newBuilder(trainingConfig);
-          UrlFilterConfig urlFilterConfig =
-              UrlFilterConfig.newBuilder()
-                  .setUrlRejectRegexPatterns(
-                      trainingConfig
-                          .getApiNamingTrainingConfig()
-                          .getRejectFilterConfigOrBuilder()
-                          .getUrlPathFilterConfig()
-                          .getUrlPathRegexPatterns())
-                  .build();
-          urlFilterApiNamingConfig
-              .getApiNamingTrainingConfigBuilder()
-              .setUrlFilterConfig(urlFilterConfig);
-          apiNamingTrainingConfigMap.put(
-              ConfigCase.URL_FILTER_CONFIG, urlFilterApiNamingConfig.build());
-        }
-        // break wasn't put intentionally here. The above logic is added to manage the deprecated
-        // field
       case TRIE_MODEL_TRAINING_CONFIG:
       case CUSTOM_RULES_LIST_CONFIG:
         apiNamingTrainingConfigMap.put(

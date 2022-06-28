@@ -12,7 +12,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 public class TrainerConfigServiceConfigTest {
-  private static final String FILE_PATH = "trainer/trainerConfigServiceConfig.conf";
+  private static final String FILE_PATH = "trainer/trainer-config-service-config.conf";
 
   @Test
   void testConfig() {

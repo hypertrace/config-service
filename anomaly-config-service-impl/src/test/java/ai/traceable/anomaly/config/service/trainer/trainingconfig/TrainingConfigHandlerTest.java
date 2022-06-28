@@ -134,25 +134,11 @@ class TrainingConfigHandlerTest {
                     .build())
             .build();
 
-    TrainingConfig trainingConfig4 =
-        TrainingConfig.newBuilder()
-            .setApiNamingTrainingConfig(
-                ApiNamingTrainingConfig.newBuilder()
-                    .setUrlFilterConfig(
-                        UrlFilterConfig.newBuilder()
-                            .setUrlRejectRegexPatterns(
-                                StringList.newBuilder()
-                                    .addAllValues(List.of(".edu", ".in"))
-                                    .build())
-                            .build())
-                    .build())
-            .build();
-
     resultConfig =
         configHandler.merge(
             config,
             ScopedTrainingConfig.newBuilder()
-                .addAllTrainingConfigs(List.of(trainingConfig2, trainingConfig3, trainingConfig4))
+                .addAllTrainingConfigs(List.of(trainingConfig2, trainingConfig3))
                 .build());
 
     trainingConfig =
@@ -187,19 +173,11 @@ class TrainingConfigHandlerTest {
                     conf.getTrainingConfigCase()
                         .equals(TrainingConfig.TrainingConfigCase.API_NAMING_TRAINING_CONFIG))
             .collect(Collectors.toList());
-    assertEquals(
-        List.of(".com", ".us", ".au"),
-        apiNamingTrainingConfig
-            .get(0)
-            .getApiNamingTrainingConfig()
-            .getUrlFilterConfig()
-            .getUrlRejectRegexPatterns()
-            .getValuesList());
 
     assertEquals(
         List.of(".com", ".us", ".au"),
         apiNamingTrainingConfig
-            .get(1)
+            .get(0)
             .getApiNamingTrainingConfig()
             .getRejectFilterConfig()
             .getUrlPathFilterConfig()
@@ -209,7 +187,7 @@ class TrainingConfigHandlerTest {
     assertEquals(
         List.of(302),
         apiNamingTrainingConfig
-            .get(1)
+            .get(0)
             .getApiNamingTrainingConfig()
             .getRejectFilterConfig()
             .getStatusCodeFilterConfig()
@@ -220,7 +198,7 @@ class TrainingConfigHandlerTest {
     assertEquals(
         List.of("bot"),
         apiNamingTrainingConfig
-            .get(1)
+            .get(0)
             .getApiNamingTrainingConfig()
             .getRejectFilterConfig()
             .getUserAgentFilterConfig()
@@ -230,7 +208,7 @@ class TrainingConfigHandlerTest {
     assertEquals(
         25,
         apiNamingTrainingConfig
-            .get(1)
+            .get(0)
             .getApiNamingTrainingConfig()
             .getRejectFilterConfig()
             .getSegmentFilterConfig()
