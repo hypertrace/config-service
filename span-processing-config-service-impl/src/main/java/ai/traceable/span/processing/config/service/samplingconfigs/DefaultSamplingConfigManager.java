@@ -57,13 +57,6 @@ public class DefaultSamplingConfigManager implements SamplingConfigManager {
   }
 
   @Override
-  public List<SamplingConfig> getAllSamplingConfigs(RequestContext requestContext) {
-    return getAllSamplingConfigsDetails(requestContext).stream()
-        .map(SamplingConfigDetails::getSamplingConfig)
-        .collect(Collectors.toUnmodifiableList());
-  }
-
-  @Override
   public List<SamplingConfig> getAllResolvedSamplingConfigs(RequestContext requestContext) {
     LicenseStatus licenseStatus = licenseStatusConfigManager.getLicenseStatus();
     if (LICENSE_LIMIT_EXHAUSTED.equals(licenseStatus.getTracesLicenseLimit())) {
@@ -111,6 +104,12 @@ public class DefaultSamplingConfigManager implements SamplingConfigManager {
     this.samplingConfigsConfigStore
         .deleteObject(requestContext, deleteSamplingConfigRequest.getId())
         .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+  }
+
+  private List<SamplingConfig> getAllSamplingConfigs(RequestContext requestContext) {
+    return getAllSamplingConfigsDetails(requestContext).stream()
+        .map(SamplingConfigDetails::getSamplingConfig)
+        .collect(Collectors.toUnmodifiableList());
   }
 
   private SamplingConfigDetails buildSamplingConfigDetails(

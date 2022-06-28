@@ -1,6 +1,7 @@
 package ai.traceable.span.processing.config.service;
 
 import ai.traceable.span.processing.config.service.licensestatus.LicenseStatusConfigManagerModule;
+import ai.traceable.span.processing.config.service.protectionspanrules.ProtectionSpanRulesManagerModule;
 import ai.traceable.span.processing.config.service.samplingconfigs.SamplingConfigManagerModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -27,6 +28,7 @@ public class SpanProcessingConfigServiceModule extends AbstractModule {
 
     install(new LicenseStatusConfigManagerModule());
     install(new SamplingConfigManagerModule());
+    install(new ProtectionSpanRulesManagerModule());
   }
 
   @Provides

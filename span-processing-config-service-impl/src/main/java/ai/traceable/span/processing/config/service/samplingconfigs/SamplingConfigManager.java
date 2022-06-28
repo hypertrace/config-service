@@ -12,8 +12,6 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public interface SamplingConfigManager {
   List<SamplingConfigDetails> getAllSamplingConfigsDetails(RequestContext requestContext);
 
-  List<SamplingConfig> getAllSamplingConfigs(RequestContext requestContext);
-
   List<SamplingConfig> getAllResolvedSamplingConfigs(RequestContext requestContext);
 
   SamplingConfigDetails createSamplingConfig(

@@ -18,6 +18,8 @@ service SpanProcessingConfigService {
 
   rpc DeleteProtectionSpanRule(DeleteProtectionSpanRuleRequest) returns (DeleteProtectionSpanRuleResponse) {}
 
+  rpc GetAllResolvedProtectionSpanRules(GetAllResolvedProtectionSpanRulesRequest) returns (GetAllResolvedProtectionSpanRulesResponse) {}
+
   rpc CreateSamplingConfig(CreateSamplingConfigRequest) returns (CreateSamplingConfigResponse) {}
 
   rpc UpdateSamplingConfig(UpdateSamplingConfigRequest) returns (UpdateSamplingConfigResponse) {}
@@ -33,6 +35,12 @@ message GetAllResolvedSamplingConfigsRequest {}
 
 message GetAllResolvedSamplingConfigsResponse {
   repeated SamplingConfig sampling_configs = 1;
+}
+
+message GetAllResolvedProtectionSpanRulesRequest {}
+
+message GetAllResolvedProtectionSpanRulesResponse {
+  repeated ProtectionSpanRule rules = 1;
 }
 
 message CreateProtectionSpanRuleRequest {

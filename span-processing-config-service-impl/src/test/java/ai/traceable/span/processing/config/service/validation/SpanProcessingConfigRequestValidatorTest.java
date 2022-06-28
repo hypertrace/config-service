@@ -12,6 +12,8 @@ import ai.traceable.span.processing.config.service.v1.DeleteProtectionSpanRuleRe
 import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.Field;
 import ai.traceable.span.processing.config.service.v1.GetAllProtectionSpanRulesRequest;
+import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSpanRulesRequest;
+import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
 import ai.traceable.span.processing.config.service.v1.RateLimit;
@@ -59,6 +61,21 @@ class SpanProcessingConfigRequestValidatorTest {
         () ->
             validator.validateOrThrow(
                 mockRequestContext, GetAllProtectionSpanRulesRequest.newBuilder().build()));
+  }
+
+  @Test
+  void validatesResolvedProtectionSpanRulesGetRequest() {
+    assertInvalidArgStatusContaining(
+        "Tenant ID",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, GetAllResolvedProtectionSpanRulesRequest.newBuilder().build()));
+
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, GetAllResolvedProtectionSpanRulesRequest.newBuilder().build()));
   }
 
   @Test
@@ -170,6 +187,21 @@ class SpanProcessingConfigRequestValidatorTest {
         () ->
             validator.validateOrThrow(
                 mockRequestContext, GetAllSamplingConfigsRequest.newBuilder().build()));
+  }
+
+  @Test
+  void validatesResolvedSamplingConfigsGetRequest() {
+    assertInvalidArgStatusContaining(
+        "Tenant ID",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, GetAllResolvedSamplingConfigsRequest.newBuilder().build()));
+
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, GetAllResolvedSamplingConfigsRequest.newBuilder().build()));
   }
 
   @Test

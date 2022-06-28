@@ -3,6 +3,7 @@ package ai.traceable.span.processing.config.service;
 import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_LIMIT_AVAILABLE;
 import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_LIMIT_EXHAUSTED;
 import static ai.traceable.span.processing.config.service.SpanProcessingConfigServiceImplTestUtils.buildMockConfig;
+import static ai.traceable.span.processing.config.service.SpanProcessingConfigServiceImplTestUtils.buildProtectionSpanRuleInfo;
 import static ai.traceable.span.processing.config.service.SpanProcessingConfigServiceImplTestUtils.buildSamplingConfig;
 import static ai.traceable.span.processing.config.service.SpanProcessingConfigServiceImplTestUtils.buildSamplingConfigInfo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -17,6 +18,8 @@ import ai.traceable.licensestatus.config.service.v1.LicenseStatus;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc;
 import ai.traceable.span.processing.config.service.licensestatus.DefaultLicenseStatusConfigManager;
 import ai.traceable.span.processing.config.service.licensestatus.LicenseStatusConfigManager;
+import ai.traceable.span.processing.config.service.protectionspanrules.DefaultProtectionSpanRulesManager;
+import ai.traceable.span.processing.config.service.protectionspanrules.ProtectionSpanRulesManager;
 import ai.traceable.span.processing.config.service.samplingconfigs.DefaultSamplingConfigManager;
 import ai.traceable.span.processing.config.service.samplingconfigs.RateLimitConfigManager;
 import ai.traceable.span.processing.config.service.samplingconfigs.SamplingConfigManager;
@@ -29,6 +32,7 @@ import ai.traceable.span.processing.config.service.v1.DeleteProtectionSpanRuleRe
 import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.Field;
 import ai.traceable.span.processing.config.service.v1.GetAllProtectionSpanRulesRequest;
+import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSpanRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRule;
@@ -43,7 +47,6 @@ import ai.traceable.span.processing.config.service.v1.SamplingConfigDetails;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
 import ai.traceable.span.processing.config.service.v1.SpanFilter;
 import ai.traceable.span.processing.config.service.v1.SpanFilterValue;
-import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
 import ai.traceable.span.processing.config.service.v1.UpdateProtectionSpanRule;
 import ai.traceable.span.processing.config.service.v1.UpdateProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateSamplingConfig;
@@ -68,7 +71,7 @@ class SpanProcessingConfigServiceImplTest {
   private ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc
           .SpanProcessingConfigServiceBlockingStub
       spanProcessingConfigServiceStub;
-  TimestampConverter timestampConverter;
+  private TimestampConverter timestampConverter;
 
   @BeforeEach
   void beforeEach() {
@@ -80,36 +83,42 @@ class SpanProcessingConfigServiceImplTest {
             .mockDelete()
             .mockUpsertAll();
 
-    ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
-        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     licenseStatusConfigServiceBlockingStub =
         mock(LicenseStatusConfigServiceGrpc.LicenseStatusConfigServiceBlockingStub.class);
-    timestampConverter = mock(TimestampConverter.class);
 
     RateLimitConfigManager rateLimitConfigManager = new RateLimitConfigManager(buildMockConfig());
     LicenseStatusConfigManager licenseStatusConfigManager =
         new DefaultLicenseStatusConfigManager(licenseStatusConfigServiceBlockingStub);
 
+    ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
+        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    timestampConverter = mock(TimestampConverter.class);
+
     SamplingConfigsConfigStore samplingConfigsConfigStore =
         new SamplingConfigsConfigStore(genericStub, timestampConverter);
+    ProtectionSpanRulesConfigStore protectionSpanRulesConfigStore =
+        new ProtectionSpanRulesConfigStore(genericStub, timestampConverter);
     SamplingConfigManager samplingConfigManager =
         new DefaultSamplingConfigManager(
             samplingConfigsConfigStore,
             timestampConverter,
             rateLimitConfigManager,
             licenseStatusConfigManager);
+    ProtectionSpanRulesManager protectionSpanRulesManager =
+        new DefaultProtectionSpanRulesManager(
+            protectionSpanRulesConfigStore, timestampConverter, licenseStatusConfigManager);
 
     this.mockGenericConfigService
         .addService(
             new SpanProcessingConfigServiceImpl(
                 samplingConfigManager,
-                new ProtectionSpanRulesConfigStore(genericStub, timestampConverter),
-                new SpanProcessingConfigRequestValidator(),
-                timestampConverter))
+                protectionSpanRulesManager,
+                new SpanProcessingConfigRequestValidator()))
         .start();
 
     this.spanProcessingConfigServiceStub =
-        SpanProcessingConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+        ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc
+            .newBlockingStub(this.mockGenericConfigService.channel());
 
     when(timestampConverter.convert(any()))
         .thenReturn(Timestamp.newBuilder().setSeconds(100).build());
@@ -132,7 +141,7 @@ class SpanProcessingConfigServiceImplTest {
                 .build());
 
     List<SamplingConfig> samplingConfigs =
-        spanProcessingConfigServiceStub
+        this.spanProcessingConfigServiceStub
             .getAllResolvedSamplingConfigs(
                 GetAllResolvedSamplingConfigsRequest.newBuilder().build())
             .getSamplingConfigsList();
@@ -163,7 +172,7 @@ class SpanProcessingConfigServiceImplTest {
                 .build());
 
     List<SamplingConfig> samplingConfigs =
-        spanProcessingConfigServiceStub
+        this.spanProcessingConfigServiceStub
             .getAllResolvedSamplingConfigs(
                 GetAllResolvedSamplingConfigsRequest.newBuilder().build())
             .getSamplingConfigsList();
@@ -172,6 +181,78 @@ class SpanProcessingConfigServiceImplTest {
     assertEquals(samplingConfig, samplingConfigs.get(0));
     // default sampling config
     assertEquals(buildSamplingConfig("default-sampling-config-id", 100), samplingConfigs.get(1));
+  }
+
+  @Test
+  void testGetAllResolvedProtectionSpanRules_licenseLimitExhausted() {
+    when(licenseStatusConfigServiceBlockingStub.getLicenseStatus(any()))
+        .thenReturn(
+            GetLicenseStatusResponse.newBuilder()
+                .setLicenseStatus(
+                    LicenseStatus.newBuilder()
+                        .setTracesLicenseLimit(LICENSE_LIMIT_EXHAUSTED)
+                        .setProtectionLicense(LicenseStatus.License.newBuilder().build())
+                        .build())
+                .build());
+
+    List<ProtectionSpanRule> protectionSpanRules =
+        spanProcessingConfigServiceStub
+            .getAllResolvedProtectionSpanRules(
+                GetAllResolvedProtectionSpanRulesRequest.newBuilder().build())
+            .getRulesList();
+
+    assertTrue(protectionSpanRules.isEmpty());
+  }
+
+  @Test
+  void testGetAllResolvedProtectionSpanRules_licenseLimitAvailable_noProtectionLicense() {
+    when(licenseStatusConfigServiceBlockingStub.getLicenseStatus(any()))
+        .thenReturn(
+            GetLicenseStatusResponse.newBuilder()
+                .setLicenseStatus(
+                    LicenseStatus.newBuilder()
+                        .setTracesLicenseLimit(LICENSE_LIMIT_AVAILABLE)
+                        .build())
+                .build());
+
+    List<ProtectionSpanRule> protectionSpanRules =
+        spanProcessingConfigServiceStub
+            .getAllResolvedProtectionSpanRules(
+                GetAllResolvedProtectionSpanRulesRequest.newBuilder().build())
+            .getRulesList();
+
+    assertTrue(protectionSpanRules.isEmpty());
+  }
+
+  @Test
+  void testGetAllResolvedProtectionSpanRules_licenseLimitAvailable() {
+    ProtectionSpanRuleDetails protectionSpanRuleDetails =
+        this.spanProcessingConfigServiceStub
+            .createProtectionSpanRule(
+                CreateProtectionSpanRuleRequest.newBuilder()
+                    .setRuleInfo(buildProtectionSpanRuleInfo())
+                    .build())
+            .getRuleDetails();
+    ProtectionSpanRule protectionSpanRule = protectionSpanRuleDetails.getRule();
+
+    when(licenseStatusConfigServiceBlockingStub.getLicenseStatus(any()))
+        .thenReturn(
+            GetLicenseStatusResponse.newBuilder()
+                .setLicenseStatus(
+                    LicenseStatus.newBuilder()
+                        .setTracesLicenseLimit(LICENSE_LIMIT_AVAILABLE)
+                        .setProtectionLicense(LicenseStatus.License.newBuilder().build())
+                        .build())
+                .build());
+
+    List<ProtectionSpanRule> protectionSpanRules =
+        spanProcessingConfigServiceStub
+            .getAllResolvedProtectionSpanRules(
+                GetAllResolvedProtectionSpanRulesRequest.newBuilder().build())
+            .getRulesList();
+
+    assertEquals(1, protectionSpanRules.size());
+    assertEquals(protectionSpanRule, protectionSpanRules.get(0));
   }
 
   @Test

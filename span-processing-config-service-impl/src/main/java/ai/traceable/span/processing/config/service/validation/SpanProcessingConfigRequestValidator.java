@@ -9,6 +9,7 @@ import ai.traceable.span.processing.config.service.v1.CreateSamplingConfigReques
 import ai.traceable.span.processing.config.service.v1.DeleteProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllProtectionSpanRulesRequest;
+import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSpanRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
@@ -45,6 +46,11 @@ public class SpanProcessingConfigRequestValidator {
       RequestContext requestContext, DeleteProtectionSpanRuleRequest request) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, DeleteProtectionSpanRuleRequest.ID_FIELD_NUMBER);
+  }
+
+  public void validateOrThrow(
+      RequestContext requestContext, GetAllResolvedProtectionSpanRulesRequest request) {
+    validateRequestContextOrThrow(requestContext);
   }
 
   private void validateData(ProtectionSpanRuleInfo protectionSpanRuleInfo) {
