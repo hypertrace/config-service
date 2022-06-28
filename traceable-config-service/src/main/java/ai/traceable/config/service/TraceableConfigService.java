@@ -142,7 +142,7 @@ public class TraceableConfigService extends PlatformService {
     BindableService rateLimitingConfigServiceV2 =
         RateLimitingConfigServiceFactory.build(managedChannel, config, activityEventProducer);
     BindableService spanProcessingConfigService =
-        SpanProcessingConfigServiceFactory.build(managedChannel);
+        SpanProcessingConfigServiceFactory.build(managedChannel, config);
 
     List<BindableService> anomalyConfigServices =
         AnomalyConfigServiceFactory.build(

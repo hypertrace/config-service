@@ -1,7 +1,7 @@
 package ai.traceable.span.processing.config.service;
 
+import ai.traceable.span.processing.config.service.samplingconfigs.SamplingConfigManager;
 import ai.traceable.span.processing.config.service.store.ProtectionSpanRulesConfigStore;
-import ai.traceable.span.processing.config.service.store.SamplingConfigsConfigStore;
 import ai.traceable.span.processing.config.service.utils.TimestampConverter;
 import ai.traceable.span.processing.config.service.v1.CreateProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.CreateProtectionSpanRuleResponse;
@@ -13,21 +13,18 @@ import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigReques
 import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigResponse;
 import ai.traceable.span.processing.config.service.v1.GetAllProtectionSpanRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllProtectionSpanRulesResponse;
+import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsRequest;
+import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsResponse;
 import ai.traceable.span.processing.config.service.v1.GetAllSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllSamplingConfigsResponse;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRule;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleDetails;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleMetadata;
-import ai.traceable.span.processing.config.service.v1.SamplingConfig;
-import ai.traceable.span.processing.config.service.v1.SamplingConfigDetails;
-import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
-import ai.traceable.span.processing.config.service.v1.SamplingConfigMetadata;
 import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
 import ai.traceable.span.processing.config.service.v1.UpdateProtectionSpanRule;
 import ai.traceable.span.processing.config.service.v1.UpdateProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateProtectionSpanRuleResponse;
-import ai.traceable.span.processing.config.service.v1.UpdateSamplingConfig;
 import ai.traceable.span.processing.config.service.v1.UpdateSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateSamplingConfigResponse;
 import ai.traceable.span.processing.config.service.validation.SpanProcessingConfigRequestValidator;
@@ -43,21 +40,41 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class SpanProcessingConfigServiceImpl
     extends SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceImplBase {
 
-  private final SpanProcessingConfigRequestValidator validator;
-  private final SamplingConfigsConfigStore samplingConfigsConfigStore;
-  private final ProtectionSpanRulesConfigStore protectionSpanRulesConfigStore;
   private final TimestampConverter timestampConverter;
+  private final SpanProcessingConfigRequestValidator validator;
+  private final SamplingConfigManager samplingConfigManager;
+  private final ProtectionSpanRulesConfigStore protectionSpanRulesConfigStore;
 
   @Inject
-  SpanProcessingConfigServiceImpl(
-      SamplingConfigsConfigStore samplingConfigsConfigStore,
+  public SpanProcessingConfigServiceImpl(
+      SamplingConfigManager samplingConfigManager,
       ProtectionSpanRulesConfigStore protectionSpanRulesConfigStore,
       SpanProcessingConfigRequestValidator requestValidator,
       TimestampConverter timestampConverter) {
     this.validator = requestValidator;
     this.protectionSpanRulesConfigStore = protectionSpanRulesConfigStore;
-    this.samplingConfigsConfigStore = samplingConfigsConfigStore;
+    this.samplingConfigManager = samplingConfigManager;
     this.timestampConverter = timestampConverter;
+  }
+
+  @Override
+  public void getAllResolvedSamplingConfigs(
+      GetAllResolvedSamplingConfigsRequest request,
+      StreamObserver<GetAllResolvedSamplingConfigsResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      this.validator.validateOrThrow(requestContext, request);
+
+      responseObserver.onNext(
+          GetAllResolvedSamplingConfigsResponse.newBuilder()
+              .addAllSamplingConfigs(
+                  this.samplingConfigManager.getAllResolvedSamplingConfigs(requestContext))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to get all resolved sampling configs for request: {}", request, e);
+      responseObserver.onError(e);
+    }
   }
 
   @Override
@@ -194,7 +211,7 @@ public class SpanProcessingConfigServiceImpl
       responseObserver.onNext(
           GetAllSamplingConfigsResponse.newBuilder()
               .addAllSamplingConfigDetails(
-                  this.samplingConfigsConfigStore.getAllData(requestContext))
+                  this.samplingConfigManager.getAllSamplingConfigsDetails(requestContext))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -211,19 +228,10 @@ public class SpanProcessingConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
 
-      // TODO: need to handle priorities
-      SamplingConfig newSamplingConfig =
-          SamplingConfig.newBuilder()
-              .setId(UUID.randomUUID().toString())
-              .setSamplingConfigInfo(request.getSamplingConfigInfo())
-              .build();
-
       responseObserver.onNext(
           CreateSamplingConfigResponse.newBuilder()
               .setSamplingConfigDetails(
-                  buildSamplingConfigDetails(
-                      this.samplingConfigsConfigStore.upsertObject(
-                          requestContext, newSamplingConfig)))
+                  this.samplingConfigManager.createSamplingConfig(requestContext, request))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -240,20 +248,10 @@ public class SpanProcessingConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
 
-      UpdateSamplingConfig updateSamplingConfig = request.getSamplingConfig();
-      SamplingConfig existingSamplingConfig =
-          this.samplingConfigsConfigStore
-              .getData(requestContext, updateSamplingConfig.getId())
-              .orElseThrow(Status.NOT_FOUND::asException);
-      SamplingConfig updatedSamplingConfig =
-          buildUpdatedSamplingConfig(existingSamplingConfig, updateSamplingConfig);
-
       responseObserver.onNext(
           UpdateSamplingConfigResponse.newBuilder()
               .setSamplingConfigDetails(
-                  buildSamplingConfigDetails(
-                      this.samplingConfigsConfigStore.upsertObject(
-                          requestContext, updatedSamplingConfig)))
+                  this.samplingConfigManager.updateSamplingConfig(requestContext, request))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -270,10 +268,7 @@ public class SpanProcessingConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
 
-      // TODO: need to handle priorities
-      this.samplingConfigsConfigStore
-          .deleteObject(requestContext, request.getId())
-          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      this.samplingConfigManager.deleteSamplingConfig(requestContext, request);
 
       responseObserver.onNext(DeleteSamplingConfigResponse.newBuilder().build());
       responseObserver.onCompleted();
@@ -281,30 +276,5 @@ public class SpanProcessingConfigServiceImpl
       log.error("Error deleting sampling config: {}", request, exception);
       responseObserver.onError(exception);
     }
-  }
-
-  private SamplingConfigDetails buildSamplingConfigDetails(
-      ContextualConfigObject<SamplingConfig> configObject) {
-    return SamplingConfigDetails.newBuilder()
-        .setSamplingConfig(configObject.getData())
-        .setMetadata(
-            SamplingConfigMetadata.newBuilder()
-                .setCreationTimestamp(
-                    timestampConverter.convert(configObject.getCreationTimestamp()))
-                .setLastUpdatedTimestamp(
-                    timestampConverter.convert(configObject.getLastUpdatedTimestamp()))
-                .build())
-        .build();
-  }
-
-  private SamplingConfig buildUpdatedSamplingConfig(
-      SamplingConfig existingSamplingConfig, UpdateSamplingConfig updateSamplingConfig) {
-    return SamplingConfig.newBuilder(existingSamplingConfig)
-        .setSamplingConfigInfo(
-            SamplingConfigInfo.newBuilder()
-                .setRateLimitConfig(updateSamplingConfig.getRateLimitConfig())
-                .setFilter(updateSamplingConfig.getFilter())
-                .build())
-        .build();
   }
 }

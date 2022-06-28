@@ -9,6 +9,7 @@ import ai.traceable.span.processing.config.service.v1.CreateSamplingConfigReques
 import ai.traceable.span.processing.config.service.v1.DeleteProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllProtectionSpanRulesRequest;
+import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
 import ai.traceable.span.processing.config.service.v1.RateLimit;
@@ -49,7 +50,9 @@ public class SpanProcessingConfigRequestValidator {
   private void validateData(ProtectionSpanRuleInfo protectionSpanRuleInfo) {
     validateNonDefaultPresenceOrThrow(
         protectionSpanRuleInfo, ProtectionSpanRuleInfo.NAME_FIELD_NUMBER);
-    this.validateSpanFilter(protectionSpanRuleInfo.getFilter());
+    if (protectionSpanRuleInfo.hasFilter()) {
+      this.validateSpanFilter(protectionSpanRuleInfo.getFilter());
+    }
   }
 
   private void validateUpdateRule(UpdateProtectionSpanRule updateProtectionSpanRule) {
@@ -79,14 +82,23 @@ public class SpanProcessingConfigRequestValidator {
     validateNonDefaultPresenceOrThrow(request, DeleteSamplingConfigRequest.ID_FIELD_NUMBER);
   }
 
+  public void validateOrThrow(
+      RequestContext requestContext, GetAllResolvedSamplingConfigsRequest request) {
+    validateRequestContextOrThrow(requestContext);
+  }
+
   private void validateData(SamplingConfigInfo samplingConfigInfo) {
     this.validateRateLimitConfig(samplingConfigInfo.getRateLimitConfig());
-    this.validateSpanFilter(samplingConfigInfo.getFilter());
+    if (samplingConfigInfo.hasFilter()) {
+      this.validateSpanFilter(samplingConfigInfo.getFilter());
+    }
   }
 
   private void validateUpdateSamplingConfig(UpdateSamplingConfig updateSamplingConfig) {
     validateNonDefaultPresenceOrThrow(updateSamplingConfig, UpdateSamplingConfig.ID_FIELD_NUMBER);
-    this.validateSpanFilter(updateSamplingConfig.getFilter());
+    if (updateSamplingConfig.hasFilter()) {
+      this.validateSpanFilter(updateSamplingConfig.getFilter());
+    }
     this.validateRateLimitConfig(updateSamplingConfig.getRateLimitConfig());
   }
 

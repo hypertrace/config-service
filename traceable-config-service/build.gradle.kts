@@ -112,6 +112,7 @@ dependencies {
   implementation(projects.externalDataClassificationConfigServiceImpl)
   implementation(projects.spanProcessingConfigServiceImpl)
   implementation(projects.featureCachingClient)
+  implementation(projects.spanProcessingConfigServiceImpl)
   implementation(libs.hypertrace.configservice.server)
   implementation(libs.hypertrace.configservice.impl)
   implementation(libs.hypertrace.grpcutils.server)
