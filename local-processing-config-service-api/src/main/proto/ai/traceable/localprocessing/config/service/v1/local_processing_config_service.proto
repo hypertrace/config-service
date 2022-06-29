@@ -71,7 +71,9 @@ message ModsecConfig {
 
 message SpanProcessingRules {
   repeated ExcludeSpanProcessingRule exclude_span_rules = 1;
-  optional RateLimitConfig rate_limit_config = 2;
+  repeated ProtectionSpanProcessingRule protection_span_rules = 3;
+  repeated SamplingConfig sampling_configs = 4;
+  optional RateLimitConfig rate_limit_config = 2[deprecated = true];
 }
 
 message ExcludeSpanProcessingRule {
@@ -81,4 +83,23 @@ message ExcludeSpanProcessingRule {
 message ExcludeSpanProcessingRuleInfo {
   string id = 1;
   SpanFilter filter = 2;
+}
+
+message ProtectionSpanProcessingRule {
+  ProtectionSpanProcessingRuleInfo protection_span_processing_rule_info = 1;
+}
+
+message ProtectionSpanProcessingRuleInfo {
+  string id = 1;
+  SpanFilter filter = 2;
+}
+
+message SamplingConfig {
+  SamplingConfigInfo sampling_config_info = 1;
+}
+
+message SamplingConfigInfo {
+  string id = 1;
+  RateLimitConfig rate_limit_config = 2;
+  SpanFilter filter = 3;
 }
