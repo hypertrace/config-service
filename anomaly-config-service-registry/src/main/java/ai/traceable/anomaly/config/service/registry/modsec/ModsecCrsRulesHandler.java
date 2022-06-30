@@ -12,10 +12,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -98,7 +98,9 @@ public class ModsecCrsRulesHandler {
       AnomalySubRuleType anomalySubRuleType,
       Set<String> disabledModsecRuleIds) {
 
-    Set<String> idsToBeRemoved = new HashSet<>();
+    // Ids to be removed should be ordered to ensure the ModSec blob doesn't keep changing on
+    // subsequent calls.
+    Set<String> idsToBeRemoved = new TreeSet<>();
     disabledModsecRuleIds.forEach(
         ruleId ->
             idsToBeRemoved.add(
