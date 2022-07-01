@@ -29,7 +29,11 @@ message DataType {
   string data_type_id = 1;
   repeated DataTypeMatchRule match_rules = 2;
   optional DataTransformation transformation = 3;
-  bool session_identifier = 4; // Remove if no session identification
+  bool session_identifier = 4;
+  // Regex pattern used to identify capture groups to suppress (obfuscate or redact)
+  // e.g. (.*)@(?:.*) to suppress an email address but not the domain. person@host.com -> ***@host.com
+  // If omitted, suppress full value
+  optional string suppression_pattern = 5;
 
   enum DataTransformation {
     DATA_TRANSFORMATION_UNSPECIFIED = 0;
