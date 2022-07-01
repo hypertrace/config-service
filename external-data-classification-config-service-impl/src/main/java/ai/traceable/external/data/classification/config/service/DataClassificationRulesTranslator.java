@@ -84,11 +84,13 @@ class DataClassificationRulesTranslator {
       Optional<String> environmentName) {
     DataType.Builder dataTypeBuilder = DataType.newBuilder();
     dataTypeBuilder.setDataTypeId(dataType.getId());
+    DataTypeRule rule = dataType.getRule();
+    if (rule.hasSuppressionPattern()) {
+      dataTypeBuilder.setSuppressionPattern(rule.getSuppressionPattern());
+    }
     translateDataSuppression(dataSuppression).ifPresent(dataTypeBuilder::setTransformation);
     List<DataTypeMatchRule> matchRules = new ArrayList<>();
-    dataType
-        .getRule()
-        .getScopedPatternsList()
+    rule.getScopedPatternsList()
         .forEach(
             scopedPattern -> {
               if (environmentName.isEmpty()

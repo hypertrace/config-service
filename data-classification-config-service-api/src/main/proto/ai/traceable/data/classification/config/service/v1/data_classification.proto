@@ -13,6 +13,7 @@ message DataTypeRule {
   string name = 1;
   optional string description = 2;
   repeated ScopedPattern scoped_patterns = 3;
+  optional string suppression_pattern = 4;
 
   message ScopedPattern {
     oneof scope {

@@ -54,6 +54,27 @@ class DataTypeConfigRequestValidatorTest {
   }
 
   @Test
+  void validateOrThrowNoSuppressionPattern() {
+    DataTypeRule rule =
+        DataTypeRule.newBuilder()
+            .setName("name-1")
+            .setSuppressionPattern(" ")
+            .addScopedPatterns(
+                ScopedPattern.newBuilder()
+                    .setApiScope(createApiScope())
+                    .addLocations(LOCATION_REQUEST_HEADER)
+                    .setKeyPattern(createStringPattern())
+                    .setActionValue(1))
+            .build();
+    CreateDataTypeRequest request = CreateDataTypeRequest.newBuilder().setRule(rule).build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          dataTypeConfigRequestValidator.validateOrThrow(REQUEST_CONTEXT, request);
+        });
+  }
+
+  @Test
   void validateOrThrowEmptyScopedPattern() {
     DataTypeRule rule = DataTypeRule.newBuilder().setName("name-1").build();
     CreateDataTypeRequest request = CreateDataTypeRequest.newBuilder().setRule(rule).build();
@@ -242,6 +263,7 @@ class DataTypeConfigRequestValidatorTest {
     DataTypeRule rule =
         DataTypeRule.newBuilder()
             .setName("name-1")
+            .setSuppressionPattern("(.*)")
             .addScopedPatterns(
                 ScopedPattern.newBuilder()
                     .setApiScope(createApiScope())

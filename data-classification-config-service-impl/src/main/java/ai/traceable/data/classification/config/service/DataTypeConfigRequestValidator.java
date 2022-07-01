@@ -46,6 +46,12 @@ class DataTypeConfigRequestValidator {
   private void validateDataTypeRule(DataTypeRule rule) {
     validateNonDefaultPresenceOrThrow(rule, DataTypeRule.NAME_FIELD_NUMBER);
     validateScopedPatternList(rule);
+    if (rule.hasSuppressionPattern() && rule.getSuppressionPattern().isBlank()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "suppression pattern cannot be empty if specified: " + printMessage(rule))
+          .asRuntimeException();
+    }
   }
 
   private void validateScopedPatternList(DataTypeRule rule) {
