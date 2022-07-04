@@ -2,11 +2,16 @@ plugins {
   `java-library`
   jacoco
   id("org.hypertrace.jacoco-report-plugin")
+  id("ai.traceable.publish-plugin")
 }
 
 dependencies {
+  api(projects.spanProcessingConfigServiceApi)
+
   implementation(libs.protobuf.javautil)
   implementation(libs.uuidCreator)
+  implementation(libs.slf4j.api)
+  implementation(libs.re2j)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

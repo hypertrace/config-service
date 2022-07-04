@@ -2,14 +2,20 @@ package ai.traceable.localprocessing.config.service.spanprocessingrules;
 
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRuleInfo;
+import ai.traceable.localprocessing.config.service.v1.ProtectionSpanProcessingRule;
+import ai.traceable.localprocessing.config.service.v1.ProtectionSpanProcessingRuleInfo;
 import ai.traceable.localprocessing.config.service.v1.RateLimit;
 import ai.traceable.localprocessing.config.service.v1.RateLimitConfig;
 import ai.traceable.localprocessing.config.service.v1.WindowedRateLimit;
+import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSpanRulesResponse;
+import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsResponse;
+import ai.traceable.span.processing.config.service.v1.ProtectionSpanRule;
+import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
+import ai.traceable.span.processing.config.service.v1.SamplingConfig;
+import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
 import com.google.protobuf.Duration;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRule;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleDetails;
@@ -203,12 +209,357 @@ public class SpanProcessingRulesManagerTestUtils {
         .build();
   }
 
+  public static ProtectionSpanProcessingRule buildExpectedProtectionSpanProcessingRule() {
+    return ProtectionSpanProcessingRule.newBuilder()
+        .setProtectionSpanProcessingRuleInfo(
+            ProtectionSpanProcessingRuleInfo.newBuilder()
+                .setId("id")
+                .setFilter(
+                    buildLogicalFilterLocalProcessing(
+                        ai.traceable.localprocessing.config.service.v1.LogicalOperator
+                            .LOGICAL_OPERATOR_AND,
+                        List.of(
+                            buildLogicalFilterLocalProcessing(
+                                ai.traceable.localprocessing.config.service.v1.LogicalOperator
+                                    .LOGICAL_OPERATOR_OR,
+                                List.of(
+                                    buildRelationalFilter(
+                                        "key",
+                                        ai.traceable.localprocessing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
+                                        "val"),
+                                    buildRelationalFilter(
+                                        "key",
+                                        ai.traceable.localprocessing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
+                                        "val"))),
+                            buildRelationalFilter(
+                                "http.url",
+                                ai.traceable.localprocessing.config.service.v1.RelationalOperator
+                                    .RELATIONAL_OPERATOR_EQUALS,
+                                "url"))))
+                .build())
+        .build();
+  }
+
+  public static ProtectionSpanProcessingRule
+      buildExpectedProtectionSpanProcessingRuleServiceNamesAndEnvironmentsProcessed() {
+    return ProtectionSpanProcessingRule.newBuilder()
+        .setProtectionSpanProcessingRuleInfo(
+            ProtectionSpanProcessingRuleInfo.newBuilder()
+                .setId("id")
+                .setFilter(
+                    buildLogicalFilterLocalProcessing(
+                        ai.traceable.localprocessing.config.service.v1.LogicalOperator
+                            .LOGICAL_OPERATOR_OR,
+                        List.of(
+                            buildRelationalFilter(
+                                "key",
+                                ai.traceable.localprocessing.config.service.v1.RelationalOperator
+                                    .RELATIONAL_OPERATOR_CONTAINS,
+                                "val"),
+                            buildRelationalFilter(
+                                "key",
+                                ai.traceable.localprocessing.config.service.v1.RelationalOperator
+                                    .RELATIONAL_OPERATOR_CONTAINS,
+                                "val"))))
+                .build())
+        .build();
+  }
+
+  public static GetAllResolvedSamplingConfigsResponse buildGetAllResolvedSamplingConfigsResponse() {
+    return GetAllResolvedSamplingConfigsResponse.newBuilder()
+        .addSamplingConfigs(
+            SamplingConfig.newBuilder()
+                .setId("id")
+                .setSamplingConfigInfo(
+                    SamplingConfigInfo.newBuilder()
+                        .setRateLimitConfig(buildRateLimitConfig())
+                        .setFilter(
+                            buildLogicalFilterSpanProcessing(
+                                ai.traceable.span.processing.config.service.v1.LogicalOperator
+                                    .LOGICAL_OPERATOR_AND,
+                                List.of(
+                                    buildLogicalFilterSpanProcessing(
+                                        ai.traceable.span.processing.config.service.v1
+                                            .LogicalOperator.LOGICAL_OPERATOR_OR,
+                                        List.of(
+                                            buildRelationalFilter(
+                                                null,
+                                                "key",
+                                                ai.traceable.span.processing.config.service.v1
+                                                    .RelationalOperator
+                                                    .RELATIONAL_OPERATOR_CONTAINS,
+                                                "val"),
+                                            buildRelationalFilter(
+                                                null,
+                                                "key",
+                                                ai.traceable.span.processing.config.service.v1
+                                                    .RelationalOperator
+                                                    .RELATIONAL_OPERATOR_CONTAINS,
+                                                "val"))),
+                                    buildRelationalFilter(
+                                        ai.traceable.span.processing.config.service.v1.Field
+                                            .FIELD_URL,
+                                        null,
+                                        ai.traceable.span.processing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                                        "url"))))
+                        .build()))
+        .build();
+  }
+
+  public static GetAllResolvedSamplingConfigsResponse
+      buildGetAllResolvedSamplingConfigsResponseEnvironmentFilter() {
+    return GetAllResolvedSamplingConfigsResponse.newBuilder()
+        .addAllSamplingConfigs(
+            List.of(
+                SamplingConfig.newBuilder()
+                    .setId("id")
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setRateLimitConfig(buildRateLimitConfig())
+                            .setFilter(
+                                buildLogicalFilterSpanProcessing(
+                                    ai.traceable.span.processing.config.service.v1.LogicalOperator
+                                        .LOGICAL_OPERATOR_AND,
+                                    List.of(
+                                        buildLogicalFilterSpanProcessing(
+                                            ai.traceable.span.processing.config.service.v1
+                                                .LogicalOperator.LOGICAL_OPERATOR_OR,
+                                            List.of(
+                                                buildRelationalFilter(
+                                                    null,
+                                                    "key",
+                                                    ai.traceable.span.processing.config.service.v1
+                                                        .RelationalOperator
+                                                        .RELATIONAL_OPERATOR_CONTAINS,
+                                                    "val"),
+                                                buildRelationalFilter(
+                                                    null,
+                                                    "key",
+                                                    ai.traceable.span.processing.config.service.v1
+                                                        .RelationalOperator
+                                                        .RELATIONAL_OPERATOR_CONTAINS,
+                                                    "val"))),
+                                        buildRelationalFilter(
+                                            ai.traceable.span.processing.config.service.v1.Field
+                                                .FIELD_ENVIRONMENT_NAME,
+                                            null,
+                                            ai.traceable.span.processing.config.service.v1
+                                                .RelationalOperator.RELATIONAL_OPERATOR_IN,
+                                            List.of("value1", "value")))))
+                            .build())
+                    .build(),
+                SamplingConfig.newBuilder()
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setRateLimitConfig(buildDefaultRateLimitConfig())
+                            .build())
+                    .build()))
+        .build();
+  }
+
+  public static GetAllResolvedSamplingConfigsResponse
+      buildGetAllResolvedSamplingConfigsResponseServiceNameFilter() {
+    return GetAllResolvedSamplingConfigsResponse.newBuilder()
+        .addAllSamplingConfigs(
+            List.of(
+                SamplingConfig.newBuilder()
+                    .setId("id")
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setRateLimitConfig(buildRateLimitConfig())
+                            .setFilter(
+                                buildLogicalFilterSpanProcessing(
+                                    ai.traceable.span.processing.config.service.v1.LogicalOperator
+                                        .LOGICAL_OPERATOR_AND,
+                                    List.of(
+                                        buildLogicalFilterSpanProcessing(
+                                            ai.traceable.span.processing.config.service.v1
+                                                .LogicalOperator.LOGICAL_OPERATOR_OR,
+                                            List.of(
+                                                buildRelationalFilter(
+                                                    null,
+                                                    "key",
+                                                    ai.traceable.span.processing.config.service.v1
+                                                        .RelationalOperator
+                                                        .RELATIONAL_OPERATOR_CONTAINS,
+                                                    "val"),
+                                                buildRelationalFilter(
+                                                    null,
+                                                    "key",
+                                                    ai.traceable.span.processing.config.service.v1
+                                                        .RelationalOperator
+                                                        .RELATIONAL_OPERATOR_CONTAINS,
+                                                    "val"))),
+                                        buildRelationalFilter(
+                                            ai.traceable.span.processing.config.service.v1.Field
+                                                .FIELD_SERVICE_NAME,
+                                            null,
+                                            ai.traceable.span.processing.config.service.v1
+                                                .RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
+                                            "val"))))
+                            .build())
+                    .build(),
+                SamplingConfig.newBuilder()
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setRateLimitConfig(buildDefaultRateLimitConfig())
+                            .build())
+                    .build()))
+        .build();
+  }
+
+  public static GetAllResolvedProtectionSpanRulesResponse
+      buildGetAllResolvedProtectionSpanRulesResponse(boolean disabled) {
+    return GetAllResolvedProtectionSpanRulesResponse.newBuilder()
+        .addRules(
+            ProtectionSpanRule.newBuilder()
+                .setId("id")
+                .setRuleInfo(
+                    ProtectionSpanRuleInfo.newBuilder()
+                        .setName("name")
+                        .setDisabled(disabled)
+                        .setFilter(
+                            buildLogicalFilterSpanProcessing(
+                                ai.traceable.span.processing.config.service.v1.LogicalOperator
+                                    .LOGICAL_OPERATOR_AND,
+                                List.of(
+                                    buildLogicalFilterSpanProcessing(
+                                        ai.traceable.span.processing.config.service.v1
+                                            .LogicalOperator.LOGICAL_OPERATOR_OR,
+                                        List.of(
+                                            buildRelationalFilter(
+                                                null,
+                                                "key",
+                                                ai.traceable.span.processing.config.service.v1
+                                                    .RelationalOperator
+                                                    .RELATIONAL_OPERATOR_CONTAINS,
+                                                "val"),
+                                            buildRelationalFilter(
+                                                null,
+                                                "key",
+                                                ai.traceable.span.processing.config.service.v1
+                                                    .RelationalOperator
+                                                    .RELATIONAL_OPERATOR_CONTAINS,
+                                                "val"))),
+                                    buildRelationalFilter(
+                                        ai.traceable.span.processing.config.service.v1.Field
+                                            .FIELD_URL,
+                                        null,
+                                        ai.traceable.span.processing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                                        "url"))))
+                        .build()))
+        .build();
+  }
+
+  public static GetAllResolvedProtectionSpanRulesResponse
+      buildGetAllResolvedProtectionSpanRulesResponseEnvironmentFilter() {
+    return GetAllResolvedProtectionSpanRulesResponse.newBuilder()
+        .addRules(
+            ProtectionSpanRule.newBuilder()
+                .setId("id")
+                .setRuleInfo(
+                    ProtectionSpanRuleInfo.newBuilder()
+                        .setName("name")
+                        .setFilter(
+                            buildLogicalFilterSpanProcessing(
+                                ai.traceable.span.processing.config.service.v1.LogicalOperator
+                                    .LOGICAL_OPERATOR_AND,
+                                List.of(
+                                    buildLogicalFilterSpanProcessing(
+                                        ai.traceable.span.processing.config.service.v1
+                                            .LogicalOperator.LOGICAL_OPERATOR_OR,
+                                        List.of(
+                                            buildRelationalFilter(
+                                                null,
+                                                "key",
+                                                ai.traceable.span.processing.config.service.v1
+                                                    .RelationalOperator
+                                                    .RELATIONAL_OPERATOR_CONTAINS,
+                                                "val"),
+                                            buildRelationalFilter(
+                                                null,
+                                                "key",
+                                                ai.traceable.span.processing.config.service.v1
+                                                    .RelationalOperator
+                                                    .RELATIONAL_OPERATOR_CONTAINS,
+                                                "val"))),
+                                    buildRelationalFilter(
+                                        ai.traceable.span.processing.config.service.v1.Field
+                                            .FIELD_ENVIRONMENT_NAME,
+                                        null,
+                                        ai.traceable.span.processing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_IN,
+                                        List.of("value1", "value")))))
+                        .build()))
+        .build();
+  }
+
+  public static GetAllResolvedProtectionSpanRulesResponse
+      buildGetAllResolvedProtectionSpanRulesResponseServiceNameFilter() {
+    return GetAllResolvedProtectionSpanRulesResponse.newBuilder()
+        .addRules(
+            ProtectionSpanRule.newBuilder()
+                .setId("id")
+                .setRuleInfo(
+                    ProtectionSpanRuleInfo.newBuilder()
+                        .setName("name")
+                        .setFilter(
+                            buildLogicalFilterSpanProcessing(
+                                ai.traceable.span.processing.config.service.v1.LogicalOperator
+                                    .LOGICAL_OPERATOR_AND,
+                                List.of(
+                                    buildLogicalFilterSpanProcessing(
+                                        ai.traceable.span.processing.config.service.v1
+                                            .LogicalOperator.LOGICAL_OPERATOR_OR,
+                                        List.of(
+                                            buildRelationalFilter(
+                                                null,
+                                                "key",
+                                                ai.traceable.span.processing.config.service.v1
+                                                    .RelationalOperator
+                                                    .RELATIONAL_OPERATOR_CONTAINS,
+                                                "val"),
+                                            buildRelationalFilter(
+                                                null,
+                                                "key",
+                                                ai.traceable.span.processing.config.service.v1
+                                                    .RelationalOperator
+                                                    .RELATIONAL_OPERATOR_CONTAINS,
+                                                "val"))),
+                                    buildRelationalFilter(
+                                        ai.traceable.span.processing.config.service.v1.Field
+                                            .FIELD_SERVICE_NAME,
+                                        null,
+                                        ai.traceable.span.processing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
+                                        "val"))))
+                        .build()))
+        .build();
+  }
+
   private static SpanFilter buildLogicalFilterSpanProcessing(
       org.hypertrace.span.processing.config.service.v1.LogicalOperator operator,
       List<org.hypertrace.span.processing.config.service.v1.SpanFilter> filters) {
     return SpanFilter.newBuilder()
         .setLogicalSpanFilter(
             LogicalSpanFilterExpression.newBuilder()
+                .setOperator(operator)
+                .addAllOperands(filters)
+                .build())
+        .build();
+  }
+
+  private static ai.traceable.span.processing.config.service.v1.SpanFilter
+      buildLogicalFilterSpanProcessing(
+          ai.traceable.span.processing.config.service.v1.LogicalOperator operator,
+          List<ai.traceable.span.processing.config.service.v1.SpanFilter> filters) {
+    return ai.traceable.span.processing.config.service.v1.SpanFilter.newBuilder()
+        .setLogicalSpanFilter(
+            ai.traceable.span.processing.config.service.v1.LogicalSpanFilterExpression.newBuilder()
                 .setOperator(operator)
                 .addAllOperands(filters)
                 .build())
@@ -246,6 +597,32 @@ public class SpanProcessingRulesManagerTestUtils {
         .build();
   }
 
+  private static ai.traceable.span.processing.config.service.v1.SpanFilter buildRelationalFilter(
+      ai.traceable.span.processing.config.service.v1.Field field,
+      String spanAttributeKey,
+      ai.traceable.span.processing.config.service.v1.RelationalOperator operator,
+      String rhs) {
+    ai.traceable.span.processing.config.service.v1.RelationalSpanFilterExpression.Builder
+        relationalSpanFilterExpressionBuilder =
+            ai.traceable.span.processing.config.service.v1.RelationalSpanFilterExpression
+                .newBuilder();
+    if (spanAttributeKey == null) {
+      relationalSpanFilterExpressionBuilder.setField(field);
+    } else {
+      relationalSpanFilterExpressionBuilder.setSpanAttributeKey(spanAttributeKey);
+    }
+    return ai.traceable.span.processing.config.service.v1.SpanFilter.newBuilder()
+        .setRelationalSpanFilter(
+            relationalSpanFilterExpressionBuilder
+                .setOperator(operator)
+                .setRightOperand(
+                    ai.traceable.span.processing.config.service.v1.SpanFilterValue.newBuilder()
+                        .setStringValue(rhs)
+                        .build())
+                .build())
+        .build();
+  }
+
   private static SpanFilter buildRelationalFilter(
       Field field, String spanAttributeKey, RelationalOperator operator, List<String> rhs) {
     RelationalSpanFilterExpression.Builder relationalSpanFilterExpressionBuilder =
@@ -277,6 +654,43 @@ public class SpanProcessingRulesManagerTestUtils {
         .build();
   }
 
+  private static ai.traceable.span.processing.config.service.v1.SpanFilter buildRelationalFilter(
+      ai.traceable.span.processing.config.service.v1.Field field,
+      String spanAttributeKey,
+      ai.traceable.span.processing.config.service.v1.RelationalOperator operator,
+      List<String> rhs) {
+    ai.traceable.span.processing.config.service.v1.RelationalSpanFilterExpression.Builder
+        relationalSpanFilterExpressionBuilder =
+            ai.traceable.span.processing.config.service.v1.RelationalSpanFilterExpression
+                .newBuilder();
+    if (spanAttributeKey == null) {
+      relationalSpanFilterExpressionBuilder.setField(field);
+    } else {
+      relationalSpanFilterExpressionBuilder.setSpanAttributeKey(spanAttributeKey);
+    }
+    return ai.traceable.span.processing.config.service.v1.SpanFilter.newBuilder()
+        .setRelationalSpanFilter(
+            relationalSpanFilterExpressionBuilder
+                .setOperator(operator)
+                .setRightOperand(
+                    ai.traceable.span.processing.config.service.v1.SpanFilterValue.newBuilder()
+                        .setListValue(
+                            ai.traceable.span.processing.config.service.v1.ListValue.newBuilder()
+                                .addAllValues(
+                                    rhs.stream()
+                                        .map(
+                                            val ->
+                                                ai.traceable.span.processing.config.service.v1
+                                                    .SpanFilterValue.newBuilder()
+                                                    .setStringValue(val)
+                                                    .build())
+                                        .collect(Collectors.toUnmodifiableList()))
+                                .build())
+                        .build())
+                .build())
+        .build();
+  }
+
   private static ai.traceable.localprocessing.config.service.v1.SpanFilter buildRelationalFilter(
       String spanAttributeKey,
       ai.traceable.localprocessing.config.service.v1.RelationalOperator operator,
@@ -295,7 +709,7 @@ public class SpanProcessingRulesManagerTestUtils {
         .build();
   }
 
-  public static RateLimitConfig buildExpectedTenantSpecificRateLimitConfig() {
+  public static RateLimitConfig buildExpectedRateLimitConfig() {
     return RateLimitConfig.newBuilder()
         .setApiEndpointCacheDuration(Duration.newBuilder().setSeconds(200).build())
         .setTraceLimitPerEndpoint(
@@ -317,24 +731,95 @@ public class SpanProcessingRulesManagerTestUtils {
         .build();
   }
 
-  public static Config buildConfig() {
-    return ConfigFactory.parseMap(
-        Map.of(
-            "local.processing.config.service.sampling.config",
-            Map.of(
-                "rate.limit.config",
-                Map.of(
-                    "tenant",
-                    Map.of(
-                        "apiEndpointCacheDuration",
-                        "200s",
-                        "traceLimitPerEndpoint",
-                        Map.of(
-                            "fixedWindowLimit",
-                            Map.of("quantityAllowed", 100, "windowDuration", "5s")),
-                        "traceLimitGlobal",
-                        Map.of(
-                            "fixedWindowLimit",
-                            Map.of("quantityAllowed", 100000, "windowDuration", "10s")))))));
+  public static RateLimitConfig buildDefaultExpectedRateLimitConfig() {
+    return RateLimitConfig.newBuilder()
+        .setApiEndpointCacheDuration(Duration.newBuilder().setSeconds(604800).build())
+        .setTraceLimitPerEndpoint(
+            RateLimit.newBuilder()
+                .setFixedWindowLimit(
+                    WindowedRateLimit.newBuilder()
+                        .setQuantityAllowed(10)
+                        .setWindowDuration(Duration.newBuilder().setSeconds(60).build())
+                        .build())
+                .build())
+        .setTraceLimitGlobal(
+            RateLimit.newBuilder()
+                .setFixedWindowLimit(
+                    WindowedRateLimit.newBuilder()
+                        .setQuantityAllowed(100)
+                        .setWindowDuration(Duration.newBuilder().setSeconds(60).build())
+                        .build())
+                .build())
+        .build();
+  }
+
+  public static ai.traceable.span.processing.config.service.v1.RateLimitConfig
+      buildRateLimitConfig() {
+    return ai.traceable.span.processing.config.service.v1.RateLimitConfig.newBuilder()
+        .setApiEndpointCacheDuration(Duration.newBuilder().setSeconds(200).build())
+        .setTraceLimitPerEndpoint(
+            ai.traceable.span.processing.config.service.v1.RateLimit.newBuilder()
+                .setFixedWindowLimit(
+                    ai.traceable.span.processing.config.service.v1.WindowedRateLimit.newBuilder()
+                        .setQuantityAllowed(100)
+                        .setWindowDuration(Duration.newBuilder().setSeconds(5).build())
+                        .build())
+                .build())
+        .setTraceLimitGlobal(
+            ai.traceable.span.processing.config.service.v1.RateLimit.newBuilder()
+                .setFixedWindowLimit(
+                    ai.traceable.span.processing.config.service.v1.WindowedRateLimit.newBuilder()
+                        .setQuantityAllowed(100000)
+                        .setWindowDuration(Duration.newBuilder().setSeconds(10).build())
+                        .build())
+                .build())
+        .build();
+  }
+
+  public static ai.traceable.span.processing.config.service.v1.RateLimitConfig
+      buildDefaultRateLimitConfig() {
+    return ai.traceable.span.processing.config.service.v1.RateLimitConfig.newBuilder()
+        .setApiEndpointCacheDuration(Duration.newBuilder().setSeconds(604800).build())
+        .setTraceLimitPerEndpoint(
+            ai.traceable.span.processing.config.service.v1.RateLimit.newBuilder()
+                .setFixedWindowLimit(
+                    ai.traceable.span.processing.config.service.v1.WindowedRateLimit.newBuilder()
+                        .setQuantityAllowed(10)
+                        .setWindowDuration(Duration.newBuilder().setSeconds(60).build())
+                        .build())
+                .build())
+        .setTraceLimitGlobal(
+            ai.traceable.span.processing.config.service.v1.RateLimit.newBuilder()
+                .setFixedWindowLimit(
+                    ai.traceable.span.processing.config.service.v1.WindowedRateLimit.newBuilder()
+                        .setQuantityAllowed(100)
+                        .setWindowDuration(Duration.newBuilder().setSeconds(60).build())
+                        .build())
+                .build())
+        .build();
+  }
+
+  public static GetAllResolvedSamplingConfigsResponse
+      buildDefaultRateLimitConfig_GetAllResolvedSamplingConfigsResponse() {
+    return GetAllResolvedSamplingConfigsResponse.newBuilder()
+        .addSamplingConfigs(
+            SamplingConfig.newBuilder()
+                .setSamplingConfigInfo(
+                    SamplingConfigInfo.newBuilder()
+                        .setRateLimitConfig(buildRateLimitConfig())
+                        .setFilter(
+                            ai.traceable.span.processing.config.service.v1.SpanFilter.newBuilder()
+                                .setLogicalSpanFilter(
+                                    ai.traceable.span.processing.config.service.v1
+                                        .LogicalSpanFilterExpression.newBuilder()
+                                        .setOperator(
+                                            ai.traceable.span.processing.config.service.v1
+                                                .LogicalOperator.LOGICAL_OPERATOR_AND)
+                                        .addAllOperands(Collections.emptyList())
+                                        .build())
+                                .build())
+                        .build())
+                .build())
+        .build();
   }
 }

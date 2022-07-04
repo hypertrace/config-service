@@ -58,7 +58,7 @@ public class DefaultSamplingConfigManager implements SamplingConfigManager {
 
   @Override
   public List<SamplingConfig> getAllResolvedSamplingConfigs(RequestContext requestContext) {
-    LicenseStatus licenseStatus = licenseStatusConfigManager.getLicenseStatus();
+    LicenseStatus licenseStatus = licenseStatusConfigManager.getLicenseStatus(requestContext);
     if (LICENSE_LIMIT_EXHAUSTED.equals(licenseStatus.getTracesLicenseLimit())) {
       return List.of(buildZeroSamplingConfig());
     }

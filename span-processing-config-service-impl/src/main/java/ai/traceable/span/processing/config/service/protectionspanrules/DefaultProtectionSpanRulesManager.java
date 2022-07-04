@@ -48,7 +48,7 @@ public class DefaultProtectionSpanRulesManager implements ProtectionSpanRulesMan
 
   @Override
   public List<ProtectionSpanRule> getAllResolvedProtectionSpanRule(RequestContext requestContext) {
-    LicenseStatus licenseStatus = licenseStatusConfigManager.getLicenseStatus();
+    LicenseStatus licenseStatus = licenseStatusConfigManager.getLicenseStatus(requestContext);
     if (!licenseStatus.hasProtectionLicense()
         || LICENSE_LIMIT_EXHAUSTED.equals(licenseStatus.getTracesLicenseLimit())) {
       return Collections.emptyList();

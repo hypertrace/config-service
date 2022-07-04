@@ -6,6 +6,8 @@ plugins {
 
 dependencies {
   api(projects.localProcessingConfigServiceApi)
+  api(projects.spanProcessingConfigServiceApi)
+  implementation(projects.configUtils)
   implementation(projects.anomalyConfigServiceApi)
   implementation(projects.customSignatureConfigServiceApi)
 

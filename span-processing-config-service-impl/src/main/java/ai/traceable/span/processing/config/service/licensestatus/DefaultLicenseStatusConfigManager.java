@@ -4,6 +4,7 @@ import ai.traceable.licensestatus.config.service.v1.GetLicenseStatusRequest;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatus;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc;
 import com.google.inject.Inject;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class DefaultLicenseStatusConfigManager implements LicenseStatusConfigManager {
 
@@ -17,9 +18,12 @@ public class DefaultLicenseStatusConfigManager implements LicenseStatusConfigMan
     this.licenseStatusConfigServiceBlockingStub = licenseStatusConfigServiceBlockingStub;
   }
 
-  public LicenseStatus getLicenseStatus() {
-    return licenseStatusConfigServiceBlockingStub
-        .getLicenseStatus(GetLicenseStatusRequest.newBuilder().build())
+  public LicenseStatus getLicenseStatus(RequestContext requestContext) {
+    return requestContext
+        .call(
+            () ->
+                licenseStatusConfigServiceBlockingStub.getLicenseStatus(
+                    GetLicenseStatusRequest.newBuilder().build()))
         .getLicenseStatus();
   }
 }

@@ -1,98 +1,22 @@
-package ai.traceable.localprocessing.config.service.spanprocessingrules.excludespanrules;
+package ai.traceable.localprocessing.config.service.utils;
 
-import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRule;
-import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRuleInfo;
 import ai.traceable.localprocessing.config.service.v1.LogicalOperator;
 import ai.traceable.localprocessing.config.service.v1.RelationalOperator;
 import ai.traceable.localprocessing.config.service.v1.SpanFilter;
 import ai.traceable.localprocessing.config.service.v1.SpanFilterValue;
-import com.google.inject.Inject;
-import java.util.List;
+import ai.traceable.span.processing.config.service.v1.LogicalSpanFilterExpression;
+import ai.traceable.span.processing.config.service.v1.RelationalSpanFilterExpression;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.config.utils.SpanFilterMatcher;
-import org.hypertrace.core.grpcutils.context.RequestContext;
-import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRule;
-import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleDetails;
-import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
-import org.hypertrace.span.processing.config.service.v1.LogicalSpanFilterExpression;
-import org.hypertrace.span.processing.config.service.v1.RelationalSpanFilterExpression;
-import org.hypertrace.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
 
 @Slf4j
-public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
+public class FilterConverter {
 
   private static final String URL_SPAN_ATTRIBUTE_KEY = "http.url";
-  private final SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
-      configServiceBlockingStub;
-  private final SpanFilterMatcher spanFilterMatcher;
 
-  @Inject
-  public DefaultExcludeSpanRulesManager(
-      SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
-          configServiceBlockingStub,
-      SpanFilterMatcher spanFilterMatcher) {
-    this.configServiceBlockingStub = configServiceBlockingStub;
-    this.spanFilterMatcher = spanFilterMatcher;
-  }
-
-  public List<ExcludeSpanProcessingRule> getAllExcludeSpanProcessingRules(
-      RequestContext requestContext, String serviceName, Optional<String> environment) {
-    return requestContext
-        .call(
-            () ->
-                configServiceBlockingStub.getAllExcludeSpanRules(
-                    GetAllExcludeSpanRulesRequest.newBuilder().build()))
-        .getRuleDetailsList()
-        .stream()
-        .map(ExcludeSpanRuleDetails::getRule)
-        .collect(Collectors.toUnmodifiableList())
-        .stream()
-        .map(excludeSpanRule -> convertExcludeSpanRule(excludeSpanRule, serviceName, environment))
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .collect(Collectors.toUnmodifiableList());
-  }
-
-  // assumption: first class field conditions are ANDed and appear in the first level of the filter
-  // tree structure
-  private Optional<ExcludeSpanProcessingRule> convertExcludeSpanRule(
-      ExcludeSpanRule excludeSpanRule, String serviceName, Optional<String> environment) {
-    // check if the rule is disabled
-    if (!excludeSpanRule.getRuleInfo().hasFilter() || excludeSpanRule.getRuleInfo().getDisabled()) {
-      return Optional.empty();
-    }
-
-    // apply environment filters if any
-    if (!spanFilterMatcher.matchesEnvironment(
-        excludeSpanRule.getRuleInfo().getFilter(), environment)) {
-      return Optional.empty();
-    }
-
-    // apply service name filters if any
-    if (!spanFilterMatcher.matchesServiceName(
-        excludeSpanRule.getRuleInfo().getFilter(), serviceName)) {
-      return Optional.empty();
-    }
-
-    Optional<SpanFilter> spanFilter = convertFilter(excludeSpanRule.getRuleInfo().getFilter());
-    if (spanFilter.isEmpty()) {
-      return Optional.empty();
-    }
-
-    return Optional.of(
-        ExcludeSpanProcessingRule.newBuilder()
-            .setExcludeSpanProcessingRuleInfo(
-                ExcludeSpanProcessingRuleInfo.newBuilder()
-                    .setId(excludeSpanRule.getId())
-                    .setFilter(spanFilter.get())
-                    .build())
-            .build());
-  }
-
-  private Optional<SpanFilter> convertFilter(
-      org.hypertrace.span.processing.config.service.v1.SpanFilter filter) {
+  public Optional<SpanFilter> convert(
+      ai.traceable.span.processing.config.service.v1.SpanFilter filter) {
     SpanFilter.Builder filterBuilder = SpanFilter.newBuilder();
     if (filter.hasLogicalSpanFilter()) {
       ai.traceable.localprocessing.config.service.v1.LogicalSpanFilterExpression
@@ -122,7 +46,7 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
         .setOperator(convertLogicalOperator(logicalSpanFilter.getOperator()))
         .addAllOperands(
             logicalSpanFilter.getOperandsList().stream()
-                .map(this::convertFilter)
+                .map(this::convert)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toUnmodifiableList()))
@@ -130,7 +54,9 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
   }
 
   private Optional<ai.traceable.localprocessing.config.service.v1.RelationalSpanFilterExpression>
-      convertRelationalFilter(RelationalSpanFilterExpression relationalSpanFilter) {
+      convertRelationalFilter(
+          ai.traceable.span.processing.config.service.v1.RelationalSpanFilterExpression
+              relationalSpanFilter) {
     Optional<String> spanAttributeKey = getSpanAttributeKey(relationalSpanFilter);
     if (spanAttributeKey.isEmpty()) {
       return Optional.empty();
@@ -164,7 +90,7 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
   }
 
   private RelationalOperator convertRelationalOperator(
-      org.hypertrace.span.processing.config.service.v1.RelationalOperator relationalOperator) {
+      ai.traceable.span.processing.config.service.v1.RelationalOperator relationalOperator) {
     switch (relationalOperator) {
       case RELATIONAL_OPERATOR_CONTAINS:
         return RelationalOperator.RELATIONAL_OPERATOR_CONTAINS;
@@ -186,7 +112,7 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
   }
 
   private LogicalOperator convertLogicalOperator(
-      org.hypertrace.span.processing.config.service.v1.LogicalOperator logicalOperator) {
+      ai.traceable.span.processing.config.service.v1.LogicalOperator logicalOperator) {
     switch (logicalOperator) {
       case LOGICAL_OPERATOR_AND:
         return LogicalOperator.LOGICAL_OPERATOR_AND;
