@@ -1,5 +1,6 @@
 package ai.traceable.anomaly.config.service.global.validator;
 
+import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusRequest;
@@ -17,4 +18,6 @@ public interface GlobalConfigValidator {
   Status validate(UpdateScopedAnomalyGlobalConfigStatusRequest request);
 
   Status validate(GetAnomalyRuleInfosRequest request);
+
+  Status validate(DeleteScopedAnomalyGlobalConfigStatusRequest request);
 }

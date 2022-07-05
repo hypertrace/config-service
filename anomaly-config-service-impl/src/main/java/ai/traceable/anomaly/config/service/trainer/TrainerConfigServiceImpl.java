@@ -6,6 +6,8 @@ import ai.traceable.anomaly.config.service.trainer.trainingconfig.TrainingConfig
 import ai.traceable.anomaly.config.service.trainer.trainingconfig.TrainingConfigValidator;
 import ai.traceable.anomaly.config.service.v1.trainer.DeleteScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.DeleteScopedTrainingConfigResponse;
+import ai.traceable.anomaly.config.service.v1.trainer.DeleteTrainingActionRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.DeleteTrainingActionResponse;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllScopedTrainingConfigsRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllScopedTrainingConfigsResponse;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllTrainingActionsRequest;
@@ -233,6 +235,21 @@ public class TrainerConfigServiceImpl
                   trainingActionManager.getAllTrainingActions(RequestContext.CURRENT.get()))
               .build();
       responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void deleteTrainingAction(
+      DeleteTrainingActionRequest request,
+      StreamObserver<DeleteTrainingActionResponse> responseObserver) {
+    try {
+      trainingActionManager.deleteTrainingAction(
+          RequestContext.CURRENT.get(), request.getConfigScope());
+      responseObserver.onNext(DeleteTrainingActionResponse.newBuilder().build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error(e.getMessage(), e);

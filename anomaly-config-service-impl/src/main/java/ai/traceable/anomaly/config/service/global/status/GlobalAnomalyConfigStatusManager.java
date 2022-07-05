@@ -16,4 +16,7 @@ public interface GlobalAnomalyConfigStatusManager {
 
   ScopedAnomalyConfigStatusChange updateScopedAnomalyConfigStatus(
       RequestContext requestContext, ScopedAnomalyConfigStatusChange scopedConfigStatusChange);
+
+  void deleteScopedAnomalyGlobalConfigStatus(
+      RequestContext requestContext, AnomalyConfigScope scope);
 }

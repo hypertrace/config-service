@@ -29,4 +29,7 @@ service AnomalyGlobalConfigService {
 
   rpc GetAnomalyRuleInfos (GetAnomalyRuleInfosRequest) returns (GetAnomalyRuleInfosResponse) {
   }
+
+  rpc DeleteScopedAnomalyGlobalConfigStatus (DeleteScopedAnomalyGlobalConfigStatusRequest) returns (DeleteScopedAnomalyGlobalConfigStatusResponse) {
+  }
 }

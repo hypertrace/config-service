@@ -5,6 +5,8 @@ import ai.traceable.anomaly.config.service.global.status.ConfigStatusManager;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.global.validator.AnomalyGlobalConfigServiceValidator;
 import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceGrpc;
+import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusRequest;
+import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetAllScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAllScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyGlobalConfigStatusRequest;
@@ -203,6 +205,28 @@ public class AnomalyGlobalConfigServiceImpl
                       RequestContext.CURRENT.get(), request.getEventFamiliesList()))
               .build();
       responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void deleteScopedAnomalyGlobalConfigStatus(
+      DeleteScopedAnomalyGlobalConfigStatusRequest request,
+      StreamObserver<DeleteScopedAnomalyGlobalConfigStatusResponse> responseObserver) {
+    Status status = globalValidator.validate(request);
+    if (!status.isOk()) {
+      log.error("Delete Anomaly Global Config Request is not valid: {}", status.getDescription());
+      responseObserver.onError(status.asException());
+      return;
+    }
+
+    try {
+      anomalyConfigStatusManager.deleteScopedAnomalyGlobalConfigStatus(
+          RequestContext.CURRENT.get(), request.getConfigScope());
+      responseObserver.onNext(DeleteScopedAnomalyGlobalConfigStatusResponse.newBuilder().build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error(e.getMessage(), e);

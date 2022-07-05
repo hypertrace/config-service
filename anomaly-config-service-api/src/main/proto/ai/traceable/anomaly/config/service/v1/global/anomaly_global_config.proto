@@ -80,3 +80,9 @@ message ExcludedEventsGenerationConfig {
     StringList exclusion_rule_ids = 2;
   }
 }
+
+message DeleteScopedAnomalyGlobalConfigStatusRequest {
+  AnomalyConfigScope config_scope = 1;
+}
+
+message DeleteScopedAnomalyGlobalConfigStatusResponse {}

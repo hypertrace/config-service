@@ -22,6 +22,13 @@ message GetAllTrainingActionsResponse {
   repeated ScopedTrainingActionConfig scoped_training_action_configs = 1;
 }
 
+message DeleteTrainingActionRequest {
+  AnomalyConfigScope config_scope = 1;
+}
+
+message DeleteTrainingActionResponse {
+}
+
 message ScopedTrainingActionConfig {
   AnomalyConfigScope config_scope = 1;
   repeated TrainingActionConfig training_action_config = 2;

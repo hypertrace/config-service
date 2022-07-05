@@ -12,6 +12,8 @@ import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
+import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
+import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusRequest;
@@ -55,6 +57,25 @@ class AnomalyGlobalConfigServiceValidatorTest {
               GetAnomalyGlobalConfigStatusRequest.newBuilder().setConfigScope(configScope).build());
       assertEquals(Status.OK.getCode(), status.getCode());
       verify(configValidator, times(1)).validate((AnomalyConfigScope) any());
+    }
+
+    @Test
+    void testValidateDeleteStatusRequest() {
+      Status status =
+          globalValidator.validate(
+              DeleteScopedAnomalyGlobalConfigStatusRequest.getDefaultInstance());
+      assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+      AnomalyConfigScope configScope =
+          AnomalyConfigScope.newBuilder()
+              .setServiceScope(AnomalyServiceScope.newBuilder().setId("serviceId").build())
+              .build();
+      doReturn(Status.OK).when(configValidator).validate(configScope);
+      status =
+          globalValidator.validate(
+              DeleteScopedAnomalyGlobalConfigStatusRequest.newBuilder()
+                  .setConfigScope(configScope)
+                  .build());
+      assertEquals(Status.OK.getCode(), status.getCode());
     }
 
     @Test

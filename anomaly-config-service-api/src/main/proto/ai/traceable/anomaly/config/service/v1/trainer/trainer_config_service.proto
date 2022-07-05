@@ -26,4 +26,6 @@ service TrainerConfigService {
   rpc DeleteScopedTrainingConfig(DeleteScopedTrainingConfigRequest) returns (DeleteScopedTrainingConfigResponse) {}
 
   rpc GetAllTrainingActions(GetAllTrainingActionsRequest) returns (GetAllTrainingActionsResponse) {}
+
+  rpc DeleteTrainingAction(DeleteTrainingActionRequest) returns (DeleteTrainingActionResponse) {}
 }

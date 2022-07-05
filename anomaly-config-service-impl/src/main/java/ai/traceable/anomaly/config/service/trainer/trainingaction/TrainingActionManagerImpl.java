@@ -66,6 +66,11 @@ public class TrainingActionManagerImpl extends IdentifiedObjectStore<ScopedTrain
                     new IllegalArgumentException("Unable to get tenant id from request context")));
   }
 
+  @Override
+  public void deleteTrainingAction(RequestContext requestContext, AnomalyConfigScope configScope) {
+    deleteObject(requestContext, getContextFromAnomalyConfigScope(configScope, requestContext));
+  }
+
   private List<ScopedTrainingActionConfig> getResolvedScopedActionConfigs(
       Map<String, ScopedTrainingActionConfig> contextToScopedActionConfigMap, String tenantId) {
     List<ScopedTrainingActionConfig> resolvedScopedActionConfigs = new ArrayList<>();

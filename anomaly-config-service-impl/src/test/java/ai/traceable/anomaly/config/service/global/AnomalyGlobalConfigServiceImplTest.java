@@ -19,6 +19,8 @@ import ai.traceable.anomaly.config.service.global.validator.AnomalyGlobalConfigS
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
+import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusRequest;
+import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetAllScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAllScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyGlobalConfigStatusRequest;
@@ -239,6 +241,22 @@ public class AnomalyGlobalConfigServiceImplTest {
             GetAnomalyRuleInfosResponse.newBuilder()
                 .addRuleInfos(AnomalyRuleInfo.getDefaultInstance())
                 .build());
+    verify(responseStreamObserver, times(1)).onCompleted();
+  }
+
+  @Test
+  @DisplayName("Delete scoped anomaly global config status")
+  void deleteScopedAnomalyGlobalConfigStatus() {
+    StreamObserver<DeleteScopedAnomalyGlobalConfigStatusResponse> responseStreamObserver =
+        mock(StreamObserver.class);
+    when(globalValidator.validate(
+            DeleteScopedAnomalyGlobalConfigStatusRequest.getDefaultInstance()))
+        .thenReturn(Status.OK);
+    globalConfigService.deleteScopedAnomalyGlobalConfigStatus(
+        DeleteScopedAnomalyGlobalConfigStatusRequest.getDefaultInstance(), responseStreamObserver);
+
+    verify(responseStreamObserver, times(1))
+        .onNext(DeleteScopedAnomalyGlobalConfigStatusResponse.newBuilder().build());
     verify(responseStreamObserver, times(1)).onCompleted();
   }
 }

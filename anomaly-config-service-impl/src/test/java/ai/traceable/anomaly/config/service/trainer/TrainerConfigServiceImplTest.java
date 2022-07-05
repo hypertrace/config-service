@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.trainer;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -16,6 +17,8 @@ import ai.traceable.anomaly.config.service.trainer.trainingconfig.TrainingConfig
 import ai.traceable.anomaly.config.service.trainer.trainingconfig.TrainingConfigValidator;
 import ai.traceable.anomaly.config.service.v1.trainer.DeleteScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.DeleteScopedTrainingConfigResponse;
+import ai.traceable.anomaly.config.service.v1.trainer.DeleteTrainingActionRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.DeleteTrainingActionResponse;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllScopedTrainingConfigsRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllScopedTrainingConfigsResponse;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllUnresolvedScopedTrainingConfigRequest;
@@ -126,6 +129,17 @@ public class TrainerConfigServiceImplTest {
         .getAllUnresolvedTrainingConfig(any(), any());
     trainerConfigService.getAllUnresolvedScopedTrainingConfig(request, responseObserver);
     verify(responseObserver, times(1)).onNext(response);
+    verify(responseObserver, times(1)).onCompleted();
+  }
+
+  @Test
+  void testDeleteTrainingAction() {
+    DeleteTrainingActionRequest request = DeleteTrainingActionRequest.newBuilder().build();
+    StreamObserver<DeleteTrainingActionResponse> responseObserver = mock(StreamObserver.class);
+
+    doNothing().when(actionManager).deleteTrainingAction(any(), any());
+    trainerConfigService.deleteTrainingAction(request, responseObserver);
+    verify(responseObserver, times(1)).onNext(DeleteTrainingActionResponse.newBuilder().build());
     verify(responseObserver, times(1)).onCompleted();
   }
 

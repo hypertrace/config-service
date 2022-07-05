@@ -124,6 +124,15 @@ public class GlobalAnomalyConfigStatusManagerImpl
         .getData();
   }
 
+  @Override
+  public void deleteScopedAnomalyGlobalConfigStatus(
+      RequestContext requestContext, AnomalyConfigScope scope) {
+    deleteObject(
+        requestContext,
+        anomalyConfigScopeUtils.getContextFromAnomalyConfigScope(
+            getTenantId(RequestContext.CURRENT.get()), scope));
+  }
+
   private ScopedAnomalyConfigStatus getResolvedConfig(
       RequestContext requestContext,
       Map<String, ScopedAnomalyConfigStatusChange> configMap,
