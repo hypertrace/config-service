@@ -138,12 +138,19 @@ message UpdateApiNamingRule {
 message ApiNamingRuleConfig {
   oneof rule_config {
     SegmentMatchingBasedConfig segment_matching_based_config = 1;
+    ApiDocumentationBasedConfig api_documentation_based_config = 2;
   }
 }
 
 message SegmentMatchingBasedConfig {
   repeated string regexes = 1;
   repeated string values = 2;
+}
+
+message ApiDocumentationBasedConfig {
+  string api_documentation_id = 1;
+  repeated string regexes = 2;
+  repeated string values = 3;
 }
 
 message ApiNamingRuleMetadata {
