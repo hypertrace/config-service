@@ -4,10 +4,12 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
+import com.google.common.base.Strings;
 import com.google.re2j.Pattern;
 import io.grpc.Status;
 import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.span.processing.config.service.v1.ApiDocumentationBasedConfig;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRuleRequest;
@@ -114,6 +116,37 @@ public class SpanProcessingConfigRequestValidator {
         }
         validateRegex(segmentMatchingBasedConfig.getRegexesList());
         break;
+      case API_DOCUMENTATION_BASED_CONFIG:
+        ApiDocumentationBasedConfig apiDocumentationBasedConfig =
+            ruleConfig.getApiDocumentationBasedConfig();
+        if (Strings.isNullOrEmpty(apiDocumentationBasedConfig.getApiDocumentationId())) {
+          throw Status.INVALID_ARGUMENT
+              .withDescription(
+                  String.format("Invalid api documentation id : %s", apiDocumentationBasedConfig))
+              .asRuntimeException();
+        }
+
+        if (apiDocumentationBasedConfig.getRegexesCount() == 0
+            || apiDocumentationBasedConfig.getRegexesCount()
+                != apiDocumentationBasedConfig.getValuesCount()) {
+          throw Status.INVALID_ARGUMENT
+              .withDescription(
+                  String.format(
+                      "Invalid regex count or segment matching count : %s",
+                      apiDocumentationBasedConfig))
+              .asRuntimeException();
+        }
+        if (apiDocumentationBasedConfig.getRegexesList().stream().anyMatch(String::isEmpty)
+            || apiDocumentationBasedConfig.getValuesList().stream().anyMatch(String::isEmpty)) {
+          throw Status.INVALID_ARGUMENT
+              .withDescription(
+                  String.format(
+                      "Invalid regex or value segment : %s. Regex/value segment must not be empty",
+                      apiDocumentationBasedConfig))
+              .asRuntimeException();
+        }
+        validateRegex(apiDocumentationBasedConfig.getRegexesList());
+        break;
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription("Unexpected rule config case: " + printMessage(ruleConfig))
@@ -135,7 +168,7 @@ public class SpanProcessingConfigRequestValidator {
 
   private void validateRegex(List<String> regexes) {
     try {
-      Pattern pattern = Pattern.compile(String.join("/", regexes));
+      Pattern.compile(String.join("/", regexes));
     } catch (Exception e) {
       throw Status.INVALID_ARGUMENT
           .withDescription(String.format("Invalid regexes : %s.", regexes))
