@@ -21,6 +21,7 @@ include(":config-service-change-event-generator")
 include(":config-service-api")
 include(":config-service-impl")
 include(":config-service")
+include(":config-service-factory")
 
 include(":config-proto-converter")
 include(":object-store")
