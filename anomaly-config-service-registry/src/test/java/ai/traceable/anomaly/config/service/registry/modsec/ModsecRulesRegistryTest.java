@@ -24,13 +24,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.SystemUtils;
 import org.junit.jupiter.api.Test;
 
 public class ModsecRulesRegistryTest {
-  private ModsecCrsRulesHandler modsecCrsRulesHandler =
+  private final ModsecCrsRulesHandler modsecCrsRulesHandler =
       new ModsecCrsRulesHandler(new ModsecRuleUtils());
-  private ModsecRulesRegistryImpl modsecRulesRegistry =
+  private final ModsecRulesRegistryImpl modsecRulesRegistry =
       new ModsecRulesRegistryImpl(new ConfigConverter(), modsecCrsRulesHandler);
 
   @Test
@@ -48,11 +49,6 @@ public class ModsecRulesRegistryTest {
       assertNotNull(
           RuleEngine.create(
               modsecRulesRegistry.getModsecCrsRulesBlob(
-                  AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSAFE, Set.of())));
-
-      assertNotNull(
-          RuleEngine.create(
-              modsecRulesRegistry.getModsecCrsRulesBlob(
                   AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK, Set.of())));
     }
 
@@ -64,38 +60,21 @@ public class ModsecRulesRegistryTest {
             .collect(Collectors.toList());
 
     long regularRulesCount =
-        subRules.stream()
-            .filter(
-                subRule ->
-                    subRule
-                        .getSubRuleTypesList()
-                        .contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
-            .count();
+        getRulesCount(subRules, AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR);
+    long safeRulesCount = getRulesCount(subRules, AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);
+    long blockingRulesCount =
+        getRulesCount(subRules, AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK);
 
-    long safeRulesCount =
-        subRules.stream()
-            .filter(
-                subRule ->
-                    subRule
-                        .getSubRuleTypesList()
-                        .contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
-            .count();
-
-    long unsafeRulesCount =
-        subRules.stream()
-            .filter(
-                subRule ->
-                    modsecCrsRulesHandler.matchModsecRule(
-                        subRule, AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSAFE))
-            .count();
-    assertEquals(regularRulesCount, safeRulesCount + unsafeRulesCount);
+    long allRulesCount = subRules.size();
+    assertEquals(allRulesCount, regularRulesCount + safeRulesCount);
 
     {
       String crsRulesBlob =
           modsecRulesRegistry.getModsecCrsRulesBlob(
               AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR, Set.of());
-      // all rules in file used
-      assertEquals(1, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
+      assertEquals(
+          allRulesCount - regularRulesCount,
+          crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
     }
     {
       String crsRulesBlob =
@@ -103,34 +82,16 @@ public class ModsecRulesRegistryTest {
               AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE, Set.of());
       // few rules in file not marked safe
       assertEquals(
-          regularRulesCount - safeRulesCount,
-          crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
+          allRulesCount - safeRulesCount, crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
       assertEquals(35, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
     }
     {
       String crsRulesBlob =
           modsecRulesRegistry.getModsecCrsRulesBlob(
-              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSAFE, Set.of());
-      assertEquals(
-          regularRulesCount - unsafeRulesCount,
-          crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
-      assertEquals(65, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
-    }
-    {
-      String crsRulesBlob =
-          modsecRulesRegistry.getModsecCrsRulesBlob(
               AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK, Set.of());
-      long blockingRulesCount =
-          subRules.stream()
-              .filter(
-                  subRule ->
-                      subRule
-                          .getSubRuleTypesList()
-                          .contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK))
-              .collect(Collectors.counting());
       // few rules in file not marked safe
       assertEquals(
-          regularRulesCount - blockingRulesCount,
+          allRulesCount - blockingRulesCount,
           crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
       // few rules in file not marked for blocking
       assertEquals(66, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
@@ -141,6 +102,29 @@ public class ModsecRulesRegistryTest {
           modsecRulesRegistry.getModsecCrsRulesBlob(
               AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR, Set.of("crs_912170"));
       assertTrue(crsRulesBlob.contains("SecRuleRemoveById 912170"));
+    }
+    {
+      // safe and regular rules are mutually exclusive sets
+      List<AnomalySubRuleInfo> regularSubRules =
+          subRules.stream()
+              .filter(
+                  subRule ->
+                      subRule
+                          .getSubRuleTypesList()
+                          .contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
+              .collect(Collectors.toList());
+      List<AnomalySubRuleInfo> safeSubRules =
+          subRules.stream()
+              .filter(
+                  subRule ->
+                      subRule
+                          .getSubRuleTypesList()
+                          .contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
+              .collect(Collectors.toList());
+      Set<AnomalySubRuleInfo> allRulesSet =
+          Stream.concat(regularSubRules.stream(), safeSubRules.stream())
+              .collect(Collectors.toSet());
+      assertEquals(allRulesSet.size(), regularSubRules.size() + safeSubRules.size());
     }
   }
 
@@ -170,7 +154,7 @@ public class ModsecRulesRegistryTest {
             .collect(Collectors.joining("\n")));
     anomalyRuleInfos
         .values()
-        .forEach(anomalyRuleInfo -> anomalyRuleInfo.getRuleId().startsWith("crs_"));
+        .forEach(anomalyRuleInfo -> assertTrue(anomalyRuleInfo.getRuleId().startsWith("crs_")));
   }
 
   @Test
@@ -182,7 +166,9 @@ public class ModsecRulesRegistryTest {
         (ruleId, anomalyRuleInfo) ->
             anomalyRuleInfo
                 .getSubRuleInfosList()
-                .forEach(anomalySubRuleInfo -> anomalyRuleInfo.getRuleId().startsWith(ruleId)));
+                .forEach(
+                    anomalySubRuleInfo ->
+                        assertTrue(anomalySubRuleInfo.getRuleId().startsWith(ruleId))));
 
     // check count of sub-rules..
     Set<String> expectedIdMatches =
@@ -207,18 +193,13 @@ public class ModsecRulesRegistryTest {
               subRuleNames.add(anomalySubRuleInfo.getRuleName());
             });
 
-    // check regular rules
+    // check labels
     List<String> subRulesRead =
-        Arrays.asList(loadModsecFileContents("modsec/modsec-regular-rules.txt").split("\\n"));
+        Arrays.asList(loadModsecFileContents("modsec/modsec-all-rules.txt").split("\\n"));
     Collections.sort(subRulesRead);
     List<String> subRulesCollected =
         anomalyRuleInfos.values().stream()
             .flatMap(rule -> rule.getSubRuleInfosList().stream())
-            .filter(
-                subRule ->
-                    subRule
-                        .getSubRuleTypesList()
-                        .contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
             .map(
                 anomalySubRuleInfo -> {
                   StringBuilder sb =
@@ -227,13 +208,9 @@ public class ModsecRulesRegistryTest {
                               + " :: "
                               + anomalySubRuleInfo.getRuleName());
                   String labels =
-                      String.join(
-                          " , ",
-                          anomalySubRuleInfo.getEventLabelsMap().entrySet().stream()
-                              .map(
-                                  entry ->
-                                      String.format("'%s:%s'", entry.getKey(), entry.getValue()))
-                              .collect(Collectors.toList()));
+                      anomalySubRuleInfo.getEventLabelsMap().entrySet().stream()
+                          .map(entry -> String.format("'%s:%s'", entry.getKey(), entry.getValue()))
+                          .collect(Collectors.joining(" , "));
                   if (!labels.isBlank()) {
                     sb.append(" :: [ ");
                     sb.append(labels);
@@ -241,6 +218,29 @@ public class ModsecRulesRegistryTest {
                   }
                   return sb.toString();
                 })
+            .sorted()
+            .collect(Collectors.toList());
+    // assertEquals(subRulesRead, subRulesCollected);
+    for (int i = 0; i < subRulesRead.size(); i++) {
+      assertEquals(subRulesRead.get(i), subRulesCollected.get(i));
+    }
+    assertEquals(subRulesRead.size(), subRulesCollected.size());
+
+    // check regular rules
+    subRulesRead =
+        Arrays.asList(loadModsecFileContents("modsec/modsec-regular-rules.txt").split("\\n"));
+    Collections.sort(subRulesRead);
+    subRulesCollected =
+        anomalyRuleInfos.values().stream()
+            .flatMap(rule -> rule.getSubRuleInfosList().stream())
+            .filter(
+                subRule ->
+                    subRule
+                        .getSubRuleTypesList()
+                        .contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
+            .map(
+                anomalySubRuleInfo ->
+                    anomalySubRuleInfo.getRuleId() + " :: " + anomalySubRuleInfo.getRuleName())
             .sorted()
             .collect(Collectors.toList());
     // assertEquals(subRulesRead, subRulesCollected);
@@ -259,33 +259,6 @@ public class ModsecRulesRegistryTest {
             .filter(
                 subRule ->
                     subRule
-                        .getSubRuleTypesList()
-                        .contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
-            .map(
-                anomalySubRuleInfo ->
-                    anomalySubRuleInfo.getRuleId() + " :: " + anomalySubRuleInfo.getRuleName())
-            .sorted()
-            .collect(Collectors.toList());
-    for (int i = 0; i < subRulesRead.size(); i++) {
-      assertEquals(subRulesRead.get(i), subRulesCollected.get(i));
-    }
-    assertEquals(subRulesRead.size(), subRulesCollected.size());
-
-    // check unsafe rules
-    subRulesRead =
-        Arrays.asList(loadModsecFileContents("modsec/modsec-unsafe-rules.txt").split("\\n"));
-    Collections.sort(subRulesRead);
-    subRulesCollected =
-        anomalyRuleInfos.values().stream()
-            .flatMap(rule -> rule.getSubRuleInfosList().stream())
-            .filter(
-                subRule ->
-                    subRule
-                        .getSubRuleTypesList()
-                        .contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
-            .filter(
-                subRule ->
-                    !subRule
                         .getSubRuleTypesList()
                         .contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
             .map(
@@ -349,5 +322,12 @@ public class ModsecRulesRegistryTest {
             String.format("Unable to read modsec crs file: %s", resourceUrl), e);
       }
     }
+  }
+
+  private long getRulesCount(
+      List<AnomalySubRuleInfo> subRules, AnomalySubRuleType anomalySubRuleType) {
+    return subRules.stream()
+        .filter(subRule -> subRule.getSubRuleTypesList().contains(anomalySubRuleType))
+        .count();
   }
 }

@@ -4,7 +4,6 @@ import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.Resources;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -162,8 +161,7 @@ public class ModsecCrsRulesHandler {
     }
   }
 
-  @VisibleForTesting
-  boolean matchModsecRule(
+  private boolean matchModsecRule(
       AnomalySubRuleInfo anomalySubRuleInfo, AnomalySubRuleType anomalySubRuleType) {
     List<AnomalySubRuleType> anomalySubRuleTypeList = anomalySubRuleInfo.getSubRuleTypesList();
     if (anomalySubRuleType == AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSAFE) {

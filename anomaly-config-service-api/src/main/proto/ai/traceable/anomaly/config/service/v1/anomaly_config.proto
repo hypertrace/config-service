@@ -97,7 +97,7 @@ enum AnomalySubRuleType {
   ANOMALY_SUB_RULE_TYPE_REGULAR = 1;
   ANOMALY_SUB_RULE_TYPE_SAFE = 2;
   ANOMALY_SUB_RULE_TYPE_BLOCK = 3;
-  ANOMALY_SUB_RULE_TYPE_UNSAFE = 4;
+  ANOMALY_SUB_RULE_TYPE_UNSAFE = 4 [deprecated = true];
 }
 
 enum AnomalyRuleCategory {
