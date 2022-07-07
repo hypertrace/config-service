@@ -62,6 +62,7 @@ message BlockingDetails {
     BlockingRuleType blocking_rule_type = 2;
     string info = 3;
     optional int64 expiration_timestamp = 4;
+    BlockingStatus status = 9;
     oneof details {
         IpDetails ip_details = 5;
         ModsecDetails modsec_details = 6;
@@ -102,4 +103,12 @@ enum BlockingRuleType{
     BLOCKING_RULE_TYPE_ALLOW = 1;
     BLOCKING_RULE_TYPE_BLOCK = 2 ;
     BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT = 3;
+}
+
+enum BlockingStatus{
+    BLOCKING_STATUS_UNSPECIFIED = 0;
+    BLOCKING_STATUS_ALLOWED = 1;
+    BLOCKING_STATUS_DENIED = 2 ;
+    BLOCKING_STATUS_SUSPENDED = 3;
+    BLOCKING_STATUS_SNOOZED = 4;
 }
