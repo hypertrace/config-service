@@ -36,6 +36,7 @@ message RedactionRule {
   bool session_identifier = 9;
   repeated Condition conditions = 10;
   bool fqn = 11;
+  bool disabled = 12;
 }
 
 enum MatchType {

@@ -209,6 +209,7 @@ class SensitiveDataConfigServiceImplTest {
         redactionRule1.toBuilder()
             .setName("rule1a")
             .setRedactionStrategy(RedactionStrategy.REDACTION_STRATEGY_HASH)
+            .setDisabled(true)
             .build();
     RedactionRule updatedRule =
         sensitiveDataStub

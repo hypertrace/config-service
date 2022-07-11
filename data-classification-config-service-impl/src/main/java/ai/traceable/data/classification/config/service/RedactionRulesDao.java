@@ -131,11 +131,12 @@ public class RedactionRulesDao {
             .collect(
                 Collectors.toUnmodifiableMap(
                     DataSet::getId, dataSet -> dataSet.getInfo().getEnabled()));
-    List<RedactionRule> allRedactionRules = getAllRedactionRules(requestContext);
+    List<RedactionRule> redactionRules =
+        getEnabledRedactionRulesWithoutSessionIdentifiers(requestContext);
     List<String> ruleIdsForRedact = new ArrayList<>();
     List<String> ruleIdsForObfuscate = new ArrayList<>();
     List<String> rulesIdsForRaw = new ArrayList<>();
-    allRedactionRules.forEach(
+    redactionRules.forEach(
         rule -> {
           switch (rule.getRedactionStrategy()) {
             case REDACTION_STRATEGY_REDACT:
@@ -197,7 +198,7 @@ public class RedactionRulesDao {
     getAutomaticSecretRedactionDataType(requestContext).ifPresent(dataTypes::add);
     getSensitiveHeadersDataType(requestContext).ifPresent(dataTypes::add);
     dataTypes.addAll(
-        getAllRedactionRules(requestContext).stream()
+        getEnabledRedactionRulesWithoutSessionIdentifiers(requestContext).stream()
             .map(this::convertRedactionRuleToDataType)
             .collect(Collectors.toList()));
     return ImmutableList.copyOf(dataTypes);
@@ -270,14 +271,17 @@ public class RedactionRulesDao {
     return builder.setRule(ruleBuilder).build();
   }
 
-  private List<RedactionRule> getAllRedactionRules(RequestContext requestContext) {
+  private List<RedactionRule> getEnabledRedactionRulesWithoutSessionIdentifiers(
+      RequestContext requestContext) {
     return requestContext.call(
         () ->
             sensitiveDataConfigServiceBlockingStub
                 .getAllRedactionRules(GetAllRedactionRulesRequest.getDefaultInstance())
                 .getRedactionRulesList()
                 .stream()
-                .filter(redactionRule -> !redactionRule.getSessionIdentifier())
+                .filter(
+                    redactionRule ->
+                        !redactionRule.getDisabled() && !redactionRule.getSessionIdentifier())
                 .collect(Collectors.toUnmodifiableList()));
   }
 

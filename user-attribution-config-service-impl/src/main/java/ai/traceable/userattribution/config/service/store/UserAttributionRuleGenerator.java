@@ -19,6 +19,7 @@ public class UserAttributionRuleGenerator {
         .setData(request.getData())
         .setName(request.getName())
         .setId(this.uuidGenerator.generateRandomId())
+        .setDisabled(false)
         .build();
   }
 }

@@ -7,6 +7,7 @@ import ai.traceable.external.userattribution.config.service.v1.GetExternalUserAt
 import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest;
 import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServiceGrpc.UserAttributionConfigServiceBlockingStub;
 import io.grpc.stub.StreamObserver;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,7 +39,10 @@ class ExternalUserAttributionConfigServiceImpl
           this.ruleTranslator.translateRules(
               this.userAttributionRuleStub
                   .getUserAttributionRules(GetUserAttributionRulesRequest.getDefaultInstance())
-                  .getRulesList());
+                  .getRulesList()
+                  .stream()
+                  .filter(rule -> !rule.getDisabled())
+                  .collect(Collectors.toUnmodifiableList()));
       responseObserver.onNext(this.responseBuilder.buildResponse(request, rules));
       responseObserver.onCompleted();
     } catch (Exception exception) {

@@ -303,7 +303,8 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
             .setRegex(newRedactionRule.getRegex())
             .setSessionIdentifier(newRedactionRule.getSessionIdentifier())
             .addAllConditions(newRedactionRule.getConditionsList())
-            .setFqn(newRedactionRule.getFqn());
+            .setFqn(newRedactionRule.getFqn())
+            .setDisabled(false);
     if (newRedactionRule.hasComplexData()) {
       builder.setComplexData(newRedactionRule.getComplexData());
     }

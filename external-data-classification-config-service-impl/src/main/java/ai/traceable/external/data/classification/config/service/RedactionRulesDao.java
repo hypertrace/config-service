@@ -20,13 +20,14 @@ class RedactionRulesDao {
     this.sensitiveDataConfigServiceBlockingStub = sensitiveDataConfigServiceBlockingStub;
   }
 
-  public List<RedactionRule> getAllRedactionRules(RequestContext requestContext) {
+  public List<RedactionRule> getEnabledRedactionRules(RequestContext requestContext) {
     return requestContext.call(
         () ->
             sensitiveDataConfigServiceBlockingStub
                 .getAllRedactionRules(GetAllRedactionRulesRequest.getDefaultInstance())
                 .getRedactionRulesList()
                 .stream()
+                .filter(rule -> !rule.getDisabled())
                 .collect(Collectors.toUnmodifiableList()));
   }
 

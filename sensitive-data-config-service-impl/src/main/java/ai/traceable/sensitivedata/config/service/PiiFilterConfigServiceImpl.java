@@ -132,8 +132,11 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
 
       List<RedactionRule> redactionRules =
           Lists.reverse(
-              configServiceCoordinator.getRedactionRules(
-                  requestContext, request.getIncludeConditionalRules()));
+              configServiceCoordinator
+                  .getRedactionRules(requestContext, request.getIncludeConditionalRules())
+                  .stream()
+                  .filter(rule -> !rule.getDisabled())
+                  .collect(Collectors.toUnmodifiableList()));
 
       List<RedactionRule> filteredRedactionRules =
           filterRedactionRules(isDataClassificationRp1Enabled, enabledDataSetMap, redactionRules);

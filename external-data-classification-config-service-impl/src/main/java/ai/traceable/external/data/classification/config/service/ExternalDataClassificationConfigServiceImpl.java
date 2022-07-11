@@ -94,8 +94,6 @@ class ExternalDataClassificationConfigServiceImpl
         responseObserver.onCompleted();
         return;
       }
-      List<RedactionRule> redactionRules =
-          this.redactionRulesDao.getAllRedactionRules(requestContext);
       Map<String, DataType> dataTypesToIdMap =
           this.dataClassificationRulesDao.getAllDataTypes(requestContext).stream()
               .collect(Collectors.toUnmodifiableMap(DataType::getId, identity()));
@@ -136,6 +134,8 @@ class ExternalDataClassificationConfigServiceImpl
               .collect(Collectors.toUnmodifiableMap(DataSet::getId, identity()));
       List<ai.traceable.external.data.classification.config.service.v1.DataType> externalDataTypes =
           new ArrayList<>();
+      List<RedactionRule> redactionRules =
+          this.redactionRulesDao.getEnabledRedactionRules(requestContext);
       externalDataTypes.addAll(
           redactionRulesTranslator.translateRedactionRules(
               redactionRules, getAllowedRedactionStrategy(enabledDataSetMap)));

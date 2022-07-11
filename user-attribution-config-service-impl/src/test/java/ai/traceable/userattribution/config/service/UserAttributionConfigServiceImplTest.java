@@ -1,6 +1,7 @@
 package ai.traceable.userattribution.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import ai.traceable.config.utils.ObjectDiffer;
@@ -93,11 +94,12 @@ class UserAttributionConfigServiceImplTest {
         this.userAttributionStub
             .updateUserAttributionRule(
                 UpdateUserAttributionRuleRequest.newBuilder()
-                    .setRule(firstCreated.toBuilder().setName("first updated"))
+                    .setRule(firstCreated.toBuilder().setName("first updated").setDisabled(true))
                     .build())
             .getRule();
 
     assertEquals(1, firstUpdated.getRank());
+    assertTrue(firstUpdated.getDisabled());
 
     List<UserAttributionRule> afterSecondCreate =
         this.userAttributionStub

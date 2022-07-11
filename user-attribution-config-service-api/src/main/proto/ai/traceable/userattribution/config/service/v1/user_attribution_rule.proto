@@ -9,6 +9,7 @@ message UserAttributionRule {
   string name = 2;
   UserAttributionRuleData data = 3;
   int32 rank = 4; // Rules will be executed from lowest to highest rank
+  bool disabled = 5;
 }
 
 
