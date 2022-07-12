@@ -69,6 +69,7 @@ include(":waf-provider-integration-service-api")
 include(":waf-provider-integration-service-impl")
 include(":span-processing-config-service-api")
 include(":span-processing-config-service-impl")
+include(":api-spec-config-service-api")
 include(":feature-caching-client")
 
 include(":mock-config-service")

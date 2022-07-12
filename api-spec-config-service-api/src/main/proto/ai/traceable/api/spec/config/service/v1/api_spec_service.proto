@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package ai.traceable.api.spec.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/api/spec/config/service/v1/api_spec.proto";
+
+service ApiSpecConfigService {
+  rpc GetApiSpecs (GetApiSpecsRequest) returns (GetApiSpecsResponse) {
+  }
+
+  rpc GetApiSpec (GetApiSpecRequest) returns (GetApiSpecResponse) {
+  }
+
+  rpc CreateApiSpec (CreateApiSpecRequest) returns (CreateApiSpecResponse) {
+  }
+
+  rpc UpdateApiSpec (UpdateApiSpecRequest) returns (UpdateApiSpecResponse) {
+  }
+
+  rpc DeleteApiSpec (DeleteApiSpecRequest) returns (DeleteApiSpecResponse) {
+  }
+}

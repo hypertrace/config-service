@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package ai.traceable.api.spec.config.service.v1;
+
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+
+// get
+message GetApiSpecsRequest {
+}
+
+message GetApiSpecsResponse {
+  repeated ApiSpec api_specs = 1;
+}
+
+message GetApiSpecRequest {
+  string id = 1;
+}
+
+message GetApiSpecResponse {
+  ApiSpec api_spec = 1;
+}
+
+// create
+message CreateApiSpecRequest {
+  CreateApiSpec create_api_spec = 1;
+}
+
+message CreateApiSpecResponse {
+  ApiSpec api_spec = 1;
+}
+
+message CreateApiSpec {
+  string name = 1;
+  bool api_naming_enabled = 2;
+  ApiSpecStatus status = 3;
+}
+
+// update
+message UpdateApiSpecRequest {
+  UpdateApiSpec api_spec = 1;
+}
+
+message UpdateApiSpecResponse {
+  ApiSpec api_spec = 1;
+}
+
+message UpdateApiSpec {
+  string spec_id = 1;
+  string name = 2;
+  bool api_naming_enabled = 3;
+  ApiSpecStatus status = 4;
+}
+
+// delete
+message DeleteApiSpecRequest {
+  string spec_id = 1;
+}
+
+message DeleteApiSpecResponse {
+}
+
+message ApiSpec {
+  string spec_id = 1;
+  string name = 2;
+  bool api_naming_enabled = 3;
+  ApiSpecStatus status = 4;
+  google.protobuf.Timestamp creation_timestamp = 5;
+  google.protobuf.Timestamp last_updated_timestamp = 6;
+}
+
+enum ApiSpecStatus {
+  API_SPEC_STATUS_UNSPECIFIED = 0;
+  API_SPEC_STATUS_IN_PROGRESS = 1;
+  API_SPEC_STATUS_COMPLETED = 2;
+  API_SPEC_STATUS_INVALID_FORMAT = 3;
+  API_SPEC_STATUS_SIZE_LIMIT_EXCEEDED = 4;
+}

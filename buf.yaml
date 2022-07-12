@@ -24,6 +24,7 @@ build:
     - waf-provider-integration-service-api/src/main/proto
     - api-attribute-override-service-api/src/main/proto
     - span-processing-config-service-api/src/main/proto
+    - api-spec-config-service-api/src/main/proto
 lint:
   use:
     - DEFAULT
