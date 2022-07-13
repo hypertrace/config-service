@@ -12,9 +12,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.span.processing.config.service.v1.ApiDocumentationBasedConfig;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRuleRequest;
+import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleRequest;
@@ -283,6 +285,109 @@ class SpanProcessingRequestValidatorTest {
                                 ApiNamingRuleConfig.newBuilder()
                                     .setSegmentMatchingBasedConfig(
                                         SegmentMatchingBasedConfig.newBuilder()
+                                            .addAllRegexes(List.of("regex"))
+                                            .addAllValues(List.of("value"))
+                                            .build())
+                                    .build())
+                            .setFilter(buildTestFilter())
+                            .build())
+                    .build()));
+  }
+
+  @Test
+  void validatesApiNamingRulesCreateRequest() {
+    assertInvalidArgStatusContaining(
+        "Tenant ID",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, CreateApiNamingRulesRequest.newBuilder().build()));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+
+    assertInvalidArgStatusContaining(
+        "ApiNamingRuleInfo.name",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateApiNamingRulesRequest.newBuilder()
+                    .addAllRulesInfo(List.of(ApiNamingRuleInfo.newBuilder().build()))
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Invalid api documentation id",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateApiNamingRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ApiNamingRuleInfo.newBuilder()
+                            .setName("name")
+                            .setFilter(buildTestFilter())
+                            .setRuleConfig(
+                                ApiNamingRuleConfig.newBuilder()
+                                    .setApiDocumentationBasedConfig(
+                                        ApiDocumentationBasedConfig.newBuilder().build())
+                                    .build())
+                            .build())
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Invalid regexes",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateApiNamingRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ApiNamingRuleInfo.newBuilder()
+                            .setName("name")
+                            .setFilter(buildTestFilter())
+                            .setRuleConfig(
+                                ApiNamingRuleConfig.newBuilder()
+                                    .setApiDocumentationBasedConfig(
+                                        ApiDocumentationBasedConfig.newBuilder()
+                                            .setApiDocumentationId("id")
+                                            .addAllRegexes(List.of("regex", "[^]+$"))
+                                            .addAllValues(List.of("value1", "value2"))
+                                            .build())
+                                    .build())
+                            .build())
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Invalid regex or value segment",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateApiNamingRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ApiNamingRuleInfo.newBuilder()
+                            .setName("name")
+                            .setFilter(buildTestFilter())
+                            .setRuleConfig(
+                                ApiNamingRuleConfig.newBuilder()
+                                    .setApiDocumentationBasedConfig(
+                                        ApiDocumentationBasedConfig.newBuilder()
+                                            .setApiDocumentationId("id")
+                                            .addAllRegexes(List.of("regex", ""))
+                                            .addAllValues(List.of("value1", "value2"))
+                                            .build())
+                                    .build())
+                            .build())
+                    .build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateApiNamingRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ApiNamingRuleInfo.newBuilder()
+                            .setName("name")
+                            .setDisabled(true)
+                            .setRuleConfig(
+                                ApiNamingRuleConfig.newBuilder()
+                                    .setApiDocumentationBasedConfig(
+                                        ApiDocumentationBasedConfig.newBuilder()
+                                            .setApiDocumentationId("id")
                                             .addAllRegexes(List.of("regex"))
                                             .addAllValues(List.of("value"))
                                             .build())
