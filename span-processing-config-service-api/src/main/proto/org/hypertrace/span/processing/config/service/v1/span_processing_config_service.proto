@@ -148,7 +148,7 @@ message SegmentMatchingBasedConfig {
 }
 
 message ApiDocumentationBasedConfig {
-  string api_documentation_id = 1;
+  string api_spec_id = 1;
   repeated string regexes = 2;
   repeated string values = 3;
 }
