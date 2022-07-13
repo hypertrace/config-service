@@ -37,22 +37,8 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
       GrpcServiceContainerEnvironment grpcServiceContainerEnvironment) {
     this.grpcServiceContainerEnvironment = grpcServiceContainerEnvironment;
     Config config = grpcServiceContainerEnvironment.getConfig(SERVICE_NAME);
-    this.store = this.buildConfigStore(config);
-    Channel localChannel = this.getLocalChannel();
-    ConfigChangeEventGenerator configChangeEventGenerator = this.buildChangeEventGenerator(config);
-
-    return Stream.of(
-            new ConfigServiceGrpcImpl(this.store),
-            new SpacesConfigServiceImpl(localChannel),
-            new LabelsConfigServiceImpl(localChannel, config, configChangeEventGenerator),
-            new LabelApplicationRuleConfigServiceImpl(
-                localChannel, config, configChangeEventGenerator),
-            new EventConditionConfigServiceImpl(localChannel, configChangeEventGenerator),
-            new NotificationRuleConfigServiceImpl(localChannel, configChangeEventGenerator),
-            new NotificationChannelConfigServiceImpl(localChannel, configChangeEventGenerator),
-            SpanProcessingConfigServiceFactory.build(localChannel))
-        .map(GrpcPlatformService::new)
-        .collect(Collectors.toUnmodifiableList());
+    return this.buildServices(
+        this.getLocalChannel(), config, this.buildChangeEventGenerator(config));
   }
 
   public void checkAndReportStoreHealth() {
@@ -67,6 +53,22 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
       this.grpcServiceContainerEnvironment.reportServiceStatus(
           STORE_REPORTING_NAME, ServingStatus.NOT_SERVING);
     }
+  }
+
+  public List<GrpcPlatformService> buildServices(
+      Channel localChannel, Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
+    return Stream.of(
+            new ConfigServiceGrpcImpl(this.buildConfigStore(config)),
+            new SpacesConfigServiceImpl(localChannel),
+            new LabelsConfigServiceImpl(localChannel, config, configChangeEventGenerator),
+            new LabelApplicationRuleConfigServiceImpl(
+                localChannel, config, configChangeEventGenerator),
+            new EventConditionConfigServiceImpl(localChannel, configChangeEventGenerator),
+            new NotificationRuleConfigServiceImpl(localChannel, configChangeEventGenerator),
+            new NotificationChannelConfigServiceImpl(localChannel, configChangeEventGenerator),
+            SpanProcessingConfigServiceFactory.build(localChannel))
+        .map(GrpcPlatformService::new)
+        .collect(Collectors.toUnmodifiableList());
   }
 
   protected Channel getLocalChannel() {
@@ -84,6 +86,7 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
     try {
       ConfigStore configStore = new DocumentConfigStore();
       configStore.init(config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG));
+      this.store = configStore;
       return configStore;
     } catch (Exception e) {
       throw new RuntimeException("Error in getting or initializing config store", e);
