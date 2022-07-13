@@ -12,9 +12,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
-import org.hypertrace.span.processing.config.service.v1.ApiDocumentationBasedConfig;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
+import org.hypertrace.span.processing.config.service.v1.ApiSpecBasedConfig;
 import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
@@ -313,7 +313,7 @@ class SpanProcessingRequestValidatorTest {
                     .build()));
 
     assertInvalidArgStatusContaining(
-        "Invalid api documentation id",
+        "Invalid api spec id",
         () ->
             validator.validateOrThrow(
                 mockRequestContext,
@@ -324,8 +324,7 @@ class SpanProcessingRequestValidatorTest {
                             .setFilter(buildTestFilter())
                             .setRuleConfig(
                                 ApiNamingRuleConfig.newBuilder()
-                                    .setApiDocumentationBasedConfig(
-                                        ApiDocumentationBasedConfig.newBuilder().build())
+                                    .setApiSpecBasedConfig(ApiSpecBasedConfig.newBuilder().build())
                                     .build())
                             .build())
                     .build()));
@@ -342,9 +341,9 @@ class SpanProcessingRequestValidatorTest {
                             .setFilter(buildTestFilter())
                             .setRuleConfig(
                                 ApiNamingRuleConfig.newBuilder()
-                                    .setApiDocumentationBasedConfig(
-                                        ApiDocumentationBasedConfig.newBuilder()
-                                            .setApiDocumentationId("id")
+                                    .setApiSpecBasedConfig(
+                                        ApiSpecBasedConfig.newBuilder()
+                                            .setApiSpecId("id")
                                             .addAllRegexes(List.of("regex", "[^]+$"))
                                             .addAllValues(List.of("value1", "value2"))
                                             .build())
@@ -364,9 +363,9 @@ class SpanProcessingRequestValidatorTest {
                             .setFilter(buildTestFilter())
                             .setRuleConfig(
                                 ApiNamingRuleConfig.newBuilder()
-                                    .setApiDocumentationBasedConfig(
-                                        ApiDocumentationBasedConfig.newBuilder()
-                                            .setApiDocumentationId("id")
+                                    .setApiSpecBasedConfig(
+                                        ApiSpecBasedConfig.newBuilder()
+                                            .setApiSpecId("id")
                                             .addAllRegexes(List.of("regex", ""))
                                             .addAllValues(List.of("value1", "value2"))
                                             .build())
@@ -385,9 +384,9 @@ class SpanProcessingRequestValidatorTest {
                             .setDisabled(true)
                             .setRuleConfig(
                                 ApiNamingRuleConfig.newBuilder()
-                                    .setApiDocumentationBasedConfig(
-                                        ApiDocumentationBasedConfig.newBuilder()
-                                            .setApiDocumentationId("id")
+                                    .setApiSpecBasedConfig(
+                                        ApiSpecBasedConfig.newBuilder()
+                                            .setApiSpecId("id")
                                             .addAllRegexes(List.of("regex"))
                                             .addAllValues(List.of("value"))
                                             .build())

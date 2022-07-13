@@ -15,11 +15,11 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.span.processing.config.service.store.ApiNamingRulesConfigStore;
 import org.hypertrace.span.processing.config.service.store.ExcludeSpanRulesConfigStore;
 import org.hypertrace.span.processing.config.service.utils.TimestampConverter;
-import org.hypertrace.span.processing.config.service.v1.ApiDocumentationBasedConfig;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRule;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleDetails;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
+import org.hypertrace.span.processing.config.service.v1.ApiSpecBasedConfig;
 import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
@@ -47,6 +47,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class SpanProcessingConfigServiceImplTest {
+
   SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
       spanProcessingConfigServiceStub;
   MockGenericConfigService mockGenericConfigService;
@@ -266,7 +267,7 @@ class SpanProcessingConfigServiceImplTest {
   }
 
   @Test
-  void testApiDocumentationBasedApiNamingRules() {
+  void testApiSpecBasedApiNamingRules() {
     List<ApiNamingRuleDetails> firstTwoCreatedApiNamingRuleDetails =
         this.spanProcessingConfigServiceStub
             .createApiNamingRules(
@@ -277,7 +278,7 @@ class SpanProcessingConfigServiceImplTest {
                                 .setName("ruleName1")
                                 .setDisabled(true)
                                 .setRuleConfig(
-                                    buildApiDocumentationBasedConfig(
+                                    buildApiSpecBasedConfig(
                                         "id1", List.of("regex"), List.of("value")))
                                 .setFilter(buildTestFilter())
                                 .build(),
@@ -285,7 +286,7 @@ class SpanProcessingConfigServiceImplTest {
                                 .setName("ruleName2")
                                 .setDisabled(true)
                                 .setRuleConfig(
-                                    buildApiDocumentationBasedConfig(
+                                    buildApiSpecBasedConfig(
                                         "id2", List.of("regex"), List.of("value")))
                                 .setFilter(buildTestFilter())
                                 .build()))
@@ -324,8 +325,7 @@ class SpanProcessingConfigServiceImplTest {
                             .setName("ruleName3")
                             .setDisabled(true)
                             .setRuleConfig(
-                                buildApiDocumentationBasedConfig(
-                                    "id3", List.of("regex"), List.of("value")))
+                                buildApiSpecBasedConfig("id3", List.of("regex"), List.of("value")))
                             .setFilter(buildTestFilter()))
                     .build())
             .getRuleDetails()
@@ -353,8 +353,7 @@ class SpanProcessingConfigServiceImplTest {
                             .setName("updatedRuleName1")
                             .setDisabled(false)
                             .setRuleConfig(
-                                buildApiDocumentationBasedConfig(
-                                    "id1", List.of("regex"), List.of("value")))
+                                buildApiSpecBasedConfig("id1", List.of("regex"), List.of("value")))
                             .setFilter(buildTestFilter()))
                     .build())
             .getRuleDetails()
@@ -405,12 +404,12 @@ class SpanProcessingConfigServiceImplTest {
         .build();
   }
 
-  private ApiNamingRuleConfig buildApiDocumentationBasedConfig(
+  private ApiNamingRuleConfig buildApiSpecBasedConfig(
       String id, List<String> regexes, List<String> values) {
     return ApiNamingRuleConfig.newBuilder()
-        .setApiDocumentationBasedConfig(
-            ApiDocumentationBasedConfig.newBuilder()
-                .setApiDocumentationId(id)
+        .setApiSpecBasedConfig(
+            ApiSpecBasedConfig.newBuilder()
+                .setApiSpecId(id)
                 .addAllRegexes(regexes)
                 .addAllValues(values))
         .build();
