@@ -9,21 +9,29 @@ import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
 service SpanProcessingConfigService {
-  rpc CreateExcludeSpanRule(CreateExcludeSpanRuleRequest) returns (CreateExcludeSpanRuleResponse) {}
+  rpc CreateExcludeSpanRule (CreateExcludeSpanRuleRequest) returns (CreateExcludeSpanRuleResponse) {
+  }
 
-  rpc UpdateExcludeSpanRule(UpdateExcludeSpanRuleRequest) returns (UpdateExcludeSpanRuleResponse) {}
+  rpc UpdateExcludeSpanRule (UpdateExcludeSpanRuleRequest) returns (UpdateExcludeSpanRuleResponse) {
+  }
 
-  rpc GetAllExcludeSpanRules(GetAllExcludeSpanRulesRequest) returns (GetAllExcludeSpanRulesResponse) {}
+  rpc GetAllExcludeSpanRules (GetAllExcludeSpanRulesRequest) returns (GetAllExcludeSpanRulesResponse) {
+  }
 
-  rpc DeleteExcludeSpanRule(DeleteExcludeSpanRuleRequest) returns (DeleteExcludeSpanRuleResponse) {}
+  rpc DeleteExcludeSpanRule (DeleteExcludeSpanRuleRequest) returns (DeleteExcludeSpanRuleResponse) {
+  }
 
-  rpc CreateApiNamingRule(CreateApiNamingRuleRequest) returns (CreateApiNamingRuleResponse) {}
+  rpc CreateApiNamingRule (CreateApiNamingRuleRequest) returns (CreateApiNamingRuleResponse) {
+  }
 
-  rpc UpdateApiNamingRule(UpdateApiNamingRuleRequest) returns (UpdateApiNamingRuleResponse) {}
+  rpc UpdateApiNamingRule (UpdateApiNamingRuleRequest) returns (UpdateApiNamingRuleResponse) {
+  }
 
-  rpc GetAllApiNamingRules(GetAllApiNamingRulesRequest) returns (GetAllApiNamingRulesResponse) {}
+  rpc GetAllApiNamingRules (GetAllApiNamingRulesRequest) returns (GetAllApiNamingRulesResponse) {
+  }
 
-  rpc DeleteApiNamingRule(DeleteApiNamingRuleRequest) returns (DeleteApiNamingRuleResponse) {}
+  rpc DeleteApiNamingRule (DeleteApiNamingRuleRequest) returns (DeleteApiNamingRuleResponse) {
+  }
 }
 
 message CreateExcludeSpanRuleRequest {
@@ -34,7 +42,8 @@ message CreateExcludeSpanRuleResponse {
   ExcludeSpanRuleDetails rule_details = 1;
 }
 
-message GetAllExcludeSpanRulesRequest {}
+message GetAllExcludeSpanRulesRequest {
+}
 
 message GetAllExcludeSpanRulesResponse {
   repeated ExcludeSpanRuleDetails rule_details = 1;
@@ -52,7 +61,8 @@ message DeleteExcludeSpanRuleRequest {
   string id = 1;
 }
 
-message DeleteExcludeSpanRuleResponse {}
+message DeleteExcludeSpanRuleResponse {
+}
 
 message ExcludeSpanRule {
   string id = 1;
@@ -90,7 +100,8 @@ message CreateApiNamingRuleResponse {
   ApiNamingRuleDetails rule_details = 1;
 }
 
-message GetAllApiNamingRulesRequest {}
+message GetAllApiNamingRulesRequest {
+}
 
 message GetAllApiNamingRulesResponse {
   repeated ApiNamingRuleDetails rule_details = 1;
@@ -108,7 +119,8 @@ message DeleteApiNamingRuleRequest {
   string id = 1;
 }
 
-message DeleteApiNamingRuleResponse {}
+message DeleteApiNamingRuleResponse {
+}
 
 message ApiNamingRule {
   string id = 1;
@@ -138,7 +150,7 @@ message UpdateApiNamingRule {
 message ApiNamingRuleConfig {
   oneof rule_config {
     SegmentMatchingBasedConfig segment_matching_based_config = 1;
-    ApiDocumentationBasedConfig api_documentation_based_config = 2;
+    ApiSpecBasedConfig api_spec_based_config = 2;
   }
 }
 
@@ -147,8 +159,8 @@ message SegmentMatchingBasedConfig {
   repeated string values = 2;
 }
 
-message ApiDocumentationBasedConfig {
-  string api_documentation_id = 1;
+message ApiSpecBasedConfig {
+  string api_spec_id = 1;
   repeated string regexes = 2;
   repeated string values = 3;
 }
