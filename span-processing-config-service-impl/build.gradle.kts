@@ -1,7 +1,7 @@
 plugins {
-    `java-library`
-    jacoco
-    id("org.hypertrace.jacoco-report-plugin")
+  `java-library`
+  jacoco
+  id("org.hypertrace.jacoco-report-plugin")
 }
 
 dependencies {
@@ -29,5 +29,5 @@ dependencies {
 }
 
 tasks.test {
-    useJUnitPlatform()
+  useJUnitPlatform()
 }
