@@ -54,17 +54,25 @@ message UserAttributionRuleData {
       string header_name = 1;
       string cookie_name = 2;
     }
+    ParsingTarget parsing_target = 3;
   }
 
   message EncodedLocation {
     oneof location {
       string json_path = 1;
     }
+    ParsingTarget parsing_target = 2;
   }
 
   message RuleCondition {
     oneof condition {
       string url_match_regex = 1;
+    }
+  }
+
+  message ParsingTarget {
+    oneof target {
+      string regex_capture_group = 1;
     }
   }
 }

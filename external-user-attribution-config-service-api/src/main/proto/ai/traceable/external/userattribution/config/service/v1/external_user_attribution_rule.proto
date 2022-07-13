@@ -24,26 +24,31 @@ message ExternalUserAttributionRule {
     string attribute_key = 1;
     // Type - id, role, scope, authheader, json, urlencoded, cookie
     Type type = 2;
+    repeated CustomParsingRule attribute_value_parsing_rules = 25;
     // Encoding (e.g. jwt)
-    Encoding encoding = 3;
+    Encoding encoding = 3 [deprecated = true];
     string cookie_name = 4;
     repeated Condition conditions = 5;
     // ID (e.g. jdoe) configuration.
     repeated string id_claims = 6;
     repeated string id_paths = 7;
     repeated string id_keys = 8;
+    repeated CustomParsingRule id_parsing_rules = 21;
     // Role (e.g. user) configuration
     repeated string role_claims = 9;
     repeated string role_paths = 10;
     repeated string role_keys = 11;
+    repeated CustomParsingRule role_parsing_rules = 22;
     // Scope (e.g. hypertrace) configuration.
     repeated string scope_claims = 12;
     repeated string scope_paths = 13;
     repeated string scope_keys = 14;
+    repeated CustomParsingRule scope_parsing_rules = 23;
     // Session (e.g. token) configuration.
     repeated string session_claims = 15;
     repeated string session_paths = 16;
     repeated string session_keys = 17;
+    repeated CustomParsingRule session_parsing_rules = 24;
     repeated int32 session_indexes = 18;
     string session_separator = 19;
     // Whether to capture raw session or hash it.
@@ -54,10 +59,10 @@ message ExternalUserAttributionRule {
       TYPE_ID = 1;
       TYPE_ROLE = 2;
       TYPE_SCOPE = 3;
-      TYPE_AUTHHEADER = 4;
-      TYPE_JSON = 5;
-      TYPE_URLENCODED = 6;
-      TYPE_COOKIE = 7;
+      TYPE_AUTHHEADER = 4 [deprecated = true];
+      TYPE_JSON = 5 [deprecated = true];
+      TYPE_URLENCODED = 6 [deprecated = true];
+      TYPE_COOKIE = 7 [deprecated = true];
     }
 
     enum Encoding {
@@ -68,6 +73,31 @@ message ExternalUserAttributionRule {
     message Condition {
       string key = 1;
       string regex = 2;
+    }
+
+    message ParsingTarget {
+      oneof target {
+        string regex_capture_group = 1;
+      }
+    }
+
+    message CustomParsingRule {
+      ParsingTarget parsing_target = 1;
+      oneof parser {
+        NoOpParser no_op_parser = 2;
+        JwtParser jwt_parser = 3;
+        Base64Parser base64_parser = 4;
+        JsonParser json_parser = 5;
+        CookieParser cookie_parser = 6;
+        UrlEncodedParser url_encoded_parser = 7;
+      }
+
+      message NoOpParser {}
+      message JwtParser {}
+      message Base64Parser {}
+      message JsonParser {}
+      message CookieParser {}
+      message UrlEncodedParser {}
     }
   }
 }

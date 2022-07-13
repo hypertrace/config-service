@@ -17,6 +17,7 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.Re
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.RuleCondition;
 import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Parser;
+import com.typesafe.config.ConfigFactory;
 import java.util.List;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
@@ -24,9 +25,11 @@ import org.junit.jupiter.api.Test;
 class ExternalUserAttributionRuleTranslatorTest {
 
   private static final Parser PARSER = JsonFormat.parser();
-
+  private static final ExternalUserAttributionConfigServiceConfig config =
+      new ExternalUserAttributionConfigServiceConfig(
+          ConfigFactory.parseResources("parsingRules.conf"));
   private final ExternalUserAttributionRuleTranslator translator =
-      new ExternalUserAttributionRuleTranslator();
+      new ExternalUserAttributionRuleTranslator(config);
 
   @Test
   void translatesCustomRule() {
@@ -49,13 +52,27 @@ class ExternalUserAttributionRuleTranslatorTest {
             "{"
                 + "  transformed_external_user_attribution_rule: {\n"
                 + "    attribute_key: \"http.request.header.authorization\",\n"
-                + "    type: TYPE_AUTHHEADER\n"
-                + "  }"
+                + "    type: TYPE_AUTHHEADER,\n"
+                + "    attribute_value_parsing_rules: [\n"
+                + "    {\n"
+                + "      parsing_target: {\n"
+                + "        regex_capture_group: \"Basic (.*)\" \n"
+                + "      },\n"
+                + "      base64_parser: {}\n"
+                + "    }]\n"
+                + "}\n"
                 + "}",
             "{"
                 + "  transformed_external_user_attribution_rule: {\n"
                 + "    attribute_key: \"rpc.request.metadata.authorization\",\n"
-                + "    type: TYPE_AUTHHEADER\n"
+                + "    type: TYPE_AUTHHEADER,\n"
+                + "    attribute_value_parsing_rules: [\n"
+                + "    {\n"
+                + "      parsing_target: {\n"
+                + "        regex_capture_group: \"Basic (.*)\" \n"
+                + "      },\n"
+                + "      base64_parser: {}\n"
+                + "    }]\n"
                 + "  }"
                 + "}"),
         translator.translateRules(
@@ -230,7 +247,23 @@ class ExternalUserAttributionRuleTranslatorTest {
                 + "    id_claims: [\"data-claim\"],"
                 + "    id_paths: [\"$.id\"],"
                 + "    role_claims: [\"data-claim\"],"
-                + "    role_paths: [\"$.role\"]"
+                + "    role_paths: [\"$.role\"],"
+                + "    attribute_value_parsing_rules: [\n"
+                + "    {\n"
+                + "      parsing_target: {\n"
+                + "        regex_capture_group: \"Bearer (.*)\" \n"
+                + "      },\n"
+                + "      jwt_parser: {}\n"
+                + "    },\n"
+                + "    {\n"
+                + "      parsing_target: {\n"
+                + "        regex_capture_group: \"Basic (.*)\" \n"
+                + "      },\n"
+                + "      base64_parser: {}\n"
+                + "    },\n"
+                + "    {\n"
+                + "      jwt_parser: {}\n"
+                + "    }]\n"
                 + "  }"
                 + "}",
             "{"
@@ -241,7 +274,23 @@ class ExternalUserAttributionRuleTranslatorTest {
                 + "    id_claims: [\"data-claim\"],"
                 + "    id_paths: [\"$.id\"],"
                 + "    role_claims: [\"data-claim\"],"
-                + "    role_paths: [\"$.role\"]"
+                + "    role_paths: [\"$.role\"],"
+                + "    attribute_value_parsing_rules: [\n"
+                + "    {\n"
+                + "      parsing_target: {\n"
+                + "        regex_capture_group: \"Bearer (.*)\" \n"
+                + "      },\n"
+                + "      jwt_parser: {}\n"
+                + "    },\n"
+                + "    {\n"
+                + "      parsing_target: {\n"
+                + "        regex_capture_group: \"Basic (.*)\" \n"
+                + "      },\n"
+                + "      base64_parser: {}\n"
+                + "    },\n"
+                + "    {\n"
+                + "      jwt_parser: {}\n"
+                + "    }]\n"
                 + "  }"
                 + "}"),
         translator.translateRules(

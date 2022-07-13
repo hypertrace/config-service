@@ -15,6 +15,7 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.Cu
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.EncodedLocation;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.HeaderLocation;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.JwtUserAttributionRuleData;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ParsingTarget;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.RequestHeaderUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ResponseBodyUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.RuleCondition;
@@ -22,6 +23,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.re2j.Pattern;
 import io.grpc.Status;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -128,6 +130,9 @@ public class UserAttributionConfigRequestValidator {
   }
 
   private void validateHeaderLocation(HeaderLocation headerLocation) {
+    if (headerLocation.hasParsingTarget()) {
+      validateCustomParseTypeLogic(headerLocation.getParsingTarget());
+    }
     switch (headerLocation.getLocationCase()) {
       case HEADER_NAME:
         validateNonDefaultPresenceOrThrow(headerLocation, HeaderLocation.HEADER_NAME_FIELD_NUMBER);
@@ -158,6 +163,9 @@ public class UserAttributionConfigRequestValidator {
   }
 
   private void validateEncodedLocation(EncodedLocation encodedLocation) {
+    if (encodedLocation.hasParsingTarget()) {
+      validateCustomParseTypeLogic(encodedLocation.getParsingTarget());
+    }
     switch (encodedLocation.getLocationCase()) {
       case JSON_PATH:
         validateNonDefaultPresenceOrThrow(encodedLocation, EncodedLocation.JSON_PATH_FIELD_NUMBER);
@@ -182,6 +190,30 @@ public class UserAttributionConfigRequestValidator {
       throw Status.INVALID_ARGUMENT
           .withDescription("Invalid yaml")
           .withCause(e)
+          .asRuntimeException();
+    }
+  }
+
+  private void validateCustomParseTypeLogic(ParsingTarget parsingTarget) {
+    switch (parsingTarget.getTargetCase()) {
+      case REGEX_CAPTURE_GROUP:
+        validateCaptureGroup(parsingTarget.getRegexCaptureGroup());
+        break;
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Unexpected custom parse type logic: " + printMessage(parsingTarget))
+            .asRuntimeException();
+    }
+  }
+
+  private void validateCaptureGroup(String regex) {
+    int groupCount = Pattern.compile(regex).groupCount();
+    if (groupCount != 1) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Regex should have exactly one capture group but found %d capture groups",
+                  groupCount))
           .asRuntimeException();
     }
   }

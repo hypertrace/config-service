@@ -19,6 +19,7 @@ dependencies {
   implementation(libs.hypertrace.configservice.validation)
   implementation(libs.hypertrace.configservice.changeeventgenerator)
   implementation(libs.jackson.yaml)
+  implementation(libs.re2j)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

@@ -286,6 +286,52 @@ class UserAttributionConfigRequestValidatorTest {
   }
 
   @Test
+  void validateRulesWithCaptureGroupCreate() {
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    assertInvalidArgStatusContaining(
+        "Regex should have exactly one capture group but found 5 capture groups",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setRequestHeaderData(
+                                RequestHeaderUserAttributionRuleData.newBuilder()
+                                    .setUserIdLocation(
+                                        HeaderLocation.newBuilder()
+                                            .setHeaderName("some-header")
+                                            .setParsingTarget(
+                                                UserAttributionRuleData.ParsingTarget.newBuilder()
+                                                    .setRegexCaptureGroup(
+                                                        "/(1(2(3)))(?:A)()4[(C)][(]D[)]\\(E\\)(5)/")
+                                                    .build()))))
+                    .build()));
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setJwtData(
+                                JwtUserAttributionRuleData.newBuilder()
+                                    .setJwtLocation(
+                                        HeaderLocation.newBuilder().setHeaderName("jwt"))
+                                    .setUserIdLocation(
+                                        EncodedLocation.newBuilder()
+                                            .setJsonPath("userid")
+                                            .setParsingTarget(
+                                                UserAttributionRuleData.ParsingTarget.newBuilder()
+                                                    .setRegexCaptureGroup("\\d+(.*)")
+                                                    .build()))
+                                    .setUserIdClaim("user-id-claim")))
+                    .build()));
+  }
+
+  @Test
   void validatesJwtCreate() {
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
     assertInvalidArgStatusContaining(

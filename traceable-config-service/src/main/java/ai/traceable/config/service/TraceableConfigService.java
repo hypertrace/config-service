@@ -195,7 +195,7 @@ public class TraceableConfigService extends PlatformService {
             managedChannel, config, configChangeEventGenerator);
     BindableService blockingConfigService = BlockingConfigServiceFactory.build(managedChannel);
     BindableService externalUserAttributionConfigService =
-        ExternalUserAttributionConfigServiceFactory.build(managedChannel);
+        ExternalUserAttributionConfigServiceFactory.build(managedChannel, config);
     BindableService externalDataClassificationConfigService =
         ExternalDataClassificationConfigServiceFactory.build(
             managedChannel, config, channelRegistry, featureCachingClient);
