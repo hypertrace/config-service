@@ -55,21 +55,8 @@ tasks.integrationTest {
 }
 
 dependencies {
-  implementation(projects.configServiceImpl)
-  implementation(projects.configServiceChangeEventGenerator)
-  implementation(projects.spacesConfigServiceImpl)
-  implementation(projects.labelsConfigServiceImpl)
-  implementation(projects.labelApplicationRuleConfigServiceImpl)
-  implementation(projects.alertingConfigServiceImpl)
-  implementation(projects.notificationRuleConfigServiceImpl)
-  implementation(projects.notificationChannelConfigServiceImpl)
-  implementation(projects.spanProcessingConfigServiceImpl)
-
-  implementation(libs.hypertrace.grpcutils.server)
-  implementation(libs.hypertrace.framework.container)
-  implementation(libs.hypertrace.framework.metrics)
-  implementation(libs.typesafe.config)
-  implementation(libs.slf4j.api)
+  implementation(libs.hypertrace.grpc.framework)
+  implementation(projects.configServiceFactory)
 
   runtimeOnly(libs.slf4j.log4jimpl)
   runtimeOnly(libs.grpc.netty)

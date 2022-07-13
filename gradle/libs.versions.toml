@@ -2,8 +2,8 @@
 protoc = "3.19.4"
 grpc = "1.45.1"
 gson = "2.9.0"
-hypertrace-grpcutils = "0.7.3"
-hypertrace-framework = "0.1.33"
+hypertrace-grpcutils = "0.7.5"
+hypertrace-framework = "0.1.37"
 lombok = "1.18.22"
 jackson = "2.13.2.2"
 kafka = "6.0.1-ccs"
@@ -20,7 +20,7 @@ hypertrace-grpcutils-context = { module = "org.hypertrace.core.grpcutils:grpc-co
 hypertrace-grpcutils-rxserver = { module = "org.hypertrace.core.grpcutils:grpc-server-rx-utils", version.ref = "hypertrace-grpcutils" }
 hypertrace-grpcutils-rxclient = { module = "org.hypertrace.core.grpcutils:grpc-client-rx-utils", version.ref = "hypertrace-grpcutils" }
 
-hypertrace-framework-container = { module = "org.hypertrace.core.serviceframework:platform-service-framework", version.ref = "hypertrace-framework" }
+hypertrace-grpc-framework = { module = "org.hypertrace.core.serviceframework:platform-grpc-service-framework", version.ref = "hypertrace-framework" }
 hypertrace-framework-metrics = { module = "org.hypertrace.core.serviceframework:platform-service-framework", version.ref = "hypertrace-framework" }
 hypertrace-framework-integrationtest = { module = "org.hypertrace.core.serviceframework:integrationtest-service-framework", version.ref = "hypertrace-framework" }
 
@@ -28,11 +28,11 @@ hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:documen
 hypertrace-eventstore = { module = "org.hypertrace.core.eventstore:event-store", version = "0.1.2" }
 
 guava = { module = "com.google.guava:guava", version = "31.1-jre" }
-rholder-guava-retrying = { module =  "com.github.rholder:guava-retrying", version = "2.0.0" }
+rholder-guava-retrying = { module = "com.github.rholder:guava-retrying", version = "2.0.0" }
 guice = { module = "com.google.inject:guice", version = "5.0.1" }
 javax-annotation = { module = "javax.annotation:javax.annotation-api", version = "1.3.2" }
 typesafe-config = { module = "com.typesafe:config", version = "1.4.1" }
-lombok = { module = "org.projectlombok:lombok", version.ref = "lombok"}
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 snakeyaml = { module = "org.yaml:snakeyaml", version = "1.28" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 rxjava3 = { module = "io.reactivex.rxjava3:rxjava", version = "3.0.11" }

@@ -1,80 +1,36 @@
 package org.hypertrace.config.service;
 
-import com.typesafe.config.Config;
-import io.grpc.Server;
-import io.grpc.ServerBuilder;
-import java.io.IOException;
-import org.hypertrace.config.service.store.ConfigStore;
-import org.hypertrace.core.grpcutils.server.InterceptorUtil;
-import org.hypertrace.core.serviceframework.PlatformService;
+import static java.time.Duration.ofMinutes;
+import static java.time.Duration.ofSeconds;
+
+import java.util.List;
 import org.hypertrace.core.serviceframework.config.ConfigClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.hypertrace.core.serviceframework.grpc.GrpcPlatformServerDefinition;
+import org.hypertrace.core.serviceframework.grpc.PlatformPeriodicTaskDefinition;
+import org.hypertrace.core.serviceframework.grpc.StandAloneGrpcPlatformServiceContainer;
 
-public class ConfigService extends PlatformService {
+public class ConfigService extends StandAloneGrpcPlatformServiceContainer {
 
-  private static final String SERVICE_PORT_CONFIG = "service.port";
-  private static final Logger LOG = LoggerFactory.getLogger(ConfigService.class);
-  private int serverPort;
-  private Server configServer;
-  private ConfigStore configStore;
+  private final ConfigServiceFactory configServiceFactory = new ConfigServiceFactory();
 
   public ConfigService(ConfigClient configClient) {
     super(configClient);
+    this.registerManagedPeriodicTask(
+        PlatformPeriodicTaskDefinition.builder()
+            .name("Check and report config store health")
+            .runnable(this.configServiceFactory::checkAndReportStoreHealth)
+            .initialDelay(ofSeconds(10))
+            .period(ofMinutes(1))
+            .build());
   }
 
   @Override
-  protected void doInit() {
-    Config config = getAppConfig();
-    serverPort = config.getInt(SERVICE_PORT_CONFIG);
-    LOG.info("Creating {} on port {}", getServiceName(), serverPort);
-
-    ServerBuilder<?> serverBuilder = ServerBuilder.forPort(serverPort);
-
-    configStore = ConfigServicesFactory.buildConfigStore(config);
-    ConfigServicesFactory.buildAllConfigServices(config, configStore, serverPort, getLifecycle())
-        .stream()
-        .map(InterceptorUtil::wrapInterceptors)
-        .forEach(serverBuilder::addService);
-
-    this.configServer = serverBuilder.build();
-  }
-
-  @Override
-  protected void doStart() {
-    LOG.info("Attempting to start {} on port {}", getServiceName(), serverPort);
-    try {
-      configServer.start();
-      LOG.info("Started Config Service on port {}", serverPort);
-    } catch (IOException e) {
-      LOG.error("Unable to start Config Service");
-      throw new RuntimeException(e);
-    }
-
-    try {
-      configServer.awaitTermination();
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override
-  protected void doStop() {
-    LOG.info("Shutting down service: {}", getServiceName());
-    while (!configServer.isShutdown()) {
-      configServer.shutdown();
-      try {
-        Thread.sleep(100);
-      } catch (InterruptedException e) {
-        LOG.warn("Interrupted!", e);
-        Thread.currentThread().interrupt();
-      }
-    }
-  }
-
-  @Override
-  public boolean healthCheck() {
-    return configStore.healthCheck();
+  protected List<GrpcPlatformServerDefinition> getServerDefinitions() {
+    return List.of(
+        GrpcPlatformServerDefinition.builder()
+            .name(this.getServiceName())
+            .port(this.getServicePort())
+            .serviceFactory(this.configServiceFactory)
+            .build());
   }
 }
