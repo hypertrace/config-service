@@ -9,10 +9,11 @@ import com.google.re2j.Pattern;
 import io.grpc.Status;
 import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
-import org.hypertrace.span.processing.config.service.v1.ApiDocumentationBasedConfig;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
+import org.hypertrace.span.processing.config.service.v1.ApiSpecBasedConfig;
 import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRuleRequest;
+import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleRequest;
@@ -69,6 +70,13 @@ public class SpanProcessingConfigRequestValidator {
     this.validateData(request.getRuleInfo());
   }
 
+  public void validateOrThrow(RequestContext requestContext, CreateApiNamingRulesRequest request) {
+    validateRequestContextOrThrow(requestContext);
+    for (ApiNamingRuleInfo apiNamingRuleInfo : request.getRulesInfoList()) {
+      this.validateData(apiNamingRuleInfo);
+    }
+  }
+
   public void validateOrThrow(RequestContext requestContext, UpdateApiNamingRuleRequest request) {
     validateRequestContextOrThrow(requestContext);
     this.validateUpdateRule(request.getRule());
@@ -116,36 +124,32 @@ public class SpanProcessingConfigRequestValidator {
         }
         validateRegex(segmentMatchingBasedConfig.getRegexesList());
         break;
-      case API_DOCUMENTATION_BASED_CONFIG:
-        ApiDocumentationBasedConfig apiDocumentationBasedConfig =
-            ruleConfig.getApiDocumentationBasedConfig();
-        if (Strings.isNullOrEmpty(apiDocumentationBasedConfig.getApiDocumentationId())) {
+      case API_SPEC_BASED_CONFIG:
+        ApiSpecBasedConfig apiSpecBasedConfig = ruleConfig.getApiSpecBasedConfig();
+        if (Strings.isNullOrEmpty(apiSpecBasedConfig.getApiSpecId())) {
           throw Status.INVALID_ARGUMENT
-              .withDescription(
-                  String.format("Invalid api documentation id : %s", apiDocumentationBasedConfig))
+              .withDescription(String.format("Invalid api spec id : %s", apiSpecBasedConfig))
               .asRuntimeException();
         }
 
-        if (apiDocumentationBasedConfig.getRegexesCount() == 0
-            || apiDocumentationBasedConfig.getRegexesCount()
-                != apiDocumentationBasedConfig.getValuesCount()) {
+        if (apiSpecBasedConfig.getRegexesCount() == 0
+            || apiSpecBasedConfig.getRegexesCount() != apiSpecBasedConfig.getValuesCount()) {
           throw Status.INVALID_ARGUMENT
               .withDescription(
                   String.format(
-                      "Invalid regex count or segment matching count : %s",
-                      apiDocumentationBasedConfig))
+                      "Invalid regex count or segment matching count : %s", apiSpecBasedConfig))
               .asRuntimeException();
         }
-        if (apiDocumentationBasedConfig.getRegexesList().stream().anyMatch(String::isEmpty)
-            || apiDocumentationBasedConfig.getValuesList().stream().anyMatch(String::isEmpty)) {
+        if (apiSpecBasedConfig.getRegexesList().stream().anyMatch(String::isEmpty)
+            || apiSpecBasedConfig.getValuesList().stream().anyMatch(String::isEmpty)) {
           throw Status.INVALID_ARGUMENT
               .withDescription(
                   String.format(
                       "Invalid regex or value segment : %s. Regex/value segment must not be empty",
-                      apiDocumentationBasedConfig))
+                      apiSpecBasedConfig))
               .asRuntimeException();
         }
-        validateRegex(apiDocumentationBasedConfig.getRegexesList());
+        validateRegex(apiSpecBasedConfig.getRegexesList());
         break;
       default:
         throw Status.INVALID_ARGUMENT
