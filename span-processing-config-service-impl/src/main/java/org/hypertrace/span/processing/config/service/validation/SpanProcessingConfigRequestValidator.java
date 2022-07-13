@@ -13,6 +13,7 @@ import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.ApiSpecBasedConfig;
 import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRuleRequest;
+import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleRequest;
@@ -67,6 +68,13 @@ public class SpanProcessingConfigRequestValidator {
   public void validateOrThrow(RequestContext requestContext, CreateApiNamingRuleRequest request) {
     validateRequestContextOrThrow(requestContext);
     this.validateData(request.getRuleInfo());
+  }
+
+  public void validateOrThrow(RequestContext requestContext, CreateApiNamingRulesRequest request) {
+    validateRequestContextOrThrow(requestContext);
+    for (ApiNamingRuleInfo apiNamingRuleInfo : request.getRulesInfoList()) {
+      this.validateData(apiNamingRuleInfo);
+    }
   }
 
   public void validateOrThrow(RequestContext requestContext, UpdateApiNamingRuleRequest request) {

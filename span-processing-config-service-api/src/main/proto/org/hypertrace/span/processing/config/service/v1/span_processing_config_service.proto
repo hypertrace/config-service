@@ -24,6 +24,9 @@ service SpanProcessingConfigService {
   rpc CreateApiNamingRule (CreateApiNamingRuleRequest) returns (CreateApiNamingRuleResponse) {
   }
 
+  rpc CreateApiNamingRules (CreateApiNamingRulesRequest) returns (CreateApiNamingRulesResponse) {
+  }
+
   rpc UpdateApiNamingRule (UpdateApiNamingRuleRequest) returns (UpdateApiNamingRuleResponse) {
   }
 
@@ -98,6 +101,14 @@ message CreateApiNamingRuleRequest {
 
 message CreateApiNamingRuleResponse {
   ApiNamingRuleDetails rule_details = 1;
+}
+
+message CreateApiNamingRulesRequest {
+  repeated ApiNamingRuleInfo rules_info = 1;
+}
+
+message CreateApiNamingRulesResponse {
+  repeated ApiNamingRuleDetails rules_details = 1;
 }
 
 message GetAllApiNamingRulesRequest {
