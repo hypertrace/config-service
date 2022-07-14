@@ -10,6 +10,7 @@ dependencies {
   implementation(projects.configUtils)
   implementation(libs.guice)
   implementation(libs.guava)
+  implementation(libs.re2j)
   implementation(libs.protobuf.javautil)
   implementation(libs.slf4j.api)
   implementation(libs.hypertrace.grpcutils.context)

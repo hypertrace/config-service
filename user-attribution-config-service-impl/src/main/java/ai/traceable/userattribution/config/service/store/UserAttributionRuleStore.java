@@ -1,5 +1,7 @@
 package ai.traceable.userattribution.config.service.store;
 
+import static ai.traceable.userattribution.config.service.store.UserAttributionRuleScopeUtils.setUserAttributionRuleScopeIfNotPresent;
+
 import ai.traceable.config.utils.RankCalculator;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -48,6 +50,7 @@ public class UserAttributionRuleStore extends IdentifiedObjectStore<UserAttribut
     UserAttributionRule.Builder builder = UserAttributionRule.newBuilder();
     try {
       ConfigProtoConverter.mergeFromValue(value, builder);
+      setUserAttributionRuleScopeIfNotPresent(builder);
       return Optional.of(builder.build());
     } catch (InvalidProtocolBufferException e) {
       log.error("Failed to convert config to UserAttributionRule: {}", value, e);
@@ -58,7 +61,9 @@ public class UserAttributionRuleStore extends IdentifiedObjectStore<UserAttribut
   @SneakyThrows
   @Override
   protected Value buildValueFromData(UserAttributionRule data) {
-    return ConfigProtoConverter.convertToValue(data);
+    UserAttributionRule.Builder builder = data.toBuilder();
+    setUserAttributionRuleScopeIfNotPresent(builder);
+    return ConfigProtoConverter.convertToValue(builder);
   }
 
   @Override

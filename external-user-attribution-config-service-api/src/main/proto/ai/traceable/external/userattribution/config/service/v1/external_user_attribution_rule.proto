@@ -11,6 +11,8 @@ message ExternalUserAttributionRules {
 
 message ExternalUserAttributionRule {
   string rule_id = 10;
+  SpanFilter span_filter = 11;
+
   oneof rule {
     RawExternalUserAttributionRule raw_external_user_attribution_rule = 1;
     TransformedExternalUserAttributionRule transformed_external_user_attribution_rule = 2;
@@ -99,5 +101,25 @@ message ExternalUserAttributionRule {
       message CookieParser {}
       message UrlEncodedParser {}
     }
+  }
+
+  message SpanFilter {
+    repeated AttributePredicate required_matching_attributes = 1;
+  }
+
+  message AttributePredicate {
+    StringPredicate name_predicate = 1;
+    StringPredicate value_predicate = 2;
+  }
+
+  message StringPredicate {
+    Operator operator = 1;
+    string value = 2;
+  }
+
+  enum Operator {
+    OPERATOR_UNSPECIFIED = 0;
+    OPERATOR_EQUALS = 1;
+    OPERATOR_MATCHES_REGEX = 2;
   }
 }

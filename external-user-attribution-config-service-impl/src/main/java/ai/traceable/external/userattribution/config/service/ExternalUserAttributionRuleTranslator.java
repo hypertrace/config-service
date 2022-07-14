@@ -27,6 +27,7 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.He
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.JwtUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.RequestHeaderUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ResponseBodyUserAttributionRuleData;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
 import java.util.Collections;
@@ -83,7 +84,34 @@ class ExternalUserAttributionRuleTranslator {
     return this.translateRuleContent(rule)
         .map(ExternalUserAttributionRule::toBuilder)
         .map(externalRuleBuilder -> externalRuleBuilder.setRuleId(rule.getId()))
+        .map(externalRuleBuilder -> translateRuleScope(externalRuleBuilder, rule.getScope()))
         .map(Builder::build);
+  }
+
+  private ExternalUserAttributionRule.Builder translateRuleScope(
+      ExternalUserAttributionRule.Builder builder, UserAttributionRuleScope scope) {
+    ExternalUserAttributionRule.SpanFilter.Builder spanFilterBuilder =
+        ExternalUserAttributionRule.SpanFilter.newBuilder();
+
+    scope.getCustomScope().getUrlScopesList().stream()
+        .map(UserAttributionRuleScope.UrlScope::getUrlMatchRegex)
+        .forEach(
+            urlRegex ->
+                spanFilterBuilder.addRequiredMatchingAttributes(
+                    ExternalUserAttributionRule.AttributePredicate.newBuilder()
+                        .setNamePredicate(
+                            buildStringPredicate(
+                                ExternalUserAttributionRule.Operator.OPERATOR_EQUALS, URL_KEY))
+                        .setValuePredicate(
+                            buildStringPredicate(
+                                ExternalUserAttributionRule.Operator.OPERATOR_MATCHES_REGEX,
+                                urlRegex))));
+
+    if (spanFilterBuilder.getRequiredMatchingAttributesCount() > 0) {
+      builder.setSpanFilter(spanFilterBuilder);
+    }
+
+    return builder;
   }
 
   private Stream<ExternalUserAttributionRule> translateRuleContent(UserAttributionRule rule) {
@@ -323,5 +351,13 @@ class ExternalUserAttributionRuleTranslator {
 
   private ParsingTarget buildRegexCaptureGroup(String regex) {
     return ParsingTarget.newBuilder().setRegexCaptureGroup(regex).build();
+  }
+
+  private ExternalUserAttributionRule.StringPredicate buildStringPredicate(
+      ExternalUserAttributionRule.Operator operator, String value) {
+    return ExternalUserAttributionRule.StringPredicate.newBuilder()
+        .setValue(value)
+        .setOperator(operator)
+        .build();
   }
 }

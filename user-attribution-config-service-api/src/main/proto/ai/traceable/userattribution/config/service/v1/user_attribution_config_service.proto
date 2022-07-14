@@ -33,6 +33,7 @@ message GetUserAttributionRulesResponse {
 message CreateUserAttributionRuleRequest {
   string name = 1;
   UserAttributionRuleData data = 2;
+  UserAttributionRuleScope scope = 3;
 }
 
 message CreateUserAttributionRuleResponse {

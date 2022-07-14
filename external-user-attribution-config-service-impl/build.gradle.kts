@@ -11,6 +11,7 @@ dependencies {
   implementation(libs.guice)
   implementation(libs.slf4j.api)
   implementation(libs.hypertrace.grpcutils.client)
+  implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.uuidCreator)
   implementation(libs.protobuf.javautil)
 
@@ -21,6 +22,7 @@ dependencies {
   testImplementation(libs.mockito.core)
   testImplementation(libs.mockito.junit)
   testImplementation(libs.protobuf.javautil)
+  testImplementation(libs.grpc.core)
 
   testAnnotationProcessor(libs.lombok)
   testCompileOnly(libs.lombok)

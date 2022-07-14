@@ -21,6 +21,7 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.Jw
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.RequestHeaderUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ResponseBodyUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.RuleCondition;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope;
 import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
 import java.util.Objects;
@@ -113,6 +114,138 @@ class UserAttributionConfigRequestValidatorTest {
                             .setCustomData(CustomUserAttributionRuleData.newBuilder()))
                     .build()));
 
+    assertInvalidArgStatusContaining(
+        "Custom scope should not be empty",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setCustomData(
+                                CustomUserAttributionRuleData.newBuilder().setYaml("key: value")))
+                    .setScope(
+                        UserAttributionRuleScope.newBuilder()
+                            .setCustomScope(
+                                UserAttributionRuleScope.CustomScope.getDefaultInstance()))
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Environment should not be empty",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setCustomData(
+                                CustomUserAttributionRuleData.newBuilder().setYaml("key: value")))
+                    .setScope(
+                        UserAttributionRuleScope.newBuilder()
+                            .setCustomScope(
+                                UserAttributionRuleScope.CustomScope.newBuilder()
+                                    .addEnvironmentScopes(
+                                        UserAttributionRuleScope.EnvironmentScope
+                                            .getDefaultInstance())
+                                    .build()))
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "duplicate element",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setCustomData(
+                                CustomUserAttributionRuleData.newBuilder().setYaml("key: value")))
+                    .setScope(
+                        UserAttributionRuleScope.newBuilder()
+                            .setCustomScope(
+                                UserAttributionRuleScope.CustomScope.newBuilder()
+                                    .addEnvironmentScopes(
+                                        UserAttributionRuleScope.EnvironmentScope.newBuilder()
+                                            .setEnvironmentName("env"))
+                                    .addEnvironmentScopes(
+                                        UserAttributionRuleScope.EnvironmentScope.newBuilder()
+                                            .setEnvironmentName("env"))
+                                    .build()))
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "duplicate element",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setCustomData(
+                                CustomUserAttributionRuleData.newBuilder().setYaml("key: value")))
+                    .setScope(
+                        UserAttributionRuleScope.newBuilder()
+                            .setCustomScope(
+                                UserAttributionRuleScope.CustomScope.newBuilder()
+                                    .addUrlScopes(
+                                        UserAttributionRuleScope.UrlScope.newBuilder()
+                                            .setUrlMatchRegex("regex")
+                                            .build())
+                                    .addUrlScopes(
+                                        UserAttributionRuleScope.UrlScope.newBuilder()
+                                            .setUrlMatchRegex("regex")
+                                            .build())
+                                    .build()))
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Url regex should not be empty",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setCustomData(
+                                CustomUserAttributionRuleData.newBuilder().setYaml("key: value")))
+                    .setScope(
+                        UserAttributionRuleScope.newBuilder()
+                            .setCustomScope(
+                                UserAttributionRuleScope.CustomScope.newBuilder()
+                                    .addUrlScopes(
+                                        UserAttributionRuleScope.UrlScope.getDefaultInstance())
+                                    .build())
+                            .build())
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Invalid url regex",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setCustomData(
+                                CustomUserAttributionRuleData.newBuilder().setYaml("key: value")))
+                    .setScope(
+                        UserAttributionRuleScope.newBuilder()
+                            .setCustomScope(
+                                UserAttributionRuleScope.CustomScope.newBuilder()
+                                    .addUrlScopes(
+                                        UserAttributionRuleScope.UrlScope.newBuilder()
+                                            .setUrlMatchRegex("[")
+                                            .build())
+                                    .build())
+                            .build())
+                    .build()));
+
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
@@ -123,6 +256,14 @@ class UserAttributionConfigRequestValidatorTest {
                         UserAttributionRuleData.newBuilder()
                             .setCustomData(
                                 CustomUserAttributionRuleData.newBuilder().setYaml("key: value")))
+                    .setScope(
+                        UserAttributionRuleScope.newBuilder()
+                            .setCustomScope(
+                                UserAttributionRuleScope.CustomScope.newBuilder()
+                                    .addEnvironmentScopes(
+                                        UserAttributionRuleScope.EnvironmentScope.newBuilder()
+                                            .setEnvironmentName("env")))
+                            .build())
                     .build()));
   }
 

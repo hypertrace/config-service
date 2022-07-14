@@ -14,6 +14,7 @@ service ExternalUserAttributionConfigService {
 
 message GetExternalUserAttributionRulesRequest {
   OnlyIfChangedFilter filter = 1;
+  optional string environment_name = 2;
 
   message OnlyIfChangedFilter {
     string previous_hash = 1;

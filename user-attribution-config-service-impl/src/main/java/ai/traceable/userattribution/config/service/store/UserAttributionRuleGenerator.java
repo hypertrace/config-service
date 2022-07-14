@@ -1,5 +1,7 @@
 package ai.traceable.userattribution.config.service.store;
 
+import static ai.traceable.userattribution.config.service.store.UserAttributionRuleScopeUtils.setUserAttributionRuleScopeIfNotPresent;
+
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.userattribution.config.service.v1.CreateUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
@@ -15,11 +17,18 @@ public class UserAttributionRuleGenerator {
   }
 
   public UserAttributionRule generateNewRuleWithoutRank(CreateUserAttributionRuleRequest request) {
-    return UserAttributionRule.newBuilder()
-        .setData(request.getData())
-        .setName(request.getName())
-        .setId(this.uuidGenerator.generateRandomId())
-        .setDisabled(false)
-        .build();
+    UserAttributionRule.Builder builder =
+        UserAttributionRule.newBuilder()
+            .setData(request.getData())
+            .setName(request.getName())
+            .setId(this.uuidGenerator.generateRandomId());
+
+    if (request.hasScope()) {
+      builder.setScope(request.getScope());
+    }
+
+    setUserAttributionRuleScopeIfNotPresent(builder);
+
+    return builder.build();
   }
 }

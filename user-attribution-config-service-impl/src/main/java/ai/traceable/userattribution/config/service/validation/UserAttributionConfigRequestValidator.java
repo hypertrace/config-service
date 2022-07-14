@@ -19,12 +19,15 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.Pa
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.RequestHeaderUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ResponseBodyUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.RuleCondition;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.re2j.Pattern;
 import io.grpc.Status;
+import java.util.List;
+import java.util.Set;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class UserAttributionConfigRequestValidator {
@@ -40,6 +43,7 @@ public class UserAttributionConfigRequestValidator {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, CreateUserAttributionRuleRequest.NAME_FIELD_NUMBER);
     this.validateRuleData(request.getData());
+    this.validateRuleScope(request.getScope());
   }
 
   public void validateOrThrow(
@@ -49,6 +53,7 @@ public class UserAttributionConfigRequestValidator {
     validateNonDefaultPresenceOrThrow(rule, UserAttributionRule.ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(rule, UserAttributionRule.NAME_FIELD_NUMBER);
     this.validateRuleData(rule.getData());
+    this.validateRuleScope(rule.getScope());
   }
 
   public void validateUpdateOrThrow(UserAttributionRule existing, UserAttributionRule updated) {
@@ -214,6 +219,65 @@ public class UserAttributionConfigRequestValidator {
               String.format(
                   "Regex should have exactly one capture group but found %d capture groups",
                   groupCount))
+          .asRuntimeException();
+    }
+  }
+
+  private void validateRuleScope(UserAttributionRuleScope scope) {
+    if (scope.getScopeCase().equals(UserAttributionRuleScope.ScopeCase.CUSTOM_SCOPE)) {
+      UserAttributionRuleScope.CustomScope customScope = scope.getCustomScope();
+
+      if (customScope.equals(UserAttributionRuleScope.CustomScope.getDefaultInstance())) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Custom scope should not be empty")
+            .asRuntimeException();
+      }
+
+      validateEnvironmentScopes(customScope.getEnvironmentScopesList());
+      validateUrlScopes(customScope.getUrlScopesList());
+    }
+  }
+
+  private void validateEnvironmentScopes(List<UserAttributionRuleScope.EnvironmentScope> scopes) {
+    try {
+      // validates there are no duplicates present
+      Set.of(scopes.toArray());
+    } catch (IllegalArgumentException e) {
+      throw Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException();
+    }
+    scopes.forEach(this::validateEnvironmentScope);
+  }
+
+  private void validateUrlScopes(List<UserAttributionRuleScope.UrlScope> scopes) {
+    try {
+      // validates there are no duplicates present
+      Set.of(scopes.toArray());
+    } catch (IllegalArgumentException e) {
+      throw Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException();
+    }
+    scopes.forEach(this::validateUrlScope);
+  }
+
+  private void validateEnvironmentScope(UserAttributionRuleScope.EnvironmentScope scope) {
+    if (scope.getEnvironmentName().isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Environment should not be empty for environment scope")
+          .asRuntimeException();
+    }
+  }
+
+  private void validateUrlScope(UserAttributionRuleScope.UrlScope scope) {
+    if (scope.getUrlMatchRegex().isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Url regex should not be empty for url scope")
+          .asRuntimeException();
+    }
+
+    try {
+      Pattern.compile(scope.getUrlMatchRegex());
+    } catch (Exception e) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(String.format("Invalid url regex : %s", scope.getUrlMatchRegex()))
           .asRuntimeException();
     }
   }
