@@ -5,13 +5,13 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
-import io.grpc.ManagedChannel;
+import io.grpc.Channel;
 
 public class IpRangeConfigServiceFactory {
   private IpRangeConfigServiceFactory() {}
 
   public static BindableService build(
-      ManagedChannel channel, Config config, ActivityEventProducer activityEventProducer) {
+      Channel channel, Config config, ActivityEventProducer activityEventProducer) {
     Injector injector =
         Guice.createInjector(
             new IpRangeConfigServiceModule(channel, config, activityEventProducer));

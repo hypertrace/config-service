@@ -45,7 +45,7 @@ import ai.traceable.localprocessing.config.service.v1.SamplingPolicies;
 import ai.traceable.localprocessing.config.service.v1.SamplingPolicy;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import io.grpc.ManagedChannel;
+import io.grpc.Channel;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,7 +117,7 @@ class LocalProcessingConfigServiceImplTest {
         Map.of("default.license.limit", "LICENSE_LIMIT_AVAILABLE"));
 
     Config config = ConfigFactory.parseMap(configMap);
-    ManagedChannel channel = (ManagedChannel) mockGenericConfigService.channel();
+    Channel channel = mockGenericConfigService.channel();
 
     customModsecDetectionManager = mock(CustomModsecDetectionManager.class);
     regularModsecDetectionManager = mock(RegularModsecDetectionManager.class);
@@ -135,7 +135,6 @@ class LocalProcessingConfigServiceImplTest {
     mockGenericConfigService
         .addService(
             new LocalProcessingConfigServiceImpl(
-                channel,
                 configServiceCoordinator,
                 customModsecDetectionManager,
                 regularModsecDetectionManager,

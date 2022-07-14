@@ -7,7 +7,7 @@ import com.google.inject.Key;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
-import io.grpc.ManagedChannel;
+import io.grpc.Channel;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
@@ -23,7 +23,7 @@ public class AnomalyConfigServiceFactory {
 
   public static List<BindableService> build(
       GrpcChannelRegistry channelRegistry,
-      ManagedChannel channel,
+      Channel channel,
       Config config,
       ConfigChangeEventGenerator configChangeEventGenerator) {
     Injector injector =

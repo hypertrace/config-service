@@ -4,7 +4,7 @@ import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceBlockingStub;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import io.grpc.ManagedChannel;
+import io.grpc.Channel;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 public class RegionBlockingManagerModule extends AbstractModule {
@@ -15,7 +15,7 @@ public class RegionBlockingManagerModule extends AbstractModule {
   }
 
   @Provides
-  RegionConfigServiceBlockingStub providesRegionConfigServiceStub(ManagedChannel channel) {
+  RegionConfigServiceBlockingStub providesRegionConfigServiceStub(Channel channel) {
     return RegionConfigServiceGrpc.newBlockingStub(channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());

@@ -6,14 +6,14 @@ import static org.mockito.Mockito.mock;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.inject.Guice;
 import com.typesafe.config.Config;
-import io.grpc.ManagedChannel;
+import io.grpc.Channel;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.junit.jupiter.api.Test;
 
 public class ExternalDataClassificationConfigServiceModuleTest {
   @Test
   void testResolveBindings() {
-    ManagedChannel mockChannel = mock(ManagedChannel.class);
+    Channel mockChannel = mock(Channel.class);
     Config mockConfig = mock(Config.class);
     GrpcChannelRegistry channelRegistry = mock(GrpcChannelRegistry.class);
     FeatureCachingClient mockFeatureClient = mock(FeatureCachingClient.class);

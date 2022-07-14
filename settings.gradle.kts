@@ -71,5 +71,6 @@ include(":span-processing-config-service-api")
 include(":span-processing-config-service-impl")
 include(":api-spec-config-service-api")
 include(":feature-caching-client")
+include(":traceable-config-service-factory")
 
 include(":mock-config-service")

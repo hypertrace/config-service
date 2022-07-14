@@ -18,7 +18,7 @@ import ai.traceable.anomaly.config.service.trainer.TrainerConfigServiceModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
-import io.grpc.ManagedChannel;
+import io.grpc.Channel;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
@@ -31,12 +31,12 @@ public class AnomalyConfigServiceModule extends AbstractModule {
 
   private final Config config;
   private final GrpcChannelRegistry channelRegistry;
-  private final ManagedChannel channel;
+  private final Channel channel;
   private final ConfigChangeEventGenerator configChangeEventGenerator;
 
   AnomalyConfigServiceModule(
       GrpcChannelRegistry channelRegistry,
-      ManagedChannel channel,
+      Channel channel,
       Config config,
       ConfigChangeEventGenerator configChangeEventGenerator) {
     this.channel = channel;

@@ -19,7 +19,6 @@ import ai.traceable.localprocessing.config.service.v1.ProtectedEndpoint;
 import ai.traceable.localprocessing.config.service.v1.ProtectionModeConfig;
 import ai.traceable.localprocessing.config.service.v1.SamplingPolicies;
 import com.google.inject.Inject;
-import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,7 +38,6 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
 
   @Inject
   public LocalProcessingConfigServiceImpl(
-      ManagedChannel channel,
       ConfigServiceCoordinator configServiceCoordinator,
       CustomModsecDetectionManager customModsecDetectionManager,
       RegularModsecDetectionManager regularModsecDetectionManager,

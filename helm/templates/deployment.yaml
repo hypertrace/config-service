@@ -123,13 +123,16 @@ spec:
             - name: traceable-nfs-model-store
               mountPath: {{ $.Values.modelStoreNFSMountPath }}
           livenessProbe:
-            initialDelaySeconds: {{ int .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ int .Values.livenessProbe.periodSeconds }}
-            tcpSocket:
-              port: {{ .Values.internalContainerPortName }}
-          readinessProbe:
-            initialDelaySeconds: {{ int .Values.readinessProbe.initialDelaySeconds }}
-            periodSeconds: {{ int .Values.readinessProbe.periodSeconds }}
+            failureThreshold: {{ int .Values.livenessProbe.failureThreshold }}
+            timeoutSeconds: {{ int .Values.livenessProbe.timeoutSeconds }}
+            httpGet:
+              path: /health
+              port: {{ .Values.containerAdminPort }}
+          startupProbe:
+            periodSeconds: {{ int .Values.startupProbe.periodSeconds }}
+            failureThreshold: {{ int .Values.startupProbe.failureThreshold }}
+            timeoutSeconds: {{ int .Values.startupProbe.timeoutSeconds }}
             httpGet:
               path: /health
               port: {{ .Values.containerAdminPort }}

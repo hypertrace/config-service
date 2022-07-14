@@ -7,7 +7,7 @@ import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServic
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
-import io.grpc.ManagedChannel;
+import io.grpc.Channel;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 public class SpanProcessingRulesManagerModule extends AbstractModule {
@@ -28,7 +28,7 @@ public class SpanProcessingRulesManagerModule extends AbstractModule {
 
   @Provides
   SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
-      providesTraceableSpanProcessingConfigServiceBlockingStub(ManagedChannel channel) {
+      providesTraceableSpanProcessingConfigServiceBlockingStub(Channel channel) {
     return SpanProcessingConfigServiceGrpc.newBlockingStub(channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());

@@ -4,7 +4,7 @@ import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServi
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import io.grpc.ManagedChannel;
+import io.grpc.Channel;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 public class CustomModsecBlockingManagerModule extends AbstractModule {
@@ -16,7 +16,7 @@ public class CustomModsecBlockingManagerModule extends AbstractModule {
 
   @Provides
   CustomSignatureConfigServiceBlockingStub providesCustomSignatureConfigServiceStub(
-      ManagedChannel channel) {
+      Channel channel) {
     return CustomSignatureConfigServiceGrpc.newBlockingStub(channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());

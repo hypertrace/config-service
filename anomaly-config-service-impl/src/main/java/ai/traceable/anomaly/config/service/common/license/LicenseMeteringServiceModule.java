@@ -5,7 +5,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.typesafe.config.Config;
-import io.grpc.ManagedChannel;
+import io.grpc.Channel;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
@@ -28,8 +28,8 @@ public class LicenseMeteringServiceModule extends AbstractModule {
   @Provides
   @Singleton
   LicenseMeteringServiceGrpc.LicenseMeteringServiceBlockingStub providesLicenseMeteringService() {
-    ManagedChannel licenseMeteringChannel =
-        channelRegistry.forAddress(config.getHost(), config.getPort());
+    Channel licenseMeteringChannel =
+        channelRegistry.forPlaintextAddress(config.getHost(), config.getPort());
     return LicenseMeteringServiceGrpc.newBlockingStub(licenseMeteringChannel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());

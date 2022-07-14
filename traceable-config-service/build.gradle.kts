@@ -11,8 +11,8 @@ plugins {
   jacoco
   `java-test-fixtures`
   id("org.hypertrace.jacoco-report-plugin")
-  id("org.hypertrace.docker-java-application-plugin") version "0.8.2"
-  id("org.hypertrace.docker-publish-plugin") version "0.8.2"
+  id("org.hypertrace.docker-java-application-plugin") version "0.9.4"
+  id("org.hypertrace.docker-publish-plugin") version "0.9.4"
   id("ai.traceable.docker-convention-plugin") version "1.2.2"
   id("org.hypertrace.integration-test-plugin") version "0.1.3"
 }
@@ -88,49 +88,12 @@ tasks.integrationTest {
 }
 
 dependencies {
-  implementation(projects.activityEventProducer)
-  implementation(projects.sensitiveDataConfigServiceImpl)
-  implementation(projects.rateLimitingConfigServiceImpl)
-  implementation(projects.licenseStatusConfigServiceImpl)
-  implementation(projects.localProcessingConfigServiceImpl)
-  implementation(projects.regionConfigServiceImpl)
-  implementation(projects.iprangeConfigServiceImpl)
-  implementation(projects.customSignatureConfigServiceImpl)
-  implementation(projects.blockingConfigServiceImpl)
-  implementation(projects.userAttributionConfigServiceImpl)
-  implementation(projects.externalUserAttributionConfigServiceImpl)
-  implementation(projects.threatManagementConfigServiceImpl)
-  implementation(projects.anomalyConfigServiceImpl)
-  implementation(projects.anomalyConfigServiceUtils)
-  implementation(projects.riskConfigServiceImpl)
-  implementation(projects.alertingConfigServiceImpl)
-  implementation(projects.reportingConfigServiceImpl)
-  implementation(projects.dataClassificationConfigServiceImpl)
-  implementation(projects.dataExfiltrationConfigServiceImpl)
-  implementation(projects.wafProviderIntegrationServiceImpl)
-  implementation(projects.apiAttributeOverrideServiceImpl)
-  implementation(projects.externalDataClassificationConfigServiceImpl)
-  implementation(projects.spanProcessingConfigServiceImpl)
-  implementation(projects.featureCachingClient)
-  implementation(projects.spanProcessingConfigServiceImpl)
-  implementation(libs.hypertrace.configservice.server)
-  implementation(libs.hypertrace.configservice.impl)
-  implementation(libs.hypertrace.grpcutils.server)
-  implementation(libs.hypertrace.grpcutils.client)
-  implementation(libs.hypertrace.framework.container)
-  implementation(libs.hypertrace.framework.metrics)
-  implementation(libs.hypertrace.configservice.notification.rule.impl)
-  implementation(libs.hypertrace.configservice.notification.channel.impl)
-  implementation(libs.hypertrace.configservice.changeeventgenerator)
-  implementation(libs.hypertrace.entityservice.api)
-  implementation(libs.traceable.activityevent.api)
-  implementation(libs.traceable.apiNamingModel)
-  implementation(libs.traceable.platformGateway.trainingEvaluationFramework)
-  implementation(libs.typesafe.config)
-  implementation(libs.slf4j.api)
-  implementation(libs.kafka.avro.serializer)
+  implementation(projects.traceableConfigServiceFactory)
+  implementation(libs.hypertrace.grpc.framework)
+
   runtimeOnly(libs.grpc.netty)
   runtimeOnly(libs.slf4j.log4jimpl)
+  runtimeOnly(libs.kafka.avro.serializer)
 
   testFixturesImplementation(libs.traceable.insights.api)
   testFixturesImplementation(libs.traceable.featureFlag.api)
@@ -154,7 +117,19 @@ dependencies {
   integrationTestImplementation(libs.hypertrace.entityservice.api)
   integrationTestImplementation(libs.protobuf.javautil)
   integrationTestImplementation(projects.iprangeConfigServiceApi)
+  integrationTestImplementation(projects.apiAttributeOverrideServiceApi)
+  integrationTestImplementation(projects.blockingConfigServiceApi)
+  integrationTestImplementation(projects.blockingConfigServiceImpl)
+  integrationTestImplementation(projects.customSignatureConfigServiceApi)
+  integrationTestImplementation(projects.localProcessingConfigServiceApi)
+  integrationTestImplementation(projects.localProcessingConfigServiceImpl)
+  integrationTestImplementation(projects.anomalyConfigServiceRegistry)
+  integrationTestImplementation(projects.anomalyConfigServiceUtils)
+  integrationTestImplementation(projects.rateLimitingConfigServiceApi)
+  integrationTestImplementation(projects.regionConfigServiceApi)
   integrationTestImplementation(projects.riskConfigServiceApi)
+  integrationTestImplementation(projects.sensitiveDataConfigServiceApi)
+  integrationTestImplementation(projects.dataClassificationConfigServiceApi)
 }
 
 application {

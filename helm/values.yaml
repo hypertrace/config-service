@@ -45,12 +45,13 @@ topologySpreadConstraints: []
 javaOpts: "-XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=60.0 -XX:MaxDirectMemorySize=128M -XX:+ExitOnOutOfMemoryError"
 
 livenessProbe:
-  initialDelaySeconds: 10
   periodSeconds: 5
-
-readinessProbe:
-  initialDelaySeconds: 2
+  failureThreshold: 3
+  timeoutSeconds: 3
+startupProbe:
   periodSeconds: 5
+  failureThreshold: 24
+  timeoutSeconds: 3
 
 resources:
   requests:

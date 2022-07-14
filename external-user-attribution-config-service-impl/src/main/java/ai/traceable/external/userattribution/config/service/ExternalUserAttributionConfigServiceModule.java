@@ -6,21 +6,18 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
-import io.grpc.ManagedChannel;
+import io.grpc.Channel;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 class ExternalUserAttributionConfigServiceModule extends AbstractModule {
-  private final ManagedChannel channel;
+  private final Channel channel;
   private final ExternalUserAttributionConfigServiceConfig
       externalUserAttributionConfigServiceConfig;
-  private final ExternalUserAttributionRuleTranslator externalUserAttributionRuleTranslator;
 
-  ExternalUserAttributionConfigServiceModule(ManagedChannel channel, Config config) {
+  ExternalUserAttributionConfigServiceModule(Channel channel, Config config) {
     this.channel = channel;
     this.externalUserAttributionConfigServiceConfig =
         new ExternalUserAttributionConfigServiceConfig(config);
-    this.externalUserAttributionRuleTranslator =
-        new ExternalUserAttributionRuleTranslator(externalUserAttributionConfigServiceConfig);
   }
 
   @Override
@@ -28,8 +25,6 @@ class ExternalUserAttributionConfigServiceModule extends AbstractModule {
     bind(BindableService.class).to(ExternalUserAttributionConfigServiceImpl.class);
     bind(ExternalUserAttributionConfigServiceConfig.class)
         .toInstance(externalUserAttributionConfigServiceConfig);
-    bind(ExternalUserAttributionRuleTranslator.class)
-        .toInstance(externalUserAttributionRuleTranslator);
   }
 
   @Provides

@@ -6,14 +6,14 @@ import static org.mockito.Mockito.mock;
 import ai.traceable.activity.event.producer.ActivityEventProducer;
 import com.google.inject.Guice;
 import com.typesafe.config.Config;
-import io.grpc.ManagedChannel;
+import io.grpc.Channel;
 import org.junit.jupiter.api.Test;
 
 class RegionConfigServiceModuleTest {
   @Test
   void testResolveBindings() {
     Config mockConfig = mock(Config.class);
-    ManagedChannel mockChannel = mock(ManagedChannel.class);
+    Channel mockChannel = mock(Channel.class);
     ActivityEventProducer mockActivityEventProducer = mock(ActivityEventProducer.class);
 
     assertDoesNotThrow(

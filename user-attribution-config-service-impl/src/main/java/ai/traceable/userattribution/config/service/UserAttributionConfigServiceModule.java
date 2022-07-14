@@ -7,18 +7,18 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
 import io.grpc.BindableService;
-import io.grpc.ManagedChannel;
+import io.grpc.Channel;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 class UserAttributionConfigServiceModule extends AbstractModule {
-  private final ManagedChannel channel;
+  private final Channel channel;
   private final ConfigChangeEventGenerator configChangeEventGenerator;
 
   UserAttributionConfigServiceModule(
-      ManagedChannel channel, ConfigChangeEventGenerator configChangeEventGenerator) {
+      Channel channel, ConfigChangeEventGenerator configChangeEventGenerator) {
     this.channel = channel;
     this.configChangeEventGenerator = configChangeEventGenerator;
   }

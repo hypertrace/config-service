@@ -7,16 +7,16 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
-import io.grpc.ManagedChannel;
+import io.grpc.Channel;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 public class SpanProcessingConfigServiceModule extends AbstractModule {
 
-  private final ManagedChannel channel;
+  private final Channel channel;
   private final Config config;
 
-  public SpanProcessingConfigServiceModule(ManagedChannel channel, Config config) {
+  public SpanProcessingConfigServiceModule(Channel channel, Config config) {
     this.channel = channel;
     this.config = config;
   }
@@ -24,7 +24,7 @@ public class SpanProcessingConfigServiceModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(BindableService.class).to(SpanProcessingConfigServiceImpl.class);
-    bind(ManagedChannel.class).toInstance(channel);
+    bind(Channel.class).toInstance(channel);
 
     install(new LicenseStatusConfigManagerModule());
     install(new SamplingConfigManagerModule());

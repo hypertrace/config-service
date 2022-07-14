@@ -8,7 +8,7 @@ import ai.traceable.localprocessing.config.service.config.http.HttpApiNamingConf
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
-import io.grpc.ManagedChannel;
+import io.grpc.Channel;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 public class HttpApiNamingManagerModule extends AbstractModule {
@@ -27,7 +27,7 @@ public class HttpApiNamingManagerModule extends AbstractModule {
 
   @Provides
   TrainerConfigServiceGrpc.TrainerConfigServiceBlockingStub
-      providesTrainerConfigServiceBlockingStub(ManagedChannel channel) {
+      providesTrainerConfigServiceBlockingStub(Channel channel) {
     return TrainerConfigServiceGrpc.newBlockingStub(channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());

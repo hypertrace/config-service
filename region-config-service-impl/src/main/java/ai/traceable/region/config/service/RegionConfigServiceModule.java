@@ -6,15 +6,15 @@ import ai.traceable.region.config.service.rules.RulesManagerModule;
 import com.google.inject.AbstractModule;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
-import io.grpc.ManagedChannel;
+import io.grpc.Channel;
 
 class RegionConfigServiceModule extends AbstractModule {
   private final RegionConfigServiceConfig config;
-  private final ManagedChannel channel;
+  private final Channel channel;
   private final ActivityEventProducer activityEventProducer;
 
   RegionConfigServiceModule(
-      ManagedChannel channel, Config config, ActivityEventProducer activityEventProducer) {
+      Channel channel, Config config, ActivityEventProducer activityEventProducer) {
     this.channel = channel;
     this.config = new RegionConfigServiceConfig(config);
     this.activityEventProducer = activityEventProducer;
@@ -23,7 +23,7 @@ class RegionConfigServiceModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(BindableService.class).to(RegionConfigServiceImpl.class);
-    bind(ManagedChannel.class).toInstance(channel);
+    bind(Channel.class).toInstance(channel);
     bind(ActivityEventProducer.class).toInstance(activityEventProducer);
     bind(RegionConfigServiceConfig.class).toInstance(this.config);
     install(new RegionStoreModule());

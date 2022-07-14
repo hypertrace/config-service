@@ -37,6 +37,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -52,6 +53,7 @@ class ExternalUserAttributionRuleTranslator {
       List.of("http.request.header.%s", "rpc.request.metadata.%s");
   private final Map<UserAttributionRuleData.DataCase, List<CustomParsingRule>> defaultParsingRules;
 
+  @Inject
   public ExternalUserAttributionRuleTranslator(
       ExternalUserAttributionConfigServiceConfig externalUserAttributionConfigServiceConfig) {
     Config rulesConfig = externalUserAttributionConfigServiceConfig.getParsingRulesConfig();

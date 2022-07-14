@@ -3,16 +3,15 @@ package ai.traceable.reporting.config.service;
 import com.google.inject.AbstractModule;
 import io.grpc.BindableService;
 import io.grpc.Channel;
-import io.grpc.ManagedChannel;
 import java.time.Clock;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 
 public class ReportingConfigServiceModule extends AbstractModule {
-  private final ManagedChannel channel;
+  private final Channel channel;
   private final ConfigChangeEventGenerator configChangeEventGenerator;
 
   public ReportingConfigServiceModule(
-      ManagedChannel channel, ConfigChangeEventGenerator configChangeEventGenerator) {
+      Channel channel, ConfigChangeEventGenerator configChangeEventGenerator) {
     this.channel = channel;
     this.configChangeEventGenerator = configChangeEventGenerator;
   }

@@ -3,8 +3,8 @@ protoc = "3.19.4"
 grpc = "1.45.1"
 lombok = "1.18.22"
 jackson = "2.13.2"
-hypertrace-grpcutils = "0.7.2"
-hypertrace-framework = "0.1.33"
+hypertrace-grpcutils = "0.7.5"
+hypertrace-framework = "0.1.37"
 traceable-platform = "0.1.83"
 traceable-platformGateway = "0.6.9"
 kafka = "6.0.1"
@@ -17,7 +17,7 @@ traceable-insights-api = { module = "ai.traceable.platform:insights-service-api"
 traceable-activityevent-api = { module = "ai.traceable.activity.event.service:activity-event-api", version = "0.3.5" }
 traceable-licensemetering-api = { module = "ai.traceable.license.metering.service:license-metering-service-api", version = "0.1.13" }
 traceable-platform-jnimodsecurity = { module = "ai.traceable.platform:jni-modsecurity", version.ref = "traceable-platform" }
-traceable-apiNamingModel = { module = "ai.traceable.platform:api-naming-model", version = "0.11.16"}
+traceable-apiNamingModel = { module = "ai.traceable.platform:api-naming-model", version = "0.11.16" }
 traceable-platformGateway-deepDataStore = { module = "ai.traceable.platform-gateway:deep-data-store", version.ref = "traceable-platformGateway" }
 traceable-platformGateway-trainingEvaluationFramework = { module = "ai.traceable.platform-gateway:training-evaluation-framework", version.ref = "traceable-platformGateway" }
 traceable-featureFlag-api = { module = "ai.traceable.featureflag:feature-flag-service-api", version = "0.5.0" }
@@ -39,7 +39,8 @@ hypertrace-configservice-objectstore = { module = "org.hypertrace.config.service
 hypertrace-configservice-validation = { module = "org.hypertrace.config.service:validation-utils" }
 hypertrace-configservice-configUtils = { module = "org.hypertrace.config.service:config-utils" }
 hypertrace-configservice-changeeventgenerator = { module = "org.hypertrace.config.service:config-service-change-event-generator" }
-hypertrace-framework-container = { module = "org.hypertrace.core.serviceframework:platform-service-framework", version.ref = "hypertrace-framework" }
+hypertrace-configservice-factory = { module = "org.hypertrace.config.service:config-service-factory" }
+hypertrace-grpc-framework = { module = "org.hypertrace.core.serviceframework:platform-grpc-service-framework", version.ref = "hypertrace-framework" }
 hypertrace-framework-metrics = { module = "org.hypertrace.core.serviceframework:platform-metrics", version.ref = "hypertrace-framework" }
 hypertrace-framework-integrationtest = { module = "org.hypertrace.core.serviceframework:integrationtest-service-framework", version.ref = "hypertrace-framework" }
 hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:document-store", version = "0.6.10" }
@@ -54,20 +55,20 @@ javax-annotation = { module = "javax.annotation:javax.annotation-api", version =
 typesafe-config = { module = "com.typesafe:config", version = "1.4.2" }
 re2j = { module = "com.google.re2j:re2j", version = "1.6" }
 uuidCreator = { module = "com.github.f4b6a3:uuid-creator", version = "2.7.11" }
-lombok = { module = "org.projectlombok:lombok", version.ref = "lombok"}
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 commons-csv = { module = "org.apache.commons:commons-csv", version = "1.8" }
 commons-lang = { module = "org.apache.commons:commons-lang3", version = "3.11" }
 commons-net = { module = "commons-net:commons-net", version = "3.8.0" }
 commons-validator = { module = "commons-validator:commons-validator", version = "1.7" }
 jackson-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
-kafka-avro-serializer = { module = "io.confluent:kafka-avro-serializer", version.ref ="kafka" }
+kafka-avro-serializer = { module = "io.confluent:kafka-avro-serializer", version.ref = "kafka" }
 grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "grpc" }
 grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
 grpc-api = { module = "io.grpc:grpc-api", version.ref = "grpc" }
 grpc-core = { module = "io.grpc:grpc-core", version.ref = "grpc" }
 grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "grpc" }
 protobuf-javautil = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protoc" }
-rholder-guava-retrying = { module =  "com.github.rholder:guava-retrying", version = "2.0.0" }
+rholder-guava-retrying = { module = "com.github.rholder:guava-retrying", version = "2.0.0" }
 
 slf4j-log4jimpl = { module = "org.apache.logging.log4j:log4j-slf4j-impl", version = "2.17.2" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version = "1.7.36" }

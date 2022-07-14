@@ -1,8 +1,5 @@
 package ai.traceable.config.service;
 
-import static ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase.TENANT_ID;
-import static ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase.managedChannelForInternalServices;
-
 import ai.traceable.api.attribute.override.service.v1.ApiAttributeOverrideServiceGrpc;
 import ai.traceable.api.attribute.override.service.v1.ApiAttributeOverrideServiceGrpc.ApiAttributeOverrideServiceBlockingStub;
 import ai.traceable.api.attribute.override.service.v1.AttributeOverride;

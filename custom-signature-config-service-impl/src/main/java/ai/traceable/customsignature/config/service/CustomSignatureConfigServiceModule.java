@@ -6,15 +6,15 @@ import ai.traceable.customsignature.config.service.rules.RulesManagerModule;
 import com.google.inject.AbstractModule;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
-import io.grpc.ManagedChannel;
+import io.grpc.Channel;
 
 class CustomSignatureConfigServiceModule extends AbstractModule {
   private final CustomSignatureConfigServiceConfig config;
-  private final ManagedChannel channel;
+  private final Channel channel;
   private final ActivityEventProducer activityEventProducer;
 
   CustomSignatureConfigServiceModule(
-      ManagedChannel channel, Config config, ActivityEventProducer activityEventProducer) {
+      Channel channel, Config config, ActivityEventProducer activityEventProducer) {
     this.channel = channel;
     this.config = new CustomSignatureConfigServiceConfig(config);
     this.activityEventProducer = activityEventProducer;
@@ -23,7 +23,7 @@ class CustomSignatureConfigServiceModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(BindableService.class).to(CustomSignatureConfigServiceImpl.class);
-    bind(ManagedChannel.class).toInstance(channel);
+    bind(Channel.class).toInstance(channel);
     bind(ActivityEventProducer.class).toInstance(activityEventProducer);
     bind(CustomSignatureConfigServiceConfig.class).toInstance(this.config);
     install(new RulesManagerModule());

@@ -5,12 +5,12 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
-import io.grpc.ManagedChannel;
+import io.grpc.Channel;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 
 public class DataClassificationConfigServiceFactory {
   public static BindableService build(
-      ManagedChannel channel,
+      Channel channel,
       ConfigChangeEventGenerator configChangeEventGenerator,
       Config config,
       FeatureCachingClient featureCachingClient) {
