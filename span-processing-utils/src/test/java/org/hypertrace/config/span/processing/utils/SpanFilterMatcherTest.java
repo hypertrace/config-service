@@ -1,4 +1,4 @@
-package org.hypertrace.config.utils;
+package org.hypertrace.config.span.processing.utils;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
