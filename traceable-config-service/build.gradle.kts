@@ -95,6 +95,7 @@ dependencies {
   runtimeOnly(libs.slf4j.log4jimpl)
   runtimeOnly(libs.kafka.avro.serializer)
 
+  testFixturesImplementation(libs.traceable.actorService.api)
   testFixturesImplementation(libs.traceable.insights.api)
   testFixturesImplementation(libs.traceable.featureFlag.api)
   testFixturesImplementation(libs.traceable.licensemetering.api)
@@ -103,6 +104,7 @@ dependencies {
 
   // Integration test dependencies
   integrationTestImplementation(testFixtures(projects.traceableConfigService))
+  integrationTestImplementation(libs.traceable.actorService.api)
   integrationTestImplementation(libs.traceable.insights.api)
   integrationTestImplementation(libs.traceable.featureFlag.api)
   integrationTestImplementation(libs.traceable.licensemetering.api)

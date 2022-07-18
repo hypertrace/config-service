@@ -3,8 +3,8 @@ package ai.traceable.blocking.config.service.customsignature;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-import ai.traceable.blocking.config.service.UuidGenerator;
 import ai.traceable.blocking.config.service.v1.CustomModsecBlockingRules;
+import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesRequest;

@@ -34,7 +34,7 @@ public class TraceableExternalConfigServiceFactory implements GrpcPlatformServic
                 providers.getLocalChannel(),
                 providers.getConfig(),
                 providers.getChangeEventGenerator()),
-            BlockingConfigServiceFactory.build(providers.getLocalChannel()),
+            BlockingConfigServiceFactory.build(providers.getLocalChannel(), providers.getConfig()),
             ExternalUserAttributionConfigServiceFactory.build(
                 providers.getLocalChannel(), providers.getConfig()),
             ExternalDataClassificationConfigServiceFactory.build(

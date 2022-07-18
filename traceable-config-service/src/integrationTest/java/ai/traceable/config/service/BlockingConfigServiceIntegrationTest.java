@@ -1,5 +1,6 @@
 package ai.traceable.config.service;
 
+import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_MODSECURITY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -15,7 +16,6 @@ import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetecti
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigRequest;
-import ai.traceable.blocking.config.service.UuidGenerator;
 import ai.traceable.blocking.config.service.v1.BlockingConfigServiceGrpc;
 import ai.traceable.blocking.config.service.v1.BlockingConfigServiceGrpc.BlockingConfigServiceBlockingStub;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesRequest;
@@ -33,6 +33,7 @@ import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
+import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.DetailedRegion;
 import ai.traceable.region.config.service.v1.GetDetailedRegionsRequest;
@@ -110,6 +111,20 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
     assertNotEquals(emptyValueUuid, modsecCrsBlockingRulesHash);
     assertFalse(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
 
+    // Only modsec rule is present
+    assertNotEquals(emptyValueUuid, response.getBlockingPolicyConfiguration().getHash());
+    assertEquals(1, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
+    assertEquals(
+        BLOCKING_CATEGORY_MODSECURITY,
+        response.getBlockingPolicyConfiguration().getBlockingDetailsList(0).getCategory());
+    assertEquals(
+        "crs_913100",
+        response
+            .getBlockingPolicyConfiguration()
+            .getBlockingDetailsList(0)
+            .getModsecDetails()
+            .getRuleId());
+
     int numRegions = createAndGetRegions();
     createAndGetCustomSignatureRule();
     response =
@@ -135,6 +150,11 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
         modsecCrsBlockingRulesHash, response.getSafeCrsBlockingRules().getHash()); // not changed
     assertTrue(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
 
+    // 1 modsec + 2 region + 1 custom-signature rule
+    String blockingPolicyConfigurationHash = response.getBlockingPolicyConfiguration().getHash();
+    assertNotEquals(emptyValueUuid, response.getBlockingPolicyConfiguration().getHash());
+    assertEquals(4, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
+
     response =
         GrpcClientRequestContextUtil.executeInTenantContext(
             TENANT_ID,
@@ -144,6 +164,7 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
                         .setRegionBlockingRulesHash(regionBlockingRulesHash)
                         .setCustomModsecBlockingRulesHash(customModsecBlockingRulesHash)
                         .setSafeCrsBlockingRulesHash(emptyValueUuid)
+                        .setBlockingPolicyConfigurationHash(blockingPolicyConfigurationHash)
                         .build()));
 
     assertEquals(
@@ -159,6 +180,11 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
         emptyValueUuid,
         response.getSafeCrsBlockingRules().getHash()); // we had given empty request hash
     assertFalse(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
+
+    assertEquals(
+        blockingPolicyConfigurationHash,
+        response.getBlockingPolicyConfiguration().getHash()); // not changed
+    assertEquals(0, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
   }
 
   private int createAndGetRegions() {

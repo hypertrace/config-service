@@ -42,6 +42,11 @@ data:
       }
     }
     {{- end }}
+    actor.service.config = {
+      host = {{ .Values.traceableConfigServiceConfig.actorServiceConfig.host }}
+      port = {{ .Values.traceableConfigServiceConfig.actorServiceConfig.port }}
+      request.timeout = {{ .Values.traceableConfigServiceConfig.actorServiceConfig.request.timeout }}
+    }
     insights.service.config = {
       host = {{ .Values.traceableConfigServiceConfig.insightsServiceConfig.host }}
       port = {{ .Values.traceableConfigServiceConfig.insightsServiceConfig.port }}

@@ -151,6 +151,11 @@ traceableConfigServiceConfig:
   mongo:
     host: mongo
     url: ""
+  actorServiceConfig:
+    host: actor-service
+    port: 50888
+    request:
+      timeout: 10s
   insightsServiceConfig:
     host: insights-service
     port: 50098

@@ -9,13 +9,17 @@ dependencies {
   api(projects.regionConfigServiceApi)
   api(projects.customSignatureConfigServiceApi)
   api(projects.anomalyConfigServiceApi)
+  api(projects.iprangeConfigServiceApi)
+
+  implementation(libs.traceable.opaDistributor.api)
+  implementation(libs.traceable.actorService.api)
+  implementation(projects.configUtils)
 
   implementation(libs.guice)
   implementation(libs.guava)
   implementation(libs.protobuf.javautil)
   implementation(libs.typesafe.config)
   implementation(libs.slf4j.api)
-  implementation(libs.uuidCreator)
 
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpcutils.client)

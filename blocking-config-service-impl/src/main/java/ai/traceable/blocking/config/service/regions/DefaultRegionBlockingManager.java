@@ -1,8 +1,8 @@
 package ai.traceable.blocking.config.service.regions;
 
-import ai.traceable.blocking.config.service.UuidGenerator;
 import ai.traceable.blocking.config.service.v1.RegionBlockingRules;
 import ai.traceable.blocking.config.service.v1.RegionIpBlockingRule;
+import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesRequest;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceBlockingStub;
 import ai.traceable.region.config.service.v1.RegionRule;
