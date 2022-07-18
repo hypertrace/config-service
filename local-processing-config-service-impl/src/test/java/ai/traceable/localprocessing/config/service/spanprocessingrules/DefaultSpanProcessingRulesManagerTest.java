@@ -39,7 +39,7 @@ import ai.traceable.localprocessing.config.service.v1.SpanProcessingRulesService
 import ai.traceable.localprocessing.config.service.v1.SpanProcessingRulesServiceResponse;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSpanRulesResponse;
 import java.util.List;
-import org.hypertrace.config.utils.SpanFilterMatcher;
+import org.hypertrace.config.span.processing.utils.SpanFilterMatcher;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesResponse;
 import org.hypertrace.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;

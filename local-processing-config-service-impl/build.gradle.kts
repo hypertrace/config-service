@@ -6,14 +6,14 @@ plugins {
 
 dependencies {
   api(projects.localProcessingConfigServiceApi)
-  api(projects.spanProcessingConfigServiceApi)
+  api(projects.traceableSpanProcessingConfigServiceApi)
   implementation(projects.configUtils)
   implementation(projects.anomalyConfigServiceApi)
   implementation(projects.customSignatureConfigServiceApi)
 
   implementation(libs.hypertrace.configservice.api)
   implementation(libs.hypertrace.configservice.objectstore)
-  implementation(libs.hypertrace.configservice.configUtils)
+  implementation(libs.hypertrace.configservice.spanProcessingUtils)
   implementation(libs.guice)
   implementation(libs.guava)
   implementation(libs.protobuf.javautil)

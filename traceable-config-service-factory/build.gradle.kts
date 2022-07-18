@@ -29,10 +29,10 @@ dependencies {
   implementation(projects.dataExfiltrationConfigServiceImpl)
   implementation(projects.wafProviderIntegrationServiceImpl)
   implementation(projects.rateLimitingConfigServiceImpl)
-  implementation(projects.spanProcessingConfigServiceImpl)
+  implementation(projects.traceableSpanProcessingConfigServiceImpl)
   implementation(projects.anomalyConfigServiceImpl)
   implementation(projects.apiAttributeOverrideServiceImpl)
-  implementation(projects.alertingConfigServiceImpl)
+  implementation(projects.traceableAlertingConfigServiceImpl)
   implementation(projects.reportingConfigServiceImpl)
 
   annotationProcessor(libs.lombok)

@@ -13,7 +13,7 @@ build:
     - data-handling-config-service-api/src/main/proto
     - anomaly-config-service-api/src/main/proto
     - reporting-config-service-api/src/main/proto
-    - alerting-config-service-api/src/main/proto
+    - traceable-alerting-config-service-api/src/main/proto
     - hypertrace-config-service/alerting-config-service-api/src/main/proto
     - data-classification-config-service-api/src/main/proto
     - iprange-config-service-api/src/main/proto
@@ -23,7 +23,7 @@ build:
     - data-exfiltration-config-service-api/src/main/proto
     - waf-provider-integration-service-api/src/main/proto
     - api-attribute-override-service-api/src/main/proto
-    - span-processing-config-service-api/src/main/proto
+    - traceable-span-processing-config-service-api/src/main/proto
     - api-spec-config-service-api/src/main/proto
 lint:
   use:

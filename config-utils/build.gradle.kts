@@ -6,7 +6,7 @@ plugins {
 }
 
 dependencies {
-  api(projects.spanProcessingConfigServiceApi)
+  api(projects.traceableSpanProcessingConfigServiceApi)
 
   implementation(libs.protobuf.javautil)
   implementation(libs.uuidCreator)
