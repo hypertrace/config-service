@@ -1,4 +1,4 @@
-package org.hypertrace.config.utils;
+package org.hypertrace.config.span.processing.utils;
 
 import com.google.re2j.Pattern;
 import java.util.Optional;
@@ -7,14 +7,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.span.processing.config.service.v1.Field;
 import org.hypertrace.span.processing.config.service.v1.ListValue;
 import org.hypertrace.span.processing.config.service.v1.LogicalOperator;
+import org.hypertrace.span.processing.config.service.v1.RelationalOperator;
 import org.hypertrace.span.processing.config.service.v1.RelationalSpanFilterExpression;
+import org.hypertrace.span.processing.config.service.v1.SpanFilter;
+import org.hypertrace.span.processing.config.service.v1.SpanFilterValue;
 
 @Slf4j
 public class SpanFilterMatcher {
 
-  public boolean matchesEnvironment(
-      org.hypertrace.span.processing.config.service.v1.SpanFilter spanFilter,
-      Optional<String> environment) {
+  public boolean matchesEnvironment(SpanFilter spanFilter, Optional<String> environment) {
     if (spanFilter.hasRelationalSpanFilter()) {
       return matchesEnvironment(spanFilter.getRelationalSpanFilter(), environment);
     } else {
@@ -23,25 +24,20 @@ public class SpanFilterMatcher {
           .getOperator()
           .equals(LogicalOperator.LOGICAL_OPERATOR_AND)) {
         return spanFilter.getLogicalSpanFilter().getOperandsList().stream()
-            .filter(
-                org.hypertrace.span.processing.config.service.v1.SpanFilter
-                    ::hasRelationalSpanFilter)
+            .filter(SpanFilter::hasRelationalSpanFilter)
             .allMatch(filter -> matchesEnvironment(filter.getRelationalSpanFilter(), environment));
       } else {
         if (spanFilter.getLogicalSpanFilter().getOperandsCount() == 0) {
           return true;
         }
         return spanFilter.getLogicalSpanFilter().getOperandsList().stream()
-            .filter(
-                org.hypertrace.span.processing.config.service.v1.SpanFilter
-                    ::hasRelationalSpanFilter)
+            .filter(SpanFilter::hasRelationalSpanFilter)
             .anyMatch(filter -> matchesEnvironment(filter.getRelationalSpanFilter(), environment));
       }
     }
   }
 
-  public boolean matchesServiceName(
-      org.hypertrace.span.processing.config.service.v1.SpanFilter spanFilter, String serviceName) {
+  public boolean matchesServiceName(SpanFilter spanFilter, String serviceName) {
     if (spanFilter.hasRelationalSpanFilter()) {
       return matchesServiceName(spanFilter.getRelationalSpanFilter(), serviceName);
     } else {
@@ -50,18 +46,14 @@ public class SpanFilterMatcher {
           .getOperator()
           .equals(LogicalOperator.LOGICAL_OPERATOR_AND)) {
         return spanFilter.getLogicalSpanFilter().getOperandsList().stream()
-            .filter(
-                org.hypertrace.span.processing.config.service.v1.SpanFilter
-                    ::hasRelationalSpanFilter)
+            .filter(SpanFilter::hasRelationalSpanFilter)
             .allMatch(filter -> matchesServiceName(filter.getRelationalSpanFilter(), serviceName));
       } else {
         if (spanFilter.getLogicalSpanFilter().getOperandsCount() == 0) {
           return true;
         }
         return spanFilter.getLogicalSpanFilter().getOperandsList().stream()
-            .filter(
-                org.hypertrace.span.processing.config.service.v1.SpanFilter
-                    ::hasRelationalSpanFilter)
+            .filter(SpanFilter::hasRelationalSpanFilter)
             .anyMatch(filter -> matchesServiceName(filter.getRelationalSpanFilter(), serviceName));
       }
     }
@@ -94,10 +86,7 @@ public class SpanFilterMatcher {
     return true;
   }
 
-  public boolean matches(
-      String lhs,
-      org.hypertrace.span.processing.config.service.v1.SpanFilterValue rhs,
-      org.hypertrace.span.processing.config.service.v1.RelationalOperator relationalOperator) {
+  public boolean matches(String lhs, SpanFilterValue rhs, RelationalOperator relationalOperator) {
     switch (rhs.getValueCase()) {
       case STRING_VALUE:
         return matches(lhs, rhs.getStringValue(), relationalOperator);
@@ -109,10 +98,7 @@ public class SpanFilterMatcher {
     }
   }
 
-  private boolean matches(
-      String lhs,
-      String rhs,
-      org.hypertrace.span.processing.config.service.v1.RelationalOperator relationalOperator) {
+  private boolean matches(String lhs, String rhs, RelationalOperator relationalOperator) {
     switch (relationalOperator) {
       case RELATIONAL_OPERATOR_CONTAINS:
         return lhs.contains(rhs);
@@ -132,14 +118,11 @@ public class SpanFilterMatcher {
     }
   }
 
-  private boolean matches(
-      String lhs,
-      ListValue rhs,
-      org.hypertrace.span.processing.config.service.v1.RelationalOperator relationalOperator) {
+  private boolean matches(String lhs, ListValue rhs, RelationalOperator relationalOperator) {
     switch (relationalOperator) {
       case RELATIONAL_OPERATOR_IN:
         return rhs.getValuesList().stream()
-            .map(org.hypertrace.span.processing.config.service.v1.SpanFilterValue::getStringValue)
+            .map(SpanFilterValue::getStringValue)
             .collect(Collectors.toUnmodifiableList())
             .contains(lhs);
       default:
