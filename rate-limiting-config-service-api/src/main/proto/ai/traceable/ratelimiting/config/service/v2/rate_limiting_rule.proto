@@ -46,6 +46,7 @@ message LeafCondition {
     RegionCondition region_condition = 4;
     IpAddressCondition ip_address_condition = 5;
     IpLocationTypeCondition ip_location_type_condition = 6;
+    IpReputationCondition ip_reputation_condition = 7;
   }
 }
 
@@ -138,6 +139,10 @@ message UserIdCondition {
   repeated string user_id_regexes = 1;
 }
 
+message IpReputationCondition {
+  IpReputationSeverity min_ip_reputation_severity = 1;
+}
+
 message ThresholdActionConfig {
   repeated ResourceAccessThresholdConfig resource_access_threshold_configs = 1;
   repeated Action actions = 2;
@@ -194,6 +199,7 @@ enum Category {
   CATEGORY_UNSPECIFIED = 0;
   CATEGORY_RATE_LIMITING = 1;
   CATEGORY_DATA_EXFILTRATION = 2;
+  CATEGORY_ENUMERATION = 3;
 }
 
 enum UserAggregateType {
@@ -206,4 +212,12 @@ enum ApiAggregateType {
   API_AGGREGATE_TYPE_UNSPECIFIED = 0;
   API_AGGREGATE_TYPE_PER_ENDPOINT = 1;
   API_AGGREGATE_TYPE_ACROSS_ENDPOINTS = 2;
+}
+
+enum IpReputationSeverity {
+  IP_REPUTATION_SEVERITY_UNSPECIFIED = 0;
+  IP_REPUTATION_SEVERITY_LOW = 1;
+  IP_REPUTATION_SEVERITY_MEDIUM = 2;
+  IP_REPUTATION_SEVERITY_HIGH = 3;
+  IP_REPUTATION_SEVERITY_CRITICAL = 4;
 }

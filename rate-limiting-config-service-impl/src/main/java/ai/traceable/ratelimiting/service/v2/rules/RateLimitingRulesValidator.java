@@ -12,6 +12,7 @@ import ai.traceable.ratelimiting.config.service.v2.DatatypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.DeleteRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
+import ai.traceable.ratelimiting.config.service.v2.IpReputationCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
@@ -93,6 +94,9 @@ public class RateLimitingRulesValidator implements RulesValidator {
       case IP_ADDRESS_CONDITION:
         validateIpAddressCondition(leafCondition.getIpAddressCondition());
         break;
+      case IP_REPUTATION_CONDITION:
+        validateIpReputationCondition(leafCondition.getIpReputationCondition());
+        break;
       default:
         throwInvalidArgumentException(
             String.format(
@@ -173,6 +177,11 @@ public class RateLimitingRulesValidator implements RulesValidator {
               "Invalid condition for type %s:%n %s",
               getName(ipAddressCondition), printMessage(ipAddressCondition)));
     }
+  }
+
+  private void validateIpReputationCondition(IpReputationCondition ipReputationCondition) {
+    validateNonDefaultPresenceOrThrow(
+        ipReputationCondition, IpReputationCondition.MIN_IP_REPUTATION_SEVERITY_FIELD_NUMBER);
   }
 
   private void validateCompositeCondition(CompositeCondition compositeCondition) {
