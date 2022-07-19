@@ -30,10 +30,16 @@ service SpanProcessingConfigService {
   rpc UpdateApiNamingRule (UpdateApiNamingRuleRequest) returns (UpdateApiNamingRuleResponse) {
   }
 
+  rpc UpdateApiNamingRules (UpdateApiNamingRulesRequest) returns (UpdateApiNamingRulesResponse) {
+  }
+
   rpc GetAllApiNamingRules (GetAllApiNamingRulesRequest) returns (GetAllApiNamingRulesResponse) {
   }
 
   rpc DeleteApiNamingRule (DeleteApiNamingRuleRequest) returns (DeleteApiNamingRuleResponse) {
+  }
+
+  rpc DeleteApiNamingRules (DeleteApiNamingRulesRequest) returns (DeleteApiNamingRulesResponse) {
   }
 }
 
@@ -126,11 +132,26 @@ message UpdateApiNamingRuleResponse {
   ApiNamingRuleDetails rule_details = 1;
 }
 
+message UpdateApiNamingRulesRequest {
+  repeated UpdateApiNamingRule rules = 1;
+}
+
+message UpdateApiNamingRulesResponse {
+  repeated ApiNamingRuleDetails rules_details = 1;
+}
+
 message DeleteApiNamingRuleRequest {
   string id = 1;
 }
 
 message DeleteApiNamingRuleResponse {
+}
+
+message DeleteApiNamingRulesRequest {
+  repeated string ids = 1;
+}
+
+message DeleteApiNamingRulesResponse {
 }
 
 message ApiNamingRule {

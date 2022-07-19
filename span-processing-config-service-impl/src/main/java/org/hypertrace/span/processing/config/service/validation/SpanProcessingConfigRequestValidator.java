@@ -16,6 +16,7 @@ import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRuleReque
 import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteApiNamingRuleRequest;
+import org.hypertrace.span.processing.config.service.v1.DeleteApiNamingRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.GetAllApiNamingRulesRequest;
@@ -24,6 +25,7 @@ import org.hypertrace.span.processing.config.service.v1.SegmentMatchingBasedConf
 import org.hypertrace.span.processing.config.service.v1.SpanFilter;
 import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRule;
 import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRuleRequest;
+import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.UpdateExcludeSpanRule;
 import org.hypertrace.span.processing.config.service.v1.UpdateExcludeSpanRuleRequest;
 
@@ -82,9 +84,27 @@ public class SpanProcessingConfigRequestValidator {
     this.validateUpdateRule(request.getRule());
   }
 
+  public void validateOrThrow(RequestContext requestContext, UpdateApiNamingRulesRequest request) {
+    validateRequestContextOrThrow(requestContext);
+    for (UpdateApiNamingRule updateApiNamingRule : request.getRulesList()) {
+      this.validateUpdateRule(updateApiNamingRule);
+    }
+  }
+
   public void validateOrThrow(RequestContext requestContext, DeleteApiNamingRuleRequest request) {
     validateRequestContextOrThrow(requestContext);
-    validateNonDefaultPresenceOrThrow(request, DeleteExcludeSpanRuleRequest.ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(request, DeleteApiNamingRuleRequest.ID_FIELD_NUMBER);
+  }
+
+  public void validateOrThrow(RequestContext requestContext, DeleteApiNamingRulesRequest request) {
+    validateRequestContextOrThrow(requestContext);
+    for (String id : request.getIdsList()) {
+      if (id.isEmpty() || id.isBlank()) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription(String.format("Invalid id in request: %s", id))
+            .asRuntimeException();
+      }
+    }
   }
 
   private void validateData(ApiNamingRuleInfo apiNamingRuleInfo) {

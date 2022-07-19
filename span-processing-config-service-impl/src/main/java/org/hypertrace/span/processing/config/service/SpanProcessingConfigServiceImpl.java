@@ -1,7 +1,10 @@
 package org.hypertrace.span.processing.config.service;
 
+import static com.google.common.collect.Streams.zip;
+
 import com.google.inject.Inject;
 import io.grpc.Status;
+import io.grpc.StatusException;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.UUID;
@@ -25,6 +28,8 @@ import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleReq
 import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleResponse;
 import org.hypertrace.span.processing.config.service.v1.DeleteApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteApiNamingRuleResponse;
+import org.hypertrace.span.processing.config.service.v1.DeleteApiNamingRulesRequest;
+import org.hypertrace.span.processing.config.service.v1.DeleteApiNamingRulesResponse;
 import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleResponse;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRule;
@@ -39,6 +44,8 @@ import org.hypertrace.span.processing.config.service.v1.SpanProcessingConfigServ
 import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRule;
 import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRuleResponse;
+import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRulesRequest;
+import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRulesResponse;
 import org.hypertrace.span.processing.config.service.v1.UpdateExcludeSpanRule;
 import org.hypertrace.span.processing.config.service.v1.UpdateExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.UpdateExcludeSpanRuleResponse;
@@ -289,6 +296,45 @@ class SpanProcessingConfigServiceImpl
   }
 
   @Override
+  public void updateApiNamingRules(
+      UpdateApiNamingRulesRequest request,
+      StreamObserver<UpdateApiNamingRulesResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      this.validator.validateOrThrow(requestContext, request);
+
+      List<UpdateApiNamingRule> updateApiNamingRules = request.getRulesList();
+      List<ApiNamingRule> existingRules =
+          request.getRulesList().stream()
+              .map(
+                  updateApiNamingRule -> {
+                    try {
+                      return this.apiNamingRulesConfigStore
+                          .getData(requestContext, updateApiNamingRule.getId())
+                          .orElseThrow(Status.NOT_FOUND::asException);
+                    } catch (StatusException e) {
+                      throw new RuntimeException(e);
+                    }
+                  })
+              .collect(Collectors.toUnmodifiableList());
+      List<ApiNamingRule> updatedRules =
+          zip(existingRules.stream(), updateApiNamingRules.stream(), this::buildUpdatedRule)
+              .collect(Collectors.toUnmodifiableList());
+
+      responseObserver.onNext(
+          UpdateApiNamingRulesResponse.newBuilder()
+              .addAllRulesDetails(
+                  buildApiNamingRuleDetails(
+                      this.apiNamingRulesConfigStore.upsertObjects(requestContext, updatedRules)))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error("Error updating api naming rules: {}", request, exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
   public void deleteApiNamingRule(
       DeleteApiNamingRuleRequest request,
       StreamObserver<DeleteApiNamingRuleResponse> responseObserver) {
@@ -305,6 +351,29 @@ class SpanProcessingConfigServiceImpl
       responseObserver.onCompleted();
     } catch (Exception exception) {
       log.error("Error deleting api naming rule: {}", request, exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void deleteApiNamingRules(
+      DeleteApiNamingRulesRequest request,
+      StreamObserver<DeleteApiNamingRulesResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      this.validator.validateOrThrow(requestContext, request);
+
+      // TODO: need to handle priorities
+      for (String id : request.getIdsList()) {
+        this.apiNamingRulesConfigStore
+            .deleteObject(requestContext, id)
+            .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      }
+
+      responseObserver.onNext(DeleteApiNamingRulesResponse.newBuilder().build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error("Error deleting api naming rules: {}", request, exception);
       responseObserver.onError(exception);
     }
   }
