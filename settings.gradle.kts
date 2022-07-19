@@ -70,6 +70,7 @@ include(":waf-provider-integration-service-impl")
 include(":traceable-span-processing-config-service-api")
 include(":traceable-span-processing-config-service-impl")
 include(":api-spec-config-service-api")
+include(":api-spec-config-service-impl")
 include(":feature-caching-client")
 include(":traceable-config-service-factory")
 

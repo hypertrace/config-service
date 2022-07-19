@@ -5,8 +5,7 @@ plugins {
 }
 
 dependencies {
-  api(projects.licenseStatusConfigServiceApi)
-  api(projects.traceableSpanProcessingConfigServiceApi)
+  api(projects.apiSpecConfigServiceApi)
 
   implementation(projects.configUtils)
 

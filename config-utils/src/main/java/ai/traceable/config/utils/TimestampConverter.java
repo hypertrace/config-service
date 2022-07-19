@@ -1,4 +1,4 @@
-package ai.traceable.span.processing.config.service.utils;
+package ai.traceable.config.utils;
 
 import com.google.protobuf.Timestamp;
 import java.time.Instant;

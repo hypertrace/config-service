@@ -2,10 +2,10 @@ package ai.traceable.span.processing.config.service.protectionspanrules;
 
 import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_LIMIT_EXHAUSTED;
 
+import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatus;
 import ai.traceable.span.processing.config.service.licensestatus.LicenseStatusConfigManager;
 import ai.traceable.span.processing.config.service.store.ProtectionSpanRulesConfigStore;
-import ai.traceable.span.processing.config.service.utils.TimestampConverter;
 import ai.traceable.span.processing.config.service.v1.CreateProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRule;

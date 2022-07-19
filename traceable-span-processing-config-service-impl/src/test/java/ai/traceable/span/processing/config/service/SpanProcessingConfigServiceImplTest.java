@@ -13,6 +13,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.licensestatus.config.service.v1.GetLicenseStatusResponse;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatus;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc;
@@ -25,7 +26,6 @@ import ai.traceable.span.processing.config.service.samplingconfigs.RateLimitConf
 import ai.traceable.span.processing.config.service.samplingconfigs.SamplingConfigManager;
 import ai.traceable.span.processing.config.service.store.ProtectionSpanRulesConfigStore;
 import ai.traceable.span.processing.config.service.store.SamplingConfigsConfigStore;
-import ai.traceable.span.processing.config.service.utils.TimestampConverter;
 import ai.traceable.span.processing.config.service.v1.CreateProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.CreateSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteProtectionSpanRuleRequest;
@@ -71,7 +71,6 @@ class SpanProcessingConfigServiceImplTest {
   private ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc
           .SpanProcessingConfigServiceBlockingStub
       spanProcessingConfigServiceStub;
-  private TimestampConverter timestampConverter;
 
   @BeforeEach
   void beforeEach() {
@@ -92,7 +91,7 @@ class SpanProcessingConfigServiceImplTest {
 
     ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    timestampConverter = mock(TimestampConverter.class);
+    TimestampConverter timestampConverter = mock(TimestampConverter.class);
 
     SamplingConfigsConfigStore samplingConfigsConfigStore =
         new SamplingConfigsConfigStore(genericStub, timestampConverter);

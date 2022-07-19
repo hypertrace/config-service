@@ -2,10 +2,10 @@ package ai.traceable.span.processing.config.service.samplingconfigs;
 
 import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_LIMIT_EXHAUSTED;
 
+import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatus;
 import ai.traceable.span.processing.config.service.licensestatus.LicenseStatusConfigManager;
 import ai.traceable.span.processing.config.service.store.SamplingConfigsConfigStore;
-import ai.traceable.span.processing.config.service.utils.TimestampConverter;
 import ai.traceable.span.processing.config.service.v1.CreateSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.RateLimit;

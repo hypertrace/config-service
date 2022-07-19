@@ -1,6 +1,6 @@
 package ai.traceable.span.processing.config.service.store;
 
-import ai.traceable.span.processing.config.service.utils.TimestampConverter;
+import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.span.processing.config.service.v1.SamplingConfig;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigDetails;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigMetadata;

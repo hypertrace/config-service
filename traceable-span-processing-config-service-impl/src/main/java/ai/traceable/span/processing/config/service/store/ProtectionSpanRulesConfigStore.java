@@ -1,6 +1,6 @@
 package ai.traceable.span.processing.config.service.store;
 
-import ai.traceable.span.processing.config.service.utils.TimestampConverter;
+import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRule;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleDetails;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleMetadata;
