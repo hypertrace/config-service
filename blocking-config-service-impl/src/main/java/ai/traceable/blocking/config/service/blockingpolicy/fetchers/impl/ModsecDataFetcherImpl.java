@@ -27,6 +27,8 @@ public class ModsecDataFetcherImpl implements ModsecDataFetcher {
   private final AnomalyGlobalConfigServiceBlockingStub anomalyGlobalConfigServiceStub;
   private final DetectorConfigServiceBlockingStub detectorConfigServiceBlockingStub;
 
+  private static final String CRS_RULE_ID_REGEX = "^crs_";
+
   @Inject
   public ModsecDataFetcherImpl(
       AnomalyGlobalConfigServiceBlockingStub anomalyGlobalConfigServiceStub,
@@ -82,7 +84,10 @@ public class ModsecDataFetcherImpl implements ModsecDataFetcher {
                           .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK)
                           .setInfo(ViolationInfoEncoder.getEncodedSafeCrsViolationInfo(ruleId))
                           .setStatus(BLOCKING_STATUS_DENIED)
-                          .setModsecDetails(ModsecDetails.newBuilder().setRuleId(ruleId).build())
+                          .setModsecDetails(
+                              ModsecDetails.newBuilder()
+                                  .setRuleId(ruleId.replaceFirst(CRS_RULE_ID_REGEX, ""))
+                                  .build())
                           .build())
               .collect(Collectors.toUnmodifiableList());
     }

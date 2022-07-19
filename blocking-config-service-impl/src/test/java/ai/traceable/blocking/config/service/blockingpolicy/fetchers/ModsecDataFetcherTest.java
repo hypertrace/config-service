@@ -81,12 +81,12 @@ class ModsecDataFetcherTest {
                                                 .addSubRuleConfigs(
                                                     AnomalySubRuleConfig.newBuilder()
                                                         .setBlockingEnabled(true)
-                                                        .setSubRuleId("modsec-rule-1")
+                                                        .setSubRuleId("crs_123456")
                                                         .build())
                                                 .addSubRuleConfigs(
                                                     AnomalySubRuleConfig.newBuilder()
                                                         .setBlockingEnabled(false)
-                                                        .setSubRuleId("modsec-rule-2")
+                                                        .setSubRuleId("crs_111111")
                                                         .build())
                                                 .build())
                                         .build())
@@ -105,12 +105,12 @@ class ModsecDataFetcherTest {
 
     List<BlockingDetails> violations = modsecDataFetcher.getModsecViolations();
     assertEquals(1, violations.size());
-    assertEquals("modsec-rule-1", violations.get(0).getModsecDetails().getRuleId());
+    assertEquals("123456", violations.get(0).getModsecDetails().getRuleId());
     assertEquals(BLOCKING_CATEGORY_MODSECURITY, violations.get(0).getCategory());
     assertEquals(BLOCKING_RULE_TYPE_BLOCK, violations.get(0).getBlockingRuleType());
     assertEquals(BLOCKING_STATUS_DENIED, violations.get(0).getStatus());
     assertEquals(
-        ViolationInfoEncoder.getEncodedSafeCrsViolationInfo("modsec-rule-1"),
+        ViolationInfoEncoder.getEncodedSafeCrsViolationInfo("crs_123456"),
         violations.get(0).getInfo());
 
     // If modsec rules are disabled

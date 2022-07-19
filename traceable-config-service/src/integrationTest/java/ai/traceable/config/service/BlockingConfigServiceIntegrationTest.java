@@ -118,7 +118,7 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
         BLOCKING_CATEGORY_MODSECURITY,
         response.getBlockingPolicyConfiguration().getBlockingDetailsList(0).getCategory());
     assertEquals(
-        "crs_913100",
+        "913100",
         response
             .getBlockingPolicyConfiguration()
             .getBlockingDetailsList(0)
