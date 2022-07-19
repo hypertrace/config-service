@@ -96,6 +96,19 @@ jobs:
         with:
           args: assemble dockerBuildImages
 
+      - name: Determine docker tag
+        id: tag
+        run: echo ::set-output name=tag::$(./gradlew -q printDockerImageDefaultTag | head -1)
+
+      - name: Scan docker image
+        uses: azure/container-scan@v0.1
+        with:
+          image-name: ${{ secrets.ARTIFACTORY_DOCKER_REGISTRY }}/traceable/traceable-config-service:${{ steps.tag.outputs.tag }}
+        env:
+          DOCKLE_HOST: "unix:///var/run/docker.sock"
+        continue-on-error: true
+
+
   test:
     runs-on: ubuntu-20.04
     steps:

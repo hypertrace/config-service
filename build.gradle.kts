@@ -3,8 +3,8 @@ plugins {
   id("org.hypertrace.ci-utils-plugin") version "0.2.0"
   id("ai.traceable.publish-plugin") version "1.2.2" apply false
   id("org.hypertrace.jacoco-report-plugin") version "0.1.3" apply false
-  id("org.sonarqube") version "3.0"
-  id("org.owasp.dependencycheck") version "6.0.3"
+  id("org.sonarqube") version "3.4.0.2513"
+  id("org.owasp.dependencycheck") version "7.1.1"
   id("org.hypertrace.code-style-plugin") version "1.1.2" apply false
 }
 
