@@ -13,7 +13,7 @@ plugins {
   id("org.hypertrace.jacoco-report-plugin")
   id("org.hypertrace.docker-java-application-plugin") version "0.9.4"
   id("org.hypertrace.docker-publish-plugin") version "0.9.4"
-  id("ai.traceable.docker-convention-plugin") version "1.2.2"
+  id("ai.traceable.docker-convention-plugin") version "1.2.4"
   id("org.hypertrace.integration-test-plugin") version "0.1.3"
 }
 

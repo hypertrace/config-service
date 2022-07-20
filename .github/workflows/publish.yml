@@ -100,6 +100,7 @@ jobs:
         with:
           args: publish dockerPushImages
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCKER_USERNAME: ${{ secrets.ARTIFACTORY_PUBLISH_USER }}
           DOCKER_PASSWORD: ${{ secrets.ARTIFACTORY_PUBLISH_TOKEN }}
 

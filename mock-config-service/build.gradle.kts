@@ -3,7 +3,7 @@ plugins {
   application
   id("org.hypertrace.docker-java-application-plugin") version "0.9.4"
   id("org.hypertrace.docker-publish-plugin") version "0.9.4"
-  id("ai.traceable.docker-convention-plugin") version "1.2.2"
+  id("ai.traceable.docker-convention-plugin") version "1.2.4"
 }
 
 dependencies {
@@ -27,7 +27,9 @@ application {
 }
 
 hypertraceDocker {
-  registryCredentials.url.set("traceableai-docker-quality.jfrog.io")
+  traceableConvention {
+    registry.set(ai.traceable.gradle.DockerConventionRegistry.GHCR)
+  }
   defaultImage {
     javaApplication {
       ports.addAll(50102)
