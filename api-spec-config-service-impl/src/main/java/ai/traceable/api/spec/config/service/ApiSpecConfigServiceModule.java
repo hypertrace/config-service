@@ -20,7 +20,6 @@ public class ApiSpecConfigServiceModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(BindableService.class).to(ApiSpecConfigServiceImpl.class);
-    bind(Channel.class).toInstance(channel);
   }
 
   @Provides
