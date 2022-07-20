@@ -34,6 +34,7 @@ dependencies {
   implementation(projects.apiAttributeOverrideServiceImpl)
   implementation(projects.traceableAlertingConfigServiceImpl)
   implementation(projects.reportingConfigServiceImpl)
+  implementation(projects.apiSpecConfigServiceImpl)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

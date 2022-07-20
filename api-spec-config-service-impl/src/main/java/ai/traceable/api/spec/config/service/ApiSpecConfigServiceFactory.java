@@ -4,10 +4,10 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
-import io.grpc.ManagedChannel;
+import io.grpc.Channel;
 
 public class ApiSpecConfigServiceFactory {
-  public static BindableService build(ManagedChannel channel, Config config) {
+  public static BindableService build(Channel channel, Config config) {
     Injector injector = Guice.createInjector(new ApiSpecConfigServiceModule(channel, config));
     return injector.getInstance(BindableService.class);
   }
