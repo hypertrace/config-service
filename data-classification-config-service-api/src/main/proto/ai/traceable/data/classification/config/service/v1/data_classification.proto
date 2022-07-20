@@ -25,6 +25,7 @@ message DataTypeRule {
     oneof pattern {
       StringPattern key_pattern = 6;
       KeyValuePattern key_value_pattern = 7;
+      KeyValuePattern leaf_key_value_pattern = 9;
     }
     Action action = 8;
   }

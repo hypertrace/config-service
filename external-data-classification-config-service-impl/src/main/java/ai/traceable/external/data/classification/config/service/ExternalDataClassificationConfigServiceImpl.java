@@ -144,7 +144,8 @@ class ExternalDataClassificationConfigServiceImpl
               dataTypes,
               dataTypesToDataSuppressionMap,
               Optional.of(request.getEnvironmentFilter().getEnvironmentName())
-                  .filter(envName -> !envName.isBlank())));
+                  .filter(envName -> !envName.isBlank()),
+              request.getPredicateSupportLevel()));
 
       // sensitive headers
       RedactionStrategy redactionStrategy =

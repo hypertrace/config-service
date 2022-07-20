@@ -78,6 +78,7 @@ message PathPredicate {
   oneof path {
     string json_path = 1;
     StringPredicate path_segment_predicate = 2;
+    StringPredicate leaf_path_segment_predicate = 3;
   }
 }
 

@@ -98,6 +98,9 @@ class DataTypeConfigRequestValidator {
       case KEY_VALUE_PATTERN:
         this.validateKeyValuePattern(scopedPattern.getKeyValuePattern());
         break;
+      case LEAF_KEY_VALUE_PATTERN:
+        this.validateKeyValuePattern(scopedPattern.getLeafKeyValuePattern());
+        break;
       case PATTERN_NOT_SET:
       default:
         throw Status.INVALID_ARGUMENT

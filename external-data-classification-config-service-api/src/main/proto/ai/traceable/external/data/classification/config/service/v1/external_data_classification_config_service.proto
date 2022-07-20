@@ -13,6 +13,7 @@ service ExternalDataClassificationService {
 message GetDataClassificationConfigRequest {
   OnlyIfChangedFilter change_filter = 1;
   EnvironmentFilter environment_filter = 2;
+  PredicateSupportLevel predicate_support_level = 3;
 
   message OnlyIfChangedFilter {
     string previous_hash = 1;
@@ -22,6 +23,11 @@ message GetDataClassificationConfigRequest {
     oneof match {
       string environment_name = 1;
     }
+  }
+
+  enum PredicateSupportLevel {
+    PREDICATE_SUPPORT_LEVEL_UNSPECIFIED = 0;
+    PREDICATE_SUPPORT_LEVEL_LEAF_PATH_SEGMENT = 1;
   }
 }
 

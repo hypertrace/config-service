@@ -275,6 +275,43 @@ class DataTypeConfigRequestValidatorTest {
     dataTypeConfigRequestValidator.validateOrThrow(REQUEST_CONTEXT, request);
   }
 
+  @Test
+  void validateOrThrowWrongLeafKeyValuePattern() {
+    DataTypeRule rule =
+        DataTypeRule.newBuilder()
+            .setName("name-1")
+            .addScopedPatterns(
+                ScopedPattern.newBuilder()
+                    .setApiScope(createApiScope())
+                    .addLocations(LOCATION_REQUEST_HEADER)
+                    .setLeafKeyValuePattern(createKeyValuePatternNoKeyPattern())
+                    .setActionValue(1))
+            .build();
+    CreateDataTypeRequest request = CreateDataTypeRequest.newBuilder().setRule(rule).build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          dataTypeConfigRequestValidator.validateOrThrow(REQUEST_CONTEXT, request);
+        });
+  }
+
+  @Test
+  void validateOrThrowCorrectLeafKeyValuePattern() {
+    DataTypeRule rule =
+        DataTypeRule.newBuilder()
+            .setName("name-1")
+            .setSuppressionPattern("(.*)")
+            .addScopedPatterns(
+                ScopedPattern.newBuilder()
+                    .setApiScope(createApiScope())
+                    .addLocations(LOCATION_REQUEST_HEADER)
+                    .setLeafKeyValuePattern(createKeyValuePattern())
+                    .setActionValue(1))
+            .build();
+    CreateDataTypeRequest request = CreateDataTypeRequest.newBuilder().setRule(rule).build();
+    dataTypeConfigRequestValidator.validateOrThrow(REQUEST_CONTEXT, request);
+  }
+
   private ApiScope createApiScope() {
     return ApiScope.newBuilder().addAllApiIds(List.of("1", "2")).build();
   }

@@ -1,5 +1,7 @@
 package ai.traceable.external.data.classification.config.service;
 
+import static ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest.PredicateSupportLevel.PREDICATE_SUPPORT_LEVEL_LEAF_PATH_SEGMENT;
+import static ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest.PredicateSupportLevel.PREDICATE_SUPPORT_LEVEL_UNSPECIFIED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
@@ -112,11 +114,36 @@ public class DataClassificationRulesTranslatorTest {
                             .setAction(Action.ACTION_MATCH)))
             .build();
 
+    DataType dataType5 =
+        DataType.newBuilder()
+            .setId("id-5")
+            .setRule(
+                DataTypeRule.newBuilder()
+                    .setName("datatype-5")
+                    .addScopedPatterns(
+                        ScopedPattern.newBuilder()
+                            .setEnvironmentScope(
+                                EnvironmentScope.newBuilder().addEnvironmentIds("env-1"))
+                            .addLocations(Location.LOCATION_REQUEST_HEADER)
+                            .setLeafKeyValuePattern(
+                                KeyValuePattern.newBuilder()
+                                    .setKeyPattern(
+                                        StringPattern.newBuilder()
+                                            .setValue("key-5")
+                                            .setOperator(Operator.OPERATOR_EQUALS))
+                                    .setValuePattern(
+                                        StringPattern.newBuilder()
+                                            .setValue("value-5")
+                                            .setOperator(Operator.OPERATOR_EQUALS)))
+                            .setAction(Action.ACTION_MATCH)))
+            .build();
+
     Map<String, DataSuppression> dataTypesToDataSuppressionMap = new HashMap<>();
     dataTypesToDataSuppressionMap.put("id-1", DataSuppression.DATA_SUPPRESSION_REDACT);
     dataTypesToDataSuppressionMap.put("id-2", DataSuppression.DATA_SUPPRESSION_REDACT);
     dataTypesToDataSuppressionMap.put("id-3", DataSuppression.DATA_SUPPRESSION_OBFUSCATE);
     dataTypesToDataSuppressionMap.put("id-4", DataSuppression.DATA_SUPPRESSION_RAW);
+    dataTypesToDataSuppressionMap.put("id-5", DataSuppression.DATA_SUPPRESSION_OBFUSCATE);
 
     ai.traceable.external.data.classification.config.service.v1.DataType expectedDataType1 =
         ai.traceable.external.data.classification.config.service.v1.DataType.newBuilder()
@@ -236,14 +263,93 @@ public class DataClassificationRulesTranslatorTest {
                                             .Operator.OPERATOR_MATCHES_REGEX))))
             .build();
 
+    ai.traceable.external.data.classification.config.service.v1.DataType expectedDataType5 =
+        ai.traceable.external.data.classification.config.service.v1.DataType.newBuilder()
+            .setDataTypeId("id-5")
+            .setTransformation(DataTransformation.DATA_TRANSFORMATION_OBFUSCATE)
+            .addMatchRules(
+                DataTypeMatchRule.newBuilder()
+                    .setAttributeFilter(
+                        AttributeFilter.newBuilder()
+                            .addAllPrefixes(List.of("http.request.header", "rpc.request.metadata")))
+                    .setResult(Result.RESULT_MATCH)
+                    .setPathValuePredicate(
+                        PathValuePredicate.newBuilder()
+                            .setPathPredicate(
+                                PathPredicate.newBuilder()
+                                    .setLeafPathSegmentPredicate(
+                                        StringPredicate.newBuilder()
+                                            .setValue("key-5")
+                                            .setOperator(
+                                                ai.traceable.external.data.classification.config
+                                                    .service.v1.Operator.OPERATOR_EQUALS)))
+                            .setValuePredicate(
+                                StringPredicate.newBuilder()
+                                    .setValue("value-5")
+                                    .setOperator(
+                                        ai.traceable.external.data.classification.config.service.v1
+                                            .Operator.OPERATOR_EQUALS))))
+            .build();
+
+    ai.traceable.external.data.classification.config.service.v1.DataType expectedDataType5_1 =
+        ai.traceable.external.data.classification.config.service.v1.DataType.newBuilder()
+            .setDataTypeId("id-5")
+            .setTransformation(DataTransformation.DATA_TRANSFORMATION_OBFUSCATE)
+            .addMatchRules(
+                DataTypeMatchRule.newBuilder()
+                    .setAttributeFilter(
+                        AttributeFilter.newBuilder()
+                            .addAllPrefixes(List.of("http.request.header", "rpc.request.metadata")))
+                    .setResult(Result.RESULT_MATCH)
+                    .setPathValuePredicate(
+                        PathValuePredicate.newBuilder()
+                            .setPathPredicate(
+                                PathPredicate.newBuilder()
+                                    .setPathSegmentPredicate(
+                                        StringPredicate.newBuilder()
+                                            .setValue("key-5")
+                                            .setOperator(
+                                                ai.traceable.external.data.classification.config
+                                                    .service.v1.Operator.OPERATOR_EQUALS)))
+                            .setValuePredicate(
+                                StringPredicate.newBuilder()
+                                    .setValue("value-5")
+                                    .setOperator(
+                                        ai.traceable.external.data.classification.config.service.v1
+                                            .Operator.OPERATOR_EQUALS))))
+            .build();
+
     List<ai.traceable.external.data.classification.config.service.v1.DataType> translatedDataTypes =
         dataClassificationRulesTranslator.translateDataTypes(
-            List.of(dataType1, dataType2, dataType3, dataType4),
+            List.of(dataType1, dataType2, dataType3, dataType4, dataType5),
             dataTypesToDataSuppressionMap,
-            Optional.empty());
+            Optional.empty(),
+            PREDICATE_SUPPORT_LEVEL_LEAF_PATH_SEGMENT);
 
     List<ai.traceable.external.data.classification.config.service.v1.DataType> expectedDataTypes =
-        List.of(expectedDataType1, expectedDataType2, expectedDataType3, expectedDataType4);
+        List.of(
+            expectedDataType1,
+            expectedDataType2,
+            expectedDataType3,
+            expectedDataType4,
+            expectedDataType5);
+
+    assertEquals(expectedDataTypes, translatedDataTypes);
+
+    translatedDataTypes =
+        dataClassificationRulesTranslator.translateDataTypes(
+            List.of(dataType1, dataType2, dataType3, dataType4, dataType5),
+            dataTypesToDataSuppressionMap,
+            Optional.empty(),
+            PREDICATE_SUPPORT_LEVEL_UNSPECIFIED);
+
+    expectedDataTypes =
+        List.of(
+            expectedDataType1,
+            expectedDataType2,
+            expectedDataType3,
+            expectedDataType4,
+            expectedDataType5_1);
 
     assertEquals(expectedDataTypes, translatedDataTypes);
 
@@ -251,7 +357,8 @@ public class DataClassificationRulesTranslatorTest {
         dataClassificationRulesTranslator.translateDataTypes(
             List.of(dataType1, dataType2, dataType3, dataType4),
             dataTypesToDataSuppressionMap,
-            Optional.of("en|v-1"));
+            Optional.of("en|v-1"),
+            PREDICATE_SUPPORT_LEVEL_LEAF_PATH_SEGMENT);
     expectedDataTypes = List.of(expectedDataType1);
     assertEquals(expectedDataTypes, translatedDataTypes);
   }

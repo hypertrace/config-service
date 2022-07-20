@@ -1,5 +1,7 @@
 package ai.traceable.external.data.classification.config.service;
 
+import static ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest.PredicateSupportLevel.PREDICATE_SUPPORT_LEVEL_LEAF_PATH_SEGMENT;
+
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Action;
@@ -12,6 +14,7 @@ import ai.traceable.external.data.classification.config.service.v1.DataType;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTransformation;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTypeMatchRule;
 import ai.traceable.external.data.classification.config.service.v1.DataType.Result;
+import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest.PredicateSupportLevel;
 import ai.traceable.external.data.classification.config.service.v1.Operator;
 import ai.traceable.external.data.classification.config.service.v1.PathPredicate;
 import ai.traceable.external.data.classification.config.service.v1.PathValuePredicate;
@@ -68,12 +71,16 @@ class DataClassificationRulesTranslator {
   List<DataType> translateDataTypes(
       List<ai.traceable.data.classification.config.service.v1.DataType> dataTypes,
       Map<String, DataSuppression> dataTypesToDataSuppressionMap,
-      Optional<String> environmentName) {
+      Optional<String> environmentName,
+      PredicateSupportLevel predicateSupportLevel) {
     return dataTypes.stream()
         .map(
             dataType ->
                 translateDataType(
-                    dataType, dataTypesToDataSuppressionMap.get(dataType.getId()), environmentName))
+                    dataType,
+                    dataTypesToDataSuppressionMap.get(dataType.getId()),
+                    environmentName,
+                    predicateSupportLevel))
         .flatMap(Optional::stream)
         .collect(Collectors.toUnmodifiableList());
   }
@@ -81,7 +88,8 @@ class DataClassificationRulesTranslator {
   private Optional<DataType> translateDataType(
       ai.traceable.data.classification.config.service.v1.DataType dataType,
       DataSuppression dataSuppression,
-      Optional<String> environmentName) {
+      Optional<String> environmentName,
+      PredicateSupportLevel predicateSupportLevel) {
     DataType.Builder dataTypeBuilder = DataType.newBuilder();
     dataTypeBuilder.setDataTypeId(dataType.getId());
     DataTypeRule rule = dataType.getRule();
@@ -100,7 +108,8 @@ class DataClassificationRulesTranslator {
                           .getEnvironmentScope()
                           .getEnvironmentIdsList()
                           .contains(environmentName.get()))) {
-                matchRules.add(translateScopedPattern(scopedPattern));
+                translateScopedPattern(scopedPattern, predicateSupportLevel)
+                    .ifPresent(matchRules::add);
               }
             });
     if (matchRules.isEmpty()) {
@@ -110,7 +119,8 @@ class DataClassificationRulesTranslator {
     return Optional.of(dataTypeBuilder.build());
   }
 
-  private DataTypeMatchRule translateScopedPattern(ScopedPattern scopedPattern) {
+  private Optional<DataTypeMatchRule> translateScopedPattern(
+      ScopedPattern scopedPattern, PredicateSupportLevel predicateSupportLevel) {
     DataTypeMatchRule.Builder dataTypeMatchRuleBuilder = DataTypeMatchRule.newBuilder();
     // environment filter is already taken care of.
     // TODO may need to support API scope in the future.
@@ -119,23 +129,51 @@ class DataClassificationRulesTranslator {
     dataTypeMatchRuleBuilder.setResult(translateAction(scopedPattern.getAction()));
     switch (scopedPattern.getPatternCase()) {
       case KEY_PATTERN:
-        return dataTypeMatchRuleBuilder
-            .setPathPredicate(translatePathPattern(scopedPattern.getKeyPattern()))
-            .build();
+        return Optional.of(
+            dataTypeMatchRuleBuilder
+                .setPathPredicate(translatePathPattern(scopedPattern.getKeyPattern()))
+                .build());
       case KEY_VALUE_PATTERN:
-        return dataTypeMatchRuleBuilder
-            .setPathValuePredicate(translatePathValuePattern(scopedPattern.getKeyValuePattern()))
-            .build();
+        return Optional.of(
+            dataTypeMatchRuleBuilder
+                .setPathValuePredicate(
+                    translatePathValuePattern(scopedPattern.getKeyValuePattern()))
+                .build());
+      case LEAF_KEY_VALUE_PATTERN:
+        if (isLeafKeyValuePatternSupported(predicateSupportLevel)) {
+          return Optional.of(
+              dataTypeMatchRuleBuilder
+                  .setPathValuePredicate(
+                      translateLeafPathValuePattern(scopedPattern.getLeafKeyValuePattern()))
+                  .build());
+        } else {
+          return Optional.of(
+              dataTypeMatchRuleBuilder
+                  .setPathValuePredicate(
+                      translatePathValuePattern(scopedPattern.getLeafKeyValuePattern()))
+                  .build());
+        }
       case PATTERN_NOT_SET:
       default:
         log.error("Unsupported scoped pattern type: {}", scopedPattern);
-        return dataTypeMatchRuleBuilder.build();
+        return Optional.empty();
     }
+  }
+
+  private boolean isLeafKeyValuePatternSupported(PredicateSupportLevel predicateSupportLevel) {
+    return predicateSupportLevel.equals(PREDICATE_SUPPORT_LEVEL_LEAF_PATH_SEGMENT);
   }
 
   private PathValuePredicate translatePathValuePattern(KeyValuePattern keyValuePattern) {
     return PathValuePredicate.newBuilder()
         .setPathPredicate(translatePathPattern(keyValuePattern.getKeyPattern()))
+        .setValuePredicate(translateStringPattern(keyValuePattern.getValuePattern()))
+        .build();
+  }
+
+  private PathValuePredicate translateLeafPathValuePattern(KeyValuePattern keyValuePattern) {
+    return PathValuePredicate.newBuilder()
+        .setPathPredicate(translateLeafPathPattern(keyValuePattern.getKeyPattern()))
         .setValuePredicate(translateStringPattern(keyValuePattern.getValuePattern()))
         .build();
   }
@@ -150,6 +188,12 @@ class DataClassificationRulesTranslator {
   private PathPredicate translatePathPattern(StringPattern pathPattern) {
     return PathPredicate.newBuilder()
         .setPathSegmentPredicate(this.translateStringPattern(pathPattern))
+        .build();
+  }
+
+  private PathPredicate translateLeafPathPattern(StringPattern pathPattern) {
+    return PathPredicate.newBuilder()
+        .setLeafPathSegmentPredicate(this.translateStringPattern(pathPattern))
         .build();
   }
 
