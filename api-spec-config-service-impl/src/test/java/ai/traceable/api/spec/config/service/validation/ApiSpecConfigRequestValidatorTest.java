@@ -134,15 +134,6 @@ class ApiSpecConfigRequestValidatorTest {
                     .setApiSpec(UpdateApiSpec.newBuilder().setSpecId("id").build())
                     .build()));
 
-    assertInvalidArgStatusContaining(
-        "UpdateApiSpec.status",
-        () ->
-            validator.validateOrThrow(
-                mockRequestContext,
-                UpdateApiSpecRequest.newBuilder()
-                    .setApiSpec(UpdateApiSpec.newBuilder().setSpecId("id").setName("name").build())
-                    .build()));
-
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(

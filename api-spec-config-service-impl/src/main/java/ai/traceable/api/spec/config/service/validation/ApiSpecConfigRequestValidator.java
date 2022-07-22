@@ -43,6 +43,5 @@ public class ApiSpecConfigRequestValidator {
   private void validateUpdateApiSpec(UpdateApiSpec updateApiSpec) {
     validateNonDefaultPresenceOrThrow(updateApiSpec, UpdateApiSpec.SPEC_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(updateApiSpec, UpdateApiSpec.NAME_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(updateApiSpec, UpdateApiSpec.STATUS_FIELD_NUMBER);
   }
 }

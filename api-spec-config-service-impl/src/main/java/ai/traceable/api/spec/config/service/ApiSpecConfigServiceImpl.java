@@ -1,5 +1,7 @@
 package ai.traceable.api.spec.config.service;
 
+import static ai.traceable.api.spec.config.service.v1.ApiSpecStatus.API_SPEC_STATUS_UNSPECIFIED;
+
 import ai.traceable.api.spec.config.service.store.ApiSpecConfigStore;
 import ai.traceable.api.spec.config.service.v1.ApiSpec;
 import ai.traceable.api.spec.config.service.v1.ApiSpecConfigServiceGrpc;
@@ -172,10 +174,15 @@ public class ApiSpecConfigServiceImpl
   }
 
   private ApiSpec buildUpdatedApiSpec(ApiSpec existingApiSpec, UpdateApiSpec updateApiSpec) {
-    return ApiSpec.newBuilder(existingApiSpec)
-        .setName(updateApiSpec.getName())
-        .setApiNamingEnabled(updateApiSpec.getApiNamingEnabled())
-        .setStatus(updateApiSpec.getStatus())
-        .build();
+    ApiSpec.Builder apiSpecBuilder =
+        ApiSpec.newBuilder(existingApiSpec)
+            .setName(updateApiSpec.getName())
+            .setApiNamingEnabled(updateApiSpec.getApiNamingEnabled());
+
+    // set updated status if present, else persist with existing status
+    if (!API_SPEC_STATUS_UNSPECIFIED.equals(updateApiSpec.getStatus())) {
+      apiSpecBuilder.setStatus(updateApiSpec.getStatus());
+    }
+    return apiSpecBuilder.build();
   }
 }

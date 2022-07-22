@@ -131,6 +131,21 @@ class ApiSpecConfigServiceImplTest {
                         UpdateApiSpec.newBuilder()
                             .setSpecId(firstCreatedApiSpec.getSpecId())
                             .setName("updatedSpec1")
+                            .setApiNamingEnabled(false))
+                    .build())
+            .getApiSpec();
+    assertEquals("updatedSpec1", updatedFirstApiSpec.getName());
+    assertFalse(updatedFirstApiSpec.getApiNamingEnabled());
+    assertEquals(API_SPEC_STATUS_IN_PROGRESS, updatedFirstApiSpec.getStatus());
+
+    updatedFirstApiSpec =
+        this.apiSpecConfigServiceBlockingStub
+            .updateApiSpec(
+                UpdateApiSpecRequest.newBuilder()
+                    .setApiSpec(
+                        UpdateApiSpec.newBuilder()
+                            .setSpecId(firstCreatedApiSpec.getSpecId())
+                            .setName("updatedSpec1")
                             .setApiNamingEnabled(false)
                             .setStatus(API_SPEC_STATUS_COMPLETED))
                     .build())
@@ -138,6 +153,7 @@ class ApiSpecConfigServiceImplTest {
     assertEquals("updatedSpec1", updatedFirstApiSpec.getName());
     assertFalse(updatedFirstApiSpec.getApiNamingEnabled());
     assertEquals(API_SPEC_STATUS_COMPLETED, updatedFirstApiSpec.getStatus());
+
     assertEquals(
         ApiSpec.newBuilder(
                 this.apiSpecConfigServiceBlockingStub
