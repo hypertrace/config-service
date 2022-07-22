@@ -12,6 +12,8 @@ import ai.traceable.ratelimiting.config.service.v2.DatatypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.DeleteRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
+import ai.traceable.ratelimiting.config.service.v2.IpLocationType;
+import ai.traceable.ratelimiting.config.service.v2.IpLocationTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpReputationCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
@@ -93,6 +95,9 @@ public class RateLimitingRulesValidator implements RulesValidator {
         break;
       case IP_ADDRESS_CONDITION:
         validateIpAddressCondition(leafCondition.getIpAddressCondition());
+        break;
+      case IP_LOCATION_TYPE_CONDITION:
+        validateIpLocationTypeCondition(leafCondition.getIpLocationTypeCondition());
         break;
       case IP_REPUTATION_CONDITION:
         validateIpReputationCondition(leafCondition.getIpReputationCondition());
@@ -182,6 +187,18 @@ public class RateLimitingRulesValidator implements RulesValidator {
   private void validateIpReputationCondition(IpReputationCondition ipReputationCondition) {
     validateNonDefaultPresenceOrThrow(
         ipReputationCondition, IpReputationCondition.MIN_IP_REPUTATION_SEVERITY_FIELD_NUMBER);
+  }
+
+  private void validateIpLocationTypeCondition(IpLocationTypeCondition ipLocationTypeCondition) {
+    validateNonDefaultPresenceOrThrow(
+        ipLocationTypeCondition, IpLocationTypeCondition.IP_LOCATION_TYPES_FIELD_NUMBER);
+    ipLocationTypeCondition.getIpLocationTypesList().forEach(this::validateIpLocationType);
+  }
+
+  private void validateIpLocationType(IpLocationType ipLocationType) {
+    if (ipLocationType.equals(IpLocationType.IP_LOCATION_TYPE_UNSPECIFIED)) {
+      throwInvalidArgumentException("Invalid IP Location Type");
+    }
   }
 
   private void validateCompositeCondition(CompositeCondition compositeCondition) {

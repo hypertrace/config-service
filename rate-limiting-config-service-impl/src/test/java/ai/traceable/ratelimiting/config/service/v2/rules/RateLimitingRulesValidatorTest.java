@@ -12,6 +12,8 @@ import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.DatatypeCondition;
+import ai.traceable.ratelimiting.config.service.v2.IpLocationType;
+import ai.traceable.ratelimiting.config.service.v2.IpLocationTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
@@ -149,6 +151,16 @@ public class RateLimitingRulesValidatorTest {
                                 Condition.newBuilder()
                                     .setLeafCondition(
                                         LeafCondition.newBuilder()
+                                            .setIpLocationTypeCondition(
+                                                buildIpLocationTypeCondition(
+                                                    List.of(
+                                                        IpLocationType.IP_LOCATION_TYPE_ANONYMOUS,
+                                                        IpLocationType
+                                                            .IP_LOCATION_TYPE_RESIDENTIAL)))))
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
                                             .setRegionCondition(
                                                 buildRegionCondition(List.of("IND", "US")))))
                             .addChildren(
@@ -191,5 +203,10 @@ public class RateLimitingRulesValidatorTest {
 
   private DatatypeCondition buildDatatypeCondition(List<String> datasetIds) {
     return DatatypeCondition.newBuilder().addAllDatasetIds(datasetIds).build();
+  }
+
+  private IpLocationTypeCondition buildIpLocationTypeCondition(
+      List<IpLocationType> ipLocationTypes) {
+    return IpLocationTypeCondition.newBuilder().addAllIpLocationTypes(ipLocationTypes).build();
   }
 }
