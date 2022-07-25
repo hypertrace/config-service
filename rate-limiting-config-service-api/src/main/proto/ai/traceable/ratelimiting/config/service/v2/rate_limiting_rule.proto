@@ -153,10 +153,16 @@ message ResourceAccessThresholdConfig {
   ApiAggregateType api_aggregate_type = 2;
   oneof threshold_config {
     RollingWindowThresholdConfig rolling_window_threshold_config = 3;
+    ValueBasedThresholdConfig value_based_threshold_config = 4;
   }
 
   message RollingWindowThresholdConfig {
     int64 count_allowed = 1;
+    string duration_iso = 2;
+  }
+
+  message ValueBasedThresholdConfig {
+    int64 unique_values_allowed = 1;
     string duration_iso = 2;
   }
 }

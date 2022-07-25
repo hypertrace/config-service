@@ -231,6 +231,10 @@ public class RateLimitingRulesValidator implements RulesValidator {
         validateRollingWindowThresholdConfig(
             resourceAccessThresholdConfig.getRollingWindowThresholdConfig());
         break;
+      case VALUE_BASED_THRESHOLD_CONFIG:
+        validateValueBasedThresholdConfig(
+            resourceAccessThresholdConfig.getValueBasedThresholdConfig());
+        break;
       default:
         throwInvalidArgumentException(
             String.format(
@@ -248,6 +252,16 @@ public class RateLimitingRulesValidator implements RulesValidator {
     validateNonDefaultPresenceOrThrow(
         rollingWindowThresholdConfig,
         ResourceAccessThresholdConfig.RollingWindowThresholdConfig.DURATION_ISO_FIELD_NUMBER);
+  }
+
+  private void validateValueBasedThresholdConfig(
+      ResourceAccessThresholdConfig.ValueBasedThresholdConfig valueBasedThresholdConfig) {
+    validateNonDefaultPresenceOrThrow(
+        valueBasedThresholdConfig,
+        ResourceAccessThresholdConfig.ValueBasedThresholdConfig.UNIQUE_VALUES_ALLOWED_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        valueBasedThresholdConfig,
+        ResourceAccessThresholdConfig.ValueBasedThresholdConfig.DURATION_ISO_FIELD_NUMBER);
   }
 
   private void validateAction(Action action) {

@@ -137,6 +137,66 @@ public class RateLimitingRulesValidatorTest {
   }
 
   @Test
+  void testValueBasedThresholdConfigValidation() {
+    CreateRateLimitingRuleRequest request =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                getRateLimitingRuleDataWithValueBasedCondition(
+                    ResourceAccessThresholdConfig.ValueBasedThresholdConfig.getDefaultInstance()))
+            .build();
+    Throwable throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request));
+    Status status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(
+        Objects.requireNonNull(status.getDescription())
+            .contains(
+                String.format(
+                    "Expected field value %s but not present",
+                    ResourceAccessThresholdConfig.ValueBasedThresholdConfig.getDescriptor()
+                        .findFieldByNumber(
+                            ResourceAccessThresholdConfig.ValueBasedThresholdConfig
+                                .UNIQUE_VALUES_ALLOWED_FIELD_NUMBER))));
+
+    CreateRateLimitingRuleRequest request1 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                getRateLimitingRuleDataWithValueBasedCondition(
+                    ResourceAccessThresholdConfig.ValueBasedThresholdConfig.newBuilder()
+                        .setUniqueValuesAllowed(10)
+                        .build()))
+            .build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request1));
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(
+        Objects.requireNonNull(status.getDescription())
+            .contains(
+                String.format(
+                    "Expected field value %s but not present",
+                    ResourceAccessThresholdConfig.ValueBasedThresholdConfig.getDescriptor()
+                        .findFieldByNumber(
+                            ResourceAccessThresholdConfig.ValueBasedThresholdConfig
+                                .DURATION_ISO_FIELD_NUMBER))));
+
+    CreateRateLimitingRuleRequest request2 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                getRateLimitingRuleDataWithValueBasedCondition(
+                    ResourceAccessThresholdConfig.ValueBasedThresholdConfig.newBuilder()
+                        .setUniqueValuesAllowed(10)
+                        .setDurationIso("1h")
+                        .build()))
+            .build();
+    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request2));
+  }
+
+  @Test
   void testValidRule() {
     RateLimitingRuleData ruleData =
         RateLimitingRuleData.newBuilder()
@@ -208,5 +268,35 @@ public class RateLimitingRulesValidatorTest {
   private IpLocationTypeCondition buildIpLocationTypeCondition(
       List<IpLocationType> ipLocationTypes) {
     return IpLocationTypeCondition.newBuilder().addAllIpLocationTypes(ipLocationTypes).build();
+  }
+
+  private RateLimitingRuleData getRateLimitingRuleDataWithValueBasedCondition(
+      ResourceAccessThresholdConfig.ValueBasedThresholdConfig valueBasedThresholdConfig) {
+    return RateLimitingRuleData.newBuilder()
+        .setName("rule1")
+        .setCategory(Category.CATEGORY_RATE_LIMITING)
+        .setEnabled(true)
+        .setCondition(
+            Condition.newBuilder()
+                .setLeafCondition(
+                    LeafCondition.newBuilder()
+                        .setRegionCondition(
+                            RegionCondition.newBuilder().addAllRegions(List.of("IND", "US")))))
+        .addThresholdActionConfigs(
+            ThresholdActionConfig.newBuilder()
+                .addActions(
+                    Action.newBuilder()
+                        .setAlert(
+                            Action.Alert.newBuilder()
+                                .setEventSeverity(Action.EventSeverity.EVENT_SEVERITY_HIGH)
+                                .build())
+                        .build())
+                .addResourceAccessThresholdConfigs(
+                    ResourceAccessThresholdConfig.newBuilder()
+                        .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                        .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                        .setValueBasedThresholdConfig(valueBasedThresholdConfig)
+                        .build()))
+        .build();
   }
 }
