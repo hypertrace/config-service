@@ -57,6 +57,9 @@ public class TrieDiffLogManager {
       "api.naming.config.trieDiffLog.cache.expireAfterWriteDuration";
   private static final String MAXIMUM_CACHE_SIZE =
       "api.naming.config.trieDiffLog.cache.maximumCacheSize";
+  private static final String DIFF_LOG_DIRECTORY_NAME =
+      "api.naming.config.trieDiffLog.directory.name";
+  private static final String DIFF_LOG_DIRECTORY_DEFAULT_NAME = "difflog";
   private static final String CACHE_NAME = "diffLogsCache";
   private static final Duration CACHE_REFRESH_DURATION_DEFAULT = Duration.ofSeconds(150);
   private static final Duration CACHE_EXPIRATION_DURATION_DEFAULT = Duration.ofSeconds(300);
@@ -68,6 +71,7 @@ public class TrieDiffLogManager {
   private final HttpApiNamingConfig httpApiNamingConfig;
   private final SegmentConverter segmentConverter;
   private final ModelPersistentStore<TrieDiffLogModel> trieDiffLogModelStore;
+  private final String diffLogDirectoryName;
 
   @Inject
   public TrieDiffLogManager(
@@ -91,6 +95,10 @@ public class TrieDiffLogManager {
     this.trieDiffLogModelStore = trieDiffLogModelStore;
     this.httpApiNamingConfig = httpApiNamingConfig;
     this.segmentConverter = segmentConverter;
+    this.diffLogDirectoryName =
+        config.hasPath(DIFF_LOG_DIRECTORY_NAME)
+            ? config.getString(DIFF_LOG_DIRECTORY_NAME)
+            : DIFF_LOG_DIRECTORY_DEFAULT_NAME;
     this.diffLogsCache =
         CacheBuilder.newBuilder()
             .expireAfterWrite(cacheExpiryDuration.toMillis(), TimeUnit.MILLISECONDS)
@@ -158,7 +166,9 @@ public class TrieDiffLogManager {
     String modelScopeSubPath = scope.getSubPath();
     String modelScopeAbsoluteDirPath =
         baseDir.resolve(modelScopeSubPath).toAbsolutePath().toString();
-    return Path.of(modelScopeAbsoluteDirPath).toAbsolutePath().toString();
+    return Path.of(modelScopeAbsoluteDirPath, this.diffLogDirectoryName)
+        .toAbsolutePath()
+        .toString();
   }
 
   private <T> T retry(Callable<T> callable) throws ExecutionException, RetryException {

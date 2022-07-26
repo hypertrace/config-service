@@ -46,6 +46,7 @@ import org.junit.jupiter.api.Test;
 
 public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationTestBase {
   private static final String TENANT_ID = "tenant1";
+  private static final String DIFF_LOG_DIRECTORY_NAME = "difflog";
   private static GrpcChannelRegistry channelRegistry;
   private static FileSystemModelStore trieModelFileSystemModelStore;
   private static FileSystemModelStore trieDiffLogModelFileSystemModelStore;
@@ -177,6 +178,7 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
         new DateScope(
             timestamp,
             new ServiceScope(TENANT_ID, createdEntity.getEntityId()),
+            DIFF_LOG_DIRECTORY_NAME,
             DATE_TIME_FORMATTER);
     trieDiffLogModelFileSystemModelStore.storeModel(dateScope, trieDiffLogModel);
 
@@ -306,6 +308,7 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
         new DateScope(
             System.currentTimeMillis(),
             new ServiceScope(TENANT_ID, createdEntity.getEntityId()),
+            DIFF_LOG_DIRECTORY_NAME,
             DATE_TIME_FORMATTER);
     trieDiffLogModelFileSystemModelStore.storeModel(dateScope, trieDiffLogModel1);
 
