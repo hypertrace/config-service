@@ -1,5 +1,7 @@
 package ai.traceable.localprocessing.config.service.apinaming.http.namingconfig;
 
+import static com.google.common.collect.Streams.zip;
+
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.CustomRulesListConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ThresholdRegexConfig;
@@ -16,13 +18,13 @@ import ai.traceable.platform.apientity.TrieNodeType;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRule;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
+import org.hypertrace.span.processing.config.service.v1.ApiSpecBasedConfig;
 import org.hypertrace.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 
 @Slf4j
@@ -186,33 +188,51 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
 
   private HttpApiNamingCustomRule convertCustomRule(
       String customRuleId, ApiNamingRuleConfig apiNamingRuleConfig) {
-    List<Segment> segmentList = new ArrayList<>();
-    if (apiNamingRuleConfig.hasSegmentMatchingBasedConfig()) {
-      SegmentMatchingBasedConfig segmentMatchingBasedConfig =
-          apiNamingRuleConfig.getSegmentMatchingBasedConfig();
-      Iterator<String> regexItr = segmentMatchingBasedConfig.getRegexesList().iterator();
-      Iterator<String> valueItr = segmentMatchingBasedConfig.getValuesList().iterator();
-      while (regexItr.hasNext() && valueItr.hasNext()) {
-        String regex = regexItr.next();
-        String value = valueItr.next();
-        if (regex.equals(value)) {
-          segmentList.add(Segment.newBuilder().setName(regex).build());
-        } else {
-          segmentList.add(
-              Segment.newBuilder()
-                  .setWildcard(
-                      Wildcard.newBuilder()
-                          .setIdentificationRegex(regex)
-                          .setReplacementPattern(value)
-                          .build())
-                  .build());
-        }
-      }
+    List<Segment> segmentList;
+
+    switch (apiNamingRuleConfig.getRuleConfigCase()) {
+      case SEGMENT_MATCHING_BASED_CONFIG:
+        SegmentMatchingBasedConfig segmentMatchingBasedConfig =
+            apiNamingRuleConfig.getSegmentMatchingBasedConfig();
+        segmentList =
+            buildSegmentList(
+                segmentMatchingBasedConfig.getRegexesList(),
+                segmentMatchingBasedConfig.getValuesList());
+        break;
+      case API_SPEC_BASED_CONFIG:
+        ApiSpecBasedConfig apiSpecBasedConfig = apiNamingRuleConfig.getApiSpecBasedConfig();
+        segmentList =
+            buildSegmentList(
+                apiSpecBasedConfig.getRegexesList(), apiSpecBasedConfig.getValuesList());
+        break;
+      default:
+        throw new UnsupportedOperationException("unknown rule config type: " + apiNamingRuleConfig);
     }
+
     return HttpApiNamingCustomRule.newBuilder()
         .setId(customRuleId)
         .setApiNamingPattern(ApiNamingPattern.newBuilder().addAllSegments(segmentList).build())
         .build();
+  }
+
+  private List<Segment> buildSegmentList(List<String> regexes, List<String> values) {
+    return zip(
+            regexes.stream(),
+            values.stream(),
+            (regex, value) -> {
+              if (regex.equals(value)) {
+                return Segment.newBuilder().setName(regex).build();
+              } else {
+                return Segment.newBuilder()
+                    .setWildcard(
+                        Wildcard.newBuilder()
+                            .setIdentificationRegex(regex)
+                            .setReplacementPattern(value)
+                            .build())
+                    .build();
+              }
+            })
+        .collect(Collectors.toUnmodifiableList());
   }
 
   private Optional<TrieModelTrainingConfig> getTrieModelTrainingConfig(

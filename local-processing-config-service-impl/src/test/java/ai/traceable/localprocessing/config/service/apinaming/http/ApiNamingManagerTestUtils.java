@@ -33,6 +33,7 @@ import org.hypertrace.span.processing.config.service.v1.ApiNamingRule;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleDetails;
 import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
+import org.hypertrace.span.processing.config.service.v1.ApiSpecBasedConfig;
 import org.hypertrace.span.processing.config.service.v1.Field;
 import org.hypertrace.span.processing.config.service.v1.GetAllApiNamingRulesResponse;
 import org.hypertrace.span.processing.config.service.v1.ListValue;
@@ -51,21 +52,10 @@ public class ApiNamingManagerTestUtils {
     HttpApiNamingConfig.Builder httpApiNamingConfigBuilder = HttpApiNamingConfig.newBuilder();
     httpApiNamingConfigBuilder
         .addSegmentWhitelistRegexes("allowRegex")
-        .addApiNamingCustomRules(
-            HttpApiNamingCustomRule.newBuilder()
-                .setApiNamingPattern(
-                    ApiNamingPattern.newBuilder()
-                        .addAllSegments(
-                            List.of(
-                                ai.traceable.localprocessing.config.service.v1.Segment.newBuilder()
-                                    .setWildcard(
-                                        Wildcard.newBuilder()
-                                            .setIdentificationRegex("id-regex")
-                                            .setReplacementPattern("replacement-value")
-                                            .build())
-                                    .build()))
-                        .build())
-                .build())
+        .addAllApiNamingCustomRules(
+            List.of(
+                buildTestApiNamingRule("id-regex-1", "replacement-value-1"),
+                buildTestApiNamingRule("id-regex-2", "replacement-value-2")))
         .addAllFallbackWildcardRegexes(
             List.of(
                 "(\\{){0,1}[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}(\\}){0,1}",
@@ -155,32 +145,32 @@ public class ApiNamingManagerTestUtils {
                         .setRuleInfo(
                             ApiNamingRuleInfo.newBuilder()
                                 .setDisabled(false)
-                                .setFilter(
-                                    SpanFilter.newBuilder()
-                                        .setRelationalSpanFilter(
-                                            RelationalSpanFilterExpression.newBuilder()
-                                                .setField(Field.FIELD_ENVIRONMENT_NAME)
-                                                .setOperator(
-                                                    RelationalOperator.RELATIONAL_OPERATOR_IN)
-                                                .setRightOperand(
-                                                    SpanFilterValue.newBuilder()
-                                                        .setListValue(
-                                                            ListValue.newBuilder()
-                                                                .addValues(
-                                                                    SpanFilterValue.newBuilder()
-                                                                        .setStringValue(
-                                                                            "environment")
-                                                                        .build())
-                                                                .build())
-                                                        .build())
-                                                .build())
-                                        .build())
+                                .setFilter(buildTestFilter())
                                 .setRuleConfig(
                                     ApiNamingRuleConfig.newBuilder()
                                         .setSegmentMatchingBasedConfig(
                                             SegmentMatchingBasedConfig.newBuilder()
-                                                .addRegexes("id-regex")
-                                                .addValues("replacement-value")
+                                                .addRegexes("id-regex-1")
+                                                .addValues("replacement-value-1")
+                                                .build())
+                                        .build())
+                                .build())
+                        .build())
+                .build())
+        .addRuleDetails(
+            ApiNamingRuleDetails.newBuilder()
+                .setRule(
+                    ApiNamingRule.newBuilder()
+                        .setRuleInfo(
+                            ApiNamingRuleInfo.newBuilder()
+                                .setDisabled(false)
+                                .setFilter(buildTestFilter())
+                                .setRuleConfig(
+                                    ApiNamingRuleConfig.newBuilder()
+                                        .setApiSpecBasedConfig(
+                                            ApiSpecBasedConfig.newBuilder()
+                                                .addRegexes("id-regex-2")
+                                                .addValues("replacement-value-2")
                                                 .build())
                                         .build())
                                 .build())
@@ -338,5 +328,43 @@ public class ApiNamingManagerTestUtils {
             Map.of("version", "0.0.0", "disabled", disabled),
             "tenantId",
             Map.of("default", Map.of("version", tenantScopedVersion, "disabled", disabled))));
+  }
+
+  private static HttpApiNamingCustomRule buildTestApiNamingRule(
+      String identificationRegex, String replacementValue) {
+    return HttpApiNamingCustomRule.newBuilder()
+        .setApiNamingPattern(
+            ApiNamingPattern.newBuilder()
+                .addAllSegments(
+                    List.of(
+                        ai.traceable.localprocessing.config.service.v1.Segment.newBuilder()
+                            .setWildcard(
+                                Wildcard.newBuilder()
+                                    .setIdentificationRegex(identificationRegex)
+                                    .setReplacementPattern(replacementValue)
+                                    .build())
+                            .build()))
+                .build())
+        .build();
+  }
+
+  private static SpanFilter buildTestFilter() {
+    return SpanFilter.newBuilder()
+        .setRelationalSpanFilter(
+            RelationalSpanFilterExpression.newBuilder()
+                .setField(Field.FIELD_ENVIRONMENT_NAME)
+                .setOperator(RelationalOperator.RELATIONAL_OPERATOR_IN)
+                .setRightOperand(
+                    SpanFilterValue.newBuilder()
+                        .setListValue(
+                            ListValue.newBuilder()
+                                .addValues(
+                                    SpanFilterValue.newBuilder()
+                                        .setStringValue("environment")
+                                        .build())
+                                .build())
+                        .build())
+                .build())
+        .build();
   }
 }
