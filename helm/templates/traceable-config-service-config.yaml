@@ -237,11 +237,6 @@ data:
       internal = {{ .Values.anomalyConfigServiceConfig.global.internal }}
       licenseTiers = {{ .Values.anomalyConfigServiceConfig.global.licenseTiers | nindent 6 }}
     }
-    detector.config.service {
-      modsecDetectionConfigs = {{ .Values.anomalyConfigServiceConfig.detectorConfigService.modsecDetectionConfigs | nindent 6 }}
-      apiDefinitionDetectionConfigs = {{ .Values.anomalyConfigServiceConfig.detectorConfigService.apiDefinitionDetectionConfigs | nindent 6 }}
-      sessionDefinitionDetectionConfigs = {{ .Values.anomalyConfigServiceConfig.detectorConfigService.sessionDefinitionDetectionConfigs | nindent 6 }}
-    }
   risk.conf: |-
     {{- if hasKey .Values "riskConfigServiceConfig" }}
       {{- if hasKey .Values.riskConfigServiceConfig "riskLevelConfigValues" }}

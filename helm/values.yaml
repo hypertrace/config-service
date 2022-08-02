@@ -241,23 +241,6 @@ anomalyConfigServiceConfig:
           disabled = false
         }
       ]
-  detectorConfigService:
-    modsecDetectionConfigs: |-
-      []
-    apiDefinitionDetectionConfigs: |-
-      [
-        {
-          configStatus = {
-            disabled = true
-            internal = true
-          }
-          apiDefinitionMetadataAnomalyDetectionConfig = {
-            anomalyRuleId = "ssrf"
-          }
-        }
-      ]
-    sessionDefinitionDetectionConfigs: |-
-      []
 
 hpa:
   enabled: false
