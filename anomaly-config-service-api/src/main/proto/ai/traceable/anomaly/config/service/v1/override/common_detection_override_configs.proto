@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+// buf:lint:ignore PACKAGE_VERSION_SUFFIX
+package ai.traceable.anomaly.config.service.v1.override;
+
+import "ai/traceable/anomaly/config/service/v1/override/detection_override_conditions_config.proto";
+import "ai/traceable/anomaly/config/service/v1/override/detection_override_scope_config.proto";
+
+option java_multiple_files = true;
+
+message DetectionOverrideAssetConfig {
+  DetectionOverrideScopeConfig scope_config = 4;
+  DetectionOverrideConditionsConfig conditions_config = 6;
+}
+
+message DetectionOverrideRuleStatus {
+  bool rule_disabled = 1;
+  bool rule_hidden_from_customer = 2;
+}

@@ -21,19 +21,31 @@ message AnomalyConfigScope {
   oneof scope {
     AnomalyServiceScope service_scope = 2;
     AnomalyApiScope api_scope = 3;
-    AnomalyParamScope param_scope = 4;
+    AnomalyParamScope param_scope = 4 [deprecated = true];
     AnomalyCustomerScope customer_scope = 5;
+    AnomalyEnvironmentScope environment_scope = 6;
   }
 }
 
+message AnomalyCustomerScope {
+}
+
+message AnomalyEnvironmentScope {
+  repeated string environment_ids = 1;
+}
+
+// deprecated
 message AnomalyParamScope {
+  option deprecated = true;
   string param_name = 1 [deprecated = true];
   AnomalyApiScope api_scope = 2 [deprecated = true];
   AnomalyParamInfoScope scope = 3;
   AnomalyParamInfo param_info = 4;
 }
 
+// deprecated
 message AnomalyParamInfoScope {
+  option deprecated = true;
   oneof scope {
     AnomalyApiScope api_scope = 1;
     AnomalyServiceScope service_scope = 2;
@@ -41,7 +53,9 @@ message AnomalyParamInfoScope {
   }
 }
 
+// deprecated
 message AnomalyParamInfo {
+  option deprecated = true;
   oneof param_details {
     string param_name = 1;
     string param_regex = 2;
@@ -55,9 +69,6 @@ message AnomalyApiScope {
 
 message AnomalyServiceScope {
   string id = 1;
-}
-
-message AnomalyCustomerScope {
 }
 
 enum AnomalyConfigScopeType {
@@ -123,6 +134,20 @@ enum AnomalyConfidenceLevel {
   ANOMALY_CONFIDENCE_LEVEL_LOW = 1;
   ANOMALY_CONFIDENCE_LEVEL_MEDIUM = 2;
   ANOMALY_CONFIDENCE_LEVEL_HIGH = 3;
+}
+
+enum AnomalySeverityLevel {
+  ANOMALY_SEVERITY_LEVEL_UNSPECIFIED = 0;
+  ANOMALY_SEVERITY_LEVEL_LOW = 1;
+  ANOMALY_SEVERITY_LEVEL_MEDIUM = 2;
+  ANOMALY_SEVERITY_LEVEL_HIGH = 3;
+}
+
+enum AnomalyThreatCategory {
+  ANOMALY_THREAT_CATEGORY_UNSPECIFIED = 0;
+  ANOMALY_THREAT_CATEGORY_MALICIOUS_ACTIVITIES = 1;
+  ANOMALY_THREAT_CATEGORY_ANOMALIES = 2;
+  ANOMALY_THREAT_CATEGORY_TESTS = 3;
 }
 
 message StringList {

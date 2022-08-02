@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+// buf:lint:ignore PACKAGE_VERSION_SUFFIX
+package ai.traceable.anomaly.config.service.v1.override;
+
+import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
+import "ai/traceable/anomaly/config/service/v1/override/detection_override_conditions_config.proto";
+
+option java_multiple_files = true;
+
+message DetectionOverrideScopeConfig {
+  DetectionOverrideGlobalScope global_scope = 1;
+  DetectionOverrideTargetScope target_scope = 2;
+}
+
+message DetectionOverrideGlobalScope {
+  oneof scope {
+    AnomalyCustomerScope customer_scope = 1;
+    AnomalyEnvironmentScope environment_scope = 2;
+  }
+}
+
+message DetectionOverrideTargetScope {
+  oneof scope {
+    DetectionOverrideApiScopeConfig api_scope = 1;
+    DetectionOverrideServiceScopeConfig service_scope = 2;
+  }
+}
+
+message DetectionOverrideApiScopeConfig {
+  repeated string api_ids = 1;
+  repeated string api_labels = 2;
+}
+
+message DetectionOverrideServiceScopeConfig {
+  repeated string service_ids = 1;
+  repeated string service_labels = 2;
+}
