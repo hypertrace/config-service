@@ -19,6 +19,7 @@ message DataParsingRule {
     DATA_PARSING_MODE_COOKIE_STRING = 2;
     DATA_PARSING_MODE_SQL = 3;
     DATA_PARSING_MODE_URL_ENCODED = 4;
+    DATA_PARSING_MODE_XML = 5;
   }
 
   message DropOnFailure {
