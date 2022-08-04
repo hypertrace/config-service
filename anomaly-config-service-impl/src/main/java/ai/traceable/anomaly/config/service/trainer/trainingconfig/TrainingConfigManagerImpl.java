@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ConfigObject;
@@ -32,6 +33,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
     implements TrainingConfigManager {
   private final TrainingConfigHandler configHandler;
   private final List<TrainingConfig> defaultApiNamingTrainingConfigs;
+  private final List<TrainingConfig> defaultMetadataTrainingConfigs;
 
   @Inject
   public TrainingConfigManagerImpl(
@@ -41,6 +43,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
     super(configServiceBlockingStub, TRAINING_CONFIG_NAMESPACE, TRAINING_CONFIG_RESOURCE_NAME);
     this.configHandler = configHandler;
     this.defaultApiNamingTrainingConfigs = config.getApiNamingTrainingConfigs();
+    this.defaultMetadataTrainingConfigs = config.getMetadataTrainingConfigs();
   }
 
   @Override
@@ -147,7 +150,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
     scopedTrainingConfigs.add(
         ScopedTrainingConfig.newBuilder()
             .setConfigScope(AnomalyConfigScope.getDefaultInstance())
-            .addAllTrainingConfigs(this.defaultApiNamingTrainingConfigs)
+            .addAllTrainingConfigs(getDefaultTrainingConfigs())
             .build());
     Set<TrainingConfig.TrainingConfigCase> configCases = configHandler.convert(filter);
     return scopedTrainingConfigs.stream()
@@ -251,7 +254,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
                   AnomalyConfigScope.newBuilder()
                       .setCustomerScope(AnomalyCustomerScope.newBuilder().build())
                       .build())
-              .addAllTrainingConfigs(this.defaultApiNamingTrainingConfigs)
+              .addAllTrainingConfigs(getDefaultTrainingConfigs())
               .build());
     }
     return resolvedConfigs;
@@ -264,7 +267,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
     ScopedTrainingConfig trainingConfig =
         ScopedTrainingConfig.newBuilder()
             .setConfigScope(configScope)
-            .addAllTrainingConfigs(this.defaultApiNamingTrainingConfigs)
+            .addAllTrainingConfigs(getDefaultTrainingConfigs())
             .build();
     for (String context : contextsWithIncreasingPriority) {
       trainingConfig =
@@ -299,5 +302,12 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
             String.format("Invalid scope found: {%s}", anomalyConfigScope.getScopeCase()));
     }
     return context;
+  }
+
+  private List<TrainingConfig> getDefaultTrainingConfigs() {
+    return Stream.concat(
+            this.defaultApiNamingTrainingConfigs.stream(),
+            this.defaultMetadataTrainingConfigs.stream())
+        .collect(Collectors.toUnmodifiableList());
   }
 }
