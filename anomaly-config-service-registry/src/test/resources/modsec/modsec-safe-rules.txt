@@ -1,3 +1,5 @@
+crs_1010010 :: Apache HTTP Server SSRF (CVE-2021-40438)
+crs_1010020 :: Jira SSRF: plugins/servlet/gadgets/makeRequest: (CVE-2019-8451)
 crs_1010100 :: Server Side Request Forgery (SSRF): Cloud Provider Metadata Endpoint
 crs_1010110 :: Server Side Request Forgery (SSRF): Common Collaborators
 crs_1020100 :: XML External Entity Injection: Local/Remote Includes (T100)
@@ -12,12 +14,16 @@ crs_9210305 :: Null Byte Injection
 crs_921140 :: HTTP Header Injection Attack via headers
 crs_921190 :: HTTP Splitting (CR/LF in request filename)
 crs_921200 :: LDAP Injection Attack
+crs_9300010 :: Rails Action View LFI: Accept header: (CVE-2019-5418)
 crs_9300120 :: OS File Access Attempt (T120)
 crs_930100 :: Path Traversal Attack (/../) (100)
 crs_930110 :: Path Traversal Attack (/../) (110)
 crs_930120 :: OS File Access Attempt (120)
 crs_930130 :: Restricted File Access Attempt
 crs_931120 :: Possible Remote File Inclusion (RFI) Attack: URL Payload Used w/Trailing Question Mark Character (?)
+crs_9320010 :: Spring Cloud Function RCE: malicious Spring Expression: (CVE-2022-22963)
+crs_9320020 :: Apache Struts RCE: multipart/form-data: (CVE-2017-5638)
+crs_9320021 :: Apache Struts RCE: OGNL in URL: CVE-2018-11776
 crs_9320100 :: Remote Command Execution: Unix Command Injection (T100)
 crs_9320105 :: Remote Command Execution: Unix Command Injection (T105)
 crs_9320150 :: Remote Command Execution: Direct Unix Command Execution (T150)
@@ -56,8 +62,9 @@ crs_943110 :: Possible Session Fixation Attack: SessionID Parameter Name with Of
 crs_9440210 :: Java Deserialization: Magic Bytes Base64 Encoded
 crs_9440900 :: Java Log4j: JNDI Exploitation (CVE-2021-44228) (T900)
 crs_9440910 :: Java Log4j: RCE DoS Exploitation (CVE-2021-45105) (T910)
-crs_9440920 :: Java Spring Core: RCE (CVE-2022-22965) (T920)
-crs_9440921 :: Java Spring Core: RCE: Panic Rule (T921)
+crs_9440920 :: Java Spring Core: RCE (CVE-2022-22965)
+crs_9440921 :: Java Spring Core: RCE: Panic Rule (CVE-2022-22965) (T921)
+crs_9440930 :: Confluence Server OGNL Injection: Webwork: (CVE-2021-26084)
 crs_944100 :: Remote Command Execution: Suspicious Java class
 crs_944110 :: Remote Command Execution: Java process spawn (CVE-2017-9805)
 crs_944120 :: Remote Command Execution: Java serialization (CVE-2015-4852) (120)
