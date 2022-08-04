@@ -65,18 +65,24 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   public void getConfig(
       GetConfigRequest request, StreamObserver<GetConfigResponse> responseObserver) {
     try {
-      Value config = configStore.getConfig(getConfigResourceContext(request)).getConfig();
+      ContextSpecificConfig config = configStore.getConfig(getConfigResourceContext(request));
 
       // get the configs for the contexts mentioned in the request and merge them in the specified
       // order
       for (String context : request.getContextsList()) {
-        Value contextSpecificConfig =
-            configStore.getConfig(getConfigResourceContext(request, context)).getConfig();
+        ContextSpecificConfig contextSpecificConfig =
+            configStore.getConfig(getConfigResourceContext(request, context));
         config = merge(config, contextSpecificConfig);
       }
 
       filterNull(config)
-          .map(nonNullConfig -> GetConfigResponse.newBuilder().setConfig(nonNullConfig).build())
+          .map(
+              nonNullConfig ->
+                  GetConfigResponse.newBuilder()
+                      .setConfig(nonNullConfig.getConfig())
+                      .setCreationTimestamp(nonNullConfig.getCreationTimestamp())
+                      .setUpdateTimestamp(nonNullConfig.getUpdateTimestamp())
+                      .build())
           .ifPresentOrElse(
               response -> {
                 responseObserver.onNext(response);

@@ -24,15 +24,19 @@ public class ConfigServiceUtils {
    * Deep merge the specified {@link Value} configs with overridingConfig taking precedence over
    * defaultConfig for the same keys.
    *
-   * @param defaultConfig
-   * @param overridingConfig
+   * @param defaultContextSpecificConfig
+   * @param overridingContextSpecificConfig
    * @return the resulting config obtained after merging defaultConfig and overridingConfig
    */
-  public static Value merge(Value defaultConfig, Value overridingConfig) {
+  public static ContextSpecificConfig merge(
+      ContextSpecificConfig defaultContextSpecificConfig,
+      ContextSpecificConfig overridingContextSpecificConfig) {
+    Value defaultConfig = defaultContextSpecificConfig.getConfig();
+    Value overridingConfig = overridingContextSpecificConfig.getConfig();
     if (isNull(defaultConfig)) {
-      return overridingConfig;
+      return overridingContextSpecificConfig;
     } else if (isNull(overridingConfig)) {
-      return defaultConfig;
+      return defaultContextSpecificConfig;
     }
 
     // Only if both - defaultConfig and overridingConfig are of kind Struct(Map), then merge
@@ -45,12 +49,31 @@ public class ConfigServiceUtils {
       Map<String, Value> resultConfigMap = new LinkedHashMap<>(defaultConfigMap);
       for (Map.Entry<String, Value> entry : overridingConfigMap.entrySet()) {
         resultConfigMap.put(
-            entry.getKey(), merge(defaultConfigMap.get(entry.getKey()), entry.getValue()));
+            entry.getKey(),
+            merge(
+                    defaultConfigMap.containsKey(entry.getKey())
+                        ? buildContextSpecificConfig(
+                            defaultConfigMap.get(entry.getKey()),
+                            defaultContextSpecificConfig.getCreationTimestamp(),
+                            defaultContextSpecificConfig.getUpdateTimestamp())
+                        : buildContextSpecificConfig(
+                            Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build(),
+                            defaultContextSpecificConfig.getCreationTimestamp(),
+                            defaultContextSpecificConfig.getUpdateTimestamp()),
+                    buildContextSpecificConfig(
+                        entry.getValue(),
+                        overridingContextSpecificConfig.getCreationTimestamp(),
+                        overridingContextSpecificConfig.getUpdateTimestamp()))
+                .getConfig());
       }
       Struct struct = Struct.newBuilder().putAllFields(resultConfigMap).build();
-      return Value.newBuilder().setStructValue(struct).build();
+      return ContextSpecificConfig.newBuilder()
+          .setConfig(Value.newBuilder().setStructValue(struct).build())
+          .setCreationTimestamp(overridingContextSpecificConfig.getCreationTimestamp())
+          .setUpdateTimestamp(overridingContextSpecificConfig.getUpdateTimestamp())
+          .build();
     } else {
-      return overridingConfig;
+      return overridingContextSpecificConfig;
     }
   }
 
@@ -64,8 +87,11 @@ public class ConfigServiceUtils {
     return value.getKindCase() == Value.KindCase.NULL_VALUE;
   }
 
-  public static Optional<Value> filterNull(Value value) {
-    return isNull(value) ? Optional.empty() : Optional.of(value);
+  public static Optional<ContextSpecificConfig> filterNull(
+      ContextSpecificConfig contextSpecificConfig) {
+    return isNull(contextSpecificConfig.getConfig())
+        ? Optional.empty()
+        : Optional.of(contextSpecificConfig);
   }
 
   public static Value emptyValue() {
@@ -78,6 +104,15 @@ public class ConfigServiceUtils {
         .setContext(context)
         .setCreationTimestamp(0)
         .setUpdateTimestamp(0)
+        .build();
+  }
+
+  private static ContextSpecificConfig buildContextSpecificConfig(
+      Value config, long creationTimestamp, long updateTimestamp) {
+    return ContextSpecificConfig.newBuilder()
+        .setConfig(config)
+        .setCreationTimestamp(creationTimestamp)
+        .setUpdateTimestamp(updateTimestamp)
         .build();
   }
 }

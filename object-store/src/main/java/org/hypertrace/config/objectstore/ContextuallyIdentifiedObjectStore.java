@@ -1,10 +1,14 @@
 package org.hypertrace.config.objectstore;
 
 import com.google.protobuf.Value;
+import io.grpc.Status;
 import java.util.Optional;
 import java.util.function.Function;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
+import org.hypertrace.config.service.v1.ContextSpecificConfig;
+import org.hypertrace.config.service.v1.GetConfigRequest;
+import org.hypertrace.config.service.v1.GetConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public abstract class ContextuallyIdentifiedObjectStore<T> {
@@ -52,6 +56,35 @@ public abstract class ContextuallyIdentifiedObjectStore<T> {
     return this.configChangeEventGenerator
         .map(generator -> new ContextAwareIdentifiedObjectStoreDelegate(context, generator))
         .orElseGet(() -> new ContextAwareIdentifiedObjectStoreDelegate(context));
+  }
+
+  public Optional<ConfigObject<T>> getObject(RequestContext context) {
+    String configContext = this.getConfigContextFromRequestContext(context);
+    try {
+      GetConfigResponse getConfigResponse =
+          context.call(
+              () ->
+                  this.configServiceBlockingStub.getConfig(
+                      GetConfigRequest.newBuilder()
+                          .setResourceName(this.resourceName)
+                          .setResourceNamespace(this.resourceNamespace)
+                          .addContexts(configContext)
+                          .build()));
+
+      ContextSpecificConfig contextSpecificConfig =
+          ContextSpecificConfig.newBuilder()
+              .setContext(configContext)
+              .setConfig(getConfigResponse.getConfig())
+              .setCreationTimestamp(getConfigResponse.getCreationTimestamp())
+              .setUpdateTimestamp(getConfigResponse.getUpdateTimestamp())
+              .build();
+      return ConfigObjectImpl.tryBuild(contextSpecificConfig, this::buildDataFromValue);
+    } catch (Exception exception) {
+      if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
+        return Optional.empty();
+      }
+      throw exception;
+    }
   }
 
   public Optional<T> getData(RequestContext context) {
