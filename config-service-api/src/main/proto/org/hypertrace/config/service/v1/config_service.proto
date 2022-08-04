@@ -68,6 +68,12 @@ message GetConfigRequest {
 message GetConfigResponse {
   // config value returned for the specified request
   google.protobuf.Value config = 1;
+
+  // timestamp (in milliseconds since epoch) at which this config was created
+  int64 creation_timestamp = 2;
+
+  // timestamp (in milliseconds since epoch) at which this config was last updated
+  int64 update_timestamp = 3;
 }
 
 message GetAllConfigsRequest {
