@@ -1,13 +1,13 @@
 package org.hypertrace.span.processing.config.service;
 
-import static com.google.common.collect.Streams.zip;
-
 import com.google.inject.Inject;
 import io.grpc.Status;
-import io.grpc.StatusException;
 import io.grpc.stub.StreamObserver;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
@@ -303,23 +303,22 @@ class SpanProcessingConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
 
-      List<UpdateApiNamingRule> updateApiNamingRules = request.getRulesList();
-      List<ApiNamingRule> existingRules =
+      Map<String, UpdateApiNamingRule> apiNamingRuleMap =
           request.getRulesList().stream()
-              .map(
-                  updateApiNamingRule -> {
-                    try {
-                      return this.apiNamingRulesConfigStore
-                          .getData(requestContext, updateApiNamingRule.getId())
-                          .orElseThrow(Status.NOT_FOUND::asException);
-                    } catch (StatusException e) {
-                      throw new RuntimeException(e);
-                    }
-                  })
+              .collect(
+                  Collectors.toUnmodifiableMap(UpdateApiNamingRule::getId, Function.identity()));
+
+      List<ApiNamingRule> existingRules =
+          apiNamingRulesConfigStore.getAllData(requestContext).stream()
+              .map(ApiNamingRuleDetails::getRule)
+              .filter(apiNamingRule -> apiNamingRuleMap.containsKey(apiNamingRule.getId()))
               .collect(Collectors.toUnmodifiableList());
-      List<ApiNamingRule> updatedRules =
-          zip(existingRules.stream(), updateApiNamingRules.stream(), this::buildUpdatedRule)
-              .collect(Collectors.toUnmodifiableList());
+
+      List<ApiNamingRule> updatedRules = new ArrayList<>();
+      for (ApiNamingRule existingRule : existingRules) {
+        updatedRules.add(
+            buildUpdatedRule(existingRule, apiNamingRuleMap.get(existingRule.getId())));
+      }
 
       responseObserver.onNext(
           UpdateApiNamingRulesResponse.newBuilder()
