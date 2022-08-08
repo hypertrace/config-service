@@ -10,6 +10,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.v1.trainer.TrainerConfigServiceGrpc.TrainerConfigServiceBlockingStub;
+import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.apinaming.http.namingconfig.DefaultHttpApiNamingConfigManager;
 import ai.traceable.localprocessing.config.service.apinaming.http.namingconfig.HttpApiNamingCachedConfigManager;
 import ai.traceable.localprocessing.config.service.apinaming.http.namingconfig.HttpCustomApiNamingRulesManager;
@@ -18,7 +19,6 @@ import ai.traceable.localprocessing.config.service.apinaming.http.trie.FullTrieM
 import ai.traceable.localprocessing.config.service.apinaming.http.trie.TrieDiffLogManager;
 import ai.traceable.localprocessing.config.service.apinaming.http.utils.SegmentConverter;
 import ai.traceable.localprocessing.config.service.config.http.HttpApiNamingConfig;
-import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.ApiNamingPattern;
 import ai.traceable.localprocessing.config.service.v1.ApiNamingPatterns;
 import ai.traceable.localprocessing.config.service.v1.DiffLog;

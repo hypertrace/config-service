@@ -7,9 +7,9 @@ import ai.traceable.anomaly.config.service.v1.trainer.CustomRulesListConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ThresholdRegexConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrieModelTrainingConfig;
+import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.apinaming.http.utils.HttpApiNamingConfigInfo;
 import ai.traceable.localprocessing.config.service.config.http.HttpApiNamingConfig;
-import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.ApiNamingPattern;
 import ai.traceable.localprocessing.config.service.v1.HttpApiNamingCustomRule;
 import ai.traceable.localprocessing.config.service.v1.Segment;
@@ -32,7 +32,7 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
 
   private final UuidGenerator uuidGenerator;
   private final HttpApiNamingConfig httpApiNamingConfig;
-  private static final String DEFAULT_MEDIUM_CARDINALITY_WILDCARD_IDENTIFICATION_REGEX = ".*";
+  private static final String DEFAULT_MEDIUM_CARDINALITY_WILDCARD_IDENTIFICATION_REGEX = "^.*$";
 
   @Inject
   public DefaultHttpApiNamingConfigManager(
@@ -111,8 +111,7 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
         buildWildcardIdentificationRegex(trieModelTrainingConfig.getLowCardinality()));
     wildcardConfigMap.put(
         TrieNodeType.MEDIUM_CARDINALITY,
-        buildMediumCardinalityWildcardIdentificationRegex(
-            trieModelTrainingConfig.getMediumCardinality()));
+        buildMediumCardinalityWildcardIdentificationRegex(trieModelTrainingConfig));
     wildcardConfigMap.put(
         TrieNodeType.HIGH_CARDINALITY,
         buildWildcardIdentificationRegex(trieModelTrainingConfig.getHighCardinality()));
@@ -125,11 +124,34 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
   }
 
   private String buildMediumCardinalityWildcardIdentificationRegex(
-      ThresholdRegexConfig thresholdRegexConfig) {
-    if (thresholdRegexConfig.getRegexList().getValuesCount() == 0) {
-      return DEFAULT_MEDIUM_CARDINALITY_WILDCARD_IDENTIFICATION_REGEX;
+      TrieModelTrainingConfig trieModelTrainingConfig) {
+    if (trieModelTrainingConfig.getMediumCardinality().getRegexList().getValuesCount() != 0) {
+      return buildWildcardIdentificationRegex(trieModelTrainingConfig.getMediumCardinality());
     }
-    return buildWildcardIdentificationRegex(thresholdRegexConfig);
+
+    // Regex which matches all valid extensions
+    String extensionRegex =
+        trieModelTrainingConfig.getExtensions().getValuesList().stream()
+            .map(extension -> ".*\\." + extension)
+            .collect(Collectors.joining("|"));
+
+    // Build a regex which includes everything not matching with other regexes
+    String otherRegexes =
+        String.join(
+            "|",
+            buildWildcardIdentificationRegex(trieModelTrainingConfig.getIds()),
+            buildWildcardIdentificationRegex(trieModelTrainingConfig.getLowCardinality()),
+            buildWildcardIdentificationRegex(trieModelTrainingConfig.getHighCardinality()),
+            String.join("|", trieModelTrainingConfig.getAllowRegexList().getValuesList()),
+            extensionRegex);
+
+    // Look ahead negative regex of other regexes
+    String negativeLookAheadOfOtherRegexes = "";
+    if (!otherRegexes.isEmpty()) {
+      negativeLookAheadOfOtherRegexes = "(?!^(" + otherRegexes + ")$)";
+    }
+    return negativeLookAheadOfOtherRegexes
+        + DEFAULT_MEDIUM_CARDINALITY_WILDCARD_IDENTIFICATION_REGEX;
   }
 
   // TODO: get rid of below two methods once done with migration

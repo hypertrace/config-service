@@ -54,6 +54,8 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
   private static final String DIFF_LOGS_BASE_DIR = "/tmp/difflogs";
   private static final DateTimeFormatter DATE_TIME_FORMATTER =
       DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH-mm-ss");
+  private static final String DEFAULT_MEDIUM_CARDINALITY_REGEX =
+      "(?!^((\\{){0,1}[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}(\\}){0,1}|\\d+||[a-zA-Z]*?([-_+]?[a-zA-Z]+)+[-_+]?|v\\d+|.*\\.json|.*\\.xml)$)^.*$";
 
   private static LocalProcessingConfigServiceGrpc.LocalProcessingConfigServiceBlockingStub
       localProcessingConfigStub;
@@ -143,7 +145,7 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
                 Segment.newBuilder()
                     .setWildcard(
                         Wildcard.newBuilder()
-                            .setIdentificationRegex(".*")
+                            .setIdentificationRegex(DEFAULT_MEDIUM_CARDINALITY_REGEX)
                             .setReplacementPattern("*")
                             .build())
                     .build())
@@ -203,7 +205,7 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
                         Segment.newBuilder()
                             .setWildcard(
                                 Wildcard.newBuilder()
-                                    .setIdentificationRegex(".*")
+                                    .setIdentificationRegex(DEFAULT_MEDIUM_CARDINALITY_REGEX)
                                     .setReplacementPattern("*")
                                     .build())
                             .build()))
@@ -225,7 +227,7 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
                         Segment.newBuilder()
                             .setWildcard(
                                 Wildcard.newBuilder()
-                                    .setIdentificationRegex(".*")
+                                    .setIdentificationRegex(DEFAULT_MEDIUM_CARDINALITY_REGEX)
                                     .setReplacementPattern("*")
                                     .build())
                             .build()))
