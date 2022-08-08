@@ -12,6 +12,7 @@ import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetConfigRequest;
+import org.hypertrace.config.service.v1.GetConfigResponse;
 import org.hypertrace.config.service.v1.UpsertAllConfigsRequest;
 import org.hypertrace.config.service.v1.UpsertAllConfigsRequest.ConfigToUpsert;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
@@ -91,6 +92,34 @@ public abstract class IdentifiedObjectStore<T> {
         .collect(
             Collectors.collectingAndThen(
                 Collectors.toUnmodifiableList(), this::orderFetchedObjects));
+  }
+
+  public Optional<ContextualConfigObject<T>> getObject(RequestContext context, String id) {
+    try {
+      GetConfigResponse getConfigResponse =
+          context.call(
+              () ->
+                  this.configServiceBlockingStub.getConfig(
+                      GetConfigRequest.newBuilder()
+                          .setResourceName(this.resourceName)
+                          .setResourceNamespace(this.resourceNamespace)
+                          .addContexts(id)
+                          .build()));
+
+      ContextSpecificConfig contextSpecificConfig =
+          ContextSpecificConfig.newBuilder()
+              .setContext(id)
+              .setConfig(getConfigResponse.getConfig())
+              .setCreationTimestamp(getConfigResponse.getCreationTimestamp())
+              .setUpdateTimestamp(getConfigResponse.getUpdateTimestamp())
+              .build();
+      return ContextualConfigObjectImpl.tryBuild(contextSpecificConfig, this::buildDataFromValue);
+    } catch (Exception exception) {
+      if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
+        return Optional.empty();
+      }
+      throw exception;
+    }
   }
 
   public Optional<T> getData(RequestContext context, String id) {

@@ -54,6 +54,41 @@ class DefaultObjectStoreTest {
   }
 
   @Test
+  void generatesConfigReadRequestForGetObject() {
+    when(this.mockStub.getConfig(any()))
+        .thenReturn(
+            GetConfigResponse.newBuilder()
+                .setConfig(Values.of("test"))
+                .setCreationTimestamp(TEST_CREATE_TIMESTAMP.toEpochMilli())
+                .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                .build());
+
+    assertEquals(
+        Optional.of(
+            new ConfigObjectImpl<>(
+                new TestInternalObject("test"), TEST_CREATE_TIMESTAMP, TEST_UPDATE_TIMESTAMP)),
+        this.store.getObject(this.mockRequestContext));
+
+    verify(this.mockStub, times(1))
+        .getConfig(
+            GetConfigRequest.newBuilder()
+                .setResourceName(TEST_RESOURCE_NAME)
+                .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
+                .build());
+
+    when(this.mockStub.getConfig(any())).thenThrow(Status.NOT_FOUND.asRuntimeException());
+
+    assertEquals(Optional.empty(), this.store.getObject(this.mockRequestContext));
+
+    verify(this.mockStub, times(2))
+        .getConfig(
+            GetConfigRequest.newBuilder()
+                .setResourceName(TEST_RESOURCE_NAME)
+                .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
+                .build());
+  }
+
+  @Test
   void generatesConfigReadRequestForGet() {
     when(this.mockStub.getConfig(any()))
         .thenReturn(GetConfigResponse.newBuilder().setConfig(Values.of("test")).build());
