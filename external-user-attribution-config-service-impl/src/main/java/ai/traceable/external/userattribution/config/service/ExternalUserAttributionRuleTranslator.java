@@ -19,7 +19,6 @@ import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttri
 import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttributionRule.TransformedExternalUserAttributionRule.Type;
 import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttributionRules;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
-import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.BasicAuthenticationUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.CustomUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.EncodedLocation;
@@ -52,7 +51,7 @@ class ExternalUserAttributionRuleTranslator {
   private static final String URL_KEY = "http.url";
   private static final List<String> REQUEST_HEADER_KEY_FORMAT_STRINGS =
       List.of("http.request.header.%s", "rpc.request.metadata.%s");
-  private final Map<UserAttributionRuleData.DataCase, List<CustomParsingRule>> defaultParsingRules;
+  private final Map<DefaultParsingRuleKey, List<CustomParsingRule>> defaultParsingRules;
 
   @Inject
   public ExternalUserAttributionRuleTranslator(
@@ -60,8 +59,9 @@ class ExternalUserAttributionRuleTranslator {
     Config rulesConfig = externalUserAttributionConfigServiceConfig.getParsingRulesConfig();
     defaultParsingRules =
         Stream.of(
-                UserAttributionRuleData.DataCase.BASIC_AUTHENTICATION_DATA,
-                UserAttributionRuleData.DataCase.JWT_DATA)
+                DefaultParsingRuleKey.BASIC_AUTHENTICATION,
+                DefaultParsingRuleKey.JWT_HEADER,
+                DefaultParsingRuleKey.JWT_COOKIE)
             .collect(
                 Collectors.toMap(
                     Function.identity(),
@@ -157,8 +157,7 @@ class ExternalUserAttributionRuleTranslator {
                             .setType(TYPE_AUTHHEADER)
                             .addAllAttributeValueParsingRules(
                                 defaultParsingRules.getOrDefault(
-                                    UserAttributionRuleData.DataCase.BASIC_AUTHENTICATION_DATA,
-                                    List.of())))
+                                    DefaultParsingRuleKey.BASIC_AUTHENTICATION, List.of())))
                     .build());
   }
 
@@ -176,17 +175,29 @@ class ExternalUserAttributionRuleTranslator {
     ruleBuilder.setType(
         this.getTypeFromHeaderLocationIfSet(data.getJwtLocation()).orElse(TYPE_AUTHHEADER));
 
+    boolean isCookieRule =
+        data.getJwtLocation().getLocationCase() == HeaderLocation.LocationCase.COOKIE_NAME;
     if (data.getJwtLocation().getParsingTarget().hasRegexCaptureGroup()) {
-      ruleBuilder.addAttributeValueParsingRules(
+      CustomParsingRule.Builder builder =
           CustomParsingRule.newBuilder()
               .setParsingTarget(
                   buildRegexCaptureGroup(
-                      data.getJwtLocation().getParsingTarget().getRegexCaptureGroup()))
-              .setJwtParser(JwtParser.getDefaultInstance()));
+                      data.getJwtLocation().getParsingTarget().getRegexCaptureGroup()));
+      if (isCookieRule) {
+        ruleBuilder.addAttributeValueParsingRules(
+            builder.setCookieParser(CustomParsingRule.CookieParser.getDefaultInstance()));
+      } else {
+        ruleBuilder.addAttributeValueParsingRules(
+            builder.setJwtParser(JwtParser.getDefaultInstance()));
+      }
     }
+
+    DefaultParsingRuleKey defaultRulesKey =
+        isCookieRule ? DefaultParsingRuleKey.JWT_COOKIE : DefaultParsingRuleKey.JWT_HEADER;
     defaultParsingRules
-        .getOrDefault(UserAttributionRuleData.DataCase.JWT_DATA, List.of())
+        .getOrDefault(defaultRulesKey, List.of())
         .forEach(ruleBuilder::addAttributeValueParsingRules);
+
     this.getStringIfSet(data.getJwtLocation().getCookieName())
         .ifPresent(ruleBuilder::setCookieName);
     ruleBuilder.setEncoding(ENCODING_JWT);
@@ -359,5 +370,11 @@ class ExternalUserAttributionRuleTranslator {
         .setValue(value)
         .setOperator(operator)
         .build();
+  }
+
+  private enum DefaultParsingRuleKey {
+    BASIC_AUTHENTICATION,
+    JWT_HEADER,
+    JWT_COOKIE;
   }
 }

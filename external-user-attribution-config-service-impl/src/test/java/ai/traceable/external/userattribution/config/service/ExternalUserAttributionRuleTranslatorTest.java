@@ -297,12 +297,6 @@ class ExternalUserAttributionRuleTranslatorTest {
                 + "      jwt_parser: {}\n"
                 + "    },\n"
                 + "    {\n"
-                + "      parsing_target: {\n"
-                + "        regex_capture_group: \"Basic (.*)\" \n"
-                + "      },\n"
-                + "      base64_parser: {}\n"
-                + "    },\n"
-                + "    {\n"
                 + "      jwt_parser: {}\n"
                 + "    }]\n"
                 + "  }"
@@ -311,7 +305,7 @@ class ExternalUserAttributionRuleTranslatorTest {
                 + "  transformed_external_user_attribution_rule: {\n"
                 + "    attribute_key: \"rpc.request.metadata.authorization\",\n"
                 + "    type: TYPE_AUTHHEADER,\n"
-                + "    encoding: ENCODING_JWT,"
+                + "    encoding: ENCODING_JWT,\n"
                 + "    id_claims: [\"data-claim\"],"
                 + "    id_paths: [\"$.id\"],"
                 + "    role_claims: [\"data-claim\"],"
@@ -322,12 +316,6 @@ class ExternalUserAttributionRuleTranslatorTest {
                 + "        regex_capture_group: \"Bearer (.*)\" \n"
                 + "      },\n"
                 + "      jwt_parser: {}\n"
-                + "    },\n"
-                + "    {\n"
-                + "      parsing_target: {\n"
-                + "        regex_capture_group: \"Basic (.*)\" \n"
-                + "      },\n"
-                + "      base64_parser: {}\n"
                 + "    },\n"
                 + "    {\n"
                 + "      jwt_parser: {}\n"
@@ -341,6 +329,41 @@ class ExternalUserAttributionRuleTranslatorTest {
                         UserAttributionRuleData.newBuilder()
                             .setJwtData(
                                 JwtUserAttributionRuleData.newBuilder()
+                                    .setUserIdClaim("data-claim")
+                                    .setUserIdLocation(
+                                        EncodedLocation.newBuilder().setJsonPath("$.id"))
+                                    .setRoleClaim("data-claim")
+                                    .setRoleLocation(
+                                        EncodedLocation.newBuilder().setJsonPath("$.role"))))
+                    .build())));
+
+    assertJsonEquals(
+        List.of(
+            "{"
+                + "  transformed_external_user_attribution_rule: {\n"
+                + "    attribute_key: \"http.request.header.cookie\",\n"
+                + "    type: TYPE_COOKIE,\n"
+                + "    encoding: ENCODING_JWT,\n"
+                + "    cookie_name: \"cookie\",\n"
+                + "    id_claims: [\"data-claim\"],"
+                + "    id_paths: [\"$.id\"],"
+                + "    role_claims: [\"data-claim\"],"
+                + "    role_paths: [\"$.role\"],"
+                + "    attribute_value_parsing_rules: [\n"
+                + "    {\n"
+                + "      cookie_parser: {}\n"
+                + "    }]\n"
+                + "}"
+                + "}"),
+        translator.translateRules(
+            List.of(
+                UserAttributionRule.newBuilder()
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setJwtData(
+                                JwtUserAttributionRuleData.newBuilder()
+                                    .setJwtLocation(
+                                        HeaderLocation.newBuilder().setCookieName("cookie"))
                                     .setUserIdClaim("data-claim")
                                     .setUserIdLocation(
                                         EncodedLocation.newBuilder().setJsonPath("$.id"))
