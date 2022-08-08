@@ -31,7 +31,7 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
         dataBuilder);
   }
 
-  private static <T> Optional<ConfigObject<T>> tryBuild(
+  static <T> Optional<ConfigObject<T>> tryBuild(
       Value config,
       long creationTimestamp,
       long updateTimestamp,

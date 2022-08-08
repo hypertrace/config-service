@@ -75,6 +75,43 @@ class ContextuallyIdentifiedObjectStoreTest {
   }
 
   @Test
+  void generatesConfigReadRequestForGetObject() {
+    when(this.mockStub.getConfig(any()))
+        .thenReturn(
+            GetConfigResponse.newBuilder()
+                .setConfig(Values.of("test"))
+                .setCreationTimestamp(TEST_CREATE_TIMESTAMP.toEpochMilli())
+                .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                .build());
+    assertEquals(
+        Optional.of(
+            new ConfigObjectImpl<>(
+                new TestObject("test"), TEST_CREATE_TIMESTAMP, TEST_UPDATE_TIMESTAMP)),
+        this.store.getObject(RequestContext.forTenantId("my-tenant")));
+
+    verify(this.mockStub, times(1))
+        .getConfig(
+            GetConfigRequest.newBuilder()
+                .setResourceName(TEST_RESOURCE_NAME)
+                .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
+                .addContexts("my-tenant")
+                .build());
+
+    when(this.mockStub.getConfig(any())).thenThrow(Status.NOT_FOUND.asRuntimeException());
+
+    assertEquals(
+        Optional.empty(), this.store.getObject(RequestContext.forTenantId("my-other-tenant")));
+
+    verify(this.mockStub, times(1))
+        .getConfig(
+            GetConfigRequest.newBuilder()
+                .setResourceName(TEST_RESOURCE_NAME)
+                .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
+                .addContexts("my-other-tenant")
+                .build());
+  }
+
+  @Test
   void generatesConfigDeleteRequest() {
     when(this.mockStub.deleteConfig(any()))
         .thenReturn(
