@@ -678,7 +678,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     assertEquals(10, enumerationsTrainingConfig.getEnumValueMaxLength());
     assertEquals(99.9, enumerationsTrainingConfig.getMinEnumOccurrencePercent());
 
-    assertTrue(metadataTrainingConfigs.get(11).getDisabled());
+    assertFalse(metadataTrainingConfigs.get(11).getDisabled());
   }
 
   @Test

@@ -2,7 +2,6 @@ package ai.traceable.anomaly.config.service.trainer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.anomaly.config.service.AnomalyConfigServiceConfig;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
@@ -462,6 +461,6 @@ public class TrainerConfigServiceConfigTest {
     assertEquals(10, enumerationsTrainingConfig.getEnumValueMaxLength());
     assertEquals(99.9, enumerationsTrainingConfig.getMinEnumOccurrencePercent());
 
-    assertTrue(metadataTrainingConfigs.get(11).getDisabled());
+    assertFalse(metadataTrainingConfigs.get(11).getDisabled());
   }
 }
