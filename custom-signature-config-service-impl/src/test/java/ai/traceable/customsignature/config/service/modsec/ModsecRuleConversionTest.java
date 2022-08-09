@@ -3,10 +3,8 @@ package ai.traceable.customsignature.config.service.modsec;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -45,8 +43,7 @@ public class ModsecRuleConversionTest {
     {
       doThrow(new UnsupportedOperationException())
           .when(modsecRuleMappings)
-          .getVariableString(any(), any());
-      doReturn("xyz").when(modsecRuleMappings).getOperatorString(any(), any());
+          .getVariablePlusOperatorString(any(), any(), any(), any());
 
       assertThrows(
           UnsupportedOperationException.class,
@@ -59,30 +56,8 @@ public class ModsecRuleConversionTest {
                               .build()),
                       new ModsecActions(100001, "ruleId", "msg"))
                   .isEmpty());
-      verify(modsecRuleMappings, times(1)).getVariableString(any(), any());
-      verify(modsecRuleMappings, times(0)).getOperatorString(any(), any());
-    }
-    {
-      reset(modsecRuleMappings);
-      doReturn("xyz").when(modsecRuleMappings).getVariableString(any(), any());
-      doThrow(new UnsupportedOperationException())
-          .when(modsecRuleMappings)
-          .getOperatorString(any(), any());
-      ;
-
-      assertThrows(
-          UnsupportedOperationException.class,
-          () ->
-              modsecRuleConversion
-                  .getModsecRuleForANDClauses(
-                      Collections.singletonList(
-                          Clause.newBuilder()
-                              .setMatchExpression(MatchExpression.newBuilder().build())
-                              .build()),
-                      new ModsecActions(100001, "ruleId", "msg"))
-                  .isEmpty());
-      verify(modsecRuleMappings, times(1)).getVariableString(any(), any());
-      verify(modsecRuleMappings, times(1)).getOperatorString(any(), any());
+      verify(modsecRuleMappings, times(1))
+          .getVariablePlusOperatorString(any(), any(), any(), any());
     }
   }
 

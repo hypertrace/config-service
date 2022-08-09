@@ -27,10 +27,12 @@ import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import com.github.f4b6a3.uuid.UuidCreator;
 import com.google.common.io.Resources;
+import io.grpc.Status;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.jupiter.api.Test;
 
 public class CustomSignatureModsecRulesManagerTest {
@@ -218,10 +220,11 @@ public class CustomSignatureModsecRulesManagerTest {
     createChainedRule(rules, 15, 95);
 
     GetCustomSignatureModsecRulesResponse response = modsecRulesManager.getModsecRules(rules);
+    // subtracting 4 unsupported NOT_CONTAIN rules
     assertEquals(
-        rules.size() + 4 + 22, /* 3+1 extra chained rules and 22 lines of modsec directives */
+        rules.size() - 4 + 4 + 22, /* 3+1 extra chained rules and 22 lines of modsec directives */
         response.getModsecRulesBlob().split("\r\n|\n\n|\r|\n").length);
-    assertEquals(rules.size(), response.getRulesCount());
+    assertEquals(rules.size() - 4, response.getRulesCount());
     assertEquals(
         EXPIRY_TIMESTAMP_MILLIS,
         response.getRulesList().get(0).getBlockingExpiryDetails().getExpiryTimestampMillis());
@@ -233,6 +236,11 @@ public class CustomSignatureModsecRulesManagerTest {
                 .getResource("sample-modsecurity-rules.conf"),
             StandardCharsets.UTF_8);
     assertEquals(fileRules, response.getModsecRulesBlob());
+
+    if (SystemUtils.IS_OS_LINUX) {
+      assertTrue(modsecRulesManager.loadNativeLibrarySuccess);
+      assertEquals(Status.OK, modsecRulesManager.validateModsecRule(fileRules, "test"));
+    }
   }
 
   private void createRules(

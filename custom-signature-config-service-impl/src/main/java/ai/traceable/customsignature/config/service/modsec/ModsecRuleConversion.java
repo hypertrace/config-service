@@ -26,66 +26,49 @@ public class ModsecRuleConversion {
     boolean responsePhase = clauses.stream().anyMatch(this::hasResponseVariable);
     if (size == 1) {
       return modsecRuleMappings.getModsecRule(
-          getVariableString(clauses.get(0)),
-          getOperatorString(clauses.get(0)),
+          getVariablePlusOperatorString(clauses.get(0)),
           modsecActions.getSingularRuleActionsString(responsePhase));
     }
 
     List<String> modsecRules = new ArrayList<>();
     modsecRules.add(
         modsecRuleMappings.getModsecRule(
-            getVariableString(clauses.get(0)),
-            getOperatorString(clauses.get(0)),
+            getVariablePlusOperatorString(clauses.get(0)),
             modsecActions.getChainedRulePrimaryActionsString(responsePhase)));
     for (int i = 1; i < size - 1; i++) {
       modsecRules.add(
           modsecRuleMappings.getModsecRule(
-              getVariableString(clauses.get(i)),
-              getOperatorString(clauses.get(i)),
+              getVariablePlusOperatorString(clauses.get(i)),
               modsecActions.getChainedRuleIntermediateActionsString()));
     }
     modsecRules.add(
         modsecRuleMappings.getModsecRule(
-            getVariableString(clauses.get(size - 1)),
-            getOperatorString(clauses.get(size - 1)),
+            getVariablePlusOperatorString(clauses.get(size - 1)),
             modsecActions.getChainedRuleFinalActionsString()));
 
     return String.join(NEW_LINE_DELIMITER, modsecRules);
   }
 
-  private String getVariableString(Clause clause) {
+  private String getVariablePlusOperatorString(Clause clause) {
     switch (clause.getClauseCase()) {
       case MATCH_EXPRESSION:
-        return modsecRuleMappings.getVariableString(
+        return modsecRuleMappings.getVariablePlusOperatorString(
             clause.getMatchExpression().getMatchCategory(),
-            clause.getMatchExpression().getMatchKey());
-      case KEY_VALUE_EXPRESSION:
-        return modsecRuleMappings.getVariableString(
-            clause.getKeyValueExpression().getMatchCategory(),
-            clause.getKeyValueExpression().getTag(),
-            clause.getKeyValueExpression().getMatchKey(),
-            clause.getKeyValueExpression().getKeyMatchOperator());
-      default:
-        throw new UnsupportedOperationException(
-            String.format(
-                "Cannot translate variable for unknown clause type '%s'", clause.getClauseCase()));
-    }
-  }
-
-  private String getOperatorString(Clause clause) {
-    switch (clause.getClauseCase()) {
-      case MATCH_EXPRESSION:
-        return modsecRuleMappings.getOperatorString(
+            clause.getMatchExpression().getMatchKey(),
             clause.getMatchExpression().getMatchOperator(),
             clause.getMatchExpression().getMatchValue());
       case KEY_VALUE_EXPRESSION:
-        return modsecRuleMappings.getOperatorString(
+        return modsecRuleMappings.getVariablePlusOperatorString(
+            clause.getKeyValueExpression().getMatchCategory(),
+            clause.getKeyValueExpression().getTag(),
+            clause.getKeyValueExpression().getMatchKey(),
+            clause.getKeyValueExpression().getKeyMatchOperator(),
             clause.getKeyValueExpression().getValueMatchOperator(),
             clause.getKeyValueExpression().getMatchValue());
       default:
         throw new UnsupportedOperationException(
             String.format(
-                "Cannot translate operator for unknown clause type '%s'", clause.getClauseCase()));
+                "Cannot translate variable for unknown clause type '%s'", clause.getClauseCase()));
     }
   }
 

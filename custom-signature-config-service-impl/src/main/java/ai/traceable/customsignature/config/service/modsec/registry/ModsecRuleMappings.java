@@ -6,20 +6,35 @@ import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import javax.inject.Inject;
 
 public class ModsecRuleMappings {
   private static final String SEC_RULE = "SecRule";
+  private static final String AMPERSAND_PREFIX = "&";
   private static final String COLON_DELIMITER = ":";
   private static final String PIPE_DELIMITER = "|";
   private static final String SPACE_DELIMITER = " ";
   private static final String NOT_PREFIX = "!";
   private static final String FRONT_SLASH_WRAPPER = "/";
+  private static final String EQUALS_ZERO_OPERATOR_STRING = "\"@eq 0\"";
 
   private static final String HOST_HEADER = "Host";
   private static final String X_FORWARDED_HOST_HEADER = "x-forwarded-host";
   private static final String FORWARDED_HEADER = "forwarded";
   private static final String USER_AGENT_HEADER = "User-Agent";
+
+  private static final Set<MatchKey> specialMatchKeySet =
+      Set.of(
+          MatchKey.MATCH_KEY_HEADER_NAME,
+          MatchKey.MATCH_KEY_HEADER_VALUE,
+          MatchKey.MATCH_KEY_PARAMETER_NAME,
+          MatchKey.MATCH_KEY_PARAMETER_VALUE);
+  private static final Set<MatchOperator> specialNotAllowedMatchOperatorSet =
+      Set.of(
+          MatchOperator.MATCH_OPERATOR_NOT_CONTAIN,
+          MatchOperator.MATCH_OPERATOR_GREATER_THAN,
+          MatchOperator.MATCH_OPERATOR_LESS_THAN);
 
   private final Map<MatchCategory, Map<MatchKey, String>> matchKeyMappings = new HashMap<>();
   private final Map<MatchOperator, String> matchOperatorMappings = new HashMap<>();
@@ -32,11 +47,84 @@ public class ModsecRuleMappings {
     initKeyValueTagMappings();
   }
 
-  public String getModsecRule(String variable, String operator, String actions) {
-    return String.join(SPACE_DELIMITER, SEC_RULE, variable, operator, actions);
+  public String getModsecRule(String variablePlusOperatorString, String actions) {
+    return String.join(SPACE_DELIMITER, SEC_RULE, variablePlusOperatorString, actions);
   }
 
-  public String getVariableString(MatchCategory matchCategory, MatchKey matchKey) {
+  public String getVariablePlusOperatorString(
+      MatchCategory matchCategory,
+      KeyValueTag keyValueTag,
+      String key,
+      MatchOperator keyMatchOperator,
+      MatchOperator valueMatchOperator,
+      String value) {
+    // MATCH_CATEGORY_UNSPECIFIED resolves to MATCH_CATEGORY_REQUEST for backward compatibility
+    if (matchCategory.equals(MatchCategory.MATCH_CATEGORY_UNSPECIFIED)) {
+      matchCategory = MatchCategory.MATCH_CATEGORY_REQUEST;
+    }
+    if (!(keyValueTagMappings.containsKey(matchCategory)
+        && keyValueTagMappings.get(matchCategory).containsKey(keyValueTag))) {
+      throw new UnsupportedOperationException(
+          String.format(
+              "Cannot translate unknown match category, key-value tag '%s', '%s'",
+              matchCategory, keyValueTag));
+    }
+    String variableString = keyValueTagMappings.get(matchCategory).get(keyValueTag);
+    switch (keyMatchOperator) {
+      case MATCH_OPERATOR_EQUALS:
+        variableString += COLON_DELIMITER + key;
+        break;
+      case MATCH_OPERATOR_NOT_EQUAL:
+        variableString += PIPE_DELIMITER + NOT_PREFIX + variableString + COLON_DELIMITER + key;
+        break;
+      case MATCH_OPERATOR_MATCHES_REGEX:
+        variableString += COLON_DELIMITER + getWrappedString(key, FRONT_SLASH_WRAPPER);
+        break;
+      case MATCH_OPERATOR_NOT_MATCH_REGEX:
+        variableString +=
+            PIPE_DELIMITER
+                + NOT_PREFIX
+                + variableString
+                + COLON_DELIMITER
+                + getWrappedString(key, FRONT_SLASH_WRAPPER);
+        break;
+      default:
+        throw new UnsupportedOperationException(
+            String.format("Cannot translate unknown key-match operator '%s'", keyMatchOperator));
+    }
+    return String.join(
+        SPACE_DELIMITER, variableString, getOperatorString(valueMatchOperator, value));
+  }
+
+  public String getVariablePlusOperatorString(
+      MatchCategory matchCategory, MatchKey matchKey, MatchOperator matchOperator, String value) {
+    if (specialMatchKeySet.contains(matchKey)) {
+      if (specialNotAllowedMatchOperatorSet.contains(matchOperator)) {
+        throw new UnsupportedOperationException(
+            String.format(
+                "Match operator %s is not supported for match key '%s'", matchOperator, matchKey));
+      }
+      if (matchOperator == MatchOperator.MATCH_OPERATOR_NOT_EQUAL
+          || matchOperator == MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX) {
+        String valueString =
+            matchOperator == MatchOperator.MATCH_OPERATOR_NOT_EQUAL
+                ? value
+                : getWrappedString(value, FRONT_SLASH_WRAPPER);
+        String variableString =
+            AMPERSAND_PREFIX
+                + getVariableString(matchCategory, matchKey)
+                + COLON_DELIMITER
+                + valueString;
+        return String.join(SPACE_DELIMITER, variableString, EQUALS_ZERO_OPERATOR_STRING);
+      }
+    }
+    return String.join(
+        SPACE_DELIMITER,
+        getVariableString(matchCategory, matchKey),
+        getOperatorString(matchOperator, value));
+  }
+
+  private String getVariableString(MatchCategory matchCategory, MatchKey matchKey) {
     // MATCH_CATEGORY_UNSPECIFIED resolves to MATCH_CATEGORY_REQUEST for backward compatibility
     if (matchCategory.equals(MatchCategory.MATCH_CATEGORY_UNSPECIFIED)) {
       matchCategory = MatchCategory.MATCH_CATEGORY_REQUEST;
@@ -51,49 +139,7 @@ public class ModsecRuleMappings {
     return matchKeyMappings.get(matchCategory).get(matchKey);
   }
 
-  public String getVariableString(
-      MatchCategory matchCategory,
-      KeyValueTag keyValueTag,
-      String key,
-      MatchOperator keyMatchOperator) {
-    // MATCH_CATEGORY_UNSPECIFIED resolves to MATCH_CATEGORY_REQUEST for backward compatibility
-    if (matchCategory.equals(MatchCategory.MATCH_CATEGORY_UNSPECIFIED)) {
-      matchCategory = MatchCategory.MATCH_CATEGORY_REQUEST;
-    }
-    if (!(keyValueTagMappings.containsKey(matchCategory)
-        && keyValueTagMappings.get(matchCategory).containsKey(keyValueTag))) {
-      throw new UnsupportedOperationException(
-          String.format(
-              "Cannot translate unknown match category, key-value tag '%s', '%s'",
-              matchCategory, keyValueTag));
-    }
-    String modsecVariable = keyValueTagMappings.get(matchCategory).get(keyValueTag);
-    switch (keyMatchOperator) {
-      case MATCH_OPERATOR_EQUALS:
-        return modsecVariable + COLON_DELIMITER + key;
-      case MATCH_OPERATOR_NOT_EQUAL:
-        return modsecVariable
-            + PIPE_DELIMITER
-            + NOT_PREFIX
-            + modsecVariable
-            + COLON_DELIMITER
-            + key;
-      case MATCH_OPERATOR_MATCHES_REGEX:
-        return modsecVariable + COLON_DELIMITER + getWrappedString(key, FRONT_SLASH_WRAPPER);
-      case MATCH_OPERATOR_NOT_MATCH_REGEX:
-        return modsecVariable
-            + PIPE_DELIMITER
-            + NOT_PREFIX
-            + modsecVariable
-            + COLON_DELIMITER
-            + getWrappedString(key, FRONT_SLASH_WRAPPER);
-      default:
-        throw new UnsupportedOperationException(
-            String.format("Cannot translate unknown key-match operator '%s'", keyMatchOperator));
-    }
-  }
-
-  public String getOperatorString(MatchOperator matchOperator, String value) {
+  private String getOperatorString(MatchOperator matchOperator, String value) {
     if (!matchOperatorMappings.containsKey(matchOperator)) {
       throw new UnsupportedOperationException(
           String.format("Cannot translate unknown match operator '%s'", matchOperator));

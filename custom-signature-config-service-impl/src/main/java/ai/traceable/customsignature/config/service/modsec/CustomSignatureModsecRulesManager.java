@@ -9,6 +9,7 @@ import ai.traceable.customsignature.config.service.v1.CustomSignatureRuleDetails
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.modsecurity.RuleEngine;
+import com.google.common.annotations.VisibleForTesting;
 import io.grpc.Status;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
   private static final String RANDOM_RULE_ID = UUID.randomUUID().toString();
   private static final String NEW_LINES_DELIMITER = "\n\n";
 
-  private static final boolean loadNativeLibrarySuccess = loadNativeRuleEngineLibrary();
+  @VisibleForTesting static final boolean loadNativeLibrarySuccess = loadNativeRuleEngineLibrary();
 
   private static boolean loadNativeRuleEngineLibrary() {
     try {
@@ -51,10 +52,11 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
     List<CustomSignatureRuleDetails> ruleDetailsList = new ArrayList<>();
     List<String> modsecRules = new ArrayList<>();
 
-    long modsecIdAssignment = MODSEC_ID_SEED + 1;
+    long modsecIdAssignment = MODSEC_ID_SEED;
 
     for (CustomSignatureRule rule : customSignatureRules) {
       String modsecRule;
+      modsecIdAssignment++;
       try {
         modsecRule =
             getModsecRule(rule.getId(), rule.getName(), rule.getDefinition(), modsecIdAssignment);
@@ -76,7 +78,6 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
               .setInternal(rule.getInternal())
               .setBlockingExpiryDetails(rule.getBlockingExpiryDetails())
               .build());
-      modsecIdAssignment++;
     }
 
     if (ruleDetailsList.isEmpty()) {
@@ -103,7 +104,11 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
           .withDescription(
               String.format("Modsec rule could not be created for rule: [%s]", ruleName));
     }
+    return validateModsecRule(modsecRule, ruleName);
+  }
 
+  @VisibleForTesting
+  Status validateModsecRule(String modsecRule, String ruleName) {
     try {
       RuleEngine ruleEngine = RuleEngine.create(modsecRule);
       RuleEngine.destroy(ruleEngine);
