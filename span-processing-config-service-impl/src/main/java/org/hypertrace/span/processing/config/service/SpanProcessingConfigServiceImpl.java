@@ -3,23 +3,13 @@ package org.hypertrace.span.processing.config.service;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
-import org.hypertrace.span.processing.config.service.store.ApiNamingRulesConfigStore;
+import org.hypertrace.span.processing.config.service.apinamingrules.ApiNamingRulesManager;
 import org.hypertrace.span.processing.config.service.store.ExcludeSpanRulesConfigStore;
 import org.hypertrace.span.processing.config.service.utils.TimestampConverter;
-import org.hypertrace.span.processing.config.service.v1.ApiNamingRule;
-import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
-import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleDetails;
-import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
-import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleMetadata;
 import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRuleResponse;
 import org.hypertrace.span.processing.config.service.v1.CreateApiNamingRulesRequest;
@@ -41,7 +31,6 @@ import org.hypertrace.span.processing.config.service.v1.GetAllApiNamingRulesResp
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesResponse;
 import org.hypertrace.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
-import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRule;
 import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRuleResponse;
 import org.hypertrace.span.processing.config.service.v1.UpdateApiNamingRulesRequest;
@@ -56,19 +45,19 @@ class SpanProcessingConfigServiceImpl
     extends SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceImplBase {
   private final SpanProcessingConfigRequestValidator validator;
   private final ExcludeSpanRulesConfigStore excludeSpanRulesConfigStore;
-  private final ApiNamingRulesConfigStore apiNamingRulesConfigStore;
   private final TimestampConverter timestampConverter;
+  private final ApiNamingRulesManager apiNamingRulesManager;
 
   @Inject
   SpanProcessingConfigServiceImpl(
       ExcludeSpanRulesConfigStore excludeSpanRulesConfigStore,
-      ApiNamingRulesConfigStore apiNamingRulesConfigStore,
       SpanProcessingConfigRequestValidator requestValidator,
-      TimestampConverter timestampConverter) {
+      TimestampConverter timestampConverter,
+      ApiNamingRulesManager apiNamingRulesManager) {
     this.validator = requestValidator;
     this.excludeSpanRulesConfigStore = excludeSpanRulesConfigStore;
-    this.apiNamingRulesConfigStore = apiNamingRulesConfigStore;
     this.timestampConverter = timestampConverter;
+    this.apiNamingRulesManager = apiNamingRulesManager;
   }
 
   @Override
@@ -203,7 +192,7 @@ class SpanProcessingConfigServiceImpl
 
       responseObserver.onNext(
           GetAllApiNamingRulesResponse.newBuilder()
-              .addAllRuleDetails(apiNamingRulesConfigStore.getAllData(requestContext))
+              .addAllRuleDetails(apiNamingRulesManager.getAllApiNamingRuleDetails(requestContext))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -220,18 +209,9 @@ class SpanProcessingConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
 
-      // TODO: need to handle priorities
-      ApiNamingRule newRule =
-          ApiNamingRule.newBuilder()
-              .setId(UUID.randomUUID().toString())
-              .setRuleInfo(request.getRuleInfo())
-              .build();
-
       responseObserver.onNext(
           CreateApiNamingRuleResponse.newBuilder()
-              .setRuleDetails(
-                  buildApiNamingRuleDetails(
-                      this.apiNamingRulesConfigStore.upsertObject(requestContext, newRule)))
+              .setRuleDetails(apiNamingRulesManager.createApiNamingRule(requestContext, request))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -248,17 +228,10 @@ class SpanProcessingConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
 
-      // TODO: need to handle priorities
-      List<ApiNamingRule> apiNamingRules =
-          request.getRulesInfoList().stream()
-              .map(this::buildApiNamingRule)
-              .collect(Collectors.toUnmodifiableList());
-
       responseObserver.onNext(
           CreateApiNamingRulesResponse.newBuilder()
               .addAllRulesDetails(
-                  buildApiNamingRuleDetails(
-                      this.apiNamingRulesConfigStore.upsertObjects(requestContext, apiNamingRules)))
+                  apiNamingRulesManager.createApiNamingRules(requestContext, request))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -275,18 +248,9 @@ class SpanProcessingConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
 
-      UpdateApiNamingRule updateApiNamingRule = request.getRule();
-      ApiNamingRule existingRule =
-          this.apiNamingRulesConfigStore
-              .getData(requestContext, updateApiNamingRule.getId())
-              .orElseThrow(Status.NOT_FOUND::asException);
-      ApiNamingRule updatedRule = buildUpdatedRule(existingRule, updateApiNamingRule);
-
       responseObserver.onNext(
           UpdateApiNamingRuleResponse.newBuilder()
-              .setRuleDetails(
-                  buildApiNamingRuleDetails(
-                      this.apiNamingRulesConfigStore.upsertObject(requestContext, updatedRule)))
+              .setRuleDetails(apiNamingRulesManager.updateApiNamingRule(requestContext, request))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -303,28 +267,10 @@ class SpanProcessingConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
 
-      Map<String, UpdateApiNamingRule> apiNamingRuleMap =
-          request.getRulesList().stream()
-              .collect(
-                  Collectors.toUnmodifiableMap(UpdateApiNamingRule::getId, Function.identity()));
-
-      List<ApiNamingRule> existingRules =
-          apiNamingRulesConfigStore.getAllData(requestContext).stream()
-              .map(ApiNamingRuleDetails::getRule)
-              .filter(apiNamingRule -> apiNamingRuleMap.containsKey(apiNamingRule.getId()))
-              .collect(Collectors.toUnmodifiableList());
-
-      List<ApiNamingRule> updatedRules = new ArrayList<>();
-      for (ApiNamingRule existingRule : existingRules) {
-        updatedRules.add(
-            buildUpdatedRule(existingRule, apiNamingRuleMap.get(existingRule.getId())));
-      }
-
       responseObserver.onNext(
           UpdateApiNamingRulesResponse.newBuilder()
               .addAllRulesDetails(
-                  buildApiNamingRuleDetails(
-                      this.apiNamingRulesConfigStore.upsertObjects(requestContext, updatedRules)))
+                  apiNamingRulesManager.updateApiNamingRules(requestContext, request))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -341,10 +287,7 @@ class SpanProcessingConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
 
-      // TODO: need to handle priorities
-      this.apiNamingRulesConfigStore
-          .deleteObject(requestContext, request.getId())
-          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      apiNamingRulesManager.deleteApiNamingRule(requestContext, request);
 
       responseObserver.onNext(DeleteApiNamingRuleResponse.newBuilder().build());
       responseObserver.onCompleted();
@@ -362,12 +305,7 @@ class SpanProcessingConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
 
-      // TODO: need to handle priorities
-      for (String id : request.getIdsList()) {
-        this.apiNamingRulesConfigStore
-            .deleteObject(requestContext, id)
-            .orElseThrow(Status.NOT_FOUND::asRuntimeException);
-      }
+      apiNamingRulesManager.deleteApiNamingRules(requestContext, request);
 
       responseObserver.onNext(DeleteApiNamingRulesResponse.newBuilder().build());
       responseObserver.onCompleted();
@@ -375,47 +313,5 @@ class SpanProcessingConfigServiceImpl
       log.error("Error deleting api naming rules: {}", request, exception);
       responseObserver.onError(exception);
     }
-  }
-
-  private ApiNamingRule buildApiNamingRule(ApiNamingRuleInfo apiNamingRuleInfo) {
-    return ApiNamingRule.newBuilder()
-        .setId(UUID.randomUUID().toString())
-        .setRuleInfo(apiNamingRuleInfo)
-        .build();
-  }
-
-  private ApiNamingRule buildUpdatedRule(
-      ApiNamingRule existingRule, UpdateApiNamingRule updateApiNamingRule) {
-    return ApiNamingRule.newBuilder(existingRule)
-        .setRuleInfo(
-            ApiNamingRuleInfo.newBuilder()
-                .setName(updateApiNamingRule.getName())
-                .setFilter(updateApiNamingRule.getFilter())
-                .setDisabled(updateApiNamingRule.getDisabled())
-                .setRuleConfig(
-                    ApiNamingRuleConfig.newBuilder(updateApiNamingRule.getRuleConfig()).build())
-                .build())
-        .build();
-  }
-
-  private ApiNamingRuleDetails buildApiNamingRuleDetails(
-      ContextualConfigObject<ApiNamingRule> configObject) {
-    return ApiNamingRuleDetails.newBuilder()
-        .setRule(configObject.getData())
-        .setMetadata(
-            ApiNamingRuleMetadata.newBuilder()
-                .setCreationTimestamp(
-                    timestampConverter.convert(configObject.getCreationTimestamp()))
-                .setLastUpdatedTimestamp(
-                    timestampConverter.convert(configObject.getLastUpdatedTimestamp()))
-                .build())
-        .build();
-  }
-
-  private List<ApiNamingRuleDetails> buildApiNamingRuleDetails(
-      List<ContextualConfigObject<ApiNamingRule>> contextualConfigObjects) {
-    return contextualConfigObjects.stream()
-        .map(this::buildApiNamingRuleDetails)
-        .collect(Collectors.toUnmodifiableList());
   }
 }

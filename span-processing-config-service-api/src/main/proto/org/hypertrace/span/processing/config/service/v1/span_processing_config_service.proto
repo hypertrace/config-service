@@ -192,7 +192,8 @@ message SegmentMatchingBasedConfig {
 }
 
 message ApiSpecBasedConfig {
-  string api_spec_id = 1;
+  string api_spec_id = 1[deprecated = true];
+  repeated string api_spec_ids = 4;
   repeated string regexes = 2;
   repeated string values = 3;
 }
