@@ -18,6 +18,17 @@ message RateLimitingRuleData {
   bool enabled = 4;
   Condition condition = 5;
   repeated ThresholdActionConfig threshold_action_configs = 6;
+  RuleConfigScope rule_config_scope = 7;
+}
+
+message RuleConfigScope {
+  oneof scope { // if no option selected, default is customer scope (all environments)
+    EnvironmentScope environment_scope = 1;
+  }
+}
+
+message EnvironmentScope {
+  repeated string environment_ids = 1;
 }
 
 message Condition {

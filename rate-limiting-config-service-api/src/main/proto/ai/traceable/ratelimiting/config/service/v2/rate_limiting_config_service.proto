@@ -18,7 +18,13 @@ service RateLimitingConfigService {
 }
 
 message GetRateLimitingRulesRequest {
-  GetRulesByCategoryFilter filter = 1;
+  GetRulesByCategoryFilter filter = 1 [deprecated = true];
+  GetRateLimitingRulesFilter rules_filter = 2;
+}
+
+message GetRateLimitingRulesFilter {
+  repeated Category categories = 1;
+  RuleConfigScope scope = 2;
 }
 
 message GetRulesByCategoryFilter {
