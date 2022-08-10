@@ -9,6 +9,7 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingS
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigRequest;
+import org.hypertrace.config.service.v1.GetConfigResponse;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -57,6 +58,30 @@ public abstract class DefaultObjectStore<T> {
 
   protected String buildClassNameForChangeEvent(T data) {
     return data.getClass().getName();
+  }
+
+  public Optional<ConfigObject<T>> getObject(RequestContext context) {
+    try {
+      GetConfigResponse getConfigResponse =
+          context.call(
+              () ->
+                  this.configServiceBlockingStub.getConfig(
+                      GetConfigRequest.newBuilder()
+                          .setResourceName(this.resourceName)
+                          .setResourceNamespace(this.resourceNamespace)
+                          .build()));
+
+      return ConfigObjectImpl.tryBuild(
+          getConfigResponse.getConfig(),
+          getConfigResponse.getCreationTimestamp(),
+          getConfigResponse.getUpdateTimestamp(),
+          this::buildDataFromValue);
+    } catch (Exception exception) {
+      if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
+        return Optional.empty();
+      }
+      throw exception;
+    }
   }
 
   public Optional<T> getData(RequestContext context) {

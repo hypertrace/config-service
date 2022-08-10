@@ -121,6 +121,43 @@ class IdentifiedObjectStoreTest {
   }
 
   @Test
+  void generatesConfigReadRequestForGetObject() {
+    when(this.mockStub.getConfig(any()))
+        .thenReturn(
+            GetConfigResponse.newBuilder()
+                .setConfig(OBJECT_1_AS_VALUE)
+                .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
+                .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                .build());
+
+    assertEquals(
+        Optional.of(
+            new ContextualConfigObjectImpl<>(
+                OBJECT_1.getId(), OBJECT_1, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP)),
+        this.store.getObject(this.mockRequestContext, OBJECT_1.getId()));
+
+    verify(this.mockStub, times(1))
+        .getConfig(
+            GetConfigRequest.newBuilder()
+                .setResourceName(TEST_RESOURCE_NAME)
+                .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
+                .addContexts(OBJECT_1.getId())
+                .build());
+
+    when(this.mockStub.getConfig(any())).thenThrow(Status.NOT_FOUND.asRuntimeException());
+
+    assertEquals(Optional.empty(), this.store.getObject(this.mockRequestContext, OBJECT_2.getId()));
+
+    verify(this.mockStub, times(1))
+        .getConfig(
+            GetConfigRequest.newBuilder()
+                .setResourceName(TEST_RESOURCE_NAME)
+                .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
+                .addContexts(OBJECT_2.getId())
+                .build());
+  }
+
+  @Test
   void generatesConfigReadRequestForGet() {
     when(this.mockStub.getConfig(any()))
         .thenReturn(GetConfigResponse.newBuilder().setConfig(OBJECT_1_AS_VALUE).build());

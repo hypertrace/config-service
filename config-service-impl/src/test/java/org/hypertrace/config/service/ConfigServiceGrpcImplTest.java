@@ -100,10 +100,20 @@ class ConfigServiceGrpcImplTest {
   void getConfig() throws IOException {
     ConfigStore configStore = mock(ConfigStore.class);
     when(configStore.getConfig(eq(configResourceWithoutContext)))
-        .thenReturn(ContextSpecificConfig.newBuilder().setConfig(config1).build());
+        .thenReturn(
+            ContextSpecificConfig.newBuilder()
+                .setConfig(config1)
+                .setCreationTimestamp(10L)
+                .setUpdateTimestamp(12L)
+                .build());
     when(configStore.getConfig(eq(configResourceWithContext)))
         .thenReturn(
-            ContextSpecificConfig.newBuilder().setConfig(config2).setContext(CONTEXT1).build());
+            ContextSpecificConfig.newBuilder()
+                .setConfig(config2)
+                .setContext(CONTEXT1)
+                .setCreationTimestamp(15L)
+                .setUpdateTimestamp(25L)
+                .build());
     ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
     StreamObserver<GetConfigResponse> responseObserver = mock(StreamObserver.class);
 
@@ -124,9 +134,19 @@ class ConfigServiceGrpcImplTest {
     List<GetConfigResponse> actualResponseList = getConfigResponseCaptor.getAllValues();
     assertEquals(2, actualResponseList.size());
     assertEquals(
-        GetConfigResponse.newBuilder().setConfig(config1).build(), actualResponseList.get(0));
+        GetConfigResponse.newBuilder()
+            .setConfig(config1)
+            .setCreationTimestamp(10L)
+            .setUpdateTimestamp(12L)
+            .build(),
+        actualResponseList.get(0));
     assertEquals(
-        GetConfigResponse.newBuilder().setConfig(mergedConfig).build(), actualResponseList.get(1));
+        GetConfigResponse.newBuilder()
+            .setConfig(mergedConfig)
+            .setCreationTimestamp(15L)
+            .setUpdateTimestamp(25L)
+            .build(),
+        actualResponseList.get(1));
   }
 
   @Test
