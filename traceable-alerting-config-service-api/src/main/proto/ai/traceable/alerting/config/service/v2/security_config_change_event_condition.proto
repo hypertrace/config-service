@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.alerting.config.service.v2;
+
+enum SecurityConfigurationType {
+    SECURITY_CONFIGURATION_TYPE_UNSPECIFIED = 0;
+    SECURITY_CONFIGURATION_TYPE_SIGNATURE_BASED_BLOCKING_RULE = 1;
+    SECURITY_CONFIGURATION_TYPE_RATE_LIMITING_RULE = 2;
+    SECURITY_CONFIGURATION_TYPE_IP_RANGE_RULE = 3;
+    SECURITY_CONFIGURATION_TYPE_LOCATION_RULE = 4;
+    SECURITY_CONFIGURATION_TYPE_CUSTOM_SIGNATURE_RULE = 5;
+    SECURITY_CONFIGURATION_TYPE_THREAT_AUTO_BLOCKING = 6;
+    SECURITY_CONFIGURATION_TYPE_DETECTION_RULE = 7;
+    SECURITY_CONFIGURATION_TYPE_EXCLUSIONS = 8;
+}
+
+message SecurityConfigChangeEventCondition {
+  repeated SecurityConfigurationType security_configuration_types = 1;
+}

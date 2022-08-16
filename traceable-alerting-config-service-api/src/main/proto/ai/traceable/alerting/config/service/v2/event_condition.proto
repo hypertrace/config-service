@@ -8,6 +8,7 @@ import "ai/traceable/alerting/config/service/v2/detected_security_event_conditio
 import "ai/traceable/alerting/config/service/v2/threat_actor_state_change_event_condition.proto";
 import "ai/traceable/alerting/config/service/v2/blocked_event_condition.proto";
 import "ai/traceable/alerting/config/service/v2/actor_severity_state_change_event_condition.proto";
+import "ai/traceable/alerting/config/service/v2/security_config_change_event_condition.proto";
 import "org/hypertrace/alerting/config/service/v1/metric_anomaly_event_condition.proto";
 
 message EventCondition {
@@ -22,6 +23,7 @@ message EventConditionMutableData {
     BlockedEventCondition blocked_event_condition = 3;
     org.hypertrace.alerting.config.service.v1.MetricAnomalyEventCondition metric_anomaly_event_condition = 4;
     ActorSeverityStateChangeEventCondition actor_severity_state_change_event_condition = 6;
+    SecurityConfigChangeEventCondition security_config_change_event_condition = 7;
   }
   optional string environment = 5;
 }
