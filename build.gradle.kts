@@ -1,11 +1,14 @@
 plugins {
-  id("ai.traceable.repository-plugin") version "1.2.2"
+  id("ai.traceable.repository-plugin") version "1.2.4"
   id("org.hypertrace.ci-utils-plugin") version "0.2.0"
-  id("ai.traceable.publish-plugin") version "1.2.2" apply false
-  id("org.hypertrace.jacoco-report-plugin") version "0.1.3" apply false
+  id("ai.traceable.publish-plugin") version "1.2.4" apply false
+  id("org.hypertrace.jacoco-report-plugin") version "0.2.0" apply false
   id("org.sonarqube") version "3.4.0.2513"
   id("org.owasp.dependencycheck") version "7.1.1"
   id("org.hypertrace.code-style-plugin") version "1.1.2" apply false
+  id("org.hypertrace.docker-java-application-plugin") version "0.9.5" apply false
+  id("org.hypertrace.docker-publish-plugin") version "0.9.5" apply false
+  id("ai.traceable.docker-convention-plugin") version "1.2.4" apply false
 }
 
 subprojects {
