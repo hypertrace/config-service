@@ -10,6 +10,7 @@ dependencies {
   api(libs.grpc.api)
   implementation(projects.iprangeConfigServiceApi)
   implementation(libs.hypertrace.configservice.api)
+  implementation(libs.hypertrace.configservice.objectstore)
   implementation(libs.guice)
   implementation(libs.protobuf.javautil)
   implementation(libs.slf4j.api)

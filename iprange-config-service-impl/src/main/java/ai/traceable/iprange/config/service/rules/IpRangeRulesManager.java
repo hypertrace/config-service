@@ -1,87 +1,49 @@
 package ai.traceable.iprange.config.service.rules;
 
-import static ai.traceable.iprange.config.service.constants.IpRangeConfigConstants.IPRANGE_RULE_CONFIG_NAMESPACE;
-import static ai.traceable.iprange.config.service.constants.IpRangeConfigConstants.IPRANGE_RULE_CONFIG_RESOURCE_NAME;
-
 import ai.traceable.iprange.config.service.utils.IpValidationUtils;
 import ai.traceable.iprange.config.service.utils.UuidGenerator;
 import ai.traceable.iprange.config.service.v1.*;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
-import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.Value;
+import io.grpc.Status;
 import java.time.Clock;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
-import org.hypertrace.config.service.v1.ContextSpecificConfig;
-import org.hypertrace.config.service.v1.DeleteConfigRequest;
-import org.hypertrace.config.service.v1.GetAllConfigsRequest;
-import org.hypertrace.config.service.v1.GetConfigRequest;
-import org.hypertrace.config.service.v1.UpsertConfigRequest;
-import org.hypertrace.config.service.v1.UpsertConfigResponse;
+import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 class IpRangeRulesManager implements RulesManager {
-  private final ConfigServiceBlockingStub configServiceBlockingStub;
-  private final IpRangeRuleConverter ipRangeRuleConverter;
+  private final IpRangeRulesStore ipRangeRulesStore;
   private final UuidGenerator uuidGenerator;
   private final IpValidationUtils ipValidationUtils;
   private final Clock clock;
 
   @Inject
   IpRangeRulesManager(
-      ConfigServiceBlockingStub configServiceBlockingStub,
-      IpRangeRuleConverter ipRangeRuleConverter,
+      IpRangeRulesStore ipRangeRulesStore,
       UuidGenerator uuidGenerator,
       IpValidationUtils ipValidationUtils,
       Clock clock) {
-    this.configServiceBlockingStub = configServiceBlockingStub;
-    this.ipRangeRuleConverter = ipRangeRuleConverter;
+    this.ipRangeRulesStore = ipRangeRulesStore;
     this.uuidGenerator = uuidGenerator;
     this.ipValidationUtils = ipValidationUtils;
     this.clock = clock;
   }
 
   @Override
-  public List<IpRangeRule> getIpRangeRules(RequestContext requestContext, GetRulesFilter filter)
-      throws RuntimeException {
-    GetAllConfigsRequest getAllRuleConfigsRequest =
-        GetAllConfigsRequest.newBuilder()
-            .setResourceNamespace(IPRANGE_RULE_CONFIG_NAMESPACE)
-            .setResourceName(IPRANGE_RULE_CONFIG_RESOURCE_NAME)
-            .build();
+  public List<IpRangeRule> getIpRangeRules(RequestContext requestContext, GetRulesFilter filter) {
 
-    List<ContextSpecificConfig> contextSpecificConfigs =
-        requestContext.call(
-            () ->
-                configServiceBlockingStub
-                    .getAllConfigs(getAllRuleConfigsRequest)
-                    .getContextSpecificConfigsList());
-
-    List<IpRangeRule> ipRangeRules = new ArrayList<>();
-
-    contextSpecificConfigs.forEach(
-        contextSpecificConfig -> {
-          try {
-            IpRangeRule ipRangeRule =
-                ipRangeRuleConverter.convert(contextSpecificConfig.getConfig());
-            ipRangeRules.add(ipRangeRule);
-          } catch (InvalidProtocolBufferException e) {
-            throw new RuntimeException(
-                String.format(
-                    "Unable to convert config to ip range rule for rule id: %s",
-                    contextSpecificConfig.getContext()),
-                e);
-          }
-        });
+    List<IpRangeRule> ipRangeRules =
+        ipRangeRulesStore.getAllObjects(requestContext).stream()
+            .map(ConfigObject::getData)
+            .collect(Collectors.toList());
 
     if (filter != GetRulesFilter.getDefaultInstance()) {
       return ipRangeRules.stream()
@@ -155,77 +117,21 @@ class IpRangeRulesManager implements RulesManager {
   }
 
   @Override
-  public IpRangeRule deleteIpRangeRule(RequestContext requestContext, String id)
-      throws InvalidProtocolBufferException {
-    DeleteConfigRequest deleteConfigRequest =
-        DeleteConfigRequest.newBuilder()
-            .setResourceNamespace(IPRANGE_RULE_CONFIG_NAMESPACE)
-            .setResourceName(IPRANGE_RULE_CONFIG_RESOURCE_NAME)
-            .setContext(id)
-            .build();
+  public IpRangeRule deleteIpRangeRule(RequestContext requestContext, String id) {
 
-    return ipRangeRuleConverter.convert(
-        requestContext.call(
-            () ->
-                configServiceBlockingStub
-                    .deleteConfig(deleteConfigRequest)
-                    .getDeletedConfig()
-                    .getConfig()));
+    return ipRangeRulesStore
+        .deleteObject(requestContext, id)
+        .map(ConfigObject::getData)
+        .orElseThrow(Status.NOT_FOUND::asRuntimeException);
   }
 
   private IpRangeRule upsertConfig(RequestContext requestContext, IpRangeRule ipRangeRule) {
-    UpsertConfigRequest upsertConfigRequest;
-    try {
-      upsertConfigRequest =
-          UpsertConfigRequest.newBuilder()
-              .setResourceNamespace(IPRANGE_RULE_CONFIG_NAMESPACE)
-              .setResourceName(IPRANGE_RULE_CONFIG_RESOURCE_NAME)
-              .setConfig(ipRangeRuleConverter.convert(ipRangeRule))
-              .setContext(ipRangeRule.getId())
-              .build();
-    } catch (InvalidProtocolBufferException e) {
-      throw new RuntimeException(
-          String.format("Unable to convert ip range rule %s to config object", ipRangeRule), e);
-    }
-
-    UpsertConfigResponse response;
-    try {
-      response =
-          requestContext.call(() -> configServiceBlockingStub.upsertConfig(upsertConfigRequest));
-    } catch (RuntimeException e) {
-      throw new RuntimeException(
-          String.format(
-              "Unable to insert ip range rule config in data for request %s", ipRangeRule),
-          e);
-    }
-
-    try {
-      return ipRangeRuleConverter.convert(response.getConfig());
-    } catch (InvalidProtocolBufferException e) {
-      throw new RuntimeException(
-          String.format("Unable to convert config response: %s back to ip range rule", response),
-          e);
-    }
+    return ipRangeRulesStore.upsertObject(requestContext, ipRangeRule).getData();
   }
 
   private boolean doesIpRangeRuleExist(RequestContext requestContext, String ruleId) {
-    try {
-      GetConfigRequest getConfigRequest =
-          GetConfigRequest.newBuilder()
-              .addContexts(ruleId)
-              .setResourceNamespace(IPRANGE_RULE_CONFIG_NAMESPACE)
-              .setResourceName(IPRANGE_RULE_CONFIG_RESOURCE_NAME)
-              .build();
-
-      Optional<Value> parsedValue =
-          Optional.ofNullable(
-                  requestContext.call(
-                      () -> configServiceBlockingStub.getConfig(getConfigRequest).getConfig()))
-              .filter(value -> value.getKindCase() != Value.KindCase.KIND_NOT_SET);
-      return parsedValue.isPresent();
-    } catch (Exception e) {
-      return false;
-    }
+    Optional<IpRangeRule> optionalRule = ipRangeRulesStore.getData(requestContext, ruleId);
+    return optionalRule.isPresent();
   }
 
   private Object[] parseRawIpRange(List<String> rawIpRanges) {
