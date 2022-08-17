@@ -55,11 +55,13 @@ public class LicenseProvider {
         LICENSE_PROVIDER_CACHE_NAME, licenseCache, Collections.emptyMap());
   }
 
-  private Licenses loadLicense() {
+  private Licenses loadLicense(ContextualKey<Void> contextualKey) {
     GetLicensesResponse licensesResponse =
-        this.licenseMeteringServiceBlockingStub
-            .withDeadlineAfter(requestTimeout.toMillis(), TimeUnit.MILLISECONDS)
-            .getLicenses(GetLicensesRequest.newBuilder().build());
+        contextualKey.callInContext(
+            () ->
+                this.licenseMeteringServiceBlockingStub
+                    .withDeadlineAfter(requestTimeout.toMillis(), TimeUnit.MILLISECONDS)
+                    .getLicenses(GetLicensesRequest.newBuilder().build()));
     return licensesResponse.getLicenses();
   }
 
