@@ -9,6 +9,12 @@ option java_multiple_files = true;
 
 message DetectionOverrideTargetEventsConfig {
   repeated DetectionOverrideEventConfig event_configs = 1;
+  DetectionOverrideAnomalousAttributesConfig anomalous_attributes = 2;
+}
+
+message DetectionOverrideAnomalousAttributesConfig {
+  repeated string attribute_names = 1;
+  repeated string attribute_regexes = 2;
 }
 
 message DetectionOverrideEventConfig {
