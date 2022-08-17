@@ -6,6 +6,7 @@ import ai.traceable.license.metering.service.api.v1.LicenseMeteringServiceGrpc;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
@@ -16,7 +17,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @Slf4j
 public class LicenseInfoLoader {
 
-  private final long callTimeoutInMs;
+  private final Duration callTimeout;
   private final LicenseMeteringServiceGrpc.LicenseMeteringServiceBlockingStub
       licenseMeteringServiceBlockingStub;
 
@@ -28,7 +29,7 @@ public class LicenseInfoLoader {
       LicenseMeteringServiceGrpc.LicenseMeteringServiceBlockingStub
           licenseMeteringServiceBlockingStub) {
 
-    this.callTimeoutInMs = config.getCallTimeoutInMs();
+    this.callTimeout = config.getCallTimeout();
     this.licenseMeteringServiceBlockingStub = licenseMeteringServiceBlockingStub;
 
     licenseTierCache =
@@ -49,7 +50,7 @@ public class LicenseInfoLoader {
           .call(
               () ->
                   licenseMeteringServiceBlockingStub
-                      .withDeadlineAfter(callTimeoutInMs, TimeUnit.MILLISECONDS)
+                      .withDeadlineAfter(callTimeout.toMillis(), TimeUnit.MILLISECONDS)
                       .getLicenseInfo(GetLicenseInfoRequest.getDefaultInstance()))
           .getLicenseInfo()
           .getTier();

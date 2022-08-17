@@ -3,21 +3,17 @@ package ai.traceable.licensestatus.config.service;
 import static ai.traceable.licensestatus.config.service.LicenseStatusConstants.LICENSE_STATUS_CONFIG;
 import static ai.traceable.licensestatus.config.service.LicenseStatusConstants.LICENSE_STATUS_RESOURCE_NAMESPACE;
 
-import ai.traceable.licensestatus.config.service.v1.LicenseLimit;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatus;
 import com.google.protobuf.Value;
-import com.typesafe.config.Config;
-import io.grpc.Channel;
 import io.grpc.Status;
+import javax.inject.Inject;
 import lombok.SneakyThrows;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
-import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
-import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
@@ -26,21 +22,13 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   static final String DEFAULT_LICENSE_LIMIT = "default.license.limit";
 
   private final ConfigServiceBlockingStub configServiceBlockingStub;
-  private final LicenseStatus defaultLicenseStatus;
+  private final LicenseProvider licenseProvider;
 
-  public ConfigServiceCoordinatorImpl(Channel configChannel, Config config) {
-    this.configServiceBlockingStub =
-        ConfigServiceGrpc.newBlockingStub(configChannel)
-            .withCallCredentials(
-                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
-    this.defaultLicenseStatus =
-        LicenseStatus.newBuilder()
-            .setTracesLicenseLimit(
-                LicenseLimit.valueOf(
-                    config
-                        .getConfig(LICENSE_STATUS_CONFIG_SERVICE)
-                        .getString(DEFAULT_LICENSE_LIMIT)))
-            .build();
+  @Inject
+  public ConfigServiceCoordinatorImpl(
+      ConfigServiceBlockingStub configServiceBlockingStub, LicenseProvider licenseProvider) {
+    this.configServiceBlockingStub = configServiceBlockingStub;
+    this.licenseProvider = licenseProvider;
   }
 
   @Override
@@ -74,7 +62,7 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
       return convertToLicenseStatusFromGeneric(getConfigResponse.getConfig());
     } catch (Exception e) {
       if (Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
-        return defaultLicenseStatus;
+        return this.licenseProvider.getLicenseStatus(requestContext);
       }
       throw e;
     }

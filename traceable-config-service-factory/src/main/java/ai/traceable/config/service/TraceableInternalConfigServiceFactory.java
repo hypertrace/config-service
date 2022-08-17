@@ -8,7 +8,7 @@ import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceF
 import ai.traceable.data.classification.config.service.DataClassificationConfigServiceFactory;
 import ai.traceable.data.exfiltration.config.service.detection.rule.DataExfiltrationDetectionRulesConfigServiceFactory;
 import ai.traceable.iprange.config.service.IpRangeConfigServiceFactory;
-import ai.traceable.licensestatus.config.service.LicenseStatusConfigServiceImpl;
+import ai.traceable.licensestatus.config.service.LicenseStatusConfigServiceFactory;
 import ai.traceable.localprocessing.config.service.ruleservice.LocalProcessingRulesServiceFactory;
 import ai.traceable.ratelimiting.service.v1.RateLimitingConfigServiceImpl;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceFactory;
@@ -58,8 +58,10 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                         providers.getFeatureCachingClient())
                     .getSensitiveDataConfigService()),
             wrap(
-                new LicenseStatusConfigServiceImpl(
-                    providers.getLocalChannel(), providers.getConfig())),
+                LicenseStatusConfigServiceFactory.build(
+                    providers.getChannelRegistry(),
+                    providers.getLocalChannel(),
+                    providers.getConfig())),
             wrap(
                 LocalProcessingRulesServiceFactory.build(
                     providers.getLocalChannel(),

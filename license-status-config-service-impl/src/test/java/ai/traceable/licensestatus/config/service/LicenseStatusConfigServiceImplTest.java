@@ -15,6 +15,8 @@ import com.typesafe.config.ConfigFactory;
 import io.grpc.Channel;
 import java.util.Map;
 import org.hypertrace.config.service.test.MockGenericConfigService;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +29,6 @@ class LicenseStatusConfigServiceImplTest {
   @BeforeEach
   void setUp() {
     mockGenericConfigService = new MockGenericConfigService().mockUpsert().mockGet().mockGetAll();
-
     Config config =
         ConfigFactory.parseMap(
             Map.of(
@@ -37,8 +38,12 @@ class LicenseStatusConfigServiceImplTest {
                     LicenseLimit.LICENSE_LIMIT_AVAILABLE.name())));
 
     Channel channel = mockGenericConfigService.channel();
+    ConfigServiceBlockingStub configServiceBlockingStub =
+        ConfigServiceGrpc.newBlockingStub(channel);
+    ConfigServiceCoordinator configServiceCoordinator =
+        new ConfigServiceCoordinatorImpl(configServiceBlockingStub, null);
     mockGenericConfigService
-        .addService(new LicenseStatusConfigServiceImpl(channel, config))
+        .addService(new LicenseStatusConfigServiceImpl(configServiceCoordinator))
         .start();
 
     licenseStatusConfigStub = LicenseStatusConfigServiceGrpc.newBlockingStub(channel);

@@ -6,9 +6,8 @@ import ai.traceable.licensestatus.config.service.v1.LicenseStatus;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc;
 import ai.traceable.licensestatus.config.service.v1.UpdateLicenseStatusRequest;
 import ai.traceable.licensestatus.config.service.v1.UpdateLicenseStatusResponse;
-import com.typesafe.config.Config;
-import io.grpc.Channel;
 import io.grpc.stub.StreamObserver;
+import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -18,8 +17,9 @@ public class LicenseStatusConfigServiceImpl
 
   private final ConfigServiceCoordinator configServiceCoordinator;
 
-  public LicenseStatusConfigServiceImpl(Channel configChannel, Config config) {
-    this.configServiceCoordinator = new ConfigServiceCoordinatorImpl(configChannel, config);
+  @Inject
+  public LicenseStatusConfigServiceImpl(ConfigServiceCoordinator configServiceCoordinator) {
+    this.configServiceCoordinator = configServiceCoordinator;
   }
 
   @Override

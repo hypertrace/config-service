@@ -111,8 +111,8 @@ public class GlobalAnomalyConfigStatusManagerTest {
                 ConfigFactory.parseString(
                     "host = \"localhost\"\n"
                         + "  port = 51018\n"
-                        + "  call.timeout.ms = 60000\n"
-                        + "  cache.expiry.duration = 5m\n"
+                        + "  call.timeout.duration = 60000\n"
+                        + "  cache.expiration.duration = 5m\n"
                         + "  cache.max.size = 5000")),
             LicenseMeteringServiceGrpc.newBlockingStub(channelForMockServer)
                 .withCallCredentials(

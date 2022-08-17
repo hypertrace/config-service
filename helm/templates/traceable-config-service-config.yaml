@@ -59,7 +59,7 @@ data:
     license.metering.service = {
       host = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.host }}
       port = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.port }}
-      cache.expiry.duration = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.cacheExpiryDuration }}
+      cache.expiration.duration = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.cacheExpiryDuration }}
     }
     api.naming.config {
       trieModels = {
