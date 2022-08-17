@@ -4,6 +4,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
+import com.google.common.base.Strings;
 import com.google.re2j.Pattern;
 import io.grpc.Status;
 import java.util.List;
@@ -146,7 +147,12 @@ public class SpanProcessingConfigRequestValidator {
       case API_SPEC_BASED_CONFIG:
         // TODO: Add validations for specId list after migration of upstream services
         ApiSpecBasedConfig apiSpecBasedConfig = ruleConfig.getApiSpecBasedConfig();
-
+        if (Strings.isNullOrEmpty(apiSpecBasedConfig.getApiSpecId())
+            && apiSpecBasedConfig.getApiSpecIdsCount() == 0) {
+          throw Status.INVALID_ARGUMENT
+              .withDescription(String.format("Invalid specIds : %s", apiSpecBasedConfig))
+              .asRuntimeException();
+        }
         if (apiSpecBasedConfig.getRegexesCount() == 0
             || apiSpecBasedConfig.getRegexesCount() != apiSpecBasedConfig.getValuesCount()) {
           throw Status.INVALID_ARGUMENT
