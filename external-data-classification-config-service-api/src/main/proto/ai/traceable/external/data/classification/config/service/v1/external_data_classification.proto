@@ -20,6 +20,7 @@ message DataParsingRule {
     DATA_PARSING_MODE_SQL = 3;
     DATA_PARSING_MODE_URL_ENCODED = 4;
     DATA_PARSING_MODE_XML = 5;
+    DATA_PARSING_MODE_MULTIPART = 6;
   }
 
   message DropOnFailure {
