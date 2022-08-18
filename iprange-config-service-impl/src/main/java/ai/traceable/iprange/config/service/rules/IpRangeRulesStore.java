@@ -11,17 +11,21 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 
 @Slf4j
 public class IpRangeRulesStore extends IdentifiedObjectStore<IpRangeRule> {
 
   @Inject
-  public IpRangeRulesStore(ConfigServiceBlockingStub configServiceBlockingStub) {
+  public IpRangeRulesStore(
+      ConfigServiceBlockingStub configServiceBlockingStub,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
         configServiceBlockingStub,
         IPRANGE_RULE_CONFIG_NAMESPACE,
-        IPRANGE_RULE_CONFIG_RESOURCE_NAME);
+        IPRANGE_RULE_CONFIG_RESOURCE_NAME,
+        configChangeEventGenerator);
   }
 
   @Override

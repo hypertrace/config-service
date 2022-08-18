@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -36,7 +37,8 @@ class IpRangeRulesManagerTest {
     uuidGenerator = mock(UuidGenerator.class);
     IpValidationUtils ipValidationUtils = new IpValidationUtils();
     mockClock = mock(Clock.class);
-    ipRangeRulesStore = new IpRangeRulesStore(configServiceBlockingStub);
+    ipRangeRulesStore =
+        new IpRangeRulesStore(configServiceBlockingStub, mock(ConfigChangeEventGenerator.class));
     this.rulesManager =
         new IpRangeRulesManager(ipRangeRulesStore, uuidGenerator, ipValidationUtils, mockClock);
     requestContext = RequestContext.forTenantId("default tenant");
