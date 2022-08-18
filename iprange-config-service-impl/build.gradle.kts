@@ -11,6 +11,7 @@ dependencies {
   implementation(projects.iprangeConfigServiceApi)
   implementation(libs.hypertrace.configservice.api)
   implementation(libs.hypertrace.configservice.objectstore)
+  implementation(libs.hypertrace.configservice.changeeventgenerator)
   implementation(libs.guice)
   implementation(libs.protobuf.javautil)
   implementation(libs.slf4j.api)
