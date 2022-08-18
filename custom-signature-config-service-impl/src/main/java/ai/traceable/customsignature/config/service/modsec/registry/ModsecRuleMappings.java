@@ -35,6 +35,12 @@ public class ModsecRuleMappings {
           MatchOperator.MATCH_OPERATOR_NOT_CONTAIN,
           MatchOperator.MATCH_OPERATOR_GREATER_THAN,
           MatchOperator.MATCH_OPERATOR_LESS_THAN);
+  private static final Set<MatchOperator> escapeQuotesMatchOperatorSet =
+      Set.of(
+          MatchOperator.MATCH_OPERATOR_EQUALS,
+          MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
+          MatchOperator.MATCH_OPERATOR_CONTAINS,
+          MatchOperator.MATCH_OPERATOR_NOT_CONTAIN);
 
   private final Map<MatchCategory, Map<MatchKey, String>> matchKeyMappings = new HashMap<>();
   private final Map<MatchOperator, String> matchOperatorMappings = new HashMap<>();
@@ -143,6 +149,10 @@ public class ModsecRuleMappings {
     if (!matchOperatorMappings.containsKey(matchOperator)) {
       throw new UnsupportedOperationException(
           String.format("Cannot translate unknown match operator '%s'", matchOperator));
+    }
+    if (escapeQuotesMatchOperatorSet.contains(matchOperator)) {
+      // escape quotes to form the correct modsec rule syntax
+      value = value.replace("\"", "\\\"");
     }
     return getWrappedString(
         matchOperatorMappings.get(matchOperator) + SPACE_DELIMITER + value, "\"");

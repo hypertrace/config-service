@@ -139,6 +139,16 @@ public class ModsecRuleMappingsTest {
             "value"));
 
     assertEquals(
+        "REQUEST_HEADERS:key \"@contains \\\"value\\\":\\\"xyz\\\"\"",
+        modsecRuleMappings.getVariablePlusOperatorString(
+            MatchCategory.MATCH_CATEGORY_REQUEST,
+            KeyValueTag.KEY_VALUE_TAG_HEADER,
+            "key",
+            MatchOperator.MATCH_OPERATOR_EQUALS,
+            MatchOperator.MATCH_OPERATOR_CONTAINS,
+            "\"value\":\"xyz\""));
+
+    assertEquals(
         "REQUEST_HEADERS|!REQUEST_HEADERS:key \"!@rx value\"",
         modsecRuleMappings.getVariablePlusOperatorString(
             MatchCategory.MATCH_CATEGORY_REQUEST,
