@@ -16,7 +16,8 @@ option java_multiple_files = true;
 message DetectionExclusionRule {
   string id = 1;
   string description = 2;
-  DetectionExclusionRuleConfig config = 3;
+  DetectionOverrideRuleScope rule_scope = 3;
+  DetectionExclusionRuleConfig config = 4;
 }
 
 message DetectionExclusionRuleConfig {

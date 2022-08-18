@@ -31,7 +31,7 @@ message AnomalyCustomerScope {
 }
 
 message AnomalyEnvironmentScope {
-  repeated string environment_ids = 1;
+  string environment_id = 1;
 }
 
 // deprecated

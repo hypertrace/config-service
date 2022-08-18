@@ -8,6 +8,16 @@ import "ai/traceable/anomaly/config/service/v1/override/detection_override_scope
 
 option java_multiple_files = true;
 
+message DetectionOverrideRuleScope {
+  oneof scope { // for tenant scope (all environments) no option is selected
+    DetectionOverrideEnvironmentScope environment_scope = 1;
+  }
+}
+
+message DetectionOverrideEnvironmentScope {
+  repeated string environment_ids = 1;
+}
+
 message DetectionOverrideAssetConfig {
   DetectionOverrideScopeConfig scope_config = 4;
   DetectionOverrideConditionsConfig conditions_config = 6;

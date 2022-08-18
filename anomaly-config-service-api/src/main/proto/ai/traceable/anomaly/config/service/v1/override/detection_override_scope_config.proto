@@ -9,18 +9,6 @@ import "ai/traceable/anomaly/config/service/v1/override/detection_override_condi
 option java_multiple_files = true;
 
 message DetectionOverrideScopeConfig {
-  DetectionOverrideGlobalScope global_scope = 1;
-  DetectionOverrideTargetScope target_scope = 2;
-}
-
-message DetectionOverrideGlobalScope {
-  oneof scope {
-    AnomalyCustomerScope customer_scope = 1;
-    AnomalyEnvironmentScope environment_scope = 2;
-  }
-}
-
-message DetectionOverrideTargetScope {
   oneof scope {
     DetectionOverrideApiScopeConfig api_scope = 1;
     DetectionOverrideServiceScopeConfig service_scope = 2;
