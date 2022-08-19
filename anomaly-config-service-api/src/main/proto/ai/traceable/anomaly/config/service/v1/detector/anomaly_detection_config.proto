@@ -244,6 +244,7 @@ message PayloadAnomalyConfig {
 message SsrfAnomalyConfig {
   StringList allowed_protocols = 1;
   optional int32 required_occurrences_of_host = 2;
+  StringList allowed_domains = 3;
 }
 
 message LearntApiAnomalyConfig {
