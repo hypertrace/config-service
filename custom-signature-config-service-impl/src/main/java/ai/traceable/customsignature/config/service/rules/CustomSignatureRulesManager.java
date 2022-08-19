@@ -18,6 +18,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -30,11 +31,13 @@ class CustomSignatureRulesManager extends IdentifiedObjectStore<CustomSignatureR
   @Inject
   public CustomSignatureRulesManager(
       ConfigServiceBlockingStub configServiceBlockingStub,
-      CustomSignatureRuleConverter customSignatureRuleConverter) {
+      CustomSignatureRuleConverter customSignatureRuleConverter,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
         configServiceBlockingStub,
         CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE,
-        CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME);
+        CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME,
+        configChangeEventGenerator);
     this.customSignatureRuleConverter = customSignatureRuleConverter;
   }
 

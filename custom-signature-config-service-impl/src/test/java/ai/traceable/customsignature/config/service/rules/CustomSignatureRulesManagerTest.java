@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -22,6 +23,7 @@ import com.google.protobuf.Value;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
@@ -46,7 +48,9 @@ public class CustomSignatureRulesManagerTest {
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     ruleConverter = spy(CustomSignatureRuleConverter.class);
     this.rulesManager =
-        spy(new CustomSignatureRulesManager(configServiceBlockingStub, ruleConverter));
+        spy(
+            new CustomSignatureRulesManager(
+                configServiceBlockingStub, ruleConverter, mock(ConfigChangeEventGenerator.class)));
     requestContext = RequestContext.forTenantId("default tenant");
   }
 

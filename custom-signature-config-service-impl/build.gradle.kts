@@ -25,6 +25,7 @@ dependencies {
   implementation(libs.traceable.activityevent.api)
   implementation(libs.hypertrace.configservice.objectstore)
   implementation(libs.traceable.platform.jniModsecurity)
+  implementation(libs.hypertrace.configservice.changeeventgenerator)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
