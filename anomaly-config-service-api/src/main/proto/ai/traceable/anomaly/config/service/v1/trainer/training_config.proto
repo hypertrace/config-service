@@ -137,6 +137,8 @@ message VulnerabilityTrainingConfig {
     HstsSecurityHeaderTrainingConfig hsts_security_header = 6;
     JavaSerializedObjectTrainingConfig java_serialized_object = 7;
     ServiceUsesBasicAuthTrainingConfig service_uses_basic_auth = 8;
+    CspSecurityHeaderTrainingConfig csp_security_header = 9;
+    DirectoryListingTrainingConfig directory_listing = 10;
   }
 }
 
@@ -260,6 +262,10 @@ message ApiParamContainsUrlTrainingConfig {}
 message ContentTypeOptionsSecurityHeaderTrainingConfig {}
 
 message HstsSecurityHeaderTrainingConfig {}
+
+message CspSecurityHeaderTrainingConfig {}
+
+message DirectoryListingTrainingConfig {}
 
 message JavaSerializedObjectTrainingConfig {}
 
