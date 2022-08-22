@@ -24,14 +24,16 @@ import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceG
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
-import ai.traceable.blocking.config.service.blockingpolicy.fetchers.impl.ModsecDataFetcherImpl;
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import java.util.List;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class ModsecDataFetcherTest {
+  private static final String TENANT_ID = "tenant-id";
+  private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
 
   private AnomalyGlobalConfigServiceBlockingStub anomalyGlobalConfigServiceStub;
   private DetectorConfigServiceBlockingStub detectorConfigServiceBlockingStub;
@@ -42,8 +44,7 @@ class ModsecDataFetcherTest {
     anomalyGlobalConfigServiceStub = mock(AnomalyGlobalConfigServiceBlockingStub.class);
     detectorConfigServiceBlockingStub = mock(DetectorConfigServiceBlockingStub.class);
     modsecDataFetcher =
-        new ModsecDataFetcherImpl(
-            anomalyGlobalConfigServiceStub, detectorConfigServiceBlockingStub);
+        new ModsecDataFetcher(anomalyGlobalConfigServiceStub, detectorConfigServiceBlockingStub);
   }
 
   @Test
@@ -103,7 +104,8 @@ class ModsecDataFetcherTest {
                         .build())
                 .build());
 
-    List<BlockingDetails> violations = modsecDataFetcher.getModsecViolations();
+    List<BlockingDetails> violations = modsecDataFetcher.getModsecViolations(REQUEST_CONTEXT);
+
     assertEquals(1, violations.size());
     assertEquals("123456", violations.get(0).getModsecDetails().getRuleId());
     assertEquals(BLOCKING_CATEGORY_MODSECURITY, violations.get(0).getCategory());
@@ -126,7 +128,7 @@ class ModsecDataFetcherTest {
             GetScopedAnomalyGlobalConfigStatusRequest.newBuilder()
                 .setConfigScope(defaultCustomerScope)
                 .build());
-    List<BlockingDetails> violations2 = modsecDataFetcher.getModsecViolations();
+    List<BlockingDetails> violations2 = modsecDataFetcher.getModsecViolations(REQUEST_CONTEXT);
     assertEquals(0, violations2.size());
   }
 }

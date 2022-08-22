@@ -22,6 +22,7 @@ traceable-platform-jnimodsecurity = { module = "ai.traceable.platform:jni-modsec
 traceable-apiNamingModel = { module = "ai.traceable.platform:api-naming-model", version = "0.11.16" }
 traceable-platformGateway-deepDataStore = { module = "ai.traceable.platform-gateway:deep-data-store", version.ref = "traceable-platformGateway" }
 traceable-platformGateway-trainingEvaluationFramework = { module = "ai.traceable.platform-gateway:training-evaluation-framework", version.ref = "traceable-platformGateway" }
+traceable-platformGateway-validators = { module = "ai.traceable.platform-gateway:validators", version.ref = "traceable-platformGateway" }
 traceable-featureFlag-api = { module = "ai.traceable.featureflag:feature-flag-service-api", version = "0.5.0" }
 traceable-platform-jniModsecurity = { module = "ai.traceable.platform:jni-modsecurity", version = "0.1.96" }
 

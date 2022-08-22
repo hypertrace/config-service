@@ -10,6 +10,7 @@ import com.google.inject.Inject;
 import java.time.Clock;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 class DefaultRegionBlockingManager implements RegionBlockingManager {
   private final Clock clock;
@@ -30,11 +31,14 @@ class DefaultRegionBlockingManager implements RegionBlockingManager {
   }
 
   @Override
-  public RegionBlockingRules getEnabledBlockingRules(String requestHash) {
+  public RegionBlockingRules getEnabledBlockingRules(
+      RequestContext requestContext, String requestHash) {
     List<RegionRule> regionRules =
-        this.regionConfigServiceStub
-            .getAllRegionRules(GetAllRegionRulesRequest.getDefaultInstance())
-            .getRuleList();
+        requestContext.call(
+            () ->
+                this.regionConfigServiceStub
+                    .getAllRegionRules(GetAllRegionRulesRequest.getDefaultInstance())
+                    .getRuleList());
 
     List<RegionRule> activeRegionRules = getActiveRegionRules(regionRules);
     List<RegionIpBlockingRule> regionIpBlockingRules =

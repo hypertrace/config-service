@@ -10,6 +10,12 @@ import com.google.inject.Inject;
 import java.util.List;
 
 class DefaultModsecBlockingManager implements ModsecBlockingManager {
+  private static final GetModsecCrsRulesRequest getModsecCrsRulesRequest =
+      GetModsecCrsRulesRequest.newBuilder()
+          .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK))
+          .setRemoveDisabledRules(true)
+          .build();
+
   private final AnomalyModsecConfigServiceBlockingStub configServiceBlockingStub;
   private final UuidGenerator uuidGenerator;
 
@@ -23,11 +29,7 @@ class DefaultModsecBlockingManager implements ModsecBlockingManager {
 
   public SafeCrsBlockingRules getBlockingRules(String requestHash) {
     GetModsecCrsRulesResponse response =
-        configServiceBlockingStub.getModsecCrsRules(
-            GetModsecCrsRulesRequest.newBuilder()
-                .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK))
-                .setRemoveDisabledRules(true)
-                .build());
+        configServiceBlockingStub.getModsecCrsRules(getModsecCrsRulesRequest);
 
     String blockingCrsRulesBlob;
     if (response.getModsecCrsRulesList().size() == 1

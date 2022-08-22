@@ -15,11 +15,15 @@ import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfi
 import ai.traceable.region.config.service.v1.RegionRule;
 import java.time.Clock;
 import java.util.List;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class DefaultRegionBlockingManagerTest {
+  private static final String TENANT_ID = "tenant-id";
+  private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
+
   private final UuidGenerator uuidGenerator = new UuidGenerator();
   private Clock clock;
   private RegionConfigServiceBlockingStub regionConfigServiceStub;
@@ -79,7 +83,8 @@ class DefaultRegionBlockingManagerTest {
             .addAllRegionIpBlockingRules(ruleConverter.convert(activeRules))
             .build();
 
-    RegionBlockingRules responseRules = this.regionBlockingManager.getEnabledBlockingRules("");
+    RegionBlockingRules responseRules =
+        this.regionBlockingManager.getEnabledBlockingRules(REQUEST_CONTEXT, "");
 
     assertEquals(
         regionBlockingRules.getRegionIpBlockingRulesList(),
@@ -88,7 +93,7 @@ class DefaultRegionBlockingManagerTest {
     assertEquals(
         0,
         this.regionBlockingManager
-            .getEnabledBlockingRules(responseRules.getHash())
+            .getEnabledBlockingRules(REQUEST_CONTEXT, responseRules.getHash())
             .getRegionIpBlockingRulesCount());
   }
 }

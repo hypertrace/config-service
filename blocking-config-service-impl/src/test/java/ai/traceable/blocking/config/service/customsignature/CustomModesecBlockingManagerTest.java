@@ -15,14 +15,16 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import java.io.IOException;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class CustomModesecBlockingManagerTest {
+  private static final String TENANT_ID = "tenant-id";
+  private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
 
   private final UuidGenerator uuidGenerator = new UuidGenerator();
-  private CustomSignatureConfigServiceBlockingStub configServiceStub;
   private Server mockConfigService;
   private ManagedChannel configServiceChannel;
   private CustomModsecBlockingManager customModsecBlockingManager;
@@ -37,7 +39,8 @@ class CustomModesecBlockingManagerTest {
             .build()
             .start();
     configServiceChannel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
-    this.configServiceStub = CustomSignatureConfigServiceGrpc.newBlockingStub(configServiceChannel);
+    CustomSignatureConfigServiceBlockingStub configServiceStub =
+        CustomSignatureConfigServiceGrpc.newBlockingStub(configServiceChannel);
     customModsecBlockingManager =
         new DefaultCustomModsecBlockingManager(configServiceStub, uuidGenerator);
   }
@@ -51,11 +54,13 @@ class CustomModesecBlockingManagerTest {
   @Test
   void testEnabledBlockingRules() {
     CustomModsecBlockingRules blockingRules =
-        customModsecBlockingManager.getEnabledBlockingRules("");
+        customModsecBlockingManager.getEnabledBlockingRules(REQUEST_CONTEXT, "");
     assertEquals("testblob", blockingRules.getCustomModsecRulesBlob());
     assertEquals(uuidGenerator.generateId("testblob"), blockingRules.getHash());
 
-    blockingRules = customModsecBlockingManager.getEnabledBlockingRules(blockingRules.getHash());
+    blockingRules =
+        customModsecBlockingManager.getEnabledBlockingRules(
+            REQUEST_CONTEXT, blockingRules.getHash());
     assertFalse(blockingRules.hasCustomModsecRulesBlob());
     assertEquals(uuidGenerator.generateId("testblob"), blockingRules.getHash());
   }

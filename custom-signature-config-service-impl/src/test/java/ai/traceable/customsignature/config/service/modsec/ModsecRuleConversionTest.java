@@ -67,6 +67,31 @@ public class ModsecRuleConversionTest {
 
     assertEquals(
         "SecRule "
+            + "REQUEST_BODY "
+            + "\"@streq {\\\"a\\\":\\\"b\\\"}\" "
+            + "\"id:10000006,phase:2,capture,block,t:none,"
+            + "msg:'MATCH_KEY_BODY : MATCH_OPERATOR_EQUALS',"
+            + "logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',"
+            + "tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',"
+            + "tag:'rule-uuid/21d38252-5986-5a04-b7a0-b32068437ccb',"
+            + "severity:'CRITICAL'\"",
+        modsecRuleConversion.getModsecRuleForANDClauses(
+            List.of(
+                Clause.newBuilder()
+                    .setMatchExpression(
+                        MatchExpression.newBuilder()
+                            .setMatchKey(MatchKey.MATCH_KEY_BODY)
+                            .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                            .setMatchValue("{\"a\":\"b\"}")
+                            .build())
+                    .build()),
+            new ModsecActions(
+                10000006,
+                "21d38252-5986-5a04-b7a0-b32068437ccb",
+                "MATCH_KEY_BODY : MATCH_OPERATOR_EQUALS")));
+
+    assertEquals(
+        "SecRule "
             + "REQUEST_HEADERS:Host|REQUEST_HEADERS:x-forwarded-host|REQUEST_HEADERS:forwarded "
             + "\"@streq 127.0.0.1\" "
             + "\"id:10000005,phase:2,capture,block,t:none,"

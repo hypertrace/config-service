@@ -1,19 +1,27 @@
 package ai.traceable.blocking.config.service.blockingpolicy;
 
+import static ai.traceable.blocking.config.service.v1.BlockingRuleType.BLOCKING_RULE_TYPE_ALLOW;
+import static ai.traceable.blocking.config.service.v1.BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK;
+import static ai.traceable.blocking.config.service.v1.BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT;
+
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.ActorBasedDataFetcher;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.CustomIpBasedDataFetcher;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.CustomSignatureDataFetcher;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.ModsecDataFetcher;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.RegionDataFetcher;
+import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.ActorBasedRulesCollection;
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
 import ai.traceable.blocking.config.service.v1.BlockingPolicyConfiguration;
+import ai.traceable.blocking.config.service.v1.BlockingRuleType;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.inject.Inject;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class DefaultBlockingPolicyConfigurationManager
@@ -42,9 +50,10 @@ public class DefaultBlockingPolicyConfigurationManager
   }
 
   @Override
-  public BlockingPolicyConfiguration getBlockingPolicyConfiguration(String requestHash) {
+  public BlockingPolicyConfiguration getBlockingPolicyConfiguration(
+      RequestContext requestContext, String requestHash) {
     try {
-      List<BlockingDetails> blockingDetailsList = getOrderedBlockingRules();
+      List<BlockingDetails> blockingDetailsList = getOrderedBlockingRules(requestContext);
       String responseHash = uuidGenerator.generateId(blockingDetailsList);
       if (responseHash.equals(requestHash)) {
         return BlockingPolicyConfiguration.newBuilder().setHash(requestHash).build();
@@ -59,35 +68,43 @@ public class DefaultBlockingPolicyConfigurationManager
     return BlockingPolicyConfiguration.newBuilder().setHash(requestHash).build();
   }
 
-  private List<BlockingDetails> getOrderedBlockingRules() {
-    List<BlockingDetails> customIpBasedExemption =
-        customIpBasedDataFetcher.getCustomIpBasedExemptions();
-
+  private List<BlockingDetails> getOrderedBlockingRules(RequestContext requestContext) {
+    // Actor based rules
+    ActorBasedRulesCollection actorBasedRulesCollection =
+        actorBasedDataFetcher.getActorBasedRules(requestContext);
     List<BlockingDetails> threatActorExemption =
-        actorBasedDataFetcher.getThreatActorBasedIpExemption();
-
-    List<BlockingDetails> customSignatureExemption =
-        customSignatureDataFetcher.getCustomSignatureExemptions();
-
-    List<BlockingDetails> customSignatureViolation =
-        customSignatureDataFetcher.getCustomSignatureViolations();
-
-    List<BlockingDetails> modsecViolation = modsecDataFetcher.getModsecViolations();
-
-    List<BlockingDetails> customIpBasedBlockAllExcept =
-        customIpBasedDataFetcher.getCustomIpBasedBlockAllExcepts();
-
-    List<BlockingDetails> customIpBasedViolation =
-        customIpBasedDataFetcher.getCustomIpBasedViolations();
-
+        actorBasedRulesCollection.getThreatActorBasedIpExemptions();
     List<BlockingDetails> threatActorViolation =
-        actorBasedDataFetcher.getThreatActorBasedIpViolation();
+        actorBasedRulesCollection.getThreatActorBasedIpViolations();
+    List<BlockingDetails> rateLimitViolation =
+        actorBasedRulesCollection.getRateLimitBasedIpViolations();
 
-    List<BlockingDetails> regionBlockAllExcept = regionDataFetcher.getRegionViolationAllExcepts();
+    // Custom signature rules
+    Map<BlockingRuleType, List<BlockingDetails>> customSignatureRulesMap =
+        customSignatureDataFetcher.getCustomSignatureRules(requestContext);
+    List<BlockingDetails> customSignatureExemption =
+        customSignatureRulesMap.get(BLOCKING_RULE_TYPE_ALLOW);
+    List<BlockingDetails> customSignatureViolation =
+        customSignatureRulesMap.get(BLOCKING_RULE_TYPE_BLOCK);
 
-    List<BlockingDetails> regionViolation = regionDataFetcher.getRegionViolations();
+    List<BlockingDetails> modsecViolation = modsecDataFetcher.getModsecViolations(requestContext);
 
-    List<BlockingDetails> rateLimitViolation = actorBasedDataFetcher.getRateLimitBasedIpViolation();
+    // Custom ip rules
+    Map<BlockingRuleType, List<BlockingDetails>> customIpBasedRulesMap =
+        customIpBasedDataFetcher.getCustomIpBasedRules(requestContext);
+    List<BlockingDetails> customIpBasedExemption =
+        customIpBasedRulesMap.get(BLOCKING_RULE_TYPE_ALLOW);
+    List<BlockingDetails> customIpBasedBlockAllExcept =
+        customIpBasedRulesMap.get(BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT);
+    List<BlockingDetails> customIpBasedViolation =
+        customIpBasedRulesMap.get(BLOCKING_RULE_TYPE_BLOCK);
+
+    // Region based rules
+    Map<BlockingRuleType, List<BlockingDetails>> regionBasedRulesMap =
+        regionDataFetcher.getRegionBasedRules(requestContext);
+    List<BlockingDetails> regionBlockAllExcept =
+        regionBasedRulesMap.get(BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT);
+    List<BlockingDetails> regionViolation = regionBasedRulesMap.get(BLOCKING_RULE_TYPE_BLOCK);
 
     // TODO: cleaner way to enforce ordering
     /*

@@ -8,8 +8,18 @@ import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRu
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import com.google.inject.Inject;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 class DefaultCustomModsecBlockingManager implements CustomModsecBlockingManager {
+  private static final GetCustomSignatureModsecRulesRequest getCustomSignatureModsecRulesRequest =
+      GetCustomSignatureModsecRulesRequest.newBuilder()
+          .setFilter(
+              GetRulesFilter.newBuilder()
+                  .addEventTypes(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
+                  .addEventTypes(EventType.EVENT_TYPE_ALLOW)
+                  .setDisabled(false)
+                  .build())
+          .build();
 
   private final CustomSignatureConfigServiceBlockingStub configServiceBlockingStub;
   private final UuidGenerator uuidGenerator;
@@ -22,17 +32,13 @@ class DefaultCustomModsecBlockingManager implements CustomModsecBlockingManager 
     this.uuidGenerator = uuidGenerator;
   }
 
-  public CustomModsecBlockingRules getEnabledBlockingRules(String requestHash) {
+  public CustomModsecBlockingRules getEnabledBlockingRules(
+      RequestContext requestContext, String requestHash) {
     GetCustomSignatureModsecRulesResponse response =
-        configServiceBlockingStub.getCustomSignatureModsecRules(
-            GetCustomSignatureModsecRulesRequest.newBuilder()
-                .setFilter(
-                    GetRulesFilter.newBuilder()
-                        .addEventTypes(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
-                        .addEventTypes(EventType.EVENT_TYPE_ALLOW)
-                        .setDisabled(false)
-                        .build())
-                .build());
+        requestContext.call(
+            () ->
+                configServiceBlockingStub.getCustomSignatureModsecRules(
+                    getCustomSignatureModsecRulesRequest));
 
     String responseHash = uuidGenerator.generateId(response.getModsecRulesBlob());
 

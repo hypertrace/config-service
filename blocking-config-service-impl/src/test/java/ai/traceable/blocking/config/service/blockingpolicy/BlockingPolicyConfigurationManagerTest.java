@@ -19,6 +19,7 @@ import ai.traceable.blocking.config.service.blockingpolicy.fetchers.CustomIpBase
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.CustomSignatureDataFetcher;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.ModsecDataFetcher;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.RegionDataFetcher;
+import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.ActorBasedRulesCollection;
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
 import ai.traceable.blocking.config.service.v1.BlockingPolicyConfiguration;
 import ai.traceable.blocking.config.service.v1.CustomSignatureDetails;
@@ -28,10 +29,15 @@ import ai.traceable.blocking.config.service.v1.RegionDetails;
 import ai.traceable.config.utils.UuidGenerator;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class BlockingPolicyConfigurationManagerTest {
+  private static final String TENANT_ID = "tenant-id";
+  private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
+
   private final UuidGenerator uuidGenerator = new UuidGenerator();
   private ActorBasedDataFetcher actorBasedDataFetcher;
   private CustomIpBasedDataFetcher customIpBasedDataFetcher;
@@ -79,7 +85,7 @@ class BlockingPolicyConfigurationManagerTest {
     initializeMocks();
 
     BlockingPolicyConfiguration blockingRules =
-        blockingPolicyConfigurationManager.getBlockingPolicyConfiguration("");
+        blockingPolicyConfigurationManager.getBlockingPolicyConfiguration(REQUEST_CONTEXT, "");
 
     assertEquals(desiredPrecedenceOrder.get(0), blockingRules.getBlockingDetailsList(0).getInfo());
     assertEquals(desiredPrecedenceOrder.get(1), blockingRules.getBlockingDetailsList(1).getInfo());
@@ -96,108 +102,106 @@ class BlockingPolicyConfigurationManagerTest {
 
     // Test the hash based mechanism
     BlockingPolicyConfiguration blockingRules2 =
-        blockingPolicyConfigurationManager.getBlockingPolicyConfiguration(blockingRules.getHash());
+        blockingPolicyConfigurationManager.getBlockingPolicyConfiguration(
+            REQUEST_CONTEXT, blockingRules.getHash());
     assertEquals(blockingRules.getHash(), blockingRules2.getHash());
     assertEquals(0, blockingRules2.getBlockingDetailsListCount());
     BlockingPolicyConfiguration blockingRules3 =
-        blockingPolicyConfigurationManager.getBlockingPolicyConfiguration("");
+        blockingPolicyConfigurationManager.getBlockingPolicyConfiguration(REQUEST_CONTEXT, "");
     assertNotEquals(0, blockingRules3.getBlockingDetailsListCount());
 
     // Test error handling
-    doThrow(new RuntimeException()).when(actorBasedDataFetcher).getThreatActorBasedIpExemption();
+    doThrow(new RuntimeException()).when(actorBasedDataFetcher).getActorBasedRules(REQUEST_CONTEXT);
     BlockingPolicyConfiguration blockingRules4 =
-        blockingPolicyConfigurationManager.getBlockingPolicyConfiguration("random");
+        blockingPolicyConfigurationManager.getBlockingPolicyConfiguration(
+            REQUEST_CONTEXT, "random");
     assertEquals("random", blockingRules4.getHash());
     assertEquals(0, blockingRules4.getBlockingDetailsListCount());
   }
 
   private void initializeMocks() {
     doReturn(
-            List.of(
-                BlockingDetails.newBuilder()
-                    .setIpDetails(IpDetails.newBuilder().addIpAddresses("1.2.3.4").build())
-                    .setCategory(BLOCKING_CATEGORY_RATE_LIMIT)
-                    .setBlockingRuleType(BLOCKING_RULE_TYPE_ALLOW)
-                    .setInfo("threat-actor-exemption")
-                    .build()))
+            new ActorBasedRulesCollection(
+                List.of(
+                    BlockingDetails.newBuilder()
+                        .setIpDetails(IpDetails.newBuilder().addIpAddresses("1.2.3.4").build())
+                        .setCategory(BLOCKING_CATEGORY_RATE_LIMIT)
+                        .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK)
+                        .setInfo("threat-actor-violation")
+                        .build()),
+                List.of(
+                    BlockingDetails.newBuilder()
+                        .setIpDetails(IpDetails.newBuilder().addIpAddresses("1.2.3.4").build())
+                        .setCategory(BLOCKING_CATEGORY_RATE_LIMIT)
+                        .setBlockingRuleType(BLOCKING_RULE_TYPE_ALLOW)
+                        .setInfo("threat-actor-exemption")
+                        .build()),
+                List.of(
+                    BlockingDetails.newBuilder()
+                        .setIpDetails(IpDetails.newBuilder().addIpAddresses("1.2.3.4").build())
+                        .setCategory(BLOCKING_CATEGORY_RATE_LIMIT)
+                        .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK)
+                        .setInfo("rate-limit-violation")
+                        .build())))
         .when(actorBasedDataFetcher)
-        .getThreatActorBasedIpExemption();
+        .getActorBasedRules(REQUEST_CONTEXT);
+
     doReturn(
-            List.of(
-                BlockingDetails.newBuilder()
-                    .setIpDetails(IpDetails.newBuilder().addIpAddresses("1.2.3.4").build())
-                    .setCategory(BLOCKING_CATEGORY_RATE_LIMIT)
-                    .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK)
-                    .setInfo("threat-actor-violation")
-                    .build()))
-        .when(actorBasedDataFetcher)
-        .getThreatActorBasedIpViolation();
-    doReturn(
-            List.of(
-                BlockingDetails.newBuilder()
-                    .setIpDetails(IpDetails.newBuilder().addIpAddresses("1.2.3.4").build())
-                    .setCategory(BLOCKING_CATEGORY_RATE_LIMIT)
-                    .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK)
-                    .setInfo("rate-limit-violation")
-                    .build()))
-        .when(actorBasedDataFetcher)
-        .getRateLimitBasedIpViolation();
-    doReturn(
-            List.of(
-                BlockingDetails.newBuilder()
-                    .setIpDetails(IpDetails.newBuilder().addIpAddresses("1.2.3.4").build())
-                    .setCategory(BLOCKING_CATEGORY_CUSTOM_IP_RULE)
-                    .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK)
-                    .setInfo("custom-ip-based-violation")
-                    .build()))
+            Map.of(
+                BLOCKING_RULE_TYPE_BLOCK,
+                List.of(
+                    BlockingDetails.newBuilder()
+                        .setIpDetails(IpDetails.newBuilder().addIpAddresses("1.2.3.4").build())
+                        .setCategory(BLOCKING_CATEGORY_CUSTOM_IP_RULE)
+                        .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK)
+                        .setInfo("custom-ip-based-violation")
+                        .build()),
+                BLOCKING_RULE_TYPE_ALLOW,
+                List.of(
+                    BlockingDetails.newBuilder()
+                        .setIpDetails(IpDetails.newBuilder().addIpAddresses("1.2.3.4").build())
+                        .setCategory(BLOCKING_CATEGORY_CUSTOM_IP_RULE)
+                        .setBlockingRuleType(BLOCKING_RULE_TYPE_ALLOW)
+                        .setInfo("custom-ip-based-exemption")
+                        .build()),
+                BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT,
+                List.of(
+                    BlockingDetails.newBuilder()
+                        .setIpDetails(IpDetails.newBuilder().addIpAddresses("1.2.3.4").build())
+                        .setCategory(BLOCKING_CATEGORY_CUSTOM_IP_RULE)
+                        .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT)
+                        .setInfo("custom-ip-based-block-all-except")
+                        .build())))
         .when(customIpBasedDataFetcher)
-        .getCustomIpBasedViolations();
+        .getCustomIpBasedRules(REQUEST_CONTEXT);
+
     doReturn(
-            List.of(
-                BlockingDetails.newBuilder()
-                    .setIpDetails(IpDetails.newBuilder().addIpAddresses("1.2.3.4").build())
-                    .setCategory(BLOCKING_CATEGORY_CUSTOM_IP_RULE)
-                    .setBlockingRuleType(BLOCKING_RULE_TYPE_ALLOW)
-                    .setInfo("custom-ip-based-exemption")
-                    .build()))
-        .when(customIpBasedDataFetcher)
-        .getCustomIpBasedExemptions();
-    doReturn(
-            List.of(
-                BlockingDetails.newBuilder()
-                    .setIpDetails(IpDetails.newBuilder().addIpAddresses("1.2.3.4").build())
-                    .setCategory(BLOCKING_CATEGORY_CUSTOM_IP_RULE)
-                    .setBlockingRuleType(BLOCKING_RULE_TYPE_ALLOW)
-                    .setInfo("custom-ip-based-block-all-except")
-                    .build()))
-        .when(customIpBasedDataFetcher)
-        .getCustomIpBasedBlockAllExcepts();
-    doReturn(
-            List.of(
-                BlockingDetails.newBuilder()
-                    .setCategory(BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE)
-                    .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK)
-                    .setInfo("custom-signature-violation")
-                    .setCustomSignatureDetails(
-                        CustomSignatureDetails.newBuilder()
-                            .setRuleId("custom-signature-rule-id")
-                            .build())
-                    .build()))
+            Map.of(
+                BLOCKING_RULE_TYPE_BLOCK,
+                List.of(
+                    BlockingDetails.newBuilder()
+                        .setCategory(BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE)
+                        .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK)
+                        .setInfo("custom-signature-violation")
+                        .setCustomSignatureDetails(
+                            CustomSignatureDetails.newBuilder()
+                                .setRuleId("custom-signature-rule-id")
+                                .build())
+                        .build()),
+                BLOCKING_RULE_TYPE_ALLOW,
+                List.of(
+                    BlockingDetails.newBuilder()
+                        .setCategory(BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE)
+                        .setBlockingRuleType(BLOCKING_RULE_TYPE_ALLOW)
+                        .setInfo("custom-signature-exemption")
+                        .setCustomSignatureDetails(
+                            CustomSignatureDetails.newBuilder()
+                                .setRuleId("custom-signature-rule-id")
+                                .build())
+                        .build())))
         .when(customSignatureDataFetcher)
-        .getCustomSignatureViolations();
-    doReturn(
-            List.of(
-                BlockingDetails.newBuilder()
-                    .setCategory(BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE)
-                    .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK)
-                    .setInfo("custom-signature-exemption")
-                    .setCustomSignatureDetails(
-                        CustomSignatureDetails.newBuilder()
-                            .setRuleId("custom-signature-rule-id")
-                            .build())
-                    .build()))
-        .when(customSignatureDataFetcher)
-        .getCustomSignatureExemptions();
+        .getCustomSignatureRules(REQUEST_CONTEXT);
+
     doReturn(
             List.of(
                 BlockingDetails.newBuilder()
@@ -208,26 +212,27 @@ class BlockingPolicyConfigurationManagerTest {
                     .setInfo("modsec-violation")
                     .build()))
         .when(modsecDataFetcher)
-        .getModsecViolations();
+        .getModsecViolations(REQUEST_CONTEXT);
+
     doReturn(
-            List.of(
-                BlockingDetails.newBuilder()
-                    .setCategory(BLOCKING_CATEGORY_CUSTOM_REGION_RULE)
-                    .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT)
-                    .setInfo("region-block-all-except")
-                    .setRegionDetails(RegionDetails.newBuilder().addRegions("Bhutan").build())
-                    .build()))
+            Map.of(
+                BLOCKING_RULE_TYPE_BLOCK,
+                List.of(
+                    BlockingDetails.newBuilder()
+                        .setCategory(BLOCKING_CATEGORY_CUSTOM_REGION_RULE)
+                        .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT)
+                        .setInfo("region-violation")
+                        .setRegionDetails(RegionDetails.newBuilder().addRegions("Bhutan").build())
+                        .build()),
+                BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT,
+                List.of(
+                    BlockingDetails.newBuilder()
+                        .setCategory(BLOCKING_CATEGORY_CUSTOM_REGION_RULE)
+                        .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT)
+                        .setInfo("region-block-all-except")
+                        .setRegionDetails(RegionDetails.newBuilder().addRegions("Bhutan").build())
+                        .build())))
         .when(regionDataFetcher)
-        .getRegionViolationAllExcepts();
-    doReturn(
-            List.of(
-                BlockingDetails.newBuilder()
-                    .setCategory(BLOCKING_CATEGORY_CUSTOM_REGION_RULE)
-                    .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT)
-                    .setInfo("region-violation")
-                    .setRegionDetails(RegionDetails.newBuilder().addRegions("Bhutan").build())
-                    .build()))
-        .when(regionDataFetcher)
-        .getRegionViolations();
+        .getRegionBasedRules(REQUEST_CONTEXT);
   }
 }

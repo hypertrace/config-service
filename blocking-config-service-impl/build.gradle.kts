@@ -13,6 +13,7 @@ dependencies {
 
   implementation(libs.traceable.opaDistributor.api)
   implementation(libs.traceable.actorService.api)
+  implementation(libs.traceable.platformGateway.validators)
   implementation(projects.configUtils)
 
   implementation(libs.guice)

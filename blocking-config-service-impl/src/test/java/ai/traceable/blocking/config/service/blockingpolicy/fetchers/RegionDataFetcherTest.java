@@ -11,9 +11,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
-import ai.traceable.blocking.config.service.blockingpolicy.fetchers.impl.RegionDataFetcherImpl;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
+import ai.traceable.blocking.config.service.v1.BlockingRuleType;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesRequest;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesResponse;
@@ -21,10 +21,14 @@ import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfi
 import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRule.ExpirationDetails;
 import java.util.List;
+import java.util.Map;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class RegionDataFetcherTest {
+  private static final String TENANT_ID = "tenant-id";
+  private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
 
   private RegionConfigServiceBlockingStub regionConfigServiceBlockingStub;
   private RegionDataFetcher regionDataFetcher;
@@ -47,39 +51,25 @@ class RegionDataFetcherTest {
         .when(blockingRulesUtils)
         .generateBlockingStatus(activeTimestamp, BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT);
 
-    regionDataFetcher =
-        new RegionDataFetcherImpl(regionConfigServiceBlockingStub, blockingRulesUtils);
-    initMock();
+    regionDataFetcher = new RegionDataFetcher(regionConfigServiceBlockingStub, blockingRulesUtils);
   }
 
   @Test
-  void getRegionViolations() {
-    List<BlockingDetails> violations = regionDataFetcher.getRegionViolations();
-    assertEquals(1, violations.size());
-    assertEquals(List.of("Nepal", "Bhutan"), violations.get(0).getRegionDetails().getRegionsList());
-    assertEquals(BLOCKING_CATEGORY_CUSTOM_REGION_RULE, violations.get(0).getCategory());
-    assertEquals(BLOCKING_RULE_TYPE_BLOCK, violations.get(0).getBlockingRuleType());
-    assertEquals(BLOCKING_STATUS_DENIED, violations.get(0).getStatus());
-    assertEquals(
-        ViolationInfoEncoder.getEncodedCustomRegionRuleViolationInfo("rule-id-1", "rule-name-1"),
-        violations.get(0).getInfo());
+  void getRegionBasedRulesTestEmpty() {
+    doReturn(GetAllRegionRulesResponse.getDefaultInstance())
+        .when(regionConfigServiceBlockingStub)
+        .getAllRegionRules(GetAllRegionRulesRequest.getDefaultInstance());
+
+    Map<BlockingRuleType, List<BlockingDetails>> regionBasedRuleMap =
+        regionDataFetcher.getRegionBasedRules(REQUEST_CONTEXT);
+
+    assertEquals(2, regionBasedRuleMap.size());
+    assertEquals(0, regionBasedRuleMap.get(BLOCKING_RULE_TYPE_BLOCK).size());
+    assertEquals(0, regionBasedRuleMap.get(BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT).size());
   }
 
   @Test
-  void getRegionViolationAllExcepts() {
-    List<BlockingDetails> blockAllExcepts = regionDataFetcher.getRegionViolationAllExcepts();
-    assertEquals(1, blockAllExcepts.size());
-    assertEquals(
-        List.of("Nepal", "Bhutan"), blockAllExcepts.get(0).getRegionDetails().getRegionsList());
-    assertEquals(BLOCKING_CATEGORY_CUSTOM_REGION_RULE, blockAllExcepts.get(0).getCategory());
-    assertEquals(BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT, blockAllExcepts.get(0).getBlockingRuleType());
-    assertEquals(BLOCKING_STATUS_DENIED, blockAllExcepts.get(0).getStatus());
-    assertEquals(
-        ViolationInfoEncoder.getEncodedCustomRegionRuleViolationInfo("rule-id-3", "rule-name-3"),
-        blockAllExcepts.get(0).getInfo());
-  }
-
-  private void initMock() {
+  void getRegionBasedRulesTest() {
     doReturn(
             GetAllRegionRulesResponse.newBuilder()
                 .addRule(
@@ -107,7 +97,7 @@ class RegionDataFetcherTest {
                 .addRule(
                     RegionRule.newBuilder()
                         .setId("rule-id-3")
-                        .addAllRegionId(List.of("Nepal", "Bhutan"))
+                        .addAllRegionId(List.of("China", "Pakistan"))
                         .setName("rule-name-3")
                         .setActionType(REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
                         .setExpirationDetails(
@@ -137,19 +127,35 @@ class RegionDataFetcherTest {
                                 .setTimestampMillis(inactiveTimestamp)
                                 .build())
                         .build())
-                .addRule(
-                    RegionRule.newBuilder()
-                        .setId("rule-id-6")
-                        .addAllRegionId(List.of())
-                        .setName("rule-name-6")
-                        .setActionType(REGION_RULE_ACTION_TYPE_BLOCK)
-                        .setExpirationDetails(
-                            ExpirationDetails.newBuilder()
-                                .setTimestampMillis(activeTimestamp)
-                                .build())
-                        .build())
                 .build())
         .when(regionConfigServiceBlockingStub)
         .getAllRegionRules(GetAllRegionRulesRequest.getDefaultInstance());
+
+    Map<BlockingRuleType, List<BlockingDetails>> regionBasedRuleMap =
+        regionDataFetcher.getRegionBasedRules(REQUEST_CONTEXT);
+
+    assertEquals(2, regionBasedRuleMap.size());
+
+    List<BlockingDetails> violations = regionBasedRuleMap.get(BLOCKING_RULE_TYPE_BLOCK);
+    assertEquals(1, violations.size());
+    assertEquals(List.of("Nepal", "Bhutan"), violations.get(0).getRegionDetails().getRegionsList());
+    assertEquals(BLOCKING_CATEGORY_CUSTOM_REGION_RULE, violations.get(0).getCategory());
+    assertEquals(BLOCKING_RULE_TYPE_BLOCK, violations.get(0).getBlockingRuleType());
+    assertEquals(BLOCKING_STATUS_DENIED, violations.get(0).getStatus());
+    assertEquals(
+        ViolationInfoEncoder.getEncodedCustomRegionRuleViolationInfo("rule-id-1", "rule-name-1"),
+        violations.get(0).getInfo());
+
+    List<BlockingDetails> blockAllExcepts =
+        regionBasedRuleMap.get(BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT);
+    assertEquals(1, blockAllExcepts.size());
+    assertEquals(
+        List.of("China", "Pakistan"), blockAllExcepts.get(0).getRegionDetails().getRegionsList());
+    assertEquals(BLOCKING_CATEGORY_CUSTOM_REGION_RULE, blockAllExcepts.get(0).getCategory());
+    assertEquals(BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT, blockAllExcepts.get(0).getBlockingRuleType());
+    assertEquals(BLOCKING_STATUS_DENIED, blockAllExcepts.get(0).getStatus());
+    assertEquals(
+        ViolationInfoEncoder.getEncodedCustomRegionRuleViolationInfo("rule-id-3", "rule-name-3"),
+        blockAllExcepts.get(0).getInfo());
   }
 }

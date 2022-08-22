@@ -46,6 +46,11 @@ data:
       host = {{ .Values.traceableConfigServiceConfig.actorServiceConfig.host }}
       port = {{ .Values.traceableConfigServiceConfig.actorServiceConfig.port }}
       request.timeout = {{ .Values.traceableConfigServiceConfig.actorServiceConfig.request.timeout }}
+      cache = {
+        maxCacheSize = {{ .Values.traceableConfigServiceConfig.actorServiceConfig.cache.maxCacheSize }}
+        refreshAfterWriteDuration = {{ .Values.traceableConfigServiceConfig.actorServiceConfig.cache.refreshAfterWriteDuration }}
+        expireAfterWriteDuration = {{ .Values.traceableConfigServiceConfig.actorServiceConfig.cache.expireAfterWriteDuration }}
+      }
     }
     insights.service.config = {
       host = {{ .Values.traceableConfigServiceConfig.insightsServiceConfig.host }}

@@ -17,12 +17,13 @@ import ai.traceable.blocking.config.service.v1.GetBlockingRulesResponse;
 import ai.traceable.blocking.config.service.v1.RegionBlockingRules;
 import ai.traceable.blocking.config.service.v1.SafeCrsBlockingRules;
 import io.grpc.stub.StreamObserver;
-import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class BlockingConfigServiceImplTest {
   private static final String TENANT_ID = "tenant1";
+  private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
 
   private RegionBlockingRules regionBlockingRules;
   private CustomModsecBlockingRules customModsecBlockingRules;
@@ -30,8 +31,8 @@ class BlockingConfigServiceImplTest {
   private BlockingPolicyConfiguration blockingPolicyConfiguration;
 
   private BlockingConfigServiceImpl blockingConfigService;
-  private String hash1 = "hash1";
-  private String hash2 = "hash2";
+  private final String hash1 = "hash1";
+  private final String hash2 = "hash2";
 
   @BeforeEach
   void setup() {
@@ -48,14 +49,16 @@ class BlockingConfigServiceImplTest {
     this.blockingPolicyConfiguration =
         BlockingPolicyConfiguration.newBuilder().setHash(hash2).build();
 
-    doReturn(regionBlockingRules).when(regionBlockingManager).getEnabledBlockingRules(hash1);
+    doReturn(regionBlockingRules)
+        .when(regionBlockingManager)
+        .getEnabledBlockingRules(REQUEST_CONTEXT, hash1);
     doReturn(customModsecBlockingRules)
         .when(customModsecBlockingManager)
-        .getEnabledBlockingRules(hash1);
+        .getEnabledBlockingRules(REQUEST_CONTEXT, hash1);
     doReturn(modsecCrsBlockingRules).when(modsecBlockingManager).getBlockingRules(hash1);
     doReturn(blockingPolicyConfiguration)
         .when(blockingPolicyConfigurationManager)
-        .getBlockingPolicyConfiguration(hash1);
+        .getBlockingPolicyConfiguration(REQUEST_CONTEXT, hash1);
 
     this.blockingConfigService =
         new BlockingConfigServiceImpl(
@@ -79,7 +82,8 @@ class BlockingConfigServiceImplTest {
                     .setBlockingPolicyConfigurationHash(hash1)
                     .build(),
                 responseObserver);
-    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+    REQUEST_CONTEXT.run(runnable);
     verify(responseObserver, times(1))
         .onNext(
             GetBlockingRulesResponse.newBuilder()
@@ -100,7 +104,7 @@ class BlockingConfigServiceImplTest {
                     .setBlockingPolicyConfigurationHash(hash1)
                     .build(),
                 responseObserver);
-    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    REQUEST_CONTEXT.run(runnable);
 
     // exception for custom signature blocking rules
     runnable =
@@ -113,7 +117,7 @@ class BlockingConfigServiceImplTest {
                     .setBlockingPolicyConfigurationHash(hash1)
                     .build(),
                 responseObserver);
-    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    REQUEST_CONTEXT.run(runnable);
 
     // exception for safe crs rules
     runnable =
@@ -126,7 +130,7 @@ class BlockingConfigServiceImplTest {
                     .setBlockingPolicyConfigurationHash(hash1)
                     .build(),
                 responseObserver);
-    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    REQUEST_CONTEXT.run(runnable);
 
     // exception for blocking policy configuration
     runnable =
@@ -139,7 +143,7 @@ class BlockingConfigServiceImplTest {
                     .setBlockingPolicyConfigurationHash("")
                     .build(),
                 responseObserver);
-    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    REQUEST_CONTEXT.run(runnable);
 
     verify(responseObserver, times(4)).onError(any(RuntimeException.class));
     verify(responseObserver, times(1)).onCompleted();

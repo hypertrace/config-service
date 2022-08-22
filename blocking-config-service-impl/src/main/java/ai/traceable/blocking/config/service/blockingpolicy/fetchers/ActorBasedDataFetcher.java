@@ -1,12 +1,19 @@
 package ai.traceable.blocking.config.service.blockingpolicy.fetchers;
 
-import ai.traceable.blocking.config.service.v1.BlockingDetails;
-import java.util.List;
+import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.ActorBasedRulesCache;
+import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.ActorBasedRulesCollection;
+import com.google.inject.Inject;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public interface ActorBasedDataFetcher {
-  List<BlockingDetails> getThreatActorBasedIpViolation();
+public class ActorBasedDataFetcher {
+  private final ActorBasedRulesCache activeActorsCache;
 
-  List<BlockingDetails> getThreatActorBasedIpExemption();
+  @Inject
+  public ActorBasedDataFetcher(ActorBasedRulesCache activeActorsCache) {
+    this.activeActorsCache = activeActorsCache;
+  }
 
-  List<BlockingDetails> getRateLimitBasedIpViolation();
+  public ActorBasedRulesCollection getActorBasedRules(RequestContext requestContext) {
+    return activeActorsCache.getActorBasedRules(requestContext.buildInternalContextualKey());
+  }
 }

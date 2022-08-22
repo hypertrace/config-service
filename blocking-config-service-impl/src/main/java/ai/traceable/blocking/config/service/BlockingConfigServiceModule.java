@@ -6,7 +6,7 @@ import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceG
 import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceGrpc.AnomalyGlobalConfigServiceBlockingStub;
 import ai.traceable.blocking.config.service.blockingmodsec.ModsecBlockingManagerModule;
 import ai.traceable.blocking.config.service.blockingpolicy.BlockingPolicyConfigurationManagerModule;
-import ai.traceable.blocking.config.service.blockingpolicy.fetchers.config.ActorServiceConfig;
+import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.config.ActorServiceConfig;
 import ai.traceable.blocking.config.service.customsignature.CustomModsecBlockingManagerModule;
 import ai.traceable.blocking.config.service.regions.RegionBlockingManagerModule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;

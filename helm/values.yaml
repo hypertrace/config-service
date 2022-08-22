@@ -156,6 +156,11 @@ traceableConfigServiceConfig:
     port: 50888
     request:
       timeout: 10s
+    cache:
+      maxCacheSize: 10000
+      expireAfterWriteDuration: 10m
+      refreshAfterWriteDuration: 30s
+
   insightsServiceConfig:
     host: insights-service
     port: 50098

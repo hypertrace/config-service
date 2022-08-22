@@ -10,6 +10,7 @@ import ai.traceable.blocking.config.service.v1.GetBlockingRulesResponse;
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
@@ -37,19 +38,22 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
     GetBlockingRulesResponse.Builder responseBuilder = GetBlockingRulesResponse.newBuilder();
 
     try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+
       responseBuilder.setRegionBlockingRules(
-          regionBlockingManager.getEnabledBlockingRules(request.getRegionBlockingRulesHash()));
+          regionBlockingManager.getEnabledBlockingRules(
+              requestContext, request.getRegionBlockingRulesHash()));
 
       responseBuilder.setCustomModsecBlockingRules(
           customModsecBlockingManager.getEnabledBlockingRules(
-              request.getCustomModsecBlockingRulesHash()));
+              requestContext, request.getCustomModsecBlockingRulesHash()));
 
       responseBuilder.setSafeCrsBlockingRules(
           modsecBlockingManager.getBlockingRules(request.getSafeCrsBlockingRulesHash()));
 
       responseBuilder.setBlockingPolicyConfiguration(
           blockingPolicyConfigurationManager.getBlockingPolicyConfiguration(
-              request.getBlockingPolicyConfigurationHash()));
+              requestContext, request.getBlockingPolicyConfigurationHash()));
 
       responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();
