@@ -46,6 +46,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -114,7 +115,10 @@ public class AnomalyDetectionConfigManagerTest {
     this.configManager =
         spy(
             new AnomalyDetectionConfigManagerImpl(
-                configServiceBlockingStub, detectionConfigConverter, detectorConfigServiceConfig));
+                configServiceBlockingStub,
+                detectionConfigConverter,
+                detectorConfigServiceConfig,
+                mock(ConfigChangeEventGenerator.class)));
   }
 
   @AfterEach
@@ -273,7 +277,10 @@ public class AnomalyDetectionConfigManagerTest {
     DetectorConfigServiceConfig config = getDefaultConfig();
     configManager =
         new AnomalyDetectionConfigManagerImpl(
-            configServiceBlockingStub, detectionConfigConverter, config);
+            configServiceBlockingStub,
+            detectionConfigConverter,
+            config,
+            mock(ConfigChangeEventGenerator.class));
 
     List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
     defaultDetectionConfigs.addAll(config.getDefaultModsecDetectionConfigs());

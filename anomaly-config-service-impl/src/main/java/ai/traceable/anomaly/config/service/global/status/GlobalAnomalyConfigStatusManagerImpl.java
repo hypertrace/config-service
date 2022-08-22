@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -45,11 +46,13 @@ public class GlobalAnomalyConfigStatusManagerImpl
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
       ScopedGlobalConfigStatusChangeConverter configConverter,
       AnomalyConfigScopeUtils anomalyConfigScopeUtils,
-      LicenseInfoLoader licenseInfoLoader) {
+      LicenseInfoLoader licenseInfoLoader,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
         configServiceBlockingStub,
         GLOBAL_ANOMALY_CONFIG_NAMESPACE,
-        GLOBAL_ANOMALY_CONFIG_STATUS_RESOURCE_NAME);
+        GLOBAL_ANOMALY_CONFIG_STATUS_RESOURCE_NAME,
+        configChangeEventGenerator);
     this.config = config;
     this.configConverter = configConverter;
     this.anomalyConfigScopeUtils = anomalyConfigScopeUtils;

@@ -18,6 +18,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -29,9 +30,13 @@ public class TrainingActionManagerImpl extends IdentifiedObjectStore<ScopedTrain
   @Inject
   TrainingActionManagerImpl(
       TrainingActionConverter actionConverter,
-      ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub) {
+      ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
-        configServiceBlockingStub, TRAINING_ACTION_NAMESPACE, TRAINING_ACTION_CONFIG_RESOURCE_NAME);
+        configServiceBlockingStub,
+        TRAINING_ACTION_NAMESPACE,
+        TRAINING_ACTION_CONFIG_RESOURCE_NAME,
+        configChangeEventGenerator);
     this.actionConverter = actionConverter;
   }
 

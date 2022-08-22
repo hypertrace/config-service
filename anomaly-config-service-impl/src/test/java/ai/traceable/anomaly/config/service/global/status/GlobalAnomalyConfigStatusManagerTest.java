@@ -5,6 +5,7 @@ import static ai.traceable.anomaly.config.service.v1.AnomalyConfidenceLevel.ANOM
 import static ai.traceable.anomaly.config.service.v1.AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_MEDIUM;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
@@ -45,6 +46,7 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import java.io.IOException;
 import java.util.List;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
@@ -139,7 +141,8 @@ public class GlobalAnomalyConfigStatusManagerTest {
                 configServiceBlockingStub,
                 configConverter,
                 new AnomalyConfigScopeUtils(),
-                licenseInfoLoader));
+                licenseInfoLoader,
+                mock(ConfigChangeEventGenerator.class)));
   }
 
   @AfterAll

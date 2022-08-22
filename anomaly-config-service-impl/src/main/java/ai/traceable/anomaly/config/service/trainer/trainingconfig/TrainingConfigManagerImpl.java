@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -39,8 +40,13 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
   public TrainingConfigManagerImpl(
       TrainingConfigHandler configHandler,
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
-      TrainerConfigServiceConfig config) {
-    super(configServiceBlockingStub, TRAINING_CONFIG_NAMESPACE, TRAINING_CONFIG_RESOURCE_NAME);
+      TrainerConfigServiceConfig config,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
+    super(
+        configServiceBlockingStub,
+        TRAINING_CONFIG_NAMESPACE,
+        TRAINING_CONFIG_RESOURCE_NAME,
+        configChangeEventGenerator);
     this.configHandler = configHandler;
     this.defaultApiNamingTrainingConfigs = config.getApiNamingTrainingConfigs();
     this.defaultMetadataTrainingConfigs = config.getMetadataTrainingConfigs();

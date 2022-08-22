@@ -3,6 +3,7 @@ package ai.traceable.anomaly.config.service.trainer.trainingaction;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -86,7 +88,11 @@ public class TrainingActionManagerTest {
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     TrainingActionConverter actionConverter = new TrainingActionConverter(Clock.systemUTC());
     this.actionManager =
-        spy(new TrainingActionManagerImpl(actionConverter, configServiceBlockingStub));
+        spy(
+            new TrainingActionManagerImpl(
+                actionConverter,
+                configServiceBlockingStub,
+                mock(ConfigChangeEventGenerator.class)));
   }
 
   @AfterEach

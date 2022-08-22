@@ -27,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -47,11 +48,13 @@ public class AggregationConfigManagerImpl
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
       AnomalyAggregationConfigHandler anomalyAggregationConfigHandler,
       AnomalyConfigScopeUtils anomalyConfigScopeUtils,
-      AggregationConfigServiceConfig config) {
+      AggregationConfigServiceConfig config,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
         configServiceBlockingStub,
         ANOMALY_AGGREGATION_CONFIG_NAMESPACE,
-        ANOMALY_AGGREGATION_CONFIG_RESOURCE_NAME);
+        ANOMALY_AGGREGATION_CONFIG_RESOURCE_NAME,
+        configChangeEventGenerator);
     this.anomalyAggregationConfigHandler = anomalyAggregationConfigHandler;
     this.anomalyConfigScopeUtils = anomalyConfigScopeUtils;
     this.defaultModsecConfig =

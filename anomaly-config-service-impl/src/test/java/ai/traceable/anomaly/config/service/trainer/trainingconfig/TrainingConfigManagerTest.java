@@ -36,6 +36,7 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -98,7 +99,10 @@ public class TrainingConfigManagerTest {
     this.configManager =
         spy(
             new TrainingConfigManagerImpl(
-                configHandler, configServiceBlockingStub, trainerConfigServiceConfig));
+                configHandler,
+                configServiceBlockingStub,
+                trainerConfigServiceConfig,
+                mock(ConfigChangeEventGenerator.class)));
   }
 
   @AfterEach
