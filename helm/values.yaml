@@ -200,20 +200,6 @@ traceableConfigServiceConfig:
         apiEndpointCacheDuration: 604800s
   labelApplicationRuleConfigServiceConfig:
     maxDynamicLabelApplicationRulesPerTenant: 100
-      #  localProcessingConfigServiceConfig:
-      #    samplingConfig:
-      #      rateLimitConfig:
-    #commented config for reference
-#        tenant1:
-#          traceLimitPerEndpoint:
-#            fixedWindowLimit:
-#              quantityAllowed: 10
-#              windowDuration: 60s
-#          traceLimitGlobal:
-#            fixedWindowLimit:
-#              quantityAllowed: 10000
-#              windowDuration: 60s
-#          apiEndpointCacheDuration: 604800s
 
 localApiNamingConfig:
   fullTrieReloadConfig:
