@@ -1,9 +1,10 @@
 [versions]
-protoc = "3.19.4"
-grpc = "1.45.1"
+protoc = "3.21.4"
+grpc = "1.48.0"
 gson = "2.9.0"
-hypertrace-grpcutils = "0.7.5"
-hypertrace-framework = "0.1.37"
+
+hypertrace-grpcutils = "0.7.6"
+hypertrace-framework = "0.1.43"
 lombok = "1.18.22"
 jackson = "2.13.2.2"
 kafka = "6.0.1-ccs"
@@ -24,7 +25,7 @@ hypertrace-grpc-framework = { module = "org.hypertrace.core.serviceframework:pla
 hypertrace-framework-metrics = { module = "org.hypertrace.core.serviceframework:platform-service-framework", version.ref = "hypertrace-framework" }
 hypertrace-framework-integrationtest = { module = "org.hypertrace.core.serviceframework:integrationtest-service-framework", version.ref = "hypertrace-framework" }
 
-hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:document-store", version = "0.6.15" }
+hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:document-store", version = "0.7.5" }
 hypertrace-eventstore = { module = "org.hypertrace.core.eventstore:event-store", version = "0.1.2" }
 
 guava = { module = "com.google.guava:guava", version = "31.1-jre" }
