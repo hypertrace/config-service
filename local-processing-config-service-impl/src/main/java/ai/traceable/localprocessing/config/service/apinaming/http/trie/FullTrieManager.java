@@ -33,12 +33,12 @@ import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 
 @Slf4j
 public class FullTrieManager {
+
   private static final String CACHE_REFRESH_DURATION =
       "api.naming.config.trieModels.cache.refreshAfterWriteDuration";
   private static final String CACHE_EXPIRATION_DURATION =
       "api.naming.config.trieModels.cache.expireAfterWriteDuration";
-  private static final String MAXIMUM_CACHE_SIZE =
-      "api.naming.config.trieModels.cache.maximumCacheSize";
+  private static final String MAXIMUM_CACHE_SIZE = "api.naming.config.trieModels.cache.maximumSize";
   private static final String CACHE_NAME = "trieModelCache";
   private static final Duration CACHE_REFRESH_DURATION_DEFAULT = Duration.ofSeconds(150);
   private static final Duration CACHE_EXPIRATION_DURATION_DEFAULT = Duration.ofSeconds(300);

@@ -29,8 +29,7 @@ public class HttpApiNamingCachedConfigManager {
       "api.naming.config.configs.cache.refreshAfterWriteDuration";
   private static final String CACHE_EXPIRATION_DURATION =
       "api.naming.config.configs.cache.expireAfterWriteDuration";
-  private static final String MAXIMUM_CACHE_SIZE =
-      "api.naming.config.configs.cache.maximumCacheSize";
+  private static final String MAXIMUM_CACHE_SIZE = "api.naming.config.configs.cache.maximumSize";
   private static final String CACHE_NAME = "trainingConfigCache";
   private static final Duration CACHE_REFRESH_DURATION_DEFAULT = Duration.ofHours(12);
   private static final Duration CACHE_EXPIRATION_DURATION_DEFAULT = Duration.ofHours(24);

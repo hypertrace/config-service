@@ -25,7 +25,7 @@ public class DelegateEntityCacheLoader
   private static final String CACHE_EXPIRATION_DURATION =
       "api.naming.config.entity.fetcher.cache.expireAfterWriteDuration";
   private static final String MAXIMUM_CACHE_SIZE =
-      "api.naming.config.entity.fetcher.cache.maximumCacheSize";
+      "api.naming.config.entity.fetcher.cache.maximumSize";
   private static final String SERVICE_ENTITY_CACHE_NAME = "serviceEntityCache";
   private static final Duration CACHE_REFRESH_DURATION_DEFAULT = Duration.ofHours(12);
   private static final Duration CACHE_EXPIRATION_DURATION_DEFAULT = Duration.ofHours(24);

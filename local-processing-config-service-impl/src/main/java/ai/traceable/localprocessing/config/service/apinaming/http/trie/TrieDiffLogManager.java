@@ -56,7 +56,7 @@ public class TrieDiffLogManager {
   private static final String CACHE_EXPIRATION_DURATION =
       "api.naming.config.trieDiffLog.cache.expireAfterWriteDuration";
   private static final String MAXIMUM_CACHE_SIZE =
-      "api.naming.config.trieDiffLog.cache.maximumCacheSize";
+      "api.naming.config.trieDiffLog.cache.maximumSize";
   private static final String DIFF_LOG_DIRECTORY_NAME =
       "api.naming.config.trieDiffLog.directory.name";
   private static final String DIFF_LOG_DIRECTORY_DEFAULT_NAME = "difflog";
