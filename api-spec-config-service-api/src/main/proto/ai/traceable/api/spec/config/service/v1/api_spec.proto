@@ -46,6 +46,14 @@ message UpdateApiSpecResponse {
   ApiSpec api_spec = 1;
 }
 
+message UpdateApiSpecsRequest {
+  repeated UpdateApiSpec api_specs = 1;
+}
+
+message UpdateApiSpecsResponse {
+  repeated ApiSpec api_specs = 1;
+}
+
 message UpdateApiSpec {
   string spec_id = 1;
   string name = 2;
@@ -59,6 +67,13 @@ message DeleteApiSpecRequest {
 }
 
 message DeleteApiSpecResponse {
+}
+
+message DeleteApiSpecsRequest {
+  repeated string spec_ids = 1;
+}
+
+message DeleteApiSpecsResponse {
 }
 
 message ApiSpec {

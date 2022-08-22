@@ -10,6 +10,8 @@ import ai.traceable.api.spec.config.service.v1.CreateApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.CreateApiSpecResponse;
 import ai.traceable.api.spec.config.service.v1.DeleteApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.DeleteApiSpecResponse;
+import ai.traceable.api.spec.config.service.v1.DeleteApiSpecsRequest;
+import ai.traceable.api.spec.config.service.v1.DeleteApiSpecsResponse;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecResponse;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecsRequest;
@@ -17,12 +19,19 @@ import ai.traceable.api.spec.config.service.v1.GetApiSpecsResponse;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpec;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpecResponse;
+import ai.traceable.api.spec.config.service.v1.UpdateApiSpecsRequest;
+import ai.traceable.api.spec.config.service.v1.UpdateApiSpecsResponse;
 import ai.traceable.api.spec.config.service.validation.ApiSpecConfigRequestValidator;
 import ai.traceable.config.utils.TimestampConverter;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -140,18 +149,59 @@ public class ApiSpecConfigServiceImpl
 
       responseObserver.onNext(
           UpdateApiSpecResponse.newBuilder()
-              .setApiSpec(
-                  ApiSpec.newBuilder(contextualConfigObject.getData())
-                      .setCreationTimestamp(
-                          timestampConverter.convert(contextualConfigObject.getCreationTimestamp()))
-                      .setLastUpdatedTimestamp(
-                          timestampConverter.convert(
-                              contextualConfigObject.getLastUpdatedTimestamp()))
-                      .build())
+              .setApiSpec(buildApiSpec(contextualConfigObject))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
       log.error("Error updating api spec: {}", request, exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void updateApiSpecs(
+      UpdateApiSpecsRequest request, StreamObserver<UpdateApiSpecsResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      this.validator.validateOrThrow(requestContext, request);
+
+      Map<String, UpdateApiSpec> apiSpecMap =
+          request.getApiSpecsList().stream()
+              .collect(Collectors.toUnmodifiableMap(UpdateApiSpec::getSpecId, Function.identity()));
+
+      Map<String, ApiSpec> existingApiSpecs =
+          apiSpecConfigStore.getAllData(requestContext).stream()
+              .filter(apiSpec -> apiSpecMap.containsKey(apiSpec.getSpecId()))
+              .collect(Collectors.toUnmodifiableMap(ApiSpec::getSpecId, Function.identity()));
+      // check if all the specs corresponding to all the specs in the request exist
+      List<String> missingSpecs = new ArrayList<>();
+      for (UpdateApiSpec apiSpec : request.getApiSpecsList()) {
+        if (!existingApiSpecs.containsKey(apiSpec.getSpecId())) {
+          missingSpecs.add(apiSpec.getSpecId());
+        }
+      }
+      if (!missingSpecs.isEmpty()) {
+        log.error("Could not find specs with following specIds: " + missingSpecs);
+        throw Status.NOT_FOUND.asException();
+      }
+
+      List<ApiSpec> updatedApiSpecs = new ArrayList<>();
+      for (ApiSpec existingApiSpec : existingApiSpecs.values()) {
+        updatedApiSpecs.add(
+            buildUpdatedApiSpec(existingApiSpec, apiSpecMap.get(existingApiSpec.getSpecId())));
+      }
+      List<ContextualConfigObject<ApiSpec>> contextualConfigObjects =
+          this.apiSpecConfigStore.upsertObjects(requestContext, updatedApiSpecs);
+      updatedApiSpecs =
+          contextualConfigObjects.stream()
+              .map(this::buildApiSpec)
+              .collect(Collectors.toUnmodifiableList());
+
+      responseObserver.onNext(
+          UpdateApiSpecsResponse.newBuilder().addAllApiSpecs(updatedApiSpecs).build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error("Error updating api specs: {}", request, exception);
       responseObserver.onError(exception);
     }
   }
@@ -164,6 +214,7 @@ public class ApiSpecConfigServiceImpl
       this.validator.validateOrThrow(requestContext, request);
 
       this.apiSpecConfigStore.deleteObject(requestContext, request.getSpecId());
+      log.info("Deleting spec with specId: " + request.getSpecId());
 
       responseObserver.onNext(DeleteApiSpecResponse.newBuilder().build());
       responseObserver.onCompleted();
@@ -171,6 +222,34 @@ public class ApiSpecConfigServiceImpl
       log.error("Error deleting api spec: {}", request, exception);
       responseObserver.onError(exception);
     }
+  }
+
+  @Override
+  public void deleteApiSpecs(
+      DeleteApiSpecsRequest request, StreamObserver<DeleteApiSpecsResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      this.validator.validateOrThrow(requestContext, request);
+
+      for (String id : request.getSpecIdsList()) {
+        this.apiSpecConfigStore.deleteObject(requestContext, id);
+        log.info("Deleting spec with specId: " + id);
+      }
+      responseObserver.onNext(DeleteApiSpecsResponse.newBuilder().build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error("Error deleting api specs: {}", request, exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  private ApiSpec buildApiSpec(ContextualConfigObject<ApiSpec> apiSpecContextualConfigObject) {
+    return ApiSpec.newBuilder(apiSpecContextualConfigObject.getData())
+        .setCreationTimestamp(
+            timestampConverter.convert(apiSpecContextualConfigObject.getCreationTimestamp()))
+        .setLastUpdatedTimestamp(
+            timestampConverter.convert(apiSpecContextualConfigObject.getLastUpdatedTimestamp()))
+        .build();
   }
 
   private ApiSpec buildUpdatedApiSpec(ApiSpec existingApiSpec, UpdateApiSpec updateApiSpec) {

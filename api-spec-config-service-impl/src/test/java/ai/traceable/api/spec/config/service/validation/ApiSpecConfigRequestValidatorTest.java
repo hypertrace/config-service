@@ -10,12 +10,15 @@ import static org.mockito.Mockito.when;
 import ai.traceable.api.spec.config.service.v1.CreateApiSpec;
 import ai.traceable.api.spec.config.service.v1.CreateApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.DeleteApiSpecRequest;
+import ai.traceable.api.spec.config.service.v1.DeleteApiSpecsRequest;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecsRequest;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpec;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpecRequest;
+import ai.traceable.api.spec.config.service.v1.UpdateApiSpecsRequest;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -150,6 +153,48 @@ class ApiSpecConfigRequestValidatorTest {
   }
 
   @Test
+  void validatesApiSpecsUpdateRequest() {
+    assertInvalidArgStatusContaining(
+        "Tenant ID",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, UpdateApiSpecsRequest.newBuilder().build()));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+
+    assertInvalidArgStatusContaining(
+        "UpdateApiSpec.spec_id",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                UpdateApiSpecsRequest.newBuilder()
+                    .addApiSpecs(UpdateApiSpec.newBuilder().setName("name").build())
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "UpdateApiSpec.name",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                UpdateApiSpecsRequest.newBuilder()
+                    .addApiSpecs(UpdateApiSpec.newBuilder().setSpecId("id").build())
+                    .build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                UpdateApiSpecsRequest.newBuilder()
+                    .addApiSpecs(
+                        UpdateApiSpec.newBuilder()
+                            .setSpecId("id")
+                            .setName("name")
+                            .setApiNamingEnabled(true)
+                            .setStatus(API_SPEC_STATUS_COMPLETED)
+                            .build())
+                    .build()));
+  }
+
+  @Test
   void validatesApiSpecDeleteRequest() {
     assertInvalidArgStatusContaining(
         "Tenant ID",
@@ -168,6 +213,29 @@ class ApiSpecConfigRequestValidatorTest {
         () ->
             validator.validateOrThrow(
                 mockRequestContext, DeleteApiSpecRequest.newBuilder().setSpecId("id").build()));
+  }
+
+  @Test
+  void validatesApiSpecsDeleteRequest() {
+    assertInvalidArgStatusContaining(
+        "Tenant ID",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, DeleteApiSpecsRequest.newBuilder().build()));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+
+    assertInvalidArgStatusContaining(
+        "Invalid specId in request",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                DeleteApiSpecsRequest.newBuilder().addAllSpecIds(List.of("", "id")).build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                DeleteApiSpecsRequest.newBuilder().addAllSpecIds(List.of("spec-id")).build()));
   }
 
   private void assertInvalidArgStatusContaining(String text, Executable executable) {

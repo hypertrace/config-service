@@ -19,6 +19,12 @@ service ApiSpecConfigService {
   rpc UpdateApiSpec (UpdateApiSpecRequest) returns (UpdateApiSpecResponse) {
   }
 
+  rpc UpdateApiSpecs (UpdateApiSpecsRequest) returns (UpdateApiSpecsResponse) {
+  }
+
   rpc DeleteApiSpec (DeleteApiSpecRequest) returns (DeleteApiSpecResponse) {
+  }
+
+  rpc DeleteApiSpecs (DeleteApiSpecsRequest) returns (DeleteApiSpecsResponse) {
   }
 }

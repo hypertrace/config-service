@@ -6,10 +6,13 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 import ai.traceable.api.spec.config.service.v1.CreateApiSpec;
 import ai.traceable.api.spec.config.service.v1.CreateApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.DeleteApiSpecRequest;
+import ai.traceable.api.spec.config.service.v1.DeleteApiSpecsRequest;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecsRequest;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpec;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpecRequest;
+import ai.traceable.api.spec.config.service.v1.UpdateApiSpecsRequest;
+import io.grpc.Status;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class ApiSpecConfigRequestValidator {
@@ -35,9 +38,27 @@ public class ApiSpecConfigRequestValidator {
     this.validateUpdateApiSpec(request.getApiSpec());
   }
 
+  public void validateOrThrow(RequestContext requestContext, UpdateApiSpecsRequest request) {
+    validateRequestContextOrThrow(requestContext);
+    for (UpdateApiSpec updateApiSpec : request.getApiSpecsList()) {
+      this.validateUpdateApiSpec(updateApiSpec);
+    }
+  }
+
   public void validateOrThrow(RequestContext requestContext, DeleteApiSpecRequest request) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, DeleteApiSpecRequest.SPEC_ID_FIELD_NUMBER);
+  }
+
+  public void validateOrThrow(RequestContext requestContext, DeleteApiSpecsRequest request) {
+    validateRequestContextOrThrow(requestContext);
+    for (String id : request.getSpecIdsList()) {
+      if (id.isEmpty() || id.isBlank()) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription(String.format("Invalid specId in request: %s", id))
+            .asRuntimeException();
+      }
+    }
   }
 
   private void validateUpdateApiSpec(UpdateApiSpec updateApiSpec) {
