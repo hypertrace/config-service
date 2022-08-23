@@ -8,6 +8,7 @@ import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleResponse;
 import ai.traceable.ratelimiting.config.service.v2.DeleteRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.DeleteRateLimitingRuleResponse;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesResponse;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc.RateLimitingConfigServiceImplBase;
@@ -47,10 +48,19 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
     try {
       RequestContext context = RequestContext.CURRENT.get();
       rulesValidator.validateOrThrow(context, request);
+
+      if (request.hasFilter()) { // backward compatibility
+        request.toBuilder()
+            .setRulesFilter(
+                GetRateLimitingRulesFilter.newBuilder()
+                    .addAllCategories(request.getFilter().getCategoriesList()));
+      }
+
       GetRateLimitingRulesResponse response =
           GetRateLimitingRulesResponse.newBuilder()
-              .addAllRules(rulesManager.getRateLimitingRules(context, request.getFilter()))
+              .addAllRules(rulesManager.getRateLimitingRules(context, request.getRulesFilter()))
               .build();
+
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception exception) {
