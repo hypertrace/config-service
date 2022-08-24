@@ -3,6 +3,7 @@ package ai.traceable.anomaly.config.service.detector.anomalydetection;
 import static ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigConstants.ANOMALY_DETECTION_CONFIG_NAMESPACE;
 import static ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigConstants.ANOMALY_DETECTION_CONFIG_RESOURCE_NAME;
 
+import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.AnomalyDetectionConfigHandler;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
@@ -34,6 +35,7 @@ public class AnomalyDetectionConfigManagerImpl
     implements AnomalyDetectionConfigManager {
 
   private final AnomalyDetectionConfigHandler anomalyDetectionConfigHandler;
+  private final AnomalyConfigScopeUtils anomalyConfigScopeUtils;
   private final List<AnomalyDetectionConfig> defaultModsecConfigs;
   private final List<AnomalyDetectionConfig> defaultApiDefinitionDetectionConfigs;
   private final List<AnomalyDetectionConfig> defaultSessionDefinitionDetectionConfigs;
@@ -42,6 +44,7 @@ public class AnomalyDetectionConfigManagerImpl
   public AnomalyDetectionConfigManagerImpl(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
       AnomalyDetectionConfigHandler anomalyDetectionConfigHandler,
+      AnomalyConfigScopeUtils anomalyConfigScopeUtils,
       DetectorConfigServiceConfig config,
       ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
@@ -50,6 +53,7 @@ public class AnomalyDetectionConfigManagerImpl
         ANOMALY_DETECTION_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
     this.anomalyDetectionConfigHandler = anomalyDetectionConfigHandler;
+    this.anomalyConfigScopeUtils = anomalyConfigScopeUtils;
     this.defaultModsecConfigs = config.getDefaultModsecDetectionConfigs();
     this.defaultApiDefinitionDetectionConfigs = config.getDefaultApiDefinitionDetectionConfigs();
     this.defaultSessionDefinitionDetectionConfigs =
@@ -61,40 +65,13 @@ public class AnomalyDetectionConfigManagerImpl
       RequestContext requestContext,
       AnomalyConfigScope configScope,
       GetAnomalyDetectionConfigsFilter filter) {
-    /*
-     * Precedence Order --> apiConfig > serviceConfig > customerConfig > defaultConfig For example, if
-     * apiConfig.disabled = true, we use it; if apiConfig.disabled = false, we use
-     * serviceConfig.disabled value and so on.. Similarly for all other config values
-     */
-    List<String> contextsWithIncreasingPriority = new ArrayList<>();
-    contextsWithIncreasingPriority.add(
-        requestContext
-            .getTenantId()
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException("Unable to get tenant id from request context")));
-
-    switch (configScope.getScopeCase()) {
-      case CUSTOMER_SCOPE:
-        break;
-      case SERVICE_SCOPE:
-        contextsWithIncreasingPriority.add(configScope.getServiceScope().getId());
-        break;
-      case API_SCOPE:
-        contextsWithIncreasingPriority.add(configScope.getApiScope().getServiceScope().getId());
-        contextsWithIncreasingPriority.add(configScope.getApiScope().getId());
-        break;
-      default:
-        throw new RuntimeException(
-            String.format("Invalid scope found: {%s}", configScope.getScopeCase()));
-    }
-
     Map<String, ScopedAnomalyDetectionConfig> configMap = fetchConfigMap(requestContext);
-
-    ScopedAnomalyDetectionConfig anomalyDetectionConfig =
-        getResolvedConfig(configMap, configScope, contextsWithIncreasingPriority, filter);
-
-    return anomalyDetectionConfig;
+    return getResolvedConfig(
+        configMap,
+        configScope,
+        anomalyConfigScopeUtils.getContextsWithIncreasingPriority(
+            getTenantId(requestContext), configScope),
+        filter);
   }
 
   @Override
@@ -106,7 +83,6 @@ public class AnomalyDetectionConfigManagerImpl
         anomalyDetectionConfigHandler.merge(
             scopedAnomalyDetectionConfig,
             currentConfig.orElse(ScopedAnomalyDetectionConfig.getDefaultInstance()));
-
     return upsertObject(requestContext, updatedScopedAnomalyDetectionConfig).getData();
   }
 
@@ -116,11 +92,8 @@ public class AnomalyDetectionConfigManagerImpl
     Map<String, ScopedAnomalyDetectionConfig> anomalyDetectionConfigMap =
         fetchConfigMap(requestContext);
 
-    List<ScopedAnomalyDetectionConfig> anomalyDetectionConfigs =
-        getResolvedConfigs(
-            anomalyDetectionConfigMap, requestContext.getTenantId().orElseThrow(), filter);
-
-    return anomalyDetectionConfigs;
+    return getResolvedConfigs(
+        anomalyDetectionConfigMap, requestContext.getTenantId().orElseThrow(), filter);
   }
 
   @Override
@@ -130,7 +103,9 @@ public class AnomalyDetectionConfigManagerImpl
       GetAnomalyDetectionConfigsFilter filter) {
 
     ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig =
-        getData(requestContext, getContextFromAnomalyConfigScope(configScope))
+        getData(
+                requestContext,
+                anomalyConfigScopeUtils.getContextFromAnomalyConfigScope(configScope))
             .orElse(ScopedAnomalyDetectionConfig.newBuilder().setConfigScope(configScope).build());
 
     return anomalyDetectionConfigHandler.merge(
@@ -223,38 +198,12 @@ public class AnomalyDetectionConfigManagerImpl
 
   @Override
   protected String getContextFromData(ScopedAnomalyDetectionConfig data) {
-    return getContextFromAnomalyConfigScope(data.getConfigScope());
+    return anomalyConfigScopeUtils.getContextFromAnomalyConfigScope(data.getConfigScope());
   }
 
   private Map<String, ScopedAnomalyDetectionConfig> fetchConfigMap(RequestContext requestContext) {
     return getAllObjects(requestContext).stream()
         .collect(Collectors.toMap(ContextualConfigObject::getContext, ConfigObject::getData));
-  }
-
-  private String getContextFromAnomalyConfigScope(AnomalyConfigScope anomalyConfigScope) {
-    String context;
-    switch (anomalyConfigScope.getScopeCase()) {
-      case CUSTOMER_SCOPE:
-        context =
-            RequestContext.CURRENT
-                .get()
-                .getTenantId()
-                .orElseThrow(
-                    () ->
-                        new IllegalArgumentException(
-                            "Unable to get tenant id from request context"));
-        break;
-      case SERVICE_SCOPE:
-        context = anomalyConfigScope.getServiceScope().getId();
-        break;
-      case API_SCOPE:
-        context = anomalyConfigScope.getApiScope().getId();
-        break;
-      default:
-        throw new RuntimeException(
-            String.format("Invalid scope found: {%s}", anomalyConfigScope.getScopeCase()));
-    }
-    return context;
   }
 
   /**
@@ -270,25 +219,14 @@ public class AnomalyDetectionConfigManagerImpl
 
     List<ScopedAnomalyDetectionConfig> resolvedConfigs = new ArrayList<>();
     for (Map.Entry<String, ScopedAnomalyDetectionConfig> entry : configMap.entrySet()) {
-
       AnomalyConfigScope anomalyConfigScope = entry.getValue().getConfigScope();
-      List<String> contextsWithIncreasingPriority = new ArrayList<>();
-      contextsWithIncreasingPriority.add(tenantId);
-      switch (anomalyConfigScope.getScopeCase()) {
-        case SERVICE_SCOPE:
-          contextsWithIncreasingPriority.add(anomalyConfigScope.getServiceScope().getId());
-          break;
-        case API_SCOPE:
-          contextsWithIncreasingPriority.add(
-              anomalyConfigScope.getApiScope().getServiceScope().getId());
-          contextsWithIncreasingPriority.add(anomalyConfigScope.getApiScope().getId());
-          break;
-        default:
-          break;
-      }
-
       resolvedConfigs.add(
-          getResolvedConfig(configMap, anomalyConfigScope, contextsWithIncreasingPriority, filter));
+          getResolvedConfig(
+              configMap,
+              anomalyConfigScope,
+              anomalyConfigScopeUtils.getContextsWithIncreasingPriority(
+                  tenantId, anomalyConfigScope),
+              filter));
     }
 
     if (!configMap.containsKey(tenantId)) {
@@ -330,5 +268,12 @@ public class AnomalyDetectionConfigManagerImpl
               : anomalyDetectionConfig;
     }
     return anomalyDetectionConfig;
+  }
+
+  private final String getTenantId(RequestContext requestContext) {
+    return requestContext
+        .getTenantId()
+        .orElseThrow(
+            () -> new IllegalArgumentException("Unable to get tenant id from request context"));
   }
 }

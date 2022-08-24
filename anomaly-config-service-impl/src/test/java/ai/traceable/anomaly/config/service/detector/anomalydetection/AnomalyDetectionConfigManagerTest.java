@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.AnomalyDetectionConfigHandler;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
@@ -17,6 +18,7 @@ import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
@@ -68,7 +70,8 @@ public class AnomalyDetectionConfigManagerTest {
   private AnomalyDetectionConfigHandler detectionConfigConverter =
       new AnomalyDetectionConfigHandler(apiDefinitionRegistry, sessionRulesRegistry);
   private AnomalyDetectionConfigManager configManager;
-
+  private final AnomalyEnvironmentScope environmentScope =
+      AnomalyEnvironmentScope.newBuilder().setEnvironmentId("environment").build();
   private final AnomalyServiceScope serviceScope =
       AnomalyServiceScope.newBuilder().setId("service").build();
   private final AnomalyApiScope apiScope =
@@ -78,6 +81,8 @@ public class AnomalyDetectionConfigManagerTest {
       AnomalyConfigScope.newBuilder()
           .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
           .build();
+  private final AnomalyConfigScope environmentConfigScope =
+      AnomalyConfigScope.newBuilder().setEnvironmentScope(environmentScope).build();
   private final AnomalyConfigScope serviceConfigScope =
       AnomalyConfigScope.newBuilder().setServiceScope(serviceScope).build();
   private final AnomalyConfigScope apiConfigScope =
@@ -90,6 +95,7 @@ public class AnomalyDetectionConfigManagerTest {
       DETECTOR_CONFIG_DIRECTORY + "resolved-detection-configs.conf";
 
   private static final String CUSTOMER_SCOPE_CONFIG = "customerScopeConfig";
+  private static final String ENVIRONMENT_SCOPE_CONFIG = "environmentScopeConfig";
   private static final String SERVICE_SCOPE_CONFIG = "serviceScopeConfig";
   private static final String API_SCOPE_CONFIG = "apiScopeConfig";
 
@@ -98,6 +104,7 @@ public class AnomalyDetectionConfigManagerTest {
   private static final Config resolvedDetectionConfigs =
       ConfigFactory.parseResources(RESOLVED_DETECTION_CONFIGS_FILE_PATH);
   private DetectorConfigServiceConfig detectorConfigServiceConfig;
+  private AnomalyConfigScopeUtils anomalyConfigScopeUtils;
 
   @BeforeEach
   public void setup() throws IOException {
@@ -109,6 +116,7 @@ public class AnomalyDetectionConfigManagerTest {
     mockConfigService.start();
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     detectorConfigServiceConfig = mock(DetectorConfigServiceConfig.class);
+    anomalyConfigScopeUtils = new AnomalyConfigScopeUtils();
     when(detectorConfigServiceConfig.getDefaultModsecDetectionConfigs()).thenReturn(List.of());
     when(detectorConfigServiceConfig.getDefaultApiDefinitionDetectionConfigs())
         .thenReturn(List.of());
@@ -117,6 +125,7 @@ public class AnomalyDetectionConfigManagerTest {
             new AnomalyDetectionConfigManagerImpl(
                 configServiceBlockingStub,
                 detectionConfigConverter,
+                anomalyConfigScopeUtils,
                 detectorConfigServiceConfig,
                 mock(ConfigChangeEventGenerator.class)));
   }
@@ -157,6 +166,18 @@ public class AnomalyDetectionConfigManagerTest {
     scopedAnomalyDetectionConfig =
         configManager.getScopedAnomalyDetectionConfig(requestContext, customerConfigScope, filter);
     assertEquals(customerScopeResolvedConfig, scopedAnomalyDetectionConfig);
+
+    scopedAnomalyDetectionConfig =
+        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(ENVIRONMENT_SCOPE_CONFIG));
+    updateScopedAnomalyDetectionConfig(requestContext, scopedAnomalyDetectionConfig);
+    ScopedAnomalyDetectionConfig environmentScopeResolvedConfig =
+        getScopedAnomalyDetectionConfig(
+            resolvedDetectionConfigs.getConfig(ENVIRONMENT_SCOPE_CONFIG));
+
+    scopedAnomalyDetectionConfig =
+        configManager.getScopedAnomalyDetectionConfig(
+            requestContext, environmentConfigScope, filter);
+    assertEquals(environmentScopeResolvedConfig, scopedAnomalyDetectionConfig);
 
     scopedAnomalyDetectionConfig =
         getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(SERVICE_SCOPE_CONFIG));
@@ -231,6 +252,10 @@ public class AnomalyDetectionConfigManagerTest {
     assertEquals(customerConfigScope, scopedAnomalyDetectionConfigs.get(0).getConfigScope());
 
     scopedAnomalyDetectionConfig =
+        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(ENVIRONMENT_SCOPE_CONFIG));
+    updateScopedAnomalyDetectionConfig(requestContext, scopedAnomalyDetectionConfig);
+
+    scopedAnomalyDetectionConfig =
         getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(SERVICE_SCOPE_CONFIG));
     updateScopedAnomalyDetectionConfig(requestContext, scopedAnomalyDetectionConfig);
 
@@ -245,7 +270,7 @@ public class AnomalyDetectionConfigManagerTest {
             .map(ScopedAnomalyDetectionConfig::getConfigScope)
             .collect(Collectors.toList());
 
-    assertEquals(3, scopedAnomalyDetectionConfigs.size());
+    assertEquals(4, scopedAnomalyDetectionConfigs.size());
     assertTrue(configScopes.contains(customerConfigScope));
 
     scopedAnomalyDetectionConfig =
@@ -254,6 +279,9 @@ public class AnomalyDetectionConfigManagerTest {
 
     ScopedAnomalyDetectionConfig customerScopeResolvedConfig =
         getScopedAnomalyDetectionConfig(resolvedDetectionConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
+    ScopedAnomalyDetectionConfig environmentScopeResolvedConfig =
+        getScopedAnomalyDetectionConfig(
+            resolvedDetectionConfigs.getConfig(ENVIRONMENT_SCOPE_CONFIG));
     ScopedAnomalyDetectionConfig serviceScopeResolvedConfig =
         getScopedAnomalyDetectionConfig(resolvedDetectionConfigs.getConfig(SERVICE_SCOPE_CONFIG));
     ScopedAnomalyDetectionConfig apiScopeResolvedConfig =
@@ -261,10 +289,13 @@ public class AnomalyDetectionConfigManagerTest {
 
     scopedAnomalyDetectionConfigs =
         configManager.getAllScopedAnomalyDetectionConfig(requestContext, filter);
-    assertEquals(3, scopedAnomalyDetectionConfigs.size());
+    assertEquals(4, scopedAnomalyDetectionConfigs.size());
 
     assertEquals(
         customerScopeResolvedConfig, getConfig(customerConfigScope, scopedAnomalyDetectionConfigs));
+    assertEquals(
+        environmentScopeResolvedConfig,
+        getConfig(environmentConfigScope, scopedAnomalyDetectionConfigs));
     assertEquals(
         serviceScopeResolvedConfig, getConfig(serviceConfigScope, scopedAnomalyDetectionConfigs));
     assertEquals(apiScopeResolvedConfig, getConfig(apiConfigScope, scopedAnomalyDetectionConfigs));
@@ -279,6 +310,7 @@ public class AnomalyDetectionConfigManagerTest {
         new AnomalyDetectionConfigManagerImpl(
             configServiceBlockingStub,
             detectionConfigConverter,
+            anomalyConfigScopeUtils,
             config,
             mock(ConfigChangeEventGenerator.class));
 
@@ -292,6 +324,15 @@ public class AnomalyDetectionConfigManagerTest {
             .getScopedAnomalyDetectionConfig(
                 requestContext,
                 customerConfigScope,
+                GetAnomalyDetectionConfigsFilter.getDefaultInstance())
+            .getAnomalyDetectionConfigsList();
+    assertEquals(defaultDetectionConfigs, detectionConfigs);
+
+    detectionConfigs =
+        configManager
+            .getScopedAnomalyDetectionConfig(
+                requestContext,
+                environmentConfigScope,
                 GetAnomalyDetectionConfigsFilter.getDefaultInstance())
             .getAnomalyDetectionConfigsList();
     assertEquals(defaultDetectionConfigs, detectionConfigs);
@@ -339,6 +380,10 @@ public class AnomalyDetectionConfigManagerTest {
         getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(SERVICE_SCOPE_CONFIG));
     updateScopedAnomalyDetectionConfig(requestContext, serviceScopedAnomalyDetectionConfig);
 
+    ScopedAnomalyDetectionConfig environmentScopedAnomalyDetectionConfig =
+        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(ENVIRONMENT_SCOPE_CONFIG));
+    updateScopedAnomalyDetectionConfig(requestContext, environmentScopedAnomalyDetectionConfig);
+
     ScopedAnomalyDetectionConfig apiScopedAnomalyDetectionConfig =
         getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(API_SCOPE_CONFIG));
     updateScopedAnomalyDetectionConfig(requestContext, apiScopedAnomalyDetectionConfig);
@@ -351,6 +396,15 @@ public class AnomalyDetectionConfigManagerTest {
                     customerConfigScope,
                     GetAnomalyDetectionConfigsFilter.getDefaultInstance()));
     assertEquals(customerScopedAnomalyDetectionConfig, scopedAnomalyDetectionConfig);
+
+    scopedAnomalyDetectionConfig =
+        requestContext.call(
+            () ->
+                configManager.getUnresolvedScopedAnomalyDetectionConfig(
+                    requestContext,
+                    environmentConfigScope,
+                    GetAnomalyDetectionConfigsFilter.getDefaultInstance()));
+    assertEquals(environmentScopedAnomalyDetectionConfig, scopedAnomalyDetectionConfig);
 
     scopedAnomalyDetectionConfig =
         requestContext.call(
@@ -384,6 +438,10 @@ public class AnomalyDetectionConfigManagerTest {
     assertEquals(2, scopedAnomalyDetectionConfigs.size());
     assertEquals(customerConfigScope, scopedAnomalyDetectionConfigs.get(0).getConfigScope());
 
+    ScopedAnomalyDetectionConfig environmentScopedAnomalyDetectionConfig =
+        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(ENVIRONMENT_SCOPE_CONFIG));
+    updateScopedAnomalyDetectionConfig(requestContext, environmentScopedAnomalyDetectionConfig);
+
     ScopedAnomalyDetectionConfig serviceScopedAnomalyDetectionConfig =
         getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(SERVICE_SCOPE_CONFIG));
     updateScopedAnomalyDetectionConfig(requestContext, serviceScopedAnomalyDetectionConfig);
@@ -399,7 +457,7 @@ public class AnomalyDetectionConfigManagerTest {
             .map(ScopedAnomalyDetectionConfig::getConfigScope)
             .collect(Collectors.toList());
 
-    assertEquals(4, scopedAnomalyDetectionConfigs.size());
+    assertEquals(5, scopedAnomalyDetectionConfigs.size());
     assertTrue(configScopes.contains(customerConfigScope));
 
     ScopedAnomalyDetectionConfig customerScopedAnomalyDetectionConfig =
@@ -408,11 +466,14 @@ public class AnomalyDetectionConfigManagerTest {
 
     scopedAnomalyDetectionConfigs =
         configManager.getAllUnresolvedScopedAnomalyDetectionConfigs(requestContext, filter);
-    assertEquals(4, scopedAnomalyDetectionConfigs.size());
+    assertEquals(5, scopedAnomalyDetectionConfigs.size());
 
     assertEquals(
         customerScopedAnomalyDetectionConfig,
         getConfig(customerConfigScope, scopedAnomalyDetectionConfigs));
+    assertEquals(
+        environmentScopedAnomalyDetectionConfig,
+        getConfig(environmentConfigScope, scopedAnomalyDetectionConfigs));
     assertEquals(
         serviceScopedAnomalyDetectionConfig,
         getConfig(serviceConfigScope, scopedAnomalyDetectionConfigs));
