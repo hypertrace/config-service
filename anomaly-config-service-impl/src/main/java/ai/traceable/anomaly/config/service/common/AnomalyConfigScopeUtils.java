@@ -28,6 +28,8 @@ public class AnomalyConfigScopeUtils {
     switch (requiredConfigScope.getScopeCase()) {
       case CUSTOMER_SCOPE:
         return isParentOfCustomerScope(configScopeToCheck, requiredConfigScope);
+      case ENVIRONMENT_SCOPE:
+        return isParentOfEnvironmentScope(configScopeToCheck, requiredConfigScope);
       case SERVICE_SCOPE:
         return isParentOfServiceScope(configScopeToCheck, requiredConfigScope);
       case API_SCOPE:
@@ -45,6 +47,9 @@ public class AnomalyConfigScopeUtils {
     switch (anomalyConfigScope.getScopeCase()) {
       case CUSTOMER_SCOPE:
         context = tenantId;
+        break;
+      case ENVIRONMENT_SCOPE:
+        context = anomalyConfigScope.getEnvironmentScope().getEnvironmentId();
         break;
       case SERVICE_SCOPE:
         context = anomalyConfigScope.getServiceScope().getId();
@@ -75,12 +80,16 @@ public class AnomalyConfigScopeUtils {
      * Precedence Order --> apiConfig > serviceConfig > customerConfig > defaultConfig For example, if
      * apiConfig.disabled = true, we use it; if apiConfig.disabled = false, we use
      * serviceConfig.disabled value and so on.. Similarly for all other config values
+     * Environment Scope acts out of hierarchy in parallel which resolves only with customer scope
      */
     List<String> contextsWithIncreasingPriority = new ArrayList<>();
     contextsWithIncreasingPriority.add(tenantId);
 
     switch (configScope.getScopeCase()) {
       case CUSTOMER_SCOPE:
+        break;
+      case ENVIRONMENT_SCOPE:
+        contextsWithIncreasingPriority.add(configScope.getEnvironmentScope().getEnvironmentId());
         break;
       case SERVICE_SCOPE:
         contextsWithIncreasingPriority.add(configScope.getServiceScope().getId());
@@ -101,6 +110,20 @@ public class AnomalyConfigScopeUtils {
     switch (configScopeToCheck.getScopeCase()) {
       case CUSTOMER_SCOPE:
         return configScopeToCheck.getCustomerScope().equals(requiredConfigScope.getCustomerScope());
+      default:
+        return false;
+    }
+  }
+
+  private boolean isParentOfEnvironmentScope(
+      AnomalyConfigScope configScopeToCheck, AnomalyConfigScope requiredConfigScope) {
+    switch (configScopeToCheck.getScopeCase()) {
+      case CUSTOMER_SCOPE:
+        return true;
+      case ENVIRONMENT_SCOPE:
+        return requiredConfigScope
+            .getEnvironmentScope()
+            .equals(configScopeToCheck.getEnvironmentScope());
       default:
         return false;
     }
