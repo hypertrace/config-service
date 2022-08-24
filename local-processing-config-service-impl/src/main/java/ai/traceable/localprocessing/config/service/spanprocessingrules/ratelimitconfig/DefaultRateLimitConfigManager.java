@@ -9,7 +9,6 @@ import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConf
 import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
 import com.google.inject.Inject;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -33,7 +32,7 @@ public class DefaultRateLimitConfigManager implements RateLimitConfigManager {
   }
 
   @Override
-  public RateLimitConfig getRateLimitConfig(
+  public Optional<RateLimitConfig> getRateLimitConfig(
       RequestContext requestContext, String serviceName, Optional<String> environment) {
     return requestContext
         .call(
@@ -44,9 +43,8 @@ public class DefaultRateLimitConfigManager implements RateLimitConfigManager {
         .stream()
         .map(samplingConfig -> convertSamplingConfig(samplingConfig, serviceName, environment))
         .filter(Optional::isPresent)
-        .map(Optional::get)
-        .collect(Collectors.toUnmodifiableList())
-        .get(0);
+        .findFirst()
+        .map(Optional::get);
   }
 
   private Optional<RateLimitConfig> convertSamplingConfig(

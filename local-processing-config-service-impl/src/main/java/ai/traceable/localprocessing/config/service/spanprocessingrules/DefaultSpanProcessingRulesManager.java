@@ -6,6 +6,7 @@ import ai.traceable.localprocessing.config.service.spanprocessingrules.ratelimit
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.GetSpanProcessingRulesRequest;
 import ai.traceable.localprocessing.config.service.v1.GetSpanProcessingRulesResponse;
+import ai.traceable.localprocessing.config.service.v1.RateLimitConfig;
 import ai.traceable.localprocessing.config.service.v1.SpanProcessingRules;
 import ai.traceable.localprocessing.config.service.v1.SpanProcessingRulesServiceRequest;
 import ai.traceable.localprocessing.config.service.v1.SpanProcessingRulesServiceResponse;
@@ -74,14 +75,17 @@ public class DefaultSpanProcessingRulesManager implements SpanProcessingRulesMan
       RequestContext requestContext, String serviceName, Optional<String> environment) {
     SpanProcessingRules.Builder spanProcessingRulesBuilder =
         SpanProcessingRules.newBuilder()
-            .setRateLimitConfig(
-                rateLimitConfigManager.getRateLimitConfig(requestContext, serviceName, environment))
             .addAllExcludeSpanRules(
                 excludeSpanRulesManager.getAllExcludeSpanProcessingRules(
                     requestContext, serviceName, environment))
             .addAllProtectionSpanRules(
                 protectionSpanRulesManager.getAllProtectionSpanProcessingRules(
                     requestContext, serviceName, environment));
+
+    Optional<RateLimitConfig> rateLimitConfigOptional =
+        rateLimitConfigManager.getRateLimitConfig(requestContext, serviceName, environment);
+    rateLimitConfigOptional.ifPresent(spanProcessingRulesBuilder::setRateLimitConfig);
+
     return spanProcessingRulesBuilder.build();
   }
 }

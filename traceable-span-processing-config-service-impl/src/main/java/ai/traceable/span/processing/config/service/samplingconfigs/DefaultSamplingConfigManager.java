@@ -21,8 +21,6 @@ import com.google.inject.Inject;
 import com.google.protobuf.Duration;
 import io.grpc.Status;
 import io.grpc.StatusException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -32,10 +30,8 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class DefaultSamplingConfigManager implements SamplingConfigManager {
 
   private static final String ZERO_SAMPLING_CONFIG_ID = "zero-sampling-config-id";
-  private static final String DEFAULT_SAMPLING_CONFIG_ID = "default-sampling-config-id";
 
   private final TimestampConverter timestampConverter;
-  private final RateLimitConfigManager rateLimitConfigManager;
   private final LicenseStatusConfigManager licenseStatusConfigManager;
   private final SamplingConfigsConfigStore samplingConfigsConfigStore;
 
@@ -43,11 +39,9 @@ public class DefaultSamplingConfigManager implements SamplingConfigManager {
   public DefaultSamplingConfigManager(
       SamplingConfigsConfigStore samplingConfigsConfigStore,
       TimestampConverter timestampConverter,
-      RateLimitConfigManager rateLimitConfigManager,
       LicenseStatusConfigManager licenseStatusConfigManager) {
     this.timestampConverter = timestampConverter;
     this.samplingConfigsConfigStore = samplingConfigsConfigStore;
-    this.rateLimitConfigManager = rateLimitConfigManager;
     this.licenseStatusConfigManager = licenseStatusConfigManager;
   }
 
@@ -62,10 +56,7 @@ public class DefaultSamplingConfigManager implements SamplingConfigManager {
     if (LICENSE_LIMIT_EXHAUSTED.equals(licenseStatus.getTracesLicenseLimit())) {
       return List.of(buildZeroSamplingConfig());
     }
-    List<SamplingConfig> samplingConfigs = new ArrayList<>(getAllSamplingConfigs(requestContext));
-    SamplingConfig defaultSamplingConfig = getDefaultSamplingConfig();
-    samplingConfigs.add(defaultSamplingConfig);
-    return Collections.unmodifiableList(samplingConfigs);
+    return getAllSamplingConfigs(requestContext);
   }
 
   @Override
@@ -166,15 +157,6 @@ public class DefaultSamplingConfigManager implements SamplingConfigManager {
                             Duration.newBuilder().setSeconds(604800).build())
                         .build())
                 .build())
-        .build();
-  }
-
-  private SamplingConfig getDefaultSamplingConfig() {
-    RateLimitConfig defaultRateLimitConfig = rateLimitConfigManager.getRateLimitConfig();
-    return SamplingConfig.newBuilder()
-        .setId(DEFAULT_SAMPLING_CONFIG_ID)
-        .setSamplingConfigInfo(
-            SamplingConfigInfo.newBuilder().setRateLimitConfig(defaultRateLimitConfig).build())
         .build();
   }
 }

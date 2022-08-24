@@ -14,7 +14,6 @@ import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
 import ai.traceable.span.processing.config.service.v1.SamplingConfig;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
 import com.google.protobuf.Duration;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRule;
@@ -350,12 +349,6 @@ public class SpanProcessingRulesManagerTestUtils {
                                                 .RelationalOperator.RELATIONAL_OPERATOR_IN,
                                             List.of("value1", "value")))))
                             .build())
-                    .build(),
-                SamplingConfig.newBuilder()
-                    .setSamplingConfigInfo(
-                        SamplingConfigInfo.newBuilder()
-                            .setRateLimitConfig(buildDefaultRateLimitConfig())
-                            .build())
                     .build()))
         .build();
   }
@@ -400,12 +393,6 @@ public class SpanProcessingRulesManagerTestUtils {
                                             ai.traceable.span.processing.config.service.v1
                                                 .RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
                                             "val"))))
-                            .build())
-                    .build(),
-                SamplingConfig.newBuilder()
-                    .setSamplingConfigInfo(
-                        SamplingConfigInfo.newBuilder()
-                            .setRateLimitConfig(buildDefaultRateLimitConfig())
                             .build())
                     .build()))
         .build();
@@ -731,28 +718,6 @@ public class SpanProcessingRulesManagerTestUtils {
         .build();
   }
 
-  public static RateLimitConfig buildDefaultExpectedRateLimitConfig() {
-    return RateLimitConfig.newBuilder()
-        .setApiEndpointCacheDuration(Duration.newBuilder().setSeconds(604800).build())
-        .setTraceLimitPerEndpoint(
-            RateLimit.newBuilder()
-                .setFixedWindowLimit(
-                    WindowedRateLimit.newBuilder()
-                        .setQuantityAllowed(10)
-                        .setWindowDuration(Duration.newBuilder().setSeconds(60).build())
-                        .build())
-                .build())
-        .setTraceLimitGlobal(
-            RateLimit.newBuilder()
-                .setFixedWindowLimit(
-                    WindowedRateLimit.newBuilder()
-                        .setQuantityAllowed(100)
-                        .setWindowDuration(Duration.newBuilder().setSeconds(60).build())
-                        .build())
-                .build())
-        .build();
-  }
-
   public static ai.traceable.span.processing.config.service.v1.RateLimitConfig
       buildRateLimitConfig() {
     return ai.traceable.span.processing.config.service.v1.RateLimitConfig.newBuilder()
@@ -771,53 +736,6 @@ public class SpanProcessingRulesManagerTestUtils {
                     ai.traceable.span.processing.config.service.v1.WindowedRateLimit.newBuilder()
                         .setQuantityAllowed(100000)
                         .setWindowDuration(Duration.newBuilder().setSeconds(10).build())
-                        .build())
-                .build())
-        .build();
-  }
-
-  public static ai.traceable.span.processing.config.service.v1.RateLimitConfig
-      buildDefaultRateLimitConfig() {
-    return ai.traceable.span.processing.config.service.v1.RateLimitConfig.newBuilder()
-        .setApiEndpointCacheDuration(Duration.newBuilder().setSeconds(604800).build())
-        .setTraceLimitPerEndpoint(
-            ai.traceable.span.processing.config.service.v1.RateLimit.newBuilder()
-                .setFixedWindowLimit(
-                    ai.traceable.span.processing.config.service.v1.WindowedRateLimit.newBuilder()
-                        .setQuantityAllowed(10)
-                        .setWindowDuration(Duration.newBuilder().setSeconds(60).build())
-                        .build())
-                .build())
-        .setTraceLimitGlobal(
-            ai.traceable.span.processing.config.service.v1.RateLimit.newBuilder()
-                .setFixedWindowLimit(
-                    ai.traceable.span.processing.config.service.v1.WindowedRateLimit.newBuilder()
-                        .setQuantityAllowed(100)
-                        .setWindowDuration(Duration.newBuilder().setSeconds(60).build())
-                        .build())
-                .build())
-        .build();
-  }
-
-  public static GetAllResolvedSamplingConfigsResponse
-      buildDefaultRateLimitConfig_GetAllResolvedSamplingConfigsResponse() {
-    return GetAllResolvedSamplingConfigsResponse.newBuilder()
-        .addSamplingConfigs(
-            SamplingConfig.newBuilder()
-                .setSamplingConfigInfo(
-                    SamplingConfigInfo.newBuilder()
-                        .setRateLimitConfig(buildRateLimitConfig())
-                        .setFilter(
-                            ai.traceable.span.processing.config.service.v1.SpanFilter.newBuilder()
-                                .setLogicalSpanFilter(
-                                    ai.traceable.span.processing.config.service.v1
-                                        .LogicalSpanFilterExpression.newBuilder()
-                                        .setOperator(
-                                            ai.traceable.span.processing.config.service.v1
-                                                .LogicalOperator.LOGICAL_OPERATOR_AND)
-                                        .addAllOperands(Collections.emptyList())
-                                        .build())
-                                .build())
                         .build())
                 .build())
         .build();

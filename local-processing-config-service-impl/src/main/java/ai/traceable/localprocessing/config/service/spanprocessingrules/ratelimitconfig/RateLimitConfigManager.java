@@ -5,6 +5,6 @@ import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public interface RateLimitConfigManager {
-  RateLimitConfig getRateLimitConfig(
+  Optional<RateLimitConfig> getRateLimitConfig(
       RequestContext requestContext, String serviceName, Optional<String> environment);
 }

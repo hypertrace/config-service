@@ -2,7 +2,6 @@ package ai.traceable.span.processing.config.service;
 
 import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_LIMIT_AVAILABLE;
 import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_LIMIT_EXHAUSTED;
-import static ai.traceable.span.processing.config.service.SpanProcessingConfigServiceImplTestUtils.buildMockConfig;
 import static ai.traceable.span.processing.config.service.SpanProcessingConfigServiceImplTestUtils.buildProtectionSpanRuleInfo;
 import static ai.traceable.span.processing.config.service.SpanProcessingConfigServiceImplTestUtils.buildSamplingConfig;
 import static ai.traceable.span.processing.config.service.SpanProcessingConfigServiceImplTestUtils.buildSamplingConfigInfo;
@@ -22,7 +21,6 @@ import ai.traceable.span.processing.config.service.licensestatus.LicenseStatusCo
 import ai.traceable.span.processing.config.service.protectionspanrules.DefaultProtectionSpanRulesManager;
 import ai.traceable.span.processing.config.service.protectionspanrules.ProtectionSpanRulesManager;
 import ai.traceable.span.processing.config.service.samplingconfigs.DefaultSamplingConfigManager;
-import ai.traceable.span.processing.config.service.samplingconfigs.RateLimitConfigManager;
 import ai.traceable.span.processing.config.service.samplingconfigs.SamplingConfigManager;
 import ai.traceable.span.processing.config.service.store.ProtectionSpanRulesConfigStore;
 import ai.traceable.span.processing.config.service.store.SamplingConfigsConfigStore;
@@ -85,7 +83,6 @@ class SpanProcessingConfigServiceImplTest {
     licenseStatusConfigServiceBlockingStub =
         mock(LicenseStatusConfigServiceGrpc.LicenseStatusConfigServiceBlockingStub.class);
 
-    RateLimitConfigManager rateLimitConfigManager = new RateLimitConfigManager(buildMockConfig());
     LicenseStatusConfigManager licenseStatusConfigManager =
         new DefaultLicenseStatusConfigManager(licenseStatusConfigServiceBlockingStub);
 
@@ -99,10 +96,7 @@ class SpanProcessingConfigServiceImplTest {
         new ProtectionSpanRulesConfigStore(genericStub, timestampConverter);
     SamplingConfigManager samplingConfigManager =
         new DefaultSamplingConfigManager(
-            samplingConfigsConfigStore,
-            timestampConverter,
-            rateLimitConfigManager,
-            licenseStatusConfigManager);
+            samplingConfigsConfigStore, timestampConverter, licenseStatusConfigManager);
     ProtectionSpanRulesManager protectionSpanRulesManager =
         new DefaultProtectionSpanRulesManager(
             protectionSpanRulesConfigStore, timestampConverter, licenseStatusConfigManager);
@@ -176,10 +170,8 @@ class SpanProcessingConfigServiceImplTest {
                 GetAllResolvedSamplingConfigsRequest.newBuilder().build())
             .getSamplingConfigsList();
 
-    assertEquals(2, samplingConfigs.size());
+    assertEquals(1, samplingConfigs.size());
     assertEquals(samplingConfig, samplingConfigs.get(0));
-    // default sampling config
-    assertEquals(buildSamplingConfig("default-sampling-config-id", 100), samplingConfigs.get(1));
   }
 
   @Test
