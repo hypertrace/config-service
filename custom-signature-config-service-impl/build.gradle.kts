@@ -24,7 +24,7 @@ dependencies {
   implementation(libs.hypertrace.configservice.protoconverter)
   implementation(libs.traceable.activityevent.api)
   implementation(libs.hypertrace.configservice.objectstore)
-  implementation(libs.traceable.platform.jniModsecurity)
+  implementation(libs.traceable.platform.jnimodsecurity)
   implementation(libs.hypertrace.configservice.changeeventgenerator)
 
   annotationProcessor(libs.lombok)

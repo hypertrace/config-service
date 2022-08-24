@@ -95,6 +95,10 @@ dependencies {
   runtimeOnly(libs.slf4j.log4jimpl)
   runtimeOnly(libs.kafka.avro.serializer)
 
+  constraints {
+    runtimeOnly(libs.jersey.common)
+  }
+
   testFixturesImplementation(libs.traceable.actorService.api)
   testFixturesImplementation(libs.traceable.insights.api)
   testFixturesImplementation(libs.traceable.featureFlag.api)
