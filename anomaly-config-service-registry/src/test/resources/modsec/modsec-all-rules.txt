@@ -9,6 +9,7 @@ crs_912170 :: Potential Denial of Service (DoS) Attack from %{tx.real_ip} - # of
 crs_913100 :: User-Agent associated with security scanner
 crs_913110 :: Request header associated with security scanner
 crs_913120 :: Request filename/argument associated with security scanner
+crs_9210010 :: IIS 6.0 WebDAV buffer overflow: (CVE-2017-7269) :: [ 'CWE:121' ]
 crs_9210110 :: HTTP Request Smuggling Attack (Request Splitting) :: [ 'OWASP_2021:A4' , 'CWE:444' ]
 crs_9210115 :: HTTP Request Smuggling Attack (Content-Length/Transfer-Encoding Confusion) :: [ 'OWASP_2021:A4' , 'CWE:444' ]
 crs_9210120 :: HTTP Request Smuggling Attack (Content-Length Confusion) :: [ 'OWASP_2021:A4' , 'CWE:444' ]
@@ -33,6 +34,12 @@ crs_931120 :: Possible Remote File Inclusion (RFI) Attack: URL Payload Used w/Tr
 crs_9320010 :: Spring Cloud Function RCE: malicious Spring Expression: (CVE-2022-22963) :: [ 'CWE:95' ]
 crs_9320020 :: Apache Struts RCE: multipart/form-data: (CVE-2017-5638) :: [ 'CWE:95' ]
 crs_9320021 :: Apache Struts RCE: OGNL in URL: CVE-2018-11776 :: [ 'CWE:95' ]
+crs_9320031 :: Solr DataImport Handler RCE : (CVE-2019-0193) :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API:API8' , 'CWE:78' ]
+crs_9320030 :: Apache Solr Deserialization RCE : (CVE-2019-0192) :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API:API8' , 'CWE:78' ]
+crs_9320040 :: Atlassian Confluence SSTI RCE : (CVE-2019-3396) :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API:API8' , 'CWE:78' ]
+crs_9320041 :: Confluence Server and Data Center Path Traversal to RCE : (CVE-2019-3398) :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API:API8' , 'CWE:78' ]
+crs_9320050 :: vBulletin RCE : (CVE-2019-16759) :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API:API8' , 'CWE:78' ]
+crs_9320060 :: Adobe ColdFusion RCE: Arbitrary File Upload Vulnerability: (CVE-2018-15961) :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API:API8' , 'CWE:78' ]
 crs_9320100 :: Remote Command Execution: Unix Command Injection (T100) :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API:API8' , 'CWE:78' ]
 crs_9320105 :: Remote Command Execution: Unix Command Injection (T105) :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API:API8' , 'CWE:78' ]
 crs_9320150 :: Remote Command Execution: Direct Unix Command Execution (T150) :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API:API8' , 'CWE:78' ]
@@ -94,7 +101,7 @@ crs_943100 :: Possible Session Fixation Attack: Setting Cookie Values in HTML ::
 crs_943110 :: Possible Session Fixation Attack: SessionID Parameter Name with Off-Domain Referer :: [ 'CWE:384' ]
 crs_943120 :: Possible Session Fixation Attack: SessionID Parameter Name with No Referer :: [ 'CWE:384' ]
 crs_9440210 :: Java Deserialization: Magic Bytes Base64 Encoded :: [ 'OWASP_2017:A8' , 'OWASP_2021:A8' , 'CWE:502' ]
-crs_9440900 :: Java Log4j: JNDI Exploitation (CVE-2021-44228) (T900) :: [ 'OWASP_2017:A9' , 'OWASP_2021:A6' ]
+crs_9440900 :: Java Log4j: JNDI Exploitation (CVE-2021-44228) (T900) :: [ 'OWASP_2017:A9' , 'OWASP_2021:A6' , 'CWE:95' ]
 crs_9440910 :: Java Log4j: RCE DoS Exploitation (CVE-2021-45105) (T910) :: [ 'OWASP_2017:A9' , 'OWASP_2021:A6' , 'CWE:95' ]
 crs_9440920 :: Java Spring Core: RCE (CVE-2022-22965) :: [ 'CWE:95' ]
 crs_9440921 :: Java Spring Core: RCE: Panic Rule (CVE-2022-22965) (T921) :: [ 'CWE:95' ]
