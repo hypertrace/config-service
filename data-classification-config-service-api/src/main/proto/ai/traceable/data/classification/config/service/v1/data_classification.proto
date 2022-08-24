@@ -107,3 +107,47 @@ message DataSetInfo {
     SENSITIVITY_NONE = 5;
   }
 }
+
+message DataClassificationOverride {
+  string id = 1;
+  DataClassificationOverrideRule data_classification_override_rule = 2;
+}
+
+message DataClassificationOverrideRule {
+  string name = 1;
+  optional string description = 2;
+  DataClassificationOverrideScope scope = 3;
+
+  oneof override {
+    DataSuppressionOverride data_suppression_override = 4;
+  }
+
+  message DataClassificationOverrideScope {
+    oneof scope {
+      EnvironmentScope environment_scope = 1;
+    }
+  }
+
+  message EnvironmentScope {
+    string environment_id = 1;
+  }
+
+  message DataSuppressionOverride {
+    DataSetInfo.DataSuppression data_suppression = 1;
+  }
+}
+
+message DataClassificationOverrideFilter {
+   oneof filter {
+     IdFilter id_filter = 1;
+     ScopeFilter scope_filter = 2;
+    }
+}
+
+message IdFilter {
+  repeated string ids = 1;
+}
+
+message ScopeFilter {
+  repeated DataClassificationOverrideRule.DataClassificationOverrideScope scopes = 1;
+}

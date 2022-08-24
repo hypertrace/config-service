@@ -34,6 +34,21 @@ service DataClassificationConfigService {
 
   // delete data set by id
   rpc DeleteDataSet(DeleteDataSetRequest) returns (DeleteDataSetResponse) {}
+
+  // create data classification override
+  rpc CreateDataClassificationOverride(CreateDataClassificationOverrideRequest) returns (CreateDataClassificationOverrideResponse) {}
+
+  // get data classification override
+  rpc GetDataClassificationOverride(GetDataClassificationOverrideRequest) returns (GetDataClassificationOverrideResponse) {}
+
+  // get list of all data classification overrides
+  rpc GetDataClassificationOverrides(GetDataClassificationOverridesRequest) returns (GetDataClassificationOverridesResponse) {}
+
+  // update data classification override
+  rpc UpdateDataClassificationOverride(UpdateDataClassificationOverrideRequest) returns (UpdateDataClassificationOverrideResponse) {}
+
+  // delete data classification override
+  rpc DeleteDataClassificationOverride(DeleteDataClassificationOverrideRequest) returns (DeleteDataClassificationOverrideResponse) {}
 }
 
 message CreateDataTypeRequest {
@@ -104,4 +119,44 @@ message DeleteDataSetRequest {
 }
 
 message DeleteDataSetResponse {
+}
+
+message CreateDataClassificationOverrideRequest {
+  DataClassificationOverrideRule data_classification_override_rule = 1;
+}
+
+message CreateDataClassificationOverrideResponse {
+  DataClassificationOverride created_data_classification_override = 1;
+}
+
+message GetDataClassificationOverrideRequest {
+  DataClassificationOverrideFilter filter = 1;
+}
+
+message GetDataClassificationOverrideResponse {
+  repeated DataClassificationOverride data_classification_overrides = 1;
+}
+
+message GetDataClassificationOverridesRequest {
+}
+
+message GetDataClassificationOverridesResponse {
+  repeated DataClassificationOverride data_classification_overrides = 1;
+}
+
+message UpdateDataClassificationOverrideRequest {
+  string id = 1;
+  DataClassificationOverrideRule data_classification_override_rule = 2;
+}
+
+message UpdateDataClassificationOverrideResponse {
+  DataClassificationOverride updated_data_classification_override = 1;
+}
+
+message DeleteDataClassificationOverrideRequest {
+  DataClassificationOverrideFilter filter = 1;
+}
+
+message DeleteDataClassificationOverrideResponse {
+  repeated DataClassificationOverride deleted_data_classification_overrides = 1;
 }
