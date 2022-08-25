@@ -12,6 +12,7 @@ import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
 import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
@@ -41,6 +42,8 @@ public class AggregationConfigManagerTest {
   private final AnomalyAggregationConfigHandler anomalyAggregationConfigHandler =
       new AnomalyAggregationConfigHandler();
   private AggregationConfigManager configManager;
+  private final AnomalyEnvironmentScope environmentScope =
+      AnomalyEnvironmentScope.newBuilder().setEnvironmentId("environment").build();
 
   private final AnomalyServiceScope serviceScope =
       AnomalyServiceScope.newBuilder().setId("service").build();
@@ -51,6 +54,8 @@ public class AggregationConfigManagerTest {
       AnomalyConfigScope.newBuilder()
           .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
           .build();
+  private final AnomalyConfigScope environmentConfigScope =
+      AnomalyConfigScope.newBuilder().setEnvironmentScope(environmentScope).build();
   private final AnomalyConfigScope serviceConfigScope =
       AnomalyConfigScope.newBuilder().setServiceScope(serviceScope).build();
   private final AnomalyConfigScope apiConfigScope =
@@ -89,6 +94,8 @@ public class AggregationConfigManagerTest {
         getApiScopedAnomalyEventAggregationConfig();
     ScopedAnomalyEventAggregationConfig serviceScopedAnomalyEventAggregationConfig =
         getServiceScopedAnomalyEventAggregationConfig();
+    ScopedAnomalyEventAggregationConfig environmentScopedAnomalyEventAggregationConfig =
+        getEnvironmentScopedAnomalyEventAggregationConfig();
     ScopedAnomalyEventAggregationConfig customerScopedAnomalyEventAggregationConfig =
         getCustomerScopedAnomalyEventAggregationConfig();
 
@@ -154,6 +161,20 @@ public class AggregationConfigManagerTest {
     verifyScopedAnomalyConfigsWithServiceApiAndCustomerScopes(
         getAllScopedAnomalyEventAggregationConfigs);
 
+    updateScopedAnomalyAggregationConfig(
+        requestContext, environmentScopedAnomalyEventAggregationConfig);
+
+    getScopedAnomalyAggregationConfig =
+        configManager.getScopedAnomalyAggregationConfig(requestContext, environmentConfigScope);
+    verifyScopedAnomalyEventAggregationConfigs(
+        getEnvironmentScopedAnomalyEventAggregationConfigMergedWithCustomer(),
+        getScopedAnomalyAggregationConfig);
+
+    getAllScopedAnomalyEventAggregationConfigs =
+        configManager.getAllScopedAnomalyEventAggregationConfigs(requestContext);
+    Assertions.assertEquals(4, getAllScopedAnomalyEventAggregationConfigs.size());
+    verifyScopedAnomalyConfigsWithEnvironmentScope(getAllScopedAnomalyEventAggregationConfigs);
+
     deleteScopedAnomalyAggregationConfig(
         requestContext,
         ScopedAnomalyEventAggregationConfig.newBuilder()
@@ -161,7 +182,7 @@ public class AggregationConfigManagerTest {
             .build());
     getAllScopedAnomalyEventAggregationConfigs =
         configManager.getAllScopedAnomalyEventAggregationConfigs(requestContext);
-    Assertions.assertEquals(2, getAllScopedAnomalyEventAggregationConfigs.size());
+    Assertions.assertEquals(3, getAllScopedAnomalyEventAggregationConfigs.size());
     verifyScopedAnomalyConfigsWithServiceAndApiScopes(getAllScopedAnomalyEventAggregationConfigs);
   }
 
@@ -171,6 +192,8 @@ public class AggregationConfigManagerTest {
     RequestContext requestContext = RequestContext.forTenantId(tenantId);
     ScopedAnomalyEventAggregationConfig apiScopedAnomalyEventAggregationConfig =
         getApiScopedAnomalyEventAggregationConfig();
+    ScopedAnomalyEventAggregationConfig environmentScopedAnomalyEventAggregationConfig =
+        getEnvironmentScopedAnomalyEventAggregationConfig();
     ScopedAnomalyEventAggregationConfig serviceScopedAnomalyEventAggregationConfig =
         getServiceScopedAnomalyEventAggregationConfig();
     List<ScopedAnomalyEventAggregationConfig> getAllUnresolvedAnomalyEventAggregationConfigs =
@@ -218,6 +241,22 @@ public class AggregationConfigManagerTest {
             requestContext, apiConfigScope);
     verifyScopedAnomalyEventAggregationConfigs(
         getApiScopedAnomalyEventAggregationConfig(), getUnresolvedScopedAnomalyAggregationConfig);
+
+    updateScopedAnomalyAggregationConfig(
+        requestContext, environmentScopedAnomalyEventAggregationConfig);
+
+    getUnresolvedScopedAnomalyAggregationConfig =
+        configManager.getUnresolvedScopedAnomalyEventAggregationConfig(
+            requestContext, environmentConfigScope);
+    Assertions.assertEquals(
+        getEnvironmentScopedAnomalyEventAggregationConfig(),
+        getUnresolvedScopedAnomalyAggregationConfig);
+
+    getAllUnresolvedAnomalyEventAggregationConfigs =
+        configManager.getAllUnresolvedScopedAnomalyEventAggregationConfigs(requestContext);
+    Assertions.assertEquals(3, getAllUnresolvedAnomalyEventAggregationConfigs.size());
+    verifyUnresolvedScopedAnomalyConfigsWithEnvironmentScope(
+        getAllUnresolvedAnomalyEventAggregationConfigs);
   }
 
   private void updateScopedAnomalyAggregationConfig(
@@ -236,6 +275,36 @@ public class AggregationConfigManagerTest {
         () ->
             configManager.deleteScopedAnomalyEventAggregationConfig(
                 requestContext, scopedAnomalyEventAggregationConfig.getConfigScope()));
+  }
+
+  private void verifyScopedAnomalyConfigsWithEnvironmentScope(
+      List<ScopedAnomalyEventAggregationConfig> getAllScopedAnomalyEventAggregationConfigs) {
+    for (ScopedAnomalyEventAggregationConfig scopedAnomalyEventAggregationConfig :
+        getAllScopedAnomalyEventAggregationConfigs) {
+      if (scopedAnomalyEventAggregationConfig.getConfigScope().equals(environmentConfigScope)) {
+        verifyScopedAnomalyEventAggregationConfigs(
+            getEnvironmentScopedAnomalyEventAggregationConfigMergedWithCustomer(),
+            scopedAnomalyEventAggregationConfig);
+      } else if (scopedAnomalyEventAggregationConfig.getConfigScope().equals(customerConfigScope)) {
+        verifyScopedAnomalyEventAggregationConfigs(
+            getCustomerScopedAnomalyEventAggregationConfig(), scopedAnomalyEventAggregationConfig);
+      }
+    }
+  }
+
+  private void verifyUnresolvedScopedAnomalyConfigsWithEnvironmentScope(
+      List<ScopedAnomalyEventAggregationConfig> getAllScopedAnomalyEventAggregationConfigs) {
+    for (ScopedAnomalyEventAggregationConfig scopedAnomalyEventAggregationConfig :
+        getAllScopedAnomalyEventAggregationConfigs) {
+      if (scopedAnomalyEventAggregationConfig.getConfigScope().equals(environmentConfigScope)) {
+        verifyScopedAnomalyEventAggregationConfigs(
+            getEnvironmentScopedAnomalyEventAggregationConfig(),
+            scopedAnomalyEventAggregationConfig);
+      } else if (scopedAnomalyEventAggregationConfig.getConfigScope().equals(customerConfigScope)) {
+        verifyScopedAnomalyEventAggregationConfigs(
+            getCustomerScopedAnomalyEventAggregationConfig(), scopedAnomalyEventAggregationConfig);
+      }
+    }
   }
 
   private void verifyScopedAnomalyConfigsWithServiceAndApiScopes(
@@ -364,6 +433,19 @@ public class AggregationConfigManagerTest {
         .build();
   }
 
+  private ScopedAnomalyEventAggregationConfig getEnvironmentScopedAnomalyEventAggregationConfig() {
+    // Only global, apiDef and modsec configs are present.
+    return ScopedAnomalyEventAggregationConfig.newBuilder()
+        .setConfigScope(environmentConfigScope)
+        .setEventAggregationConfig(
+            EventAggregationConfig.newBuilder()
+                .setGlobalConfig(getEnvironmentScopedGlobalConfig())
+                .addFamilyConfigs(getEnvironmentScopedApiDefConfig())
+                .addFamilyConfigs(getEnvironmentScopedModsecConfig())
+                .build())
+        .build();
+  }
+
   private ScopedAnomalyEventAggregationConfig
       getServiceScopedAnomalyEventAggregationConfigMergedWithCustomer() {
     return ScopedAnomalyEventAggregationConfig.newBuilder()
@@ -373,6 +455,20 @@ public class AggregationConfigManagerTest {
                 .setGlobalConfig(getServiceScopedGlobalConfig())
                 .addFamilyConfigs(getServiceScopedApiDefConfig())
                 .addFamilyConfigs(getServiceScopedModsecConfig())
+                .addFamilyConfigs(getCustomerScopedSessionConfig())
+                .build())
+        .build();
+  }
+
+  private ScopedAnomalyEventAggregationConfig
+      getEnvironmentScopedAnomalyEventAggregationConfigMergedWithCustomer() {
+    return ScopedAnomalyEventAggregationConfig.newBuilder()
+        .setConfigScope(environmentConfigScope)
+        .setEventAggregationConfig(
+            EventAggregationConfig.newBuilder()
+                .setGlobalConfig(getEnvironmentScopedGlobalConfig())
+                .addFamilyConfigs(getEnvironmentScopedApiDefConfig())
+                .addFamilyConfigs(getEnvironmentScopedModsecConfig())
                 .addFamilyConfigs(getCustomerScopedSessionConfig())
                 .build())
         .build();
@@ -412,6 +508,13 @@ public class AggregationConfigManagerTest {
         .build();
   }
 
+  private EventAggregationGlobalConfig getEnvironmentScopedGlobalConfig() {
+    return EventAggregationGlobalConfig.newBuilder()
+        .setParamNameMaxDuration("4d")
+        .setParamValueMaxDuration("4d")
+        .build();
+  }
+
   private EventAggregationFamilyConfig getApiScopedApiDefConfig() {
     return EventAggregationFamilyConfig.newBuilder()
         .setAnomalyEventFamily(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF)
@@ -444,6 +547,30 @@ public class AggregationConfigManagerTest {
                 .setMaxEventsWithScorePerParamValue(20)
                 .setMaxEventsWithoutScorePerParamValue(20)
                 .setMaxUsersPerParam(20)
+                .build())
+        .build();
+  }
+
+  private EventAggregationFamilyConfig getEnvironmentScopedApiDefConfig() {
+    return EventAggregationFamilyConfig.newBuilder()
+        .setAnomalyEventFamily(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF)
+        .setAggregationConfig(
+            AggregationConfig.newBuilder()
+                .setMaxEventsWithScorePerParamValue(40)
+                .setMaxEventsWithoutScorePerParamValue(40)
+                .setMaxUsersPerParam(40)
+                .build())
+        .build();
+  }
+
+  private EventAggregationFamilyConfig getEnvironmentScopedModsecConfig() {
+    return EventAggregationFamilyConfig.newBuilder()
+        .setAnomalyEventFamily(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC)
+        .setAggregationConfig(
+            AggregationConfig.newBuilder()
+                .setMaxEventsWithScorePerParamValue(40)
+                .setMaxEventsWithoutScorePerParamValue(40)
+                .setMaxUsersPerParam(40)
                 .build())
         .build();
   }

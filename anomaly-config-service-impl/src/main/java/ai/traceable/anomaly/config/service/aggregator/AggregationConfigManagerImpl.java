@@ -179,22 +179,12 @@ public class AggregationConfigManagerImpl
     List<ScopedAnomalyEventAggregationConfig> resolvedConfigs = new ArrayList<>();
     for (Map.Entry<String, ScopedAnomalyEventAggregationConfig> entry : configMap.entrySet()) {
       AnomalyConfigScope anomalyConfigScope = entry.getValue().getConfigScope();
-      List<String> contextsWithIncreasingPriority = new ArrayList<>();
-      contextsWithIncreasingPriority.add(tenantId);
-      switch (anomalyConfigScope.getScopeCase()) {
-        case SERVICE_SCOPE:
-          contextsWithIncreasingPriority.add(anomalyConfigScope.getServiceScope().getId());
-          break;
-        case API_SCOPE:
-          contextsWithIncreasingPriority.add(
-              anomalyConfigScope.getApiScope().getServiceScope().getId());
-          contextsWithIncreasingPriority.add(anomalyConfigScope.getApiScope().getId());
-          break;
-        default:
-          break;
-      }
       resolvedConfigs.add(
-          getResolvedConfig(configMap, anomalyConfigScope, contextsWithIncreasingPriority));
+          getResolvedConfig(
+              configMap,
+              anomalyConfigScope,
+              anomalyConfigScopeUtils.getContextsWithIncreasingPriority(
+                  tenantId, anomalyConfigScope)));
     }
     return resolvedConfigs;
   }
