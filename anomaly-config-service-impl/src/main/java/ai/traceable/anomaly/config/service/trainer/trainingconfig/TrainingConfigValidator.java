@@ -6,6 +6,7 @@ import ai.traceable.anomaly.config.service.v1.trainer.DeleteAnomalyConfigOption;
 import ai.traceable.anomaly.config.service.v1.trainer.DeleteScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.GetScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.GetUnresolvedScopedTrainingConfigRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.LocalTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.MetadataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.SensitiveDataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.SessionTrainingConfig;
@@ -94,6 +95,9 @@ public class TrainingConfigValidator {
     EnumMap<SensitiveDataTrainingConfig.ConfigCase, TrainingConfig> sensitiveDataTrainingConfigMap =
         new EnumMap<>(SensitiveDataTrainingConfig.ConfigCase.class);
 
+    EnumMap<LocalTrainingConfig.ConfigCase, TrainingConfig> localTrainingConfigMap =
+        new EnumMap<>(LocalTrainingConfig.ConfigCase.class);
+
     for (TrainingConfig trainingConfig : trainingConfigs) {
 
       switch (trainingConfig.getTrainingConfigCase()) {
@@ -155,6 +159,18 @@ public class TrainingConfigValidator {
                     sensitiveDataTrainingConfigCase));
           } else {
             sensitiveDataTrainingConfigMap.put(sensitiveDataTrainingConfigCase, trainingConfig);
+          }
+          break;
+
+        case LOCAL_TRAINING_CONFIG:
+          LocalTrainingConfig.ConfigCase localTrainingConfigCase =
+              trainingConfig.getLocalTrainingConfig().getConfigCase();
+          if (localTrainingConfigMap.containsKey(localTrainingConfigCase)) {
+            return Status.INVALID_ARGUMENT.withDescription(
+                "UpdateScopedTrainingConfigRequest should have only one training config for localTrainingConfig: "
+                    + localTrainingConfigCase);
+          } else {
+            localTrainingConfigMap.put(localTrainingConfigCase, trainingConfig);
           }
           break;
 

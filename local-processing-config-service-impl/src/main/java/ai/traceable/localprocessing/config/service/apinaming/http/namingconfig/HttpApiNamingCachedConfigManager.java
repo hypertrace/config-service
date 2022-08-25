@@ -88,6 +88,7 @@ public class HttpApiNamingCachedConfigManager {
     return GetAllScopedTrainingConfigsRequest.newBuilder()
         .setFilter(
             GetTrainingConfigsFilter.newBuilder()
+                .addTrainingConfigTypes(TrainingConfigType.TRAINING_CONFIG_TYPE_LOCAL_TRAINING)
                 .addTrainingConfigTypes(TrainingConfigType.TRAINING_CONFIG_TYPE_API_NAMING))
         .build();
   }

@@ -13,6 +13,7 @@ enum TrainingConfigType {
   TRAINING_CONFIG_TYPE_SESSION = 3;
   TRAINING_CONFIG_TYPE_API_NAMING = 4;
   TRAINING_CONFIG_TYPE_SENSITIVE_DATA = 5;
+  TRAINING_CONFIG_TYPE_LOCAL_TRAINING = 6;
 }
 
 message GetTrainingConfigsFilter {
@@ -88,14 +89,23 @@ message TrainingConfig {
     SessionTrainingConfig session_training_config = 4;
     ApiNamingTrainingConfig api_naming_training_config = 5;
     SensitiveDataTrainingConfig sensitive_data_training_config = 6;
+    LocalTrainingConfig local_training_config = 7;
   }
 }
+
+message LocalTrainingConfig {
+  oneof config {
+    ApiNamingConfig api_naming_config = 1;
+  }
+}
+
+message ApiNamingConfig {}
 
 message ApiNamingTrainingConfig {
   oneof config {
     UrlFilterConfig url_filter_config = 1 [deprecated = true];
     TrieModelTrainingConfig trie_model_training_config = 2;
-    CustomRulesListConfig custom_rules_list_config = 3;
+    CustomRulesListConfig custom_rules_list_config = 3 [deprecated = true];
     RejectFilterConfig reject_filter_config = 4;
   }
 }

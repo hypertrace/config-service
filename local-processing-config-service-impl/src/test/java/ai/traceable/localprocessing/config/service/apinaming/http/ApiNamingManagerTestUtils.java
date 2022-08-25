@@ -4,8 +4,10 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
 import ai.traceable.anomaly.config.service.v1.StringList;
+import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllScopedTrainingConfigsResponse;
+import ai.traceable.anomaly.config.service.v1.trainer.LocalTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ThresholdRegexConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
@@ -89,6 +91,14 @@ public class ApiNamingManagerTestUtils {
       AnomalyConfigScope anomalyConfigScope) {
     return ScopedTrainingConfig.newBuilder()
         .setConfigScope(anomalyConfigScope)
+        .addTrainingConfigs(
+            TrainingConfig.newBuilder()
+                .setDisabled(false)
+                .setLocalTrainingConfig(
+                    LocalTrainingConfig.newBuilder()
+                        .setApiNamingConfig(ApiNamingConfig.getDefaultInstance())
+                        .build())
+                .build())
         .addTrainingConfigs(
             TrainingConfig.newBuilder()
                 .setApiNamingTrainingConfig(ApiNamingTrainingConfig.newBuilder().build()))
@@ -321,13 +331,13 @@ public class ApiNamingManagerTestUtils {
                   .build())
           .build();
 
-  public static Config buildFullTrieReloadConfig(boolean disabled, String tenantScopedVersion) {
+  public static Config buildFullTrieReloadConfig(String tenantScopedVersion) {
     return ConfigFactory.parseMap(
         Map.of(
             "default",
-            Map.of("version", "0.0.0", "disabled", disabled),
+            Map.of("version", "0.0.0"),
             "tenantId",
-            Map.of("default", Map.of("version", tenantScopedVersion, "disabled", disabled))));
+            Map.of("default", Map.of("version", tenantScopedVersion))));
   }
 
   private static HttpApiNamingCustomRule buildTestApiNamingRule(

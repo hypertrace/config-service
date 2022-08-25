@@ -5,11 +5,13 @@ import static ai.traceable.anomaly.config.service.common.AnomalyConfigServiceUti
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig.ConfigCase;
 import ai.traceable.anomaly.config.service.v1.trainer.GetTrainingConfigsFilter;
+import ai.traceable.anomaly.config.service.v1.trainer.LocalTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.MetadataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.SensitiveDataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.SessionTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig.TrainingConfigCase;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfigType;
 import ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -54,6 +56,9 @@ public class TrainingConfigHandler {
           break;
         case TRAINING_CONFIG_TYPE_SENSITIVE_DATA:
           configCases.add(TrainingConfig.TrainingConfigCase.SENSITIVE_DATA_TRAINING_CONFIG);
+          break;
+        case TRAINING_CONFIG_TYPE_LOCAL_TRAINING:
+          configCases.add(TrainingConfigCase.LOCAL_TRAINING_CONFIG);
         default:
           break;
       }
@@ -88,6 +93,9 @@ public class TrainingConfigHandler {
     EnumMap<SensitiveDataTrainingConfig.ConfigCase, TrainingConfig> sensitiveDataTrainingConfigMap =
         new EnumMap<>(SensitiveDataTrainingConfig.ConfigCase.class);
 
+    EnumMap<LocalTrainingConfig.ConfigCase, TrainingConfig> localTrainingConfigMap =
+        new EnumMap<>(LocalTrainingConfig.ConfigCase.class);
+
     preferredConfig
         .getTrainingConfigsList()
         .forEach(
@@ -113,6 +121,10 @@ public class TrainingConfigHandler {
                   sensitiveDataTrainingConfigMap.put(
                       trainingConfig.getSensitiveDataTrainingConfig().getConfigCase(),
                       trainingConfig);
+                  break;
+                case LOCAL_TRAINING_CONFIG:
+                  localTrainingConfigMap.put(
+                      trainingConfig.getLocalTrainingConfig().getConfigCase(), trainingConfig);
                 default:
                   break;
               }
@@ -152,6 +164,12 @@ public class TrainingConfigHandler {
                       sensitiveDataTrainingConfigMap,
                       trainingConfig.getSensitiveDataTrainingConfig().getConfigCase(),
                       trainingConfig);
+                  break;
+                case LOCAL_TRAINING_CONFIG:
+                  resolve(
+                      localTrainingConfigMap,
+                      trainingConfig.getLocalTrainingConfig().getConfigCase(),
+                      trainingConfig);
                 default:
                   break;
               }
@@ -164,6 +182,7 @@ public class TrainingConfigHandler {
         .addAllTrainingConfigs(sessionTrainingConfigMap.values())
         .addAllTrainingConfigs(apiNamingTrainingConfigMap.values())
         .addAllTrainingConfigs(sensitiveDataTrainingConfigMap.values())
+        .addAllTrainingConfigs(localTrainingConfigMap.values())
         .build();
   }
 
@@ -237,6 +256,15 @@ public class TrainingConfigHandler {
                     filter
                         .getConfigCase()
                         .equals(trainingConfig.getSessionTrainingConfig().getConfigCase()));
+      case LOCAL_TRAINING_CONFIG:
+        return configFilter.stream()
+            .filter(TrainingConfig::hasLocalTrainingConfig)
+            .map(TrainingConfig::getLocalTrainingConfig)
+            .anyMatch(
+                filter ->
+                    filter
+                        .getConfigCase()
+                        .equals(trainingConfig.getLocalTrainingConfig().getConfigCase()));
       default:
         return false;
     }

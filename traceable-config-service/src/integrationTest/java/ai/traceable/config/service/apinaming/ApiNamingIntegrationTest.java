@@ -2,11 +2,19 @@ package ai.traceable.config.service.apinaming;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.StringList;
+import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.LocalTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ThresholdRegexConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.TrainerConfigServiceGrpc;
+import ai.traceable.anomaly.config.service.v1.trainer.TrainerConfigServiceGrpc.TrainerConfigServiceBlockingStub;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrieModelTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.UpdateScopedTrainingConfigRequest;
 import ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase;
 import ai.traceable.localprocessing.config.service.v1.ApiNamingPattern;
 import ai.traceable.localprocessing.config.service.v1.DiffLog;
@@ -59,6 +67,7 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
 
   private static LocalProcessingConfigServiceGrpc.LocalProcessingConfigServiceBlockingStub
       localProcessingConfigStub;
+  private static TrainerConfigServiceBlockingStub trainerConfigServiceBlockingStub;
   private static Entity createdEntity;
   private static EntityServiceClient entityServiceClient;
 
@@ -67,6 +76,10 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
     channelRegistry = new GrpcChannelRegistry();
     localProcessingConfigStub =
         LocalProcessingConfigServiceGrpc.newBlockingStub(managedChannelForExternalServices)
+            .withCallCredentials(
+                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+    trainerConfigServiceBlockingStub =
+        TrainerConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
     entityServiceClient =
@@ -112,6 +125,28 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
 
   @Test
   void testHttpApiNamingResponse() throws InterruptedException {
+    RequestContext.forTenantId(TENANT_ID)
+        .call(
+            () ->
+                trainerConfigServiceBlockingStub.updateScopedTrainingConfig(
+                    UpdateScopedTrainingConfigRequest.newBuilder()
+                        .setScopedTrainingConfig(
+                            ScopedTrainingConfig.newBuilder()
+                                .addTrainingConfigs(
+                                    TrainingConfig.newBuilder()
+                                        .setDisabled(false)
+                                        .setLocalTrainingConfig(
+                                            LocalTrainingConfig.newBuilder()
+                                                .setApiNamingConfig(
+                                                    ApiNamingConfig.newBuilder().build())
+                                                .build())
+                                        .build())
+                                .setConfigScope(
+                                    AnomalyConfigScope.newBuilder()
+                                        .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+                                        .build())
+                                .build())
+                        .build()));
     TrieModel trieModel = new TrieModel();
     TrieModelTrainerConfig trieModelTrainerConfig = buildTrieModelTrainerConfig();
     for (int i = 0; i < 10; i++) {

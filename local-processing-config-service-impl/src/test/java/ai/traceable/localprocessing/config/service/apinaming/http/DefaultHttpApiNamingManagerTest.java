@@ -9,7 +9,14 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.GetAllScopedTrainingConfigsResponse;
+import ai.traceable.anomaly.config.service.v1.trainer.LocalTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainerConfigServiceGrpc.TrainerConfigServiceBlockingStub;
+import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.apinaming.http.namingconfig.DefaultHttpApiNamingConfigManager;
 import ai.traceable.localprocessing.config.service.apinaming.http.namingconfig.HttpApiNamingCachedConfigManager;
@@ -53,11 +60,11 @@ class DefaultHttpApiNamingManagerTest {
   private FileMetadata fileMetadata;
   private HttpApiNamingConfig httpApiNamingConfig;
   private EntityFetcher entityFetcher;
+  private TrainerConfigServiceBlockingStub trainerConfigServiceBlockingStub;
 
   @BeforeEach
   void setup() throws IOException {
-    TrainerConfigServiceBlockingStub trainerConfigServiceBlockingStub =
-        mock(TrainerConfigServiceBlockingStub.class);
+    trainerConfigServiceBlockingStub = mock(TrainerConfigServiceBlockingStub.class);
     SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
         spanProcessingConfigServiceBlockingStub =
             mock(SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub.class);
@@ -76,6 +83,9 @@ class DefaultHttpApiNamingManagerTest {
     SegmentConverter segmentConverter = new SegmentConverter();
     SpanFilterMatcher spanFilterMatcher = new SpanFilterMatcher();
 
+    HttpApiNamingCachedConfigManager httpApiNamingCachedConfigManager =
+        new HttpApiNamingCachedConfigManager(
+            ConfigFactory.parseMap(Map.of()), trainerConfigServiceBlockingStub);
     httpApiNamingManager =
         new DefaultHttpApiNamingManager(
             new DefaultHttpApiNamingConfigManager(httpApiNamingConfig, uuidGenerator),
@@ -88,13 +98,12 @@ class DefaultHttpApiNamingManagerTest {
                     trieDiffLogModelStore,
                     httpApiNamingConfig,
                     segmentConverter)),
-            new HttpApiNamingCachedConfigManager(
-                ConfigFactory.parseMap(Map.of()), trainerConfigServiceBlockingStub),
+            httpApiNamingCachedConfigManager,
             new HttpCustomApiNamingRulesManager(
                 ConfigFactory.parseMap(Map.of()),
                 spanProcessingConfigServiceBlockingStub,
                 spanFilterMatcher),
-            new LocalApiNamingConfigManager(httpApiNamingConfig),
+            new LocalApiNamingConfigManager(httpApiNamingConfig, httpApiNamingCachedConfigManager),
             entityFetcher);
     when(trainerConfigServiceBlockingStub.getAllScopedTrainingConfigs(any()))
         .thenReturn(ApiNamingManagerTestUtils.buildGetAllScopedTrainingConfigsResponse());
@@ -124,7 +133,7 @@ class DefaultHttpApiNamingManagerTest {
     when(trieModel.getNonEmbryonicWildcardPaths(ApiNamingManagerTestUtils.builtTrieNodeConfig, 10))
         .thenReturn(new ArrayList<>());
     when(httpApiNamingConfig.getFullTrieReloadConfig())
-        .thenReturn(buildFullTrieReloadConfig(false, "2.3.0"));
+        .thenReturn(buildFullTrieReloadConfig("2.3.0"));
     when(trieDiffLogModel.getTrieDiffLog())
         .thenReturn(ai.traceable.platform.apientity.TrieDiffLog.newBuilder().build());
     when(fileMetadata.getModificationTime()).thenReturn(1L);
@@ -186,7 +195,7 @@ class DefaultHttpApiNamingManagerTest {
   @Test
   void testTrieConstruction() throws ExecutionException {
     when(httpApiNamingConfig.getFullTrieReloadConfig())
-        .thenReturn(buildFullTrieReloadConfig(false, "0.0.0"));
+        .thenReturn(buildFullTrieReloadConfig("0.0.0"));
     when(trieModel.getNonEmbryonicWildcardPaths(any(), anyInt()))
         .thenReturn(ApiNamingManagerTestUtils.builtNonEmbryonicPaths);
     when(trieDiffLogModel.getTrieDiffLog())
@@ -227,7 +236,7 @@ class DefaultHttpApiNamingManagerTest {
   @Test
   void testTrieDiffLogConstruction() throws ExecutionException {
     when(httpApiNamingConfig.getFullTrieReloadConfig())
-        .thenReturn(buildFullTrieReloadConfig(false, "0.0.0"));
+        .thenReturn(buildFullTrieReloadConfig("0.0.0"));
     when(trieDiffLogModel.getTrieDiffLog()).thenReturn(ApiNamingManagerTestUtils.builtTrieDiffLog);
     when(fileMetadata.getModificationTime()).thenReturn(3L);
     DiffPattern expectedDiffPattern = ApiNamingManagerTestUtils.builtExpectedDiffTrie;
@@ -260,7 +269,84 @@ class DefaultHttpApiNamingManagerTest {
   }
 
   @Test
-  void testLocalApiNamingConfig() throws ExecutionException {
+  void testLocalApiNamingConfig_withDisabled() throws ExecutionException {
+    when(trieDiffLogModel.getTrieDiffLog()).thenReturn(ApiNamingManagerTestUtils.builtTrieDiffLog);
+    when(fileMetadata.getModificationTime()).thenReturn(3L);
+    when(trieModel.getNonEmbryonicWildcardPaths(any(), anyInt()))
+        .thenReturn(ApiNamingManagerTestUtils.builtNonEmbryonicPaths);
+
+    ServiceRequest serviceRequest1 =
+        ServiceRequest.newBuilder()
+            .setServiceName("serviceName1")
+            .setConfigHash("")
+            .setToken("t=1;v=0.0.0")
+            .build();
+
+    when(entityFetcher.getServiceIds(
+            any(), eq(List.of(serviceRequest1)), eq(Optional.of("environment"))))
+        .thenReturn(Map.of(serviceRequest1, Optional.of("serviceId1")));
+
+    when(trainerConfigServiceBlockingStub.getAllScopedTrainingConfigs(any()))
+        .thenReturn(
+            localTrainingConfigResponse(
+                TrainingConfig.newBuilder()
+                    .setDisabled(true)
+                    .setLocalTrainingConfig(
+                        LocalTrainingConfig.newBuilder()
+                            .setApiNamingConfig(ApiNamingConfig.getDefaultInstance())
+                            .build())
+                    .build()));
+
+    when(httpApiNamingConfig.getFullTrieReloadConfig())
+        .thenReturn(buildFullTrieReloadConfig("1.0.0"));
+    List<HttpServiceResponse> actualServiceResponseList =
+        httpApiNamingManager.getHttpServiceResponseList(
+            RequestContext.forTenantId("tenantId"),
+            GetApiNamingModelRequest.newBuilder()
+                .setEnvironment("environment")
+                .addAllServiceRequests(List.of(serviceRequest1))
+                .build());
+    // disabled local api naming config
+    assertEquals(0, actualServiceResponseList.size());
+  }
+
+  @Test
+  void testLocalApiNamingConfig_withDefaultAsDisabled() throws ExecutionException {
+    when(trieDiffLogModel.getTrieDiffLog()).thenReturn(ApiNamingManagerTestUtils.builtTrieDiffLog);
+    when(fileMetadata.getModificationTime()).thenReturn(3L);
+    when(trieModel.getNonEmbryonicWildcardPaths(any(), anyInt()))
+        .thenReturn(ApiNamingManagerTestUtils.builtNonEmbryonicPaths);
+
+    ServiceRequest serviceRequest1 =
+        ServiceRequest.newBuilder()
+            .setServiceName("serviceName1")
+            .setConfigHash("")
+            .setToken("t=1;v=0.0.0")
+            .build();
+
+    when(entityFetcher.getServiceIds(
+            any(), eq(List.of(serviceRequest1)), eq(Optional.of("environment"))))
+        .thenReturn(Map.of(serviceRequest1, Optional.of("serviceId1")));
+
+    when(httpApiNamingConfig.getFullTrieReloadConfig())
+        .thenReturn(buildFullTrieReloadConfig("1.0.0"));
+    when(trainerConfigServiceBlockingStub.getAllScopedTrainingConfigs(any()))
+        .thenReturn(GetAllScopedTrainingConfigsResponse.newBuilder().build());
+
+    List<HttpServiceResponse> actualServiceResponseList =
+        httpApiNamingManager.getHttpServiceResponseList(
+            RequestContext.forTenantId("tenantId"),
+            GetApiNamingModelRequest.newBuilder()
+                .setEnvironment("environment")
+                .addAllServiceRequests(List.of(serviceRequest1))
+                .build());
+
+    // disabled local api naming config
+    assertEquals(0, actualServiceResponseList.size());
+  }
+
+  @Test
+  void testLocalApiNamingConfig_withEnabled() throws ExecutionException {
     when(trieDiffLogModel.getTrieDiffLog()).thenReturn(ApiNamingManagerTestUtils.builtTrieDiffLog);
     when(fileMetadata.getModificationTime()).thenReturn(3L);
     when(trieModel.getNonEmbryonicWildcardPaths(any(), anyInt()))
@@ -277,21 +363,10 @@ class DefaultHttpApiNamingManagerTest {
     when(entityFetcher.getServiceIds(
             any(), eq(List.of(serviceRequest1)), eq(Optional.of("environment"))))
         .thenReturn(Map.of(serviceRequest1, Optional.of("serviceId1")));
-    when(httpApiNamingConfig.getFullTrieReloadConfig())
-        .thenReturn(buildFullTrieReloadConfig(true, "1.0.0"));
-    List<HttpServiceResponse> actualServiceResponseList =
-        httpApiNamingManager.getHttpServiceResponseList(
-            RequestContext.forTenantId("tenantId"),
-            GetApiNamingModelRequest.newBuilder()
-                .setEnvironment("environment")
-                .addAllServiceRequests(List.of(serviceRequest1))
-                .build());
-    // disabled local api naming config
-    assertEquals(0, actualServiceResponseList.size());
 
     when(httpApiNamingConfig.getFullTrieReloadConfig())
-        .thenReturn(buildFullTrieReloadConfig(false, "1.0.0"));
-    actualServiceResponseList =
+        .thenReturn(buildFullTrieReloadConfig("1.0.0"));
+    List<HttpServiceResponse> actualServiceResponseList =
         httpApiNamingManager.getHttpServiceResponseList(
             RequestContext.forTenantId("tenantId"),
             GetApiNamingModelRequest.newBuilder()
@@ -312,5 +387,20 @@ class DefaultHttpApiNamingManagerTest {
             .getApiNamingPatternsList();
     assertTrue(actualPatterns.contains(expectedFullPattern.getApiNamingPatterns(0)));
     assertTrue(actualPatterns.contains(expectedFullPattern.getApiNamingPatterns(1)));
+  }
+
+  private GetAllScopedTrainingConfigsResponse localTrainingConfigResponse(
+      TrainingConfig trainingConfig) {
+    return GetAllScopedTrainingConfigsResponse.newBuilder()
+        .addAllScopedTrainingConfigs(
+            List.of(
+                ScopedTrainingConfig.newBuilder()
+                    .setConfigScope(
+                        AnomalyConfigScope.newBuilder()
+                            .setCustomerScope(AnomalyCustomerScope.newBuilder().build())
+                            .build())
+                    .addTrainingConfigs(trainingConfig)
+                    .build()))
+        .build();
   }
 }
