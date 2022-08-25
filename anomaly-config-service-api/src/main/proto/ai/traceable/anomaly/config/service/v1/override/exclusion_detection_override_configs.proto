@@ -39,12 +39,13 @@ message GetAllDetectionExclusionRulesResponse {
   repeated DetectionExclusionRule rules = 1;
 }
 
-message CreateDetectionExclusionRuleConfigRequest {
+message CreateDetectionExclusionRuleRequest {
   string description = 1;
-  DetectionExclusionRuleConfig config = 2;
+  DetectionOverrideRuleScope rule_scope = 2;
+  DetectionExclusionRuleConfig config = 3;
 }
 
-message CreateDetectionExclusionRuleConfigResponse {
+message CreateDetectionExclusionRuleResponse {
   DetectionExclusionRule rule = 1;
 }
 
