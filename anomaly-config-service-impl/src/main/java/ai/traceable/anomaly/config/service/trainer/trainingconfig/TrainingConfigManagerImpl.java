@@ -3,6 +3,7 @@ package ai.traceable.anomaly.config.service.trainer.trainingconfig;
 import static ai.traceable.anomaly.config.service.trainer.trainingconfig.TrainingConfigConstants.TRAINING_CONFIG_NAMESPACE;
 import static ai.traceable.anomaly.config.service.trainer.trainingconfig.TrainingConfigConstants.TRAINING_CONFIG_RESOURCE_NAME;
 
+import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.trainer.TrainerConfigServiceConfig;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
@@ -33,6 +34,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrainingConfig>
     implements TrainingConfigManager {
   private final TrainingConfigHandler configHandler;
+  private final AnomalyConfigScopeUtils anomalyConfigScopeUtils;
   private final List<TrainingConfig> defaultApiNamingTrainingConfigs;
   private final List<TrainingConfig> defaultMetadataTrainingConfigs;
 
@@ -40,6 +42,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
   public TrainingConfigManagerImpl(
       TrainingConfigHandler configHandler,
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
+      AnomalyConfigScopeUtils anomalyConfigScopeUtils,
       TrainerConfigServiceConfig config,
       ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
@@ -48,6 +51,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
         TRAINING_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
     this.configHandler = configHandler;
+    this.anomalyConfigScopeUtils = anomalyConfigScopeUtils;
     this.defaultApiNamingTrainingConfigs = config.getApiNamingTrainingConfigs();
     this.defaultMetadataTrainingConfigs = config.getMetadataTrainingConfigs();
   }
@@ -70,7 +74,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
 
   @Override
   protected String getContextFromData(ScopedTrainingConfig data) {
-    return getContextFromAnomalyConfigScope(data.getConfigScope());
+    return anomalyConfigScopeUtils.getContextFromAnomalyConfigScope(data.getConfigScope());
   }
 
   @Override
@@ -78,33 +82,9 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
       RequestContext requestContext,
       AnomalyConfigScope configScope,
       GetTrainingConfigsFilter filter) {
-    /*
-     * Precedence Order --> apiConfig > serviceConfig > customerConfig > defaultConfig For example, if
-     * apiConfig.disabled = true, we use it; if apiConfig.disabled = false, we use
-     * serviceConfig.disabled value and so on.. Similarly for all other config values
-     */
-    List<String> contextsWithIncreasingPriority = new ArrayList<>();
-    contextsWithIncreasingPriority.add(
-        requestContext
-            .getTenantId()
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException("Unable to get tenant id from request context")));
-
-    switch (configScope.getScopeCase()) {
-      case CUSTOMER_SCOPE:
-        break;
-      case SERVICE_SCOPE:
-        contextsWithIncreasingPriority.add(configScope.getServiceScope().getId());
-        break;
-      case API_SCOPE:
-        contextsWithIncreasingPriority.add(configScope.getApiScope().getServiceScope().getId());
-        contextsWithIncreasingPriority.add(configScope.getApiScope().getId());
-        break;
-      default:
-        throw new RuntimeException(
-            String.format("Invalid scope found: {%s}", configScope.getScopeCase()));
-    }
+    List<String> contextsWithIncreasingPriority =
+        anomalyConfigScopeUtils.getContextsWithIncreasingPriority(
+            getTenantId(requestContext), configScope);
 
     Map<String, ScopedTrainingConfig> configMap = fetchConfigMap(requestContext);
 
@@ -126,7 +106,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
     Map<String, ScopedTrainingConfig> trainingConfigMap = fetchConfigMap(requestContext);
 
     List<ScopedTrainingConfig> trainingConfigs =
-        getResolvedConfigs(trainingConfigMap, requestContext.getTenantId().orElseThrow());
+        getResolvedConfigs(trainingConfigMap, getTenantId(requestContext));
 
     Set<TrainingConfig.TrainingConfigCase> configCases = configHandler.convert(filter);
 
@@ -140,7 +120,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
       RequestContext requestContext,
       AnomalyConfigScope configScope,
       GetTrainingConfigsFilter filter) {
-    String context = getContextFromAnomalyConfigScope(configScope);
+    String context = anomalyConfigScopeUtils.getContextFromAnomalyConfigScope(configScope);
     ScopedTrainingConfig scopedTrainingConfig =
         getData(requestContext, context)
             .orElse(ScopedTrainingConfig.newBuilder().setConfigScope(configScope).build());
@@ -176,7 +156,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
     ScopedTrainingConfig.Builder deletedConfigsBuilder =
         ScopedTrainingConfig.newBuilder().setConfigScope(configScope);
 
-    String context = getContextFromAnomalyConfigScope(configScope);
+    String context = anomalyConfigScopeUtils.getContextFromAnomalyConfigScope(configScope);
     ScopedTrainingConfig scopedTrainingConfig =
         getData(requestContext, context).orElse(ScopedTrainingConfig.getDefaultInstance());
 
@@ -235,21 +215,8 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
     for (Map.Entry<String, ScopedTrainingConfig> entry : configMap.entrySet()) {
 
       AnomalyConfigScope anomalyConfigScope = entry.getValue().getConfigScope();
-      List<String> contextsWithIncreasingPriority = new ArrayList<>();
-      contextsWithIncreasingPriority.add(tenantId);
-      switch (anomalyConfigScope.getScopeCase()) {
-        case SERVICE_SCOPE:
-          contextsWithIncreasingPriority.add(anomalyConfigScope.getServiceScope().getId());
-          break;
-        case API_SCOPE:
-          contextsWithIncreasingPriority.add(
-              anomalyConfigScope.getApiScope().getServiceScope().getId());
-          contextsWithIncreasingPriority.add(anomalyConfigScope.getApiScope().getId());
-          break;
-        default:
-          break;
-      }
-
+      List<String> contextsWithIncreasingPriority =
+          anomalyConfigScopeUtils.getContextsWithIncreasingPriority(tenantId, anomalyConfigScope);
       resolvedConfigs.add(
           getResolvedConfig(configMap, anomalyConfigScope, contextsWithIncreasingPriority));
     }
@@ -284,36 +251,17 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
     return trainingConfig;
   }
 
-  private String getContextFromAnomalyConfigScope(AnomalyConfigScope anomalyConfigScope) {
-    String context;
-    switch (anomalyConfigScope.getScopeCase()) {
-      case CUSTOMER_SCOPE:
-        context =
-            RequestContext.CURRENT
-                .get()
-                .getTenantId()
-                .orElseThrow(
-                    () ->
-                        new IllegalArgumentException(
-                            "Unable to get tenant id from request context"));
-        break;
-      case SERVICE_SCOPE:
-        context = anomalyConfigScope.getServiceScope().getId();
-        break;
-      case API_SCOPE:
-        context = anomalyConfigScope.getApiScope().getId();
-        break;
-      default:
-        throw new RuntimeException(
-            String.format("Invalid scope found: {%s}", anomalyConfigScope.getScopeCase()));
-    }
-    return context;
-  }
-
   private List<TrainingConfig> getDefaultTrainingConfigs() {
     return Stream.concat(
             this.defaultApiNamingTrainingConfigs.stream(),
             this.defaultMetadataTrainingConfigs.stream())
         .collect(Collectors.toUnmodifiableList());
+  }
+
+  private final String getTenantId(RequestContext requestContext) {
+    return requestContext
+        .getTenantId()
+        .orElseThrow(
+            () -> new IllegalArgumentException("Unable to get tenant id from request context"));
   }
 }

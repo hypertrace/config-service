@@ -9,10 +9,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.trainer.TrainerConfigServiceConfig;
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
 import ai.traceable.anomaly.config.service.v1.trainer.DeleteAnomalyConfigOption;
@@ -54,9 +56,12 @@ public class TrainingConfigManagerTest {
   private TrainingConfigHandler configHandler;
   private TrainingConfigManager configManager;
   private TrainerConfigServiceConfig trainerConfigServiceConfig;
+  private AnomalyConfigScopeUtils anomalyConfigScopeUtils;
 
   private final AnomalyServiceScope serviceScope =
       AnomalyServiceScope.newBuilder().setId("service").build();
+  private final AnomalyEnvironmentScope environmentScope =
+      AnomalyEnvironmentScope.newBuilder().setEnvironmentId("environment").build();
   private final AnomalyApiScope apiScope =
       AnomalyApiScope.newBuilder().setId("api").setServiceScope(serviceScope).build();
 
@@ -66,6 +71,8 @@ public class TrainingConfigManagerTest {
           .build();
   private final AnomalyConfigScope serviceConfigScope =
       AnomalyConfigScope.newBuilder().setServiceScope(serviceScope).build();
+  private final AnomalyConfigScope environmentConfigScope =
+      AnomalyConfigScope.newBuilder().setEnvironmentScope(environmentScope).build();
   private final AnomalyConfigScope apiConfigScope =
       AnomalyConfigScope.newBuilder().setApiScope(apiScope).build();
 
@@ -77,6 +84,7 @@ public class TrainingConfigManagerTest {
 
   private static final String CUSTOMER_SCOPE_CONFIG = "customerScopeConfig";
   private static final String SERVICE_SCOPE_CONFIG = "serviceScopeConfig";
+  private static final String ENVIRONMENT_SCOPE_CONFIG = "environmentScopeConfig";
   private static final String API_SCOPE_CONFIG = "apiScopeConfig";
 
   private static final Config scopedTrainingConfigs =
@@ -94,6 +102,7 @@ public class TrainingConfigManagerTest {
     mockConfigService.start();
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     configHandler = new TrainingConfigHandler();
+    anomalyConfigScopeUtils = new AnomalyConfigScopeUtils();
     trainerConfigServiceConfig = mock(TrainerConfigServiceConfig.class);
     when(trainerConfigServiceConfig.getApiNamingTrainingConfigs()).thenReturn(List.of());
     this.configManager =
@@ -101,6 +110,7 @@ public class TrainingConfigManagerTest {
             new TrainingConfigManagerImpl(
                 configHandler,
                 configServiceBlockingStub,
+                anomalyConfigScopeUtils,
                 trainerConfigServiceConfig,
                 mock(ConfigChangeEventGenerator.class)));
   }
@@ -146,6 +156,22 @@ public class TrainingConfigManagerTest {
         customerScopeResolvedConfig,
         configManager.getScopedTrainingConfig(
             requestContext, apiConfigScope, GetTrainingConfigsFilter.getDefaultInstance()));
+
+    scopedTrainingConfig =
+        getScopedTrainingConfig(scopedTrainingConfigs.getConfig(ENVIRONMENT_SCOPE_CONFIG));
+    ScopedTrainingConfig environmentScopeResolvedConfig =
+        getScopedTrainingConfig(resolvedTrainingConfigs.getConfig(ENVIRONMENT_SCOPE_CONFIG));
+
+    updateScopedTrainingConfig(requestContext, scopedTrainingConfig);
+
+    assertEquals(
+        customerScopeResolvedConfig,
+        configManager.getScopedTrainingConfig(
+            requestContext, customerConfigScope, GetTrainingConfigsFilter.getDefaultInstance()));
+    assertEquals(
+        environmentScopeResolvedConfig,
+        configManager.getScopedTrainingConfig(
+            requestContext, environmentConfigScope, GetTrainingConfigsFilter.getDefaultInstance()));
 
     scopedTrainingConfig =
         getScopedTrainingConfig(scopedTrainingConfigs.getConfig(SERVICE_SCOPE_CONFIG));
@@ -325,6 +351,10 @@ public class TrainingConfigManagerTest {
     updateScopedTrainingConfig(requestContext, scopedTrainingConfig);
 
     scopedTrainingConfig =
+        getScopedTrainingConfig(scopedTrainingConfigs.getConfig(ENVIRONMENT_SCOPE_CONFIG));
+    updateScopedTrainingConfig(requestContext, scopedTrainingConfig);
+
+    scopedTrainingConfig =
         getScopedTrainingConfig(scopedTrainingConfigs.getConfig(SERVICE_SCOPE_CONFIG));
     updateScopedTrainingConfig(requestContext, scopedTrainingConfig);
 
@@ -334,6 +364,8 @@ public class TrainingConfigManagerTest {
 
     ScopedTrainingConfig customerScopeResolvedConfig =
         getScopedTrainingConfig(resolvedTrainingConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
+    ScopedTrainingConfig environmentScopeResolvedConfig =
+        getScopedTrainingConfig(resolvedTrainingConfigs.getConfig(ENVIRONMENT_SCOPE_CONFIG));
     ScopedTrainingConfig serviceScopeResolvedConfig =
         getScopedTrainingConfig(resolvedTrainingConfigs.getConfig(SERVICE_SCOPE_CONFIG));
     ScopedTrainingConfig apiScopeResolvedConfig =
@@ -343,8 +375,10 @@ public class TrainingConfigManagerTest {
         configManager.getAllScopedTrainingConfig(
             requestContext, GetTrainingConfigsFilter.getDefaultInstance());
 
-    assertEquals(3, trainingConfigs.size());
+    assertEquals(4, trainingConfigs.size());
     assertEquals(customerScopeResolvedConfig, getConfig(customerConfigScope, trainingConfigs));
+    assertEquals(
+        environmentScopeResolvedConfig, getConfig(environmentConfigScope, trainingConfigs));
     assertEquals(serviceScopeResolvedConfig, getConfig(serviceConfigScope, trainingConfigs));
     assertEquals(apiScopeResolvedConfig, getConfig(apiConfigScope, trainingConfigs));
   }
@@ -366,6 +400,10 @@ public class TrainingConfigManagerTest {
         getScopedTrainingConfig(scopedTrainingConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
     updateScopedTrainingConfig(requestContext, customerScopedTrainingConfig);
 
+    ScopedTrainingConfig environmentScopedTrainingConfig =
+        getScopedTrainingConfig(scopedTrainingConfigs.getConfig(ENVIRONMENT_SCOPE_CONFIG));
+    updateScopedTrainingConfig(requestContext, environmentScopedTrainingConfig);
+
     ScopedTrainingConfig serviceScopedTrainingConfig =
         getScopedTrainingConfig(scopedTrainingConfigs.getConfig(SERVICE_SCOPE_CONFIG));
     updateScopedTrainingConfig(requestContext, serviceScopedTrainingConfig);
@@ -383,6 +421,15 @@ public class TrainingConfigManagerTest {
                     customerConfigScope,
                     GetTrainingConfigsFilter.getDefaultInstance()));
     assertEquals(customerScopedTrainingConfig, scopedTrainingConfig);
+
+    scopedTrainingConfig =
+        requestContext.call(
+            () ->
+                configManager.getUnresolvedTrainingConfig(
+                    requestContext,
+                    environmentConfigScope,
+                    GetTrainingConfigsFilter.getDefaultInstance()));
+    assertEquals(environmentScopedTrainingConfig, scopedTrainingConfig);
 
     scopedTrainingConfig =
         requestContext.call(
@@ -417,6 +464,10 @@ public class TrainingConfigManagerTest {
         getScopedTrainingConfig(scopedTrainingConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
     updateScopedTrainingConfig(requestContext, customerScopedTrainingConfig);
 
+    ScopedTrainingConfig environmentScopedTrainingConfig =
+        getScopedTrainingConfig(scopedTrainingConfigs.getConfig(ENVIRONMENT_SCOPE_CONFIG));
+    updateScopedTrainingConfig(requestContext, environmentScopedTrainingConfig);
+
     ScopedTrainingConfig serviceScopedTrainingConfig =
         getScopedTrainingConfig(scopedTrainingConfigs.getConfig(SERVICE_SCOPE_CONFIG));
     updateScopedTrainingConfig(requestContext, serviceScopedTrainingConfig);
@@ -432,11 +483,14 @@ public class TrainingConfigManagerTest {
         scopedTrainingConfigList.stream()
             .map(ScopedTrainingConfig::getConfigScope)
             .collect(Collectors.toList());
-    assertEquals(4, configScopes.size());
+    assertEquals(5, configScopes.size());
     assertEquals(
         customerScopedTrainingConfig, getConfig(customerConfigScope, scopedTrainingConfigList));
     assertEquals(
         serviceScopedTrainingConfig, getConfig(serviceConfigScope, scopedTrainingConfigList));
+    assertEquals(
+        environmentScopedTrainingConfig,
+        getConfig(environmentConfigScope, scopedTrainingConfigList));
     assertEquals(apiScopedTrainingConfig, getConfig(apiConfigScope, scopedTrainingConfigList));
   }
 
