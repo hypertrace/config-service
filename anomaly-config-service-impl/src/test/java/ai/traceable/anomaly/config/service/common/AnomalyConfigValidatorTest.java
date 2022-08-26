@@ -7,6 +7,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyParamInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalyParamInfoScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
@@ -40,7 +41,23 @@ public class AnomalyConfigValidatorTest {
     status =
         configValidator.validate(
             AnomalyConfigScope.newBuilder()
+                .setEnvironmentScope(AnomalyEnvironmentScope.getDefaultInstance())
+                .build());
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("valid Environment ID"));
+
+    status =
+        configValidator.validate(
+            AnomalyConfigScope.newBuilder()
                 .setServiceScope(AnomalyServiceScope.newBuilder().setId("id").build())
+                .build());
+    assertEquals(Status.OK.getCode(), status.getCode());
+
+    status =
+        configValidator.validate(
+            AnomalyConfigScope.newBuilder()
+                .setEnvironmentScope(
+                    AnomalyEnvironmentScope.newBuilder().setEnvironmentId("id").build())
                 .build());
     assertEquals(Status.OK.getCode(), status.getCode());
 

@@ -3,6 +3,7 @@ package ai.traceable.anomaly.config.service.global.status;
 import static ai.traceable.anomaly.config.service.v1.AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_HIGH;
 import static ai.traceable.anomaly.config.service.v1.AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_LOW;
 import static ai.traceable.anomaly.config.service.v1.AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_MEDIUM;
+import static ai.traceable.anomaly.config.service.v1.AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_UNSPECIFIED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -54,6 +55,7 @@ import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -100,14 +102,14 @@ public class GlobalAnomalyConfigStatusManagerTest {
             .build()
             .start();
     channelForMockServer = InProcessChannelBuilder.forName(serverName).directExecutor().build();
-
-    mockConfigService =
-        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
-    mockConfigService.start();
   }
 
   @BeforeEach
   public void setup() {
+    mockConfigService =
+        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    mockConfigService.start();
+
     configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel())
             .withCallCredentials(
@@ -150,9 +152,13 @@ public class GlobalAnomalyConfigStatusManagerTest {
                 mock(ConfigChangeEventGenerator.class)));
   }
 
+  @AfterEach
+  public void wrapup() {
+    mockConfigService.shutdown();
+  }
+
   @AfterAll
   public static void teardown() {
-    mockConfigService.shutdown();
     mockServer.shutdownNow();
   }
 
@@ -388,6 +394,114 @@ public class GlobalAnomalyConfigStatusManagerTest {
               .getScopedAnomalyConfigStatus(requestContext, apiConfigScope)
               .getConfigStatus());
       scopedConfigs = configStatusManager.getAllScopedAnomalyConfigStatusConfigs(requestContext);
+      assertEquals(4, scopedConfigs.size());
+      assertEquals(environmentConfigScope, scopedConfigs.get(0).getConfigScope());
+      assertEquals(expectedEnvironmentStatus, scopedConfigs.get(0).getConfigStatus());
+      assertEquals(serviceConfigScope, scopedConfigs.get(1).getConfigScope());
+      assertEquals(expectedServiceStatus, scopedConfigs.get(1).getConfigStatus());
+      assertEquals(apiConfigScope, scopedConfigs.get(2).getConfigScope());
+      assertEquals(expectedApiStatus, scopedConfigs.get(2).getConfigStatus());
+      assertEquals(customerConfigScope, scopedConfigs.get(3).getConfigScope());
+      assertEquals(expectedCustomerStatus, scopedConfigs.get(3).getConfigStatus());
+    }
+  }
+
+  @Test
+  void test_getUnresolvedScopedAnomalyConfigStatus() throws InvalidProtocolBufferException {
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+
+    AnomalyConfigStatusChange configStatusChange;
+    AnomalyConfigStatus expectedCustomerStatus;
+    AnomalyConfigStatus expectedEnvironmentStatus;
+    AnomalyConfigStatus expectedServiceStatus;
+    AnomalyConfigStatus expectedApiStatus;
+    List<ScopedAnomalyConfigStatus> scopedConfigs;
+
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            configStatusManager.getUnresolvedScopedAnomalyConfigStatus(
+                requestContext,
+                AnomalyConfigScope.newBuilder()
+                    .setParamScope(AnomalyParamScope.getDefaultInstance())
+                    .build()));
+
+    {
+      expectedCustomerStatus = AnomalyConfigStatus.getDefaultInstance();
+      assertEquals(
+          expectedCustomerStatus,
+          configStatusManager
+              .getUnresolvedScopedAnomalyConfigStatus(requestContext, customerConfigScope)
+              .getConfigStatus());
+      scopedConfigs =
+          configStatusManager.getAllUnresolvedScopedAnomalyConfigStatusConfigs(requestContext);
+      assertEquals(1, scopedConfigs.size());
+      assertEquals(customerConfigScope, scopedConfigs.get(0).getConfigScope());
+      assertEquals(expectedCustomerStatus, scopedConfigs.get(0).getConfigStatus());
+      assertEquals(
+          ANOMALY_CONFIDENCE_LEVEL_UNSPECIFIED, scopedConfigs.get(0).getMinConfidenceLevel());
+    }
+    {
+      configStatusChange = AnomalyConfigStatusChange.newBuilder().setDisabled(false).build();
+      upsertEnvironmentConfigStatus(configStatusChange);
+      expectedCustomerStatus = AnomalyConfigStatus.getDefaultInstance();
+      expectedEnvironmentStatus =
+          AnomalyConfigStatus.newBuilder().setInternal(false).setDisabled(false).build();
+      assertEquals(
+          expectedCustomerStatus,
+          configStatusManager
+              .getUnresolvedScopedAnomalyConfigStatus(requestContext, customerConfigScope)
+              .getConfigStatus());
+      assertEquals(
+          expectedEnvironmentStatus,
+          configStatusManager
+              .getUnresolvedScopedAnomalyConfigStatus(requestContext, environmentConfigScope)
+              .getConfigStatus());
+      scopedConfigs =
+          configStatusManager.getAllUnresolvedScopedAnomalyConfigStatusConfigs(requestContext);
+      assertEquals(2, scopedConfigs.size());
+      assertEquals(environmentConfigScope, scopedConfigs.get(0).getConfigScope());
+      assertEquals(expectedEnvironmentStatus, scopedConfigs.get(0).getConfigStatus());
+      assertEquals(customerConfigScope, scopedConfigs.get(1).getConfigScope());
+      assertEquals(expectedCustomerStatus, scopedConfigs.get(1).getConfigStatus());
+    }
+    {
+      configStatusChange =
+          AnomalyConfigStatusChange.newBuilder().setInternal(true).setDisabled(false).build();
+      upsertServiceConfigStatus(configStatusChange);
+      configStatusChange =
+          AnomalyConfigStatusChange.newBuilder().setInternal(true).setDisabled(true).build();
+      upsertApiConfigStatus(configStatusChange);
+      expectedCustomerStatus = AnomalyConfigStatus.getDefaultInstance();
+      expectedEnvironmentStatus =
+          AnomalyConfigStatus.newBuilder().setInternal(false).setDisabled(false).build();
+      expectedServiceStatus =
+          AnomalyConfigStatus.newBuilder().setInternal(true).setDisabled(false).build();
+      expectedApiStatus =
+          AnomalyConfigStatus.newBuilder().setInternal(true).setDisabled(true).build();
+      assertEquals(
+          expectedCustomerStatus,
+          configStatusManager
+              .getUnresolvedScopedAnomalyConfigStatus(requestContext, customerConfigScope)
+              .getConfigStatus());
+      assertEquals(
+          expectedEnvironmentStatus,
+          configStatusManager
+              .getUnresolvedScopedAnomalyConfigStatus(requestContext, environmentConfigScope)
+              .getConfigStatus());
+      assertEquals(
+          expectedServiceStatus,
+          configStatusManager
+              .getUnresolvedScopedAnomalyConfigStatus(requestContext, serviceConfigScope)
+              .getConfigStatus());
+      assertEquals(
+          expectedApiStatus,
+          configStatusManager
+              .getUnresolvedScopedAnomalyConfigStatus(requestContext, apiConfigScope)
+              .getConfigStatus());
+      scopedConfigs =
+          configStatusManager.getAllUnresolvedScopedAnomalyConfigStatusConfigs(requestContext);
       assertEquals(4, scopedConfigs.size());
       assertEquals(environmentConfigScope, scopedConfigs.get(0).getConfigScope());
       assertEquals(expectedEnvironmentStatus, scopedConfigs.get(0).getConfigStatus());

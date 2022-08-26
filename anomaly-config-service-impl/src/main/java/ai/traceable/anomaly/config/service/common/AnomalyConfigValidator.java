@@ -3,6 +3,7 @@ package ai.traceable.anomaly.config.service.common;
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
+import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyParamInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalyParamInfoScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
@@ -15,6 +16,9 @@ public class AnomalyConfigValidator {
   public Status validate(AnomalyConfigScope configScope) {
     AnomalyConfigScope.ScopeCase scopeCase = configScope.getScopeCase();
     switch (scopeCase) {
+      case ENVIRONMENT_SCOPE:
+        ;
+        return validateEnvironmentScope(configScope.getEnvironmentScope());
       case SERVICE_SCOPE:
         return validateServiceScope(configScope.getServiceScope());
       case API_SCOPE:
@@ -55,6 +59,14 @@ public class AnomalyConfigValidator {
     if (scope.getId().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Anomaly Global Config SERVICE Scope should have valid Service ID.");
+    }
+    return Status.OK;
+  }
+
+  private Status validateEnvironmentScope(AnomalyEnvironmentScope scope) {
+    if (scope.getEnvironmentId().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Anomaly Global Config ENVIRONMENT Scope should have valid Environment ID.");
     }
     return Status.OK;
   }

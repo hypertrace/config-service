@@ -23,12 +23,16 @@ import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalCo
 import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetAllScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAllScopedAnomalyGlobalConfigStatusResponse;
+import ai.traceable.anomaly.config.service.v1.global.GetAllUnresolvedScopedAnomalyGlobalConfigStatusRequest;
+import ai.traceable.anomaly.config.service.v1.global.GetAllUnresolvedScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusResponse;
+import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusRequest;
+import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.global.UpdateAnomalyGlobalConfigStatusRequest;
@@ -153,6 +157,39 @@ public class AnomalyGlobalConfigServiceImplTest {
   }
 
   @Test
+  void test_getUnresolvedScopedAnomalyGlobalConfigStatus() {
+    GetUnresolvedScopedAnomalyGlobalConfigStatusRequest getRequest =
+        GetUnresolvedScopedAnomalyGlobalConfigStatusRequest.newBuilder().build();
+    StreamObserver<GetUnresolvedScopedAnomalyGlobalConfigStatusResponse> responseObserver =
+        mock(StreamObserver.class);
+
+    doReturn(Status.INVALID_ARGUMENT).when(globalValidator).validate(getRequest);
+    globalConfigService.getUnresolvedScopedAnomalyGlobalConfigStatus(getRequest, responseObserver);
+    verify(responseObserver, times(1))
+        .onError(
+            argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INVALID_ARGUMENT));
+
+    doReturn(Status.OK).when(globalValidator).validate(getRequest);
+
+    doThrow(new RuntimeException("msg"))
+        .when(anomalyConfigStatusManager)
+        .getUnresolvedScopedAnomalyConfigStatus(any(), any());
+    globalConfigService.getUnresolvedScopedAnomalyGlobalConfigStatus(getRequest, responseObserver);
+    verify(responseObserver, times(1)).onError(argThat(err -> err.getMessage().equals("msg")));
+
+    GetUnresolvedScopedAnomalyGlobalConfigStatusResponse response =
+        GetUnresolvedScopedAnomalyGlobalConfigStatusResponse.newBuilder()
+            .setScopedConfig(ScopedAnomalyConfigStatus.newBuilder().build())
+            .build();
+    doReturn(response.getScopedConfig())
+        .when(anomalyConfigStatusManager)
+        .getUnresolvedScopedAnomalyConfigStatus(any(), any());
+    globalConfigService.getUnresolvedScopedAnomalyGlobalConfigStatus(getRequest, responseObserver);
+    verify(responseObserver, times(1)).onNext(response);
+    verify(responseObserver, times(1)).onCompleted();
+  }
+
+  @Test
   void test_getAllScopedAnomalyGlobalConfigStatus() {
     GetAllScopedAnomalyGlobalConfigStatusRequest getRequest =
         GetAllScopedAnomalyGlobalConfigStatusRequest.newBuilder().build();
@@ -179,6 +216,39 @@ public class AnomalyGlobalConfigServiceImplTest {
         .when(anomalyConfigStatusManager)
         .getAllScopedAnomalyConfigStatusConfigs(any());
     globalConfigService.getAllScopedAnomalyGlobalConfigStatus(getRequest, responseObserver);
+    verify(responseObserver, times(1)).onNext(response);
+    verify(responseObserver, times(1)).onCompleted();
+  }
+
+  @Test
+  void test_getAllUnresolvedScopedAnomalyGlobalConfigStatus() {
+    GetAllUnresolvedScopedAnomalyGlobalConfigStatusRequest getRequest =
+        GetAllUnresolvedScopedAnomalyGlobalConfigStatusRequest.newBuilder().build();
+    StreamObserver<GetAllUnresolvedScopedAnomalyGlobalConfigStatusResponse> responseObserver =
+        mock(StreamObserver.class);
+
+    doThrow(new RuntimeException("msg"))
+        .when(anomalyConfigStatusManager)
+        .getAllUnresolvedScopedAnomalyConfigStatusConfigs(any());
+    globalConfigService.getAllUnresolvedScopedAnomalyGlobalConfigStatus(
+        getRequest, responseObserver);
+    verify(responseObserver, times(1)).onError(argThat(err -> err.getMessage().equals("msg")));
+
+    List<ScopedAnomalyConfigStatus> scopedConfigs =
+        List.of(
+            ScopedAnomalyConfigStatus.newBuilder().build(),
+            ScopedAnomalyConfigStatus.newBuilder()
+                .setConfigScope(new AnomalyConfigScopeUtils().getDefaultCustomerConfigScope())
+                .build());
+    GetAllUnresolvedScopedAnomalyGlobalConfigStatusResponse response =
+        GetAllUnresolvedScopedAnomalyGlobalConfigStatusResponse.newBuilder()
+            .addAllScopedConfigs(scopedConfigs)
+            .build();
+    doReturn(response.getScopedConfigsList())
+        .when(anomalyConfigStatusManager)
+        .getAllUnresolvedScopedAnomalyConfigStatusConfigs(any());
+    globalConfigService.getAllUnresolvedScopedAnomalyGlobalConfigStatus(
+        getRequest, responseObserver);
     verify(responseObserver, times(1)).onNext(response);
     verify(responseObserver, times(1)).onCompleted();
   }

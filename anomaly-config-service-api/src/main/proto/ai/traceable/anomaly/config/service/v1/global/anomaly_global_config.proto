@@ -44,10 +44,25 @@ message GetScopedAnomalyGlobalConfigStatusResponse {
   ScopedAnomalyConfigStatus scoped_config = 1;
 }
 
+message GetUnresolvedScopedAnomalyGlobalConfigStatusRequest {
+  AnomalyConfigScope config_scope = 1;
+}
+
+message GetUnresolvedScopedAnomalyGlobalConfigStatusResponse {
+  ScopedAnomalyConfigStatus scoped_config = 1;
+}
+
 message GetAllScopedAnomalyGlobalConfigStatusRequest {
 }
 
 message GetAllScopedAnomalyGlobalConfigStatusResponse {
+  repeated ScopedAnomalyConfigStatus scoped_configs = 1;
+}
+
+message GetAllUnresolvedScopedAnomalyGlobalConfigStatusRequest {
+}
+
+message GetAllUnresolvedScopedAnomalyGlobalConfigStatusResponse {
   repeated ScopedAnomalyConfigStatus scoped_configs = 1;
 }
 

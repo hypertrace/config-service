@@ -14,6 +14,12 @@ public interface GlobalAnomalyConfigStatusManager {
   ScopedAnomalyConfigStatus getScopedAnomalyConfigStatus(
       RequestContext requestContext, AnomalyConfigScope configScope);
 
+  List<ScopedAnomalyConfigStatus> getAllUnresolvedScopedAnomalyConfigStatusConfigs(
+      RequestContext requestContext);
+
+  ScopedAnomalyConfigStatus getUnresolvedScopedAnomalyConfigStatus(
+      RequestContext requestContext, AnomalyConfigScope configScope);
+
   ScopedAnomalyConfigStatusChange updateScopedAnomalyConfigStatus(
       RequestContext requestContext, ScopedAnomalyConfigStatusChange scopedConfigStatusChange);
 

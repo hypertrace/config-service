@@ -17,6 +17,7 @@ import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalCo
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusRequest;
+import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.global.UpdateAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.UpdateScopedAnomalyGlobalConfigStatusRequest;
@@ -134,6 +135,24 @@ class AnomalyGlobalConfigServiceValidatorTest {
       status =
           globalValidator.validate(
               GetScopedAnomalyGlobalConfigStatusRequest.newBuilder()
+                  .setConfigScope(configScope)
+                  .build());
+      assertEquals(Status.OK.getCode(), status.getCode());
+      verify(configValidator, times(1)).validate((AnomalyConfigScope) any());
+    }
+
+    @Test
+    void testValidateGetUnresolvedStatusRequest() {
+      Status status =
+          globalValidator.validate(
+              GetUnresolvedScopedAnomalyGlobalConfigStatusRequest.getDefaultInstance());
+      assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+      assertTrue(status.getDescription().contains("valid config scope"));
+      verify(configValidator, times(0)).validate((AnomalyConfigScope) any());
+
+      status =
+          globalValidator.validate(
+              GetUnresolvedScopedAnomalyGlobalConfigStatusRequest.newBuilder()
                   .setConfigScope(configScope)
                   .build());
       assertEquals(Status.OK.getCode(), status.getCode());

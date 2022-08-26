@@ -126,10 +126,7 @@ public class AnomalyDetectionConfigManagerImpl
     if (!anomalyDetectionConfigMap.containsKey(tenantId)) {
       scopedAnomalyDetectionConfigs.add(
           ScopedAnomalyDetectionConfig.newBuilder()
-              .setConfigScope(
-                  AnomalyConfigScope.newBuilder()
-                      .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
-                      .build())
+              .setConfigScope(anomalyConfigScopeUtils.getDefaultCustomerConfigScope())
               .build());
     }
 

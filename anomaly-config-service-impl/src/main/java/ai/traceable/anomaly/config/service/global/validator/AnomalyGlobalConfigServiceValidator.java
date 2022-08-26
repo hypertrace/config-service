@@ -6,6 +6,7 @@ import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalCo
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusRequest;
+import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.UpdateAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.UpdateScopedAnomalyGlobalConfigStatusRequest;
 import io.grpc.Status;
@@ -47,6 +48,15 @@ public class AnomalyGlobalConfigServiceValidator implements GlobalConfigValidato
 
   @Override
   public Status validate(GetScopedAnomalyGlobalConfigStatusRequest request) {
+    if (!request.hasConfigScope()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Anomaly Global Config Update request should have a valid config scope.");
+    }
+    return anomalyConfigValidator.validate(request.getConfigScope());
+  }
+
+  @Override
+  public Status validate(GetUnresolvedScopedAnomalyGlobalConfigStatusRequest request) {
     if (!request.hasConfigScope()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Anomaly Global Config Update request should have a valid config scope.");

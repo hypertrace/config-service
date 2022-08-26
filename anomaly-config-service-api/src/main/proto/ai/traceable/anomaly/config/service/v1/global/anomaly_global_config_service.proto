@@ -24,6 +24,12 @@ service AnomalyGlobalConfigService {
   rpc GetAllScopedAnomalyGlobalConfigStatus (GetAllScopedAnomalyGlobalConfigStatusRequest) returns (GetAllScopedAnomalyGlobalConfigStatusResponse) {
   }
 
+  rpc GetUnresolvedScopedAnomalyGlobalConfigStatus (GetUnresolvedScopedAnomalyGlobalConfigStatusRequest) returns (GetUnresolvedScopedAnomalyGlobalConfigStatusResponse) {
+  }
+
+  rpc GetAllUnresolvedScopedAnomalyGlobalConfigStatus (GetAllUnresolvedScopedAnomalyGlobalConfigStatusRequest) returns (GetAllUnresolvedScopedAnomalyGlobalConfigStatusResponse) {
+  }
+
   rpc UpdateScopedAnomalyGlobalConfigStatus (UpdateScopedAnomalyGlobalConfigStatusRequest) returns (UpdateScopedAnomalyGlobalConfigStatusResponse) {
   }
 
