@@ -32,10 +32,15 @@ message DetectionExclusionConfigCriteria {
   DetectionOverrideActorsConfig actors_config = 4;
 }
 
-message GetAllDetectionExclusionRulesRequest {
+message GetDetectionExclusionRulesFilter {
+  DetectionOverrideRuleScope rule_scope = 1;
 }
 
-message GetAllDetectionExclusionRulesResponse {
+message GetDetectionExclusionRulesRequest {
+  GetDetectionExclusionRulesFilter filter = 1;
+}
+
+message GetDetectionExclusionRulesResponse {
   repeated DetectionExclusionRule rules = 1;
 }
 

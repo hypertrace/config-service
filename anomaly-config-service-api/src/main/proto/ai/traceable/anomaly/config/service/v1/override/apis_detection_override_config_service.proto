@@ -13,7 +13,7 @@ service DetectionOverrideConfigService {
 
   // detection exclusion rules
 
-  rpc GetAllDetectionExclusionRules(GetAllDetectionExclusionRulesRequest) returns (GetAllDetectionExclusionRulesResponse) {}
+  rpc GetDetectionExclusionRules(GetDetectionExclusionRulesRequest) returns (GetDetectionExclusionRulesResponse) {}
 
   rpc CreateDetectionExclusionRule(CreateDetectionExclusionRuleRequest) returns (CreateDetectionExclusionRuleResponse) {}
 
