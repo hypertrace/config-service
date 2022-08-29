@@ -16,6 +16,8 @@ dependencies {
   implementation(libs.slf4j.api)
   implementation(libs.commons.csv)
   implementation(libs.uuidCreator)
+  implementation(libs.hypertrace.configservice.objectstore)
+  implementation(libs.hypertrace.configservice.changeeventgenerator)
 
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpcutils.client)

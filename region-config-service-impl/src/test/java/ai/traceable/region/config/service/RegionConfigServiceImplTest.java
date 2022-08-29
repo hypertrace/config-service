@@ -56,6 +56,7 @@ class RegionConfigServiceImplTest {
 
   private RegionConfigServiceImpl regionConfigService;
   private ActivityEventProducer mockActivityEventProducer;
+  private RequestContext requestContext;
 
   @BeforeEach
   void setup() {
@@ -73,6 +74,7 @@ class RegionConfigServiceImplTest {
             rulesManager,
             mockCustomSignatureConfigServiceConfig,
             mockActivityEventProducer);
+    requestContext = RequestContext.forTenantId("tenant-id");
   }
 
   @Nested
@@ -173,14 +175,17 @@ class RegionConfigServiceImplTest {
     void shouldGetAllRegionRules() {
       RegionRule regionRule1 = RegionRule.newBuilder().setId("id-1").build();
       RegionRule regionRule2 = RegionRule.newBuilder().setId("id-2").build();
-      when(rulesManager.getRegionRules()).thenReturn(List.of(regionRule1, regionRule2));
+      when(rulesManager.getRegionRules(requestContext))
+          .thenReturn(List.of(regionRule1, regionRule2));
 
       StreamObserver<GetAllRegionRulesResponse> responseObserver = mock(StreamObserver.class);
-      Runnable runnable =
-          () ->
-              regionConfigService.getAllRegionRules(
-                  GetAllRegionRulesRequest.getDefaultInstance(), responseObserver);
-      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      requestContext.call(
+          () -> {
+            regionConfigService.getAllRegionRules(
+                GetAllRegionRulesRequest.getDefaultInstance(), responseObserver);
+            return null;
+          });
 
       verify(responseObserver, times(1))
           .onNext(
@@ -211,13 +216,15 @@ class RegionConfigServiceImplTest {
               .build();
 
       when(rulesValidator.validate(eq(createRegionRuleRequest), any())).thenReturn(Status.OK);
-      when(rulesManager.createRegionRule(createRegionRuleRequest))
-          .thenReturn(Optional.of(regionRule));
+      when(rulesManager.createRegionRule(requestContext, createRegionRuleRequest))
+          .thenReturn(regionRule);
 
       StreamObserver<CreateRegionRuleResponse> responseObserver = mock(StreamObserver.class);
-      Runnable runnable =
-          () -> regionConfigService.createRegionRule(createRegionRuleRequest, responseObserver);
-      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+      requestContext.call(
+          () -> {
+            regionConfigService.createRegionRule(createRegionRuleRequest, responseObserver);
+            return null;
+          });
 
       verify(responseObserver, times(1))
           .onNext(CreateRegionRuleResponse.newBuilder().setRule(regionRule).build());
@@ -247,37 +254,16 @@ class RegionConfigServiceImplTest {
 
       when(rulesValidator.validate(eq(createRegionRuleRequest), any()))
           .thenReturn(Status.INVALID_ARGUMENT);
-      when(rulesManager.createRegionRule(createRegionRuleRequest)).thenReturn(Optional.empty());
+      when(rulesManager.createRegionRule(requestContext, createRegionRuleRequest)).thenReturn(null);
 
       StreamObserver<CreateRegionRuleResponse> responseObserver = mock(StreamObserver.class);
-      Runnable runnable =
-          () -> regionConfigService.createRegionRule(createRegionRuleRequest, responseObserver);
-      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
-
+      requestContext.call(
+          () -> {
+            regionConfigService.createRegionRule(createRegionRuleRequest, responseObserver);
+            return null;
+          });
       verify(responseObserver, times(1))
           .onError(argThat(err -> Status.fromThrowable(err).getCode() == Code.INVALID_ARGUMENT));
-    }
-
-    @Test
-    @DisplayName("should return internal error unable to create")
-    void should_fail_createRegionRule_unableToCreate() {
-      CreateRegionRuleRequest createRegionRuleRequest =
-          CreateRegionRuleRequest.newBuilder()
-              .addRegionId("region-1")
-              .setName("name")
-              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
-              .build();
-
-      when(rulesValidator.validate(eq(createRegionRuleRequest), any())).thenReturn(Status.OK);
-      when(rulesManager.createRegionRule(createRegionRuleRequest)).thenReturn(Optional.empty());
-
-      StreamObserver<CreateRegionRuleResponse> responseObserver = mock(StreamObserver.class);
-      Runnable runnable =
-          () -> regionConfigService.createRegionRule(createRegionRuleRequest, responseObserver);
-      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
-
-      verify(responseObserver, times(1))
-          .onError(argThat(err -> Status.fromThrowable(err).getCode() == Code.INTERNAL));
     }
   }
 
@@ -301,14 +287,16 @@ class RegionConfigServiceImplTest {
               .build();
 
       when(rulesValidator.validate(eq(updateRegionRuleRequest), any())).thenReturn(Status.OK);
-      when(rulesManager.updateRegionRule(updateRegionRuleRequest))
-          .thenReturn(Optional.of(updatedRegionRule));
+      when(rulesManager.updateRegionRule(requestContext, updateRegionRuleRequest))
+          .thenReturn(updatedRegionRule);
 
       StreamObserver<UpdateRegionRuleResponse> responseObserver = mock(StreamObserver.class);
-      Runnable runnable =
-          () -> regionConfigService.updateRegionRule(updateRegionRuleRequest, responseObserver);
-      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
 
+      requestContext.call(
+          () -> {
+            regionConfigService.updateRegionRule(updateRegionRuleRequest, responseObserver);
+            return null;
+          });
       verify(responseObserver, times(1))
           .onNext(UpdateRegionRuleResponse.newBuilder().setRule(updatedRegionRule).build());
       verify(responseObserver, times(1)).onCompleted();
@@ -343,45 +331,17 @@ class RegionConfigServiceImplTest {
 
       when(rulesValidator.validate(eq(updateRegionRuleRequest), any()))
           .thenReturn(Status.INVALID_ARGUMENT);
-      when(rulesManager.updateRegionRule(updateRegionRuleRequest)).thenReturn(Optional.empty());
+      when(rulesManager.updateRegionRule(requestContext, updateRegionRuleRequest)).thenReturn(null);
 
       StreamObserver<UpdateRegionRuleResponse> responseObserver = mock(StreamObserver.class);
-      Runnable runnable =
-          () -> regionConfigService.updateRegionRule(updateRegionRuleRequest, responseObserver);
-      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
 
+      requestContext.call(
+          () -> {
+            regionConfigService.updateRegionRule(updateRegionRuleRequest, responseObserver);
+            return null;
+          });
       verify(responseObserver, times(1))
           .onError(argThat(err -> Status.fromThrowable(err).getCode() == Code.INVALID_ARGUMENT));
-    }
-
-    @Test
-    @DisplayName("should return internal error unable to update")
-    void should_fail_updateRegionRule_unableToUpdate() {
-      RegionRule updatedRegionRule =
-          RegionRule.newBuilder()
-              .setId("id")
-              .addRegionId("region-1")
-              .setName("name")
-              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
-              .build();
-      UpdateRegionRuleRequest updateRegionRuleRequest =
-          UpdateRegionRuleRequest.newBuilder()
-              .setId("id")
-              .setName("name")
-              .addRegionId("region-1")
-              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
-              .build();
-
-      when(rulesValidator.validate(eq(updateRegionRuleRequest), any())).thenReturn(Status.OK);
-      when(rulesManager.updateRegionRule(updateRegionRuleRequest)).thenReturn(Optional.empty());
-
-      StreamObserver<UpdateRegionRuleResponse> responseObserver = mock(StreamObserver.class);
-      Runnable runnable =
-          () -> regionConfigService.updateRegionRule(updateRegionRuleRequest, responseObserver);
-      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
-
-      verify(responseObserver, times(1))
-          .onError(argThat(err -> Status.fromThrowable(err).getCode() == Code.INTERNAL));
     }
   }
 
@@ -397,10 +357,12 @@ class RegionConfigServiceImplTest {
       when(rulesManager.deleteRegionRule(any(), eq("id"))).thenReturn(regionRule);
 
       StreamObserver<DeleteRegionRuleResponse> responseObserver = mock(StreamObserver.class);
-      Runnable runnable =
-          () -> regionConfigService.deleteRegionRule(deleteRegionRuleRequest, responseObserver);
-      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
 
+      requestContext.call(
+          () -> {
+            regionConfigService.deleteRegionRule(deleteRegionRuleRequest, responseObserver);
+            return null;
+          });
       verify(responseObserver, times(1)).onNext(DeleteRegionRuleResponse.getDefaultInstance());
       verify(responseObserver, times(1)).onCompleted();
 

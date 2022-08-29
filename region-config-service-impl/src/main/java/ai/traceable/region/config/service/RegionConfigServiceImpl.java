@@ -107,8 +107,8 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
   public void getAllRegionRules(
       GetAllRegionRulesRequest request,
       StreamObserver<GetAllRegionRulesResponse> responseObserver) {
-    List<RegionRule> regionRules = rulesManager.getRegionRules();
-
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    List<RegionRule> regionRules = rulesManager.getRegionRules(requestContext);
     responseObserver.onNext(GetAllRegionRulesResponse.newBuilder().addAllRule(regionRules).build());
     responseObserver.onCompleted();
   }
@@ -116,18 +116,16 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
   @Override
   public void createRegionRule(
       CreateRegionRuleRequest request, StreamObserver<CreateRegionRuleResponse> responseObserver) {
-    Status status = rulesValidator.validate(request, getAllRegionsRulesSupplier());
+
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    Status status = rulesValidator.validate(request, getAllRegionsRulesSupplier(requestContext));
     if (!status.isOk()) {
       responseObserver.onError(status.asException());
       return;
     }
 
-    Optional<RegionRule> maybeRegionRule = rulesManager.createRegionRule(request);
-    if (maybeRegionRule.isEmpty()) {
-      responseObserver.onError(Status.INTERNAL.asException());
-      return;
-    }
-    RegionRule regionRule = maybeRegionRule.get();
+    RegionRule regionRule = rulesManager.createRegionRule(requestContext, request);
+
     responseObserver.onNext(CreateRegionRuleResponse.newBuilder().setRule(regionRule).build());
     responseObserver.onCompleted();
 
@@ -141,28 +139,22 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
   @Override
   public void updateRegionRule(
       UpdateRegionRuleRequest request, StreamObserver<UpdateRegionRuleResponse> responseObserver) {
-    Status status = rulesValidator.validate(request, getAllRegionsRulesSupplier());
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    Status status = rulesValidator.validate(request, getAllRegionsRulesSupplier(requestContext));
     if (!status.isOk()) {
       responseObserver.onError(status.asException());
       return;
     }
 
-    Optional<RegionRule> maybeUpdatedRegionRule = rulesManager.updateRegionRule(request);
-    if (maybeUpdatedRegionRule.isEmpty()) {
-      responseObserver.onError(Status.INTERNAL.asException());
-      return;
-    }
+    RegionRule regionRule = rulesManager.updateRegionRule(requestContext, request);
 
-    RegionRule updatedRegionRule = maybeUpdatedRegionRule.get();
-    responseObserver.onNext(
-        UpdateRegionRuleResponse.newBuilder().setRule(updatedRegionRule).build());
+    responseObserver.onNext(UpdateRegionRuleResponse.newBuilder().setRule(regionRule).build());
     responseObserver.onCompleted();
 
     if (shouldPublishActivityEvents) {
       activityEventProducer.publishSecurityConfigurationChangeEvent(
           RequestContext.CURRENT.get(),
-          buildSecurityConfigurationChangeEvent(
-              updatedRegionRule, SecurityConfigurationAction.UPDATE));
+          buildSecurityConfigurationChangeEvent(regionRule, SecurityConfigurationAction.UPDATE));
     }
   }
 
@@ -203,7 +195,7 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
         .build();
   }
 
-  private Supplier<List<RegionRule>> getAllRegionsRulesSupplier() {
-    return rulesManager::getRegionRules;
+  private Supplier<List<RegionRule>> getAllRegionsRulesSupplier(RequestContext requestContext) {
+    return () -> rulesManager.getRegionRules(requestContext);
   }
 }
