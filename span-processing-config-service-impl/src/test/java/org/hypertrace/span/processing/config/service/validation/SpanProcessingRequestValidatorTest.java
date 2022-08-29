@@ -338,23 +338,6 @@ class SpanProcessingRequestValidatorTest {
                     .build()));
 
     assertInvalidArgStatusContaining(
-        "Invalid api spec id",
-        () ->
-            validator.validateOrThrow(
-                mockRequestContext,
-                CreateApiNamingRuleRequest.newBuilder()
-                    .setRuleInfo(
-                        ApiNamingRuleInfo.newBuilder()
-                            .setName("name")
-                            .setFilter(buildTestFilter())
-                            .setRuleConfig(
-                                ApiNamingRuleConfig.newBuilder()
-                                    .setApiSpecBasedConfig(ApiSpecBasedConfig.newBuilder().build())
-                                    .build())
-                            .build())
-                    .build()));
-
-    assertInvalidArgStatusContaining(
         "Invalid regexes",
         () ->
             validator.validateOrThrow(

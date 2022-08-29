@@ -145,13 +145,14 @@ public class SpanProcessingConfigRequestValidator {
         validateRegex(segmentMatchingBasedConfig.getRegexesList());
         break;
       case API_SPEC_BASED_CONFIG:
+        // TODO: Add validations for specId list after migration of upstream services
         ApiSpecBasedConfig apiSpecBasedConfig = ruleConfig.getApiSpecBasedConfig();
-        if (Strings.isNullOrEmpty(apiSpecBasedConfig.getApiSpecId())) {
+        if (Strings.isNullOrEmpty(apiSpecBasedConfig.getApiSpecId())
+            && apiSpecBasedConfig.getApiSpecIdsCount() == 0) {
           throw Status.INVALID_ARGUMENT
-              .withDescription(String.format("Invalid api spec id : %s", apiSpecBasedConfig))
+              .withDescription(String.format("Invalid specIds : %s", apiSpecBasedConfig))
               .asRuntimeException();
         }
-
         if (apiSpecBasedConfig.getRegexesCount() == 0
             || apiSpecBasedConfig.getRegexesCount() != apiSpecBasedConfig.getValuesCount()) {
           throw Status.INVALID_ARGUMENT
