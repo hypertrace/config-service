@@ -105,7 +105,7 @@ class SpanProcessingConfigServiceImplTest {
 
   @Test
   void testExcludeSpanRulesCrud() {
-    ExcludeSpanRule mockSystemLevelExcludeSpanRule = buildMockSystemLevelExcludeSpanRule(false);
+    ExcludeSpanRule mockSystemExcludeSpanRule = buildMockSystemExcludeSpanRule(false);
     ExcludeSpanRuleDetails firstCreatedExcludeSpanRuleDetails =
         this.spanProcessingConfigServiceStub
             .createExcludeSpanRule(
@@ -142,7 +142,7 @@ class SpanProcessingConfigServiceImplTest {
     assertEquals(3, excludeSpanRules.size());
     assertTrue(excludeSpanRules.contains(firstCreatedExcludeSpanRule));
     assertTrue(excludeSpanRules.contains(secondCreatedExcludeSpanRule));
-    assertTrue(excludeSpanRules.contains(mockSystemLevelExcludeSpanRule));
+    assertTrue(excludeSpanRules.contains(mockSystemExcludeSpanRule));
 
     ExcludeSpanRule updatedFirstExcludeSpanRule =
         this.spanProcessingConfigServiceStub
@@ -172,51 +172,51 @@ class SpanProcessingConfigServiceImplTest {
     excludeSpanRules = getAllExcludeSpanRules();
     assertEquals(2, excludeSpanRules.size());
     assertEquals(secondCreatedExcludeSpanRule, excludeSpanRules.get(0));
-    assertEquals(mockSystemLevelExcludeSpanRule, excludeSpanRules.get(1));
+    assertEquals(mockSystemExcludeSpanRule, excludeSpanRules.get(1));
 
-    // update system level exclude span rule (it does not exist in store as of now)
-    ExcludeSpanRule updatedSystemLevelExcludeSpanRule =
+    // update system exclude span rule (it does not exist in store as of now)
+    ExcludeSpanRule updatedSystemExcludeSpanRule =
         this.spanProcessingConfigServiceStub
             .updateExcludeSpanRule(
                 UpdateExcludeSpanRuleRequest.newBuilder()
                     .setRule(
                         UpdateExcludeSpanRule.newBuilder()
-                            .setId(mockSystemLevelExcludeSpanRule.getId())
-                            .setName(mockSystemLevelExcludeSpanRule.getRuleInfo().getName())
+                            .setId(mockSystemExcludeSpanRule.getId())
+                            .setName(mockSystemExcludeSpanRule.getRuleInfo().getName())
                             .setDisabled(true)
-                            .setFilter(mockSystemLevelExcludeSpanRule.getRuleInfo().getFilter()))
+                            .setFilter(mockSystemExcludeSpanRule.getRuleInfo().getFilter()))
                     .build())
             .getRuleDetails()
             .getRule();
-    assertEquals(mockSystemLevelExcludeSpanRule.getId(), updatedSystemLevelExcludeSpanRule.getId());
-    assertTrue(updatedSystemLevelExcludeSpanRule.getRuleInfo().getDisabled());
+    assertEquals(mockSystemExcludeSpanRule.getId(), updatedSystemExcludeSpanRule.getId());
+    assertTrue(updatedSystemExcludeSpanRule.getRuleInfo().getDisabled());
     excludeSpanRules = getAllExcludeSpanRules();
     assertEquals(2, excludeSpanRules.size());
     assertEquals(secondCreatedExcludeSpanRule, excludeSpanRules.get(0));
-    assertEquals(buildMockSystemLevelExcludeSpanRule(true), excludeSpanRules.get(1));
+    assertEquals(buildMockSystemExcludeSpanRule(true), excludeSpanRules.get(1));
 
-    // update system level exclude span rule (it exists in store now)
-    updatedSystemLevelExcludeSpanRule =
+    // update system exclude span rule (it exists in store now)
+    updatedSystemExcludeSpanRule =
         this.spanProcessingConfigServiceStub
             .updateExcludeSpanRule(
                 UpdateExcludeSpanRuleRequest.newBuilder()
                     .setRule(
                         UpdateExcludeSpanRule.newBuilder()
-                            .setId(mockSystemLevelExcludeSpanRule.getId())
-                            .setName(mockSystemLevelExcludeSpanRule.getRuleInfo().getName())
+                            .setId(mockSystemExcludeSpanRule.getId())
+                            .setName(mockSystemExcludeSpanRule.getRuleInfo().getName())
                             .setDisabled(false)
-                            .setFilter(mockSystemLevelExcludeSpanRule.getRuleInfo().getFilter()))
+                            .setFilter(mockSystemExcludeSpanRule.getRuleInfo().getFilter()))
                     .build())
             .getRuleDetails()
             .getRule();
-    assertEquals(mockSystemLevelExcludeSpanRule.getId(), updatedSystemLevelExcludeSpanRule.getId());
-    assertFalse(updatedSystemLevelExcludeSpanRule.getRuleInfo().getDisabled());
+    assertEquals(mockSystemExcludeSpanRule.getId(), updatedSystemExcludeSpanRule.getId());
+    assertFalse(updatedSystemExcludeSpanRule.getRuleInfo().getDisabled());
     excludeSpanRules = getAllExcludeSpanRules();
     assertEquals(2, excludeSpanRules.size());
     assertEquals(secondCreatedExcludeSpanRule, excludeSpanRules.get(0));
-    assertEquals(mockSystemLevelExcludeSpanRule, excludeSpanRules.get(1));
+    assertEquals(mockSystemExcludeSpanRule, excludeSpanRules.get(1));
 
-    // throw exception if there is no tenant level or system level rule corresponding to the id
+    // throw exception if there is no user or system rule corresponding to the id
     assertThrows(
         StatusRuntimeException.class,
         () ->
@@ -229,6 +229,30 @@ class SpanProcessingConfigServiceImplTest {
                             .setDisabled(true)
                             .setFilter(buildTestFilter())
                             .build())
+                    .build()));
+
+    // throw exception if we try to update any field other than disabled for system rule
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            this.spanProcessingConfigServiceStub.updateExcludeSpanRule(
+                UpdateExcludeSpanRuleRequest.newBuilder()
+                    .setRule(
+                        UpdateExcludeSpanRule.newBuilder()
+                            .setId(mockSystemExcludeSpanRule.getId())
+                            .setName("name")
+                            .setDisabled(true)
+                            .setFilter(buildTestFilter())
+                            .build())
+                    .build()));
+
+    // throw exception if we try to delete a system exclude rule
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            this.spanProcessingConfigServiceStub.deleteExcludeSpanRule(
+                DeleteExcludeSpanRuleRequest.newBuilder()
+                    .setId(mockSystemExcludeSpanRule.getId())
                     .build()));
   }
 
@@ -719,12 +743,12 @@ class SpanProcessingConfigServiceImplTest {
         .collect(Collectors.toUnmodifiableList());
   }
 
-  private ExcludeSpanRule buildMockSystemLevelExcludeSpanRule(boolean disabled) {
+  private ExcludeSpanRule buildMockSystemExcludeSpanRule(boolean disabled) {
     return ExcludeSpanRule.newBuilder()
         .setId("70d6b39a-dca7-4bf0-b98c-d5c5d7ff0a3a")
         .setRuleInfo(
             ExcludeSpanRuleInfo.newBuilder()
-                .setName("System Level Exclusion - Health checks")
+                .setName("System Exclusion - Health checks")
                 .setDisabled(disabled)
                 .setType(RULE_TYPE_SYSTEM)
                 .setFilter(
@@ -755,7 +779,7 @@ class SpanProcessingConfigServiceImplTest {
         Map.of(
             "span.processing.config.service",
             Map.of(
-                "system.level.exclude.span.rules",
+                "system.exclude.span.rules",
                 List.of(
                     Map.of(
                         "id",
@@ -763,7 +787,7 @@ class SpanProcessingConfigServiceImplTest {
                         "rule_info",
                         Map.of(
                             "name",
-                            "System Level Exclusion - Health checks",
+                            "System Exclusion - Health checks",
                             "disabled",
                             false,
                             "type",
