@@ -215,10 +215,7 @@ class SpanProcessingConfigServiceImplTest {
     assertEquals(2, excludeSpanRules.size());
     assertEquals(secondCreatedExcludeSpanRule, excludeSpanRules.get(0));
     assertEquals(mockSystemLevelExcludeSpanRule, excludeSpanRules.get(1));
-  }
 
-  @Test
-  void testExcludeSpanRules_exceptionOnNoRuleFound() {
     // throw exception if there is no tenant level or system level rule corresponding to the id
     assertThrows(
         StatusRuntimeException.class,
