@@ -87,6 +87,7 @@ message ExcludeSpanRuleInfo {
   string name = 1;
   SpanFilter filter = 2;
   bool disabled = 3;
+  RuleType type = 4;
 }
 
 message ExcludeSpanRuleMetadata {
@@ -99,6 +100,12 @@ message UpdateExcludeSpanRule {
   string name = 2;
   SpanFilter filter = 3;
   bool disabled = 4;
+}
+
+enum RuleType {
+  RULE_TYPE_UNSPECIFIED = 0;
+  RULE_TYPE_SYSTEM = 1;
+  RULE_TYPE_USER = 2;
 }
 
 message CreateApiNamingRuleRequest {

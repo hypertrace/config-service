@@ -1,9 +1,18 @@
 package org.hypertrace.span.processing.config.service;
 
 import com.google.inject.Inject;
+import com.google.protobuf.util.JsonFormat;
+import com.typesafe.config.Config;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -43,21 +52,49 @@ import org.hypertrace.span.processing.config.service.validation.SpanProcessingCo
 @Slf4j
 class SpanProcessingConfigServiceImpl
     extends SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceImplBase {
+
+  private static final String SPAN_PROCESSING_CONFIG_SERVICE = "span.processing.config.service";
+  private static final String SYSTEM_LEVEL_EXCLUDE_SPAN_RULES = "system.level.exclude.span.rules";
+
   private final SpanProcessingConfigRequestValidator validator;
   private final ExcludeSpanRulesConfigStore excludeSpanRulesConfigStore;
   private final TimestampConverter timestampConverter;
   private final ApiNamingRulesManager apiNamingRulesManager;
+  private List<ExcludeSpanRule> systemLevelExcludeSpanRules;
+  private Map<String, ExcludeSpanRuleDetails> systemLevelExcludeSpanRulesToIdMap;
 
   @Inject
   SpanProcessingConfigServiceImpl(
       ExcludeSpanRulesConfigStore excludeSpanRulesConfigStore,
       SpanProcessingConfigRequestValidator requestValidator,
       TimestampConverter timestampConverter,
-      ApiNamingRulesManager apiNamingRulesManager) {
+      ApiNamingRulesManager apiNamingRulesManager,
+      Config config) {
     this.validator = requestValidator;
     this.excludeSpanRulesConfigStore = excludeSpanRulesConfigStore;
     this.timestampConverter = timestampConverter;
     this.apiNamingRulesManager = apiNamingRulesManager;
+
+    buildSystemLevelExcludeSpanRuleConfigs(config);
+  }
+
+  private void buildSystemLevelExcludeSpanRuleConfigs(Config config) {
+    List<? extends com.typesafe.config.ConfigObject> systemLevelExcludeSpanRuleObjectList = null;
+    if (config.hasPath(SPAN_PROCESSING_CONFIG_SERVICE)) {
+      Config spanProcessingConfig = config.getConfig(SPAN_PROCESSING_CONFIG_SERVICE);
+      if (spanProcessingConfig.hasPath(SYSTEM_LEVEL_EXCLUDE_SPAN_RULES)) {
+        systemLevelExcludeSpanRuleObjectList =
+            spanProcessingConfig.getObjectList(SYSTEM_LEVEL_EXCLUDE_SPAN_RULES);
+      }
+    }
+    if (systemLevelExcludeSpanRuleObjectList != null) {
+      systemLevelExcludeSpanRules =
+          buildSystemLevelExcludeSpanRules(systemLevelExcludeSpanRuleObjectList);
+      systemLevelExcludeSpanRulesToIdMap = buildSystemLevelExcludeSpanRulesToIdMap();
+    } else {
+      systemLevelExcludeSpanRules = Collections.emptyList();
+      systemLevelExcludeSpanRulesToIdMap = Collections.emptyMap();
+    }
   }
 
   @Override
@@ -67,10 +104,35 @@ class SpanProcessingConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
+      List<ExcludeSpanRuleDetails> excludeSpanRules =
+          excludeSpanRulesConfigStore.getAllData(requestContext);
+
+      Map<String, ExcludeSpanRuleDetails> tenantLevelExcludeSpanRulesToIdMap =
+          buildTenantLevelExcludeSpanRulesToIdMap(excludeSpanRules);
+
+      // all the tenant level configs except for the overridden system level ones
+      List<ExcludeSpanRuleDetails> filteredTenantLevelExcludeSpanRules =
+          excludeSpanRules.stream()
+              .filter(
+                  excludeSpanRule ->
+                      !systemLevelExcludeSpanRulesToIdMap.containsKey(
+                          excludeSpanRule.getRule().getId()))
+              .collect(Collectors.toUnmodifiableList());
+
+      // all the system level configs, replaced by the overridden configs in case of overrides
+      List<ExcludeSpanRuleDetails> filteredSystemLevelExcludeSpanRules =
+          systemLevelExcludeSpanRules.stream()
+              .map(
+                  excludeSpanRule ->
+                      tenantLevelExcludeSpanRulesToIdMap.containsKey(excludeSpanRule.getId())
+                          ? tenantLevelExcludeSpanRulesToIdMap.get(excludeSpanRule.getId())
+                          : ExcludeSpanRuleDetails.newBuilder().setRule(excludeSpanRule).build())
+              .collect(Collectors.toUnmodifiableList());
 
       responseObserver.onNext(
           GetAllExcludeSpanRulesResponse.newBuilder()
-              .addAllRuleDetails(excludeSpanRulesConfigStore.getAllData(requestContext))
+              .addAllRuleDetails(filteredTenantLevelExcludeSpanRules)
+              .addAllRuleDetails(filteredSystemLevelExcludeSpanRules)
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -116,9 +178,13 @@ class SpanProcessingConfigServiceImpl
       this.validator.validateOrThrow(requestContext, request);
 
       UpdateExcludeSpanRule updateExcludeSpanRule = request.getRule();
+
+      // check if the rule already exists. If not, check if it is a system level config. If yes, use
+      // that. Else, error out.
       ExcludeSpanRule existingRule =
           this.excludeSpanRulesConfigStore
               .getData(requestContext, updateExcludeSpanRule.getId())
+              .or(() -> getSystemLevelExcludeSpanRule(updateExcludeSpanRule.getId()))
               .orElseThrow(Status.NOT_FOUND::asException);
       ExcludeSpanRule updatedRule = buildUpdatedRule(existingRule, updateExcludeSpanRule);
 
@@ -156,6 +222,47 @@ class SpanProcessingConfigServiceImpl
     }
   }
 
+  private List<ExcludeSpanRule> buildSystemLevelExcludeSpanRules(
+      List<? extends com.typesafe.config.ConfigObject> configObjectList) {
+    return configObjectList.stream()
+        .map(this::buildExcludeSpanRuleFromConfig)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  @SneakyThrows
+  private ExcludeSpanRule buildExcludeSpanRuleFromConfig(
+      com.typesafe.config.ConfigObject configObject) {
+    String jsonString = configObject.render();
+    ExcludeSpanRule.Builder builder = ExcludeSpanRule.newBuilder();
+    JsonFormat.parser().merge(jsonString, builder);
+    return builder.build();
+  }
+
+  private Optional<ExcludeSpanRule> getSystemLevelExcludeSpanRule(String id) {
+    if (systemLevelExcludeSpanRulesToIdMap.containsKey(id)) {
+      return Optional.of(systemLevelExcludeSpanRulesToIdMap.get(id).getRule());
+    }
+    return Optional.empty();
+  }
+
+  private Map<String, ExcludeSpanRuleDetails> buildSystemLevelExcludeSpanRulesToIdMap() {
+    return systemLevelExcludeSpanRules.stream()
+        .collect(
+            Collectors.toUnmodifiableMap(
+                ExcludeSpanRule::getId,
+                (ExcludeSpanRule excludeSpanRule) ->
+                    ExcludeSpanRuleDetails.newBuilder().setRule(excludeSpanRule).build()));
+  }
+
+  private Map<String, ExcludeSpanRuleDetails> buildTenantLevelExcludeSpanRulesToIdMap(
+      List<ExcludeSpanRuleDetails> excludeSpanRules) {
+    return excludeSpanRules.stream()
+        .collect(
+            Collectors.toUnmodifiableMap(
+                (ExcludeSpanRuleDetails ruleDetails) -> ruleDetails.getRule().getId(),
+                Function.identity()));
+  }
+
   private ExcludeSpanRule buildUpdatedRule(
       ExcludeSpanRule existingRule, UpdateExcludeSpanRule updateExcludeSpanRule) {
     return ExcludeSpanRule.newBuilder(existingRule)
@@ -164,6 +271,7 @@ class SpanProcessingConfigServiceImpl
                 .setName(updateExcludeSpanRule.getName())
                 .setFilter(updateExcludeSpanRule.getFilter())
                 .setDisabled(updateExcludeSpanRule.getDisabled())
+                .setType(existingRule.getRuleInfo().getType())
                 .build())
         .build();
   }
