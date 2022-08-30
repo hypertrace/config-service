@@ -6,6 +6,7 @@ import static org.hypertrace.span.processing.config.service.v1.RelationalOperato
 import static org.hypertrace.span.processing.config.service.v1.RuleType.RULE_TYPE_SYSTEM;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -14,6 +15,7 @@ import static org.mockito.Mockito.when;
 import com.google.protobuf.Timestamp;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import io.grpc.StatusRuntimeException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -213,6 +215,24 @@ class SpanProcessingConfigServiceImplTest {
     assertEquals(2, excludeSpanRules.size());
     assertEquals(secondCreatedExcludeSpanRule, excludeSpanRules.get(0));
     assertEquals(mockSystemLevelExcludeSpanRule, excludeSpanRules.get(1));
+  }
+
+  @Test
+  void testExcludeSpanRules_exceptionOnNoRuleFound() {
+    // throw exception if there is no tenant level or system level rule corresponding to the id
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            this.spanProcessingConfigServiceStub.updateExcludeSpanRule(
+                UpdateExcludeSpanRuleRequest.newBuilder()
+                    .setRule(
+                        UpdateExcludeSpanRule.newBuilder()
+                            .setId("81d6b39a-dca7-4bf0-b98c-d5c5d7ff0a3b")
+                            .setName("name")
+                            .setDisabled(true)
+                            .setFilter(buildTestFilter())
+                            .build())
+                    .build()));
   }
 
   @Test
