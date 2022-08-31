@@ -18,7 +18,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.config.ActorServiceCacheConfig;
+import ai.traceable.blocking.config.service.BlockingDataCacheConfig;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.config.ActorServiceConfig;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
@@ -66,15 +66,17 @@ class ActorBasedRulesCacheTest {
     ActorServiceConfig actorServiceConfig = mock(ActorServiceConfig.class);
     doReturn(Duration.ofSeconds(30)).when(actorServiceConfig).getCallTimeoutDuration();
     doReturn(
-            new ActorServiceCacheConfig(
+            new BlockingDataCacheConfig(
                 ConfigFactory.parseMap(
                     Map.of(
-                        "maxCacheSize",
-                        10,
-                        "expireAfterWriteDuration",
-                        "2m",
-                        "refreshAfterWriteDuration",
-                        "10m"))))
+                        "cache",
+                        Map.of(
+                            "maxCacheSize",
+                            10,
+                            "expireAfterWriteDuration",
+                            "2m",
+                            "refreshAfterWriteDuration",
+                            "10m")))))
         .when(actorServiceConfig)
         .getCacheConfig();
 

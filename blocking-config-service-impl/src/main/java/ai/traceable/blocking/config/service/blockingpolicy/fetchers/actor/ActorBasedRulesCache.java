@@ -9,7 +9,7 @@ import static ai.traceable.platform.actor.v1.Status.STATUS_ALWAYS_DENIED;
 import static ai.traceable.platform.actor.v1.Status.STATUS_SNOOZED;
 import static ai.traceable.platform.actor.v1.Status.STATUS_SUSPENDED;
 
-import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.config.ActorServiceCacheConfig;
+import ai.traceable.blocking.config.service.BlockingDataCacheConfig;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.config.ActorServiceConfig;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.blocking.config.service.v1.BlockingCategory;
@@ -61,12 +61,12 @@ public class ActorBasedRulesCache {
     this.actorServiceStub = actorServiceStub;
     this.callTimeout = actorServiceConfig.getCallTimeoutDuration();
     this.blockingRulesUtils = blockingRulesUtils;
-    ActorServiceCacheConfig actorServiceCacheConfig = actorServiceConfig.getCacheConfig();
+    BlockingDataCacheConfig blockingDataCacheConfig = actorServiceConfig.getCacheConfig();
     actorCache =
         CacheBuilder.newBuilder()
-            .maximumSize(actorServiceCacheConfig.getMaxCacheSize())
-            .expireAfterWrite(actorServiceCacheConfig.getWriteExpirationDuration())
-            .refreshAfterWrite(actorServiceCacheConfig.getRefreshExpirationDuration())
+            .maximumSize(blockingDataCacheConfig.getMaxCacheSize())
+            .expireAfterWrite(blockingDataCacheConfig.getWriteExpirationDuration())
+            .refreshAfterWrite(blockingDataCacheConfig.getRefreshExpirationDuration())
             .build(
                 CacheLoader.asyncReloading(
                     CacheLoader.from(this::loadValue), Executors.newSingleThreadExecutor()));

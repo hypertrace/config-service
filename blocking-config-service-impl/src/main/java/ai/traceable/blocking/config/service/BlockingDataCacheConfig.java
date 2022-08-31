@@ -1,9 +1,10 @@
-package ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.config;
+package ai.traceable.blocking.config.service;
 
 import com.typesafe.config.Config;
 import java.time.Duration;
 
-public class ActorServiceCacheConfig {
+public class BlockingDataCacheConfig {
+  private static final String CACHE_CONFIG_NAME = "cache";
   public static final String MAX_CACHE_SIZE = "maxCacheSize";
   public static final String EXPIRE_AFTER_WRITE_DURATION = "expireAfterWriteDuration";
   public static final String REFRESH_AFTER_WRITE_DURATION = "refreshAfterWriteDuration";
@@ -12,10 +13,11 @@ public class ActorServiceCacheConfig {
   private final Duration writeExpirationDuration;
   private final Duration refreshExpirationDuration;
 
-  public ActorServiceCacheConfig(Config config) {
-    maxCacheSize = config.getLong(MAX_CACHE_SIZE);
-    writeExpirationDuration = config.getDuration(EXPIRE_AFTER_WRITE_DURATION);
-    refreshExpirationDuration = config.getDuration(REFRESH_AFTER_WRITE_DURATION);
+  public BlockingDataCacheConfig(Config config) {
+    Config cacheConfig = config.getConfig(CACHE_CONFIG_NAME);
+    maxCacheSize = cacheConfig.getLong(MAX_CACHE_SIZE);
+    writeExpirationDuration = cacheConfig.getDuration(EXPIRE_AFTER_WRITE_DURATION);
+    refreshExpirationDuration = cacheConfig.getDuration(REFRESH_AFTER_WRITE_DURATION);
   }
 
   public long getMaxCacheSize() {

@@ -24,6 +24,8 @@ dependencies {
 
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpcutils.client)
+  implementation(libs.hypertrace.entityservice.api)
+  implementation(libs.hypertrace.framework.metrics)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

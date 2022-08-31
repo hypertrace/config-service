@@ -8,6 +8,7 @@ import ai.traceable.blocking.config.service.blockingmodsec.ModsecBlockingManager
 import ai.traceable.blocking.config.service.blockingpolicy.BlockingPolicyConfigurationManagerModule;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.config.ActorServiceConfig;
 import ai.traceable.blocking.config.service.customsignature.CustomModsecBlockingManagerModule;
+import ai.traceable.blocking.config.service.entity.EntityQueryServiceConfig;
 import ai.traceable.blocking.config.service.regions.RegionBlockingManagerModule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
@@ -86,6 +87,11 @@ class BlockingConfigServiceModule extends AbstractModule {
   @Provides
   ActorServiceConfig providesActorServiceConfig() {
     return new ActorServiceConfig(this.config);
+  }
+
+  @Provides
+  EntityQueryServiceConfig providesEntityQueryServiceConfig() {
+    return new EntityQueryServiceConfig(this.config);
   }
 
   @Provides

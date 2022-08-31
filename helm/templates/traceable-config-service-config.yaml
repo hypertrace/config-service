@@ -60,6 +60,11 @@ data:
     entity.service.config = {
       host = {{ .Values.traceableConfigServiceConfig.entityServiceConfig.host }}
       port = {{ .Values.traceableConfigServiceConfig.entityServiceConfig.port }}
+      cache = {
+        maxCacheSize = {{ .Values.traceableConfigServiceConfig.entityServiceConfig.cache.maxCacheSize }}
+        refreshAfterWriteDuration = {{ .Values.traceableConfigServiceConfig.entityServiceConfig.cache.refreshAfterWriteDuration }}
+        expireAfterWriteDuration = {{ .Values.traceableConfigServiceConfig.entityServiceConfig.cache.expireAfterWriteDuration }}
+      }
     }
     license.metering.service = {
       host = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.host }}

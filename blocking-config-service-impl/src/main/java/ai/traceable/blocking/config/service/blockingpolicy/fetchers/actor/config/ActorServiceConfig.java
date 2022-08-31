@@ -1,5 +1,6 @@
 package ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.config;
 
+import ai.traceable.blocking.config.service.BlockingDataCacheConfig;
 import com.typesafe.config.Config;
 import java.time.Duration;
 
@@ -9,20 +10,17 @@ public class ActorServiceConfig {
   private static final String HOST_CONFIG_NAME = "host";
   private static final String PORT_CONFIG_NAME = "port";
   private static final String CALL_TIMEOUT_CONFIG_NAME = "request.timeout";
-  private static final String CACHE_CONFIG_NAME = "cache";
 
   private final String host;
   private final int port;
   private final Duration callTimeout;
-  private final ActorServiceCacheConfig cacheConfig;
+  private final BlockingDataCacheConfig cacheConfig;
 
   public ActorServiceConfig(Config config) {
     host = config.getConfig(ACTOR_SERVICE_CONFIG_NAME).getString(HOST_CONFIG_NAME);
     port = config.getConfig(ACTOR_SERVICE_CONFIG_NAME).getInt(PORT_CONFIG_NAME);
     callTimeout = config.getConfig(ACTOR_SERVICE_CONFIG_NAME).getDuration(CALL_TIMEOUT_CONFIG_NAME);
-    cacheConfig =
-        new ActorServiceCacheConfig(
-            config.getConfig(ACTOR_SERVICE_CONFIG_NAME).getConfig(CACHE_CONFIG_NAME));
+    cacheConfig = new BlockingDataCacheConfig(config.getConfig(ACTOR_SERVICE_CONFIG_NAME));
   }
 
   public String getHost() {
@@ -37,7 +35,7 @@ public class ActorServiceConfig {
     return this.callTimeout;
   }
 
-  public ActorServiceCacheConfig getCacheConfig() {
+  public BlockingDataCacheConfig getCacheConfig() {
     return this.cacheConfig;
   }
 }

@@ -169,6 +169,10 @@ traceableConfigServiceConfig:
   entityServiceConfig:
     host: entity-service
     port: 50061
+    cache:
+      maxCacheSize: 10000
+      refreshAfterWriteDuration: 10m
+      expireAfterWriteDuration: 12h
   licenseMeteringServiceConfig:
     host: license-metering-service
     port: 51018
