@@ -65,6 +65,7 @@ class SpanProcessingConfigServiceImpl
   private final ExcludeSpanRulesConfigStore excludeSpanRulesConfigStore;
   private final TimestampConverter timestampConverter;
   private final ApiNamingRulesManager apiNamingRulesManager;
+  private List<ExcludeSpanRule> systemExcludeSpanRules;
   private Map<String, ExcludeSpanRule> systemExcludeSpanRuleIdToRuleMap;
 
   @Inject
@@ -83,16 +84,15 @@ class SpanProcessingConfigServiceImpl
   }
 
   private void buildSystemExcludeSpanRuleConfigs(Config config) {
-    List<? extends com.typesafe.config.ConfigObject> systemExcludeSpanRuleObjectList = null;
-    if (config.hasPath(SYSTEM_EXCLUDE_SPAN_RULES)) {
-      systemExcludeSpanRuleObjectList = config.getObjectList(SYSTEM_EXCLUDE_SPAN_RULES);
-    }
-    if (systemExcludeSpanRuleObjectList != null) {
-      systemExcludeSpanRuleIdToRuleMap =
-          buildSystemExcludeSpanRulesToIdMap(systemExcludeSpanRuleObjectList);
-    } else {
+    if (!config.hasPath(SYSTEM_EXCLUDE_SPAN_RULES)) {
+      systemExcludeSpanRules = Collections.emptyList();
       systemExcludeSpanRuleIdToRuleMap = Collections.emptyMap();
+      return;
     }
+    List<? extends com.typesafe.config.ConfigObject> systemExcludeSpanRuleObjects =
+        config.getObjectList(SYSTEM_EXCLUDE_SPAN_RULES);
+    systemExcludeSpanRules = buildSystemExcludeSpanRules(systemExcludeSpanRuleObjects);
+    systemExcludeSpanRuleIdToRuleMap = buildExcludeSpanRuleIdToRuleMap(systemExcludeSpanRules);
   }
 
   @Override
@@ -248,7 +248,7 @@ class SpanProcessingConfigServiceImpl
 
     // non overridden system exclude span rules
     List<ExcludeSpanRuleDetails> nonOverriddenSystemExcludeSpanRules =
-        systemExcludeSpanRuleIdToRuleMap.values().stream()
+        systemExcludeSpanRules.stream()
             .filter(
                 excludeSpanRule ->
                     !overriddenSystemExcludeSpanRuleIds.contains(excludeSpanRule.getId()))
@@ -262,10 +262,16 @@ class SpanProcessingConfigServiceImpl
     return excludeSpanRules;
   }
 
-  private Map<String, ExcludeSpanRule> buildSystemExcludeSpanRulesToIdMap(
-      List<? extends com.typesafe.config.ConfigObject> configObjectList) {
-    return configObjectList.stream()
+  private List<ExcludeSpanRule> buildSystemExcludeSpanRules(
+      List<? extends com.typesafe.config.ConfigObject> configObjects) {
+    return configObjects.stream()
         .map(this::buildExcludeSpanRuleFromConfig)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private Map<String, ExcludeSpanRule> buildExcludeSpanRuleIdToRuleMap(
+      List<ExcludeSpanRule> excludeSpanRules) {
+    return excludeSpanRules.stream()
         .collect(Collectors.toUnmodifiableMap(ExcludeSpanRule::getId, Function.identity()));
   }
 
