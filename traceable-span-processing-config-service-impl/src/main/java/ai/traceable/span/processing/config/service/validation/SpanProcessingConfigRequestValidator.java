@@ -12,11 +12,13 @@ import ai.traceable.span.processing.config.service.v1.GetAllProtectionSpanRulesR
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSpanRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllSamplingConfigsRequest;
+import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRuleEvaluationStatusRequest;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
 import ai.traceable.span.processing.config.service.v1.RateLimit;
 import ai.traceable.span.processing.config.service.v1.RateLimitConfig;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
 import ai.traceable.span.processing.config.service.v1.SpanFilter;
+import ai.traceable.span.processing.config.service.v1.UpdateDefaultProtectionSpanRuleEvaluationStatusRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateProtectionSpanRule;
 import ai.traceable.span.processing.config.service.v1.UpdateProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateSamplingConfig;
@@ -50,6 +52,17 @@ public class SpanProcessingConfigRequestValidator {
 
   public void validateOrThrow(
       RequestContext requestContext, GetAllResolvedProtectionSpanRulesRequest request) {
+    validateRequestContextOrThrow(requestContext);
+  }
+
+  public void validateOrThrow(
+      RequestContext requestContext, GetDefaultProtectionSpanRuleEvaluationStatusRequest request) {
+    validateRequestContextOrThrow(requestContext);
+  }
+
+  public void validateOrThrow(
+      RequestContext requestContext,
+      UpdateDefaultProtectionSpanRuleEvaluationStatusRequest request) {
     validateRequestContextOrThrow(requestContext);
   }
 

@@ -22,10 +22,12 @@ import ai.traceable.span.processing.config.service.protectionspanrules.DefaultPr
 import ai.traceable.span.processing.config.service.protectionspanrules.ProtectionSpanRulesManager;
 import ai.traceable.span.processing.config.service.samplingconfigs.DefaultSamplingConfigManager;
 import ai.traceable.span.processing.config.service.samplingconfigs.SamplingConfigManager;
+import ai.traceable.span.processing.config.service.store.DefaultProtectionSpanRuleEvaluationStatusConfigStore;
 import ai.traceable.span.processing.config.service.store.ProtectionSpanRulesConfigStore;
 import ai.traceable.span.processing.config.service.store.SamplingConfigsConfigStore;
 import ai.traceable.span.processing.config.service.v1.CreateProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.CreateSamplingConfigRequest;
+import ai.traceable.span.processing.config.service.v1.DefaultProtectionSpanRuleEvaluationStatus;
 import ai.traceable.span.processing.config.service.v1.DeleteProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.Field;
@@ -33,6 +35,7 @@ import ai.traceable.span.processing.config.service.v1.GetAllProtectionSpanRulesR
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSpanRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllSamplingConfigsRequest;
+import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRuleEvaluationStatusRequest;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRule;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleDetails;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
@@ -45,6 +48,7 @@ import ai.traceable.span.processing.config.service.v1.SamplingConfigDetails;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
 import ai.traceable.span.processing.config.service.v1.SpanFilter;
 import ai.traceable.span.processing.config.service.v1.SpanFilterValue;
+import ai.traceable.span.processing.config.service.v1.UpdateDefaultProtectionSpanRuleEvaluationStatusRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateProtectionSpanRule;
 import ai.traceable.span.processing.config.service.v1.UpdateProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateSamplingConfig;
@@ -100,13 +104,17 @@ class SpanProcessingConfigServiceImplTest {
     ProtectionSpanRulesManager protectionSpanRulesManager =
         new DefaultProtectionSpanRulesManager(
             protectionSpanRulesConfigStore, timestampConverter, licenseStatusConfigManager);
+    DefaultProtectionSpanRuleEvaluationStatusConfigStore
+        defaultProtectionSpanRuleEvaluationStatusConfigStore =
+            new DefaultProtectionSpanRuleEvaluationStatusConfigStore(genericStub);
 
     this.mockGenericConfigService
         .addService(
             new SpanProcessingConfigServiceImpl(
                 samplingConfigManager,
                 protectionSpanRulesManager,
-                new SpanProcessingConfigRequestValidator()))
+                new SpanProcessingConfigRequestValidator(),
+                defaultProtectionSpanRuleEvaluationStatusConfigStore))
         .start();
 
     this.spanProcessingConfigServiceStub =
@@ -562,5 +570,44 @@ class SpanProcessingConfigServiceImplTest {
             .collect(Collectors.toUnmodifiableList());
     assertEquals(1, samplingConfigs.size());
     assertEquals(secondCreatedSamplingConfig, samplingConfigs.get(0));
+  }
+
+  @Test
+  void testDefaultProtectionSpanRuleEvaluationStatus() {
+    DefaultProtectionSpanRuleEvaluationStatus defaultProtectionSpanRuleEvaluationStatus =
+        getDefaultProtectionSpanRuleEvaluationStatus();
+    assertFalse(defaultProtectionSpanRuleEvaluationStatus.getEnabled());
+
+    defaultProtectionSpanRuleEvaluationStatus =
+        updateDefaultProtectionSpanRuleEvaluationStatus(true);
+    assertTrue(defaultProtectionSpanRuleEvaluationStatus.getEnabled());
+    defaultProtectionSpanRuleEvaluationStatus = getDefaultProtectionSpanRuleEvaluationStatus();
+    assertTrue(defaultProtectionSpanRuleEvaluationStatus.getEnabled());
+
+    defaultProtectionSpanRuleEvaluationStatus =
+        updateDefaultProtectionSpanRuleEvaluationStatus(false);
+    assertFalse(defaultProtectionSpanRuleEvaluationStatus.getEnabled());
+    defaultProtectionSpanRuleEvaluationStatus = getDefaultProtectionSpanRuleEvaluationStatus();
+    assertFalse(defaultProtectionSpanRuleEvaluationStatus.getEnabled());
+  }
+
+  private DefaultProtectionSpanRuleEvaluationStatus getDefaultProtectionSpanRuleEvaluationStatus() {
+    return this.spanProcessingConfigServiceStub
+        .getDefaultProtectionSpanRuleEvaluationStatus(
+            GetDefaultProtectionSpanRuleEvaluationStatusRequest.getDefaultInstance())
+        .getStatus();
+  }
+
+  private DefaultProtectionSpanRuleEvaluationStatus updateDefaultProtectionSpanRuleEvaluationStatus(
+      boolean enabled) {
+    return this.spanProcessingConfigServiceStub
+        .updateDefaultProtectionSpanRuleEvaluationStatus(
+            UpdateDefaultProtectionSpanRuleEvaluationStatusRequest.newBuilder()
+                .setStatus(
+                    DefaultProtectionSpanRuleEvaluationStatus.newBuilder()
+                        .setEnabled(enabled)
+                        .build())
+                .build())
+        .getStatus();
   }
 }

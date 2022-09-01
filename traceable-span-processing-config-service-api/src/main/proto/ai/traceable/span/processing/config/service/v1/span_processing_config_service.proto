@@ -29,6 +29,10 @@ service SpanProcessingConfigService {
   rpc DeleteSamplingConfig(DeleteSamplingConfigRequest) returns (DeleteSamplingConfigResponse) {}
 
   rpc GetAllResolvedSamplingConfigs(GetAllResolvedSamplingConfigsRequest) returns (GetAllResolvedSamplingConfigsResponse) {}
+
+  rpc GetDefaultProtectionSpanRuleEvaluationStatus(GetDefaultProtectionSpanRuleEvaluationStatusRequest) returns (GetDefaultProtectionSpanRuleEvaluationStatusResponse) {}
+
+  rpc UpdateDefaultProtectionSpanRuleEvaluationStatus(UpdateDefaultProtectionSpanRuleEvaluationStatusRequest) returns (UpdateDefaultProtectionSpanRuleEvaluationStatusResponse) {}
 }
 
 message GetAllResolvedSamplingConfigsRequest {}
@@ -132,3 +136,21 @@ message DeleteSamplingConfigRequest {
 }
 
 message DeleteSamplingConfigResponse {}
+
+message GetDefaultProtectionSpanRuleEvaluationStatusRequest {}
+
+message GetDefaultProtectionSpanRuleEvaluationStatusResponse {
+  DefaultProtectionSpanRuleEvaluationStatus status = 1;
+}
+
+message UpdateDefaultProtectionSpanRuleEvaluationStatusRequest {
+  DefaultProtectionSpanRuleEvaluationStatus status = 1;
+}
+
+message UpdateDefaultProtectionSpanRuleEvaluationStatusResponse {
+  DefaultProtectionSpanRuleEvaluationStatus status = 1;
+}
+
+message DefaultProtectionSpanRuleEvaluationStatus {
+  bool enabled = 1;
+}

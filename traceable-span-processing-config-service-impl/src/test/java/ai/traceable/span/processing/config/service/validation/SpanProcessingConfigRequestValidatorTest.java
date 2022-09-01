@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.span.processing.config.service.v1.CreateProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.CreateSamplingConfigRequest;
+import ai.traceable.span.processing.config.service.v1.DefaultProtectionSpanRuleEvaluationStatus;
 import ai.traceable.span.processing.config.service.v1.DeleteProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.Field;
@@ -15,6 +16,7 @@ import ai.traceable.span.processing.config.service.v1.GetAllProtectionSpanRulesR
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSpanRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllSamplingConfigsRequest;
+import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRuleEvaluationStatusRequest;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
 import ai.traceable.span.processing.config.service.v1.RateLimit;
 import ai.traceable.span.processing.config.service.v1.RateLimitConfig;
@@ -23,6 +25,7 @@ import ai.traceable.span.processing.config.service.v1.RelationalSpanFilterExpres
 import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
 import ai.traceable.span.processing.config.service.v1.SpanFilter;
 import ai.traceable.span.processing.config.service.v1.SpanFilterValue;
+import ai.traceable.span.processing.config.service.v1.UpdateDefaultProtectionSpanRuleEvaluationStatusRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateProtectionSpanRule;
 import ai.traceable.span.processing.config.service.v1.UpdateProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateSamplingConfig;
@@ -170,6 +173,45 @@ class SpanProcessingConfigRequestValidatorTest {
                             .setId("id")
                             .setName("name")
                             .setFilter(buildTestFilter())
+                            .build())
+                    .build()));
+  }
+
+  @Test
+  void validatesGetDefaultProtectionSpanRuleEvaluationStatusRequest() {
+    assertInvalidArgStatusContaining(
+        "Tenant ID",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                GetDefaultProtectionSpanRuleEvaluationStatusRequest.newBuilder().build()));
+
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                GetDefaultProtectionSpanRuleEvaluationStatusRequest.newBuilder().build()));
+  }
+
+  @Test
+  void validatesUpdateDefaultProtectionSpanRuleEvaluationStatusRequest() {
+    assertInvalidArgStatusContaining(
+        "Tenant ID",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                UpdateDefaultProtectionSpanRuleEvaluationStatusRequest.newBuilder().build()));
+
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                UpdateDefaultProtectionSpanRuleEvaluationStatusRequest.newBuilder()
+                    .setStatus(
+                        DefaultProtectionSpanRuleEvaluationStatus.newBuilder()
+                            .setEnabled(false)
                             .build())
                     .build()));
   }
