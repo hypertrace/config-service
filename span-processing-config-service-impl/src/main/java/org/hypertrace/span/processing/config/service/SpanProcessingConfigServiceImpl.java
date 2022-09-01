@@ -124,6 +124,7 @@ class SpanProcessingConfigServiceImpl
                           : ExcludeSpanRuleDetails.newBuilder().setRule(excludeSpanRule).build())
               .collect(Collectors.toUnmodifiableList());
 
+      // Note: the priority of system rules is lower than the priority of user defined ones.
       responseObserver.onNext(
           GetAllExcludeSpanRulesResponse.newBuilder()
               .addAllRuleDetails(filteredUserExcludeSpanRules)
