@@ -7,10 +7,13 @@ import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -99,37 +102,16 @@ class SpanProcessingConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
-      List<ExcludeSpanRuleDetails> excludeSpanRules =
+
+      List<ExcludeSpanRuleDetails> userExcludeSpanRules =
           excludeSpanRulesConfigStore.getAllData(requestContext);
 
-      Map<String, ExcludeSpanRuleDetails> userExcludeSpanRuleIdToRuleMap =
-          buildUserExcludeSpanRulesToIdMap(excludeSpanRules);
+      // reorder user exclude span rules and system exclude span rules as per expected priority
+      List<ExcludeSpanRuleDetails> excludeSpanRules =
+          reorderExcludeSpanRules(userExcludeSpanRules, systemExcludeSpanRuleIdToRuleMap);
 
-      // all the user configs except for the overridden system ones
-      List<ExcludeSpanRuleDetails> filteredUserExcludeSpanRules =
-          excludeSpanRules.stream()
-              .filter(
-                  excludeSpanRule ->
-                      !systemExcludeSpanRuleIdToRuleMap.containsKey(
-                          excludeSpanRule.getRule().getId()))
-              .collect(Collectors.toUnmodifiableList());
-
-      // all the system configs, replaced by the overridden configs in case of overrides
-      List<ExcludeSpanRuleDetails> filteredSystemExcludeSpanRules =
-          systemExcludeSpanRuleIdToRuleMap.values().stream()
-              .map(
-                  excludeSpanRule ->
-                      userExcludeSpanRuleIdToRuleMap.containsKey(excludeSpanRule.getId())
-                          ? userExcludeSpanRuleIdToRuleMap.get(excludeSpanRule.getId())
-                          : ExcludeSpanRuleDetails.newBuilder().setRule(excludeSpanRule).build())
-              .collect(Collectors.toUnmodifiableList());
-
-      // Note: the priority of system rules is lower than the priority of user defined ones.
       responseObserver.onNext(
-          GetAllExcludeSpanRulesResponse.newBuilder()
-              .addAllRuleDetails(filteredUserExcludeSpanRules)
-              .addAllRuleDetails(filteredSystemExcludeSpanRules)
-              .build());
+          GetAllExcludeSpanRulesResponse.newBuilder().addAllRuleDetails(excludeSpanRules).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Unable to get all exclude span rules for request: {}", request, e);
@@ -243,20 +225,48 @@ class SpanProcessingConfigServiceImpl
     return Optional.empty();
   }
 
+  private List<ExcludeSpanRuleDetails> reorderExcludeSpanRules(
+      List<ExcludeSpanRuleDetails> userExcludeSpanRules,
+      Map<String, ExcludeSpanRule> systemExcludeSpanRuleIdToRuleMap) {
+    // This method sets the priority of rules. User exclude span rules -> user overridden system
+    // exclude span rules -> non overridden system exclude span rules
+    List<ExcludeSpanRuleDetails> excludeSpanRules = new ArrayList<>();
+    List<ExcludeSpanRuleDetails> overriddenSystemExcludeSpanRules = new ArrayList<>();
+    Set<String> overriddenSystemExcludeSpanRuleIds = new HashSet<>();
+
+    for (ExcludeSpanRuleDetails excludeSpanRule : userExcludeSpanRules) {
+      String id = excludeSpanRule.getRule().getId();
+      if (systemExcludeSpanRuleIdToRuleMap.containsKey(id)) {
+        // user overridden system exclude span rules
+        overriddenSystemExcludeSpanRules.add(excludeSpanRule);
+        overriddenSystemExcludeSpanRuleIds.add(id);
+      } else {
+        // user exclude span rules
+        excludeSpanRules.add(excludeSpanRule);
+      }
+    }
+
+    // non overridden system exclude span rules
+    List<ExcludeSpanRuleDetails> nonOverriddenSystemExcludeSpanRules =
+        systemExcludeSpanRuleIdToRuleMap.values().stream()
+            .filter(
+                excludeSpanRule ->
+                    !overriddenSystemExcludeSpanRuleIds.contains(excludeSpanRule.getId()))
+            .map(
+                excludeSpanRule ->
+                    ExcludeSpanRuleDetails.newBuilder().setRule(excludeSpanRule).build())
+            .collect(Collectors.toUnmodifiableList());
+
+    excludeSpanRules.addAll(overriddenSystemExcludeSpanRules);
+    excludeSpanRules.addAll(nonOverriddenSystemExcludeSpanRules);
+    return excludeSpanRules;
+  }
+
   private Map<String, ExcludeSpanRule> buildSystemExcludeSpanRulesToIdMap(
       List<? extends com.typesafe.config.ConfigObject> configObjectList) {
     return configObjectList.stream()
         .map(this::buildExcludeSpanRuleFromConfig)
         .collect(Collectors.toUnmodifiableMap(ExcludeSpanRule::getId, Function.identity()));
-  }
-
-  private Map<String, ExcludeSpanRuleDetails> buildUserExcludeSpanRulesToIdMap(
-      List<ExcludeSpanRuleDetails> excludeSpanRules) {
-    return excludeSpanRules.stream()
-        .collect(
-            Collectors.toUnmodifiableMap(
-                (ExcludeSpanRuleDetails ruleDetails) -> ruleDetails.getRule().getId(),
-                Function.identity()));
   }
 
   private void validateUpdateExcludeSpanRule(
