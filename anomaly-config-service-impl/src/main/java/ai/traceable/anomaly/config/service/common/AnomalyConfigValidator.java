@@ -17,7 +17,6 @@ public class AnomalyConfigValidator {
     AnomalyConfigScope.ScopeCase scopeCase = configScope.getScopeCase();
     switch (scopeCase) {
       case ENVIRONMENT_SCOPE:
-        ;
         return validateEnvironmentScope(configScope.getEnvironmentScope());
       case SERVICE_SCOPE:
         return validateServiceScope(configScope.getServiceScope());

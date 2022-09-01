@@ -6,9 +6,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
+import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingActionConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingAction;
@@ -58,6 +60,7 @@ public class TrainingActionManagerTest {
   // various config key names inside Config instance
   private static final String CUSTOMER_SCOPE_CONFIG = "customerScopeConfig";
   private static final String SERVICE_SCOPE_CONFIG = "serviceScopeConfig";
+  private static final String ENVIRONMENT_SCOPE_CONFIG = "environmentScopeConfig";
   private static final String API_SCOPE_CONFIG = "apiScopeConfig";
   private static final String CONFIG_SCOPE_CONFIG = "configScope";
   private static final String TRAINING_ACTION_CONFIG = "trainingAction";
@@ -65,6 +68,8 @@ public class TrainingActionManagerTest {
   private static MockGenericConfigService mockConfigService;
   private final AnomalyServiceScope serviceScope =
       AnomalyServiceScope.newBuilder().setId("service").build();
+  private final AnomalyEnvironmentScope environmentScope =
+      AnomalyEnvironmentScope.newBuilder().setEnvironmentId("environment").build();
   private final AnomalyApiScope apiScope =
       AnomalyApiScope.newBuilder().setId("api").setServiceScope(serviceScope).build();
   private final AnomalyConfigScope apiConfigScope =
@@ -75,6 +80,8 @@ public class TrainingActionManagerTest {
           .build();
   private final AnomalyConfigScope serviceConfigScope =
       AnomalyConfigScope.newBuilder().setServiceScope(serviceScope).build();
+  private final AnomalyConfigScope environmentConfigScope =
+      AnomalyConfigScope.newBuilder().setEnvironmentScope(environmentScope).build();
   private TrainingActionManager actionManager;
 
   @BeforeEach
@@ -87,11 +94,13 @@ public class TrainingActionManagerTest {
     ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     TrainingActionConverter actionConverter = new TrainingActionConverter(Clock.systemUTC());
+    AnomalyConfigScopeUtils anomalyConfigScopeUtils = new AnomalyConfigScopeUtils();
     this.actionManager =
         spy(
             new TrainingActionManagerImpl(
                 actionConverter,
                 configServiceBlockingStub,
+                anomalyConfigScopeUtils,
                 mock(ConfigChangeEventGenerator.class)));
   }
 
@@ -121,6 +130,20 @@ public class TrainingActionManagerTest {
         customerScopedInputConfig,
         customerScopedOutputConfig,
         resolvedCustomerScopedConfig,
+        requestContext);
+
+    // upsert action at environment level and verify responses for upsert and getAll methods
+    Config environmentScopedInputConfig =
+        scopedTrainingActionsInput.getConfig(ENVIRONMENT_SCOPE_CONFIG);
+    Config environmentScopedOutputConfig =
+        scopedTrainingActionsOutput.getConfig(ENVIRONMENT_SCOPE_CONFIG);
+    Config resolvedEnvironmentScopedConfig =
+        resolvedScopedTrainingActionsConfig.getConfig(ENVIRONMENT_SCOPE_CONFIG);
+    upsertAndVerifyForScope(
+        environmentConfigScope,
+        environmentScopedInputConfig,
+        environmentScopedOutputConfig,
+        resolvedEnvironmentScopedConfig,
         requestContext);
 
     // upsert action at service level and verify responses for upsert and getAll methods
