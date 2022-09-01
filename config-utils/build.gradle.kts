@@ -12,6 +12,8 @@ dependencies {
   implementation(libs.uuidCreator)
   implementation(libs.slf4j.api)
   implementation(libs.re2j)
+  implementation(libs.commons.net)
+  implementation(libs.commons.validator)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

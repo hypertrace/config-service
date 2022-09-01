@@ -30,7 +30,6 @@ import io.grpc.Status;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RateLimitingRulesValidator implements RulesValidator {
-
   @Override
   public void validateOrThrow(RequestContext requestContext, GetRateLimitingRulesRequest request) {
     validateRequestContextOrThrow(requestContext);
@@ -187,8 +186,7 @@ public class RateLimitingRulesValidator implements RulesValidator {
   }
 
   private void validateIpAddressCondition(IpAddressCondition ipAddressCondition) {
-    if (ipAddressCondition.getCidrIpRangesList().isEmpty()
-        && ipAddressCondition.getIpAddressesList().isEmpty()) {
+    if (ipAddressCondition.getRawInputIpDataList().isEmpty()) {
       throwInvalidArgumentException(
           String.format(
               "Invalid condition for type %s:%n %s",

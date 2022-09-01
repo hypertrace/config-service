@@ -140,6 +140,7 @@ message RegionCondition {
 message IpAddressCondition {
   repeated string cidr_ip_ranges = 1;
   repeated string ip_addresses = 2;
+  repeated string raw_input_ip_data = 3;
 }
 
 message IpLocationTypeCondition {

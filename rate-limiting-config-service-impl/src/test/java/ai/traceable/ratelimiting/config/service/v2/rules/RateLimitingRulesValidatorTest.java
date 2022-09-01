@@ -16,6 +16,7 @@ import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.DatatypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.EnvironmentScope;
+import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationType;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
@@ -307,6 +308,13 @@ public class RateLimitingRulesValidatorTest {
                                 Condition.newBuilder()
                                     .setLeafCondition(
                                         LeafCondition.newBuilder()
+                                            .setIpAddressCondition(
+                                                buildIpAddressCondition(
+                                                    List.of("1.2.3.4/24", "127.0.0.1")))))
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
                                             .setDatatypeCondition(
                                                 buildDatatypeCondition(List.of("id1", "id2")))))
                             .setOperator(CompositeCondition.LogicalOperator.LOGICAL_OPERATOR_AND))
@@ -349,6 +357,10 @@ public class RateLimitingRulesValidatorTest {
   private IpLocationTypeCondition buildIpLocationTypeCondition(
       List<IpLocationType> ipLocationTypes) {
     return IpLocationTypeCondition.newBuilder().addAllIpLocationTypes(ipLocationTypes).build();
+  }
+
+  private IpAddressCondition buildIpAddressCondition(List<String> rawIpList) {
+    return IpAddressCondition.newBuilder().addAllRawInputIpData(rawIpList).build();
   }
 
   private RateLimitingRuleData getRateLimitingRuleDataWithValueBasedCondition(

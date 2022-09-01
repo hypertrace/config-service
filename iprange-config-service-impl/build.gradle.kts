@@ -9,6 +9,7 @@ dependencies {
   api(libs.typesafe.config)
   api(libs.grpc.api)
   implementation(projects.iprangeConfigServiceApi)
+  implementation(projects.configUtils)
   implementation(libs.hypertrace.configservice.api)
   implementation(libs.hypertrace.configservice.objectstore)
   implementation(libs.hypertrace.configservice.changeeventgenerator)
@@ -16,8 +17,6 @@ dependencies {
   implementation(libs.protobuf.javautil)
   implementation(libs.slf4j.api)
   implementation(libs.uuidCreator)
-  implementation(libs.commons.net)
-  implementation(libs.commons.validator)
   implementation(libs.guava)
 
   implementation(libs.hypertrace.grpcutils.context)

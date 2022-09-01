@@ -7,10 +7,16 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.ratelimiting.config.service.v2.Category;
+import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
+import ai.traceable.ratelimiting.config.service.v2.CompositeCondition.LogicalOperator;
+import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.EnvironmentScope;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
+import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
+import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
+import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesManager;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesStore;
@@ -49,6 +55,60 @@ public class RateLimitingRulesManagerTest {
   @AfterEach
   void tearDown() {
     mockConfigService.shutdown();
+  }
+
+  @Test
+  void testProcessRateLimitRuleData() {
+    LeafCondition nonIpRuleLeaf =
+        LeafCondition.newBuilder()
+            .setRegionCondition(RegionCondition.newBuilder().addRegions("region").build())
+            .build();
+    LeafCondition ipRuleLeaf =
+        LeafCondition.newBuilder()
+            .setIpAddressCondition(
+                IpAddressCondition.newBuilder()
+                    .addAllRawInputIpData(List.of("1.2.3.4", "192.168.100.14/24", "127.0.0.1"))
+                    .build())
+            .build();
+    LeafCondition processedIpRuleLeaf =
+        LeafCondition.newBuilder()
+            .setIpAddressCondition(
+                IpAddressCondition.newBuilder()
+                    .addAllRawInputIpData(List.of("1.2.3.4", "192.168.100.14/24", "127.0.0.1"))
+                    .addAllIpAddresses(List.of("1.2.3.4", "127.0.0.1"))
+                    .addCidrIpRanges("192.168.100.14/24")
+                    .build())
+            .build();
+    RateLimitingRuleData nonIpAddressRuleData =
+        buildRateLimitingRuleData("nonip", Category.CATEGORY_RATE_LIMITING, nonIpRuleLeaf);
+    assertEquals(nonIpAddressRuleData, rulesManager.processRateLimitRuleData(nonIpAddressRuleData));
+    RateLimitingRuleData ipAddressRuleData =
+        buildRateLimitingRuleData("iprule", Category.CATEGORY_DATA_EXFILTRATION, ipRuleLeaf);
+    RateLimitingRuleData processedIpAddressRuleData =
+        buildRateLimitingRuleData(
+            "iprule", Category.CATEGORY_DATA_EXFILTRATION, processedIpRuleLeaf);
+    assertEquals(
+        processedIpAddressRuleData, rulesManager.processRateLimitRuleData(ipAddressRuleData));
+    RateLimitingRuleData compositeRuleData =
+        buildRateLimitingRuleData(
+            "compositerule",
+            Category.CATEGORY_ENUMERATION,
+            CompositeCondition.newBuilder()
+                .addAllChildren(
+                    List.of(
+                        Condition.newBuilder().setLeafCondition(ipRuleLeaf).build(),
+                        Condition.newBuilder().setLeafCondition(nonIpRuleLeaf).build()))
+                .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
+                .build());
+    RateLimitingRuleData processedCompositeRuleData =
+        rulesManager.processRateLimitRuleData(compositeRuleData);
+    List<Condition> processedChildren =
+        processedCompositeRuleData.getCondition().getCompositeCondition().getChildrenList();
+    assertEquals(
+        Condition.newBuilder().setLeafCondition(processedIpRuleLeaf).build(),
+        processedChildren.get(0));
+    assertEquals(
+        Condition.newBuilder().setLeafCondition(nonIpRuleLeaf).build(), processedChildren.get(1));
   }
 
   @Test
@@ -279,6 +339,24 @@ public class RateLimitingRulesManagerTest {
 
   private RateLimitingRuleData buildRateLimitingRuleData(String name, Category category) {
     return RateLimitingRuleData.newBuilder().setName(name).setCategory(category).build();
+  }
+
+  private RateLimitingRuleData buildRateLimitingRuleData(
+      String name, Category category, LeafCondition leafCondition) {
+    return RateLimitingRuleData.newBuilder()
+        .setName(name)
+        .setCategory(category)
+        .setCondition(Condition.newBuilder().setLeafCondition(leafCondition).build())
+        .build();
+  }
+
+  private RateLimitingRuleData buildRateLimitingRuleData(
+      String name, Category category, CompositeCondition compositeCondition) {
+    return RateLimitingRuleData.newBuilder()
+        .setName(name)
+        .setCategory(category)
+        .setCondition(Condition.newBuilder().setCompositeCondition(compositeCondition).build())
+        .build();
   }
 
   private RateLimitingRule buildRateLimitingRule(
