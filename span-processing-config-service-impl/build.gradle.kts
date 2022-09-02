@@ -18,6 +18,7 @@ dependencies {
   implementation(libs.guava)
   implementation(libs.slf4j.api)
   implementation(libs.google.re2j)
+  implementation(libs.typesafe.config)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
