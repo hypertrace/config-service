@@ -151,7 +151,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
             anomalyConfigScopeUtils.getContextFromAnomalyConfigScope(
                 getTenantId(requestContext), configScope));
     if (scopedAnomalyConfigStatusChangeOptional.isEmpty()) {
-      return ScopedAnomalyConfigStatus.getDefaultInstance();
+      return ScopedAnomalyConfigStatus.newBuilder().setConfigScope(configScope).build();
     }
     return configConverter.convertScopedConfig(
         scopedAnomalyConfigStatusChangeOptional.get(),
