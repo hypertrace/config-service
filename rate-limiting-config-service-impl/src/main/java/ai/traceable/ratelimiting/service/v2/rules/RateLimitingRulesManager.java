@@ -6,6 +6,7 @@ import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
+import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
@@ -86,9 +87,10 @@ public class RateLimitingRulesManager implements RulesManager {
       List<String> rawIps =
           condition.getLeafCondition().getIpAddressCondition().getRawInputIpDataList();
       IpParsingResults parsedResults = ipAddressParsingUtils.parseRawIpRange(rawIps);
-      builder
-          .getLeafConditionBuilder()
-          .getIpAddressConditionBuilder()
+      IpAddressCondition.Builder ipAddressConditionBuilder =
+          builder.getLeafConditionBuilder().getIpAddressConditionBuilder();
+      ipAddressConditionBuilder.clearCidrIpRanges().clearIpAddresses();
+      ipAddressConditionBuilder
           .addAllCidrIpRanges(parsedResults.getIpRanges())
           .addAllIpAddresses(parsedResults.getIpAddresses());
     } else if (condition.hasCompositeCondition()) {
