@@ -4,6 +4,7 @@ import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -21,31 +22,52 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public abstract class ScopeResolutionIdentifiedObjectStoreWithFilter<T extends Message, F, S>
     extends IdentifiedObjectStoreWithFilter<T, F> {
 
+  protected final T defaultConfig;
+
   protected ScopeResolutionIdentifiedObjectStoreWithFilter(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
       String resourceNamespace,
       String resourceName,
-      ConfigChangeEventGenerator configChangeEventGenerator) {
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      T defaultConfig) {
     super(configServiceBlockingStub, resourceNamespace, resourceName, configChangeEventGenerator);
+    this.defaultConfig = defaultConfig;
   }
 
-  public List<T> getAllFilteredResolvedConfigs(RequestContext context, F filter, T defaultConfig) {
-    Map<S, T> configObjectsMap =
-        getAllFilteredConfigs(context, filter).stream()
-            .collect(Collectors.toMap(this::extractScope, Function.identity()));
+  public T getDefaultConfig() {
+    return defaultConfig;
+  }
 
-    return configObjectsMap.entrySet().stream()
+  public List<ContextualConfigObject<T>> getAllFilteredResolvedObjects(
+      RequestContext context, F filter) {
+    Map<S, ContextualConfigObject<T>> configObjectsMap = getConfigObjectsMap(context, filter);
+    return configObjectsMap.values().stream()
         .map(
-            entry -> resolveConfig(extractScope(entry.getValue()), defaultConfig, configObjectsMap))
+            configObject ->
+                ContextualConfigObjectImpl.updateData(
+                    configObject,
+                    resolveConfig(extractScope(configObject.getData()), configObjectsMap)))
         .collect(Collectors.toUnmodifiableList());
   }
 
-  public T getFilteredResolvedConfig(RequestContext context, F filter, S scope, T defaultConfig) {
-    List<T> filteredConfigObjects = getAllFilteredConfigs(context, filter);
-    Map<S, T> configObjectsMap =
-        filteredConfigObjects.stream()
-            .collect(Collectors.toMap(this::extractScope, Function.identity()));
-    return resolveConfig(scope, defaultConfig, configObjectsMap);
+  public List<T> getAllFilteredResolvedConfigData(RequestContext context, F filter) {
+    return getAllFilteredResolvedObjects(context, filter).stream()
+        .map(ConfigObject::getData)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  public Optional<ContextualConfigObject<T>> getFilteredResolvedObject(
+      RequestContext context, F filter, S scope) {
+    Map<S, ContextualConfigObject<T>> configObjectsMap = getConfigObjectsMap(context, filter);
+    return Optional.ofNullable(configObjectsMap.get(scope))
+        .map(
+            configObject ->
+                ContextualConfigObjectImpl.updateData(
+                    configObject, resolveConfig(scope, configObjectsMap)));
+  }
+
+  public Optional<T> getFilteredResolvedData(RequestContext context, F filter, S scope) {
+    return getFilteredResolvedObject(context, filter, scope).map(ConfigObject::getData);
   }
 
   /**
@@ -73,12 +95,16 @@ public abstract class ScopeResolutionIdentifiedObjectStoreWithFilter<T extends M
    * @param fallbackConfig
    * @return mergedConfig
    */
-  protected T mergeConfigs(T preferredConfig, T fallbackConfig) {
+  protected T mergeConfigs(T fallbackConfig, T preferredConfig) {
     T.Builder builder = fallbackConfig.toBuilder();
     mergeFromProto(builder, preferredConfig);
     return (T) builder.build();
   }
 
+  /**
+   * Custom implementation of merging protos to replace the list of messages rather than appending
+   * (which is done in default proto implementation)
+   */
   protected void mergeFromProto(T.Builder builder, T source) {
     List<Descriptors.FieldDescriptor> fieldDescriptors = builder.getDescriptorForType().getFields();
     for (Descriptors.FieldDescriptor fieldDescriptor : fieldDescriptors) {
@@ -96,14 +122,17 @@ public abstract class ScopeResolutionIdentifiedObjectStoreWithFilter<T extends M
     }
   }
 
-  private T resolveConfig(S scope, T defaultConfig, Map<S, T> configObjectsMap) {
-    List<S> scopesWithIncreasingPriority = getResolutionScopesWithIncreasingPriority(scope);
-    T resultConfig = defaultConfig;
-    for (S scopeObject : scopesWithIncreasingPriority) {
-      if (configObjectsMap.containsKey(scopeObject)) {
-        resultConfig = mergeConfigs(configObjectsMap.get(scopeObject), resultConfig);
-      }
-    }
-    return resultConfig;
+  private Map<S, ContextualConfigObject<T>> getConfigObjectsMap(RequestContext context, F filter) {
+    List<ContextualConfigObject<T>> configObjects = getAllFilteredObjects(context, filter);
+    return configObjects.stream()
+        .collect(
+            Collectors.toMap(
+                configObject -> extractScope(configObject.getData()), Function.identity()));
+  }
+
+  private T resolveConfig(S scope, Map<S, ContextualConfigObject<T>> configObjectsMap) {
+    return getResolutionScopesWithIncreasingPriority(scope).stream()
+        .flatMap(scopeObject -> Optional.ofNullable(configObjectsMap.get(scope).getData()).stream())
+        .reduce(defaultConfig, this::mergeConfigs);
   }
 }

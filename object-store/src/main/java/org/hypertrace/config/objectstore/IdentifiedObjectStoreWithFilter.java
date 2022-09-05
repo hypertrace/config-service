@@ -3,7 +3,6 @@ package org.hypertrace.config.objectstore;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -24,24 +23,26 @@ public abstract class IdentifiedObjectStoreWithFilter<T, F> extends IdentifiedOb
     super(configServiceBlockingStub, resourceNamespace, resourceName, configChangeEventGenerator);
   }
 
-  public List<T> getAllFilteredConfigs(RequestContext context, F filter) {
-    Stream<T> configObjectsStream = getAllObjects(context).stream().map(ConfigObject::getData);
-    if (!isFilterEmpty(filter)) {
-      configObjectsStream =
-          configObjectsStream
-              .map(configObject -> filterConfig(configObject, filter))
-              .filter(Optional::isPresent)
-              .map(Optional::get);
-    }
-    return configObjectsStream.collect(Collectors.toUnmodifiableList());
+  public List<ContextualConfigObject<T>> getAllFilteredObjects(RequestContext context, F filter) {
+    return getAllObjects(context).stream()
+        .flatMap(configObject -> filterObject(configObject, filter).stream())
+        .collect(Collectors.toUnmodifiableList());
   }
 
-  public Optional<T> getFilteredConfig(RequestContext context, String contextId, F filter) {
-    Optional<T> fetchedConfig = getData(context, contextId);
-    if (!isFilterEmpty(filter)) {
-      return fetchedConfig.flatMap(config -> filterConfig(config, filter));
-    }
-    return fetchedConfig;
+  public List<T> getAllFilteredConfigData(RequestContext context, F filter) {
+    return getAllFilteredObjects(context, filter).stream()
+        .map(ConfigObject::getData)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  public Optional<ContextualConfigObject<T>> getFilteredObject(
+      RequestContext context, String contextId, F filter) {
+    return getObject(context, contextId)
+        .flatMap(configObject -> filterObject(configObject, filter));
+  }
+
+  public Optional<T> getFilteredData(RequestContext context, String id, F filter) {
+    return getFilteredObject(context, id, filter).map(ConfigObject::getData);
   }
 
   /**
@@ -49,17 +50,15 @@ public abstract class IdentifiedObjectStoreWithFilter<T, F> extends IdentifiedOb
    * which can be partially filtered and returned. In cases where filter applies to entire config
    * object, Optional.empty() is returned
    *
-   * @param config
+   * @param data
    * @param filter
    * @return
    */
-  protected abstract Optional<T> filterConfig(T config, F filter);
+  protected abstract Optional<T> filterConfigData(T data, F filter);
 
-  /**
-   * Method to check if any filter confitions exist at all
-   *
-   * @param filter
-   * @return
-   */
-  protected abstract boolean isFilterEmpty(F filter);
+  private Optional<ContextualConfigObject<T>> filterObject(
+      ContextualConfigObject<T> configObject, F filter) {
+    return filterConfigData(configObject.getData(), filter)
+        .map(filteredData -> ContextualConfigObjectImpl.updateData(configObject, filteredData));
+  }
 }

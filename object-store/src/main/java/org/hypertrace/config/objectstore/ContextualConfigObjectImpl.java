@@ -15,6 +15,15 @@ class ContextualConfigObjectImpl<T> implements ContextualConfigObject<T> {
   Instant creationTimestamp;
   Instant lastUpdatedTimestamp;
 
+  static <T> ContextualConfigObject<T> updateData(
+      ContextualConfigObject<T> existingContextualObject, T updatedData) {
+    return new ContextualConfigObjectImpl<>(
+        existingContextualObject.getContext(),
+        updatedData,
+        existingContextualObject.getCreationTimestamp(),
+        existingContextualObject.getLastUpdatedTimestamp());
+  }
+
   static <T> Optional<ContextualConfigObject<T>> tryBuild(
       ContextSpecificConfig contextSpecificConfig, Function<Value, Optional<T>> dataBuilder) {
     return tryBuild(
