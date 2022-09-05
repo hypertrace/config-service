@@ -1,5 +1,7 @@
 package org.hypertrace.span.processing.config.service.validation;
 
+import static org.hypertrace.span.processing.config.service.v1.RuleType.RULE_TYPE_SYSTEM;
+import static org.hypertrace.span.processing.config.service.v1.RuleType.RULE_TYPE_USER;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -101,7 +103,21 @@ class SpanProcessingRequestValidatorTest {
             validator.validateOrThrow(
                 mockRequestContext,
                 CreateExcludeSpanRuleRequest.newBuilder()
-                    .setRuleInfo(ExcludeSpanRuleInfo.newBuilder().build())
+                    .setRuleInfo(ExcludeSpanRuleInfo.newBuilder().setType(RULE_TYPE_USER).build())
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Invalid rule type to create system level rule",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateExcludeSpanRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ExcludeSpanRuleInfo.newBuilder()
+                            .setName("name")
+                            .setType(RULE_TYPE_SYSTEM)
+                            .setFilter(buildTestFilter())
+                            .build())
                     .build()));
 
     assertDoesNotThrow(
@@ -114,6 +130,7 @@ class SpanProcessingRequestValidatorTest {
                             .setName("name")
                             .setDisabled(true)
                             .setFilter(buildTestFilter())
+                            .setType(RULE_TYPE_USER)
                             .build())
                     .build()));
   }

@@ -3,6 +3,7 @@ package org.hypertrace.span.processing.config.service.validation;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
+import static org.hypertrace.span.processing.config.service.v1.RuleType.RULE_TYPE_SYSTEM;
 
 import com.google.common.base.Strings;
 import com.google.re2j.Pattern;
@@ -39,6 +40,13 @@ public class SpanProcessingConfigRequestValidator {
   public void validateOrThrow(RequestContext requestContext, CreateExcludeSpanRuleRequest request) {
     validateRequestContextOrThrow(requestContext);
     this.validateData(request.getRuleInfo());
+    if (RULE_TYPE_SYSTEM.equals(request.getRuleInfo().getType())) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Invalid rule type to create system level rule : %s", request.getRuleInfo()))
+          .asRuntimeException();
+    }
   }
 
   public void validateOrThrow(RequestContext requestContext, UpdateExcludeSpanRuleRequest request) {
