@@ -190,18 +190,6 @@ traceableConfigServiceConfig:
       thread:
         pool:
           size: 2
-  spanProcessingConfigServiceConfig:
-    samplingConfig:
-      rateLimitConfig:
-        traceLimitPerEndpoint:
-          fixedWindowLimit:
-            quantityAllowed: 10
-            windowDuration: 60s
-        traceLimitGlobal:
-          fixedWindowLimit:
-            quantityAllowed: 10000
-            windowDuration: 60s
-        apiEndpointCacheDuration: 604800s
   labelApplicationRuleConfigServiceConfig:
     maxDynamicLabelApplicationRulesPerTenant: 100
 

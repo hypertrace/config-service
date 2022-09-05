@@ -179,42 +179,6 @@ data:
     risk.config.service = {
       include "risk.conf"
     }
-    local.processing.config.service = {
-      include "span-processing-rules.conf"
-    }
-    span.processing.config.service = {
-      {{- if hasKey .Values.traceableConfigServiceConfig "spanProcessingConfigServiceConfig" }}
-      sampling.config {
-        rate.limit.config = {
-          traceLimitPerEndpoint = {
-            {{- if hasKey $.Values.traceableConfigServiceConfig.spanProcessingConfigServiceConfig.samplingConfig.rateLimitConfig.traceLimitPerEndpoint "fixedWindowLimit" }}
-            fixedWindowLimit = {
-              {{- if hasKey $.Values.traceableConfigServiceConfig.spanProcessingConfigServiceConfig.samplingConfig.rateLimitConfig.traceLimitPerEndpoint.fixedWindowLimit "quantityAllowed" }}
-              quantityAllowed = {{ $.Values.traceableConfigServiceConfig.spanProcessingConfigServiceConfig.samplingConfig.rateLimitConfig.traceLimitPerEndpoint.fixedWindowLimit.quantityAllowed }}
-              {{- end }}
-              {{- if hasKey $.Values.traceableConfigServiceConfig.spanProcessingConfigServiceConfig.samplingConfig.rateLimitConfig.traceLimitPerEndpoint.fixedWindowLimit "windowDuration" }}
-              windowDuration = {{ $.Values.traceableConfigServiceConfig.spanProcessingConfigServiceConfig.samplingConfig.rateLimitConfig.traceLimitPerEndpoint.fixedWindowLimit.windowDuration }}
-              {{- end }}
-            }
-            {{- end }}
-          }
-          traceLimitGlobal = {
-            {{- if hasKey $.Values.traceableConfigServiceConfig.spanProcessingConfigServiceConfig.samplingConfig.rateLimitConfig.traceLimitGlobal "fixedWindowLimit" }}
-            fixedWindowLimit = {
-              {{- if hasKey $.Values.traceableConfigServiceConfig.spanProcessingConfigServiceConfig.samplingConfig.rateLimitConfig.traceLimitGlobal.fixedWindowLimit "quantityAllowed" }}
-              quantityAllowed = {{ $.Values.traceableConfigServiceConfig.spanProcessingConfigServiceConfig.samplingConfig.rateLimitConfig.traceLimitGlobal.fixedWindowLimit.quantityAllowed }}
-              {{- end }}
-              {{- if hasKey $.Values.traceableConfigServiceConfig.spanProcessingConfigServiceConfig.samplingConfig.rateLimitConfig.traceLimitGlobal.fixedWindowLimit "windowDuration" }}
-              windowDuration = {{ $.Values.traceableConfigServiceConfig.spanProcessingConfigServiceConfig.samplingConfig.rateLimitConfig.traceLimitGlobal.fixedWindowLimit.windowDuration }}
-              {{- end }}
-            }
-            {{- end }}
-          }
-          apiEndpointCacheDuration = {{ $.Values.traceableConfigServiceConfig.spanProcessingConfigServiceConfig.samplingConfig.rateLimitConfig.apiEndpointCacheDuration }}
-        }
-      }
-      {{- end }}
-    }
     label.application.rule.config.service {
       max.dynamic.label.application.rules.per.tenant = {{ int .Values.traceableConfigServiceConfig.labelApplicationRuleConfigServiceConfig.maxDynamicLabelApplicationRulesPerTenant }}
     }
