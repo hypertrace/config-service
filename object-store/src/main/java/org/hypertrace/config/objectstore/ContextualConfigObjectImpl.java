@@ -4,25 +4,18 @@ import com.google.protobuf.Value;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Function;
+import lombok.Builder;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
 
 @lombok.Value
+@Builder(toBuilder = true)
 class ContextualConfigObjectImpl<T> implements ContextualConfigObject<T> {
   String context;
   T data;
   Instant creationTimestamp;
   Instant lastUpdatedTimestamp;
-
-  static <T> ContextualConfigObject<T> updateData(
-      ContextualConfigObject<T> existingContextualObject, T updatedData) {
-    return new ContextualConfigObjectImpl<>(
-        existingContextualObject.getContext(),
-        updatedData,
-        existingContextualObject.getCreationTimestamp(),
-        existingContextualObject.getLastUpdatedTimestamp());
-  }
 
   static <T> Optional<ContextualConfigObject<T>> tryBuild(
       ContextSpecificConfig contextSpecificConfig, Function<Value, Optional<T>> dataBuilder) {

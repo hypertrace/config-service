@@ -19,12 +19,12 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
  * @param <F> Filter
  * @param <S> Scope
  */
-public abstract class ScopeResolutionIdentifiedObjectStoreWithFilter<T extends Message, F, S>
+public abstract class ScopeResolutionIdentifiedObjectStore<T extends Message, F, S>
     extends IdentifiedObjectStoreWithFilter<T, F> {
 
   protected final T defaultConfig;
 
-  protected ScopeResolutionIdentifiedObjectStoreWithFilter(
+  protected ScopeResolutionIdentifiedObjectStore(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
       String resourceNamespace,
       String resourceName,
@@ -34,49 +34,39 @@ public abstract class ScopeResolutionIdentifiedObjectStoreWithFilter<T extends M
     this.defaultConfig = defaultConfig;
   }
 
-  public T getDefaultConfig() {
-    return defaultConfig;
-  }
-
-  public List<ContextualConfigObject<T>> getAllFilteredResolvedObjects(
-      RequestContext context, F filter) {
-    Map<S, ContextualConfigObject<T>> configObjectsMap = getConfigObjectsMap(context, filter);
-    return configObjectsMap.values().stream()
-        .map(
-            configObject ->
-                ContextualConfigObjectImpl.updateData(
-                    configObject,
-                    resolveConfig(extractScope(configObject.getData()), configObjectsMap)))
+  public List<T> getAllResolvedConfigData(RequestContext context, F filter) {
+    Map<S, T> configDataMap = getConfigDataMap(context, filter);
+    return configDataMap.values().stream()
+        .map(configData -> resolveConfig(extractScope(configData), configDataMap))
         .collect(Collectors.toUnmodifiableList());
   }
 
-  public List<T> getAllFilteredResolvedConfigData(RequestContext context, F filter) {
-    return getAllFilteredResolvedObjects(context, filter).stream()
-        .map(ConfigObject::getData)
+  public List<T> getAllResolvedConfigData(RequestContext context) {
+    Map<S, T> configDataMap = getConfigDataMap(context);
+    return configDataMap.values().stream()
+        .map(configData -> resolveConfig(extractScope(configData), configDataMap))
         .collect(Collectors.toUnmodifiableList());
   }
 
-  public Optional<ContextualConfigObject<T>> getFilteredResolvedObject(
-      RequestContext context, F filter, S scope) {
-    Map<S, ContextualConfigObject<T>> configObjectsMap = getConfigObjectsMap(context, filter);
-    return Optional.ofNullable(configObjectsMap.get(scope))
-        .map(
-            configObject ->
-                ContextualConfigObjectImpl.updateData(
-                    configObject, resolveConfig(scope, configObjectsMap)));
+  public Optional<T> getResolvedData(RequestContext context, S scope, F filter) {
+    Map<S, T> configDataMap = getConfigDataMap(context, filter);
+    return Optional.ofNullable(configDataMap.get(scope))
+        .map(configData -> resolveConfig(scope, configDataMap));
   }
 
-  public Optional<T> getFilteredResolvedData(RequestContext context, F filter, S scope) {
-    return getFilteredResolvedObject(context, filter, scope).map(ConfigObject::getData);
+  public Optional<T> getResolvedData(RequestContext context, S scope) {
+    Map<S, T> configDataMap = getConfigDataMap(context);
+    return Optional.ofNullable(configDataMap.get(scope))
+        .map(configData -> resolveConfig(scope, configDataMap));
   }
 
   /**
    * Method to extract scope object from given config object
    *
-   * @param configObject
+   * @param configData
    * @return Scope object
    */
-  protected abstract S extractScope(T configObject);
+  protected abstract S extractScope(T configData);
 
   /**
    * Method to return scopes with which the given scope needs to be resolved in increasing order of
@@ -122,17 +112,19 @@ public abstract class ScopeResolutionIdentifiedObjectStoreWithFilter<T extends M
     }
   }
 
-  private Map<S, ContextualConfigObject<T>> getConfigObjectsMap(RequestContext context, F filter) {
-    List<ContextualConfigObject<T>> configObjects = getAllFilteredObjects(context, filter);
-    return configObjects.stream()
-        .collect(
-            Collectors.toMap(
-                configObject -> extractScope(configObject.getData()), Function.identity()));
+  private Map<S, T> getConfigDataMap(RequestContext context, F filter) {
+    List<T> configData = getAllFilteredConfigData(context, filter);
+    return configData.stream().collect(Collectors.toMap(this::extractScope, Function.identity()));
   }
 
-  private T resolveConfig(S scope, Map<S, ContextualConfigObject<T>> configObjectsMap) {
+  private Map<S, T> getConfigDataMap(RequestContext context) {
+    List<T> configData = getAllConfigData(context);
+    return configData.stream().collect(Collectors.toMap(this::extractScope, Function.identity()));
+  }
+
+  private T resolveConfig(S scope, Map<S, T> configDataMap) {
     return getResolutionScopesWithIncreasingPriority(scope).stream()
-        .flatMap(scopeObject -> Optional.ofNullable(configObjectsMap.get(scope).getData()).stream())
+        .flatMap(scopeObject -> Optional.ofNullable(configDataMap.get(scope)).stream())
         .reduce(defaultConfig, this::mergeConfigs);
   }
 }

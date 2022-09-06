@@ -45,6 +45,11 @@ public abstract class IdentifiedObjectStoreWithFilter<T, F> extends IdentifiedOb
     return getFilteredObject(context, id, filter).map(ConfigObject::getData);
   }
 
+  protected ContextualConfigObject<T> updateConfigData(
+      ContextualConfigObject<T> configObject, T updatedData) {
+    return ((ContextualConfigObjectImpl) configObject).toBuilder().data(updatedData).build();
+  }
+
   /**
    * Method to obtain filtered config A config object can consist of multiple configs, e.g. array,
    * which can be partially filtered and returned. In cases where filter applies to entire config
@@ -59,6 +64,6 @@ public abstract class IdentifiedObjectStoreWithFilter<T, F> extends IdentifiedOb
   private Optional<ContextualConfigObject<T>> filterObject(
       ContextualConfigObject<T> configObject, F filter) {
     return filterConfigData(configObject.getData(), filter)
-        .map(filteredData -> ContextualConfigObjectImpl.updateData(configObject, filteredData));
+        .map(filteredData -> updateConfigData(configObject, filteredData));
   }
 }
