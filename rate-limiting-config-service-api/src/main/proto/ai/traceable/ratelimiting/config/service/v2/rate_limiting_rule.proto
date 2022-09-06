@@ -166,6 +166,7 @@ message ResourceAccessThresholdConfig {
   oneof threshold_config {
     RollingWindowThresholdConfig rolling_window_threshold_config = 3;
     ValueBasedThresholdConfig value_based_threshold_config = 4;
+    DynamicThresholdConfig dynamic_threshold_config = 5;
   }
 
   message RollingWindowThresholdConfig {
@@ -176,6 +177,12 @@ message ResourceAccessThresholdConfig {
   message ValueBasedThresholdConfig {
     int64 unique_values_allowed = 1;
     string duration_iso = 2;
+  }
+
+  message DynamicThresholdConfig {
+    int64  percent_exceeding_mean_allowed = 1;
+    string duration_iso = 2;
+    string mean_calculation_duration_iso = 3;
   }
 }
 
