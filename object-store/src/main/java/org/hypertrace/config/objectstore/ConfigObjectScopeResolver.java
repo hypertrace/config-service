@@ -11,9 +11,9 @@ import java.util.stream.Collectors;
 /**
  * Resolver class to resolve configs based on scope
  *
- * @param <T>
- * @param <U>
- * @param <S>
+ * @param <T> Raw config type
+ * @param <U> Resolved config type
+ * @param <S> Scope
  */
 public abstract class ConfigObjectScopeResolver<T extends Message, U extends Message, S> {
 
