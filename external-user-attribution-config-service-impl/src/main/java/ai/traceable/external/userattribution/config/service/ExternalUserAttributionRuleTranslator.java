@@ -26,7 +26,8 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.He
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.JwtUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.RequestHeaderUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ResponseBodyUserAttributionRuleData;
-import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.EnvironmentScope;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.UrlScope;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
 import java.util.Collections;
@@ -49,6 +50,7 @@ class ExternalUserAttributionRuleTranslator {
   private static final List<String> AUTH_HEADER_KEYS =
       List.of("http.request.header.authorization", "rpc.request.metadata.authorization");
   private static final String URL_KEY = "http.url";
+  private static final String ENVIRONMENT_NAME_KEY = "deployment.environment";
   private static final List<String> REQUEST_HEADER_KEY_FORMAT_STRINGS =
       List.of("http.request.header.%s", "rpc.request.metadata.%s");
   private final Map<DefaultParsingRuleKey, List<CustomParsingRule>> defaultParsingRules;
@@ -84,34 +86,53 @@ class ExternalUserAttributionRuleTranslator {
     return this.translateRuleContent(rule)
         .map(ExternalUserAttributionRule::toBuilder)
         .map(externalRuleBuilder -> externalRuleBuilder.setRuleId(rule.getId()))
-        .map(externalRuleBuilder -> translateRuleScope(externalRuleBuilder, rule.getScope()))
+        .map(externalRuleBuilder -> translateRuleScope(externalRuleBuilder, rule))
         .map(Builder::build);
   }
 
   private ExternalUserAttributionRule.Builder translateRuleScope(
-      ExternalUserAttributionRule.Builder builder, UserAttributionRuleScope scope) {
-    ExternalUserAttributionRule.SpanFilter.Builder spanFilterBuilder =
-        ExternalUserAttributionRule.SpanFilter.newBuilder();
-
-    scope.getCustomScope().getUrlScopesList().stream()
-        .map(UserAttributionRuleScope.UrlScope::getUrlMatchRegex)
-        .forEach(
-            urlRegex ->
-                spanFilterBuilder.addRequiredMatchingAttributes(
-                    ExternalUserAttributionRule.AttributePredicate.newBuilder()
-                        .setNamePredicate(
-                            buildStringPredicate(
-                                ExternalUserAttributionRule.Operator.OPERATOR_EQUALS, URL_KEY))
-                        .setValuePredicate(
-                            buildStringPredicate(
-                                ExternalUserAttributionRule.Operator.OPERATOR_MATCHES_REGEX,
-                                urlRegex))));
-
-    if (spanFilterBuilder.getRequiredMatchingAttributesCount() > 0) {
-      builder.setSpanFilter(spanFilterBuilder);
+      ExternalUserAttributionRule.Builder builder, UserAttributionRule rule) {
+    if (rule.getData().hasCustomData()) { // no condition added for a custom Yaml rule
+      return builder;
     }
 
+    List<String> urlScopes =
+        rule.getScope().getCustomScope().getUrlScopesList().stream()
+            .map(UrlScope::getUrlMatchRegex)
+            .collect(Collectors.toUnmodifiableList());
+    getConditionRegex(urlScopes)
+        .ifPresent(
+            urlConditionRegex ->
+                builder
+                    .getTransformedExternalUserAttributionRuleBuilder()
+                    .addConditions(
+                        Condition.newBuilder()
+                            .setKey(URL_KEY)
+                            .setRegex(urlConditionRegex)
+                            .build()));
+
+    List<String> environmentScopes =
+        rule.getScope().getCustomScope().getEnvironmentScopesList().stream()
+            .map(EnvironmentScope::getEnvironmentName)
+            .collect(Collectors.toUnmodifiableList());
+    getConditionRegex(environmentScopes)
+        .ifPresent(
+            environmentConditionRegex ->
+                builder
+                    .getTransformedExternalUserAttributionRuleBuilder()
+                    .addConditions(
+                        Condition.newBuilder()
+                            .setKey(ENVIRONMENT_NAME_KEY)
+                            .setRegex(environmentConditionRegex)
+                            .build()));
     return builder;
+  }
+
+  private Optional<String> getConditionRegex(List<String> allowedValues) {
+    if (allowedValues.isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.of(String.join("|", allowedValues));
   }
 
   private Stream<ExternalUserAttributionRule> translateRuleContent(UserAttributionRule rule) {
@@ -362,14 +383,6 @@ class ExternalUserAttributionRuleTranslator {
 
   private ParsingTarget buildRegexCaptureGroup(String regex) {
     return ParsingTarget.newBuilder().setRegexCaptureGroup(regex).build();
-  }
-
-  private ExternalUserAttributionRule.StringPredicate buildStringPredicate(
-      ExternalUserAttributionRule.Operator operator, String value) {
-    return ExternalUserAttributionRule.StringPredicate.newBuilder()
-        .setValue(value)
-        .setOperator(operator)
-        .build();
   }
 
   private enum DefaultParsingRuleKey {

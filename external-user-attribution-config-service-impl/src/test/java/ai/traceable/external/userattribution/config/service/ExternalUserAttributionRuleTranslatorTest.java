@@ -16,6 +16,9 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.Re
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ResponseBodyUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.RuleCondition;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.CustomScope;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.EnvironmentScope;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.UrlScope;
 import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Parser;
 import com.typesafe.config.ConfigFactory;
@@ -35,33 +38,7 @@ class ExternalUserAttributionRuleTranslatorTest {
   @Test
   void translatesCustomRule() {
     assertJsonEquals(
-        "{"
-            + " raw_external_user_attribution_rule: { yaml: \"rule-yaml\"},"
-            + " span_filter: {"
-            + "  required_matching_attributes: ["
-            + "   {"
-            + "     name_predicate: {"
-            + "      value: \"http.url\","
-            + "      operator: OPERATOR_EQUALS"
-            + "     },"
-            + "     value_predicate: {"
-            + "      value: \"regex1\","
-            + "      operator: OPERATOR_MATCHES_REGEX"
-            + "     }"
-            + "   },"
-            + "   {"
-            + "     name_predicate: {"
-            + "      value: \"http.url\","
-            + "      operator: OPERATOR_EQUALS"
-            + "     },"
-            + "     value_predicate: {"
-            + "      value: \"regex2\","
-            + "      operator: OPERATOR_MATCHES_REGEX"
-            + "     }"
-            + "   }"
-            + "  ]"
-            + " }"
-            + " }",
+        "{ raw_external_user_attribution_rule: { yaml: \"rule-yaml\"}}",
         translator.translateRules(
             List.of(
                 UserAttributionRule.newBuilder()
@@ -69,20 +46,6 @@ class ExternalUserAttributionRuleTranslatorTest {
                         UserAttributionRuleData.newBuilder()
                             .setCustomData(
                                 CustomUserAttributionRuleData.newBuilder().setYaml("rule-yaml")))
-                    .setScope(
-                        UserAttributionRuleScope.newBuilder()
-                            .setCustomScope(
-                                UserAttributionRuleScope.CustomScope.newBuilder()
-                                    .addUrlScopes(
-                                        UserAttributionRuleScope.UrlScope.newBuilder()
-                                            .setUrlMatchRegex("regex1")
-                                            .build())
-                                    .addUrlScopes(
-                                        UserAttributionRuleScope.UrlScope.newBuilder()
-                                            .setUrlMatchRegex("regex2")
-                                            .build())
-                                    .build())
-                            .build())
                     .build())));
   }
 
@@ -370,6 +333,68 @@ class ExternalUserAttributionRuleTranslatorTest {
                                     .setRoleClaim("data-claim")
                                     .setRoleLocation(
                                         EncodedLocation.newBuilder().setJsonPath("$.role"))))
+                    .build())));
+  }
+
+  @Test
+  void translatesRequestHeaderRuleWithScopes() {
+    assertJsonEquals(
+        List.of(
+            "{"
+                + "  transformed_external_user_attribution_rule: {\n"
+                + "    attribute_key: \"http.request.header.id-header\",\n"
+                + "    type: TYPE_ID,\n"
+                + "    conditions: ["
+                + "    {\n"
+                + "      key: \"http.url\",\n"
+                + "      regex: \"^url1|url2\"\n"
+                + "    },\n"
+                + "    {\n"
+                + "      key: \"deployment.environment\",\n"
+                + "      regex: \"env1\"\n"
+                + "    }\n"
+                + "    ]"
+                + "  }"
+                + "}",
+            "{"
+                + "  transformed_external_user_attribution_rule: {\n"
+                + "    attribute_key: \"rpc.request.metadata.id-header\",\n"
+                + "    type: TYPE_ID,\n"
+                + "    conditions: ["
+                + "    {\n"
+                + "      key: \"http.url\",\n"
+                + "      regex: \"^url1|url2\"\n"
+                + "    },\n"
+                + "    {\n"
+                + "      key: \"deployment.environment\",\n"
+                + "      regex: \"env1\"\n"
+                + "    }\n"
+                + "    ]"
+                + "  }"
+                + "}"),
+        translator.translateRules(
+            List.of(
+                UserAttributionRule.newBuilder()
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setRequestHeaderData(
+                                RequestHeaderUserAttributionRuleData.newBuilder()
+                                    .setUserIdLocation(
+                                        HeaderLocation.newBuilder().setHeaderName("id-header"))))
+                    .setScope(
+                        UserAttributionRuleScope.newBuilder()
+                            .setCustomScope(
+                                CustomScope.newBuilder()
+                                    .addUrlScopes(
+                                        UrlScope.newBuilder().setUrlMatchRegex("^url1").build())
+                                    .addUrlScopes(
+                                        UrlScope.newBuilder().setUrlMatchRegex("url2").build())
+                                    .addEnvironmentScopes(
+                                        EnvironmentScope.newBuilder()
+                                            .setEnvironmentName("env1")
+                                            .build())
+                                    .build())
+                            .build())
                     .build())));
   }
 
