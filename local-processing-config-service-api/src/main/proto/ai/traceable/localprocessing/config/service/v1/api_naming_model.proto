@@ -5,6 +5,8 @@ package ai.traceable.localprocessing.config.service.v1;
 option java_multiple_files = true;
 option go_package = "github.com/Traceableai/config-service/localprocessing/v1";
 
+import "google/protobuf/duration.proto";
+
 message GetApiNamingModelRequest {
   repeated ServiceRequest service_requests = 1;
   optional string environment = 2;
@@ -18,6 +20,7 @@ message ServiceRequest {
 
 message GetApiNamingModelResponse {
   HttpApiNamingModelResponse http_api_naming_response = 1;
+  google.protobuf.Duration refresh_after_duration = 2;
 }
 
 message HttpApiNamingModelResponse {
