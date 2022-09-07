@@ -10,6 +10,7 @@ import com.google.inject.Provides;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.Channel;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
@@ -18,12 +19,17 @@ public class RateLimitingConfigServiceModule extends AbstractModule {
   private final Channel channel;
   private final RateLimitingConfigServiceConfig config;
   private final ActivityEventProducer activityEventProducer;
+  private final ConfigChangeEventGenerator configChangeEventGenerator;
 
   RateLimitingConfigServiceModule(
-      Channel channel, Config config, ActivityEventProducer activityEventProducer) {
+      Channel channel,
+      Config config,
+      ActivityEventProducer activityEventProducer,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     this.channel = channel;
     this.config = new RateLimitingConfigServiceConfig(config);
     this.activityEventProducer = activityEventProducer;
+    this.configChangeEventGenerator = configChangeEventGenerator;
   }
 
   @Override
@@ -33,6 +39,7 @@ public class RateLimitingConfigServiceModule extends AbstractModule {
     bind(RateLimitingConfigServiceConfig.class).toInstance(config);
     bind(RulesManager.class).to(RateLimitingRulesManager.class);
     bind(RulesValidator.class).to(RateLimitingRulesValidator.class);
+    bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
   }
 
   @Provides

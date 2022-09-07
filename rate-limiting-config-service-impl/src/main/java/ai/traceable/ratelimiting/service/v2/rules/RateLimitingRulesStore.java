@@ -10,6 +10,7 @@ import java.util.Optional;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,11 +19,14 @@ public class RateLimitingRulesStore extends IdentifiedObjectStore<RateLimitingRu
   Logger log = LoggerFactory.getLogger(RateLimitingRulesManager.class);
 
   @Inject
-  public RateLimitingRulesStore(ConfigServiceBlockingStub configServiceBlockingStub) {
+  public RateLimitingRulesStore(
+      ConfigServiceBlockingStub configServiceBlockingStub,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
         configServiceBlockingStub,
         RATE_LIMITING_RULE_CONFIG_RESOURCE_NAMESPACE,
-        RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME);
+        RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME,
+        configChangeEventGenerator);
   }
 
   @Override

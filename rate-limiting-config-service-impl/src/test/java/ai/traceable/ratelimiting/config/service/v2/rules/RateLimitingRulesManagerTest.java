@@ -25,6 +25,7 @@ import io.grpc.StatusRuntimeException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
@@ -47,7 +48,10 @@ public class RateLimitingRulesManagerTest {
     mockConfigService.start();
     ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
-    RateLimitingRulesStore rulesStore = new RateLimitingRulesStore(configServiceBlockingStub);
+    ConfigChangeEventGenerator mockConfigChangeEventGenerator =
+        mock(ConfigChangeEventGenerator.class);
+    RateLimitingRulesStore rulesStore =
+        new RateLimitingRulesStore(configServiceBlockingStub, mockConfigChangeEventGenerator);
     uuidGenerator = mock(UuidGenerator.class);
     rulesManager = new RateLimitingRulesManager(rulesStore, uuidGenerator);
   }

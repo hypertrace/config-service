@@ -121,7 +121,8 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                 RateLimitingConfigServiceFactory.build( // v2
                     providers.getLocalChannel(),
                     providers.getConfig(),
-                    providers.getActivityEventProducer())),
+                    providers.getActivityEventProducer(),
+                    providers.getChangeEventGenerator())),
             wrap(
                 SpanProcessingConfigServiceFactory.build(
                     providers.getLocalChannel(), providers.getConfig())),
