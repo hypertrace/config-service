@@ -23,31 +23,25 @@ public abstract class IdentifiedObjectStoreWithFilter<T, F> extends IdentifiedOb
     super(configServiceBlockingStub, resourceNamespace, resourceName, configChangeEventGenerator);
   }
 
-  public List<ContextualConfigObject<T>> getAllFilteredObjects(RequestContext context, F filter) {
+  public List<ContextualConfigObject<T>> getAllObjects(RequestContext context, F filter) {
     return getAllObjects(context).stream()
         .flatMap(configObject -> filterObject(configObject, filter).stream())
         .collect(Collectors.toUnmodifiableList());
   }
 
-  public List<T> getAllFilteredConfigData(RequestContext context, F filter) {
-    return getAllFilteredObjects(context, filter).stream()
+  public List<T> getAllConfigData(RequestContext context, F filter) {
+    return getAllObjects(context, filter).stream()
         .map(ConfigObject::getData)
         .collect(Collectors.toUnmodifiableList());
   }
 
-  public Optional<ContextualConfigObject<T>> getFilteredObject(
-      RequestContext context, String contextId, F filter) {
-    return getObject(context, contextId)
-        .flatMap(configObject -> filterObject(configObject, filter));
+  public Optional<ContextualConfigObject<T>> getObject(
+      RequestContext context, String id, F filter) {
+    return getObject(context, id).flatMap(configObject -> filterObject(configObject, filter));
   }
 
-  public Optional<T> getFilteredData(RequestContext context, String id, F filter) {
-    return getFilteredObject(context, id, filter).map(ConfigObject::getData);
-  }
-
-  protected ContextualConfigObject<T> updateConfigData(
-      ContextualConfigObject<T> configObject, T updatedData) {
-    return ((ContextualConfigObjectImpl) configObject).toBuilder().data(updatedData).build();
+  public Optional<T> getData(RequestContext context, String id, F filter) {
+    return getObject(context, id, filter).map(ConfigObject::getData);
   }
 
   /**
@@ -65,5 +59,10 @@ public abstract class IdentifiedObjectStoreWithFilter<T, F> extends IdentifiedOb
       ContextualConfigObject<T> configObject, F filter) {
     return filterConfigData(configObject.getData(), filter)
         .map(filteredData -> updateConfigData(configObject, filteredData));
+  }
+
+  private ContextualConfigObject<T> updateConfigData(
+      ContextualConfigObject<T> configObject, T updatedData) {
+    return ((ContextualConfigObjectImpl) configObject).toBuilder().data(updatedData).build();
   }
 }
