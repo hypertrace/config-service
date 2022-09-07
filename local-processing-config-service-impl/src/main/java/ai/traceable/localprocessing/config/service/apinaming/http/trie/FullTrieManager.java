@@ -80,8 +80,16 @@ public class FullTrieManager {
 
   private Optional<TrieModel> loadTrieModel(@Nonnull ContextualKey<ServiceScope> key) {
     try {
+      log.debug(
+          "Loading trie model for request context: {}, serviceScope:{}",
+          key.getContext(),
+          key.getData());
       PersistedModel<TrieModel> persistedModel = trieModelStore.loadModel(key.getData());
       if (persistedModel == null) {
+        log.debug(
+            "Trie model loaded for request context: {}, serviceScope:{} is null",
+            key.getContext(),
+            key.getData());
         return Optional.empty();
       }
       return Optional.ofNullable(persistedModel.getModel());
@@ -98,6 +106,10 @@ public class FullTrieManager {
   private Optional<TrieModel> getTrieModel(
       RequestContext requestContext, ServiceScope serviceScope) {
     try {
+      log.debug(
+          "Fetching trie model for request context: {}, serviceScope:{}",
+          requestContext,
+          serviceScope);
       return trieModelCache.get(requestContext.buildInternalContextualKey(serviceScope));
     } catch (Exception e) {
       log.error(

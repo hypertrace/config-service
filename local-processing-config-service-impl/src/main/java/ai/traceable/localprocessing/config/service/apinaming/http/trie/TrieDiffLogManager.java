@@ -30,6 +30,7 @@ import com.typesafe.config.Config;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -43,13 +44,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Slf4j
 public class TrieDiffLogManager {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(TrieDiffLogManager.class);
 
   private static final String CACHE_REFRESH_DURATION =
       "api.naming.config.trieDiffLog.cache.refreshAfterWriteDuration";
@@ -112,6 +109,10 @@ public class TrieDiffLogManager {
   private List<PersistedModel<TrieDiffLogModel>> loadTrieDiffLogModels(
       @Nonnull ContextualKey<DiffLogIdentifier> key) {
     try {
+      log.debug(
+          "Loading diff logs for request context:{}, diffLogIdentifier:{}",
+          key.getContext(),
+          key.getData());
       return retry(
           () ->
               trieDiffLogModelStore
@@ -134,9 +135,17 @@ public class TrieDiffLogManager {
       throws ExecutionException {
     String diffLogDirPath =
         this.getAbsoluteDiffLogDirPath(Path.of(httpApiNamingConfig.getBaseDirectory()), scope);
-    return diffLogsCache.get(
-        requestContext.buildInternalContextualKey(
-            new DiffLogIdentifier(diffLogDirPath, buildModelFilter(agentTimestampMillis))));
+    DiffLogIdentifier diffLogIdentifier =
+        new DiffLogIdentifier(diffLogDirPath, buildModelFilter(agentTimestampMillis));
+    if (log.isDebugEnabled()) {
+      log.debug(
+          "Fetching diff logs for request context:{}, modelScope:{}, agentTimestamp:{}, diffLogIdentifier:{}",
+          requestContext,
+          scope,
+          Instant.ofEpochMilli(agentTimestampMillis),
+          diffLogIdentifier);
+    }
+    return diffLogsCache.get(requestContext.buildInternalContextualKey(diffLogIdentifier));
   }
 
   public List<DiffLog> getAllTrieDiffLogs(
@@ -145,6 +154,13 @@ public class TrieDiffLogManager {
       long agentTimestampMillis,
       Map<TrieNodeType, String> wildcardConfigMap)
       throws ExecutionException {
+    if (log.isDebugEnabled()) {
+      log.debug(
+          "Fetching diff logs for request context: {}, modelScope: {}, agentTimestamp:{}",
+          requestContext,
+          scope,
+          Instant.ofEpochMilli(agentTimestampMillis));
+    }
     return getAllTrieDiffLogs(
         getTrieDiffLogModels(requestContext, scope, agentTimestampMillis), wildcardConfigMap);
   }
@@ -182,7 +198,7 @@ public class TrieDiffLogManager {
     try {
       return (T) retryer.call(callable);
     } catch (ExecutionException | RetryException ex) {
-      LOGGER.error("Error in loading model after retrying", ex);
+      log.error("Error in loading model after retrying", ex);
       throw ex;
     }
   }

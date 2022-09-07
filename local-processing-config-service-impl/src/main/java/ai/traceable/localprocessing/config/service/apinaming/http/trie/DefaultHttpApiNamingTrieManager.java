@@ -9,6 +9,7 @@ import ai.traceable.localprocessing.config.service.v1.FullPattern;
 import ai.traceable.platform.model.store.ServiceScope;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -65,6 +66,16 @@ public class DefaultHttpApiNamingTrieManager implements HttpApiNamingTrieManager
         && agentTimestampMillis != 0
         && trieModelTimestampMillis - agentTimestampMillis
             <= httpApiNamingConfig.getDiffLogsRetentionPeriod()) {
+      if (log.isDebugEnabled()) {
+        log.debug(
+            "Loading diff logs. request context:{}, serviceId:{}, AgentTimestamp:{}, trieModelTimestamp:{},diffLogRetentionPeriod:{}, reloadFullTrie:{}",
+            requestContext,
+            serviceId,
+            Instant.ofEpochMilli(agentTimestampMillis),
+            Instant.ofEpochMilli(trieModelTimestampMillis),
+            httpApiNamingConfig.getDiffLogsRetentionPeriod(),
+            reloadFullTrie);
+      }
       diffLogs =
           trieDiffLogManager.getAllTrieDiffLogs(
               requestContext,
@@ -74,17 +85,31 @@ public class DefaultHttpApiNamingTrieManager implements HttpApiNamingTrieManager
     }
 
     if (!diffLogs.isEmpty()) {
+      long latestDiffLogTimestamp =
+          trieDiffLogManager.getLatestDiffLogTimestamp(
+              requestContext, serviceScope, agentTimestampMillis);
+      if (log.isDebugEnabled()) {
+        log.debug(
+            "Found diff logs. Request context:{}, serviceId:{}, latestDiffLogTimestamp:{} ",
+            requestContext,
+            serviceId,
+            Instant.ofEpochMilli(latestDiffLogTimestamp));
+      }
       return ApiNamingPatterns.newBuilder()
           .setDiffPattern(getDiffPatterns(diffLogs))
-          .setToken(
-              "t="
-                  + trieDiffLogManager.getLatestDiffLogTimestamp(
-                      requestContext, serviceScope, agentTimestampMillis)
-                  + ";v="
-                  + platformTrieVersion)
+          .setToken("t=" + latestDiffLogTimestamp + ";v=" + platformTrieVersion)
           .build();
     } else {
+      log.debug("Empty diff logs. Request context:{}, serviceId:{}", requestContext, serviceId);
       if (agentTimestampMillis < trieModelTimestampMillis) {
+        if (log.isDebugEnabled()) {
+          log.debug(
+              "Reading full trie as agentTimestamp:{} < trieModelTimestamp:{} for request context:{}, serviceId:{}",
+              Instant.ofEpochMilli(agentTimestampMillis),
+              Instant.ofEpochMilli(trieModelTimestampMillis),
+              requestContext,
+              serviceId);
+        }
         Optional<FullPattern> fullPatternMaybe =
             fullTrieManager.getFullPattern(requestContext, serviceScope, httpApiNamingConfigInfo);
         if (fullPatternMaybe.isEmpty()) {
@@ -99,6 +124,14 @@ public class DefaultHttpApiNamingTrieManager implements HttpApiNamingTrieManager
             .setToken("t=" + trieModelTimestampMillis + ";v=" + platformTrieVersion)
             .build();
       } else {
+        if (log.isDebugEnabled()) {
+          log.debug(
+              "Not setting full trie/diff logs as agentTimestamp:{} >= trieModelTimestamp:{} for request context:{}, serviceId:{}",
+              Instant.ofEpochMilli(agentTimestampMillis),
+              Instant.ofEpochMilli(trieModelTimestampMillis),
+              requestContext,
+              serviceId);
+        }
         return ApiNamingPatterns.newBuilder().setToken(trieToken).build();
       }
     }
