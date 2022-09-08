@@ -28,6 +28,7 @@ import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
 import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
 import ai.traceable.ratelimiting.config.service.v2.UserAggregateType;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesValidator;
+import com.google.protobuf.Duration;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
@@ -346,6 +347,152 @@ public class RateLimitingRulesValidatorTest {
     assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request));
   }
 
+  @Test
+  void testDynamicThresholdConfigValidation() {
+    CreateRateLimitingRuleRequest request =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                getRateLimitingRuleDataWithDynamicThresholdCondition(
+                    ResourceAccessThresholdConfig.DynamicThresholdConfig.getDefaultInstance(),
+                    ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT,
+                    UserAggregateType.USER_AGGREGATE_TYPE_PER_USER))
+            .build();
+    Throwable throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request));
+    Status status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(
+        Objects.requireNonNull(status.getDescription())
+            .contains(
+                String.format(
+                    "Expected field value %s but not present",
+                    ResourceAccessThresholdConfig.DynamicThresholdConfig.getDescriptor()
+                        .findFieldByNumber(
+                            ResourceAccessThresholdConfig.DynamicThresholdConfig
+                                .PERCENT_EXCEEDING_MEAN_ALLOWED_FIELD_NUMBER))));
+
+    CreateRateLimitingRuleRequest request1 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                getRateLimitingRuleDataWithDynamicThresholdCondition(
+                    ResourceAccessThresholdConfig.DynamicThresholdConfig.newBuilder()
+                        .setPercentExceedingMeanAllowed(200)
+                        .build(),
+                    ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT,
+                    UserAggregateType.USER_AGGREGATE_TYPE_PER_USER))
+            .build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request1));
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals(
+        "Dynamic threshold config does not have valid mean calculation duration",
+        status.getDescription());
+
+    CreateRateLimitingRuleRequest request2 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                getRateLimitingRuleDataWithDynamicThresholdCondition(
+                    ResourceAccessThresholdConfig.DynamicThresholdConfig.newBuilder()
+                        .setPercentExceedingMeanAllowed(200)
+                        .setMeanCalculationDuration(Duration.newBuilder().setSeconds(10000).build())
+                        .build(),
+                    ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT,
+                    UserAggregateType.USER_AGGREGATE_TYPE_PER_USER))
+            .build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request2));
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals("Dynamic threshold config does not have valid duration", status.getDescription());
+
+    CreateRateLimitingRuleRequest request3 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                getRateLimitingRuleDataWithDynamicThresholdCondition(
+                    ResourceAccessThresholdConfig.DynamicThresholdConfig.newBuilder()
+                        .setPercentExceedingMeanAllowed(200)
+                        .setMeanCalculationDuration(Duration.newBuilder().setSeconds(10000).build())
+                        .setDuration(Duration.newBuilder().setSeconds(10000).build())
+                        .build(),
+                    ApiAggregateType.API_AGGREGATE_TYPE_ACROSS_ENDPOINTS,
+                    UserAggregateType.USER_AGGREGATE_TYPE_ACROSS_USERS))
+            .build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request3));
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals(
+        "Dynamic threshold supports aggregation only on per user and per api endpoint",
+        status.getDescription());
+
+    CreateRateLimitingRuleRequest request4 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                getRateLimitingRuleDataWithDynamicThresholdCondition(
+                    ResourceAccessThresholdConfig.DynamicThresholdConfig.newBuilder()
+                        .setPercentExceedingMeanAllowed(200)
+                        .setMeanCalculationDuration(Duration.newBuilder().setSeconds(10000).build())
+                        .setDuration(Duration.newBuilder().setSeconds(10000).build())
+                        .build(),
+                    ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT,
+                    UserAggregateType.USER_AGGREGATE_TYPE_ACROSS_USERS))
+            .build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request4));
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals(
+        "Dynamic threshold supports aggregation only on per user and per api endpoint",
+        status.getDescription());
+
+    CreateRateLimitingRuleRequest request5 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                getRateLimitingRuleDataWithDynamicThresholdCondition(
+                    ResourceAccessThresholdConfig.DynamicThresholdConfig.newBuilder()
+                        .setPercentExceedingMeanAllowed(200)
+                        .setMeanCalculationDuration(Duration.newBuilder().setSeconds(10000).build())
+                        .setDuration(Duration.newBuilder().setSeconds(10000).build())
+                        .build(),
+                    ApiAggregateType.API_AGGREGATE_TYPE_ACROSS_ENDPOINTS,
+                    UserAggregateType.USER_AGGREGATE_TYPE_PER_USER))
+            .build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request5));
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals(
+        "Dynamic threshold supports aggregation only on per user and per api endpoint",
+        status.getDescription());
+
+    CreateRateLimitingRuleRequest request6 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                getRateLimitingRuleDataWithDynamicThresholdCondition(
+                    ResourceAccessThresholdConfig.DynamicThresholdConfig.newBuilder()
+                        .setPercentExceedingMeanAllowed(200)
+                        .setMeanCalculationDuration(Duration.newBuilder().setSeconds(10000).build())
+                        .setDuration(Duration.newBuilder().setSeconds(10000).build())
+                        .build(),
+                    ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT,
+                    UserAggregateType.USER_AGGREGATE_TYPE_PER_USER))
+            .build();
+    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request6));
+  }
+
   private RegionCondition buildRegionCondition(List<String> regions) {
     return RegionCondition.newBuilder().addAllRegions(regions).build();
   }
@@ -389,6 +536,38 @@ public class RateLimitingRulesValidatorTest {
                         .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
                         .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
                         .setValueBasedThresholdConfig(valueBasedThresholdConfig)
+                        .build()))
+        .build();
+  }
+
+  private RateLimitingRuleData getRateLimitingRuleDataWithDynamicThresholdCondition(
+      ResourceAccessThresholdConfig.DynamicThresholdConfig dynamicThresholdConfig,
+      ApiAggregateType apiAggregateType,
+      UserAggregateType userAggregateType) {
+    return RateLimitingRuleData.newBuilder()
+        .setName("rule1")
+        .setCategory(Category.CATEGORY_RATE_LIMITING)
+        .setEnabled(true)
+        .setCondition(
+            Condition.newBuilder()
+                .setLeafCondition(
+                    LeafCondition.newBuilder()
+                        .setRegionCondition(
+                            RegionCondition.newBuilder().addAllRegions(List.of("IND", "US")))))
+        .addThresholdActionConfigs(
+            ThresholdActionConfig.newBuilder()
+                .addActions(
+                    Action.newBuilder()
+                        .setAlert(
+                            Action.Alert.newBuilder()
+                                .setEventSeverity(Action.EventSeverity.EVENT_SEVERITY_HIGH)
+                                .build())
+                        .build())
+                .addResourceAccessThresholdConfigs(
+                    ResourceAccessThresholdConfig.newBuilder()
+                        .setApiAggregateType(apiAggregateType)
+                        .setUserAggregateType(userAggregateType)
+                        .setDynamicThresholdConfig(dynamicThresholdConfig)
                         .build()))
         .build();
   }

@@ -5,6 +5,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDef
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
 import ai.traceable.ratelimiting.config.service.v2.Action;
+import ai.traceable.ratelimiting.config.service.v2.ApiAggregateType;
 import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
@@ -25,6 +26,7 @@ import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
 import ai.traceable.ratelimiting.config.service.v2.ScopeCondition;
 import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
 import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleRequest;
+import ai.traceable.ratelimiting.config.service.v2.UserAggregateType;
 import com.google.protobuf.Message;
 import io.grpc.Status;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -245,6 +247,20 @@ public class RateLimitingRulesValidator implements RulesValidator {
         validateValueBasedThresholdConfig(
             resourceAccessThresholdConfig.getValueBasedThresholdConfig());
         break;
+      case DYNAMIC_THRESHOLD_CONFIG:
+        validateDynamicThresholdConfig(resourceAccessThresholdConfig.getDynamicThresholdConfig());
+        if (!resourceAccessThresholdConfig
+                .getUserAggregateType()
+                .equals(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+            || !resourceAccessThresholdConfig
+                .getApiAggregateType()
+                .equals(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)) {
+          throw Status.INVALID_ARGUMENT
+              .withDescription(
+                  "Dynamic threshold supports aggregation only on per user and per api endpoint")
+              .asRuntimeException();
+        }
+        break;
       default:
         throwInvalidArgumentException(
             String.format(
@@ -272,6 +288,24 @@ public class RateLimitingRulesValidator implements RulesValidator {
     validateNonDefaultPresenceOrThrow(
         valueBasedThresholdConfig,
         ResourceAccessThresholdConfig.ValueBasedThresholdConfig.DURATION_ISO_FIELD_NUMBER);
+  }
+
+  private void validateDynamicThresholdConfig(
+      ResourceAccessThresholdConfig.DynamicThresholdConfig dynamicThresholdConfig) {
+    validateNonDefaultPresenceOrThrow(
+        dynamicThresholdConfig,
+        ResourceAccessThresholdConfig.DynamicThresholdConfig
+            .PERCENT_EXCEEDING_MEAN_ALLOWED_FIELD_NUMBER);
+    if (!dynamicThresholdConfig.hasMeanCalculationDuration()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Dynamic threshold config does not have valid mean calculation duration")
+          .asRuntimeException();
+    }
+    if (!dynamicThresholdConfig.hasDuration()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Dynamic threshold config does not have valid duration")
+          .asRuntimeException();
+    }
   }
 
   private void validateAction(Action action) {
