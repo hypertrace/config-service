@@ -80,6 +80,7 @@ enum ParamValueType {
   PARAM_VALUE_TYPE_HTML = 14;
   PARAM_VALUE_TYPE_RICH_TEXT_HTML = 15;
   PARAM_VALUE_TYPE_FREE_TEXT = 16;
+  PARAM_VALUE_TYPE_NULL = 17;
 }
 
 message AttributeOverrideIdentifier {
