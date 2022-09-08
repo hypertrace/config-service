@@ -1,12 +1,24 @@
 package ai.traceable.iprange.config.service.rules;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.IpAddressParsingUtils;
 import ai.traceable.iprange.config.service.utils.UuidGenerator;
-import ai.traceable.iprange.config.service.v1.*;
+import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
+import ai.traceable.iprange.config.service.v1.EnvironmentScope;
+import ai.traceable.iprange.config.service.v1.ExpirationDetails;
+import ai.traceable.iprange.config.service.v1.GetRulesFilter;
+import ai.traceable.iprange.config.service.v1.IpRangeRule;
+import ai.traceable.iprange.config.service.v1.IpRangeRuleDetails;
+import ai.traceable.iprange.config.service.v1.RuleAction;
+import ai.traceable.iprange.config.service.v1.RuleScope;
+import ai.traceable.iprange.config.service.v1.UpdateIpRangeRuleRequest;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Arrays;
@@ -16,7 +28,11 @@ import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 class IpRangeRulesManagerTest {
 
@@ -72,6 +88,12 @@ class IpRangeRulesManagerTest {
               .setInternal(false)
               .addAllIpRanges(Arrays.asList("16.16.16.16/16"))
               .addAllIpAddresses(Arrays.asList("4.3.2.1"))
+              .setRuleScope(
+                  RuleScope.newBuilder()
+                      .setEnvironmentScope(
+                          EnvironmentScope.newBuilder()
+                              .addEnvironmentIds("env1")
+                              .addEnvironmentIds("env2")))
               .build();
 
       IpRangeRuleDetails ipRangeRuleDetails2 =
@@ -114,11 +136,35 @@ class IpRangeRulesManagerTest {
               requestContext, GetRulesFilter.newBuilder().addRuleIds("First-test").build());
       assertEquals(List.of(ipRangeRule1), resultIpRules1);
 
-      // Filter by interal and name is present
+      // Filter by internal and name is present
       List<IpRangeRule> resultIpRules2 =
           rulesManager.getIpRangeRules(
               requestContext, GetRulesFilter.newBuilder().setInternal(true).build());
       assertEquals(List.of(ipRangeRule2), resultIpRules2);
+
+      // Filter by env
+      assertEquals(
+          List.of(ipRangeRule2, ipRangeRule1),
+          rulesManager.getIpRangeRules(
+              requestContext,
+              GetRulesFilter.newBuilder()
+                  .setRuleScope(
+                      RuleScope.newBuilder()
+                          .setEnvironmentScope(
+                              EnvironmentScope.newBuilder()
+                                  .addEnvironmentIds("env1")
+                                  .addEnvironmentIds("env3")))
+                  .build()));
+      assertEquals(
+          List.of(ipRangeRule2),
+          rulesManager.getIpRangeRules(
+              requestContext,
+              GetRulesFilter.newBuilder()
+                  .setRuleScope(
+                      RuleScope.newBuilder()
+                          .setEnvironmentScope(
+                              EnvironmentScope.newBuilder().addEnvironmentIds("env3")))
+                  .build()));
     }
   }
 

@@ -4,7 +4,6 @@ import ai.traceable.config.utils.IpAddressParsingUtils;
 import ai.traceable.config.utils.IpAddressParsingUtils.IpParsingResults;
 import ai.traceable.iprange.config.service.utils.UuidGenerator;
 import ai.traceable.iprange.config.service.v1.*;
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import java.time.Clock;
@@ -12,7 +11,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -39,32 +37,10 @@ class IpRangeRulesManager implements RulesManager {
   @Override
   public List<IpRangeRule> getIpRangeRules(RequestContext requestContext, GetRulesFilter filter) {
 
-    List<IpRangeRule> ipRangeRules =
-        ipRangeRulesStore.getAllObjects(requestContext).stream()
-            .map(ConfigObject::getData)
-            .collect(Collectors.toList());
-
-    if (filter != GetRulesFilter.getDefaultInstance()) {
-      return ipRangeRules.stream()
-          .filter(
-              rule -> {
-                boolean ruleIdAccept =
-                    filter.getRuleIdsCount() == 0 || filter.getRuleIdsList().contains(rule.getId());
-
-                boolean ruleActionTypeAccept =
-                    !(filter.hasRuleAction()
-                        && rule.getRuleDetails().getRuleAction() != filter.getRuleAction());
-
-                boolean disabledAccept =
-                    !(filter.hasDisabled() && rule.getDisabled() != filter.getDisabled());
-
-                boolean internalAccept =
-                    !(filter.hasInternal() && rule.getInternal() != filter.getInternal());
-                return ruleIdAccept && ruleActionTypeAccept && disabledAccept && internalAccept;
-              })
-          .collect(ImmutableList.toImmutableList());
+    if (filter.equals(GetRulesFilter.getDefaultInstance())) {
+      return ipRangeRulesStore.getAllConfigData(requestContext);
     }
-    return ImmutableList.copyOf(ipRangeRules);
+    return ipRangeRulesStore.getAllConfigData(requestContext, filter);
   }
 
   @Override
