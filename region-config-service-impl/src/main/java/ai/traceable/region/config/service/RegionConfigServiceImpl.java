@@ -18,6 +18,7 @@ import ai.traceable.region.config.service.v1.GetDetailedRegionsRequest;
 import ai.traceable.region.config.service.v1.GetDetailedRegionsResponse;
 import ai.traceable.region.config.service.v1.GetRegionRequest;
 import ai.traceable.region.config.service.v1.GetRegionResponse;
+import ai.traceable.region.config.service.v1.GetRegionRulesFilter;
 import ai.traceable.region.config.service.v1.GetRegionsRequest;
 import ai.traceable.region.config.service.v1.GetRegionsResponse;
 import ai.traceable.region.config.service.v1.Region;
@@ -108,7 +109,7 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
       GetAllRegionRulesRequest request,
       StreamObserver<GetAllRegionRulesResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
-    List<RegionRule> regionRules = rulesManager.getRegionRules(requestContext);
+    List<RegionRule> regionRules = rulesManager.getRegionRules(requestContext, request.getFilter());
     responseObserver.onNext(GetAllRegionRulesResponse.newBuilder().addAllRule(regionRules).build());
     responseObserver.onCompleted();
   }
@@ -196,6 +197,7 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
   }
 
   private Supplier<List<RegionRule>> getAllRegionsRulesSupplier(RequestContext requestContext) {
-    return () -> rulesManager.getRegionRules(requestContext);
+    return () ->
+        rulesManager.getRegionRules(requestContext, GetRegionRulesFilter.getDefaultInstance());
   }
 }

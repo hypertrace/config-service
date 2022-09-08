@@ -5,115 +5,134 @@ package ai.traceable.region.config.service.v1;
 option java_multiple_files = true;
 
 message GetRegionsRequest {
-    RegionsFilter filter = 1;
+  RegionsFilter filter = 1;
 }
 
 message RegionsFilter {
-    repeated string id = 1;
+  repeated string id = 1;
 }
 
 message GetRegionsResponse {
-    repeated Region region = 1;
+  repeated Region region = 1;
 }
 
 message GetRegionRequest {
-    string id = 1;
+  string id = 1;
 }
 
 message GetRegionResponse {
-    Region region = 1;
+  Region region = 1;
 }
 
 message GetDetailedRegionsRequest {
-    RegionsFilter filter = 1;
+  RegionsFilter filter = 1;
 }
 
 message GetDetailedRegionsResponse {
-    repeated DetailedRegion region = 1;
+  repeated DetailedRegion region = 1;
 }
 
 message Region {
-    string id = 1;
-    string name = 2;
+  string id = 1;
+  string name = 2;
 }
 
 message DetailedRegion {
-    string id = 1;
-    string name = 2;
-    repeated IpRange ip_range = 3;
+  string id = 1;
+  string name = 2;
+  repeated IpRange ip_range = 3;
 }
 
 message IpRange {
-    oneof range {
-        IpV4Range ipv4_range = 1;
-    }
+  oneof range {
+    IpV4Range ipv4_range = 1;
+  }
 }
 
 message IpV4Range {
-    int64 start_ip = 1;
-    int64 end_ip = 2;
+  int64 start_ip = 1;
+  int64 end_ip = 2;
+}
+
+message GetRegionRulesFilter {
+  RuleScope rule_scope = 1;
 }
 
 message GetAllRegionRulesRequest {
+  GetRegionRulesFilter filter = 1;
 }
 
 message GetAllRegionRulesResponse {
-    repeated RegionRule rule = 1;
+  repeated RegionRule rule = 1;
 }
 
 message CreateRegionRuleRequest {
-    repeated string region_id = 1;
-    string name = 2;
-    RegionRuleActionType action_type = 3;
-    ExpirationDetails expiration_details = 4;
+  repeated string region_id = 1;
+  string name = 2;
+  RegionRuleActionType action_type = 3;
+  ExpirationDetails expiration_details = 4;
+  RuleScope rule_scope = 5;
 }
 
 message CreateRegionRuleResponse {
-    RegionRule rule = 1;
+  RegionRule rule = 1;
 }
 
 message UpdateRegionRuleRequest {
-    string id = 1;
-    repeated string region_id = 2;
-    string name = 3;
-    RegionRuleActionType action_type = 4;
-    ExpirationDetails expiration_details = 5;
+  string id = 1;
+  repeated string region_id = 2;
+  string name = 3;
+  RegionRuleActionType action_type = 4;
+  ExpirationDetails expiration_details = 5;
+  RuleScope rule_scope = 6;
 }
 
 message UpdateRegionRuleResponse {
-    RegionRule rule = 1;
+  RegionRule rule = 1;
 }
 
 message DeleteRegionRuleRequest {
-    string id = 1;
+  string id = 1;
 }
 
 message DeleteRegionRuleResponse {
 }
 
 message ExpirationDetails {
-    oneof expiration {
-        // Duration represented in ISO 8601 duration format.
-        string duration = 1;
-    }
+  oneof expiration {
+    // Duration represented in ISO 8601 duration format.
+    string duration = 1;
+  }
 }
 
 message RegionRule {
-    string id = 1;
-    repeated string region_id = 2;
-    string name = 3;
-    RegionRuleActionType action_type = 4;
-    ExpirationDetails expiration_details = 5;
-    message ExpirationDetails {
-        // Duration represented in ISO 8601 duration format.
-        string duration = 1;
-        int64 timestamp_millis = 2;
-    }
+  string id = 1;
+  repeated string region_id = 2;
+  string name = 3;
+  RegionRuleActionType action_type = 4;
+  ExpirationDetails expiration_details = 5;
+  RuleScope rule_scope = 6;
+
+  message ExpirationDetails {
+    // Duration represented in ISO 8601 duration format.
+    string duration = 1;
+    int64 timestamp_millis = 2;
+  }
+}
+
+message RuleScope {
+  oneof scope { // if no option selected, default is customer scope (all environments)
+    EnvironmentScope environment_scope = 1;
+  }
+}
+
+message EnvironmentScope {
+  repeated string environment_ids = 1;
 }
 
 enum RegionRuleActionType {
-    REGION_RULE_ACTION_TYPE_UNSPECIFIED = 0;
-    REGION_RULE_ACTION_TYPE_BLOCK = 1;
-    REGION_RULE_ACTION_TYPE_ALLOW = 2;
-    REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT = 3;
+  REGION_RULE_ACTION_TYPE_UNSPECIFIED = 0;
+  REGION_RULE_ACTION_TYPE_BLOCK = 1;
+  REGION_RULE_ACTION_TYPE_ALLOW = 2;
+  REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT = 3;
 }

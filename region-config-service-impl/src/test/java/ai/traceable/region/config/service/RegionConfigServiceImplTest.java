@@ -175,7 +175,7 @@ class RegionConfigServiceImplTest {
     void shouldGetAllRegionRules() {
       RegionRule regionRule1 = RegionRule.newBuilder().setId("id-1").build();
       RegionRule regionRule2 = RegionRule.newBuilder().setId("id-2").build();
-      when(rulesManager.getRegionRules(requestContext))
+      when(rulesManager.getRegionRules(eq(requestContext), any()))
           .thenReturn(List.of(regionRule1, regionRule2));
 
       StreamObserver<GetAllRegionRulesResponse> responseObserver = mock(StreamObserver.class);

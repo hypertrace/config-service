@@ -3,19 +3,23 @@ package ai.traceable.region.config.service.rules;
 import static ai.traceable.region.config.service.constants.RegionConfigConstants.REGION_RULE_CONFIG_NAMESPACE;
 import static ai.traceable.region.config.service.constants.RegionConfigConstants.REGION_RULE_CONFIG_RESOURCE_NAME;
 
+import ai.traceable.region.config.service.v1.GetRegionRulesFilter;
 import ai.traceable.region.config.service.v1.RegionRule;
+import ai.traceable.region.config.service.v1.RuleScope;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
+import java.util.List;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 
 @Slf4j
-public class RegionRulesStore extends IdentifiedObjectStore<RegionRule> {
+public class RegionRulesStore
+    extends IdentifiedObjectStoreWithFilter<RegionRule, GetRegionRulesFilter> {
 
   @Inject
   public RegionRulesStore(
@@ -49,5 +53,21 @@ public class RegionRulesStore extends IdentifiedObjectStore<RegionRule> {
   @Override
   protected String getContextFromData(RegionRule rule) {
     return rule.getId();
+  }
+
+  @Override
+  protected Optional<RegionRule> filterConfigData(RegionRule data, GetRegionRulesFilter filter) {
+    return Optional.of(data).filter(rule -> filterRuleOnScope(rule, filter.getRuleScope()));
+  }
+
+  private boolean filterRuleOnScope(RegionRule ruleData, RuleScope filterScope) {
+    List<String> filterEnvironmentIds = filterScope.getEnvironmentScope().getEnvironmentIdsList();
+    List<String> ruleEnvironmentIds =
+        ruleData.getRuleScope().getEnvironmentScope().getEnvironmentIdsList();
+
+    if (filterEnvironmentIds.isEmpty() || ruleEnvironmentIds.isEmpty()) {
+      return true;
+    }
+    return ruleEnvironmentIds.stream().anyMatch(filterEnvironmentIds::contains);
   }
 }

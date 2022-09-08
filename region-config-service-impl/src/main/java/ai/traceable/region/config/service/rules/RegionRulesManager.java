@@ -2,6 +2,7 @@ package ai.traceable.region.config.service.rules;
 
 import ai.traceable.region.config.service.utils.UuidGenerator;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
+import ai.traceable.region.config.service.v1.GetRegionRulesFilter;
 import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRule.Builder;
 import ai.traceable.region.config.service.v1.RegionRule.ExpirationDetails;
@@ -11,7 +12,6 @@ import io.grpc.Status;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -31,12 +31,12 @@ class RegionRulesManager implements RulesManager {
   }
 
   @Override
-  public List<RegionRule> getRegionRules(RequestContext requestContext) {
-    List<RegionRule> regionRules =
-        regionRulesStore.getAllObjects(requestContext).stream()
-            .map(ConfigObject::getData)
-            .collect(Collectors.toList());
-    return regionRules;
+  public List<RegionRule> getRegionRules(
+      RequestContext requestContext, GetRegionRulesFilter filter) {
+    if (filter.equals(GetRegionRulesFilter.getDefaultInstance())) {
+      return regionRulesStore.getAllConfigData(requestContext);
+    }
+    return regionRulesStore.getAllConfigData(requestContext, filter);
   }
 
   @Override

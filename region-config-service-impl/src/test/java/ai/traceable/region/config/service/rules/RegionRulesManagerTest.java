@@ -7,7 +7,10 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.region.config.service.utils.UuidGenerator;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
+import ai.traceable.region.config.service.v1.EnvironmentScope;
+import ai.traceable.region.config.service.v1.GetRegionRulesFilter;
 import ai.traceable.region.config.service.v1.RegionRule;
+import ai.traceable.region.config.service.v1.RuleScope;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import com.google.common.collect.ImmutableSortedMap;
 import java.time.Clock;
@@ -55,14 +58,44 @@ class RegionRulesManagerTest {
   class GetAllRegionRules {
     @Test
     void shouldGetAllRegionRules() {
-      RegionRule mockRegionRule1 = RegionRule.newBuilder().setId("id-1").setName("name-1").build();
+      RuleScope ruleScope =
+          RuleScope.newBuilder()
+              .setEnvironmentScope(
+                  EnvironmentScope.newBuilder().addEnvironmentIds("env1").addEnvironmentIds("env2"))
+              .build();
+      RegionRule mockRegionRule1 =
+          RegionRule.newBuilder().setRuleScope(ruleScope).setId("id-1").setName("name-1").build();
       RegionRule mockRegionRule2 = RegionRule.newBuilder().setId("id-2").setName("name-2").build();
       addRegionRules(ImmutableSortedMap.of("id-1", mockRegionRule1, "id-2", mockRegionRule2));
 
-      RegionRule regionRule1 = RegionRule.newBuilder().setId("id-1").setName("name-1").build();
+      RegionRule regionRule1 =
+          RegionRule.newBuilder().setId("id-1").setName("name-1").setRuleScope(ruleScope).build();
       RegionRule regionRule2 = RegionRule.newBuilder().setId("id-2").setName("name-2").build();
-      List<RegionRule> regionRules = rulesManager.getRegionRules(requestContext);
-      assertEquals(List.of(regionRule2, regionRule1), regionRules);
+      assertEquals(
+          List.of(regionRule2, regionRule1),
+          rulesManager.getRegionRules(requestContext, GetRegionRulesFilter.getDefaultInstance()));
+      assertEquals(
+          List.of(regionRule2, regionRule1),
+          rulesManager.getRegionRules(
+              requestContext,
+              GetRegionRulesFilter.newBuilder()
+                  .setRuleScope(
+                      RuleScope.newBuilder()
+                          .setEnvironmentScope(
+                              EnvironmentScope.newBuilder()
+                                  .addEnvironmentIds("env1")
+                                  .addEnvironmentIds("env3")))
+                  .build()));
+      assertEquals(
+          List.of(regionRule2),
+          rulesManager.getRegionRules(
+              requestContext,
+              GetRegionRulesFilter.newBuilder()
+                  .setRuleScope(
+                      RuleScope.newBuilder()
+                          .setEnvironmentScope(
+                              EnvironmentScope.newBuilder().addEnvironmentIds("env3")))
+                  .build()));
     }
   }
 
