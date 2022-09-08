@@ -141,7 +141,7 @@ message DataClassificationOverrideFilter {
    oneof filter {
      IdFilter id_filter = 1;
      ScopeFilter scope_filter = 2;
-    }
+   }
 }
 
 message IdFilter {

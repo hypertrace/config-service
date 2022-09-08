@@ -6,23 +6,34 @@ import static org.hypertrace.config.proto.converter.ConfigProtoConverter.convert
 
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.data.classification.config.service.impl.v1.DeletedSystemDataset.DeletedSystemDataSet;
+import ai.traceable.data.classification.config.service.v1.CreateDataClassificationOverrideRequest;
+import ai.traceable.data.classification.config.service.v1.CreateDataClassificationOverrideResponse;
 import ai.traceable.data.classification.config.service.v1.CreateDataSetRequest;
 import ai.traceable.data.classification.config.service.v1.CreateDataSetResponse;
 import ai.traceable.data.classification.config.service.v1.CreateDataTypeRequest;
 import ai.traceable.data.classification.config.service.v1.CreateDataTypeResponse;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceImplBase;
+import ai.traceable.data.classification.config.service.v1.DataClassificationOverride;
+import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideFilter;
+import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideRule;
 import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataType;
+import ai.traceable.data.classification.config.service.v1.DeleteDataClassificationOverridesRequest;
+import ai.traceable.data.classification.config.service.v1.DeleteDataClassificationOverridesResponse;
 import ai.traceable.data.classification.config.service.v1.DeleteDataSetRequest;
 import ai.traceable.data.classification.config.service.v1.DeleteDataSetResponse;
 import ai.traceable.data.classification.config.service.v1.DeleteDataTypeRequest;
 import ai.traceable.data.classification.config.service.v1.DeleteDataTypeResponse;
+import ai.traceable.data.classification.config.service.v1.GetDataClassificationOverridesRequest;
+import ai.traceable.data.classification.config.service.v1.GetDataClassificationOverridesResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataSetRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataSetResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataSetsResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
+import ai.traceable.data.classification.config.service.v1.UpdateDataClassificationOverrideRequest;
+import ai.traceable.data.classification.config.service.v1.UpdateDataClassificationOverrideResponse;
 import ai.traceable.data.classification.config.service.v1.UpdateDataSetRequest;
 import ai.traceable.data.classification.config.service.v1.UpdateDataSetResponse;
 import ai.traceable.data.classification.config.service.v1.UpdateDataTypeRequest;
@@ -32,10 +43,12 @@ import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
@@ -51,8 +64,11 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
   private final IdentifiedObjectStore<DataSet> dataSetStore;
   private final IdentifiedObjectStore<DataType> dataTypeStore;
   private final IdentifiedObjectStore<DeletedSystemDataSet> deletedDataSetStore;
+  private final IdentifiedObjectStore<DataClassificationOverride> dataClassificationOverrideStore;
   private final DataSetConfigRequestValidator dataSetConfigRequestValidator;
   private final DataTypeConfigRequestValidator dataTypeConfigRequestValidator;
+  private final DataClassificationOverrideConfigRequestValidator
+      dataClassificationOverrideConfigRequestValidator;
   private static final String DATA_CLASSIFICATION_CONFIG_SERVICE =
       "data.classification.config.service";
   private static final String SYSTEM_DATASETS_RP1 = "system.datasets.rp1";
@@ -76,8 +92,11 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       DataSetStore dataSetStore,
       DataTypeStore dataTypeStore,
       DeletedDataSetStore deletedDataSetStore,
+      DataClassificationOverrideStore dataClassificationOverrideStore,
       DataSetConfigRequestValidator dataSetConfigRequestValidator,
       DataTypeConfigRequestValidator dataTypeConfigRequestValidator,
+      DataClassificationOverrideConfigRequestValidator
+          dataClassificationOverrideConfigRequestValidator,
       Config config,
       ConfigChangeEventGenerator configChangeEventGenerator,
       RedactionRulesDao redactionRulesDao,
@@ -85,8 +104,11 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
     this.dataSetStore = dataSetStore;
     this.dataTypeStore = dataTypeStore;
     this.deletedDataSetStore = deletedDataSetStore;
+    this.dataClassificationOverrideStore = dataClassificationOverrideStore;
     this.dataSetConfigRequestValidator = dataSetConfigRequestValidator;
     this.dataTypeConfigRequestValidator = dataTypeConfigRequestValidator;
+    this.dataClassificationOverrideConfigRequestValidator =
+        dataClassificationOverrideConfigRequestValidator;
     this.configChangeEventGenerator = Optional.ofNullable(configChangeEventGenerator);
     this.redactionRulesDao = redactionRulesDao;
     List<? extends com.typesafe.config.ConfigObject> systemDataSetsObjectList = null;
@@ -398,6 +420,117 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
     }
   }
 
+  @Override
+  public void createDataClassificationOverride(
+      CreateDataClassificationOverrideRequest request,
+      StreamObserver<CreateDataClassificationOverrideResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      this.dataClassificationOverrideConfigRequestValidator.validateOrThrow(
+          requestContext, request);
+      DataClassificationOverride dataClassificationOverride =
+          DataClassificationOverride.newBuilder()
+              .setId(UUID.randomUUID().toString())
+              .setDataClassificationOverrideRule(request.getDataClassificationOverrideRule())
+              .build();
+      DataClassificationOverride createdDataClassificationOverride =
+          this.dataClassificationOverrideStore
+              .upsertObject(requestContext, dataClassificationOverride)
+              .getData();
+      responseObserver.onNext(
+          CreateDataClassificationOverrideResponse.newBuilder()
+              .setCreatedDataClassificationOverride(createdDataClassificationOverride)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to create data classification override - {}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getDataClassificationOverrides(
+      GetDataClassificationOverridesRequest request,
+      StreamObserver<GetDataClassificationOverridesResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      this.dataClassificationOverrideConfigRequestValidator.validateOrThrow(
+          requestContext, request);
+      List<DataClassificationOverride> dataClassificationOverrides =
+          getDataClassificationOverridesListByFilter(requestContext, request.getFilter());
+      responseObserver.onNext(
+          GetDataClassificationOverridesResponse.newBuilder()
+              .addAllDataClassificationOverrides(dataClassificationOverrides)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to get data classification overrides - {}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void updateDataClassificationOverride(
+      UpdateDataClassificationOverrideRequest request,
+      StreamObserver<UpdateDataClassificationOverrideResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      this.dataClassificationOverrideConfigRequestValidator.validateOrThrow(
+          requestContext, request);
+      DataClassificationOverride existingDataClassificationOverride =
+          this.dataClassificationOverrideStore
+              .getData(requestContext, request.getId())
+              .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      DataClassificationOverride updatedDataClassificationOverride =
+          existingDataClassificationOverride.toBuilder()
+              .setDataClassificationOverrideRule(request.getDataClassificationOverrideRule())
+              .build();
+      DataClassificationOverride upsertedDataClassificationOverride =
+          this.dataClassificationOverrideStore
+              .upsertObject(requestContext, updatedDataClassificationOverride)
+              .getData();
+      responseObserver.onNext(
+          UpdateDataClassificationOverrideResponse.newBuilder()
+              .setUpdatedDataClassificationOverride(upsertedDataClassificationOverride)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to update data classification override - {}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void deleteDataClassificationOverrides(
+      DeleteDataClassificationOverridesRequest request,
+      StreamObserver<DeleteDataClassificationOverridesResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      this.dataClassificationOverrideConfigRequestValidator.validateOrThrow(
+          requestContext, request);
+      List<DataClassificationOverride> dataClassificationOverrides =
+          getDataClassificationOverridesListByFilter(requestContext, request.getFilter());
+      List<DataClassificationOverride> deletedDataClassificationOverrides = new ArrayList<>();
+      dataClassificationOverrides.forEach(
+          dataClassificationOverride -> {
+            Optional<ContextualConfigObject<DataClassificationOverride>> deletedConfigObject =
+                this.dataClassificationOverrideStore.deleteObject(
+                    requestContext, dataClassificationOverride.getId());
+            if (deletedConfigObject.isPresent()) {
+              deletedDataClassificationOverrides.add(deletedConfigObject.get().getData());
+            }
+          });
+      responseObserver.onNext(
+          DeleteDataClassificationOverridesResponse.newBuilder()
+              .addAllDeletedDataClassificationOverrides(deletedDataClassificationOverrides)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to delete data classification overrides - {}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
   @SneakyThrows
   private void sendSystemDataSetDeletionEvent(
       RequestContext requestContext, boolean isObjectEmpty, DataSet systemDataSet) {
@@ -493,5 +626,48 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       return systemDataSetsRp2ToIdMap;
     }
     return systemDataSetsRp1ToIdMap;
+  }
+
+  private List<DataClassificationOverride> getDataClassificationOverridesListByFilter(
+      RequestContext requestContext, DataClassificationOverrideFilter filter) {
+    List<DataClassificationOverride> dataClassificationOverrides = new ArrayList<>();
+    List<DataClassificationOverride> tenantDataClassificationOverrides =
+        this.dataClassificationOverrideStore.getAllObjects(requestContext).stream()
+            .map(ConfigObject::getData)
+            .collect(Collectors.toUnmodifiableList());
+    switch (filter.getFilterCase()) {
+      case ID_FILTER:
+        {
+          Set<String> filterSet = Set.copyOf(filter.getIdFilter().getIdsList());
+          return tenantDataClassificationOverrides.stream()
+              .filter(
+                  tenantDataClassificationOverride ->
+                      filterSet.contains(tenantDataClassificationOverride.getId()))
+              .collect(Collectors.toUnmodifiableList());
+        }
+      case SCOPE_FILTER:
+        {
+          List<DataClassificationOverrideRule.DataClassificationOverrideScope> scopesList =
+              filter.getScopeFilter().getScopesList();
+          Set<String> environmentFilterSet =
+              scopesList.stream()
+                  .filter(scope -> scope.hasEnvironmentScope())
+                  .map(scope -> scope.getEnvironmentScope().getEnvironmentId())
+                  .collect(Collectors.toUnmodifiableSet());
+          return tenantDataClassificationOverrides.stream()
+              .filter(
+                  tenantDataClassificationOverride -> {
+                    return environmentFilterSet.contains(
+                        tenantDataClassificationOverride
+                            .getDataClassificationOverrideRule()
+                            .getScope()
+                            .getEnvironmentScope()
+                            .getEnvironmentId());
+                  })
+              .collect(Collectors.toUnmodifiableList());
+        }
+      default:
+        return tenantDataClassificationOverrides;
+    }
   }
 }
