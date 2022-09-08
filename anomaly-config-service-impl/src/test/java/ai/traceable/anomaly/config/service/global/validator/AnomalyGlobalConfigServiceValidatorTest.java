@@ -14,12 +14,10 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
 import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusRequest;
-import ai.traceable.anomaly.config.service.v1.global.GetAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
-import ai.traceable.anomaly.config.service.v1.global.UpdateAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.UpdateScopedAnomalyGlobalConfigStatusRequest;
 import io.grpc.Status;
 import io.grpc.Status.Code;
@@ -44,21 +42,7 @@ class AnomalyGlobalConfigServiceValidatorTest {
   }
 
   @Nested
-  class ConfigStatusValidation {
-    @Test
-    void testValidateGetStatusRequest() {
-      Status status =
-          globalValidator.validate(GetAnomalyGlobalConfigStatusRequest.getDefaultInstance());
-      assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
-      assertTrue(status.getDescription().contains("valid config scope"));
-      verify(configValidator, times(0)).validate((AnomalyConfigScope) any());
-
-      status =
-          globalValidator.validate(
-              GetAnomalyGlobalConfigStatusRequest.newBuilder().setConfigScope(configScope).build());
-      assertEquals(Status.OK.getCode(), status.getCode());
-      verify(configValidator, times(1)).validate((AnomalyConfigScope) any());
-    }
+  class GlobalConfigStatusValidation {
 
     @Test
     void testValidateDeleteStatusRequest() {
@@ -79,51 +63,6 @@ class AnomalyGlobalConfigServiceValidatorTest {
       assertEquals(Status.OK.getCode(), status.getCode());
     }
 
-    @Test
-    void testValidateUpdateStatusRequest() {
-      Status status =
-          globalValidator.validate(UpdateAnomalyGlobalConfigStatusRequest.getDefaultInstance());
-      assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
-      assertTrue(status.getDescription().contains("valid config status"));
-      verify(configValidator, times(0)).validate((AnomalyConfigStatusChange) any());
-      verify(configValidator, times(0)).validate((AnomalyConfigScope) any());
-
-      status =
-          globalValidator.validate(
-              UpdateAnomalyGlobalConfigStatusRequest.newBuilder()
-                  .setConfigStatus(configStatusChange)
-                  .build());
-      assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
-      assertTrue(status.getDescription().contains("valid config scope"));
-      verify(configValidator, times(0)).validate((AnomalyConfigStatusChange) any());
-      verify(configValidator, times(0)).validate((AnomalyConfigScope) any());
-
-      status =
-          globalValidator.validate(
-              UpdateAnomalyGlobalConfigStatusRequest.newBuilder()
-                  .setConfigStatus(configStatusChange)
-                  .setConfigScope(configScope)
-                  .build());
-      assertEquals(Status.OK.getCode(), status.getCode());
-      verify(configValidator, times(1)).validate((AnomalyConfigStatusChange) any());
-      verify(configValidator, times(1)).validate((AnomalyConfigScope) any());
-
-      clearInvocations(configValidator);
-      doReturn(Status.INVALID_ARGUMENT).when(configValidator).validate(configStatusChange);
-      status =
-          globalValidator.validate(
-              UpdateAnomalyGlobalConfigStatusRequest.newBuilder()
-                  .setConfigStatus(configStatusChange)
-                  .setConfigScope(configScope)
-                  .build());
-      assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
-      verify(configValidator, times(1)).validate((AnomalyConfigStatusChange) any());
-      verify(configValidator, times(0)).validate((AnomalyConfigScope) any());
-    }
-  }
-
-  @Nested
-  class GlobalConfigStatusValidation {
     @Test
     void testValidateGetStatusRequest() {
       Status status =

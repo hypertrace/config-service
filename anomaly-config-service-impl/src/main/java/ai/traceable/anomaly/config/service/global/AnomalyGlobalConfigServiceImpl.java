@@ -1,7 +1,6 @@
 package ai.traceable.anomaly.config.service.global;
 
 import ai.traceable.anomaly.config.service.global.ruleinfo.RuleInfoManager;
-import ai.traceable.anomaly.config.service.global.status.ConfigStatusManager;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.global.validator.AnomalyGlobalConfigServiceValidator;
 import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceGrpc;
@@ -19,7 +18,6 @@ import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfi
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusResponse;
-import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.global.UpdateAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.UpdateAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.UpdateScopedAnomalyGlobalConfigStatusRequest;
@@ -34,18 +32,15 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class AnomalyGlobalConfigServiceImpl
     extends AnomalyGlobalConfigServiceGrpc.AnomalyGlobalConfigServiceImplBase {
   private final AnomalyGlobalConfigServiceValidator globalValidator;
-  private final ConfigStatusManager configStatusManager;
   private final GlobalAnomalyConfigStatusManager anomalyConfigStatusManager;
   private final RuleInfoManager ruleInfoManager;
 
   @Inject
   public AnomalyGlobalConfigServiceImpl(
       AnomalyGlobalConfigServiceValidator globalValidator,
-      ConfigStatusManager configStatusManager,
       GlobalAnomalyConfigStatusManager anomalyConfigStatusManager,
       RuleInfoManager ruleInfoManager) {
     this.globalValidator = globalValidator;
-    this.configStatusManager = configStatusManager;
     this.anomalyConfigStatusManager = anomalyConfigStatusManager;
     this.ruleInfoManager = ruleInfoManager;
   }
@@ -54,65 +49,16 @@ public class AnomalyGlobalConfigServiceImpl
   public void getAnomalyGlobalConfigStatus(
       GetAnomalyGlobalConfigStatusRequest request,
       StreamObserver<GetAnomalyGlobalConfigStatusResponse> responseObserver) {
-
-    Status status = globalValidator.validate(request);
-    if (!status.isOk()) {
-      log.error(
-          "Get Anomaly Global Config Status Request is not valid: {}", status.getDescription());
-      responseObserver.onError(status.asException());
-      return;
-    }
-
-    try {
-      GetAnomalyGlobalConfigStatusResponse response =
-          GetAnomalyGlobalConfigStatusResponse.newBuilder()
-              .setConfigStatus(
-                  configStatusManager.getAnomalyConfigStatus(
-                      RequestContext.CURRENT.get(), request.getConfigScope()))
-              .build();
-      responseObserver.onNext(response);
-      responseObserver.onCompleted();
-    } catch (Exception e) {
-      log.error(e.getMessage(), e);
-      responseObserver.onError(e);
-    }
+    throw new UnsupportedOperationException(
+        "This API is deprecated - please use \"getScopedAnomalyGlobalConfigStatus\" API instead.");
   }
 
   @Override
   public void updateAnomalyGlobalConfigStatus(
       UpdateAnomalyGlobalConfigStatusRequest request,
       StreamObserver<UpdateAnomalyGlobalConfigStatusResponse> responseObserver) {
-    Status status = globalValidator.validate(request);
-    if (!status.isOk()) {
-      log.error(
-          "Update Anomaly Global Config Status Request is not valid: {}", status.getDescription());
-      responseObserver.onError(status.asException());
-      return;
-    }
-
-    try {
-      UpdateAnomalyGlobalConfigStatusResponse response =
-          UpdateAnomalyGlobalConfigStatusResponse.newBuilder()
-              .setConfigStatus(
-                  configStatusManager.updateAnomalyConfigStatus(
-                      RequestContext.CURRENT.get(),
-                      request.getConfigScope(),
-                      request.getConfigStatus()))
-              .build();
-      // temporary dual-write
-      anomalyConfigStatusManager.updateScopedAnomalyConfigStatus(
-          RequestContext.CURRENT.get(),
-          ScopedAnomalyConfigStatusChange.newBuilder()
-              .setConfigScope(request.getConfigScope())
-              .setConfigStatus(response.getConfigStatus())
-              .build());
-
-      responseObserver.onNext(response);
-      responseObserver.onCompleted();
-    } catch (Exception e) {
-      log.error(e.getMessage(), e);
-      responseObserver.onError(e);
-    }
+    throw new UnsupportedOperationException(
+        "This API is deprecated - please use \"updateScopedAnomalyGlobalConfigStatus\" API instead.");
   }
 
   @Override
