@@ -6,6 +6,7 @@ import ai.traceable.localprocessing.config.service.apinaming.http.utils.LocalApi
 import ai.traceable.localprocessing.config.service.config.http.HttpApiNamingConfig;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -16,7 +17,6 @@ public class LocalApiNamingConfigManager {
 
   private static final String LOCAL_API_NAMING_DEFAULT_CONFIG_KEY = "default";
   private static final String TRIE_VERSION_CONFIG_KEY = "version";
-  private static final String LOCAL_API_NAMING_DISABLED_CONFIG_KEY = "disabled";
   private final HttpApiNamingConfig httpApiNamingConfig;
   private final HttpApiNamingCachedConfigManager httpApiNamingCachedConfigManager;
 
@@ -67,5 +67,9 @@ public class LocalApiNamingConfigManager {
     // by default local api naming config is disabled
     boolean disabled = localTrainingConfig.map(TrainingConfig::getDisabled).orElse(true);
     return new LocalApiNamingConfigInfo(disabled, config.getString(TRIE_VERSION_CONFIG_KEY));
+  }
+
+  public Duration getAgentPollingFrequency() {
+    return httpApiNamingConfig.getAgentPollingFrequency();
   }
 }

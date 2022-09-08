@@ -194,6 +194,7 @@ traceableConfigServiceConfig:
     maxDynamicLabelApplicationRulesPerTenant: 100
 
 localApiNamingConfig:
+  agentPollingFrequency: 5m
   fullTrieReloadConfig:
     #commented config for reference
     #    tenant1:

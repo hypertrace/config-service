@@ -43,6 +43,7 @@ import ai.traceable.localprocessing.config.service.v1.ProtectionModeConfig;
 import ai.traceable.localprocessing.config.service.v1.RegularModsecDetectionRules;
 import ai.traceable.localprocessing.config.service.v1.SamplingPolicies;
 import ai.traceable.localprocessing.config.service.v1.SamplingPolicy;
+import com.google.protobuf.Duration;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.Channel;
@@ -168,6 +169,8 @@ class LocalProcessingConfigServiceImplTest {
         .validateOrThrow(any(RequestContext.class), any(GetApiNamingModelRequest.class));
     when(httpApiNamingManager.getHttpServiceResponseList(any(), any()))
         .thenReturn(serviceResponseList);
+    when(httpApiNamingManager.getAgentPollingFrequency())
+        .thenReturn(Duration.newBuilder().setSeconds(3003).build());
 
     GetApiNamingModelResponse expectedResponse =
         GetApiNamingModelResponse.newBuilder()
@@ -175,7 +178,9 @@ class LocalProcessingConfigServiceImplTest {
                 HttpApiNamingModelResponse.newBuilder()
                     .addAllHttpServiceResponses(serviceResponseList)
                     .build())
+            .setRefreshAfterDuration(Duration.newBuilder().setSeconds(3003).build())
             .build();
+
     assertEquals(
         expectedResponse,
         localProcessingConfigStub.getApiNamingModel(GetApiNamingModelRequest.newBuilder().build()));

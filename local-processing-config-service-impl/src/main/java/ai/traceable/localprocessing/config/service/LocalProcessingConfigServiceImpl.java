@@ -95,6 +95,7 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
                       .addAllHttpServiceResponses(
                           httpApiNamingManager.getHttpServiceResponseList(requestContext, request))
                       .build())
+              .setRefreshAfterDuration(httpApiNamingManager.getAgentPollingFrequency())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {

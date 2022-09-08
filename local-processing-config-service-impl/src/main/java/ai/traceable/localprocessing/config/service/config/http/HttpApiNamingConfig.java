@@ -2,6 +2,7 @@ package ai.traceable.localprocessing.config.service.config.http;
 
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
+import java.time.Duration;
 import java.util.List;
 
 public class HttpApiNamingConfig {
@@ -14,6 +15,7 @@ public class HttpApiNamingConfig {
   private static final String TRIE_DIFFLOG_RETENTION_PERIOD =
       "trieDiffLog.diff.logs.retention.period";
   private static final String FULL_TRIE_RELOAD_CONFIG = "full.trie.reload.config";
+  private static final String AGENT_POLLING_FREQUENCY = "agent.polling.frequency";
   private final Config config;
   private final Config localApiNamingConfig;
 
@@ -45,5 +47,9 @@ public class HttpApiNamingConfig {
 
   public Config getFullTrieReloadConfig() {
     return this.localApiNamingConfig.getConfig(FULL_TRIE_RELOAD_CONFIG);
+  }
+
+  public Duration getAgentPollingFrequency() {
+    return this.localApiNamingConfig.getDuration(AGENT_POLLING_FREQUENCY);
   }
 }

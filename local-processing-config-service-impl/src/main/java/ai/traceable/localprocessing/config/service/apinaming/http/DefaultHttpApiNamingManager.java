@@ -10,6 +10,7 @@ import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelRequest;
 import ai.traceable.localprocessing.config.service.v1.HttpServiceResponse;
 import ai.traceable.localprocessing.config.service.v1.ServiceRequest;
 import com.google.inject.Inject;
+import com.google.protobuf.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -44,6 +45,15 @@ class DefaultHttpApiNamingManager implements HttpApiNamingManager {
     this.httpCustomApiNamingRulesManager = httpCustomApiNamingRulesManager;
     this.localApiNamingConfigManager = localApiNamingConfigManager;
     this.entityFetcher = entityFetcher;
+  }
+
+  public Duration getAgentPollingFrequency() {
+    java.time.Duration agentPollingFrequency =
+        localApiNamingConfigManager.getAgentPollingFrequency();
+    return Duration.newBuilder()
+        .setSeconds(agentPollingFrequency.getSeconds())
+        .setNanos(agentPollingFrequency.getNano())
+        .build();
   }
 
   public List<HttpServiceResponse> getHttpServiceResponseList(

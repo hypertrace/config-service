@@ -183,6 +183,7 @@ data:
       max.dynamic.label.application.rules.per.tenant = {{ int .Values.traceableConfigServiceConfig.labelApplicationRuleConfigServiceConfig.maxDynamicLabelApplicationRulesPerTenant }}
     }
     local.api.naming.config = {
+      agent.polling.frequency = {{ .Values.localApiNamingConfig.agentPollingFrequency }}
       {{- if hasKey $.Values.localApiNamingConfig "fullTrieReloadConfig" }}
       full.trie.reload.config = {
         {{- range $k,$v := $.Values.localApiNamingConfig.fullTrieReloadConfig }}
