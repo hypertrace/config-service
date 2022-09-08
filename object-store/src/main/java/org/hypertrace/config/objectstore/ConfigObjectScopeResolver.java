@@ -12,14 +12,14 @@ import java.util.stream.Collectors;
  * Resolver class to resolve configs based on scope
  *
  * @param <T> Raw config type
- * @param <U> Resolved config type
  * @param <S> Scope
+ * @param <U> Resolved config type
  */
-public abstract class ConfigObjectScopeResolver<T extends Message, U extends Message, S> {
+public abstract class ConfigObjectScopeResolver<T, S, U> {
 
-  protected final Optional<U> defaultConfig;
+  protected final Optional<T> defaultConfig;
 
-  public ConfigObjectScopeResolver(U defaultConfig) {
+  public ConfigObjectScopeResolver(T defaultConfig) {
     this.defaultConfig = Optional.of(defaultConfig);
   }
 
@@ -49,7 +49,7 @@ public abstract class ConfigObjectScopeResolver<T extends Message, U extends Mes
 
   /**
    * Method to return scopes with which the given scope needs to be resolved in increasing order of
-   * priority For example, API scope would return a list {customer, env, service, api}
+   * priority For example, API scope could return a list {tenant, service, api}
    *
    * @param scopeObject
    * @return list of associated scopes in increasing order of priority
@@ -64,14 +64,16 @@ public abstract class ConfigObjectScopeResolver<T extends Message, U extends Mes
    */
   protected abstract U convertConfig(T configStoreData);
 
-  /**
-   * Method to resolve config store object with object of resolved config type
-   *
-   * @param fallbackConfig
-   * @param preferredConfig
-   * @return
-   */
-  protected abstract U resolveConfig(U fallbackConfig, T preferredConfig);
+  /** Method should be overridden if the default logic needs to be changed */
+  protected T mergeConfigs(T fallbackConfig, T preferredConfig) {
+    if (fallbackConfig.equals(preferredConfig)) {
+      return preferredConfig;
+    }
+    if (fallbackConfig instanceof Message && preferredConfig instanceof Message) {
+      return (T) mergeProtoConfigs((Message) fallbackConfig, (Message) preferredConfig);
+    }
+    return preferredConfig;
+  }
 
   private Map<S, T> getConfigDataMap(List<T> configDataList) {
     return configDataList.stream()
@@ -81,17 +83,16 @@ public abstract class ConfigObjectScopeResolver<T extends Message, U extends Mes
   private Optional<U> resolveConfig(S scope, Map<S, T> configDataMap) {
     Optional<T> mergedConfig =
         getResolutionScopesWithIncreasingPriority(scope).stream()
-            .flatMap(scopeObject -> Optional.ofNullable(configDataMap.get(scope)).stream())
-            .reduce(
-                (fallbackConfig, preferredConfig) ->
-                    (T) mergeConfigs(fallbackConfig, preferredConfig));
+            .flatMap(scopeObject -> Optional.ofNullable(configDataMap.get(scopeObject)).stream())
+            .reduce(this::mergeConfigs);
     return mergedConfig
         .map(
             preferredConfig ->
                 defaultConfig
-                    .map(fallbackConfig -> resolveConfig(fallbackConfig, preferredConfig))
-                    .orElse(convertConfig(preferredConfig)))
-        .or(() -> defaultConfig);
+                    .map(fallbackConfig -> mergeConfigs(fallbackConfig, preferredConfig))
+                    .orElse(preferredConfig))
+        .or(() -> defaultConfig)
+        .map(this::convertConfig);
   }
 
   /**
@@ -102,7 +103,7 @@ public abstract class ConfigObjectScopeResolver<T extends Message, U extends Mes
    * @param fallbackConfig
    * @return mergedConfig
    */
-  public static Message mergeConfigs(Message fallbackConfig, Message preferredConfig) {
+  private Message mergeProtoConfigs(Message fallbackConfig, Message preferredConfig) {
     Message.Builder builder = fallbackConfig.toBuilder();
     mergeFromProto(builder, preferredConfig);
     return builder.build();
@@ -112,7 +113,7 @@ public abstract class ConfigObjectScopeResolver<T extends Message, U extends Mes
    * Custom implementation of merging protos to replace the list of messages rather than appending
    * (which is done in default proto implementation)
    */
-  private static void mergeFromProto(Message.Builder builder, Message source) {
+  private void mergeFromProto(Message.Builder builder, Message source) {
     List<Descriptors.FieldDescriptor> fieldDescriptors = builder.getDescriptorForType().getFields();
     for (Descriptors.FieldDescriptor fieldDescriptor : fieldDescriptors) {
       if (fieldDescriptor.isRepeated()) {
