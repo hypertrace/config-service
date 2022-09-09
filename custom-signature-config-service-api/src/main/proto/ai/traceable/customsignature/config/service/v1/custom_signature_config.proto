@@ -10,6 +10,7 @@ message CreateCustomSignatureRuleRequest {
   RuleDefinition definition = 3;
   RuleEffect effect = 4;
   ExpiryDetails blocking_expiry_details = 5;
+  RuleScope rule_scope = 6;
 }
 
 message CreateCustomSignatureRuleResponse {
@@ -53,6 +54,7 @@ message GetRulesFilter {
   repeated EventType event_types = 2;
   optional bool disabled = 3;
   optional bool internal = 4;
+  RuleScope rule_scope = 5;
 }
 
 message CustomSignatureRule {
@@ -64,6 +66,7 @@ message CustomSignatureRule {
   bool disabled = 6;
   bool internal = 7;
   ExpiryDetails blocking_expiry_details = 8;
+  RuleScope rule_scope = 9;
 }
 
 message CustomSignatureRuleDetails {
@@ -73,6 +76,17 @@ message CustomSignatureRuleDetails {
   bool disabled = 6;
   bool internal = 7;
   ExpiryDetails blocking_expiry_details = 8;
+  RuleScope rule_scope = 9;
+}
+
+message RuleScope {
+  oneof scope { // if no option selected, default is customer scope (all environments)
+    EnvironmentScope environment_scope = 1;
+  }
+}
+
+message EnvironmentScope {
+  repeated string environment_ids = 1;
 }
 
 message RuleDefinition {
