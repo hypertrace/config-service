@@ -14,6 +14,7 @@ import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
+import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
 import ai.traceable.customsignature.config.service.v1.EventSeverity;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
@@ -25,6 +26,7 @@ import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
+import ai.traceable.customsignature.config.service.v1.RuleScope;
 import com.github.f4b6a3.uuid.UuidCreator;
 import com.google.common.io.Resources;
 import io.grpc.Status;
@@ -228,6 +230,8 @@ public class CustomSignatureModsecRulesManagerTest {
     assertEquals(
         EXPIRY_TIMESTAMP_MILLIS,
         response.getRulesList().get(0).getBlockingExpiryDetails().getExpiryTimestampMillis());
+    assertEquals(
+        "dev", response.getRules(0).getRuleScope().getEnvironmentScope().getEnvironmentIds(0));
 
     String fileRules =
         Resources.toString(
@@ -279,6 +283,11 @@ public class CustomSignatureModsecRulesManagerTest {
                                                             .build())
                                                     .build())
                                             .build())
+                                    .build())
+                            .setRuleScope(
+                                RuleScope.newBuilder()
+                                    .setEnvironmentScope(
+                                        EnvironmentScope.newBuilder().addEnvironmentIds("dev"))
                                     .build())
                             .build())));
   }
@@ -350,6 +359,12 @@ public class CustomSignatureModsecRulesManagerTest {
                                         ExpiryDetails.newBuilder()
                                             .setExpiryDuration(EXPIRY_DURATION)
                                             .setExpiryTimestampMillis(EXPIRY_TIMESTAMP_MILLIS)
+                                            .build())
+                                    .setRuleScope(
+                                        RuleScope.newBuilder()
+                                            .setEnvironmentScope(
+                                                EnvironmentScope.newBuilder()
+                                                    .addEnvironmentIds("dev"))
                                             .build())
                                     .build()))));
   }

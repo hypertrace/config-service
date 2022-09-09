@@ -13,6 +13,7 @@ import ai.traceable.customsignature.config.service.v1.ClauseOperator;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleRequest;
+import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
 import ai.traceable.customsignature.config.service.v1.EventSeverity;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
@@ -24,6 +25,7 @@ import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
+import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
 import io.grpc.Status;
 import io.grpc.Status.Code;
@@ -509,6 +511,35 @@ public class CustomSignatureRulesValidatorTest {
         .thenReturn(Status.INTERNAL);
     status = rulesValidator.validate(request);
     assertEquals(Code.INTERNAL, status.getCode());
+
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setEffect(ruleEffect)
+            .setDefinition(validRuleDefinition)
+            .setBlockingExpiryDetails(
+                ExpiryDetails.newBuilder().setExpiryDuration(NON_ZERO_EXPIRY_DURATION).build())
+            .setRuleScope(RuleScope.newBuilder().setEnvironmentScope(EnvironmentScope.newBuilder()))
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals("Environment scope should have at least one environment", status.getDescription());
+
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setEffect(ruleEffect)
+            .setDefinition(validRuleDefinition)
+            .setBlockingExpiryDetails(
+                ExpiryDetails.newBuilder().setExpiryDuration(NON_ZERO_EXPIRY_DURATION).build())
+            .setRuleScope(
+                RuleScope.newBuilder()
+                    .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("dev")))
+            .build();
+    when(modsecRulesManager.validateModsecRule(request.getName(), request.getDefinition()))
+        .thenReturn(Status.OK);
+    status = rulesValidator.validate(request);
+    assertEquals(Code.OK, status.getCode());
   }
 
   @Test
@@ -951,6 +982,63 @@ public class CustomSignatureRulesValidatorTest {
         .thenReturn(Status.INTERNAL);
     status = rulesValidator.validate(request);
     assertEquals(Code.INTERNAL, status.getCode());
+
+    rule =
+        CustomSignatureRule.newBuilder()
+            .setId("id")
+            .setName("name")
+            .setEffect(ruleEffect)
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setMatchExpression(
+                                        MatchExpression.newBuilder()
+                                            .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
+                                            .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .setRuleScope(RuleScope.newBuilder().setEnvironmentScope(EnvironmentScope.newBuilder()))
+            .build();
+    status =
+        rulesValidator.validate(
+            UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals("Environment scope should have at least one environment", status.getDescription());
+
+    rule =
+        CustomSignatureRule.newBuilder()
+            .setId("id")
+            .setName("name")
+            .setEffect(ruleEffect)
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setMatchExpression(
+                                        MatchExpression.newBuilder()
+                                            .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
+                                            .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .setRuleScope(
+                RuleScope.newBuilder()
+                    .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("dev")))
+            .build();
+    status =
+        rulesValidator.validate(
+            UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
+    assertEquals(Code.OK, status.getCode());
   }
 
   public void testValidateDeleteRule() {

@@ -77,6 +77,7 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
               .setDisabled(rule.getDisabled())
               .setInternal(rule.getInternal())
               .setBlockingExpiryDetails(rule.getBlockingExpiryDetails())
+              .setRuleScope(rule.getRuleScope())
               .build());
     }
 

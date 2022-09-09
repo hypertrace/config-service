@@ -18,6 +18,7 @@ import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
+import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
 import com.google.re2j.Pattern;
 import com.google.re2j.PatternSyntaxException;
@@ -71,6 +72,10 @@ class CustomSignatureRulesValidator implements RulesValidator {
       return status;
     }
 
+    if ((status = validateRuleScope(request.getRuleScope())) != Status.OK) {
+      return status;
+    }
+
     return modsecRulesManager.validateModsecRule(request.getName(), request.getDefinition());
   }
 
@@ -107,6 +112,10 @@ class CustomSignatureRulesValidator implements RulesValidator {
     }
 
     if ((status = validateExpiry(rule.getBlockingExpiryDetails())) != Status.OK) {
+      return status;
+    }
+
+    if ((status = validateRuleScope(rule.getRuleScope())) != Status.OK) {
       return status;
     }
 
@@ -262,5 +271,15 @@ class CustomSignatureRulesValidator implements RulesValidator {
                         .getKeyValueExpression()
                         .getMatchCategory()
                         .equals(MatchCategory.MATCH_CATEGORY_RESPONSE));
+  }
+
+  private Status validateRuleScope(RuleScope scope) {
+    if (scope.hasEnvironmentScope()
+        && scope.getEnvironmentScope().getEnvironmentIdsList().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Environment scope should have at least one environment");
+    } else {
+      return Status.OK;
+    }
   }
 }

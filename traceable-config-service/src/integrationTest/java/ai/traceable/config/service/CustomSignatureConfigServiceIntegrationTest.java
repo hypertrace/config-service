@@ -26,6 +26,7 @@ import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
+import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -330,6 +331,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
                                     .build())
                             .setDefinition(definition)
+                            .setRuleScope(RuleScope.newBuilder().build())
                             .build())
                     .getRule());
 
@@ -347,6 +349,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
                                     .build())
                             .setDefinition(definition)
+                            .setRuleScope(RuleScope.newBuilder().build())
                             .build())
                     .getRule());
     return List.of(rule1, rule2);
@@ -414,6 +417,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
                     .build())
             .setDefinition(definition)
+            .setRuleScope(RuleScope.newBuilder().build())
             .build(),
         CustomSignatureRule.newBuilder()
             .setId(id2)
@@ -424,6 +428,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
                     .build())
             .setDefinition(definition)
+            .setRuleScope(RuleScope.newBuilder().build())
             .build());
   }
 

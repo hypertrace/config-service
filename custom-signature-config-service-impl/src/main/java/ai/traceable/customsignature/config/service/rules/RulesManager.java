@@ -10,10 +10,6 @@ import java.util.UUID;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public interface RulesManager {
-
-  String CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE = "customSignatureRule";
-  String CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME = "customSignatureRuleConfig";
-
   List<CustomSignatureRule> getCustomSignatureRules(
       RequestContext requestContext, GetRulesFilter filter);
 

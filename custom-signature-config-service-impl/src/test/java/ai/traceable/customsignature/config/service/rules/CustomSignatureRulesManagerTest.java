@@ -1,5 +1,7 @@
 package ai.traceable.customsignature.config.service.rules;
 
+import static ai.traceable.customsignature.config.service.rules.CustomSignatureRulesStore.CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE;
+import static ai.traceable.customsignature.config.service.rules.CustomSignatureRulesStore.CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -11,11 +13,13 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
+import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
+import ai.traceable.customsignature.config.service.v1.RuleScope;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Struct;
@@ -47,10 +51,10 @@ public class CustomSignatureRulesManagerTest {
     mockConfigService.start();
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     ruleConverter = spy(CustomSignatureRuleConverter.class);
-    this.rulesManager =
-        spy(
-            new CustomSignatureRulesManager(
-                configServiceBlockingStub, ruleConverter, mock(ConfigChangeEventGenerator.class)));
+    CustomSignatureRulesStore rulesStore =
+        new CustomSignatureRulesStore(
+            configServiceBlockingStub, ruleConverter, mock(ConfigChangeEventGenerator.class));
+    this.rulesManager = spy(new CustomSignatureRulesManager(rulesStore));
     requestContext = RequestContext.forTenantId("default tenant");
   }
 
@@ -71,12 +75,14 @@ public class CustomSignatureRulesManagerTest {
                 .setEffect(
                     RuleEffect.newBuilder()
                         .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING))
+                .setRuleScope(getRuleScope(List.of("dev", "prod")))
                 .build(),
             CustomSignatureRule.newBuilder()
                 .setId("id2")
                 .setName("name-2")
                 .setEffect(
                     RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
+                .setRuleScope(getRuleScope(List.of("dev")))
                 .build());
 
     when(rulesManager.generateRuleId()).thenReturn("id1").thenReturn("id2");
@@ -156,6 +162,30 @@ public class CustomSignatureRulesManagerTest {
                 .setInternal(true)
                 .build());
     assertTrue(results.isEmpty());
+
+    // Filter on dev env (both rules should come)
+    results =
+        rulesManager.getCustomSignatureRules(
+            requestContext,
+            GetRulesFilter.newBuilder().setRuleScope(getRuleScope(List.of("dev"))).build());
+    assertEquals(2, results.size());
+    assertTrue(results.contains(expectedRules.get(0)));
+    assertTrue(results.contains(expectedRules.get(1)));
+
+    // Filter on prod env (first rule should come)
+    results =
+        rulesManager.getCustomSignatureRules(
+            requestContext,
+            GetRulesFilter.newBuilder().setRuleScope(getRuleScope(List.of("prod"))).build());
+    assertEquals(1, results.size());
+    assertEquals(expectedRules.get(0), results.get(0));
+
+    // Filter on staging env (both rules should get filtered out)
+    results =
+        rulesManager.getCustomSignatureRules(
+            requestContext,
+            GetRulesFilter.newBuilder().setRuleScope(getRuleScope(List.of("staging"))).build());
+    assertTrue(results.isEmpty());
   }
 
   @Test
@@ -168,9 +198,13 @@ public class CustomSignatureRulesManagerTest {
             .setName("name")
             .setDefinition(RuleDefinition.newBuilder().build())
             .setEffect(RuleEffect.newBuilder().build())
+            .setRuleScope(getRuleScope(List.of("dev")))
             .build();
     CreateCustomSignatureRuleRequest createRuleRequest =
-        CreateCustomSignatureRuleRequest.newBuilder().setName("name").build();
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setRuleScope(getRuleScope(List.of("dev")))
+            .build();
     assertEquals(
         customSignatureRule,
         rulesManager.createCustomSignatureRule(requestContext, createRuleRequest).get());
@@ -247,6 +281,7 @@ public class CustomSignatureRulesManagerTest {
             .setName("name")
             .setDefinition(RuleDefinition.newBuilder().build())
             .setEffect(RuleEffect.newBuilder().build())
+            .setRuleScope(RuleScope.newBuilder())
             .build();
     CreateCustomSignatureRuleRequest createRuleRequest =
         CreateCustomSignatureRuleRequest.newBuilder().setName("name").build();
@@ -378,8 +413,8 @@ public class CustomSignatureRulesManagerTest {
         (id, ruleConfig) ->
             configServiceBlockingStub.upsertConfig(
                 UpsertConfigRequest.newBuilder()
-                    .setResourceNamespace(RulesManager.CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE)
-                    .setResourceName(RulesManager.CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME)
+                    .setResourceNamespace(CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE)
+                    .setResourceName(CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME)
                     .setConfig(ruleConfig)
                     .setContext(id)
                     .build()));
@@ -392,5 +427,11 @@ public class CustomSignatureRulesManagerTest {
             .putFields("name", Value.newBuilder().setStringValue(name).build())
             .build();
     return Value.newBuilder().setStructValue(ruleConfigStruct).build();
+  }
+
+  private RuleScope getRuleScope(List<String> environmentIds) {
+    return RuleScope.newBuilder()
+        .setEnvironmentScope(EnvironmentScope.newBuilder().addAllEnvironmentIds(environmentIds))
+        .build();
   }
 }
