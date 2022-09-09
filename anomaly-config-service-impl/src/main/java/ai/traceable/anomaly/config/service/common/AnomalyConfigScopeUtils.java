@@ -92,9 +92,17 @@ public class AnomalyConfigScopeUtils {
         contextsWithIncreasingPriority.add(configScope.getEnvironmentScope().getEnvironmentId());
         break;
       case SERVICE_SCOPE:
+        if (configScope.getServiceScope().hasEnvironmentScope()) {
+          contextsWithIncreasingPriority.add(
+              configScope.getServiceScope().getEnvironmentScope().getEnvironmentId());
+        }
         contextsWithIncreasingPriority.add(configScope.getServiceScope().getId());
         break;
       case API_SCOPE:
+        if (configScope.getApiScope().getServiceScope().hasEnvironmentScope()) {
+          contextsWithIncreasingPriority.add(
+              configScope.getApiScope().getServiceScope().getEnvironmentScope().getEnvironmentId());
+        }
         contextsWithIncreasingPriority.add(configScope.getApiScope().getServiceScope().getId());
         contextsWithIncreasingPriority.add(configScope.getApiScope().getId());
         break;
@@ -134,6 +142,11 @@ public class AnomalyConfigScopeUtils {
     switch (configScopeToCheck.getScopeCase()) {
       case CUSTOMER_SCOPE:
         return true;
+      case ENVIRONMENT_SCOPE:
+        return requiredConfigScope
+            .getServiceScope()
+            .getEnvironmentScope()
+            .equals(configScopeToCheck.getEnvironmentScope());
       case SERVICE_SCOPE:
         return requiredConfigScope.getServiceScope().equals(configScopeToCheck.getServiceScope());
       default:
@@ -146,6 +159,12 @@ public class AnomalyConfigScopeUtils {
     switch (configScopeToCheck.getScopeCase()) {
       case CUSTOMER_SCOPE:
         return true;
+      case ENVIRONMENT_SCOPE:
+        return requiredConfigScope
+            .getApiScope()
+            .getServiceScope()
+            .getEnvironmentScope()
+            .equals(configScopeToCheck.getEnvironmentScope());
       case SERVICE_SCOPE:
         return requiredConfigScope
             .getApiScope()
@@ -163,6 +182,13 @@ public class AnomalyConfigScopeUtils {
     switch (configScopeToCheck.getScopeCase()) {
       case CUSTOMER_SCOPE:
         return true;
+      case ENVIRONMENT_SCOPE:
+        return requiredConfigScope
+            .getParamScope()
+            .getApiScope()
+            .getServiceScope()
+            .getEnvironmentScope()
+            .equals(configScopeToCheck.getEnvironmentScope());
       case SERVICE_SCOPE:
         return requiredConfigScope
             .getParamScope()
