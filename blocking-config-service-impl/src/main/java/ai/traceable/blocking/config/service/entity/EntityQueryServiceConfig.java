@@ -11,7 +11,7 @@ public class EntityQueryServiceConfig {
   @Inject
   public EntityQueryServiceConfig(Config config) {
     this.config = config.getConfig("entity.service.config");
-    this.attributesMapConfig = config.getConfig("attributeMap");
+    this.attributesMapConfig = config.getConfig("entity.service.attributeMap");
   }
 
   public String getEntityServiceHost() {
