@@ -94,6 +94,12 @@ public abstract class IdentifiedObjectStore<T> {
                 Collectors.toUnmodifiableList(), this::orderFetchedObjects));
   }
 
+  public List<T> getAllConfigData(RequestContext context) {
+    return getAllObjects(context).stream()
+        .map(ConfigObject::getData)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
   public Optional<ContextualConfigObject<T>> getObject(RequestContext context, String id) {
     try {
       GetConfigResponse getConfigResponse =
@@ -123,26 +129,7 @@ public abstract class IdentifiedObjectStore<T> {
   }
 
   public Optional<T> getData(RequestContext context, String id) {
-    try {
-      Value value =
-          context.call(
-              () ->
-                  this.configServiceBlockingStub
-                      .getConfig(
-                          GetConfigRequest.newBuilder()
-                              .setResourceName(this.resourceName)
-                              .setResourceNamespace(this.resourceNamespace)
-                              .addContexts(id)
-                              .build())
-                      .getConfig());
-      T object = this.buildDataFromValue(value).orElseThrow(Status.INTERNAL::asRuntimeException);
-      return Optional.of(object);
-    } catch (Exception exception) {
-      if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
-        return Optional.empty();
-      }
-      throw exception;
-    }
+    return getObject(context, id).map(ConfigObject::getData);
   }
 
   public ContextualConfigObject<T> upsertObject(RequestContext context, T data) {
