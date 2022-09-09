@@ -12,6 +12,7 @@ import static ai.traceable.platform.actor.v1.Status.STATUS_SUSPENDED;
 import ai.traceable.blocking.config.service.BlockingDataCacheConfig;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.config.ActorServiceConfig;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.utils.BlockingRulesUtils;
+import ai.traceable.blocking.config.service.v1.ActorDetails;
 import ai.traceable.blocking.config.service.v1.BlockingCategory;
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
 import ai.traceable.blocking.config.service.v1.BlockingRuleType;
@@ -114,7 +115,7 @@ public class ActorBasedRulesCache {
               if (actor.getStatusChangeSource()
                   == StatusChangeSource.STATUS_CHANGE_SOURCE_RATE_LIMIT) {
                 // Rate limit error
-                rateLimitBasedIpViolations.add(
+                rateLimitBasedIpViolations.addAll(
                     this.generateBlockingDetails(
                         actor,
                         BLOCKING_CATEGORY_RATE_LIMIT,
@@ -131,7 +132,7 @@ public class ActorBasedRulesCache {
                     break;
                   case STATUS_ALWAYS_ALLOWED:
                   case STATUS_SNOOZED:
-                    threatActorBasedIpExemptions.add(
+                    threatActorBasedIpExemptions.addAll(
                         this.generateBlockingDetails(
                             actor,
                             BLOCKING_CATEGORY_THREAT_ACTOR,
@@ -141,7 +142,7 @@ public class ActorBasedRulesCache {
                     break;
                   case STATUS_ALWAYS_DENIED:
                   case STATUS_SUSPENDED:
-                    threatActorBasedIpViolations.add(
+                    threatActorBasedIpViolations.addAll(
                         this.generateBlockingDetails(
                             actor,
                             BLOCKING_CATEGORY_THREAT_ACTOR,
@@ -164,24 +165,36 @@ public class ActorBasedRulesCache {
         && blockingRulesUtils.isRuleActive(actor.getStatusExpiryTimestamp());
   }
 
-  private BlockingDetails generateBlockingDetails(
+  private List<BlockingDetails> generateBlockingDetails(
       Actor actor,
       BlockingCategory blockingCategory,
       BlockingRuleType blockingRuleType,
       String info) {
-    return BlockingDetails.newBuilder()
-        .setCategory(blockingCategory)
-        .setBlockingRuleType(blockingRuleType)
-        .setInfo(info)
-        .setExpirationTimestamp(actor.getStatusExpiryTimestamp())
-        .setStatus(
-            blockingRulesUtils.generateBlockingStatus(
-                actor.getStatusExpiryTimestamp(), blockingRuleType))
-        .setIpDetails(
-            IpDetails.newBuilder()
-                .addAllIpAddresses(parseIpAddresses(actor.getIpAddressesList()))
-                .build())
-        .build();
+    BlockingDetails actorDetails =
+        BlockingDetails.newBuilder()
+            .setCategory(blockingCategory)
+            .setBlockingRuleType(blockingRuleType)
+            .setInfo(info)
+            .setExpirationTimestamp(actor.getStatusExpiryTimestamp())
+            .setStatus(
+                blockingRulesUtils.generateBlockingStatus(
+                    actor.getStatusExpiryTimestamp(), blockingRuleType))
+            .setActorDetails(
+                ActorDetails.newBuilder()
+                    .addAllIpAddresses(parseIpAddresses(actor.getIpAddressesList()))
+                    .setUserId(actor.getActorId()))
+            .build();
+
+    // for backward compatibility
+    BlockingDetails ipDetails =
+        actorDetails.toBuilder()
+            .clearActorDetails()
+            .setIpDetails(
+                IpDetails.newBuilder()
+                    .addAllIpAddresses(parseIpAddresses(actor.getIpAddressesList())))
+            .build();
+
+    return List.of(actorDetails, ipDetails);
   }
 
   private List<String> parseIpAddresses(List<String> ipAddresses) {

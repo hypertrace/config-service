@@ -4,8 +4,9 @@ import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_THREAT_ACTOR;
 import static ai.traceable.blocking.config.service.v1.BlockingRuleType.BLOCKING_RULE_TYPE_ALLOW;
 import static ai.traceable.blocking.config.service.v1.BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK;
-import static ai.traceable.blocking.config.service.v1.BlockingStatus.BLOCKING_STATUS_ALLOWED;
 import static ai.traceable.blocking.config.service.v1.BlockingStatus.BLOCKING_STATUS_DENIED;
+import static ai.traceable.blocking.config.service.v1.BlockingStatus.BLOCKING_STATUS_SNOOZED;
+import static ai.traceable.blocking.config.service.v1.BlockingStatus.BLOCKING_STATUS_SUSPENDED;
 import static ai.traceable.platform.actor.v1.Status.STATUS_ALWAYS_ALLOWED;
 import static ai.traceable.platform.actor.v1.Status.STATUS_ALWAYS_DENIED;
 import static ai.traceable.platform.actor.v1.Status.STATUS_SNOOZED;
@@ -32,6 +33,7 @@ import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import com.google.common.collect.ImmutableList;
 import com.typesafe.config.ConfigFactory;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -46,22 +48,14 @@ class ActorBasedRulesCacheTest {
   private static final long inactiveTimestamp = System.currentTimeMillis() - 10000L;
   private static final long activeTimestamp = System.currentTimeMillis() + 10000L;
 
+  private final BlockingRulesUtils blockingRulesUtils = new BlockingRulesUtils(Clock.systemUTC());
+
   private ActorServiceBlockingStub actorServiceBlockingStub;
   private ActorBasedRulesCache actorBasedRulesCache;
 
   @BeforeEach
   void setUp() {
     actorServiceBlockingStub = mock(ActorServiceBlockingStub.class, RETURNS_DEEP_STUBS);
-
-    BlockingRulesUtils blockingRulesUtils = mock(BlockingRulesUtils.class);
-    doReturn(true).when(blockingRulesUtils).isRuleActive(activeTimestamp);
-    doReturn(false).when(blockingRulesUtils).isRuleActive(inactiveTimestamp);
-    doReturn(BLOCKING_STATUS_ALLOWED)
-        .when(blockingRulesUtils)
-        .generateBlockingStatus(activeTimestamp, BLOCKING_RULE_TYPE_ALLOW);
-    doReturn(BLOCKING_STATUS_DENIED)
-        .when(blockingRulesUtils)
-        .generateBlockingStatus(activeTimestamp, BLOCKING_RULE_TYPE_BLOCK);
 
     ActorServiceConfig actorServiceConfig = mock(ActorServiceConfig.class);
     doReturn(Duration.ofSeconds(30)).when(actorServiceConfig).getCallTimeoutDuration();
@@ -126,31 +120,51 @@ class ActorBasedRulesCacheTest {
         actorBasedRulesCache.getActorBasedRules(REQUEST_CONTEXT.buildInternalContextualKey());
 
     List<BlockingDetails> violations = response.getThreatActorBasedIpViolations();
-    assertEquals(1, violations.size());
+    assertEquals(2, violations.size());
     assertEquals(
-        List.of("1.1.1.1", "2.2.2.2"), violations.get(0).getIpDetails().getIpAddressesList());
+        List.of("1.1.1.1", "2.2.2.2"), violations.get(0).getActorDetails().getIpAddressesList());
     assertEquals(BLOCKING_CATEGORY_THREAT_ACTOR, violations.get(0).getCategory());
+    assertEquals("actor-2", violations.get(0).getActorDetails().getUserId());
     assertEquals(BLOCKING_RULE_TYPE_BLOCK, violations.get(0).getBlockingRuleType());
-    assertEquals(BLOCKING_STATUS_DENIED, violations.get(0).getStatus());
+    assertEquals(BLOCKING_STATUS_SUSPENDED, violations.get(0).getStatus());
     assertEquals(
         ViolationInfoEncoder.getEncodedThreatActorViolationInfo("entity-2"),
         violations.get(0).getInfo());
+    assertEquals(
+        List.of("1.1.1.1", "2.2.2.2"), violations.get(1).getIpDetails().getIpAddressesList());
+    assertEquals(BLOCKING_CATEGORY_THREAT_ACTOR, violations.get(1).getCategory());
+    assertEquals(BLOCKING_RULE_TYPE_BLOCK, violations.get(1).getBlockingRuleType());
+    assertEquals(BLOCKING_STATUS_SUSPENDED, violations.get(1).getStatus());
+    assertEquals(
+        ViolationInfoEncoder.getEncodedThreatActorViolationInfo("entity-2"),
+        violations.get(1).getInfo());
 
     List<BlockingDetails> exemptions = response.getThreatActorBasedIpExemptions();
-    assertEquals(1, exemptions.size());
+    assertEquals(2, exemptions.size());
     assertEquals(
-        List.of("1.1.1.1", "2.2.2.2"), exemptions.get(0).getIpDetails().getIpAddressesList());
+        List.of("1.1.1.1", "2.2.2.2"), exemptions.get(0).getActorDetails().getIpAddressesList());
+    assertEquals("actor-7", exemptions.get(0).getActorDetails().getUserId());
     assertEquals(BLOCKING_CATEGORY_THREAT_ACTOR, exemptions.get(0).getCategory());
     assertEquals(BLOCKING_RULE_TYPE_ALLOW, exemptions.get(0).getBlockingRuleType());
-    assertEquals(BLOCKING_STATUS_ALLOWED, exemptions.get(0).getStatus());
+    assertEquals(BLOCKING_STATUS_SNOOZED, exemptions.get(0).getStatus());
     assertEquals(
         ExemptionInfoEncoder.getEncodedThreatActorExemptionInfo("entity-7"),
         exemptions.get(0).getInfo());
+    assertEquals(
+        List.of("1.1.1.1", "2.2.2.2"), exemptions.get(1).getIpDetails().getIpAddressesList());
+    assertEquals(BLOCKING_CATEGORY_THREAT_ACTOR, exemptions.get(1).getCategory());
+    assertEquals(BLOCKING_RULE_TYPE_ALLOW, exemptions.get(1).getBlockingRuleType());
+    assertEquals(BLOCKING_STATUS_SNOOZED, exemptions.get(1).getStatus());
+    assertEquals(
+        ExemptionInfoEncoder.getEncodedThreatActorExemptionInfo("entity-7"),
+        exemptions.get(1).getInfo());
 
     List<BlockingDetails> rateLimitBasedIpViolation = response.getRateLimitBasedIpViolations();
-    assertEquals(1, rateLimitBasedIpViolation.size());
+    assertEquals(2, rateLimitBasedIpViolation.size());
     assertEquals(
-        List.of("1.1.1.1"), rateLimitBasedIpViolation.get(0).getIpDetails().getIpAddressesList());
+        List.of("1.1.1.1"),
+        rateLimitBasedIpViolation.get(0).getActorDetails().getIpAddressesList());
+    assertEquals("actor-1", rateLimitBasedIpViolation.get(0).getActorDetails().getUserId());
     assertEquals(BLOCKING_CATEGORY_RATE_LIMIT, rateLimitBasedIpViolation.get(0).getCategory());
     assertEquals(BLOCKING_RULE_TYPE_BLOCK, rateLimitBasedIpViolation.get(0).getBlockingRuleType());
     assertEquals(BLOCKING_STATUS_DENIED, rateLimitBasedIpViolation.get(0).getStatus());
@@ -158,6 +172,15 @@ class ActorBasedRulesCacheTest {
         ViolationInfoEncoder.getEncodedRateLimitViolationInfo(
             "entity-1", "rate-limit-id-1", "rate-limit-name-1"),
         rateLimitBasedIpViolation.get(0).getInfo());
+    assertEquals(
+        List.of("1.1.1.1"), rateLimitBasedIpViolation.get(1).getIpDetails().getIpAddressesList());
+    assertEquals(BLOCKING_CATEGORY_RATE_LIMIT, rateLimitBasedIpViolation.get(1).getCategory());
+    assertEquals(BLOCKING_RULE_TYPE_BLOCK, rateLimitBasedIpViolation.get(1).getBlockingRuleType());
+    assertEquals(BLOCKING_STATUS_DENIED, rateLimitBasedIpViolation.get(1).getStatus());
+    assertEquals(
+        ViolationInfoEncoder.getEncodedRateLimitViolationInfo(
+            "entity-1", "rate-limit-id-1", "rate-limit-name-1"),
+        rateLimitBasedIpViolation.get(1).getInfo());
   }
 
   private static List<Actor> generateSampleResponse() {
@@ -175,7 +198,6 @@ class ActorBasedRulesCacheTest {
                             .setRuleName("rate-limit-name-1")
                             .build())
                     .build())
-            .setStatusExpiryTimestamp(activeTimestamp)
             .build(),
         Actor.newBuilder()
             .setActorId("actor-2")

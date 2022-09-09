@@ -69,6 +69,7 @@ message BlockingDetails {
         ModsecDetails modsec_details = 6;
         CustomSignatureDetails custom_signature_details = 7;
         RegionDetails region_details = 8;
+        ActorDetails actor_details = 10;
     }
 }
 
@@ -79,6 +80,11 @@ message ModsecDetails {
 message IpDetails {
     repeated string ip_addresses = 1;
     repeated string ip_ranges = 2;
+}
+
+message ActorDetails {
+    string user_id = 1;
+    repeated string ip_addresses = 2;
 }
 
 message CustomSignatureDetails {
