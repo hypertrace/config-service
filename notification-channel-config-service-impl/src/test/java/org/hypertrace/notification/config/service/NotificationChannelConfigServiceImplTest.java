@@ -1,6 +1,7 @@
 package org.hypertrace.notification.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.mock;
 
 import java.util.List;
@@ -15,6 +16,7 @@ import org.hypertrace.notification.config.service.v1.NotificationChannel;
 import org.hypertrace.notification.config.service.v1.NotificationChannelConfigServiceGrpc;
 import org.hypertrace.notification.config.service.v1.NotificationChannelMutableData;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelRequest;
+import org.hypertrace.notification.config.service.v1.WebhookChannelConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -118,6 +120,53 @@ class NotificationChannelConfigServiceImplTest {
         channelStub
             .getAllNotificationChannels(GetAllNotificationChannelsRequest.getDefaultInstance())
             .getNotificationChannelsList());
+  }
+
+  @Test
+  void testIdPropagation() {
+    NotificationChannelMutableData data =
+        NotificationChannelMutableData.newBuilder()
+            .setChannelName("test-channel")
+            .addWebhookChannelConfig(WebhookChannelConfig.newBuilder())
+            .build();
+
+    NotificationChannel channel =
+        channelStub
+            .createNotificationChannel(
+                CreateNotificationChannelRequest.newBuilder()
+                    .setNotificationChannelMutableData(data)
+                    .build())
+            .getNotificationChannel();
+
+    String configId =
+        channel.getNotificationChannelMutableData().getWebhookChannelConfigList().get(0).getId();
+
+    // id should get generated
+    assertFalse(configId.isEmpty());
+
+    data =
+        NotificationChannelMutableData.newBuilder()
+            .setChannelName("test-channel")
+            .addWebhookChannelConfig(WebhookChannelConfig.newBuilder().setId(configId))
+            .build();
+
+    NotificationChannel updatedChannel =
+        channelStub
+            .updateNotificationChannel(
+                UpdateNotificationChannelRequest.newBuilder()
+                    .setNotificationChannelMutableData(data)
+                    .setId(channel.getId())
+                    .build())
+            .getNotificationChannel();
+
+    // id should not get generated
+    assertEquals(
+        configId,
+        updatedChannel
+            .getNotificationChannelMutableData()
+            .getWebhookChannelConfigList()
+            .get(0)
+            .getId());
   }
 
   private NotificationChannelMutableData getNotificationChannelMutableData(String name) {
