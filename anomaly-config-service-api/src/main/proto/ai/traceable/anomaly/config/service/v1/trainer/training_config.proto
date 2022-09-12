@@ -149,6 +149,7 @@ message VulnerabilityTrainingConfig {
     ServiceUsesBasicAuthTrainingConfig service_uses_basic_auth = 8;
     CspSecurityHeaderTrainingConfig csp_security_header = 9;
     DirectoryListingTrainingConfig directory_listing = 10;
+    EnumerableParamTrainingConfig enumerable_param = 11;
   }
 }
 
@@ -280,6 +281,11 @@ message DirectoryListingTrainingConfig {}
 message JavaSerializedObjectTrainingConfig {}
 
 message ServiceUsesBasicAuthTrainingConfig {}
+
+message EnumerableParamTrainingConfig {
+  optional string include_param_regex = 1;
+  optional int32 max_allowed_bucket_occurrence_percent = 2;
+}
 
 message ObjectBolaTrainingConfig {
   ParamSusceptibilityConfig param_susceptibility_config = 1;
