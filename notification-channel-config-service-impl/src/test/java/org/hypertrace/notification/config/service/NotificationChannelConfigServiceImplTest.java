@@ -17,6 +17,7 @@ import org.hypertrace.notification.config.service.v1.NotificationChannelConfigSe
 import org.hypertrace.notification.config.service.v1.NotificationChannelMutableData;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.WebhookChannelConfig;
+import org.hypertrace.notification.config.service.v1.WebhookHeader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -167,6 +168,208 @@ class NotificationChannelConfigServiceImplTest {
             .getWebhookChannelConfigList()
             .get(0)
             .getId());
+  }
+
+  @Test
+  void testHeaderPopulation() {
+    NotificationChannelMutableData data =
+        NotificationChannelMutableData.newBuilder()
+            .setChannelName("test-channel")
+            .addWebhookChannelConfig(WebhookChannelConfig.newBuilder())
+            .build();
+
+    NotificationChannel channel =
+        channelStub
+            .createNotificationChannel(
+                CreateNotificationChannelRequest.newBuilder()
+                    .setNotificationChannelMutableData(data)
+                    .build())
+            .getNotificationChannel();
+
+    // no secret header
+    NotificationChannel updatedChannel =
+        channelStub
+            .updateNotificationChannel(
+                UpdateNotificationChannelRequest.newBuilder()
+                    .setNotificationChannelMutableData(data)
+                    .setId(channel.getId())
+                    .build())
+            .getNotificationChannel();
+
+    assertEquals(
+        data.getWebhookChannelConfigList().get(0).getHeadersList(),
+        updatedChannel
+            .getNotificationChannelMutableData()
+            .getWebhookChannelConfigList()
+            .get(0)
+            .getHeadersList());
+
+    // add a new config with secret headers
+    data =
+        NotificationChannelMutableData.newBuilder()
+            .setChannelName("test-channel")
+            .addWebhookChannelConfig(
+                WebhookChannelConfig.newBuilder()
+                    .addHeaders(
+                        WebhookHeader.newBuilder()
+                            .setName("test-header")
+                            .setValue("test-encrypted-header")
+                            .setIsSecret(true)))
+            .build();
+
+    updatedChannel =
+        channelStub
+            .updateNotificationChannel(
+                UpdateNotificationChannelRequest.newBuilder()
+                    .setNotificationChannelMutableData(data)
+                    .setId(channel.getId())
+                    .build())
+            .getNotificationChannel();
+
+    assertEquals(
+        data.getWebhookChannelConfigList().get(0).getHeadersList(),
+        updatedChannel
+            .getNotificationChannelMutableData()
+            .getWebhookChannelConfigList()
+            .get(0)
+            .getHeadersList());
+
+    List<NotificationChannel> notificationChannels =
+        channelStub
+            .getAllNotificationChannels(GetAllNotificationChannelsRequest.getDefaultInstance())
+            .getNotificationChannelsList();
+    assertEquals(
+        1,
+        notificationChannels
+            .get(0)
+            .getNotificationChannelMutableData()
+            .getWebhookChannelConfigList()
+            .size());
+
+    String configId =
+        updatedChannel
+            .getNotificationChannelMutableData()
+            .getWebhookChannelConfigList()
+            .get(0)
+            .getId();
+
+    // add secret header to existing config
+    data =
+        NotificationChannelMutableData.newBuilder()
+            .setChannelName("test-channel")
+            .addWebhookChannelConfig(
+                WebhookChannelConfig.newBuilder()
+                    .setId(configId)
+                    .addHeaders(
+                        WebhookHeader.newBuilder()
+                            .setName("test-header")
+                            .setValue("")
+                            .setIsSecret(true))
+                    .addHeaders(
+                        WebhookHeader.newBuilder()
+                            .setName("test-header-2")
+                            .setValue("test-encrypted-header-2")
+                            .setIsSecret(true)))
+            .build();
+
+    updatedChannel =
+        channelStub
+            .updateNotificationChannel(
+                UpdateNotificationChannelRequest.newBuilder()
+                    .setNotificationChannelMutableData(data)
+                    .setId(channel.getId())
+                    .build())
+            .getNotificationChannel();
+
+    NotificationChannelMutableData expectedData =
+        NotificationChannelMutableData.newBuilder()
+            .setChannelName("test-channel")
+            .addWebhookChannelConfig(
+                WebhookChannelConfig.newBuilder()
+                    .setId(configId)
+                    .addHeaders(
+                        WebhookHeader.newBuilder()
+                            .setName("test-header")
+                            .setValue("test-encrypted-header")
+                            .setIsSecret(true))
+                    .addHeaders(
+                        WebhookHeader.newBuilder()
+                            .setName("test-header-2")
+                            .setValue("test-encrypted-header-2")
+                            .setIsSecret(true)))
+            .build();
+
+    assertEquals(
+        expectedData.getWebhookChannelConfigList().get(0).getHeadersList(),
+        updatedChannel
+            .getNotificationChannelMutableData()
+            .getWebhookChannelConfigList()
+            .get(0)
+            .getHeadersList());
+
+    // add non-secret header to existing config
+    data =
+        NotificationChannelMutableData.newBuilder()
+            .setChannelName("test-channel")
+            .addWebhookChannelConfig(
+                WebhookChannelConfig.newBuilder()
+                    .setId(configId)
+                    .addHeaders(
+                        WebhookHeader.newBuilder()
+                            .setName("test-header")
+                            .setValue("")
+                            .setIsSecret(true))
+                    .addHeaders(
+                        WebhookHeader.newBuilder()
+                            .setName("test-header-2")
+                            .setValue("")
+                            .setIsSecret(true))
+                    .addHeaders(
+                        WebhookHeader.newBuilder()
+                            .setName("test-header-3")
+                            .setValue("test-header-3")
+                            .setIsSecret(false)))
+            .build();
+
+    updatedChannel =
+        channelStub
+            .updateNotificationChannel(
+                UpdateNotificationChannelRequest.newBuilder()
+                    .setNotificationChannelMutableData(data)
+                    .setId(channel.getId())
+                    .build())
+            .getNotificationChannel();
+
+    expectedData =
+        NotificationChannelMutableData.newBuilder()
+            .setChannelName("test-channel")
+            .addWebhookChannelConfig(
+                WebhookChannelConfig.newBuilder()
+                    .setId(configId)
+                    .addHeaders(
+                        WebhookHeader.newBuilder()
+                            .setName("test-header")
+                            .setValue("test-encrypted-header")
+                            .setIsSecret(true))
+                    .addHeaders(
+                        WebhookHeader.newBuilder()
+                            .setName("test-header-2")
+                            .setValue("test-encrypted-header-2")
+                            .setIsSecret(true))
+                    .addHeaders(
+                        WebhookHeader.newBuilder()
+                            .setName("test-header-3")
+                            .setValue("test-header-3")
+                            .setIsSecret(false)))
+            .build();
+
+    assertEquals(
+        expectedData.getWebhookChannelConfigList().get(0).getHeadersList(),
+        updatedChannel
+            .getNotificationChannelMutableData()
+            .getWebhookChannelConfigList()
+            .get(0)
+            .getHeadersList());
   }
 
   private NotificationChannelMutableData getNotificationChannelMutableData(String name) {

@@ -50,10 +50,16 @@ public class Utils {
   private WebhookChannelConfig transformConfig(WebhookChannelConfig config, String channelId) {
     List<WebhookHeader> updatedHeaders = config.getHeadersList();
     if (hasSecretHeaders(updatedHeaders)) {
+      Optional<WebhookChannelConfig> currentConfig = getCurrentConfig(config.getId(), channelId);
+
+      // if newly added config, return as no encrypted secret headers
+      if (currentConfig.isEmpty()) {
+        return config;
+      }
+
       return config.toBuilder()
           .clearHeaders()
-          .addAllHeaders(
-              transformHeaders(updatedHeaders, getCurrentHeaderList(config.getId(), channelId)))
+          .addAllHeaders(transformHeaders(updatedHeaders, currentConfig.get().getHeadersList()))
           .build();
     } else {
       return config;
@@ -87,19 +93,15 @@ public class Utils {
         .collect(Collectors.toList());
   }
 
-  @SneakyThrows
-  private List<WebhookHeader> getCurrentHeaderList(String configId, String channelId) {
+  private Optional<WebhookChannelConfig> getCurrentConfig(String configId, String channelId) {
     RequestContext requestContext = RequestContext.CURRENT.get();
     NotificationChannel channel =
         notificationChannelStore
             .getData(requestContext, channelId)
             .orElseThrow(Status.NOT_FOUND::asRuntimeException);
 
-    Optional<WebhookChannelConfig> configOptional =
-        channel.getNotificationChannelMutableData().getWebhookChannelConfigList().stream()
-            .filter(config -> config.getId().equals(configId))
-            .findFirst();
-
-    return configOptional.get().getHeadersList();
+    return channel.getNotificationChannelMutableData().getWebhookChannelConfigList().stream()
+        .filter(config -> config.getId().equals(configId))
+        .findFirst();
   }
 }
