@@ -1,0 +1,136 @@
+syntax = "proto3";
+
+package ai.traceable.external.agent.attribute.config.service.v1;
+option go_package = "github.com/Traceableai/config-service/gen/go/ai/traceable/external/agent/attribute/config/service/v1";
+
+option java_multiple_files = true;
+
+message AgentAttributeRules {
+  repeated AgentAttributeRule agent_attribute_rule = 1;
+}
+
+message AgentAttributeRule {
+  SpanFilter span_filter = 1;
+
+  // Parse the original attribute value and apply actions
+  AttributeRule root_rule = 2;
+
+  message AttributeRule {
+    // actions to be taken at this point before more projection
+    repeated Action initial_actions = 1;
+    Projector projector = 2;
+    // actions to be taken once projection is successful before going into child rules
+    repeated Action before_children_actions = 3;
+    // actions to be taken after all children
+    repeated Action end_actions = 4;
+
+    message Action {
+      oneof action {
+        AttributeAddition attribute_addition = 1;
+        AttributeAppend attribute_append = 2;
+      }
+
+      message AttributeAddition {
+        // new attribute to be added
+        string attribute_key = 1;
+        // rule to get the value of this attribute
+        AttributeRule value_projection_rule = 2;
+      }
+
+      message AttributeAppend{
+        // attribute key to append to (will add if not present)
+        string attribute_key = 1;
+        // rule to get the value to append
+        AttributeRule value_projection_rule = 2;
+        // separator between appended values. Optional
+        string separator = 3;
+      }
+    }
+
+    message Projector {
+      oneof projector {
+        AttributeProjector attribute_projector = 1;
+        NoOpProjector no_op_projector = 2;
+        JwtProjector jwt_projector = 3;
+        Base64Projector base64_projector = 4;
+        JsonProjector json_projector = 5;
+        CookieProjector cookie_projector = 6;
+        UrlEncodedProjector url_encoded_projector = 7;
+        RegexCaptureGroupProjector regex_capture_group_projector = 8;
+        StaticValueProjector value_projector = 9;
+        FirstMatchingProjector first_matching_projector = 10;
+        EachMatchingProjector each_matching_projector = 11;
+      }
+
+      message FirstMatchingProjector {
+        repeated AttributeRule attribute_rules = 1;
+      }
+
+      message EachMatchingProjector {
+        repeated AttributeRule attribute_rules = 1;
+      }
+
+      message NoOpProjector {}
+
+      message Base64Projector {
+        AttributeRule attribute_rule = 1;
+      }
+
+      message JwtProjector {
+        repeated ParsedObjectKeyRule claim_rules = 1;
+      }
+
+      message JsonProjector {
+        repeated ParsedObjectKeyRule json_path_rules = 1;
+      }
+
+      message CookieProjector {
+        repeated ParsedObjectKeyRule cookie_name_rules = 1;
+      }
+
+      message UrlEncodedProjector {
+        repeated ParsedObjectKeyRule url_param_rules = 1;
+      }
+
+      message ParsedObjectKeyRule {
+        string key = 1;
+        AttributeRule attribute_rule = 2;
+      }
+
+      message RegexCaptureGroupProjector {
+        string regex_capture_group = 1;
+        AttributeRule attribute_rule = 2;
+      }
+
+      message StaticValueProjector {
+        string value = 1;
+        AttributeRule attribute_rule = 2;
+      }
+
+      message AttributeProjector {
+        string attribute_key = 1;
+        AttributeRule attribute_rule = 2;
+      }
+    }
+  }
+
+  message SpanFilter {
+    repeated AttributePredicate required_matching_attributes = 1;
+
+    message AttributePredicate {
+      StringPredicate name_predicate = 1;
+      StringPredicate value_predicate = 2;
+    }
+
+    message StringPredicate {
+      Operator operator = 1;
+      string value = 2;
+    }
+
+    enum Operator {
+      OPERATOR_UNSPECIFIED = 0;
+      OPERATOR_EQUALS = 1;
+      OPERATOR_MATCHES_REGEX = 2;
+    }
+  }
+}
