@@ -8,6 +8,7 @@ import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRu
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import com.google.inject.Inject;
+import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 class DefaultCustomModsecBlockingManager implements CustomModsecBlockingManager {
@@ -33,7 +34,7 @@ class DefaultCustomModsecBlockingManager implements CustomModsecBlockingManager 
   }
 
   public CustomModsecBlockingRules getEnabledBlockingRules(
-      RequestContext requestContext, String requestHash) {
+      RequestContext requestContext, String requestHash, Optional<String> environmentId) {
     GetCustomSignatureModsecRulesResponse response =
         requestContext.call(
             () ->

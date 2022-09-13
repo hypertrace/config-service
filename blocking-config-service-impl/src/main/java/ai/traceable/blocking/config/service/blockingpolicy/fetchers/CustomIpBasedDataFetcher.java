@@ -9,11 +9,13 @@ import ai.traceable.blocking.config.service.blockingpolicy.fetchers.utils.Blocki
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
 import ai.traceable.blocking.config.service.v1.BlockingRuleType;
 import ai.traceable.blocking.config.service.v1.IpDetails;
+import ai.traceable.iprange.config.service.v1.EnvironmentScope;
 import ai.traceable.iprange.config.service.v1.GetIpRangeRulesRequest;
 import ai.traceable.iprange.config.service.v1.GetIpRangeRulesResponse;
 import ai.traceable.iprange.config.service.v1.GetRulesFilter;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc.IpRangeConfigServiceBlockingStub;
 import ai.traceable.iprange.config.service.v1.IpRangeRule;
+import ai.traceable.iprange.config.service.v1.RuleScope;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import com.google.inject.Inject;
@@ -21,15 +23,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CustomIpBasedDataFetcher {
   private static final Logger LOGGER = LoggerFactory.getLogger(CustomIpBasedDataFetcher.class);
-  private static final GetIpRangeRulesRequest getIpRangeRulesRequest =
+  private static final GetIpRangeRulesRequest DEFAULT_GET_IP_RANGE_RULES_REQUEST =
       GetIpRangeRulesRequest.newBuilder()
-          .setFilter(GetRulesFilter.newBuilder().setDisabled(false).build())
+          .setFilter(GetRulesFilter.newBuilder().setDisabled(false))
           .build();
 
   private final IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub;
@@ -44,10 +47,25 @@ public class CustomIpBasedDataFetcher {
   }
 
   public Map<BlockingRuleType, List<BlockingDetails>> getCustomIpBasedRules(
-      RequestContext requestContext) {
+      RequestContext requestContext, Optional<String> environmentId) {
     List<BlockingDetails> exemptions = new ArrayList<>();
     List<BlockingDetails> violations = new ArrayList<>();
     List<BlockingDetails> blockAllExcepts = new ArrayList<>();
+
+    GetIpRangeRulesRequest getIpRangeRulesRequest =
+        environmentId
+            .map(
+                id ->
+                    GetIpRangeRulesRequest.newBuilder()
+                        .setFilter(
+                            GetRulesFilter.newBuilder()
+                                .setDisabled(false)
+                                .setRuleScope(
+                                    RuleScope.newBuilder()
+                                        .setEnvironmentScope(
+                                            EnvironmentScope.newBuilder().addEnvironmentIds(id))))
+                        .build())
+            .orElse(DEFAULT_GET_IP_RANGE_RULES_REQUEST);
 
     GetIpRangeRulesResponse response =
         requestContext.call(() -> ipRangeConfigServiceStub.getIpRangeRules(getIpRangeRulesRequest));

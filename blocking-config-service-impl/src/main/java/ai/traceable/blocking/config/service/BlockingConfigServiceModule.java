@@ -8,7 +8,6 @@ import ai.traceable.blocking.config.service.blockingmodsec.ModsecBlockingManager
 import ai.traceable.blocking.config.service.blockingpolicy.BlockingPolicyConfigurationManagerModule;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.config.ActorServiceConfig;
 import ai.traceable.blocking.config.service.customsignature.CustomModsecBlockingManagerModule;
-import ai.traceable.blocking.config.service.entity.EntityQueryServiceConfig;
 import ai.traceable.blocking.config.service.regions.RegionBlockingManagerModule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
@@ -30,10 +29,13 @@ import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProvide
 class BlockingConfigServiceModule extends AbstractModule {
   private final Channel channel;
   private final Config config;
+  private final GrpcChannelRegistry grpcChannelRegistry;
 
-  public BlockingConfigServiceModule(Channel channel, Config config) {
+  public BlockingConfigServiceModule(
+      Channel channel, Config config, GrpcChannelRegistry grpcChannelRegistry) {
     this.channel = channel;
     this.config = config;
+    this.grpcChannelRegistry = grpcChannelRegistry;
   }
 
   @Override
@@ -41,6 +43,7 @@ class BlockingConfigServiceModule extends AbstractModule {
     bind(Clock.class).toInstance(Clock.systemUTC());
     bind(BindableService.class).to(BlockingConfigServiceImpl.class);
     bind(Channel.class).toInstance(channel);
+    bind(GrpcChannelRegistry.class).toInstance(grpcChannelRegistry);
     install(new RegionBlockingManagerModule());
     install(new CustomModsecBlockingManagerModule());
     install(new ModsecBlockingManagerModule());
@@ -90,13 +93,8 @@ class BlockingConfigServiceModule extends AbstractModule {
   }
 
   @Provides
-  EntityQueryServiceConfig providesEntityQueryServiceConfig() {
-    return new EntityQueryServiceConfig(this.config);
-  }
-
-  @Provides
-  ActorServiceBlockingStub providesActorServiceBlockingStub(ActorServiceConfig actorServiceConfig) {
-    GrpcChannelRegistry channelRegistry = new GrpcChannelRegistry();
+  ActorServiceBlockingStub providesActorServiceBlockingStub(
+      ActorServiceConfig actorServiceConfig, GrpcChannelRegistry channelRegistry) {
     return ActorServiceGrpc.newBlockingStub(
             channelRegistry.forPlaintextAddress(
                 actorServiceConfig.getHost(), actorServiceConfig.getPort()))

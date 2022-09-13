@@ -10,12 +10,14 @@ import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_ALLO
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_BLOCK;
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
 import ai.traceable.blocking.config.service.v1.BlockingRuleType;
+import ai.traceable.iprange.config.service.v1.EnvironmentScope;
 import ai.traceable.iprange.config.service.v1.ExpirationDetails;
 import ai.traceable.iprange.config.service.v1.GetIpRangeRulesRequest;
 import ai.traceable.iprange.config.service.v1.GetIpRangeRulesResponse;
@@ -23,16 +25,19 @@ import ai.traceable.iprange.config.service.v1.GetRulesFilter;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc.IpRangeConfigServiceBlockingStub;
 import ai.traceable.iprange.config.service.v1.IpRangeRule;
 import ai.traceable.iprange.config.service.v1.IpRangeRuleDetails;
+import ai.traceable.iprange.config.service.v1.RuleScope;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class CustomIpBasedDataFetcherTest {
   private static final String TENANT_ID = "tenant-id";
+  private static final String ENVIRONMENT_ID = "environment-id";
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
 
   private IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub;
@@ -73,7 +78,7 @@ class CustomIpBasedDataFetcherTest {
                 .build());
 
     Map<BlockingRuleType, List<BlockingDetails>> customIpBasedRuleMap =
-        customIpBasedDataFetcher.getCustomIpBasedRules(REQUEST_CONTEXT);
+        customIpBasedDataFetcher.getCustomIpBasedRules(REQUEST_CONTEXT, Optional.empty());
 
     assertEquals(3, customIpBasedRuleMap.size());
     assertEquals(0, customIpBasedRuleMap.get(BLOCKING_RULE_TYPE_ALLOW).size());
@@ -82,112 +87,8 @@ class CustomIpBasedDataFetcherTest {
   }
 
   @Test
-  void getCustomIpBasedRulesTest() {
-    doReturn(
-            GetIpRangeRulesResponse.newBuilder()
-                .addRules(
-                    IpRangeRule.newBuilder()
-                        .setId("rule-id-1")
-                        .setRuleDetails(
-                            IpRangeRuleDetails.newBuilder()
-                                .setName("rule-name-1")
-                                .setRuleAction(RULE_ACTION_BLOCK)
-                                .setExpirationDetails(
-                                    ExpirationDetails.newBuilder()
-                                        .setExpirationTimestampMillis(activeTimestamp)
-                                        .build())
-                                .build())
-                        .addIpAddresses("1.2.3.4")
-                        .addIpAddresses("11.22.33.44")
-                        .build())
-                .addRules(
-                    IpRangeRule.newBuilder()
-                        .setId("rule-id-2")
-                        .setRuleDetails(
-                            IpRangeRuleDetails.newBuilder()
-                                .setName("rule-name-2")
-                                .setRuleAction(RULE_ACTION_BLOCK)
-                                .setExpirationDetails(
-                                    ExpirationDetails.newBuilder()
-                                        .setExpirationTimestampMillis(inactiveTimestamp)
-                                        .build())
-                                .build())
-                        .addIpAddresses("1.2.3.4")
-                        .addIpAddresses("11.22.33.44")
-                        .build())
-                .addRules(
-                    IpRangeRule.newBuilder()
-                        .setId("rule-id-3")
-                        .setRuleDetails(
-                            IpRangeRuleDetails.newBuilder()
-                                .setName("rule-name-3")
-                                .setRuleAction(RULE_ACTION_BLOCK)
-                                .setExpirationDetails(
-                                    ExpirationDetails.newBuilder()
-                                        .setExpirationTimestampMillis(activeTimestamp)
-                                        .build())
-                                .build())
-                        .addIpRanges("1.2.3.4")
-                        .build())
-                .addRules(
-                    IpRangeRule.newBuilder()
-                        .setId("rule-id-4")
-                        .setRuleDetails(
-                            IpRangeRuleDetails.newBuilder()
-                                .setName("rule-name-4")
-                                .setRuleAction(RULE_ACTION_BLOCK)
-                                .setExpirationDetails(
-                                    ExpirationDetails.newBuilder()
-                                        .setExpirationTimestampMillis(activeTimestamp)
-                                        .build())
-                                .build())
-                        .build())
-                .addRules(
-                    IpRangeRule.newBuilder()
-                        .setId("rule-id-5")
-                        .setRuleDetails(
-                            IpRangeRuleDetails.newBuilder()
-                                .setName("rule-name-5")
-                                .setRuleAction(RULE_ACTION_ALLOW)
-                                .setExpirationDetails(
-                                    ExpirationDetails.newBuilder()
-                                        .setExpirationTimestampMillis(activeTimestamp)
-                                        .build())
-                                .build())
-                        .addIpAddresses("1.2.3.4")
-                        .addIpAddresses("11.22.33.44")
-                        .build())
-                .addRules(
-                    IpRangeRule.newBuilder()
-                        .setId("rule-id-6")
-                        .setRuleDetails(
-                            IpRangeRuleDetails.newBuilder()
-                                .setName("rule-name-6")
-                                .setRuleAction(RULE_ACTION_ALLOW)
-                                .setExpirationDetails(
-                                    ExpirationDetails.newBuilder()
-                                        .setExpirationTimestampMillis(inactiveTimestamp)
-                                        .build())
-                                .build())
-                        .addIpAddresses("1.2.3.4")
-                        .addIpAddresses("11.22.33.44")
-                        .build())
-                .addRules(
-                    IpRangeRule.newBuilder()
-                        .setId("rule-id-7")
-                        .setRuleDetails(
-                            IpRangeRuleDetails.newBuilder()
-                                .setName("rule-name-7")
-                                .setRuleAction(RULE_ACTION_BLOCK_ALL_EXCEPT)
-                                .setExpirationDetails(
-                                    ExpirationDetails.newBuilder()
-                                        .setExpirationTimestampMillis(activeTimestamp)
-                                        .build())
-                                .build())
-                        .addIpAddresses("1.2.3.4")
-                        .addIpAddresses("11.22.33.44")
-                        .build())
-                .build())
+  void getCustomIpBasedRulesTestWithoutEnvironment() {
+    doReturn(sampleGetIpRangeRulesResponse)
         .when(ipRangeConfigServiceStub)
         .getIpRangeRules(
             GetIpRangeRulesRequest.newBuilder()
@@ -195,7 +96,7 @@ class CustomIpBasedDataFetcherTest {
                 .build());
 
     Map<BlockingRuleType, List<BlockingDetails>> customIpBasedRuleMap =
-        customIpBasedDataFetcher.getCustomIpBasedRules(REQUEST_CONTEXT);
+        customIpBasedDataFetcher.getCustomIpBasedRules(REQUEST_CONTEXT, Optional.empty());
 
     assertEquals(3, customIpBasedRuleMap.size());
 
@@ -234,4 +135,151 @@ class CustomIpBasedDataFetcherTest {
         ViolationInfoEncoder.getEncodedCustomIpRuleViolationInfo("rule-id-7", "rule-name-7"),
         blockAllExcepts.get(0).getInfo());
   }
+
+  @Test
+  void getCustomIpBasedRulesTestWithEnvironment() {
+    doReturn(sampleGetIpRangeRulesResponse)
+        .when(ipRangeConfigServiceStub)
+        .getIpRangeRules(
+            GetIpRangeRulesRequest.newBuilder()
+                .setFilter(
+                    GetRulesFilter.newBuilder()
+                        .setDisabled(false)
+                        .setRuleScope(
+                            RuleScope.newBuilder()
+                                .setEnvironmentScope(
+                                    EnvironmentScope.newBuilder()
+                                        .addEnvironmentIds(ENVIRONMENT_ID)
+                                        .build())
+                                .build())
+                        .build())
+                .build());
+
+    Map<BlockingRuleType, List<BlockingDetails>> customIpBasedRuleMap =
+        customIpBasedDataFetcher.getCustomIpBasedRules(
+            REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
+
+    assertEquals(3, customIpBasedRuleMap.size());
+    assertEquals(2, customIpBasedRuleMap.get(BLOCKING_RULE_TYPE_BLOCK).size());
+    assertEquals(1, customIpBasedRuleMap.get(BLOCKING_RULE_TYPE_ALLOW).size());
+    assertEquals(1, customIpBasedRuleMap.get(BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT).size());
+
+    // Without environment
+    assertThrows(
+        NullPointerException.class,
+        () -> customIpBasedDataFetcher.getCustomIpBasedRules(REQUEST_CONTEXT, Optional.empty()));
+
+    // Wrong environment
+    assertThrows(
+        NullPointerException.class,
+        () ->
+            customIpBasedDataFetcher.getCustomIpBasedRules(
+                REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID + "random")));
+  }
+
+  private static final GetIpRangeRulesResponse sampleGetIpRangeRulesResponse =
+      GetIpRangeRulesResponse.newBuilder()
+          .addRules(
+              IpRangeRule.newBuilder()
+                  .setId("rule-id-1")
+                  .setRuleDetails(
+                      IpRangeRuleDetails.newBuilder()
+                          .setName("rule-name-1")
+                          .setRuleAction(RULE_ACTION_BLOCK)
+                          .setExpirationDetails(
+                              ExpirationDetails.newBuilder()
+                                  .setExpirationTimestampMillis(activeTimestamp)
+                                  .build())
+                          .build())
+                  .addIpAddresses("1.2.3.4")
+                  .addIpAddresses("11.22.33.44")
+                  .build())
+          .addRules(
+              IpRangeRule.newBuilder()
+                  .setId("rule-id-2")
+                  .setRuleDetails(
+                      IpRangeRuleDetails.newBuilder()
+                          .setName("rule-name-2")
+                          .setRuleAction(RULE_ACTION_BLOCK)
+                          .setExpirationDetails(
+                              ExpirationDetails.newBuilder()
+                                  .setExpirationTimestampMillis(inactiveTimestamp)
+                                  .build())
+                          .build())
+                  .addIpAddresses("1.2.3.4")
+                  .addIpAddresses("11.22.33.44")
+                  .build())
+          .addRules(
+              IpRangeRule.newBuilder()
+                  .setId("rule-id-3")
+                  .setRuleDetails(
+                      IpRangeRuleDetails.newBuilder()
+                          .setName("rule-name-3")
+                          .setRuleAction(RULE_ACTION_BLOCK)
+                          .setExpirationDetails(
+                              ExpirationDetails.newBuilder()
+                                  .setExpirationTimestampMillis(activeTimestamp)
+                                  .build())
+                          .build())
+                  .addIpRanges("1.2.3.4")
+                  .build())
+          .addRules(
+              IpRangeRule.newBuilder()
+                  .setId("rule-id-4")
+                  .setRuleDetails(
+                      IpRangeRuleDetails.newBuilder()
+                          .setName("rule-name-4")
+                          .setRuleAction(RULE_ACTION_BLOCK)
+                          .setExpirationDetails(
+                              ExpirationDetails.newBuilder()
+                                  .setExpirationTimestampMillis(activeTimestamp)
+                                  .build())
+                          .build())
+                  .build())
+          .addRules(
+              IpRangeRule.newBuilder()
+                  .setId("rule-id-5")
+                  .setRuleDetails(
+                      IpRangeRuleDetails.newBuilder()
+                          .setName("rule-name-5")
+                          .setRuleAction(RULE_ACTION_ALLOW)
+                          .setExpirationDetails(
+                              ExpirationDetails.newBuilder()
+                                  .setExpirationTimestampMillis(activeTimestamp)
+                                  .build())
+                          .build())
+                  .addIpAddresses("1.2.3.4")
+                  .addIpAddresses("11.22.33.44")
+                  .build())
+          .addRules(
+              IpRangeRule.newBuilder()
+                  .setId("rule-id-6")
+                  .setRuleDetails(
+                      IpRangeRuleDetails.newBuilder()
+                          .setName("rule-name-6")
+                          .setRuleAction(RULE_ACTION_ALLOW)
+                          .setExpirationDetails(
+                              ExpirationDetails.newBuilder()
+                                  .setExpirationTimestampMillis(inactiveTimestamp)
+                                  .build())
+                          .build())
+                  .addIpAddresses("1.2.3.4")
+                  .addIpAddresses("11.22.33.44")
+                  .build())
+          .addRules(
+              IpRangeRule.newBuilder()
+                  .setId("rule-id-7")
+                  .setRuleDetails(
+                      IpRangeRuleDetails.newBuilder()
+                          .setName("rule-name-7")
+                          .setRuleAction(RULE_ACTION_BLOCK_ALL_EXCEPT)
+                          .setExpirationDetails(
+                              ExpirationDetails.newBuilder()
+                                  .setExpirationTimestampMillis(activeTimestamp)
+                                  .build())
+                          .build())
+                  .addIpAddresses("1.2.3.4")
+                  .addIpAddresses("11.22.33.44")
+                  .build())
+          .build();
 }

@@ -22,6 +22,7 @@ import io.grpc.stub.StreamObserver;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,8 +98,17 @@ class MockRegionConfigService extends RegionConfigServiceImplBase {
   public void getDetailedRegions(
       GetDetailedRegionsRequest request,
       StreamObserver<GetDetailedRegionsResponse> responseObserver) {
-    responseObserver.onNext(
-        GetDetailedRegionsResponse.newBuilder().addAllRegion(mockDetailedRegions()).build());
+    ArrayList<DetailedRegion> regions = new ArrayList<>();
+    if (request.getFilter().getIdList().contains("region-id-1")) {
+      regions.add(REGION_1);
+    }
+    if (request.getFilter().getIdList().contains("region-id-2")) {
+      regions.add(REGION_2);
+    }
+    if (request.getFilter().getIdList().contains("region-id-3")) {
+      regions.add(REGION_3);
+    }
+    responseObserver.onNext(GetDetailedRegionsResponse.newBuilder().addAllRegion(regions).build());
     responseObserver.onCompleted();
   }
 
@@ -117,7 +127,7 @@ class MockRegionConfigService extends RegionConfigServiceImplBase {
                     Collectors.toList(),
                     list ->
                         GetAllRegionRulesResponse.newBuilder()
-                            .addAllRule(Lists.reverse(list))
+                            .addAllRule(filteredRules(list, request))
                             .build()));
 
     responseObserver.onNext(response);
@@ -136,6 +146,7 @@ class MockRegionConfigService extends RegionConfigServiceImplBase {
               .setActionType(request.getActionType())
               .setName(request.getName())
               .addAllRegionId(request.getRegionIdList())
+              .setRuleScope(request.getRuleScope())
               .build();
     } else {
       String duration = request.getExpirationDetails().getDuration();
@@ -150,6 +161,7 @@ class MockRegionConfigService extends RegionConfigServiceImplBase {
                       .setDuration(duration)
                       .setTimestampMillis(clock.millis() + Duration.parse(duration).toMillis())
                       .build())
+              .setRuleScope(request.getRuleScope())
               .build();
     }
     rules.put(id, regionRule);
@@ -163,5 +175,25 @@ class MockRegionConfigService extends RegionConfigServiceImplBase {
 
   private String generateId() {
     return UUID.randomUUID().toString();
+  }
+
+  private List<RegionRule> filteredRules(List<RegionRule> rules, GetAllRegionRulesRequest request) {
+    if (request.hasFilter()
+        && request.getFilter().hasRuleScope()
+        && request.getFilter().getRuleScope().hasEnvironmentScope()) {
+      List<String> environmentIds =
+          request.getFilter().getRuleScope().getEnvironmentScope().getEnvironmentIdsList();
+      return Lists.reverse(rules).stream()
+          .filter(
+              regionRule -> {
+                List<String> ruleEnvironmentIds =
+                    regionRule.getRuleScope().getEnvironmentScope().getEnvironmentIdsList();
+                return environmentIds.isEmpty()
+                    || ruleEnvironmentIds.isEmpty()
+                    || ruleEnvironmentIds.stream().anyMatch(environmentIds::contains);
+              })
+          .collect(Collectors.toList());
+    }
+    return Lists.reverse(rules);
   }
 }

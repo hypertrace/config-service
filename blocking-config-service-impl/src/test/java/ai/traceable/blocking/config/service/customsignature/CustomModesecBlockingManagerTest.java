@@ -15,6 +15,7 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import java.io.IOException;
+import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,13 +55,13 @@ class CustomModesecBlockingManagerTest {
   @Test
   void testEnabledBlockingRules() {
     CustomModsecBlockingRules blockingRules =
-        customModsecBlockingManager.getEnabledBlockingRules(REQUEST_CONTEXT, "");
+        customModsecBlockingManager.getEnabledBlockingRules(REQUEST_CONTEXT, "", Optional.empty());
     assertEquals("testblob", blockingRules.getCustomModsecRulesBlob());
     assertEquals(uuidGenerator.generateId("testblob"), blockingRules.getHash());
 
     blockingRules =
         customModsecBlockingManager.getEnabledBlockingRules(
-            REQUEST_CONTEXT, blockingRules.getHash());
+            REQUEST_CONTEXT, blockingRules.getHash(), Optional.empty());
     assertFalse(blockingRules.hasCustomModsecRulesBlob());
     assertEquals(uuidGenerator.generateId("testblob"), blockingRules.getHash());
   }

@@ -26,14 +26,14 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class ModsecDataFetcher {
   private static final String CRS_RULE_ID_REGEX = "^crs_";
   private static final GetScopedAnomalyGlobalConfigStatusRequest
-      getScopedAnomalyGlobalConfigStatusRequest =
+      SCOPED_ANOMALY_GLOBAL_CONFIG_STATUS_REQUEST =
           GetScopedAnomalyGlobalConfigStatusRequest.newBuilder()
               .setConfigScope(
                   AnomalyConfigScope.newBuilder()
                       .setCustomerScope(AnomalyCustomerScope.getDefaultInstance()))
               .build();
   private static final GetScopedAnomalyDetectionConfigRequest
-      getScopedAnomalyDetectionConfigRequest =
+      SCOPED_ANOMALY_DETECTION_CONFIG_REQUEST =
           GetScopedAnomalyDetectionConfigRequest.newBuilder()
               .setConfigScope(
                   AnomalyConfigScope.newBuilder()
@@ -60,14 +60,14 @@ public class ModsecDataFetcher {
   public List<BlockingDetails> getModsecViolations(RequestContext requestContext) {
     GetScopedAnomalyGlobalConfigStatusResponse statusResponse =
         anomalyGlobalConfigServiceStub.getScopedAnomalyGlobalConfigStatus(
-            getScopedAnomalyGlobalConfigStatusRequest);
+            SCOPED_ANOMALY_GLOBAL_CONFIG_STATUS_REQUEST);
     List<BlockingDetails> parsedModsecViolations = List.of();
     if (!statusResponse.getScopedConfig().getConfigStatus().getDisabled()) {
       GetScopedAnomalyDetectionConfigResponse response =
           requestContext.call(
               () ->
                   detectorConfigServiceBlockingStub.getScopedAnomalyDetectionConfig(
-                      getScopedAnomalyDetectionConfigRequest));
+                      SCOPED_ANOMALY_DETECTION_CONFIG_REQUEST));
 
       parsedModsecViolations =
           response.getScopedAnomalyDetectionConfig().getAnomalyDetectionConfigsList().stream()

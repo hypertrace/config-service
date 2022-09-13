@@ -18,6 +18,7 @@ import com.google.inject.Inject;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
@@ -51,9 +52,10 @@ public class DefaultBlockingPolicyConfigurationManager
 
   @Override
   public BlockingPolicyConfiguration getBlockingPolicyConfiguration(
-      RequestContext requestContext, String requestHash) {
+      RequestContext requestContext, String requestHash, Optional<String> environmentId) {
     try {
-      List<BlockingDetails> blockingDetailsList = getOrderedBlockingRules(requestContext);
+      List<BlockingDetails> blockingDetailsList =
+          getOrderedBlockingRules(requestContext, environmentId);
       String responseHash = uuidGenerator.generateId(blockingDetailsList);
       if (responseHash.equals(requestHash)) {
         return BlockingPolicyConfiguration.newBuilder().setHash(requestHash).build();
@@ -68,7 +70,8 @@ public class DefaultBlockingPolicyConfigurationManager
     return BlockingPolicyConfiguration.newBuilder().setHash(requestHash).build();
   }
 
-  private List<BlockingDetails> getOrderedBlockingRules(RequestContext requestContext) {
+  private List<BlockingDetails> getOrderedBlockingRules(
+      RequestContext requestContext, Optional<String> environmentId) {
     // Actor based rules
     ActorBasedRulesCollection actorBasedRulesCollection =
         actorBasedDataFetcher.getActorBasedRules(requestContext);
@@ -91,7 +94,7 @@ public class DefaultBlockingPolicyConfigurationManager
 
     // Custom ip rules
     Map<BlockingRuleType, List<BlockingDetails>> customIpBasedRulesMap =
-        customIpBasedDataFetcher.getCustomIpBasedRules(requestContext);
+        customIpBasedDataFetcher.getCustomIpBasedRules(requestContext, environmentId);
     List<BlockingDetails> customIpBasedExemption =
         customIpBasedRulesMap.get(BLOCKING_RULE_TYPE_ALLOW);
     List<BlockingDetails> customIpBasedBlockAllExcept =
@@ -101,7 +104,7 @@ public class DefaultBlockingPolicyConfigurationManager
 
     // Region based rules
     Map<BlockingRuleType, List<BlockingDetails>> regionBasedRulesMap =
-        regionDataFetcher.getRegionBasedRules(requestContext);
+        regionDataFetcher.getRegionBasedRules(requestContext, environmentId);
     List<BlockingDetails> regionBlockAllExcept =
         regionBasedRulesMap.get(BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT);
     List<BlockingDetails> regionViolation = regionBasedRulesMap.get(BLOCKING_RULE_TYPE_BLOCK);

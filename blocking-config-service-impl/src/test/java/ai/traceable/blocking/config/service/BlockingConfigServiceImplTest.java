@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import ai.traceable.blocking.config.service.blockingmodsec.ModsecBlockingManager;
 import ai.traceable.blocking.config.service.blockingpolicy.BlockingPolicyConfigurationManager;
 import ai.traceable.blocking.config.service.customsignature.CustomModsecBlockingManager;
+import ai.traceable.blocking.config.service.entity.EntityFetcher;
 import ai.traceable.blocking.config.service.regions.RegionBlockingManager;
 import ai.traceable.blocking.config.service.v1.BlockingPolicyConfiguration;
 import ai.traceable.blocking.config.service.v1.CustomModsecBlockingRules;
@@ -17,6 +18,8 @@ import ai.traceable.blocking.config.service.v1.GetBlockingRulesResponse;
 import ai.traceable.blocking.config.service.v1.RegionBlockingRules;
 import ai.traceable.blocking.config.service.v1.SafeCrsBlockingRules;
 import io.grpc.stub.StreamObserver;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,15 +36,18 @@ class BlockingConfigServiceImplTest {
   private BlockingConfigServiceImpl blockingConfigService;
   private final String hash1 = "hash1";
   private final String hash2 = "hash2";
+  private final String environment = "env";
+  private final Optional<String> environmentId = Optional.of("env-id");
 
   @BeforeEach
-  void setup() {
+  void setup() throws ExecutionException {
     RegionBlockingManager regionBlockingManager = mock(RegionBlockingManager.class);
     CustomModsecBlockingManager customModsecBlockingManager =
         mock(CustomModsecBlockingManager.class);
     ModsecBlockingManager modsecBlockingManager = mock(ModsecBlockingManager.class);
     BlockingPolicyConfigurationManager blockingPolicyConfigurationManager =
         mock(BlockingPolicyConfigurationManager.class);
+    EntityFetcher entityFetcher = mock(EntityFetcher.class);
 
     this.regionBlockingRules = RegionBlockingRules.newBuilder().setHash(hash2).build();
     this.customModsecBlockingRules = CustomModsecBlockingRules.newBuilder().setHash(hash2).build();
@@ -49,23 +55,26 @@ class BlockingConfigServiceImplTest {
     this.blockingPolicyConfiguration =
         BlockingPolicyConfiguration.newBuilder().setHash(hash2).build();
 
+    doReturn(environmentId).when(entityFetcher).getEnvironmentId(REQUEST_CONTEXT, environment);
+
     doReturn(regionBlockingRules)
         .when(regionBlockingManager)
-        .getEnabledBlockingRules(REQUEST_CONTEXT, hash1);
+        .getEnabledBlockingRules(REQUEST_CONTEXT, hash1, environmentId);
     doReturn(customModsecBlockingRules)
         .when(customModsecBlockingManager)
-        .getEnabledBlockingRules(REQUEST_CONTEXT, hash1);
+        .getEnabledBlockingRules(REQUEST_CONTEXT, hash1, environmentId);
     doReturn(modsecCrsBlockingRules).when(modsecBlockingManager).getBlockingRules(hash1);
     doReturn(blockingPolicyConfiguration)
         .when(blockingPolicyConfigurationManager)
-        .getBlockingPolicyConfiguration(REQUEST_CONTEXT, hash1);
+        .getBlockingPolicyConfiguration(REQUEST_CONTEXT, hash1, environmentId);
 
     this.blockingConfigService =
         new BlockingConfigServiceImpl(
             regionBlockingManager,
             customModsecBlockingManager,
             modsecBlockingManager,
-            blockingPolicyConfigurationManager);
+            blockingPolicyConfigurationManager,
+            entityFetcher);
   }
 
   @Test
@@ -80,6 +89,7 @@ class BlockingConfigServiceImplTest {
                     .setCustomModsecBlockingRulesHash(hash1)
                     .setSafeCrsBlockingRulesHash(hash1)
                     .setBlockingPolicyConfigurationHash(hash1)
+                    .setEnvironment(environment)
                     .build(),
                 responseObserver);
 

@@ -3,12 +3,16 @@ package ai.traceable.blocking.config.service.regions;
 import ai.traceable.blocking.config.service.v1.RegionBlockingRules;
 import ai.traceable.blocking.config.service.v1.RegionIpBlockingRule;
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.region.config.service.v1.EnvironmentScope;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesRequest;
+import ai.traceable.region.config.service.v1.GetRegionRulesFilter;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceBlockingStub;
 import ai.traceable.region.config.service.v1.RegionRule;
+import ai.traceable.region.config.service.v1.RuleScope;
 import com.google.inject.Inject;
 import java.time.Clock;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -32,13 +36,24 @@ class DefaultRegionBlockingManager implements RegionBlockingManager {
 
   @Override
   public RegionBlockingRules getEnabledBlockingRules(
-      RequestContext requestContext, String requestHash) {
+      RequestContext requestContext, String requestHash, Optional<String> environmentId) {
+    GetAllRegionRulesRequest rulesRequest =
+        environmentId
+            .map(
+                id ->
+                    GetAllRegionRulesRequest.newBuilder()
+                        .setFilter(
+                            GetRegionRulesFilter.newBuilder()
+                                .setRuleScope(
+                                    RuleScope.newBuilder()
+                                        .setEnvironmentScope(
+                                            EnvironmentScope.newBuilder().addEnvironmentIds(id))))
+                        .build())
+            .orElseGet(GetAllRegionRulesRequest::getDefaultInstance);
+
     List<RegionRule> regionRules =
         requestContext.call(
-            () ->
-                this.regionConfigServiceStub
-                    .getAllRegionRules(GetAllRegionRulesRequest.getDefaultInstance())
-                    .getRuleList());
+            () -> this.regionConfigServiceStub.getAllRegionRules(rulesRequest).getRuleList());
 
     List<RegionRule> activeRegionRules = getActiveRegionRules(regionRules);
     List<RegionIpBlockingRule> regionIpBlockingRules =
@@ -63,7 +78,6 @@ class DefaultRegionBlockingManager implements RegionBlockingManager {
     if (!regionRule.hasExpirationDetails()) {
       return true;
     }
-
     long expirationMillis = regionRule.getExpirationDetails().getTimestampMillis();
     return expirationMillis == 0 || expirationMillis > currentTimeMillis;
   }

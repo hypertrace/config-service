@@ -30,12 +30,14 @@ import ai.traceable.config.utils.UuidGenerator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class BlockingPolicyConfigurationManagerTest {
   private static final String TENANT_ID = "tenant-id";
+  private static final String ENVIRONMENT_ID = "environment-id";
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
 
   private final UuidGenerator uuidGenerator = new UuidGenerator();
@@ -85,7 +87,8 @@ class BlockingPolicyConfigurationManagerTest {
     initializeMocks();
 
     BlockingPolicyConfiguration blockingRules =
-        blockingPolicyConfigurationManager.getBlockingPolicyConfiguration(REQUEST_CONTEXT, "");
+        blockingPolicyConfigurationManager.getBlockingPolicyConfiguration(
+            REQUEST_CONTEXT, "", Optional.of(ENVIRONMENT_ID));
 
     assertEquals(desiredPrecedenceOrder.get(0), blockingRules.getBlockingDetailsList(0).getInfo());
     assertEquals(desiredPrecedenceOrder.get(1), blockingRules.getBlockingDetailsList(1).getInfo());
@@ -103,18 +106,19 @@ class BlockingPolicyConfigurationManagerTest {
     // Test the hash based mechanism
     BlockingPolicyConfiguration blockingRules2 =
         blockingPolicyConfigurationManager.getBlockingPolicyConfiguration(
-            REQUEST_CONTEXT, blockingRules.getHash());
+            REQUEST_CONTEXT, blockingRules.getHash(), Optional.of(ENVIRONMENT_ID));
     assertEquals(blockingRules.getHash(), blockingRules2.getHash());
     assertEquals(0, blockingRules2.getBlockingDetailsListCount());
     BlockingPolicyConfiguration blockingRules3 =
-        blockingPolicyConfigurationManager.getBlockingPolicyConfiguration(REQUEST_CONTEXT, "");
+        blockingPolicyConfigurationManager.getBlockingPolicyConfiguration(
+            REQUEST_CONTEXT, "", Optional.of(ENVIRONMENT_ID));
     assertNotEquals(0, blockingRules3.getBlockingDetailsListCount());
 
     // Test error handling
     doThrow(new RuntimeException()).when(actorBasedDataFetcher).getActorBasedRules(REQUEST_CONTEXT);
     BlockingPolicyConfiguration blockingRules4 =
         blockingPolicyConfigurationManager.getBlockingPolicyConfiguration(
-            REQUEST_CONTEXT, "random");
+            REQUEST_CONTEXT, "random", Optional.of(ENVIRONMENT_ID));
     assertEquals("random", blockingRules4.getHash());
     assertEquals(0, blockingRules4.getBlockingDetailsListCount());
   }
@@ -173,7 +177,7 @@ class BlockingPolicyConfigurationManagerTest {
                         .setInfo("custom-ip-based-block-all-except")
                         .build())))
         .when(customIpBasedDataFetcher)
-        .getCustomIpBasedRules(REQUEST_CONTEXT);
+        .getCustomIpBasedRules(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
 
     doReturn(
             Map.of(
@@ -233,6 +237,6 @@ class BlockingPolicyConfigurationManagerTest {
                         .setRegionDetails(RegionDetails.newBuilder().addRegions("Bhutan").build())
                         .build())))
         .when(regionDataFetcher)
-        .getRegionBasedRules(REQUEST_CONTEXT);
+        .getRegionBasedRules(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
   }
 }
