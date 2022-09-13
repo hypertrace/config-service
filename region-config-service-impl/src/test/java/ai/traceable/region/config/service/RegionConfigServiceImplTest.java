@@ -12,6 +12,7 @@ import ai.traceable.activity.event.SecurityConfigurationAction;
 import ai.traceable.activity.event.SecurityConfigurationChange;
 import ai.traceable.activity.event.SecurityConfigurationType;
 import ai.traceable.activity.event.producer.ActivityEventProducer;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.region.config.service.regions.RegionStore;
 import ai.traceable.region.config.service.rules.RulesManager;
 import ai.traceable.region.config.service.rules.RulesValidator;
@@ -48,33 +49,40 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class RegionConfigServiceImplTest {
-  private static final String TENANT_ID = "tenant1";
+  private static final String TENANT_ID = "tenant-id";
 
-  private RegionStore regionStore;
+  private RegionStore neustarRegionStore;
+  private RegionStore ipqsRegionStore;
   private RulesValidator rulesValidator;
   private RulesManager rulesManager;
 
   private RegionConfigServiceImpl regionConfigService;
   private ActivityEventProducer mockActivityEventProducer;
   private RequestContext requestContext;
+  private FeatureCachingClient featureCachingClient;
 
   @BeforeEach
   void setup() {
-    regionStore = mock(RegionStore.class);
+    neustarRegionStore = mock(RegionStore.class);
+    ipqsRegionStore = mock(RegionStore.class);
     rulesValidator = mock(RulesValidator.class);
     rulesManager = mock(RulesManager.class);
     mockActivityEventProducer = mock(ActivityEventProducer.class);
     RegionConfigServiceConfig mockCustomSignatureConfigServiceConfig =
         mock(RegionConfigServiceConfig.class);
     when(mockCustomSignatureConfigServiceConfig.shouldPublishActivityEvents()).thenReturn(true);
+    featureCachingClient = mock(FeatureCachingClient.class);
+
     regionConfigService =
         new RegionConfigServiceImpl(
-            regionStore,
+            neustarRegionStore,
+            ipqsRegionStore,
             rulesValidator,
             rulesManager,
             mockCustomSignatureConfigServiceConfig,
-            mockActivityEventProducer);
-    requestContext = RequestContext.forTenantId("tenant-id");
+            mockActivityEventProducer,
+            featureCachingClient);
+    requestContext = RequestContext.forTenantId(TENANT_ID);
   }
 
   @Nested
@@ -83,7 +91,7 @@ class RegionConfigServiceImplTest {
     void shouldGetCountries() {
       StreamObserver<GetRegionsResponse> responseObserver = mock(StreamObserver.class);
       List<Region> regions = List.of(Region.newBuilder().setId("id").setName("name").build());
-      when(regionStore.getCountries(Collections.emptyList())).thenReturn(regions);
+      when(neustarRegionStore.getCountries(Collections.emptyList())).thenReturn(regions);
 
       Runnable runnable =
           () ->
@@ -94,6 +102,18 @@ class RegionConfigServiceImplTest {
       verify(responseObserver, times(1))
           .onNext(GetRegionsResponse.newBuilder().addAllRegion(regions).build());
       verify(responseObserver, times(1)).onCompleted();
+
+      regions = List.of(Region.newBuilder().setId("id2").setName("name2").build());
+      when(ipqsRegionStore.getCountries(Collections.emptyList())).thenReturn(regions);
+      when(featureCachingClient.isIpqsEnabledForRegionToIpMapping(requestContext)).thenReturn(true);
+      runnable =
+          () ->
+              regionConfigService.getRegions(
+                  GetRegionsRequest.getDefaultInstance(), responseObserver);
+      requestContext.run(runnable);
+
+      verify(responseObserver, times(1))
+          .onNext(GetRegionsResponse.newBuilder().addAllRegion(regions).build());
     }
   }
 
@@ -104,7 +124,7 @@ class RegionConfigServiceImplTest {
       StreamObserver<GetDetailedRegionsResponse> responseObserver = mock(StreamObserver.class);
       List<DetailedRegion> regions =
           List.of(DetailedRegion.newBuilder().setId("id").setName("name").build());
-      when(regionStore.getDetailedRegions(Collections.emptyList())).thenReturn(regions);
+      when(neustarRegionStore.getDetailedRegions(Collections.emptyList())).thenReturn(regions);
 
       Runnable runnable =
           () ->
@@ -115,6 +135,19 @@ class RegionConfigServiceImplTest {
       verify(responseObserver, times(1))
           .onNext(GetDetailedRegionsResponse.newBuilder().addAllRegion(regions).build());
       verify(responseObserver, times(1)).onCompleted();
+
+      regions = List.of(DetailedRegion.newBuilder().setId("id2").setName("name2").build());
+      when(ipqsRegionStore.getDetailedRegions(Collections.emptyList())).thenReturn(regions);
+      when(featureCachingClient.isIpqsEnabledForRegionToIpMapping(requestContext)).thenReturn(true);
+
+      runnable =
+          () ->
+              regionConfigService.getDetailedRegions(
+                  GetDetailedRegionsRequest.getDefaultInstance(), responseObserver);
+      requestContext.run(runnable);
+
+      verify(responseObserver, times(1))
+          .onNext(GetDetailedRegionsResponse.newBuilder().addAllRegion(regions).build());
     }
   }
 
@@ -124,7 +157,7 @@ class RegionConfigServiceImplTest {
     void shouldGetRegion() {
       StreamObserver<GetRegionResponse> responseObserver = mock(StreamObserver.class);
       Region region = Region.newBuilder().setId("id").setName("name").build();
-      when(regionStore.getRegion("id")).thenReturn(Optional.of(region));
+      when(neustarRegionStore.getRegion("id")).thenReturn(Optional.of(region));
 
       Runnable runnable =
           () ->
@@ -135,6 +168,19 @@ class RegionConfigServiceImplTest {
       verify(responseObserver, times(1))
           .onNext(GetRegionResponse.newBuilder().setRegion(region).build());
       verify(responseObserver, times(1)).onCompleted();
+
+      region = Region.newBuilder().setId("id2").setName("name2").build();
+      when(ipqsRegionStore.getRegion("id2")).thenReturn(Optional.of(region));
+      when(featureCachingClient.isIpqsEnabledForRegionToIpMapping(requestContext)).thenReturn(true);
+
+      runnable =
+          () ->
+              regionConfigService.getRegion(
+                  GetRegionRequest.newBuilder().setId("id2").build(), responseObserver);
+      requestContext.run(runnable);
+
+      verify(responseObserver, times(1))
+          .onNext(GetRegionResponse.newBuilder().setRegion(region).build());
     }
 
     @Test
@@ -156,7 +202,7 @@ class RegionConfigServiceImplTest {
     @DisplayName("should return not found for invalid region id")
     void should_error_invalidRegionId() {
       StreamObserver<GetRegionResponse> responseObserver = mock(StreamObserver.class);
-      when(regionStore.getRegion("id")).thenReturn(Optional.empty());
+      when(neustarRegionStore.getRegion("id")).thenReturn(Optional.empty());
 
       Runnable runnable =
           () ->

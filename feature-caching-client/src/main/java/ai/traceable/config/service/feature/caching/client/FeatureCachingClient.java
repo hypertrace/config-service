@@ -29,10 +29,12 @@ public class FeatureCachingClient {
   private static final boolean DEFAULT_DATA_CLASSIFICATION_RP1_FLAG_VALUE = true;
 
   private static final boolean DEFAULT_DATA_CLASSIFICATION_RP2_FLAG_VALUE = false;
+  private static final boolean DEFAULT_IPQS_ENABLED_VALUE = false;
   private static final String DATA_CLASSIFICATION_RP1_FLAG = "data-classification.mvp";
   private static final String DATA_CLASSIFICATION_RP2_FLAG = "data-classification.rp2";
+  private static final String IPQS_ENABLED_FLAG = "enricher.ipqs-ip-intelligence";
   private static final List<String> ALL_FLAGS_TO_FETCH =
-      List.of(DATA_CLASSIFICATION_RP1_FLAG, DATA_CLASSIFICATION_RP2_FLAG);
+      List.of(DATA_CLASSIFICATION_RP1_FLAG, DATA_CLASSIFICATION_RP2_FLAG, IPQS_ENABLED_FLAG);
   private final FeatureFlagServiceBlockingStub featureFlagStub;
   private final LoadingCache<ContextualKey<Void>, Map<String, Boolean>> featureFlagCache;
   private final Duration featureFlagRequestTimeout;
@@ -80,6 +82,18 @@ public class FeatureCachingClient {
       log.error(
           "Failed to retrieve current feature flag value for Data Classification RP2", exception);
       return DEFAULT_DATA_CLASSIFICATION_RP2_FLAG_VALUE;
+    }
+  }
+
+  public boolean isIpqsEnabledForRegionToIpMapping(RequestContext requestContext) {
+    try {
+      return requireNonNull(
+          this.featureFlagCache
+              .get(requestContext.buildInternalContextualKey())
+              .get(IPQS_ENABLED_FLAG));
+    } catch (Exception exception) {
+      log.error("Failed to retrieve current feature flag value for IPQS", exception);
+      return DEFAULT_IPQS_ENABLED_VALUE;
     }
   }
 

@@ -16,22 +16,22 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-class NeustarRegionStoreTest {
-  private NeustarRegionBuilder regionBuilder;
+class RegionStoreImplTest {
+  private RegionBuilder regionBuilder;
   private RegionConverter regionConverter;
 
-  private NeustarRegionStore regionStore;
+  private RegionStoreImpl regionStore;
 
   @BeforeEach
   void setup() {
-    regionBuilder = mock(NeustarRegionBuilder.class);
+    regionBuilder = mock(RegionBuilder.class);
     regionConverter = mock(RegionConverter.class);
 
     when(regionConverter.convert(any(Region.class)))
         .thenReturn(ai.traceable.region.config.service.v1.Region.getDefaultInstance());
     when(regionBuilder.buildRegions()).thenReturn(mockRegions());
 
-    this.regionStore = new NeustarRegionStore(regionBuilder, regionConverter);
+    this.regionStore = new RegionStoreImpl(regionBuilder, regionConverter);
   }
 
   @Nested

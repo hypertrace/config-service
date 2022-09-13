@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.region.config.service.RegionConfigServiceConfig;
 import ai.traceable.region.config.service.utils.UuidGenerator;
 import com.google.common.base.Joiner;
 import java.io.IOException;
@@ -18,20 +17,18 @@ import org.apache.commons.csv.CSVRecord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class NeustarRegionBuilderTest {
+class RegionBuilderTest {
   private static final String START_IP_INT_CSV_HEADER = "start_ip_int";
   private static final String END_IP_INT_CSV_HEADER = "end_ip_int";
   private static final String COUNTRY_CSV_HEADER = "country";
 
-  private RegionConfigServiceConfig config;
   private UuidGenerator uuidGenerator;
-  private NeustarRegionBuilder regionBuilder;
+  private RegionBuilder regionBuilder;
 
   @BeforeEach
   void setup() {
-    this.config = mock(RegionConfigServiceConfig.class);
     this.uuidGenerator = mock(UuidGenerator.class);
-    this.regionBuilder = new NeustarRegionBuilder(uuidGenerator, config);
+    this.regionBuilder = new RegionBuilder(uuidGenerator, "");
   }
 
   @Test

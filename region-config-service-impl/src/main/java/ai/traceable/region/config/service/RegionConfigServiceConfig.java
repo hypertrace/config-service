@@ -7,13 +7,18 @@ public class RegionConfigServiceConfig {
   private static final String REGION_CONFIG_SERVICE = "region.config.service";
   private static final String SHOULD_PUBLISH_ACTIVITY_EVENTS_CONFIG = "shouldPublishActivityEvents";
   private static final String NEUSTAR_COUNTRIES_DATA_PATH = "neustar.countries.data.path";
+  private static final String IPQS_COUNTRIES_DATA_PATH = "ipqs.countries.data.path";
 
   public RegionConfigServiceConfig(Config config) {
     this.config = config.getConfig(REGION_CONFIG_SERVICE);
   }
 
-  public String getCountriesDataPath() {
+  public String getNeustarCountriesDataPath() {
     return this.config.getString(NEUSTAR_COUNTRIES_DATA_PATH);
+  }
+
+  public String getIpqsCountriesDataPath() {
+    return this.config.getString(IPQS_COUNTRIES_DATA_PATH);
   }
 
   public boolean shouldPublishActivityEvents() {

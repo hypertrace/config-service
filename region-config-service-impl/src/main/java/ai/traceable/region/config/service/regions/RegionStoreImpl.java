@@ -11,12 +11,12 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-class NeustarRegionStore implements RegionStore {
+class RegionStoreImpl implements RegionStore {
   private final RegionConverter regionConverter;
   private final Map<String, Region> regionIdToRegionMap;
 
   @Inject
-  NeustarRegionStore(NeustarRegionBuilder regionBuilder, RegionConverter regionConverter) {
+  RegionStoreImpl(RegionBuilder regionBuilder, RegionConverter regionConverter) {
     this.regionConverter = regionConverter;
     this.regionIdToRegionMap = regionBuilder.buildRegions();
   }

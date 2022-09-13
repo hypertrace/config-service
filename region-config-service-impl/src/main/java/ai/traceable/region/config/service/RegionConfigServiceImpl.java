@@ -1,9 +1,13 @@
 package ai.traceable.region.config.service;
 
+import static ai.traceable.region.config.service.RegionConfigServiceModule.IPQS_REGION_STORE;
+import static ai.traceable.region.config.service.RegionConfigServiceModule.NEUSTAR_REGION_STORE;
+
 import ai.traceable.activity.event.SecurityConfigurationAction;
 import ai.traceable.activity.event.SecurityConfigurationChange;
 import ai.traceable.activity.event.SecurityConfigurationType;
 import ai.traceable.activity.event.producer.ActivityEventProducer;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.region.config.service.regions.RegionStore;
 import ai.traceable.region.config.service.rules.RulesManager;
 import ai.traceable.region.config.service.rules.RulesValidator;
@@ -27,6 +31,7 @@ import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleResponse;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.Collections;
@@ -38,30 +43,37 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
-  private final RegionStore regionStore;
+  private final RegionStore neustarRegionStore;
+  private final RegionStore ipqsRegionStore;
   private final RulesValidator rulesValidator;
   private final RulesManager rulesManager;
   private ActivityEventProducer activityEventProducer;
   private final boolean shouldPublishActivityEvents;
+  private final FeatureCachingClient featureCachingClient;
 
   @Inject
   RegionConfigServiceImpl(
-      RegionStore regionStore,
+      @Named(NEUSTAR_REGION_STORE) RegionStore neustarRegionStore,
+      @Named(IPQS_REGION_STORE) RegionStore ipqsRegionStore,
       RulesValidator rulesValidator,
       RulesManager rulesManager,
       RegionConfigServiceConfig config,
-      ActivityEventProducer activityEventProducer) {
-    this.regionStore = regionStore;
+      ActivityEventProducer activityEventProducer,
+      FeatureCachingClient featureCachingClient) {
+    this.neustarRegionStore = neustarRegionStore;
+    this.ipqsRegionStore = ipqsRegionStore;
     this.rulesValidator = rulesValidator;
     this.rulesManager = rulesManager;
     this.activityEventProducer = activityEventProducer;
     this.shouldPublishActivityEvents = config.shouldPublishActivityEvents();
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
   public void getRegions(
       GetRegionsRequest request, StreamObserver<GetRegionsResponse> responseObserver) {
 
+    RegionStore regionStore = getRegionStore(RequestContext.CURRENT.get());
     List<Region> countries =
         regionStore.getCountries(
             request.hasFilter() ? request.getFilter().getIdList() : Collections.emptyList());
@@ -74,6 +86,7 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
   public void getDetailedRegions(
       GetDetailedRegionsRequest request,
       StreamObserver<GetDetailedRegionsResponse> responseObserver) {
+    RegionStore regionStore = getRegionStore(RequestContext.CURRENT.get());
     List<DetailedRegion> regions =
         regionStore.getDetailedRegions(
             request.hasFilter() ? request.getFilter().getIdList() : Collections.emptyList());
@@ -93,6 +106,7 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
       return;
     }
 
+    RegionStore regionStore = getRegionStore(RequestContext.CURRENT.get());
     Optional<Region> maybeRegion = regionStore.getRegion(request.getId());
     if (maybeRegion.isEmpty()) {
       responseObserver.onError(Status.NOT_FOUND.asException());
@@ -199,5 +213,12 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
   private Supplier<List<RegionRule>> getAllRegionsRulesSupplier(RequestContext requestContext) {
     return () ->
         rulesManager.getRegionRules(requestContext, GetRegionRulesFilter.getDefaultInstance());
+  }
+
+  private RegionStore getRegionStore(RequestContext requestContext) {
+    if (featureCachingClient.isIpqsEnabledForRegionToIpMapping(requestContext)) {
+      return ipqsRegionStore;
+    }
+    return neustarRegionStore;
   }
 }

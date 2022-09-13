@@ -1,9 +1,11 @@
 package ai.traceable.region.config.service.regions;
 
-import ai.traceable.region.config.service.RegionConfigServiceConfig;
+import static ai.traceable.region.config.service.regions.RegionStoreModule.COUNTRIES_DATA_PATH;
+
 import ai.traceable.region.config.service.utils.UuidGenerator;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -17,34 +19,32 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 
 @Slf4j
-class NeustarRegionBuilder {
+class RegionBuilder {
   private static final String START_IP_INT_CSV_HEADER = "start_ip_int";
   private static final String END_IP_INT_CSV_HEADER = "end_ip_int";
   private static final String COUNTRY_CSV_HEADER = "country";
 
   private final UuidGenerator uuidGenerator;
-  private final RegionConfigServiceConfig config;
+  private final String countriesDataPath;
 
   @Inject
-  NeustarRegionBuilder(UuidGenerator uuidGenerator, RegionConfigServiceConfig config) {
+  RegionBuilder(UuidGenerator uuidGenerator, @Named(COUNTRIES_DATA_PATH) String countriesDataPath) {
     this.uuidGenerator = uuidGenerator;
-    this.config = config;
+    this.countriesDataPath = countriesDataPath;
   }
 
-  // reads the neustar CSV data and converts it into a region map
+  // reads the CSV data and converts it into a region map
   public Map<String, Region> buildRegions() {
-    String countriesCsv = config.getCountriesDataPath();
     try {
-      Reader csvReader =
-          new InputStreamReader(getClass().getResourceAsStream(config.getCountriesDataPath()));
+      Reader csvReader = new InputStreamReader(getClass().getResourceAsStream(countriesDataPath));
 
       Iterable<CSVRecord> records =
           CSVFormat.DEFAULT.withHeader().withFirstRecordAsHeader().parse(csvReader);
       return buildRegions(records);
     } catch (FileNotFoundException e) {
-      log.error("Unable to find countries data file {}", countriesCsv, e);
+      log.error("Unable to find countries data file {}", countriesDataPath, e);
     } catch (IOException e) {
-      log.error("Unable to parse data file {}", countriesCsv, e);
+      log.error("Unable to parse data file {}", countriesDataPath, e);
     }
 
     return Collections.emptyMap();

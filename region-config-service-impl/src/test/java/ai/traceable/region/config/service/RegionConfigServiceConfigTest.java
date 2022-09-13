@@ -21,13 +21,15 @@ class RegionConfigServiceConfigTest {
 
   @Test
   void shouldParseConfig() {
-    assertEquals("/neustar/countries.csv", config.getCountriesDataPath());
+    assertEquals("/neustar/countries.csv", config.getNeustarCountriesDataPath());
+    assertEquals("/ipqs/countries.csv", config.getIpqsCountriesDataPath());
   }
 
   private Config mockConfig() {
     Config mockConfig = mock(Config.class);
     Map<String, Object> configMap = new HashMap<>();
     configMap.put("neustar.countries.data.path", "/neustar/countries.csv");
+    configMap.put("ipqs.countries.data.path", "/ipqs/countries.csv");
     when(mockConfig.getConfig("region.config.service"))
         .thenReturn(ConfigFactory.parseMap(configMap));
     return mockConfig;
