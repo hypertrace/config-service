@@ -285,6 +285,7 @@ message ServiceUsesBasicAuthTrainingConfig {}
 message EnumerableParamTrainingConfig {
   optional string include_param_regex = 1;
   optional int32 max_allowed_bucket_occurrence_percent = 2;
+  optional int64 min_required_total_occurrence_count = 3;
 }
 
 message ObjectBolaTrainingConfig {
