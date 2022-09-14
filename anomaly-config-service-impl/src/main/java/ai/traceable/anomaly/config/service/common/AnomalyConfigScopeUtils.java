@@ -36,6 +36,10 @@ public class AnomalyConfigScopeUtils {
         return isParentOfApiScope(configScopeToCheck, requiredConfigScope);
       case PARAM_SCOPE:
         return isParentOfParamScope(configScopeToCheck, requiredConfigScope);
+      case BACKEND_SCOPE:
+        return isParentOfBackendScope(configScopeToCheck, requiredConfigScope);
+      case BACKEND_API_SCOPE:
+        return isParentOfBackendApiScope(configScopeToCheck, requiredConfigScope);
       default:
         return false;
     }
@@ -56,6 +60,12 @@ public class AnomalyConfigScopeUtils {
         break;
       case API_SCOPE:
         context = anomalyConfigScope.getApiScope().getId();
+        break;
+      case BACKEND_SCOPE:
+        context = anomalyConfigScope.getBackendScope().getId();
+        break;
+      case BACKEND_API_SCOPE:
+        context = anomalyConfigScope.getBackendApiScope().getId();
         break;
       default:
         throw new RuntimeException(
@@ -106,6 +116,26 @@ public class AnomalyConfigScopeUtils {
         contextsWithIncreasingPriority.add(configScope.getApiScope().getServiceScope().getId());
         contextsWithIncreasingPriority.add(configScope.getApiScope().getId());
         break;
+      case BACKEND_SCOPE:
+        if (configScope.getBackendScope().hasEnvironmentScope()) {
+          contextsWithIncreasingPriority.add(
+              configScope.getBackendScope().getEnvironmentScope().getEnvironmentId());
+        }
+        contextsWithIncreasingPriority.add(configScope.getBackendScope().getId());
+        break;
+      case BACKEND_API_SCOPE:
+        if (configScope.getBackendApiScope().getBackendScope().hasEnvironmentScope()) {
+          contextsWithIncreasingPriority.add(
+              configScope
+                  .getBackendApiScope()
+                  .getBackendScope()
+                  .getEnvironmentScope()
+                  .getEnvironmentId());
+        }
+        contextsWithIncreasingPriority.add(
+            configScope.getBackendApiScope().getBackendScope().getId());
+        contextsWithIncreasingPriority.add(configScope.getBackendApiScope().getId());
+        break;
       default:
         throw new RuntimeException(
             String.format("Invalid scope found: {%s}", configScope.getScopeCase()));
@@ -154,6 +184,23 @@ public class AnomalyConfigScopeUtils {
     }
   }
 
+  private boolean isParentOfBackendScope(
+      AnomalyConfigScope configScopeToCheck, AnomalyConfigScope requiredConfigScope) {
+    switch (configScopeToCheck.getScopeCase()) {
+      case CUSTOMER_SCOPE:
+        return true;
+      case ENVIRONMENT_SCOPE:
+        return requiredConfigScope
+            .getBackendScope()
+            .getEnvironmentScope()
+            .equals(configScopeToCheck.getEnvironmentScope());
+      case BACKEND_SCOPE:
+        return requiredConfigScope.getBackendScope().equals(configScopeToCheck.getBackendScope());
+      default:
+        return false;
+    }
+  }
+
   private boolean isParentOfApiScope(
       AnomalyConfigScope configScopeToCheck, AnomalyConfigScope requiredConfigScope) {
     switch (configScopeToCheck.getScopeCase()) {
@@ -172,6 +219,31 @@ public class AnomalyConfigScopeUtils {
             .equals(configScopeToCheck.getServiceScope());
       case API_SCOPE:
         return requiredConfigScope.getApiScope().equals(configScopeToCheck.getApiScope());
+      default:
+        return false;
+    }
+  }
+
+  private boolean isParentOfBackendApiScope(
+      AnomalyConfigScope configScopeToCheck, AnomalyConfigScope requiredConfigScope) {
+    switch (configScopeToCheck.getScopeCase()) {
+      case CUSTOMER_SCOPE:
+        return true;
+      case ENVIRONMENT_SCOPE:
+        return requiredConfigScope
+            .getBackendApiScope()
+            .getBackendScope()
+            .getEnvironmentScope()
+            .equals(configScopeToCheck.getEnvironmentScope());
+      case BACKEND_SCOPE:
+        return requiredConfigScope
+            .getBackendApiScope()
+            .getBackendScope()
+            .equals(configScopeToCheck.getBackendScope());
+      case BACKEND_API_SCOPE:
+        return requiredConfigScope
+            .getBackendApiScope()
+            .equals(configScopeToCheck.getBackendApiScope());
       default:
         return false;
     }

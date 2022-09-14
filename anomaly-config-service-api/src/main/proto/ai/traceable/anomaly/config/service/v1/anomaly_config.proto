@@ -24,6 +24,8 @@ message AnomalyConfigScope {
     AnomalyParamScope param_scope = 4 [deprecated = true];
     AnomalyCustomerScope customer_scope = 5;
     AnomalyEnvironmentScope environment_scope = 6;
+    AnomalyBackendScope backend_scope = 7;
+    AnomalyBackendApiScope backend_api_scope = 8;
   }
 }
 
@@ -68,6 +70,16 @@ message AnomalyApiScope {
 }
 
 message AnomalyServiceScope {
+  string id = 1;
+  AnomalyEnvironmentScope environment_scope = 2; //optional
+}
+
+message AnomalyBackendApiScope {
+  string id = 1;
+  AnomalyBackendScope backend_scope = 2;
+}
+
+message AnomalyBackendScope {
   string id = 1;
   AnomalyEnvironmentScope environment_scope = 2; //optional
 }

@@ -1,6 +1,8 @@
 package ai.traceable.anomaly.config.service.common;
 
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyBackendApiScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyBackendScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
@@ -24,6 +26,10 @@ public class AnomalyConfigValidator {
         return validateApiScope(configScope.getApiScope());
       case PARAM_SCOPE:
         return validateParamScope(configScope.getParamScope());
+      case BACKEND_SCOPE:
+        return validateBackendScope(configScope.getBackendScope());
+      case BACKEND_API_SCOPE:
+        return validateBackendApiScope(configScope.getBackendApiScope());
       default:
         return Status.OK;
     }
@@ -54,10 +60,26 @@ public class AnomalyConfigValidator {
     return Status.OK;
   }
 
+  private Status validateBackendApiScope(AnomalyBackendApiScope scope) {
+    if (scope.getId().isEmpty() || scope.getBackendScope().getId().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Anomaly Global Config API Scope should have valid API and Backend IDs.");
+    }
+    return Status.OK;
+  }
+
   private Status validateServiceScope(AnomalyServiceScope scope) {
     if (scope.getId().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Anomaly Global Config SERVICE Scope should have valid Service ID.");
+    }
+    return Status.OK;
+  }
+
+  private Status validateBackendScope(AnomalyBackendScope scope) {
+    if (scope.getId().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Anomaly Global Config Backend Scope should have valid Backend ID.");
     }
     return Status.OK;
   }
