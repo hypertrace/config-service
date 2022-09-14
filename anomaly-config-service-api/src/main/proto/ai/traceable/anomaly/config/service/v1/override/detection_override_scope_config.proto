@@ -9,18 +9,19 @@ import "ai/traceable/anomaly/config/service/v1/override/detection_override_condi
 option java_multiple_files = true;
 
 message DetectionOverrideScopeConfig {
+  repeated DetectionOverrideScope scopes = 1;
+}
+
+message DetectionOverrideScope {
   oneof scope {
-    DetectionOverrideApiScopeConfig api_scope = 1;
-    DetectionOverrideServiceScopeConfig service_scope = 2;
+    DetectionOverrideEntityScope api_scope = 1;
+    DetectionOverrideEntityScope service_scope = 2;
   }
 }
 
-message DetectionOverrideApiScopeConfig {
-  repeated string api_ids = 1;
-  repeated string api_label_ids = 2;
-}
-
-message DetectionOverrideServiceScopeConfig {
-  repeated string service_ids = 1;
-  repeated string service_label_ids = 2;
+message DetectionOverrideEntityScope {
+  oneof ids {
+    StringList entity_ids = 1;
+    StringList label_ids = 2;
+  }
 }

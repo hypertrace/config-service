@@ -100,20 +100,25 @@ message RuleEffect {
 }
 
 message CustomSignatureScopeConfig {
+   repeated CustomSignatureScope scopes = 1;
+}
+
+message CustomSignatureScope {
   oneof scope {
-    CustomSignatureApiScopeConfig api_scope = 1;
-    CustomSignatureServiceScopeConfig service_scope = 2;
+    CustomSignatureEntityScope api_scope = 1;
+    CustomSignatureEntityScope service_scope = 2;
   }
 }
 
-message CustomSignatureApiScopeConfig {
-  repeated string api_ids = 1;
-  repeated string api_label_ids = 2;
+message CustomSignatureEntityScope {
+  oneof ids {
+    StringList entity_ids = 1;
+    StringList label_ids = 2;
+  }
 }
 
-message CustomSignatureServiceScopeConfig {
-  repeated string service_ids = 1;
-  repeated string service_label_ids = 2;
+message StringList {
+  repeated string values = 1;
 }
 
 message ClauseGroup {
