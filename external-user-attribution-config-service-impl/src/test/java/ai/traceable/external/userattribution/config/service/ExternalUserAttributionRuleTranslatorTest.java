@@ -21,7 +21,6 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.E
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.UrlScope;
 import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Parser;
-import com.typesafe.config.ConfigFactory;
 import java.util.List;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
@@ -29,11 +28,8 @@ import org.junit.jupiter.api.Test;
 class ExternalUserAttributionRuleTranslatorTest {
 
   private static final Parser PARSER = JsonFormat.parser();
-  private static final ExternalUserAttributionConfigServiceConfig config =
-      new ExternalUserAttributionConfigServiceConfig(
-          ConfigFactory.parseResources("parsingRules.conf"));
   private final ExternalUserAttributionRuleTranslator translator =
-      new ExternalUserAttributionRuleTranslator(config);
+      new ExternalUserAttributionRuleTranslator();
 
   @Test
   void translatesCustomRule() {
@@ -56,27 +52,13 @@ class ExternalUserAttributionRuleTranslatorTest {
             "{"
                 + "  transformed_external_user_attribution_rule: {\n"
                 + "    attribute_key: \"http.request.header.authorization\",\n"
-                + "    type: TYPE_AUTHHEADER,\n"
-                + "    attribute_value_parsing_rules: [\n"
-                + "    {\n"
-                + "      parsing_target: {\n"
-                + "        regex_capture_group: \"Basic (.*)\" \n"
-                + "      },\n"
-                + "      base64_parser: {}\n"
-                + "    }]\n"
-                + "}\n"
+                + "    type: TYPE_AUTHHEADER\n"
+                + "}"
                 + "}",
             "{"
                 + "  transformed_external_user_attribution_rule: {\n"
                 + "    attribute_key: \"rpc.request.metadata.authorization\",\n"
-                + "    type: TYPE_AUTHHEADER,\n"
-                + "    attribute_value_parsing_rules: [\n"
-                + "    {\n"
-                + "      parsing_target: {\n"
-                + "        regex_capture_group: \"Basic (.*)\" \n"
-                + "      },\n"
-                + "      base64_parser: {}\n"
-                + "    }]\n"
+                + "    type: TYPE_AUTHHEADER\n"
                 + "  }"
                 + "}"),
         translator.translateRules(
@@ -251,17 +233,7 @@ class ExternalUserAttributionRuleTranslatorTest {
                 + "    id_claims: [\"data-claim\"],"
                 + "    id_paths: [\"$.id\"],"
                 + "    role_claims: [\"data-claim\"],"
-                + "    role_paths: [\"$.role\"],"
-                + "    attribute_value_parsing_rules: [\n"
-                + "    {\n"
-                + "      parsing_target: {\n"
-                + "        regex_capture_group: \"Bearer (.*)\" \n"
-                + "      },\n"
-                + "      jwt_parser: {}\n"
-                + "    },\n"
-                + "    {\n"
-                + "      jwt_parser: {}\n"
-                + "    }]\n"
+                + "    role_paths: [\"$.role\"]"
                 + "  }"
                 + "}",
             "{"
@@ -272,17 +244,7 @@ class ExternalUserAttributionRuleTranslatorTest {
                 + "    id_claims: [\"data-claim\"],"
                 + "    id_paths: [\"$.id\"],"
                 + "    role_claims: [\"data-claim\"],"
-                + "    role_paths: [\"$.role\"],"
-                + "    attribute_value_parsing_rules: [\n"
-                + "    {\n"
-                + "      parsing_target: {\n"
-                + "        regex_capture_group: \"Bearer (.*)\" \n"
-                + "      },\n"
-                + "      jwt_parser: {}\n"
-                + "    },\n"
-                + "    {\n"
-                + "      jwt_parser: {}\n"
-                + "    }]\n"
+                + "    role_paths: [\"$.role\"]"
                 + "  }"
                 + "}"),
         translator.translateRules(
@@ -292,41 +254,6 @@ class ExternalUserAttributionRuleTranslatorTest {
                         UserAttributionRuleData.newBuilder()
                             .setJwtData(
                                 JwtUserAttributionRuleData.newBuilder()
-                                    .setUserIdClaim("data-claim")
-                                    .setUserIdLocation(
-                                        EncodedLocation.newBuilder().setJsonPath("$.id"))
-                                    .setRoleClaim("data-claim")
-                                    .setRoleLocation(
-                                        EncodedLocation.newBuilder().setJsonPath("$.role"))))
-                    .build())));
-
-    assertJsonEquals(
-        List.of(
-            "{"
-                + "  transformed_external_user_attribution_rule: {\n"
-                + "    attribute_key: \"http.request.header.cookie\",\n"
-                + "    type: TYPE_COOKIE,\n"
-                + "    encoding: ENCODING_JWT,\n"
-                + "    cookie_name: \"cookie\",\n"
-                + "    id_claims: [\"data-claim\"],"
-                + "    id_paths: [\"$.id\"],"
-                + "    role_claims: [\"data-claim\"],"
-                + "    role_paths: [\"$.role\"],"
-                + "    attribute_value_parsing_rules: [\n"
-                + "    {\n"
-                + "      cookie_parser: {}\n"
-                + "    }]\n"
-                + "}"
-                + "}"),
-        translator.translateRules(
-            List.of(
-                UserAttributionRule.newBuilder()
-                    .setData(
-                        UserAttributionRuleData.newBuilder()
-                            .setJwtData(
-                                JwtUserAttributionRuleData.newBuilder()
-                                    .setJwtLocation(
-                                        HeaderLocation.newBuilder().setCookieName("cookie"))
                                     .setUserIdClaim("data-claim")
                                     .setUserIdLocation(
                                         EncodedLocation.newBuilder().setJsonPath("$.id"))

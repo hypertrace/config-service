@@ -12,10 +12,6 @@ import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttri
 import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttributionRule.RawExternalUserAttributionRule;
 import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttributionRule.TransformedExternalUserAttributionRule;
 import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttributionRule.TransformedExternalUserAttributionRule.Condition;
-import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttributionRule.TransformedExternalUserAttributionRule.CustomParsingRule;
-import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttributionRule.TransformedExternalUserAttributionRule.CustomParsingRule.JwtParser;
-import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttributionRule.TransformedExternalUserAttributionRule.CustomParsingRule.NoOpParser;
-import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttributionRule.TransformedExternalUserAttributionRule.ParsingTarget;
 import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttributionRule.TransformedExternalUserAttributionRule.Type;
 import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttributionRules;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
@@ -28,18 +24,12 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.Re
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ResponseBodyUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.EnvironmentScope;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.UrlScope;
-import com.google.protobuf.util.JsonFormat;
-import com.typesafe.config.Config;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.inject.Inject;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -53,22 +43,6 @@ class ExternalUserAttributionRuleTranslator {
   private static final String ENVIRONMENT_NAME_KEY = "deployment.environment";
   private static final List<String> REQUEST_HEADER_KEY_FORMAT_STRINGS =
       List.of("http.request.header.%s", "rpc.request.metadata.%s");
-  private final Map<DefaultParsingRuleKey, List<CustomParsingRule>> defaultParsingRules;
-
-  @Inject
-  public ExternalUserAttributionRuleTranslator(
-      ExternalUserAttributionConfigServiceConfig externalUserAttributionConfigServiceConfig) {
-    Config rulesConfig = externalUserAttributionConfigServiceConfig.getParsingRulesConfig();
-    defaultParsingRules =
-        Stream.of(
-                DefaultParsingRuleKey.BASIC_AUTHENTICATION,
-                DefaultParsingRuleKey.JWT_HEADER,
-                DefaultParsingRuleKey.JWT_COOKIE)
-            .collect(
-                Collectors.toMap(
-                    Function.identity(),
-                    dataCase -> buildCustomParsingRules(rulesConfig, dataCase.toString())));
-  }
 
   ExternalUserAttributionRules translateRules(List<UserAttributionRule> rules) {
     return rules.stream()
@@ -175,10 +149,7 @@ class ExternalUserAttributionRuleTranslator {
                     .setTransformedExternalUserAttributionRule(
                         TransformedExternalUserAttributionRule.newBuilder()
                             .setAttributeKey(key)
-                            .setType(TYPE_AUTHHEADER)
-                            .addAllAttributeValueParsingRules(
-                                defaultParsingRules.getOrDefault(
-                                    DefaultParsingRuleKey.BASIC_AUTHENTICATION, List.of())))
+                            .setType(TYPE_AUTHHEADER))
                     .build());
   }
 
@@ -195,55 +166,14 @@ class ExternalUserAttributionRuleTranslator {
     ruleBuilder.setAttributeKey(attributeKey);
     ruleBuilder.setType(
         this.getTypeFromHeaderLocationIfSet(data.getJwtLocation()).orElse(TYPE_AUTHHEADER));
-
-    boolean isCookieRule =
-        data.getJwtLocation().getLocationCase() == HeaderLocation.LocationCase.COOKIE_NAME;
-    if (data.getJwtLocation().getParsingTarget().hasRegexCaptureGroup()) {
-      CustomParsingRule.Builder builder =
-          CustomParsingRule.newBuilder()
-              .setParsingTarget(
-                  buildRegexCaptureGroup(
-                      data.getJwtLocation().getParsingTarget().getRegexCaptureGroup()));
-      if (isCookieRule) {
-        ruleBuilder.addAttributeValueParsingRules(
-            builder.setCookieParser(CustomParsingRule.CookieParser.getDefaultInstance()));
-      } else {
-        ruleBuilder.addAttributeValueParsingRules(
-            builder.setJwtParser(JwtParser.getDefaultInstance()));
-      }
-    }
-
-    DefaultParsingRuleKey defaultRulesKey =
-        isCookieRule ? DefaultParsingRuleKey.JWT_COOKIE : DefaultParsingRuleKey.JWT_HEADER;
-    defaultParsingRules
-        .getOrDefault(defaultRulesKey, List.of())
-        .forEach(ruleBuilder::addAttributeValueParsingRules);
-
     this.getStringIfSet(data.getJwtLocation().getCookieName())
         .ifPresent(ruleBuilder::setCookieName);
     ruleBuilder.setEncoding(ENCODING_JWT);
-
     ruleBuilder.addIdClaims(data.getUserIdClaim());
     this.getPathIfSet(data.getUserIdLocation()).ifPresent(ruleBuilder::addIdPaths);
-    if (data.getUserIdLocation().getParsingTarget().hasRegexCaptureGroup()) {
-      ruleBuilder.addIdParsingRules(
-          CustomParsingRule.newBuilder()
-              .setParsingTarget(
-                  buildRegexCaptureGroup(
-                      data.getUserIdLocation().getParsingTarget().getRegexCaptureGroup()))
-              .setNoOpParser(NoOpParser.getDefaultInstance()));
-    }
 
     this.getStringIfSet(data.getRoleClaim()).ifPresent(ruleBuilder::addRoleClaims);
     this.getPathIfSet(data.getRoleLocation()).ifPresent(ruleBuilder::addRolePaths);
-    if (data.getRoleLocation().getParsingTarget().hasRegexCaptureGroup()) {
-      ruleBuilder.addRoleParsingRules(
-          CustomParsingRule.newBuilder()
-              .setParsingTarget(
-                  buildRegexCaptureGroup(
-                      data.getRoleLocation().getParsingTarget().getRegexCaptureGroup()))
-              .setNoOpParser(NoOpParser.getDefaultInstance()));
-    }
 
     return ExternalUserAttributionRule.newBuilder()
         .setTransformedExternalUserAttributionRule(ruleBuilder)
@@ -264,24 +194,8 @@ class ExternalUserAttributionRuleTranslator {
                               .setKey(URL_KEY)
                               .setRegex(data.getCondition().getUrlMatchRegex()))
                       .addIdPaths(this.getPathIfSet(data.getUserIdLocation()).orElseThrow());
-              if (data.getUserIdLocation().getParsingTarget().hasRegexCaptureGroup()) {
-                ruleBuilder.addIdParsingRules(
-                    CustomParsingRule.newBuilder()
-                        .setParsingTarget(
-                            buildRegexCaptureGroup(
-                                data.getUserIdLocation().getParsingTarget().getRegexCaptureGroup()))
-                        .setNoOpParser(NoOpParser.getDefaultInstance()));
-              }
 
               this.getPathIfSet(data.getRoleLocation()).ifPresent(ruleBuilder::addRolePaths);
-              if (data.getRoleLocation().getParsingTarget().hasRegexCaptureGroup()) {
-                ruleBuilder.addRoleParsingRules(
-                    CustomParsingRule.newBuilder()
-                        .setParsingTarget(
-                            buildRegexCaptureGroup(
-                                data.getRoleLocation().getParsingTarget().getRegexCaptureGroup()))
-                        .setNoOpParser(NoOpParser.getDefaultInstance()));
-              }
 
               return ExternalUserAttributionRule.newBuilder()
                   .setTransformedExternalUserAttributionRule(ruleBuilder)
@@ -301,26 +215,11 @@ class ExternalUserAttributionRuleTranslator {
     return this.getHeaderAttributeKeysIfSet(headerLocation).orElse(Collections.emptyList()).stream()
         .map(
             headerKey ->
-                TransformedExternalUserAttributionRule.newBuilder()
-                    .setType(type)
-                    .setAttributeKey(headerKey))
-        .map(
-            transformedRuleBuilder -> {
-              if (headerLocation.getParsingTarget().hasRegexCaptureGroup()
-                  && (type == TYPE_ID || type == TYPE_ROLE)) {
-                transformedRuleBuilder.addAttributeValueParsingRules(
-                    CustomParsingRule.newBuilder()
-                        .setParsingTarget(
-                            buildRegexCaptureGroup(
-                                headerLocation.getParsingTarget().getRegexCaptureGroup()))
-                        .setNoOpParser(NoOpParser.getDefaultInstance()));
-              }
-              return transformedRuleBuilder.build();
-            })
-        .map(
-            transformedRule ->
                 ExternalUserAttributionRule.newBuilder()
-                    .setTransformedExternalUserAttributionRule(transformedRule)
+                    .setTransformedExternalUserAttributionRule(
+                        TransformedExternalUserAttributionRule.newBuilder()
+                            .setType(type)
+                            .setAttributeKey(headerKey))
                     .build());
   }
 
@@ -358,36 +257,11 @@ class ExternalUserAttributionRuleTranslator {
     }
   }
 
-  private List<CustomParsingRule> buildCustomParsingRules(Config config, String type) {
-    return config.hasPath(type)
-        ? config.getConfigList(type).stream()
-            .map(this::buildCustomParsingRuleFromConfig)
-            .collect(Collectors.toList())
-        : List.of();
-  }
-
-  @SneakyThrows
-  private CustomParsingRule buildCustomParsingRuleFromConfig(Config ruleConfig) {
-    CustomParsingRule.Builder builder = CustomParsingRule.newBuilder();
-    JsonFormat.parser().merge(ruleConfig.root().render(), builder);
-    return builder.build();
-  }
-
   private Optional<String> getStringIfSet(String value) {
     return Optional.ofNullable(value).filter(Predicate.not(String::isEmpty));
   }
 
   private Optional<String> getPathIfSet(EncodedLocation location) {
     return this.getStringIfSet(location.getJsonPath());
-  }
-
-  private ParsingTarget buildRegexCaptureGroup(String regex) {
-    return ParsingTarget.newBuilder().setRegexCaptureGroup(regex).build();
-  }
-
-  private enum DefaultParsingRuleKey {
-    BASIC_AUTHENTICATION,
-    JWT_HEADER,
-    JWT_COOKIE;
   }
 }

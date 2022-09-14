@@ -1,8 +1,6 @@
 package ai.traceable.external.userattribution.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttributionConfigServiceGrpc;
 import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttributionRules;
@@ -13,7 +11,6 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServi
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope;
-import com.typesafe.config.ConfigFactory;
 import io.grpc.Context;
 import io.grpc.Contexts;
 import io.grpc.ManagedChannel;
@@ -83,11 +80,7 @@ class ExternalUserAttributionConfigServiceImplTest {
 
   @BeforeEach
   void beforeEach() throws IOException {
-    ExternalUserAttributionConfigServiceConfig config =
-        mock(ExternalUserAttributionConfigServiceConfig.class);
-    when(config.getParsingRulesConfig()).thenReturn(ConfigFactory.empty());
-
-    externalUserAttributionRuleTranslator = new ExternalUserAttributionRuleTranslator(config);
+    externalUserAttributionRuleTranslator = new ExternalUserAttributionRuleTranslator();
 
     String uniqueName = InProcessServerBuilder.generateName();
     ManagedChannel channel = InProcessChannelBuilder.forName(uniqueName).directExecutor().build();
