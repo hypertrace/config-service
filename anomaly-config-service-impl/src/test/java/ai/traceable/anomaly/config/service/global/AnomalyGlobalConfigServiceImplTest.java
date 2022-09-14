@@ -104,7 +104,7 @@ public class AnomalyGlobalConfigServiceImplTest {
 
     GetUnresolvedScopedAnomalyGlobalConfigStatusResponse response =
         GetUnresolvedScopedAnomalyGlobalConfigStatusResponse.newBuilder()
-            .setScopedConfig(ScopedAnomalyConfigStatus.newBuilder().build())
+            .setScopedConfig(ScopedAnomalyConfigStatusChange.newBuilder().build())
             .build();
     doReturn(response.getScopedConfig())
         .when(anomalyConfigStatusManager)
@@ -159,12 +159,8 @@ public class AnomalyGlobalConfigServiceImplTest {
         getRequest, responseObserver);
     verify(responseObserver, times(1)).onError(argThat(err -> err.getMessage().equals("msg")));
 
-    List<ScopedAnomalyConfigStatus> scopedConfigs =
-        List.of(
-            ScopedAnomalyConfigStatus.newBuilder().build(),
-            ScopedAnomalyConfigStatus.newBuilder()
-                .setConfigScope(new AnomalyConfigScopeUtils().getDefaultCustomerConfigScope())
-                .build());
+    List<ScopedAnomalyConfigStatusChange> scopedConfigs =
+        List.of(ScopedAnomalyConfigStatusChange.newBuilder().build());
     GetAllUnresolvedScopedAnomalyGlobalConfigStatusResponse response =
         GetAllUnresolvedScopedAnomalyGlobalConfigStatusResponse.newBuilder()
             .addAllScopedConfigs(scopedConfigs)

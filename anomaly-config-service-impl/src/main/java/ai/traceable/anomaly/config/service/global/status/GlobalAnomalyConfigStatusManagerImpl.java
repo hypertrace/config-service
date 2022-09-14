@@ -86,15 +86,16 @@ public class GlobalAnomalyConfigStatusManagerImpl
       RequestContext requestContext) {
     Map<String, ScopedAnomalyConfigStatusChange> configMap = fetchConfigMap(requestContext);
     List<ScopedAnomalyConfigStatus> resolvedConfigs =
-        configMap.entrySet().stream()
+        configMap.values().stream()
             .map(
-                entry ->
+                scopedAnomalyConfigStatusChange ->
                     getResolvedConfig(
                         requestContext,
                         configMap,
-                        entry.getValue().getConfigScope(),
+                        scopedAnomalyConfigStatusChange.getConfigScope(),
                         anomalyConfigScopeUtils.getContextsWithIncreasingPriority(
-                            getTenantId(requestContext), entry.getValue().getConfigScope())))
+                            getTenantId(requestContext),
+                            scopedAnomalyConfigStatusChange.getConfigScope())))
             .collect(Collectors.toList());
     if (!configMap.containsKey(getTenantId(requestContext))) {
       resolvedConfigs.add(
@@ -108,27 +109,10 @@ public class GlobalAnomalyConfigStatusManagerImpl
   }
 
   @Override
-  public List<ScopedAnomalyConfigStatus> getAllUnresolvedScopedAnomalyConfigStatusConfigs(
+  public List<ScopedAnomalyConfigStatusChange> getAllUnresolvedScopedAnomalyConfigStatusConfigs(
       RequestContext requestContext) {
     Map<String, ScopedAnomalyConfigStatusChange> configMap = fetchConfigMap(requestContext);
-    List<ScopedAnomalyConfigStatus> unresolvedScopedAnomalyConfigStatuses =
-        configMap.entrySet().stream()
-            .map(
-                entry ->
-                    configConverter.convertScopedConfig(
-                        entry.getValue(),
-                        entry.getValue().getMinConfidenceLevel(),
-                        configConverter.merge(
-                            entry.getValue().getConfigStatus(),
-                            AnomalyConfigStatus.getDefaultInstance())))
-            .collect(Collectors.toList());
-    if (!configMap.containsKey(getTenantId(requestContext))) {
-      unresolvedScopedAnomalyConfigStatuses.add(
-          ScopedAnomalyConfigStatus.newBuilder()
-              .setConfigScope(anomalyConfigScopeUtils.getDefaultCustomerConfigScope())
-              .build());
-    }
-    return Collections.unmodifiableList(unresolvedScopedAnomalyConfigStatuses);
+    return configMap.values().stream().collect(Collectors.toUnmodifiableList());
   }
 
   @Override
@@ -143,22 +127,15 @@ public class GlobalAnomalyConfigStatusManagerImpl
   }
 
   @Override
-  public ScopedAnomalyConfigStatus getUnresolvedScopedAnomalyConfigStatus(
+  public ScopedAnomalyConfigStatusChange getUnresolvedScopedAnomalyConfigStatus(
       RequestContext requestContext, AnomalyConfigScope configScope) {
     Optional<ScopedAnomalyConfigStatusChange> scopedAnomalyConfigStatusChangeOptional =
         getData(
             requestContext,
             anomalyConfigScopeUtils.getContextFromAnomalyConfigScope(
                 getTenantId(requestContext), configScope));
-    if (scopedAnomalyConfigStatusChangeOptional.isEmpty()) {
-      return ScopedAnomalyConfigStatus.newBuilder().setConfigScope(configScope).build();
-    }
-    return configConverter.convertScopedConfig(
-        scopedAnomalyConfigStatusChangeOptional.get(),
-        scopedAnomalyConfigStatusChangeOptional.get().getMinConfidenceLevel(),
-        configConverter.merge(
-            scopedAnomalyConfigStatusChangeOptional.get().getConfigStatus(),
-            AnomalyConfigStatus.getDefaultInstance()));
+    return scopedAnomalyConfigStatusChangeOptional.orElse(
+        ScopedAnomalyConfigStatusChange.newBuilder().setConfigScope(configScope).build());
   }
 
   @Override

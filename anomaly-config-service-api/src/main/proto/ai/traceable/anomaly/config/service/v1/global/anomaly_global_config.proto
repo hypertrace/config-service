@@ -49,7 +49,7 @@ message GetUnresolvedScopedAnomalyGlobalConfigStatusRequest {
 }
 
 message GetUnresolvedScopedAnomalyGlobalConfigStatusResponse {
-  ScopedAnomalyConfigStatus scoped_config = 1;
+  ScopedAnomalyConfigStatusChange scoped_config = 1;
 }
 
 message GetAllScopedAnomalyGlobalConfigStatusRequest {
@@ -63,7 +63,7 @@ message GetAllUnresolvedScopedAnomalyGlobalConfigStatusRequest {
 }
 
 message GetAllUnresolvedScopedAnomalyGlobalConfigStatusResponse {
-  repeated ScopedAnomalyConfigStatus scoped_configs = 1;
+  repeated ScopedAnomalyConfigStatusChange scoped_configs = 1;
 }
 
 message GetAnomalyRuleInfosRequest {
