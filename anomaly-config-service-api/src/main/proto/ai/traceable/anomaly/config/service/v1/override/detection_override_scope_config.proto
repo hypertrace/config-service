@@ -17,10 +17,10 @@ message DetectionOverrideScopeConfig {
 
 message DetectionOverrideApiScopeConfig {
   repeated string api_ids = 1;
-  repeated string api_labels = 2;
+  repeated string api_label_ids = 2;
 }
 
 message DetectionOverrideServiceScopeConfig {
   repeated string service_ids = 1;
-  repeated string service_labels = 2;
+  repeated string service_label_ids = 2;
 }
