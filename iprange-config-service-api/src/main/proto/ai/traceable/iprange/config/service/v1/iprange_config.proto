@@ -42,10 +42,11 @@ message GetIpRangeRulesResponse {
 
 message GetRulesFilter {
   repeated string rule_ids = 1;
-  optional RuleAction rule_action = 2;
+  optional RuleAction rule_action = 2 [deprecated = true];
   optional bool disabled = 3;
   optional bool internal = 4;
   RuleScope rule_scope = 5;
+  repeated RuleAction rule_actions = 6;
 }
 
 message IpRangeRule {
@@ -74,6 +75,14 @@ message IpRangeRuleDetails {
   repeated string raw_input_ip_data = 3;
   RuleAction rule_action = 4;
   ExpirationDetails expiration_details = 5;
+  EventSeverity event_severity = 6;
+  IpRangeRuleConditions conditions = 7;
+}
+
+message IpRangeRuleConditions {
+  CustomIpScopeCondition scope = 1;
+  IpReputationCondition ip_reputation = 2;
+  StatusCodeMatchCondition status_code_match_condition = 3;
 }
 
 message ExpirationDetails {
@@ -90,4 +99,55 @@ enum RuleAction {
   RULE_ACTION_BLOCK = 1;
   RULE_ACTION_ALLOW = 2;
   RULE_ACTION_BLOCK_ALL_EXCEPT = 3;
+  RULE_ACTION_ALERT = 4;
+}
+
+enum EventSeverity {
+  EVENT_SEVERITY_UNSPECIFIED = 0;
+  EVENT_SEVERITY_LOW = 1;
+  EVENT_SEVERITY_MEDIUM = 2;
+  EVENT_SEVERITY_HIGH = 3;
+  EVENT_SEVERITY_CRITICAL = 4;
+}
+
+message CustomIpScopeCondition {
+  oneof scope {
+    CustomIpApiScopeConfig api_scope = 1;
+    CustomIpServiceScopeConfig service_scope = 2;
+  }
+}
+
+message CustomIpApiScopeConfig {
+  repeated string api_ids = 1;
+  repeated string api_label_ids = 2;
+}
+
+message CustomIpServiceScopeConfig {
+  repeated string service_ids = 1;
+  repeated string service_label_ids = 2;
+}
+
+message IpReputationCondition {
+  IpReputationSeverity min_ip_reputation_severity = 1;
+}
+
+enum IpReputationSeverity {
+  IP_REPUTATION_SEVERITY_UNSPECIFIED = 0;
+  IP_REPUTATION_SEVERITY_LOW = 1;
+  IP_REPUTATION_SEVERITY_MEDIUM = 2;
+  IP_REPUTATION_SEVERITY_HIGH = 3;
+  IP_REPUTATION_SEVERITY_CRITICAL = 4;
+}
+
+message StatusCodeMatchCondition {
+  StatusCodeMatchType match_type = 1;
+  string match_value = 2;
+}
+
+enum StatusCodeMatchType {
+  STATUS_CODE_MATCH_TYPE_UNSPECIFIED = 0;
+  STATUS_CODE_MATCH_TYPE_EQUALS = 1;
+  STATUS_CODE_MATCH_TYPE_NOT_EQUAL = 2;
+  STATUS_CODE_MATCH_TYPE_MATCHES_REGEX = 3;
+  STATUS_CODE_MATCH_TYPE_NOT_MATCH_REGEX = 4;
 }

@@ -91,11 +91,29 @@ message EnvironmentScope {
 
 message RuleDefinition {
   ClauseGroup clause_group = 1;
+  CustomSignatureScopeConfig scope_config = 2;
 }
 
 message RuleEffect {
   EventType event_type = 1;
   EventSeverity event_severity = 2;
+}
+
+message CustomSignatureScopeConfig {
+  oneof scope {
+    CustomSignatureApiScopeConfig api_scope = 1;
+    CustomSignatureServiceScopeConfig service_scope = 2;
+  }
+}
+
+message CustomSignatureApiScopeConfig {
+  repeated string api_ids = 1;
+  repeated string api_label_ids = 2;
+}
+
+message CustomSignatureServiceScopeConfig {
+  repeated string service_ids = 1;
+  repeated string service_label_ids = 2;
 }
 
 message ClauseGroup {

@@ -56,6 +56,7 @@ message IpV4Range {
 
 message GetRegionRulesFilter {
   RuleScope rule_scope = 1;
+  repeated RegionRuleActionType rule_action_types = 2;
 }
 
 message GetAllRegionRulesRequest {
@@ -72,6 +73,8 @@ message CreateRegionRuleRequest {
   RegionRuleActionType action_type = 3;
   ExpirationDetails expiration_details = 4;
   RuleScope rule_scope = 5;
+  EventSeverity event_severity = 6;
+  RegionRuleConditions conditions = 7;
 }
 
 message CreateRegionRuleResponse {
@@ -85,6 +88,8 @@ message UpdateRegionRuleRequest {
   RegionRuleActionType action_type = 4;
   ExpirationDetails expiration_details = 5;
   RuleScope rule_scope = 6;
+  EventSeverity event_severity = 7;
+  RegionRuleConditions conditions = 8;
 }
 
 message UpdateRegionRuleResponse {
@@ -112,12 +117,20 @@ message RegionRule {
   RegionRuleActionType action_type = 4;
   ExpirationDetails expiration_details = 5;
   RuleScope rule_scope = 6;
+  EventSeverity event_severity = 7;
+  RegionRuleConditions conditions = 8;
 
   message ExpirationDetails {
     // Duration represented in ISO 8601 duration format.
     string duration = 1;
     int64 timestamp_millis = 2;
   }
+}
+
+message RegionRuleConditions {
+  CustomRegionScopeCondition scope = 1;
+  IpReputationCondition ip_reputation = 2;
+  StatusCodeMatchCondition status_code_match_condition = 3;
 }
 
 message RuleScope {
@@ -135,4 +148,55 @@ enum RegionRuleActionType {
   REGION_RULE_ACTION_TYPE_BLOCK = 1;
   REGION_RULE_ACTION_TYPE_ALLOW = 2;
   REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT = 3;
+  REGION_RULE_ACTION_TYPE_ALERT = 4;
+}
+
+enum EventSeverity {
+  EVENT_SEVERITY_UNSPECIFIED = 0;
+  EVENT_SEVERITY_LOW = 1;
+  EVENT_SEVERITY_MEDIUM = 2;
+  EVENT_SEVERITY_HIGH = 3;
+  EVENT_SEVERITY_CRITICAL = 4;
+}
+
+message CustomRegionScopeCondition {
+  oneof scope {
+    CustomRegionApiScopeConfig api_scope = 1;
+    CustomRegionServiceScopeConfig service_scope = 2;
+  }
+}
+
+message CustomRegionApiScopeConfig {
+  repeated string api_ids = 1;
+  repeated string api_label_ids = 2;
+}
+
+message CustomRegionServiceScopeConfig {
+  repeated string service_ids = 1;
+  repeated string service_label_ids = 2;
+}
+
+message IpReputationCondition {
+  IpReputationSeverity min_ip_reputation_severity = 1;
+}
+
+enum IpReputationSeverity {
+  IP_REPUTATION_SEVERITY_UNSPECIFIED = 0;
+  IP_REPUTATION_SEVERITY_LOW = 1;
+  IP_REPUTATION_SEVERITY_MEDIUM = 2;
+  IP_REPUTATION_SEVERITY_HIGH = 3;
+  IP_REPUTATION_SEVERITY_CRITICAL = 4;
+}
+
+message StatusCodeMatchCondition {
+  StatusCodeMatchType match_type = 1;
+  string match_value = 2;
+}
+
+enum StatusCodeMatchType {
+  STATUS_CODE_MATCH_TYPE_UNSPECIFIED = 0;
+  STATUS_CODE_MATCH_TYPE_EQUALS = 1;
+  STATUS_CODE_MATCH_TYPE_NOT_EQUAL = 2;
+  STATUS_CODE_MATCH_TYPE_MATCHES_REGEX = 3;
+  STATUS_CODE_MATCH_TYPE_NOT_MATCH_REGEX = 4;
 }
