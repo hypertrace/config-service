@@ -10,10 +10,8 @@ message AgentAttributeRules {
 }
 
 message AgentAttributeRule {
-  SpanFilter span_filter = 1;
-
   // Parse the original attribute value and apply actions
-  AttributeRule root_rule = 2;
+  AttributeRule root_rule = 1;
 
   message AttributeRule {
     // actions to be taken at this point before more projection
@@ -60,6 +58,47 @@ message AgentAttributeRule {
         StaticValueProjector value_projector = 9;
         FirstMatchingProjector first_matching_projector = 10;
         EachMatchingProjector each_matching_projector = 11;
+        ConditionalProjector conditional_projector = 12;
+      }
+
+      message ConditionalProjector {
+        Predicate predicate = 1;
+        AttributeRule attribute_rule = 2;
+
+        message Predicate {
+          oneof predicate {
+            AttributePredicate attribute_predicate = 1;
+            LogicalPredicate logical_predicate = 2;
+            StringPredicate current_value_predicate = 3;
+          }
+
+          message LogicalPredicate {
+            LogicalOperator operator = 1;
+            repeated Predicate children = 2;
+          }
+
+          enum LogicalOperator {
+            LOGICAL_OPERATOR_UNSPECIFIED = 0;
+            LOGICAL_OPERATOR_AND = 1;
+            LOGICAL_OPERATOR_OR = 2;
+          }
+
+          message AttributePredicate {
+            StringPredicate name_predicate = 1;
+            StringPredicate value_predicate = 2;
+          }
+
+          message StringPredicate {
+            ComparisonOperator operator = 1;
+            string value = 2;
+          }
+
+          enum ComparisonOperator {
+            COMPARISON_OPERATOR_UNSPECIFIED = 0;
+            COMPARISON_OPERATOR_EQUALS = 1;
+            COMPARISON_OPERATOR_MATCHES_REGEX = 2;
+          }
+        }
       }
 
       message FirstMatchingProjector {
@@ -111,26 +150,6 @@ message AgentAttributeRule {
         string attribute_key = 1;
         AttributeRule attribute_rule = 2;
       }
-    }
-  }
-
-  message SpanFilter {
-    repeated AttributePredicate required_matching_attributes = 1;
-
-    message AttributePredicate {
-      StringPredicate name_predicate = 1;
-      StringPredicate value_predicate = 2;
-    }
-
-    message StringPredicate {
-      Operator operator = 1;
-      string value = 2;
-    }
-
-    enum Operator {
-      OPERATOR_UNSPECIFIED = 0;
-      OPERATOR_EQUALS = 1;
-      OPERATOR_MATCHES_REGEX = 2;
     }
   }
 }
