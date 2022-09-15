@@ -85,6 +85,7 @@ tasks.integrationTest {
   useJUnitPlatform()
   dependsOn("startEntityServiceContainer")
   finalizedBy("stopEntityServiceContainer")
+  maxHeapSize = "1024m"
 }
 
 dependencies {
