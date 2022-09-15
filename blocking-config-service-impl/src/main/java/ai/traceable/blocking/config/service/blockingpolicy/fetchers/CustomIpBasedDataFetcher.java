@@ -30,10 +30,10 @@ import org.slf4j.LoggerFactory;
 
 public class CustomIpBasedDataFetcher {
   private static final Logger LOGGER = LoggerFactory.getLogger(CustomIpBasedDataFetcher.class);
+  private static final GetRulesFilter BASE_RULE_FILTER =
+      GetRulesFilter.newBuilder().setDisabled(false).build();
   private static final GetIpRangeRulesRequest DEFAULT_GET_IP_RANGE_RULES_REQUEST =
-      GetIpRangeRulesRequest.newBuilder()
-          .setFilter(GetRulesFilter.newBuilder().setDisabled(false))
-          .build();
+      GetIpRangeRulesRequest.newBuilder().setFilter(BASE_RULE_FILTER).build();
 
   private final IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub;
   private final BlockingRulesUtils blockingRulesUtils;
@@ -58,8 +58,7 @@ public class CustomIpBasedDataFetcher {
                 id ->
                     GetIpRangeRulesRequest.newBuilder()
                         .setFilter(
-                            GetRulesFilter.newBuilder()
-                                .setDisabled(false)
+                            BASE_RULE_FILTER.toBuilder()
                                 .setRuleScope(
                                     RuleScope.newBuilder()
                                         .setEnvironmentScope(

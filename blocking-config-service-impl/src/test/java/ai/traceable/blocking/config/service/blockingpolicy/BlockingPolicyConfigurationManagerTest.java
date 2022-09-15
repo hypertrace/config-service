@@ -204,7 +204,7 @@ class BlockingPolicyConfigurationManagerTest {
                                 .build())
                         .build())))
         .when(customSignatureDataFetcher)
-        .getCustomSignatureRules(REQUEST_CONTEXT);
+        .getCustomSignatureRules(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
 
     doReturn(
             List.of(

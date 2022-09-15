@@ -9,6 +9,7 @@ import static ai.traceable.customsignature.config.service.v1.EventSeverity.EVENT
 import static ai.traceable.customsignature.config.service.v1.EventType.EVENT_TYPE_ALLOW;
 import static ai.traceable.customsignature.config.service.v1.EventType.EVENT_TYPE_DETECTION_AND_BLOCKING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
@@ -17,21 +18,25 @@ import ai.traceable.blocking.config.service.v1.BlockingDetails;
 import ai.traceable.blocking.config.service.v1.BlockingRuleType;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
+import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
+import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class CustomSignatureDataFetcherTest {
   private static final String TENANT_ID = "tenant-id";
+  private static final String ENVIRONMENT_ID = "environment-id";
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
 
   private CustomSignatureConfigServiceBlockingStub customSignatureConfigServiceBlockingStub;
@@ -69,12 +74,11 @@ class CustomSignatureDataFetcherTest {
                     GetRulesFilter.newBuilder()
                         .addEventTypes(EVENT_TYPE_DETECTION_AND_BLOCKING)
                         .addEventTypes(EVENT_TYPE_ALLOW)
-                        .setDisabled(false)
-                        .build())
+                        .setDisabled(false))
                 .build());
 
     Map<BlockingRuleType, List<BlockingDetails>> customSignatureRuleMap =
-        customSignatureDataFetcher.getCustomSignatureRules(REQUEST_CONTEXT);
+        customSignatureDataFetcher.getCustomSignatureRules(REQUEST_CONTEXT, Optional.empty());
 
     assertEquals(2, customSignatureRuleMap.size());
     assertEquals(0, customSignatureRuleMap.get(BLOCKING_RULE_TYPE_ALLOW).size());
@@ -82,74 +86,8 @@ class CustomSignatureDataFetcherTest {
   }
 
   @Test
-  void getCustomSignatureRulesTest() {
-    doReturn(
-            GetCustomSignatureRulesResponse.newBuilder()
-                .addRules(
-                    CustomSignatureRule.newBuilder()
-                        .setId("rule-id-1")
-                        .setName("rule-name-1")
-                        .setDescription("rule-description-1")
-                        .setEffect(
-                            RuleEffect.newBuilder()
-                                .setEventType(EVENT_TYPE_ALLOW)
-                                .setEventSeverity(EVENT_SEVERITY_HIGH)
-                                .build())
-                        .setDisabled(false)
-                        .setBlockingExpiryDetails(
-                            ExpiryDetails.newBuilder()
-                                .setExpiryTimestampMillis(activeTimestamp)
-                                .build())
-                        .build())
-                .addRules(
-                    CustomSignatureRule.newBuilder()
-                        .setId("rule-id-2")
-                        .setName("rule-name-2")
-                        .setDescription("rule-description-2")
-                        .setEffect(
-                            RuleEffect.newBuilder()
-                                .setEventType(EVENT_TYPE_ALLOW)
-                                .setEventSeverity(EVENT_SEVERITY_HIGH)
-                                .build())
-                        .setDisabled(false)
-                        .setBlockingExpiryDetails(
-                            ExpiryDetails.newBuilder()
-                                .setExpiryTimestampMillis(inactiveTimestamp)
-                                .build())
-                        .build())
-                .addRules(
-                    CustomSignatureRule.newBuilder()
-                        .setId("rule-id-3")
-                        .setName("rule-name-3")
-                        .setDescription("rule-description-3")
-                        .setEffect(
-                            RuleEffect.newBuilder()
-                                .setEventType(EVENT_TYPE_DETECTION_AND_BLOCKING)
-                                .setEventSeverity(EVENT_SEVERITY_HIGH)
-                                .build())
-                        .setDisabled(false)
-                        .setBlockingExpiryDetails(
-                            ExpiryDetails.newBuilder()
-                                .setExpiryTimestampMillis(activeTimestamp)
-                                .build())
-                        .build())
-                .addRules(
-                    CustomSignatureRule.newBuilder()
-                        .setId("rule-id-4")
-                        .setName("rule-name-4")
-                        .setDescription("rule-description-4")
-                        .setEffect(
-                            RuleEffect.newBuilder()
-                                .setEventType(EVENT_TYPE_DETECTION_AND_BLOCKING)
-                                .setEventSeverity(EVENT_SEVERITY_HIGH)
-                                .build())
-                        .setDisabled(false)
-                        .setBlockingExpiryDetails(
-                            ExpiryDetails.newBuilder()
-                                .setExpiryTimestampMillis(inactiveTimestamp)
-                                .build())
-                        .build())
-                .build())
+  void getCustomSignatureRulesTestWithoutEnvironment() {
+    doReturn(sampleCustomSignatureRuleResponse)
         .when(customSignatureConfigServiceBlockingStub)
         .getCustomSignatureRules(
             GetCustomSignatureRulesRequest.newBuilder()
@@ -157,12 +95,11 @@ class CustomSignatureDataFetcherTest {
                     GetRulesFilter.newBuilder()
                         .addEventTypes(EVENT_TYPE_DETECTION_AND_BLOCKING)
                         .addEventTypes(EVENT_TYPE_ALLOW)
-                        .setDisabled(false)
-                        .build())
+                        .setDisabled(false))
                 .build());
 
     Map<BlockingRuleType, List<BlockingDetails>> customSignatureRuleMap =
-        customSignatureDataFetcher.getCustomSignatureRules(REQUEST_CONTEXT);
+        customSignatureDataFetcher.getCustomSignatureRules(REQUEST_CONTEXT, Optional.empty());
 
     assertEquals(2, customSignatureRuleMap.size());
 
@@ -188,4 +125,99 @@ class CustomSignatureDataFetcherTest {
             "rule-id-3", "rule-name-3", EVENT_SEVERITY_HIGH.name()),
         violations.get(0).getInfo());
   }
+
+  @Test
+  void getCustomSignatureRulesTestWithEnvironment() {
+    doReturn(sampleCustomSignatureRuleResponse)
+        .when(customSignatureConfigServiceBlockingStub)
+        .getCustomSignatureRules(
+            GetCustomSignatureRulesRequest.newBuilder()
+                .setFilter(
+                    GetRulesFilter.newBuilder()
+                        .addEventTypes(EVENT_TYPE_DETECTION_AND_BLOCKING)
+                        .addEventTypes(EVENT_TYPE_ALLOW)
+                        .setRuleScope(
+                            RuleScope.newBuilder()
+                                .setEnvironmentScope(
+                                    EnvironmentScope.newBuilder()
+                                        .addEnvironmentIds(ENVIRONMENT_ID)))
+                        .setDisabled(false))
+                .build());
+
+    Map<BlockingRuleType, List<BlockingDetails>> customSignatureRuleMap =
+        customSignatureDataFetcher.getCustomSignatureRules(
+            REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
+
+    assertEquals(2, customSignatureRuleMap.size());
+    assertEquals(1, customSignatureRuleMap.get(BLOCKING_RULE_TYPE_ALLOW).size());
+    assertEquals(1, customSignatureRuleMap.get(BLOCKING_RULE_TYPE_BLOCK).size());
+
+    // Without environment
+    assertThrows(
+        NullPointerException.class,
+        () ->
+            customSignatureDataFetcher.getCustomSignatureRules(REQUEST_CONTEXT, Optional.empty()));
+
+    // Wrong environment
+    assertThrows(
+        NullPointerException.class,
+        () ->
+            customSignatureDataFetcher.getCustomSignatureRules(
+                REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID + "random")));
+  }
+
+  private static final GetCustomSignatureRulesResponse sampleCustomSignatureRuleResponse =
+      GetCustomSignatureRulesResponse.newBuilder()
+          .addRules(
+              CustomSignatureRule.newBuilder()
+                  .setId("rule-id-1")
+                  .setName("rule-name-1")
+                  .setDescription("rule-description-1")
+                  .setEffect(
+                      RuleEffect.newBuilder()
+                          .setEventType(EVENT_TYPE_ALLOW)
+                          .setEventSeverity(EVENT_SEVERITY_HIGH))
+                  .setDisabled(false)
+                  .setBlockingExpiryDetails(
+                      ExpiryDetails.newBuilder().setExpiryTimestampMillis(activeTimestamp))
+                  .build())
+          .addRules(
+              CustomSignatureRule.newBuilder()
+                  .setId("rule-id-2")
+                  .setName("rule-name-2")
+                  .setDescription("rule-description-2")
+                  .setEffect(
+                      RuleEffect.newBuilder()
+                          .setEventType(EVENT_TYPE_ALLOW)
+                          .setEventSeverity(EVENT_SEVERITY_HIGH))
+                  .setDisabled(false)
+                  .setBlockingExpiryDetails(
+                      ExpiryDetails.newBuilder().setExpiryTimestampMillis(inactiveTimestamp))
+                  .build())
+          .addRules(
+              CustomSignatureRule.newBuilder()
+                  .setId("rule-id-3")
+                  .setName("rule-name-3")
+                  .setDescription("rule-description-3")
+                  .setEffect(
+                      RuleEffect.newBuilder()
+                          .setEventType(EVENT_TYPE_DETECTION_AND_BLOCKING)
+                          .setEventSeverity(EVENT_SEVERITY_HIGH))
+                  .setDisabled(false)
+                  .setBlockingExpiryDetails(
+                      ExpiryDetails.newBuilder().setExpiryTimestampMillis(activeTimestamp))
+                  .build())
+          .addRules(
+              CustomSignatureRule.newBuilder()
+                  .setId("rule-id-4")
+                  .setName("rule-name-4")
+                  .setDescription("rule-description-4")
+                  .setEffect(
+                      RuleEffect.newBuilder()
+                          .setEventType(EVENT_TYPE_DETECTION_AND_BLOCKING)
+                          .setEventSeverity(EVENT_SEVERITY_HIGH))
+                  .setDisabled(false)
+                  .setBlockingExpiryDetails(
+                      ExpiryDetails.newBuilder().setExpiryTimestampMillis(inactiveTimestamp)))
+          .build();
 }

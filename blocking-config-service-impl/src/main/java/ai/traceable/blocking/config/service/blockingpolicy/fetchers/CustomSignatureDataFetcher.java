@@ -10,10 +10,12 @@ import ai.traceable.blocking.config.service.v1.BlockingRuleType;
 import ai.traceable.blocking.config.service.v1.CustomSignatureDetails;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
+import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
+import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import com.google.common.collect.ImmutableList;
@@ -22,22 +24,22 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CustomSignatureDataFetcher {
   private static final Logger LOGGER = LoggerFactory.getLogger(CustomSignatureDataFetcher.class);
-  private static final GetCustomSignatureRulesRequest getCustomSignatureRulesRequest =
-      GetCustomSignatureRulesRequest.newBuilder()
-          .setFilter(
-              GetRulesFilter.newBuilder()
-                  .addAllEventTypes(
-                      ImmutableList.of(
-                          EventType.EVENT_TYPE_DETECTION_AND_BLOCKING, EventType.EVENT_TYPE_ALLOW))
-                  .setDisabled(false)
-                  .build())
+  private static final GetRulesFilter BASE_RULE_FILTER =
+      GetRulesFilter.newBuilder()
+          .addAllEventTypes(
+              ImmutableList.of(
+                  EventType.EVENT_TYPE_DETECTION_AND_BLOCKING, EventType.EVENT_TYPE_ALLOW))
+          .setDisabled(false)
           .build();
+  private static final GetCustomSignatureRulesRequest DEFAULT_GET_CUSTOM_SIGNATURE_RULES_REQUEST =
+      GetCustomSignatureRulesRequest.newBuilder().setFilter(BASE_RULE_FILTER).build();
 
   private final CustomSignatureConfigServiceBlockingStub configServiceBlockingStub;
   private final BlockingRulesUtils blockingRulesUtils;
@@ -51,9 +53,23 @@ public class CustomSignatureDataFetcher {
   }
 
   public Map<BlockingRuleType, List<BlockingDetails>> getCustomSignatureRules(
-      RequestContext requestContext) {
+      RequestContext requestContext, Optional<String> environmentId) {
     List<BlockingDetails> exemptions = new ArrayList<>();
     List<BlockingDetails> violations = new ArrayList<>();
+
+    GetCustomSignatureRulesRequest getCustomSignatureRulesRequest =
+        environmentId
+            .map(
+                id ->
+                    GetCustomSignatureRulesRequest.newBuilder()
+                        .setFilter(
+                            BASE_RULE_FILTER.toBuilder()
+                                .setRuleScope(
+                                    RuleScope.newBuilder()
+                                        .setEnvironmentScope(
+                                            EnvironmentScope.newBuilder().addEnvironmentIds(id))))
+                        .build())
+            .orElse(DEFAULT_GET_CUSTOM_SIGNATURE_RULES_REQUEST);
 
     GetCustomSignatureRulesResponse response =
         requestContext.call(
@@ -116,7 +132,7 @@ public class CustomSignatureDataFetcher {
                 customSignatureRule.getBlockingExpiryDetails().getExpiryTimestampMillis(),
                 blockingRuleType))
         .setCustomSignatureDetails(
-            CustomSignatureDetails.newBuilder().setRuleId(customSignatureRule.getId()).build())
+            CustomSignatureDetails.newBuilder().setRuleId(customSignatureRule.getId()))
         .build();
   }
 }

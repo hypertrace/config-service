@@ -84,7 +84,7 @@ public class DefaultBlockingPolicyConfigurationManager
 
     // Custom signature rules
     Map<BlockingRuleType, List<BlockingDetails>> customSignatureRulesMap =
-        customSignatureDataFetcher.getCustomSignatureRules(requestContext);
+        customSignatureDataFetcher.getCustomSignatureRules(requestContext, environmentId);
     List<BlockingDetails> customSignatureExemption =
         customSignatureRulesMap.get(BLOCKING_RULE_TYPE_ALLOW);
     List<BlockingDetails> customSignatureViolation =
