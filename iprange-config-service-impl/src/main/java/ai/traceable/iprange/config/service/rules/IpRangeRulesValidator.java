@@ -5,6 +5,7 @@ import ai.traceable.iprange.config.service.v1.DeleteIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.IpRangeRule;
 import ai.traceable.iprange.config.service.v1.IpRangeRuleDetails;
 import ai.traceable.iprange.config.service.v1.RuleAction;
+import ai.traceable.iprange.config.service.v1.RuleScope;
 import ai.traceable.iprange.config.service.v1.UpdateIpRangeRuleRequest;
 import io.grpc.Status;
 import java.time.format.DateTimeParseException;
@@ -17,6 +18,10 @@ class IpRangeRulesValidator implements RulesValidator {
   public Status validate(
       CreateIpRangeRuleRequest request, Supplier<List<IpRangeRule>> blockAllExceptRulesSupplier) {
     Status status = validate(request.getRuleDetails());
+    if (!status.isOk()) {
+      return status;
+    }
+    status = validate(request.getRuleScope());
     if (!status.isOk()) {
       return status;
     }
@@ -35,6 +40,10 @@ class IpRangeRulesValidator implements RulesValidator {
       return Status.INVALID_ARGUMENT.withDescription("Update Ip Range rule should have a valid id");
     }
     Status status = validate(request.getRuleDetails());
+    if (!status.isOk()) {
+      return status;
+    }
+    status = validate(request.getRuleScope());
     if (!status.isOk()) {
       return status;
     }
@@ -78,6 +87,15 @@ class IpRangeRulesValidator implements RulesValidator {
         return Status.INVALID_ARGUMENT.withDescription(
             "IP Range rule should have a valid expiration duration in ISO 8601 format");
       }
+    }
+    return Status.OK;
+  }
+
+  private Status validate(RuleScope ruleScope) {
+    if (ruleScope.hasEnvironmentScope()
+        && ruleScope.getEnvironmentScope().getEnvironmentIdsCount() == 0) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "EnvironmentScope should have non empty id list");
     }
     return Status.OK;
   }

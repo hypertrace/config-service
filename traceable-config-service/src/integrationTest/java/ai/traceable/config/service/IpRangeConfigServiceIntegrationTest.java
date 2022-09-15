@@ -5,12 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.DeleteIpRangeRuleRequest;
+import ai.traceable.iprange.config.service.v1.EnvironmentScope;
 import ai.traceable.iprange.config.service.v1.ExpirationDetails;
 import ai.traceable.iprange.config.service.v1.GetIpRangeRulesRequest;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc;
 import ai.traceable.iprange.config.service.v1.IpRangeRule;
 import ai.traceable.iprange.config.service.v1.IpRangeRuleDetails;
 import ai.traceable.iprange.config.service.v1.RuleAction;
+import ai.traceable.iprange.config.service.v1.RuleScope;
 import ai.traceable.iprange.config.service.v1.UpdateIpRangeRuleRequest;
 import java.util.Arrays;
 import java.util.List;
@@ -21,6 +23,14 @@ import org.junit.jupiter.api.Test;
 
 public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceIntegrationTestBase {
   private static IpRangeConfigServiceGrpc.IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub;
+  private static final RuleScope ruleScope1 =
+      RuleScope.newBuilder()
+          .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env1").build())
+          .build();
+  private static final RuleScope ruleScope2 =
+      RuleScope.newBuilder()
+          .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env2").build())
+          .build();
 
   @BeforeAll
   static void init() {
@@ -50,6 +60,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
                     .createIpRangeRule(
                         CreateIpRangeRuleRequest.newBuilder()
                             .setRuleDetails(ipRangeRuleDetails1)
+                            .setRuleScope(ruleScope1)
                             .build())
                     .getRule()
                     .getId());
@@ -60,6 +71,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
             .setRuleDetails(ipRangeRuleDetails1)
             .addAllIpAddresses(Arrays.asList("1.2.3.4"))
             .addAllIpRanges(Arrays.asList("1.1.1.1/16"))
+            .setRuleScope(ruleScope1)
             .build();
 
     IpRangeRuleDetails ipRangeRuleDetails2 =
@@ -80,6 +92,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
                     .createIpRangeRule(
                         CreateIpRangeRuleRequest.newBuilder()
                             .setRuleDetails(ipRangeRuleDetails2)
+                            .setRuleScope(ruleScope2)
                             .build())
                     .getRule()
                     .getId());
@@ -90,6 +103,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
             .setRuleDetails(ipRangeRuleDetails2)
             .addAllIpRanges(Arrays.asList("16.16.16.16/16"))
             .addAllIpAddresses(Arrays.asList("11.12.13.14"))
+            .setRuleScope(ruleScope2)
             .build();
 
     List<IpRangeRule> ipRangeRules =
@@ -123,6 +137,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
                     .createIpRangeRule(
                         CreateIpRangeRuleRequest.newBuilder()
                             .setRuleDetails(ipRangeRuleDetails1)
+                            .setRuleScope(ruleScope1)
                             .build())
                     .getRule());
     IpRangeRule ipRangeRule1 =
@@ -131,6 +146,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
             .setRuleDetails(ipRangeRuleDetails1)
             .addAllIpAddresses(Arrays.asList("1.2.3.4"))
             .addAllIpRanges(Arrays.asList("1.1.1.1/16"))
+            .setRuleScope(ruleScope1)
             .build();
 
     IpRangeRuleDetails ipRangeRuleDetails2 =
@@ -151,6 +167,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
                     .createIpRangeRule(
                         CreateIpRangeRuleRequest.newBuilder()
                             .setRuleDetails(ipRangeRuleDetails2)
+                            .setRuleScope(ruleScope2)
                             .build())
                     .getRule());
 
@@ -160,6 +177,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
             .setRuleDetails(ipRangeRuleDetails2)
             .addAllIpRanges(Arrays.asList("16.16.16.16/16"))
             .addAllIpAddresses(Arrays.asList("11.12.13.14"))
+            .setRuleScope(ruleScope2)
             .build();
 
     assertCustom(ipRangeRule1, createdIpRangeRule1);
@@ -186,6 +204,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
                     .createIpRangeRule(
                         CreateIpRangeRuleRequest.newBuilder()
                             .setRuleDetails(ipRangeRuleDetails)
+                            .setRuleScope(ruleScope1)
                             .build())
                     .getRule()
                     .getId());
@@ -208,6 +227,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
             .addAllIpRanges(Arrays.asList("1.1.1.1/16"))
             .setDisabled(true)
             .setInternal(true)
+            .setRuleScope(ruleScope2)
             .build();
 
     IpRangeRule returnedIpRangeRule =
@@ -221,6 +241,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
                             .setRuleDetails(updatedIpRangeRuleDetails)
                             .setInternal(true)
                             .setDisabled(true)
+                            .setRuleScope(ruleScope2)
                             .build())
                     .getRule());
 
@@ -256,6 +277,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
                     .createIpRangeRule(
                         CreateIpRangeRuleRequest.newBuilder()
                             .setRuleDetails(ipRangeRuleDetails1)
+                            .setRuleScope(ruleScope1)
                             .build())
                     .getRule()
                     .getId());
@@ -266,6 +288,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
             .setRuleDetails(ipRangeRuleDetails1)
             .addAllIpAddresses(Arrays.asList("1.2.3.4"))
             .addAllIpRanges(Arrays.asList("1.1.1.1/16"))
+            .setRuleScope(ruleScope1)
             .build();
 
     IpRangeRuleDetails ipRangeRuleDetails2 =
@@ -286,6 +309,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
                     .createIpRangeRule(
                         CreateIpRangeRuleRequest.newBuilder()
                             .setRuleDetails(ipRangeRuleDetails2)
+                            .setRuleScope(ruleScope2)
                             .build())
                     .getRule()
                     .getId());
@@ -318,6 +342,9 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
     assertEquals(
         ipRangeRule1.getRuleDetails().getRuleAction(),
         ipRangeRule2.getRuleDetails().getRuleAction());
+    assertEquals(
+        ipRangeRule1.getRuleScope().getEnvironmentScope().getEnvironmentIdsList(),
+        ipRangeRule2.getRuleScope().getEnvironmentScope().getEnvironmentIdsList());
     if (ipRangeRule1.getRuleDetails().hasExpirationDetails()
         && ipRangeRule2.getRuleDetails().hasExpirationDetails()) {
       assertTrue(

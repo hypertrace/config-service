@@ -26,6 +26,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class RegionRulesManagerTest {
+  private static final RuleScope ruleScope =
+      RuleScope.newBuilder()
+          .setEnvironmentScope(
+              EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of("env1", "env2")))
+          .build();
   private final Clock clock = Clock.systemUTC();
 
   private MockGenericConfigService mockConfigService;
@@ -105,10 +110,15 @@ class RegionRulesManagerTest {
     @Test
     void shouldCreateRegionRule() {
       when(uuidGenerator.generateId()).thenReturn("id-1");
-      RegionRule regionRule = RegionRule.newBuilder().setId("id-1").setName("name-1").build();
+      RegionRule regionRule =
+          RegionRule.newBuilder().setId("id-1").setName("name-1").setRuleScope(ruleScope).build();
       RegionRule createdRegionRule =
           rulesManager.createRegionRule(
-              requestContext, CreateRegionRuleRequest.newBuilder().setName("name-1").build());
+              requestContext,
+              CreateRegionRuleRequest.newBuilder()
+                  .setName("name-1")
+                  .setRuleScope(ruleScope)
+                  .build());
       assertEquals(regionRule, createdRegionRule);
     }
   }
@@ -123,9 +133,17 @@ class RegionRulesManagerTest {
           RegionRule.newBuilder().setId("id-1").setName("name-1").build();
       addRegionRules(ImmutableSortedMap.of("id-1", originalRegionRule));
       RegionRule updatedRegionRule =
-          RegionRule.newBuilder().setId("id-1").setName("updated-name").build();
+          RegionRule.newBuilder()
+              .setId("id-1")
+              .setName("updated-name")
+              .setRuleScope(ruleScope)
+              .build();
       UpdateRegionRuleRequest request =
-          UpdateRegionRuleRequest.newBuilder().setId("id-1").setName("updated-name").build();
+          UpdateRegionRuleRequest.newBuilder()
+              .setId("id-1")
+              .setName("updated-name")
+              .setRuleScope(ruleScope)
+              .build();
       assertEquals(updatedRegionRule, rulesManager.updateRegionRule(requestContext, request));
     }
   }

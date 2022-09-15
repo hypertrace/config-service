@@ -36,6 +36,11 @@ import org.junit.jupiter.api.Test;
 
 class IpRangeRulesManagerTest {
 
+  private static final RuleScope ruleScope =
+      RuleScope.newBuilder()
+          .setEnvironmentScope(
+              EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of("env1", "env2")))
+          .build();
   private MockGenericConfigService mockConfigService;
   private UuidGenerator uuidGenerator;
   private IpRangeRulesManager rulesManager;
@@ -205,6 +210,7 @@ class IpRangeRulesManagerTest {
                       .build())
               .addAllIpAddresses(Arrays.asList("1.2.3.4"))
               .addAllIpRanges(Arrays.asList("1.1.1.1/16"))
+              .setRuleScope(ruleScope)
               .build();
 
       when(uuidGenerator.generateId()).thenReturn("First-test");
@@ -214,7 +220,10 @@ class IpRangeRulesManagerTest {
       IpRangeRule maybeCreatedIpRangeRule =
           rulesManager.createIpRangeRule(
               requestContext,
-              CreateIpRangeRuleRequest.newBuilder().setRuleDetails(ipRangeRuleDetails).build());
+              CreateIpRangeRuleRequest.newBuilder()
+                  .setRuleDetails(ipRangeRuleDetails)
+                  .setRuleScope(ruleScope)
+                  .build());
 
       assertNotNull(maybeCreatedIpRangeRule);
       assertEquals(ipRangeRule, maybeCreatedIpRangeRule);
@@ -245,6 +254,7 @@ class IpRangeRulesManagerTest {
                       .setId("First-test")
                       .setRuleDetails(updatedRuleDetails)
                       .setDisabled(true)
+                      .setRuleScope(ruleScope)
                       .build()));
     }
 
@@ -283,6 +293,7 @@ class IpRangeRulesManagerTest {
               .setDisabled(true)
               .addAllIpAddresses(Arrays.asList("11.12.13.14"))
               .addAllIpRanges(Arrays.asList("1.1.1.1/16"))
+              .setRuleScope(ruleScope)
               .build();
 
       addIpRangeRule(IpRangeRule.getDefaultInstance());
@@ -296,6 +307,7 @@ class IpRangeRulesManagerTest {
                   .setId("First-test")
                   .setRuleDetails(updatedRuleDetails)
                   .setDisabled(true)
+                  .setRuleScope(ruleScope)
                   .build());
 
       assertNotNull(maybeUpdatedIpRangeRule);

@@ -4,6 +4,7 @@ import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.DeleteRegionRuleRequest;
 import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRuleActionType;
+import ai.traceable.region.config.service.v1.RuleScope;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import io.grpc.Status;
 import java.util.List;
@@ -14,6 +15,10 @@ class RegionRulesValidator implements RulesValidator {
   @Override
   public Status validate(
       CreateRegionRuleRequest request, Supplier<List<RegionRule>> existingRegionRulesSupplier) {
+    Status status = validate(request.getRuleScope());
+    if (!status.isOk()) {
+      return status;
+    }
     if (request.getRegionIdList().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "create region rule should have non empty region id list");
@@ -41,6 +46,10 @@ class RegionRulesValidator implements RulesValidator {
   @Override
   public Status validate(
       UpdateRegionRuleRequest request, Supplier<List<RegionRule>> existingRegionRulesSupplier) {
+    Status status = validate(request.getRuleScope());
+    if (!status.isOk()) {
+      return status;
+    }
     if (request.getId().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription("update region rule should have a valid id");
     }
@@ -77,6 +86,15 @@ class RegionRulesValidator implements RulesValidator {
       return Status.INVALID_ARGUMENT.withDescription("delete region rule should have a valid id");
     }
 
+    return Status.OK;
+  }
+
+  private Status validate(RuleScope ruleScope) {
+    if (ruleScope.hasEnvironmentScope()
+        && ruleScope.getEnvironmentScope().getEnvironmentIdsCount() == 0) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "environment scope should have non empty id list");
+    }
     return Status.OK;
   }
 

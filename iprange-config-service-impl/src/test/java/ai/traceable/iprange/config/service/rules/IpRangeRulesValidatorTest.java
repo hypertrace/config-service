@@ -42,7 +42,14 @@ class IpRangeRulesValidatorTest {
               .build();
 
       CreateIpRangeRuleRequest createIpRangeRuleRequest =
-          CreateIpRangeRuleRequest.newBuilder().setRuleDetails(iprangeRuleDetails).build();
+          CreateIpRangeRuleRequest.newBuilder()
+              .setRuleDetails(iprangeRuleDetails)
+              .setRuleScope(
+                  RuleScope.newBuilder()
+                      .setEnvironmentScope(
+                          EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of("e1", "e2")))
+                      .build())
+              .build();
 
       Status status =
           rulesValidator.validate(createIpRangeRuleRequest, blockAllExceptRulesSupplier);
@@ -66,6 +73,34 @@ class IpRangeRulesValidatorTest {
       Status status =
           rulesValidator.validate(createIpRangeRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Status.Code.OK, status.getCode());
+    }
+
+    @Test
+    @DisplayName("Should return invalid status because of empty env id list")
+    void validateCreateIpRangeRuleRequest_empty_env_scope() {
+      IpRangeRuleDetails iprangeRuleDetails =
+          IpRangeRuleDetails.newBuilder()
+              .setName("Tester")
+              .setDescription("Range rule test")
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
+              .setExpirationDetails(
+                  ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
+              .build();
+
+      CreateIpRangeRuleRequest createIpRangeRuleRequest =
+          CreateIpRangeRuleRequest.newBuilder()
+              .setRuleDetails(iprangeRuleDetails)
+              .setRuleScope(
+                  RuleScope.newBuilder()
+                      .setEnvironmentScope(
+                          EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of()))
+                      .build())
+              .build();
+
+      Status status =
+          rulesValidator.validate(createIpRangeRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
     }
 
     @Test
@@ -207,6 +242,11 @@ class IpRangeRulesValidatorTest {
               .setRuleDetails(iprangeRuleDetails)
               .setDisabled(true)
               .setInternal(false)
+              .setRuleScope(
+                  RuleScope.newBuilder()
+                      .setEnvironmentScope(
+                          EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of("e1", "e2")))
+                      .build())
               .build();
 
       Status status =
@@ -252,6 +292,37 @@ class IpRangeRulesValidatorTest {
       Status status =
           rulesValidator.validate(updateIpRangeRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName("Should return invalid argument status when env list is empty")
+    void validateUpdateIpRangeRuleRequest_empty_env_scope() {
+      IpRangeRuleDetails iprangeRuleDetails =
+          IpRangeRuleDetails.newBuilder()
+              .setName("Tester")
+              .setDescription("Range rule test")
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
+              .setExpirationDetails(
+                  ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
+              .build();
+
+      UpdateIpRangeRuleRequest updateIpRangeRuleRequest =
+          UpdateIpRangeRuleRequest.newBuilder()
+              .setId("Tester0")
+              .setRuleDetails(iprangeRuleDetails)
+              .setDisabled(true)
+              .setInternal(false)
+              .setRuleScope(
+                  RuleScope.newBuilder()
+                      .setEnvironmentScope(
+                          EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of()))
+                      .build())
+              .build();
+
+      Status status =
+          rulesValidator.validate(updateIpRangeRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
     }
 
     @Test

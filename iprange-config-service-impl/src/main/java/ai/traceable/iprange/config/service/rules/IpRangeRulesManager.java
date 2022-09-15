@@ -58,6 +58,7 @@ class IpRangeRulesManager implements RulesManager {
             .setRuleDetails(parseRuleDetails(createRuleRequest.getRuleDetails()))
             .addAllIpRanges(parsedRawIpRange.getIpRanges())
             .addAllIpAddresses(parsedRawIpRange.getIpAddresses())
+            .setRuleScope(createRuleRequest.getRuleScope())
             .build();
 
     return upsertConfig(requestContext, ipRangeRule);
@@ -84,6 +85,7 @@ class IpRangeRulesManager implements RulesManager {
             .setInternal(updateRuleRequest.getInternal())
             .addAllIpRanges(parsedRawIpRange.getIpRanges())
             .addAllIpAddresses(parsedRawIpRange.getIpAddresses())
+            .setRuleScope(updateRuleRequest.getRuleScope())
             .build();
 
     return upsertConfig(requestContext, ipRangeRule);

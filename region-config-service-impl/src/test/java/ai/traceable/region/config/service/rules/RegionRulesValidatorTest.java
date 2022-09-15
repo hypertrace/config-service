@@ -6,8 +6,10 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.DeleteRegionRuleRequest;
+import ai.traceable.region.config.service.v1.EnvironmentScope;
 import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRuleActionType;
+import ai.traceable.region.config.service.v1.RuleScope;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import io.grpc.Status;
 import io.grpc.Status.Code;
@@ -84,6 +86,26 @@ class RegionRulesValidatorTest {
       Status status = rulesValidator.validate(createRegionRuleRequest, getAllRegionRulesSupplier);
 
       assertEquals(Code.OK, status.getCode());
+    }
+
+    @Test
+    @DisplayName("should fail as empty list in env scope")
+    void should_fail_createRegionRule_empty_env_scope() {
+      CreateRegionRuleRequest createRegionRuleRequest =
+          CreateRegionRuleRequest.newBuilder()
+              .addRegionId("region-1")
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+              .setName("name")
+              .setRuleScope(
+                  RuleScope.newBuilder()
+                      .setEnvironmentScope(
+                          EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of()))
+                      .build())
+              .build();
+
+      Status status = rulesValidator.validate(createRegionRuleRequest, getAllRegionRulesSupplier);
+
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
     }
 
     @Test
@@ -169,12 +191,18 @@ class RegionRulesValidatorTest {
     @Test
     @DisplayName("should pass as updating the existing block all except rule type")
     void should_pass_updateRegionRule_sameId() {
+      RuleScope ruleScope =
+          RuleScope.newBuilder()
+              .setEnvironmentScope(
+                  EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of("e1", "e2")))
+              .build();
       UpdateRegionRuleRequest updateRegionRuleRequest =
           UpdateRegionRuleRequest.newBuilder()
               .setId("id")
               .addRegionId("region-1")
               .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
               .setName("name")
+              .setRuleScope(ruleScope)
               .build();
 
       when(getAllRegionRulesSupplier.get())
@@ -183,10 +211,40 @@ class RegionRulesValidatorTest {
                   RegionRule.newBuilder()
                       .setId("id")
                       .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+                      .setRuleScope(ruleScope)
                       .build()));
       Status status = rulesValidator.validate(updateRegionRuleRequest, getAllRegionRulesSupplier);
 
       assertEquals(Code.OK, status.getCode());
+    }
+
+    @Test
+    @DisplayName("should fail as env scope has empty list")
+    void should_fail_updateRegionRule_empty_list_env_scope() {
+      RuleScope ruleScope =
+          RuleScope.newBuilder()
+              .setEnvironmentScope(EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of()))
+              .build();
+      UpdateRegionRuleRequest updateRegionRuleRequest =
+          UpdateRegionRuleRequest.newBuilder()
+              .setId("id")
+              .addRegionId("region-1")
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+              .setName("name")
+              .setRuleScope(ruleScope)
+              .build();
+
+      when(getAllRegionRulesSupplier.get())
+          .thenReturn(
+              List.of(
+                  RegionRule.newBuilder()
+                      .setId("id")
+                      .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+                      .setRuleScope(ruleScope)
+                      .build()));
+      Status status = rulesValidator.validate(updateRegionRuleRequest, getAllRegionRulesSupplier);
+
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
     }
 
     @Test
