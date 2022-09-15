@@ -43,7 +43,7 @@ message UserAttributionRuleData {
     ResponseBodyUserAttributionRuleData response_body_data = 3;
     RequestHeaderUserAttributionRuleData request_header_data = 4;
     CustomUserAttributionRuleData custom_data = 5;
-    CustomTokenAuthenticationRuleData custom_auth_data = 6;
+    CustomTokenRuleData custom_token_data = 6;
   }
 
   message CustomUserAttributionRuleData {
@@ -76,7 +76,7 @@ message UserAttributionRuleData {
     Authentication authentication = 3;
   }
 
-  message CustomTokenAuthenticationRuleData {
+  message CustomTokenRuleData {
     Authentication authentication = 1;
 
     oneof location {
