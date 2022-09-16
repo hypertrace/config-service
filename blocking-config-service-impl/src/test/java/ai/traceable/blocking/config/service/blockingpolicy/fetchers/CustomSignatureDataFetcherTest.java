@@ -149,7 +149,7 @@ class CustomSignatureDataFetcherTest {
             REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
 
     assertEquals(2, customSignatureRuleMap.size());
-    assertEquals(1, customSignatureRuleMap.get(BLOCKING_RULE_TYPE_ALLOW).size());
+    assertEquals(2, customSignatureRuleMap.get(BLOCKING_RULE_TYPE_ALLOW).size());
     assertEquals(1, customSignatureRuleMap.get(BLOCKING_RULE_TYPE_BLOCK).size());
 
     // Without environment
@@ -219,5 +219,21 @@ class CustomSignatureDataFetcherTest {
                   .setDisabled(false)
                   .setBlockingExpiryDetails(
                       ExpiryDetails.newBuilder().setExpiryTimestampMillis(inactiveTimestamp)))
+          .addRules(
+              CustomSignatureRule.newBuilder()
+                  .setId("rule-id-5")
+                  .setName("rule-name-5")
+                  .setDescription("rule-description-5")
+                  .setEffect(
+                      RuleEffect.newBuilder()
+                          .setEventType(EVENT_TYPE_ALLOW)
+                          .setEventSeverity(EVENT_SEVERITY_HIGH))
+                  .setRuleScope(
+                      RuleScope.newBuilder()
+                          .setEnvironmentScope(
+                              EnvironmentScope.newBuilder().addEnvironmentIds(ENVIRONMENT_ID)))
+                  .setDisabled(false)
+                  .setBlockingExpiryDetails(
+                      ExpiryDetails.newBuilder().setExpiryTimestampMillis(activeTimestamp)))
           .build();
 }

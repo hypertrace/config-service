@@ -130,7 +130,7 @@ class RegionDataFetcherTest {
     Map<BlockingRuleType, List<BlockingDetails>> regionBasedRuleMap =
         regionDataFetcher.getRegionBasedRules(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
     assertEquals(2, regionBasedRuleMap.size());
-    assertEquals(1, regionBasedRuleMap.get(BLOCKING_RULE_TYPE_BLOCK).size());
+    assertEquals(2, regionBasedRuleMap.get(BLOCKING_RULE_TYPE_BLOCK).size());
     assertEquals(1, regionBasedRuleMap.get(BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT).size());
 
     // Without environment
@@ -193,5 +193,17 @@ class RegionDataFetcherTest {
                   .setExpirationDetails(
                       ExpirationDetails.newBuilder().setTimestampMillis(inactiveTimestamp).build())
                   .build())
+          .addRule(
+              RegionRule.newBuilder()
+                  .setId("rule-id-6")
+                  .addAllRegionId(List.of("Nepal", "Bhutan"))
+                  .setName("rule-name-6")
+                  .setActionType(REGION_RULE_ACTION_TYPE_BLOCK)
+                  .setExpirationDetails(
+                      ExpirationDetails.newBuilder().setTimestampMillis(activeTimestamp).build())
+                  .setRuleScope(
+                      RuleScope.newBuilder()
+                          .setEnvironmentScope(
+                              EnvironmentScope.newBuilder().addEnvironmentIds(ENVIRONMENT_ID))))
           .build();
 }

@@ -70,7 +70,7 @@ public class CustomIpBasedDataFetcher {
         requestContext.call(() -> ipRangeConfigServiceStub.getIpRangeRules(getIpRangeRulesRequest));
 
     response.getRulesList().stream()
-        .filter(this::filterRule)
+        .filter(ipRangeRule -> this.filterRule(ipRangeRule, environmentId))
         .forEach(
             ipRangeRule -> {
               switch (ipRangeRule.getRuleDetails().getRuleAction()) {
@@ -112,7 +112,12 @@ public class CustomIpBasedDataFetcher {
     return customIpBasedRulesMap;
   }
 
-  private boolean filterRule(IpRangeRule ipRule) {
+  private boolean filterRule(IpRangeRule ipRule, Optional<String> environmentId) {
+    // Removing rules with environment scope in case of default env
+    if (environmentId.isEmpty()
+        && ipRule.getRuleScope().getEnvironmentScope().getEnvironmentIdsCount() != 0) {
+      return false;
+    }
     return (!ipRule.getIpAddressesList().isEmpty() || !ipRule.getIpRangesList().isEmpty())
         && blockingRulesUtils.isRuleActive(
             ipRule.getRuleDetails().getExpirationDetails().getExpirationTimestampMillis());

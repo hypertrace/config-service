@@ -63,7 +63,7 @@ public class RegionDataFetcher {
         requestContext.call(() -> regionConfigServiceStub.getAllRegionRules(rulesRequest));
 
     response.getRuleList().stream()
-        .filter(this::filterRule)
+        .filter(regionRule -> this.filterRule(regionRule, environmentId))
         .forEach(
             regionRule -> {
               switch (regionRule.getActionType()) {
@@ -88,7 +88,12 @@ public class RegionDataFetcher {
     return regionBasedRulesMap;
   }
 
-  private boolean filterRule(RegionRule regionRule) {
+  private boolean filterRule(RegionRule regionRule, Optional<String> environmentId) {
+    // Removing rules with environment scope in case of default env
+    if (environmentId.isEmpty()
+        && regionRule.getRuleScope().getEnvironmentScope().getEnvironmentIdsCount() != 0) {
+      return false;
+    }
     return !regionRule.getRegionIdList().isEmpty()
         && blockingRulesUtils.isRuleActive(regionRule.getExpirationDetails().getTimestampMillis());
   }

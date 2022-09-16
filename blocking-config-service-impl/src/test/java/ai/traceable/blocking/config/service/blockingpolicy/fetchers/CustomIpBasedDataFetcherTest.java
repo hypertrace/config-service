@@ -160,7 +160,7 @@ class CustomIpBasedDataFetcherTest {
             REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
 
     assertEquals(3, customIpBasedRuleMap.size());
-    assertEquals(2, customIpBasedRuleMap.get(BLOCKING_RULE_TYPE_BLOCK).size());
+    assertEquals(3, customIpBasedRuleMap.get(BLOCKING_RULE_TYPE_BLOCK).size());
     assertEquals(1, customIpBasedRuleMap.get(BLOCKING_RULE_TYPE_ALLOW).size());
     assertEquals(1, customIpBasedRuleMap.get(BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT).size());
 
@@ -281,5 +281,21 @@ class CustomIpBasedDataFetcherTest {
                   .addIpAddresses("1.2.3.4")
                   .addIpAddresses("11.22.33.44")
                   .build())
+          .addRules(
+              IpRangeRule.newBuilder()
+                  .setId("rule-id-8")
+                  .setRuleDetails(
+                      IpRangeRuleDetails.newBuilder()
+                          .setName("rule-name-8")
+                          .setRuleAction(RULE_ACTION_BLOCK)
+                          .setExpirationDetails(
+                              ExpirationDetails.newBuilder()
+                                  .setExpirationTimestampMillis(activeTimestamp)))
+                  .addIpAddresses("1.2.3.4")
+                  .addIpAddresses("11.22.33.44")
+                  .setRuleScope(
+                      RuleScope.newBuilder()
+                          .setEnvironmentScope(
+                              EnvironmentScope.newBuilder().addEnvironmentIds(ENVIRONMENT_ID))))
           .build();
 }
