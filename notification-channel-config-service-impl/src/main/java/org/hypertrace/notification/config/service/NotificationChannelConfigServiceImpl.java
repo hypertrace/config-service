@@ -20,7 +20,6 @@ import org.hypertrace.notification.config.service.v1.GetNotificationChannelReque
 import org.hypertrace.notification.config.service.v1.GetNotificationChannelResponse;
 import org.hypertrace.notification.config.service.v1.NotificationChannel;
 import org.hypertrace.notification.config.service.v1.NotificationChannelConfigServiceGrpc;
-import org.hypertrace.notification.config.service.v1.NotificationChannelMutableData;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelResponse;
 
@@ -48,8 +47,7 @@ public class NotificationChannelConfigServiceImpl
       NotificationChannel.Builder builder =
           NotificationChannel.newBuilder()
               .setId(UUID.randomUUID().toString())
-              .setNotificationChannelMutableData(
-                  getIdPopulatedData(request.getNotificationChannelMutableData()));
+              .setNotificationChannelMutableData(request.getNotificationChannelMutableData());
       responseObserver.onNext(
           CreateNotificationChannelResponse.newBuilder()
               .setNotificationChannel(
@@ -78,7 +76,7 @@ public class NotificationChannelConfigServiceImpl
                           NotificationChannel.newBuilder()
                               .setId(request.getId())
                               .setNotificationChannelMutableData(
-                                  getIdPopulatedData(request.getNotificationChannelMutableData()))
+                                  request.getNotificationChannelMutableData())
                               .build())
                       .getData())
               .build());
@@ -150,20 +148,5 @@ public class NotificationChannelConfigServiceImpl
       log.error("Get Notification Channel by id RPC failed for request:{}", request, e);
       responseObserver.onError(e);
     }
-  }
-
-  private NotificationChannelMutableData getIdPopulatedData(NotificationChannelMutableData data) {
-    return NotificationChannelMutableData.newBuilder()
-        .setChannelName(data.getChannelName())
-        .addAllEmailChannelConfig(data.getEmailChannelConfigList())
-        .addAllWebhookChannelConfig(
-            data.getWebhookChannelConfigList().stream()
-                .map(
-                    config ->
-                        config.getId().isBlank()
-                            ? config.toBuilder().setId(UUID.randomUUID().toString()).build()
-                            : config)
-                .collect(Collectors.toList()))
-        .build();
   }
 }
