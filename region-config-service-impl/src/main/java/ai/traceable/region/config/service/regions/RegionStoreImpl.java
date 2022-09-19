@@ -1,7 +1,6 @@
 package ai.traceable.region.config.service.regions;
 
 import ai.traceable.region.config.service.v1.DetailedRegion;
-import com.google.inject.Inject;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -15,10 +14,10 @@ class RegionStoreImpl implements RegionStore {
   private final RegionConverter regionConverter;
   private final Map<String, Region> regionIdToRegionMap;
 
-  @Inject
-  RegionStoreImpl(RegionBuilder regionBuilder, RegionConverter regionConverter) {
+  RegionStoreImpl(
+      RegionBuilder regionBuilder, RegionConverter regionConverter, String countriesDataPath) {
     this.regionConverter = regionConverter;
-    this.regionIdToRegionMap = regionBuilder.buildRegions();
+    this.regionIdToRegionMap = regionBuilder.buildRegions(countriesDataPath);
   }
 
   @Override

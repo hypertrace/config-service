@@ -28,7 +28,7 @@ class RegionBuilderTest {
   @BeforeEach
   void setup() {
     this.uuidGenerator = mock(UuidGenerator.class);
-    this.regionBuilder = new RegionBuilder(uuidGenerator, "");
+    this.regionBuilder = new RegionBuilder(uuidGenerator);
   }
 
   @Test

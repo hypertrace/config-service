@@ -13,7 +13,8 @@ import ai.traceable.activity.event.SecurityConfigurationChange;
 import ai.traceable.activity.event.SecurityConfigurationType;
 import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
-import ai.traceable.region.config.service.regions.RegionStore;
+import ai.traceable.region.config.service.regions.IpqsRegionStore;
+import ai.traceable.region.config.service.regions.NeustarRegionStore;
 import ai.traceable.region.config.service.rules.RulesManager;
 import ai.traceable.region.config.service.rules.RulesValidator;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
@@ -51,8 +52,8 @@ import org.junit.jupiter.api.Test;
 class RegionConfigServiceImplTest {
   private static final String TENANT_ID = "tenant-id";
 
-  private RegionStore neustarRegionStore;
-  private RegionStore ipqsRegionStore;
+  private NeustarRegionStore neustarRegionStore;
+  private IpqsRegionStore ipqsRegionStore;
   private RulesValidator rulesValidator;
   private RulesManager rulesManager;
 
@@ -63,8 +64,8 @@ class RegionConfigServiceImplTest {
 
   @BeforeEach
   void setup() {
-    neustarRegionStore = mock(RegionStore.class);
-    ipqsRegionStore = mock(RegionStore.class);
+    neustarRegionStore = mock(NeustarRegionStore.class);
+    ipqsRegionStore = mock(IpqsRegionStore.class);
     rulesValidator = mock(RulesValidator.class);
     rulesManager = mock(RulesManager.class);
     mockActivityEventProducer = mock(ActivityEventProducer.class);

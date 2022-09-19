@@ -1,13 +1,12 @@
 package ai.traceable.region.config.service;
 
-import static ai.traceable.region.config.service.RegionConfigServiceModule.IPQS_REGION_STORE;
-import static ai.traceable.region.config.service.RegionConfigServiceModule.NEUSTAR_REGION_STORE;
-
 import ai.traceable.activity.event.SecurityConfigurationAction;
 import ai.traceable.activity.event.SecurityConfigurationChange;
 import ai.traceable.activity.event.SecurityConfigurationType;
 import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
+import ai.traceable.region.config.service.regions.IpqsRegionStore;
+import ai.traceable.region.config.service.regions.NeustarRegionStore;
 import ai.traceable.region.config.service.regions.RegionStore;
 import ai.traceable.region.config.service.rules.RulesManager;
 import ai.traceable.region.config.service.rules.RulesValidator;
@@ -31,7 +30,6 @@ import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleResponse;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.Collections;
@@ -53,8 +51,8 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
 
   @Inject
   RegionConfigServiceImpl(
-      @Named(NEUSTAR_REGION_STORE) RegionStore neustarRegionStore,
-      @Named(IPQS_REGION_STORE) RegionStore ipqsRegionStore,
+      NeustarRegionStore neustarRegionStore,
+      IpqsRegionStore ipqsRegionStore,
       RulesValidator rulesValidator,
       RulesManager rulesManager,
       RegionConfigServiceConfig config,

@@ -1,11 +1,8 @@
 package ai.traceable.region.config.service.regions;
 
-import static ai.traceable.region.config.service.regions.RegionStoreModule.COUNTRIES_DATA_PATH;
-
 import ai.traceable.region.config.service.utils.UuidGenerator;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -25,16 +22,14 @@ class RegionBuilder {
   private static final String COUNTRY_CSV_HEADER = "country";
 
   private final UuidGenerator uuidGenerator;
-  private final String countriesDataPath;
 
   @Inject
-  RegionBuilder(UuidGenerator uuidGenerator, @Named(COUNTRIES_DATA_PATH) String countriesDataPath) {
+  RegionBuilder(UuidGenerator uuidGenerator) {
     this.uuidGenerator = uuidGenerator;
-    this.countriesDataPath = countriesDataPath;
   }
 
   // reads the CSV data and converts it into a region map
-  public Map<String, Region> buildRegions() {
+  public Map<String, Region> buildRegions(String countriesDataPath) {
     try {
       Reader csvReader = new InputStreamReader(getClass().getResourceAsStream(countriesDataPath));
 

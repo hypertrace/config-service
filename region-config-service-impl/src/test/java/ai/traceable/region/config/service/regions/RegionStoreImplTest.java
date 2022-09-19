@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 class RegionStoreImplTest {
   private RegionBuilder regionBuilder;
   private RegionConverter regionConverter;
+  private String countriesDataPath;
 
   private RegionStoreImpl regionStore;
 
@@ -26,12 +27,13 @@ class RegionStoreImplTest {
   void setup() {
     regionBuilder = mock(RegionBuilder.class);
     regionConverter = mock(RegionConverter.class);
+    countriesDataPath = "/path/to/csv";
 
     when(regionConverter.convert(any(Region.class)))
         .thenReturn(ai.traceable.region.config.service.v1.Region.getDefaultInstance());
-    when(regionBuilder.buildRegions()).thenReturn(mockRegions());
+    when(regionBuilder.buildRegions(any(String.class))).thenReturn(mockRegions());
 
-    this.regionStore = new RegionStoreImpl(regionBuilder, regionConverter);
+    this.regionStore = new RegionStoreImpl(regionBuilder, regionConverter, countriesDataPath);
   }
 
   @Nested
