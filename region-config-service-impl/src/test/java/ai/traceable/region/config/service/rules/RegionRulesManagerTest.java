@@ -101,6 +101,26 @@ class RegionRulesManagerTest {
                           .setEnvironmentScope(
                               EnvironmentScope.newBuilder().addEnvironmentIds("env3")))
                   .build()));
+
+      // Filter by rule scope with env scope with no envs should only return rules with no envs
+      assertEquals(
+          List.of(regionRule2),
+          rulesManager.getRegionRules(
+              requestContext,
+              GetRegionRulesFilter.newBuilder()
+                  .setRuleScope(
+                      RuleScope.newBuilder()
+                          .setEnvironmentScope(EnvironmentScope.getDefaultInstance()))
+                  .build()));
+
+      // Filter by rule scope with no env scope should all available rules
+      assertEquals(
+          List.of(regionRule2, regionRule1),
+          rulesManager.getRegionRules(
+              requestContext,
+              GetRegionRulesFilter.newBuilder()
+                  .setRuleScope(RuleScope.getDefaultInstance())
+                  .build()));
     }
   }
 

@@ -35,6 +35,13 @@ class RegionDataFetcherTest {
   private static final String TENANT_ID = "tenant-id";
   private static final String ENVIRONMENT_ID = "environment-id";
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
+  private static final GetAllRegionRulesRequest DEFAULT_GET_REQUEST =
+      GetAllRegionRulesRequest.newBuilder()
+          .setFilter(
+              GetRegionRulesFilter.newBuilder()
+                  .setRuleScope(
+                      RuleScope.newBuilder().setEnvironmentScope(EnvironmentScope.newBuilder())))
+          .build();
 
   private RegionConfigServiceBlockingStub regionConfigServiceBlockingStub;
   private RegionDataFetcher regionDataFetcher;
@@ -64,7 +71,7 @@ class RegionDataFetcherTest {
   void getRegionBasedRulesTestEmpty() {
     doReturn(GetAllRegionRulesResponse.getDefaultInstance())
         .when(regionConfigServiceBlockingStub)
-        .getAllRegionRules(GetAllRegionRulesRequest.getDefaultInstance());
+        .getAllRegionRules(DEFAULT_GET_REQUEST);
 
     Map<BlockingRuleType, List<BlockingDetails>> regionBasedRuleMap =
         regionDataFetcher.getRegionBasedRules(REQUEST_CONTEXT, Optional.empty());
@@ -76,9 +83,9 @@ class RegionDataFetcherTest {
 
   @Test
   void getRegionBasedRulesTestWithoutEnvironment() {
-    doReturn(sampleRegionRuleResponse)
+    doReturn(sampleRegionAllEnvRulesResponse)
         .when(regionConfigServiceBlockingStub)
-        .getAllRegionRules(GetAllRegionRulesRequest.getDefaultInstance());
+        .getAllRegionRules(DEFAULT_GET_REQUEST);
 
     Map<BlockingRuleType, List<BlockingDetails>> regionBasedRuleMap =
         regionDataFetcher.getRegionBasedRules(REQUEST_CONTEXT, Optional.empty());
@@ -110,7 +117,7 @@ class RegionDataFetcherTest {
 
   @Test
   void getRegionBasedRulesTestWithEnvironment() {
-    doReturn(sampleRegionRuleResponse)
+    doReturn(sampleRegionAllRulesResponse)
         .when(regionConfigServiceBlockingStub)
         .getAllRegionRules(
             GetAllRegionRulesRequest.newBuilder()
@@ -146,7 +153,7 @@ class RegionDataFetcherTest {
                 REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID + "random")));
   }
 
-  private static final GetAllRegionRulesResponse sampleRegionRuleResponse =
+  private static final GetAllRegionRulesResponse sampleRegionAllEnvRulesResponse =
       GetAllRegionRulesResponse.newBuilder()
           .addRule(
               RegionRule.newBuilder()
@@ -193,6 +200,10 @@ class RegionDataFetcherTest {
                   .setExpirationDetails(
                       ExpirationDetails.newBuilder().setTimestampMillis(inactiveTimestamp).build())
                   .build())
+          .build();
+
+  private static final GetAllRegionRulesResponse sampleRegionAllRulesResponse =
+      sampleRegionAllEnvRulesResponse.toBuilder()
           .addRule(
               RegionRule.newBuilder()
                   .setId("rule-id-6")

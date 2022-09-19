@@ -69,15 +69,24 @@ public class CustomSignatureRulesStore
                     || filter.getEventTypesList().contains(rule.getEffect().getEventType()))
         .filter(rule -> !(filter.hasDisabled() && rule.getDisabled() != filter.getDisabled()))
         .filter(rule -> !(filter.hasInternal() && rule.getInternal() != filter.getInternal()))
-        .filter(rule -> filterRuleOnScope(rule.getRuleScope(), filter.getRuleScope()));
+        .filter(rule -> filterRuleOnScope(rule, filter.getRuleScope()));
   }
 
-  private boolean filterRuleOnScope(RuleScope ruleScope, RuleScope filterScope) {
-    List<String> filterEnvironmentIds = filterScope.getEnvironmentScope().getEnvironmentIdsList();
-    List<String> ruleEnvironmentIds = ruleScope.getEnvironmentScope().getEnvironmentIdsList();
-    if (filterEnvironmentIds.isEmpty() || ruleEnvironmentIds.isEmpty()) {
+  /**
+   * Method to filter on rule-scope * If filterScope has no environment scope, always return true *
+   * If filterScope has environment scope but the environment scope has no environment IDs, return
+   * true only if the rule has no Environment IDs in its rule-scope. * If filterScope has
+   * environment scope and the environment scope has one or more environment IDs, return true only
+   * if there is at least one overlap of environment ID between the filter and the rule.
+   */
+  private boolean filterRuleOnScope(CustomSignatureRule ruleData, RuleScope filterScope) {
+    List<String> ruleEnvironmentIds =
+        ruleData.getRuleScope().getEnvironmentScope().getEnvironmentIdsList();
+    if (!filterScope.hasEnvironmentScope() || ruleEnvironmentIds.isEmpty()) {
       return true;
     }
+
+    List<String> filterEnvironmentIds = filterScope.getEnvironmentScope().getEnvironmentIdsList();
     return ruleEnvironmentIds.stream().anyMatch(filterEnvironmentIds::contains);
   }
 }

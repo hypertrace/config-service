@@ -38,6 +38,16 @@ class CustomSignatureDataFetcherTest {
   private static final String TENANT_ID = "tenant-id";
   private static final String ENVIRONMENT_ID = "environment-id";
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
+  private static final GetCustomSignatureRulesRequest DEFAULT_GET_REQUEST =
+      GetCustomSignatureRulesRequest.newBuilder()
+          .setFilter(
+              GetRulesFilter.newBuilder()
+                  .addEventTypes(EVENT_TYPE_DETECTION_AND_BLOCKING)
+                  .addEventTypes(EVENT_TYPE_ALLOW)
+                  .setDisabled(false)
+                  .setRuleScope(
+                      RuleScope.newBuilder().setEnvironmentScope(EnvironmentScope.newBuilder())))
+          .build();
 
   private CustomSignatureConfigServiceBlockingStub customSignatureConfigServiceBlockingStub;
   private CustomSignatureDataFetcher customSignatureDataFetcher;
@@ -68,14 +78,7 @@ class CustomSignatureDataFetcherTest {
   void getCustomSignatureRulesTestEmpty() {
     doReturn(GetCustomSignatureRulesResponse.getDefaultInstance())
         .when(customSignatureConfigServiceBlockingStub)
-        .getCustomSignatureRules(
-            GetCustomSignatureRulesRequest.newBuilder()
-                .setFilter(
-                    GetRulesFilter.newBuilder()
-                        .addEventTypes(EVENT_TYPE_DETECTION_AND_BLOCKING)
-                        .addEventTypes(EVENT_TYPE_ALLOW)
-                        .setDisabled(false))
-                .build());
+        .getCustomSignatureRules(DEFAULT_GET_REQUEST);
 
     Map<BlockingRuleType, List<BlockingDetails>> customSignatureRuleMap =
         customSignatureDataFetcher.getCustomSignatureRules(REQUEST_CONTEXT, Optional.empty());
@@ -87,16 +90,9 @@ class CustomSignatureDataFetcherTest {
 
   @Test
   void getCustomSignatureRulesTestWithoutEnvironment() {
-    doReturn(sampleCustomSignatureRuleResponse)
+    doReturn(sampleCustomSignatureAllEnvRulesResponse)
         .when(customSignatureConfigServiceBlockingStub)
-        .getCustomSignatureRules(
-            GetCustomSignatureRulesRequest.newBuilder()
-                .setFilter(
-                    GetRulesFilter.newBuilder()
-                        .addEventTypes(EVENT_TYPE_DETECTION_AND_BLOCKING)
-                        .addEventTypes(EVENT_TYPE_ALLOW)
-                        .setDisabled(false))
-                .build());
+        .getCustomSignatureRules(DEFAULT_GET_REQUEST);
 
     Map<BlockingRuleType, List<BlockingDetails>> customSignatureRuleMap =
         customSignatureDataFetcher.getCustomSignatureRules(REQUEST_CONTEXT, Optional.empty());
@@ -128,7 +124,7 @@ class CustomSignatureDataFetcherTest {
 
   @Test
   void getCustomSignatureRulesTestWithEnvironment() {
-    doReturn(sampleCustomSignatureRuleResponse)
+    doReturn(sampleCustomSignatureAllRulesResponse)
         .when(customSignatureConfigServiceBlockingStub)
         .getCustomSignatureRules(
             GetCustomSignatureRulesRequest.newBuilder()
@@ -166,7 +162,7 @@ class CustomSignatureDataFetcherTest {
                 REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID + "random")));
   }
 
-  private static final GetCustomSignatureRulesResponse sampleCustomSignatureRuleResponse =
+  private static final GetCustomSignatureRulesResponse sampleCustomSignatureAllEnvRulesResponse =
       GetCustomSignatureRulesResponse.newBuilder()
           .addRules(
               CustomSignatureRule.newBuilder()
@@ -219,6 +215,10 @@ class CustomSignatureDataFetcherTest {
                   .setDisabled(false)
                   .setBlockingExpiryDetails(
                       ExpiryDetails.newBuilder().setExpiryTimestampMillis(inactiveTimestamp)))
+          .build();
+
+  private static final GetCustomSignatureRulesResponse sampleCustomSignatureAllRulesResponse =
+      sampleCustomSignatureAllEnvRulesResponse.toBuilder()
           .addRules(
               CustomSignatureRule.newBuilder()
                   .setId("rule-id-5")

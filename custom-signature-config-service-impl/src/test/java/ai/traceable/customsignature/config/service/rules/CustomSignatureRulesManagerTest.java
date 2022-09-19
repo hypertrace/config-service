@@ -83,15 +83,24 @@ public class CustomSignatureRulesManagerTest {
                 .setEffect(
                     RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
                 .setRuleScope(getRuleScope(List.of("dev")))
+                .build(),
+            CustomSignatureRule.newBuilder()
+                .setId("id3")
+                .setName("name-3")
+                .setEffect(
+                    RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
                 .build());
 
-    when(rulesManager.generateRuleId()).thenReturn("id1").thenReturn("id2");
+    when(rulesManager.generateRuleId()).thenReturn("id1").thenReturn("id2").thenReturn("id3");
     rulesManager.createCustomSignatureRule(
         requestContext, CreateCustomSignatureRuleRequest.newBuilder().setName("name-1").build());
     rulesManager.createCustomSignatureRule(
         requestContext, CreateCustomSignatureRuleRequest.newBuilder().setName("name-2").build());
+    rulesManager.createCustomSignatureRule(
+        requestContext, CreateCustomSignatureRuleRequest.newBuilder().setName("name-3").build());
     rulesManager.updateCustomSignatureRule(requestContext, expectedRules.get(0));
     rulesManager.updateCustomSignatureRule(requestContext, expectedRules.get(1));
+    rulesManager.updateCustomSignatureRule(requestContext, expectedRules.get(2));
 
     List<CustomSignatureRule> results;
 
@@ -112,9 +121,10 @@ public class CustomSignatureRulesManagerTest {
     // No filter -- return all rules
     results =
         rulesManager.getCustomSignatureRules(requestContext, GetRulesFilter.newBuilder().build());
-    assertEquals(2, results.size());
+    assertEquals(3, results.size());
     assertTrue(results.contains(expectedRules.get(0)));
     assertTrue(results.contains(expectedRules.get(1)));
+    assertTrue(results.contains(expectedRules.get(2)));
 
     // Filter on disabled
     results =
@@ -163,29 +173,50 @@ public class CustomSignatureRulesManagerTest {
                 .build());
     assertTrue(results.isEmpty());
 
-    // Filter on dev env (both rules should come)
+    // Filter on dev env (all 3 rules should come)
     results =
         rulesManager.getCustomSignatureRules(
             requestContext,
             GetRulesFilter.newBuilder().setRuleScope(getRuleScope(List.of("dev"))).build());
-    assertEquals(2, results.size());
+    assertEquals(3, results.size());
     assertTrue(results.contains(expectedRules.get(0)));
     assertTrue(results.contains(expectedRules.get(1)));
+    assertTrue(results.contains(expectedRules.get(2)));
 
-    // Filter on prod env (first rule should come)
+    // Filter on prod env (only 2 rules should come)
     results =
         rulesManager.getCustomSignatureRules(
             requestContext,
             GetRulesFilter.newBuilder().setRuleScope(getRuleScope(List.of("prod"))).build());
-    assertEquals(1, results.size());
-    assertEquals(expectedRules.get(0), results.get(0));
+    assertEquals(2, results.size());
+    assertTrue(results.contains(expectedRules.get(0)));
+    assertTrue(results.contains(expectedRules.get(2)));
 
-    // Filter on staging env (both rules should get filtered out)
+    // Filter on staging env (first 2 rules should get filtered out)
     results =
         rulesManager.getCustomSignatureRules(
             requestContext,
             GetRulesFilter.newBuilder().setRuleScope(getRuleScope(List.of("staging"))).build());
-    assertTrue(results.isEmpty());
+    assertEquals(1, results.size());
+    assertTrue(results.contains(expectedRules.get(2)));
+
+    // Filter by rule scope with env scope with no envs should only return rules with no envs
+    results =
+        rulesManager.getCustomSignatureRules(
+            requestContext,
+            GetRulesFilter.newBuilder().setRuleScope(getRuleScope(List.of())).build());
+    assertEquals(1, results.size());
+    assertTrue(results.contains(expectedRules.get(2)));
+
+    // Filter by rule scope with no env scope should all available rules
+    results =
+        rulesManager.getCustomSignatureRules(
+            requestContext,
+            GetRulesFilter.newBuilder().setRuleScope(RuleScope.getDefaultInstance()).build());
+    assertEquals(3, results.size());
+    assertTrue(results.contains(expectedRules.get(0)));
+    assertTrue(results.contains(expectedRules.get(1)));
+    assertTrue(results.contains(expectedRules.get(2)));
   }
 
   @Test

@@ -45,19 +45,18 @@ public class RegionDataFetcher {
     List<BlockingDetails> violations = new ArrayList<>();
     List<BlockingDetails> blockAllExcepts = new ArrayList<>();
 
+    // empty env scope will only return rules with rule-scope as all-envs
     GetAllRegionRulesRequest rulesRequest =
-        environmentId
-            .map(
-                id ->
-                    GetAllRegionRulesRequest.newBuilder()
-                        .setFilter(
-                            GetRegionRulesFilter.newBuilder()
-                                .setRuleScope(
-                                    RuleScope.newBuilder()
-                                        .setEnvironmentScope(
-                                            EnvironmentScope.newBuilder().addEnvironmentIds(id))))
-                        .build())
-            .orElseGet(GetAllRegionRulesRequest::getDefaultInstance);
+        GetAllRegionRulesRequest.newBuilder()
+            .setFilter(
+                GetRegionRulesFilter.newBuilder()
+                    .setRuleScope(
+                        RuleScope.newBuilder()
+                            .setEnvironmentScope(
+                                environmentId
+                                    .map(id -> EnvironmentScope.newBuilder().addEnvironmentIds(id))
+                                    .orElse(EnvironmentScope.newBuilder()))))
+            .build();
 
     GetAllRegionRulesResponse response =
         requestContext.call(() -> regionConfigServiceStub.getAllRegionRules(rulesRequest));
@@ -89,11 +88,6 @@ public class RegionDataFetcher {
   }
 
   private boolean filterRule(RegionRule regionRule, Optional<String> environmentId) {
-    // Removing rules with environment scope in case of default env
-    if (environmentId.isEmpty()
-        && regionRule.getRuleScope().getEnvironmentScope().getEnvironmentIdsCount() != 0) {
-      return false;
-    }
     return !regionRule.getRegionIdList().isEmpty()
         && blockingRulesUtils.isRuleActive(regionRule.getExpirationDetails().getTimestampMillis());
   }

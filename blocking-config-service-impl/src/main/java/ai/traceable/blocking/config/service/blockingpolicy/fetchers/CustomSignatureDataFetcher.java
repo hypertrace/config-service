@@ -31,15 +31,8 @@ import org.slf4j.LoggerFactory;
 
 public class CustomSignatureDataFetcher {
   private static final Logger LOGGER = LoggerFactory.getLogger(CustomSignatureDataFetcher.class);
-  private static final GetRulesFilter BASE_RULE_FILTER =
-      GetRulesFilter.newBuilder()
-          .addAllEventTypes(
-              ImmutableList.of(
-                  EventType.EVENT_TYPE_DETECTION_AND_BLOCKING, EventType.EVENT_TYPE_ALLOW))
-          .setDisabled(false)
-          .build();
-  private static final GetCustomSignatureRulesRequest DEFAULT_GET_CUSTOM_SIGNATURE_RULES_REQUEST =
-      GetCustomSignatureRulesRequest.newBuilder().setFilter(BASE_RULE_FILTER).build();
+  private static final List<EventType> EVENT_TYPES_LIST =
+      ImmutableList.of(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING, EventType.EVENT_TYPE_ALLOW);
 
   private final CustomSignatureConfigServiceBlockingStub configServiceBlockingStub;
   private final BlockingRulesUtils blockingRulesUtils;
@@ -57,19 +50,20 @@ public class CustomSignatureDataFetcher {
     List<BlockingDetails> exemptions = new ArrayList<>();
     List<BlockingDetails> violations = new ArrayList<>();
 
+    // empty env scope will only return rules with rule-scope as all-envs
     GetCustomSignatureRulesRequest getCustomSignatureRulesRequest =
-        environmentId
-            .map(
-                id ->
-                    GetCustomSignatureRulesRequest.newBuilder()
-                        .setFilter(
-                            BASE_RULE_FILTER.toBuilder()
-                                .setRuleScope(
-                                    RuleScope.newBuilder()
-                                        .setEnvironmentScope(
-                                            EnvironmentScope.newBuilder().addEnvironmentIds(id))))
-                        .build())
-            .orElse(DEFAULT_GET_CUSTOM_SIGNATURE_RULES_REQUEST);
+        GetCustomSignatureRulesRequest.newBuilder()
+            .setFilter(
+                GetRulesFilter.newBuilder()
+                    .addAllEventTypes(EVENT_TYPES_LIST)
+                    .setDisabled(false)
+                    .setRuleScope(
+                        RuleScope.newBuilder()
+                            .setEnvironmentScope(
+                                environmentId
+                                    .map(id -> EnvironmentScope.newBuilder().addEnvironmentIds(id))
+                                    .orElse(EnvironmentScope.newBuilder()))))
+            .build();
 
     GetCustomSignatureRulesResponse response =
         requestContext.call(
@@ -116,11 +110,6 @@ public class CustomSignatureDataFetcher {
 
   private boolean filterRule(
       CustomSignatureRule customSignatureRule, Optional<String> environmentId) {
-    // Removing rules with environment scope in case of default env
-    if (environmentId.isEmpty()
-        && customSignatureRule.getRuleScope().getEnvironmentScope().getEnvironmentIdsCount() != 0) {
-      return false;
-    }
     return blockingRulesUtils.isRuleActive(
         customSignatureRule.getBlockingExpiryDetails().getExpiryTimestampMillis());
   }

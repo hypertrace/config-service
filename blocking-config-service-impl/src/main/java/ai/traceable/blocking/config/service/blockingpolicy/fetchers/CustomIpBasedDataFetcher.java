@@ -30,10 +30,6 @@ import org.slf4j.LoggerFactory;
 
 public class CustomIpBasedDataFetcher {
   private static final Logger LOGGER = LoggerFactory.getLogger(CustomIpBasedDataFetcher.class);
-  private static final GetRulesFilter BASE_RULE_FILTER =
-      GetRulesFilter.newBuilder().setDisabled(false).build();
-  private static final GetIpRangeRulesRequest DEFAULT_GET_IP_RANGE_RULES_REQUEST =
-      GetIpRangeRulesRequest.newBuilder().setFilter(BASE_RULE_FILTER).build();
 
   private final IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub;
   private final BlockingRulesUtils blockingRulesUtils;
@@ -52,19 +48,19 @@ public class CustomIpBasedDataFetcher {
     List<BlockingDetails> violations = new ArrayList<>();
     List<BlockingDetails> blockAllExcepts = new ArrayList<>();
 
+    // empty env scope will only return rules with rule-scope as all-envs
     GetIpRangeRulesRequest getIpRangeRulesRequest =
-        environmentId
-            .map(
-                id ->
-                    GetIpRangeRulesRequest.newBuilder()
-                        .setFilter(
-                            BASE_RULE_FILTER.toBuilder()
-                                .setRuleScope(
-                                    RuleScope.newBuilder()
-                                        .setEnvironmentScope(
-                                            EnvironmentScope.newBuilder().addEnvironmentIds(id))))
-                        .build())
-            .orElse(DEFAULT_GET_IP_RANGE_RULES_REQUEST);
+        GetIpRangeRulesRequest.newBuilder()
+            .setFilter(
+                GetRulesFilter.newBuilder()
+                    .setDisabled(false)
+                    .setRuleScope(
+                        RuleScope.newBuilder()
+                            .setEnvironmentScope(
+                                environmentId
+                                    .map(id -> EnvironmentScope.newBuilder().addEnvironmentIds(id))
+                                    .orElse(EnvironmentScope.newBuilder()))))
+            .build();
 
     GetIpRangeRulesResponse response =
         requestContext.call(() -> ipRangeConfigServiceStub.getIpRangeRules(getIpRangeRulesRequest));
@@ -113,11 +109,6 @@ public class CustomIpBasedDataFetcher {
   }
 
   private boolean filterRule(IpRangeRule ipRule, Optional<String> environmentId) {
-    // Removing rules with environment scope in case of default env
-    if (environmentId.isEmpty()
-        && ipRule.getRuleScope().getEnvironmentScope().getEnvironmentIdsCount() != 0) {
-      return false;
-    }
     return (!ipRule.getIpAddressesList().isEmpty() || !ipRule.getIpRangesList().isEmpty())
         && blockingRulesUtils.isRuleActive(
             ipRule.getRuleDetails().getExpirationDetails().getExpirationTimestampMillis());

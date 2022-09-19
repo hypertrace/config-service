@@ -39,6 +39,15 @@ class CustomIpBasedDataFetcherTest {
   private static final String TENANT_ID = "tenant-id";
   private static final String ENVIRONMENT_ID = "environment-id";
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
+  private static final GetIpRangeRulesRequest DEFAULT_GET_REQUEST =
+      GetIpRangeRulesRequest.newBuilder()
+          .setFilter(
+              GetRulesFilter.newBuilder()
+                  .setDisabled(false)
+                  .setRuleScope(
+                      RuleScope.newBuilder().setEnvironmentScope(EnvironmentScope.newBuilder()))
+                  .build())
+          .build();
 
   private IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub;
   private CustomIpBasedDataFetcher customIpBasedDataFetcher;
@@ -72,10 +81,7 @@ class CustomIpBasedDataFetcherTest {
   void getCustomIpBasedRulesTestEmpty() {
     doReturn(GetIpRangeRulesResponse.getDefaultInstance())
         .when(ipRangeConfigServiceStub)
-        .getIpRangeRules(
-            GetIpRangeRulesRequest.newBuilder()
-                .setFilter(GetRulesFilter.newBuilder().setDisabled(false).build())
-                .build());
+        .getIpRangeRules(DEFAULT_GET_REQUEST);
 
     Map<BlockingRuleType, List<BlockingDetails>> customIpBasedRuleMap =
         customIpBasedDataFetcher.getCustomIpBasedRules(REQUEST_CONTEXT, Optional.empty());
@@ -88,12 +94,9 @@ class CustomIpBasedDataFetcherTest {
 
   @Test
   void getCustomIpBasedRulesTestWithoutEnvironment() {
-    doReturn(sampleGetIpRangeRulesResponse)
+    doReturn(sampleGetIpRangeRulesAllEnvsResponse)
         .when(ipRangeConfigServiceStub)
-        .getIpRangeRules(
-            GetIpRangeRulesRequest.newBuilder()
-                .setFilter(GetRulesFilter.newBuilder().setDisabled(false).build())
-                .build());
+        .getIpRangeRules(DEFAULT_GET_REQUEST);
 
     Map<BlockingRuleType, List<BlockingDetails>> customIpBasedRuleMap =
         customIpBasedDataFetcher.getCustomIpBasedRules(REQUEST_CONTEXT, Optional.empty());
@@ -138,7 +141,7 @@ class CustomIpBasedDataFetcherTest {
 
   @Test
   void getCustomIpBasedRulesTestWithEnvironment() {
-    doReturn(sampleGetIpRangeRulesResponse)
+    doReturn(sampleGetAllIpRangeRulesResponse)
         .when(ipRangeConfigServiceStub)
         .getIpRangeRules(
             GetIpRangeRulesRequest.newBuilder()
@@ -177,7 +180,7 @@ class CustomIpBasedDataFetcherTest {
                 REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID + "random")));
   }
 
-  private static final GetIpRangeRulesResponse sampleGetIpRangeRulesResponse =
+  private static final GetIpRangeRulesResponse sampleGetIpRangeRulesAllEnvsResponse =
       GetIpRangeRulesResponse.newBuilder()
           .addRules(
               IpRangeRule.newBuilder()
@@ -281,6 +284,10 @@ class CustomIpBasedDataFetcherTest {
                   .addIpAddresses("1.2.3.4")
                   .addIpAddresses("11.22.33.44")
                   .build())
+          .build();
+
+  private static final GetIpRangeRulesResponse sampleGetAllIpRangeRulesResponse =
+      sampleGetIpRangeRulesAllEnvsResponse.toBuilder()
           .addRules(
               IpRangeRule.newBuilder()
                   .setId("rule-id-8")
