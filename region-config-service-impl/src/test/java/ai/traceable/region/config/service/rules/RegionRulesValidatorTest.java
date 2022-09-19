@@ -109,6 +109,26 @@ class RegionRulesValidatorTest {
     }
 
     @Test
+    @DisplayName("should fail as empty id in env scope")
+    void should_fail_createRegionRule_empty_env_id() {
+      CreateRegionRuleRequest createRegionRuleRequest =
+          CreateRegionRuleRequest.newBuilder()
+              .addRegionId("region-1")
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+              .setName("name")
+              .setRuleScope(
+                  RuleScope.newBuilder()
+                      .setEnvironmentScope(
+                          EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of("")))
+                      .build())
+              .build();
+
+      Status status = rulesValidator.validate(createRegionRuleRequest, getAllRegionRulesSupplier);
+
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
     @DisplayName("should return ALREADY_EXISTS for duplicate block all except action type")
     void should_pass_createRegionRule_duplicateBlockAllExcept() {
       CreateRegionRuleRequest createRegionRuleRequest =
@@ -224,6 +244,35 @@ class RegionRulesValidatorTest {
       RuleScope ruleScope =
           RuleScope.newBuilder()
               .setEnvironmentScope(EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of()))
+              .build();
+      UpdateRegionRuleRequest updateRegionRuleRequest =
+          UpdateRegionRuleRequest.newBuilder()
+              .setId("id")
+              .addRegionId("region-1")
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+              .setName("name")
+              .setRuleScope(ruleScope)
+              .build();
+
+      when(getAllRegionRulesSupplier.get())
+          .thenReturn(
+              List.of(
+                  RegionRule.newBuilder()
+                      .setId("id")
+                      .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+                      .setRuleScope(ruleScope)
+                      .build()));
+      Status status = rulesValidator.validate(updateRegionRuleRequest, getAllRegionRulesSupplier);
+
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName("should fail as env scope has empty id")
+    void should_fail_updateRegionRule_empty_id_env_scope() {
+      RuleScope ruleScope =
+          RuleScope.newBuilder()
+              .setEnvironmentScope(EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of("")))
               .build();
       UpdateRegionRuleRequest updateRegionRuleRequest =
           UpdateRegionRuleRequest.newBuilder()

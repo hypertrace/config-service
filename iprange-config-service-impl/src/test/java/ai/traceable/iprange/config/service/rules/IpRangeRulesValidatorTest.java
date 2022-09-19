@@ -104,6 +104,34 @@ class IpRangeRulesValidatorTest {
     }
 
     @Test
+    @DisplayName("Should return invalid status because of empty env id")
+    void validateCreateIpRangeRuleRequest_empty_env_id() {
+      IpRangeRuleDetails iprangeRuleDetails =
+          IpRangeRuleDetails.newBuilder()
+              .setName("Tester")
+              .setDescription("Range rule test")
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
+              .setExpirationDetails(
+                  ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
+              .build();
+
+      CreateIpRangeRuleRequest createIpRangeRuleRequest =
+          CreateIpRangeRuleRequest.newBuilder()
+              .setRuleDetails(iprangeRuleDetails)
+              .setRuleScope(
+                  RuleScope.newBuilder()
+                      .setEnvironmentScope(
+                          EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of("")))
+                      .build())
+              .build();
+
+      Status status =
+          rulesValidator.validate(createIpRangeRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
     @DisplayName("Should return invalid argument status when missing name in create IP Range rule")
     void validateCreateIpRangeRuleRequest_missing_name() {
       IpRangeRuleDetails iprangeRuleDetails =
@@ -317,6 +345,37 @@ class IpRangeRulesValidatorTest {
                   RuleScope.newBuilder()
                       .setEnvironmentScope(
                           EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of()))
+                      .build())
+              .build();
+
+      Status status =
+          rulesValidator.validate(updateIpRangeRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName("Should return invalid argument status when env id is empty")
+    void validateUpdateIpRangeRuleRequest_empty_env_id() {
+      IpRangeRuleDetails iprangeRuleDetails =
+          IpRangeRuleDetails.newBuilder()
+              .setName("Tester")
+              .setDescription("Range rule test")
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
+              .setExpirationDetails(
+                  ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
+              .build();
+
+      UpdateIpRangeRuleRequest updateIpRangeRuleRequest =
+          UpdateIpRangeRuleRequest.newBuilder()
+              .setId("Tester0")
+              .setRuleDetails(iprangeRuleDetails)
+              .setDisabled(true)
+              .setInternal(false)
+              .setRuleScope(
+                  RuleScope.newBuilder()
+                      .setEnvironmentScope(
+                          EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of("")))
                       .build())
               .build();
 

@@ -534,6 +534,21 @@ public class CustomSignatureRulesValidatorTest {
                 ExpiryDetails.newBuilder().setExpiryDuration(NON_ZERO_EXPIRY_DURATION).build())
             .setRuleScope(
                 RuleScope.newBuilder()
+                    .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("")))
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals("Environment id should not be empty string.", status.getDescription());
+
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setEffect(ruleEffect)
+            .setDefinition(validRuleDefinition)
+            .setBlockingExpiryDetails(
+                ExpiryDetails.newBuilder().setExpiryDuration(NON_ZERO_EXPIRY_DURATION).build())
+            .setRuleScope(
+                RuleScope.newBuilder()
                     .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("dev")))
             .build();
     when(modsecRulesManager.validateModsecRule(request.getName(), request.getDefinition()))
@@ -1033,6 +1048,36 @@ public class CustomSignatureRulesValidatorTest {
                     .build())
             .setRuleScope(
                 RuleScope.newBuilder()
+                    .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("")))
+            .build();
+    status =
+        rulesValidator.validate(
+            UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals("Environment id should not be empty string.", status.getDescription());
+
+    rule =
+        CustomSignatureRule.newBuilder()
+            .setId("id")
+            .setName("name")
+            .setEffect(ruleEffect)
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setMatchExpression(
+                                        MatchExpression.newBuilder()
+                                            .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
+                                            .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .setRuleScope(
+                RuleScope.newBuilder()
                     .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("dev")))
             .build();
     status =
@@ -1041,6 +1086,7 @@ public class CustomSignatureRulesValidatorTest {
     assertEquals(Code.OK, status.getCode());
   }
 
+  @Test
   public void testValidateDeleteRule() {
     Status status;
 

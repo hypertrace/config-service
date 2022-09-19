@@ -274,10 +274,16 @@ class CustomSignatureRulesValidator implements RulesValidator {
   }
 
   private Status validateRuleScope(RuleScope scope) {
-    if (scope.hasEnvironmentScope()
-        && scope.getEnvironmentScope().getEnvironmentIdsList().isEmpty()) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Environment scope should have at least one environment");
+    if (scope.hasEnvironmentScope()) {
+      List<String> environmentIdList = scope.getEnvironmentScope().getEnvironmentIdsList();
+      if (environmentIdList.isEmpty()) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            "Environment scope should have at least one environment");
+      } else {
+        return environmentIdList.stream().anyMatch(String::isEmpty)
+            ? Status.INVALID_ARGUMENT.withDescription("Environment id should not be empty string.")
+            : Status.OK;
+      }
     } else {
       return Status.OK;
     }
