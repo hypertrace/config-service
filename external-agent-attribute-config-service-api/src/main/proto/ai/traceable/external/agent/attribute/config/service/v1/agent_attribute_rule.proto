@@ -25,7 +25,7 @@ message AgentAttributeRule {
     message Action {
       oneof action {
         AttributeAddition attribute_addition = 1;
-        AttributeAppend attribute_append = 2;
+        AttributeArrayAppend attribute_array_append = 2;
       }
 
       message AttributeAddition {
@@ -35,13 +35,12 @@ message AgentAttributeRule {
         AttributeRule value_projection_rule = 2;
       }
 
-      message AttributeAppend{
+      // adds or appends value as an array to an attribute
+      message AttributeArrayAppend{
         // attribute key to append to (will add if not present)
         string attribute_key = 1;
         // rule to get the value to append
         AttributeRule value_projection_rule = 2;
-        // separator between appended values. Optional
-        string separator = 3;
       }
     }
 
