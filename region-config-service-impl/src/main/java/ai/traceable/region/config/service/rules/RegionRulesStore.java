@@ -57,7 +57,10 @@ public class RegionRulesStore
 
   @Override
   protected Optional<RegionRule> filterConfigData(RegionRule data, GetRegionRulesFilter filter) {
-    return Optional.of(data).filter(rule -> filterRuleOnScope(rule, filter.getRuleScope()));
+    return Optional.of(data)
+        .filter(rule -> !(filter.hasDisabled() && rule.getDisabled() != filter.getDisabled()))
+        .filter(rule -> !(filter.hasInternal() && rule.getInternal() != filter.getInternal()))
+        .filter(rule -> filterRuleOnScope(rule, filter.getRuleScope()));
   }
 
   /**

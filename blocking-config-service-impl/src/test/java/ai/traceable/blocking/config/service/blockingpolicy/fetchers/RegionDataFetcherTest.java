@@ -39,8 +39,8 @@ class RegionDataFetcherTest {
       GetAllRegionRulesRequest.newBuilder()
           .setFilter(
               GetRegionRulesFilter.newBuilder()
-                  .setRuleScope(
-                      RuleScope.newBuilder().setEnvironmentScope(EnvironmentScope.newBuilder())))
+                  .setRuleScope(RuleScope.getDefaultInstance())
+                  .setDisabled(false))
           .build();
 
   private RegionConfigServiceBlockingStub regionConfigServiceBlockingStub;
@@ -130,6 +130,7 @@ class RegionDataFetcherTest {
                                         .addEnvironmentIds(ENVIRONMENT_ID)
                                         .build())
                                 .build())
+                        .setDisabled(false)
                         .build())
                 .build());
 

@@ -57,6 +57,8 @@ message IpV4Range {
 message GetRegionRulesFilter {
   RuleScope rule_scope = 1;
   repeated RegionRuleActionType rule_action_types = 2;
+  optional bool disabled = 8;
+  optional bool internal = 9;
 }
 
 message GetAllRegionRulesRequest {
@@ -90,6 +92,8 @@ message UpdateRegionRuleRequest {
   RuleScope rule_scope = 6;
   EventSeverity event_severity = 7;
   RegionRuleConditions conditions = 8;
+  bool disabled = 9;
+  bool internal = 10;
 }
 
 message UpdateRegionRuleResponse {
@@ -119,6 +123,8 @@ message RegionRule {
   RuleScope rule_scope = 6;
   EventSeverity event_severity = 7;
   RegionRuleConditions conditions = 8;
+  bool disabled = 9;
+  bool internal = 10;
 
   message ExpirationDetails {
     // Duration represented in ISO 8601 duration format.

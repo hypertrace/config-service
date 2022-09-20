@@ -50,12 +50,16 @@ public class RegionDataFetcher {
         GetAllRegionRulesRequest.newBuilder()
             .setFilter(
                 GetRegionRulesFilter.newBuilder()
+                    .setDisabled(false)
                     .setRuleScope(
-                        RuleScope.newBuilder()
-                            .setEnvironmentScope(
-                                environmentId
-                                    .map(id -> EnvironmentScope.newBuilder().addEnvironmentIds(id))
-                                    .orElse(EnvironmentScope.newBuilder()))))
+                        environmentId
+                            .map(
+                                id ->
+                                    RuleScope.newBuilder()
+                                        .setEnvironmentScope(
+                                            EnvironmentScope.newBuilder().addEnvironmentIds(id))
+                                        .build())
+                            .orElse(RuleScope.getDefaultInstance())))
             .build();
 
     GetAllRegionRulesResponse response =

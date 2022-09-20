@@ -61,6 +61,8 @@ class RegionRulesManager implements RulesManager {
         .setName(request.getName())
         .addAllRegionId(request.getRegionIdList())
         .setActionType(request.getActionType())
+        .setDisabled(request.getDisabled())
+        .setInternal(request.getInternal())
         .setRuleScope(request.getRuleScope());
     if (request.hasExpirationDetails()) {
       updateExpirationDetails(regionRuleBuilder, request.getExpirationDetails().getDuration());

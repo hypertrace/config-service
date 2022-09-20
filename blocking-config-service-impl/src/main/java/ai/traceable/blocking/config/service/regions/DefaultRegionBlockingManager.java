@@ -38,19 +38,20 @@ class DefaultRegionBlockingManager implements RegionBlockingManager {
   public RegionBlockingRules getEnabledBlockingRules(
       RequestContext requestContext, String requestHash, Optional<String> environmentId) {
     GetAllRegionRulesRequest rulesRequest =
-        environmentId
-            .map(
-                id ->
-                    GetAllRegionRulesRequest.newBuilder()
-                        .setFilter(
-                            GetRegionRulesFilter.newBuilder()
-                                .setRuleScope(
+        GetAllRegionRulesRequest.newBuilder()
+            .setFilter(
+                GetRegionRulesFilter.newBuilder()
+                    .setDisabled(false)
+                    .setRuleScope(
+                        environmentId
+                            .map(
+                                id ->
                                     RuleScope.newBuilder()
                                         .setEnvironmentScope(
-                                            EnvironmentScope.newBuilder().addEnvironmentIds(id))))
-                        .build())
-            .orElseGet(GetAllRegionRulesRequest::getDefaultInstance);
-
+                                            EnvironmentScope.newBuilder().addEnvironmentIds(id))
+                                        .build())
+                            .orElse(RuleScope.getDefaultInstance())))
+            .build();
     List<RegionRule> regionRules =
         requestContext.call(
             () -> this.regionConfigServiceStub.getAllRegionRules(rulesRequest).getRuleList());

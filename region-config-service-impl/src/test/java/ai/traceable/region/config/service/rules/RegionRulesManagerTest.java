@@ -69,13 +69,25 @@ class RegionRulesManagerTest {
                   EnvironmentScope.newBuilder().addEnvironmentIds("env1").addEnvironmentIds("env2"))
               .build();
       RegionRule mockRegionRule1 =
-          RegionRule.newBuilder().setRuleScope(ruleScope).setId("id-1").setName("name-1").build();
-      RegionRule mockRegionRule2 = RegionRule.newBuilder().setId("id-2").setName("name-2").build();
+          RegionRule.newBuilder()
+              .setRuleScope(ruleScope)
+              .setId("id-1")
+              .setName("name-1")
+              .setInternal(true)
+              .build();
+      RegionRule mockRegionRule2 =
+          RegionRule.newBuilder().setId("id-2").setName("name-2").setDisabled(true).build();
       addRegionRules(ImmutableSortedMap.of("id-1", mockRegionRule1, "id-2", mockRegionRule2));
 
       RegionRule regionRule1 =
-          RegionRule.newBuilder().setId("id-1").setName("name-1").setRuleScope(ruleScope).build();
-      RegionRule regionRule2 = RegionRule.newBuilder().setId("id-2").setName("name-2").build();
+          RegionRule.newBuilder()
+              .setId("id-1")
+              .setName("name-1")
+              .setRuleScope(ruleScope)
+              .setInternal(true)
+              .build();
+      RegionRule regionRule2 =
+          RegionRule.newBuilder().setId("id-2").setName("name-2").setDisabled(true).build();
       assertEquals(
           List.of(regionRule2, regionRule1),
           rulesManager.getRegionRules(requestContext, GetRegionRulesFilter.getDefaultInstance()));
@@ -121,6 +133,33 @@ class RegionRulesManagerTest {
               GetRegionRulesFilter.newBuilder()
                   .setRuleScope(RuleScope.getDefaultInstance())
                   .build()));
+
+      // Filter on disabled and internal
+      assertEquals(
+          List.of(regionRule1),
+          rulesManager.getRegionRules(
+              requestContext,
+              GetRegionRulesFilter.newBuilder()
+                  .setRuleScope(RuleScope.getDefaultInstance())
+                  .setInternal(true)
+                  .build()));
+      assertEquals(
+          List.of(regionRule2),
+          rulesManager.getRegionRules(
+              requestContext,
+              GetRegionRulesFilter.newBuilder()
+                  .setRuleScope(RuleScope.getDefaultInstance())
+                  .setDisabled(true)
+                  .build()));
+      assertEquals(
+          List.of(),
+          rulesManager.getRegionRules(
+              requestContext,
+              GetRegionRulesFilter.newBuilder()
+                  .setRuleScope(RuleScope.getDefaultInstance())
+                  .setDisabled(false)
+                  .setInternal(false)
+                  .build()));
     }
   }
 
@@ -156,12 +195,14 @@ class RegionRulesManagerTest {
           RegionRule.newBuilder()
               .setId("id-1")
               .setName("updated-name")
+              .setInternal(true)
               .setRuleScope(ruleScope)
               .build();
       UpdateRegionRuleRequest request =
           UpdateRegionRuleRequest.newBuilder()
               .setId("id-1")
               .setName("updated-name")
+              .setInternal(true)
               .setRuleScope(ruleScope)
               .build();
       assertEquals(updatedRegionRule, rulesManager.updateRegionRule(requestContext, request));
