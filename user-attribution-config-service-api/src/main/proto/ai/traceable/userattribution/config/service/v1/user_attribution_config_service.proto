@@ -24,6 +24,22 @@ service UserAttributionConfigService {
 }
 
 message GetUserAttributionRulesRequest {
+  GetUserAttributionRulesFilter filter = 1;
+
+  message GetUserAttributionRulesFilter {
+    optional bool disabled = 1;
+    ScopeFilter scope_filter = 2;
+
+    message ScopeFilter {
+      oneof scope {
+        EnvironmentScopeFilter environment_scope_filter = 1;
+      }
+
+      message EnvironmentScopeFilter {
+        repeated string environment_names = 1;
+      }
+    }
+  }
 }
 
 message GetUserAttributionRulesResponse {

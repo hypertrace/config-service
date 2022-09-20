@@ -13,6 +13,9 @@ import ai.traceable.userattribution.config.service.store.UserAttributionRuleStor
 import ai.traceable.userattribution.config.service.v1.CreateUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.DeleteUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest;
+import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest.GetUserAttributionRulesFilter;
+import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest.GetUserAttributionRulesFilter.ScopeFilter;
+import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest.GetUserAttributionRulesFilter.ScopeFilter.EnvironmentScopeFilter;
 import ai.traceable.userattribution.config.service.v1.RankUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.UpdateUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServiceGrpc;
@@ -20,8 +23,13 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServi
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.CustomUserAttributionRuleData;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.CustomScope;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.EnvironmentScope;
 import ai.traceable.userattribution.config.service.validation.UserAttributionConfigRequestValidator;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -157,5 +165,100 @@ class UserAttributionConfigServiceImplTest {
 
   private UserAttributionRule withRank(UserAttributionRule rule, int rank) {
     return rule.toBuilder().setRank(rank).build();
+  }
+
+  @Test
+  void createAndGetRulesWithFilter() {
+    UserAttributionRule firstCreated =
+        this.userAttributionStub
+            .createUserAttributionRule(
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("first")
+                    .setData(RULE_DATA)
+                    .setScope(buildRuleScope(List.of("env1")))
+                    .build())
+            .getRules(0);
+
+    List<UserAttributionRule> afterSecondCreate =
+        this.userAttributionStub
+            .createUserAttributionRule(
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("second")
+                    .setData(RULE_DATA)
+                    .setScope(buildRuleScope(List.of("env2")))
+                    .build())
+            .getRulesList();
+
+    List<UserAttributionRule> afterThirdCreate =
+        this.userAttributionStub
+            .createUserAttributionRule(
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("third")
+                    .setData(RULE_DATA)
+                    .build())
+            .getRulesList();
+
+    // should return the rules which are scoped to atleast one of the envs in the filter, or are not
+    // scoped to any env
+    assertEquals(
+        List.of(afterThirdCreate.get(0), afterThirdCreate.get(2)),
+        this.userAttributionStub
+            .getUserAttributionRules(
+                GetUserAttributionRulesRequest.newBuilder()
+                    .setFilter(
+                        GetUserAttributionRulesFilter.newBuilder()
+                            .setScopeFilter(buildEnvironmentScopeFilter(List.of("env0", "env1")))
+                            .build())
+                    .build())
+            .getRulesList());
+
+    // should return only the rules which are not targeted to an env
+    assertEquals(
+        List.of(afterThirdCreate.get(2)),
+        this.userAttributionStub
+            .getUserAttributionRules(
+                GetUserAttributionRulesRequest.newBuilder()
+                    .setFilter(
+                        GetUserAttributionRulesFilter.newBuilder()
+                            .setScopeFilter(buildEnvironmentScopeFilter(Collections.emptyList()))
+                            .build())
+                    .build())
+            .getRulesList());
+
+    UserAttributionRule firstUpdated =
+        this.userAttributionStub
+            .updateUserAttributionRule(
+                UpdateUserAttributionRuleRequest.newBuilder()
+                    .setRule(firstCreated.toBuilder().setDisabled(true))
+                    .build())
+            .getRule();
+
+    // should return all the rules which are not disabled
+    assertEquals(
+        List.of(afterThirdCreate.get(1), afterThirdCreate.get(2)),
+        this.userAttributionStub
+            .getUserAttributionRules(
+                GetUserAttributionRulesRequest.newBuilder()
+                    .setFilter(
+                        GetUserAttributionRulesFilter.newBuilder().setDisabled(false).build())
+                    .build())
+            .getRulesList());
+  }
+
+  private UserAttributionRuleScope buildRuleScope(List<String> environmentNames) {
+    List<EnvironmentScope> environmentScopes =
+        environmentNames.stream()
+            .map(env -> EnvironmentScope.newBuilder().setEnvironmentName(env).build())
+            .collect(Collectors.toUnmodifiableList());
+    return UserAttributionRuleScope.newBuilder()
+        .setCustomScope(CustomScope.newBuilder().addAllEnvironmentScopes(environmentScopes).build())
+        .build();
+  }
+
+  private ScopeFilter buildEnvironmentScopeFilter(List<String> environmentNames) {
+    return ScopeFilter.newBuilder()
+        .setEnvironmentScopeFilter(
+            EnvironmentScopeFilter.newBuilder().addAllEnvironmentNames(environmentNames).build())
+        .build();
   }
 }

@@ -55,7 +55,7 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
       this.validator.validateOrThrow(requestContext, request);
       responseObserver.onNext(
           GetUserAttributionRulesResponse.newBuilder()
-              .addAllRules(this.ruleStore.getAllData(requestContext))
+              .addAllRules(this.ruleStore.getAllConfigData(requestContext, request.getFilter()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {

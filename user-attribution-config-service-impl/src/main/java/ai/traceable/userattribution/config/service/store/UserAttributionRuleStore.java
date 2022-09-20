@@ -3,7 +3,10 @@ package ai.traceable.userattribution.config.service.store;
 import static ai.traceable.userattribution.config.service.store.UserAttributionRuleScopeUtils.setUserAttributionRuleScopeIfNotPresent;
 
 import ai.traceable.config.utils.RankCalculator;
+import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest.GetUserAttributionRulesFilter;
+import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest.GetUserAttributionRulesFilter.ScopeFilter;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.EnvironmentScope;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import java.util.List;
@@ -13,14 +16,15 @@ import javax.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
-import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-public class UserAttributionRuleStore extends IdentifiedObjectStore<UserAttributionRule> {
+public class UserAttributionRuleStore
+    extends IdentifiedObjectStoreWithFilter<UserAttributionRule, GetUserAttributionRulesFilter> {
   private static final String USER_ATTRIBUTION_RULE_RESOURCE_NAME = "user-attribution-rule";
   private static final String USER_ATTRIBUTION_RESOURCE_NAMESPACE = "user-attribution";
 
@@ -75,5 +79,26 @@ public class UserAttributionRuleStore extends IdentifiedObjectStore<UserAttribut
   protected List<ContextualConfigObject<UserAttributionRule>> orderFetchedObjects(
       List<ContextualConfigObject<UserAttributionRule>> objects) {
     return this.rankCalculator.orderFromRanks(objects, ContextualConfigObject::getData);
+  }
+
+  @Override
+  protected Optional<UserAttributionRule> filterConfigData(
+      UserAttributionRule data, GetUserAttributionRulesFilter filter) {
+    return Optional.of(data)
+        .filter(rule -> !filter.hasDisabled() || rule.getDisabled() == filter.getDisabled())
+        .filter(rule -> filterRuleOnScope(data, filter.getScopeFilter()));
+  }
+
+  private boolean filterRuleOnScope(UserAttributionRule ruleData, ScopeFilter scopeFilter) {
+    List<EnvironmentScope> ruleEnvironments =
+        ruleData.getScope().getCustomScope().getEnvironmentScopesList();
+    // when environment scope is requested in the filter, with no environments assigned, return only
+    // those rules which are not targeted at an environment.
+    if (!scopeFilter.hasEnvironmentScopeFilter() || ruleEnvironments.isEmpty()) {
+      return true;
+    }
+    return scopeFilter.getEnvironmentScopeFilter().getEnvironmentNamesList().stream()
+        .map(env -> EnvironmentScope.newBuilder().setEnvironmentName(env).build())
+        .anyMatch(ruleEnvironments::contains);
   }
 }
