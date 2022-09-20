@@ -42,6 +42,10 @@ public class AggregationConfigServiceConfigTest {
                     + "     max_events_without_score_per_user_across_params = 1\n"
                     + "     max_users_per_param = 10\n"
                     + "  }\n"
+                    + "  customSignatureAggregationConfig = {\n"
+                    + "     max_events_with_score_per_user_across_params = 100\n"
+                    + "     max_events_without_score_per_user_across_params = 1000\n"
+                    + "  }\n"
                     + "  globalAggregationConfig = {\n"
                     + "     param_name_max_duration = 1d\n"
                     + "     param_value_max_duration = 1d\n"
@@ -59,6 +63,13 @@ public class AggregationConfigServiceConfigTest {
     Optional<AggregationConfig> sessionConfig = config.getDefaultSessionAggregationConfig();
     Assertions.assertEquals(1, sessionConfig.get().getMaxEventsWithScorePerParamValue());
     Assertions.assertEquals(10, sessionConfig.get().getMaxEventsWithoutScorePerParamValue());
+
+    Optional<AggregationConfig> customSignatureConfig =
+        config.getDefaultCustomSignatureAggregationConfig();
+    Assertions.assertEquals(
+        100, customSignatureConfig.get().getMaxEventsWithScorePerUserAcrossParams());
+    Assertions.assertEquals(
+        1000, customSignatureConfig.get().getMaxEventsWithoutScorePerUserAcrossParams());
 
     Optional<EventAggregationGlobalConfig> globalConfig =
         config.getDefaultGlobalAggregationConfig();

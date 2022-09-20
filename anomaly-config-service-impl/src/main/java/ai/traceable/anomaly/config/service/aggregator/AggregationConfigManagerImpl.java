@@ -41,6 +41,7 @@ public class AggregationConfigManagerImpl
   private final Optional<EventAggregationFamilyConfig> defaultModsecConfig;
   private final Optional<EventAggregationFamilyConfig> defaultApiDefinitionAggregationConfig;
   private final Optional<EventAggregationFamilyConfig> defaultSessionAggregationConfig;
+  private final Optional<EventAggregationFamilyConfig> defaultCustomSignatureAggregationConfig;
   private final Optional<EventAggregationGlobalConfig> defaultGlobalAggregationConfig;
 
   @Inject
@@ -78,6 +79,14 @@ public class AggregationConfigManagerImpl
                 aggregationConfig ->
                     getDefaultConfig(
                         aggregationConfig, AnomalyEventFamily.ANOMALY_EVENT_FAMILY_SESSION));
+    this.defaultCustomSignatureAggregationConfig =
+        config
+            .getDefaultCustomSignatureAggregationConfig()
+            .flatMap(
+                aggregationConfig ->
+                    getDefaultConfig(
+                        aggregationConfig,
+                        AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CUSTOM_SIGNATURE));
     this.defaultGlobalAggregationConfig = config.getDefaultGlobalAggregationConfig();
   }
 
@@ -234,6 +243,8 @@ public class AggregationConfigManagerImpl
     defaultApiDefinitionAggregationConfig.ifPresent(
         eventAggregationConfigBuilder::addFamilyConfigs);
     defaultSessionAggregationConfig.ifPresent(eventAggregationConfigBuilder::addFamilyConfigs);
+    defaultCustomSignatureAggregationConfig.ifPresent(
+        eventAggregationConfigBuilder::addFamilyConfigs);
     return ScopedAnomalyEventAggregationConfig.newBuilder()
         .setConfigScope(configScope)
         .setEventAggregationConfig(eventAggregationConfigBuilder.build())
