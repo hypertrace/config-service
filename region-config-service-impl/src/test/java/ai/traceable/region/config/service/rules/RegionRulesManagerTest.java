@@ -73,6 +73,7 @@ class RegionRulesManagerTest {
               .setRuleScope(ruleScope)
               .setId("id-1")
               .setName("name-1")
+              .setDescription("desc-1")
               .setInternal(true)
               .build();
       RegionRule mockRegionRule2 =
@@ -84,6 +85,7 @@ class RegionRulesManagerTest {
               .setId("id-1")
               .setName("name-1")
               .setRuleScope(ruleScope)
+              .setDescription("desc-1")
               .setInternal(true)
               .build();
       RegionRule regionRule2 =
@@ -170,12 +172,18 @@ class RegionRulesManagerTest {
     void shouldCreateRegionRule() {
       when(uuidGenerator.generateId()).thenReturn("id-1");
       RegionRule regionRule =
-          RegionRule.newBuilder().setId("id-1").setName("name-1").setRuleScope(ruleScope).build();
+          RegionRule.newBuilder()
+              .setId("id-1")
+              .setName("name-1")
+              .setDescription("desc-1")
+              .setRuleScope(ruleScope)
+              .build();
       RegionRule createdRegionRule =
           rulesManager.createRegionRule(
               requestContext,
               CreateRegionRuleRequest.newBuilder()
                   .setName("name-1")
+                  .setDescription("desc-1")
                   .setRuleScope(ruleScope)
                   .build());
       assertEquals(regionRule, createdRegionRule);
@@ -195,6 +203,7 @@ class RegionRulesManagerTest {
           RegionRule.newBuilder()
               .setId("id-1")
               .setName("updated-name")
+              .setDescription("desc-1")
               .setInternal(true)
               .setRuleScope(ruleScope)
               .build();
@@ -202,6 +211,7 @@ class RegionRulesManagerTest {
           UpdateRegionRuleRequest.newBuilder()
               .setId("id-1")
               .setName("updated-name")
+              .setDescription("desc-1")
               .setInternal(true)
               .setRuleScope(ruleScope)
               .build();

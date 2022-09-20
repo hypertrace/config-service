@@ -77,6 +77,7 @@ message CreateRegionRuleRequest {
   RuleScope rule_scope = 5;
   EventSeverity event_severity = 6;
   RegionRuleConditions conditions = 7;
+  string description = 8;
 }
 
 message CreateRegionRuleResponse {
@@ -94,6 +95,7 @@ message UpdateRegionRuleRequest {
   RegionRuleConditions conditions = 8;
   bool disabled = 9;
   bool internal = 10;
+  string description = 11;
 }
 
 message UpdateRegionRuleResponse {
@@ -125,6 +127,7 @@ message RegionRule {
   RegionRuleConditions conditions = 8;
   bool disabled = 9;
   bool internal = 10;
+  string description = 11;
 
   message ExpirationDetails {
     // Duration represented in ISO 8601 duration format.

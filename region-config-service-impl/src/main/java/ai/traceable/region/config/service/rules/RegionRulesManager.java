@@ -59,6 +59,7 @@ class RegionRulesManager implements RulesManager {
     regionRuleBuilder
         .setId(request.getId())
         .setName(request.getName())
+        .setDescription(request.getDescription())
         .addAllRegionId(request.getRegionIdList())
         .setActionType(request.getActionType())
         .setDisabled(request.getDisabled())
@@ -100,6 +101,7 @@ class RegionRulesManager implements RulesManager {
         .setId(ruleId)
         .addAllRegionId(createRuleRequest.getRegionIdList())
         .setName(createRuleRequest.getName())
+        .setDescription(createRuleRequest.getDescription())
         .setActionType(createRuleRequest.getActionType())
         .setRuleScope(createRuleRequest.getRuleScope())
         .build();
