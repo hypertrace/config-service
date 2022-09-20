@@ -205,7 +205,7 @@ public class RateLimitingRulesValidatorTest {
   }
 
   @Test
-  void testInvalidRuleConfigScope() {
+  void testInvalidRuleConfigScope_emptyEnvironmentScope() {
     RateLimitingRuleData ruleData =
         RateLimitingRuleData.newBuilder()
             .setName("rule1")
@@ -276,6 +276,75 @@ public class RateLimitingRulesValidatorTest {
                     "Expected at least 1 value for repeated field %s but not present",
                     EnvironmentScope.getDescriptor()
                         .findFieldByNumber(EnvironmentScope.ENVIRONMENT_IDS_FIELD_NUMBER))));
+  }
+
+  @Test
+  void testInvalidRuleConfigScope_emptyEnvironmentIds() {
+    RateLimitingRuleData ruleData =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule1")
+            .setCategory(Category.CATEGORY_RATE_LIMITING)
+            .setEnabled(true)
+            .setCondition(
+                Condition.newBuilder()
+                    .setCompositeCondition(
+                        CompositeCondition.newBuilder()
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setIpLocationTypeCondition(
+                                                buildIpLocationTypeCondition(
+                                                    List.of(
+                                                        IpLocationType.IP_LOCATION_TYPE_ANONYMOUS,
+                                                        IpLocationType
+                                                            .IP_LOCATION_TYPE_RESIDENTIAL)))))
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setRegionCondition(
+                                                buildRegionCondition(List.of("IND", "US")))))
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setDatatypeCondition(
+                                                buildDatatypeCondition(List.of("id1", "id2")))))
+                            .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND))
+                    .build())
+            .addThresholdActionConfigs(
+                ThresholdActionConfig.newBuilder()
+                    .addActions(
+                        Action.newBuilder()
+                            .setBlock(
+                                Block.newBuilder()
+                                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                                    .build())
+                            .build())
+                    .addResourceAccessThresholdConfigs(
+                        ResourceAccessThresholdConfig.newBuilder()
+                            .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                            .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                            .setRollingWindowThresholdConfig(
+                                RollingWindowThresholdConfig.newBuilder()
+                                    .setCountAllowed(1000)
+                                    .setDurationIso("P3Y6M4DT12H30M5S")
+                                    .build())
+                            .build()))
+            .setRuleConfigScope(
+                RuleConfigScope.newBuilder()
+                    .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("")))
+            .build();
+    CreateRateLimitingRuleRequest request =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    Throwable throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request));
+    Status status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals(status.getDescription(), "Environment id should not be empty string.");
   }
 
   @Test

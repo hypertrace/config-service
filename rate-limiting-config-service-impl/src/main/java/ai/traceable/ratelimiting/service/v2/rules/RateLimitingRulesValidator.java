@@ -66,15 +66,18 @@ public class RateLimitingRulesValidator implements RulesValidator {
     validateNonDefaultPresenceOrThrow(
         data, RateLimitingRuleData.THRESHOLD_ACTION_CONFIGS_FIELD_NUMBER);
     data.getThresholdActionConfigsList().forEach(this::validateThresholdActionConfig);
-    if (data.hasRuleConfigScope()) {
-      validateRuleConfigScope(data.getRuleConfigScope());
-    }
+    validateRuleConfigScope(data.getRuleConfigScope());
   }
 
   private void validateRuleConfigScope(RuleConfigScope scope) {
     if (scope.hasEnvironmentScope()) {
       validateNonDefaultPresenceOrThrow(
           scope.getEnvironmentScope(), EnvironmentScope.ENVIRONMENT_IDS_FIELD_NUMBER);
+      if (scope.getEnvironmentScope().getEnvironmentIdsList().stream().anyMatch(String::isEmpty)) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Environment id should not be empty string.")
+            .asRuntimeException();
+      }
     }
   }
 
