@@ -236,6 +236,35 @@ public class RateLimitingRulesManagerTest {
                 .build());
     assertEquals(3, rules.size());
     assertEquals(new HashSet<>(expectedRules.subList(0, 3)), new HashSet<>(rules));
+
+    // filter on category and scope [default rule scope should return all rules]
+    filterScope = RuleConfigScope.getDefaultInstance();
+
+    rules =
+        rulesManager.getRateLimitingRules(
+            requestContext,
+            GetRateLimitingRulesFilter.newBuilder()
+                .addCategories(Category.CATEGORY_RATE_LIMITING)
+                .setScope(filterScope)
+                .build());
+    assertEquals(3, rules.size());
+    assertEquals(new HashSet<>(expectedRules.subList(0, 3)), new HashSet<>(rules));
+
+    // filter on category and scope [rule scope with env scope with no envs should only return rules
+    // with no envs]
+    filterScope =
+        RuleConfigScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.getDefaultInstance())
+            .build();
+    rules =
+        rulesManager.getRateLimitingRules(
+            requestContext,
+            GetRateLimitingRulesFilter.newBuilder()
+                .addCategories(Category.CATEGORY_RATE_LIMITING)
+                .setScope(filterScope)
+                .build());
+    assertEquals(2, rules.size());
+    assertEquals(new HashSet<>(expectedRules.subList(0, 2)), new HashSet<>(rules));
   }
 
   @Test
