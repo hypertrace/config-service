@@ -72,13 +72,12 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
             .map(apiNamingRuleInfo -> buildApiNamingRule(requestContext, apiNamingRuleInfo))
             .collect(Collectors.toUnmodifiableList());
 
+    List<ApiNamingRuleInfo> apiSpecBasedNamingRulesInfo =
+        request.getRulesInfoList().stream()
+            .filter(apiNamingRuleInfo -> apiNamingRuleInfo.getRuleConfig().hasApiSpecBasedConfig())
+            .collect(Collectors.toUnmodifiableList());
     List<ApiNamingRule> apiSpecBasedRules =
-        buildApiSpecBasedRules(
-            requestContext,
-            request.getRulesInfoList().stream()
-                .filter(
-                    apiNamingRuleInfo -> apiNamingRuleInfo.getRuleConfig().hasApiSpecBasedConfig())
-                .collect(Collectors.toUnmodifiableList()));
+        buildApiSpecBasedRules(requestContext, apiSpecBasedNamingRulesInfo);
 
     return buildApiNamingRuleDetails(
         this.apiNamingRulesConfigStore.upsertObjects(
