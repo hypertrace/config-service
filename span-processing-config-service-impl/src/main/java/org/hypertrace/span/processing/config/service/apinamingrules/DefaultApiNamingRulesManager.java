@@ -64,40 +64,37 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
   public List<ApiNamingRuleDetails> createApiNamingRules(
       RequestContext requestContext, CreateApiNamingRulesRequest request) {
     // TODO: need to handle priorities
-    List<ApiNamingRule> segmentMatchingBasedRules =
+    Stream<ApiNamingRule> segmentMatchingBasedRuleStream =
         request.getRulesInfoList().stream()
             .filter(
                 apiNamingRuleInfo ->
                     apiNamingRuleInfo.getRuleConfig().hasSegmentMatchingBasedConfig())
-            .map(apiNamingRuleInfo -> buildApiNamingRule(requestContext, apiNamingRuleInfo))
-            .collect(Collectors.toUnmodifiableList());
+            .map(apiNamingRuleInfo -> buildApiNamingRule(requestContext, apiNamingRuleInfo));
 
-    List<ApiNamingRuleInfo> apiSpecBasedNamingRulesInfo =
+    Stream<ApiNamingRuleInfo> apiSpecBasedNamingRulesInfo =
         request.getRulesInfoList().stream()
-            .filter(apiNamingRuleInfo -> apiNamingRuleInfo.getRuleConfig().hasApiSpecBasedConfig())
-            .collect(Collectors.toUnmodifiableList());
-    List<ApiNamingRule> apiSpecBasedRules =
-        buildApiSpecBasedRules(requestContext, apiSpecBasedNamingRulesInfo);
+            .filter(apiNamingRuleInfo -> apiNamingRuleInfo.getRuleConfig().hasApiSpecBasedConfig());
+    Stream<ApiNamingRule> apiSpecBasedRuleStream =
+        buildApiSpecBasedNamingRules(requestContext, apiSpecBasedNamingRulesInfo);
 
     return buildApiNamingRuleDetails(
         this.apiNamingRulesConfigStore.upsertObjects(
             requestContext,
-            Stream.concat(segmentMatchingBasedRules.stream(), apiSpecBasedRules.stream())
+            Stream.concat(segmentMatchingBasedRuleStream, apiSpecBasedRuleStream)
                 .collect(Collectors.toUnmodifiableList())));
   }
 
-  private List<ApiNamingRule> buildApiSpecBasedRules(
-      RequestContext requestContext, List<ApiNamingRuleInfo> apiSpecBasedApiNamingRules) {
+  private Stream<ApiNamingRule> buildApiSpecBasedNamingRules(
+      RequestContext requestContext,
+      Stream<ApiNamingRuleInfo> apiSpecBasedApiNamingRuleInfoStream) {
     List<ApiNamingRule> existingApiNamingRules =
         getAllApiNamingRuleDetails(requestContext).stream()
             .map(ApiNamingRuleDetails::getRule)
             .collect(Collectors.toUnmodifiableList());
 
-    return apiSpecBasedApiNamingRules.stream()
-        .map(
-            apiNamingRuleInfo ->
-                createApiSpecBasedNamingRule(existingApiNamingRules, apiNamingRuleInfo))
-        .collect(Collectors.toUnmodifiableList());
+    return apiSpecBasedApiNamingRuleInfoStream.map(
+        apiNamingRuleInfo ->
+            createApiSpecBasedNamingRule(existingApiNamingRules.stream(), apiNamingRuleInfo));
   }
 
   @Override
@@ -200,11 +197,9 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
             .setRuleInfo(apiNamingRuleInfo)
             .build();
       case API_SPEC_BASED_CONFIG:
-        List<ApiNamingRule> existingApiNamingRules =
-            getAllApiNamingRuleDetails(requestContext).stream()
-                .map(ApiNamingRuleDetails::getRule)
-                .collect(Collectors.toUnmodifiableList());
-        return createApiSpecBasedNamingRule(existingApiNamingRules, apiNamingRuleInfo);
+        Stream<ApiNamingRule> existingApiNamingRuleStream =
+            getAllApiNamingRuleDetails(requestContext).stream().map(ApiNamingRuleDetails::getRule);
+        return createApiSpecBasedNamingRule(existingApiNamingRuleStream, apiNamingRuleInfo);
       default:
         log.error("Unrecognized api naming rule config type:{}", apiNamingRuleInfo);
         throw new RuntimeException();
@@ -212,11 +207,11 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
   }
 
   private ApiNamingRule createApiSpecBasedNamingRule(
-      List<ApiNamingRule> existingApiNamingRules, ApiNamingRuleInfo apiNamingRuleInfo) {
+      Stream<ApiNamingRule> existingApiNamingRuleStream, ApiNamingRuleInfo apiNamingRuleInfo) {
     ApiSpecBasedConfig apiSpecBasedConfig =
         apiNamingRuleInfo.getRuleConfig().getApiSpecBasedConfig();
     Optional<ApiNamingRule> apiNamingRuleMaybe =
-        checkIfApiNamingRuleAlreadyExists(existingApiNamingRules, apiNamingRuleInfo);
+        checkIfApiNamingRuleAlreadyExists(existingApiNamingRuleStream, apiNamingRuleInfo);
     if (apiNamingRuleMaybe.isEmpty()) {
       return ApiNamingRule.newBuilder()
           .setId(UUID.randomUUID().toString())
@@ -256,8 +251,8 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
   }
 
   private Optional<ApiNamingRule> checkIfApiNamingRuleAlreadyExists(
-      List<ApiNamingRule> existingApiNamingRules, ApiNamingRuleInfo apiNamingRuleInfo) {
-    return existingApiNamingRules.stream()
+      Stream<ApiNamingRule> existingApiNamingRuleStream, ApiNamingRuleInfo apiNamingRuleInfo) {
+    return existingApiNamingRuleStream
         .filter(
             rule ->
                 rule.getRuleInfo().getRuleConfig().hasApiSpecBasedConfig()
