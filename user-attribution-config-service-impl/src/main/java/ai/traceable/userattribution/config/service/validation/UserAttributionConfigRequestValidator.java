@@ -11,6 +11,7 @@ import ai.traceable.userattribution.config.service.v1.RankUserAttributionRuleReq
 import ai.traceable.userattribution.config.service.v1.UpdateUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.CustomTokenRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.CustomUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.EncodedLocation;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.HeaderLocation;
@@ -28,10 +29,14 @@ import com.google.re2j.Pattern;
 import io.grpc.Status;
 import java.util.List;
 import java.util.Set;
+import javax.inject.Inject;
+import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
+@AllArgsConstructor(onConstructor_ = {@Inject})
 public class UserAttributionConfigRequestValidator {
   private static final ObjectMapper YAML_OBJECT_MAPPER = new ObjectMapper(new YAMLFactory());
+  private final AuthenticationValidator authenticationValidator;
 
   public void validateOrThrow(
       RequestContext requestContext, GetUserAttributionRulesRequest request) {
@@ -98,6 +103,9 @@ public class UserAttributionConfigRequestValidator {
       case REQUEST_HEADER_DATA:
         this.validateRequestHeaderRuleData(ruleData.getRequestHeaderData());
         break;
+      case CUSTOM_TOKEN_DATA:
+        this.validateCustomTokenData(ruleData.getCustomTokenData());
+        break;
       case CUSTOM_DATA:
         this.validateCustomRuleData(ruleData.getCustomData());
         break;
@@ -118,12 +126,18 @@ public class UserAttributionConfigRequestValidator {
   private void validateRequestHeaderRuleData(
       RequestHeaderUserAttributionRuleData requestHeaderRuleData) {
     this.validateHeaderLocation(requestHeaderRuleData.getUserIdLocation());
+    if (requestHeaderRuleData.hasAuthentication()) {
+      authenticationValidator.validate(requestHeaderRuleData.getAuthentication());
+    }
     // Role not required
   }
 
   private void validateResponseBodyData(ResponseBodyUserAttributionRuleData responseBodyRuleData) {
     this.validateRuleCondition(responseBodyRuleData.getCondition());
     this.validateEncodedLocation(responseBodyRuleData.getUserIdLocation());
+    if (responseBodyRuleData.hasAuthentication()) {
+      authenticationValidator.validate(responseBodyRuleData.getAuthentication());
+    }
     // Role not required
   }
 
@@ -131,7 +145,35 @@ public class UserAttributionConfigRequestValidator {
     this.validateHeaderLocation(jwtRuleData.getJwtLocation());
     validateNonDefaultPresenceOrThrow(
         jwtRuleData, JwtUserAttributionRuleData.USER_ID_CLAIM_FIELD_NUMBER);
+    if (jwtRuleData.hasAuthentication()) {
+      authenticationValidator.validate(jwtRuleData.getAuthentication());
+    }
     // Role and all encoded locations not required
+  }
+
+  private void validateCustomTokenData(final CustomTokenRuleData customTokenData) {
+    switch (customTokenData.getLocationCase()) {
+      case REQUEST_HEADER_LOCATION:
+        validateHeaderLocation(customTokenData.getRequestHeaderLocation());
+        break;
+
+      case REQUEST_BODY_LOCATION:
+        validateEncodedLocation(customTokenData.getRequestBodyLocation());
+        break;
+
+      case LOCATION_NOT_SET:
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Unexpected token location: " + printMessage(customTokenData))
+            .asRuntimeException();
+    }
+
+    if (!customTokenData.hasAuthentication()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Specification of authentication is required for custom token")
+          .asRuntimeException();
+    }
+
+    authenticationValidator.validate(customTokenData.getAuthentication());
   }
 
   private void validateHeaderLocation(HeaderLocation headerLocation) {

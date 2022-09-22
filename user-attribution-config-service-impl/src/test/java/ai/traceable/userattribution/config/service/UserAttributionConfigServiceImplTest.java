@@ -26,6 +26,7 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.Cu
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.CustomScope;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.EnvironmentScope;
+import ai.traceable.userattribution.config.service.validation.AuthenticationValidator;
 import ai.traceable.userattribution.config.service.validation.UserAttributionConfigRequestValidator;
 import java.util.Collections;
 import java.util.List;
@@ -70,7 +71,7 @@ class UserAttributionConfigServiceImplTest {
     this.mockGenericConfigService
         .addService(
             new UserAttributionConfigServiceImpl(
-                new UserAttributionConfigRequestValidator(),
+                new UserAttributionConfigRequestValidator(new AuthenticationValidator()),
                 new UserAttributionRuleStore(
                     genericStub, configChangeEventGenerator, rankCalculator),
                 new UserAttributionRuleGenerator(new UuidGenerator()),

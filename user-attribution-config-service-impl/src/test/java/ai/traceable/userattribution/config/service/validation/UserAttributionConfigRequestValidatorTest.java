@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.userattribution.config.service.v1.Authentication;
 import ai.traceable.userattribution.config.service.v1.CreateUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.DeleteUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest;
@@ -14,6 +15,7 @@ import ai.traceable.userattribution.config.service.v1.UpdateUserAttributionRuleR
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.BasicAuthenticationUserAttributionRuleData;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.CustomTokenRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.CustomUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.EncodedLocation;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.HeaderLocation;
@@ -39,7 +41,7 @@ class UserAttributionConfigRequestValidatorTest {
   private static final String TEST_TENANT_ID =
       "UserAttributionConfigRequestValidatorTest-tenant-id";
   private final UserAttributionConfigRequestValidator validator =
-      new UserAttributionConfigRequestValidator();
+      new UserAttributionConfigRequestValidator(new AuthenticationValidator());
 
   @Mock private RequestContext mockRequestContext;
 
@@ -362,6 +364,24 @@ class UserAttributionConfigRequestValidatorTest {
                                         RuleCondition.newBuilder().setUrlMatchRegex("regex"))))
                     .build()));
 
+    assertInvalidArgStatusContaining(
+        "Authentication type cannot be empty",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setResponseBodyData(
+                                ResponseBodyUserAttributionRuleData.newBuilder()
+                                    .setCondition(
+                                        RuleCondition.newBuilder().setUrlMatchRegex("regex"))
+                                    .setUserIdLocation(
+                                        EncodedLocation.newBuilder().setJsonPath("some-path"))
+                                    .setAuthentication(Authentication.newBuilder())))
+                    .build()));
+
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
@@ -375,7 +395,73 @@ class UserAttributionConfigRequestValidatorTest {
                                     .setCondition(
                                         RuleCondition.newBuilder().setUrlMatchRegex("regex"))
                                     .setUserIdLocation(
-                                        EncodedLocation.newBuilder().setJsonPath("some-path"))))
+                                        EncodedLocation.newBuilder().setJsonPath("some-path"))
+                                    .setAuthentication(
+                                        Authentication.newBuilder().setType("Auth-type"))))
+                    .build()));
+  }
+
+  @Test
+  void validatesCustomTokenCreate() {
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    assertInvalidArgStatusContaining(
+        "header location",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setCustomTokenData(
+                                CustomTokenRuleData.newBuilder()
+                                    .setRequestHeaderLocation(HeaderLocation.getDefaultInstance())))
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "encoded location",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setCustomTokenData(
+                                CustomTokenRuleData.newBuilder()
+                                    .setRequestBodyLocation(EncodedLocation.getDefaultInstance())))
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Authentication type cannot be empty",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setCustomTokenData(
+                                CustomTokenRuleData.newBuilder()
+                                    .setRequestHeaderLocation(
+                                        HeaderLocation.newBuilder().setHeaderName("some-header"))
+                                    .setAuthentication(Authentication.newBuilder())))
+                    .build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setCustomTokenData(
+                                CustomTokenRuleData.newBuilder()
+                                    .setRequestHeaderLocation(
+                                        HeaderLocation.newBuilder().setHeaderName("some-header"))
+                                    .setAuthentication(
+                                        Authentication.newBuilder().setType("OAuth 2.0"))))
                     .build()));
   }
 
@@ -395,6 +481,22 @@ class UserAttributionConfigRequestValidatorTest {
                                 RequestHeaderUserAttributionRuleData.getDefaultInstance()))
                     .build()));
 
+    assertInvalidArgStatusContaining(
+        "Authentication type cannot be empty",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setRequestHeaderData(
+                                RequestHeaderUserAttributionRuleData.newBuilder()
+                                    .setUserIdLocation(
+                                        HeaderLocation.newBuilder().setHeaderName("some-header"))
+                                    .setAuthentication(Authentication.newBuilder())))
+                    .build()));
+
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
@@ -406,7 +508,9 @@ class UserAttributionConfigRequestValidatorTest {
                             .setRequestHeaderData(
                                 RequestHeaderUserAttributionRuleData.newBuilder()
                                     .setUserIdLocation(
-                                        HeaderLocation.newBuilder().setHeaderName("some-header"))))
+                                        HeaderLocation.newBuilder().setHeaderName("some-header"))
+                                    .setAuthentication(
+                                        Authentication.newBuilder().setType("OAuth 2.0"))))
                     .build()));
   }
 
@@ -500,6 +604,22 @@ class UserAttributionConfigRequestValidatorTest {
                                     .setJwtLocation(
                                         HeaderLocation.newBuilder().setCookieName("jwt"))))
                     .build()));
+    assertInvalidArgStatusContaining(
+        "Authentication type cannot be empty",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setJwtData(
+                                JwtUserAttributionRuleData.newBuilder()
+                                    .setJwtLocation(
+                                        HeaderLocation.newBuilder().setHeaderName("jwt"))
+                                    .setUserIdClaim("user-id-claim")
+                                    .setAuthentication(Authentication.newBuilder())))
+                    .build()));
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
@@ -512,7 +632,9 @@ class UserAttributionConfigRequestValidatorTest {
                                 JwtUserAttributionRuleData.newBuilder()
                                     .setJwtLocation(
                                         HeaderLocation.newBuilder().setHeaderName("jwt"))
-                                    .setUserIdClaim("user-id-claim")))
+                                    .setUserIdClaim("user-id-claim")
+                                    .setAuthentication(
+                                        Authentication.newBuilder().setType("Bearer Token"))))
                     .build()));
   }
 
