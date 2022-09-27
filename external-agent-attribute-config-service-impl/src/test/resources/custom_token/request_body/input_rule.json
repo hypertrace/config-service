@@ -1,0 +1,13 @@
+{
+  "id": "custom-token-rule-id",
+  "data": {
+    "customTokenData": {
+      "authentication": {
+        "type": "custom-auth"
+      },
+      "requestBodyLocation": {
+        "jsonPath": "$.my-path"
+      }
+    }
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "attributeRules": [
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeKey": "http.request.header.role-hdr",
+          "attributeRule": {
+            "initialActions": [
+              {
+                "attributeAddition": {
+                  "attributeKey": "enduser.role",
+                  "valueProjectionRule": {
+                    "projector": {
+                      "noOpProjector": {
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "attributeAddition": {
+                  "attributeKey": "enduser.role.rule",
+                  "valueProjectionRule": {
+                    "projector": {
+                      "valueProjector": {
+                        "value": "request-header-rule-id"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeKey": "rpc.request.metadata.role-hdr",
+          "attributeRule": {
+            "initialActions": [
+              {
+                "attributeAddition": {
+                  "attributeKey": "enduser.role",
+                  "valueProjectionRule": {
+                    "projector": {
+                      "noOpProjector": {
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "attributeAddition": {
+                  "attributeKey": "enduser.role.rule",
+                  "valueProjectionRule": {
+                    "projector": {
+                      "valueProjector": {
+                        "value": "request-header-rule-id"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

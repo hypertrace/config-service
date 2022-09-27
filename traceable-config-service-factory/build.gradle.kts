@@ -15,6 +15,7 @@ dependencies {
   implementation(projects.localProcessingConfigServiceImpl)
   implementation(projects.blockingConfigServiceImpl)
   implementation(projects.externalUserAttributionConfigServiceImpl)
+  implementation(projects.externalAgentAttributeConfigServiceImpl)
   implementation(projects.externalDataClassificationConfigServiceImpl)
 
   implementation(projects.licenseStatusConfigServiceImpl)

@@ -1,0 +1,18 @@
+{
+  "id": "jwt-header-rule-id",
+  "data": {
+    "jwtData": {
+      "userIdClaim": "data-claim",
+      "userIdLocation": {
+        "jsonPath": "$.id"
+      },
+      "roleClaim": "data-claim",
+      "roleLocation": {
+        "jsonPath": "$.role"
+      },
+      "authentication": {
+        "type": "JWT authentication"
+      }
+    }
+  }
+}

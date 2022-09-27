@@ -1,0 +1,61 @@
+{
+  "attributeRules": [
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeKey": "http.request.header.cookie",
+          "attributeRule": {
+            "projector": {
+              "cookieProjector": {
+                "cookieNameRules": [
+                  {
+                    "key": "jwt",
+                    "attributeRule": {
+                      "projector": {
+                        "regexCaptureGroupProjector": {
+                          "regexCaptureGroup": "^((?i)Bearer:? )?(.*)$",
+                          "attributeRule": {
+                            "projector": {
+                              "jwtProjector": {
+                              }
+                            },
+                            "beforeChildrenActions": [
+                              {
+                                "attributeArrayAppend": {
+                                  "attributeKey": "traceableai.auth.types",
+                                  "valueProjectionRule": {
+                                    "projector": {
+                                      "valueProjector": {
+                                        "value": "JWT authentication"
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "attributeArrayAppend": {
+                                  "attributeKey": "traceableai.auth.rules",
+                                  "valueProjectionRule": {
+                                    "projector": {
+                                      "valueProjector": {
+                                        "value": "jwt-cookie-rule-id"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

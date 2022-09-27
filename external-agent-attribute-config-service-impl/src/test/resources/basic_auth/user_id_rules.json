@@ -1,0 +1,112 @@
+{
+  "attributeRules": [
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeKey": "http.request.header.authorization",
+          "attributeRule": {
+            "projector": {
+              "regexCaptureGroupProjector": {
+                "regexCaptureGroup": "(?i)Basic:? (.*)",
+                "attributeRule": {
+                  "projector": {
+                    "base64Projector": {
+                      "attributeRule": {
+                        "projector": {
+                          "regexCaptureGroupProjector": {
+                            "regexCaptureGroup": "(.*):",
+                            "attributeRule": {
+                              "initialActions": [
+                                {
+                                  "attributeAddition": {
+                                    "attributeKey": "enduser.id",
+                                    "valueProjectionRule": {
+                                      "projector": {
+                                        "noOpProjector": {
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                {
+                                  "attributeAddition": {
+                                    "attributeKey": "enduser.id.rule",
+                                    "valueProjectionRule": {
+                                      "projector": {
+                                        "valueProjector": {
+                                          "value": "basic-auth-rule-id"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeKey": "rpc.request.metadata.authorization",
+          "attributeRule": {
+            "projector": {
+              "regexCaptureGroupProjector": {
+                "regexCaptureGroup": "(?i)Basic:? (.*)",
+                "attributeRule": {
+                  "projector": {
+                    "base64Projector": {
+                      "attributeRule": {
+                        "projector": {
+                          "regexCaptureGroupProjector": {
+                            "regexCaptureGroup": "(.*):",
+                            "attributeRule": {
+                              "initialActions": [
+                                {
+                                  "attributeAddition": {
+                                    "attributeKey": "enduser.id",
+                                    "valueProjectionRule": {
+                                      "projector": {
+                                        "noOpProjector": {
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                {
+                                  "attributeAddition": {
+                                    "attributeKey": "enduser.id.rule",
+                                    "valueProjectionRule": {
+                                      "projector": {
+                                        "valueProjector": {
+                                          "value": "basic-auth-rule-id"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

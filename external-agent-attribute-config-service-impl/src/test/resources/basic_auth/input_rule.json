@@ -1,0 +1,7 @@
+{
+  "id": "basic-auth-rule-id",
+  "data": {
+    "basicAuthenticationData": {
+    }
+  }
+}

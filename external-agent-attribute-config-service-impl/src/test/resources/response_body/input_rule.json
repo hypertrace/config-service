@@ -1,0 +1,16 @@
+{
+  "id": "response-body-rule-id",
+  "data": {
+    "responseBodyData": {
+      "userIdLocation": {
+        "jsonPath": "$.id"
+      },
+      "roleLocation": {
+        "jsonPath": "$.role"
+      },
+      "authentication": {
+        "type": "some-body-based-auth"
+      }
+    }
+  }
+}

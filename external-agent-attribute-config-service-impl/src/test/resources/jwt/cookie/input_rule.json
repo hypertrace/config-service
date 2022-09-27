@@ -1,0 +1,21 @@
+{
+  "id": "jwt-cookie-rule-id",
+  "data": {
+    "jwtData": {
+      "jwtLocation": {
+        "cookieName": "jwt"
+      },
+      "userIdClaim": "data-claim",
+      "userIdLocation": {
+        "jsonPath": "$.id"
+      },
+      "roleClaim": "data-claim",
+      "roleLocation": {
+        "jsonPath": "$.role"
+      },
+      "authentication": {
+        "type": "JWT authentication"
+      }
+    }
+  }
+}

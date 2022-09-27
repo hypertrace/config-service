@@ -1,0 +1,74 @@
+{
+  "attributeRules": [
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeKey": "http.request.header.id-hdr",
+          "attributeRule": {
+            "initialActions": [
+              {
+                "attributeArrayAppend": {
+                  "attributeKey": "traceableai.auth.types",
+                  "valueProjectionRule": {
+                    "projector": {
+                      "valueProjector": {
+                        "value": "some-hdr-based-auth"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "attributeArrayAppend": {
+                  "attributeKey": "traceableai.auth.rules",
+                  "valueProjectionRule": {
+                    "projector": {
+                      "valueProjector": {
+                        "value": "request-header-rule-id"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeKey": "rpc.request.metadata.id-hdr",
+          "attributeRule": {
+            "initialActions": [
+              {
+                "attributeArrayAppend": {
+                  "attributeKey": "traceableai.auth.types",
+                  "valueProjectionRule": {
+                    "projector": {
+                      "valueProjector": {
+                        "value": "some-hdr-based-auth"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "attributeArrayAppend": {
+                  "attributeKey": "traceableai.auth.rules",
+                  "valueProjectionRule": {
+                    "projector": {
+                      "valueProjector": {
+                        "value": "request-header-rule-id"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

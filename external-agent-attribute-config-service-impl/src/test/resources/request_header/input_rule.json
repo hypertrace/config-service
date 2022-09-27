@@ -1,0 +1,16 @@
+{
+  "id": "request-header-rule-id",
+  "data": {
+    "requestHeaderData": {
+      "userIdLocation": {
+        "headerName": "id-hdr"
+      },
+      "roleLocation": {
+        "headerName": "role-hdr"
+      },
+      "authentication": {
+        "type": "some-hdr-based-auth"
+      }
+    }
+  }
+}

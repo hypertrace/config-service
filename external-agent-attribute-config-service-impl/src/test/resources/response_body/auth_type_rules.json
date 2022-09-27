@@ -1,0 +1,96 @@
+{
+  "attributeRules": [
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeKey": "http.response.body",
+          "attributeRule": {
+            "projector": {
+              "jsonProjector": {
+                "jsonPathRules": [
+                  {
+                    "key": "$.id",
+                    "attributeRule": {
+                      "initialActions": [
+                        {
+                          "attributeArrayAppend": {
+                            "attributeKey": "traceableai.auth.types",
+                            "valueProjectionRule": {
+                              "projector": {
+                                "valueProjector": {
+                                  "value": "some-body-based-auth"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "attributeArrayAppend": {
+                            "attributeKey": "traceableai.auth.rules",
+                            "valueProjectionRule": {
+                              "projector": {
+                                "valueProjector": {
+                                  "value": "response-body-rule-id"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeKey": "rpc.response.body",
+          "attributeRule": {
+            "projector": {
+              "jsonProjector": {
+                "jsonPathRules": [
+                  {
+                    "key": "$.id",
+                    "attributeRule": {
+                      "initialActions": [
+                        {
+                          "attributeArrayAppend": {
+                            "attributeKey": "traceableai.auth.types",
+                            "valueProjectionRule": {
+                              "projector": {
+                                "valueProjector": {
+                                  "value": "some-body-based-auth"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "attributeArrayAppend": {
+                            "attributeKey": "traceableai.auth.rules",
+                            "valueProjectionRule": {
+                              "projector": {
+                                "valueProjector": {
+                                  "value": "response-body-rule-id"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
