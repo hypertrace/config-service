@@ -39,7 +39,9 @@ class RegionDataFetcherTest {
       GetAllRegionRulesRequest.newBuilder()
           .setFilter(
               GetRegionRulesFilter.newBuilder()
-                  .setRuleScope(RuleScope.getDefaultInstance())
+                  .setRuleScope(
+                      RuleScope.newBuilder()
+                          .setEnvironmentScope(EnvironmentScope.getDefaultInstance()))
                   .setDisabled(false))
           .build();
 
