@@ -14,6 +14,11 @@ import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRul
 import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector;
 import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.AttributeProjector;
 import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.Base64Projector;
+import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.ConditionalProjector;
+import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.ConditionalProjector.Predicate;
+import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.ConditionalProjector.Predicate.AttributePredicate;
+import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.ConditionalProjector.Predicate.ComparisonOperator;
+import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.ConditionalProjector.Predicate.StringPredicate;
 import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.CookieProjector;
 import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.EachMatchingProjector;
 import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.FirstMatchingProjector;
@@ -187,6 +192,45 @@ class AttributeRuleBuilder {
             Projector.newBuilder()
                 .setEachMatchingProjector(
                     EachMatchingProjector.newBuilder().addAllAttributeRules(attributeRules)))
+        .build();
+  }
+
+  AttributeRule buildRuleForCondition(
+      String name, List<String> allowedRegexValues, AttributeRule childRule) {
+    if (allowedRegexValues.isEmpty()) {
+      return childRule;
+    }
+
+    String regexValue = String.join("|", allowedRegexValues);
+    return AttributeRule.newBuilder()
+        .setProjector(
+            Projector.newBuilder()
+                .setConditionalProjector(
+                    ConditionalProjector.newBuilder()
+                        .setPredicate(
+                            buildPredicate(
+                                ComparisonOperator.COMPARISON_OPERATOR_EQUALS,
+                                name,
+                                ComparisonOperator.COMPARISON_OPERATOR_MATCHES_REGEX,
+                                regexValue))
+                        .setAttributeRule(childRule)))
+        .build();
+  }
+
+  private Predicate buildPredicate(
+      ComparisonOperator nameComparisonOperator,
+      String name,
+      ComparisonOperator valueComparisonOperator,
+      String value) {
+    return Predicate.newBuilder()
+        .setAttributePredicate(
+            AttributePredicate.newBuilder()
+                .setNamePredicate(
+                    StringPredicate.newBuilder().setOperator(nameComparisonOperator).setValue(name))
+                .setValuePredicate(
+                    StringPredicate.newBuilder()
+                        .setOperator(valueComparisonOperator)
+                        .setValue(value)))
         .build();
   }
 }

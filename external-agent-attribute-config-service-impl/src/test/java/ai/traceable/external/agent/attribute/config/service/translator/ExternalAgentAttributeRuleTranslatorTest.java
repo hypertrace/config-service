@@ -20,7 +20,8 @@ class ExternalAgentAttributeRuleTranslatorTest {
               new JwtRuleTranslator(attributeKeysExtractor, attributeRuleBuilder),
               new RequestHeaderRuleTranslator(attributeKeysExtractor, attributeRuleBuilder),
               new ResponseBodyRuleTranslator(attributeRuleBuilder)),
-          attributeRuleBuilder);
+          attributeRuleBuilder,
+          new UrlScopeTranslator(attributeRuleBuilder));
 
   @Test
   void translateRules() throws IOException {

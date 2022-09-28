@@ -1,0 +1,20 @@
+{
+  "projector": {
+    "conditionalProjector": {
+      "predicate": {
+        "attributePredicate": {
+          "namePredicate": {
+            "operator": "COMPARISON_OPERATOR_EQUALS",
+            "value": "http.url"
+          },
+          "valuePredicate": {
+            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+            "value": ".*/my-url-suffix|my-url-prefix/.*"
+          }
+        }
+      },
+      "attributeRule": {
+      }
+    }
+  }
+}

@@ -24,6 +24,15 @@ class TestUtils {
     return projectorBuilder.build().getAttributeRulesList();
   }
 
+  static AttributeRule getExpectedAttributeRule(String filename) throws IOException {
+    AttributeRule.Builder attributeRuleBuilder = AttributeRule.newBuilder();
+    PARSER.merge(
+        new BufferedReader(
+            new InputStreamReader(TestUtils.class.getClassLoader().getResourceAsStream(filename))),
+        attributeRuleBuilder);
+    return attributeRuleBuilder.build();
+  }
+
   static AgentAttributeRules getExpectedAgentAttributeRules(String filename) throws IOException {
     AgentAttributeRules.Builder agentAttributeRulesBuilder = AgentAttributeRules.newBuilder();
     PARSER.merge(

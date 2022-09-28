@@ -21,15 +21,19 @@ public class ExternalAgentAttributeRuleTranslator {
 
   private final Map<DataCase, RuleTranslator> ruleTranslatorMap;
   private final AttributeRuleBuilder attributeRuleBuilder;
+  private final UrlScopeTranslator urlScopeTranslator;
 
   @Inject
   public ExternalAgentAttributeRuleTranslator(
-      Set<RuleTranslator> ruleTranslators, AttributeRuleBuilder attributeRuleBuilder) {
+      Set<RuleTranslator> ruleTranslators,
+      AttributeRuleBuilder attributeRuleBuilder,
+      UrlScopeTranslator urlScopeTranslator) {
     this.ruleTranslatorMap =
         ruleTranslators.stream()
             .collect(
                 Collectors.toUnmodifiableMap(RuleTranslator::getRuleDataCase, Function.identity()));
     this.attributeRuleBuilder = attributeRuleBuilder;
+    this.urlScopeTranslator = urlScopeTranslator;
   }
 
   public AgentAttributeRules translateRules(List<UserAttributionRule> rules) {
@@ -76,7 +80,18 @@ public class ExternalAgentAttributeRuleTranslator {
       List<UserAttributionRule> rules,
       Function<UserAttributionRule, Stream<AttributeRule>> ruleTranslator) {
     List<AttributeRule> attributeRules =
-        rules.stream().flatMap(ruleTranslator).collect(Collectors.toUnmodifiableList());
+        rules.stream()
+            .flatMap(rule -> translateRule(rule, ruleTranslator))
+            .collect(Collectors.toUnmodifiableList());
     return attributeRules.isEmpty() ? Optional.empty() : Optional.of(attributeRules);
+  }
+
+  private Stream<AttributeRule> translateRule(
+      UserAttributionRule rule,
+      Function<UserAttributionRule, Stream<AttributeRule>> ruleTranslator) {
+    return ruleTranslator
+        .apply(rule)
+        .map(
+            translatedRule -> urlScopeTranslator.addUrlScopeIfSet(rule.getScope(), translatedRule));
   }
 }

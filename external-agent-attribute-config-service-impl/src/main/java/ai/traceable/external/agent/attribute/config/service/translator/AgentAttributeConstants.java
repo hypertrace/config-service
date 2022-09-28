@@ -18,4 +18,5 @@ class AgentAttributeConstants {
   static final String AUTH_TYPES_ATTRIBUTE_KEY = "traceableai.auth.types";
   static final String AUTH_TYPES_RULE_ATTRIBUTE_KEY = "traceableai.auth.rules";
   static final String BASIC_AUTH_TYPE = "Basic";
+  static final String URL_KEY = "http.url";
 }
