@@ -74,7 +74,7 @@ public class DefaultBlockingPolicyConfigurationManager
       RequestContext requestContext, Optional<String> environmentId) {
     // Actor based rules
     ActorBasedRulesCollection actorBasedRulesCollection =
-        actorBasedDataFetcher.getActorBasedRules(requestContext);
+        actorBasedDataFetcher.getActorBasedRules(requestContext, environmentId);
     List<BlockingDetails> threatActorExemption =
         actorBasedRulesCollection.getThreatActorBasedIpExemptions();
     List<BlockingDetails> threatActorViolation =

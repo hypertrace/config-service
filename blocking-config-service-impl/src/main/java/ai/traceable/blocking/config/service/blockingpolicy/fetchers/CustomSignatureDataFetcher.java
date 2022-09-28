@@ -71,7 +71,7 @@ public class CustomSignatureDataFetcher {
                 configServiceBlockingStub.getCustomSignatureRules(getCustomSignatureRulesRequest));
 
     response.getRulesList().stream()
-        .filter(customSignatureRule -> this.filterRule(customSignatureRule, environmentId))
+        .filter(this::filterRule)
         .forEach(
             customSignatureRule -> {
               switch (customSignatureRule.getEffect().getEventType()) {
@@ -108,8 +108,7 @@ public class CustomSignatureDataFetcher {
     return customSignatureRulesMap;
   }
 
-  private boolean filterRule(
-      CustomSignatureRule customSignatureRule, Optional<String> environmentId) {
+  private boolean filterRule(CustomSignatureRule customSignatureRule) {
     return blockingRulesUtils.isRuleActive(
         customSignatureRule.getBlockingExpiryDetails().getExpiryTimestampMillis());
   }

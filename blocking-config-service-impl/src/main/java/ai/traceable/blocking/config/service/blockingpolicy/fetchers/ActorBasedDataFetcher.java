@@ -3,6 +3,7 @@ package ai.traceable.blocking.config.service.blockingpolicy.fetchers;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.ActorBasedRulesCache;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.ActorBasedRulesCollection;
 import com.google.inject.Inject;
+import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class ActorBasedDataFetcher {
@@ -13,7 +14,9 @@ public class ActorBasedDataFetcher {
     this.activeActorsCache = activeActorsCache;
   }
 
-  public ActorBasedRulesCollection getActorBasedRules(RequestContext requestContext) {
-    return activeActorsCache.getActorBasedRules(requestContext.buildInternalContextualKey());
+  public ActorBasedRulesCollection getActorBasedRules(
+      RequestContext requestContext, Optional<String> environmentId) {
+    return activeActorsCache.getActorBasedRules(
+        requestContext.buildInternalContextualKey(environmentId));
   }
 }

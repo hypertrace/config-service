@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.ActorBasedRulesCache;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.ActorBasedRulesCollection;
+import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Test;
 
@@ -20,10 +21,11 @@ class ActorBasedDataFetcherTest {
 
     doReturn(mockActorBasedRulesCollection)
         .when(actorBasedRulesCache)
-        .getActorBasedRules(REQUEST_CONTEXT.buildInternalContextualKey());
+        .getActorBasedRules(REQUEST_CONTEXT.buildInternalContextualKey(Optional.empty()));
 
     ActorBasedDataFetcher actorBasedDataFetcher = new ActorBasedDataFetcher(actorBasedRulesCache);
     assertEquals(
-        mockActorBasedRulesCollection, actorBasedDataFetcher.getActorBasedRules(REQUEST_CONTEXT));
+        mockActorBasedRulesCollection,
+        actorBasedDataFetcher.getActorBasedRules(REQUEST_CONTEXT, Optional.empty()));
   }
 }

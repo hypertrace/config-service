@@ -5,11 +5,12 @@ plugins {
 }
 
 dependencies {
-  api(projects.blockingConfigServiceApi)
-  api(projects.regionConfigServiceApi)
-  api(projects.customSignatureConfigServiceApi)
   api(projects.anomalyConfigServiceApi)
+  api(projects.blockingConfigServiceApi)
+  api(projects.customSignatureConfigServiceApi)
+  api(projects.regionConfigServiceApi)
   api(projects.iprangeConfigServiceApi)
+  api(projects.rateLimitingConfigServiceApi)
 
   implementation(libs.traceable.opaDistributor.api)
   implementation(libs.traceable.actorService.api)

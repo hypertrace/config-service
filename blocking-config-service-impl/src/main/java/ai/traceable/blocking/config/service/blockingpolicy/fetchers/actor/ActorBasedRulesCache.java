@@ -36,6 +36,8 @@ import io.grpc.protobuf.StatusProto;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -50,18 +52,21 @@ public class ActorBasedRulesCache {
       ExternalIpAddressValidator.getInstance();
 
   private final ActorServiceBlockingStub actorServiceStub;
-  private final LoadingCache<ContextualKey<Void>, ActorBasedRulesCollection> actorCache;
+  private final LoadingCache<ContextualKey<Optional<String>>, ActorBasedRulesCollection> actorCache;
   private final Duration callTimeout;
   private final BlockingRulesUtils blockingRulesUtils;
+  private final RateLimitingRuleFetcher rateLimitingRuleFetcher;
 
   @Inject
   public ActorBasedRulesCache(
       ActorServiceBlockingStub actorServiceStub,
       ActorServiceConfig actorServiceConfig,
-      BlockingRulesUtils blockingRulesUtils) {
+      BlockingRulesUtils blockingRulesUtils,
+      RateLimitingRuleFetcher rateLimitingRuleFetcher) {
     this.actorServiceStub = actorServiceStub;
     this.callTimeout = actorServiceConfig.getCallTimeoutDuration();
     this.blockingRulesUtils = blockingRulesUtils;
+    this.rateLimitingRuleFetcher = rateLimitingRuleFetcher;
     BlockingDataCacheConfig blockingDataCacheConfig = actorServiceConfig.getCacheConfig();
     actorCache =
         CacheBuilder.newBuilder()
@@ -73,7 +78,8 @@ public class ActorBasedRulesCache {
                     CacheLoader.from(this::loadValue), Executors.newSingleThreadExecutor()));
   }
 
-  public ActorBasedRulesCollection getActorBasedRules(ContextualKey<Void> contextualKey) {
+  public ActorBasedRulesCollection getActorBasedRules(
+      ContextualKey<Optional<String>> contextualKey) {
     try {
       return actorCache.get(contextualKey);
     } catch (Exception e) {
@@ -86,8 +92,9 @@ public class ActorBasedRulesCache {
     }
   }
 
-  private ActorBasedRulesCollection loadValue(ContextualKey<Void> contextualKey) {
+  private ActorBasedRulesCollection loadValue(ContextualKey<Optional<String>> contextualKey) {
     RequestContext requestContext = contextualKey.getContext();
+    Optional<String> environmentId = contextualKey.getData();
 
     GetActorsByStatusResponse actorsByStatusResponse =
         requestContext.call(
@@ -108,8 +115,11 @@ public class ActorBasedRulesCache {
     List<BlockingDetails> threatActorBasedIpExemptions = new ArrayList<>();
     List<BlockingDetails> rateLimitBasedIpViolations = new ArrayList<>();
 
+    Set<String> activeRateLimitingRuleIds =
+        rateLimitingRuleFetcher.getRateLimitingRules(requestContext, environmentId);
+
     actorsByStatusResponse.getActorsList().stream()
-        .filter(this::filterActor)
+        .filter(actor -> this.filterActor(actor, activeRateLimitingRuleIds))
         .forEach(
             actor -> {
               if (actor.getStatusChangeSource()
@@ -160,9 +170,19 @@ public class ActorBasedRulesCache {
         threatActorBasedIpViolations, threatActorBasedIpExemptions, rateLimitBasedIpViolations);
   }
 
-  private boolean filterActor(Actor actor) {
+  private boolean filterActor(Actor actor, Set<String> activeRateLimitingRuleIds) {
     return !parseIpAddresses(actor.getIpAddressesList()).isEmpty()
-        && blockingRulesUtils.isRuleActive(actor.getStatusExpiryTimestamp());
+        && blockingRulesUtils.isRuleActive(actor.getStatusExpiryTimestamp())
+        && filterActorActorOnEnvironment(actor, activeRateLimitingRuleIds);
+  }
+
+  private boolean filterActorActorOnEnvironment(
+      Actor actor, Set<String> activeRateLimitingRuleIds) {
+    if (actor.getStatusChangeSource() == StatusChangeSource.STATUS_CHANGE_SOURCE_RATE_LIMIT) {
+      return activeRateLimitingRuleIds.contains(
+          actor.getStatusChangeDetails().getRateLimitDetails().getRuleId());
+    }
+    return true;
   }
 
   private List<BlockingDetails> generateBlockingDetails(

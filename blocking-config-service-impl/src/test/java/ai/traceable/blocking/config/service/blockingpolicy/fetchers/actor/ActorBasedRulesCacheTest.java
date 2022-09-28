@@ -37,6 +37,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +46,7 @@ import org.junit.jupiter.api.Test;
 
 class ActorBasedRulesCacheTest {
   private static final String TENANT_ID = "tenant-id";
+  private static final String ENVIRONMENT_ID = "environment-id";
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
   private static final long inactiveTimestamp = System.currentTimeMillis() - 10000L;
   private static final long activeTimestamp = System.currentTimeMillis() + 10000L;
@@ -52,10 +55,12 @@ class ActorBasedRulesCacheTest {
 
   private ActorServiceBlockingStub actorServiceBlockingStub;
   private ActorBasedRulesCache actorBasedRulesCache;
+  private RateLimitingRuleFetcher rateLimitingRuleFetcher;
 
   @BeforeEach
   void setUp() {
     actorServiceBlockingStub = mock(ActorServiceBlockingStub.class, RETURNS_DEEP_STUBS);
+    rateLimitingRuleFetcher = mock(RateLimitingRuleFetcher.class);
 
     ActorServiceConfig actorServiceConfig = mock(ActorServiceConfig.class);
     doReturn(Duration.ofSeconds(30)).when(actorServiceConfig).getCallTimeoutDuration();
@@ -75,7 +80,11 @@ class ActorBasedRulesCacheTest {
         .getCacheConfig();
 
     actorBasedRulesCache =
-        new ActorBasedRulesCache(actorServiceBlockingStub, actorServiceConfig, blockingRulesUtils);
+        new ActorBasedRulesCache(
+            actorServiceBlockingStub,
+            actorServiceConfig,
+            blockingRulesUtils,
+            rateLimitingRuleFetcher);
   }
 
   @Test
@@ -92,16 +101,19 @@ class ActorBasedRulesCacheTest {
                             STATUS_SNOOZED))
                     .build()))
         .thenReturn(GetActorsByStatusResponse.getDefaultInstance());
+    when(rateLimitingRuleFetcher.getRateLimitingRules(REQUEST_CONTEXT, Optional.empty()))
+        .thenReturn(Set.of("rate-limit-id-1"));
 
     ActorBasedRulesCollection response =
-        actorBasedRulesCache.getActorBasedRules(REQUEST_CONTEXT.buildInternalContextualKey());
+        actorBasedRulesCache.getActorBasedRules(
+            REQUEST_CONTEXT.buildInternalContextualKey(Optional.empty()));
     assertEquals(0, response.getRateLimitBasedIpViolations().size());
     assertEquals(0, response.getThreatActorBasedIpExemptions().size());
     assertEquals(0, response.getRateLimitBasedIpViolations().size());
   }
 
   @Test
-  void getActorBasedRules() {
+  void testGetActorBasedRulesWithoutEnvironment() {
     when(actorServiceBlockingStub
             .withDeadlineAfter(30000L, TimeUnit.MILLISECONDS)
             .getActorsByStatus(
@@ -115,12 +127,15 @@ class ActorBasedRulesCacheTest {
                     .build()))
         .thenReturn(
             GetActorsByStatusResponse.newBuilder().addAllActors(generateSampleResponse()).build());
+    when(rateLimitingRuleFetcher.getRateLimitingRules(REQUEST_CONTEXT, Optional.empty()))
+        .thenReturn(Set.of("rate-limit-id-1"));
 
     ActorBasedRulesCollection response =
-        actorBasedRulesCache.getActorBasedRules(REQUEST_CONTEXT.buildInternalContextualKey());
+        actorBasedRulesCache.getActorBasedRules(
+            REQUEST_CONTEXT.buildInternalContextualKey(Optional.empty()));
 
     List<BlockingDetails> violations = response.getThreatActorBasedIpViolations();
-    assertEquals(2, violations.size());
+    assertEquals(4, violations.size());
     assertEquals(
         List.of("1.1.1.1", "2.2.2.2"), violations.get(0).getActorDetails().getIpAddressesList());
     assertEquals(BLOCKING_CATEGORY_THREAT_ACTOR, violations.get(0).getCategory());
@@ -138,9 +153,14 @@ class ActorBasedRulesCacheTest {
     assertEquals(
         ViolationInfoEncoder.getEncodedThreatActorViolationInfo("entity-2"),
         violations.get(1).getInfo());
+    assertEquals(List.of("8.8.8.8"), violations.get(2).getActorDetails().getIpAddressesList());
+    assertEquals("actor-8", violations.get(2).getActorDetails().getUserId());
+    assertEquals(List.of("8.8.8.8"), violations.get(3).getIpDetails().getIpAddressesList());
+    assertEquals(BLOCKING_CATEGORY_THREAT_ACTOR, violations.get(3).getCategory());
+    assertEquals(BLOCKING_RULE_TYPE_BLOCK, violations.get(3).getBlockingRuleType());
 
     List<BlockingDetails> exemptions = response.getThreatActorBasedIpExemptions();
-    assertEquals(2, exemptions.size());
+    assertEquals(4, exemptions.size());
     assertEquals(
         List.of("1.1.1.1", "2.2.2.2"), exemptions.get(0).getActorDetails().getIpAddressesList());
     assertEquals("actor-7", exemptions.get(0).getActorDetails().getUserId());
@@ -158,6 +178,9 @@ class ActorBasedRulesCacheTest {
     assertEquals(
         ExemptionInfoEncoder.getEncodedThreatActorExemptionInfo("entity-7"),
         exemptions.get(1).getInfo());
+    assertEquals(List.of("9.9.9.9"), exemptions.get(2).getActorDetails().getIpAddressesList());
+    assertEquals("actor-9", exemptions.get(2).getActorDetails().getUserId());
+    assertEquals(List.of("9.9.9.9"), exemptions.get(3).getIpDetails().getIpAddressesList());
 
     List<BlockingDetails> rateLimitBasedIpViolation = response.getRateLimitBasedIpViolations();
     assertEquals(2, rateLimitBasedIpViolation.size());
@@ -181,6 +204,62 @@ class ActorBasedRulesCacheTest {
         ViolationInfoEncoder.getEncodedRateLimitViolationInfo(
             "entity-1", "rate-limit-id-1", "rate-limit-name-1"),
         rateLimitBasedIpViolation.get(1).getInfo());
+  }
+
+  @Test
+  void testGetActorBasedRulesWithEnvironment() {
+    when(actorServiceBlockingStub
+            .withDeadlineAfter(30000L, TimeUnit.MILLISECONDS)
+            .getActorsByStatus(
+                GetActorsByStatusRequest.newBuilder()
+                    .addAllStatus(
+                        ImmutableList.of(
+                            STATUS_ALWAYS_DENIED,
+                            STATUS_SUSPENDED,
+                            STATUS_ALWAYS_ALLOWED,
+                            STATUS_SNOOZED))
+                    .build()))
+        .thenReturn(
+            GetActorsByStatusResponse.newBuilder().addAllActors(generateSampleResponse()).build());
+    when(rateLimitingRuleFetcher.getRateLimitingRules(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID)))
+        .thenReturn(Set.of("rate-limit-id-1"));
+
+    ActorBasedRulesCollection response =
+        actorBasedRulesCache.getActorBasedRules(
+            REQUEST_CONTEXT.buildInternalContextualKey(Optional.of(ENVIRONMENT_ID)));
+
+    List<BlockingDetails> violations = response.getThreatActorBasedIpViolations();
+    assertEquals(4, violations.size());
+    assertEquals(
+        List.of("1.1.1.1", "2.2.2.2"), violations.get(0).getActorDetails().getIpAddressesList());
+    assertEquals("actor-2", violations.get(0).getActorDetails().getUserId());
+    assertEquals(
+        List.of("1.1.1.1", "2.2.2.2"), violations.get(1).getIpDetails().getIpAddressesList());
+    assertEquals(List.of("8.8.8.8"), violations.get(2).getActorDetails().getIpAddressesList());
+    assertEquals("actor-8", violations.get(2).getActorDetails().getUserId());
+    assertEquals(List.of("8.8.8.8"), violations.get(3).getIpDetails().getIpAddressesList());
+    assertEquals(BLOCKING_CATEGORY_THREAT_ACTOR, violations.get(3).getCategory());
+    assertEquals(BLOCKING_RULE_TYPE_BLOCK, violations.get(3).getBlockingRuleType());
+
+    List<BlockingDetails> exemptions = response.getThreatActorBasedIpExemptions();
+    assertEquals(4, exemptions.size());
+    assertEquals(
+        List.of("1.1.1.1", "2.2.2.2"), exemptions.get(0).getActorDetails().getIpAddressesList());
+    assertEquals("actor-7", exemptions.get(0).getActorDetails().getUserId());
+    assertEquals(
+        List.of("1.1.1.1", "2.2.2.2"), exemptions.get(1).getIpDetails().getIpAddressesList());
+    assertEquals(List.of("9.9.9.9"), exemptions.get(2).getActorDetails().getIpAddressesList());
+    assertEquals("actor-9", exemptions.get(2).getActorDetails().getUserId());
+    assertEquals(List.of("9.9.9.9"), exemptions.get(3).getIpDetails().getIpAddressesList());
+
+    List<BlockingDetails> rateLimitBasedIpViolation = response.getRateLimitBasedIpViolations();
+    assertEquals(2, rateLimitBasedIpViolation.size());
+    assertEquals(
+        List.of("1.1.1.1"),
+        rateLimitBasedIpViolation.get(0).getActorDetails().getIpAddressesList());
+    assertEquals("actor-1", rateLimitBasedIpViolation.get(0).getActorDetails().getUserId());
+    assertEquals(
+        List.of("1.1.1.1"), rateLimitBasedIpViolation.get(1).getIpDetails().getIpAddressesList());
   }
 
   private static List<Actor> generateSampleResponse() {
@@ -256,6 +335,24 @@ class ActorBasedRulesCacheTest {
             .setEntityId("entity-7")
             .setStatus(STATUS_SNOOZED)
             .addAllIpAddresses(List.of("1.1.1.1", "192.168.65.3", "2.2.2.2"))
+            .setStatusChangeSource(STATUS_CHANGE_SOURCE_SYSTEM)
+            .setStatusExpiryTimestamp(activeTimestamp)
+            .build(),
+        Actor.newBuilder()
+            .setActorId("actor-8")
+            .setEntityId("entity-8")
+            .setEnvironment(ENVIRONMENT_ID)
+            .setStatus(STATUS_SUSPENDED)
+            .addAllIpAddresses(List.of("8.8.8.8"))
+            .setStatusChangeSource(STATUS_CHANGE_SOURCE_SYSTEM)
+            .setStatusExpiryTimestamp(activeTimestamp)
+            .build(),
+        Actor.newBuilder()
+            .setActorId("actor-9")
+            .setEntityId("entity-9")
+            .setEnvironment(ENVIRONMENT_ID)
+            .setStatus(STATUS_SNOOZED)
+            .addAllIpAddresses(List.of("9.9.9.9"))
             .setStatusChangeSource(STATUS_CHANGE_SOURCE_SYSTEM)
             .setStatusExpiryTimestamp(activeTimestamp)
             .build());

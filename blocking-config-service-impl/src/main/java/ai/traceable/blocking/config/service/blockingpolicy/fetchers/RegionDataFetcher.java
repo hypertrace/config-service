@@ -63,7 +63,7 @@ public class RegionDataFetcher {
         requestContext.call(() -> regionConfigServiceStub.getAllRegionRules(rulesRequest));
 
     response.getRuleList().stream()
-        .filter(regionRule -> this.filterRule(regionRule, environmentId))
+        .filter(this::filterRule)
         .forEach(
             regionRule -> {
               switch (regionRule.getActionType()) {
@@ -88,7 +88,7 @@ public class RegionDataFetcher {
     return regionBasedRulesMap;
   }
 
-  private boolean filterRule(RegionRule regionRule, Optional<String> environmentId) {
+  private boolean filterRule(RegionRule regionRule) {
     return !regionRule.getRegionIdList().isEmpty()
         && blockingRulesUtils.isRuleActive(regionRule.getExpirationDetails().getTimestampMillis());
   }

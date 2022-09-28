@@ -115,7 +115,9 @@ class BlockingPolicyConfigurationManagerTest {
     assertNotEquals(0, blockingRules3.getBlockingDetailsListCount());
 
     // Test error handling
-    doThrow(new RuntimeException()).when(actorBasedDataFetcher).getActorBasedRules(REQUEST_CONTEXT);
+    doThrow(new RuntimeException())
+        .when(actorBasedDataFetcher)
+        .getActorBasedRules(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
     BlockingPolicyConfiguration blockingRules4 =
         blockingPolicyConfigurationManager.getBlockingPolicyConfiguration(
             REQUEST_CONTEXT, "random", Optional.of(ENVIRONMENT_ID));
@@ -148,7 +150,7 @@ class BlockingPolicyConfigurationManagerTest {
                         .setInfo("rate-limit-violation")
                         .build())))
         .when(actorBasedDataFetcher)
-        .getActorBasedRules(REQUEST_CONTEXT);
+        .getActorBasedRules(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
 
     doReturn(
             Map.of(
