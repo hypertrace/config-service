@@ -19,7 +19,9 @@ public class AnomalyConfigServiceFactory {
   static final String ANOMALY_MODSEC_CONFIG_ANNOTATION = "anomalyModsecConfig";
   static final String TRAINER_CONFIG_ANNOTATION = "trainerConfig";
   static final String DETECTOR_CONFIG_ANNOTATION = "detectorConfig";
-  static final String AGGREGATOR_CONFIG_ANNOTATON = "aggregatorConfig";
+  static final String AGGREGATOR_CONFIG_ANNOTATION = "aggregatorConfig";
+  static final String DETECTION_OVERRIDE_EXCLUSION_CONFIG_ANNOTATION =
+      "detectionOverrideExclusionConfig";
 
   public static List<BindableService> build(
       GrpcChannelRegistry channelRegistry,
@@ -37,7 +39,8 @@ public class AnomalyConfigServiceFactory {
         getInjectorInstance(injector, ANOMALY_MODSEC_CONFIG_ANNOTATION),
         getInjectorInstance(injector, TRAINER_CONFIG_ANNOTATION),
         getInjectorInstance(injector, DETECTOR_CONFIG_ANNOTATION),
-        getInjectorInstance(injector, AGGREGATOR_CONFIG_ANNOTATON));
+        getInjectorInstance(injector, AGGREGATOR_CONFIG_ANNOTATION),
+        getInjectorInstance(injector, DETECTION_OVERRIDE_EXCLUSION_CONFIG_ANNOTATION));
   }
 
   private static <T> BindableService getInjectorInstance(Injector injector, String annotation) {

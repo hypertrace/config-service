@@ -7,6 +7,7 @@ plugins {
 dependencies {
   api(projects.anomalyConfigServiceApi)
   api(projects.anomalyConfigServiceRegistry)
+  implementation(projects.configUtils)
   implementation(projects.anomalyConfigServiceUtils)
   implementation(libs.hypertrace.configservice.api)
   implementation(libs.hypertrace.configservice.protoconverter)
