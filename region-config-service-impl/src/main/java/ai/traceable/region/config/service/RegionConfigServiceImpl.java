@@ -32,10 +32,15 @@ import ai.traceable.region.config.service.v1.UpdateRegionRuleResponse;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -122,6 +127,8 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
       StreamObserver<GetAllRegionRulesResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
     List<RegionRule> regionRules = rulesManager.getRegionRules(requestContext, request.getFilter());
+    regionRules = populateRegionMapping(regionRules, requestContext);
+
     responseObserver.onNext(GetAllRegionRulesResponse.newBuilder().addAllRule(regionRules).build());
     responseObserver.onCompleted();
   }
@@ -218,5 +225,34 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
       return ipqsRegionStore;
     }
     return neustarRegionStore;
+  }
+
+  private List<RegionRule> populateRegionMapping(
+      List<RegionRule> regionRules, RequestContext requestContext) {
+    Set<String> regionIds =
+        regionRules.stream()
+            .flatMap(regionRule -> regionRule.getRegionIdList().stream())
+            .collect(Collectors.toUnmodifiableSet());
+    RegionStore regionStore = getRegionStore(requestContext);
+    Map<String, String> regionMapping =
+        regionStore.getCountries(new ArrayList<>(regionIds)).stream()
+            .collect(Collectors.toUnmodifiableMap(Region::getId, Region::getName, (v1, v2) -> v1));
+
+    return regionRules.stream()
+        .map(regionRule -> populateRegionMapping(regionRule, regionMapping))
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private RegionRule populateRegionMapping(
+      RegionRule regionRule, Map<String, String> regionMapping) {
+    List<String> regionIds = regionRule.getRegionIdList();
+    Map<String, String> regionIdToNameMap =
+        regionIds.stream()
+            .filter(regionMapping::containsKey)
+            .collect(
+                Collectors.toUnmodifiableMap(
+                    Function.identity(), regionMapping::get, (v1, v2) -> v1));
+
+    return regionRule.toBuilder().putAllRegionIdToNameMap(regionIdToNameMap).build();
   }
 }

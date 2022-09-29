@@ -220,10 +220,17 @@ class RegionConfigServiceImplTest {
   class GetAllRegionRules {
     @Test
     void shouldGetAllRegionRules() {
-      RegionRule regionRule1 = RegionRule.newBuilder().setId("id-1").build();
-      RegionRule regionRule2 = RegionRule.newBuilder().setId("id-2").build();
+      RegionRule regionRule1 =
+          RegionRule.newBuilder().setId("id-1").addRegionId("region-id-1").build();
+      RegionRule regionRule2 =
+          RegionRule.newBuilder().setId("id-2").addRegionId("region-id-2").build();
       when(rulesManager.getRegionRules(eq(requestContext), any()))
           .thenReturn(List.of(regionRule1, regionRule2));
+      when(neustarRegionStore.getCountries(any()))
+          .thenReturn(
+              List.of(
+                  Region.newBuilder().setId("region-id-1").setName("region-1").build(),
+                  Region.newBuilder().setId("region-id-2").setName("region-2").build()));
 
       StreamObserver<GetAllRegionRulesResponse> responseObserver = mock(StreamObserver.class);
 
@@ -233,6 +240,10 @@ class RegionConfigServiceImplTest {
                 GetAllRegionRulesRequest.getDefaultInstance(), responseObserver);
             return null;
           });
+
+      regionRule1 = regionRule1.toBuilder().putRegionIdToNameMap("region-id-1", "region-1").build();
+
+      regionRule2 = regionRule2.toBuilder().putRegionIdToNameMap("region-id-2", "region-2").build();
 
       verify(responseObserver, times(1))
           .onNext(

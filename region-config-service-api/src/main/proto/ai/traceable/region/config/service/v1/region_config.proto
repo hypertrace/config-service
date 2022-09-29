@@ -128,6 +128,7 @@ message RegionRule {
   bool disabled = 9;
   bool internal = 10;
   string description = 11;
+  map<string, string> region_id_to_name_map = 12;
 
   message ExpirationDetails {
     // Duration represented in ISO 8601 duration format.
