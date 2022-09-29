@@ -10,14 +10,6 @@ import "ai/traceable/anomaly/config/service/v1/global/anomaly_global_config.prot
 
 service AnomalyGlobalConfigService {
 
-  rpc GetAnomalyGlobalConfigStatus (GetAnomalyGlobalConfigStatusRequest) returns (GetAnomalyGlobalConfigStatusResponse) {
-    option deprecated = true;
-  }
-
-  rpc UpdateAnomalyGlobalConfigStatus (UpdateAnomalyGlobalConfigStatusRequest) returns (UpdateAnomalyGlobalConfigStatusResponse) {
-    option deprecated = true;
-  }
-
   rpc GetScopedAnomalyGlobalConfigStatus (GetScopedAnomalyGlobalConfigStatusRequest) returns (GetScopedAnomalyGlobalConfigStatusResponse) {
   }
 

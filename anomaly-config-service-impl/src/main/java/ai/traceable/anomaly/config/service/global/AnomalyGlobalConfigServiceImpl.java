@@ -10,16 +10,12 @@ import ai.traceable.anomaly.config.service.v1.global.GetAllScopedAnomalyGlobalCo
 import ai.traceable.anomaly.config.service.v1.global.GetAllScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetAllUnresolvedScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAllUnresolvedScopedAnomalyGlobalConfigStatusResponse;
-import ai.traceable.anomaly.config.service.v1.global.GetAnomalyGlobalConfigStatusRequest;
-import ai.traceable.anomaly.config.service.v1.global.GetAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusResponse;
-import ai.traceable.anomaly.config.service.v1.global.UpdateAnomalyGlobalConfigStatusRequest;
-import ai.traceable.anomaly.config.service.v1.global.UpdateAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.UpdateScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.UpdateScopedAnomalyGlobalConfigStatusResponse;
 import io.grpc.Status;
@@ -43,22 +39,6 @@ public class AnomalyGlobalConfigServiceImpl
     this.globalValidator = globalValidator;
     this.anomalyConfigStatusManager = anomalyConfigStatusManager;
     this.ruleInfoManager = ruleInfoManager;
-  }
-
-  @Override
-  public void getAnomalyGlobalConfigStatus(
-      GetAnomalyGlobalConfigStatusRequest request,
-      StreamObserver<GetAnomalyGlobalConfigStatusResponse> responseObserver) {
-    throw new UnsupportedOperationException(
-        "This API is deprecated - please use \"getScopedAnomalyGlobalConfigStatus\" API instead.");
-  }
-
-  @Override
-  public void updateAnomalyGlobalConfigStatus(
-      UpdateAnomalyGlobalConfigStatusRequest request,
-      StreamObserver<UpdateAnomalyGlobalConfigStatusResponse> responseObserver) {
-    throw new UnsupportedOperationException(
-        "This API is deprecated - please use \"updateScopedAnomalyGlobalConfigStatus\" API instead.");
   }
 
   @Override
