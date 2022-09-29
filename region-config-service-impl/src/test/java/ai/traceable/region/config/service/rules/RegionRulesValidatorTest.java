@@ -60,6 +60,29 @@ class RegionRulesValidatorTest {
     }
 
     @Test
+    @DisplayName("should return invalid argument unspecified severity")
+    void should_fail_createRegionRule_invalidSeverity() {
+      CreateRegionRuleRequest createRegionRuleRequest =
+          CreateRegionRuleRequest.newBuilder()
+              .addRegionId("region-1")
+              .setName("name")
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
+              .build();
+
+      // severity not required for any action other than alert
+      Status status = rulesValidator.validate(createRegionRuleRequest, getAllRegionRulesSupplier);
+      assertEquals(Code.OK, status.getCode());
+
+      createRegionRuleRequest =
+          createRegionRuleRequest.toBuilder()
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALERT)
+              .build();
+
+      status = rulesValidator.validate(createRegionRuleRequest, getAllRegionRulesSupplier);
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
     @DisplayName("should return invalid argument invalid name")
     void should_fail_createRegionRule_invalidName() {
       CreateRegionRuleRequest createRegionRuleRequest =
@@ -194,6 +217,30 @@ class RegionRulesValidatorTest {
 
       Status status = rulesValidator.validate(updateRegionRuleRequest, getAllRegionRulesSupplier);
 
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName("should return invalid argument unspecified severity")
+    void should_fail_createRegionRule_invalidSeverity() {
+      UpdateRegionRuleRequest updateRegionRuleRequest =
+          UpdateRegionRuleRequest.newBuilder()
+              .setId("id")
+              .addRegionId("region-1")
+              .setName("name")
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
+              .build();
+
+      // severity not required for any action other than alert
+      Status status = rulesValidator.validate(updateRegionRuleRequest, getAllRegionRulesSupplier);
+      assertEquals(Code.OK, status.getCode());
+
+      updateRegionRuleRequest =
+          updateRegionRuleRequest.toBuilder()
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALERT)
+              .build();
+
+      status = rulesValidator.validate(updateRegionRuleRequest, getAllRegionRulesSupplier);
       assertEquals(Code.INVALID_ARGUMENT, status.getCode());
     }
 

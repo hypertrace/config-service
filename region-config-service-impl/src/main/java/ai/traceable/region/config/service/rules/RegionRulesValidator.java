@@ -2,6 +2,7 @@ package ai.traceable.region.config.service.rules;
 
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.DeleteRegionRuleRequest;
+import ai.traceable.region.config.service.v1.EventSeverity;
 import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRuleActionType;
 import ai.traceable.region.config.service.v1.RuleScope;
@@ -31,6 +32,12 @@ class RegionRulesValidator implements RulesValidator {
     if (request.getActionType() == RegionRuleActionType.REGION_RULE_ACTION_TYPE_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
           "create region rule should have a valid action type");
+    }
+
+    if (request.getActionType() == RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALERT
+        && request.getEventSeverity() == EventSeverity.EVENT_SEVERITY_UNSPECIFIED) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "create region rule with alert action should have a valid severity");
     }
 
     if (RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT.equals(
@@ -66,6 +73,12 @@ class RegionRulesValidator implements RulesValidator {
     if (request.getActionType() == RegionRuleActionType.REGION_RULE_ACTION_TYPE_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
           "update region rule should have a valid action type");
+    }
+
+    if (request.getActionType() == RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALERT
+        && request.getEventSeverity() == EventSeverity.EVENT_SEVERITY_UNSPECIFIED) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "update region rule with alert action should have a valid severity");
     }
 
     if (RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT.equals(

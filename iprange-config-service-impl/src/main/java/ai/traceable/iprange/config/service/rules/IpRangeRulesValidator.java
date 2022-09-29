@@ -2,6 +2,7 @@ package ai.traceable.iprange.config.service.rules;
 
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.DeleteIpRangeRuleRequest;
+import ai.traceable.iprange.config.service.v1.EventSeverity;
 import ai.traceable.iprange.config.service.v1.IpRangeRule;
 import ai.traceable.iprange.config.service.v1.IpRangeRuleDetails;
 import ai.traceable.iprange.config.service.v1.RuleAction;
@@ -78,6 +79,12 @@ class IpRangeRulesValidator implements RulesValidator {
     if (details.getRuleAction() == RuleAction.RULE_ACTION_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
           "IP Range rule should have a valid action type");
+    }
+
+    if (details.getRuleAction() == RuleAction.RULE_ACTION_ALERT
+        && details.getEventSeverity() == EventSeverity.EVENT_SEVERITY_UNSPECIFIED) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "IP Range rule with ALERT action should have a valid severity");
     }
 
     if (details.getExpirationDetails().hasExpirationDuration()) {

@@ -12,6 +12,7 @@ import ai.traceable.config.utils.IpAddressParsingUtils;
 import ai.traceable.iprange.config.service.utils.UuidGenerator;
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.EnvironmentScope;
+import ai.traceable.iprange.config.service.v1.EventSeverity;
 import ai.traceable.iprange.config.service.v1.ExpirationDetails;
 import ai.traceable.iprange.config.service.v1.GetRulesFilter;
 import ai.traceable.iprange.config.service.v1.IpRangeRule;
@@ -204,6 +205,7 @@ class IpRangeRulesManagerTest {
               .setRuleAction(RuleAction.RULE_ACTION_BLOCK)
               .setExpirationDetails(
                   ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
+              .setEventSeverity(EventSeverity.EVENT_SEVERITY_HIGH)
               .build();
 
       long now = Clock.systemUTC().millis();
@@ -287,6 +289,7 @@ class IpRangeRulesManagerTest {
               .setRuleAction(RuleAction.RULE_ACTION_BLOCK)
               .setExpirationDetails(
                   ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
+              .setEventSeverity(EventSeverity.EVENT_SEVERITY_HIGH)
               .build();
       long now = Clock.systemUTC().millis();
 

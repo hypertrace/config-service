@@ -186,6 +186,35 @@ class IpRangeRulesValidatorTest {
     }
 
     @Test
+    @DisplayName("Should return invalid argument status when severity not specified")
+    void validateCreateIpRangeRuleRequest_invalid_severity() {
+      IpRangeRuleDetails iprangeRuleDetails =
+          IpRangeRuleDetails.newBuilder()
+              .setName("Test")
+              .setDescription("Range rule test")
+              .addAllRawInputIpData(Arrays.asList("1.1.1.1/16"))
+              .setRuleAction(RuleAction.RULE_ACTION_BLOCK)
+              .build();
+
+      CreateIpRangeRuleRequest createIpRangeRuleRequest =
+          CreateIpRangeRuleRequest.newBuilder().setRuleDetails(iprangeRuleDetails).build();
+
+      // severity not required for any action other than alert
+      Status status =
+          rulesValidator.validate(createIpRangeRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Status.Code.OK, status.getCode());
+
+      createIpRangeRuleRequest =
+          CreateIpRangeRuleRequest.newBuilder()
+              .setRuleDetails(
+                  iprangeRuleDetails.toBuilder().setRuleAction(RuleAction.RULE_ACTION_ALERT))
+              .build();
+
+      status = rulesValidator.validate(createIpRangeRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
     @DisplayName(
         "Should return invalid argument status when expiration duration is given in wrong format")
     void validateCreateIpRangeRuleRequest_invalid_expiration_duration() {
@@ -447,6 +476,39 @@ class IpRangeRulesValidatorTest {
 
       Status status =
           rulesValidator.validate(updateIpRangeRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName("Should return invalid argument status when severity not specified")
+    void validateUpdateIpRangeRuleRequest_invalid_severity() {
+      IpRangeRuleDetails iprangeRuleDetails =
+          IpRangeRuleDetails.newBuilder()
+              .setName("Test")
+              .setDescription("Range rule test")
+              .addAllRawInputIpData(Arrays.asList("1.1.1.1/16"))
+              .setRuleAction(RuleAction.RULE_ACTION_BLOCK)
+              .build();
+
+      UpdateIpRangeRuleRequest updateIpRangeRuleRequest =
+          UpdateIpRangeRuleRequest.newBuilder()
+              .setId("tester")
+              .setRuleDetails(iprangeRuleDetails)
+              .build();
+
+      // severity not required for any action other than alert
+      Status status =
+          rulesValidator.validate(updateIpRangeRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Status.Code.OK, status.getCode());
+
+      updateIpRangeRuleRequest =
+          UpdateIpRangeRuleRequest.newBuilder()
+              .setId("tester")
+              .setRuleDetails(
+                  iprangeRuleDetails.toBuilder().setRuleAction(RuleAction.RULE_ACTION_ALERT))
+              .build();
+
+      status = rulesValidator.validate(updateIpRangeRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 

@@ -17,6 +17,7 @@ import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceBlockingStub;
 import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRuleActionType;
+import ai.traceable.region.config.service.v1.RegionRuleConditions;
 import ai.traceable.region.config.service.v1.RuleScope;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import java.util.List;
@@ -321,6 +322,7 @@ class RegionConfigServiceIntegrationTest extends TraceableConfigServiceIntegrati
                 .addAllRegionId(List.of("region-1", "region-2"))
                 .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
                 .setRuleScope(RuleScope.getDefaultInstance())
+                .setConditions(RegionRuleConditions.getDefaultInstance())
                 .build()),
         regionRules);
   }

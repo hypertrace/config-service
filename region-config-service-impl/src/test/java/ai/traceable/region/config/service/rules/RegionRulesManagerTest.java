@@ -8,8 +8,12 @@ import static org.mockito.Mockito.when;
 import ai.traceable.region.config.service.utils.UuidGenerator;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.EnvironmentScope;
+import ai.traceable.region.config.service.v1.EventSeverity;
 import ai.traceable.region.config.service.v1.GetRegionRulesFilter;
+import ai.traceable.region.config.service.v1.IpReputationCondition;
+import ai.traceable.region.config.service.v1.IpReputationSeverity;
 import ai.traceable.region.config.service.v1.RegionRule;
+import ai.traceable.region.config.service.v1.RegionRuleConditions;
 import ai.traceable.region.config.service.v1.RuleScope;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import com.google.common.collect.ImmutableSortedMap;
@@ -171,12 +175,20 @@ class RegionRulesManagerTest {
     @Test
     void shouldCreateRegionRule() {
       when(uuidGenerator.generateId()).thenReturn("id-1");
+      RegionRuleConditions conditions =
+          RegionRuleConditions.newBuilder()
+              .setIpReputation(
+                  IpReputationCondition.newBuilder()
+                      .setMinIpReputationSeverity(IpReputationSeverity.IP_REPUTATION_SEVERITY_HIGH))
+              .build();
       RegionRule regionRule =
           RegionRule.newBuilder()
               .setId("id-1")
               .setName("name-1")
               .setDescription("desc-1")
               .setRuleScope(ruleScope)
+              .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
+              .setConditions(conditions)
               .build();
       RegionRule createdRegionRule =
           rulesManager.createRegionRule(
@@ -185,6 +197,8 @@ class RegionRulesManagerTest {
                   .setName("name-1")
                   .setDescription("desc-1")
                   .setRuleScope(ruleScope)
+                  .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
+                  .setConditions(conditions)
                   .build());
       assertEquals(regionRule, createdRegionRule);
     }
@@ -198,6 +212,12 @@ class RegionRulesManagerTest {
 
       RegionRule originalRegionRule =
           RegionRule.newBuilder().setId("id-1").setName("name-1").build();
+      RegionRuleConditions conditions =
+          RegionRuleConditions.newBuilder()
+              .setIpReputation(
+                  IpReputationCondition.newBuilder()
+                      .setMinIpReputationSeverity(IpReputationSeverity.IP_REPUTATION_SEVERITY_HIGH))
+              .build();
       addRegionRules(ImmutableSortedMap.of("id-1", originalRegionRule));
       RegionRule updatedRegionRule =
           RegionRule.newBuilder()
@@ -206,6 +226,8 @@ class RegionRulesManagerTest {
               .setDescription("desc-1")
               .setInternal(true)
               .setRuleScope(ruleScope)
+              .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
+              .setConditions(conditions)
               .build();
       UpdateRegionRuleRequest request =
           UpdateRegionRuleRequest.newBuilder()
@@ -214,6 +236,8 @@ class RegionRulesManagerTest {
               .setDescription("desc-1")
               .setInternal(true)
               .setRuleScope(ruleScope)
+              .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
+              .setConditions(conditions)
               .build();
       assertEquals(updatedRegionRule, rulesManager.updateRegionRule(requestContext, request));
     }
