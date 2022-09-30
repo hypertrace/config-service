@@ -14,6 +14,7 @@ dependencies {
   implementation(libs.typesafe.config)
   implementation(libs.slf4j.api)
   implementation(libs.guice)
+  implementation(libs.re2j)
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpcutils.client)
   implementation(libs.hypertrace.configservice.protoconverter)

@@ -18,6 +18,7 @@ import ai.traceable.ratelimiting.config.service.v2.IpLocationType;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpReputationCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
+import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperator;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
@@ -28,10 +29,14 @@ import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
 import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.UserAggregateType;
 import com.google.protobuf.Message;
+import com.google.re2j.Pattern;
+import com.google.re2j.PatternSyntaxException;
 import io.grpc.Status;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RateLimitingRulesValidator implements RulesValidator {
+  private static final String UTF_8_REGEX_PREFIX = "(*UTF8)";
+
   @Override
   public void validateOrThrow(RequestContext requestContext, GetRateLimitingRulesRequest request) {
     validateRequestContextOrThrow(requestContext);
@@ -174,6 +179,10 @@ public class RateLimitingRulesValidator implements RulesValidator {
         stringCondition, KeyValueCondition.StringCondition.OPERATOR_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         stringCondition, KeyValueCondition.StringCondition.VALUE_FIELD_NUMBER);
+    if (stringCondition.getOperator() == MatchOperator.MATCH_OPERATOR_MATCHES_REGEX
+        || stringCondition.getOperator() == MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX) {
+      validateRegex(stringCondition.getValue());
+    }
   }
 
   private void validateDatatypeCondition(DatatypeCondition datatypeCondition) {
@@ -308,6 +317,19 @@ public class RateLimitingRulesValidator implements RulesValidator {
       throw Status.INVALID_ARGUMENT
           .withDescription("Dynamic threshold config does not have valid duration")
           .asRuntimeException();
+    }
+  }
+
+  private void validateRegex(String regexPattern) {
+    if (regexPattern.startsWith(UTF_8_REGEX_PREFIX)) {
+      return;
+    }
+    // compiling an invalid regex throws PatternSyntaxException
+    try {
+      Pattern.compile(regexPattern);
+    } catch (PatternSyntaxException e) {
+      throw new IllegalArgumentException(
+          "Invalid Regex Value for the rate limit rule expression", e);
     }
   }
 

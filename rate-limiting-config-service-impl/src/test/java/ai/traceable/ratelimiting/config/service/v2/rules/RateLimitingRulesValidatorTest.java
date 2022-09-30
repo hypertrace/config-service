@@ -19,6 +19,10 @@ import ai.traceable.ratelimiting.config.service.v2.EnvironmentScope;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationType;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationTypeCondition;
+import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
+import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperator;
+import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.StringCondition;
+import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
@@ -348,6 +352,54 @@ public class RateLimitingRulesValidatorTest {
   }
 
   @Test
+  void testInvalidRule_invalidRegex() {
+    RateLimitingRuleData ruleData =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule1")
+            .setCategory(Category.CATEGORY_RATE_LIMITING)
+            .setEnabled(true)
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setKeyValueCondition(
+                                KeyValueCondition.newBuilder()
+                                    .setType(Type.TYPE_URL)
+                                    .setKeyCondition(
+                                        StringCondition.newBuilder()
+                                            .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                                            .setValue("*")
+                                            .build())
+                                    .build())))
+            .addThresholdActionConfigs(
+                ThresholdActionConfig.newBuilder()
+                    .addActions(
+                        Action.newBuilder()
+                            .setBlock(
+                                Block.newBuilder()
+                                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                                    .build())
+                            .build())
+                    .addResourceAccessThresholdConfigs(
+                        ResourceAccessThresholdConfig.newBuilder()
+                            .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                            .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                            .setRollingWindowThresholdConfig(
+                                RollingWindowThresholdConfig.newBuilder()
+                                    .setCountAllowed(1000)
+                                    .setDurationIso("P3Y6M4DT12H30M5S")
+                                    .build())
+                            .build()))
+            .setRuleConfigScope(RuleConfigScope.newBuilder())
+            .build();
+    CreateRateLimitingRuleRequest request =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> rulesValidator.validateOrThrow(requestContext, request));
+  }
+
+  @Test
   void testValidRule() {
     RateLimitingRuleData ruleData =
         RateLimitingRuleData.newBuilder()
@@ -358,6 +410,21 @@ public class RateLimitingRulesValidatorTest {
                 Condition.newBuilder()
                     .setCompositeCondition(
                         CompositeCondition.newBuilder()
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setKeyValueCondition(
+                                                KeyValueCondition.newBuilder()
+                                                    .setType(Type.TYPE_URL)
+                                                    .setKeyCondition(
+                                                        StringCondition.newBuilder()
+                                                            .setOperator(
+                                                                MatchOperator
+                                                                    .MATCH_OPERATOR_MATCHES_REGEX)
+                                                            .setValue("^a")
+                                                            .build())
+                                                    .build())))
                             .addChildren(
                                 Condition.newBuilder()
                                     .setLeafCondition(
