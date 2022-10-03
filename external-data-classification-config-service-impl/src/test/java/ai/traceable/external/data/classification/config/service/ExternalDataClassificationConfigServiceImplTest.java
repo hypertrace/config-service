@@ -10,6 +10,8 @@ import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
+import ai.traceable.data.classification.config.service.v1.DataClassificationOverride;
+import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideRule;
 import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
@@ -24,6 +26,8 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule.Location;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
+import ai.traceable.data.classification.config.service.v1.GetDataClassificationOverridesRequest;
+import ai.traceable.data.classification.config.service.v1.GetDataClassificationOverridesResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataSetsResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
@@ -46,6 +50,7 @@ import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
 import io.grpc.stub.StreamObserver;
+import java.util.ArrayList;
 import java.util.List;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -61,6 +66,7 @@ public class ExternalDataClassificationConfigServiceImplTest {
   InsightsServiceCoordinator insightsServiceCoordinator;
   UuidGenerator uuidGenerator;
   FeatureCachingClient featureCachingClient;
+  List<DataClassificationOverride> dataClassificationOverrides;
 
   ExternalDataClassificationConfig externalDataClassificationConfig;
 
@@ -107,10 +113,11 @@ public class ExternalDataClassificationConfigServiceImplTest {
 
   @Test
   void getDataClassificationConfigTest() {
+    dataClassificationOverrides = new ArrayList<>();
     GetDataClassificationConfigResponse response =
         externalDataClassificationServiceBlockingStub.getDataClassificationConfig(
             GetDataClassificationConfigRequest.getDefaultInstance());
-    assertEquals(2, response.getDataTypesCount());
+    assertEquals(1, response.getDataTypesCount());
 
     response =
         externalDataClassificationServiceBlockingStub.getDataClassificationConfig(
@@ -119,10 +126,39 @@ public class ExternalDataClassificationConfigServiceImplTest {
                 .setEnvironmentFilter(EnvironmentFilter.newBuilder().setEnvironmentName("random"))
                 .build());
     assertEquals(1, response.getDataTypesCount());
+
+    response =
+        externalDataClassificationServiceBlockingStub.getDataClassificationConfig(
+            GetDataClassificationConfigRequest.newBuilder()
+                .setChangeFilter(OnlyIfChangedFilter.getDefaultInstance())
+                .setEnvironmentFilter(EnvironmentFilter.newBuilder().setEnvironmentName("env-1"))
+                .build());
+    assertEquals(3, response.getDataTypesCount());
+  }
+
+  @Test
+  void getDataClassificationConfigTestWithDataClassificationOverrides() {
+    dataClassificationOverrides =
+        List.of(
+            DataClassificationOverride.newBuilder()
+                .setDataClassificationOverrideRule(
+                    DataClassificationOverrideRule.newBuilder()
+                        .setDataSuppressionOverride(
+                            DataClassificationOverrideRule.DataSuppressionOverride.newBuilder()
+                                .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW)))
+                .build());
+    GetDataClassificationConfigResponse response =
+        externalDataClassificationServiceBlockingStub.getDataClassificationConfig(
+            GetDataClassificationConfigRequest.newBuilder()
+                .setChangeFilter(OnlyIfChangedFilter.getDefaultInstance())
+                .setEnvironmentFilter(EnvironmentFilter.newBuilder().setEnvironmentName("random"))
+                .build());
+    assertEquals(0, response.getDataTypesCount());
   }
 
   @Test
   void returnsEmptyDisabledResponseIfDisabled() {
+    dataClassificationOverrides = new ArrayList<>();
     when(featureCachingClient.isDataClassificationRp2Enabled(any())).thenReturn(false);
     assertEquals(
         GetDataClassificationConfigResponse.newBuilder().setEnabled(false).build(),
@@ -132,6 +168,7 @@ public class ExternalDataClassificationConfigServiceImplTest {
 
   @Test
   void returnsDefaultRule() {
+    dataClassificationOverrides = new ArrayList<>();
     ai.traceable.external.data.classification.config.service.v1.DataType defaultDataType =
         ai.traceable.external.data.classification.config.service.v1.DataType.newBuilder()
             .addMatchRules(
@@ -191,10 +228,9 @@ public class ExternalDataClassificationConfigServiceImplTest {
                   DataSetInfo.newBuilder()
                       .setName("datatsetname-3")
                       .setEnabled(true)
-                      .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW)
+                      .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
                       .setSensitivity(Sensitivity.SENSITIVITY_LOW)
-                      .addDataTypeIds("datatype-1")
-                      .addDataTypeIds("datatype-2"))
+                      .addDataTypeIds("datatype-3"))
               .build();
       DataSet legacyDataSet =
           DataSet.newBuilder()
@@ -254,10 +290,10 @@ public class ExternalDataClassificationConfigServiceImplTest {
 
       DataType dataType3 =
           DataType.newBuilder()
-              .setId("id-3")
+              .setId("datatype-3")
               .setRule(
                   DataTypeRule.newBuilder()
-                      .setName("datatype-3")
+                      .setName("datatypename-3")
                       .addScopedPatterns(
                           ScopedPattern.newBuilder()
                               .setEnvironmentScope(
@@ -279,6 +315,17 @@ public class ExternalDataClassificationConfigServiceImplTest {
       responseObserver.onNext(
           GetDataTypesResponse.newBuilder()
               .addAllDataTypes(List.of(dataType1, dataType2, dataType3))
+              .build());
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getDataClassificationOverrides(
+        GetDataClassificationOverridesRequest request,
+        StreamObserver<GetDataClassificationOverridesResponse> responseObserver) {
+      responseObserver.onNext(
+          GetDataClassificationOverridesResponse.newBuilder()
+              .addAllDataClassificationOverrides(dataClassificationOverrides)
               .build());
       responseObserver.onCompleted();
     }

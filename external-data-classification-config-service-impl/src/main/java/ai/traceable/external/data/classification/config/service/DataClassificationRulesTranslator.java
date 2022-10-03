@@ -21,7 +21,6 @@ import ai.traceable.external.data.classification.config.service.v1.PathValuePred
 import ai.traceable.external.data.classification.config.service.v1.StringPredicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -90,33 +89,33 @@ class DataClassificationRulesTranslator {
       DataSuppression dataSuppression,
       Optional<String> environmentName,
       PredicateSupportLevel predicateSupportLevel) {
-    DataType.Builder dataTypeBuilder = DataType.newBuilder();
-    dataTypeBuilder.setDataTypeId(dataType.getId());
-    DataTypeRule rule = dataType.getRule();
-    if (rule.hasSuppressionPattern()) {
-      dataTypeBuilder.setSuppressionPattern(rule.getSuppressionPattern());
-    }
-    translateDataSuppression(dataSuppression).ifPresent(dataTypeBuilder::setTransformation);
-    List<DataTypeMatchRule> matchRules = new ArrayList<>();
-    rule.getScopedPatternsList()
-        .forEach(
-            scopedPattern -> {
-              if (environmentName.isEmpty()
-                  || scopedPattern.hasGlobalScope()
-                  || (scopedPattern.hasEnvironmentScope()
-                      && scopedPattern
-                          .getEnvironmentScope()
-                          .getEnvironmentIdsList()
-                          .contains(environmentName.get()))) {
-                translateScopedPattern(scopedPattern, predicateSupportLevel)
-                    .ifPresent(matchRules::add);
-              }
-            });
+    List<DataTypeMatchRule> matchRules =
+        dataType.getRule().getScopedPatternsList().stream()
+            .filter(scopedPattern -> matchScope(scopedPattern, environmentName))
+            .map(scopedPattern -> translateScopedPattern(scopedPattern, predicateSupportLevel))
+            .flatMap(Optional::stream)
+            .collect(Collectors.toUnmodifiableList());
     if (matchRules.isEmpty()) {
       return Optional.empty();
     }
+    DataType.Builder dataTypeBuilder = DataType.newBuilder();
+    dataTypeBuilder.setDataTypeId(dataType.getId());
+    if (dataType.getRule().hasSuppressionPattern()) {
+      dataTypeBuilder.setSuppressionPattern(dataType.getRule().getSuppressionPattern());
+    }
+    translateDataSuppression(dataSuppression).ifPresent(dataTypeBuilder::setTransformation);
     dataTypeBuilder.addAllMatchRules(matchRules);
     return Optional.of(dataTypeBuilder.build());
+  }
+
+  private boolean matchScope(ScopedPattern scopedPattern, Optional<String> environmentName) {
+    return scopedPattern.hasGlobalScope()
+        || (environmentName.isEmpty() && !scopedPattern.hasEnvironmentScope())
+        || (environmentName.isPresent()
+            && scopedPattern
+                .getEnvironmentScope()
+                .getEnvironmentIdsList()
+                .contains(environmentName.get()));
   }
 
   private Optional<DataTypeMatchRule> translateScopedPattern(

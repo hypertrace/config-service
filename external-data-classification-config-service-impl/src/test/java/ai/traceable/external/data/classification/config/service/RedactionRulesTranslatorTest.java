@@ -23,7 +23,6 @@ import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 public class RedactionRulesTranslatorTest {
@@ -73,9 +72,7 @@ public class RedactionRulesTranslatorTest {
             .build();
 
     List<DataType> translatedDataTypes =
-        this.redactionRulesTranslator.translateRedactionRules(
-            List.of(rule1, rule2, rule3),
-            Set.of(REDACTION_STRATEGY_HASH, REDACTION_STRATEGY_REDACT));
+        this.redactionRulesTranslator.translateRedactionRules(List.of(rule1, rule2, rule3));
 
     assertEquals(3, translatedDataTypes.size());
 
@@ -166,112 +163,6 @@ public class RedactionRulesTranslatorTest {
             .build();
 
     assertEquals(List.of(expectedRule1, expectedRule2, expectedRule3), translatedDataTypes);
-  }
-
-  @Test
-  void translateRedactionRulesTestOnlyRedactionAllowed() {
-    RedactionRule rule1 =
-        RedactionRule.newBuilder()
-            .setId("id-1")
-            .setSessionIdentifier(false)
-            .setRedactionStrategy(REDACTION_STRATEGY_REDACT)
-            .setRegex("regex-1")
-            .setFqn(true)
-            .addConditions(
-                Condition.newBuilder()
-                    .setAttributeRegexMatch(
-                        AttributeRegexMatch.newBuilder().setKey("key-1").setRegex("reg-1")))
-            .build();
-
-    RedactionRule rule2 =
-        RedactionRule.newBuilder()
-            .setId("id-2")
-            .setSessionIdentifier(false)
-            .setRedactionStrategy(REDACTION_STRATEGY_HASH)
-            .setRegex("regex-2")
-            .setFqn(false)
-            .addConditions(
-                Condition.newBuilder()
-                    .setAttributeRegexMatch(
-                        AttributeRegexMatch.newBuilder().setKey("prefix").setRegex("reg-2")))
-            .build();
-
-    RedactionRule rule3 =
-        RedactionRule.newBuilder()
-            .setId("id-3")
-            .setSessionIdentifier(true)
-            .setRedactionStrategy(RedactionStrategy.REDACTION_STRATEGY_RAW)
-            .setFqn(true)
-            .setRegex("regex-3")
-            .addConditions(
-                Condition.newBuilder()
-                    .setAttributeRegexMatch(
-                        AttributeRegexMatch.newBuilder().setKey("key-3").setRegex("reg-3")))
-            .build();
-
-    List<DataType> translatedDataTypes =
-        this.redactionRulesTranslator.translateRedactionRules(
-            List.of(rule1, rule2, rule3), Set.of(REDACTION_STRATEGY_REDACT));
-    assertEquals(2, translatedDataTypes.size());
-
-    DataType expectedRule1 =
-        DataType.newBuilder()
-            .setDataTypeId("id-1")
-            .setSessionIdentifier(false)
-            .setTransformation(DataTransformation.DATA_TRANSFORMATION_REDACT)
-            .addMatchRules(
-                DataTypeMatchRule.newBuilder()
-                    .setSpanFilter(
-                        SpanFilter.newBuilder()
-                            .addRequiredMatchingAttributes(
-                                AttributePredicate.newBuilder()
-                                    .setNamePredicate(
-                                        StringPredicate.newBuilder()
-                                            .setOperator(OPERATOR_EQUALS)
-                                            .setValue("key-1"))
-                                    .setValuePredicate(
-                                        StringPredicate.newBuilder()
-                                            .setOperator(OPERATOR_MATCHES_REGEX)
-                                            .setValue("reg-1"))))
-                    .setResult(Result.RESULT_MATCH)
-                    .setAttributeFilter(AttributeFilter.getDefaultInstance())
-                    .setPathPredicate(
-                        PathPredicate.newBuilder()
-                            .setPathSegmentPredicate(
-                                StringPredicate.newBuilder()
-                                    .setOperator(OPERATOR_MATCHES_REGEX)
-                                    .setValue("regex-1"))))
-            .build();
-
-    DataType expectedRule2 =
-        DataType.newBuilder()
-            .setDataTypeId("id-3")
-            .setSessionIdentifier(true)
-            .addMatchRules(
-                DataTypeMatchRule.newBuilder()
-                    .setSpanFilter(
-                        SpanFilter.newBuilder()
-                            .addRequiredMatchingAttributes(
-                                AttributePredicate.newBuilder()
-                                    .setNamePredicate(
-                                        StringPredicate.newBuilder()
-                                            .setOperator(OPERATOR_EQUALS)
-                                            .setValue("key-3"))
-                                    .setValuePredicate(
-                                        StringPredicate.newBuilder()
-                                            .setOperator(OPERATOR_MATCHES_REGEX)
-                                            .setValue("reg-3"))))
-                    .setResult(Result.RESULT_MATCH)
-                    .setAttributeFilter(AttributeFilter.getDefaultInstance())
-                    .setPathPredicate(
-                        PathPredicate.newBuilder()
-                            .setPathSegmentPredicate(
-                                StringPredicate.newBuilder()
-                                    .setOperator(OPERATOR_MATCHES_REGEX)
-                                    .setValue("regex-3"))))
-            .build();
-
-    assertEquals(List.of(expectedRule1, expectedRule2), translatedDataTypes);
   }
 
   @Test

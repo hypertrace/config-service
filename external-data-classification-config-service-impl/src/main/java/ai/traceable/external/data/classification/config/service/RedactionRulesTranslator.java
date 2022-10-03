@@ -20,7 +20,6 @@ import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,11 +37,9 @@ class RedactionRulesTranslator {
           "rpc.request.metadata",
           "http.request.header");
 
-  public List<DataType> translateRedactionRules(
-      List<RedactionRule> redactionRules, Set<RedactionStrategy> allowedRedactionStrategy) {
+  public List<DataType> translateRedactionRules(List<RedactionRule> redactionRules) {
     return redactionRules.stream()
-        .map(redactionRule -> this.translateRedactionRule(redactionRule, allowedRedactionStrategy))
-        .flatMap(Optional::stream)
+        .map(this::translateRedactionRule)
         .collect(Collectors.toUnmodifiableList());
   }
 
@@ -97,23 +94,15 @@ class RedactionRulesTranslator {
         .build();
   }
 
-  private Optional<DataType> translateRedactionRule(
-      RedactionRule redactionRule, Set<RedactionStrategy> allowedRedactionStrategy) {
-    // translate only session identifier redaction rules, and ones with allowed redaction strategy
-    if (redactionRule.getSessionIdentifier()
-        || allowedRedactionStrategy.contains(redactionRule.getRedactionStrategy())) {
-      DataType.Builder dataTypeBuilder =
-          DataType.newBuilder()
-              .setDataTypeId(redactionRule.getId())
-              .setSessionIdentifier(redactionRule.getSessionIdentifier());
-      Optional<DataTransformation> maybeDataTransformation =
-          translateRedactionStrategy(redactionRule.getRedactionStrategy());
-      maybeDataTransformation.ifPresent(dataTypeBuilder::setTransformation);
-      return Optional.of(
-          dataTypeBuilder.addMatchRules(getTranslatedDataTypeMatchRule(redactionRule)).build());
-    } else {
-      return Optional.empty();
-    }
+  private DataType translateRedactionRule(RedactionRule redactionRule) {
+    DataType.Builder dataTypeBuilder =
+        DataType.newBuilder()
+            .setDataTypeId(redactionRule.getId())
+            .setSessionIdentifier(redactionRule.getSessionIdentifier());
+    Optional<DataTransformation> maybeDataTransformation =
+        translateRedactionStrategy(redactionRule.getRedactionStrategy());
+    maybeDataTransformation.ifPresent(dataTypeBuilder::setTransformation);
+    return dataTypeBuilder.addMatchRules(getTranslatedDataTypeMatchRule(redactionRule)).build();
   }
 
   private DataTypeMatchRule getTranslatedDataTypeMatchRule(RedactionRule redactionRule) {

@@ -43,7 +43,7 @@ public class DataClassificationRulesTranslatorTest {
                         ScopedPattern.newBuilder()
                             .setEnvironmentScope(
                                 EnvironmentScope.newBuilder()
-                                    .addAllEnvironmentIds(List.of("en|v-1", "env-2")))
+                                    .addAllEnvironmentIds(List.of("env-1", "env-2")))
                             .addAllLocations(
                                 List.of(Location.LOCATION_REQUEST_HEADER, Location.LOCATION_QUERY))
                             .setKeyPattern(
@@ -61,8 +61,7 @@ public class DataClassificationRulesTranslatorTest {
                     .setName("datatype-2")
                     .addScopedPatterns(
                         ScopedPattern.newBuilder()
-                            .setEnvironmentScope(
-                                EnvironmentScope.newBuilder().addEnvironmentIds("env-1"))
+                            .setGlobalScope(DataTypeRule.GlobalScope.getDefaultInstance())
                             .addLocations(Location.LOCATION_ANY)
                             .setKeyPattern(
                                 StringPattern.newBuilder()
@@ -122,8 +121,7 @@ public class DataClassificationRulesTranslatorTest {
                     .setName("datatype-5")
                     .addScopedPatterns(
                         ScopedPattern.newBuilder()
-                            .setEnvironmentScope(
-                                EnvironmentScope.newBuilder().addEnvironmentIds("env-1"))
+                            .setGlobalScope(DataTypeRule.GlobalScope.getDefaultInstance())
                             .addLocations(Location.LOCATION_REQUEST_HEADER)
                             .setLeafKeyValuePattern(
                                 KeyValuePattern.newBuilder()
@@ -323,7 +321,7 @@ public class DataClassificationRulesTranslatorTest {
         dataClassificationRulesTranslator.translateDataTypes(
             List.of(dataType1, dataType2, dataType3, dataType4, dataType5),
             dataTypesToDataSuppressionMap,
-            Optional.empty(),
+            Optional.of("env-1"),
             PREDICATE_SUPPORT_LEVEL_LEAF_PATH_SEGMENT);
 
     List<ai.traceable.external.data.classification.config.service.v1.DataType> expectedDataTypes =
@@ -340,7 +338,7 @@ public class DataClassificationRulesTranslatorTest {
         dataClassificationRulesTranslator.translateDataTypes(
             List.of(dataType1, dataType2, dataType3, dataType4, dataType5),
             dataTypesToDataSuppressionMap,
-            Optional.empty(),
+            Optional.of("env-1"),
             PREDICATE_SUPPORT_LEVEL_UNSPECIFIED);
 
     expectedDataTypes =
@@ -355,11 +353,31 @@ public class DataClassificationRulesTranslatorTest {
 
     translatedDataTypes =
         dataClassificationRulesTranslator.translateDataTypes(
-            List.of(dataType1, dataType2, dataType3, dataType4),
+            List.of(dataType1, dataType2, dataType3, dataType4, dataType5),
             dataTypesToDataSuppressionMap,
-            Optional.of("en|v-1"),
+            Optional.of("env-2"),
+            PREDICATE_SUPPORT_LEVEL_UNSPECIFIED);
+
+    expectedDataTypes = List.of(expectedDataType1, expectedDataType2, expectedDataType5_1);
+
+    assertEquals(expectedDataTypes, translatedDataTypes);
+
+    translatedDataTypes =
+        dataClassificationRulesTranslator.translateDataTypes(
+            List.of(dataType1, dataType2, dataType3, dataType4, dataType5),
+            dataTypesToDataSuppressionMap,
+            Optional.empty(),
             PREDICATE_SUPPORT_LEVEL_LEAF_PATH_SEGMENT);
-    expectedDataTypes = List.of(expectedDataType1);
+    expectedDataTypes = List.of(expectedDataType2, expectedDataType5);
+    assertEquals(expectedDataTypes, translatedDataTypes);
+
+    translatedDataTypes =
+        dataClassificationRulesTranslator.translateDataTypes(
+            List.of(dataType1, dataType2, dataType3, dataType4, dataType5),
+            dataTypesToDataSuppressionMap,
+            Optional.of("env-random"),
+            PREDICATE_SUPPORT_LEVEL_LEAF_PATH_SEGMENT);
+    expectedDataTypes = List.of(expectedDataType2, expectedDataType5);
     assertEquals(expectedDataTypes, translatedDataTypes);
   }
 }

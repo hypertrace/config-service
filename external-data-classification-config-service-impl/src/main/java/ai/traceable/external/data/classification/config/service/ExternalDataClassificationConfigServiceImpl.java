@@ -1,6 +1,7 @@
 package ai.traceable.external.data.classification.config.service;
 
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_HASH;
+import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_RAW;
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_REDACT;
 import static java.util.function.Function.identity;
 
@@ -94,6 +95,13 @@ class ExternalDataClassificationConfigServiceImpl
         responseObserver.onCompleted();
         return;
       }
+      Optional<String> envOptional =
+          Optional.of(request.getEnvironmentFilter().getEnvironmentName())
+              .filter(envName -> !envName.isBlank());
+      Optional<DataSuppression> dataSuppressionOverrideOptional =
+          envOptional.flatMap(
+              env ->
+                  this.dataClassificationRulesDao.getDataSuppressionOverride(requestContext, env));
       Map<String, DataType> dataTypesToIdMap =
           this.dataClassificationRulesDao.getAllDataTypes(requestContext).stream()
               .collect(Collectors.toUnmodifiableMap(DataType::getId, identity()));
@@ -103,6 +111,10 @@ class ExternalDataClassificationConfigServiceImpl
               .collect(Collectors.toUnmodifiableList());
       List<DataSet> dataSetsToTranslate =
           enabledDataSets.stream()
+              .map(
+                  dataSet ->
+                      updateDataSetIfDataSuppressionOverridden(
+                          dataSet, dataSuppressionOverrideOptional))
               .filter(
                   dataSet ->
                       !dataSet.getId().startsWith(LEGACY_DATASET_ID_PREFIX)
@@ -138,18 +150,21 @@ class ExternalDataClassificationConfigServiceImpl
           this.redactionRulesDao.getEnabledRedactionRules(requestContext);
       externalDataTypes.addAll(
           redactionRulesTranslator.translateRedactionRules(
-              redactionRules, getAllowedRedactionStrategy(enabledDataSetMap)));
+              getFilteredRedactionRules(
+                  redactionRules, enabledDataSetMap, dataSuppressionOverrideOptional)));
       externalDataTypes.addAll(
           dataClassificationRulesTranslator.translateDataTypes(
               dataTypes,
               dataTypesToDataSuppressionMap,
-              Optional.of(request.getEnvironmentFilter().getEnvironmentName())
-                  .filter(envName -> !envName.isBlank()),
+              envOptional,
               request.getPredicateSupportLevel()));
 
       // sensitive headers
       RedactionStrategy redactionStrategy =
-          redactionRulesDao.getParamTypeHeaderRedactionStrategy(requestContext);
+          dataSuppressionOverrideOptional
+              .flatMap(this::translateDataSuppression)
+              .orElseGet(
+                  () -> redactionRulesDao.getParamTypeHeaderRedactionStrategy(requestContext));
       if (enabledDataSetMap.containsKey(LEGACY_SENSITIVE_HEADERS_DATA_SET_ID)
           && (redactionStrategy.equals(REDACTION_STRATEGY_HASH)
               || redactionStrategy.equals(REDACTION_STRATEGY_REDACT))) {
@@ -174,14 +189,58 @@ class ExternalDataClassificationConfigServiceImpl
     }
   }
 
-  private Set<RedactionStrategy> getAllowedRedactionStrategy(
-      Map<String, DataSet> enabledDataSetMap) {
+  private DataSet updateDataSetIfDataSuppressionOverridden(
+      DataSet dataSet, Optional<DataSuppression> dataSuppressionOverrideOptional) {
+    return dataSuppressionOverrideOptional
+        .map(
+            dataSuppression ->
+                dataSet.toBuilder()
+                    .setInfo(dataSet.getInfo().toBuilder().setDataSuppression(dataSuppression))
+                    .build())
+        .orElse(dataSet);
+  }
+
+  private List<RedactionRule> getFilteredRedactionRules(
+      List<RedactionRule> redactionRules,
+      Map<String, DataSet> enabledDataSetMap,
+      Optional<DataSuppression> dataSuppressionOverrideOptional) {
     Set<RedactionStrategy> allowedRedactionStrategy = new HashSet<>();
     Optional.ofNullable(enabledDataSetMap.get(LEGACY_REDACT_DATA_SET_ID))
         .ifPresent(ds -> allowedRedactionStrategy.add(REDACTION_STRATEGY_REDACT));
     Optional.ofNullable(enabledDataSetMap.get(LEGACY_OBFUSCATE_DATA_SET_ID))
         .ifPresent(ds -> allowedRedactionStrategy.add(REDACTION_STRATEGY_HASH));
-    return Collections.unmodifiableSet(allowedRedactionStrategy);
+    Optional<RedactionStrategy> redactionStrategyOverrideOptional =
+        dataSuppressionOverrideOptional.flatMap(this::translateDataSuppression);
+    return redactionRules.stream()
+        .filter(
+            // filter redactions rules as follows :
+            // 1. all session identifier redaction rules are allowed
+            // 2. redactions rules only in enabled legacy data sets are allowed
+            redactionRule ->
+                redactionRule.getSessionIdentifier()
+                    || allowedRedactionStrategy.contains(redactionRule.getRedactionStrategy()))
+        .map(
+            redactionRule ->
+                updateRedactionRuleIfRedactionStrategyOverridden(
+                    redactionRule, redactionStrategyOverrideOptional))
+        .filter(
+            // post update filter redactions rules as follows :
+            // 1. all session identifier redaction rules are still allowed
+            // 2. redactions rules only with redaction strategy as REDACT or HASH are allowed
+            redactionRule ->
+                redactionRule.getSessionIdentifier()
+                    || redactionRule.getRedactionStrategy().equals(REDACTION_STRATEGY_HASH)
+                    || redactionRule.getRedactionStrategy().equals(REDACTION_STRATEGY_REDACT))
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private RedactionRule updateRedactionRuleIfRedactionStrategyOverridden(
+      RedactionRule redactionRule, Optional<RedactionStrategy> redactionStrategyOverrideOptional) {
+    return redactionStrategyOverrideOptional
+        .map(
+            redactionStrategy ->
+                redactionRule.toBuilder().setRedactionStrategy(redactionStrategy).build())
+        .orElse(redactionRule);
   }
 
   private static int comparatorUtility(DataSetInfo dataSetInfo) {
@@ -194,6 +253,22 @@ class ExternalDataClassificationConfigServiceImpl
         return 2;
       default:
         return Integer.MAX_VALUE;
+    }
+  }
+
+  private Optional<RedactionStrategy> translateDataSuppression(DataSuppression dataSuppression) {
+    switch (dataSuppression) {
+      case DATA_SUPPRESSION_REDACT:
+        return Optional.of(REDACTION_STRATEGY_REDACT);
+      case DATA_SUPPRESSION_OBFUSCATE:
+        return Optional.of(REDACTION_STRATEGY_HASH);
+      case DATA_SUPPRESSION_RAW:
+        return Optional.of(REDACTION_STRATEGY_RAW);
+      default:
+        log.warn(
+            "Unable to translate data suppression {} to appropriate redaction strategy",
+            dataSuppression);
+        return Optional.empty();
     }
   }
 }
