@@ -1,5 +1,3 @@
-crs_912120 :: Denial of Service (DoS) attack identified from %{tx.real_ip} (%{tx.dos_block_counter} hits since last alert)
-crs_912170 :: Potential Denial of Service (DoS) Attack from %{tx.real_ip} - # of Request Bursts: %{ip.dos_burst_counter}
 crs_9210110 :: HTTP Request Smuggling Attack (Request Splitting)
 crs_9210150 :: HTTP Header Injection Attack via payload (CR/LF) (T150)
 crs_921120 :: HTTP Response Splitting Attack (120)

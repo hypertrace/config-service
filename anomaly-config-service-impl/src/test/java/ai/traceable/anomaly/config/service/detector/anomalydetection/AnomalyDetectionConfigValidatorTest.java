@@ -246,14 +246,14 @@ public class AnomalyDetectionConfigValidatorTest {
                             .build()))
             .build();
 
-    subRuleConfig2 = AnomalySubRuleConfig.newBuilder().setSubRuleId("crs_912120").build();
+    subRuleConfig2 = AnomalySubRuleConfig.newBuilder().setSubRuleId("crs_931100").build();
     anomalyDetectionConfig2 =
         AnomalyDetectionConfig.newBuilder()
             .setModsecurityAnomalyDetectionConfig(
                 ModsecurityAnomalyDetectionConfig.newBuilder()
                     .setModsecAnomalyRule(
                         ModsecurityAnomalyRuleConfig.newBuilder()
-                            .setAnomalyRuleId("crs_912")
+                            .setAnomalyRuleId("crs_931")
                             .addSubRuleConfigs(subRuleConfig2)
                             .build()))
             .build();
@@ -276,25 +276,24 @@ public class AnomalyDetectionConfigValidatorTest {
     status = validator.validate(updateRequest);
     assertTrue(status.getDescription().contains("Invalid modsec ruleId: rule"));
 
-    anomalyDetectionConfig2 = buildModSecConfig("crs_912", Optional.of("subRule"));
+    anomalyDetectionConfig2 = buildModSecConfig("crs_931", Optional.of("subRule"));
     updateRequest = buildUpdateRequest(List.of(anomalyDetectionConfig2));
     status = validator.validate(updateRequest);
     assertTrue(
-        status.getDescription().contains("Invalid subRuleId: subRule for modsec ruleId: crs_912"));
+        status.getDescription().contains("Invalid subRuleId: subRule for modsec ruleId: crs_931"));
 
     subRuleConfig1 =
         AnomalySubRuleConfig.newBuilder()
-            .setSubRuleId("crs_912120")
+            .setSubRuleId("crs_931100")
             .setBlockingEnabled(true)
             .build();
-
     anomalyDetectionConfig1 =
         AnomalyDetectionConfig.newBuilder()
             .setModsecurityAnomalyDetectionConfig(
                 ModsecurityAnomalyDetectionConfig.newBuilder()
                     .setModsecAnomalyRule(
                         ModsecurityAnomalyRuleConfig.newBuilder()
-                            .setAnomalyRuleId("crs_912")
+                            .setAnomalyRuleId("crs_931")
                             .addSubRuleConfigs(subRuleConfig1)
                             .build()))
             .build();
@@ -307,7 +306,7 @@ public class AnomalyDetectionConfigValidatorTest {
         status
             .getDescription()
             .contains(
-                "SubRuleId: crs_912120 not available for blocking for modsec ruleId: crs_912"));
+                "SubRuleId: crs_931100 not available for blocking for modsec ruleId: crs_931"));
 
     subRuleConfig1 =
         AnomalySubRuleConfig.newBuilder()

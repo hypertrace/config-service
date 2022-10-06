@@ -83,7 +83,7 @@ public class ModsecRulesRegistryTest {
       // few rules in file not marked safe
       assertEquals(
           allRulesCount - safeRulesCount, crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
-      assertEquals(35, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
+      assertEquals(33, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
     }
     {
       String crsRulesBlob =
@@ -94,14 +94,14 @@ public class ModsecRulesRegistryTest {
           allRulesCount - blockingRulesCount,
           crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
       // few rules in file not marked for blocking
-      assertEquals(66, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
+      assertEquals(64, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
     }
     {
-      // crs_912170 is disabled
+      // crs_913100 is disabled
       String crsRulesBlob =
           modsecRulesRegistry.getModsecCrsRulesBlob(
-              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR, Set.of("crs_912170"));
-      assertTrue(crsRulesBlob.contains("SecRuleRemoveById 912170"));
+              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR, Set.of("crs_913100"));
+      assertTrue(crsRulesBlob.contains("SecRuleRemoveById 913100"));
     }
     {
       // safe and regular rules are mutually exclusive sets
@@ -131,11 +131,10 @@ public class ModsecRulesRegistryTest {
   @Test
   public void testRules() {
     Map<String, AnomalyRuleInfo> anomalyRuleInfos = modsecRulesRegistry.getModsecRuleInfos();
-    assertEquals(13, anomalyRuleInfos.size());
+    assertEquals(12, anomalyRuleInfos.size());
     assertEquals(
         "crs_101 :: Server Side Request Forgery (SSRF) Signatures\n"
             + "crs_102 :: XML External Entity Injection (XXE)\n"
-            + "crs_912 :: Denial of Service (DOS) attack\n"
             + "crs_913 :: Scanner Detection\n"
             + "crs_921 :: HTTP Protocol Attacks\n"
             + "crs_930 :: Local File Inclusion\n"
