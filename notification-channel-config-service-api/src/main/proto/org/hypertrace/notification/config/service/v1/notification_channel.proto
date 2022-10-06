@@ -25,7 +25,6 @@ message WebhookChannelConfig {
   string url = 1;
   WebhookFormat format = 2;
   repeated WebhookHeader headers = 3;
-  string id = 4;
 }
 
 message EmailChannelConfig {

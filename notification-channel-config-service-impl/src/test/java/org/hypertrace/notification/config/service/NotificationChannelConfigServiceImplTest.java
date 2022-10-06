@@ -3,7 +3,14 @@ package org.hypertrace.notification.config.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
+import com.google.protobuf.Value;
+import com.google.protobuf.util.JsonFormat;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
+import java.util.Objects;
+import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.notification.config.service.v1.CreateNotificationChannelRequest;
@@ -36,6 +43,26 @@ class NotificationChannelConfigServiceImplTest {
 
     channelStub =
         NotificationChannelConfigServiceGrpc.newBlockingStub(mockGenericConfigService.channel());
+  }
+
+  @Test
+  void testProtoChanges() throws IOException {
+    String notificationChannelFileName =
+        Objects.requireNonNull(
+                Thread.currentThread()
+                    .getContextClassLoader()
+                    .getResource("sample_notification_channel.json"))
+            .getPath();
+    String notificationChannelInJson =
+        new String(Files.readAllBytes(new File(notificationChannelFileName).toPath()));
+
+    Value.Builder valueBuilder = Value.newBuilder();
+    JsonFormat.parser().merge(notificationChannelInJson, valueBuilder);
+    NotificationChannel.Builder builder = NotificationChannel.newBuilder();
+    ConfigProtoConverter.mergeFromValue(valueBuilder.build(), builder);
+    NotificationChannel channel = builder.build();
+
+    assertEquals("ca793999-1ecd-4d8d-abf6-492ecd161350", channel.getId());
   }
 
   @Test
