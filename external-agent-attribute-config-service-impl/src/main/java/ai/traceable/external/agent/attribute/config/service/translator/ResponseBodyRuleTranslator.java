@@ -61,7 +61,9 @@ public class ResponseBodyRuleTranslator implements RuleTranslator {
             attributeKey,
             attributeRuleBuilder.buildRuleForJsonPath(
                 data.getUserIdLocation().getJsonPath(),
-                attributeRuleBuilder.buildActionAttributeRuleForUserId(ruleId))));
+                attributeRuleBuilder.buildRuleForParsingTarget(
+                    data.getUserIdLocation().getParsingTarget(),
+                    attributeRuleBuilder.buildActionAttributeRuleForUserId(ruleId)))));
   }
 
   private Optional<AttributeRule> translateRuleForUserRole(
@@ -74,7 +76,9 @@ public class ResponseBodyRuleTranslator implements RuleTranslator {
             attributeKey,
             attributeRuleBuilder.buildRuleForJsonPath(
                 data.getRoleLocation().getJsonPath(),
-                attributeRuleBuilder.buildActionAttributeRuleForUserRole(ruleId))));
+                attributeRuleBuilder.buildRuleForParsingTarget(
+                    data.getRoleLocation().getParsingTarget(),
+                    attributeRuleBuilder.buildActionAttributeRuleForUserRole(ruleId)))));
   }
 
   private Optional<AttributeRule> translateRuleForAuthType(

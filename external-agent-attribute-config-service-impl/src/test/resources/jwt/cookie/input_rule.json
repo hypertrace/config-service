@@ -3,15 +3,24 @@
   "data": {
     "jwtData": {
       "jwtLocation": {
-        "cookieName": "jwt"
+        "cookieName": "jwt",
+        "parsingTarget": {
+          "regex_capture_group": "Bearer-xyz (.*)"
+        }
       },
       "userIdClaim": "data-claim",
       "userIdLocation": {
-        "jsonPath": "$.id"
+        "jsonPath": "$.id",
+        "parsingTarget": {
+          "regex_capture_group": "user id is (.*)"
+        }
       },
       "roleClaim": "data-claim",
       "roleLocation": {
-        "jsonPath": "$.role"
+        "jsonPath": "$.role",
+        "parsingTarget": {
+          "regex_capture_group": "user role is (.*)"
+        }
       },
       "authentication": {
         "type": "JWT authentication"

@@ -63,18 +63,21 @@ public class JwtRuleTranslator implements RuleTranslator {
       return Optional.empty();
     }
     AttributeRule actionRule = attributeRuleBuilder.buildActionAttributeRuleForUserId(ruleId);
-    AttributeRule ruleAfterParsingJwtClaim;
+    AttributeRule ruleAfterParsingJwtClaim =
+        attributeRuleBuilder.buildRuleForParsingTarget(
+            data.getUserIdLocation().getParsingTarget(), actionRule);
     if (data.getUserIdLocation().hasJsonPath()) {
       ruleAfterParsingJwtClaim =
           attributeRuleBuilder.buildRuleForJsonPath(
-              data.getUserIdLocation().getJsonPath(), actionRule);
-    } else {
-      ruleAfterParsingJwtClaim = actionRule;
+              data.getUserIdLocation().getJsonPath(), ruleAfterParsingJwtClaim);
     }
     AttributeRule ruleForJwtClaim =
         attributeRuleBuilder.buildRuleForJwtClaim(data.getUserIdClaim(), ruleAfterParsingJwtClaim);
     AttributeRule ruleForBearerCaptureGroup =
-        attributeRuleBuilder.buildRuleForRegexCaptureGroup(BEARER_CAPTURE_GROUP, ruleForJwtClaim);
+        attributeRuleBuilder.buildRuleForParsingTarget(
+            attributeRuleBuilder.parsingTargetWithFallback(
+                data.getJwtLocation().getParsingTarget(), BEARER_CAPTURE_GROUP),
+            ruleForJwtClaim);
     boolean isCookieRule =
         data.getJwtLocation().getLocationCase() == HeaderLocation.LocationCase.COOKIE_NAME;
     return Optional.of(
@@ -92,18 +95,21 @@ public class JwtRuleTranslator implements RuleTranslator {
       return Optional.empty();
     }
     AttributeRule actionRule = attributeRuleBuilder.buildActionAttributeRuleForUserRole(ruleId);
-    AttributeRule ruleAfterParsingJwtClaim;
+    AttributeRule ruleAfterParsingJwtClaim =
+        attributeRuleBuilder.buildRuleForParsingTarget(
+            data.getRoleLocation().getParsingTarget(), actionRule);
     if (data.getRoleLocation().hasJsonPath()) {
       ruleAfterParsingJwtClaim =
           attributeRuleBuilder.buildRuleForJsonPath(
-              data.getRoleLocation().getJsonPath(), actionRule);
-    } else {
-      ruleAfterParsingJwtClaim = actionRule;
+              data.getRoleLocation().getJsonPath(), ruleAfterParsingJwtClaim);
     }
     AttributeRule ruleForJwtClaim =
         attributeRuleBuilder.buildRuleForJwtClaim(data.getRoleClaim(), ruleAfterParsingJwtClaim);
     AttributeRule ruleForBearerCaptureGroup =
-        attributeRuleBuilder.buildRuleForRegexCaptureGroup(BEARER_CAPTURE_GROUP, ruleForJwtClaim);
+        attributeRuleBuilder.buildRuleForParsingTarget(
+            attributeRuleBuilder.parsingTargetWithFallback(
+                data.getJwtLocation().getParsingTarget(), BEARER_CAPTURE_GROUP),
+            ruleForJwtClaim);
     boolean isCookieRule =
         data.getJwtLocation().getLocationCase() == HeaderLocation.LocationCase.COOKIE_NAME;
     return Optional.of(
@@ -125,7 +131,10 @@ public class JwtRuleTranslator implements RuleTranslator {
             attributeRuleBuilder.buildActionsForAuthType(
                 data.getAuthentication().getType(), ruleId));
     AttributeRule ruleForBearerCaptureGroup =
-        attributeRuleBuilder.buildRuleForRegexCaptureGroup(BEARER_CAPTURE_GROUP, ruleForParsingJwt);
+        attributeRuleBuilder.buildRuleForParsingTarget(
+            attributeRuleBuilder.parsingTargetWithFallback(
+                data.getJwtLocation().getParsingTarget(), BEARER_CAPTURE_GROUP),
+            ruleForParsingJwt);
     boolean isCookieRule =
         data.getJwtLocation().getLocationCase() == HeaderLocation.LocationCase.COOKIE_NAME;
     return Optional.of(

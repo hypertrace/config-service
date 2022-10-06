@@ -13,7 +13,7 @@
                     "attributeRule": {
                       "projector": {
                         "regexCaptureGroupProjector": {
-                          "regexCaptureGroup": "^((?i)Bearer:? )?(.*)$",
+                          "regexCaptureGroup": "Bearer-xyz (.*)",
                           "attributeRule": {
                             "projector": {
                               "jwtProjector": {
@@ -27,31 +27,38 @@
                                             {
                                               "key": "$.role",
                                               "attributeRule": {
-                                                "initialActions": [
-                                                  {
-                                                    "attributeAddition": {
-                                                      "attributeKey": "enduser.role",
-                                                      "valueProjectionRule": {
-                                                        "projector": {
-                                                          "noOpProjector": {
+                                                "projector": {
+                                                  "regexCaptureGroupProjector": {
+                                                    "regexCaptureGroup": "user role is (.*)",
+                                                    "attributeRule": {
+                                                      "initialActions": [
+                                                        {
+                                                          "attributeAddition": {
+                                                            "attributeKey": "enduser.role",
+                                                            "valueProjectionRule": {
+                                                              "projector": {
+                                                                "noOpProjector": {
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "attributeAddition": {
+                                                            "attributeKey": "enduser.role.rule",
+                                                            "valueProjectionRule": {
+                                                              "projector": {
+                                                                "valueProjector": {
+                                                                  "value": "jwt-cookie-rule-id"
+                                                                }
+                                                              }
+                                                            }
                                                           }
                                                         }
-                                                      }
-                                                    }
-                                                  },
-                                                  {
-                                                    "attributeAddition": {
-                                                      "attributeKey": "enduser.role.rule",
-                                                      "valueProjectionRule": {
-                                                        "projector": {
-                                                          "valueProjector": {
-                                                            "value": "jwt-cookie-rule-id"
-                                                          }
-                                                        }
-                                                      }
+                                                      ]
                                                     }
                                                   }
-                                                ]
+                                                }
                                               }
                                             }
                                           ]

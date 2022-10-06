@@ -138,31 +138,38 @@
                                                     {
                                                       "key": "$.id",
                                                       "attributeRule": {
-                                                        "initialActions": [
-                                                          {
-                                                            "attributeAddition": {
-                                                              "attributeKey": "enduser.id",
-                                                              "valueProjectionRule": {
-                                                                "projector": {
-                                                                  "noOpProjector": {
+                                                        "projector": {
+                                                          "regexCaptureGroupProjector": {
+                                                            "regexCaptureGroup": "user id is (.*)",
+                                                            "attributeRule": {
+                                                              "initialActions": [
+                                                                {
+                                                                  "attributeAddition": {
+                                                                    "attributeKey": "enduser.id",
+                                                                    "valueProjectionRule": {
+                                                                      "projector": {
+                                                                        "noOpProjector": {
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "attributeAddition": {
+                                                                    "attributeKey": "enduser.id.rule",
+                                                                    "valueProjectionRule": {
+                                                                      "projector": {
+                                                                        "valueProjector": {
+                                                                          "value": "jwt-header-rule-id"
+                                                                        }
+                                                                      }
+                                                                    }
                                                                   }
                                                                 }
-                                                              }
-                                                            }
-                                                          },
-                                                          {
-                                                            "attributeAddition": {
-                                                              "attributeKey": "enduser.id.rule",
-                                                              "valueProjectionRule": {
-                                                                "projector": {
-                                                                  "valueProjector": {
-                                                                    "value": "jwt-header-rule-id"
-                                                                  }
-                                                                }
-                                                              }
+                                                              ]
                                                             }
                                                           }
-                                                        ]
+                                                        }
                                                       }
                                                     }
                                                   ]
@@ -201,31 +208,38 @@
                                                     {
                                                       "key": "$.id",
                                                       "attributeRule": {
-                                                        "initialActions": [
-                                                          {
-                                                            "attributeAddition": {
-                                                              "attributeKey": "enduser.id",
-                                                              "valueProjectionRule": {
-                                                                "projector": {
-                                                                  "noOpProjector": {
+                                                        "projector": {
+                                                          "regexCaptureGroupProjector": {
+                                                            "regexCaptureGroup": "user id is (.*)",
+                                                            "attributeRule": {
+                                                              "initialActions": [
+                                                                {
+                                                                  "attributeAddition": {
+                                                                    "attributeKey": "enduser.id",
+                                                                    "valueProjectionRule": {
+                                                                      "projector": {
+                                                                        "noOpProjector": {
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "attributeAddition": {
+                                                                    "attributeKey": "enduser.id.rule",
+                                                                    "valueProjectionRule": {
+                                                                      "projector": {
+                                                                        "valueProjector": {
+                                                                          "value": "jwt-header-rule-id"
+                                                                        }
+                                                                      }
+                                                                    }
                                                                   }
                                                                 }
-                                                              }
-                                                            }
-                                                          },
-                                                          {
-                                                            "attributeAddition": {
-                                                              "attributeKey": "enduser.id.rule",
-                                                              "valueProjectionRule": {
-                                                                "projector": {
-                                                                  "valueProjector": {
-                                                                    "value": "jwt-header-rule-id"
-                                                                  }
-                                                                }
-                                                              }
+                                                              ]
                                                             }
                                                           }
-                                                        ]
+                                                        }
                                                       }
                                                     }
                                                   ]
@@ -248,31 +262,38 @@
                           "attributeProjector": {
                             "attributeKey": "http.request.header.id-hdr",
                             "attributeRule": {
-                              "initialActions": [
-                                {
-                                  "attributeAddition": {
-                                    "attributeKey": "enduser.id",
-                                    "valueProjectionRule": {
-                                      "projector": {
-                                        "noOpProjector": {
+                              "projector": {
+                                "regexCaptureGroupProjector": {
+                                  "regexCaptureGroup": "user id is (.*)",
+                                  "attributeRule": {
+                                    "initialActions": [
+                                      {
+                                        "attributeAddition": {
+                                          "attributeKey": "enduser.id",
+                                          "valueProjectionRule": {
+                                            "projector": {
+                                              "noOpProjector": {
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "attributeAddition": {
+                                          "attributeKey": "enduser.id.rule",
+                                          "valueProjectionRule": {
+                                            "projector": {
+                                              "valueProjector": {
+                                                "value": "request-header-rule-id"
+                                              }
+                                            }
+                                          }
                                         }
                                       }
-                                    }
-                                  }
-                                },
-                                {
-                                  "attributeAddition": {
-                                    "attributeKey": "enduser.id.rule",
-                                    "valueProjectionRule": {
-                                      "projector": {
-                                        "valueProjector": {
-                                          "value": "request-header-rule-id"
-                                        }
-                                      }
-                                    }
+                                    ]
                                   }
                                 }
-                              ]
+                              }
                             }
                           }
                         }
@@ -282,31 +303,38 @@
                           "attributeProjector": {
                             "attributeKey": "rpc.request.metadata.id-hdr",
                             "attributeRule": {
-                              "initialActions": [
-                                {
-                                  "attributeAddition": {
-                                    "attributeKey": "enduser.id",
-                                    "valueProjectionRule": {
-                                      "projector": {
-                                        "noOpProjector": {
+                              "projector": {
+                                "regexCaptureGroupProjector": {
+                                  "regexCaptureGroup": "user id is (.*)",
+                                  "attributeRule": {
+                                    "initialActions": [
+                                      {
+                                        "attributeAddition": {
+                                          "attributeKey": "enduser.id",
+                                          "valueProjectionRule": {
+                                            "projector": {
+                                              "noOpProjector": {
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "attributeAddition": {
+                                          "attributeKey": "enduser.id.rule",
+                                          "valueProjectionRule": {
+                                            "projector": {
+                                              "valueProjector": {
+                                                "value": "request-header-rule-id"
+                                              }
+                                            }
+                                          }
                                         }
                                       }
-                                    }
-                                  }
-                                },
-                                {
-                                  "attributeAddition": {
-                                    "attributeKey": "enduser.id.rule",
-                                    "valueProjectionRule": {
-                                      "projector": {
-                                        "valueProjector": {
-                                          "value": "request-header-rule-id"
-                                        }
-                                      }
-                                    }
+                                    ]
                                   }
                                 }
-                              ]
+                              }
                             }
                           }
                         }
@@ -322,31 +350,38 @@
                                     {
                                       "key": "$.id",
                                       "attributeRule": {
-                                        "initialActions": [
-                                          {
-                                            "attributeAddition": {
-                                              "attributeKey": "enduser.id",
-                                              "valueProjectionRule": {
-                                                "projector": {
-                                                  "noOpProjector": {
+                                        "projector": {
+                                          "regexCaptureGroupProjector": {
+                                            "regexCaptureGroup": "user id is (.*)",
+                                            "attributeRule": {
+                                              "initialActions": [
+                                                {
+                                                  "attributeAddition": {
+                                                    "attributeKey": "enduser.id",
+                                                    "valueProjectionRule": {
+                                                      "projector": {
+                                                        "noOpProjector": {
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "attributeAddition": {
+                                                    "attributeKey": "enduser.id.rule",
+                                                    "valueProjectionRule": {
+                                                      "projector": {
+                                                        "valueProjector": {
+                                                          "value": "response-body-rule-id"
+                                                        }
+                                                      }
+                                                    }
                                                   }
                                                 }
-                                              }
-                                            }
-                                          },
-                                          {
-                                            "attributeAddition": {
-                                              "attributeKey": "enduser.id.rule",
-                                              "valueProjectionRule": {
-                                                "projector": {
-                                                  "valueProjector": {
-                                                    "value": "response-body-rule-id"
-                                                  }
-                                                }
-                                              }
+                                              ]
                                             }
                                           }
-                                        ]
+                                        }
                                       }
                                     }
                                   ]
@@ -367,31 +402,38 @@
                                     {
                                       "key": "$.id",
                                       "attributeRule": {
-                                        "initialActions": [
-                                          {
-                                            "attributeAddition": {
-                                              "attributeKey": "enduser.id",
-                                              "valueProjectionRule": {
-                                                "projector": {
-                                                  "noOpProjector": {
+                                        "projector": {
+                                          "regexCaptureGroupProjector": {
+                                            "regexCaptureGroup": "user id is (.*)",
+                                            "attributeRule": {
+                                              "initialActions": [
+                                                {
+                                                  "attributeAddition": {
+                                                    "attributeKey": "enduser.id",
+                                                    "valueProjectionRule": {
+                                                      "projector": {
+                                                        "noOpProjector": {
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "attributeAddition": {
+                                                    "attributeKey": "enduser.id.rule",
+                                                    "valueProjectionRule": {
+                                                      "projector": {
+                                                        "valueProjector": {
+                                                          "value": "response-body-rule-id"
+                                                        }
+                                                      }
+                                                    }
                                                   }
                                                 }
-                                              }
-                                            }
-                                          },
-                                          {
-                                            "attributeAddition": {
-                                              "attributeKey": "enduser.id.rule",
-                                              "valueProjectionRule": {
-                                                "projector": {
-                                                  "valueProjector": {
-                                                    "value": "response-body-rule-id"
-                                                  }
-                                                }
-                                              }
+                                              ]
                                             }
                                           }
-                                        ]
+                                        }
                                       }
                                     }
                                   ]
@@ -430,31 +472,38 @@
                                                     {
                                                       "key": "$.role",
                                                       "attributeRule": {
-                                                        "initialActions": [
-                                                          {
-                                                            "attributeAddition": {
-                                                              "attributeKey": "enduser.role",
-                                                              "valueProjectionRule": {
-                                                                "projector": {
-                                                                  "noOpProjector": {
+                                                        "projector": {
+                                                          "regexCaptureGroupProjector": {
+                                                            "regexCaptureGroup": "user role is (.*)",
+                                                            "attributeRule": {
+                                                              "initialActions": [
+                                                                {
+                                                                  "attributeAddition": {
+                                                                    "attributeKey": "enduser.role",
+                                                                    "valueProjectionRule": {
+                                                                      "projector": {
+                                                                        "noOpProjector": {
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "attributeAddition": {
+                                                                    "attributeKey": "enduser.role.rule",
+                                                                    "valueProjectionRule": {
+                                                                      "projector": {
+                                                                        "valueProjector": {
+                                                                          "value": "jwt-header-rule-id"
+                                                                        }
+                                                                      }
+                                                                    }
                                                                   }
                                                                 }
-                                                              }
-                                                            }
-                                                          },
-                                                          {
-                                                            "attributeAddition": {
-                                                              "attributeKey": "enduser.role.rule",
-                                                              "valueProjectionRule": {
-                                                                "projector": {
-                                                                  "valueProjector": {
-                                                                    "value": "jwt-header-rule-id"
-                                                                  }
-                                                                }
-                                                              }
+                                                              ]
                                                             }
                                                           }
-                                                        ]
+                                                        }
                                                       }
                                                     }
                                                   ]
@@ -493,31 +542,38 @@
                                                     {
                                                       "key": "$.role",
                                                       "attributeRule": {
-                                                        "initialActions": [
-                                                          {
-                                                            "attributeAddition": {
-                                                              "attributeKey": "enduser.role",
-                                                              "valueProjectionRule": {
-                                                                "projector": {
-                                                                  "noOpProjector": {
+                                                        "projector": {
+                                                          "regexCaptureGroupProjector": {
+                                                            "regexCaptureGroup": "user role is (.*)",
+                                                            "attributeRule": {
+                                                              "initialActions": [
+                                                                {
+                                                                  "attributeAddition": {
+                                                                    "attributeKey": "enduser.role",
+                                                                    "valueProjectionRule": {
+                                                                      "projector": {
+                                                                        "noOpProjector": {
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "attributeAddition": {
+                                                                    "attributeKey": "enduser.role.rule",
+                                                                    "valueProjectionRule": {
+                                                                      "projector": {
+                                                                        "valueProjector": {
+                                                                          "value": "jwt-header-rule-id"
+                                                                        }
+                                                                      }
+                                                                    }
                                                                   }
                                                                 }
-                                                              }
-                                                            }
-                                                          },
-                                                          {
-                                                            "attributeAddition": {
-                                                              "attributeKey": "enduser.role.rule",
-                                                              "valueProjectionRule": {
-                                                                "projector": {
-                                                                  "valueProjector": {
-                                                                    "value": "jwt-header-rule-id"
-                                                                  }
-                                                                }
-                                                              }
+                                                              ]
                                                             }
                                                           }
-                                                        ]
+                                                        }
                                                       }
                                                     }
                                                   ]
@@ -540,31 +596,38 @@
                           "attributeProjector": {
                             "attributeKey": "http.request.header.role-hdr",
                             "attributeRule": {
-                              "initialActions": [
-                                {
-                                  "attributeAddition": {
-                                    "attributeKey": "enduser.role",
-                                    "valueProjectionRule": {
-                                      "projector": {
-                                        "noOpProjector": {
+                              "projector": {
+                                "regexCaptureGroupProjector": {
+                                  "regexCaptureGroup": "user role is (.*)",
+                                  "attributeRule": {
+                                    "initialActions": [
+                                      {
+                                        "attributeAddition": {
+                                          "attributeKey": "enduser.role",
+                                          "valueProjectionRule": {
+                                            "projector": {
+                                              "noOpProjector": {
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "attributeAddition": {
+                                          "attributeKey": "enduser.role.rule",
+                                          "valueProjectionRule": {
+                                            "projector": {
+                                              "valueProjector": {
+                                                "value": "request-header-rule-id"
+                                              }
+                                            }
+                                          }
                                         }
                                       }
-                                    }
-                                  }
-                                },
-                                {
-                                  "attributeAddition": {
-                                    "attributeKey": "enduser.role.rule",
-                                    "valueProjectionRule": {
-                                      "projector": {
-                                        "valueProjector": {
-                                          "value": "request-header-rule-id"
-                                        }
-                                      }
-                                    }
+                                    ]
                                   }
                                 }
-                              ]
+                              }
                             }
                           }
                         }
@@ -574,31 +637,38 @@
                           "attributeProjector": {
                             "attributeKey": "rpc.request.metadata.role-hdr",
                             "attributeRule": {
-                              "initialActions": [
-                                {
-                                  "attributeAddition": {
-                                    "attributeKey": "enduser.role",
-                                    "valueProjectionRule": {
-                                      "projector": {
-                                        "noOpProjector": {
+                              "projector": {
+                                "regexCaptureGroupProjector": {
+                                  "regexCaptureGroup": "user role is (.*)",
+                                  "attributeRule": {
+                                    "initialActions": [
+                                      {
+                                        "attributeAddition": {
+                                          "attributeKey": "enduser.role",
+                                          "valueProjectionRule": {
+                                            "projector": {
+                                              "noOpProjector": {
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "attributeAddition": {
+                                          "attributeKey": "enduser.role.rule",
+                                          "valueProjectionRule": {
+                                            "projector": {
+                                              "valueProjector": {
+                                                "value": "request-header-rule-id"
+                                              }
+                                            }
+                                          }
                                         }
                                       }
-                                    }
-                                  }
-                                },
-                                {
-                                  "attributeAddition": {
-                                    "attributeKey": "enduser.role.rule",
-                                    "valueProjectionRule": {
-                                      "projector": {
-                                        "valueProjector": {
-                                          "value": "request-header-rule-id"
-                                        }
-                                      }
-                                    }
+                                    ]
                                   }
                                 }
-                              ]
+                              }
                             }
                           }
                         }
@@ -614,31 +684,38 @@
                                     {
                                       "key": "$.role",
                                       "attributeRule": {
-                                        "initialActions": [
-                                          {
-                                            "attributeAddition": {
-                                              "attributeKey": "enduser.role",
-                                              "valueProjectionRule": {
-                                                "projector": {
-                                                  "noOpProjector": {
+                                        "projector": {
+                                          "regexCaptureGroupProjector": {
+                                            "regexCaptureGroup": "user role is (.*)",
+                                            "attributeRule": {
+                                              "initialActions": [
+                                                {
+                                                  "attributeAddition": {
+                                                    "attributeKey": "enduser.role",
+                                                    "valueProjectionRule": {
+                                                      "projector": {
+                                                        "noOpProjector": {
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "attributeAddition": {
+                                                    "attributeKey": "enduser.role.rule",
+                                                    "valueProjectionRule": {
+                                                      "projector": {
+                                                        "valueProjector": {
+                                                          "value": "response-body-rule-id"
+                                                        }
+                                                      }
+                                                    }
                                                   }
                                                 }
-                                              }
-                                            }
-                                          },
-                                          {
-                                            "attributeAddition": {
-                                              "attributeKey": "enduser.role.rule",
-                                              "valueProjectionRule": {
-                                                "projector": {
-                                                  "valueProjector": {
-                                                    "value": "response-body-rule-id"
-                                                  }
-                                                }
-                                              }
+                                              ]
                                             }
                                           }
-                                        ]
+                                        }
                                       }
                                     }
                                   ]
@@ -659,31 +736,38 @@
                                     {
                                       "key": "$.role",
                                       "attributeRule": {
-                                        "initialActions": [
-                                          {
-                                            "attributeAddition": {
-                                              "attributeKey": "enduser.role",
-                                              "valueProjectionRule": {
-                                                "projector": {
-                                                  "noOpProjector": {
+                                        "projector": {
+                                          "regexCaptureGroupProjector": {
+                                            "regexCaptureGroup": "user role is (.*)",
+                                            "attributeRule": {
+                                              "initialActions": [
+                                                {
+                                                  "attributeAddition": {
+                                                    "attributeKey": "enduser.role",
+                                                    "valueProjectionRule": {
+                                                      "projector": {
+                                                        "noOpProjector": {
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "attributeAddition": {
+                                                    "attributeKey": "enduser.role.rule",
+                                                    "valueProjectionRule": {
+                                                      "projector": {
+                                                        "valueProjector": {
+                                                          "value": "response-body-rule-id"
+                                                        }
+                                                      }
+                                                    }
                                                   }
                                                 }
-                                              }
-                                            }
-                                          },
-                                          {
-                                            "attributeAddition": {
-                                              "attributeKey": "enduser.role.rule",
-                                              "valueProjectionRule": {
-                                                "projector": {
-                                                  "valueProjector": {
-                                                    "value": "response-body-rule-id"
-                                                  }
-                                                }
-                                              }
+                                              ]
                                             }
                                           }
-                                        ]
+                                        }
                                       }
                                     }
                                   ]

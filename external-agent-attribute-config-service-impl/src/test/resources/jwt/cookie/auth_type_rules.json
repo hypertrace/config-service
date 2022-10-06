@@ -13,7 +13,7 @@
                     "attributeRule": {
                       "projector": {
                         "regexCaptureGroupProjector": {
-                          "regexCaptureGroup": "^((?i)Bearer:? )?(.*)$",
+                          "regexCaptureGroup": "Bearer-xyz (.*)",
                           "attributeRule": {
                             "projector": {
                               "jwtProjector": {

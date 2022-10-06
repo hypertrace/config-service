@@ -5,31 +5,38 @@
         "attributeProjector": {
           "attributeKey": "http.request.header.role-hdr",
           "attributeRule": {
-            "initialActions": [
-              {
-                "attributeAddition": {
-                  "attributeKey": "enduser.role",
-                  "valueProjectionRule": {
-                    "projector": {
-                      "noOpProjector": {
+            "projector": {
+              "regexCaptureGroupProjector": {
+                "regexCaptureGroup": "user role is (.*)",
+                "attributeRule": {
+                  "initialActions": [
+                    {
+                      "attributeAddition": {
+                        "attributeKey": "enduser.role",
+                        "valueProjectionRule": {
+                          "projector": {
+                            "noOpProjector": {
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "attributeAddition": {
+                        "attributeKey": "enduser.role.rule",
+                        "valueProjectionRule": {
+                          "projector": {
+                            "valueProjector": {
+                              "value": "request-header-rule-id"
+                            }
+                          }
+                        }
                       }
                     }
-                  }
-                }
-              },
-              {
-                "attributeAddition": {
-                  "attributeKey": "enduser.role.rule",
-                  "valueProjectionRule": {
-                    "projector": {
-                      "valueProjector": {
-                        "value": "request-header-rule-id"
-                      }
-                    }
-                  }
+                  ]
                 }
               }
-            ]
+            }
           }
         }
       }
@@ -39,31 +46,38 @@
         "attributeProjector": {
           "attributeKey": "rpc.request.metadata.role-hdr",
           "attributeRule": {
-            "initialActions": [
-              {
-                "attributeAddition": {
-                  "attributeKey": "enduser.role",
-                  "valueProjectionRule": {
-                    "projector": {
-                      "noOpProjector": {
+            "projector": {
+              "regexCaptureGroupProjector": {
+                "regexCaptureGroup": "user role is (.*)",
+                "attributeRule": {
+                  "initialActions": [
+                    {
+                      "attributeAddition": {
+                        "attributeKey": "enduser.role",
+                        "valueProjectionRule": {
+                          "projector": {
+                            "noOpProjector": {
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "attributeAddition": {
+                        "attributeKey": "enduser.role.rule",
+                        "valueProjectionRule": {
+                          "projector": {
+                            "valueProjector": {
+                              "value": "request-header-rule-id"
+                            }
+                          }
+                        }
                       }
                     }
-                  }
-                }
-              },
-              {
-                "attributeAddition": {
-                  "attributeKey": "enduser.role.rule",
-                  "valueProjectionRule": {
-                    "projector": {
-                      "valueProjector": {
-                        "value": "request-header-rule-id"
-                      }
-                    }
-                  }
+                  ]
                 }
               }
-            ]
+            }
           }
         }
       }

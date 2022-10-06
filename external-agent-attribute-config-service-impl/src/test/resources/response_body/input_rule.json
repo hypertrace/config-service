@@ -3,10 +3,16 @@
   "data": {
     "responseBodyData": {
       "userIdLocation": {
-        "jsonPath": "$.id"
+        "jsonPath": "$.id",
+        "parsingTarget": {
+          "regex_capture_group": "user id is (.*)"
+        }
       },
       "roleLocation": {
-        "jsonPath": "$.role"
+        "jsonPath": "$.role",
+        "parsingTarget": {
+          "regex_capture_group": "user role is (.*)"
+        }
       },
       "authentication": {
         "type": "some-body-based-auth"

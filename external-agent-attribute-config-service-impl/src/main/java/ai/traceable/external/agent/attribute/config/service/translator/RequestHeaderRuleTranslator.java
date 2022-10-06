@@ -3,6 +3,8 @@ package ai.traceable.external.agent.attribute.config.service.translator;
 import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.DataCase;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.HeaderLocation;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ParsingTarget;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.RequestHeaderUserAttributionRuleData;
 import java.util.Collections;
 import java.util.Optional;
@@ -23,20 +25,26 @@ public class RequestHeaderRuleTranslator implements RuleTranslator {
 
   @Override
   public Stream<AttributeRule> translateRuleForUserId(UserAttributionRule rule) {
-    return attributeKeysExtractor
-        .getHeaderAttributeKeys(rule.getData().getRequestHeaderData().getUserIdLocation())
-        .stream()
-        .map(attributeKey -> translateRuleForUserId(attributeKey, rule.getId()));
+    HeaderLocation userIdLocation = rule.getData().getRequestHeaderData().getUserIdLocation();
+    return attributeKeysExtractor.getHeaderAttributeKeys(userIdLocation).stream()
+        .map(
+            attributeKey ->
+                translateRuleForUserId(
+                    attributeKey, rule.getId(), userIdLocation.getParsingTarget()));
   }
 
   @Override
   public Stream<AttributeRule> translateRuleForUserRole(UserAttributionRule rule) {
     // since role is optional, role location may not be present
+    HeaderLocation roleLocation = rule.getData().getRequestHeaderData().getRoleLocation();
     return attributeKeysExtractor
-        .getHeaderAttributeKeysIfSet(rule.getData().getRequestHeaderData().getRoleLocation())
+        .getHeaderAttributeKeysIfSet(roleLocation)
         .orElse(Collections.emptyList())
         .stream()
-        .map(attributeKey -> translateRuleForUserRole(attributeKey, rule.getId()));
+        .map(
+            attributeKey ->
+                translateRuleForUserRole(
+                    attributeKey, rule.getId(), roleLocation.getParsingTarget()));
   }
 
   @Override
@@ -52,14 +60,20 @@ public class RequestHeaderRuleTranslator implements RuleTranslator {
         .flatMap(Optional::stream);
   }
 
-  private AttributeRule translateRuleForUserId(String attributeKey, String ruleId) {
+  private AttributeRule translateRuleForUserId(
+      String attributeKey, String ruleId, ParsingTarget parsingTarget) {
     return attributeRuleBuilder.buildRuleForAttribute(
-        attributeKey, attributeRuleBuilder.buildActionAttributeRuleForUserId(ruleId));
+        attributeKey,
+        attributeRuleBuilder.buildRuleForParsingTarget(
+            parsingTarget, attributeRuleBuilder.buildActionAttributeRuleForUserId(ruleId)));
   }
 
-  private AttributeRule translateRuleForUserRole(String attributeKey, String ruleId) {
+  private AttributeRule translateRuleForUserRole(
+      String attributeKey, String ruleId, ParsingTarget parsingTarget) {
     return attributeRuleBuilder.buildRuleForAttribute(
-        attributeKey, attributeRuleBuilder.buildActionAttributeRuleForUserRole(ruleId));
+        attributeKey,
+        attributeRuleBuilder.buildRuleForParsingTarget(
+            parsingTarget, attributeRuleBuilder.buildActionAttributeRuleForUserRole(ruleId)));
   }
 
   private Optional<AttributeRule> translateRuleForAuthType(

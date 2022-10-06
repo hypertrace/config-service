@@ -3,10 +3,16 @@
   "data": {
     "requestHeaderData": {
       "userIdLocation": {
-        "headerName": "id-hdr"
+        "headerName": "id-hdr",
+        "parsingTarget": {
+          "regex_capture_group": "user id is (.*)"
+        }
       },
       "roleLocation": {
-        "headerName": "role-hdr"
+        "headerName": "role-hdr",
+        "parsingTarget": {
+          "regex_capture_group": "user role is (.*)"
+        }
       },
       "authentication": {
         "type": "some-hdr-based-auth"

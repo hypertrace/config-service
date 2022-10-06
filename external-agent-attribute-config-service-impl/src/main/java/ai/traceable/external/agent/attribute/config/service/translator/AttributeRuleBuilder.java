@@ -28,6 +28,8 @@ import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRul
 import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.ParsedObjectKeyRule;
 import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.RegexCaptureGroupProjector;
 import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.StaticValueProjector;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ParsingTarget;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ParsingTarget.TargetCase;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -232,5 +234,23 @@ class AttributeRuleBuilder {
                         .setOperator(valueComparisonOperator)
                         .setValue(value)))
         .build();
+  }
+
+  AttributeRule buildRuleForParsingTarget(ParsingTarget parsingTarget, AttributeRule childRule) {
+    switch (parsingTarget.getTargetCase()) {
+      case REGEX_CAPTURE_GROUP:
+        return buildRuleForRegexCaptureGroup(parsingTarget.getRegexCaptureGroup(), childRule);
+      case TARGET_NOT_SET:
+        return childRule;
+      default:
+        log.error("Unrecognised ParsingTarget case: {}", parsingTarget.getTargetCase());
+        return childRule;
+    }
+  }
+
+  ParsingTarget parsingTargetWithFallback(ParsingTarget provided, String fallbackRegex) {
+    return provided.getTargetCase() == TargetCase.TARGET_NOT_SET
+        ? ParsingTarget.newBuilder().setRegexCaptureGroup(fallbackRegex).build()
+        : provided;
   }
 }

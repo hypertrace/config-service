@@ -11,31 +11,38 @@
                   {
                     "key": "$.id",
                     "attributeRule": {
-                      "initialActions": [
-                        {
-                          "attributeAddition": {
-                            "attributeKey": "enduser.id",
-                            "valueProjectionRule": {
-                              "projector": {
-                                "noOpProjector": {
+                      "projector": {
+                        "regexCaptureGroupProjector": {
+                          "regexCaptureGroup": "user id is (.*)",
+                          "attributeRule": {
+                            "initialActions": [
+                              {
+                                "attributeAddition": {
+                                  "attributeKey": "enduser.id",
+                                  "valueProjectionRule": {
+                                    "projector": {
+                                      "noOpProjector": {
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "attributeAddition": {
+                                  "attributeKey": "enduser.id.rule",
+                                  "valueProjectionRule": {
+                                    "projector": {
+                                      "valueProjector": {
+                                        "value": "response-body-rule-id"
+                                      }
+                                    }
+                                  }
                                 }
                               }
-                            }
-                          }
-                        },
-                        {
-                          "attributeAddition": {
-                            "attributeKey": "enduser.id.rule",
-                            "valueProjectionRule": {
-                              "projector": {
-                                "valueProjector": {
-                                  "value": "response-body-rule-id"
-                                }
-                              }
-                            }
+                            ]
                           }
                         }
-                      ]
+                      }
                     }
                   }
                 ]
@@ -56,31 +63,38 @@
                   {
                     "key": "$.id",
                     "attributeRule": {
-                      "initialActions": [
-                        {
-                          "attributeAddition": {
-                            "attributeKey": "enduser.id",
-                            "valueProjectionRule": {
-                              "projector": {
-                                "noOpProjector": {
+                      "projector": {
+                        "regexCaptureGroupProjector": {
+                          "regexCaptureGroup": "user id is (.*)",
+                          "attributeRule": {
+                            "initialActions": [
+                              {
+                                "attributeAddition": {
+                                  "attributeKey": "enduser.id",
+                                  "valueProjectionRule": {
+                                    "projector": {
+                                      "noOpProjector": {
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "attributeAddition": {
+                                  "attributeKey": "enduser.id.rule",
+                                  "valueProjectionRule": {
+                                    "projector": {
+                                      "valueProjector": {
+                                        "value": "response-body-rule-id"
+                                      }
+                                    }
+                                  }
                                 }
                               }
-                            }
-                          }
-                        },
-                        {
-                          "attributeAddition": {
-                            "attributeKey": "enduser.id.rule",
-                            "valueProjectionRule": {
-                              "projector": {
-                                "valueProjector": {
-                                  "value": "response-body-rule-id"
-                                }
-                              }
-                            }
+                            ]
                           }
                         }
-                      ]
+                      }
                     }
                   }
                 ]

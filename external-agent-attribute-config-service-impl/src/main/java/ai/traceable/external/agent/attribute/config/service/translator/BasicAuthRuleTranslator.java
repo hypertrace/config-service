@@ -6,6 +6,8 @@ import static ai.traceable.external.agent.attribute.config.service.translator.Ag
 import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.DataCase;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.HeaderLocation;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ParsingTarget;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import lombok.RequiredArgsConstructor;
@@ -23,36 +25,44 @@ public class BasicAuthRuleTranslator implements RuleTranslator {
 
   @Override
   public Stream<AttributeRule> translateRuleForUserId(UserAttributionRule rule) {
+    HeaderLocation headerLocation = rule.getData().getBasicAuthenticationData().getLocation();
     return attributeKeysExtractor
-        .getHeaderAttributeKeysIfSet(rule.getData().getBasicAuthenticationData().getLocation())
+        .getHeaderAttributeKeysIfSet(headerLocation)
         .orElse(AUTH_HEADER_KEYS)
         .stream()
-        .map(key -> translateRuleForUserId(key, rule.getId()));
+        .map(key -> translateRuleForUserId(key, rule.getId(), headerLocation.getParsingTarget()));
   }
 
   @Override
   public Stream<AttributeRule> translateRuleForAuthType(UserAttributionRule rule) {
+    HeaderLocation headerLocation = rule.getData().getBasicAuthenticationData().getLocation();
     return attributeKeysExtractor
-        .getHeaderAttributeKeysIfSet(rule.getData().getBasicAuthenticationData().getLocation())
+        .getHeaderAttributeKeysIfSet(headerLocation)
         .orElse(AUTH_HEADER_KEYS)
         .stream()
-        .map(key -> translateRuleForAuthType(key, rule.getId()));
+        .map(key -> translateRuleForAuthType(key, rule.getId(), headerLocation.getParsingTarget()));
   }
 
-  private AttributeRule translateRuleForUserId(String key, String ruleId) {
-    return getRule(key, attributeRuleBuilder.buildActionAttributeRuleForUserId(ruleId));
-  }
-
-  private AttributeRule translateRuleForAuthType(String key, String ruleId) {
+  private AttributeRule translateRuleForUserId(
+      String key, String ruleId, ParsingTarget parsingTarget) {
     return getRule(
-        key, attributeRuleBuilder.buildActionAttributeRuleForAuthType(BASIC_AUTH_TYPE, ruleId));
+        key, attributeRuleBuilder.buildActionAttributeRuleForUserId(ruleId), parsingTarget);
   }
 
-  private AttributeRule getRule(String key, AttributeRule actionAttributeRule) {
+  private AttributeRule translateRuleForAuthType(
+      String key, String ruleId, ParsingTarget parsingTarget) {
+    return getRule(
+        key,
+        attributeRuleBuilder.buildActionAttributeRuleForAuthType(BASIC_AUTH_TYPE, ruleId),
+        parsingTarget);
+  }
+
+  private AttributeRule getRule(
+      String key, AttributeRule actionAttributeRule, ParsingTarget parsingTarget) {
     return attributeRuleBuilder.buildRuleForAttribute(
         key,
-        attributeRuleBuilder.buildRuleForRegexCaptureGroup(
-            "(?i)Basic:? (.*)",
+        attributeRuleBuilder.buildRuleForParsingTarget(
+            attributeRuleBuilder.parsingTargetWithFallback(parsingTarget, "(?i)Basic:? (.*)"),
             attributeRuleBuilder.buildRuleForBase64(
                 attributeRuleBuilder.buildRuleForRegexCaptureGroup("(.*):", actionAttributeRule))));
   }

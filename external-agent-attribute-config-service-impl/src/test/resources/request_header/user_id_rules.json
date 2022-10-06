@@ -5,31 +5,38 @@
         "attributeProjector": {
           "attributeKey": "http.request.header.id-hdr",
           "attributeRule": {
-            "initialActions": [
-              {
-                "attributeAddition": {
-                  "attributeKey": "enduser.id",
-                  "valueProjectionRule": {
-                    "projector": {
-                      "noOpProjector": {
+            "projector": {
+              "regexCaptureGroupProjector": {
+                "regexCaptureGroup": "user id is (.*)",
+                "attributeRule": {
+                  "initialActions": [
+                    {
+                      "attributeAddition": {
+                        "attributeKey": "enduser.id",
+                        "valueProjectionRule": {
+                          "projector": {
+                            "noOpProjector": {
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "attributeAddition": {
+                        "attributeKey": "enduser.id.rule",
+                        "valueProjectionRule": {
+                          "projector": {
+                            "valueProjector": {
+                              "value": "request-header-rule-id"
+                            }
+                          }
+                        }
                       }
                     }
-                  }
-                }
-              },
-              {
-                "attributeAddition": {
-                  "attributeKey": "enduser.id.rule",
-                  "valueProjectionRule": {
-                    "projector": {
-                      "valueProjector": {
-                        "value": "request-header-rule-id"
-                      }
-                    }
-                  }
+                  ]
                 }
               }
-            ]
+            }
           }
         }
       }
@@ -39,31 +46,38 @@
         "attributeProjector": {
           "attributeKey": "rpc.request.metadata.id-hdr",
           "attributeRule": {
-            "initialActions": [
-              {
-                "attributeAddition": {
-                  "attributeKey": "enduser.id",
-                  "valueProjectionRule": {
-                    "projector": {
-                      "noOpProjector": {
+            "projector": {
+              "regexCaptureGroupProjector": {
+                "regexCaptureGroup": "user id is (.*)",
+                "attributeRule": {
+                  "initialActions": [
+                    {
+                      "attributeAddition": {
+                        "attributeKey": "enduser.id",
+                        "valueProjectionRule": {
+                          "projector": {
+                            "noOpProjector": {
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "attributeAddition": {
+                        "attributeKey": "enduser.id.rule",
+                        "valueProjectionRule": {
+                          "projector": {
+                            "valueProjector": {
+                              "value": "request-header-rule-id"
+                            }
+                          }
+                        }
                       }
                     }
-                  }
-                }
-              },
-              {
-                "attributeAddition": {
-                  "attributeKey": "enduser.id.rule",
-                  "valueProjectionRule": {
-                    "projector": {
-                      "valueProjector": {
-                        "value": "request-header-rule-id"
-                      }
-                    }
-                  }
+                  ]
                 }
               }
-            ]
+            }
           }
         }
       }
