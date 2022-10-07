@@ -68,6 +68,10 @@ public class RateLimitingRulesValidator implements RulesValidator {
     validateNonDefaultPresenceOrThrow(data, RateLimitingRuleData.CATEGORY_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(data, RateLimitingRuleData.NAME_FIELD_NUMBER);
     validateCondition(data.getCondition());
+    if (!isScopeConditionPresent(data.getCondition())) {
+      throwInvalidArgumentException("Scope condition not present in rate limit rule");
+    }
+
     validateNonDefaultPresenceOrThrow(
         data, RateLimitingRuleData.THRESHOLD_ACTION_CONFIGS_FIELD_NUMBER);
     data.getThresholdActionConfigsList().forEach(this::validateThresholdActionConfig);
@@ -128,6 +132,20 @@ public class RateLimitingRulesValidator implements RulesValidator {
             String.format(
                 "Invalid Case in %s:%n %s", getName(leafCondition), printMessage(leafCondition)));
     }
+  }
+
+  private boolean isScopeConditionPresent(Condition condition) {
+    switch (condition.getConditionCase()) {
+      case LEAF_CONDITION:
+        if (condition.getLeafCondition().hasScopeCondition()) {
+          return true;
+        }
+        break;
+      case COMPOSITE_CONDITION:
+        return condition.getCompositeCondition().getChildrenList().stream()
+            .anyMatch(this::isScopeConditionPresent);
+    }
+    return false;
   }
 
   private void validateScopeCondition(ScopeCondition scopeCondition) {
