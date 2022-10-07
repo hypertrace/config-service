@@ -5,6 +5,7 @@ import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_
 import static ai.traceable.span.processing.config.service.SpanProcessingConfigServiceImplTestUtils.buildProtectionSpanRuleInfo;
 import static ai.traceable.span.processing.config.service.SpanProcessingConfigServiceImplTestUtils.buildSamplingConfig;
 import static ai.traceable.span.processing.config.service.SpanProcessingConfigServiceImplTestUtils.buildSamplingConfigInfo;
+import static ai.traceable.span.processing.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_CONTAINS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -16,21 +17,34 @@ import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.licensestatus.config.service.v1.GetLicenseStatusResponse;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatus;
 import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc;
+import ai.traceable.span.processing.config.service.apinamingrules.ApiNamingRulesManager;
+import ai.traceable.span.processing.config.service.apinamingrules.DefaultApiNamingRulesManager;
 import ai.traceable.span.processing.config.service.licensestatus.DefaultLicenseStatusConfigManager;
 import ai.traceable.span.processing.config.service.licensestatus.LicenseStatusConfigManager;
 import ai.traceable.span.processing.config.service.protectionspanrules.DefaultProtectionSpanRulesManager;
 import ai.traceable.span.processing.config.service.protectionspanrules.ProtectionSpanRulesManager;
 import ai.traceable.span.processing.config.service.samplingconfigs.DefaultSamplingConfigManager;
 import ai.traceable.span.processing.config.service.samplingconfigs.SamplingConfigManager;
+import ai.traceable.span.processing.config.service.store.ApiNamingRulesConfigStore;
 import ai.traceable.span.processing.config.service.store.DefaultProtectionSpanRuleEvaluationStatusConfigStore;
 import ai.traceable.span.processing.config.service.store.ProtectionSpanRulesConfigStore;
 import ai.traceable.span.processing.config.service.store.SamplingConfigsConfigStore;
+import ai.traceable.span.processing.config.service.v1.ApiNamingRule;
+import ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig;
+import ai.traceable.span.processing.config.service.v1.ApiNamingRuleDetails;
+import ai.traceable.span.processing.config.service.v1.ApiNamingRuleInfo;
+import ai.traceable.span.processing.config.service.v1.ApiSpecBasedConfig;
+import ai.traceable.span.processing.config.service.v1.CreateApiNamingRuleRequest;
+import ai.traceable.span.processing.config.service.v1.CreateApiNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.CreateProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.CreateSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.DefaultProtectionSpanRuleEvaluationStatus;
+import ai.traceable.span.processing.config.service.v1.DeleteApiNamingRuleRequest;
+import ai.traceable.span.processing.config.service.v1.DeleteApiNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.Field;
+import ai.traceable.span.processing.config.service.v1.GetAllApiNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllProtectionSpanRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSpanRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsRequest;
@@ -41,13 +55,16 @@ import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleDetails;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
 import ai.traceable.span.processing.config.service.v1.RateLimit;
 import ai.traceable.span.processing.config.service.v1.RateLimitConfig;
-import ai.traceable.span.processing.config.service.v1.RelationalOperator;
 import ai.traceable.span.processing.config.service.v1.RelationalSpanFilterExpression;
 import ai.traceable.span.processing.config.service.v1.SamplingConfig;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigDetails;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
+import ai.traceable.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 import ai.traceable.span.processing.config.service.v1.SpanFilter;
 import ai.traceable.span.processing.config.service.v1.SpanFilterValue;
+import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRule;
+import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRuleRequest;
+import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateDefaultProtectionSpanRuleEvaluationStatusRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateProtectionSpanRule;
 import ai.traceable.span.processing.config.service.v1.UpdateProtectionSpanRuleRequest;
@@ -96,11 +113,15 @@ class SpanProcessingConfigServiceImplTest {
 
     SamplingConfigsConfigStore samplingConfigsConfigStore =
         new SamplingConfigsConfigStore(genericStub, timestampConverter);
+    ApiNamingRulesConfigStore apiNamingRulesConfigStore =
+        new ApiNamingRulesConfigStore(genericStub, timestampConverter);
     ProtectionSpanRulesConfigStore protectionSpanRulesConfigStore =
         new ProtectionSpanRulesConfigStore(genericStub, timestampConverter);
     SamplingConfigManager samplingConfigManager =
         new DefaultSamplingConfigManager(
             samplingConfigsConfigStore, timestampConverter, licenseStatusConfigManager);
+    ApiNamingRulesManager apiNamingRulesManager =
+        new DefaultApiNamingRulesManager(apiNamingRulesConfigStore, timestampConverter);
     ProtectionSpanRulesManager protectionSpanRulesManager =
         new DefaultProtectionSpanRulesManager(
             protectionSpanRulesConfigStore, timestampConverter, licenseStatusConfigManager);
@@ -112,6 +133,7 @@ class SpanProcessingConfigServiceImplTest {
         .addService(
             new SpanProcessingConfigServiceImpl(
                 samplingConfigManager,
+                apiNamingRulesManager,
                 protectionSpanRulesManager,
                 new SpanProcessingConfigRequestValidator(),
                 defaultProtectionSpanRuleEvaluationStatusConfigStore))
@@ -269,8 +291,7 @@ class SpanProcessingConfigServiceImplTest {
                                     .setRelationalSpanFilter(
                                         RelationalSpanFilterExpression.newBuilder()
                                             .setField(Field.FIELD_SERVICE_NAME)
-                                            .setOperator(
-                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                            .setOperator(RELATIONAL_OPERATOR_CONTAINS)
                                             .setRightOperand(
                                                 SpanFilterValue.newBuilder().setStringValue("a")))))
                     .build())
@@ -298,8 +319,7 @@ class SpanProcessingConfigServiceImplTest {
                                     .setRelationalSpanFilter(
                                         RelationalSpanFilterExpression.newBuilder()
                                             .setField(Field.FIELD_SERVICE_NAME)
-                                            .setOperator(
-                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                            .setOperator(RELATIONAL_OPERATOR_CONTAINS)
                                             .setRightOperand(
                                                 SpanFilterValue.newBuilder().setStringValue("a")))))
                     .build())
@@ -331,8 +351,7 @@ class SpanProcessingConfigServiceImplTest {
                                     .setRelationalSpanFilter(
                                         RelationalSpanFilterExpression.newBuilder()
                                             .setField(Field.FIELD_SERVICE_NAME)
-                                            .setOperator(
-                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                            .setOperator(RELATIONAL_OPERATOR_CONTAINS)
                                             .setRightOperand(
                                                 SpanFilterValue.newBuilder().setStringValue("a")))))
                     .build())
@@ -407,8 +426,7 @@ class SpanProcessingConfigServiceImplTest {
                                     .setRelationalSpanFilter(
                                         RelationalSpanFilterExpression.newBuilder()
                                             .setField(Field.FIELD_SERVICE_NAME)
-                                            .setOperator(
-                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                            .setOperator(RELATIONAL_OPERATOR_CONTAINS)
                                             .setRightOperand(
                                                 SpanFilterValue.newBuilder().setStringValue("a")))))
                     .build())
@@ -460,8 +478,7 @@ class SpanProcessingConfigServiceImplTest {
                                     .setRelationalSpanFilter(
                                         RelationalSpanFilterExpression.newBuilder()
                                             .setField(Field.FIELD_SERVICE_NAME)
-                                            .setOperator(
-                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                            .setOperator(RELATIONAL_OPERATOR_CONTAINS)
                                             .setRightOperand(
                                                 SpanFilterValue.newBuilder().setStringValue("b")))))
                     .build())
@@ -518,8 +535,7 @@ class SpanProcessingConfigServiceImplTest {
                                     .setRelationalSpanFilter(
                                         RelationalSpanFilterExpression.newBuilder()
                                             .setField(Field.FIELD_SERVICE_NAME)
-                                            .setOperator(
-                                                RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                            .setOperator(RELATIONAL_OPERATOR_CONTAINS)
                                             .setRightOperand(
                                                 SpanFilterValue.newBuilder().setStringValue("a")))))
                     .build())
@@ -609,5 +625,483 @@ class SpanProcessingConfigServiceImplTest {
                         .build())
                 .build())
         .getStatus();
+  }
+
+  @Test
+  void testSegmentBasedApiNamingRules() {
+    ApiNamingRuleDetails firstCreatedApiNamingRuleDetails =
+        this.spanProcessingConfigServiceStub
+            .createApiNamingRule(
+                CreateApiNamingRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ApiNamingRuleInfo.newBuilder()
+                            .setName("ruleName1")
+                            .setDisabled(true)
+                            .setRuleConfig(
+                                buildSegmentMatchingBasedConfig(List.of("regex"), List.of("value")))
+                            .setFilter(buildTestFilter()))
+                    .build())
+            .getRuleDetails();
+    ApiNamingRule firstCreatedApiNamingRule = firstCreatedApiNamingRuleDetails.getRule();
+    Timestamp expectedTimestamp = Timestamp.newBuilder().setSeconds(100).build();
+    assertEquals(
+        expectedTimestamp, firstCreatedApiNamingRuleDetails.getMetadata().getCreationTimestamp());
+    assertEquals(
+        expectedTimestamp,
+        firstCreatedApiNamingRuleDetails.getMetadata().getLastUpdatedTimestamp());
+
+    ApiNamingRule secondCreatedApiNamingRule =
+        this.spanProcessingConfigServiceStub
+            .createApiNamingRule(
+                CreateApiNamingRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ApiNamingRuleInfo.newBuilder()
+                            .setName("ruleName2")
+                            .setDisabled(true)
+                            .setRuleConfig(
+                                buildSegmentMatchingBasedConfig(List.of("regex"), List.of("value")))
+                            .setFilter(buildTestFilter()))
+                    .build())
+            .getRuleDetails()
+            .getRule();
+
+    List<ApiNamingRule> apiNamingRules = getAllApiNamingRules();
+    assertEquals(2, apiNamingRules.size());
+    assertTrue(apiNamingRules.contains(firstCreatedApiNamingRule));
+    assertTrue(apiNamingRules.contains(secondCreatedApiNamingRule));
+
+    ApiNamingRule updatedFirstApiNamingRule =
+        this.spanProcessingConfigServiceStub
+            .updateApiNamingRule(
+                UpdateApiNamingRuleRequest.newBuilder()
+                    .setRule(
+                        UpdateApiNamingRule.newBuilder()
+                            .setId(firstCreatedApiNamingRule.getId())
+                            .setName("updatedRuleName1")
+                            .setDisabled(false)
+                            .setRuleConfig(
+                                buildSegmentMatchingBasedConfig(List.of("regex"), List.of("value")))
+                            .setFilter(buildTestFilter()))
+                    .build())
+            .getRuleDetails()
+            .getRule();
+    assertEquals("updatedRuleName1", updatedFirstApiNamingRule.getRuleInfo().getName());
+    assertFalse(updatedFirstApiNamingRule.getRuleInfo().getDisabled());
+
+    apiNamingRules = getAllApiNamingRules();
+    assertEquals(2, apiNamingRules.size());
+    assertTrue(apiNamingRules.contains(updatedFirstApiNamingRule));
+
+    this.spanProcessingConfigServiceStub.deleteApiNamingRule(
+        DeleteApiNamingRuleRequest.newBuilder().setId(firstCreatedApiNamingRule.getId()).build());
+
+    apiNamingRules = getAllApiNamingRules();
+    assertEquals(1, apiNamingRules.size());
+    assertEquals(secondCreatedApiNamingRule, apiNamingRules.get(0));
+  }
+
+  // TODO: remove this test after migration of upstream services and configs
+  @Test
+  void testApiSpecBasedApiNamingRules() {
+    List<ApiNamingRuleDetails> firstTwoCreatedApiNamingRuleDetails =
+        this.spanProcessingConfigServiceStub
+            .createApiNamingRules(
+                CreateApiNamingRulesRequest.newBuilder()
+                    .addAllRulesInfo(
+                        List.of(
+                            ApiNamingRuleInfo.newBuilder()
+                                .setName("ruleName1")
+                                .setDisabled(true)
+                                .setRuleConfig(
+                                    buildApiSpecBasedConfig(
+                                        "id1", List.of("regex"), List.of("value")))
+                                .setFilter(buildTestFilter())
+                                .build(),
+                            ApiNamingRuleInfo.newBuilder()
+                                .setName("ruleName2")
+                                .setDisabled(true)
+                                .setRuleConfig(
+                                    buildApiSpecBasedConfig(
+                                        "id2", List.of("regex"), List.of("value")))
+                                .setFilter(buildTestFilter())
+                                .build()))
+                    .build())
+            .getRulesDetailsList();
+
+    ApiNamingRuleDetails firstCreatedApiNamingRuleDetails =
+        firstTwoCreatedApiNamingRuleDetails.get(1);
+    ApiNamingRule firstCreatedApiNamingRule = firstTwoCreatedApiNamingRuleDetails.get(1).getRule();
+    ApiNamingRule secondCreatedApiNamingRule = firstTwoCreatedApiNamingRuleDetails.get(0).getRule();
+
+    List<ApiNamingRule> apiNamingRules = getAllApiNamingRules();
+    assertEquals(2, apiNamingRules.size());
+    assertTrue(apiNamingRules.contains(firstCreatedApiNamingRule));
+    assertTrue(apiNamingRules.contains(secondCreatedApiNamingRule));
+
+    Timestamp expectedTimestamp = Timestamp.newBuilder().setSeconds(100).build();
+    assertEquals(
+        expectedTimestamp, firstCreatedApiNamingRuleDetails.getMetadata().getCreationTimestamp());
+    assertEquals(
+        expectedTimestamp,
+        firstCreatedApiNamingRuleDetails.getMetadata().getLastUpdatedTimestamp());
+
+    ApiNamingRule thirdCreatedApiNamingRule =
+        this.spanProcessingConfigServiceStub
+            .createApiNamingRule(
+                CreateApiNamingRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ApiNamingRuleInfo.newBuilder()
+                            .setName("ruleName3")
+                            .setDisabled(true)
+                            .setRuleConfig(
+                                buildApiSpecBasedConfig("id3", List.of("regex"), List.of("value")))
+                            .setFilter(buildTestFilter()))
+                    .build())
+            .getRuleDetails()
+            .getRule();
+
+    apiNamingRules = getAllApiNamingRules();
+    assertEquals(3, apiNamingRules.size());
+    assertTrue(apiNamingRules.contains(firstCreatedApiNamingRule));
+    assertTrue(apiNamingRules.contains(secondCreatedApiNamingRule));
+    assertTrue(apiNamingRules.contains(thirdCreatedApiNamingRule));
+
+    ApiNamingRule updatedFirstApiNamingRule =
+        this.spanProcessingConfigServiceStub
+            .updateApiNamingRule(
+                UpdateApiNamingRuleRequest.newBuilder()
+                    .setRule(
+                        UpdateApiNamingRule.newBuilder()
+                            .setId(firstCreatedApiNamingRule.getId())
+                            .setName("updatedRuleName1")
+                            .setDisabled(false)
+                            .setRuleConfig(
+                                buildApiSpecBasedConfig("id1", List.of("regex"), List.of("value")))
+                            .setFilter(buildTestFilter()))
+                    .build())
+            .getRuleDetails()
+            .getRule();
+    assertEquals("updatedRuleName1", updatedFirstApiNamingRule.getRuleInfo().getName());
+    assertFalse(updatedFirstApiNamingRule.getRuleInfo().getDisabled());
+
+    apiNamingRules = getAllApiNamingRules();
+    assertEquals(3, apiNamingRules.size());
+    assertTrue(apiNamingRules.contains(updatedFirstApiNamingRule));
+
+    List<ApiNamingRule> updatedSecondAndThirdApiNamingRules =
+        this.spanProcessingConfigServiceStub
+            .updateApiNamingRules(
+                UpdateApiNamingRulesRequest.newBuilder()
+                    .addAllRules(
+                        List.of(
+                            UpdateApiNamingRule.newBuilder()
+                                .setId(secondCreatedApiNamingRule.getId())
+                                .setName("updatedRuleName2")
+                                .setDisabled(false)
+                                .setRuleConfig(
+                                    buildApiSpecBasedConfig(
+                                        "id2", List.of("regex"), List.of("value")))
+                                .setFilter(buildTestFilter())
+                                .build(),
+                            UpdateApiNamingRule.newBuilder()
+                                .setId(thirdCreatedApiNamingRule.getId())
+                                .setName("updatedRuleName3")
+                                .setDisabled(false)
+                                .setRuleConfig(
+                                    buildApiSpecBasedConfig(
+                                        "id3", List.of("regex"), List.of("value")))
+                                .setFilter(buildTestFilter())
+                                .build()))
+                    .build())
+            .getRulesDetailsList()
+            .stream()
+            .map(ApiNamingRuleDetails::getRule)
+            .collect(Collectors.toUnmodifiableList());
+
+    apiNamingRules = getAllApiNamingRules();
+    assertEquals(3, apiNamingRules.size());
+    assertTrue(apiNamingRules.contains(updatedSecondAndThirdApiNamingRules.get(0)));
+    assertTrue(apiNamingRules.contains(updatedSecondAndThirdApiNamingRules.get(1)));
+
+    this.spanProcessingConfigServiceStub.deleteApiNamingRule(
+        DeleteApiNamingRuleRequest.newBuilder().setId(firstCreatedApiNamingRule.getId()).build());
+
+    apiNamingRules = getAllApiNamingRules();
+    assertEquals(2, apiNamingRules.size());
+    assertTrue(apiNamingRules.contains(updatedSecondAndThirdApiNamingRules.get(0)));
+    assertTrue(apiNamingRules.contains(updatedSecondAndThirdApiNamingRules.get(1)));
+
+    this.spanProcessingConfigServiceStub.deleteApiNamingRules(
+        DeleteApiNamingRulesRequest.newBuilder()
+            .addAllIds(
+                List.of(secondCreatedApiNamingRule.getId(), thirdCreatedApiNamingRule.getId()))
+            .build());
+
+    apiNamingRules = getAllApiNamingRules();
+    assertTrue(apiNamingRules.isEmpty());
+  }
+
+  @Test
+  void testApiSpecBasedApiNamingRules_handleDuplication() {
+    List<ApiNamingRuleDetails> firstTwoCreatedApiNamingRuleDetails =
+        this.spanProcessingConfigServiceStub
+            .createApiNamingRules(
+                CreateApiNamingRulesRequest.newBuilder()
+                    .addAllRulesInfo(
+                        List.of(
+                            ApiNamingRuleInfo.newBuilder()
+                                .setName("ruleName1")
+                                .setDisabled(true)
+                                .setRuleConfig(
+                                    buildApiSpecBasedConfig(
+                                        List.of("id1"), List.of("regex"), List.of("value")))
+                                .setFilter(buildTestFilter())
+                                .build(),
+                            ApiNamingRuleInfo.newBuilder()
+                                .setName("ruleName2")
+                                .setDisabled(true)
+                                .setRuleConfig(
+                                    buildApiSpecBasedConfig(
+                                        List.of("id2"), List.of("regex1"), List.of("value1")))
+                                .setFilter(buildTestFilter())
+                                .build()))
+                    .build())
+            .getRulesDetailsList();
+
+    ApiNamingRuleDetails firstCreatedApiNamingRuleDetails =
+        firstTwoCreatedApiNamingRuleDetails.get(1);
+    ApiNamingRule firstCreatedApiNamingRule = firstTwoCreatedApiNamingRuleDetails.get(1).getRule();
+    ApiNamingRule secondCreatedApiNamingRule = firstTwoCreatedApiNamingRuleDetails.get(0).getRule();
+
+    List<ApiNamingRule> apiNamingRules = getAllApiNamingRules();
+    assertEquals(2, apiNamingRules.size());
+    assertTrue(apiNamingRules.contains(firstCreatedApiNamingRule));
+    assertTrue(apiNamingRules.contains(secondCreatedApiNamingRule));
+
+    Timestamp expectedTimestamp = Timestamp.newBuilder().setSeconds(100).build();
+    assertEquals(
+        expectedTimestamp, firstCreatedApiNamingRuleDetails.getMetadata().getCreationTimestamp());
+    assertEquals(
+        expectedTimestamp,
+        firstCreatedApiNamingRuleDetails.getMetadata().getLastUpdatedTimestamp());
+
+    ApiNamingRule thirdCreatedApiNamingRule =
+        this.spanProcessingConfigServiceStub
+            .createApiNamingRules(
+                CreateApiNamingRulesRequest.newBuilder()
+                    .addAllRulesInfo(
+                        List.of(
+                            ApiNamingRuleInfo.newBuilder()
+                                .setName("ruleName3")
+                                .setDisabled(true)
+                                .setRuleConfig(
+                                    buildApiSpecBasedConfig(
+                                        List.of("id3"), List.of("regex"), List.of("value")))
+                                .setFilter(buildTestFilter())
+                                .build()))
+                    .build())
+            .getRulesDetailsList()
+            .get(0)
+            .getRule();
+
+    apiNamingRules = getAllApiNamingRules();
+    assertEquals(2, apiNamingRules.size());
+    assertTrue(apiNamingRules.contains(firstCreatedApiNamingRule));
+    assertTrue(
+        apiNamingRules.contains(
+            ApiNamingRule.newBuilder()
+                .setId(secondCreatedApiNamingRule.getId())
+                .setRuleInfo(
+                    ApiNamingRuleInfo.newBuilder()
+                        .setName("ruleName1")
+                        .setDisabled(true)
+                        .setRuleConfig(
+                            buildApiSpecBasedConfig(
+                                List.of("id1", "id3"), List.of("regex"), List.of("value")))
+                        .setFilter(buildTestFilter())
+                        .build())
+                .build()));
+
+    ApiNamingRule updatedFirstApiNamingRule =
+        this.spanProcessingConfigServiceStub
+            .updateApiNamingRule(
+                UpdateApiNamingRuleRequest.newBuilder()
+                    .setRule(
+                        UpdateApiNamingRule.newBuilder()
+                            .setId(firstCreatedApiNamingRule.getId())
+                            .setName("updatedRuleName1")
+                            .setDisabled(false)
+                            .setRuleConfig(
+                                buildApiSpecBasedConfig(
+                                    List.of("id1", "id4"), List.of("regex"), List.of("value")))
+                            .setFilter(buildTestFilter()))
+                    .build())
+            .getRuleDetails()
+            .getRule();
+    assertEquals("updatedRuleName1", updatedFirstApiNamingRule.getRuleInfo().getName());
+    assertFalse(updatedFirstApiNamingRule.getRuleInfo().getDisabled());
+
+    apiNamingRules = getAllApiNamingRules();
+    assertEquals(2, apiNamingRules.size());
+    assertTrue(apiNamingRules.contains(updatedFirstApiNamingRule));
+
+    List<ApiNamingRule> updatedFirstAndSecondApiNamingRules =
+        this.spanProcessingConfigServiceStub
+            .updateApiNamingRules(
+                UpdateApiNamingRulesRequest.newBuilder()
+                    .addAllRules(
+                        List.of(
+                            UpdateApiNamingRule.newBuilder()
+                                .setId(firstCreatedApiNamingRule.getId())
+                                .setName("updatedRuleName1")
+                                .setDisabled(false)
+                                .setRuleConfig(
+                                    buildApiSpecBasedConfig(
+                                        List.of("id1", "id4", "id5"),
+                                        List.of("regex"),
+                                        List.of("value")))
+                                .setFilter(buildTestFilter())
+                                .build(),
+                            UpdateApiNamingRule.newBuilder()
+                                .setId(secondCreatedApiNamingRule.getId())
+                                .setName("updatedRuleName2")
+                                .setDisabled(false)
+                                .setRuleConfig(
+                                    buildApiSpecBasedConfig(
+                                        "id3", List.of("regex1"), List.of("value1")))
+                                .setFilter(buildTestFilter())
+                                .build()))
+                    .build())
+            .getRulesDetailsList()
+            .stream()
+            .map(ApiNamingRuleDetails::getRule)
+            .collect(Collectors.toUnmodifiableList());
+
+    apiNamingRules = getAllApiNamingRules();
+    assertEquals(2, apiNamingRules.size());
+    assertTrue(apiNamingRules.contains(updatedFirstAndSecondApiNamingRules.get(0)));
+    assertTrue(apiNamingRules.contains(updatedFirstAndSecondApiNamingRules.get(1)));
+
+    this.spanProcessingConfigServiceStub.deleteApiNamingRule(
+        DeleteApiNamingRuleRequest.newBuilder().setId(firstCreatedApiNamingRule.getId()).build());
+
+    apiNamingRules = getAllApiNamingRules();
+    assertEquals(1, apiNamingRules.size());
+    assertTrue(apiNamingRules.contains(updatedFirstAndSecondApiNamingRules.get(1)));
+
+    this.spanProcessingConfigServiceStub.deleteApiNamingRules(
+        DeleteApiNamingRulesRequest.newBuilder()
+            .addAllIds(List.of(secondCreatedApiNamingRule.getId()))
+            .build());
+
+    apiNamingRules = getAllApiNamingRules();
+    assertTrue(apiNamingRules.isEmpty());
+  }
+
+  // TODO: remove this test after migration of upstream services and configs
+  @Test
+  void testApiSpecBasedApiNamingRules_checkNamingRuleMatchWithOlderFormat() {
+    // shouldn't match with a naming rule of older format even if identification regexes,replacement
+    // values and filter are same
+    ApiNamingRuleDetails firstCreatedApiNamingRuleDetails =
+        this.spanProcessingConfigServiceStub
+            .createApiNamingRule(
+                CreateApiNamingRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ApiNamingRuleInfo.newBuilder()
+                            .setName("ruleName1")
+                            .setDisabled(true)
+                            .setRuleConfig(
+                                buildApiSpecBasedConfig("id1", List.of("regex"), List.of("value")))
+                            .setFilter(buildTestFilter())
+                            .build())
+                    .build())
+            .getRuleDetails();
+
+    ApiNamingRule firstCreatedApiNamingRule = firstCreatedApiNamingRuleDetails.getRule();
+
+    List<ApiNamingRule> apiNamingRules = getAllApiNamingRules();
+    assertEquals(1, apiNamingRules.size());
+    assertTrue(apiNamingRules.contains(firstCreatedApiNamingRule));
+
+    Timestamp expectedTimestamp = Timestamp.newBuilder().setSeconds(100).build();
+    assertEquals(
+        expectedTimestamp, firstCreatedApiNamingRuleDetails.getMetadata().getCreationTimestamp());
+    assertEquals(
+        expectedTimestamp,
+        firstCreatedApiNamingRuleDetails.getMetadata().getLastUpdatedTimestamp());
+
+    ApiNamingRule secondCreatedApiNamingRule =
+        this.spanProcessingConfigServiceStub
+            .createApiNamingRules(
+                CreateApiNamingRulesRequest.newBuilder()
+                    .addAllRulesInfo(
+                        List.of(
+                            ApiNamingRuleInfo.newBuilder()
+                                .setName("ruleName2")
+                                .setDisabled(true)
+                                .setRuleConfig(
+                                    buildApiSpecBasedConfig(
+                                        List.of("id3"), List.of("regex"), List.of("value")))
+                                .setFilter(buildTestFilter())
+                                .build()))
+                    .build())
+            .getRulesDetailsList()
+            .get(0)
+            .getRule();
+
+    apiNamingRules = getAllApiNamingRules();
+    assertEquals(2, apiNamingRules.size());
+    assertTrue(apiNamingRules.contains(firstCreatedApiNamingRule));
+    assertTrue(apiNamingRules.contains(secondCreatedApiNamingRule));
+  }
+
+  private List<ApiNamingRule> getAllApiNamingRules() {
+    return this.spanProcessingConfigServiceStub
+        .getAllApiNamingRules(GetAllApiNamingRulesRequest.newBuilder().build())
+        .getRuleDetailsList()
+        .stream()
+        .map(ApiNamingRuleDetails::getRule)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private SpanFilter buildTestFilter() {
+    return SpanFilter.newBuilder()
+        .setRelationalSpanFilter(
+            RelationalSpanFilterExpression.newBuilder()
+                .setField(Field.FIELD_SERVICE_NAME)
+                .setOperator(RELATIONAL_OPERATOR_CONTAINS)
+                .setRightOperand(SpanFilterValue.newBuilder().setStringValue("a")))
+        .build();
+  }
+
+  private ApiNamingRuleConfig buildSegmentMatchingBasedConfig(
+      List<String> regexes, List<String> values) {
+    return ApiNamingRuleConfig.newBuilder()
+        .setSegmentMatchingBasedConfig(
+            SegmentMatchingBasedConfig.newBuilder().addAllRegexes(regexes).addAllValues(values))
+        .build();
+  }
+
+  private ApiNamingRuleConfig buildApiSpecBasedConfig(
+      String id, List<String> regexes, List<String> values) {
+    return ApiNamingRuleConfig.newBuilder()
+        .setApiSpecBasedConfig(
+            ApiSpecBasedConfig.newBuilder()
+                .setApiSpecId(id)
+                .addAllRegexes(regexes)
+                .addAllValues(values))
+        .build();
+  }
+
+  private ApiNamingRuleConfig buildApiSpecBasedConfig(
+      List<String> id, List<String> regexes, List<String> values) {
+    return ApiNamingRuleConfig.newBuilder()
+        .setApiSpecBasedConfig(
+            ApiSpecBasedConfig.newBuilder()
+                .addAllApiSpecIds(id)
+                .addAllRegexes(regexes)
+                .addAllValues(values))
+        .build();
   }
 }

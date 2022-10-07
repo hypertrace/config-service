@@ -1,17 +1,28 @@
 package ai.traceable.span.processing.config.service;
 
+import ai.traceable.span.processing.config.service.apinamingrules.ApiNamingRulesManager;
 import ai.traceable.span.processing.config.service.protectionspanrules.ProtectionSpanRulesManager;
 import ai.traceable.span.processing.config.service.samplingconfigs.SamplingConfigManager;
 import ai.traceable.span.processing.config.service.store.DefaultProtectionSpanRuleEvaluationStatusConfigStore;
+import ai.traceable.span.processing.config.service.v1.CreateApiNamingRuleRequest;
+import ai.traceable.span.processing.config.service.v1.CreateApiNamingRuleResponse;
+import ai.traceable.span.processing.config.service.v1.CreateApiNamingRulesRequest;
+import ai.traceable.span.processing.config.service.v1.CreateApiNamingRulesResponse;
 import ai.traceable.span.processing.config.service.v1.CreateProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.CreateProtectionSpanRuleResponse;
 import ai.traceable.span.processing.config.service.v1.CreateSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.CreateSamplingConfigResponse;
 import ai.traceable.span.processing.config.service.v1.DefaultProtectionSpanRuleEvaluationStatus;
+import ai.traceable.span.processing.config.service.v1.DeleteApiNamingRuleRequest;
+import ai.traceable.span.processing.config.service.v1.DeleteApiNamingRuleResponse;
+import ai.traceable.span.processing.config.service.v1.DeleteApiNamingRulesRequest;
+import ai.traceable.span.processing.config.service.v1.DeleteApiNamingRulesResponse;
 import ai.traceable.span.processing.config.service.v1.DeleteProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteProtectionSpanRuleResponse;
 import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigResponse;
+import ai.traceable.span.processing.config.service.v1.GetAllApiNamingRulesRequest;
+import ai.traceable.span.processing.config.service.v1.GetAllApiNamingRulesResponse;
 import ai.traceable.span.processing.config.service.v1.GetAllProtectionSpanRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllProtectionSpanRulesResponse;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSpanRulesRequest;
@@ -23,6 +34,10 @@ import ai.traceable.span.processing.config.service.v1.GetAllSamplingConfigsRespo
 import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRuleEvaluationStatusRequest;
 import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRuleEvaluationStatusResponse;
 import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
+import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRuleRequest;
+import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRuleResponse;
+import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRulesRequest;
+import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRulesResponse;
 import ai.traceable.span.processing.config.service.v1.UpdateDefaultProtectionSpanRuleEvaluationStatusRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateDefaultProtectionSpanRuleEvaluationStatusResponse;
 import ai.traceable.span.processing.config.service.v1.UpdateProtectionSpanRuleRequest;
@@ -41,6 +56,7 @@ public class SpanProcessingConfigServiceImpl
 
   private final SpanProcessingConfigRequestValidator validator;
   private final SamplingConfigManager samplingConfigManager;
+  private final ApiNamingRulesManager apiNamingRulesManager;
   private final ProtectionSpanRulesManager protectionSpanRulesManager;
   private final DefaultProtectionSpanRuleEvaluationStatusConfigStore
       defaultProtectionSpanRuleEvaluationStatusStore;
@@ -49,13 +65,15 @@ public class SpanProcessingConfigServiceImpl
   @Inject
   public SpanProcessingConfigServiceImpl(
       SamplingConfigManager samplingConfigManager,
+      ApiNamingRulesManager apiNamingRulesManager,
       ProtectionSpanRulesManager protectionSpanRulesManager,
       SpanProcessingConfigRequestValidator requestValidator,
       DefaultProtectionSpanRuleEvaluationStatusConfigStore
           defaultProtectionSpanRuleEvaluationStatusStore) {
     this.validator = requestValidator;
-    this.protectionSpanRulesManager = protectionSpanRulesManager;
     this.samplingConfigManager = samplingConfigManager;
+    this.apiNamingRulesManager = apiNamingRulesManager;
+    this.protectionSpanRulesManager = protectionSpanRulesManager;
     this.defaultProtectionSpanRuleEvaluationStatusStore =
         defaultProtectionSpanRuleEvaluationStatusStore;
   }
@@ -308,6 +326,139 @@ public class SpanProcessingConfigServiceImpl
           request,
           e);
       responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getAllApiNamingRules(
+      GetAllApiNamingRulesRequest request,
+      StreamObserver<GetAllApiNamingRulesResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      this.validator.validateOrThrow(requestContext, request);
+
+      responseObserver.onNext(
+          GetAllApiNamingRulesResponse.newBuilder()
+              .addAllRuleDetails(apiNamingRulesManager.getAllApiNamingRuleDetails(requestContext))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to get all api naming rules for request: {}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void createApiNamingRule(
+      CreateApiNamingRuleRequest request,
+      StreamObserver<CreateApiNamingRuleResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      this.validator.validateOrThrow(requestContext, request);
+
+      responseObserver.onNext(
+          CreateApiNamingRuleResponse.newBuilder()
+              .setRuleDetails(apiNamingRulesManager.createApiNamingRule(requestContext, request))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error("Error creating api naming rule {}", request, exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void createApiNamingRules(
+      CreateApiNamingRulesRequest request,
+      StreamObserver<CreateApiNamingRulesResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      this.validator.validateOrThrow(requestContext, request);
+
+      responseObserver.onNext(
+          CreateApiNamingRulesResponse.newBuilder()
+              .addAllRulesDetails(
+                  apiNamingRulesManager.createApiNamingRules(requestContext, request))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error("Error creating api naming rules {}", request, exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void updateApiNamingRule(
+      UpdateApiNamingRuleRequest request,
+      StreamObserver<UpdateApiNamingRuleResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      this.validator.validateOrThrow(requestContext, request);
+
+      responseObserver.onNext(
+          UpdateApiNamingRuleResponse.newBuilder()
+              .setRuleDetails(apiNamingRulesManager.updateApiNamingRule(requestContext, request))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error("Error updating api naming rule: {}", request, exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void updateApiNamingRules(
+      UpdateApiNamingRulesRequest request,
+      StreamObserver<UpdateApiNamingRulesResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      this.validator.validateOrThrow(requestContext, request);
+
+      responseObserver.onNext(
+          UpdateApiNamingRulesResponse.newBuilder()
+              .addAllRulesDetails(
+                  apiNamingRulesManager.updateApiNamingRules(requestContext, request))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error("Error updating api naming rules: {}", request, exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void deleteApiNamingRule(
+      DeleteApiNamingRuleRequest request,
+      StreamObserver<DeleteApiNamingRuleResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      this.validator.validateOrThrow(requestContext, request);
+
+      apiNamingRulesManager.deleteApiNamingRule(requestContext, request);
+
+      responseObserver.onNext(DeleteApiNamingRuleResponse.newBuilder().build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error("Error deleting api naming rule: {}", request, exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void deleteApiNamingRules(
+      DeleteApiNamingRulesRequest request,
+      StreamObserver<DeleteApiNamingRulesResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      this.validator.validateOrThrow(requestContext, request);
+
+      apiNamingRulesManager.deleteApiNamingRules(requestContext, request);
+
+      responseObserver.onNext(DeleteApiNamingRulesResponse.newBuilder().build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error("Error deleting api naming rules: {}", request, exception);
+      responseObserver.onError(exception);
     }
   }
 }
