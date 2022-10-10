@@ -15,6 +15,7 @@ import ai.traceable.userattribution.config.service.v1.UpdateUserAttributionRuleR
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.BasicAuthenticationUserAttributionRuleData;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.CustomJsonUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.CustomTokenRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.CustomUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.EncodedLocation;
@@ -719,6 +720,74 @@ class UserAttributionConfigRequestValidatorTest {
                         UserAttributionRuleData.newBuilder()
                             .setCustomData(
                                 CustomUserAttributionRuleData.newBuilder().setYaml("key: value")))
+                    .build()));
+  }
+
+  @Test
+  void validatesCustomJsonRule() {
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+
+    assertInvalidArgStatusContaining(
+        "JSON rule data should be specified for at least one of the target attributes",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setCustomJsonData(CustomJsonUserAttributionRuleData.newBuilder()))
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Invalid JSON format",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setCustomJsonData(
+                                CustomJsonUserAttributionRuleData.newBuilder()
+                                    .setUserIdRuleData("bad-json")))
+                    .build()));
+
+    String validJsonRuleData =
+        "{\n"
+            + "  \"projector\": {\n"
+            + "    \"attributeProjector\": {\n"
+            + "      \"attributeKey\": \"http.request.header.authorization\",\n"
+            + "      \"attributeRule\": {\n"
+            + "        \"initialActions\": [\n"
+            + "          {\n"
+            + "            \"attributeArrayAppend\": {\n"
+            + "              \"attributeKey\": \"traceableai.auth.types\",\n"
+            + "              \"valueProjectionRule\": {\n"
+            + "                \"projector\": {\n"
+            + "                  \"valueProjector\": {\n"
+            + "                    \"value\": \"Basic\"\n"
+            + "                  }\n"
+            + "                }\n"
+            + "              }\n"
+            + "            }\n"
+            + "          }\n"
+            + "        ]\n"
+            + "      }\n"
+            + "    }\n"
+            + "  }\n"
+            + "}";
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setCustomJsonData(
+                                CustomJsonUserAttributionRuleData.newBuilder()
+                                    .setAuthTypeRuleData(validJsonRuleData)))
                     .build()));
   }
 

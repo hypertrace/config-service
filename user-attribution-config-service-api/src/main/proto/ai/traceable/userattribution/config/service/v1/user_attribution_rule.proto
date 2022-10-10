@@ -42,12 +42,19 @@ message UserAttributionRuleData {
     JwtUserAttributionRuleData jwt_data = 2;
     ResponseBodyUserAttributionRuleData response_body_data = 3;
     RequestHeaderUserAttributionRuleData request_header_data = 4;
-    CustomUserAttributionRuleData custom_data = 5;
+    CustomUserAttributionRuleData custom_data = 5;  // custom yaml rule
     CustomTokenRuleData custom_token_data = 6;
+    CustomJsonUserAttributionRuleData custom_json_data = 7; // custom json rule
   }
 
   message CustomUserAttributionRuleData {
     string yaml = 1;
+  }
+
+  message CustomJsonUserAttributionRuleData {
+    optional string user_id_rule_data = 1;
+    optional string role_rule_data = 2;
+    optional string auth_type_rule_data = 3;
   }
 
   message BasicAuthenticationUserAttributionRuleData {

@@ -8,6 +8,7 @@ dependencies {
   api(projects.userAttributionConfigServiceApi)
   implementation(libs.hypertrace.configservice.api)
   implementation(projects.configUtils)
+  implementation(projects.externalAgentAttributeConfigServiceApi)
   implementation(libs.guice)
   implementation(libs.guava)
   implementation(libs.re2j)
@@ -21,6 +22,7 @@ dependencies {
   implementation(libs.hypertrace.configservice.changeeventgenerator)
   implementation(libs.jackson.yaml)
   implementation(libs.re2j)
+  implementation(libs.protobuf.javautil)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

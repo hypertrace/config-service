@@ -4,6 +4,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
+import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule;
 import ai.traceable.userattribution.config.service.v1.CreateUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.DeleteUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest;
@@ -11,6 +12,7 @@ import ai.traceable.userattribution.config.service.v1.RankUserAttributionRuleReq
 import ai.traceable.userattribution.config.service.v1.UpdateUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.CustomJsonUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.CustomTokenRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.CustomUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.EncodedLocation;
@@ -25,6 +27,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.util.JsonFormat;
+import com.google.protobuf.util.JsonFormat.Parser;
 import com.google.re2j.Pattern;
 import io.grpc.Status;
 import java.util.List;
@@ -36,6 +41,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class UserAttributionConfigRequestValidator {
   private static final ObjectMapper YAML_OBJECT_MAPPER = new ObjectMapper(new YAMLFactory());
+  private static final Parser JSON_FORMAT_PARSER = JsonFormat.parser();
   private final AuthenticationValidator authenticationValidator;
 
   public void validateOrThrow(
@@ -109,6 +115,9 @@ public class UserAttributionConfigRequestValidator {
       case CUSTOM_DATA:
         this.validateCustomRuleData(ruleData.getCustomData());
         break;
+      case CUSTOM_JSON_DATA:
+        this.validateCustomJsonRuleData(ruleData.getCustomJsonData());
+        break;
       case DATA_NOT_SET:
       default:
         throw Status.INVALID_ARGUMENT
@@ -121,6 +130,26 @@ public class UserAttributionConfigRequestValidator {
     validateNonDefaultPresenceOrThrow(
         customRuleData, CustomUserAttributionRuleData.YAML_FIELD_NUMBER);
     this.validateValidYaml(customRuleData.getYaml());
+  }
+
+  private void validateCustomJsonRuleData(CustomJsonUserAttributionRuleData customJsonRuleData) {
+    if (!customJsonRuleData.hasUserIdRuleData()
+        && !customJsonRuleData.hasRoleRuleData()
+        && !customJsonRuleData.hasAuthTypeRuleData()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "JSON rule data should be specified for at least one of the target attributes")
+          .asRuntimeException();
+    }
+    if (customJsonRuleData.hasUserIdRuleData()) {
+      this.validateJsonRuleData(customJsonRuleData.getUserIdRuleData());
+    }
+    if (customJsonRuleData.hasRoleRuleData()) {
+      this.validateJsonRuleData(customJsonRuleData.getRoleRuleData());
+    }
+    if (customJsonRuleData.hasAuthTypeRuleData()) {
+      this.validateJsonRuleData(customJsonRuleData.getAuthTypeRuleData());
+    }
   }
 
   private void validateRequestHeaderRuleData(
@@ -236,6 +265,18 @@ public class UserAttributionConfigRequestValidator {
     } catch (JsonProcessingException e) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Invalid yaml")
+          .withCause(e)
+          .asRuntimeException();
+    }
+  }
+
+  private void validateJsonRuleData(String jsonRuleData) {
+    try {
+      AttributeRule.Builder attributeRuleBuilder = AttributeRule.newBuilder();
+      JSON_FORMAT_PARSER.merge(jsonRuleData, attributeRuleBuilder);
+    } catch (InvalidProtocolBufferException e) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Invalid JSON format")
           .withCause(e)
           .asRuntimeException();
     }
