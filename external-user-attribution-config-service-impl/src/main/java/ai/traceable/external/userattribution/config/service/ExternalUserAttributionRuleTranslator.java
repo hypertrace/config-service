@@ -122,6 +122,9 @@ class ExternalUserAttributionRuleTranslator {
           return this.translateUserResponseBody(rule.getData().getResponseBodyData());
         case REQUEST_HEADER_DATA:
           return this.translateUserRequestHeader(rule.getData().getRequestHeaderData());
+        case CUSTOM_TOKEN_DATA:
+        case CUSTOM_JSON_DATA:
+          return Stream.empty();
         case DATA_NOT_SET:
         default:
           log.error("Unrecognized rule: {}", rule);

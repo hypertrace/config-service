@@ -1,8 +1,10 @@
 package ai.traceable.external.agent.attribute.config.service;
 
 import ai.traceable.external.agent.attribute.config.service.translator.BasicAuthRuleTranslator;
+import ai.traceable.external.agent.attribute.config.service.translator.CustomJsonRuleTranslator;
 import ai.traceable.external.agent.attribute.config.service.translator.CustomTokenRuleTranslator;
 import ai.traceable.external.agent.attribute.config.service.translator.JwtRuleTranslator;
+import ai.traceable.external.agent.attribute.config.service.translator.NoOpYamlRuleTranslator;
 import ai.traceable.external.agent.attribute.config.service.translator.RequestHeaderRuleTranslator;
 import ai.traceable.external.agent.attribute.config.service.translator.ResponseBodyRuleTranslator;
 import ai.traceable.external.agent.attribute.config.service.translator.RuleTranslator;
@@ -29,7 +31,9 @@ class ExternalAgentAttributeConfigServiceModule extends AbstractModule {
     Multibinder<RuleTranslator> multibinder =
         Multibinder.newSetBinder(binder(), RuleTranslator.class);
     multibinder.addBinding().to(BasicAuthRuleTranslator.class);
+    multibinder.addBinding().to(CustomJsonRuleTranslator.class);
     multibinder.addBinding().to(CustomTokenRuleTranslator.class);
+    multibinder.addBinding().to(NoOpYamlRuleTranslator.class);
     multibinder.addBinding().to(JwtRuleTranslator.class);
     multibinder.addBinding().to(RequestHeaderRuleTranslator.class);
     multibinder.addBinding().to(ResponseBodyRuleTranslator.class);
