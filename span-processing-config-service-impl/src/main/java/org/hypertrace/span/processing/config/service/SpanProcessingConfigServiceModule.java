@@ -7,7 +7,6 @@ import io.grpc.BindableService;
 import io.grpc.Channel;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
-import org.hypertrace.span.processing.config.service.apinamingrules.ApiNamingRulesManagerModule;
 
 public class SpanProcessingConfigServiceModule extends AbstractModule {
   private final Channel channel;
@@ -22,8 +21,6 @@ public class SpanProcessingConfigServiceModule extends AbstractModule {
   protected void configure() {
     bind(BindableService.class).to(SpanProcessingConfigServiceImpl.class);
     bind(Config.class).toInstance(config);
-
-    install(new ApiNamingRulesManagerModule());
   }
 
   @Provides
