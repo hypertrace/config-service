@@ -43,14 +43,11 @@ class DefaultRegionBlockingManager implements RegionBlockingManager {
                 GetRegionRulesFilter.newBuilder()
                     .setDisabled(false)
                     .setRuleScope(
-                        environmentId
-                            .map(
-                                id ->
-                                    RuleScope.newBuilder()
-                                        .setEnvironmentScope(
-                                            EnvironmentScope.newBuilder().addEnvironmentIds(id))
-                                        .build())
-                            .orElse(RuleScope.getDefaultInstance())))
+                        RuleScope.newBuilder()
+                            .setEnvironmentScope(
+                                environmentId
+                                    .map(id -> EnvironmentScope.newBuilder().addEnvironmentIds(id))
+                                    .orElse(EnvironmentScope.newBuilder()))))
             .build();
     List<RegionRule> regionRules =
         requestContext.call(

@@ -26,6 +26,7 @@ public class TraceableConfigServiceIntegrationTestBase {
   private static final Collection CONFIGURATIONS_COLLECTION = getConfigurationsCollection();
   protected static ManagedChannel managedChannelForInternalServices;
   protected static ManagedChannel managedChannelForExternalServices;
+  protected static MockActorService mockActorService;
   private static Server mockActorServer;
   private static Server mockInsightsServer;
   private static Server mockLicenseMeteringServer;
@@ -41,8 +42,8 @@ public class TraceableConfigServiceIntegrationTestBase {
     managedChannelForExternalServices =
         ManagedChannelBuilder.forAddress("localhost", 60102).usePlaintext().build();
 
-    mockActorServer =
-        ServerBuilder.forPort(60888).addService(new MockActorService()).build().start();
+    mockActorService = new MockActorService();
+    mockActorServer = ServerBuilder.forPort(60888).addService(mockActorService).build().start();
     mockInsightsServer =
         ServerBuilder.forPort(60098).addService(new MockInsightsService()).build().start();
     mockLicenseMeteringServer =

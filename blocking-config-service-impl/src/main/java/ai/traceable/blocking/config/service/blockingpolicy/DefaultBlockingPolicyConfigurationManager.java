@@ -65,7 +65,10 @@ public class DefaultBlockingPolicyConfigurationManager
           .addAllBlockingDetailsList(blockingDetailsList)
           .build();
     } catch (Exception e) {
-      log.error("Unable to create blocking policy configuration", e);
+      log.error(
+          "Unable to create blocking policy configuration for tenant:{} ",
+          requestContext.getTenantId(),
+          e);
     }
     return BlockingPolicyConfiguration.newBuilder().setHash(requestHash).build();
   }

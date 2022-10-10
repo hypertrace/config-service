@@ -15,6 +15,9 @@ public class MockFeatureFlagService extends FeatureFlagServiceImplBase {
         GetCurrentFlagValuesResponse.newBuilder()
             .putValues(
                 "data-classification.mvp", FeatureFlagValue.newBuilder().setBoolean(true).build())
+            .putValues(
+                "enricher.ipqs-ip-intelligence",
+                FeatureFlagValue.newBuilder().setBoolean(true).build())
             .build());
     responseObserver.onCompleted();
   }
