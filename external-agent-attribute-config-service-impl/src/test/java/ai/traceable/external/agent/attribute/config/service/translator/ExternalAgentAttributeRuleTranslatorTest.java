@@ -1,14 +1,20 @@
 package ai.traceable.external.agent.attribute.config.service.translator;
 
+import static java.util.Collections.emptyList;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import ai.traceable.external.agent.attribute.config.service.ExternalAgentAttributeConfigServiceConfig;
 import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRules;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class ExternalAgentAttributeRuleTranslatorTest {
+  private ExternalAgentAttributeConfigServiceConfig mockConfig =
+      mock(ExternalAgentAttributeConfigServiceConfig.class);
 
   private final AttributeKeysExtractor attributeKeysExtractor = new AttributeKeysExtractor();
   private final AttributeRuleBuilder attributeRuleBuilder = new AttributeRuleBuilder();
@@ -21,7 +27,8 @@ class ExternalAgentAttributeRuleTranslatorTest {
               new RequestHeaderRuleTranslator(attributeKeysExtractor, attributeRuleBuilder),
               new ResponseBodyRuleTranslator(attributeRuleBuilder)),
           attributeRuleBuilder,
-          new UrlScopeTranslator(attributeRuleBuilder));
+          new UrlScopeTranslator(attributeRuleBuilder),
+          mockConfig);
 
   @Test
   void translateRules() throws IOException {
@@ -33,14 +40,32 @@ class ExternalAgentAttributeRuleTranslatorTest {
                 TestUtils.getUserAttributionRule("jwt/header/input_rule.json"),
                 TestUtils.getUserAttributionRule("request_header/input_rule.json"),
                 TestUtils.getUserAttributionRule("response_body/input_rule.json")));
-    Assertions.assertEquals(
+    assertEquals(
         TestUtils.getExpectedAgentAttributeRules("agent_attribute_rules.json"), translatedRules);
   }
 
   @Test
   void translateNoRule() {
-    Assertions.assertEquals(
-        AgentAttributeRules.getDefaultInstance(),
-        translator.translateRules(Collections.emptyList()));
+    assertEquals(AgentAttributeRules.getDefaultInstance(), translator.translateRules(emptyList()));
+  }
+
+  @Test
+  void translateSystemRules() throws IOException {
+    final AgentAttributeRules rules =
+        TestUtils.getExpectedAgentAttributeRules("system_rules/input_system_rules.json");
+    when(mockConfig.getSystemAuthTypeRules())
+        .thenReturn(
+            rules
+                .getAgentAttributeRule(0)
+                .getRootRule()
+                .getProjector()
+                .getEachMatchingProjector()
+                .getAttributeRules(0)
+                .getProjector()
+                .getEachMatchingProjector()
+                .getAttributeRulesList());
+
+    final AgentAttributeRules translatedRules = translator.translateRules(emptyList());
+    assertEquals(rules, translatedRules);
   }
 }

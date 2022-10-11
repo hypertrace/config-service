@@ -43,7 +43,7 @@ public class CustomJsonRuleTranslator implements RuleTranslator {
     return Stream.empty();
   }
 
-  private Stream<AttributeRule> translateRule(String jsonRuleData) {
+  public Stream<AttributeRule> translateRule(String jsonRuleData) {
     AttributeRule.Builder attributeRuleBuilder = AttributeRule.newBuilder();
     try {
       PARSER.merge(jsonRuleData, attributeRuleBuilder);
