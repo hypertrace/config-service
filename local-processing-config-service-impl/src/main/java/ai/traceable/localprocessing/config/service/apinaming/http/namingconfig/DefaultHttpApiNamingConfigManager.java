@@ -15,6 +15,10 @@ import ai.traceable.localprocessing.config.service.v1.HttpApiNamingCustomRule;
 import ai.traceable.localprocessing.config.service.v1.Segment;
 import ai.traceable.localprocessing.config.service.v1.Wildcard;
 import ai.traceable.platform.apientity.TrieNodeType;
+import ai.traceable.span.processing.config.service.v1.ApiNamingRule;
+import ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig;
+import ai.traceable.span.processing.config.service.v1.ApiSpecBasedConfig;
+import ai.traceable.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -22,10 +26,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.span.processing.config.service.v1.ApiNamingRule;
-import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
-import org.hypertrace.span.processing.config.service.v1.ApiSpecBasedConfig;
-import org.hypertrace.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 
 @Slf4j
 public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigManager {

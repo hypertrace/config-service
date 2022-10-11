@@ -9,6 +9,7 @@ import ai.traceable.localprocessing.config.service.apinaming.http.utils.LocalApi
 import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelRequest;
 import ai.traceable.localprocessing.config.service.v1.HttpServiceResponse;
 import ai.traceable.localprocessing.config.service.v1.ServiceRequest;
+import ai.traceable.span.processing.config.service.v1.ApiNamingRule;
 import com.google.inject.Inject;
 import com.google.protobuf.Duration;
 import java.util.ArrayList;
@@ -19,7 +20,6 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
-import org.hypertrace.span.processing.config.service.v1.ApiNamingRule;
 
 @Slf4j
 class DefaultHttpApiNamingManager implements HttpApiNamingManager {

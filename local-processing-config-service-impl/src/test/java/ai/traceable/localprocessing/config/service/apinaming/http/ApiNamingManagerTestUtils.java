@@ -1,5 +1,8 @@
 package ai.traceable.localprocessing.config.service.apinaming.http;
 
+import static ai.traceable.span.processing.config.service.v1.Field.FIELD_ENVIRONMENT_NAME;
+import static ai.traceable.span.processing.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_IN;
+
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
@@ -26,24 +29,22 @@ import ai.traceable.platform.apientity.Segment;
 import ai.traceable.platform.apientity.TrieDiffLog;
 import ai.traceable.platform.apientity.TrieNodeType;
 import ai.traceable.platform.apientity.http.model.TrieNodeConfig;
+import ai.traceable.span.processing.config.service.v1.ApiNamingRule;
+import ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig;
+import ai.traceable.span.processing.config.service.v1.ApiNamingRuleDetails;
+import ai.traceable.span.processing.config.service.v1.ApiNamingRuleInfo;
+import ai.traceable.span.processing.config.service.v1.ApiSpecBasedConfig;
+import ai.traceable.span.processing.config.service.v1.GetAllApiNamingRulesResponse;
+import ai.traceable.span.processing.config.service.v1.ListValue;
+import ai.traceable.span.processing.config.service.v1.RelationalSpanFilterExpression;
+import ai.traceable.span.processing.config.service.v1.SegmentMatchingBasedConfig;
+import ai.traceable.span.processing.config.service.v1.SpanFilter;
+import ai.traceable.span.processing.config.service.v1.SpanFilterValue;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import org.hypertrace.span.processing.config.service.v1.ApiNamingRule;
-import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleConfig;
-import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleDetails;
-import org.hypertrace.span.processing.config.service.v1.ApiNamingRuleInfo;
-import org.hypertrace.span.processing.config.service.v1.ApiSpecBasedConfig;
-import org.hypertrace.span.processing.config.service.v1.Field;
-import org.hypertrace.span.processing.config.service.v1.GetAllApiNamingRulesResponse;
-import org.hypertrace.span.processing.config.service.v1.ListValue;
-import org.hypertrace.span.processing.config.service.v1.RelationalOperator;
-import org.hypertrace.span.processing.config.service.v1.RelationalSpanFilterExpression;
-import org.hypertrace.span.processing.config.service.v1.SegmentMatchingBasedConfig;
-import org.hypertrace.span.processing.config.service.v1.SpanFilter;
-import org.hypertrace.span.processing.config.service.v1.SpanFilterValue;
 
 public class ApiNamingManagerTestUtils {
   private static final String SERVICE_ID1 = "serviceId1";
@@ -362,8 +363,8 @@ public class ApiNamingManagerTestUtils {
     return SpanFilter.newBuilder()
         .setRelationalSpanFilter(
             RelationalSpanFilterExpression.newBuilder()
-                .setField(Field.FIELD_ENVIRONMENT_NAME)
-                .setOperator(RelationalOperator.RELATIONAL_OPERATOR_IN)
+                .setField(FIELD_ENVIRONMENT_NAME)
+                .setOperator(RELATIONAL_OPERATOR_IN)
                 .setRightOperand(
                     SpanFilterValue.newBuilder()
                         .setListValue(
