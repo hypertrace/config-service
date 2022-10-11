@@ -29,7 +29,6 @@ dependencies {
   implementation(libs.traceable.apiNamingModel)
   implementation(libs.traceable.platformGateway.deepDataStore)
   implementation(libs.traceable.platformGateway.trainingEvaluationFramework)
-  implementation(libs.rholder.guava.retrying)
   implementation(libs.hypertrace.framework.metrics)
 
   annotationProcessor(libs.lombok)

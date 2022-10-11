@@ -6,6 +6,9 @@ import ai.traceable.localprocessing.config.service.v1.ApiNamingPatterns;
 import ai.traceable.localprocessing.config.service.v1.DiffLog;
 import ai.traceable.localprocessing.config.service.v1.DiffPattern;
 import ai.traceable.localprocessing.config.service.v1.FullPattern;
+import ai.traceable.platform.apientity.http.difflog.TrieDiffLogModel;
+import ai.traceable.platform.apientity.http.model.TrieModel;
+import ai.traceable.platform.model.PersistedModel;
 import ai.traceable.platform.model.store.ServiceScope;
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -19,6 +22,9 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class DefaultHttpApiNamingTrieManager implements HttpApiNamingTrieManager {
+
+  private static final String SEMICOLON_DELIMITER = ";";
+  private static final String ZERO_VERSION = "0.0.0";
 
   private final HttpApiNamingConfig httpApiNamingConfig;
   private final FullTrieManager fullTrieManager;
@@ -56,84 +62,94 @@ public class DefaultHttpApiNamingTrieManager implements HttpApiNamingTrieManager
       throws IOException, ExecutionException {
     String tenantId = requestContext.getTenantId().orElseThrow();
     ServiceScope serviceScope = new ServiceScope(tenantId, serviceId);
-    List<DiffLog> diffLogs = Collections.emptyList();
-    long trieModelTimestampMillis = fullTrieManager.getModelTimestamp(serviceScope);
+    List<DiffLog> diffLogs;
+    List<PersistedModel<TrieDiffLogModel>> trieDiffLogModels = Collections.emptyList();
+    // Reading timestamp directly from trie model store, instead of cache. Reading it from trie
+    // model store would mean loading full trie unnecessarily occasionally as the condition to read
+    // diff logs could sometimes be broken(as it would be greater than that in the trie). However if
+    // we need to read from the cache, we would be reading the trie model each time which would be
+    // worse.
+    long latestTrieModelTimestampMillis = fullTrieManager.getModelTimestamp(serviceScope);
     long agentTimestampMillis = getAgentTimestampMillis(trieToken, serviceId, requestContext);
     boolean reloadFullTrie =
         !platformTrieVersion.equals(getAgentVersion(trieToken, serviceId, requestContext));
 
     if (!reloadFullTrie
         && agentTimestampMillis != 0
-        && trieModelTimestampMillis - agentTimestampMillis
+        && latestTrieModelTimestampMillis - agentTimestampMillis
             <= httpApiNamingConfig.getDiffLogsRetentionPeriod()) {
       if (log.isDebugEnabled()) {
         log.debug(
-            "Loading diff logs. request context:{}, serviceId:{}, AgentTimestamp:{}, trieModelTimestamp:{},diffLogRetentionPeriod:{}, reloadFullTrie:{}",
+            "Loading diff logs. request context:{}, serviceId:{}, AgentTimestamp:{}, latestTrieModelTimestamp:{},diffLogRetentionPeriod:{}, reloadFullTrie:{}",
             requestContext,
             serviceId,
             Instant.ofEpochMilli(agentTimestampMillis),
-            Instant.ofEpochMilli(trieModelTimestampMillis),
+            Instant.ofEpochMilli(latestTrieModelTimestampMillis),
             httpApiNamingConfig.getDiffLogsRetentionPeriod(),
             reloadFullTrie);
       }
-      diffLogs =
-          trieDiffLogManager.getAllTrieDiffLogs(
-              requestContext,
-              serviceScope,
-              agentTimestampMillis,
-              httpApiNamingConfigInfo.getWildcardConfigMap());
+      trieDiffLogModels =
+          trieDiffLogManager.getTrieDiffLogModels(
+              requestContext, serviceScope, agentTimestampMillis);
     }
 
-    if (!diffLogs.isEmpty()) {
-      long latestDiffLogTimestamp =
-          trieDiffLogManager.getLatestDiffLogTimestamp(
-              requestContext, serviceScope, agentTimestampMillis);
+    if (!trieDiffLogModels.isEmpty()) {
+      diffLogs =
+          trieDiffLogManager.getAllTrieDiffLogs(
+              trieDiffLogModels, httpApiNamingConfigInfo.getWildcardConfigMap());
+      long latestDiffLogTimestampMillis =
+          trieDiffLogManager.getLatestDiffLogTimestamp((trieDiffLogModels));
       if (log.isDebugEnabled()) {
         log.debug(
             "Found diff logs. Request context:{}, serviceId:{}, latestDiffLogTimestamp:{} ",
             requestContext,
             serviceId,
-            Instant.ofEpochMilli(latestDiffLogTimestamp));
+            Instant.ofEpochMilli(latestDiffLogTimestampMillis));
       }
       return ApiNamingPatterns.newBuilder()
           .setDiffPattern(getDiffPatterns(diffLogs))
-          .setToken("t=" + latestDiffLogTimestamp + ";v=" + platformTrieVersion)
+          .setToken("t=" + latestDiffLogTimestampMillis + ";v=" + platformTrieVersion)
           .build();
     } else {
       log.debug("Empty diff logs. Request context:{}, serviceId:{}", requestContext, serviceId);
-      if (agentTimestampMillis < trieModelTimestampMillis) {
-        if (log.isDebugEnabled()) {
-          log.debug(
-              "Reading full trie as agentTimestamp:{} < trieModelTimestamp:{} for request context:{}, serviceId:{}",
-              Instant.ofEpochMilli(agentTimestampMillis),
-              Instant.ofEpochMilli(trieModelTimestampMillis),
-              requestContext,
-              serviceId);
+      FullTrieManager.FullTrieData fullTrieData =
+          fullTrieManager.getTrieModelData(requestContext, serviceScope, agentTimestampMillis);
+      Optional<TrieModel> trieModelMaybe = fullTrieData.getTrieModelMaybe();
+      if (trieModelMaybe.isPresent()) {
+        TrieModel trieModel = trieModelMaybe.get();
+        long trieModelTimestampMillis = fullTrieData.getTrieModelTimestampMillis();
+        if (agentTimestampMillis < trieModelTimestampMillis) {
+          if (log.isDebugEnabled()) {
+            log.debug(
+                "Reading full trie as agentTimestamp:{} < trieModelTimestamp:{} for request context:{}, serviceId:{}",
+                Instant.ofEpochMilli(agentTimestampMillis),
+                Instant.ofEpochMilli(trieModelTimestampMillis),
+                requestContext,
+                serviceId);
+          }
+          FullPattern fullPattern =
+              fullTrieManager.getFullPattern(trieModel, httpApiNamingConfigInfo);
+          return ApiNamingPatterns.newBuilder()
+              .setFullPattern(fullPattern)
+              .setToken("t=" + trieModelTimestampMillis + ";v=" + platformTrieVersion)
+              .build();
+        } else {
+          if (log.isDebugEnabled()) {
+            log.debug(
+                "Not setting full trie/diff logs as agentTimestamp:{} >= trieModelTimestamp:{} for request context:{}, serviceId:{}",
+                Instant.ofEpochMilli(agentTimestampMillis),
+                Instant.ofEpochMilli(trieModelTimestampMillis),
+                requestContext,
+                serviceId);
+          }
         }
-        Optional<FullPattern> fullPatternMaybe =
-            fullTrieManager.getFullPattern(requestContext, serviceScope, httpApiNamingConfigInfo);
-        if (fullPatternMaybe.isEmpty()) {
-          log.error(
-              "Could not fetch full trie for request context:{}, service scope:{}",
-              requestContext,
-              serviceId);
-          return ApiNamingPatterns.newBuilder().setToken(trieToken).build();
-        }
-        return ApiNamingPatterns.newBuilder()
-            .setFullPattern(fullPatternMaybe.get())
-            .setToken("t=" + trieModelTimestampMillis + ";v=" + platformTrieVersion)
-            .build();
       } else {
-        if (log.isDebugEnabled()) {
-          log.debug(
-              "Not setting full trie/diff logs as agentTimestamp:{} >= trieModelTimestamp:{} for request context:{}, serviceId:{}",
-              Instant.ofEpochMilli(agentTimestampMillis),
-              Instant.ofEpochMilli(trieModelTimestampMillis),
-              requestContext,
-              serviceId);
-        }
-        return ApiNamingPatterns.newBuilder().setToken(trieToken).build();
+        log.error(
+            "Could not fetch full trie for request context:{}, service scope:{}",
+            requestContext,
+            serviceId);
       }
+      return ApiNamingPatterns.newBuilder().setToken(trieToken).build();
     }
   }
 
@@ -144,10 +160,10 @@ public class DefaultHttpApiNamingTrieManager implements HttpApiNamingTrieManager
   private long getAgentTimestampMillis(
       String trieToken, String serviceId, RequestContext requestContext) {
     try {
-      if (trieToken.equals("")) {
+      if (trieToken.isEmpty()) {
         return 0;
       }
-      String[] tokens = trieToken.split(";");
+      String[] tokens = trieToken.split(SEMICOLON_DELIMITER);
       return Long.parseLong(tokens[0].substring(2));
     } catch (Exception e) {
       log.error(
@@ -162,10 +178,10 @@ public class DefaultHttpApiNamingTrieManager implements HttpApiNamingTrieManager
   private String getAgentVersion(
       String trieToken, String serviceId, RequestContext requestContext) {
     try {
-      if (trieToken.equals("")) {
-        return "0.0.0";
+      if (trieToken.isEmpty()) {
+        return ZERO_VERSION;
       }
-      String[] tokens = trieToken.split(";");
+      String[] tokens = trieToken.split(SEMICOLON_DELIMITER);
       return tokens[1].substring(2);
     } catch (Exception e) {
       log.error(
@@ -173,7 +189,7 @@ public class DefaultHttpApiNamingTrieManager implements HttpApiNamingTrieManager
           trieToken,
           serviceId,
           requestContext);
-      return "0.0.0";
+      return ZERO_VERSION;
     }
   }
 }

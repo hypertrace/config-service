@@ -106,18 +106,20 @@ trieModels:
       readPriority: 1
       writeDisabled: false
   cache:
-    refreshAfterWriteDuration: 150s
-    expireAfterWriteDuration: 300s
+    refreshAfterWriteDuration: 30m
+    expireAfterWriteDuration: 60m
     maximumSize: 100
+    threadPoolSize: 2
 
 trieDiffLog:
   modelStore:
     deepStoreScheme: "file"
   trieDiffLogsRetentionPeriod: 1h
   cache:
-    refreshAfterWriteDuration: 150s
-    expireAfterWriteDuration: 300s
+    refreshAfterWriteDuration: 30m
+    expireAfterWriteDuration: 60m
     maximumSize: 100
+    threadPoolSize: 2
 
 entityFetcher:
   cache:

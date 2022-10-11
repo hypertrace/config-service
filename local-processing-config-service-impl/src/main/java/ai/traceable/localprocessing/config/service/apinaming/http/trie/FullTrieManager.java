@@ -15,6 +15,7 @@ import ai.traceable.platform.model.store.ServiceScope;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import java.io.IOException;
@@ -24,13 +25,24 @@ import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 
+/**
+ * The cache is not useful at all in case of 1TPA. Every subsequent request would be cache miss and
+ * would be loaded. However it would be useful in case of multiple TPAs polling for the same service
+ * (which would mostly arise only in daemonset mirroring kind of setups)
+ *
+ * <p>For the first agent requesting, each request would be a new load. For all the other agents
+ * with the same request, it would be returned from the cache
+ */
 @Slf4j
 public class FullTrieManager {
 
@@ -39,12 +51,15 @@ public class FullTrieManager {
   private static final String CACHE_EXPIRATION_DURATION =
       "api.naming.config.trieModels.cache.expireAfterWriteDuration";
   private static final String MAXIMUM_CACHE_SIZE = "api.naming.config.trieModels.cache.maximumSize";
+  private static final String FULL_TRIE_CACHE_THREAD_POOL_SIZE =
+      "api.naming.config.trieModels.cache.threadPoolSize";
   private static final String CACHE_NAME = "trieModelCache";
-  private static final Duration CACHE_REFRESH_DURATION_DEFAULT = Duration.ofSeconds(150);
-  private static final Duration CACHE_EXPIRATION_DURATION_DEFAULT = Duration.ofSeconds(300);
+  private static final Duration CACHE_REFRESH_DURATION_DEFAULT = Duration.ofMinutes(30);
+  private static final Duration CACHE_EXPIRATION_DURATION_DEFAULT = Duration.ofMinutes(60);
   private static final long MAXIMUM_CACHE_SIZE_DEFAULT = 100;
+  private static final int FULL_TRIE_CACHE_THREAD_POOL_SIZE_DEFAULT = 2;
 
-  private final LoadingCache<ContextualKey<ServiceScope>, Optional<TrieModel>> trieModelCache;
+  private final LoadingCache<ContextualKey<FullTrieIdentifier>, FullTrieData> trieModelCache;
   private final ModelPersistentStore<TrieModel> trieModelStore;
   private final SegmentConverter segmentConverter;
 
@@ -65,6 +80,10 @@ public class FullTrieManager {
         config.hasPath(MAXIMUM_CACHE_SIZE)
             ? config.getLong(MAXIMUM_CACHE_SIZE)
             : MAXIMUM_CACHE_SIZE_DEFAULT;
+    int fullTrieCacheThreadPoolSize =
+        config.hasPath(FULL_TRIE_CACHE_THREAD_POOL_SIZE)
+            ? config.getInt(FULL_TRIE_CACHE_THREAD_POOL_SIZE)
+            : FULL_TRIE_CACHE_THREAD_POOL_SIZE_DEFAULT;
 
     this.trieModelStore = trieModelStore;
     this.segmentConverter = segmentConverter;
@@ -74,50 +93,59 @@ public class FullTrieManager {
             .expireAfterWrite(cacheExpiryDuration.toMillis(), TimeUnit.MILLISECONDS)
             .maximumSize(maximumCacheSize)
             .recordStats()
-            .build(CacheLoader.from(this::loadTrieModel));
+            .build(
+                CacheLoader.asyncReloading(
+                    CacheLoader.from(this::loadTrieModelData),
+                    Executors.newFixedThreadPool(
+                        fullTrieCacheThreadPoolSize, this.buildFullTrieCacheThreadFactory())));
     PlatformMetricsRegistry.registerCache(CACHE_NAME, trieModelCache, Collections.emptyMap());
   }
 
-  private Optional<TrieModel> loadTrieModel(@Nonnull ContextualKey<ServiceScope> key) {
+  private FullTrieData loadTrieModelData(@Nonnull ContextualKey<FullTrieIdentifier> key) {
     try {
       log.debug(
-          "Loading trie model for request context: {}, serviceScope:{}",
+          "Loading trie model for request context: {}, FullTrieIdentifier:{}",
           key.getContext(),
           key.getData());
-      PersistedModel<TrieModel> persistedModel = trieModelStore.loadModel(key.getData());
+      PersistedModel<TrieModel> persistedModel =
+          trieModelStore.loadModel(key.getData().getServiceScope());
       if (persistedModel == null) {
         log.debug(
             "Trie model loaded for request context: {}, serviceScope:{} is null",
             key.getContext(),
             key.getData());
-        return Optional.empty();
+        return new FullTrieData(Optional.empty(), 0);
       }
-      return Optional.ofNullable(persistedModel.getModel());
+      return new FullTrieData(
+          Optional.ofNullable(persistedModel.getModel()),
+          persistedModel.getMetadata().getModificationTime());
     } catch (Exception e) {
       log.error(
           "Could not fetch trie model for request context:{} and service scope:{} with exception: {}",
           key.getContext(),
           key.getData(),
           e);
-      return Optional.empty();
+      return new FullTrieData(Optional.empty(), 0);
     }
   }
 
-  private Optional<TrieModel> getTrieModel(
-      RequestContext requestContext, ServiceScope serviceScope) {
+  public FullTrieData getTrieModelData(
+      RequestContext requestContext, ServiceScope serviceScope, long agentTimestampMillis) {
     try {
       log.debug(
           "Fetching trie model for request context: {}, serviceScope:{}",
           requestContext,
           serviceScope);
-      return trieModelCache.get(requestContext.buildInternalContextualKey(serviceScope));
+      return trieModelCache.get(
+          requestContext.buildInternalContextualKey(
+              new FullTrieIdentifier(serviceScope, agentTimestampMillis)));
     } catch (Exception e) {
       log.error(
           "Unable to get trie model for request context:{}, service scope:{} with exception:{}",
           requestContext,
           serviceScope,
           e);
-      return Optional.empty();
+      return new FullTrieData(Optional.empty(), 0);
     }
   }
 
@@ -129,22 +157,13 @@ public class FullTrieManager {
     return modelMetadata.getModificationTime();
   }
 
-  public Optional<FullPattern> getFullPattern(
-      RequestContext requestContext,
-      ServiceScope serviceScope,
-      HttpApiNamingConfigInfo httpApiNamingConfigInfo) {
-    Optional<TrieModel> trieModelMaybe = getTrieModel(requestContext, serviceScope);
-    if (trieModelMaybe.isEmpty()) {
-      return Optional.empty();
-    }
+  public FullPattern getFullPattern(
+      TrieModel trieModel, HttpApiNamingConfigInfo httpApiNamingConfigInfo) {
     List<List<Segment>> nonEmbryonicPaths =
-        trieModelMaybe
-            .get()
-            .getNonEmbryonicWildcardPaths(
-                buildTrieNodeConfig(httpApiNamingConfigInfo),
-                httpApiNamingConfigInfo.getMaxNumberOfTriePaths());
-    return Optional.of(
-        buildFullPattern(nonEmbryonicPaths, httpApiNamingConfigInfo.getWildcardConfigMap()));
+        trieModel.getNonEmbryonicWildcardPaths(
+            buildTrieNodeConfig(httpApiNamingConfigInfo),
+            httpApiNamingConfigInfo.getMaxNumberOfTriePaths());
+    return buildFullPattern(nonEmbryonicPaths, httpApiNamingConfigInfo.getWildcardConfigMap());
   }
 
   private FullPattern buildFullPattern(
@@ -174,5 +193,21 @@ public class FullTrieManager {
         List.of(httpApiNamingConfigInfo.getWildcardConfigMap().get(TrieNodeType.HIGH_CARDINALITY)),
         new HashSet<>(httpApiNamingConfigInfo.getExtensions()),
         httpApiNamingConfigInfo.getEmbryonicThreshold());
+  }
+
+  private ThreadFactory buildFullTrieCacheThreadFactory() {
+    return new ThreadFactoryBuilder().setDaemon(true).setNameFormat("full-trie-cache-%d").build();
+  }
+
+  @Value
+  private static class FullTrieIdentifier {
+    ServiceScope serviceScope;
+    long agentTimestampMillis;
+  }
+
+  @Value
+  static class FullTrieData {
+    Optional<TrieModel> trieModelMaybe;
+    long trieModelTimestampMillis;
   }
 }

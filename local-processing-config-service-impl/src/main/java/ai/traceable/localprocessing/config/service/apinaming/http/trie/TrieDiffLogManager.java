@@ -16,26 +16,22 @@ import ai.traceable.platform.model.PersistedModel;
 import ai.traceable.platform.model.filter.ModelFilter;
 import ai.traceable.platform.model.store.ModelPersistentStore;
 import ai.traceable.platform.model.store.ModelScope;
-import com.github.rholder.retry.RetryException;
-import com.github.rholder.retry.Retryer;
-import com.github.rholder.retry.RetryerBuilder;
-import com.github.rholder.retry.StopStrategies;
-import com.github.rholder.retry.WaitStrategies;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Streams;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -54,13 +50,16 @@ public class TrieDiffLogManager {
       "api.naming.config.trieDiffLog.cache.expireAfterWriteDuration";
   private static final String MAXIMUM_CACHE_SIZE =
       "api.naming.config.trieDiffLog.cache.maximumSize";
+  private static final String DIFF_LOG_CACHE_THREAD_POOL_SIZE =
+      "api.naming.config.trieDiffLog.cache.threadPoolSize";
   private static final String DIFF_LOG_DIRECTORY_NAME =
       "api.naming.config.trieDiffLog.directory.name";
   private static final String DIFF_LOG_DIRECTORY_DEFAULT_NAME = "difflog";
   private static final String CACHE_NAME = "diffLogsCache";
-  private static final Duration CACHE_REFRESH_DURATION_DEFAULT = Duration.ofSeconds(150);
-  private static final Duration CACHE_EXPIRATION_DURATION_DEFAULT = Duration.ofSeconds(300);
+  private static final Duration CACHE_REFRESH_DURATION_DEFAULT = Duration.ofMinutes(30);
+  private static final Duration CACHE_EXPIRATION_DURATION_DEFAULT = Duration.ofMinutes(60);
   private static final long MAXIMUM_CACHE_SIZE_DEFAULT = 100;
+  private static final int DIFF_LOG_CACHE_THREAD_POOL_SIZE_DEFAULT = 2;
 
   private final LoadingCache<
           ContextualKey<DiffLogIdentifier>, List<PersistedModel<TrieDiffLogModel>>>
@@ -88,6 +87,10 @@ public class TrieDiffLogManager {
         config.hasPath(MAXIMUM_CACHE_SIZE)
             ? config.getLong(MAXIMUM_CACHE_SIZE)
             : MAXIMUM_CACHE_SIZE_DEFAULT;
+    int diffLogCacheThreadPoolSize =
+        config.hasPath(DIFF_LOG_CACHE_THREAD_POOL_SIZE)
+            ? config.getInt(DIFF_LOG_CACHE_THREAD_POOL_SIZE)
+            : DIFF_LOG_CACHE_THREAD_POOL_SIZE_DEFAULT;
 
     this.trieDiffLogModelStore = trieDiffLogModelStore;
     this.httpApiNamingConfig = httpApiNamingConfig;
@@ -102,7 +105,11 @@ public class TrieDiffLogManager {
             .refreshAfterWrite(cacheRefreshDuration.toMillis(), TimeUnit.MILLISECONDS)
             .maximumSize(maximumCacheSize)
             .recordStats()
-            .build(CacheLoader.from(this::loadTrieDiffLogModels));
+            .build(
+                CacheLoader.asyncReloading(
+                    CacheLoader.from(this::loadTrieDiffLogModels),
+                    Executors.newFixedThreadPool(
+                        diffLogCacheThreadPoolSize, this.buildDiffLogCacheThreadFactory())));
     PlatformMetricsRegistry.registerCache(CACHE_NAME, diffLogsCache, Collections.emptyMap());
   }
 
@@ -113,13 +120,11 @@ public class TrieDiffLogManager {
           "Loading diff logs for request context:{}, diffLogIdentifier:{}",
           key.getContext(),
           key.getData());
-      return retry(
-          () ->
-              trieDiffLogModelStore
-                  .loadModelsInDir(key.getData().getDiffLogDirPath(), key.getData().getFilter())
-                  .values()
-                  .stream()
-                  .collect(Collectors.toUnmodifiableList()));
+      return trieDiffLogModelStore
+          .loadModelsInDir(key.getData().getDiffLogDirPath(), key.getData().getFilter())
+          .values()
+          .stream()
+          .collect(Collectors.toUnmodifiableList());
     } catch (Exception e) {
       log.error(
           "Could not fetch diff logs for request context:{} and diff log identifier : {} with exception: {}",
@@ -130,7 +135,7 @@ public class TrieDiffLogManager {
     }
   }
 
-  private List<PersistedModel<TrieDiffLogModel>> getTrieDiffLogModels(
+  public List<PersistedModel<TrieDiffLogModel>> getTrieDiffLogModels(
       RequestContext requestContext, ModelScope scope, long agentTimestampMillis)
       throws ExecutionException {
     String diffLogDirPath =
@@ -148,27 +153,8 @@ public class TrieDiffLogManager {
     return diffLogsCache.get(requestContext.buildInternalContextualKey(diffLogIdentifier));
   }
 
-  public List<DiffLog> getAllTrieDiffLogs(
-      RequestContext requestContext,
-      ModelScope scope,
-      long agentTimestampMillis,
-      Map<TrieNodeType, String> wildcardConfigMap)
-      throws ExecutionException {
-    if (log.isDebugEnabled()) {
-      log.debug(
-          "Fetching diff logs for request context: {}, modelScope: {}, agentTimestamp:{}",
-          requestContext,
-          scope,
-          Instant.ofEpochMilli(agentTimestampMillis));
-    }
-    return getAllTrieDiffLogs(
-        getTrieDiffLogModels(requestContext, scope, agentTimestampMillis), wildcardConfigMap);
-  }
-
-  public long getLatestDiffLogTimestamp(
-      RequestContext requestContext, ModelScope scope, long agentTimestampMillis)
-      throws ExecutionException {
-    return getTrieDiffLogModels(requestContext, scope, agentTimestampMillis).stream()
+  public long getLatestDiffLogTimestamp(List<PersistedModel<TrieDiffLogModel>> persistedModels) {
+    return persistedModels.stream()
         .map(persistedModel -> persistedModel.getMetadata().getModificationTime())
         .max(Long::compare)
         .orElse(0L);
@@ -187,23 +173,7 @@ public class TrieDiffLogManager {
         .toString();
   }
 
-  private <T> T retry(Callable<T> callable) throws ExecutionException, RetryException {
-    Retryer retryer =
-        RetryerBuilder.newBuilder()
-            .retryIfExceptionOfType(IOException.class)
-            .withWaitStrategy(WaitStrategies.fixedWait(100L, TimeUnit.MILLISECONDS))
-            .withStopStrategy(StopStrategies.stopAfterAttempt(2))
-            .build();
-
-    try {
-      return (T) retryer.call(callable);
-    } catch (ExecutionException | RetryException ex) {
-      log.error("Error in loading model after retrying", ex);
-      throw ex;
-    }
-  }
-
-  private List<DiffLog> getAllTrieDiffLogs(
+  public List<DiffLog> getAllTrieDiffLogs(
       List<PersistedModel<TrieDiffLogModel>> persistedModels,
       Map<TrieNodeType, String> wildcardConfigMap) {
     return persistedModels.stream()
@@ -265,6 +235,10 @@ public class TrieDiffLogManager {
     return deletion.getSegments().stream()
         .map(segment -> segmentConverter.convertSegment(segment, wildcardConfigMap))
         .collect(Collectors.toUnmodifiableList());
+  }
+
+  private ThreadFactory buildDiffLogCacheThreadFactory() {
+    return new ThreadFactoryBuilder().setDaemon(true).setNameFormat("diff-log-cache-%d").build();
   }
 
   @Value

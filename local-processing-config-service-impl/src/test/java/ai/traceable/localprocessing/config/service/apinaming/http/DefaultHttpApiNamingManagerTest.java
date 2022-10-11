@@ -124,6 +124,7 @@ class DefaultHttpApiNamingManagerTest {
     when(trieModelStore.loadModel(any())).thenReturn(persistedModel);
     when(trieModelStore.getModelMetadata(any())).thenReturn(fileMetadata);
     when(persistedModel.getModel()).thenReturn(trieModel);
+    when(persistedModel.getMetadata()).thenReturn(fileMetadata);
     when(spanProcessingConfigServiceBlockingStub.getAllApiNamingRules(any()))
         .thenReturn(ApiNamingManagerTestUtils.buildGetAllApiNamingRuleResponse());
   }

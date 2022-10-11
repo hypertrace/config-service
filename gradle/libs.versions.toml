@@ -70,7 +70,6 @@ grpc-api = { module = "io.grpc:grpc-api", version.ref = "grpc" }
 grpc-core = { module = "io.grpc:grpc-core", version.ref = "grpc" }
 grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "grpc" }
 protobuf-javautil = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protoc" }
-rholder-guava-retrying = { module = "com.github.rholder:guava-retrying", version = "2.0.0" }
 jersey-common = { module = "org.glassfish.jersey.core:jersey-common", version = "2.36" }
 
 slf4j-log4jimpl = { module = "org.apache.logging.log4j:log4j-slf4j-impl", version = "2.17.2" }

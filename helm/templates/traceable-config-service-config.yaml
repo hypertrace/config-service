@@ -106,6 +106,7 @@ data:
           refreshAfterWriteDuration = {{ .Values.trieModels.cache.refreshAfterWriteDuration }}
           expireAfterWriteDuration = {{ .Values.trieModels.cache.expireAfterWriteDuration }}
           maximumSize = {{ .Values.trieModels.cache.maximumSize }}
+          threadPoolSize = {{ .Values.trieModels.cache.threadPoolSize }}
         }
       }
       trieDiffLog = {
@@ -134,6 +135,7 @@ data:
           refreshAfterWriteDuration = {{ .Values.trieDiffLog.cache.refreshAfterWriteDuration }}
           expireAfterWriteDuration = {{ .Values.trieDiffLog.cache.expireAfterWriteDuration }}
           maximumSize = {{ .Values.trieDiffLog.cache.maximumSize }}
+          threadPoolSize = {{ .Values.trieDiffLog.cache.threadPoolSize }}
         }
       }
       entity.fetcher = {
