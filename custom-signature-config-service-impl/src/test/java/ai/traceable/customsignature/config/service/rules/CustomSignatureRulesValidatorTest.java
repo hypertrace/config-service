@@ -74,18 +74,6 @@ public class CustomSignatureRulesValidatorTest {
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
             .setName("name")
-            .setEffect(
-                RuleEffect.newBuilder()
-                    .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
-                    .build())
-            .build();
-    status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid event severity"));
-
-    request =
-        CreateCustomSignatureRuleRequest.newBuilder()
-            .setName("name")
             .setDefinition(
                 RuleDefinition.newBuilder()
                     .setClauseGroup(
@@ -277,6 +265,84 @@ public class CustomSignatureRulesValidatorTest {
             .build();
     status = rulesValidator.validate(request);
     assertEquals(Code.OK, status.getCode());
+
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
+                    .build())
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setMatchExpression(
+                                        MatchExpression.newBuilder()
+                                            .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
+                                            .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.OK, status.getCode());
+
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+                    .build())
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setMatchExpression(
+                                        MatchExpression.newBuilder()
+                                            .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
+                                            .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.OK, status.getCode());
+
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setEffect(
+                RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION).build())
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setMatchExpression(
+                                        MatchExpression.newBuilder()
+                                            .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
+                                            .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    assertTrue(status.getDescription().contains("valid event severity"));
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -596,21 +662,6 @@ public class CustomSignatureRulesValidatorTest {
         CustomSignatureRule.newBuilder()
             .setId("id")
             .setName("name")
-            .setEffect(
-                RuleEffect.newBuilder()
-                    .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
-                    .build())
-            .build();
-    status =
-        rulesValidator.validate(
-            UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid event severity"));
-
-    rule =
-        CustomSignatureRule.newBuilder()
-            .setId("id")
-            .setName("name")
             .setDefinition(
                 RuleDefinition.newBuilder()
                     .setClauseGroup(
@@ -796,6 +847,93 @@ public class CustomSignatureRulesValidatorTest {
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
     assertEquals(Code.OK, status.getCode());
+
+    rule =
+        CustomSignatureRule.newBuilder()
+            .setId("id")
+            .setName("name")
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
+                    .build())
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setMatchExpression(
+                                        MatchExpression.newBuilder()
+                                            .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
+                                            .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    status =
+        rulesValidator.validate(
+            UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
+    assertEquals(Code.OK, status.getCode());
+
+    rule =
+        CustomSignatureRule.newBuilder()
+            .setId("id")
+            .setName("name")
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+                    .build())
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setMatchExpression(
+                                        MatchExpression.newBuilder()
+                                            .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
+                                            .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    status =
+        rulesValidator.validate(
+            UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
+    assertEquals(Code.OK, status.getCode());
+
+    rule =
+        CustomSignatureRule.newBuilder()
+            .setId("id")
+            .setName("name")
+            .setEffect(
+                RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION).build())
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setMatchExpression(
+                                        MatchExpression.newBuilder()
+                                            .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
+                                            .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    status =
+        rulesValidator.validate(
+            UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    assertTrue(status.getDescription().contains("valid event severity"));
 
     rule =
         CustomSignatureRule.newBuilder()

@@ -134,14 +134,17 @@ class CustomSignatureRulesValidator implements RulesValidator {
   }
 
   private Status validateRuleEffect(RuleEffect ruleEffect, boolean responseCategory) {
-    if (ruleEffect.getEventType() == EventType.EVENT_TYPE_UNSPECIFIED) {
+    EventType eventType = ruleEffect.getEventType();
+    if (eventType == EventType.EVENT_TYPE_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule Effect should have a valid event type.");
     }
-    if (ruleEffect.getEventSeverity() == EventSeverity.EVENT_SEVERITY_UNSPECIFIED) {
+    if (eventType == EventType.EVENT_TYPE_NORMAL_DETECTION
+        && ruleEffect.getEventSeverity() == EventSeverity.EVENT_SEVERITY_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
-          "Custom Signature Rule Effect should have a valid event severity.");
+          "Custom Signature Rule Effect with alert action should have a valid event severity.");
     }
+
     if (responseCategory && INVALID_RESPONSE_EVENT_TYPES.contains(ruleEffect.getEventType())) {
       return Status.INVALID_ARGUMENT.withDescription(
           String.format(
