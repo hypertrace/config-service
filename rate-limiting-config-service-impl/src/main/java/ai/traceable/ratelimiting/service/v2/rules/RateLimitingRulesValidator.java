@@ -302,9 +302,10 @@ public class RateLimitingRulesValidator implements RulesValidator {
 
   private void validateRollingWindowThresholdConfig(
       ResourceAccessThresholdConfig.RollingWindowThresholdConfig rollingWindowThresholdConfig) {
-    validateNonDefaultPresenceOrThrow(
-        rollingWindowThresholdConfig,
-        ResourceAccessThresholdConfig.RollingWindowThresholdConfig.COUNT_ALLOWED_FIELD_NUMBER);
+    if (rollingWindowThresholdConfig.getCountAllowed() < 0) {
+      throwInvalidArgumentException(
+          "Count allowed should be greater than or equal to 0 for rolling threshold config");
+    }
     validateNonDefaultPresenceOrThrow(
         rollingWindowThresholdConfig,
         ResourceAccessThresholdConfig.RollingWindowThresholdConfig.DURATION_ISO_FIELD_NUMBER);
