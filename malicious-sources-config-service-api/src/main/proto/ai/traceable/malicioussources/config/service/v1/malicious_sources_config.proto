@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+package ai.traceable.malicioussources.config.service.v1;
+
+option java_multiple_files = true;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+message MaliciousSourcesRule {
+  string id = 1;
+  MaliciousSourcesRuleScope rule_scope = 2;
+  MaliciousSourcesRuleStatus rule_status = 3;
+  MaliciousSourcesRuleInfo rule_info = 4;
+}
+
+message MaliciousSourcesRuleScope {
+  oneof scope { // if no option selected, default is customer scope (all environments)
+    EnvironmentScope environment_scope = 1;
+  }
+}
+
+message EnvironmentScope {
+  repeated string environment_ids = 1;
+}
+
+message MaliciousSourcesRuleStatus {
+  bool disabled = 1;
+  bool internal = 2;
+}
+
+message MaliciousSourcesRuleInfo {
+  string name = 1;
+  string description = 2;
+  MaliciousSourcesRuleAction rule_action = 3;
+  MaliciousSourcesRuleConditions conditions = 4;
+}
+
+message MaliciousSourcesRuleAction {
+  RuleActionType action_type = 1;
+  ExpirationDetails expiration_details = 2;
+  EventSeverity event_severity = 3;
+}
+
+message MaliciousSourcesRuleConditions {
+  IpAddressCondition ip_range_condition = 1;
+  RegionCondition region_condition = 2;
+  IpLocationTypeCondition ip_location_type_condition = 3;
+  IpReputationCondition ip_reputation_condition = 4;
+}
+
+enum RuleActionType {
+  RULE_ACTION_TYPE_UNSPECIFIED = 0;
+  RULE_ACTION_TYPE_BLOCK = 1;
+  RULE_ACTION_TYPE_ALLOW = 2;
+  RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT = 3;
+  RULE_ACTION_TYPE_ALERT = 4;
+}
+
+message ExpirationDetails {
+  // Expiration duration represented in ISO 8601 duration format.
+  // If expiration_duration is not set and expiration_timestamp_millis is set, the value gets derived from the expiration_timestamp_millis field
+  optional google.protobuf.Duration expiration_duration = 1;
+  // Timestamp at which the blocking expires.
+  // If expiration_timestamp_millis is not set and expiration_duration is set, the value gets derived from the expiration_duration field
+  optional google.protobuf.Timestamp expiration_timestamp_millis = 2;
+}
+
+enum EventSeverity {
+  EVENT_SEVERITY_UNSPECIFIED = 0;
+  EVENT_SEVERITY_LOW = 1;
+  EVENT_SEVERITY_MEDIUM = 2;
+  EVENT_SEVERITY_HIGH = 3;
+  EVENT_SEVERITY_CRITICAL = 4;
+}
+
+message IpAddressCondition {
+  repeated string cidr_ip_ranges = 1;
+  repeated string ip_addresses = 2;
+}
+
+message RegionCondition {
+  repeated string regions = 1;
+}
+
+message IpLocationTypeCondition {
+  repeated IpLocationType ip_location_types = 1;
+}
+
+enum IpLocationType {
+  IP_LOCATION_TYPE_UNSPECIFIED = 0;
+  IP_LOCATION_TYPE_ANONYMOUS_VPN = 1;
+  IP_LOCATION_TYPE_HOSTING_PROVIDER = 2;
+  IP_LOCATION_TYPE_PUBLIC_PROXY = 3;
+  IP_LOCATION_TYPE_TOR_EXIT_NODE = 4;
+}
+
+message IpReputationCondition {
+  oneof reputation {
+    IpReputationSeverity min_ip_reputation_severity = 1;
+    int32 min_ip_reputation_score = 2;
+  }
+}
+
+enum IpReputationSeverity {
+  IP_REPUTATION_SEVERITY_UNSPECIFIED = 0;
+  IP_REPUTATION_SEVERITY_LOW = 1;
+  IP_REPUTATION_SEVERITY_MEDIUM = 2;
+  IP_REPUTATION_SEVERITY_HIGH = 3;
+  IP_REPUTATION_SEVERITY_CRITICAL = 4;
+}

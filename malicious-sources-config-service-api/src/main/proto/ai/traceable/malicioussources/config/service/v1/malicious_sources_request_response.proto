@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package ai.traceable.malicioussources.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/malicioussources/config/service/v1/malicious_sources_config.proto";
+
+message CreateMaliciousSourcesRuleRequest {
+  MaliciousSourcesRuleInfo rule_info = 1;
+  MaliciousSourcesRuleScope rule_scope = 2;
+}
+
+message CreateMaliciousSourcesRuleResponse {
+  MaliciousSourcesRule rule = 1;
+}
+
+message UpdateMaliciousSourcesRuleRequest {
+  MaliciousSourcesRule rule = 1;
+}
+
+message UpdateMaliciousSourcesRuleResponse {
+  MaliciousSourcesRule rule = 1;
+}
+
+message DeleteMaliciousSourcesRuleRequest {
+  string id = 1;
+}
+
+message DeleteMaliciousSourcesRuleResponse {
+}
+
+message GetMaliciousSourcesRulesRequest {
+  GetRulesFilter filter = 1;
+}
+
+message GetMaliciousSourcesRulesResponse {
+  repeated MaliciousSourcesRule rules = 1;
+}
+
+message GetRulesFilter {
+  repeated string rule_ids = 1;
+  MaliciousSourcesRuleScope rule_scope = 2;
+  MaliciousSourcesRuleStatus rule_status = 3;
+  repeated RuleActionType rule_action_types = 4;
+}

@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package ai.traceable.malicioussources.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/malicioussources/config/service/v1/malicious_sources_request_response.proto";
+
+service MaliciousSourcesConfigService {
+
+    rpc GetMaliciousSourcesRules (GetMaliciousSourcesRulesRequest) returns (GetMaliciousSourcesRulesResponse) {
+    }
+
+    rpc CreateMaliciousSourcesRule (CreateMaliciousSourcesRuleRequest) returns (CreateMaliciousSourcesRuleResponse) {
+    }
+
+    rpc UpdateMaliciousSourcesRule (UpdateMaliciousSourcesRuleRequest) returns (UpdateMaliciousSourcesRuleResponse) {
+    }
+
+    rpc DeleteMaliciousSourcesRule (DeleteMaliciousSourcesRuleRequest) returns (DeleteMaliciousSourcesRuleResponse) {
+    }
+}
