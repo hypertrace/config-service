@@ -1,358 +1,28 @@
 {
-  "agentAttributeRule": [
+  "attributeRules": [
     {
-      "rootRule": {
-        "projector": {
-          "eachMatchingProjector": {
-            "attributeRules": [
-              {
-                "projector": {
-                  "firstMatchingProjector": {
-                    "attributeRules": [
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "http.request.header.authorization",
-                            "attributeRule": {
-                              "projector": {
-                                "regexCaptureGroupProjector": {
-                                  "regexCaptureGroup": "(?i)Basic:? (.*)",
-                                  "attributeRule": {
-                                    "projector": {
-                                      "base64Projector": {
-                                        "attributeRule": {
-                                          "projector": {
-                                            "regexCaptureGroupProjector": {
-                                              "regexCaptureGroup": "(.*):",
-                                              "attributeRule": {
-                                                "initialActions": [
-                                                  {
-                                                    "attributeAddition": {
-                                                      "attributeKey": "enduser.id",
-                                                      "valueProjectionRule": {
-                                                        "projector": {
-                                                          "noOpProjector": {
-                                                          }
-                                                        }
-                                                      }
-                                                    }
-                                                  },
-                                                  {
-                                                    "attributeAddition": {
-                                                      "attributeKey": "enduser.id.rule",
-                                                      "valueProjectionRule": {
-                                                        "projector": {
-                                                          "valueProjector": {
-                                                            "value": "basic-auth-rule-id"
-                                                          }
-                                                        }
-                                                      }
-                                                    }
-                                                  }
-                                                ]
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "rpc.request.metadata.authorization",
-                            "attributeRule": {
-                              "projector": {
-                                "regexCaptureGroupProjector": {
-                                  "regexCaptureGroup": "(?i)Basic:? (.*)",
-                                  "attributeRule": {
-                                    "projector": {
-                                      "base64Projector": {
-                                        "attributeRule": {
-                                          "projector": {
-                                            "regexCaptureGroupProjector": {
-                                              "regexCaptureGroup": "(.*):",
-                                              "attributeRule": {
-                                                "initialActions": [
-                                                  {
-                                                    "attributeAddition": {
-                                                      "attributeKey": "enduser.id",
-                                                      "valueProjectionRule": {
-                                                        "projector": {
-                                                          "noOpProjector": {
-                                                          }
-                                                        }
-                                                      }
-                                                    }
-                                                  },
-                                                  {
-                                                    "attributeAddition": {
-                                                      "attributeKey": "enduser.id.rule",
-                                                      "valueProjectionRule": {
-                                                        "projector": {
-                                                          "valueProjector": {
-                                                            "value": "basic-auth-rule-id"
-                                                          }
-                                                        }
-                                                      }
-                                                    }
-                                                  }
-                                                ]
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "http.request.header.authorization",
-                            "attributeRule": {
-                              "projector": {
-                                "regexCaptureGroupProjector": {
-                                  "regexCaptureGroup": "^((?i)Bearer:? )?(.*)$",
-                                  "attributeRule": {
-                                    "projector": {
-                                      "jwtProjector": {
-                                        "claimRules": [
-                                          {
-                                            "key": "data-claim",
-                                            "attributeRule": {
-                                              "projector": {
-                                                "jsonProjector": {
-                                                  "jsonPathRules": [
-                                                    {
-                                                      "key": "$.id",
-                                                      "attributeRule": {
-                                                        "projector": {
-                                                          "regexCaptureGroupProjector": {
-                                                            "regexCaptureGroup": "user id is (.*)",
-                                                            "attributeRule": {
-                                                              "initialActions": [
-                                                                {
-                                                                  "attributeAddition": {
-                                                                    "attributeKey": "enduser.id",
-                                                                    "valueProjectionRule": {
-                                                                      "projector": {
-                                                                        "noOpProjector": {
-                                                                        }
-                                                                      }
-                                                                    }
-                                                                  }
-                                                                },
-                                                                {
-                                                                  "attributeAddition": {
-                                                                    "attributeKey": "enduser.id.rule",
-                                                                    "valueProjectionRule": {
-                                                                      "projector": {
-                                                                        "valueProjector": {
-                                                                          "value": "jwt-header-rule-id"
-                                                                        }
-                                                                      }
-                                                                    }
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          }
-                                                        }
-                                                      }
-                                                    }
-                                                  ]
-                                                }
-                                              }
-                                            }
-                                          }
-                                        ]
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "rpc.request.metadata.authorization",
-                            "attributeRule": {
-                              "projector": {
-                                "regexCaptureGroupProjector": {
-                                  "regexCaptureGroup": "^((?i)Bearer:? )?(.*)$",
-                                  "attributeRule": {
-                                    "projector": {
-                                      "jwtProjector": {
-                                        "claimRules": [
-                                          {
-                                            "key": "data-claim",
-                                            "attributeRule": {
-                                              "projector": {
-                                                "jsonProjector": {
-                                                  "jsonPathRules": [
-                                                    {
-                                                      "key": "$.id",
-                                                      "attributeRule": {
-                                                        "projector": {
-                                                          "regexCaptureGroupProjector": {
-                                                            "regexCaptureGroup": "user id is (.*)",
-                                                            "attributeRule": {
-                                                              "initialActions": [
-                                                                {
-                                                                  "attributeAddition": {
-                                                                    "attributeKey": "enduser.id",
-                                                                    "valueProjectionRule": {
-                                                                      "projector": {
-                                                                        "noOpProjector": {
-                                                                        }
-                                                                      }
-                                                                    }
-                                                                  }
-                                                                },
-                                                                {
-                                                                  "attributeAddition": {
-                                                                    "attributeKey": "enduser.id.rule",
-                                                                    "valueProjectionRule": {
-                                                                      "projector": {
-                                                                        "valueProjector": {
-                                                                          "value": "jwt-header-rule-id"
-                                                                        }
-                                                                      }
-                                                                    }
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          }
-                                                        }
-                                                      }
-                                                    }
-                                                  ]
-                                                }
-                                              }
-                                            }
-                                          }
-                                        ]
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "http.request.header.id-hdr",
-                            "attributeRule": {
-                              "projector": {
-                                "regexCaptureGroupProjector": {
-                                  "regexCaptureGroup": "user id is (.*)",
-                                  "attributeRule": {
-                                    "initialActions": [
-                                      {
-                                        "attributeAddition": {
-                                          "attributeKey": "enduser.id",
-                                          "valueProjectionRule": {
-                                            "projector": {
-                                              "noOpProjector": {
-                                              }
-                                            }
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "attributeAddition": {
-                                          "attributeKey": "enduser.id.rule",
-                                          "valueProjectionRule": {
-                                            "projector": {
-                                              "valueProjector": {
-                                                "value": "request-header-rule-id"
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    ]
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "rpc.request.metadata.id-hdr",
-                            "attributeRule": {
-                              "projector": {
-                                "regexCaptureGroupProjector": {
-                                  "regexCaptureGroup": "user id is (.*)",
-                                  "attributeRule": {
-                                    "initialActions": [
-                                      {
-                                        "attributeAddition": {
-                                          "attributeKey": "enduser.id",
-                                          "valueProjectionRule": {
-                                            "projector": {
-                                              "noOpProjector": {
-                                              }
-                                            }
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "attributeAddition": {
-                                          "attributeKey": "enduser.id.rule",
-                                          "valueProjectionRule": {
-                                            "projector": {
-                                              "valueProjector": {
-                                                "value": "request-header-rule-id"
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    ]
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "http.response.body",
-                            "attributeRule": {
-                              "projector": {
-                                "jsonProjector": {
-                                  "jsonPathRules": [
-                                    {
-                                      "key": "$.id",
+      "projector": {
+        "eachMatchingProjector": {
+          "attributeRules": [
+            {
+              "projector": {
+                "firstMatchingProjector": {
+                  "attributeRules": [
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "http.request.header.authorization",
+                          "attributeRule": {
+                            "projector": {
+                              "regexCaptureGroupProjector": {
+                                "regexCaptureGroup": "(?i)Basic:? (.*)",
+                                "attributeRule": {
+                                  "projector": {
+                                    "base64Projector": {
                                       "attributeRule": {
                                         "projector": {
                                           "regexCaptureGroupProjector": {
-                                            "regexCaptureGroup": "user id is (.*)",
+                                            "regexCaptureGroup": "(.*):",
                                             "attributeRule": {
                                               "initialActions": [
                                                 {
@@ -372,7 +42,7 @@
                                                     "valueProjectionRule": {
                                                       "projector": {
                                                         "valueProjector": {
-                                                          "value": "response-body-rule-id"
+                                                          "value": "basic-auth-rule-id"
                                                         }
                                                       }
                                                     }
@@ -384,27 +54,29 @@
                                         }
                                       }
                                     }
-                                  ]
+                                  }
                                 }
                               }
                             }
                           }
                         }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "rpc.response.body",
-                            "attributeRule": {
-                              "projector": {
-                                "jsonProjector": {
-                                  "jsonPathRules": [
-                                    {
-                                      "key": "$.id",
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "rpc.request.metadata.authorization",
+                          "attributeRule": {
+                            "projector": {
+                              "regexCaptureGroupProjector": {
+                                "regexCaptureGroup": "(?i)Basic:? (.*)",
+                                "attributeRule": {
+                                  "projector": {
+                                    "base64Projector": {
                                       "attributeRule": {
                                         "projector": {
                                           "regexCaptureGroupProjector": {
-                                            "regexCaptureGroup": "user id is (.*)",
+                                            "regexCaptureGroup": "(.*):",
                                             "attributeRule": {
                                               "initialActions": [
                                                 {
@@ -424,7 +96,7 @@
                                                     "valueProjectionRule": {
                                                       "projector": {
                                                         "valueProjector": {
-                                                          "value": "response-body-rule-id"
+                                                          "value": "basic-auth-rule-id"
                                                         }
                                                       }
                                                     }
@@ -436,397 +108,66 @@
                                         }
                                       }
                                     }
-                                  ]
+                                  }
                                 }
                               }
                             }
                           }
                         }
                       }
-                    ]
-                  }
-                }
-              },
-              {
-                "projector": {
-                  "firstMatchingProjector": {
-                    "attributeRules": [
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "http.request.header.authorization",
-                            "attributeRule": {
-                              "projector": {
-                                "regexCaptureGroupProjector": {
-                                  "regexCaptureGroup": "^((?i)Bearer:? )?(.*)$",
-                                  "attributeRule": {
-                                    "projector": {
-                                      "jwtProjector": {
-                                        "claimRules": [
-                                          {
-                                            "key": "data-claim",
-                                            "attributeRule": {
-                                              "projector": {
-                                                "jsonProjector": {
-                                                  "jsonPathRules": [
-                                                    {
-                                                      "key": "$.role",
-                                                      "attributeRule": {
-                                                        "projector": {
-                                                          "regexCaptureGroupProjector": {
-                                                            "regexCaptureGroup": "user role is (.*)",
-                                                            "attributeRule": {
-                                                              "initialActions": [
-                                                                {
-                                                                  "attributeAddition": {
-                                                                    "attributeKey": "enduser.role",
-                                                                    "valueProjectionRule": {
-                                                                      "projector": {
-                                                                        "noOpProjector": {
-                                                                        }
-                                                                      }
-                                                                    }
-                                                                  }
-                                                                },
-                                                                {
-                                                                  "attributeAddition": {
-                                                                    "attributeKey": "enduser.role.rule",
-                                                                    "valueProjectionRule": {
-                                                                      "projector": {
-                                                                        "valueProjector": {
-                                                                          "value": "jwt-header-rule-id"
-                                                                        }
-                                                                      }
-                                                                    }
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          }
-                                                        }
-                                                      }
-                                                    }
-                                                  ]
-                                                }
-                                              }
-                                            }
-                                          }
-                                        ]
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "rpc.request.metadata.authorization",
-                            "attributeRule": {
-                              "projector": {
-                                "regexCaptureGroupProjector": {
-                                  "regexCaptureGroup": "^((?i)Bearer:? )?(.*)$",
-                                  "attributeRule": {
-                                    "projector": {
-                                      "jwtProjector": {
-                                        "claimRules": [
-                                          {
-                                            "key": "data-claim",
-                                            "attributeRule": {
-                                              "projector": {
-                                                "jsonProjector": {
-                                                  "jsonPathRules": [
-                                                    {
-                                                      "key": "$.role",
-                                                      "attributeRule": {
-                                                        "projector": {
-                                                          "regexCaptureGroupProjector": {
-                                                            "regexCaptureGroup": "user role is (.*)",
-                                                            "attributeRule": {
-                                                              "initialActions": [
-                                                                {
-                                                                  "attributeAddition": {
-                                                                    "attributeKey": "enduser.role",
-                                                                    "valueProjectionRule": {
-                                                                      "projector": {
-                                                                        "noOpProjector": {
-                                                                        }
-                                                                      }
-                                                                    }
-                                                                  }
-                                                                },
-                                                                {
-                                                                  "attributeAddition": {
-                                                                    "attributeKey": "enduser.role.rule",
-                                                                    "valueProjectionRule": {
-                                                                      "projector": {
-                                                                        "valueProjector": {
-                                                                          "value": "jwt-header-rule-id"
-                                                                        }
-                                                                      }
-                                                                    }
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          }
-                                                        }
-                                                      }
-                                                    }
-                                                  ]
-                                                }
-                                              }
-                                            }
-                                          }
-                                        ]
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "http.request.header.role-hdr",
-                            "attributeRule": {
-                              "projector": {
-                                "regexCaptureGroupProjector": {
-                                  "regexCaptureGroup": "user role is (.*)",
-                                  "attributeRule": {
-                                    "initialActions": [
-                                      {
-                                        "attributeAddition": {
-                                          "attributeKey": "enduser.role",
-                                          "valueProjectionRule": {
-                                            "projector": {
-                                              "noOpProjector": {
-                                              }
-                                            }
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "attributeAddition": {
-                                          "attributeKey": "enduser.role.rule",
-                                          "valueProjectionRule": {
-                                            "projector": {
-                                              "valueProjector": {
-                                                "value": "request-header-rule-id"
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    ]
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "rpc.request.metadata.role-hdr",
-                            "attributeRule": {
-                              "projector": {
-                                "regexCaptureGroupProjector": {
-                                  "regexCaptureGroup": "user role is (.*)",
-                                  "attributeRule": {
-                                    "initialActions": [
-                                      {
-                                        "attributeAddition": {
-                                          "attributeKey": "enduser.role",
-                                          "valueProjectionRule": {
-                                            "projector": {
-                                              "noOpProjector": {
-                                              }
-                                            }
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "attributeAddition": {
-                                          "attributeKey": "enduser.role.rule",
-                                          "valueProjectionRule": {
-                                            "projector": {
-                                              "valueProjector": {
-                                                "value": "request-header-rule-id"
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    ]
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "http.response.body",
-                            "attributeRule": {
-                              "projector": {
-                                "jsonProjector": {
-                                  "jsonPathRules": [
-                                    {
-                                      "key": "$.role",
-                                      "attributeRule": {
-                                        "projector": {
-                                          "regexCaptureGroupProjector": {
-                                            "regexCaptureGroup": "user role is (.*)",
-                                            "attributeRule": {
-                                              "initialActions": [
-                                                {
-                                                  "attributeAddition": {
-                                                    "attributeKey": "enduser.role",
-                                                    "valueProjectionRule": {
-                                                      "projector": {
-                                                        "noOpProjector": {
-                                                        }
-                                                      }
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "attributeAddition": {
-                                                    "attributeKey": "enduser.role.rule",
-                                                    "valueProjectionRule": {
-                                                      "projector": {
-                                                        "valueProjector": {
-                                                          "value": "response-body-rule-id"
-                                                        }
-                                                      }
-                                                    }
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          }
-                                        }
-                                      }
-                                    }
-                                  ]
-                                }
-                              }
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "rpc.response.body",
-                            "attributeRule": {
-                              "projector": {
-                                "jsonProjector": {
-                                  "jsonPathRules": [
-                                    {
-                                      "key": "$.role",
-                                      "attributeRule": {
-                                        "projector": {
-                                          "regexCaptureGroupProjector": {
-                                            "regexCaptureGroup": "user role is (.*)",
-                                            "attributeRule": {
-                                              "initialActions": [
-                                                {
-                                                  "attributeAddition": {
-                                                    "attributeKey": "enduser.role",
-                                                    "valueProjectionRule": {
-                                                      "projector": {
-                                                        "noOpProjector": {
-                                                        }
-                                                      }
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "attributeAddition": {
-                                                    "attributeKey": "enduser.role.rule",
-                                                    "valueProjectionRule": {
-                                                      "projector": {
-                                                        "valueProjector": {
-                                                          "value": "response-body-rule-id"
-                                                        }
-                                                      }
-                                                    }
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          }
-                                        }
-                                      }
-                                    }
-                                  ]
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    ]
-                  }
-                }
-              },
-              {
-                "projector": {
-                  "eachMatchingProjector": {
-                    "attributeRules": [
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "http.request.header.authorization",
-                            "attributeRule": {
-                              "projector": {
-                                "regexCaptureGroupProjector": {
-                                  "regexCaptureGroup": "(?i)Basic:? (.*)",
-                                  "attributeRule": {
-                                    "projector": {
-                                      "base64Projector": {
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "http.request.header.authorization",
+                          "attributeRule": {
+                            "projector": {
+                              "regexCaptureGroupProjector": {
+                                "regexCaptureGroup": "^((?i)Bearer:? )?(.*)$",
+                                "attributeRule": {
+                                  "projector": {
+                                    "jwtProjector": {
+                                      "claimRule": {
+                                        "key": "data-claim",
                                         "attributeRule": {
                                           "projector": {
-                                            "regexCaptureGroupProjector": {
-                                              "regexCaptureGroup": "(.*):",
-                                              "attributeRule": {
-                                                "initialActions": [
-                                                  {
-                                                    "attributeArrayAppend": {
-                                                      "attributeKey": "traceableai.auth.types",
-                                                      "valueProjectionRule": {
-                                                        "projector": {
-                                                          "valueProjector": {
-                                                            "value": "Basic"
+                                            "jsonProjector": {
+                                              "jsonPathRule": {
+                                                "key": "$.id",
+                                                "attributeRule": {
+                                                  "projector": {
+                                                    "regexCaptureGroupProjector": {
+                                                      "regexCaptureGroup": "user id is (.*)",
+                                                      "attributeRule": {
+                                                        "initialActions": [
+                                                          {
+                                                            "attributeAddition": {
+                                                              "attributeKey": "enduser.id",
+                                                              "valueProjectionRule": {
+                                                                "projector": {
+                                                                  "noOpProjector": {
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          },
+                                                          {
+                                                            "attributeAddition": {
+                                                              "attributeKey": "enduser.id.rule",
+                                                              "valueProjectionRule": {
+                                                                "projector": {
+                                                                  "valueProjector": {
+                                                                    "value": "jwt-header-rule-id"
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
                                                           }
-                                                        }
-                                                      }
-                                                    }
-                                                  },
-                                                  {
-                                                    "attributeArrayAppend": {
-                                                      "attributeKey": "traceableai.auth.rules",
-                                                      "valueProjectionRule": {
-                                                        "projector": {
-                                                          "valueProjector": {
-                                                            "value": "basic-auth-rule-id"
-                                                          }
-                                                        }
+                                                        ]
                                                       }
                                                     }
                                                   }
-                                                ]
+                                                }
                                               }
                                             }
                                           }
@@ -839,49 +180,60 @@
                             }
                           }
                         }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "rpc.request.metadata.authorization",
-                            "attributeRule": {
-                              "projector": {
-                                "regexCaptureGroupProjector": {
-                                  "regexCaptureGroup": "(?i)Basic:? (.*)",
-                                  "attributeRule": {
-                                    "projector": {
-                                      "base64Projector": {
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "rpc.request.metadata.authorization",
+                          "attributeRule": {
+                            "projector": {
+                              "regexCaptureGroupProjector": {
+                                "regexCaptureGroup": "^((?i)Bearer:? )?(.*)$",
+                                "attributeRule": {
+                                  "projector": {
+                                    "jwtProjector": {
+                                      "claimRule": {
+                                        "key": "data-claim",
                                         "attributeRule": {
                                           "projector": {
-                                            "regexCaptureGroupProjector": {
-                                              "regexCaptureGroup": "(.*):",
-                                              "attributeRule": {
-                                                "initialActions": [
-                                                  {
-                                                    "attributeArrayAppend": {
-                                                      "attributeKey": "traceableai.auth.types",
-                                                      "valueProjectionRule": {
-                                                        "projector": {
-                                                          "valueProjector": {
-                                                            "value": "Basic"
+                                            "jsonProjector": {
+                                              "jsonPathRule": {
+                                                "key": "$.id",
+                                                "attributeRule": {
+                                                  "projector": {
+                                                    "regexCaptureGroupProjector": {
+                                                      "regexCaptureGroup": "user id is (.*)",
+                                                      "attributeRule": {
+                                                        "initialActions": [
+                                                          {
+                                                            "attributeAddition": {
+                                                              "attributeKey": "enduser.id",
+                                                              "valueProjectionRule": {
+                                                                "projector": {
+                                                                  "noOpProjector": {
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          },
+                                                          {
+                                                            "attributeAddition": {
+                                                              "attributeKey": "enduser.id.rule",
+                                                              "valueProjectionRule": {
+                                                                "projector": {
+                                                                  "valueProjector": {
+                                                                    "value": "jwt-header-rule-id"
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
                                                           }
-                                                        }
+                                                        ]
                                                       }
                                                     }
-                                                  },
-                                                  {
-                                                    "attributeArrayAppend": {
-                                                      "attributeKey": "traceableai.auth.rules",
-                                                      "valueProjectionRule": {
-                                                        "projector": {
-                                                          "valueProjector": {
-                                                            "value": "basic-auth-rule-id"
-                                                          }
-                                                        }
-                                                      }
-                                                    }
                                                   }
-                                                ]
+                                                }
                                               }
                                             }
                                           }
@@ -894,344 +246,39 @@
                             }
                           }
                         }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "http.request.body",
-                            "attributeRule": {
-                              "projector": {
-                                "jsonProjector": {
-                                  "jsonPathRules": [
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "http.request.header.id-hdr",
+                          "attributeRule": {
+                            "projector": {
+                              "regexCaptureGroupProjector": {
+                                "regexCaptureGroup": "user id is (.*)",
+                                "attributeRule": {
+                                  "initialActions": [
                                     {
-                                      "key": "$.my-path",
-                                      "attributeRule": {
-                                        "initialActions": [
-                                          {
-                                            "attributeArrayAppend": {
-                                              "attributeKey": "traceableai.auth.types",
-                                              "valueProjectionRule": {
-                                                "projector": {
-                                                  "valueProjector": {
-                                                    "value": "custom-auth"
-                                                  }
-                                                }
-                                              }
-                                            }
-                                          },
-                                          {
-                                            "attributeArrayAppend": {
-                                              "attributeKey": "traceableai.auth.rules",
-                                              "valueProjectionRule": {
-                                                "projector": {
-                                                  "valueProjector": {
-                                                    "value": "custom-token-rule-id"
-                                                  }
-                                                }
-                                              }
+                                      "attributeAddition": {
+                                        "attributeKey": "enduser.id",
+                                        "valueProjectionRule": {
+                                          "projector": {
+                                            "noOpProjector": {
                                             }
                                           }
-                                        ]
-                                      }
-                                    }
-                                  ]
-                                }
-                              }
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "rpc.request.body",
-                            "attributeRule": {
-                              "projector": {
-                                "jsonProjector": {
-                                  "jsonPathRules": [
-                                    {
-                                      "key": "$.my-path",
-                                      "attributeRule": {
-                                        "initialActions": [
-                                          {
-                                            "attributeArrayAppend": {
-                                              "attributeKey": "traceableai.auth.types",
-                                              "valueProjectionRule": {
-                                                "projector": {
-                                                  "valueProjector": {
-                                                    "value": "custom-auth"
-                                                  }
-                                                }
-                                              }
-                                            }
-                                          },
-                                          {
-                                            "attributeArrayAppend": {
-                                              "attributeKey": "traceableai.auth.rules",
-                                              "valueProjectionRule": {
-                                                "projector": {
-                                                  "valueProjector": {
-                                                    "value": "custom-token-rule-id"
-                                                  }
-                                                }
-                                              }
-                                            }
-                                          }
-                                        ]
-                                      }
-                                    }
-                                  ]
-                                }
-                              }
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "http.request.header.authorization",
-                            "attributeRule": {
-                              "projector": {
-                                "regexCaptureGroupProjector": {
-                                  "regexCaptureGroup": "^((?i)Bearer:? )?(.*)$",
-                                  "attributeRule": {
-                                    "projector": {
-                                      "jwtProjector": {
+                                        }
                                       }
                                     },
-                                    "beforeChildrenActions": [
-                                      {
-                                        "attributeArrayAppend": {
-                                          "attributeKey": "traceableai.auth.types",
-                                          "valueProjectionRule": {
-                                            "projector": {
-                                              "valueProjector": {
-                                                "value": "JWT authentication"
-                                              }
-                                            }
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "attributeArrayAppend": {
-                                          "attributeKey": "traceableai.auth.rules",
-                                          "valueProjectionRule": {
-                                            "projector": {
-                                              "valueProjector": {
-                                                "value": "jwt-header-rule-id"
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    ]
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "rpc.request.metadata.authorization",
-                            "attributeRule": {
-                              "projector": {
-                                "regexCaptureGroupProjector": {
-                                  "regexCaptureGroup": "^((?i)Bearer:? )?(.*)$",
-                                  "attributeRule": {
-                                    "projector": {
-                                      "jwtProjector": {
-                                      }
-                                    },
-                                    "beforeChildrenActions": [
-                                      {
-                                        "attributeArrayAppend": {
-                                          "attributeKey": "traceableai.auth.types",
-                                          "valueProjectionRule": {
-                                            "projector": {
-                                              "valueProjector": {
-                                                "value": "JWT authentication"
-                                              }
-                                            }
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "attributeArrayAppend": {
-                                          "attributeKey": "traceableai.auth.rules",
-                                          "valueProjectionRule": {
-                                            "projector": {
-                                              "valueProjector": {
-                                                "value": "jwt-header-rule-id"
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    ]
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "http.request.header.id-hdr",
-                            "attributeRule": {
-                              "initialActions": [
-                                {
-                                  "attributeArrayAppend": {
-                                    "attributeKey": "traceableai.auth.types",
-                                    "valueProjectionRule": {
-                                      "projector": {
-                                        "valueProjector": {
-                                          "value": "some-hdr-based-auth"
-                                        }
-                                      }
-                                    }
-                                  }
-                                },
-                                {
-                                  "attributeArrayAppend": {
-                                    "attributeKey": "traceableai.auth.rules",
-                                    "valueProjectionRule": {
-                                      "projector": {
-                                        "valueProjector": {
-                                          "value": "request-header-rule-id"
-                                        }
-                                      }
-                                    }
-                                  }
-                                }
-                              ]
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "rpc.request.metadata.id-hdr",
-                            "attributeRule": {
-                              "initialActions": [
-                                {
-                                  "attributeArrayAppend": {
-                                    "attributeKey": "traceableai.auth.types",
-                                    "valueProjectionRule": {
-                                      "projector": {
-                                        "valueProjector": {
-                                          "value": "some-hdr-based-auth"
-                                        }
-                                      }
-                                    }
-                                  }
-                                },
-                                {
-                                  "attributeArrayAppend": {
-                                    "attributeKey": "traceableai.auth.rules",
-                                    "valueProjectionRule": {
-                                      "projector": {
-                                        "valueProjector": {
-                                          "value": "request-header-rule-id"
-                                        }
-                                      }
-                                    }
-                                  }
-                                }
-                              ]
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "http.response.body",
-                            "attributeRule": {
-                              "projector": {
-                                "jsonProjector": {
-                                  "jsonPathRules": [
                                     {
-                                      "key": "$.id",
-                                      "attributeRule": {
-                                        "initialActions": [
-                                          {
-                                            "attributeArrayAppend": {
-                                              "attributeKey": "traceableai.auth.types",
-                                              "valueProjectionRule": {
-                                                "projector": {
-                                                  "valueProjector": {
-                                                    "value": "some-body-based-auth"
-                                                  }
-                                                }
-                                              }
-                                            }
-                                          },
-                                          {
-                                            "attributeArrayAppend": {
-                                              "attributeKey": "traceableai.auth.rules",
-                                              "valueProjectionRule": {
-                                                "projector": {
-                                                  "valueProjector": {
-                                                    "value": "response-body-rule-id"
-                                                  }
-                                                }
-                                              }
+                                      "attributeAddition": {
+                                        "attributeKey": "enduser.id.rule",
+                                        "valueProjectionRule": {
+                                          "projector": {
+                                            "valueProjector": {
+                                              "value": "request-header-rule-id"
                                             }
                                           }
-                                        ]
-                                      }
-                                    }
-                                  ]
-                                }
-                              }
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "projector": {
-                          "attributeProjector": {
-                            "attributeKey": "rpc.response.body",
-                            "attributeRule": {
-                              "projector": {
-                                "jsonProjector": {
-                                  "jsonPathRules": [
-                                    {
-                                      "key": "$.id",
-                                      "attributeRule": {
-                                        "initialActions": [
-                                          {
-                                            "attributeArrayAppend": {
-                                              "attributeKey": "traceableai.auth.types",
-                                              "valueProjectionRule": {
-                                                "projector": {
-                                                  "valueProjector": {
-                                                    "value": "some-body-based-auth"
-                                                  }
-                                                }
-                                              }
-                                            }
-                                          },
-                                          {
-                                            "attributeArrayAppend": {
-                                              "attributeKey": "traceableai.auth.rules",
-                                              "valueProjectionRule": {
-                                                "projector": {
-                                                  "valueProjector": {
-                                                    "value": "response-body-rule-id"
-                                                  }
-                                                }
-                                              }
-                                            }
-                                          }
-                                        ]
+                                        }
                                       }
                                     }
                                   ]
@@ -1241,12 +288,931 @@
                           }
                         }
                       }
-                    ]
-                  }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "rpc.request.metadata.id-hdr",
+                          "attributeRule": {
+                            "projector": {
+                              "regexCaptureGroupProjector": {
+                                "regexCaptureGroup": "user id is (.*)",
+                                "attributeRule": {
+                                  "initialActions": [
+                                    {
+                                      "attributeAddition": {
+                                        "attributeKey": "enduser.id",
+                                        "valueProjectionRule": {
+                                          "projector": {
+                                            "noOpProjector": {
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "attributeAddition": {
+                                        "attributeKey": "enduser.id.rule",
+                                        "valueProjectionRule": {
+                                          "projector": {
+                                            "valueProjector": {
+                                              "value": "request-header-rule-id"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "http.response.body",
+                          "attributeRule": {
+                            "projector": {
+                              "jsonProjector": {
+                                "jsonPathRule": {
+                                  "key": "$.id",
+                                  "attributeRule": {
+                                    "projector": {
+                                      "regexCaptureGroupProjector": {
+                                        "regexCaptureGroup": "user id is (.*)",
+                                        "attributeRule": {
+                                          "initialActions": [
+                                            {
+                                              "attributeAddition": {
+                                                "attributeKey": "enduser.id",
+                                                "valueProjectionRule": {
+                                                  "projector": {
+                                                    "noOpProjector": {
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "attributeAddition": {
+                                                "attributeKey": "enduser.id.rule",
+                                                "valueProjectionRule": {
+                                                  "projector": {
+                                                    "valueProjector": {
+                                                      "value": "response-body-rule-id"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "rpc.response.body",
+                          "attributeRule": {
+                            "projector": {
+                              "jsonProjector": {
+                                "jsonPathRule": {
+                                  "key": "$.id",
+                                  "attributeRule": {
+                                    "projector": {
+                                      "regexCaptureGroupProjector": {
+                                        "regexCaptureGroup": "user id is (.*)",
+                                        "attributeRule": {
+                                          "initialActions": [
+                                            {
+                                              "attributeAddition": {
+                                                "attributeKey": "enduser.id",
+                                                "valueProjectionRule": {
+                                                  "projector": {
+                                                    "noOpProjector": {
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "attributeAddition": {
+                                                "attributeKey": "enduser.id.rule",
+                                                "valueProjectionRule": {
+                                                  "projector": {
+                                                    "valueProjector": {
+                                                      "value": "response-body-rule-id"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
                 }
               }
-            ]
-          }
+            },
+            {
+              "projector": {
+                "firstMatchingProjector": {
+                  "attributeRules": [
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "http.request.header.authorization",
+                          "attributeRule": {
+                            "projector": {
+                              "regexCaptureGroupProjector": {
+                                "regexCaptureGroup": "^((?i)Bearer:? )?(.*)$",
+                                "attributeRule": {
+                                  "projector": {
+                                    "jwtProjector": {
+                                      "claimRule": {
+                                        "key": "data-claim",
+                                        "attributeRule": {
+                                          "projector": {
+                                            "jsonProjector": {
+                                              "jsonPathRule": {
+                                                "key": "$.role",
+                                                "attributeRule": {
+                                                  "projector": {
+                                                    "regexCaptureGroupProjector": {
+                                                      "regexCaptureGroup": "user role is (.*)",
+                                                      "attributeRule": {
+                                                        "initialActions": [
+                                                          {
+                                                            "attributeAddition": {
+                                                              "attributeKey": "enduser.role",
+                                                              "valueProjectionRule": {
+                                                                "projector": {
+                                                                  "noOpProjector": {
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          },
+                                                          {
+                                                            "attributeAddition": {
+                                                              "attributeKey": "enduser.role.rule",
+                                                              "valueProjectionRule": {
+                                                                "projector": {
+                                                                  "valueProjector": {
+                                                                    "value": "jwt-header-rule-id"
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        ]
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "rpc.request.metadata.authorization",
+                          "attributeRule": {
+                            "projector": {
+                              "regexCaptureGroupProjector": {
+                                "regexCaptureGroup": "^((?i)Bearer:? )?(.*)$",
+                                "attributeRule": {
+                                  "projector": {
+                                    "jwtProjector": {
+                                      "claimRule": {
+                                        "key": "data-claim",
+                                        "attributeRule": {
+                                          "projector": {
+                                            "jsonProjector": {
+                                              "jsonPathRule": {
+                                                "key": "$.role",
+                                                "attributeRule": {
+                                                  "projector": {
+                                                    "regexCaptureGroupProjector": {
+                                                      "regexCaptureGroup": "user role is (.*)",
+                                                      "attributeRule": {
+                                                        "initialActions": [
+                                                          {
+                                                            "attributeAddition": {
+                                                              "attributeKey": "enduser.role",
+                                                              "valueProjectionRule": {
+                                                                "projector": {
+                                                                  "noOpProjector": {
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          },
+                                                          {
+                                                            "attributeAddition": {
+                                                              "attributeKey": "enduser.role.rule",
+                                                              "valueProjectionRule": {
+                                                                "projector": {
+                                                                  "valueProjector": {
+                                                                    "value": "jwt-header-rule-id"
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        ]
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "http.request.header.role-hdr",
+                          "attributeRule": {
+                            "projector": {
+                              "regexCaptureGroupProjector": {
+                                "regexCaptureGroup": "user role is (.*)",
+                                "attributeRule": {
+                                  "initialActions": [
+                                    {
+                                      "attributeAddition": {
+                                        "attributeKey": "enduser.role",
+                                        "valueProjectionRule": {
+                                          "projector": {
+                                            "noOpProjector": {
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "attributeAddition": {
+                                        "attributeKey": "enduser.role.rule",
+                                        "valueProjectionRule": {
+                                          "projector": {
+                                            "valueProjector": {
+                                              "value": "request-header-rule-id"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "rpc.request.metadata.role-hdr",
+                          "attributeRule": {
+                            "projector": {
+                              "regexCaptureGroupProjector": {
+                                "regexCaptureGroup": "user role is (.*)",
+                                "attributeRule": {
+                                  "initialActions": [
+                                    {
+                                      "attributeAddition": {
+                                        "attributeKey": "enduser.role",
+                                        "valueProjectionRule": {
+                                          "projector": {
+                                            "noOpProjector": {
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "attributeAddition": {
+                                        "attributeKey": "enduser.role.rule",
+                                        "valueProjectionRule": {
+                                          "projector": {
+                                            "valueProjector": {
+                                              "value": "request-header-rule-id"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "http.response.body",
+                          "attributeRule": {
+                            "projector": {
+                              "jsonProjector": {
+                                "jsonPathRule": {
+                                  "key": "$.role",
+                                  "attributeRule": {
+                                    "projector": {
+                                      "regexCaptureGroupProjector": {
+                                        "regexCaptureGroup": "user role is (.*)",
+                                        "attributeRule": {
+                                          "initialActions": [
+                                            {
+                                              "attributeAddition": {
+                                                "attributeKey": "enduser.role",
+                                                "valueProjectionRule": {
+                                                  "projector": {
+                                                    "noOpProjector": {
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "attributeAddition": {
+                                                "attributeKey": "enduser.role.rule",
+                                                "valueProjectionRule": {
+                                                  "projector": {
+                                                    "valueProjector": {
+                                                      "value": "response-body-rule-id"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "rpc.response.body",
+                          "attributeRule": {
+                            "projector": {
+                              "jsonProjector": {
+                                "jsonPathRule": {
+                                  "key": "$.role",
+                                  "attributeRule": {
+                                    "projector": {
+                                      "regexCaptureGroupProjector": {
+                                        "regexCaptureGroup": "user role is (.*)",
+                                        "attributeRule": {
+                                          "initialActions": [
+                                            {
+                                              "attributeAddition": {
+                                                "attributeKey": "enduser.role",
+                                                "valueProjectionRule": {
+                                                  "projector": {
+                                                    "noOpProjector": {
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "attributeAddition": {
+                                                "attributeKey": "enduser.role.rule",
+                                                "valueProjectionRule": {
+                                                  "projector": {
+                                                    "valueProjector": {
+                                                      "value": "response-body-rule-id"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "projector": {
+                "eachMatchingProjector": {
+                  "attributeRules": [
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "http.request.header.authorization",
+                          "attributeRule": {
+                            "projector": {
+                              "regexCaptureGroupProjector": {
+                                "regexCaptureGroup": "(?i)Basic:? (.*)",
+                                "attributeRule": {
+                                  "projector": {
+                                    "base64Projector": {
+                                      "attributeRule": {
+                                        "projector": {
+                                          "regexCaptureGroupProjector": {
+                                            "regexCaptureGroup": "(.*):",
+                                            "attributeRule": {
+                                              "initialActions": [
+                                                {
+                                                  "attributeArrayAppend": {
+                                                    "attributeKey": "traceableai.auth.types",
+                                                    "valueProjectionRule": {
+                                                      "projector": {
+                                                        "valueProjector": {
+                                                          "value": "Basic"
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "attributeArrayAppend": {
+                                                    "attributeKey": "traceableai.auth.rules",
+                                                    "valueProjectionRule": {
+                                                      "projector": {
+                                                        "valueProjector": {
+                                                          "value": "basic-auth-rule-id"
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "rpc.request.metadata.authorization",
+                          "attributeRule": {
+                            "projector": {
+                              "regexCaptureGroupProjector": {
+                                "regexCaptureGroup": "(?i)Basic:? (.*)",
+                                "attributeRule": {
+                                  "projector": {
+                                    "base64Projector": {
+                                      "attributeRule": {
+                                        "projector": {
+                                          "regexCaptureGroupProjector": {
+                                            "regexCaptureGroup": "(.*):",
+                                            "attributeRule": {
+                                              "initialActions": [
+                                                {
+                                                  "attributeArrayAppend": {
+                                                    "attributeKey": "traceableai.auth.types",
+                                                    "valueProjectionRule": {
+                                                      "projector": {
+                                                        "valueProjector": {
+                                                          "value": "Basic"
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "attributeArrayAppend": {
+                                                    "attributeKey": "traceableai.auth.rules",
+                                                    "valueProjectionRule": {
+                                                      "projector": {
+                                                        "valueProjector": {
+                                                          "value": "basic-auth-rule-id"
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "http.request.body",
+                          "attributeRule": {
+                            "projector": {
+                              "jsonProjector": {
+                                "jsonPathRule": {
+                                  "key": "$.my-path",
+                                  "attributeRule": {
+                                    "initialActions": [
+                                      {
+                                        "attributeArrayAppend": {
+                                          "attributeKey": "traceableai.auth.types",
+                                          "valueProjectionRule": {
+                                            "projector": {
+                                              "valueProjector": {
+                                                "value": "custom-auth"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "attributeArrayAppend": {
+                                          "attributeKey": "traceableai.auth.rules",
+                                          "valueProjectionRule": {
+                                            "projector": {
+                                              "valueProjector": {
+                                                "value": "custom-token-rule-id"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "rpc.request.body",
+                          "attributeRule": {
+                            "projector": {
+                              "jsonProjector": {
+                                "jsonPathRule": {
+                                  "key": "$.my-path",
+                                  "attributeRule": {
+                                    "initialActions": [
+                                      {
+                                        "attributeArrayAppend": {
+                                          "attributeKey": "traceableai.auth.types",
+                                          "valueProjectionRule": {
+                                            "projector": {
+                                              "valueProjector": {
+                                                "value": "custom-auth"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "attributeArrayAppend": {
+                                          "attributeKey": "traceableai.auth.rules",
+                                          "valueProjectionRule": {
+                                            "projector": {
+                                              "valueProjector": {
+                                                "value": "custom-token-rule-id"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "http.request.header.authorization",
+                          "attributeRule": {
+                            "projector": {
+                              "regexCaptureGroupProjector": {
+                                "regexCaptureGroup": "^((?i)Bearer:? )?(.*)$",
+                                "attributeRule": {
+                                  "projector": {
+                                    "jwtProjector": {
+                                    }
+                                  },
+                                  "beforeChildrenActions": [
+                                    {
+                                      "attributeArrayAppend": {
+                                        "attributeKey": "traceableai.auth.types",
+                                        "valueProjectionRule": {
+                                          "projector": {
+                                            "valueProjector": {
+                                              "value": "JWT authentication"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "attributeArrayAppend": {
+                                        "attributeKey": "traceableai.auth.rules",
+                                        "valueProjectionRule": {
+                                          "projector": {
+                                            "valueProjector": {
+                                              "value": "jwt-header-rule-id"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "rpc.request.metadata.authorization",
+                          "attributeRule": {
+                            "projector": {
+                              "regexCaptureGroupProjector": {
+                                "regexCaptureGroup": "^((?i)Bearer:? )?(.*)$",
+                                "attributeRule": {
+                                  "projector": {
+                                    "jwtProjector": {
+                                    }
+                                  },
+                                  "beforeChildrenActions": [
+                                    {
+                                      "attributeArrayAppend": {
+                                        "attributeKey": "traceableai.auth.types",
+                                        "valueProjectionRule": {
+                                          "projector": {
+                                            "valueProjector": {
+                                              "value": "JWT authentication"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "attributeArrayAppend": {
+                                        "attributeKey": "traceableai.auth.rules",
+                                        "valueProjectionRule": {
+                                          "projector": {
+                                            "valueProjector": {
+                                              "value": "jwt-header-rule-id"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "http.request.header.id-hdr",
+                          "attributeRule": {
+                            "initialActions": [
+                              {
+                                "attributeArrayAppend": {
+                                  "attributeKey": "traceableai.auth.types",
+                                  "valueProjectionRule": {
+                                    "projector": {
+                                      "valueProjector": {
+                                        "value": "some-hdr-based-auth"
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "attributeArrayAppend": {
+                                  "attributeKey": "traceableai.auth.rules",
+                                  "valueProjectionRule": {
+                                    "projector": {
+                                      "valueProjector": {
+                                        "value": "request-header-rule-id"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "rpc.request.metadata.id-hdr",
+                          "attributeRule": {
+                            "initialActions": [
+                              {
+                                "attributeArrayAppend": {
+                                  "attributeKey": "traceableai.auth.types",
+                                  "valueProjectionRule": {
+                                    "projector": {
+                                      "valueProjector": {
+                                        "value": "some-hdr-based-auth"
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "attributeArrayAppend": {
+                                  "attributeKey": "traceableai.auth.rules",
+                                  "valueProjectionRule": {
+                                    "projector": {
+                                      "valueProjector": {
+                                        "value": "request-header-rule-id"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "http.response.body",
+                          "attributeRule": {
+                            "projector": {
+                              "jsonProjector": {
+                                "jsonPathRule": {
+                                  "key": "$.id",
+                                  "attributeRule": {
+                                    "initialActions": [
+                                      {
+                                        "attributeArrayAppend": {
+                                          "attributeKey": "traceableai.auth.types",
+                                          "valueProjectionRule": {
+                                            "projector": {
+                                              "valueProjector": {
+                                                "value": "some-body-based-auth"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "attributeArrayAppend": {
+                                          "attributeKey": "traceableai.auth.rules",
+                                          "valueProjectionRule": {
+                                            "projector": {
+                                              "valueProjector": {
+                                                "value": "response-body-rule-id"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "rpc.response.body",
+                          "attributeRule": {
+                            "projector": {
+                              "jsonProjector": {
+                                "jsonPathRule": {
+                                  "key": "$.id",
+                                  "attributeRule": {
+                                    "initialActions": [
+                                      {
+                                        "attributeArrayAppend": {
+                                          "attributeKey": "traceableai.auth.types",
+                                          "valueProjectionRule": {
+                                            "projector": {
+                                              "valueProjector": {
+                                                "value": "some-body-based-auth"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "attributeArrayAppend": {
+                                          "attributeKey": "traceableai.auth.rules",
+                                          "valueProjectionRule": {
+                                            "projector": {
+                                              "valueProjector": {
+                                                "value": "response-body-rule-id"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
         }
       }
     }

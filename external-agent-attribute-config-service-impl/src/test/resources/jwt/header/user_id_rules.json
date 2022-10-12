@@ -11,56 +11,52 @@
                 "attributeRule": {
                   "projector": {
                     "jwtProjector": {
-                      "claimRules": [
-                        {
-                          "key": "data-claim",
-                          "attributeRule": {
-                            "projector": {
-                              "jsonProjector": {
-                                "jsonPathRules": [
-                                  {
-                                    "key": "$.id",
-                                    "attributeRule": {
-                                      "projector": {
-                                        "regexCaptureGroupProjector": {
-                                          "regexCaptureGroup": "user id is (.*)",
-                                          "attributeRule": {
-                                            "initialActions": [
-                                              {
-                                                "attributeAddition": {
-                                                  "attributeKey": "enduser.id",
-                                                  "valueProjectionRule": {
-                                                    "projector": {
-                                                      "noOpProjector": {
-                                                      }
-                                                    }
-                                                  }
-                                                }
-                                              },
-                                              {
-                                                "attributeAddition": {
-                                                  "attributeKey": "enduser.id.rule",
-                                                  "valueProjectionRule": {
-                                                    "projector": {
-                                                      "valueProjector": {
-                                                        "value": "jwt-header-rule-id"
-                                                      }
-                                                    }
+                      "claimRule": {
+                        "key": "data-claim",
+                        "attributeRule": {
+                          "projector": {
+                            "jsonProjector": {
+                              "jsonPathRule": {
+                                "key": "$.id",
+                                "attributeRule": {
+                                  "projector": {
+                                    "regexCaptureGroupProjector": {
+                                      "regexCaptureGroup": "user id is (.*)",
+                                      "attributeRule": {
+                                        "initialActions": [
+                                          {
+                                            "attributeAddition": {
+                                              "attributeKey": "enduser.id",
+                                              "valueProjectionRule": {
+                                                "projector": {
+                                                  "noOpProjector": {
                                                   }
                                                 }
                                               }
-                                            ]
+                                            }
+                                          },
+                                          {
+                                            "attributeAddition": {
+                                              "attributeKey": "enduser.id.rule",
+                                              "valueProjectionRule": {
+                                                "projector": {
+                                                  "valueProjector": {
+                                                    "value": "jwt-header-rule-id"
+                                                  }
+                                                }
+                                              }
+                                            }
                                           }
-                                        }
+                                        ]
                                       }
                                     }
                                   }
-                                ]
+                                }
                               }
                             }
                           }
                         }
-                      ]
+                      }
                     }
                   }
                 }
@@ -81,56 +77,52 @@
                 "attributeRule": {
                   "projector": {
                     "jwtProjector": {
-                      "claimRules": [
-                        {
-                          "key": "data-claim",
-                          "attributeRule": {
-                            "projector": {
-                              "jsonProjector": {
-                                "jsonPathRules": [
-                                  {
-                                    "key": "$.id",
-                                    "attributeRule": {
-                                      "projector": {
-                                        "regexCaptureGroupProjector": {
-                                          "regexCaptureGroup": "user id is (.*)",
-                                          "attributeRule": {
-                                            "initialActions": [
-                                              {
-                                                "attributeAddition": {
-                                                  "attributeKey": "enduser.id",
-                                                  "valueProjectionRule": {
-                                                    "projector": {
-                                                      "noOpProjector": {
-                                                      }
-                                                    }
-                                                  }
-                                                }
-                                              },
-                                              {
-                                                "attributeAddition": {
-                                                  "attributeKey": "enduser.id.rule",
-                                                  "valueProjectionRule": {
-                                                    "projector": {
-                                                      "valueProjector": {
-                                                        "value": "jwt-header-rule-id"
-                                                      }
-                                                    }
+                      "claimRule": {
+                        "key": "data-claim",
+                        "attributeRule": {
+                          "projector": {
+                            "jsonProjector": {
+                              "jsonPathRule": {
+                                "key": "$.id",
+                                "attributeRule": {
+                                  "projector": {
+                                    "regexCaptureGroupProjector": {
+                                      "regexCaptureGroup": "user id is (.*)",
+                                      "attributeRule": {
+                                        "initialActions": [
+                                          {
+                                            "attributeAddition": {
+                                              "attributeKey": "enduser.id",
+                                              "valueProjectionRule": {
+                                                "projector": {
+                                                  "noOpProjector": {
                                                   }
                                                 }
                                               }
-                                            ]
+                                            }
+                                          },
+                                          {
+                                            "attributeAddition": {
+                                              "attributeKey": "enduser.id.rule",
+                                              "valueProjectionRule": {
+                                                "projector": {
+                                                  "valueProjector": {
+                                                    "value": "jwt-header-rule-id"
+                                                  }
+                                                }
+                                              }
+                                            }
                                           }
-                                        }
+                                        ]
                                       }
                                     }
                                   }
-                                ]
+                                }
                               }
                             }
                           }
                         }
-                      ]
+                      }
                     }
                   }
                 }

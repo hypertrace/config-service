@@ -4,7 +4,7 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import ai.traceable.external.agent.attribute.config.service.translator.CustomJsonRuleTranslator;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import java.util.List;

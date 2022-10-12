@@ -7,39 +7,37 @@
           "attributeRule": {
             "projector": {
               "jsonProjector": {
-                "jsonPathRules": [
-                  {
-                    "key": "$.id",
-                    "attributeRule": {
-                      "initialActions": [
-                        {
-                          "attributeArrayAppend": {
-                            "attributeKey": "traceableai.auth.types",
-                            "valueProjectionRule": {
-                              "projector": {
-                                "valueProjector": {
-                                  "value": "some-body-based-auth"
-                                }
-                              }
-                            }
-                          }
-                        },
-                        {
-                          "attributeArrayAppend": {
-                            "attributeKey": "traceableai.auth.rules",
-                            "valueProjectionRule": {
-                              "projector": {
-                                "valueProjector": {
-                                  "value": "response-body-rule-id"
-                                }
+                "jsonPathRule": {
+                  "key": "$.id",
+                  "attributeRule": {
+                    "initialActions": [
+                      {
+                        "attributeArrayAppend": {
+                          "attributeKey": "traceableai.auth.types",
+                          "valueProjectionRule": {
+                            "projector": {
+                              "valueProjector": {
+                                "value": "some-body-based-auth"
                               }
                             }
                           }
                         }
-                      ]
-                    }
+                      },
+                      {
+                        "attributeArrayAppend": {
+                          "attributeKey": "traceableai.auth.rules",
+                          "valueProjectionRule": {
+                            "projector": {
+                              "valueProjector": {
+                                "value": "response-body-rule-id"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
                   }
-                ]
+                }
               }
             }
           }
@@ -53,39 +51,37 @@
           "attributeRule": {
             "projector": {
               "jsonProjector": {
-                "jsonPathRules": [
-                  {
-                    "key": "$.id",
-                    "attributeRule": {
-                      "initialActions": [
-                        {
-                          "attributeArrayAppend": {
-                            "attributeKey": "traceableai.auth.types",
-                            "valueProjectionRule": {
-                              "projector": {
-                                "valueProjector": {
-                                  "value": "some-body-based-auth"
-                                }
-                              }
-                            }
-                          }
-                        },
-                        {
-                          "attributeArrayAppend": {
-                            "attributeKey": "traceableai.auth.rules",
-                            "valueProjectionRule": {
-                              "projector": {
-                                "valueProjector": {
-                                  "value": "response-body-rule-id"
-                                }
+                "jsonPathRule": {
+                  "key": "$.id",
+                  "attributeRule": {
+                    "initialActions": [
+                      {
+                        "attributeArrayAppend": {
+                          "attributeKey": "traceableai.auth.types",
+                          "valueProjectionRule": {
+                            "projector": {
+                              "valueProjector": {
+                                "value": "some-body-based-auth"
                               }
                             }
                           }
                         }
-                      ]
-                    }
+                      },
+                      {
+                        "attributeArrayAppend": {
+                          "attributeKey": "traceableai.auth.rules",
+                          "valueProjectionRule": {
+                            "projector": {
+                              "valueProjector": {
+                                "value": "response-body-rule-id"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
                   }
-                ]
+                }
               }
             }
           }

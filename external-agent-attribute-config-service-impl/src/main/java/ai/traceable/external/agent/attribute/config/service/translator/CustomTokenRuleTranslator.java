@@ -2,7 +2,7 @@ package ai.traceable.external.agent.attribute.config.service.translator;
 
 import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.REQUEST_BODY_KEYS;
 
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.CustomTokenRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.DataCase;

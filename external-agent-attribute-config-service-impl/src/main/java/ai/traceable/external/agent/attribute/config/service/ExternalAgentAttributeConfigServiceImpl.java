@@ -3,7 +3,7 @@ package ai.traceable.external.agent.attribute.config.service;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import ai.traceable.external.agent.attribute.config.service.translator.ExternalAgentAttributeRuleTranslator;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRules;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.external.agent.attribute.config.service.v1.ExternalAgentAttributeConfigServiceGrpc.ExternalAgentAttributeConfigServiceImplBase;
 import ai.traceable.external.agent.attribute.config.service.v1.GetAgentAttributeRulesRequest;
 import ai.traceable.external.agent.attribute.config.service.v1.GetAgentAttributeRulesResponse;
@@ -45,7 +45,7 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
       StreamObserver<GetAgentAttributeRulesResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      AgentAttributeRules rules =
+      List<AttributeRule> rules =
           this.ruleTranslator.translateRules(
               fetchActiveUserAttributionRules(requestContext, request));
       responseObserver.onNext(this.responseBuilder.buildResponse(request, rules));

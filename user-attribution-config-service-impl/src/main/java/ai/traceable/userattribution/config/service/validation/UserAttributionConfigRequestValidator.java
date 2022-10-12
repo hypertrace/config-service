@@ -4,7 +4,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.userattribution.config.service.v1.CreateUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.DeleteUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest;

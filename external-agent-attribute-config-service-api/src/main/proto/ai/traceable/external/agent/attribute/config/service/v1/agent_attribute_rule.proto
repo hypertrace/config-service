@@ -5,150 +5,141 @@ option go_package = "github.com/Traceableai/config-service/gen/go/ai/traceable/e
 
 option java_multiple_files = true;
 
-message AgentAttributeRules {
-  repeated AgentAttributeRule agent_attribute_rule = 1;
-}
+message AttributeRule {
+  // actions to be taken at this point before more projection
+  repeated Action initial_actions = 1;
+  Projector projector = 2;
+  // actions to be taken once projection is successful before going into child rules
+  repeated Action before_children_actions = 3;
+  // actions to be taken after all children
+  repeated Action end_actions = 4;
 
-message AgentAttributeRule {
-  // Parse the original attribute value and apply actions
-  AttributeRule root_rule = 1;
+  message Action {
+    oneof action {
+      AttributeAddition attribute_addition = 1;
+      AttributeArrayAppend attribute_array_append = 2;
+    }
 
-  message AttributeRule {
-    // actions to be taken at this point before more projection
-    repeated Action initial_actions = 1;
-    Projector projector = 2;
-    // actions to be taken once projection is successful before going into child rules
-    repeated Action before_children_actions = 3;
-    // actions to be taken after all children
-    repeated Action end_actions = 4;
+    message AttributeAddition {
+      // new attribute to be added
+      string attribute_key = 1;
+      // rule to get the value of this attribute
+      AttributeRule value_projection_rule = 2;
+    }
 
-    message Action {
-      oneof action {
-        AttributeAddition attribute_addition = 1;
-        AttributeArrayAppend attribute_array_append = 2;
-      }
+    // adds or appends value as an array to an attribute
+    message AttributeArrayAppend{
+      // attribute key to append to (will add if not present)
+      string attribute_key = 1;
+      // rule to get the value to append
+      AttributeRule value_projection_rule = 2;
+    }
+  }
 
-      message AttributeAddition {
-        // new attribute to be added
-        string attribute_key = 1;
-        // rule to get the value of this attribute
-        AttributeRule value_projection_rule = 2;
-      }
+  message Projector {
+    oneof projector {
+      AttributeProjector attribute_projector = 1;
+      NoOpProjector no_op_projector = 2;
+      JwtProjector jwt_projector = 3;
+      Base64Projector base64_projector = 4;
+      JsonProjector json_projector = 5;
+      CookieProjector cookie_projector = 6;
+      UrlEncodedProjector url_encoded_projector = 7;
+      RegexCaptureGroupProjector regex_capture_group_projector = 8;
+      StaticValueProjector value_projector = 9;
+      FirstMatchingProjector first_matching_projector = 10;
+      EachMatchingProjector each_matching_projector = 11;
+      ConditionalProjector conditional_projector = 12;
+    }
 
-      // adds or appends value as an array to an attribute
-      message AttributeArrayAppend{
-        // attribute key to append to (will add if not present)
-        string attribute_key = 1;
-        // rule to get the value to append
-        AttributeRule value_projection_rule = 2;
+    message ConditionalProjector {
+      Predicate predicate = 1;
+      AttributeRule attribute_rule = 2;
+
+      message Predicate {
+        oneof predicate {
+          AttributePredicate attribute_predicate = 1;
+          LogicalPredicate logical_predicate = 2;
+          StringPredicate current_value_predicate = 3;
+        }
+
+        message LogicalPredicate {
+          LogicalOperator operator = 1;
+          repeated Predicate children = 2;
+        }
+
+        enum LogicalOperator {
+          LOGICAL_OPERATOR_UNSPECIFIED = 0;
+          LOGICAL_OPERATOR_AND = 1;
+          LOGICAL_OPERATOR_OR = 2;
+        }
+
+        message AttributePredicate {
+          StringPredicate name_predicate = 1;
+          StringPredicate value_predicate = 2;
+        }
+
+        message StringPredicate {
+          ComparisonOperator operator = 1;
+          string value = 2;
+        }
+
+        enum ComparisonOperator {
+          COMPARISON_OPERATOR_UNSPECIFIED = 0;
+          COMPARISON_OPERATOR_EQUALS = 1;
+          COMPARISON_OPERATOR_MATCHES_REGEX = 2;
+        }
       }
     }
 
-    message Projector {
-      oneof projector {
-        AttributeProjector attribute_projector = 1;
-        NoOpProjector no_op_projector = 2;
-        JwtProjector jwt_projector = 3;
-        Base64Projector base64_projector = 4;
-        JsonProjector json_projector = 5;
-        CookieProjector cookie_projector = 6;
-        UrlEncodedProjector url_encoded_projector = 7;
-        RegexCaptureGroupProjector regex_capture_group_projector = 8;
-        StaticValueProjector value_projector = 9;
-        FirstMatchingProjector first_matching_projector = 10;
-        EachMatchingProjector each_matching_projector = 11;
-        ConditionalProjector conditional_projector = 12;
-      }
+    message FirstMatchingProjector {
+      repeated AttributeRule attribute_rules = 1;
+    }
 
-      message ConditionalProjector {
-        Predicate predicate = 1;
-        AttributeRule attribute_rule = 2;
+    message EachMatchingProjector {
+      repeated AttributeRule attribute_rules = 1;
+    }
 
-        message Predicate {
-          oneof predicate {
-            AttributePredicate attribute_predicate = 1;
-            LogicalPredicate logical_predicate = 2;
-            StringPredicate current_value_predicate = 3;
-          }
+    message NoOpProjector {}
 
-          message LogicalPredicate {
-            LogicalOperator operator = 1;
-            repeated Predicate children = 2;
-          }
+    message Base64Projector {
+      AttributeRule attribute_rule = 1;
+    }
 
-          enum LogicalOperator {
-            LOGICAL_OPERATOR_UNSPECIFIED = 0;
-            LOGICAL_OPERATOR_AND = 1;
-            LOGICAL_OPERATOR_OR = 2;
-          }
+    message JwtProjector {
+      ParsedObjectKeyRule claim_rule = 1;
+    }
 
-          message AttributePredicate {
-            StringPredicate name_predicate = 1;
-            StringPredicate value_predicate = 2;
-          }
+    message JsonProjector {
+      ParsedObjectKeyRule json_path_rule = 1;
+    }
 
-          message StringPredicate {
-            ComparisonOperator operator = 1;
-            string value = 2;
-          }
+    message CookieProjector {
+      ParsedObjectKeyRule cookie_name_rule = 1;
+    }
 
-          enum ComparisonOperator {
-            COMPARISON_OPERATOR_UNSPECIFIED = 0;
-            COMPARISON_OPERATOR_EQUALS = 1;
-            COMPARISON_OPERATOR_MATCHES_REGEX = 2;
-          }
-        }
-      }
+    message UrlEncodedProjector {
+      ParsedObjectKeyRule url_param_rule = 1;
+    }
 
-      message FirstMatchingProjector {
-        repeated AttributeRule attribute_rules = 1;
-      }
+    message ParsedObjectKeyRule {
+      string key = 1;
+      AttributeRule attribute_rule = 2;
+    }
 
-      message EachMatchingProjector {
-        repeated AttributeRule attribute_rules = 1;
-      }
+    message RegexCaptureGroupProjector {
+      string regex_capture_group = 1;
+      AttributeRule attribute_rule = 2;
+    }
 
-      message NoOpProjector {}
+    message StaticValueProjector {
+      string value = 1;
+      AttributeRule attribute_rule = 2;
+    }
 
-      message Base64Projector {
-        AttributeRule attribute_rule = 1;
-      }
-
-      message JwtProjector {
-        repeated ParsedObjectKeyRule claim_rules = 1;
-      }
-
-      message JsonProjector {
-        repeated ParsedObjectKeyRule json_path_rules = 1;
-      }
-
-      message CookieProjector {
-        repeated ParsedObjectKeyRule cookie_name_rules = 1;
-      }
-
-      message UrlEncodedProjector {
-        repeated ParsedObjectKeyRule url_param_rules = 1;
-      }
-
-      message ParsedObjectKeyRule {
-        string key = 1;
-        AttributeRule attribute_rule = 2;
-      }
-
-      message RegexCaptureGroupProjector {
-        string regex_capture_group = 1;
-        AttributeRule attribute_rule = 2;
-      }
-
-      message StaticValueProjector {
-        string value = 1;
-        AttributeRule attribute_rule = 2;
-      }
-
-      message AttributeProjector {
-        string attribute_key = 1;
-        AttributeRule attribute_rule = 2;
-      }
+    message AttributeProjector {
+      string attribute_key = 1;
+      AttributeRule attribute_rule = 2;
     }
   }
 }

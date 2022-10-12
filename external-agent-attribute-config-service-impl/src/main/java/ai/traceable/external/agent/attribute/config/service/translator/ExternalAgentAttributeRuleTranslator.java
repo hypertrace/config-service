@@ -1,9 +1,7 @@
 package ai.traceable.external.agent.attribute.config.service.translator;
 
 import ai.traceable.external.agent.attribute.config.service.ExternalAgentAttributeConfigServiceConfig;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRules;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.DataCase;
 import java.util.ArrayList;
@@ -40,21 +38,15 @@ public class ExternalAgentAttributeRuleTranslator {
     this.externalAgentAttributeConfigServiceConfig = externalAgentAttributeConfigServiceConfig;
   }
 
-  public AgentAttributeRules translateRules(List<UserAttributionRule> rules) {
+  public List<AttributeRule> translateRules(List<UserAttributionRule> rules) {
     List<AttributeRule> attributeRulesForFields = new ArrayList<>();
     getAttributeRuleForUserId(rules).ifPresent(attributeRulesForFields::add);
     getAttributeRuleForUserRole(rules).ifPresent(attributeRulesForFields::add);
     getAttributeRuleForAuthType(rules).ifPresent(attributeRulesForFields::add);
 
     return attributeRulesForFields.isEmpty()
-        ? AgentAttributeRules.getDefaultInstance()
-        : AgentAttributeRules.newBuilder()
-            .addAgentAttributeRule(
-                AgentAttributeRule.newBuilder()
-                    .setRootRule(
-                        attributeRuleBuilder.buildRuleForEachMatchingProjector(
-                            attributeRulesForFields)))
-            .build();
+        ? List.of()
+        : List.of(attributeRuleBuilder.buildRuleForEachMatchingProjector(attributeRulesForFields));
   }
 
   private Optional<AttributeRule> getAttributeRuleForUserId(List<UserAttributionRule> rules) {

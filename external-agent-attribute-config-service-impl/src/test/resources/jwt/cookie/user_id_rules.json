@@ -7,66 +7,60 @@
           "attributeRule": {
             "projector": {
               "cookieProjector": {
-                "cookieNameRules": [
-                  {
-                    "key": "jwt",
-                    "attributeRule": {
-                      "projector": {
-                        "regexCaptureGroupProjector": {
-                          "regexCaptureGroup": "Bearer-xyz (.*)",
-                          "attributeRule": {
-                            "projector": {
-                              "jwtProjector": {
-                                "claimRules": [
-                                  {
-                                    "key": "data-claim",
-                                    "attributeRule": {
-                                      "projector": {
-                                        "jsonProjector": {
-                                          "jsonPathRules": [
-                                            {
-                                              "key": "$.id",
+                "cookieNameRule": {
+                  "key": "jwt",
+                  "attributeRule": {
+                    "projector": {
+                      "regexCaptureGroupProjector": {
+                        "regexCaptureGroup": "Bearer-xyz (.*)",
+                        "attributeRule": {
+                          "projector": {
+                            "jwtProjector": {
+                              "claimRule": {
+                                "key": "data-claim",
+                                "attributeRule": {
+                                  "projector": {
+                                    "jsonProjector": {
+                                      "jsonPathRule": {
+                                        "key": "$.id",
+                                        "attributeRule": {
+                                          "projector": {
+                                            "regexCaptureGroupProjector": {
+                                              "regexCaptureGroup": "user id is (.*)",
                                               "attributeRule": {
-                                                "projector": {
-                                                  "regexCaptureGroupProjector": {
-                                                    "regexCaptureGroup": "user id is (.*)",
-                                                    "attributeRule": {
-                                                      "initialActions": [
-                                                        {
-                                                          "attributeAddition": {
-                                                            "attributeKey": "enduser.id",
-                                                            "valueProjectionRule": {
-                                                              "projector": {
-                                                                "noOpProjector": {
-                                                                }
-                                                              }
-                                                            }
-                                                          }
-                                                        },
-                                                        {
-                                                          "attributeAddition": {
-                                                            "attributeKey": "enduser.id.rule",
-                                                            "valueProjectionRule": {
-                                                              "projector": {
-                                                                "valueProjector": {
-                                                                  "value": "jwt-cookie-rule-id"
-                                                                }
-                                                              }
-                                                            }
+                                                "initialActions": [
+                                                  {
+                                                    "attributeAddition": {
+                                                      "attributeKey": "enduser.id",
+                                                      "valueProjectionRule": {
+                                                        "projector": {
+                                                          "noOpProjector": {
                                                           }
                                                         }
-                                                      ]
+                                                      }
+                                                    }
+                                                  },
+                                                  {
+                                                    "attributeAddition": {
+                                                      "attributeKey": "enduser.id.rule",
+                                                      "valueProjectionRule": {
+                                                        "projector": {
+                                                          "valueProjector": {
+                                                            "value": "jwt-cookie-rule-id"
+                                                          }
+                                                        }
+                                                      }
                                                     }
                                                   }
-                                                }
+                                                ]
                                               }
                                             }
-                                          ]
+                                          }
                                         }
                                       }
                                     }
                                   }
-                                ]
+                                }
                               }
                             }
                           }
@@ -74,7 +68,7 @@
                       }
                     }
                   }
-                ]
+                }
               }
             }
           }

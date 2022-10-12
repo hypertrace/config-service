@@ -7,27 +7,27 @@ import static ai.traceable.external.agent.attribute.config.service.translator.Ag
 import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.END_USER_ROLE_ATTRIBUTE_KEY;
 import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.END_USER_ROLE_RULE_ATTRIBUTE_KEY;
 
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Action;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Action.AttributeAddition;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Action.AttributeArrayAppend;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.AttributeProjector;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.Base64Projector;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.ConditionalProjector;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.ConditionalProjector.Predicate;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.ConditionalProjector.Predicate.AttributePredicate;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.ConditionalProjector.Predicate.ComparisonOperator;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.ConditionalProjector.Predicate.StringPredicate;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.CookieProjector;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.EachMatchingProjector;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.FirstMatchingProjector;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.JsonProjector;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.JwtProjector;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.NoOpProjector;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.ParsedObjectKeyRule;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.RegexCaptureGroupProjector;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.StaticValueProjector;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Action;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Action.AttributeAddition;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Action.AttributeArrayAppend;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.AttributeProjector;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.Base64Projector;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate.AttributePredicate;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate.ComparisonOperator;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate.StringPredicate;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.CookieProjector;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.EachMatchingProjector;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.FirstMatchingProjector;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.JsonProjector;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.JwtProjector;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.NoOpProjector;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ParsedObjectKeyRule;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.RegexCaptureGroupProjector;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.StaticValueProjector;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ParsingTarget;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ParsingTarget.TargetCase;
 import java.util.List;
@@ -139,7 +139,7 @@ class AttributeRuleBuilder {
             Projector.newBuilder()
                 .setJsonProjector(
                     JsonProjector.newBuilder()
-                        .addJsonPathRules(
+                        .setJsonPathRule(
                             ParsedObjectKeyRule.newBuilder()
                                 .setKey(jsonPath)
                                 .setAttributeRule(childRule))))
@@ -152,7 +152,7 @@ class AttributeRuleBuilder {
             Projector.newBuilder()
                 .setJwtProjector(
                     JwtProjector.newBuilder()
-                        .addClaimRules(
+                        .setClaimRule(
                             ParsedObjectKeyRule.newBuilder()
                                 .setKey(claim)
                                 .setAttributeRule(childRule))))
@@ -172,7 +172,7 @@ class AttributeRuleBuilder {
             Projector.newBuilder()
                 .setCookieProjector(
                     CookieProjector.newBuilder()
-                        .addCookieNameRules(
+                        .setCookieNameRule(
                             ParsedObjectKeyRule.newBuilder()
                                 .setKey(cookieName)
                                 .setAttributeRule(childRule))))

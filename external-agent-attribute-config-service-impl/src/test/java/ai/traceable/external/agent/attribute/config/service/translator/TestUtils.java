@@ -1,8 +1,7 @@
 package ai.traceable.external.agent.attribute.config.service.translator;
 
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule.Projector.FirstMatchingProjector;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRules;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.FirstMatchingProjector;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Parser;
@@ -31,15 +30,6 @@ class TestUtils {
             new InputStreamReader(TestUtils.class.getClassLoader().getResourceAsStream(filename))),
         attributeRuleBuilder);
     return attributeRuleBuilder.build();
-  }
-
-  static AgentAttributeRules getExpectedAgentAttributeRules(String filename) throws IOException {
-    AgentAttributeRules.Builder agentAttributeRulesBuilder = AgentAttributeRules.newBuilder();
-    PARSER.merge(
-        new BufferedReader(
-            new InputStreamReader(TestUtils.class.getClassLoader().getResourceAsStream(filename))),
-        agentAttributeRulesBuilder);
-    return agentAttributeRulesBuilder.build();
   }
 
   static UserAttributionRule getUserAttributionRule(String filename) throws IOException {

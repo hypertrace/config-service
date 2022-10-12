@@ -1,6 +1,6 @@
 package ai.traceable.external.agent.attribute.config.service.translator;
 
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRule.AttributeRule;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.CustomScope;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.SystemWideScope;

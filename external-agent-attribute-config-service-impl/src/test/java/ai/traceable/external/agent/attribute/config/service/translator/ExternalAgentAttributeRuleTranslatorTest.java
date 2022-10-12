@@ -6,14 +6,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.external.agent.attribute.config.service.ExternalAgentAttributeConfigServiceConfig;
-import ai.traceable.external.agent.attribute.config.service.v1.AgentAttributeRules;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class ExternalAgentAttributeRuleTranslatorTest {
-  private ExternalAgentAttributeConfigServiceConfig mockConfig =
+  private final ExternalAgentAttributeConfigServiceConfig mockConfig =
       mock(ExternalAgentAttributeConfigServiceConfig.class);
 
   private final AttributeKeysExtractor attributeKeysExtractor = new AttributeKeysExtractor();
@@ -32,7 +32,7 @@ class ExternalAgentAttributeRuleTranslatorTest {
 
   @Test
   void translateRules() throws IOException {
-    AgentAttributeRules translatedRules =
+    List<AttributeRule> translatedRules =
         translator.translateRules(
             List.of(
                 TestUtils.getUserAttributionRule("basic_auth/input_rule.json"),
@@ -41,23 +41,22 @@ class ExternalAgentAttributeRuleTranslatorTest {
                 TestUtils.getUserAttributionRule("request_header/input_rule.json"),
                 TestUtils.getUserAttributionRule("response_body/input_rule.json")));
     assertEquals(
-        TestUtils.getExpectedAgentAttributeRules("agent_attribute_rules.json"), translatedRules);
+        TestUtils.getExpectedAttributeRules("agent_attribute_rules.json"), translatedRules);
   }
 
   @Test
   void translateNoRule() {
-    assertEquals(AgentAttributeRules.getDefaultInstance(), translator.translateRules(emptyList()));
+    assertEquals(List.of(), translator.translateRules(emptyList()));
   }
 
   @Test
   void translateSystemRules() throws IOException {
-    final AgentAttributeRules rules =
-        TestUtils.getExpectedAgentAttributeRules("system_rules/input_system_rules.json");
+    final List<AttributeRule> rules =
+        TestUtils.getExpectedAttributeRules("system_rules/input_system_rules.json");
     when(mockConfig.getSystemAuthTypeRules())
         .thenReturn(
             rules
-                .getAgentAttributeRule(0)
-                .getRootRule()
+                .get(0)
                 .getProjector()
                 .getEachMatchingProjector()
                 .getAttributeRules(0)
@@ -65,7 +64,7 @@ class ExternalAgentAttributeRuleTranslatorTest {
                 .getEachMatchingProjector()
                 .getAttributeRulesList());
 
-    final AgentAttributeRules translatedRules = translator.translateRules(emptyList());
+    final List<AttributeRule> translatedRules = translator.translateRules(emptyList());
     assertEquals(rules, translatedRules);
   }
 }

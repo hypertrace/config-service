@@ -7,45 +7,43 @@
           "attributeRule": {
             "projector": {
               "jsonProjector": {
-                "jsonPathRules": [
-                  {
-                    "key": "$.id",
-                    "attributeRule": {
-                      "projector": {
-                        "regexCaptureGroupProjector": {
-                          "regexCaptureGroup": "user id is (.*)",
-                          "attributeRule": {
-                            "initialActions": [
-                              {
-                                "attributeAddition": {
-                                  "attributeKey": "enduser.id",
-                                  "valueProjectionRule": {
-                                    "projector": {
-                                      "noOpProjector": {
-                                      }
-                                    }
-                                  }
-                                }
-                              },
-                              {
-                                "attributeAddition": {
-                                  "attributeKey": "enduser.id.rule",
-                                  "valueProjectionRule": {
-                                    "projector": {
-                                      "valueProjector": {
-                                        "value": "response-body-rule-id"
-                                      }
+                "jsonPathRule": {
+                  "key": "$.id",
+                  "attributeRule": {
+                    "projector": {
+                      "regexCaptureGroupProjector": {
+                        "regexCaptureGroup": "user id is (.*)",
+                        "attributeRule": {
+                          "initialActions": [
+                            {
+                              "attributeAddition": {
+                                "attributeKey": "enduser.id",
+                                "valueProjectionRule": {
+                                  "projector": {
+                                    "noOpProjector": {
                                     }
                                   }
                                 }
                               }
-                            ]
-                          }
+                            },
+                            {
+                              "attributeAddition": {
+                                "attributeKey": "enduser.id.rule",
+                                "valueProjectionRule": {
+                                  "projector": {
+                                    "valueProjector": {
+                                      "value": "response-body-rule-id"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ]
                         }
                       }
                     }
                   }
-                ]
+                }
               }
             }
           }
@@ -59,45 +57,43 @@
           "attributeRule": {
             "projector": {
               "jsonProjector": {
-                "jsonPathRules": [
-                  {
-                    "key": "$.id",
-                    "attributeRule": {
-                      "projector": {
-                        "regexCaptureGroupProjector": {
-                          "regexCaptureGroup": "user id is (.*)",
-                          "attributeRule": {
-                            "initialActions": [
-                              {
-                                "attributeAddition": {
-                                  "attributeKey": "enduser.id",
-                                  "valueProjectionRule": {
-                                    "projector": {
-                                      "noOpProjector": {
-                                      }
-                                    }
-                                  }
-                                }
-                              },
-                              {
-                                "attributeAddition": {
-                                  "attributeKey": "enduser.id.rule",
-                                  "valueProjectionRule": {
-                                    "projector": {
-                                      "valueProjector": {
-                                        "value": "response-body-rule-id"
-                                      }
+                "jsonPathRule": {
+                  "key": "$.id",
+                  "attributeRule": {
+                    "projector": {
+                      "regexCaptureGroupProjector": {
+                        "regexCaptureGroup": "user id is (.*)",
+                        "attributeRule": {
+                          "initialActions": [
+                            {
+                              "attributeAddition": {
+                                "attributeKey": "enduser.id",
+                                "valueProjectionRule": {
+                                  "projector": {
+                                    "noOpProjector": {
                                     }
                                   }
                                 }
                               }
-                            ]
-                          }
+                            },
+                            {
+                              "attributeAddition": {
+                                "attributeKey": "enduser.id.rule",
+                                "valueProjectionRule": {
+                                  "projector": {
+                                    "valueProjector": {
+                                      "value": "response-body-rule-id"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ]
                         }
                       }
                     }
                   }
-                ]
+                }
               }
             }
           }
