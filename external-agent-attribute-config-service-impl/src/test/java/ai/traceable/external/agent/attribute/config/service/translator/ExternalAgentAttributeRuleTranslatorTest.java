@@ -2,10 +2,7 @@ package ai.traceable.external.agent.attribute.config.service.translator;
 
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import ai.traceable.external.agent.attribute.config.service.ExternalAgentAttributeConfigServiceConfig;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import java.io.IOException;
 import java.util.List;
@@ -13,8 +10,6 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class ExternalAgentAttributeRuleTranslatorTest {
-  private final ExternalAgentAttributeConfigServiceConfig mockConfig =
-      mock(ExternalAgentAttributeConfigServiceConfig.class);
 
   private final AttributeKeysExtractor attributeKeysExtractor = new AttributeKeysExtractor();
   private final AttributeRuleBuilder attributeRuleBuilder = new AttributeRuleBuilder();
@@ -27,8 +22,7 @@ class ExternalAgentAttributeRuleTranslatorTest {
               new RequestHeaderRuleTranslator(attributeKeysExtractor, attributeRuleBuilder),
               new ResponseBodyRuleTranslator(attributeRuleBuilder)),
           attributeRuleBuilder,
-          new UrlScopeTranslator(attributeRuleBuilder),
-          mockConfig);
+          new UrlScopeTranslator(attributeRuleBuilder));
 
   @Test
   void translateRules() throws IOException {
@@ -40,6 +34,7 @@ class ExternalAgentAttributeRuleTranslatorTest {
                 TestUtils.getUserAttributionRule("jwt/header/input_rule.json"),
                 TestUtils.getUserAttributionRule("request_header/input_rule.json"),
                 TestUtils.getUserAttributionRule("response_body/input_rule.json")));
+
     assertEquals(
         TestUtils.getExpectedAttributeRules("agent_attribute_rules.json"), translatedRules);
   }
@@ -47,24 +42,5 @@ class ExternalAgentAttributeRuleTranslatorTest {
   @Test
   void translateNoRule() {
     assertEquals(List.of(), translator.translateRules(emptyList()));
-  }
-
-  @Test
-  void translateSystemRules() throws IOException {
-    final List<AttributeRule> rules =
-        TestUtils.getExpectedAttributeRules("system_rules/input_system_rules.json");
-    when(mockConfig.getSystemAuthTypeRules())
-        .thenReturn(
-            rules
-                .get(0)
-                .getProjector()
-                .getEachMatchingProjector()
-                .getAttributeRules(0)
-                .getProjector()
-                .getEachMatchingProjector()
-                .getAttributeRulesList());
-
-    final List<AttributeRule> translatedRules = translator.translateRules(emptyList());
-    assertEquals(rules, translatedRules);
   }
 }

@@ -13,19 +13,15 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServi
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.multibindings.Multibinder;
-import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.Channel;
-import javax.inject.Singleton;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 class ExternalAgentAttributeConfigServiceModule extends AbstractModule {
   private final Channel channel;
-  private final Config config;
 
-  ExternalAgentAttributeConfigServiceModule(final Channel channel, final Config config) {
+  ExternalAgentAttributeConfigServiceModule(Channel channel) {
     this.channel = channel;
-    this.config = config;
   }
 
   @Override
@@ -48,12 +44,5 @@ class ExternalAgentAttributeConfigServiceModule extends AbstractModule {
     return UserAttributionConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
-  }
-
-  @Provides
-  @Singleton
-  ExternalAgentAttributeConfigServiceConfig providesExternalAgentAttributeConfigServiceConfig(
-      final CustomJsonRuleTranslator customJsonRuleTranslator) {
-    return new ExternalAgentAttributeConfigServiceConfig(config, customJsonRuleTranslator);
   }
 }
