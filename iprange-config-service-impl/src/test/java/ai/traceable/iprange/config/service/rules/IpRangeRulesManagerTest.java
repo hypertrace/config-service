@@ -142,6 +142,21 @@ class IpRangeRulesManagerTest {
               requestContext, GetRulesFilter.newBuilder().addRuleIds("First-test").build());
       assertEquals(List.of(ipRangeRule1), resultIpRules1);
 
+      // Filter by action when action is not present
+      assertTrue(
+          rulesManager
+              .getIpRangeRules(
+                  requestContext,
+                  GetRulesFilter.newBuilder().addRuleActions(RuleAction.RULE_ACTION_ALERT).build())
+              .isEmpty());
+
+      // Filter by action and action is present
+      resultIpRules1 =
+          rulesManager.getIpRangeRules(
+              requestContext,
+              GetRulesFilter.newBuilder().addRuleActions(RuleAction.RULE_ACTION_BLOCK).build());
+      assertEquals(List.of(ipRangeRule1), resultIpRules1);
+
       // Filter by internal and name is present
       List<IpRangeRule> resultIpRules2 =
           rulesManager.getIpRangeRules(

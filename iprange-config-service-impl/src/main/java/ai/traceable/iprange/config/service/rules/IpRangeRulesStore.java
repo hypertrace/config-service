@@ -62,6 +62,10 @@ public class IpRangeRulesStore
             rule -> filter.getRuleIdsCount() == 0 || filter.getRuleIdsList().contains(rule.getId()))
         .filter(
             rule ->
+                filter.getRuleActionsCount() == 0
+                    || filter.getRuleActionsList().contains(rule.getRuleDetails().getRuleAction()))
+        .filter(
+            rule ->
                 !(filter.hasRuleAction()
                     && rule.getRuleDetails().getRuleAction() != filter.getRuleAction()))
         .filter(rule -> !(filter.hasDisabled() && rule.getDisabled() != filter.getDisabled()))
