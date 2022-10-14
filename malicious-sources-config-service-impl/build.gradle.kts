@@ -16,7 +16,6 @@ dependencies {
   implementation(libs.guice)
   implementation(libs.protobuf.javautil)
   implementation(libs.slf4j.api)
-  implementation(libs.uuidCreator)
   implementation(libs.hypertrace.grpcutils.client)
 
   annotationProcessor(libs.lombok)
@@ -24,10 +23,8 @@ dependencies {
   testImplementation(libs.junit.jupiter)
   testImplementation(libs.mockito.core)
   testImplementation(testFixtures(libs.hypertrace.configservice.api))
-  testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.1")
 }
 
-tasks.getByName<Test>("test") {
+tasks.test {
   useJUnitPlatform()
 }
