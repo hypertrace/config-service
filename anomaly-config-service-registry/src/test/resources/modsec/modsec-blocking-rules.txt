@@ -4,7 +4,6 @@ crs_1020100 :: XML External Entity Injection: Local/Remote Includes (T100)
 crs_913100 :: User-Agent associated with security scanner
 crs_913110 :: Request header associated with security scanner
 crs_913120 :: Request filename/argument associated with security scanner
-crs_9210010 :: IIS 6.0 WebDAV buffer overflow: (CVE-2017-7269)
 crs_9210115 :: HTTP Request Smuggling Attack (Content-Length/Transfer-Encoding Confusion)
 crs_9210120 :: HTTP Request Smuggling Attack (Content-Length Confusion)
 crs_921140 :: HTTP Header Injection Attack via headers
@@ -23,6 +22,13 @@ crs_9320040 :: Atlassian Confluence SSTI RCE : (CVE-2019-3396)
 crs_9320041 :: Confluence Server and Data Center Path Traversal to RCE : (CVE-2019-3398)
 crs_9320050 :: vBulletin RCE : (CVE-2019-16759)
 crs_9320060 :: Adobe ColdFusion RCE: Arbitrary File Upload Vulnerability: (CVE-2018-15961)
+crs_93200070 :: Blueimp jQuery-File-Upload: Unauthenticated arbitrary file upload: (CVE-2018-9206)
+crs_93200080 :: Oracle WebLogic Server: RCE: (CVE-2019-2725)
+crs_93200090 :: Zoho ManageEngine ServiceDesk Plus: Arbitrary File Upload: (CVE-2019-8394)
+crs_93200100 :: Atlassian Crowd: RCE: (CVE-2019-11580)
+crs_93200110 :: Microsoft Exchange Server: RCE: (CVE-2021-26855)
+crs_93200120 :: Drupal Core: RCE SA-CORE-2019-003: (CVE-2019-6340)
+crs_9210010 :: IIS 6.0 WebDAV buffer overflow: (CVE-2017-7269)
 crs_932160 :: Remote Command Execution: Unix Shell Code
 crs_932170 :: Remote Command Execution: Shellshock (CVE-2014-6271) (170)
 crs_932171 :: Remote Command Execution: Shellshock (CVE-2014-6271) (171)
