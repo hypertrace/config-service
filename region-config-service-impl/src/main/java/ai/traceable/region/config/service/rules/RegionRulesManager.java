@@ -12,6 +12,8 @@ import io.grpc.Status;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -55,9 +57,15 @@ class RegionRulesManager implements RulesManager {
   @Override
   public RegionRule updateRegionRule(
       RequestContext requestContext, UpdateRegionRuleRequest request) {
+    String ruleId = request.getId();
+    if (!doesRegionRuleExist(requestContext, ruleId)) {
+      throw new NoSuchElementException(
+          String.format("Unable to update as region rule with id = %s does not exist", ruleId));
+    }
+
     Builder regionRuleBuilder = RegionRule.newBuilder();
     regionRuleBuilder
-        .setId(request.getId())
+        .setId(ruleId)
         .setName(request.getName())
         .setDescription(request.getDescription())
         .addAllRegionId(request.getRegionIdList())
@@ -117,5 +125,10 @@ class RegionRulesManager implements RulesManager {
             .setDuration(duration)
             .setTimestampMillis(System.currentTimeMillis() + Duration.parse(duration).toMillis())
             .build());
+  }
+
+  private boolean doesRegionRuleExist(RequestContext requestContext, String ruleId) {
+    Optional<RegionRule> regionRuleOptional = regionRulesStore.getData(requestContext, ruleId);
+    return regionRuleOptional.isPresent();
   }
 }

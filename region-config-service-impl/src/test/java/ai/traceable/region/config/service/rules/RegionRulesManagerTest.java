@@ -2,6 +2,7 @@ package ai.traceable.region.config.service.rules;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -20,6 +21,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -240,6 +242,31 @@ class RegionRulesManagerTest {
               .setConditions(conditions)
               .build();
       assertEquals(updatedRegionRule, rulesManager.updateRegionRule(requestContext, request));
+    }
+
+    @Test
+    void shouldThrowExceptionIfRuleDoesntExist() {
+      RegionRuleConditions conditions =
+          RegionRuleConditions.newBuilder()
+              .setIpReputation(
+                  IpReputationCondition.newBuilder()
+                      .setMinIpReputationSeverity(IpReputationSeverity.IP_REPUTATION_SEVERITY_HIGH))
+              .build();
+
+      UpdateRegionRuleRequest request =
+          UpdateRegionRuleRequest.newBuilder()
+              .setId("id-1")
+              .setName("updated-name")
+              .setDescription("desc-1")
+              .setInternal(true)
+              .setRuleScope(ruleScope)
+              .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
+              .setConditions(conditions)
+              .build();
+
+      assertThrows(
+          NoSuchElementException.class,
+          () -> rulesManager.updateRegionRule(requestContext, request));
     }
   }
 
