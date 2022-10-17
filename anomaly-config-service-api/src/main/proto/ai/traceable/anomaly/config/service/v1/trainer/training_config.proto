@@ -374,6 +374,7 @@ message TrieModelTrainingConfig {
   StringList extensions = 6;
   optional int32 embryonic_threshold = 7;
   optional int32 max_number_of_trie_paths = 8;
+  optional int32 non_mergeable_depth = 9;
 }
 
 message UserAgentFilterConfig {
