@@ -93,6 +93,7 @@ enum IpLocationType {
   IP_LOCATION_TYPE_HOSTING_PROVIDER = 2;
   IP_LOCATION_TYPE_PUBLIC_PROXY = 3;
   IP_LOCATION_TYPE_TOR_EXIT_NODE = 4;
+  IP_LOCATION_TYPE_BOT = 7;
 }
 
 message IpReputationCondition {
