@@ -217,7 +217,6 @@ public class AnomalyConfigValidatorTest {
                         .build())
                 .build());
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
-    assertTrue(status.getDescription().contains("Invalid param regex"));
 
     status =
         configValidator.validate(

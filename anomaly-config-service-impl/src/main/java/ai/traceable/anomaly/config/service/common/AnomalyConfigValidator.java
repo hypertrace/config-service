@@ -10,8 +10,8 @@ import ai.traceable.anomaly.config.service.v1.AnomalyParamInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalyParamInfoScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
+import ai.traceable.config.utils.RegexValidator;
 import io.grpc.Status;
-import java.util.regex.Pattern;
 
 public class AnomalyConfigValidator {
 
@@ -133,13 +133,7 @@ public class AnomalyConfigValidator {
           return Status.INVALID_ARGUMENT.withDescription(
               "Param regex should not be empty for paramInfo");
         }
-        try {
-          Pattern.compile(paramInfo.getParamRegex());
-        } catch (Exception e) {
-          return Status.INVALID_ARGUMENT.withDescription(
-              String.format("Invalid param regex for paramInfo : %s", paramInfo.getParamRegex()));
-        }
-        break;
+        return RegexValidator.validate(paramInfo.getParamRegex());
       default:
         return Status.INVALID_ARGUMENT.withDescription("ParamInfo is not set");
     }

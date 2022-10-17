@@ -209,6 +209,27 @@ public class DetectionOverrideConditionsValidatorTest {
                                         MatchCondition.newBuilder()
                                             .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
                                             .setValue(
+                                                MatchValue.newBuilder().setStringValue("*"))))))
+            .build();
+    status = conditionsValidator.validateConditionsConfig(config);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    config =
+        DetectionOverrideConditionsConfig.newBuilder()
+            .setMatchConditionsClauseGroup(
+                MatchConditionsClauseGroup.newBuilder()
+                    .setClauseType(MatchConditionClauseOperator.MATCH_CONDITION_CLAUSE_OPERATOR_AND)
+                    .addConditions(
+                        MatchConditionClause.newBuilder()
+                            .setKeyValueCondition(
+                                KeyValueMatchCondition.newBuilder()
+                                    .setKeyMatchCondition(
+                                        KeyMatchCondition.newBuilder()
+                                            .setMetadata(KeyMetadata.KEY_METADATA_URL))
+                                    .setValueMatchCondition(
+                                        MatchCondition.newBuilder()
+                                            .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                                            .setValue(
                                                 MatchValue.newBuilder().setStringValue("."))))))
             .build();
     status = conditionsValidator.validateConditionsConfig(config);

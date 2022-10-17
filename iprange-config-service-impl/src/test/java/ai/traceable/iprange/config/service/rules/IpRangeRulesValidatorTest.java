@@ -65,6 +65,14 @@ class IpRangeRulesValidatorTest {
               .setDescription("Range rule test")
               .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
               .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
+              .setConditions(
+                  IpRangeRuleConditions.newBuilder()
+                      .setStatusCodeMatchCondition(
+                          StatusCodeMatchCondition.newBuilder()
+                              .setMatchType(
+                                  StatusCodeMatchType.STATUS_CODE_MATCH_TYPE_MATCHES_REGEX)
+                              .setMatchValue("^a")
+                              .build()))
               .build();
 
       CreateIpRangeRuleRequest createIpRangeRuleRequest =
@@ -73,6 +81,33 @@ class IpRangeRulesValidatorTest {
       Status status =
           rulesValidator.validate(createIpRangeRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Status.Code.OK, status.getCode());
+    }
+
+    @Test
+    @DisplayName("Should return invalid status due to bad regex")
+    void validateIpRangeRuleDetailsRequest_invalid_regex() {
+      IpRangeRuleDetails iprangeRuleDetails =
+          IpRangeRuleDetails.newBuilder()
+              .setName("Tester")
+              .setDescription("Range rule test")
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
+              .setConditions(
+                  IpRangeRuleConditions.newBuilder()
+                      .setStatusCodeMatchCondition(
+                          StatusCodeMatchCondition.newBuilder()
+                              .setMatchType(
+                                  StatusCodeMatchType.STATUS_CODE_MATCH_TYPE_MATCHES_REGEX)
+                              .setMatchValue("*")
+                              .build()))
+              .build();
+
+      CreateIpRangeRuleRequest createIpRangeRuleRequest =
+          CreateIpRangeRuleRequest.newBuilder().setRuleDetails(iprangeRuleDetails).build();
+
+      Status status =
+          rulesValidator.validate(createIpRangeRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
     }
 
     @Test

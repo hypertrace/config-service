@@ -53,6 +53,23 @@ public class DetectionOverrideEventsValidatorTest {
                                 AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_LOW)))
             .setAnomalousAttributes(
                 DetectionOverrideAnomalousAttributesConfig.newBuilder()
+                    .addAttributeNames("test-name")
+                    .addAttributeRegexes("*"))
+            .build();
+    assertEquals(
+        Status.INVALID_ARGUMENT.getCode(),
+        eventsValidator.validateTargetEventsConfig(config).getCode());
+
+    config =
+        DetectionOverrideTargetEventsConfig.newBuilder()
+            .addEventConfigs(
+                DetectionOverrideEventConfig.newBuilder()
+                    .setConfidence(
+                        DetectionOverrideConfidence.newBuilder()
+                            .setConfidenceLevel(
+                                AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_LOW)))
+            .setAnomalousAttributes(
+                DetectionOverrideAnomalousAttributesConfig.newBuilder()
                     .addAttributeNames("test-name"))
             .build();
     assertEquals(Status.OK, eventsValidator.validateTargetEventsConfig(config));

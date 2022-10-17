@@ -10,8 +10,10 @@ import ai.traceable.anomaly.config.service.v1.override.MatchConditionClauseOpera
 import ai.traceable.anomaly.config.service.v1.override.MatchConditionsClauseGroup;
 import ai.traceable.anomaly.config.service.v1.override.MatchOperator;
 import ai.traceable.anomaly.config.service.v1.override.MatchValue;
+import ai.traceable.config.utils.RegexValidator;
 import io.grpc.Status;
 import java.util.List;
+import java.util.function.Predicate;
 import lombok.NonNull;
 
 public class DetectionOverrideConditionsValidator {
@@ -96,21 +98,34 @@ public class DetectionOverrideConditionsValidator {
     if (!condition.hasValue()) {
       return Status.INVALID_ARGUMENT.withDescription("MatchCondition should have a match value");
     }
-    return validateMatchValue(condition.getValue());
+    return validateMatchValue(
+        condition.getValue(),
+        condition.getOperator() == MatchOperator.MATCH_OPERATOR_MATCHES_REGEX
+            || condition.getOperator() == MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX);
   }
 
-  private Status validateMatchValue(@NonNull MatchValue value) {
+  private Status validateMatchValue(@NonNull MatchValue value, boolean isRegexMatched) {
     switch (value.getValueCase()) {
       case STRING_VALUE:
         if (value.getStringValue().isEmpty()) {
           return Status.INVALID_ARGUMENT.withDescription(
               "Value shouldn't have an empty string value");
         }
+        if (isRegexMatched) {
+          return RegexValidator.validate(value.getStringValue());
+        }
         break;
       case LIST_VALUE:
         if (value.getListValue().getValuesList().isEmpty()) {
           return Status.INVALID_ARGUMENT.withDescription(
               "Value list should have at least one value");
+        }
+        if (isRegexMatched) {
+          return value.getListValue().getValuesList().stream()
+              .map(RegexValidator::validate)
+              .filter(Predicate.not(Status::isOk))
+              .findFirst()
+              .orElse(Status.OK);
         }
         break;
       default:

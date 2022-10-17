@@ -1,5 +1,6 @@
 package ai.traceable.iprange.config.service.rules;
 
+import ai.traceable.config.utils.RegexValidator;
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.DeleteIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.EventSeverity;
@@ -7,6 +8,8 @@ import ai.traceable.iprange.config.service.v1.IpRangeRule;
 import ai.traceable.iprange.config.service.v1.IpRangeRuleDetails;
 import ai.traceable.iprange.config.service.v1.RuleAction;
 import ai.traceable.iprange.config.service.v1.RuleScope;
+import ai.traceable.iprange.config.service.v1.StatusCodeMatchCondition;
+import ai.traceable.iprange.config.service.v1.StatusCodeMatchType;
 import ai.traceable.iprange.config.service.v1.UpdateIpRangeRuleRequest;
 import io.grpc.Status;
 import java.time.format.DateTimeParseException;
@@ -94,6 +97,15 @@ class IpRangeRulesValidator implements RulesValidator {
         return Status.INVALID_ARGUMENT.withDescription(
             "IP Range rule should have a valid expiration duration in ISO 8601 format");
       }
+    }
+
+    StatusCodeMatchCondition statusCodeMatchCondition =
+        details.getConditions().getStatusCodeMatchCondition();
+    if (statusCodeMatchCondition.getMatchType()
+            == StatusCodeMatchType.STATUS_CODE_MATCH_TYPE_MATCHES_REGEX
+        || statusCodeMatchCondition.getMatchType()
+            == StatusCodeMatchType.STATUS_CODE_MATCH_TYPE_NOT_MATCH_REGEX) {
+      return RegexValidator.validate(statusCodeMatchCondition.getMatchValue());
     }
     return Status.OK;
   }

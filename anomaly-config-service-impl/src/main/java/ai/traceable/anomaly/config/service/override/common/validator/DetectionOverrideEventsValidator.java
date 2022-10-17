@@ -7,8 +7,10 @@ import ai.traceable.anomaly.config.service.v1.override.DetectionOverrideAnomalou
 import ai.traceable.anomaly.config.service.v1.override.DetectionOverrideEventConfig;
 import ai.traceable.anomaly.config.service.v1.override.DetectionOverrideTargetEventsConfig;
 import ai.traceable.anomaly.config.service.v1.override.DetectionOverrideThreatType;
+import ai.traceable.config.utils.RegexValidator;
 import io.grpc.Status;
 import java.util.List;
+import java.util.function.Predicate;
 import lombok.NonNull;
 
 public class DetectionOverrideEventsValidator {
@@ -35,7 +37,11 @@ public class DetectionOverrideEventsValidator {
       return Status.INVALID_ARGUMENT.withDescription(
           "Attribute names should have at least one name or one regex");
     }
-    return Status.OK;
+    return config.getAttributeRegexesList().stream()
+        .map(RegexValidator::validate)
+        .filter(Predicate.not(Status::isOk))
+        .findFirst()
+        .orElse(Status.OK);
   }
 
   private Status validateEventsConfig(List<DetectionOverrideEventConfig> eventConfigList) {
