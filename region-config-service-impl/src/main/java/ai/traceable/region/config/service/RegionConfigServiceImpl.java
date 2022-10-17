@@ -144,8 +144,17 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
       return;
     }
 
-    RegionRule regionRule = rulesManager.createRegionRule(requestContext, request);
+    Optional<RegionRule> regionRuleOptional =
+        rulesManager.createRegionRule(requestContext, request);
+    if (regionRuleOptional.isEmpty()) {
+      responseObserver.onError(
+          Status.INTERNAL
+              .withDescription(String.format("Unable to create region rule %s", request.getName()))
+              .asException());
+      return;
+    }
 
+    RegionRule regionRule = regionRuleOptional.get();
     responseObserver.onNext(CreateRegionRuleResponse.newBuilder().setRule(regionRule).build());
     responseObserver.onCompleted();
 
@@ -166,8 +175,18 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
       return;
     }
 
-    RegionRule regionRule = rulesManager.updateRegionRule(requestContext, request);
+    Optional<RegionRule> regionRuleOptional =
+        rulesManager.updateRegionRule(requestContext, request);
+    if (regionRuleOptional.isEmpty()) {
+      responseObserver.onError(
+          Status.INTERNAL
+              .withDescription(
+                  String.format("Unable to update region rule with id %s", request.getId()))
+              .asException());
+      return;
+    }
 
+    RegionRule regionRule = regionRuleOptional.get();
     responseObserver.onNext(UpdateRegionRuleResponse.newBuilder().setRule(regionRule).build());
     responseObserver.onCompleted();
 

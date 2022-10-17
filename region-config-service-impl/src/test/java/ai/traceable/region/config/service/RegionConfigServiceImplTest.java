@@ -275,7 +275,7 @@ class RegionConfigServiceImplTest {
 
       when(rulesValidator.validate(eq(createRegionRuleRequest), any())).thenReturn(Status.OK);
       when(rulesManager.createRegionRule(requestContext, createRegionRuleRequest))
-          .thenReturn(regionRule);
+          .thenReturn(Optional.of(regionRule));
 
       StreamObserver<CreateRegionRuleResponse> responseObserver = mock(StreamObserver.class);
       requestContext.call(
@@ -312,13 +312,14 @@ class RegionConfigServiceImplTest {
 
       when(rulesValidator.validate(eq(createRegionRuleRequest), any()))
           .thenReturn(Status.INVALID_ARGUMENT);
-      when(rulesManager.createRegionRule(requestContext, createRegionRuleRequest)).thenReturn(null);
+      when(rulesManager.createRegionRule(requestContext, createRegionRuleRequest))
+          .thenReturn(Optional.empty());
 
       StreamObserver<CreateRegionRuleResponse> responseObserver = mock(StreamObserver.class);
       requestContext.call(
           () -> {
             regionConfigService.createRegionRule(createRegionRuleRequest, responseObserver);
-            return null;
+            return Optional.empty();
           });
       verify(responseObserver, times(1))
           .onError(argThat(err -> Status.fromThrowable(err).getCode() == Code.INVALID_ARGUMENT));
@@ -346,7 +347,7 @@ class RegionConfigServiceImplTest {
 
       when(rulesValidator.validate(eq(updateRegionRuleRequest), any())).thenReturn(Status.OK);
       when(rulesManager.updateRegionRule(requestContext, updateRegionRuleRequest))
-          .thenReturn(updatedRegionRule);
+          .thenReturn(Optional.of(updatedRegionRule));
 
       StreamObserver<UpdateRegionRuleResponse> responseObserver = mock(StreamObserver.class);
 
@@ -374,12 +375,6 @@ class RegionConfigServiceImplTest {
     @Test
     @DisplayName("should return invalid argument status invalid request")
     void should_fail_updateRegionRule_invalidRequest() {
-      RegionRule updatedRegionRule =
-          RegionRule.newBuilder()
-              .setId("id")
-              .addRegionId("region-1")
-              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
-              .build();
       UpdateRegionRuleRequest updateRegionRuleRequest =
           UpdateRegionRuleRequest.newBuilder()
               .setId("id")
@@ -389,17 +384,43 @@ class RegionConfigServiceImplTest {
 
       when(rulesValidator.validate(eq(updateRegionRuleRequest), any()))
           .thenReturn(Status.INVALID_ARGUMENT);
-      when(rulesManager.updateRegionRule(requestContext, updateRegionRuleRequest)).thenReturn(null);
+      when(rulesManager.updateRegionRule(requestContext, updateRegionRuleRequest))
+          .thenReturn(Optional.empty());
 
       StreamObserver<UpdateRegionRuleResponse> responseObserver = mock(StreamObserver.class);
 
       requestContext.call(
           () -> {
             regionConfigService.updateRegionRule(updateRegionRuleRequest, responseObserver);
-            return null;
+            return Optional.empty();
           });
       verify(responseObserver, times(1))
           .onError(argThat(err -> Status.fromThrowable(err).getCode() == Code.INVALID_ARGUMENT));
+    }
+
+    @Test
+    @DisplayName("should return internal status error on invalid rule id")
+    void should_fail_updateRegionRule_invalidId() {
+      UpdateRegionRuleRequest updateRegionRuleRequest =
+          UpdateRegionRuleRequest.newBuilder()
+              .setId("id")
+              .addRegionId("region-1")
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
+              .build();
+
+      when(rulesValidator.validate(eq(updateRegionRuleRequest), any())).thenReturn(Status.OK);
+      when(rulesManager.updateRegionRule(requestContext, updateRegionRuleRequest))
+          .thenReturn(Optional.empty());
+
+      StreamObserver<UpdateRegionRuleResponse> responseObserver = mock(StreamObserver.class);
+
+      requestContext.call(
+          () -> {
+            regionConfigService.updateRegionRule(updateRegionRuleRequest, responseObserver);
+            return Optional.empty();
+          });
+      verify(responseObserver, times(1))
+          .onError(argThat(err -> Status.fromThrowable(err).getCode() == Code.INTERNAL));
     }
   }
 

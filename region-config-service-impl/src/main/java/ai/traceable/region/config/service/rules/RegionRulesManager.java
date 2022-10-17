@@ -12,7 +12,6 @@ import io.grpc.Status;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ConfigObject;
@@ -42,7 +41,7 @@ class RegionRulesManager implements RulesManager {
   }
 
   @Override
-  public RegionRule createRegionRule(
+  public Optional<RegionRule> createRegionRule(
       RequestContext requestContext, CreateRegionRuleRequest createRuleRequest) {
     String ruleId = this.uuidGenerator.generateId();
     RegionRule regionRule;
@@ -51,16 +50,15 @@ class RegionRulesManager implements RulesManager {
     } else {
       regionRule = createDefaultRegionRule(createRuleRequest, ruleId);
     }
-    return regionRulesStore.upsertObject(requestContext, regionRule).getData();
+    return upsertConfig(requestContext, regionRule);
   }
 
   @Override
-  public RegionRule updateRegionRule(
+  public Optional<RegionRule> updateRegionRule(
       RequestContext requestContext, UpdateRegionRuleRequest request) {
     String ruleId = request.getId();
     if (!doesRegionRuleExist(requestContext, ruleId)) {
-      throw new NoSuchElementException(
-          String.format("Unable to update as region rule with id = %s does not exist", ruleId));
+      return Optional.empty();
     }
 
     Builder regionRuleBuilder = RegionRule.newBuilder();
@@ -80,7 +78,7 @@ class RegionRulesManager implements RulesManager {
     }
     RegionRule regionRule = regionRuleBuilder.build();
 
-    return regionRulesStore.upsertObject(requestContext, regionRule).getData();
+    return upsertConfig(requestContext, regionRule);
   }
 
   @Override
@@ -89,6 +87,15 @@ class RegionRulesManager implements RulesManager {
         .deleteObject(requestContext, id)
         .map(ConfigObject::getData)
         .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+  }
+
+  private Optional<RegionRule> upsertConfig(RequestContext requestContext, RegionRule regionRule) {
+    try {
+      return Optional.of(regionRulesStore.upsertObject(requestContext, regionRule).getData());
+    } catch (Exception exception) {
+      log.error("Unable to upsert region rule {}", regionRule, exception);
+      return Optional.empty();
+    }
   }
 
   private RegionRule createRegionRuleWithExpirationDetails(
