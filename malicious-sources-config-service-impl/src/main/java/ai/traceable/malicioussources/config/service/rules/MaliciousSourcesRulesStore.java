@@ -2,7 +2,9 @@ package ai.traceable.malicioussources.config.service.rules;
 
 import ai.traceable.malicioussources.config.service.v1.GetRulesFilter;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleScope;
 import com.google.protobuf.Value;
+import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
 import lombok.SneakyThrows;
@@ -59,6 +61,28 @@ public class MaliciousSourcesRulesStore
   @Override
   protected Optional<MaliciousSourcesRule> filterConfigData(
       MaliciousSourcesRule ruleData, GetRulesFilter filter) {
-    return Optional.empty();
+    return Optional.of(ruleData)
+        .filter(
+            rule -> filter.getRuleIdsCount() == 0 || filter.getRuleIdsList().contains(rule.getId()))
+        .filter(rule -> filterRuleOnScope(rule, filter.getRuleScope()))
+        .filter(rule -> !(filter.hasRuleStatus() && rule.getRuleStatus() != filter.getRuleStatus()))
+        .filter(
+            rule ->
+                filter.getRuleActionTypesCount() == 0
+                    || filter
+                        .getRuleActionTypesList()
+                        .contains(rule.getRuleInfo().getRuleAction().getActionType()));
+  }
+
+  private boolean filterRuleOnScope(
+      MaliciousSourcesRule ruleData, MaliciousSourcesRuleScope filterScope) {
+    List<String> ruleEnvironmentIds =
+        ruleData.getRuleScope().getEnvironmentScope().getEnvironmentIdsList();
+    if (!filterScope.hasEnvironmentScope() || ruleEnvironmentIds.isEmpty()) {
+      return true;
+    }
+
+    List<String> filterEnvironmentIds = filterScope.getEnvironmentScope().getEnvironmentIdsList();
+    return ruleEnvironmentIds.stream().anyMatch(filterEnvironmentIds::contains);
   }
 }
