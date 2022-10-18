@@ -2,7 +2,7 @@
 protoc = "3.21.4"
 grpc = "1.48.0"
 gson = "2.9.0"
-hypertrace-grpcutils = "0.7.6"
+hypertrace-grpcutils = "0.8.2"
 hypertrace-framework = "0.1.43"
 lombok = "1.18.22"
 jackson = "2.13.2.2"
