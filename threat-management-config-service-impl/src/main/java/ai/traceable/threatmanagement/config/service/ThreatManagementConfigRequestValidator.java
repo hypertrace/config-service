@@ -1,6 +1,8 @@
 package ai.traceable.threatmanagement.config.service;
 
+import ai.traceable.config.utils.RegexValidator;
 import ai.traceable.threatmanagement.config.service.v1.AnomalyScoreContribution;
+import ai.traceable.threatmanagement.config.service.v1.ExcludeAutoBlockingConfig;
 import ai.traceable.threatmanagement.config.service.v1.GetAnomalyScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetSecurityEventTypeContributionRequest;
@@ -98,6 +100,8 @@ class ThreatManagementConfigRequestValidator {
     ThreatAutoBlockingActionType actionType = request.getActionType();
     this.validateThreatAutoBlockingActionType(actionType);
 
+    request.getExcludeConfigsList().forEach(this::validateExcludeAutoBlockingConfig);
+
     switch (actionType) {
       case THREAT_AUTO_BLOCKING_ACTION_TYPE_NO_ACTION:
         if (request.hasExpirationDetails()) {
@@ -114,6 +118,18 @@ class ThreatManagementConfigRequestValidator {
     if (requestContext.getTenantId().isEmpty()) {
       throw new IllegalArgumentException("Missing expected Tenant ID in request");
     }
+  }
+
+  private void validateExcludeAutoBlockingConfig(ExcludeAutoBlockingConfig config) {
+    config
+        .getUserIdRegexesList()
+        .forEach(
+            userIdRegex -> {
+              if (!RegexValidator.validate(userIdRegex).isOk()) {
+                throw new IllegalArgumentException(
+                    "Invalid user id regex provided: " + userIdRegex);
+              }
+            });
   }
 
   private void validateThreatScoreBound(ThreatScoreBound threatScoreBound) {

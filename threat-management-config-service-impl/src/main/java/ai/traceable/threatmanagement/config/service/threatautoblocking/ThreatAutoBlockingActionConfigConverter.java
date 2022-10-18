@@ -1,11 +1,11 @@
 package ai.traceable.threatmanagement.config.service.threatautoblocking;
 
 import static ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK;
+import static ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_NO_ACTION;
 
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionType;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest;
-import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest.ExpirationDetails;
 import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Duration;
@@ -22,41 +22,27 @@ class ThreatAutoBlockingActionConfigConverter {
 
   public ThreatAutoBlockingActionConfig convert(UpdateThreatAutoBlockingConfigRequest request) {
     ThreatAutoBlockingActionType actionType = request.getActionType();
-    switch (actionType) {
-      case THREAT_AUTO_BLOCKING_ACTION_TYPE_NO_ACTION:
-        return buildDefaultConfig(actionType);
-      case THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK:
-        if (!request.hasExpirationDetails()) {
-          return buildDefaultConfig(actionType);
-        }
-
-        return getBlockingActionTypeConfig(request.getExpirationDetails());
-      case THREAT_AUTO_BLOCKING_ACTION_TYPE_UNSPECIFIED:
-      case UNRECOGNIZED:
-      default:
-        throw new IllegalArgumentException(
-            String.format("Invalid threat auto blocking action config type %s", actionType));
+    ThreatAutoBlockingActionConfig.Builder builder =
+        ThreatAutoBlockingActionConfig.newBuilder().setActionType(actionType);
+    if (actionType == THREAT_AUTO_BLOCKING_ACTION_TYPE_NO_ACTION) {
+      return builder.build();
     }
+    if (actionType == THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK) {
+      if (request.hasExpirationDetails()) {
+        builder.setExpirationDetails(convertExpirationDetails(request.getExpirationDetails()));
+      }
+      return builder.addAllExcludeConfigs(request.getExcludeConfigsList()).build();
+    }
+    throw new IllegalArgumentException(
+        String.format("Invalid threat auto blocking action config type %s", actionType));
   }
 
-  private ThreatAutoBlockingActionConfig getBlockingActionTypeConfig(
-      ExpirationDetails expirationDetails) {
-    if (!expirationDetails.hasDuration()) {
-      return buildDefaultConfig(THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK);
-    }
-
+  private ThreatAutoBlockingActionConfig.ExpirationDetails convertExpirationDetails(
+      UpdateThreatAutoBlockingConfigRequest.ExpirationDetails expirationDetails) {
     String duration = expirationDetails.getDuration();
-    return ThreatAutoBlockingActionConfig.newBuilder()
-        .setActionType(THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK)
-        .setExpirationDetails(
-            ThreatAutoBlockingActionConfig.ExpirationDetails.newBuilder()
-                .setDuration(duration)
-                .setTimestampMillis(clock.millis() + Duration.parse(duration).toMillis()))
+    return ThreatAutoBlockingActionConfig.ExpirationDetails.newBuilder()
+        .setDuration(duration)
+        .setTimestampMillis(clock.millis() + Duration.parse(duration).toMillis())
         .build();
-  }
-
-  private ThreatAutoBlockingActionConfig buildDefaultConfig(
-      ThreatAutoBlockingActionType actionType) {
-    return ThreatAutoBlockingActionConfig.newBuilder().setActionType(actionType).build();
   }
 }

@@ -6,6 +6,7 @@ plugins {
 
 dependencies {
   api(projects.threatManagementConfigServiceApi)
+  implementation(projects.configUtils)
   implementation(libs.hypertrace.configservice.api)
 
   implementation(libs.guice)

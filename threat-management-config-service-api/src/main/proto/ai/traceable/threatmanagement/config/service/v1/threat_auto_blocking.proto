@@ -11,9 +11,14 @@ message GetThreatAutoBlockingConfigResponse {
   ThreatAutoBlockingActionConfig auto_blocking_action_config = 1;
 }
 
+message ExcludeAutoBlockingConfig {
+  repeated string user_id_regexes = 1;
+}
+
 message UpdateThreatAutoBlockingConfigRequest {
   ThreatAutoBlockingActionType action_type = 1;
   ExpirationDetails expiration_details = 2;
+  repeated ExcludeAutoBlockingConfig exclude_configs = 3;
 
   message ExpirationDetails {
     // Duration represented in ISO 8601 duration format.
@@ -28,6 +33,7 @@ message UpdateThreatAutoBlockingConfigResponse {
 message ThreatAutoBlockingActionConfig {
   ThreatAutoBlockingActionType action_type = 1;
   ExpirationDetails expiration_details = 2;
+  repeated ExcludeAutoBlockingConfig exclude_configs = 3;
 
   message ExpirationDetails {
     // Duration represented in ISO 8601 duration format.

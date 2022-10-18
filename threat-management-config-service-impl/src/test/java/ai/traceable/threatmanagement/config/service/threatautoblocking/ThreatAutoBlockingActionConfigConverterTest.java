@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.threatmanagement.config.service.v1.ExcludeAutoBlockingConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionType;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest;
@@ -57,12 +58,16 @@ class ThreatAutoBlockingActionConfigConverterTest {
     UpdateThreatAutoBlockingConfigRequest request =
         UpdateThreatAutoBlockingConfigRequest.newBuilder()
             .setActionType(ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK)
+            .addExcludeConfigs(
+                ExcludeAutoBlockingConfig.newBuilder().addUserIdRegexes("^a").build())
             .setExpirationDetails(ExpirationDetails.newBuilder().setDuration("PT1H2M34S").build())
             .build();
 
     assertEquals(
         ThreatAutoBlockingActionConfig.newBuilder()
             .setActionType(ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK)
+            .addExcludeConfigs(
+                ExcludeAutoBlockingConfig.newBuilder().addUserIdRegexes("^a").build())
             .setExpirationDetails(
                 ThreatAutoBlockingActionConfig.ExpirationDetails.newBuilder()
                     .setDuration("PT1H2M34S")

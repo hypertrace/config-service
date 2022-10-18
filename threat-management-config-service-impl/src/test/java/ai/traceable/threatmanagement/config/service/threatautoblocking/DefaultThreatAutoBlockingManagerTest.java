@@ -6,10 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.threatmanagement.config.service.v1.ExcludeAutoBlockingConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionConfig.ExpirationDetails;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionType;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest;
+import com.google.protobuf.ListValue;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 import io.grpc.Status;
@@ -53,6 +55,7 @@ class DefaultThreatAutoBlockingManagerTest {
   private static final ThreatAutoBlockingActionConfig THREAT_AUTO_BLOCKING_ACTION_CONFIG_2 =
       ThreatAutoBlockingActionConfig.newBuilder()
           .setActionType(ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK)
+          .addExcludeConfigs(ExcludeAutoBlockingConfig.newBuilder().addUserIdRegexes("^a").build())
           .setExpirationDetails(
               ExpirationDetails.newBuilder().setDuration("PT1H2M34S").setTimestampMillis(3754000))
           .build();
@@ -67,6 +70,25 @@ class DefaultThreatAutoBlockingManagerTest {
                           .setStringValue(
                               ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK
                                   .name())
+                          .build())
+                  .putFields(
+                      "excludeConfigs",
+                      Value.newBuilder()
+                          .setListValue(
+                              ListValue.newBuilder()
+                                  .addValues(
+                                      Value.newBuilder()
+                                          .setStructValue(
+                                              Struct.newBuilder()
+                                                  .putFields(
+                                                      "userIdRegexes",
+                                                      Value.newBuilder()
+                                                          .setListValue(
+                                                              ListValue.newBuilder()
+                                                                  .addValues(
+                                                                      Value.newBuilder()
+                                                                          .setStringValue("^a")))
+                                                          .build()))))
                           .build())
                   .putFields(
                       "expirationDetails",
