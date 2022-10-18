@@ -71,7 +71,6 @@ message ScopeCondition {
   message EntityScope {
     EntityType entity_type = 1;
     repeated string entity_ids = 2;
-    bool all_entities = 3;
   }
 
   message LabelScope {
