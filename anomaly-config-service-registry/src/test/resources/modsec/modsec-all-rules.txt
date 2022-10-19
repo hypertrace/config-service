@@ -104,6 +104,7 @@ crs_942500 :: MySQL in-line comment :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OW
 crs_943100 :: Possible Session Fixation Attack: Setting Cookie Values in HTML :: [ 'CWE:384' ]
 crs_943110 :: Possible Session Fixation Attack: SessionID Parameter Name with Off-Domain Referer :: [ 'CWE:384' ]
 crs_943120 :: Possible Session Fixation Attack: SessionID Parameter Name with No Referer :: [ 'CWE:384' ]
+crs_94400910 :: Apache Commons Text: String Interpolation RCE: (CVE-2022-42889) :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API:API8' , 'CWE:94' ]
 crs_9440210 :: Java Deserialization: Magic Bytes Base64 Encoded :: [ 'OWASP_2017:A8' , 'OWASP_2021:A8' , 'CWE:502' ]
 crs_9440900 :: Java Log4j: JNDI Exploitation (CVE-2021-44228) (T900) :: [ 'OWASP_2017:A9' , 'OWASP_2021:A6' , 'CWE:95' ]
 crs_9440910 :: Java Log4j: RCE DoS Exploitation (CVE-2021-45105) (T910) :: [ 'OWASP_2017:A9' , 'OWASP_2021:A6' , 'CWE:95' ]
