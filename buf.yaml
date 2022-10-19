@@ -18,6 +18,7 @@ build:
     - hypertrace-config-service/alerting-config-service-api/src/main/proto
     - data-classification-config-service-api/src/main/proto
     - iprange-config-service-api/src/main/proto
+    - malicious-sources-config-service-api/src/main/proto
     - license-status-config-service-api/src/main/proto
     - threat-management-config-service-api/src/main/proto
     - external-data-classification-config-service-api/src/main/proto

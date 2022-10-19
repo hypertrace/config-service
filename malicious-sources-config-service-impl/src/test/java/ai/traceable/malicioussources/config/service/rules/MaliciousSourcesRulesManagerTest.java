@@ -25,6 +25,7 @@ import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleCondi
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleInfo;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleScope;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleStatus;
+import ai.traceable.malicioussources.config.service.v1.Region;
 import ai.traceable.malicioussources.config.service.v1.RegionCondition;
 import ai.traceable.malicioussources.config.service.v1.RuleActionType;
 import ai.traceable.malicioussources.config.service.v1.UpdateMaliciousSourcesRuleRequest;
@@ -232,7 +233,10 @@ public class MaliciousSourcesRulesManagerTest {
                       .build())
               .setConditions(
                   MaliciousSourcesRuleConditions.newBuilder()
-                      .setRegionCondition(RegionCondition.newBuilder().addRegions("China").build())
+                      .setRegionCondition(
+                          RegionCondition.newBuilder()
+                              .addRegions(Region.newBuilder().setCountryIsoCode("0000").build())
+                              .build())
                       .setIpLocationTypeCondition(
                           IpLocationTypeCondition.newBuilder()
                               .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN)
@@ -289,7 +293,10 @@ public class MaliciousSourcesRulesManagerTest {
                       .build())
               .setConditions(
                   MaliciousSourcesRuleConditions.newBuilder()
-                      .setRegionCondition(RegionCondition.newBuilder().addRegions("China").build())
+                      .setRegionCondition(
+                          RegionCondition.newBuilder()
+                              .addRegions(Region.newBuilder().setCountryIsoCode("0000").build())
+                              .build())
                       .setIpLocationTypeCondition(
                           IpLocationTypeCondition.newBuilder()
                               .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN)
@@ -340,7 +347,10 @@ public class MaliciousSourcesRulesManagerTest {
                       .build())
               .setConditions(
                   MaliciousSourcesRuleConditions.newBuilder()
-                      .setRegionCondition(RegionCondition.newBuilder().addRegions("China").build())
+                      .setRegionCondition(
+                          RegionCondition.newBuilder()
+                              .addRegions(Region.newBuilder().setCountryIsoCode("0000").build())
+                              .build())
                       .setIpLocationTypeCondition(
                           IpLocationTypeCondition.newBuilder()
                               .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN)
