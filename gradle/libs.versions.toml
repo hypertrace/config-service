@@ -1,8 +1,8 @@
 [versions]
-protoc = "3.21.4"
-grpc = "1.48.0"
+protoc = "3.21.7"
+grpc = "1.50.0"
 gson = "2.9.0"
-hypertrace-grpcutils = "0.8.2"
+hypertrace-grpcutils = "0.9.0"
 hypertrace-framework = "0.1.43"
 lombok = "1.18.22"
 jackson = "2.13.2.2"
@@ -65,4 +65,4 @@ mockito-junit = { module = "org.mockito:mockito-junit-jupiter", version.ref = "m
 mockito-inline = { module = "org.mockito:mockito-inline", version.ref = "mockito" }
 
 [bundles]
-grpc-api = ["grpc-stub", "grpc-protobuf", "javax-annotation"]
+grpc-api = ["grpc-stub", "grpc-protobuf", "javax-annotation", "protobuf-java"]
