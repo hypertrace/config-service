@@ -1,7 +1,6 @@
 package ai.traceable.localprocessing.config.service.spanprocessingrules;
 
 import ai.traceable.localprocessing.config.service.spanprocessingrules.excludespanrules.ExcludeSpanRulesManagerModule;
-import ai.traceable.localprocessing.config.service.spanprocessingrules.protectionspanrules.ProtectionSpanRulesManagerModule;
 import ai.traceable.localprocessing.config.service.spanprocessingrules.ratelimitconfig.RateLimitConfigManagerModule;
 import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
 import com.google.inject.AbstractModule;
@@ -22,7 +21,6 @@ public class SpanProcessingRulesManagerModule extends AbstractModule {
   protected void configure() {
     bind(SpanProcessingRulesManager.class).to(DefaultSpanProcessingRulesManager.class);
     install(new ExcludeSpanRulesManagerModule());
-    install(new ProtectionSpanRulesManagerModule());
     install(new RateLimitConfigManagerModule(this.config));
   }
 

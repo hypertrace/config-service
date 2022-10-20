@@ -1,7 +1,6 @@
 package ai.traceable.localprocessing.config.service.spanprocessingrules;
 
 import ai.traceable.localprocessing.config.service.spanprocessingrules.excludespanrules.ExcludeSpanRulesManager;
-import ai.traceable.localprocessing.config.service.spanprocessingrules.protectionspanrules.ProtectionSpanRulesManager;
 import ai.traceable.localprocessing.config.service.spanprocessingrules.ratelimitconfig.RateLimitConfigManager;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.GetSpanProcessingRulesRequest;
@@ -22,18 +21,15 @@ public class DefaultSpanProcessingRulesManager implements SpanProcessingRulesMan
 
   private final ExcludeSpanRulesManager excludeSpanRulesManager;
   private final RateLimitConfigManager rateLimitConfigManager;
-  private final ProtectionSpanRulesManager protectionSpanRulesManager;
   private final UuidGenerator uuidGenerator;
 
   @Inject
   public DefaultSpanProcessingRulesManager(
       ExcludeSpanRulesManager excludeSpanRulesManager,
       RateLimitConfigManager rateLimitConfigManager,
-      ProtectionSpanRulesManager protectionSpanRulesManager,
       UuidGenerator uuidGenerator) {
     this.excludeSpanRulesManager = excludeSpanRulesManager;
     this.rateLimitConfigManager = rateLimitConfigManager;
-    this.protectionSpanRulesManager = protectionSpanRulesManager;
     this.uuidGenerator = uuidGenerator;
   }
 
@@ -77,9 +73,6 @@ public class DefaultSpanProcessingRulesManager implements SpanProcessingRulesMan
         SpanProcessingRules.newBuilder()
             .addAllExcludeSpanRules(
                 excludeSpanRulesManager.getAllExcludeSpanProcessingRules(
-                    requestContext, serviceName, environment))
-            .addAllProtectionSpanRules(
-                protectionSpanRulesManager.getAllProtectionSpanProcessingRules(
                     requestContext, serviceName, environment));
 
     Optional<RateLimitConfig> rateLimitConfigOptional =
