@@ -140,7 +140,8 @@ public class CustomSignatureModsecRulesManagerTest {
             MatchOperator.MATCH_OPERATOR_EQUALS,
             MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
             MatchOperator.MATCH_OPERATOR_CONTAINS,
-            MatchOperator.MATCH_OPERATOR_NOT_CONTAIN));
+            MatchOperator.MATCH_OPERATOR_NOT_CONTAIN),
+        EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
 
     createRules(
         rules,
@@ -155,7 +156,8 @@ public class CustomSignatureModsecRulesManagerTest {
             new MatchCombination(MatchKey.MATCH_KEY_PARAMETER_VALUE, "^\\d+$")),
         List.of(
             MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
-            MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX));
+            MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX),
+        EventType.EVENT_TYPE_ALLOW);
 
     createRules(
         rules,
@@ -250,7 +252,8 @@ public class CustomSignatureModsecRulesManagerTest {
   private void createRules(
       List<CustomSignatureRule> rules,
       List<MatchCombination> matchCombinations,
-      List<MatchOperator> matchOperators) {
+      List<MatchOperator> matchOperators,
+      EventType eventType) {
     matchCombinations.forEach(
         matchCombination ->
             matchOperators.forEach(
@@ -260,7 +263,7 @@ public class CustomSignatureModsecRulesManagerTest {
                             .setId(getUUID(matchCombination.getMatchKey() + " : " + matchOperator))
                             .setName(matchCombination.getMatchKey() + " : " + matchOperator)
                             .setDescription(matchCombination.getMatchKey() + " : " + matchOperator)
-                            .setEffect(getDefaultRuleEffect())
+                            .setEffect(getRuleEffect(eventType))
                             .setBlockingExpiryDetails(
                                 ExpiryDetails.newBuilder()
                                     .setExpiryTimestampMillis(EXPIRY_TIMESTAMP_MILLIS)
@@ -327,7 +330,7 @@ public class CustomSignatureModsecRulesManagerTest {
                                             + ") valueMatch("
                                             + valueMatchOperator
                                             + ")")
-                                    .setEffect(getDefaultRuleEffect())
+                                    .setEffect(getRuleEffect())
                                     .setDefinition(
                                         RuleDefinition.newBuilder()
                                             .setClauseGroup(
@@ -379,7 +382,7 @@ public class CustomSignatureModsecRulesManagerTest {
             .setId(getUUID("Chained rule with ids: " + idList))
             .setName("Chained rule with ids: " + idList)
             .setDescription("Chained rule with ids: " + idList)
-            .setEffect(getDefaultRuleEffect())
+            .setEffect(getRuleEffect())
             .setDefinition(
                 RuleDefinition.newBuilder()
                     .setClauseGroup(
@@ -400,9 +403,16 @@ public class CustomSignatureModsecRulesManagerTest {
             .build());
   }
 
-  private RuleEffect getDefaultRuleEffect() {
+  private RuleEffect getRuleEffect() {
     return RuleEffect.newBuilder()
         .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
+        .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+        .build();
+  }
+
+  private RuleEffect getRuleEffect(EventType eventType) {
+    return RuleEffect.newBuilder()
+        .setEventType(eventType)
         .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
         .build();
   }

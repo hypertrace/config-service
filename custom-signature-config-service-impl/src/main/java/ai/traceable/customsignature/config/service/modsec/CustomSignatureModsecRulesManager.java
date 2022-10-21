@@ -6,6 +6,7 @@ import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRuleDetails;
+import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.modsecurity.RuleEngine;
@@ -15,6 +16,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
@@ -50,7 +53,8 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
   public GetCustomSignatureModsecRulesResponse getModsecRules(
       List<CustomSignatureRule> customSignatureRules) {
     List<CustomSignatureRuleDetails> ruleDetailsList = new ArrayList<>();
-    List<String> modsecRules = new ArrayList<>();
+    List<String> allowModsecRules = new ArrayList<>();
+    List<String> violationModsecRules = new ArrayList<>();
 
     long modsecIdAssignment = MODSEC_ID_SEED;
 
@@ -68,7 +72,11 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
       if (modsecRule == null || modsecRule.isBlank()) {
         continue;
       }
-      modsecRules.add(modsecRule);
+      if (rule.getEffect().getEventType() == EventType.EVENT_TYPE_ALLOW) {
+        allowModsecRules.add(modsecRule);
+      } else {
+        violationModsecRules.add(modsecRule);
+      }
       ruleDetailsList.add(
           CustomSignatureRuleDetails.newBuilder()
               .setId(rule.getId())
@@ -84,7 +92,9 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
     if (ruleDetailsList.isEmpty()) {
       return GetCustomSignatureModsecRulesResponse.getDefaultInstance();
     }
-
+    List<String> modsecRules =
+        Stream.concat(allowModsecRules.stream(), violationModsecRules.stream())
+            .collect(Collectors.toList());
     return GetCustomSignatureModsecRulesResponse.newBuilder()
         .setModsecRulesBlob(modsecConfigDirectives + String.join(NEW_LINES_DELIMITER, modsecRules))
         .addAllRules(ruleDetailsList)
