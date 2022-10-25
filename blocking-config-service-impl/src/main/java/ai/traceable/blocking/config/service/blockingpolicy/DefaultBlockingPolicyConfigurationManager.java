@@ -93,7 +93,8 @@ public class DefaultBlockingPolicyConfigurationManager
     List<BlockingDetails> customSignatureViolation =
         customSignatureRulesMap.get(BLOCKING_RULE_TYPE_BLOCK);
 
-    List<BlockingDetails> modsecViolation = modsecDataFetcher.getModsecViolations(requestContext);
+    List<BlockingDetails> modsecViolation =
+        modsecDataFetcher.getModsecViolations(requestContext, environmentId);
 
     // Custom ip rules
     Map<BlockingRuleType, List<BlockingDetails>> customIpBasedRulesMap =

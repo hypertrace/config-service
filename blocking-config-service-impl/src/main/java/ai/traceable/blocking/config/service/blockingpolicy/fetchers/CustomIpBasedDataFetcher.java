@@ -4,6 +4,9 @@ import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_
 import static ai.traceable.blocking.config.service.v1.BlockingRuleType.BLOCKING_RULE_TYPE_ALLOW;
 import static ai.traceable.blocking.config.service.v1.BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK;
 import static ai.traceable.blocking.config.service.v1.BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT;
+import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_ALLOW;
+import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_BLOCK;
+import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT;
 
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
@@ -15,9 +18,11 @@ import ai.traceable.iprange.config.service.v1.GetIpRangeRulesResponse;
 import ai.traceable.iprange.config.service.v1.GetRulesFilter;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc.IpRangeConfigServiceBlockingStub;
 import ai.traceable.iprange.config.service.v1.IpRangeRule;
+import ai.traceable.iprange.config.service.v1.RuleAction;
 import ai.traceable.iprange.config.service.v1.RuleScope;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,6 +35,8 @@ import org.slf4j.LoggerFactory;
 
 public class CustomIpBasedDataFetcher {
   private static final Logger LOGGER = LoggerFactory.getLogger(CustomIpBasedDataFetcher.class);
+  private static final List<RuleAction> SUPPORTED_RULE_ACTIONS =
+      ImmutableList.of(RULE_ACTION_BLOCK, RULE_ACTION_ALLOW, RULE_ACTION_BLOCK_ALL_EXCEPT);
 
   private final IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub;
   private final BlockingRulesUtils blockingRulesUtils;
@@ -54,6 +61,7 @@ public class CustomIpBasedDataFetcher {
             .setFilter(
                 GetRulesFilter.newBuilder()
                     .setDisabled(false)
+                    .addAllRuleActions(SUPPORTED_RULE_ACTIONS)
                     .setRuleScope(
                         RuleScope.newBuilder()
                             .setEnvironmentScope(

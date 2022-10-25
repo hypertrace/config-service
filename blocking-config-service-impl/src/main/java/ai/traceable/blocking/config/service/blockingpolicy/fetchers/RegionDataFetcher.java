@@ -3,6 +3,8 @@ package ai.traceable.blocking.config.service.blockingpolicy.fetchers;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_CUSTOM_REGION_RULE;
 import static ai.traceable.blocking.config.service.v1.BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK;
 import static ai.traceable.blocking.config.service.v1.BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT;
+import static ai.traceable.region.config.service.v1.RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK;
+import static ai.traceable.region.config.service.v1.RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT;
 
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
@@ -15,7 +17,9 @@ import ai.traceable.region.config.service.v1.GetAllRegionRulesResponse;
 import ai.traceable.region.config.service.v1.GetRegionRulesFilter;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceBlockingStub;
 import ai.traceable.region.config.service.v1.RegionRule;
+import ai.traceable.region.config.service.v1.RegionRuleActionType;
 import ai.traceable.region.config.service.v1.RuleScope;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,6 +32,8 @@ import org.slf4j.LoggerFactory;
 
 public class RegionDataFetcher {
   private static final Logger LOGGER = LoggerFactory.getLogger(RegionDataFetcher.class);
+  private static final List<RegionRuleActionType> SUPPORTED_RULE_ACTIONS =
+      ImmutableList.of(REGION_RULE_ACTION_TYPE_BLOCK, REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT);
 
   private final RegionConfigServiceBlockingStub regionConfigServiceStub;
   private final BlockingRulesUtils blockingRulesUtils;
@@ -51,6 +57,7 @@ public class RegionDataFetcher {
             .setFilter(
                 GetRegionRulesFilter.newBuilder()
                     .setDisabled(false)
+                    .addAllRuleActionTypes(SUPPORTED_RULE_ACTIONS)
                     .setRuleScope(
                         RuleScope.newBuilder()
                             .setEnvironmentScope(

@@ -6,6 +6,7 @@ import static ai.traceable.blocking.config.service.v1.BlockingStatus.BLOCKING_ST
 
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfigType;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc.DetectorConfigServiceBlockingStub;
@@ -20,31 +21,16 @@ import ai.traceable.blocking.config.service.v1.ModsecDetails;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class ModsecDataFetcher {
   private static final String CRS_RULE_ID_REGEX = "^crs_";
-  private static final GetScopedAnomalyGlobalConfigStatusRequest
-      SCOPED_ANOMALY_GLOBAL_CONFIG_STATUS_REQUEST =
-          GetScopedAnomalyGlobalConfigStatusRequest.newBuilder()
-              .setConfigScope(
-                  AnomalyConfigScope.newBuilder()
-                      .setCustomerScope(AnomalyCustomerScope.getDefaultInstance()))
-              .build();
-  private static final GetScopedAnomalyDetectionConfigRequest
-      SCOPED_ANOMALY_DETECTION_CONFIG_REQUEST =
-          GetScopedAnomalyDetectionConfigRequest.newBuilder()
-              .setConfigScope(
-                  AnomalyConfigScope.newBuilder()
-                      .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
-                      .build())
-              .setFilter(
-                  GetAnomalyDetectionConfigsFilter.newBuilder()
-                      .addAnomalyDetectionConfigTypes(
-                          AnomalyDetectionConfigType.ANOMALY_DETECTION_CONFIG_TYPE_MODSECURITY)
-                      .build())
-              .build();
+  private static final AnomalyConfigScope DEFAULT_ANOMALY_CONFIG_SCOPE =
+      AnomalyConfigScope.newBuilder()
+          .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+          .build();
 
   private final AnomalyGlobalConfigServiceBlockingStub anomalyGlobalConfigServiceStub;
   private final DetectorConfigServiceBlockingStub detectorConfigServiceBlockingStub;
@@ -57,47 +43,90 @@ public class ModsecDataFetcher {
     this.detectorConfigServiceBlockingStub = detectorConfigServiceBlockingStub;
   }
 
-  public List<BlockingDetails> getModsecViolations(RequestContext requestContext) {
+  public List<BlockingDetails> getModsecViolations(
+      RequestContext requestContext, Optional<String> environmentId) {
+    AnomalyConfigScope anomalyConfigScope =
+        environmentId
+            .map(
+                id ->
+                    AnomalyConfigScope.newBuilder()
+                        .setEnvironmentScope(
+                            AnomalyEnvironmentScope.newBuilder().setEnvironmentId(id))
+                        .build())
+            .orElse(DEFAULT_ANOMALY_CONFIG_SCOPE);
+
     GetScopedAnomalyGlobalConfigStatusResponse statusResponse =
-        anomalyGlobalConfigServiceStub.getScopedAnomalyGlobalConfigStatus(
-            SCOPED_ANOMALY_GLOBAL_CONFIG_STATUS_REQUEST);
+        getScopedAnomalyGlobalConfigStatus(requestContext, anomalyConfigScope);
     List<BlockingDetails> parsedModsecViolations = List.of();
     if (!statusResponse.getScopedConfig().getConfigStatus().getDisabled()) {
-      GetScopedAnomalyDetectionConfigResponse response =
-          requestContext.call(
-              () ->
-                  detectorConfigServiceBlockingStub.getScopedAnomalyDetectionConfig(
-                      SCOPED_ANOMALY_DETECTION_CONFIG_REQUEST));
-
       parsedModsecViolations =
-          response.getScopedAnomalyDetectionConfig().getAnomalyDetectionConfigsList().stream()
-              .filter(
-                  detectionConfig ->
-                      detectionConfig.getModsecurityAnomalyDetectionConfig().hasModsecAnomalyRule())
-              .filter(detectionConfig -> !detectionConfig.getConfigStatus().getDisabled())
-              .flatMap(
-                  detectionConfig ->
-                      detectionConfig
-                          .getModsecurityAnomalyDetectionConfig()
-                          .getModsecAnomalyRule()
-                          .getSubRuleConfigsList()
-                          .stream())
-              .filter(AnomalySubRuleConfig::getBlockingEnabled)
-              .map(AnomalySubRuleConfig::getSubRuleId)
-              .map(
-                  ruleId ->
-                      BlockingDetails.newBuilder()
-                          .setCategory(BLOCKING_CATEGORY_MODSECURITY)
-                          .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK)
-                          .setInfo(ViolationInfoEncoder.getEncodedSafeCrsViolationInfo(ruleId))
-                          .setStatus(BLOCKING_STATUS_DENIED)
-                          .setModsecDetails(
-                              ModsecDetails.newBuilder()
-                                  .setRuleId(ruleId.replaceFirst(CRS_RULE_ID_REGEX, ""))
-                                  .build())
-                          .build())
-              .collect(Collectors.toUnmodifiableList());
+          parseModsecViolations(
+              getScopedAnomalyDetectionConfig(requestContext, anomalyConfigScope));
     }
     return parsedModsecViolations;
+  }
+
+  private GetScopedAnomalyGlobalConfigStatusResponse getScopedAnomalyGlobalConfigStatus(
+      RequestContext requestContext, AnomalyConfigScope anomalyConfigScope) {
+    GetScopedAnomalyGlobalConfigStatusRequest getScopedAnomalyGlobalConfigStatusRequest =
+        GetScopedAnomalyGlobalConfigStatusRequest.newBuilder()
+            .setConfigScope(anomalyConfigScope)
+            .build();
+
+    return requestContext.call(
+        () ->
+            anomalyGlobalConfigServiceStub.getScopedAnomalyGlobalConfigStatus(
+                getScopedAnomalyGlobalConfigStatusRequest));
+  }
+
+  private GetScopedAnomalyDetectionConfigResponse getScopedAnomalyDetectionConfig(
+      RequestContext requestContext, AnomalyConfigScope anomalyConfigScope) {
+    GetScopedAnomalyDetectionConfigRequest getScopedAnomalyDetectionConfigRequest =
+        GetScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setConfigScope(anomalyConfigScope)
+            .setFilter(
+                GetAnomalyDetectionConfigsFilter.newBuilder()
+                    .addAnomalyDetectionConfigTypes(
+                        AnomalyDetectionConfigType.ANOMALY_DETECTION_CONFIG_TYPE_MODSECURITY))
+            .build();
+
+    return requestContext.call(
+        () ->
+            detectorConfigServiceBlockingStub.getScopedAnomalyDetectionConfig(
+                getScopedAnomalyDetectionConfigRequest));
+  }
+
+  private static List<BlockingDetails> parseModsecViolations(
+      GetScopedAnomalyDetectionConfigResponse scopedAnomalyDetectionConfigResponse) {
+    return scopedAnomalyDetectionConfigResponse
+        .getScopedAnomalyDetectionConfig()
+        .getAnomalyDetectionConfigsList()
+        .stream()
+        .filter(
+            detectionConfig ->
+                detectionConfig.getModsecurityAnomalyDetectionConfig().hasModsecAnomalyRule())
+        .filter(detectionConfig -> !detectionConfig.getConfigStatus().getDisabled())
+        .flatMap(
+            detectionConfig ->
+                detectionConfig
+                    .getModsecurityAnomalyDetectionConfig()
+                    .getModsecAnomalyRule()
+                    .getSubRuleConfigsList()
+                    .stream())
+        .filter(AnomalySubRuleConfig::getBlockingEnabled)
+        .map(AnomalySubRuleConfig::getSubRuleId)
+        .map(
+            ruleId ->
+                BlockingDetails.newBuilder()
+                    .setCategory(BLOCKING_CATEGORY_MODSECURITY)
+                    .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK)
+                    .setInfo(ViolationInfoEncoder.getEncodedSafeCrsViolationInfo(ruleId))
+                    .setStatus(BLOCKING_STATUS_DENIED)
+                    .setModsecDetails(
+                        ModsecDetails.newBuilder()
+                            .setRuleId(ruleId.replaceFirst(CRS_RULE_ID_REGEX, ""))
+                            .build())
+                    .build())
+        .collect(Collectors.toUnmodifiableList());
   }
 }

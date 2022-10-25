@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc;
@@ -133,8 +134,6 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
-    enableBlockingOnAModsecRule();
-
     // Need to add actors upfront due to caching
     mockActorService.addThreatActor("Actor-1", "1.1.1.1", STATUS_ALWAYS_DENIED, Optional.empty());
     mockActorService.addThreatActor(
@@ -158,6 +157,9 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
   @Test
   void getBlockingRules() {
     String emptyValueUuid = uuidGenerator.generateId("");
+
+    enableBlockingOnAModsecRule(Optional.empty());
+    enableBlockingOnAModsecRule(Optional.of(ENVIRONMENT_ID));
 
     GetBlockingRulesResponse response =
         RequestContext.forTenantId(TENANT_ID)
@@ -245,10 +247,10 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
         modsecCrsBlockingRulesHash, response.getSafeCrsBlockingRules().getHash()); // not changed
     assertTrue(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
 
-    // 1 modsec + 3 region + 2 custom-signature rule + 2 * (2 threat-actors + 4 rate-limit)
+    // 2 modsec + 3 region + 2 custom-signature rule + 2 * (2 threat-actors + 4 rate-limit)
     String blockingPolicyConfigurationHash = response.getBlockingPolicyConfiguration().getHash();
     assertNotEquals(emptyValueUuid, response.getBlockingPolicyConfiguration().getHash());
-    assertEquals(18, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
+    assertEquals(19, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
 
     response =
         RequestContext.forTenantId(TENANT_ID)
@@ -301,9 +303,9 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
   }
 
   void checkBlockingPolicy(BlockingPolicyConfiguration blockingPolicyConfiguration) {
-    // 1 modsec + 3 region + 2 custom-signature rule + 2 * (2 threat-actors + 4 rate-limit) + 2
+    // 2 modsec + 3 region + 2 custom-signature rule + 2 * (2 threat-actors + 4 rate-limit) + 2
     // custom-ip
-    assertEquals(20, blockingPolicyConfiguration.getBlockingDetailsListCount());
+    assertEquals(21, blockingPolicyConfiguration.getBlockingDetailsListCount());
 
     assertEquals(
         BLOCKING_CATEGORY_CUSTOM_IP_RULE,
@@ -346,19 +348,22 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
     assertEquals(
         "913100",
         blockingPolicyConfiguration.getBlockingDetailsList(5).getModsecDetails().getRuleId());
+    assertEquals(
+        "941280",
+        blockingPolicyConfiguration.getBlockingDetailsList(6).getModsecDetails().getRuleId());
 
     assertEquals(
         BLOCKING_CATEGORY_CUSTOM_REGION_RULE,
-        blockingPolicyConfiguration.getBlockingDetailsList(9).getCategory());
+        blockingPolicyConfiguration.getBlockingDetailsList(10).getCategory());
     assertEquals(
-        BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(9).getStatus());
+        BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(10).getStatus());
 
     assertEquals(
         BLOCKING_CATEGORY_RATE_LIMIT,
-        blockingPolicyConfiguration.getBlockingDetailsList(16).getCategory());
+        blockingPolicyConfiguration.getBlockingDetailsList(17).getCategory());
     assertEquals(
         BLOCKING_STATUS_SUSPENDED,
-        blockingPolicyConfiguration.getBlockingDetailsList(16).getStatus());
+        blockingPolicyConfiguration.getBlockingDetailsList(17).getStatus());
   }
 
   private void createRegionRules() {
@@ -466,7 +471,7 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
                         .build()));
   }
 
-  private static void enableBlockingOnAModsecRule() {
+  private static void enableBlockingOnAModsecRule(Optional<String> environmentId) {
     RequestContext.forTenantId(TENANT_ID)
         .call(
             () ->
@@ -475,19 +480,33 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
                         .setScopedAnomalyDetectionConfig(
                             ScopedAnomalyDetectionConfig.newBuilder()
                                 .setConfigScope(
-                                    AnomalyConfigScope.newBuilder()
-                                        .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
-                                        .build())
+                                    environmentId
+                                        .map(
+                                            id ->
+                                                AnomalyConfigScope.newBuilder()
+                                                    .setEnvironmentScope(
+                                                        AnomalyEnvironmentScope.newBuilder()
+                                                            .setEnvironmentId(id)))
+                                        .orElse(
+                                            AnomalyConfigScope.newBuilder()
+                                                .setCustomerScope(
+                                                    AnomalyCustomerScope.getDefaultInstance())))
                                 .addAnomalyDetectionConfigs(
                                     AnomalyDetectionConfig.newBuilder()
                                         .setModsecurityAnomalyDetectionConfig(
                                             ModsecurityAnomalyDetectionConfig.newBuilder()
                                                 .setModsecAnomalyRule(
                                                     ModsecurityAnomalyRuleConfig.newBuilder()
-                                                        .setAnomalyRuleId("crs_913")
+                                                        .setAnomalyRuleId(
+                                                            environmentId
+                                                                .map(id -> "crs_941")
+                                                                .orElse("crs_913"))
                                                         .addSubRuleConfigs(
                                                             AnomalySubRuleConfig.newBuilder()
-                                                                .setSubRuleId("crs_913100")
+                                                                .setSubRuleId(
+                                                                    environmentId
+                                                                        .map(id -> "crs_941280")
+                                                                        .orElse("crs_913100"))
                                                                 .setBlockingEnabled(true))))))
                         .build()));
   }

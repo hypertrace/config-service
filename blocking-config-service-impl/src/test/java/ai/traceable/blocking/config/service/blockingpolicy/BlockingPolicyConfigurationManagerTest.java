@@ -218,7 +218,7 @@ class BlockingPolicyConfigurationManagerTest {
                     .setInfo("modsec-violation")
                     .build()))
         .when(modsecDataFetcher)
-        .getModsecViolations(REQUEST_CONTEXT);
+        .getModsecViolations(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
 
     doReturn(
             Map.of(

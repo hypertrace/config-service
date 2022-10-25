@@ -42,6 +42,9 @@ class RegionDataFetcherTest {
                   .setRuleScope(
                       RuleScope.newBuilder()
                           .setEnvironmentScope(EnvironmentScope.getDefaultInstance()))
+                  .addAllRuleActionTypes(
+                      List.of(
+                          REGION_RULE_ACTION_TYPE_BLOCK, REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT))
                   .setDisabled(false))
           .build();
 
@@ -133,6 +136,10 @@ class RegionDataFetcherTest {
                                         .build())
                                 .build())
                         .setDisabled(false)
+                        .addAllRuleActionTypes(
+                            List.of(
+                                REGION_RULE_ACTION_TYPE_BLOCK,
+                                REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT))
                         .build())
                 .build());
 

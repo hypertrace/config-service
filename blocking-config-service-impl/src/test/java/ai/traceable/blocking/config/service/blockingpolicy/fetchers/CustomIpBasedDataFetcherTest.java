@@ -44,6 +44,8 @@ class CustomIpBasedDataFetcherTest {
           .setFilter(
               GetRulesFilter.newBuilder()
                   .setDisabled(false)
+                  .addAllRuleActions(
+                      List.of(RULE_ACTION_BLOCK, RULE_ACTION_ALLOW, RULE_ACTION_BLOCK_ALL_EXCEPT))
                   .setRuleScope(
                       RuleScope.newBuilder().setEnvironmentScope(EnvironmentScope.newBuilder()))
                   .build())
@@ -148,6 +150,9 @@ class CustomIpBasedDataFetcherTest {
                 .setFilter(
                     GetRulesFilter.newBuilder()
                         .setDisabled(false)
+                        .addAllRuleActions(
+                            List.of(
+                                RULE_ACTION_BLOCK, RULE_ACTION_ALLOW, RULE_ACTION_BLOCK_ALL_EXCEPT))
                         .setRuleScope(
                             RuleScope.newBuilder()
                                 .setEnvironmentScope(

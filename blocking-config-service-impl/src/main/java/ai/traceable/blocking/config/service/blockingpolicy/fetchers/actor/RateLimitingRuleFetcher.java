@@ -33,7 +33,7 @@ public class RateLimitingRuleFetcher {
                         RuleConfigScope.newBuilder()
                             .setEnvironmentScope(
                                 environmentId
-                                    .map(id -> EnvironmentScope.newBuilder().addEnvironmentIds(id))
+                                    .map(EnvironmentScope.newBuilder()::addEnvironmentIds)
                                     .orElse(EnvironmentScope.newBuilder()))))
             .build();
 
