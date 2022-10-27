@@ -60,6 +60,10 @@ public class RegionRulesStore
     return Optional.of(data)
         .filter(rule -> !(filter.hasDisabled() && rule.getDisabled() != filter.getDisabled()))
         .filter(rule -> !(filter.hasInternal() && rule.getInternal() != filter.getInternal()))
+        .filter(
+            rule ->
+                filter.getRuleActionTypesCount() == 0
+                    || filter.getRuleActionTypesList().contains(rule.getActionType()))
         .filter(rule -> filterRuleOnScope(rule, filter.getRuleScope()));
   }
 

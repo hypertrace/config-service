@@ -14,6 +14,7 @@ import ai.traceable.region.config.service.v1.GetRegionRulesFilter;
 import ai.traceable.region.config.service.v1.IpReputationCondition;
 import ai.traceable.region.config.service.v1.IpReputationSeverity;
 import ai.traceable.region.config.service.v1.RegionRule;
+import ai.traceable.region.config.service.v1.RegionRuleActionType;
 import ai.traceable.region.config.service.v1.RegionRuleConditions;
 import ai.traceable.region.config.service.v1.RuleScope;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
@@ -43,7 +44,6 @@ class RegionRulesManagerTest {
   private RequestContext requestContext;
   private RegionRulesStore regionRulesStore;
   private RegionRulesManager rulesManager;
-  private ConfigChangeEventGenerator configChangeEventGenerator;
 
   @BeforeEach
   void setup() {
@@ -52,7 +52,7 @@ class RegionRulesManagerTest {
     mockConfigService.start();
     uuidGenerator = mock(UuidGenerator.class);
     requestContext = RequestContext.forTenantId("default tenant");
-    configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     regionRulesStore = new RegionRulesStore(configServiceBlockingStub, configChangeEventGenerator);
@@ -80,9 +80,15 @@ class RegionRulesManagerTest {
               .setName("name-1")
               .setDescription("desc-1")
               .setInternal(true)
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
               .build();
       RegionRule mockRegionRule2 =
-          RegionRule.newBuilder().setId("id-2").setName("name-2").setDisabled(true).build();
+          RegionRule.newBuilder()
+              .setId("id-2")
+              .setName("name-2")
+              .setDisabled(true)
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALERT)
+              .build();
       addRegionRules(ImmutableSortedMap.of("id-1", mockRegionRule1, "id-2", mockRegionRule2));
 
       RegionRule regionRule1 =
@@ -92,9 +98,15 @@ class RegionRulesManagerTest {
               .setRuleScope(ruleScope)
               .setDescription("desc-1")
               .setInternal(true)
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
               .build();
       RegionRule regionRule2 =
-          RegionRule.newBuilder().setId("id-2").setName("name-2").setDisabled(true).build();
+          RegionRule.newBuilder()
+              .setId("id-2")
+              .setName("name-2")
+              .setDisabled(true)
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALERT)
+              .build();
       assertEquals(
           List.of(regionRule2, regionRule1),
           rulesManager.getRegionRules(requestContext, GetRegionRulesFilter.getDefaultInstance()));
@@ -139,6 +151,15 @@ class RegionRulesManagerTest {
               requestContext,
               GetRegionRulesFilter.newBuilder()
                   .setRuleScope(RuleScope.getDefaultInstance())
+                  .build()));
+      // Filter on rule action type
+      assertEquals(
+          List.of(regionRule1),
+          rulesManager.getRegionRules(
+              requestContext,
+              GetRegionRulesFilter.newBuilder()
+                  .setRuleScope(RuleScope.getDefaultInstance())
+                  .addRuleActionTypes(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
                   .build()));
 
       // Filter on disabled and internal
