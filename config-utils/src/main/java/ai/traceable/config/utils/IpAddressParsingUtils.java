@@ -36,11 +36,11 @@ public class IpAddressParsingUtils {
         .build();
   }
 
-  private boolean isValidIp(String ipAddress) {
+  public boolean isValidIp(String ipAddress) {
     return ipAddressValidator.isValid(ipAddress);
   }
 
-  private boolean isValidSubnet(String subnet) {
+  public boolean isValidSubnet(String subnet) {
     // validate IP range CIDR syntax with SubnetUtils
     try {
       new SubnetUtils(subnet);

@@ -30,7 +30,7 @@ import ai.traceable.malicioussources.config.service.v1.RegionCondition;
 import ai.traceable.malicioussources.config.service.v1.RuleActionType;
 import ai.traceable.malicioussources.config.service.v1.UpdateMaliciousSourcesRuleRequest;
 import com.google.protobuf.Timestamp;
-import io.grpc.StatusException;
+import io.grpc.StatusRuntimeException;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -76,10 +76,10 @@ public class MaliciousSourcesRulesManagerTest {
   }
 
   @Nested
-  class getIpRangeRules {
+  class getMaliciousSourcesRules {
     @Test
     @DisplayName("should fetch all Malicious Sources rules for a valid query")
-    void shouldGetAllIpRangeRules() {
+    void shouldGetAllMaliciousSourcesRules() {
       MaliciousSourcesRuleInfo maliciousSourcesRuleInfo1 =
           MaliciousSourcesRuleInfo.newBuilder()
               .setName("Tester-1")
@@ -271,10 +271,10 @@ public class MaliciousSourcesRulesManagerTest {
   }
 
   @Nested
-  class updateIpRangeRule {
+  class updateMaliciousSourcesRule {
     @Test
     @DisplayName("Should fail when Malicious Sources Rule to be updated is not present")
-    void should_notUpdateIpRangeRule_ifNotPresent() {
+    void should_notUpdateMaliciousSourcesRule_ifNotPresent() {
       MaliciousSourcesRuleInfo updatedRuleDetails =
           MaliciousSourcesRuleInfo.newBuilder()
               .setName("Updated-Tester-1")
@@ -317,7 +317,7 @@ public class MaliciousSourcesRulesManagerTest {
               .build();
 
       assertThrows(
-          StatusException.class,
+          StatusRuntimeException.class,
           () ->
               rulesManager.updateMaliciousSourcesRule(
                   requestContext,
@@ -328,7 +328,7 @@ public class MaliciousSourcesRulesManagerTest {
 
     @Test
     @DisplayName("should be able to update an Malicious Sources Rule if given valid arguments")
-    void shouldUpdateIpRangeRule() throws StatusException {
+    void shouldUpdateMaliciousSourcesRule() {
       MaliciousSourcesRuleInfo updatedRuleDetails =
           MaliciousSourcesRuleInfo.newBuilder()
               .setName("Updated-Tester-1")
@@ -388,10 +388,10 @@ public class MaliciousSourcesRulesManagerTest {
   }
 
   @Nested
-  class deleteIpRangeRule {
+  class deleteMaliciousSourcesRule {
     @Test
-    @DisplayName("should be able to delete an Ip Range Rule")
-    void shouldDeleteIpRangeRule() {
+    @DisplayName("should be able to delete an Malicious Sources Rule")
+    void shouldDeleteMaliciousSourcesRule() {
       addMaliciousSourcesRule(MaliciousSourcesRule.newBuilder().setId("id-1").build());
       // Deleting an entity which exists
       assertDoesNotThrow(() -> rulesManager.deleteMaliciousSourcesRule(requestContext, "id-1"));

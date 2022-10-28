@@ -36,6 +36,7 @@ dependencies {
   implementation(projects.traceableAlertingConfigServiceImpl)
   implementation(projects.reportingConfigServiceImpl)
   implementation(projects.apiSpecConfigServiceImpl)
+  implementation(projects.maliciousSourcesConfigServiceImpl)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

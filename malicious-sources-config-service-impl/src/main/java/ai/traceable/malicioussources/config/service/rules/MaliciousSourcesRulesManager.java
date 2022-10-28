@@ -6,7 +6,6 @@ import ai.traceable.malicioussources.config.service.v1.GetRulesFilter;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.UpdateMaliciousSourcesRuleRequest;
 import io.grpc.Status;
-import io.grpc.StatusException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -49,21 +48,22 @@ public class MaliciousSourcesRulesManager implements RulesManager {
             .setRuleInfo(createRuleRequest.getRuleInfo())
             .build();
 
-    return maliciousSourcesRulesStore.upsertObject(requestContext, maliciousSourcesRule).getData();
+    return upsertObject(requestContext, maliciousSourcesRule);
   }
 
   @Override
   public MaliciousSourcesRule updateMaliciousSourcesRule(
-      RequestContext requestContext, UpdateMaliciousSourcesRuleRequest updateRuleRequest)
-      throws StatusException {
+      RequestContext requestContext, UpdateMaliciousSourcesRuleRequest updateRuleRequest) {
     String ruleId = updateRuleRequest.getRule().getId();
     if (!doesMaliciousSourcesRuleExist(requestContext, ruleId)) {
-      throw new StatusException(Status.NOT_FOUND);
+      throw Status.NOT_FOUND
+          .withDescription(
+              String.format(
+                  "Unable to update as Malicious Sources rule with id = %s does not exist", ruleId))
+          .asRuntimeException();
     }
 
-    return maliciousSourcesRulesStore
-        .upsertObject(requestContext, updateRuleRequest.getRule())
-        .getData();
+    return upsertObject(requestContext, updateRuleRequest.getRule());
   }
 
   @Override
@@ -78,5 +78,10 @@ public class MaliciousSourcesRulesManager implements RulesManager {
     Optional<MaliciousSourcesRule> optionalRule =
         maliciousSourcesRulesStore.getData(requestContext, ruleId);
     return optionalRule.isPresent();
+  }
+
+  private MaliciousSourcesRule upsertObject(
+      RequestContext requestContext, MaliciousSourcesRule maliciousSourcesRule) {
+    return maliciousSourcesRulesStore.upsertObject(requestContext, maliciousSourcesRule).getData();
   }
 }

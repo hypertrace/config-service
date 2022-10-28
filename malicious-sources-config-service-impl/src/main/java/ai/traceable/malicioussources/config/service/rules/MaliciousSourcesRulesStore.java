@@ -74,6 +74,13 @@ public class MaliciousSourcesRulesStore
                         .contains(rule.getRuleInfo().getRuleAction().getActionType()));
   }
 
+  /**
+   * Method to filter on rule-scope * If filterScope has no environment scope, always return true *
+   * If filterScope has environment scope but the environment scope has no environment IDs, return
+   * true only if the rule has no Environment IDs in its rule-scope. * If filterScope has
+   * environment scope and the environment scope has one or more environment IDs, return true only
+   * if there is at least one overlap of environment ID between the filter and the rule.
+   */
   private boolean filterRuleOnScope(
       MaliciousSourcesRule ruleData, MaliciousSourcesRuleScope filterScope) {
     List<String> ruleEnvironmentIds =

@@ -21,6 +21,7 @@ dependencies {
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
   testImplementation(libs.junit.jupiter)
+  testImplementation(libs.mockito.junit)
   testImplementation(libs.mockito.core)
   testImplementation(testFixtures(libs.hypertrace.configservice.api))
 }

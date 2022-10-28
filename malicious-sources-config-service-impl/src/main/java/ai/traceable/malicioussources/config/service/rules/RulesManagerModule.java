@@ -10,6 +10,7 @@ public class RulesManagerModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(RulesManager.class).to(MaliciousSourcesRulesManager.class);
+    bind(RulesValidator.class).to(MaliciousSourcesRulesValidator.class);
   }
 
   @Provides

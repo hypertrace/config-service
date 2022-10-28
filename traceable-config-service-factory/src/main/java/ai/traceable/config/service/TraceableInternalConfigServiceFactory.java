@@ -10,6 +10,7 @@ import ai.traceable.data.exfiltration.config.service.detection.rule.DataExfiltra
 import ai.traceable.iprange.config.service.IpRangeConfigServiceFactory;
 import ai.traceable.licensestatus.config.service.LicenseStatusConfigServiceFactory;
 import ai.traceable.localprocessing.config.service.ruleservice.LocalProcessingRulesServiceFactory;
+import ai.traceable.malicioussources.config.service.MaliciousSourcesConfigServiceFactory;
 import ai.traceable.ratelimiting.service.v1.RateLimitingConfigServiceImpl;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceFactory;
 import ai.traceable.region.config.service.RegionConfigServiceFactory;
@@ -80,6 +81,9 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getConfig(),
                     providers.getActivityEventProducer(),
                     providers.getChangeEventGenerator())),
+            wrap(
+                MaliciousSourcesConfigServiceFactory.build(
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())),
             wrap(
                 CustomSignatureConfigServiceFactory.build(
                     providers.getLocalChannel(),
