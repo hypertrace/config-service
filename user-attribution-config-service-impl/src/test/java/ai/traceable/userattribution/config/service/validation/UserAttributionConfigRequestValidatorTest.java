@@ -25,6 +25,10 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.Re
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ResponseBodyUserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.RuleCondition;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.CustomScope;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.EnvironmentScope;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.SystemWideScope;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.UrlScope;
 import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
 import java.util.Objects;
@@ -176,6 +180,7 @@ class UserAttributionConfigRequestValidatorTest {
                                     .addEnvironmentScopes(
                                         UserAttributionRuleScope.EnvironmentScope.newBuilder()
                                             .setEnvironmentName("env"))
+                                    .addUrlScopes(UrlScope.newBuilder().setUrlMatchRegex("testUrl"))
                                     .build()))
                     .build()));
 
@@ -337,18 +342,6 @@ class UserAttributionConfigRequestValidatorTest {
   @Test
   void validatesResponseBodyCreate() {
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
-    assertInvalidArgStatusContaining(
-        "rule condition",
-        () ->
-            validator.validateOrThrow(
-                mockRequestContext,
-                CreateUserAttributionRuleRequest.newBuilder()
-                    .setName("rule-name")
-                    .setData(
-                        UserAttributionRuleData.newBuilder()
-                            .setResponseBodyData(
-                                ResponseBodyUserAttributionRuleData.getDefaultInstance()))
-                    .build()));
 
     assertInvalidArgStatusContaining(
         "encoded location",
@@ -383,6 +376,48 @@ class UserAttributionConfigRequestValidatorTest {
                                     .setAuthentication(Authentication.newBuilder())))
                     .build()));
 
+    assertInvalidArgStatusContaining(
+        "requires at least one URL scope",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setResponseBodyData(
+                                ResponseBodyUserAttributionRuleData.newBuilder()
+                                    .setUserIdLocation(
+                                        EncodedLocation.newBuilder().setJsonPath("some-path"))
+                                    .setAuthentication(Authentication.newBuilder())))
+                    .setScope(
+                        UserAttributionRuleScope.newBuilder()
+                            .setSystemWideScope(SystemWideScope.newBuilder()))
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "requires at least one URL scope",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setResponseBodyData(
+                                ResponseBodyUserAttributionRuleData.newBuilder()
+                                    .setUserIdLocation(
+                                        EncodedLocation.newBuilder().setJsonPath("some-path"))
+                                    .setAuthentication(Authentication.newBuilder())))
+                    .setScope(
+                        UserAttributionRuleScope.newBuilder()
+                            .setCustomScope(
+                                CustomScope.newBuilder()
+                                    .addEnvironmentScopes(
+                                        EnvironmentScope.newBuilder()
+                                            .setEnvironmentName("development"))))
+                    .build()));
+
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
@@ -399,6 +434,27 @@ class UserAttributionConfigRequestValidatorTest {
                                         EncodedLocation.newBuilder().setJsonPath("some-path"))
                                     .setAuthentication(
                                         Authentication.newBuilder().setType("Auth-type"))))
+                    .build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateUserAttributionRuleRequest.newBuilder()
+                    .setName("rule-name")
+                    .setData(
+                        UserAttributionRuleData.newBuilder()
+                            .setResponseBodyData(
+                                ResponseBodyUserAttributionRuleData.newBuilder()
+                                    .setUserIdLocation(
+                                        EncodedLocation.newBuilder().setJsonPath("some-path"))
+                                    .setAuthentication(
+                                        Authentication.newBuilder().setType("Auth-type"))))
+                    .setScope(
+                        UserAttributionRuleScope.newBuilder()
+                            .setCustomScope(
+                                CustomScope.newBuilder()
+                                    .addUrlScopes(UrlScope.newBuilder().setUrlMatchRegex("regex"))))
                     .build()));
   }
 

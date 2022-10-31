@@ -53,7 +53,7 @@ public class UserAttributionConfigRequestValidator {
       RequestContext requestContext, CreateUserAttributionRuleRequest request) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, CreateUserAttributionRuleRequest.NAME_FIELD_NUMBER);
-    this.validateRuleData(request.getData());
+    this.validateRuleData(request.getData(), request.getScope());
     this.validateRuleScope(request.getScope());
   }
 
@@ -63,7 +63,7 @@ public class UserAttributionConfigRequestValidator {
     UserAttributionRule rule = request.getRule();
     validateNonDefaultPresenceOrThrow(rule, UserAttributionRule.ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(rule, UserAttributionRule.NAME_FIELD_NUMBER);
-    this.validateRuleData(rule.getData());
+    this.validateRuleData(rule.getData(), rule.getScope());
     this.validateRuleScope(rule.getScope());
   }
 
@@ -95,7 +95,7 @@ public class UserAttributionConfigRequestValidator {
     }
   }
 
-  private void validateRuleData(UserAttributionRuleData ruleData) {
+  private void validateRuleData(UserAttributionRuleData ruleData, UserAttributionRuleScope scope) {
     switch (ruleData.getDataCase()) {
       case JWT_DATA:
         this.validateJwtData(ruleData.getJwtData());
@@ -104,7 +104,7 @@ public class UserAttributionConfigRequestValidator {
         // No validation required, no data expected
         break;
       case RESPONSE_BODY_DATA:
-        this.validateResponseBodyData(ruleData.getResponseBodyData());
+        this.validateResponseBodyData(ruleData.getResponseBodyData(), scope);
         break;
       case REQUEST_HEADER_DATA:
         this.validateRequestHeaderRuleData(ruleData.getRequestHeaderData());
@@ -161,8 +161,20 @@ public class UserAttributionConfigRequestValidator {
     // Role not required
   }
 
-  private void validateResponseBodyData(ResponseBodyUserAttributionRuleData responseBodyRuleData) {
-    this.validateRuleCondition(responseBodyRuleData.getCondition());
+  private void validateResponseBodyData(
+      ResponseBodyUserAttributionRuleData responseBodyRuleData, UserAttributionRuleScope scope) {
+    if (responseBodyRuleData.hasCondition()
+        && responseBodyRuleData.getCondition().hasUrlMatchRegex()) {
+      this.validateRuleCondition(responseBodyRuleData.getCondition());
+    } else if (!scope.hasCustomScope() || scope.getCustomScope().getUrlScopesCount() == 0) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Response body authentication type rule (%s) requires at least one URL scope",
+                  printMessage(responseBodyRuleData)))
+          .asRuntimeException();
+    }
+
     this.validateEncodedLocation(responseBodyRuleData.getUserIdLocation());
     if (responseBodyRuleData.hasAuthentication()) {
       authenticationValidator.validate(responseBodyRuleData.getAuthentication());
