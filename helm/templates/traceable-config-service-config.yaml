@@ -51,6 +51,7 @@ data:
         refreshAfterWriteDuration = {{ .Values.traceableConfigServiceConfig.actorServiceConfig.cache.refreshAfterWriteDuration }}
         expireAfterWriteDuration = {{ .Values.traceableConfigServiceConfig.actorServiceConfig.cache.expireAfterWriteDuration }}
       }
+      maxNumberOfActors = {{ .Values.traceableConfigServiceConfig.actorServiceConfig.maxNumberOfActors }}
     }
     insights.service.config = {
       host = {{ .Values.traceableConfigServiceConfig.insightsServiceConfig.host }}

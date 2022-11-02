@@ -17,10 +17,6 @@ import ai.traceable.blocking.config.service.v1.BlockingCategory;
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
 import ai.traceable.blocking.config.service.v1.BlockingRuleType;
 import ai.traceable.blocking.config.service.v1.IpDetails;
-import ai.traceable.platform.actor.v1.Actor;
-import ai.traceable.platform.actor.v1.ActorServiceGrpc.ActorServiceBlockingStub;
-import ai.traceable.platform.actor.v1.GetActorsByStatusRequest;
-import ai.traceable.platform.actor.v1.GetActorsByStatusResponse;
 import ai.traceable.platform.actor.v1.StatusChangeSource;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
@@ -28,18 +24,14 @@ import ai.traceable.platform.validator.ExternalIpAddressValidator;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.rpc.Code;
 import com.google.rpc.Status;
 import io.grpc.protobuf.StatusProto;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -51,22 +43,17 @@ public class ActorBasedRulesCache {
   private static final ExternalIpAddressValidator externalIpAddressValidator =
       ExternalIpAddressValidator.getInstance();
 
-  private final ActorServiceBlockingStub actorServiceStub;
   private final LoadingCache<ContextualKey<Optional<String>>, ActorBasedRulesCollection> actorCache;
-  private final Duration callTimeout;
   private final BlockingRulesUtils blockingRulesUtils;
-  private final RateLimitingRuleFetcher rateLimitingRuleFetcher;
+  private final ActorStore actorStore;
 
   @Inject
   public ActorBasedRulesCache(
-      ActorServiceBlockingStub actorServiceStub,
       ActorServiceConfig actorServiceConfig,
       BlockingRulesUtils blockingRulesUtils,
-      RateLimitingRuleFetcher rateLimitingRuleFetcher) {
-    this.actorServiceStub = actorServiceStub;
-    this.callTimeout = actorServiceConfig.getCallTimeoutDuration();
+      ActorStore actorStore) {
     this.blockingRulesUtils = blockingRulesUtils;
-    this.rateLimitingRuleFetcher = rateLimitingRuleFetcher;
+    this.actorStore = actorStore;
     BlockingDataCacheConfig blockingDataCacheConfig = actorServiceConfig.getCacheConfig();
     actorCache =
         CacheBuilder.newBuilder()
@@ -83,10 +70,14 @@ public class ActorBasedRulesCache {
     try {
       return actorCache.get(contextualKey);
     } catch (Exception e) {
+      LOGGER.error(
+          String.format(
+              "Error retrieving active actors from cache for context - %s: %s", contextualKey, e),
+          e);
       Status status =
           Status.newBuilder()
               .setCode(Code.INTERNAL.getNumber())
-              .setMessage("Error retrieving active actors from cache " + e.getMessage())
+              .setMessage("Error retrieving active actors from cache")
               .build();
       throw StatusProto.toStatusRuntimeException(status);
     }
@@ -96,30 +87,16 @@ public class ActorBasedRulesCache {
     RequestContext requestContext = contextualKey.getContext();
     Optional<String> environmentId = contextualKey.getData();
 
-    GetActorsByStatusResponse actorsByStatusResponse =
-        requestContext.call(
-            () ->
-                actorServiceStub
-                    .withDeadlineAfter(callTimeout.toMillis(), TimeUnit.MILLISECONDS)
-                    .getActorsByStatus(
-                        GetActorsByStatusRequest.newBuilder()
-                            .addAllStatus(
-                                ImmutableList.of(
-                                    STATUS_ALWAYS_DENIED,
-                                    STATUS_SUSPENDED,
-                                    STATUS_ALWAYS_ALLOWED,
-                                    STATUS_SNOOZED))
-                            .build()));
+    List<ActorStatusDetails> actorStatusDetailsList =
+        actorStore.getActiveThreatActors(requestContext, environmentId);
 
     List<BlockingDetails> threatActorBasedIpViolations = new ArrayList<>();
     List<BlockingDetails> threatActorBasedIpExemptions = new ArrayList<>();
     List<BlockingDetails> rateLimitBasedIpViolations = new ArrayList<>();
 
-    Set<String> activeRateLimitingRuleIds =
-        rateLimitingRuleFetcher.getRateLimitingRules(requestContext, environmentId);
-
-    actorsByStatusResponse.getActorsList().stream()
-        .filter(actor -> this.filterActor(actor, activeRateLimitingRuleIds))
+    actorStatusDetailsList.stream()
+        .filter(
+            actorStatusDetails -> !parseIpAddresses(actorStatusDetails.getIpAddresses()).isEmpty())
         .forEach(
             actor -> {
               if (actor.getStatusChangeSource()
@@ -127,82 +104,68 @@ public class ActorBasedRulesCache {
                 // Rate limit error
                 rateLimitBasedIpViolations.addAll(
                     this.generateBlockingDetails(
-                        actor,
                         BLOCKING_CATEGORY_RATE_LIMIT,
                         BLOCKING_RULE_TYPE_BLOCK,
                         ViolationInfoEncoder.getEncodedRateLimitViolationInfo(
                             actor.getEntityId(),
                             actor.getStatusChangeDetails().getRateLimitDetails().getRuleId(),
-                            actor.getStatusChangeDetails().getRateLimitDetails().getRuleName())));
+                            actor.getStatusChangeDetails().getRateLimitDetails().getRuleName()),
+                        actor));
               } else {
-                switch (actor.getStatus()) {
-                  case STATUS_NORMAL:
-                  case STATUS_THREAT_ACTOR:
-                  case STATUS_RESOLVED:
-                    break;
-                  case STATUS_ALWAYS_ALLOWED:
-                  case STATUS_SNOOZED:
-                    threatActorBasedIpExemptions.addAll(
-                        this.generateBlockingDetails(
-                            actor,
-                            BLOCKING_CATEGORY_THREAT_ACTOR,
-                            BLOCKING_RULE_TYPE_ALLOW,
-                            ExemptionInfoEncoder.getEncodedThreatActorExemptionInfo(
-                                actor.getEntityId())));
-                    break;
-                  case STATUS_ALWAYS_DENIED:
-                  case STATUS_SUSPENDED:
-                    threatActorBasedIpViolations.addAll(
-                        this.generateBlockingDetails(
-                            actor,
-                            BLOCKING_CATEGORY_THREAT_ACTOR,
-                            BLOCKING_RULE_TYPE_BLOCK,
-                            ViolationInfoEncoder.getEncodedThreatActorViolationInfo(
-                                actor.getEntityId())));
-                    break;
-                  default:
-                    LOGGER.warn("Unsupported actor status type {}", actor.getStatus());
+                if (actor.getStatus() == STATUS_ALWAYS_ALLOWED
+                    || actor.getStatus() == STATUS_SNOOZED) {
+                  // Exemption
+                  threatActorBasedIpExemptions.addAll(
+                      this.generateBlockingDetails(
+                          BLOCKING_CATEGORY_THREAT_ACTOR,
+                          BLOCKING_RULE_TYPE_ALLOW,
+                          ExemptionInfoEncoder.getEncodedThreatActorExemptionInfo(
+                              actor.getEntityId()),
+                          actor));
+                } else if (actor.getStatus() == STATUS_ALWAYS_DENIED
+                    || actor.getStatus() == STATUS_SUSPENDED) {
+                  // Violation
+                  threatActorBasedIpViolations.addAll(
+                      this.generateBlockingDetails(
+                          BLOCKING_CATEGORY_THREAT_ACTOR,
+                          BLOCKING_RULE_TYPE_BLOCK,
+                          ViolationInfoEncoder.getEncodedThreatActorViolationInfo(
+                              actor.getEntityId()),
+                          actor));
                 }
               }
             });
 
-    return new ActorBasedRulesCollection(
-        threatActorBasedIpViolations, threatActorBasedIpExemptions, rateLimitBasedIpViolations);
-  }
+    ActorBasedRulesCollection response =
+        new ActorBasedRulesCollection(
+            threatActorBasedIpViolations, threatActorBasedIpExemptions, rateLimitBasedIpViolations);
 
-  private boolean filterActor(Actor actor, Set<String> activeRateLimitingRuleIds) {
-    return !parseIpAddresses(actor.getIpAddressesList()).isEmpty()
-        && blockingRulesUtils.isRuleActive(actor.getStatusExpiryTimestamp())
-        && filterActorActorOnEnvironment(actor, activeRateLimitingRuleIds);
-  }
+    LOGGER.debug(
+        String.format(
+            "For tenant - %s, parsed actors response is - %s",
+            requestContext.getTenantId(), response));
 
-  private boolean filterActorActorOnEnvironment(
-      Actor actor, Set<String> activeRateLimitingRuleIds) {
-    if (actor.getStatusChangeSource() == StatusChangeSource.STATUS_CHANGE_SOURCE_RATE_LIMIT) {
-      return activeRateLimitingRuleIds.contains(
-          actor.getStatusChangeDetails().getRateLimitDetails().getRuleId());
-    }
-    return true;
+    return response;
   }
 
   private List<BlockingDetails> generateBlockingDetails(
-      Actor actor,
       BlockingCategory blockingCategory,
       BlockingRuleType blockingRuleType,
-      String info) {
+      String info,
+      ActorStatusDetails actorStatusDetails) {
     BlockingDetails actorDetails =
         BlockingDetails.newBuilder()
             .setCategory(blockingCategory)
             .setBlockingRuleType(blockingRuleType)
             .setInfo(info)
-            .setExpirationTimestamp(actor.getStatusExpiryTimestamp())
+            .setExpirationTimestamp(actorStatusDetails.getExpirationTimestampMillis())
             .setStatus(
                 blockingRulesUtils.generateBlockingStatus(
-                    actor.getStatusExpiryTimestamp(), blockingRuleType))
+                    actorStatusDetails.getExpirationTimestampMillis(), blockingRuleType))
             .setActorDetails(
                 ActorDetails.newBuilder()
-                    .addAllIpAddresses(parseIpAddresses(actor.getIpAddressesList()))
-                    .setUserId(actor.getActorId()))
+                    .addAllIpAddresses(parseIpAddresses(actorStatusDetails.getIpAddresses()))
+                    .setUserId(actorStatusDetails.getActorId()))
             .build();
 
     // for backward compatibility
@@ -211,13 +174,13 @@ public class ActorBasedRulesCache {
             .clearActorDetails()
             .setIpDetails(
                 IpDetails.newBuilder()
-                    .addAllIpAddresses(parseIpAddresses(actor.getIpAddressesList())))
+                    .addAllIpAddresses(parseIpAddresses(actorStatusDetails.getIpAddresses())))
             .build();
 
     return List.of(actorDetails, ipDetails);
   }
 
-  private List<String> parseIpAddresses(List<String> ipAddresses) {
+  private static List<String> parseIpAddresses(List<String> ipAddresses) {
     return ipAddresses.stream()
         .filter(externalIpAddressValidator::validate)
         .collect(Collectors.toUnmodifiableList());

@@ -85,7 +85,10 @@ public class RegionDataFetcher {
                   break;
                 default:
                   LOGGER.warn(
-                      "Unsupported region based rule event type {}", regionRule.getActionType());
+                      "Unsupported region based rule event type {} for request-context:{} and ruleID:{}",
+                      regionRule.getActionType(),
+                      requestContext,
+                      regionRule.getId());
               }
             });
 

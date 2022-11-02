@@ -5,6 +5,7 @@ lombok = "1.18.22"
 jackson = "2.13.2"
 hypertrace-grpcutils = "0.7.7"
 hypertrace-framework = "0.1.43"
+hypertrace-entityService = "0.8.41"
 traceable-platform = "0.1.99"
 traceable-platformGateway = "0.6.32"
 kafka = "6.0.1"
@@ -13,7 +14,7 @@ junit = "5.8.2"
 mockito = "4.4.0"
 
 [libraries]
-traceable-actorService-api = { module = "ai.traceable.platform:actor-service-api", version = "0.2.71" }
+traceable-actorService-api = { module = "ai.traceable.platform:actor-service-api", version = "0.2.78" }
 traceable-opaDistributor-api = { module = "ai.traceable.platform:opa-aggregator-api", version = "0.2.5" }
 traceable-insights-api = { module = "ai.traceable.platform:insights-service-api", version = "0.49.14" }
 traceable-activityevent-api = { module = "ai.traceable.activity.event.service:activity-event-api", version = "0.4.17" }
@@ -49,7 +50,8 @@ hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:documen
 
 # https://traceableai.atlassian.net/wiki/spaces/Engineering/pages/1746337898/Config+Service+-+Dependency+Hell
 # We would ideally want to segregate config service into 2 services - agent-configuration-service, and config-service and not have config-service depend on entity-service
-hypertrace-entityservice-api = { module = "org.hypertrace.entity.service:entity-service-api", version = "0.8.41" }
+hypertrace-entityservice-api = { module = "org.hypertrace.entity.service:entity-service-api", version.ref = "hypertrace-entityService" }
+hypertrace-entityservice-client = { module = "org.hypertrace.entity.service:entity-service-client", version.ref = "hypertrace-entityService" }
 
 guava = { module = "com.google.guava:guava", version = "31.1-jre" }
 guice = { module = "com.google.inject:guice", version = "5.0.1" }

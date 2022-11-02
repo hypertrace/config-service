@@ -6,16 +6,19 @@ import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_MODSECURITY;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_RATE_LIMIT;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_THREAT_ACTOR;
+import static ai.traceable.blocking.config.service.v1.BlockingRuleType.BLOCKING_RULE_TYPE_ALLOW;
+import static ai.traceable.blocking.config.service.v1.BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK;
+import static ai.traceable.blocking.config.service.v1.BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT;
 import static ai.traceable.blocking.config.service.v1.BlockingStatus.BLOCKING_STATUS_ALLOWED;
 import static ai.traceable.blocking.config.service.v1.BlockingStatus.BLOCKING_STATUS_DENIED;
 import static ai.traceable.blocking.config.service.v1.BlockingStatus.BLOCKING_STATUS_SNOOZED;
-import static ai.traceable.blocking.config.service.v1.BlockingStatus.BLOCKING_STATUS_SUSPENDED;
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_ALLOW;
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_BLOCK;
+import static ai.traceable.platform.actor.v1.Status.STATUS_ALWAYS_ALLOWED;
 import static ai.traceable.platform.actor.v1.Status.STATUS_ALWAYS_DENIED;
+import static ai.traceable.platform.actor.v1.Status.STATUS_RESOLVED;
 import static ai.traceable.platform.actor.v1.Status.STATUS_SNOOZED;
-import static ai.traceable.ratelimiting.config.service.v2.Category.CATEGORY_DATA_EXFILTRATION;
-import static ai.traceable.ratelimiting.config.service.v2.Category.CATEGORY_RATE_LIMITING;
+import static ai.traceable.platform.actor.v1.Status.STATUS_SUSPENDED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -58,23 +61,16 @@ import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc.IpRangeCo
 import ai.traceable.iprange.config.service.v1.IpRangeRuleDetails;
 import ai.traceable.iprange.config.service.v1.RuleAction;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
-import ai.traceable.ratelimiting.config.service.v2.Action;
-import ai.traceable.ratelimiting.config.service.v2.Action.Block;
-import ai.traceable.ratelimiting.config.service.v2.ApiAggregateType;
-import ai.traceable.ratelimiting.config.service.v2.Category;
-import ai.traceable.ratelimiting.config.service.v2.Condition;
-import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
-import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
-import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc;
-import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub;
-import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
-import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig;
-import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
-import ai.traceable.ratelimiting.config.service.v2.ScopeCondition;
-import ai.traceable.ratelimiting.config.service.v2.ScopeCondition.EntityScope;
-import ai.traceable.ratelimiting.config.service.v2.ScopeCondition.EntityType;
-import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
-import ai.traceable.ratelimiting.config.service.v2.UserAggregateType;
+import ai.traceable.platform.actor.v1.Actor;
+import ai.traceable.platform.actor.v1.Actor.Builder;
+import ai.traceable.platform.actor.v1.ActorServiceGrpc;
+import ai.traceable.platform.actor.v1.ActorServiceGrpc.ActorServiceBlockingStub;
+import ai.traceable.platform.actor.v1.RateLimitDetails;
+import ai.traceable.platform.actor.v1.ScoreCategory;
+import ai.traceable.platform.actor.v1.Status;
+import ai.traceable.platform.actor.v1.StatusChangeDetails;
+import ai.traceable.platform.actor.v1.StatusChangeSource;
+import ai.traceable.platform.actor.v1.UpsertActorRequest;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.DetailedRegion;
 import ai.traceable.region.config.service.v1.GetDetailedRegionsRequest;
@@ -84,26 +80,38 @@ import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceBlockingStub;
 import ai.traceable.region.config.service.v1.RegionRuleActionType;
 import ai.traceable.region.config.service.v1.RegionsFilter;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import java.util.List;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.entity.type.service.client.EntityTypeServiceClient;
+import org.hypertrace.entity.type.service.v1.AttributeKind;
+import org.hypertrace.entity.type.service.v1.AttributeType;
+import org.hypertrace.entity.type.service.v1.EntityType;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegrationTestBase {
+  private static final String TENANT_ID = "tenant-blocking-test";
   private static final UuidGenerator uuidGenerator = new UuidGenerator();
   private static final String ENVIRONMENT_ID = "environment-id";
+  private static final long inactiveTimestamp = System.currentTimeMillis() - 100000L;
+  private static final long activeTimestamp = System.currentTimeMillis() + 100000L;
 
   private static BlockingConfigServiceBlockingStub blockingConfigServiceStub;
   private static CustomSignatureConfigServiceBlockingStub customSignatureConfigServiceStub;
   private static DetectorConfigServiceBlockingStub detectorConfigServiceStub;
   private static IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub;
-  private static RateLimitingConfigServiceBlockingStub rateLimitingConfigServiceStub;
   private static RegionConfigServiceBlockingStub regionConfigServiceStub;
+  private static ActorServiceBlockingStub actorServiceBlockingStub;
+  protected static ManagedChannel managedChannelForEntityServiceClient;
+  protected static ManagedChannel managedChannelForActorServices;
 
   @BeforeAll
-  static void init() {
+  static void init() throws InterruptedException {
     regionConfigServiceStub =
         RegionConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
             .withCallCredentials(
@@ -129,29 +137,44 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
-    rateLimitingConfigServiceStub =
-        RateLimitingConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+    managedChannelForEntityServiceClient =
+        ManagedChannelBuilder.forAddress("localhost", 60061).usePlaintext().build();
+    EntityTypeServiceClient entityTypeServiceClient =
+        new EntityTypeServiceClient(managedChannelForEntityServiceClient);
+
+    managedChannelForActorServices =
+        ManagedChannelBuilder.forAddress("localhost", 60888).usePlaintext().build();
+    actorServiceBlockingStub =
+        ActorServiceGrpc.newBlockingStub(managedChannelForActorServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
+    // Make actor_id identifying attribute
+    entityTypeServiceClient.upsertEntityType(
+        TENANT_ID,
+        EntityType.newBuilder()
+            .setName("ACTOR")
+            .setTenantId(TENANT_ID)
+            .addAttributeType(
+                AttributeType.newBuilder()
+                    .setName("actor_id")
+                    .setIdentifyingAttribute(true)
+                    .setValueKind(AttributeKind.TYPE_STRING)
+                    .build())
+            .build());
+
     // Need to add actors upfront due to caching
-    mockActorService.addThreatActor("Actor-1", "1.1.1.1", STATUS_ALWAYS_DENIED, Optional.empty());
-    mockActorService.addThreatActor(
-        "Actor-2", "2.2.2.2", STATUS_SNOOZED, Optional.of(ENVIRONMENT_ID));
-    mockActorService.addRateLimitingActor(
-        addRateLimitingRules(Optional.empty(), CATEGORY_RATE_LIMITING), Optional.empty());
-    mockActorService.addRateLimitingActor(
-        addRateLimitingRules(Optional.empty(), CATEGORY_RATE_LIMITING),
-        Optional.of(ENVIRONMENT_ID));
-    mockActorService.addRateLimitingActor(
-        addRateLimitingRules(Optional.of(ENVIRONMENT_ID), CATEGORY_RATE_LIMITING),
-        Optional.of(ENVIRONMENT_ID));
-    mockActorService.addRateLimitingActor(
-        addRateLimitingRules(Optional.of(ENVIRONMENT_ID), CATEGORY_RATE_LIMITING),
-        Optional.empty());
-    mockActorService.addRateLimitingActor(
-        addRateLimitingRules(Optional.of(ENVIRONMENT_ID), CATEGORY_DATA_EXFILTRATION),
-        Optional.empty());
+    createActor(STATUS_ALWAYS_DENIED, 0L, "", true);
+    createActor(STATUS_ALWAYS_ALLOWED, activeTimestamp, ENVIRONMENT_ID, false);
+    createActor(STATUS_SNOOZED, inactiveTimestamp, ENVIRONMENT_ID, false);
+    createActor(STATUS_SUSPENDED, activeTimestamp, "random-env", true);
+    createActor(STATUS_RESOLVED, activeTimestamp, "", false);
+  }
+
+  @AfterAll
+  static void clean() {
+    managedChannelForActorServices.shutdownNow();
+    managedChannelForEntityServiceClient.shutdownNow();
   }
 
   @Test
@@ -186,9 +209,9 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
     assertNotEquals(emptyValueUuid, modsecCrsBlockingRulesHash);
     assertFalse(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
 
-    // 1 modsec rule is present + 2 * (2 threat-actors + 2 rate-limit)
+    // 1 modsec rule is present + 2 * (1 threat-actors + 2 rate-limit)
     assertNotEquals(emptyValueUuid, response.getBlockingPolicyConfiguration().getHash());
-    assertEquals(9, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
+    assertEquals(7, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
 
     createRegionRules();
     createCustomSignatureRule(Optional.empty());
@@ -217,9 +240,9 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
         modsecCrsBlockingRulesHash, response.getSafeCrsBlockingRules().getHash()); // not changed
     assertTrue(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
 
-    // 1 modsec + 2 region + 1 custom-signature rule + 2 * (2 threat-actors + 2 rate-limit)
+    // 1 modsec + 2 region + 1 custom-signature rule + 2 * (1 threat-actors + 2 rate-limit)
     assertNotEquals(emptyValueUuid, response.getBlockingPolicyConfiguration().getHash());
-    assertEquals(12, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
+    assertEquals(10, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
 
     // Checking with environment
     response =
@@ -247,10 +270,10 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
         modsecCrsBlockingRulesHash, response.getSafeCrsBlockingRules().getHash()); // not changed
     assertTrue(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
 
-    // 2 modsec + 3 region + 2 custom-signature rule + 2 * (2 threat-actors + 4 rate-limit)
+    // 2 modsec + 3 region + 2 custom-signature rule + 2 * (1 threat-actors + 1 rate-limit)
     String blockingPolicyConfigurationHash = response.getBlockingPolicyConfiguration().getHash();
     assertNotEquals(emptyValueUuid, response.getBlockingPolicyConfiguration().getHash());
-    assertEquals(19, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
+    assertEquals(11, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
 
     response =
         RequestContext.forTenantId(TENANT_ID)
@@ -303,9 +326,9 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
   }
 
   void checkBlockingPolicy(BlockingPolicyConfiguration blockingPolicyConfiguration) {
-    // 2 modsec + 3 region + 2 custom-signature rule + 2 * (2 threat-actors + 4 rate-limit) + 2
+    // 2 modsec + 3 region + 2 custom-signature rule + 2 * (1 threat-actors + 1 rate-limit) + 2
     // custom-ip
-    assertEquals(21, blockingPolicyConfiguration.getBlockingDetailsListCount());
+    assertEquals(13, blockingPolicyConfiguration.getBlockingDetailsListCount());
 
     assertEquals(
         BLOCKING_CATEGORY_CUSTOM_IP_RULE,
@@ -322,7 +345,10 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
     assertEquals(
         BLOCKING_STATUS_SNOOZED, blockingPolicyConfiguration.getBlockingDetailsList(1).getStatus());
     assertEquals(
-        List.of("2.2.2.2"),
+        BLOCKING_RULE_TYPE_ALLOW,
+        blockingPolicyConfiguration.getBlockingDetailsList(1).getBlockingRuleType());
+    assertEquals(
+        List.of("197.23.5.0"),
         blockingPolicyConfiguration
             .getBlockingDetailsList(1)
             .getActorDetails()
@@ -333,12 +359,6 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
         blockingPolicyConfiguration.getBlockingDetailsList(3).getCategory());
     assertEquals(
         BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(3).getStatus());
-    assertEquals(
-        List.of("2.2.2.2"),
-        blockingPolicyConfiguration
-            .getBlockingDetailsList(1)
-            .getActorDetails()
-            .getIpAddressesList());
 
     assertEquals(
         BLOCKING_CATEGORY_MODSECURITY,
@@ -353,17 +373,43 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
         blockingPolicyConfiguration.getBlockingDetailsList(6).getModsecDetails().getRuleId());
 
     assertEquals(
+        BLOCKING_CATEGORY_CUSTOM_IP_RULE,
+        blockingPolicyConfiguration.getBlockingDetailsList(7).getCategory());
+    assertEquals(
+        BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(7).getStatus());
+    assertEquals(
+        List.of("11.11.11.11"),
+        blockingPolicyConfiguration.getBlockingDetailsList(7).getIpDetails().getIpAddressesList());
+
+    assertEquals(
+        BLOCKING_CATEGORY_CUSTOM_REGION_RULE,
+        blockingPolicyConfiguration.getBlockingDetailsList(8).getCategory());
+    assertEquals(
+        BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT,
+        blockingPolicyConfiguration.getBlockingDetailsList(8).getBlockingRuleType());
+    assertEquals(
+        BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(8).getStatus());
+
+    assertEquals(
         BLOCKING_CATEGORY_CUSTOM_REGION_RULE,
         blockingPolicyConfiguration.getBlockingDetailsList(10).getCategory());
+    assertEquals(
+        BLOCKING_RULE_TYPE_BLOCK,
+        blockingPolicyConfiguration.getBlockingDetailsList(10).getBlockingRuleType());
     assertEquals(
         BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(10).getStatus());
 
     assertEquals(
         BLOCKING_CATEGORY_RATE_LIMIT,
-        blockingPolicyConfiguration.getBlockingDetailsList(17).getCategory());
+        blockingPolicyConfiguration.getBlockingDetailsList(11).getCategory());
     assertEquals(
-        BLOCKING_STATUS_SUSPENDED,
-        blockingPolicyConfiguration.getBlockingDetailsList(17).getStatus());
+        BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(11).getStatus());
+    assertEquals(
+        List.of("197.23.5.0"),
+        blockingPolicyConfiguration
+            .getBlockingDetailsList(11)
+            .getActorDetails()
+            .getIpAddressesList());
   }
 
   private void createRegionRules() {
@@ -399,21 +445,18 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
                         .addRegionId(detailedRegions.get(0).getId())
                         .addRegionId(detailedRegions.get(1).getId())
                         .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
-                        .build()))
-        .getRule();
+                        .build()));
 
     RequestContext.forTenantId(TENANT_ID)
         .call(
             () ->
-                regionConfigServiceStub
-                    .createRegionRule(
-                        CreateRegionRuleRequest.newBuilder()
-                            .setName("rule-2")
-                            .addRegionId(detailedRegions.get(2).getId())
-                            .setActionType(
-                                RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
-                            .build())
-                    .getRule());
+                regionConfigServiceStub.createRegionRule(
+                    CreateRegionRuleRequest.newBuilder()
+                        .setName("rule-2")
+                        .addRegionId(detailedRegions.get(2).getId())
+                        .setActionType(
+                            RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+                        .build()));
 
     RequestContext.forTenantId(TENANT_ID)
         .call(
@@ -539,62 +582,32 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
                         .build()));
   }
 
-  private static String addRateLimitingRules(Optional<String> environmentId, Category category) {
-    return RequestContext.forTenantId(TENANT_ID)
+  private static void createActor(
+      Status status, Long expiry, String environment, boolean isRateLimit) {
+    Builder actorBuilder =
+        Actor.newBuilder()
+            .setActorId("user-" + environment + "-" + status.name())
+            .setScoreCategory(ScoreCategory.SCORE_CATEGORY_HIGH)
+            .setStatus(status)
+            .addIpAddresses("197.23.5.0")
+            .addAllLabels(List.of("label1"))
+            .setStatusExpiryTimestamp(expiry)
+            .setEnvironment(environment);
+
+    if (isRateLimit) {
+      actorBuilder.setStatusChangeSource(StatusChangeSource.STATUS_CHANGE_SOURCE_RATE_LIMIT);
+      actorBuilder.setStatusChangeDetails(
+          StatusChangeDetails.newBuilder()
+              .setRateLimitDetails(
+                  RateLimitDetails.newBuilder()
+                      .setRuleName("Rate-limit-rule")
+                      .setRuleId("rate-limit-rule-id")));
+    }
+    Actor actor = actorBuilder.build();
+    RequestContext.forTenantId(TENANT_ID)
         .call(
             () ->
-                rateLimitingConfigServiceStub.createRateLimitingRule(
-                    CreateRateLimitingRuleRequest.newBuilder()
-                        .setData(
-                            RateLimitingRuleData.newBuilder()
-                                .setName("Rate-limiting-rule")
-                                .setEnabled(true)
-                                .setCategory(category)
-                                .setCondition(
-                                    Condition.newBuilder()
-                                        .setLeafCondition(
-                                            LeafCondition.newBuilder()
-                                                .setScopeCondition(
-                                                    ScopeCondition.newBuilder()
-                                                        .setEntityScope(
-                                                            EntityScope.newBuilder()
-                                                                .addEntityIds("random-entity")
-                                                                .setEntityType(
-                                                                    EntityType.ENTITY_TYPE_API)))))
-                                .addThresholdActionConfigs(
-                                    ThresholdActionConfig.newBuilder()
-                                        .addActions(
-                                            Action.newBuilder()
-                                                .setBlock(
-                                                    Block.newBuilder()
-                                                        .setEventSeverity(
-                                                            Action.EventSeverity
-                                                                .EVENT_SEVERITY_LOW)))
-                                        .addResourceAccessThresholdConfigs(
-                                            ResourceAccessThresholdConfig.newBuilder()
-                                                .setApiAggregateType(
-                                                    ApiAggregateType
-                                                        .API_AGGREGATE_TYPE_PER_ENDPOINT)
-                                                .setUserAggregateType(
-                                                    UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
-                                                .setRollingWindowThresholdConfig(
-                                                    ResourceAccessThresholdConfig
-                                                        .RollingWindowThresholdConfig.newBuilder()
-                                                        .setCountAllowed(1000)
-                                                        .setDurationIso("P3Y6M4DT12H30M5S"))))
-                                .setRuleConfigScope(
-                                    environmentId
-                                        .map(
-                                            id ->
-                                                RuleConfigScope.newBuilder()
-                                                    .setEnvironmentScope(
-                                                        ai.traceable.ratelimiting.config.service.v2
-                                                            .EnvironmentScope.newBuilder()
-                                                            .addEnvironmentIds(id))
-                                                    .build())
-                                        .orElse(RuleConfigScope.getDefaultInstance())))
-                        .build()))
-        .getRule()
-        .getId();
+                actorServiceBlockingStub.upsertActor(
+                    UpsertActorRequest.newBuilder().setActor(actor).build()));
   }
 }

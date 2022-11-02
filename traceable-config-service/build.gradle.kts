@@ -28,7 +28,32 @@ tasks.register<DockerRemoveNetwork>("removeIntegrationTestNetwork") {
 }
 
 tasks.register<DockerPullImage>("pullMongoImage") {
-  image.set(docker.registryCredentials.url.get() + "/mongo:4.2.7")
+  image.set(docker.registryCredentials.url.get() + "/mongo:4.4.0")
+}
+
+tasks.register<DockerPullImage>("pullEntityServiceImage") {
+  image.set(docker.registryCredentials.url.get() + "/hypertrace/entity-service:0.8.37")
+}
+
+tasks.register<DockerPullImage>("pullActorServiceImage") {
+  image.set(docker.registryCredentials.url.get() + "/traceable/actor-service:0.2.78")
+}
+
+tasks.register<DockerStartContainer>("startMongoContainer") {
+  dependsOn("createMongoContainer")
+  targetContainerId(tasks.getByName<DockerCreateContainer>("createMongoContainer").containerId)
+}
+
+tasks.register<DockerStartContainer>("startEntityServiceContainer") {
+  dependsOn("startMongoContainer")
+  dependsOn("createEntityServiceContainer")
+  targetContainerId(tasks.getByName<DockerCreateContainer>("createEntityServiceContainer").containerId)
+}
+
+tasks.register<DockerStartContainer>("startActorServiceContainer") {
+  dependsOn("startEntityServiceContainer")
+  dependsOn("createActorServiceContainer")
+  targetContainerId(tasks.getByName<DockerCreateContainer>("createActorServiceContainer").containerId)
 }
 
 tasks.register<DockerCreateContainer>("createMongoContainer") {
@@ -41,9 +66,29 @@ tasks.register<DockerCreateContainer>("createMongoContainer") {
   hostConfig.autoRemove.set(true)
 }
 
-tasks.register<DockerStartContainer>("startMongoContainer") {
-  dependsOn("createMongoContainer")
-  targetContainerId(tasks.getByName<DockerCreateContainer>("createMongoContainer").containerId)
+tasks.register<DockerCreateContainer>("createEntityServiceContainer") {
+  dependsOn("createIntegrationTestNetwork")
+  dependsOn("pullEntityServiceImage")
+  targetImageId(tasks.getByName<DockerPullImage>("pullEntityServiceImage").image)
+  containerName.set("entity-service-local")
+  envVars.put("mongo_host", tasks.getByName<DockerCreateContainer>("createMongoContainer").containerName)
+  hostConfig.portBindings.set(listOf("60061:50061"))
+  hostConfig.binds.put("$projectDir/src/integrationTest/resources/config-entity-service-test/application.conf", "/app/resources/configs/entity-service/application.conf")
+  hostConfig.network.set(tasks.getByName<DockerCreateNetwork>("createIntegrationTestNetwork").networkId)
+  hostConfig.autoRemove.set(true)
+}
+
+tasks.register<DockerCreateContainer>("createActorServiceContainer") {
+  dependsOn("createIntegrationTestNetwork")
+  dependsOn("pullActorServiceImage")
+  targetImageId(tasks.getByName<DockerPullImage>("pullActorServiceImage").image)
+  containerName.set("actor-service-local")
+  envVars.put("entity_service_host", tasks.getByName<DockerCreateContainer>("createEntityServiceContainer").containerName)
+  exposePorts("tcp", listOf(50888))
+  hostConfig.portBindings.set(listOf("60888:50888"))
+  hostConfig.binds.put("$projectDir/src/integrationTest/resources/config-actor-service-test/application.conf", "/app/resources/configs/actor-service/application.conf")
+  hostConfig.network.set(tasks.getByName<DockerCreateNetwork>("createIntegrationTestNetwork").networkId)
+  hostConfig.autoRemove.set(true)
 }
 
 tasks.register<DockerStopContainer>("stopMongoContainer") {
@@ -51,40 +96,20 @@ tasks.register<DockerStopContainer>("stopMongoContainer") {
   finalizedBy("removeIntegrationTestNetwork")
 }
 
-tasks.register<DockerPullImage>("pullEntityServiceImage") {
-  image.set(docker.registryCredentials.url.get() + "/hypertrace/entity-service:0.6.6")
-}
-
-tasks.register<DockerCreateContainer>("createEntityServiceContainer") {
-  dependsOn("pullEntityServiceImage")
-  targetImageId(tasks.getByName<DockerPullImage>("pullEntityServiceImage").image)
-  containerName.set("entity-service-local")
-  envVars.put("SERVICE_NAME", "entity-service")
-  envVars.put("mongo_host", tasks.getByName<DockerCreateContainer>("createMongoContainer").containerName)
-  envVars.put("BOOTSTRAP_CONFIG_URI", "file:///app/resources/configs")
-  envVars.put("CLUSTER_NAME", "test")
-  exposePorts("tcp", listOf(60061))
-  hostConfig.portBindings.set(listOf("60061:50061"))
-  hostConfig.binds.put("$projectDir/src/integrationTest/resources/config-entity-service-test/application.conf", "/app/resources/configs/entity-service/test/application.conf")
-  hostConfig.network.set(tasks.getByName<DockerCreateNetwork>("createIntegrationTestNetwork").networkId)
-  hostConfig.autoRemove.set(true)
-}
-
-tasks.register<DockerStartContainer>("startEntityServiceContainer") {
-  dependsOn("startMongoContainer")
-  dependsOn("createEntityServiceContainer")
-  targetContainerId(tasks.getByName<DockerCreateContainer>("createEntityServiceContainer").containerId)
-}
-
 tasks.register<DockerStopContainer>("stopEntityServiceContainer") {
   targetContainerId(tasks.getByName<DockerCreateContainer>("createEntityServiceContainer").containerId)
   finalizedBy("stopMongoContainer")
 }
 
+tasks.register<DockerStopContainer>("stopActorServiceContainer") {
+  targetContainerId(tasks.getByName<DockerCreateContainer>("createActorServiceContainer").containerId)
+  finalizedBy("stopEntityServiceContainer")
+}
+
 tasks.integrationTest {
   useJUnitPlatform()
-  dependsOn("startEntityServiceContainer")
-  finalizedBy("stopEntityServiceContainer")
+  dependsOn("startActorServiceContainer")
+  finalizedBy("stopActorServiceContainer")
   maxHeapSize = "1024m"
 }
 
@@ -122,6 +147,7 @@ dependencies {
   integrationTestImplementation(libs.hypertrace.grpcutils.client)
   integrationTestImplementation(libs.hypertrace.grpcutils.context)
   integrationTestImplementation(libs.hypertrace.entityservice.api)
+  integrationTestImplementation(libs.hypertrace.entityservice.client)
   integrationTestImplementation(libs.protobuf.javautil)
   integrationTestImplementation(projects.iprangeConfigServiceApi)
   integrationTestImplementation(projects.apiAttributeOverrideServiceApi)

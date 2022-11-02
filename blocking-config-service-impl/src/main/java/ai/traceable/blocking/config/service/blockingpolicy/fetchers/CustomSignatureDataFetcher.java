@@ -97,8 +97,10 @@ public class CustomSignatureDataFetcher {
                   break;
                 default:
                   LOGGER.warn(
-                      "Unsupported custom signature rule event type {}",
-                      customSignatureRule.getEffect().getEventType());
+                      "Unsupported custom signature based rule event type {} for request-context:{} and ruleID:{}",
+                      customSignatureRule.getEffect().getEventType(),
+                      requestContext,
+                      customSignatureRule.getId());
               }
             });
 

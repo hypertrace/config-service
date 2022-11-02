@@ -3,39 +3,34 @@ package ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.confi
 import ai.traceable.blocking.config.service.BlockingDataCacheConfig;
 import com.typesafe.config.Config;
 import java.time.Duration;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.ToString;
+import lombok.experimental.FieldDefaults;
 
+@Getter
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
+@ToString
 public class ActorServiceConfig {
 
   private static final String ACTOR_SERVICE_CONFIG_NAME = "actor.service.config";
   private static final String HOST_CONFIG_NAME = "host";
   private static final String PORT_CONFIG_NAME = "port";
   private static final String CALL_TIMEOUT_CONFIG_NAME = "request.timeout";
+  private static final String MAX_NUMBER_OF_ACTORS = "maxNumberOfActors";
 
-  private final String host;
-  private final int port;
-  private final Duration callTimeout;
-  private final BlockingDataCacheConfig cacheConfig;
+  String host;
+  int port;
+  Duration callTimeoutDuration;
+  BlockingDataCacheConfig cacheConfig;
+  int maxNumberOfActors;
 
   public ActorServiceConfig(Config config) {
     host = config.getConfig(ACTOR_SERVICE_CONFIG_NAME).getString(HOST_CONFIG_NAME);
     port = config.getConfig(ACTOR_SERVICE_CONFIG_NAME).getInt(PORT_CONFIG_NAME);
-    callTimeout = config.getConfig(ACTOR_SERVICE_CONFIG_NAME).getDuration(CALL_TIMEOUT_CONFIG_NAME);
+    callTimeoutDuration =
+        config.getConfig(ACTOR_SERVICE_CONFIG_NAME).getDuration(CALL_TIMEOUT_CONFIG_NAME);
     cacheConfig = new BlockingDataCacheConfig(config.getConfig(ACTOR_SERVICE_CONFIG_NAME));
-  }
-
-  public String getHost() {
-    return this.host;
-  }
-
-  public int getPort() {
-    return this.port;
-  }
-
-  public Duration getCallTimeoutDuration() {
-    return this.callTimeout;
-  }
-
-  public BlockingDataCacheConfig getCacheConfig() {
-    return this.cacheConfig;
+    maxNumberOfActors = config.getConfig(ACTOR_SERVICE_CONFIG_NAME).getInt(MAX_NUMBER_OF_ACTORS);
   }
 }

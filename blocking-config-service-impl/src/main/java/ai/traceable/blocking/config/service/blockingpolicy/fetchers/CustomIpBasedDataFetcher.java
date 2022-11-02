@@ -104,8 +104,10 @@ public class CustomIpBasedDataFetcher {
                   break;
                 default:
                   LOGGER.warn(
-                      "Unsupported custom ip based rule event type {}",
-                      ipRangeRule.getRuleDetails().getRuleAction());
+                      "Unsupported custom ip based rule event type {} for request-context:{} and ruleID:{}",
+                      ipRangeRule.getRuleDetails().getRuleAction(),
+                      requestContext,
+                      ipRangeRule.getId());
               }
             });
 
