@@ -29,17 +29,20 @@ import com.google.rpc.Code;
 import com.google.rpc.Status;
 import io.grpc.protobuf.StatusProto;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ActorBasedRulesCache {
   private static final Logger LOGGER = LoggerFactory.getLogger(ActorBasedRulesCache.class);
+  private static final String ACTOR_BASED_RULES_CACHE = "ActorBasedRulesCache";
   private static final ExternalIpAddressValidator externalIpAddressValidator =
       ExternalIpAddressValidator.getInstance();
 
@@ -60,9 +63,12 @@ public class ActorBasedRulesCache {
             .maximumSize(blockingDataCacheConfig.getMaxCacheSize())
             .expireAfterWrite(blockingDataCacheConfig.getWriteExpirationDuration())
             .refreshAfterWrite(blockingDataCacheConfig.getRefreshExpirationDuration())
+            .recordStats()
             .build(
                 CacheLoader.asyncReloading(
                     CacheLoader.from(this::loadValue), Executors.newSingleThreadExecutor()));
+    PlatformMetricsRegistry.registerCache(
+        ACTOR_BASED_RULES_CACHE, actorCache, Collections.emptyMap());
   }
 
   public ActorBasedRulesCollection getActorBasedRules(
