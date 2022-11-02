@@ -163,6 +163,7 @@ dependencies {
   integrationTestImplementation(projects.riskConfigServiceApi)
   integrationTestImplementation(projects.sensitiveDataConfigServiceApi)
   integrationTestImplementation(projects.dataClassificationConfigServiceApi)
+  integrationTestImplementation(projects.maliciousSourcesConfigServiceApi)
 }
 
 application {
