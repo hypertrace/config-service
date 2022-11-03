@@ -29,7 +29,7 @@ import ai.traceable.platform.apientity.http.model.TrieModel;
 import ai.traceable.platform.apientity.http.model.TrieModelTrainerConfig;
 import ai.traceable.platform.model.store.DateScope;
 import ai.traceable.platform.model.store.FileSystemModelStore;
-import ai.traceable.platform.model.store.ServiceScope;
+import ai.traceable.platform.model.store.scope.ServiceScope;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.io.File;

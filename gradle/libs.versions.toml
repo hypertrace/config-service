@@ -7,7 +7,7 @@ hypertrace-grpcutils = "0.7.7"
 hypertrace-framework = "0.1.43"
 hypertrace-entityService = "0.8.41"
 traceable-platform = "0.1.99"
-traceable-platformGateway = "0.6.32"
+traceable-platformGateway = "0.6.57"
 kafka = "6.0.1"
 
 junit = "5.8.2"

@@ -11,7 +11,7 @@ import ai.traceable.platform.apientity.http.model.TrieNodeConfig;
 import ai.traceable.platform.deepstore.FileMetadata;
 import ai.traceable.platform.model.PersistedModel;
 import ai.traceable.platform.model.store.ModelPersistentStore;
-import ai.traceable.platform.model.store.ServiceScope;
+import ai.traceable.platform.model.store.scope.ServiceScope;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;

@@ -9,7 +9,7 @@ import ai.traceable.localprocessing.config.service.v1.FullPattern;
 import ai.traceable.platform.apientity.http.difflog.TrieDiffLogModel;
 import ai.traceable.platform.apientity.http.model.TrieModel;
 import ai.traceable.platform.model.PersistedModel;
-import ai.traceable.platform.model.store.ServiceScope;
+import ai.traceable.platform.model.store.scope.ServiceScope;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.time.Instant;
