@@ -11,6 +11,7 @@ message GetBlockingRulesRequest {
     // Safe_crs_blocking_rule is same as block_crs_rule
     string safe_crs_blocking_rules_hash = 3;
     string blocking_policy_configuration_hash = 4;
+    string ip_type_data_hash = 6;
     string environment = 5;
 }
 
@@ -19,6 +20,7 @@ message GetBlockingRulesResponse {
     CustomModsecBlockingRules custom_modsec_blocking_rules = 2;
     SafeCrsBlockingRules safe_crs_blocking_rules = 3;
     BlockingPolicyConfiguration blocking_policy_configuration = 4;
+    IpTypeBlockingRules ip_type_blocking_rules = 5;
 }
 
 message RegionBlockingRules {
@@ -42,6 +44,11 @@ message BlockingPolicyConfiguration {
     repeated BlockingDetails blocking_details_list = 2;
 }
 
+message IpTypeBlockingRules {
+    repeated IpTypeRule ip_type_rule_list = 1;
+    string hash = 2;
+}
+
 message RegionIpBlockingRule {
     repeated IpRange ip_ranges = 1;
     string region_id = 2;
@@ -50,6 +57,7 @@ message RegionIpBlockingRule {
 message IpRange {
     oneof value {
         IpV4Range ipv4_range = 1;
+        int32 ipv4_address = 2;
     }
 }
 
@@ -70,6 +78,7 @@ message BlockingDetails {
         CustomSignatureDetails custom_signature_details = 7;
         RegionDetails region_details = 8;
         ActorDetails actor_details = 10;
+        IpTypeDetails ip_type_details = 11;
     }
 }
 
@@ -95,6 +104,23 @@ message RegionDetails {
     repeated string regions = 1;
 }
 
+message IpTypeDetails {
+    repeated IpType ip_types = 1;
+}
+
+message IpTypeRule {
+    IpType ip_type = 1;
+    repeated IpRange ip_ranges = 2;
+}
+
+enum IpType {
+    IP_TYPE_UNSPECIFIED = 0;
+    IP_TYPE_BOT = 1;
+    IP_TYPE_VPN = 2;
+    IP_TYPE_TOR = 3;
+    IP_TYPE_PROXY = 4;
+}
+
 enum BlockingCategory {
     BLOCKING_CATEGORY_UNSPECIFIED = 0;
     BLOCKING_CATEGORY_THREAT_ACTOR = 1;
@@ -103,6 +129,7 @@ enum BlockingCategory {
     BLOCKING_CATEGORY_CUSTOM_IP_RULE = 4;
     BLOCKING_CATEGORY_CUSTOM_REGION_RULE = 5;
     BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE = 6;
+    BLOCKING_CATEGORY_IP_TYPE_RULE = 7;
 }
 
 enum BlockingRuleType{
