@@ -7,8 +7,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.v1.override.CreateDetectionExclusionRuleRequest;
+import ai.traceable.anomaly.config.service.v1.override.DetectionExclusionConfigCriteria;
 import ai.traceable.anomaly.config.service.v1.override.DetectionExclusionRule;
-import ai.traceable.anomaly.config.service.v1.override.DetectionExclusionRuleConfig;
+import ai.traceable.anomaly.config.service.v1.override.DetectionExclusionRuleInfo;
 import ai.traceable.anomaly.config.service.v1.override.DetectionOverrideEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.override.DetectionOverrideRuleScope;
 import ai.traceable.anomaly.config.service.v1.override.GetDetectionExclusionRulesFilter;
@@ -132,16 +133,24 @@ public class DetectionOverrideExclusionRulesManagerTest {
 
   @Test
   public void testCreateDetectionExclusionRule() {
+    DetectionOverrideRuleScope ruleScope =
+        DetectionOverrideRuleScope.newBuilder()
+            .setEnvironmentScope(
+                DetectionOverrideEnvironmentScope.newBuilder()
+                    .addAllEnvironmentIds(List.of("prod")))
+            .build();
+    DetectionExclusionRuleInfo ruleInfo =
+        DetectionExclusionRuleInfo.newBuilder()
+            .setName("test_rule_info")
+            .setDescription("test_rule_info")
+            .setCriteria(DetectionExclusionConfigCriteria.getDefaultInstance())
+            .build();
+
     DetectionExclusionRule expectedRule =
         DetectionExclusionRule.newBuilder()
             .setId("test-id")
-            .setDescription("test")
-            .setConfig(DetectionExclusionRuleConfig.newBuilder())
-            .setRuleScope(
-                DetectionOverrideRuleScope.newBuilder()
-                    .setEnvironmentScope(
-                        DetectionOverrideEnvironmentScope.newBuilder()
-                            .addAllEnvironmentIds(List.of("prod"))))
+            .setRuleInfo(ruleInfo)
+            .setRuleScope(ruleScope)
             .build();
 
     when(uuidGenerator.generateRandomId()).thenReturn("test-id");
@@ -149,12 +158,8 @@ public class DetectionOverrideExclusionRulesManagerTest {
         rulesManager.createDetectionExclusionRule(
             requestContext,
             CreateDetectionExclusionRuleRequest.newBuilder()
-                .setDescription("test")
-                .setRuleScope(
-                    DetectionOverrideRuleScope.newBuilder()
-                        .setEnvironmentScope(
-                            DetectionOverrideEnvironmentScope.newBuilder()
-                                .addAllEnvironmentIds(List.of("prod"))))
+                .setRuleInfo(ruleInfo)
+                .setRuleScope(ruleScope)
                 .build());
 
     assertEquals(expectedRule, actualRule);

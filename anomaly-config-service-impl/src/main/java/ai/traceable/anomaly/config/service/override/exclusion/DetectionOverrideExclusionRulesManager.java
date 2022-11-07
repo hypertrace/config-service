@@ -41,9 +41,8 @@ class DetectionOverrideExclusionRulesManager implements ExclusionRulesManager {
     DetectionExclusionRule rule =
         DetectionExclusionRule.newBuilder()
             .setId(ruleId)
-            .setDescription(request.getDescription())
+            .setRuleInfo(request.getRuleInfo())
             .setRuleScope(request.getRuleScope())
-            .setConfig(request.getConfig())
             .build();
     return rulesStore.upsertObject(requestContext, rule).getData();
   }

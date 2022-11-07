@@ -12,7 +12,7 @@ import ai.traceable.anomaly.config.service.v1.override.CreateDetectionExclusionR
 import ai.traceable.anomaly.config.service.v1.override.DeleteDetectionExclusionRuleRequest;
 import ai.traceable.anomaly.config.service.v1.override.DetectionExclusionConfigCriteria;
 import ai.traceable.anomaly.config.service.v1.override.DetectionExclusionRule;
-import ai.traceable.anomaly.config.service.v1.override.DetectionExclusionRuleConfig;
+import ai.traceable.anomaly.config.service.v1.override.DetectionExclusionRuleInfo;
 import ai.traceable.anomaly.config.service.v1.override.DetectionOverrideRuleScope;
 import ai.traceable.anomaly.config.service.v1.override.DetectionOverrideRuleStatus;
 import ai.traceable.anomaly.config.service.v1.override.DetectionOverrideTargetEventsConfig;
@@ -44,40 +44,27 @@ public class DetectionOverrideExclusionRulesValidatorTest {
 
     request =
         CreateDetectionExclusionRuleRequest.newBuilder()
-            .setConfig(DetectionExclusionRuleConfig.getDefaultInstance())
             .setRuleScope(DetectionOverrideRuleScope.getDefaultInstance())
             .build();
 
     Status status = rulesValidator.validate(request);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
-    assertEquals("Config should have a valid criteria / rule status.", status.getDescription());
+    assertEquals(
+        "Create detection exclusion rule request should have a valid rule info / rule scope.",
+        status.getDescription());
 
     request =
         CreateDetectionExclusionRuleRequest.newBuilder()
-            .setConfig(
-                DetectionExclusionRuleConfig.newBuilder()
-                    .setCriteria(DetectionExclusionConfigCriteria.newBuilder().build())
-                    .setRuleStatus(DetectionOverrideRuleStatus.getDefaultInstance())
-                    .build())
             .setRuleScope(DetectionOverrideRuleScope.getDefaultInstance())
-            .build();
-
-    status = rulesValidator.validate(request);
-    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
-    assertEquals("Criteria should have a valid target events config.", status.getDescription());
-
-    request =
-        CreateDetectionExclusionRuleRequest.newBuilder()
-            .setConfig(
-                DetectionExclusionRuleConfig.newBuilder()
+            .setRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .setName("test-name")
                     .setCriteria(
                         DetectionExclusionConfigCriteria.newBuilder()
                             .setTargetEventsConfig(
                                 DetectionOverrideTargetEventsConfig.getDefaultInstance())
                             .build())
-                    .setRuleStatus(DetectionOverrideRuleStatus.getDefaultInstance())
                     .build())
-            .setRuleScope(DetectionOverrideRuleScope.getDefaultInstance())
             .build();
 
     when(eventsValidator.validateTargetEventsConfig(any())).thenReturn(Status.OK);
@@ -89,14 +76,18 @@ public class DetectionOverrideExclusionRulesValidatorTest {
   public void testValidateUpdateRequest() {
     UpdateDetectionExclusionRuleRequest request =
         UpdateDetectionExclusionRuleRequest.getDefaultInstance();
-    assertEquals(Status.INVALID_ARGUMENT.getCode(), rulesValidator.validate(request).getCode());
+    Status status = rulesValidator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals(
+        "Update detection exclusion rule request should have a valid rule.",
+        status.getDescription());
 
     request =
         UpdateDetectionExclusionRuleRequest.newBuilder()
             .setRule(DetectionExclusionRule.newBuilder().setId("").build())
             .build();
 
-    Status status = rulesValidator.validate(request);
+    status = rulesValidator.validate(request);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertEquals("Detection rule shouldn't have an empty id.", status.getDescription());
 
@@ -111,23 +102,77 @@ public class DetectionOverrideExclusionRulesValidatorTest {
 
     status = rulesValidator.validate(request);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
-    assertEquals("Detection rule should have a valid scope/config.", status.getDescription());
+    assertEquals("Detection rule should have a valid scope/info/status.", status.getDescription());
 
     request =
         UpdateDetectionExclusionRuleRequest.newBuilder()
             .setRule(
                 DetectionExclusionRule.newBuilder()
                     .setId("test-id")
+                    .setRuleInfo(DetectionExclusionRuleInfo.getDefaultInstance())
                     .setRuleScope(DetectionOverrideRuleScope.getDefaultInstance())
-                    .setConfig(
-                        DetectionExclusionRuleConfig.newBuilder()
+                    .setRuleStatus(DetectionOverrideRuleStatus.getDefaultInstance())
+                    .build())
+            .build();
+
+    when(scopeValidator.validateRuleScope(any())).thenReturn(Status.OK);
+    status = rulesValidator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals("Rule info shouldn't have an empty name.", status.getDescription());
+
+    request =
+        UpdateDetectionExclusionRuleRequest.newBuilder()
+            .setRule(
+                DetectionExclusionRule.newBuilder()
+                    .setId("test-id")
+                    .setRuleInfo(
+                        DetectionExclusionRuleInfo.newBuilder().setName("test-name").build())
+                    .setRuleScope(DetectionOverrideRuleScope.getDefaultInstance())
+                    .setRuleStatus(DetectionOverrideRuleStatus.getDefaultInstance())
+                    .build())
+            .build();
+
+    when(scopeValidator.validateRuleScope(any())).thenReturn(Status.OK);
+    status = rulesValidator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals("Rule info should have a valid criteria.", status.getDescription());
+
+    request =
+        UpdateDetectionExclusionRuleRequest.newBuilder()
+            .setRule(
+                DetectionExclusionRule.newBuilder()
+                    .setId("test-id")
+                    .setRuleInfo(
+                        DetectionExclusionRuleInfo.newBuilder()
+                            .setName("test-name")
+                            .setCriteria(DetectionExclusionConfigCriteria.getDefaultInstance())
+                            .build())
+                    .setRuleScope(DetectionOverrideRuleScope.getDefaultInstance())
+                    .setRuleStatus(DetectionOverrideRuleStatus.getDefaultInstance())
+                    .build())
+            .build();
+
+    when(scopeValidator.validateRuleScope(any())).thenReturn(Status.OK);
+    status = rulesValidator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals("Criteria should have a valid target events config.", status.getDescription());
+
+    request =
+        UpdateDetectionExclusionRuleRequest.newBuilder()
+            .setRule(
+                DetectionExclusionRule.newBuilder()
+                    .setId("test-id")
+                    .setRuleInfo(
+                        DetectionExclusionRuleInfo.newBuilder()
+                            .setName("test-name")
                             .setCriteria(
                                 DetectionExclusionConfigCriteria.newBuilder()
                                     .setTargetEventsConfig(
                                         DetectionOverrideTargetEventsConfig.getDefaultInstance())
                                     .build())
-                            .setRuleStatus(DetectionOverrideRuleStatus.getDefaultInstance())
                             .build())
+                    .setRuleScope(DetectionOverrideRuleScope.getDefaultInstance())
+                    .setRuleStatus(DetectionOverrideRuleStatus.getDefaultInstance())
                     .build())
             .build();
 

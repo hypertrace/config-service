@@ -15,14 +15,15 @@ option java_multiple_files = true;
 
 message DetectionExclusionRule {
   string id = 1;
-  string description = 2;
+  DetectionExclusionRuleInfo rule_info = 2;
   DetectionOverrideRuleScope rule_scope = 3;
-  DetectionExclusionRuleConfig config = 4;
+  DetectionOverrideRuleStatus rule_status = 4;
 }
 
-message DetectionExclusionRuleConfig {
-  DetectionExclusionConfigCriteria criteria = 1;
-  DetectionOverrideRuleStatus rule_status = 2;
+message DetectionExclusionRuleInfo {
+  string name = 1;
+  string description = 2;
+  DetectionExclusionConfigCriteria criteria = 3;
 }
 
 message DetectionExclusionConfigCriteria {
@@ -45,9 +46,8 @@ message GetDetectionExclusionRulesResponse {
 }
 
 message CreateDetectionExclusionRuleRequest {
-  string description = 1;
-  DetectionOverrideRuleScope rule_scope = 2;
-  DetectionExclusionRuleConfig config = 3;
+  DetectionOverrideRuleScope rule_scope = 1;
+  DetectionExclusionRuleInfo rule_info = 2;
 }
 
 message CreateDetectionExclusionRuleResponse {

@@ -7,7 +7,7 @@ import ai.traceable.anomaly.config.service.v1.override.CreateDetectionExclusionR
 import ai.traceable.anomaly.config.service.v1.override.DeleteDetectionExclusionRuleRequest;
 import ai.traceable.anomaly.config.service.v1.override.DetectionExclusionConfigCriteria;
 import ai.traceable.anomaly.config.service.v1.override.DetectionExclusionRule;
-import ai.traceable.anomaly.config.service.v1.override.DetectionExclusionRuleConfig;
+import ai.traceable.anomaly.config.service.v1.override.DetectionExclusionRuleInfo;
 import ai.traceable.anomaly.config.service.v1.override.UpdateDetectionExclusionRuleRequest;
 import io.grpc.Status;
 import javax.inject.Inject;
@@ -31,13 +31,13 @@ public class DetectionOverrideExclusionRulesValidator implements ExclusionRulesV
 
   @Override
   public Status validate(CreateDetectionExclusionRuleRequest request) {
-    if (!request.hasConfig() || !request.hasRuleScope()) {
+    if (!request.hasRuleInfo() || !request.hasRuleScope()) {
       return Status.INVALID_ARGUMENT.withDescription(
-          "Create detection exclusion rule request should have a valid config / rule scope.");
+          "Create detection exclusion rule request should have a valid rule info / rule scope.");
     }
 
     Status status;
-    if ((status = validateRuleConfig(request.getConfig())) != Status.OK) {
+    if ((status = validateRuleInfo(request.getRuleInfo())) != Status.OK) {
       return status;
     }
     if ((status = scopeValidator.validateRuleScope(request.getRuleScope())) != Status.OK) {
@@ -70,28 +70,31 @@ public class DetectionOverrideExclusionRulesValidator implements ExclusionRulesV
       return Status.INVALID_ARGUMENT.withDescription("Detection rule shouldn't have an empty id.");
     }
 
-    if (!rule.hasRuleScope() || !rule.hasConfig()) {
+    if (!rule.hasRuleScope() || !rule.hasRuleInfo() || !rule.hasRuleStatus()) {
       return Status.INVALID_ARGUMENT.withDescription(
-          "Detection rule should have a valid scope/config.");
+          "Detection rule should have a valid scope/info/status.");
     }
 
     Status status;
     if ((status = scopeValidator.validateRuleScope(rule.getRuleScope())) != Status.OK) {
       return status;
     }
-    if ((status = validateRuleConfig(rule.getConfig())) != Status.OK) {
+    if ((status = validateRuleInfo(rule.getRuleInfo())) != Status.OK) {
       return status;
     }
 
     return Status.OK;
   }
 
-  private Status validateRuleConfig(@NonNull DetectionExclusionRuleConfig config) {
-    if (!config.hasCriteria() || !config.hasRuleStatus()) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Config should have a valid criteria / rule status.");
+  private Status validateRuleInfo(@NonNull DetectionExclusionRuleInfo ruleInfo) {
+    if (ruleInfo.getName().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription("Rule info shouldn't have an empty name.");
     }
-    return validateCriteria(config.getCriteria());
+
+    if (!ruleInfo.hasCriteria()) {
+      return Status.INVALID_ARGUMENT.withDescription("Rule info should have a valid criteria.");
+    }
+    return validateCriteria(ruleInfo.getCriteria());
   }
 
   private Status validateCriteria(@NonNull DetectionExclusionConfigCriteria criteria) {
