@@ -47,7 +47,6 @@ enum Field {
   FIELD_URL = 1;
   FIELD_SERVICE_NAME = 2;
   FIELD_ENVIRONMENT_NAME = 3;
-  FIELD_SERVICE_ID = 4;
 }
 
 enum RelationalOperator {

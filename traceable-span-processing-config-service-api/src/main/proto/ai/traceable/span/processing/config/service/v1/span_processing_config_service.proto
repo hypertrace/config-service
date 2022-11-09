@@ -248,8 +248,7 @@ message ApiNamingRuleConfig {
   oneof rule_config {
     SegmentMatchingBasedConfig segment_matching_based_config = 1;
     ApiSpecBasedConfig api_spec_based_config = 2;
-    CardinalityBasedConfig cardinality_based_config = 3;
-    AstScanBasedConfig ast_scan_based_config = 4;
+    AstScanBasedConfig ast_scan_based_config = 3;
   }
 }
 
@@ -270,28 +269,6 @@ message AstScanBasedConfig {
   string api_spec_id = 2;
   repeated string regexes = 3;
   repeated string values = 4;
-}
-
-message CardinalityBasedConfig {
-  repeated Segment segments = 1;
-  repeated string values = 2;
-  repeated string regexes = 3; //This list gets populated only on the read path while retrieving all custom naming rules
-}
-
-message Segment {
-  oneof value {
-    string string_value = 1;
-    WildcardType wildcard_value = 2;
-  }
-}
-
-enum WildcardType {
-  WILDCARD_TYPE_UNSPECIFIED = 0;
-  WILDCARD_TYPE_ID = 1;
-  WILDCARD_TYPE_WHITELIST = 2;
-  WILDCARD_TYPE_LOW_CARDINALITY = 3;
-  WILDCARD_TYPE_MEDIUM_CARDINALITY = 4;
-  WILDCARD_TYPE_HIGH_CARDINALITY = 5;
 }
 
 message ApiNamingRuleMetadata {
