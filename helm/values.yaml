@@ -135,7 +135,7 @@ apiNamingCustomRules:
   cache:
     refreshAfterWriteDuration: 150s
     expireAfterWriteDuration: 300s
-    maximumSize: 100
+    maximumSize: 1000
 
 apiNamingConfigs:
   cache:

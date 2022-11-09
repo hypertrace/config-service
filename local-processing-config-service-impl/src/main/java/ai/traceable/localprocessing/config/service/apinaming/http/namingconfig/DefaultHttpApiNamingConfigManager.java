@@ -1,5 +1,6 @@
 package ai.traceable.localprocessing.config.service.apinaming.http.namingconfig;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.Streams.zip;
 
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
@@ -26,6 +27,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -33,6 +35,7 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
 
   private final UuidGenerator uuidGenerator;
   private final HttpApiNamingConfig httpApiNamingConfig;
+  private static final String OR_DELIMITER = "|";
   private static final String DEFAULT_MEDIUM_CARDINALITY_WILDCARD_IDENTIFICATION_REGEX = "^.*$";
 
   @Inject
@@ -121,7 +124,7 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
   }
 
   private String buildWildcardIdentificationRegex(ThresholdRegexConfig thresholdRegexConfig) {
-    return String.join("|", thresholdRegexConfig.getRegexList().getValuesList());
+    return String.join(OR_DELIMITER, thresholdRegexConfig.getRegexList().getValuesList());
   }
 
   private String buildMediumCardinalityWildcardIdentificationRegex(
@@ -134,17 +137,19 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
     String extensionRegex =
         trieModelTrainingConfig.getExtensions().getValuesList().stream()
             .map(extension -> ".*\\." + extension)
-            .collect(Collectors.joining("|"));
+            .collect(Collectors.joining(OR_DELIMITER));
 
     // Build a regex which includes everything not matching with other regexes
     String otherRegexes =
-        String.join(
-            "|",
-            buildWildcardIdentificationRegex(trieModelTrainingConfig.getIds()),
-            buildWildcardIdentificationRegex(trieModelTrainingConfig.getLowCardinality()),
-            buildWildcardIdentificationRegex(trieModelTrainingConfig.getHighCardinality()),
-            String.join("|", trieModelTrainingConfig.getAllowRegexList().getValuesList()),
-            extensionRegex);
+        Stream.of(
+                buildWildcardIdentificationRegex(trieModelTrainingConfig.getIds()),
+                buildWildcardIdentificationRegex(trieModelTrainingConfig.getLowCardinality()),
+                buildWildcardIdentificationRegex(trieModelTrainingConfig.getHighCardinality()),
+                String.join(
+                    OR_DELIMITER, trieModelTrainingConfig.getAllowRegexList().getValuesList()),
+                extensionRegex)
+            .filter(s -> !isNullOrEmpty(s))
+            .collect(Collectors.joining(OR_DELIMITER));
 
     // Look ahead negative regex of other regexes
     String negativeLookAheadOfOtherRegexes = "";

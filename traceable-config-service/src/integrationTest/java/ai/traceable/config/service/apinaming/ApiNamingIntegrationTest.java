@@ -62,7 +62,7 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
   private static final DateTimeFormatter DATE_TIME_FORMATTER =
       DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH-mm-ss");
   private static final String DEFAULT_MEDIUM_CARDINALITY_REGEX =
-      "(?!^((\\{){0,1}[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}(\\}){0,1}|\\d+||[a-zA-Z]*?([-_+]?[a-zA-Z]+)+[-_+]?|v\\d+|.*\\.json|.*\\.xml)$)^.*$";
+      "(?!^((\\{){0,1}[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}(\\}){0,1}|\\d+|[a-zA-Z]*?([-_+]?[a-zA-Z]+)+[-_+]?|v\\d+|.*\\.json|.*\\.xml)$)^.*$";
 
   private static LocalProcessingConfigServiceGrpc.LocalProcessingConfigServiceBlockingStub
       localProcessingConfigStub;
