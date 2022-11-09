@@ -249,6 +249,7 @@ message ApiNamingRuleConfig {
     SegmentMatchingBasedConfig segment_matching_based_config = 1;
     ApiSpecBasedConfig api_spec_based_config = 2;
     CardinalityBasedConfig cardinality_based_config = 3;
+    AstScanBasedConfig ast_scan_based_config = 4;
   }
 }
 
@@ -262,6 +263,13 @@ message ApiSpecBasedConfig {
   repeated string api_spec_ids = 4;
   repeated string regexes = 2;
   repeated string values = 3;
+}
+
+message AstScanBasedConfig {
+  string scan_id = 1;
+  string api_spec_id = 2;
+  repeated string regexes = 3;
+  repeated string values = 4;
 }
 
 message CardinalityBasedConfig {

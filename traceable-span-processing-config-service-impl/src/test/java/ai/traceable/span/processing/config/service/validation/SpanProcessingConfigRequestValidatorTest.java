@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleInfo;
 import ai.traceable.span.processing.config.service.v1.ApiSpecBasedConfig;
+import ai.traceable.span.processing.config.service.v1.AstScanBasedConfig;
 import ai.traceable.span.processing.config.service.v1.CreateApiNamingRuleRequest;
 import ai.traceable.span.processing.config.service.v1.CreateApiNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.CreateProtectionSpanRuleRequest;
@@ -536,6 +537,63 @@ class SpanProcessingConfigRequestValidatorTest {
                     .build()));
 
     assertInvalidArgStatusContaining(
+        "Invalid regexes",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateApiNamingRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ApiNamingRuleInfo.newBuilder()
+                            .setName("name")
+                            .setFilter(buildTestFilter())
+                            .setRuleConfig(
+                                buildAstScanBasedConfig(
+                                    "scanId",
+                                    "apiSpecId",
+                                    List.of("regex", "[^]+$"),
+                                    List.of("value1", "value2")))
+                            .build())
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Invalid scanId",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateApiNamingRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ApiNamingRuleInfo.newBuilder()
+                            .setName("name")
+                            .setFilter(buildTestFilter())
+                            .setRuleConfig(
+                                buildAstScanBasedConfig(
+                                    "",
+                                    "apiSpecId",
+                                    List.of("regex", "[^]+$"),
+                                    List.of("value1", "value2")))
+                            .build())
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Invalid specId",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateApiNamingRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ApiNamingRuleInfo.newBuilder()
+                            .setName("name")
+                            .setFilter(buildTestFilter())
+                            .setRuleConfig(
+                                buildAstScanBasedConfig(
+                                    "scanId",
+                                    "",
+                                    List.of("regex", "[^]+$"),
+                                    List.of("value1", "value2")))
+                            .build())
+                    .build()));
+
+    assertInvalidArgStatusContaining(
         "Invalid regex or value segment",
         () ->
             validator.validateOrThrow(
@@ -557,6 +615,25 @@ class SpanProcessingConfigRequestValidatorTest {
                             .build())
                     .build()));
 
+    assertInvalidArgStatusContaining(
+        "Invalid regex or value segment",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateApiNamingRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ApiNamingRuleInfo.newBuilder()
+                            .setName("name")
+                            .setFilter(buildTestFilter())
+                            .setRuleConfig(
+                                buildAstScanBasedConfig(
+                                    "scanId",
+                                    "apiSpecId",
+                                    List.of("regex", ""),
+                                    List.of("value1", "value2")))
+                            .build())
+                    .build()));
+
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
@@ -575,6 +652,22 @@ class SpanProcessingConfigRequestValidatorTest {
                                             .addAllValues(List.of("value"))
                                             .build())
                                     .build())
+                            .setFilter(buildTestFilter())
+                            .build())
+                    .build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateApiNamingRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ApiNamingRuleInfo.newBuilder()
+                            .setName("name")
+                            .setDisabled(true)
+                            .setRuleConfig(
+                                buildAstScanBasedConfig(
+                                    "scanId", "apiSpecId", List.of("regex"), List.of("value")))
                             .setFilter(buildTestFilter())
                             .build())
                     .build()));
@@ -843,6 +936,19 @@ class SpanProcessingConfigRequestValidatorTest {
                         .build())
                 .build())
         .setApiEndpointCacheDuration(Duration.newBuilder().setSeconds(100).setNanos(100).build())
+        .build();
+  }
+
+  private ApiNamingRuleConfig buildAstScanBasedConfig(
+      String scanId, String apiSpecId, List<String> regexes, List<String> values) {
+    return ApiNamingRuleConfig.newBuilder()
+        .setAstScanBasedConfig(
+            AstScanBasedConfig.newBuilder()
+                .setScanId(scanId)
+                .setApiSpecId(apiSpecId)
+                .addAllRegexes(regexes)
+                .addAllValues(values)
+                .build())
         .build();
   }
 }

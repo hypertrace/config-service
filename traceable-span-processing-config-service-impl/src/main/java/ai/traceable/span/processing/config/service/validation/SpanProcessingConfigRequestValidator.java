@@ -1,5 +1,6 @@
 package ai.traceable.span.processing.config.service.validation;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
@@ -7,6 +8,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleInfo;
 import ai.traceable.span.processing.config.service.v1.ApiSpecBasedConfig;
+import ai.traceable.span.processing.config.service.v1.AstScanBasedConfig;
 import ai.traceable.span.processing.config.service.v1.CreateApiNamingRuleRequest;
 import ai.traceable.span.processing.config.service.v1.CreateApiNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.CreateProtectionSpanRuleRequest;
@@ -35,7 +37,6 @@ import ai.traceable.span.processing.config.service.v1.UpdateProtectionSpanRule;
 import ai.traceable.span.processing.config.service.v1.UpdateProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateSamplingConfig;
 import ai.traceable.span.processing.config.service.v1.UpdateSamplingConfigRequest;
-import com.google.common.base.Strings;
 import io.grpc.Status;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -205,7 +206,7 @@ public class SpanProcessingConfigRequestValidator {
       case API_SPEC_BASED_CONFIG:
         // TODO: Add validations for specId list after migration of upstream services
         ApiSpecBasedConfig apiSpecBasedConfig = ruleConfig.getApiSpecBasedConfig();
-        if (Strings.isNullOrEmpty(apiSpecBasedConfig.getApiSpecId())
+        if (isNullOrEmpty(apiSpecBasedConfig.getApiSpecId())
             && apiSpecBasedConfig.getApiSpecIdsCount() == 0) {
           throw Status.INVALID_ARGUMENT
               .withDescription(String.format("Invalid specIds : %s", apiSpecBasedConfig))
@@ -229,6 +230,37 @@ public class SpanProcessingConfigRequestValidator {
               .asRuntimeException();
         }
         validateRegex(apiSpecBasedConfig.getRegexesList());
+        break;
+      case AST_SCAN_BASED_CONFIG:
+        AstScanBasedConfig astScanBasedConfig = ruleConfig.getAstScanBasedConfig();
+        if (isNullOrEmpty(astScanBasedConfig.getScanId())) {
+          throw Status.INVALID_ARGUMENT
+              .withDescription(String.format("Invalid scanId : %s", astScanBasedConfig))
+              .asRuntimeException();
+        }
+        if (isNullOrEmpty(astScanBasedConfig.getApiSpecId())) {
+          throw Status.INVALID_ARGUMENT
+              .withDescription(String.format("Invalid specId : %s", astScanBasedConfig))
+              .asRuntimeException();
+        }
+        if (astScanBasedConfig.getRegexesCount() == 0
+            || astScanBasedConfig.getRegexesCount() != astScanBasedConfig.getValuesCount()) {
+          throw Status.INVALID_ARGUMENT
+              .withDescription(
+                  String.format(
+                      "Invalid regex count or segment matching count : %s", astScanBasedConfig))
+              .asRuntimeException();
+        }
+        if (astScanBasedConfig.getRegexesList().stream().anyMatch(String::isEmpty)
+            || astScanBasedConfig.getValuesList().stream().anyMatch(String::isEmpty)) {
+          throw Status.INVALID_ARGUMENT
+              .withDescription(
+                  String.format(
+                      "Invalid regex or value segment : %s. Regex/value segment must not be empty",
+                      astScanBasedConfig))
+              .asRuntimeException();
+        }
+        validateRegex(astScanBasedConfig.getRegexesList());
         break;
       default:
         throw Status.INVALID_ARGUMENT

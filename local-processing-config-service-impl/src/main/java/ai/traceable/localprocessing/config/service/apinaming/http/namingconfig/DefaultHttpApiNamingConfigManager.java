@@ -18,6 +18,7 @@ import ai.traceable.platform.apientity.TrieNodeType;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRule;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig;
 import ai.traceable.span.processing.config.service.v1.ApiSpecBasedConfig;
+import ai.traceable.span.processing.config.service.v1.AstScanBasedConfig;
 import ai.traceable.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -226,6 +227,12 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
         segmentList =
             buildSegmentList(
                 apiSpecBasedConfig.getRegexesList(), apiSpecBasedConfig.getValuesList());
+        break;
+      case AST_SCAN_BASED_CONFIG:
+        AstScanBasedConfig astScanBasedConfig = apiNamingRuleConfig.getAstScanBasedConfig();
+        segmentList =
+            buildSegmentList(
+                astScanBasedConfig.getRegexesList(), astScanBasedConfig.getValuesList());
         break;
       default:
         throw new UnsupportedOperationException("unknown rule config type: " + apiNamingRuleConfig);

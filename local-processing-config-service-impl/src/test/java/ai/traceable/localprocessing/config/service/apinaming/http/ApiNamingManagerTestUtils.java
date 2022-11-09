@@ -34,6 +34,7 @@ import ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleDetails;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleInfo;
 import ai.traceable.span.processing.config.service.v1.ApiSpecBasedConfig;
+import ai.traceable.span.processing.config.service.v1.AstScanBasedConfig;
 import ai.traceable.span.processing.config.service.v1.GetAllApiNamingRulesResponse;
 import ai.traceable.span.processing.config.service.v1.ListValue;
 import ai.traceable.span.processing.config.service.v1.RelationalSpanFilterExpression;
@@ -58,7 +59,8 @@ public class ApiNamingManagerTestUtils {
         .addAllApiNamingCustomRules(
             List.of(
                 buildTestApiNamingRule("id-regex-1", "replacement-value-1"),
-                buildTestApiNamingRule("id-regex-2", "replacement-value-2")))
+                buildTestApiNamingRule("id-regex-2", "replacement-value-2"),
+                buildTestApiNamingRule("id-regex-3", "replacement-value-3")))
         .addAllFallbackWildcardRegexes(
             List.of(
                 "(\\{){0,1}[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}(\\}){0,1}",
@@ -180,8 +182,30 @@ public class ApiNamingManagerTestUtils {
                                     ApiNamingRuleConfig.newBuilder()
                                         .setApiSpecBasedConfig(
                                             ApiSpecBasedConfig.newBuilder()
+                                                .addAllApiSpecIds(List.of("apiSpecId"))
                                                 .addRegexes("id-regex-2")
                                                 .addValues("replacement-value-2")
+                                                .build())
+                                        .build())
+                                .build())
+                        .build())
+                .build())
+        .addRuleDetails(
+            ApiNamingRuleDetails.newBuilder()
+                .setRule(
+                    ApiNamingRule.newBuilder()
+                        .setRuleInfo(
+                            ApiNamingRuleInfo.newBuilder()
+                                .setDisabled(false)
+                                .setFilter(buildTestFilter())
+                                .setRuleConfig(
+                                    ApiNamingRuleConfig.newBuilder()
+                                        .setAstScanBasedConfig(
+                                            AstScanBasedConfig.newBuilder()
+                                                .setScanId("scanId")
+                                                .setApiSpecId("apiSpecId")
+                                                .addRegexes("id-regex-3")
+                                                .addValues("replacement-value-3")
                                                 .build())
                                         .build())
                                 .build())
