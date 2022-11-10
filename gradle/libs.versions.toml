@@ -14,8 +14,8 @@ junit = "5.8.2"
 mockito = "4.4.0"
 
 [libraries]
-traceable-actorService-api = { module = "ai.traceable.platform:actor-service-api", version = "0.2.78" }
-traceable-opaDistributor-api = { module = "ai.traceable.platform:opa-aggregator-api", version = "0.2.5" }
+traceable-actorService-api = { module = "ai.traceable.platform:actor-service-api", version = "0.2.81" }
+traceable-opaDistributor-api = { module = "ai.traceable.platform:opa-aggregator-api", version = "0.2.13" }
 traceable-insights-api = { module = "ai.traceable.platform:insights-service-api", version = "0.49.14" }
 traceable-activityevent-api = { module = "ai.traceable.activity.event.service:activity-event-api", version = "0.4.17" }
 traceable-licensemetering-api = { module = "ai.traceable.license.metering.service:license-metering-service-api", version = "0.1.40" }

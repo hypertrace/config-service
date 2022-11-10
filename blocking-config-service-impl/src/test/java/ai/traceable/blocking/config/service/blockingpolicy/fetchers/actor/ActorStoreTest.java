@@ -230,9 +230,13 @@ class ActorStoreTest {
         rowBuilder.putFields(
             ACTOR_FIELD_STATUS_EXPIRY_TIMESTAMP.name(),
             Value.newBuilder().setNumberValue(1000 + n).build());
+      } else {
+        rowBuilder.putFields(ACTOR_FIELD_STATUS_CHANGE_SOURCE.name(), Value.newBuilder().build());
+        rowBuilder.putFields(ACTOR_FIELD_STATUS_CHANGE_DETAILS.name(), Value.newBuilder().build());
+        rowBuilder.putFields(
+            ACTOR_FIELD_STATUS_EXPIRY_TIMESTAMP.name(), Value.newBuilder().build());
       }
     }
-
     return rowBuilder.build();
   }
 

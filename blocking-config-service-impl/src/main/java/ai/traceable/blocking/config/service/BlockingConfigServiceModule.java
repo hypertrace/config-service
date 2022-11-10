@@ -6,17 +6,12 @@ import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceG
 import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceGrpc.AnomalyGlobalConfigServiceBlockingStub;
 import ai.traceable.blocking.config.service.blockingmodsec.ModsecBlockingManagerModule;
 import ai.traceable.blocking.config.service.blockingpolicy.BlockingPolicyConfigurationManagerModule;
-import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.config.ActorServiceConfig;
 import ai.traceable.blocking.config.service.customsignature.CustomModsecBlockingManagerModule;
 import ai.traceable.blocking.config.service.regions.RegionBlockingManagerModule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc.IpRangeConfigServiceBlockingStub;
-import ai.traceable.platform.actor.v1.ActorServiceGrpc;
-import ai.traceable.platform.actor.v1.ActorServiceGrpc.ActorServiceBlockingStub;
-import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc;
-import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceBlockingStub;
 import com.google.inject.AbstractModule;
@@ -49,7 +44,7 @@ class BlockingConfigServiceModule extends AbstractModule {
     install(new RegionBlockingManagerModule());
     install(new CustomModsecBlockingManagerModule());
     install(new ModsecBlockingManagerModule());
-    install(new BlockingPolicyConfigurationManagerModule());
+    install(new BlockingPolicyConfigurationManagerModule(config));
   }
 
   @Provides
@@ -85,29 +80,6 @@ class BlockingConfigServiceModule extends AbstractModule {
   @Provides
   IpRangeConfigServiceBlockingStub providesIpRangeConfigServiceBlockingStub(Channel channel) {
     return IpRangeConfigServiceGrpc.newBlockingStub(channel)
-        .withCallCredentials(
-            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
-  }
-
-  @Provides
-  RateLimitingConfigServiceBlockingStub providesRateLimitingConfigServiceBlockingStub(
-      Channel channel) {
-    return RateLimitingConfigServiceGrpc.newBlockingStub(channel)
-        .withCallCredentials(
-            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
-  }
-
-  @Provides
-  ActorServiceConfig providesActorServiceConfig() {
-    return new ActorServiceConfig(this.config);
-  }
-
-  @Provides
-  ActorServiceBlockingStub providesActorServiceBlockingStub(
-      ActorServiceConfig actorServiceConfig, GrpcChannelRegistry channelRegistry) {
-    return ActorServiceGrpc.newBlockingStub(
-            channelRegistry.forPlaintextAddress(
-                actorServiceConfig.getHost(), actorServiceConfig.getPort()))
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }
