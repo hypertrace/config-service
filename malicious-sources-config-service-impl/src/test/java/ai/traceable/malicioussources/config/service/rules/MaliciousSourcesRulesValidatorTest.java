@@ -17,7 +17,7 @@ import ai.traceable.malicioussources.config.service.v1.IpReputationCondition;
 import ai.traceable.malicioussources.config.service.v1.IpReputationSeverity;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleAction;
-import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleConditions;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleCondition;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleInfo;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleScope;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleStatus;
@@ -66,8 +66,8 @@ public class MaliciousSourcesRulesValidatorTest {
                               .build())
                       .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpLocationTypeCondition(
                           IpLocationTypeCondition.newBuilder()
                               .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN)
@@ -103,8 +103,8 @@ public class MaliciousSourcesRulesValidatorTest {
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK)
                       .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpReputationCondition(
                           IpReputationCondition.newBuilder().setMinIpReputationScore(100).build())
                       .build())
@@ -131,8 +131,8 @@ public class MaliciousSourcesRulesValidatorTest {
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_UNSPECIFIED)
                       .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpReputationCondition(
                           IpReputationCondition.newBuilder().setMinIpReputationScore(100).build())
                       .build())
@@ -160,8 +160,8 @@ public class MaliciousSourcesRulesValidatorTest {
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALERT)
                       .setEventSeverity(EventSeverity.EVENT_SEVERITY_UNSPECIFIED)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpReputationCondition(
                           IpReputationCondition.newBuilder().setMinIpReputationScore(100).build())
                       .build())
@@ -188,8 +188,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpLocationTypeCondition(
                           IpLocationTypeCondition.newBuilder()
                               .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_UNSPECIFIED)
@@ -218,8 +218,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpLocationTypeCondition(IpLocationTypeCondition.newBuilder().build())
                       .build())
               .build();
@@ -245,8 +245,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpReputationCondition(IpReputationCondition.newBuilder().build())
                       .build())
               .build();
@@ -272,8 +272,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpReputationCondition(
                           IpReputationCondition.newBuilder()
                               .setMinIpReputationSeverity(
@@ -303,8 +303,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpReputationCondition(
                           IpReputationCondition.newBuilder().setMinIpReputationScore(-5).build())
                       .build())
@@ -331,8 +331,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setRegionCondition(RegionCondition.newBuilder().build())
                       .build())
               .build();
@@ -358,8 +358,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setRegionCondition(
                           RegionCondition.newBuilder()
                               .addRegions(Region.newBuilder().setCountryIsoCode("QQQ").build())
@@ -388,8 +388,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpRangeCondition(IpAddressCondition.newBuilder().build())
                       .build())
               .build();
@@ -416,8 +416,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpRangeCondition(
                           IpAddressCondition.newBuilder()
                               .addIpAddresses("2555.2555.2555.0")
@@ -447,8 +447,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpRangeCondition(
                           IpAddressCondition.newBuilder()
                               .addCidrIpRanges("255.255.255.0/100")
@@ -501,8 +501,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpRangeCondition(
                           IpAddressCondition.newBuilder().addIpAddresses("255.255.255.0").build())
                       .build())
@@ -535,8 +535,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpRangeCondition(
                           IpAddressCondition.newBuilder().addIpAddresses("255.255.255.0").build())
                       .build())
@@ -568,8 +568,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpRangeCondition(
                           IpAddressCondition.newBuilder().addIpAddresses("255.255.255.0").build())
                       .build())
@@ -599,8 +599,8 @@ public class MaliciousSourcesRulesValidatorTest {
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
                       .setEventSeverity(EventSeverity.EVENT_SEVERITY_HIGH)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpRangeCondition(
                           IpAddressCondition.newBuilder().addIpAddresses("255.255.255.0").build())
                       .build())
@@ -641,8 +641,8 @@ public class MaliciousSourcesRulesValidatorTest {
                               .build())
                       .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpLocationTypeCondition(
                           IpLocationTypeCondition.newBuilder()
                               .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN)
@@ -674,8 +674,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpRangeCondition(
                           IpAddressCondition.newBuilder().addIpAddresses("255.255.255.0").build())
                       .build())
@@ -709,8 +709,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpRangeCondition(
                           IpAddressCondition.newBuilder().addIpAddresses("255.255.255.0").build())
                       .build())
@@ -744,8 +744,8 @@ public class MaliciousSourcesRulesValidatorTest {
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_UNSPECIFIED)
                       .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpReputationCondition(
                           IpReputationCondition.newBuilder().setMinIpReputationScore(100).build())
                       .build())
@@ -780,8 +780,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpLocationTypeCondition(
                           IpLocationTypeCondition.newBuilder()
                               .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_UNSPECIFIED)
@@ -817,8 +817,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpLocationTypeCondition(IpLocationTypeCondition.newBuilder().build())
                       .build())
               .build();
@@ -852,8 +852,8 @@ public class MaliciousSourcesRulesValidatorTest {
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALERT)
                       .setEventSeverity(EventSeverity.EVENT_SEVERITY_UNSPECIFIED)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpReputationCondition(
                           IpReputationCondition.newBuilder().setMinIpReputationScore(100).build())
                       .build())
@@ -886,8 +886,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpReputationCondition(IpReputationCondition.newBuilder().build())
                       .build())
               .build();
@@ -920,8 +920,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpReputationCondition(
                           IpReputationCondition.newBuilder()
                               .setMinIpReputationSeverity(
@@ -958,8 +958,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setRegionCondition(RegionCondition.newBuilder().build())
                       .build())
               .build();
@@ -992,8 +992,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setRegionCondition(
                           RegionCondition.newBuilder()
                               .addRegions(Region.newBuilder().setCountryIsoCode("QQQ").build())
@@ -1029,8 +1029,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpReputationCondition(
                           IpReputationCondition.newBuilder().setMinIpReputationScore(-5).build())
                       .build())
@@ -1064,8 +1064,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpRangeCondition(IpAddressCondition.newBuilder().build())
                       .build())
               .build();
@@ -1099,8 +1099,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpRangeCondition(
                           IpAddressCondition.newBuilder()
                               .addIpAddresses("2555.2555.2555.0")
@@ -1138,8 +1138,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpRangeCondition(
                           IpAddressCondition.newBuilder()
                               .addCidrIpRanges("255.255.255.0/100")
@@ -1207,8 +1207,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpRangeCondition(
                           IpAddressCondition.newBuilder().addIpAddresses("255.255.255.0").build())
                       .build())
@@ -1248,8 +1248,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpRangeCondition(
                           IpAddressCondition.newBuilder().addIpAddresses("255.255.255.0").build())
                       .build())
@@ -1288,8 +1288,8 @@ public class MaliciousSourcesRulesValidatorTest {
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpRangeCondition(
                           IpAddressCondition.newBuilder().addIpAddresses("255.255.255.0").build())
                       .build())
@@ -1326,8 +1326,8 @@ public class MaliciousSourcesRulesValidatorTest {
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
                       .setEventSeverity(EventSeverity.EVENT_SEVERITY_HIGH)
                       .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpRangeCondition(
                           IpAddressCondition.newBuilder().addIpAddresses("255.255.255.0").build())
                       .build())

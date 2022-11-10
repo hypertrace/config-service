@@ -33,7 +33,7 @@ message MaliciousSourcesRuleInfo {
   string name = 1;
   string description = 2;
   MaliciousSourcesRuleAction rule_action = 3;
-  MaliciousSourcesRuleConditions conditions = 4;
+  repeated MaliciousSourcesRuleCondition conditions = 4;
 }
 
 message MaliciousSourcesRuleAction {
@@ -42,11 +42,13 @@ message MaliciousSourcesRuleAction {
   EventSeverity event_severity = 3;
 }
 
-message MaliciousSourcesRuleConditions {
-  IpAddressCondition ip_range_condition = 1;
-  RegionCondition region_condition = 2;
-  IpLocationTypeCondition ip_location_type_condition = 3;
-  IpReputationCondition ip_reputation_condition = 4;
+message MaliciousSourcesRuleCondition {
+  oneof condition {
+    IpAddressCondition ip_range_condition = 1;
+    RegionCondition region_condition = 2;
+    IpLocationTypeCondition ip_location_type_condition = 3;
+    IpReputationCondition ip_reputation_condition = 4;
+  }
 }
 
 enum RuleActionType {

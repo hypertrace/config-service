@@ -14,7 +14,7 @@ import ai.traceable.malicioussources.config.service.v1.IpReputationCondition;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesConfigServiceGrpc;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleAction;
-import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleConditions;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleCondition;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleInfo;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleScope;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleStatus;
@@ -47,8 +47,8 @@ public class MaliciousSourcesConfigServiceIntegrationTest
               MaliciousSourcesRuleAction.newBuilder()
                   .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK)
                   .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL))
-          .setConditions(
-              MaliciousSourcesRuleConditions.newBuilder()
+          .addConditions(
+              MaliciousSourcesRuleCondition.newBuilder()
                   .setIpReputationCondition(
                       IpReputationCondition.newBuilder().setMinIpReputationScore(100)))
           .build();
@@ -60,8 +60,8 @@ public class MaliciousSourcesConfigServiceIntegrationTest
               MaliciousSourcesRuleAction.newBuilder()
                   .setActionType(RuleActionType.RULE_ACTION_TYPE_ALERT)
                   .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL))
-          .setConditions(
-              MaliciousSourcesRuleConditions.newBuilder()
+          .addConditions(
+              MaliciousSourcesRuleCondition.newBuilder()
                   .setIpLocationTypeCondition(
                       IpLocationTypeCondition.newBuilder()
                           .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN)))

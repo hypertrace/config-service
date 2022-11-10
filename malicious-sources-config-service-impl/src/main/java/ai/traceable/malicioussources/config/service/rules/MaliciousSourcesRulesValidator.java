@@ -11,7 +11,7 @@ import ai.traceable.malicioussources.config.service.v1.IpReputationCondition;
 import ai.traceable.malicioussources.config.service.v1.IpReputationSeverity;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleAction;
-import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleConditions;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleCondition;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleInfo;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleScope;
 import ai.traceable.malicioussources.config.service.v1.RegionCondition;
@@ -102,51 +102,34 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
     if (!status.isOk()) {
       return status;
     }
-    status = validate(ruleInfo.getConditions());
-    if (!status.isOk()) {
-      return status;
+    if (ruleInfo.getConditionsCount() == 0) {
+      return Status.NOT_FOUND.withDescription(
+          "MaliciousSourcesRule should have at least one valid condition");
+    }
+    for (MaliciousSourcesRuleCondition condition : ruleInfo.getConditionsList()) {
+      status = validate(condition);
+      if (!status.isOk()) {
+        return status;
+      }
     }
 
     return Status.OK;
   }
 
-  private Status validate(MaliciousSourcesRuleConditions ruleConditions) {
-    Status status;
-    if (ruleConditions.hasIpLocationTypeCondition()) {
-      status = validate(ruleConditions.getIpLocationTypeCondition());
-      if (!status.isOk()) {
-        return status;
-      }
+  private Status validate(MaliciousSourcesRuleCondition ruleCondition) {
+    switch (ruleCondition.getConditionCase()) {
+      case IP_LOCATION_TYPE_CONDITION:
+        return validate(ruleCondition.getIpLocationTypeCondition());
+      case IP_REPUTATION_CONDITION:
+        return validate(ruleCondition.getIpReputationCondition());
+      case IP_RANGE_CONDITION:
+        return validate(ruleCondition.getIpRangeCondition());
+      case REGION_CONDITION:
+        return validate(ruleCondition.getRegionCondition());
+      default:
+        return Status.NOT_FOUND.withDescription(
+            "MaliciousSourcesRuleCondition should have at least one valid condition");
     }
-
-    if (ruleConditions.hasIpReputationCondition()) {
-      status = validate(ruleConditions.getIpReputationCondition());
-      if (!status.isOk()) {
-        return status;
-      }
-    }
-    if (ruleConditions.hasRegionCondition()) {
-      status = validate(ruleConditions.getRegionCondition());
-      if (!status.isOk()) {
-        return status;
-      }
-    }
-    if (ruleConditions.hasIpRangeCondition()) {
-      status = validate(ruleConditions.getIpRangeCondition());
-      if (!status.isOk()) {
-        return status;
-      }
-    }
-
-    if (!(ruleConditions.hasIpRangeCondition()
-        || ruleConditions.hasIpReputationCondition()
-        || ruleConditions.hasRegionCondition()
-        || ruleConditions.hasIpLocationTypeCondition())) {
-      return Status.NOT_FOUND.withDescription(
-          "MaliciousSourcesRuleConditions in Malicious Source rule should have at least one of the Rule Condition");
-    }
-
-    return Status.OK;
   }
 
   private Status validate(IpAddressCondition ipAddressCondition) {

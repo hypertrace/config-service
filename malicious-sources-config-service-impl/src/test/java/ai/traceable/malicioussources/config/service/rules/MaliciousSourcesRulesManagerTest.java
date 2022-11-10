@@ -21,7 +21,7 @@ import ai.traceable.malicioussources.config.service.v1.IpReputationCondition;
 import ai.traceable.malicioussources.config.service.v1.IpReputationSeverity;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleAction;
-import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleConditions;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleCondition;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleInfo;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleScope;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleStatus;
@@ -90,10 +90,8 @@ public class MaliciousSourcesRulesManagerTest {
                       .setExpirationDetails(
                           ExpirationDetails.newBuilder()
                               .setExpirationDuration(
-                                  com.google.protobuf.Duration.newBuilder().setSeconds(10).build())
-                              .setExpirationTimestampMillis(
-                                  Timestamp.newBuilder().setSeconds(20).build())
-                              .build())
+                                  com.google.protobuf.Duration.newBuilder().setSeconds(10))
+                              .setExpirationTimestampMillis(Timestamp.newBuilder().setSeconds(20)))
                       .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
                       .build())
               .build();
@@ -108,8 +106,7 @@ public class MaliciousSourcesRulesManagerTest {
                       .setExpirationDetails(
                           ExpirationDetails.newBuilder()
                               .setExpirationDuration(
-                                  com.google.protobuf.Duration.newBuilder().setSeconds(20).build())
-                              .build())
+                                  com.google.protobuf.Duration.newBuilder().setSeconds(20)))
                       .setEventSeverity(EventSeverity.EVENT_SEVERITY_HIGH)
                       .build())
               .build();
@@ -125,10 +122,7 @@ public class MaliciousSourcesRulesManagerTest {
                               .addEnvironmentIds("env2")))
               .setRuleInfo(maliciousSourcesRuleInfo1)
               .setRuleStatus(
-                  MaliciousSourcesRuleStatus.newBuilder()
-                      .setDisabled(true)
-                      .setInternal(false)
-                      .build())
+                  MaliciousSourcesRuleStatus.newBuilder().setDisabled(true).setInternal(false))
               .build();
 
       MaliciousSourcesRule maliciousSourcesRule2 =
@@ -136,10 +130,7 @@ public class MaliciousSourcesRulesManagerTest {
               .setId("Second-test")
               .setRuleInfo(maliciousSourcesRuleInfo2)
               .setRuleStatus(
-                  MaliciousSourcesRuleStatus.newBuilder()
-                      .setDisabled(false)
-                      .setInternal(true)
-                      .build())
+                  MaliciousSourcesRuleStatus.newBuilder().setDisabled(false).setInternal(true))
               .build();
 
       addMaliciousSourcesRule(maliciousSourcesRule1);
@@ -225,29 +216,26 @@ public class MaliciousSourcesRulesManagerTest {
                       .setExpirationDetails(
                           ExpirationDetails.newBuilder()
                               .setExpirationDuration(
-                                  com.google.protobuf.Duration.newBuilder().setSeconds(10).build())
-                              .setExpirationTimestampMillis(
-                                  Timestamp.newBuilder().setSeconds(20).build())
-                              .build())
-                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
-                      .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+                                  com.google.protobuf.Duration.newBuilder().setSeconds(10))
+                              .setExpirationTimestampMillis(Timestamp.newBuilder().setSeconds(20)))
+                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setRegionCondition(
                           RegionCondition.newBuilder()
-                              .addRegions(Region.newBuilder().setCountryIsoCode("0000").build())
-                              .build())
+                              .addRegions(Region.newBuilder().setCountryIsoCode("0000"))))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpLocationTypeCondition(
                           IpLocationTypeCondition.newBuilder()
-                              .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN)
-                              .build())
+                              .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN)))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpReputationCondition(
                           IpReputationCondition.newBuilder()
                               .setMinIpReputationSeverity(
                                   IpReputationSeverity.IP_REPUTATION_SEVERITY_LOW)
-                              .setMinIpReputationScore(1)
-                              .build())
-                      .build())
+                              .setMinIpReputationScore(1)))
               .build();
 
       when(uuidGenerator.generateId(anyString())).thenReturn("First-test");
@@ -285,29 +273,26 @@ public class MaliciousSourcesRulesManagerTest {
                       .setExpirationDetails(
                           ExpirationDetails.newBuilder()
                               .setExpirationDuration(
-                                  com.google.protobuf.Duration.newBuilder().setSeconds(10).build())
-                              .setExpirationTimestampMillis(
-                                  Timestamp.newBuilder().setSeconds(20).build())
-                              .build())
-                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
-                      .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+                                  com.google.protobuf.Duration.newBuilder().setSeconds(10))
+                              .setExpirationTimestampMillis(Timestamp.newBuilder().setSeconds(20)))
+                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setRegionCondition(
                           RegionCondition.newBuilder()
-                              .addRegions(Region.newBuilder().setCountryIsoCode("0000").build())
-                              .build())
+                              .addRegions(Region.newBuilder().setCountryIsoCode("0000"))))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpLocationTypeCondition(
                           IpLocationTypeCondition.newBuilder()
-                              .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN)
-                              .build())
+                              .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN)))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpReputationCondition(
                           IpReputationCondition.newBuilder()
                               .setMinIpReputationSeverity(
                                   IpReputationSeverity.IP_REPUTATION_SEVERITY_LOW)
-                              .setMinIpReputationScore(1)
-                              .build())
-                      .build())
+                              .setMinIpReputationScore(1)))
               .build();
       MaliciousSourcesRule maliciousSourcesRule =
           MaliciousSourcesRule.newBuilder()
@@ -339,29 +324,26 @@ public class MaliciousSourcesRulesManagerTest {
                       .setExpirationDetails(
                           ExpirationDetails.newBuilder()
                               .setExpirationDuration(
-                                  com.google.protobuf.Duration.newBuilder().setSeconds(10).build())
-                              .setExpirationTimestampMillis(
-                                  Timestamp.newBuilder().setSeconds(20).build())
-                              .build())
-                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
-                      .build())
-              .setConditions(
-                  MaliciousSourcesRuleConditions.newBuilder()
+                                  com.google.protobuf.Duration.newBuilder().setSeconds(10))
+                              .setExpirationTimestampMillis(Timestamp.newBuilder().setSeconds(20)))
+                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setRegionCondition(
                           RegionCondition.newBuilder()
-                              .addRegions(Region.newBuilder().setCountryIsoCode("0000").build())
-                              .build())
+                              .addRegions(Region.newBuilder().setCountryIsoCode("0000"))))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpLocationTypeCondition(
                           IpLocationTypeCondition.newBuilder()
-                              .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN)
-                              .build())
+                              .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN)))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
                       .setIpReputationCondition(
                           IpReputationCondition.newBuilder()
                               .setMinIpReputationSeverity(
                                   IpReputationSeverity.IP_REPUTATION_SEVERITY_LOW)
-                              .setMinIpReputationScore(1)
-                              .build())
-                      .build())
+                              .setMinIpReputationScore(1)))
               .build();
       MaliciousSourcesRule maliciousSourcesRule =
           MaliciousSourcesRule.newBuilder()
@@ -369,10 +351,7 @@ public class MaliciousSourcesRulesManagerTest {
               .setRuleScope(ruleScope)
               .setRuleInfo(updatedRuleDetails)
               .setRuleStatus(
-                  MaliciousSourcesRuleStatus.newBuilder()
-                      .setInternal(true)
-                      .setInternal(false)
-                      .build())
+                  MaliciousSourcesRuleStatus.newBuilder().setInternal(true).setInternal(false))
               .build();
 
       addMaliciousSourcesRule(MaliciousSourcesRule.getDefaultInstance());
