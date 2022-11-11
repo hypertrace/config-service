@@ -115,8 +115,7 @@ public class MaliciousSourcesConfigServiceImplTest {
                           ExpirationDetails.newBuilder()
                               .setExpirationDuration(
                                   com.google.protobuf.Duration.newBuilder().setSeconds(10).build())
-                              .setExpirationTimestampMillis(
-                                  Timestamp.newBuilder().setSeconds(20).build())
+                              .setExpirationTimestamp(Timestamp.newBuilder().setSeconds(20).build())
                               .build())
                       .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
                       .build())
@@ -255,8 +254,7 @@ public class MaliciousSourcesConfigServiceImplTest {
                           ExpirationDetails.newBuilder()
                               .setExpirationDuration(
                                   com.google.protobuf.Duration.newBuilder().setSeconds(10).build())
-                              .setExpirationTimestampMillis(
-                                  Timestamp.newBuilder().setSeconds(20).build())
+                              .setExpirationTimestamp(Timestamp.newBuilder().setSeconds(20).build())
                               .build())
                       .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
                       .build())

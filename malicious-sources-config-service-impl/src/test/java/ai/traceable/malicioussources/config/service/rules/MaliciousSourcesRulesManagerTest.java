@@ -91,7 +91,7 @@ public class MaliciousSourcesRulesManagerTest {
                           ExpirationDetails.newBuilder()
                               .setExpirationDuration(
                                   com.google.protobuf.Duration.newBuilder().setSeconds(10))
-                              .setExpirationTimestampMillis(Timestamp.newBuilder().setSeconds(20)))
+                              .setExpirationTimestamp(Timestamp.newBuilder().setSeconds(20)))
                       .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
                       .build())
               .build();
@@ -217,7 +217,7 @@ public class MaliciousSourcesRulesManagerTest {
                           ExpirationDetails.newBuilder()
                               .setExpirationDuration(
                                   com.google.protobuf.Duration.newBuilder().setSeconds(10))
-                              .setExpirationTimestampMillis(Timestamp.newBuilder().setSeconds(20)))
+                              .setExpirationTimestamp(Timestamp.newBuilder().setSeconds(20)))
                       .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL))
               .addConditions(
                   MaliciousSourcesRuleCondition.newBuilder()
@@ -274,7 +274,7 @@ public class MaliciousSourcesRulesManagerTest {
                           ExpirationDetails.newBuilder()
                               .setExpirationDuration(
                                   com.google.protobuf.Duration.newBuilder().setSeconds(10))
-                              .setExpirationTimestampMillis(Timestamp.newBuilder().setSeconds(20)))
+                              .setExpirationTimestamp(Timestamp.newBuilder().setSeconds(20)))
                       .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL))
               .addConditions(
                   MaliciousSourcesRuleCondition.newBuilder()
@@ -325,7 +325,7 @@ public class MaliciousSourcesRulesManagerTest {
                           ExpirationDetails.newBuilder()
                               .setExpirationDuration(
                                   com.google.protobuf.Duration.newBuilder().setSeconds(10))
-                              .setExpirationTimestampMillis(Timestamp.newBuilder().setSeconds(20)))
+                              .setExpirationTimestamp(Timestamp.newBuilder().setSeconds(20)))
                       .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL))
               .addConditions(
                   MaliciousSourcesRuleCondition.newBuilder()

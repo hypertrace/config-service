@@ -61,11 +61,11 @@ enum RuleActionType {
 
 message ExpirationDetails {
   // Expiration duration represented in ISO 8601 duration format.
-  // If expiration_duration is not set and expiration_timestamp_millis is set, the value gets derived from the expiration_timestamp_millis field
+  // If expiration_duration is not set and expiration_timestamp is set, the value gets derived from the expiration_timestamp field
   optional google.protobuf.Duration expiration_duration = 1;
   // Timestamp at which the blocking expires.
-  // If expiration_timestamp_millis is not set and expiration_duration is set, the value gets derived from the expiration_duration field
-  optional google.protobuf.Timestamp expiration_timestamp_millis = 2;
+  // If expiration_timestamp is not set and expiration_duration is set, the value gets derived from the expiration_duration field
+  optional google.protobuf.Timestamp expiration_timestamp = 2;
 }
 
 enum EventSeverity {
