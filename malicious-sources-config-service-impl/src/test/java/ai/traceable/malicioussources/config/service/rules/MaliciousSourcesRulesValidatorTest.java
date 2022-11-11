@@ -490,6 +490,30 @@ public class MaliciousSourcesRulesValidatorTest {
     }
 
     @Test
+    @DisplayName("Should return invalid argument due unspecified condition")
+    void validateCreateMaliciousSourcesRuleRequest_valid_rule_condition() {
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-1")
+              .setDescription("Malicious Sources Rule Test")
+              .addConditions(MaliciousSourcesRuleCondition.getDefaultInstance())
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
+                      .build())
+              .build();
+
+      CreateMaliciousSourcesRuleRequest createMaliciousSourcesRuleRequest =
+          CreateMaliciousSourcesRuleRequest.newBuilder()
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .build();
+
+      Status status =
+          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
     @DisplayName("Should return invalid status because of empty env id list")
     void validateCreateMaliciousSourcesRuleRequest_empty_env_scope() {
       when(ipAddressParsingUtils.isValidIp(anyString())).thenReturn(true);
@@ -1193,6 +1217,37 @@ public class MaliciousSourcesRulesValidatorTest {
       Status status =
           rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Status.Code.NOT_FOUND, status.getCode());
+    }
+
+    @Test
+    @DisplayName("Should return invalid argument due to unspecified rule condition")
+    void validateUpdateMaliciousSourcesRuleRequest_rule_condition() {
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-1")
+              .setDescription("Malicious Sources Rule Test")
+              .addConditions(MaliciousSourcesRuleCondition.getDefaultInstance())
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
+                      .build())
+              .build();
+
+      MaliciousSourcesRule maliciousSourcesRule =
+          MaliciousSourcesRule.newBuilder()
+              .setId("First-test")
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .setRuleStatus(
+                  MaliciousSourcesRuleStatus.newBuilder()
+                      .setInternal(false)
+                      .setDisabled(true)
+                      .build())
+              .build();
+      UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
+          UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
+      Status status =
+          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
     @Test

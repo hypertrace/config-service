@@ -127,8 +127,8 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
       case REGION_CONDITION:
         return validate(ruleCondition.getRegionCondition());
       default:
-        return Status.NOT_FOUND.withDescription(
-            "MaliciousSourcesRuleCondition should have at least one valid condition");
+        return Status.INVALID_ARGUMENT.withDescription(
+            "MaliciousSourcesRuleCondition should have a valid condition");
     }
   }
 
