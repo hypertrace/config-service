@@ -20,6 +20,7 @@ dependencies {
   implementation(projects.blockingConfigServiceApi)
   implementation(projects.externalUserAttributionConfigServiceApi)
   implementation(projects.externalDataClassificationConfigServiceApi)
+  implementation(projects.externalAgentAttributeConfigServiceApi)
 }
 
 application {

@@ -19,6 +19,7 @@ public class MockConfigServer {
             .addService(new BlockingConfigServiceImpl())
             .addService(new ExternalUserAttributionConfigServiceImpl())
             .addService(new ExternalDataClassificationConfigServiceImpl())
+            .addService(new ExternalAgentAttributeConfigServiceImpl())
             .build()
             .start();
   }
