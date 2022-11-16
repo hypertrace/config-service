@@ -60,5 +60,6 @@ message GetWafIntegrationsFilter {
   enum WafProviderType {
     WAF_PROVIDER_TYPE_UNSPECIFIED = 0;
     WAF_PROVIDER_TYPE_CLOUDFLARE = 1;
+    WAF_PROVIDER_TYPE_AWS = 2;
   }
 }

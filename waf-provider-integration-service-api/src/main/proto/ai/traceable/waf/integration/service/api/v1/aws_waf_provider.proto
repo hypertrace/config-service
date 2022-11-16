@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package ai.traceable.waf.integration.service.api.v1;
+
+option java_multiple_files = true;
+
+message AwsIntegrationParams {
+  string access_key_id = 1;
+  string encrypted_secret_access_key = 2;
+  repeated AwsResource resources = 3;
+}
+
+message AwsResource {
+  string region = 1;
+  string arn = 2;
+}
+
+message AwsIntegrationUpdateParams {
+  string access_key_id = 1;
+  optional string encrypted_secret_access_key = 2;
+  repeated AwsResource resources = 3;
+}
