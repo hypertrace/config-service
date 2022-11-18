@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package ai.traceable.authorization.detection.config.service.v1;
+
+option java_multiple_files = true;
+
+message GetAuthorizationDetectionRulesRequest {
+  AuthorizationDetectionRuleFilter filter = 1;
+}
+
+message AuthorizationDetectionRuleFilter {
+  AuthorizationDetectionRuleScope scope = 1;
+}
+
+message AuthorizationDetectionRuleScope {
+  repeated string environment_names = 1;
+}
+
+message GetAuthorizationDetectionRulesResponse {
+  repeated AuthorizationDetectionRule rules = 1;
+}
+
+message AuthorizationDetectionRule {
+  string id = 1;
+  string authorization_type = 2;
+  AuthorizationDetectionRuleScope scope = 3;
+  Predicate predicate = 4;
+}
+
+message Predicate {
+  oneof predicate {
+    CompositePredicate composite_predicate = 1;
+    KeyValuePredicate header_predicate = 2;
+    KeyValuePredicate cookie_predicate = 3;
+    KeyValuePredicate query_parameter_predicate = 4;
+    KeyValuePredicate form_body_predicate = 5;
+    PathValuePredicate json_body_predicate = 6;
+  }
+
+  message CompositePredicate {
+    LogicalOperator operator = 1;
+    repeated Predicate children = 2;
+
+    enum LogicalOperator {
+      LOGICAL_OPERATOR_UNSPECIFIED = 0;
+      LOGICAL_OPERATOR_AND = 1;
+      LOGICAL_OPERATOR_OR = 2;
+    }
+  }
+
+  message KeyValuePredicate {
+    StringPredicate key_predicate = 1;
+    StringPredicate value_predicate = 2;
+  }
+
+  message PathValuePredicate {
+    PathPredicate path_predicate = 1;
+    StringPredicate value_predicate = 2;
+  }
+
+  message PathPredicate {
+    // Currently this is just a fancy string predicate, but with room for nested expressions in future
+    oneof path {
+      StringPredicate key_predicate = 1; // Single level match
+    }
+  }
+
+  message StringPredicate {
+    RelationalOperator operator = 1;
+    string value = 2;
+
+    enum RelationalOperator {
+      RELATIONAL_OPERATOR_UNSPECIFIED = 0;
+      RELATIONAL_OPERATOR_EQUALS = 1;
+      RELATIONAL_OPERATOR_NOT_EQUALS = 2;
+      RELATIONAL_OPERATOR_MATCHES_REGEX = 3;
+      RELATIONAL_OPERATOR_NOT_MATCHES_REGEX = 4;
+    }
+  }
+}

@@ -27,6 +27,7 @@ build:
     - api-attribute-override-service-api/src/main/proto
     - traceable-span-processing-config-service-api/src/main/proto
     - api-spec-config-service-api/src/main/proto
+    - authorization-detection-config-service-api/src/main/proto
 lint:
   use:
     - DEFAULT
