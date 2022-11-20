@@ -7,6 +7,8 @@ option java_multiple_files = true;
 import "ai/traceable/authorization/detection/config/service/v1/authorization_detection_rule.proto";
 
 service AuthorizationDetectionConfigService {
-  rpc GetAuthorizationDetectionRules (GetAuthorizationDetectionRulesRequest) returns (GetAuthorizationDetectionRulesResponse) {
-  }
+  rpc GetAuthorizationDetectionRules (GetAuthorizationDetectionRulesRequest) returns (GetAuthorizationDetectionRulesResponse) {}
+  rpc UpdateAuthorizationDetectionRule (UpdateAuthorizationDetectionRuleRequest) returns (UpdateAuthorizationDetectionRuleResponse){}
+  rpc CreateAuthorizationDetectionRule (CreateAuthorizationDetectionRuleRequest) returns (CreateAuthorizationDetectionRuleResponse){}
+  rpc DeleteAuthorizationDetectionRule (DeleteAuthorizationDetectionRuleRequest) returns (DeleteAuthorizationDetectionRuleResponse){}
 }

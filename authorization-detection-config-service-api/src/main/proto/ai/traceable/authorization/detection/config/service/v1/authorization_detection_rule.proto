@@ -78,3 +78,26 @@ message Predicate {
     }
   }
 }
+
+message CreateAuthorizationDetectionRuleRequest {
+  string authorization_type = 1;
+  AuthorizationDetectionRuleScope scope = 2;
+  Predicate predicate = 3;
+}
+message CreateAuthorizationDetectionRuleResponse {
+  AuthorizationDetectionRule rule = 1;
+}
+message UpdateAuthorizationDetectionRuleRequest {
+  string id = 1;
+  string authorization_type = 2;
+  AuthorizationDetectionRuleScope scope = 3;
+  Predicate predicate = 4;
+}
+message UpdateAuthorizationDetectionRuleResponse {
+  AuthorizationDetectionRule rule = 1;
+}
+message DeleteAuthorizationDetectionRuleRequest {
+  string id = 1;
+}
+message DeleteAuthorizationDetectionRuleResponse {
+}
