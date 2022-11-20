@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package ai.traceable.auth.detection.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/auth/detection/config/service/v1/auth_detection_rule.proto";
+
+service AuthDetectionConfigService {
+  rpc GetAuthDetectionRules (GetAuthDetectionRulesRequest) returns (GetAuthDetectionRulesResponse) {}
+  rpc UpdateAuthDetectionRule (UpdateAuthDetectionRuleRequest) returns (UpdateAuthDetectionRuleResponse){}
+  rpc CreateAuthDetectionRule (CreateAuthDetectionRuleRequest) returns (CreateAuthDetectionRuleResponse){}
+  rpc DeleteAuthDetectionRule (DeleteAuthDetectionRuleRequest) returns (DeleteAuthDetectionRuleResponse){}
+}
