@@ -119,6 +119,7 @@ enum IpType {
     IP_TYPE_VPN = 2;
     IP_TYPE_TOR = 3;
     IP_TYPE_PROXY = 4;
+    IP_TYPE_HOSTING_PROVIDER = 5;
 }
 
 enum BlockingCategory {
