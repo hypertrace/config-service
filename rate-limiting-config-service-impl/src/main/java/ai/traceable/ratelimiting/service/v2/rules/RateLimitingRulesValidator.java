@@ -11,9 +11,12 @@ import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.DatatypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.DeleteRateLimitingRuleRequest;
+import ai.traceable.ratelimiting.config.service.v2.EmailDomainCondition;
 import ai.traceable.ratelimiting.config.service.v2.EnvironmentScope;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
+import ai.traceable.ratelimiting.config.service.v2.IpConnectionType;
+import ai.traceable.ratelimiting.config.service.v2.IpConnectionTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationType;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpReputationCondition;
@@ -27,11 +30,14 @@ import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
 import ai.traceable.ratelimiting.config.service.v2.ScopeCondition;
 import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
 import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleRequest;
+import ai.traceable.ratelimiting.config.service.v2.UserAgentCondition;
 import ai.traceable.ratelimiting.config.service.v2.UserAggregateType;
+import ai.traceable.ratelimiting.config.service.v2.UserIdCondition;
 import com.google.protobuf.Message;
 import com.google.re2j.Pattern;
 import com.google.re2j.PatternSyntaxException;
 import io.grpc.Status;
+import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RateLimitingRulesValidator implements RulesValidator {
@@ -126,6 +132,18 @@ public class RateLimitingRulesValidator implements RulesValidator {
         break;
       case IP_REPUTATION_CONDITION:
         validateIpReputationCondition(leafCondition.getIpReputationCondition());
+        break;
+      case USER_ID_CONDITION:
+        validateUserIdCondition(leafCondition.getUserIdCondition());
+        break;
+      case EMAIL_DOMAIN_CONDITION:
+        validateEmailDomainCondition(leafCondition.getEmailDomainCondition());
+        break;
+      case USER_AGENT_CONDITION:
+        validateUserAgentCondition(leafCondition.getUserAgentCondition());
+        break;
+      case IP_CONNECTION_TYPE_CONDITION:
+        validateIpConnectionTypeCondition(leafCondition.getIpConnectionTypeCondition());
         break;
       default:
         throwInvalidArgumentException(
@@ -237,9 +255,59 @@ public class RateLimitingRulesValidator implements RulesValidator {
     ipLocationTypeCondition.getIpLocationTypesList().forEach(this::validateIpLocationType);
   }
 
+  private void validateUserIdCondition(UserIdCondition userIdCondition) {
+    List<String> actorEntityIds = userIdCondition.getActorEntityIdsList();
+    List<String> userIdRegexes = userIdCondition.getUserIdRegexesList();
+    if (actorEntityIds.isEmpty() && userIdRegexes.isEmpty()) {
+      throwInvalidArgumentException(
+          String.format(
+              "Invalid condition for type %s:%n %s",
+              getName(userIdCondition), printMessage(userIdCondition)));
+    }
+
+    if (!userIdRegexes.isEmpty()) {
+      userIdRegexes.forEach(this::validateRegex);
+    }
+  }
+
+  private void validateEmailDomainCondition(EmailDomainCondition emailDomainCondition) {
+    List<String> emailDomains = emailDomainCondition.getEmailDomainsList();
+    List<String> emailRegexes = emailDomainCondition.getEmailRegexesList();
+    if (emailDomains.isEmpty() && emailRegexes.isEmpty()) {
+      throwInvalidArgumentException(
+          String.format(
+              "Invalid condition for type %s:%n %s",
+              getName(emailDomainCondition), printMessage(emailDomainCondition)));
+    }
+
+    if (!emailRegexes.isEmpty()) {
+      emailRegexes.forEach(this::validateRegex);
+    }
+  }
+
+  private void validateUserAgentCondition(UserAgentCondition userAgentCondition) {
+    validateNonDefaultPresenceOrThrow(
+        userAgentCondition, UserAgentCondition.USER_AGENTS_FIELD_NUMBER);
+  }
+
+  private void validateIpConnectionTypeCondition(
+      IpConnectionTypeCondition ipConnectionTypeCondition) {
+    validateNonDefaultPresenceOrThrow(
+        ipConnectionTypeCondition, IpConnectionTypeCondition.IP_CONNECTION_TYPES_FIELD_NUMBER);
+    ipConnectionTypeCondition.getIpConnectionTypesList().forEach(this::validateIpConnectionType);
+  }
+
   private void validateIpLocationType(IpLocationType ipLocationType) {
     if (ipLocationType.equals(IpLocationType.IP_LOCATION_TYPE_UNSPECIFIED)) {
       throwInvalidArgumentException("Invalid IP Location Type");
+    }
+  }
+
+  private void validateIpConnectionType(IpConnectionType ipConnectionType) {
+    if (ipConnectionType.equals(IpConnectionType.IP_CONNECTION_TYPE_UNSPECIFIED)
+        || ipConnectionType.equals(IpConnectionType.UNRECOGNIZED)) {
+      throwInvalidArgumentException(
+          String.format("Invalid IP Connection Type : %s", ipConnectionType));
     }
   }
 

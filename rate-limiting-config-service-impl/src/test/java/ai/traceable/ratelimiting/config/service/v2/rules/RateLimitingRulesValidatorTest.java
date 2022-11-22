@@ -15,8 +15,11 @@ import ai.traceable.ratelimiting.config.service.v2.CompositeCondition.LogicalOpe
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.DatatypeCondition;
+import ai.traceable.ratelimiting.config.service.v2.EmailDomainCondition;
 import ai.traceable.ratelimiting.config.service.v2.EnvironmentScope;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
+import ai.traceable.ratelimiting.config.service.v2.IpConnectionType;
+import ai.traceable.ratelimiting.config.service.v2.IpConnectionTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationType;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
@@ -31,7 +34,9 @@ import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
 import ai.traceable.ratelimiting.config.service.v2.ScopeCondition;
 import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
+import ai.traceable.ratelimiting.config.service.v2.UserAgentCondition;
 import ai.traceable.ratelimiting.config.service.v2.UserAggregateType;
+import ai.traceable.ratelimiting.config.service.v2.UserIdCondition;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesValidator;
 import com.google.protobuf.Duration;
 import io.grpc.Status;
@@ -571,6 +576,50 @@ public class RateLimitingRulesValidatorTest {
                                                                     .ENTITY_TYPE_API)
                                                             .addEntityIds("id1")
                                                             .build())
+                                                    .build())
+                                            .build())
+                                    .build())
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setUserIdCondition(
+                                                UserIdCondition.newBuilder()
+                                                    .addActorEntityIds("userId")
+                                                    .addUserIdRegexes("userId.*")
+                                                    .build())
+                                            .build())
+                                    .build())
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setEmailDomainCondition(
+                                                EmailDomainCondition.newBuilder()
+                                                    .addEmailDomains("@abc")
+                                                    .addEmailRegexes("@foo.*")
+                                                    .build())
+                                            .build())
+                                    .build())
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setUserAgentCondition(
+                                                UserAgentCondition.newBuilder()
+                                                    .addUserAgents("agent")
+                                                    .build())
+                                            .build())
+                                    .build())
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setIpConnectionTypeCondition(
+                                                IpConnectionTypeCondition.newBuilder()
+                                                    .addIpConnectionTypes(
+                                                        IpConnectionType
+                                                            .IP_CONNECTION_TYPE_CORPORATE)
                                                     .build())
                                             .build())
                                     .build())
