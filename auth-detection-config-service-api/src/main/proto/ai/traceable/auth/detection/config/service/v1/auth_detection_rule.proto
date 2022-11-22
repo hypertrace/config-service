@@ -22,9 +22,10 @@ message GetAuthDetectionRulesResponse {
 
 message AuthDetectionRule {
   string id = 1;
-  string auth_type = 2;
+  optional string auth_type = 2;
   AuthDetectionRuleScope scope = 3;
   Predicate predicate = 4;
+  bool default = 5;
 }
 
 message Predicate {

@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package ai.traceable.auth.detection.config.service.impl;
+
+message DeletedDefaultAuthDetectionRule {
+  string id = 1;
+}

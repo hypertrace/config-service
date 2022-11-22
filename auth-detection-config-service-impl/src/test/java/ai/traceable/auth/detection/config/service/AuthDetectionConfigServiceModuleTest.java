@@ -1,6 +1,9 @@
 package ai.traceable.auth.detection.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.inject.Guice;
 import com.typesafe.config.Config;
@@ -19,7 +22,7 @@ class AuthDetectionConfigServiceModuleTest {
 
   @Test
   void testResolveBindings() {
-
+    when(mockConfig.getConfig(anyString())).thenReturn(mock(Config.class));
     assertDoesNotThrow(
         () ->
             Guice.createInjector(

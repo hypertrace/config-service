@@ -10,7 +10,6 @@ import ai.traceable.auth.detection.config.service.v1.GetAuthDetectionRulesRespon
 import ai.traceable.auth.detection.config.service.v1.UpdateAuthDetectionRuleRequest;
 import ai.traceable.auth.detection.config.service.v1.UpdateAuthDetectionRuleResponse;
 import com.google.inject.Inject;
-import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +20,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 class AuthDetectionConfigServiceImpl extends AuthDetectionConfigServiceImplBase {
 
   private final AuthDetectionConfigRequestValidator validator;
-  private final AuthDetectionRuleStore ruleStore;
+  private final AuthDetectionRuleManager ruleManager;
   private final AuthDetectionConfigRuleBuilder ruleBuilder;
 
   @Override
@@ -33,7 +32,7 @@ class AuthDetectionConfigServiceImpl extends AuthDetectionConfigServiceImplBase 
       validator.validateOrThrow(requestContext, request);
       responseObserver.onNext(
           GetAuthDetectionRulesResponse.newBuilder()
-              .addAllRules(this.ruleStore.getAllConfigData(requestContext, request.getFilter()))
+              .addAllRules(this.ruleManager.getAll(requestContext, request.getFilter()))
               .build());
       responseObserver.onCompleted();
     } catch (Throwable throwable) {
@@ -55,10 +54,7 @@ class AuthDetectionConfigServiceImpl extends AuthDetectionConfigServiceImplBase 
       validator.validateOrThrow(requestContext, request);
       responseObserver.onNext(
           UpdateAuthDetectionRuleResponse.newBuilder()
-              .setRule(
-                  this.ruleStore
-                      .upsertObject(requestContext, this.ruleBuilder.build(request))
-                      .getData())
+              .setRule(this.ruleManager.update(requestContext, this.ruleBuilder.build(request)))
               .build());
       responseObserver.onCompleted();
     } catch (Throwable throwable) {
@@ -80,10 +76,7 @@ class AuthDetectionConfigServiceImpl extends AuthDetectionConfigServiceImplBase 
       validator.validateOrThrow(requestContext, request);
       responseObserver.onNext(
           CreateAuthDetectionRuleResponse.newBuilder()
-              .setRule(
-                  this.ruleStore
-                      .upsertObject(requestContext, this.ruleBuilder.build(request))
-                      .getData())
+              .setRule(this.ruleManager.create(requestContext, this.ruleBuilder.build(request)))
               .build());
       responseObserver.onCompleted();
     } catch (Throwable throwable) {
@@ -103,9 +96,7 @@ class AuthDetectionConfigServiceImpl extends AuthDetectionConfigServiceImplBase 
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
       validator.validateOrThrow(requestContext, request);
-      this.ruleStore
-          .deleteObject(requestContext, request.getId())
-          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      this.ruleManager.delete(requestContext, request.getId());
 
       responseObserver.onNext(DeleteAuthDetectionRuleResponse.getDefaultInstance());
       responseObserver.onCompleted();

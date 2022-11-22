@@ -20,7 +20,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @AllArgsConstructor(onConstructor_ = {@Inject})
 class AuthDetectionConfigRequestValidator {
-  private final AuthDetectionRuleStore ruleStore;
+  private final AuthDetectionRuleManager ruleManager;
 
   void validateOrThrow(RequestContext requestContext, GetAuthDetectionRulesRequest request) {
     validateRequestContextOrThrow(requestContext);
@@ -29,26 +29,20 @@ class AuthDetectionConfigRequestValidator {
   void validateOrThrow(RequestContext requestContext, UpdateAuthDetectionRuleRequest request) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, UpdateAuthDetectionRuleRequest.ID_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(
-        request, UpdateAuthDetectionRuleRequest.AUTH_TYPE_FIELD_NUMBER);
     validatePredicate(request.getPredicate());
 
-    ruleStore
-        .getObject(requestContext, request.getId())
-        .orElseThrow(
-            () ->
-                Status.NOT_FOUND
-                    .withDescription(
-                        String.format(
-                            "Unable to find requested rule for update in context %s for request %s",
-                            requestContext, request))
-                    .asRuntimeException());
+    if (!ruleManager.ruleExists(requestContext, request.getId())) {
+      throw Status.NOT_FOUND
+          .withDescription(
+              String.format(
+                  "Unable to find requested rule for update in context %s for request %s",
+                  requestContext, request))
+          .asRuntimeException();
+    }
   }
 
   void validateOrThrow(RequestContext requestContext, CreateAuthDetectionRuleRequest request) {
     validateRequestContextOrThrow(requestContext);
-    validateNonDefaultPresenceOrThrow(
-        request, CreateAuthDetectionRuleRequest.AUTH_TYPE_FIELD_NUMBER);
     validatePredicate(request.getPredicate());
   }
 
@@ -103,14 +97,13 @@ class AuthDetectionConfigRequestValidator {
   }
 
   void validateKeyValuePredicate(KeyValuePredicate keyValuePredicate) {
-    // We can have either key predicate, value predicate or both. At least one must be set.
-    if (!keyValuePredicate.hasKeyPredicate() && !keyValuePredicate.hasValuePredicate()) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription("KeyValuePredicate has neither key nor value predicate set")
-          .asRuntimeException();
-    }
+    // We can have either key predicate or both key and value predicate
     if (keyValuePredicate.hasKeyPredicate()) {
       this.validateStringPredicate(keyValuePredicate.getKeyPredicate());
+    } else {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("KeyValuePredicate has no key predicate set")
+          .asRuntimeException();
     }
     if (keyValuePredicate.hasValuePredicate()) {
       this.validateStringPredicate(keyValuePredicate.getValuePredicate());

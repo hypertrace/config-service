@@ -11,6 +11,7 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingS
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 class AuthDetectionConfigServiceModule extends AbstractModule {
+  private static final String AUTH_DETECTON_CONFIG_KEY_PATH = "auth.detection.config.service";
   private final Channel channel;
   private final ConfigChangeEventGenerator configChangeEventGenerator;
   private final Config config;
@@ -26,7 +27,8 @@ class AuthDetectionConfigServiceModule extends AbstractModule {
   protected void configure() {
     bind(BindableService.class).to(AuthDetectionConfigServiceImpl.class);
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
-    bind(Config.class).toInstance(config);
+    bind(DefaultAuthRuleConfig.class)
+        .toInstance(new DefaultAuthRuleConfig(config.getConfig(AUTH_DETECTON_CONFIG_KEY_PATH)));
   }
 
   @Provides

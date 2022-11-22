@@ -1,5 +1,6 @@
 package ai.traceable.auth.detection.config.service;
 
+import static ai.traceable.auth.detection.config.service.v1.Predicate.StringPredicate.RelationalOperator.RELATIONAL_OPERATOR_MATCHES_REGEX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -17,12 +18,12 @@ import ai.traceable.auth.detection.config.service.v1.Predicate.StringPredicate;
 import ai.traceable.auth.detection.config.service.v1.Predicate.StringPredicate.RelationalOperator;
 import ai.traceable.auth.detection.config.service.v1.UpdateAuthDetectionRuleRequest;
 import ai.traceable.config.utils.UuidGenerator;
+import com.typesafe.config.ConfigFactory;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -67,17 +68,59 @@ class AuthDetectionConfigServiceImplTest {
                                   .setValue("(?i).*api-?_?key.*"))))
           .build();
 
+  AuthDetectionRule DEFAULT_BEARER_RULE =
+      AuthDetectionRule.newBuilder()
+          .setId("f496d554-4685-4de4-a074-4186ee579a4c")
+          .setAuthType("Bearer Token")
+          .setDefault(true)
+          .setPredicate(
+              Predicate.newBuilder()
+                  .setHeaderPredicate(
+                      KeyValuePredicate.newBuilder()
+                          .setKeyPredicate(
+                              StringPredicate.newBuilder()
+                                  .setOperator(RELATIONAL_OPERATOR_MATCHES_REGEX)
+                                  .setValue("(?i)^authorization$"))
+                          .setValuePredicate(
+                              StringPredicate.newBuilder()
+                                  .setOperator(RELATIONAL_OPERATOR_MATCHES_REGEX)
+                                  .setValue("^Bearer\\s.*"))))
+          .build();
+  AuthDetectionRule DEFAULT_BASIC_RULE =
+      AuthDetectionRule.newBuilder()
+          .setId("c96cdabf-4311-49f7-aedc-0568aeb0c2af")
+          .setAuthType("Basic")
+          .setDefault(true)
+          .setPredicate(
+              Predicate.newBuilder()
+                  .setHeaderPredicate(
+                      KeyValuePredicate.newBuilder()
+                          .setKeyPredicate(
+                              StringPredicate.newBuilder()
+                                  .setOperator(RELATIONAL_OPERATOR_MATCHES_REGEX)
+                                  .setValue("(?i)^authorization$"))
+                          .setValuePredicate(
+                              StringPredicate.newBuilder()
+                                  .setOperator(RELATIONAL_OPERATOR_MATCHES_REGEX)
+                                  .setValue("^Basic\\s.*"))))
+          .build();
+
   @BeforeEach
   void setUp() {
     mockGenericConfigService =
-        new MockGenericConfigService().mockUpsert().mockGetAll().mockDelete();
+        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     mockGenericConfigService
         .addService(
             new AuthDetectionConfigServiceImpl(
                 mockValidator,
-                new AuthDetectionRuleStore(
-                    ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel()),
-                    mockConfigChangeEventGenerator),
+                new AuthDetectionRuleManager(
+                    new DefaultAuthRuleConfig(ConfigFactory.parseResources("default-rules.conf")),
+                    new UserDefinedAuthDetectionRuleStore(
+                        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel()),
+                        mockConfigChangeEventGenerator),
+                    new DeletedDefaultAuthDetectionRuleStore(
+                        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel()),
+                        mockConfigChangeEventGenerator)),
                 new AuthDetectionConfigRuleBuilder(mockUuidGenerator)))
         .start();
     stub = AuthDetectionConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
@@ -110,13 +153,13 @@ class AuthDetectionConfigServiceImplTest {
     assertEquals(
         SCOPED_AUTH_RULE, this.stub.createAuthDetectionRule(scopedCreateRequest).getRule());
 
-    Assertions.assertEquals(
-        List.of(SCOPED_AUTH_RULE, UNSCOPED_AUTH_RULE),
+    assertEquals(
+        List.of(DEFAULT_BEARER_RULE, DEFAULT_BASIC_RULE, SCOPED_AUTH_RULE, UNSCOPED_AUTH_RULE),
         this.stub
             .getAuthDetectionRules(GetAuthDetectionRulesRequest.getDefaultInstance())
             .getRulesList());
-    Assertions.assertEquals(
-        List.of(SCOPED_AUTH_RULE, UNSCOPED_AUTH_RULE),
+    assertEquals(
+        List.of(DEFAULT_BEARER_RULE, DEFAULT_BASIC_RULE, SCOPED_AUTH_RULE, UNSCOPED_AUTH_RULE),
         this.stub
             .getAuthDetectionRules(
                 GetAuthDetectionRulesRequest.newBuilder()
@@ -128,8 +171,8 @@ class AuthDetectionConfigServiceImplTest {
                                         SCOPED_AUTH_RULE.getScope().getEnvironmentNamesList())))
                     .build())
             .getRulesList());
-    Assertions.assertEquals(
-        List.of(UNSCOPED_AUTH_RULE),
+    assertEquals(
+        List.of(DEFAULT_BEARER_RULE, DEFAULT_BASIC_RULE, UNSCOPED_AUTH_RULE),
         this.stub
             .getAuthDetectionRules(
                 GetAuthDetectionRulesRequest.newBuilder()
@@ -158,8 +201,8 @@ class AuthDetectionConfigServiceImplTest {
     assertEquals(
         expectedUpdatedRule, this.stub.updateAuthDetectionRule(ruleUpdateRequest).getRule());
 
-    Assertions.assertEquals(
-        List.of(SCOPED_AUTH_RULE, expectedUpdatedRule),
+    assertEquals(
+        List.of(DEFAULT_BEARER_RULE, DEFAULT_BASIC_RULE, SCOPED_AUTH_RULE, expectedUpdatedRule),
         this.stub
             .getAuthDetectionRules(
                 GetAuthDetectionRulesRequest.newBuilder()
@@ -172,8 +215,8 @@ class AuthDetectionConfigServiceImplTest {
                     .build())
             .getRulesList());
 
-    Assertions.assertEquals(
-        List.of(expectedUpdatedRule),
+    assertEquals(
+        List.of(DEFAULT_BEARER_RULE, DEFAULT_BASIC_RULE, expectedUpdatedRule),
         this.stub
             .getAuthDetectionRules(
                 GetAuthDetectionRulesRequest.newBuilder()
@@ -188,8 +231,8 @@ class AuthDetectionConfigServiceImplTest {
     this.stub.deleteAuthDetectionRule(
         DeleteAuthDetectionRuleRequest.newBuilder().setId(SCOPED_AUTH_RULE.getId()).build());
 
-    Assertions.assertEquals(
-        List.of(expectedUpdatedRule),
+    assertEquals(
+        List.of(DEFAULT_BEARER_RULE, DEFAULT_BASIC_RULE, expectedUpdatedRule),
         this.stub
             .getAuthDetectionRules(
                 GetAuthDetectionRulesRequest.newBuilder()
@@ -204,7 +247,43 @@ class AuthDetectionConfigServiceImplTest {
 
     this.stub.deleteAuthDetectionRule(
         DeleteAuthDetectionRuleRequest.newBuilder().setId(expectedUpdatedRule.getId()).build());
-    Assertions.assertEquals(
+
+    AuthDetectionRule modifiedBearerRule =
+        DEFAULT_BEARER_RULE.toBuilder()
+            .setScope(AuthDetectionRuleScope.newBuilder().addEnvironmentNames("other-env"))
+            .setDefault(false)
+            .build();
+    assertEquals(
+        modifiedBearerRule,
+        this.stub
+            .updateAuthDetectionRule(
+                UpdateAuthDetectionRuleRequest.newBuilder()
+                    .setId(DEFAULT_BEARER_RULE.getId())
+                    .setAuthType(DEFAULT_BEARER_RULE.getAuthType())
+                    .setPredicate(DEFAULT_BEARER_RULE.getPredicate())
+                    .setScope(modifiedBearerRule.getScope())
+                    .build())
+            .getRule());
+
+    assertEquals(
+        List.of(DEFAULT_BASIC_RULE, modifiedBearerRule),
+        this.stub
+            .getAuthDetectionRules(GetAuthDetectionRulesRequest.getDefaultInstance())
+            .getRulesList());
+
+    this.stub.deleteAuthDetectionRule(
+        DeleteAuthDetectionRuleRequest.newBuilder().setId(modifiedBearerRule.getId()).build());
+
+    assertEquals(
+        List.of(DEFAULT_BASIC_RULE),
+        this.stub
+            .getAuthDetectionRules(GetAuthDetectionRulesRequest.getDefaultInstance())
+            .getRulesList());
+
+    this.stub.deleteAuthDetectionRule(
+        DeleteAuthDetectionRuleRequest.newBuilder().setId(DEFAULT_BASIC_RULE.getId()).build());
+
+    assertEquals(
         List.of(),
         this.stub
             .getAuthDetectionRules(GetAuthDetectionRulesRequest.getDefaultInstance())

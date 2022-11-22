@@ -12,13 +12,13 @@ import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 
-class AuthDetectionRuleStore
+class UserDefinedAuthDetectionRuleStore
     extends IdentifiedObjectStoreWithFilter<AuthDetectionRule, AuthDetectionRuleFilter> {
   private static final String AUTH_DETECTION_RULE_RESOURCE_NAME = "auth-detection-rule";
   private static final String AUTH_DETECTION_NAMESPACE = "auth-detection";
 
   @Inject
-  AuthDetectionRuleStore(
+  UserDefinedAuthDetectionRuleStore(
       ConfigServiceBlockingStub configServiceBlockingStub,
       ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
