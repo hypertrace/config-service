@@ -180,13 +180,6 @@ traceableConfigServiceConfig:
     host: license-metering-service
     port: 51018
     cacheExpiryDuration: 5m
-  regionConfigService:
-    neustarMode: RESOURCE_FILE
-    neustarResourceFile: neustar/countries.csv
-    ipqsMode: VERSIONS_DIR
-    ipqsVersionsDir: /var/data/models/ipqs/country_csv
-    ipqsVersionsFileName: countries.csv
-    ipqsVersionsRefreshDuration: 24h
   featureFlagServiceConfig:
     host: feature-flag-service
     port: 51001

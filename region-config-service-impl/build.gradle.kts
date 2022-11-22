@@ -10,7 +10,6 @@ dependencies {
   api(libs.typesafe.config)
   implementation(projects.regionConfigServiceApi)
   implementation(projects.featureCachingClient)
-  implementation(projects.configUtils)
   implementation(libs.hypertrace.configservice.api)
   implementation(libs.guice)
   implementation(libs.guava)

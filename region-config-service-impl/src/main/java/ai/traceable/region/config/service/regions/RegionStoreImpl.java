@@ -1,27 +1,23 @@
 package ai.traceable.region.config.service.regions;
 
-import ai.traceable.region.config.service.RegionConfigServiceConfig;
 import ai.traceable.region.config.service.v1.DetailedRegion;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 class RegionStoreImpl implements RegionStore {
   private final RegionConverter regionConverter;
-  private final Supplier<Map<String, Region>> regionIdToRegionMapSupplier;
+  private final Map<String, Region> regionIdToRegionMap;
 
   RegionStoreImpl(
-      RegionBuilder regionBuilder,
-      RegionConverter regionConverter,
-      RegionConfigServiceConfig.CountriesDataConfig dataConfig) {
+      RegionBuilder regionBuilder, RegionConverter regionConverter, String countriesDataPath) {
     this.regionConverter = regionConverter;
-    this.regionIdToRegionMapSupplier = regionBuilder.buildRegions(dataConfig);
+    this.regionIdToRegionMap = regionBuilder.buildRegions(countriesDataPath);
   }
 
   @Override
@@ -42,17 +38,15 @@ class RegionStoreImpl implements RegionStore {
 
   @Override
   public Optional<ai.traceable.region.config.service.v1.Region> getRegion(String id) {
-    return Optional.ofNullable(regionIdToRegionMapSupplier.get().get(id))
-        .map(this.regionConverter::convert);
+    return Optional.ofNullable(regionIdToRegionMap.get(id)).map(this.regionConverter::convert);
   }
 
   private List<Region> getRegions(List<String> ids) {
-    Map<String, Region> regionIdToRegionMap = regionIdToRegionMapSupplier.get();
     return ids.isEmpty()
         ? List.copyOf(regionIdToRegionMap.values())
         : ids.stream()
             .map(regionIdToRegionMap::get)
             .filter(Objects::nonNull)
-            .collect(Collectors.toUnmodifiableList());
+            .collect(Collectors.toList());
   }
 }

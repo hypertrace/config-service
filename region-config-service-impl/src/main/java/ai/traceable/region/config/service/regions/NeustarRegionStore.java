@@ -10,6 +10,6 @@ public class NeustarRegionStore extends RegionStoreImpl {
       RegionBuilder regionBuilder,
       RegionConverter regionConverter,
       RegionConfigServiceConfig config) {
-    super(regionBuilder, regionConverter, config.getNeustarCountriesDataConfig());
+    super(regionBuilder, regionConverter, config.getNeustarCountriesDataPath());
   }
 }
