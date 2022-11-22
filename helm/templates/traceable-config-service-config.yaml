@@ -72,6 +72,18 @@ data:
       port = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.port }}
       cache.expiration.duration = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.cacheExpiryDuration }}
     }
+    region.config.service {
+      neustar.countries.data {
+        mode = {{ .Values.traceableConfigServiceConfig.regionConfigService.neustarMode }}
+        resource.file = {{ .Values.traceableConfigServiceConfig.regionConfigService.neustarResourceFile }}
+      }
+      ipqs.countries.data {
+        mode = {{ .Values.traceableConfigServiceConfig.regionConfigService.ipqsMode }}
+        versions.dir = {{ .Values.traceableConfigServiceConfig.regionConfigService.ipqsVersionsDir }}
+        versions.file.name = {{ .Values.traceableConfigServiceConfig.regionConfigService.ipqsVersionsFileName }}
+        versions.refresh.duration = {{ .Values.traceableConfigServiceConfig.regionConfigService.ipqsVersionsRefreshDuration }}
+      }
+    }
     api.naming.config {
       trieModels = {
         {{- if $.Values.trieModels.modelStores }}
