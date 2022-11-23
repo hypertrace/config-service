@@ -7,7 +7,7 @@
           "attributeRule": {
             "projector": {
               "regexCaptureGroupProjector": {
-                "regexCaptureGroup": "^((?i)Bearer:? )?(.*)$",
+                "regexCaptureGroup": "^(?:(?i)Bearer:? )?(.*)$",
                 "attributeRule": {
                   "projector": {
                     "jwtProjector": {
@@ -73,7 +73,7 @@
           "attributeRule": {
             "projector": {
               "regexCaptureGroupProjector": {
-                "regexCaptureGroup": "^((?i)Bearer:? )?(.*)$",
+                "regexCaptureGroup": "^(?:(?i)Bearer:? )?(.*)$",
                 "attributeRule": {
                   "projector": {
                     "jwtProjector": {

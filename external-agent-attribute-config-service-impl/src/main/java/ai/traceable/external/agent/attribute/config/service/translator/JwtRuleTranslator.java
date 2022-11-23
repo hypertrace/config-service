@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(onConstructor_ = {@Inject})
 public class JwtRuleTranslator implements RuleTranslator {
 
-  private static final String BEARER_CAPTURE_GROUP = "^((?i)Bearer:? )?(.*)$";
+  private static final String BEARER_CAPTURE_GROUP = "^(?:(?i)Bearer:? )?(.*)$";
   private final AttributeKeysExtractor attributeKeysExtractor;
   private final AttributeRuleBuilder attributeRuleBuilder;
 
