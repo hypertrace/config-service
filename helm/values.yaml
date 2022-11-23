@@ -180,6 +180,14 @@ traceableConfigServiceConfig:
     host: license-metering-service
     port: 51018
     cacheExpiryDuration: 5m
+  regionConfigService:
+    neustarMode: RESOURCE_FILE
+    neustarResourceFile: neustar/countries.csv
+    ipqsMode: RESOURCE_FILE # TODO: switch to VERSIONS_DIR after cron job stabilizes
+    #    ipqsVersionsDir: /var/data/models/ipqs/country_csv
+    #    ipqsVersionsFileName: countries.csv
+    #    ipqsVersionsRefreshDuration: 24h
+    ipqsResourceFile: ipqs/countries.csv
   featureFlagServiceConfig:
     host: feature-flag-service
     port: 51001

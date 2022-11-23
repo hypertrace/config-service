@@ -10,6 +10,6 @@ public class IpqsRegionStore extends RegionStoreImpl {
       RegionBuilder regionBuilder,
       RegionConverter regionConverter,
       RegionConfigServiceConfig config) {
-    super(regionBuilder, regionConverter, config.getIpqsCountriesDataPath());
+    super(regionBuilder, regionConverter, config.getIpqsCountriesDataConfig());
   }
 }
