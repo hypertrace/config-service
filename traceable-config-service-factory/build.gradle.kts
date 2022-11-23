@@ -37,6 +37,7 @@ dependencies {
   implementation(projects.reportingConfigServiceImpl)
   implementation(projects.apiSpecConfigServiceImpl)
   implementation(projects.maliciousSourcesConfigServiceImpl)
+  implementation(projects.authDetectionConfigServiceImpl)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
