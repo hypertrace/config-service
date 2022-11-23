@@ -74,16 +74,19 @@ data:
     }
     region.config.service {
       neustar.countries.data {
-        mode = {{ .Values.traceableConfigServiceConfig.regionConfigService.neustarMode }}
-        resource.file = {{ .Values.traceableConfigServiceConfig.regionConfigService.neustarResourceFile }}
+        mode = {{ .Values.traceableConfigServiceConfig.regionConfigService.neustar.mode }}
+        resource.file = {{ .Values.traceableConfigServiceConfig.regionConfigService.neustar.resourceFile }}
       }
       ipqs.countries.data {
-        mode = {{ .Values.traceableConfigServiceConfig.regionConfigService.ipqsMode }}
-        resource.file = {{ .Values.traceableConfigServiceConfig.regionConfigService.ipqsResourceFile }}
-        versions.dir = {{ .Values.traceableConfigServiceConfig.regionConfigService.ipqsVersionsDir }}
-        versions.file.name = {{ .Values.traceableConfigServiceConfig.regionConfigService.ipqsVersionsFileName }}
-        versions.refresh.duration = {{ .Values.traceableConfigServiceConfig.regionConfigService.ipqsVersionsRefreshDuration }}
+        mode = {{ .Values.traceableConfigServiceConfig.regionConfigService.ipqs.mode }}
+        {{- if .Values.traceableConfigServiceConfig.regionConfigService.ipqs.resourceFile }}
+        resource.file = {{ .Values.traceableConfigServiceConfig.regionConfigService.ipqs.resourceFile }}
+        {{- end }}
+        {{- if .Values.traceableConfigServiceConfig.regionConfigService.ipqs.versions }}
+        {{ .Values.traceableConfigServiceConfig.regionConfigService.ipqs.versions | nindent 8 }}
+        {{- end }}
       }
+      shouldPublishActivityEvents = true
     }
     api.naming.config {
       trieModels = {

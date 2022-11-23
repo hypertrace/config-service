@@ -181,13 +181,16 @@ traceableConfigServiceConfig:
     port: 51018
     cacheExpiryDuration: 5m
   regionConfigService:
-    neustarMode: RESOURCE_FILE
-    neustarResourceFile: neustar/countries.csv
-    ipqsMode: RESOURCE_FILE # TODO: switch to VERSIONS_DIR after cron job stabilizes
-    #    ipqsVersionsDir: /var/data/models/ipqs/country_csv
-    #    ipqsVersionsFileName: countries.csv
-    #    ipqsVersionsRefreshDuration: 24h
-    ipqsResourceFile: ipqs/countries.csv
+    neustar:
+      mode: RESOURCE_FILE
+      resourceFile: neustar/countries.csv
+    ipqs:
+      mode: RESOURCE_FILE # TODO: switch to VERSIONS_DIR after cron job stabilizes
+      resourceFile: ipqs/countries.csv
+      versions: |-
+        versionsDir = /var/data/models/ipqs/country_csv
+        versionsFileName = countries.csv
+        versionsRefreshDuration = 24h
   featureFlagServiceConfig:
     host: feature-flag-service
     port: 51001
