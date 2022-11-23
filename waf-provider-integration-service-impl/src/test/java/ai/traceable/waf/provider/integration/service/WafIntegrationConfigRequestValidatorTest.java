@@ -1,7 +1,11 @@
 package ai.traceable.waf.provider.integration.service;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.AwsIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.AwsResource;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
@@ -50,10 +54,25 @@ class WafIntegrationConfigRequestValidatorTest {
         () -> {
           wafIntegrationConfigRequestValidator.validateOrThrow(request2, REQUEST_CONTEXT);
         });
+
+    GetWafIntegrationsRequest request3 =
+        GetWafIntegrationsRequest.newBuilder()
+            .setFilter(
+                GetWafIntegrationsFilter.newBuilder()
+                    .addAllWafProviderTypes(
+                        List.of(
+                            WafProviderType.WAF_PROVIDER_TYPE_AWS,
+                            WafProviderType.WAF_PROVIDER_TYPE_CLOUDFLARE)))
+            .build();
+
+    assertDoesNotThrow(
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(request3, REQUEST_CONTEXT);
+        });
   }
 
   @Test
-  void invalidWafIntegrationDetailsTest() {
+  void invalidCloudflareWafIntegrationDetailsTest() {
     CloudflareIntegrationParams cloudflareIntegrationParams =
         CloudflareIntegrationParams.newBuilder()
             .setZone("zone")
@@ -76,7 +95,7 @@ class WafIntegrationConfigRequestValidatorTest {
   }
 
   @Test
-  void invalidUpdateRequestTest() {
+  void invalidUpdateCloudflareRequestTest() {
     UpdateWafIntegrationRequest request =
         UpdateWafIntegrationRequest.newBuilder()
             .setId("id-1")
@@ -174,6 +193,261 @@ class WafIntegrationConfigRequestValidatorTest {
         StatusRuntimeException.class,
         () -> {
           wafIntegrationConfigRequestValidator.validateOrThrow(deleteRequest, REQUEST_CONTEXT);
+        });
+  }
+
+  @Test
+  void invalidCreateAwsWafIntegrationTest() {
+    AwsIntegrationParams.Builder awsIntegrationParamsBuilder =
+        AwsIntegrationParams.newBuilder()
+            .setAccessKeyId("access-key")
+            .setEncryptedSecretAccessKey("secret")
+            .addAllResources(
+                List.of(AwsResource.newBuilder().setArn("arn").setRegion("region").build()));
+
+    // name field is absent
+    CreateWafIntegrationRequest request1 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setAwsIntegrationParams(awsIntegrationParamsBuilder))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(request1, REQUEST_CONTEXT);
+        });
+
+    // access key id field is absent
+    CreateWafIntegrationRequest request2 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAwsIntegrationParams(awsIntegrationParamsBuilder.clearAccessKeyId()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(request2, REQUEST_CONTEXT);
+        });
+
+    // secret field is absent
+    CreateWafIntegrationRequest request3 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAwsIntegrationParams(
+                        awsIntegrationParamsBuilder.clearEncryptedSecretAccessKey()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(request3, REQUEST_CONTEXT);
+        });
+
+    // resources field is absent
+    CreateWafIntegrationRequest request4 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAwsIntegrationParams(awsIntegrationParamsBuilder.clearResources()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(request4, REQUEST_CONTEXT);
+        });
+
+    CreateWafIntegrationRequest validRequest =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAwsIntegrationParams(
+                        AwsIntegrationParams.newBuilder()
+                            .setAccessKeyId("id")
+                            .setEncryptedSecretAccessKey("key")
+                            .addResources(
+                                AwsResource.newBuilder().setArn("arn").setRegion("region"))))
+            .build();
+
+    // resource present but invalid
+    testWithInvalidAwsResource(validRequest);
+
+    // valid request
+    assertDoesNotThrow(
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(validRequest, REQUEST_CONTEXT);
+        });
+  }
+
+  @Test
+  void invalidUpdateAwsRequestTest() {
+    AwsIntegrationUpdateParams.Builder awsIntegrationUpdateParams =
+        AwsIntegrationUpdateParams.newBuilder()
+            .setAccessKeyId("access-key")
+            .addAllResources(
+                List.of(AwsResource.newBuilder().setArn("arn").setRegion("region").build()));
+
+    // id field is absent
+    UpdateWafIntegrationRequest request1 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setDescription("desc")
+                    .setName("name")
+                    .setUpdatedAwsIntegrationParams(awsIntegrationUpdateParams))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(request1, REQUEST_CONTEXT);
+        });
+
+    // name field is absent
+    UpdateWafIntegrationRequest request2 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setUpdatedAwsIntegrationParams(awsIntegrationUpdateParams))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(request2, REQUEST_CONTEXT);
+        });
+
+    // access key id field is absent
+    UpdateWafIntegrationRequest request3 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedAwsIntegrationParams(awsIntegrationUpdateParams.clearAccessKeyId()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(request3, REQUEST_CONTEXT);
+        });
+
+    // resources field is absent
+    UpdateWafIntegrationRequest request4 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedAwsIntegrationParams(awsIntegrationUpdateParams.clearResources()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(request4, REQUEST_CONTEXT);
+        });
+
+    UpdateWafIntegrationRequest validRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedAwsIntegrationParams(
+                        AwsIntegrationUpdateParams.newBuilder()
+                            .setAccessKeyId("id")
+                            .setEncryptedSecretAccessKey("key")
+                            .addResources(
+                                AwsResource.newBuilder().setArn("arn").setRegion("region"))))
+            .build();
+
+    // resource present but invalid
+    testWithInvalidAwsResource(validRequest);
+
+    // valid request
+    assertDoesNotThrow(
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(validRequest, REQUEST_CONTEXT);
+        });
+  }
+
+  private void testWithInvalidAwsResource(CreateWafIntegrationRequest request) {
+    AwsResource.Builder awsResourceBuilder =
+        AwsResource.newBuilder().setArn("arn").setRegion("region");
+
+    AwsIntegrationParams.Builder awsIntegrationBuilder =
+        AwsIntegrationParams.newBuilder()
+            .setAccessKeyId("access-key")
+            .setEncryptedSecretAccessKey("secret");
+
+    // no arn
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(
+              request.toBuilder()
+                  .setWafIntegrationDetails(
+                      request.getWafIntegrationDetails().toBuilder()
+                          .setAwsIntegrationParams(
+                              awsIntegrationBuilder.addResources(awsResourceBuilder.clearArn())))
+                  .build(),
+              REQUEST_CONTEXT);
+        });
+
+    // no region
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(
+              request.toBuilder()
+                  .setWafIntegrationDetails(
+                      request.getWafIntegrationDetails().toBuilder()
+                          .setAwsIntegrationParams(
+                              awsIntegrationBuilder.addResources(awsResourceBuilder.clearRegion())))
+                  .build(),
+              REQUEST_CONTEXT);
+        });
+  }
+
+  private void testWithInvalidAwsResource(UpdateWafIntegrationRequest request) {
+    AwsResource.Builder awsResourceBuilder =
+        AwsResource.newBuilder().setArn("arn").setRegion("region");
+
+    AwsIntegrationUpdateParams.Builder awsIntegrationBuilder =
+        AwsIntegrationUpdateParams.newBuilder()
+            .setAccessKeyId("access-key")
+            .setEncryptedSecretAccessKey("secret");
+
+    // no arn
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(
+              request.toBuilder()
+                  .setUpdatedWafIntegrationDetails(
+                      request.getUpdatedWafIntegrationDetails().toBuilder()
+                          .setUpdatedAwsIntegrationParams(
+                              awsIntegrationBuilder.addResources(awsResourceBuilder.clearArn())))
+                  .build(),
+              REQUEST_CONTEXT);
+        });
+
+    // no arn
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(
+              request.toBuilder()
+                  .setUpdatedWafIntegrationDetails(
+                      request.getUpdatedWafIntegrationDetails().toBuilder()
+                          .setUpdatedAwsIntegrationParams(
+                              awsIntegrationBuilder.addResources(awsResourceBuilder.clearRegion())))
+                  .build(),
+              REQUEST_CONTEXT);
         });
   }
 }

@@ -4,6 +4,9 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
+import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.AwsIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.AwsResource;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
@@ -71,6 +74,7 @@ public class WafIntegrationConfigRequestValidator {
   private void validateWafProviderType(WafProviderType type) {
     switch (type) {
       case WAF_PROVIDER_TYPE_CLOUDFLARE:
+      case WAF_PROVIDER_TYPE_AWS:
         break;
       case WAF_PROVIDER_TYPE_UNSPECIFIED:
       case UNRECOGNIZED:
@@ -88,6 +92,10 @@ public class WafIntegrationConfigRequestValidator {
         validateUpdatedCloudFlareIntegrationParams(
             updatedWafIntegrationDetails.getUpdatedCloudflareIntegrationParams());
         break;
+      case UPDATED_AWS_INTEGRATION_PARAMS:
+        validateUpdatedAwsIntegrationParams(
+            updatedWafIntegrationDetails.getUpdatedAwsIntegrationParams());
+        break;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
         throw Status.INVALID_ARGUMENT
@@ -101,6 +109,9 @@ public class WafIntegrationConfigRequestValidator {
     switch (wafIntegrationDetails.getIntegrationParamsCase()) {
       case CLOUDFLARE_INTEGRATION_PARAMS:
         validateCloudFlareIntegrationParams(wafIntegrationDetails.getCloudflareIntegrationParams());
+        break;
+      case AWS_INTEGRATION_PARAMS:
+        validateAwsIntegrationParams(wafIntegrationDetails.getAwsIntegrationParams());
         break;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
@@ -125,6 +136,15 @@ public class WafIntegrationConfigRequestValidator {
     }
   }
 
+  private void validateUpdatedAwsIntegrationParams(
+      AwsIntegrationUpdateParams awsIntegrationUpdateParams) {
+    validateNonDefaultPresenceOrThrow(
+        awsIntegrationUpdateParams, AwsIntegrationUpdateParams.ACCESS_KEY_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        awsIntegrationUpdateParams, AwsIntegrationUpdateParams.RESOURCES_FIELD_NUMBER);
+    awsIntegrationUpdateParams.getResourcesList().forEach(this::validateAwsResource);
+  }
+
   private void validateCloudFlareIntegrationParams(
       CloudflareIntegrationParams cloudflareIntegrationParams) {
     validateNonDefaultPresenceOrThrow(
@@ -133,5 +153,20 @@ public class WafIntegrationConfigRequestValidator {
         cloudflareIntegrationParams, CloudflareIntegrationParams.EMAIL_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         cloudflareIntegrationParams, CloudflareIntegrationParams.API_TOKEN_FIELD_NUMBER);
+  }
+
+  private void validateAwsIntegrationParams(AwsIntegrationParams awsIntegrationParams) {
+    validateNonDefaultPresenceOrThrow(
+        awsIntegrationParams, AwsIntegrationParams.ACCESS_KEY_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        awsIntegrationParams, AwsIntegrationParams.ENCRYPTED_SECRET_ACCESS_KEY_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        awsIntegrationParams, AwsIntegrationParams.RESOURCES_FIELD_NUMBER);
+    awsIntegrationParams.getResourcesList().forEach(this::validateAwsResource);
+  }
+
+  private void validateAwsResource(AwsResource awsResource) {
+    validateNonDefaultPresenceOrThrow(awsResource, AwsResource.ARN_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(awsResource, AwsResource.REGION_FIELD_NUMBER);
   }
 }
