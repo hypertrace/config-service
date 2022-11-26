@@ -162,6 +162,7 @@ message BlockingMetadataAnomalyDetectionConfig {
     ThreatActorAnomalyConfig threat_actor = 5;
     SafeCrsAnomalyConfig safe_crs = 6;
     InAgentVulnerableLibraryConfig in_agent_vulnerable_library = 7;
+    MaliciousSourcesAnomalyConfig malicious_sources = 8;
   }
 }
 
@@ -313,6 +314,8 @@ message ThreatActorAnomalyConfig {}
 message SafeCrsAnomalyConfig {}
 
 message InAgentVulnerableLibraryConfig {}
+
+message MaliciousSourcesAnomalyConfig {}
 
 message AnomalySubRuleConfig {
   string sub_rule_id = 1;
