@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.BflaAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ContentSizeAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ContentTypeAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.DeviceAnomalyConfig;
@@ -106,6 +107,12 @@ public class ApiDefinitionRegistryTest {
         ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
             .setAnomalyRuleId("enum")
             .setEnum(EnumerationsAnomalyConfig.getDefaultInstance())
+            .build());
+    expectedMap.put(
+        "bfla",
+        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+            .setAnomalyRuleId("bfla")
+            .setBfla(BflaAnomalyConfig.getDefaultInstance())
             .build());
 
     assertEquals(expectedMap, ruleIdToConfigMap);

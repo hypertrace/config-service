@@ -65,7 +65,7 @@ class ConfigConverterTest {
 
     assertEquals("bola", ruleInfosMap.get("bola").getRuleId());
     assertEquals("Authorization Bypass", ruleInfosMap.get("bola").getRuleName());
-    assertEquals("Session Authorization Anomalies", ruleInfosMap.get("bola").getRuleCategory());
+    assertEquals("Authorization Violations", ruleInfosMap.get("bola").getRuleCategory());
     assertEquals(
         ANOMALY_RULE_CATEGORY_AUTHORIZATION_VIOLATIONS,
         ruleInfosMap.get("bola").getAnomalyRuleCategory());

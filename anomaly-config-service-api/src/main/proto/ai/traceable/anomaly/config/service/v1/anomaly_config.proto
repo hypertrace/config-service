@@ -136,7 +136,7 @@ enum AnomalyRuleCategory {
   ANOMALY_RULE_CATEGORY_SESSION_FIXATION = 8 [(string_value) = "Session Fixation"];
   ANOMALY_RULE_CATEGORY_PATH_MANIPULATION = 9 [(string_value) = "Path Manipulation"];
   ANOMALY_RULE_CATEGORY_KNOWN_VULNERABILITIES = 10 [(string_value) = "Known Vulnerabilities"];
-  ANOMALY_RULE_CATEGORY_AUTHORIZATION_VIOLATIONS = 11 [(string_value) = "Session Authorization Anomalies"];
+  ANOMALY_RULE_CATEGORY_AUTHORIZATION_VIOLATIONS = 11 [(string_value) = "Authorization Violations"];
   ANOMALY_RULE_CATEGORY_CUSTOM_RULES = 12 [(string_value) = "Custom Rules"];
   ANOMALY_RULE_CATEGORY_RATE_LIMIT = 13 [(string_value) = "Rate Limit"];
   ANOMALY_RULE_CATEGORY_ATTACKER = 14 [(string_value) = "Attacker"];

@@ -132,6 +132,7 @@ message ApiDefinitionMetadataAnomalyDetectionConfig {
     PayloadAnomalyConfig payload = 10;
     SsrfAnomalyConfig ssrf = 11;
     UnknownParamAnomalyConfig unknown_param = 12;
+    BflaAnomalyConfig bfla = 13;
   }
 }
 
@@ -246,6 +247,10 @@ message SsrfAnomalyConfig {
   StringList allowed_protocols = 1;
   optional int32 required_occurrences_of_host = 2;
   StringList allowed_domains = 3;
+}
+
+message BflaAnomalyConfig {
+  optional double min_percent_seen = 1;
 }
 
 message LearntApiAnomalyConfig {
