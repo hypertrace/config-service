@@ -31,7 +31,9 @@ import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Pro
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ParsingTarget;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ParsingTarget.TargetCase;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 class AttributeRuleBuilder {
@@ -198,7 +200,7 @@ class AttributeRuleBuilder {
   }
 
   AttributeRule buildRuleForCondition(
-      String name, List<String> allowedRegexValues, AttributeRule childRule) {
+      List<String> names, List<String> allowedRegexValues, AttributeRule childRule) {
     if (allowedRegexValues.isEmpty()) {
       return childRule;
     }
@@ -212,27 +214,40 @@ class AttributeRuleBuilder {
                         .setPredicate(
                             buildPredicate(
                                 ComparisonOperator.COMPARISON_OPERATOR_EQUALS,
-                                name,
                                 ComparisonOperator.COMPARISON_OPERATOR_MATCHES_REGEX,
-                                regexValue))
+                                names.stream()
+                                    .map(name -> Pair.of(name, regexValue))
+                                    .collect(Collectors.toList())))
                         .setAttributeRule(childRule)))
         .build();
   }
 
   private Predicate buildPredicate(
       ComparisonOperator nameComparisonOperator,
-      String name,
       ComparisonOperator valueComparisonOperator,
-      String value) {
+      List<Pair<String, String>> nameValuePairs) {
     return Predicate.newBuilder()
-        .setAttributePredicate(
-            AttributePredicate.newBuilder()
-                .setNamePredicate(
-                    StringPredicate.newBuilder().setOperator(nameComparisonOperator).setValue(name))
-                .setValuePredicate(
-                    StringPredicate.newBuilder()
-                        .setOperator(valueComparisonOperator)
-                        .setValue(value)))
+        .setLogicalPredicate(
+            Predicate.LogicalPredicate.newBuilder()
+                .setOperator(Predicate.LogicalOperator.LOGICAL_OPERATOR_OR)
+                .addAllChildren(
+                    nameValuePairs.stream()
+                        .map(
+                            nameValuePair ->
+                                Predicate.newBuilder()
+                                    .setAttributePredicate(
+                                        AttributePredicate.newBuilder()
+                                            .setNamePredicate(
+                                                StringPredicate.newBuilder()
+                                                    .setOperator(nameComparisonOperator)
+                                                    .setValue(nameValuePair.getKey()))
+                                            .setValuePredicate(
+                                                StringPredicate.newBuilder()
+                                                    .setOperator(valueComparisonOperator)
+                                                    .setValue(nameValuePair.getValue())))
+                                    .build())
+                        .collect(Collectors.toList()))
+                .build())
         .build();
   }
 

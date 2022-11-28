@@ -1,6 +1,6 @@
 package ai.traceable.external.agent.attribute.config.service.translator;
 
-import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.URL_KEY;
+import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.URL_KEYS;
 
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope;
@@ -20,6 +20,6 @@ public class UrlScopeTranslator {
         ruleScope.getCustomScope().getUrlScopesList().stream()
             .map(UrlScope::getUrlMatchRegex)
             .collect(Collectors.toUnmodifiableList());
-    return attributeRuleBuilder.buildRuleForCondition(URL_KEY, urlScopes, translatedRule);
+    return attributeRuleBuilder.buildRuleForCondition(URL_KEYS, urlScopes, translatedRule);
   }
 }

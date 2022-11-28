@@ -2,15 +2,31 @@
   "projector": {
     "conditionalProjector": {
       "predicate": {
-        "attributePredicate": {
-          "namePredicate": {
-            "operator": "COMPARISON_OPERATOR_EQUALS",
-            "value": "http.url"
-          },
-          "valuePredicate": {
-            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
-            "value": ".*/my-url-suffix"
-          }
+        "logicalPredicate": {
+          "operator": "LOGICAL_OPERATOR_OR",
+          "children": [{
+            "attributePredicate": {
+              "namePredicate": {
+                "operator": "COMPARISON_OPERATOR_EQUALS",
+                "value": "http.url"
+              },
+              "valuePredicate": {
+                "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                "value": ".*/my-url-suffix"
+              }
+            }
+          }, {
+            "attributePredicate": {
+              "namePredicate": {
+                "operator": "COMPARISON_OPERATOR_EQUALS",
+                "value": "http.target"
+              },
+              "valuePredicate": {
+                "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                "value": ".*/my-url-suffix"
+              }
+            }
+          }]
         }
       },
       "attributeRule": {
