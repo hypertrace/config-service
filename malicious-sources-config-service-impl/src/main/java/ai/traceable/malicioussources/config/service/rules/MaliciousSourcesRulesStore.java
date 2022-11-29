@@ -65,7 +65,10 @@ public class MaliciousSourcesRulesStore
         .filter(
             rule -> filter.getRuleIdsCount() == 0 || filter.getRuleIdsList().contains(rule.getId()))
         .filter(rule -> filterRuleOnScope(rule, filter.getRuleScope()))
-        .filter(rule -> !(filter.hasRuleStatus() && rule.getRuleStatus() != filter.getRuleStatus()))
+        .filter(
+            rule ->
+                !(filter.hasDisabled()
+                    && rule.getRuleStatus().getDisabled() != filter.getDisabled()))
         .filter(
             rule ->
                 filter.getRuleActionTypesCount() == 0

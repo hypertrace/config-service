@@ -41,6 +41,6 @@ message GetMaliciousSourcesRulesResponse {
 message GetRulesFilter {
   repeated string rule_ids = 1;
   MaliciousSourcesRuleScope rule_scope = 2;
-  MaliciousSourcesRuleStatus rule_status = 3;
+  optional bool disabled = 3;
   repeated RuleActionType rule_action_types = 4;
 }

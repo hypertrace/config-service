@@ -115,10 +115,30 @@ public class MaliciousSourcesConfigServiceIntegrationTest
                         .getMaliciousSourcesRules(
                             GetMaliciousSourcesRulesRequest.newBuilder()
                                 .setFilter(
-                                    GetRulesFilter.newBuilder().setRuleScope(ruleScope1).build())
+                                    GetRulesFilter.newBuilder()
+                                        .setRuleScope(ruleScope1)
+                                        .setDisabled(false)
+                                        .build())
                                 .build())
                         .getRulesList());
     assertEquals(List.of(expectedMaliciousSourcesRule1), actualMaliciousSourcesRules);
+
+    // assert default rule should be disabled
+    actualMaliciousSourcesRules =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(
+                () ->
+                    maliciousSourcesConfigServiceBlockingStub
+                        .getMaliciousSourcesRules(
+                            GetMaliciousSourcesRulesRequest.newBuilder()
+                                .setFilter(
+                                    GetRulesFilter.newBuilder()
+                                        .setRuleScope(ruleScope1)
+                                        .setDisabled(true)
+                                        .build())
+                                .build())
+                        .getRulesList());
+    assertEquals(List.of(), actualMaliciousSourcesRules);
   }
 
   @Test
@@ -202,7 +222,9 @@ public class MaliciousSourcesConfigServiceIntegrationTest
                 () ->
                     maliciousSourcesConfigServiceBlockingStub
                         .getMaliciousSourcesRules(
-                            GetMaliciousSourcesRulesRequest.getDefaultInstance())
+                            GetMaliciousSourcesRulesRequest.newBuilder()
+                                .setFilter(GetRulesFilter.newBuilder().setDisabled(true))
+                                .build())
                         .getRulesList()
                         .size()));
   }
