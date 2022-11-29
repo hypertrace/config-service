@@ -33,7 +33,6 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.Pa
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 class AttributeRuleBuilder {
@@ -214,37 +213,37 @@ class AttributeRuleBuilder {
                         .setPredicate(
                             buildPredicate(
                                 ComparisonOperator.COMPARISON_OPERATOR_EQUALS,
+                                names,
                                 ComparisonOperator.COMPARISON_OPERATOR_MATCHES_REGEX,
-                                names.stream()
-                                    .map(name -> Pair.of(name, regexValue))
-                                    .collect(Collectors.toList())))
+                                regexValue))
                         .setAttributeRule(childRule)))
         .build();
   }
 
   private Predicate buildPredicate(
       ComparisonOperator nameComparisonOperator,
+      List<String> names,
       ComparisonOperator valueComparisonOperator,
-      List<Pair<String, String>> nameValuePairs) {
+      String value) {
     return Predicate.newBuilder()
         .setLogicalPredicate(
             Predicate.LogicalPredicate.newBuilder()
                 .setOperator(Predicate.LogicalOperator.LOGICAL_OPERATOR_OR)
                 .addAllChildren(
-                    nameValuePairs.stream()
+                    names.stream()
                         .map(
-                            nameValuePair ->
+                            name ->
                                 Predicate.newBuilder()
                                     .setAttributePredicate(
                                         AttributePredicate.newBuilder()
                                             .setNamePredicate(
                                                 StringPredicate.newBuilder()
                                                     .setOperator(nameComparisonOperator)
-                                                    .setValue(nameValuePair.getKey()))
+                                                    .setValue(name))
                                             .setValuePredicate(
                                                 StringPredicate.newBuilder()
                                                     .setOperator(valueComparisonOperator)
-                                                    .setValue(nameValuePair.getValue())))
+                                                    .setValue(value)))
                                     .build())
                         .collect(Collectors.toList()))
                 .build())
