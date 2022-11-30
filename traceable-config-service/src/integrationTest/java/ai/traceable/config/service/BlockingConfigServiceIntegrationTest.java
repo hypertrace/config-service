@@ -46,6 +46,7 @@ import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
+import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleResponse;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
@@ -83,6 +84,9 @@ import ai.traceable.platform.actor.v1.Status;
 import ai.traceable.platform.actor.v1.StatusChangeDetails;
 import ai.traceable.platform.actor.v1.StatusChangeSource;
 import ai.traceable.platform.actor.v1.UpsertActorRequest;
+import ai.traceable.platform.actor.v1.UpsertActorResponse;
+import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
+import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.DetailedRegion;
 import ai.traceable.region.config.service.v1.GetDetailedRegionsRequest;
@@ -94,6 +98,7 @@ import ai.traceable.region.config.service.v1.RegionRuleActionType;
 import ai.traceable.region.config.service.v1.RegionsFilter;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -125,6 +130,8 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
       maliciousSourcesConfigServiceBlockingStub;
   protected static ManagedChannel managedChannelForEntityServiceClient;
   protected static ManagedChannel managedChannelForActorServices;
+  private static final List<String> actorEntityId = new ArrayList<>();
+  private static final List<String> customSignatureRuleId = new ArrayList<>();
 
   @BeforeAll
   static void init() throws InterruptedException {
@@ -185,11 +192,11 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
             .build());
 
     // Need to add actors upfront due to caching
-    createActor(STATUS_ALWAYS_DENIED, 0L, "", true);
-    createActor(STATUS_ALWAYS_ALLOWED, activeTimestamp, ENVIRONMENT_ID, false);
-    createActor(STATUS_SNOOZED, inactiveTimestamp, ENVIRONMENT_ID, false);
-    createActor(STATUS_SUSPENDED, activeTimestamp, "random-env", true);
-    createActor(STATUS_RESOLVED, activeTimestamp, "", false);
+    actorEntityId.add(createActor(STATUS_ALWAYS_DENIED, 0L, "", true));
+    actorEntityId.add(createActor(STATUS_ALWAYS_ALLOWED, activeTimestamp, ENVIRONMENT_ID, false));
+    actorEntityId.add(createActor(STATUS_SNOOZED, inactiveTimestamp, ENVIRONMENT_ID, false));
+    actorEntityId.add(createActor(STATUS_SUSPENDED, activeTimestamp, "random-env", true));
+    actorEntityId.add(createActor(STATUS_RESOLVED, activeTimestamp, "", false));
   }
 
   @AfterAll
@@ -242,8 +249,8 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
     assertEquals(7, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
 
     createRegionRules();
-    createCustomSignatureRule(Optional.empty());
-    createCustomSignatureRule(Optional.of(ENVIRONMENT_ID));
+    customSignatureRuleId.add(createCustomSignatureRule(Optional.empty()));
+    customSignatureRuleId.add(createCustomSignatureRule(Optional.of(ENVIRONMENT_ID)));
     createIpTypeRule(
         Optional.empty(),
         List.of(
@@ -409,6 +416,9 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
     assertEquals(
         BLOCKING_STATUS_SNOOZED, blockingPolicyConfiguration.getBlockingDetailsList(1).getStatus());
     assertEquals(
+        ExemptionInfoEncoder.getEncodedThreatActorExemptionInfo(actorEntityId.get(1)),
+        blockingPolicyConfiguration.getBlockingDetailsList(1).getInfo());
+    assertEquals(
         BLOCKING_RULE_TYPE_ALLOW,
         blockingPolicyConfiguration.getBlockingDetailsList(1).getBlockingRuleType());
     assertEquals(
@@ -421,6 +431,10 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
     assertEquals(
         BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE,
         blockingPolicyConfiguration.getBlockingDetailsList(3).getCategory());
+    assertEquals(
+        ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
+            customSignatureRuleId.get(1), "rule-1", "EVENT_SEVERITY_MEDIUM"),
+        blockingPolicyConfiguration.getBlockingDetailsList(3).getInfo());
     assertEquals(
         BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(3).getStatus());
 
@@ -468,6 +482,10 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
         blockingPolicyConfiguration.getBlockingDetailsList(11).getCategory());
     assertEquals(
         BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(11).getStatus());
+    assertEquals(
+        ViolationInfoEncoder.getEncodedRateLimitViolationInfo(
+            actorEntityId.get(0), "rate-limit-rule-id", "Rate-limit-rule"),
+        blockingPolicyConfiguration.getBlockingDetailsList(11).getInfo());
     assertEquals(
         List.of("197.23.5.0"),
         blockingPolicyConfiguration
@@ -577,41 +595,45 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
                         .build()));
   }
 
-  private void createCustomSignatureRule(Optional<String> environmentId) {
-    RequestContext.forTenantId(TENANT_ID)
-        .call(
-            () ->
-                customSignatureConfigServiceStub.createCustomSignatureRule(
-                    CreateCustomSignatureRuleRequest.newBuilder()
-                        .setName("rule-1")
-                        .setDefinition(
-                            RuleDefinition.newBuilder()
-                                .setClauseGroup(
-                                    ClauseGroup.newBuilder()
-                                        .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
-                                        .addClauses(
-                                            Clause.newBuilder()
-                                                .setMatchExpression(
-                                                    MatchExpression.newBuilder()
-                                                        .setMatchKey(
-                                                            MatchKey.MATCH_KEY_HEADER_VALUE)
-                                                        .setMatchOperator(
-                                                            MatchOperator.MATCH_OPERATOR_CONTAINS)
-                                                        .setMatchValue("anomalous")))))
-                        .setRuleScope(
-                            environmentId
-                                .map(
-                                    id ->
-                                        RuleScope.newBuilder()
-                                            .setEnvironmentScope(
-                                                EnvironmentScope.newBuilder().addEnvironmentIds(id))
-                                            .build())
-                                .orElse(RuleScope.getDefaultInstance()))
-                        .setEffect(
-                            RuleEffect.newBuilder()
-                                .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
-                                .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM))
-                        .build()));
+  private String createCustomSignatureRule(Optional<String> environmentId) {
+    CreateCustomSignatureRuleResponse response =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(
+                () ->
+                    customSignatureConfigServiceStub.createCustomSignatureRule(
+                        CreateCustomSignatureRuleRequest.newBuilder()
+                            .setName("rule-1")
+                            .setDefinition(
+                                RuleDefinition.newBuilder()
+                                    .setClauseGroup(
+                                        ClauseGroup.newBuilder()
+                                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                                            .addClauses(
+                                                Clause.newBuilder()
+                                                    .setMatchExpression(
+                                                        MatchExpression.newBuilder()
+                                                            .setMatchKey(
+                                                                MatchKey.MATCH_KEY_HEADER_VALUE)
+                                                            .setMatchOperator(
+                                                                MatchOperator
+                                                                    .MATCH_OPERATOR_CONTAINS)
+                                                            .setMatchValue("anomalous")))))
+                            .setRuleScope(
+                                environmentId
+                                    .map(
+                                        id ->
+                                            RuleScope.newBuilder()
+                                                .setEnvironmentScope(
+                                                    EnvironmentScope.newBuilder()
+                                                        .addEnvironmentIds(id))
+                                                .build())
+                                    .orElse(RuleScope.getDefaultInstance()))
+                            .setEffect(
+                                RuleEffect.newBuilder()
+                                    .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
+                                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM))
+                            .build()));
+    return response.getRule().getId();
   }
 
   private static void enableBlockingOnAModsecRule(Optional<String> environmentId) {
@@ -682,7 +704,7 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
                         .build()));
   }
 
-  private static void createActor(
+  private static String createActor(
       Status status, Long expiry, String environment, boolean isRateLimit) {
     Builder actorBuilder =
         Actor.newBuilder()
@@ -704,10 +726,12 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
                       .setRuleId("rate-limit-rule-id")));
     }
     Actor actor = actorBuilder.build();
-    RequestContext.forTenantId(TENANT_ID)
-        .call(
-            () ->
-                actorServiceBlockingStub.upsertActor(
-                    UpsertActorRequest.newBuilder().setActor(actor).build()));
+    UpsertActorResponse response =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(
+                () ->
+                    actorServiceBlockingStub.upsertActor(
+                        UpsertActorRequest.newBuilder().setActor(actor).build()));
+    return response.getActor().getEntityId();
   }
 }

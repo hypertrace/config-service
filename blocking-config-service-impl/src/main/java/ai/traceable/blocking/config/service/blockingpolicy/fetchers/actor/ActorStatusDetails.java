@@ -8,6 +8,7 @@ import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_STATUS_CHANG
 import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_STATUS_CHANGE_SOURCE;
 import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_STATUS_EXPIRY_TIMESTAMP;
 
+import ai.traceable.platform.actor.v1.RateLimitDetails;
 import ai.traceable.platform.actor.v1.Status;
 import ai.traceable.platform.actor.v1.StatusChangeDetails;
 import ai.traceable.platform.actor.v1.StatusChangeDetails.Builder;
@@ -102,7 +103,16 @@ class ActorStatusDetails {
     Builder statusChangeDetailsBuilder = StatusChangeDetails.newBuilder();
     try {
       Value statusChangeDetailsValue = actorFieldsMap.get(ACTOR_FIELD_STATUS_CHANGE_DETAILS.name());
-      ConfigProtoConverter.mergeFromValue(statusChangeDetailsValue, statusChangeDetailsBuilder);
+      if (statusChangeDetailsValue != null) {
+        if (parseStatusChangeSource(actorFieldsMap)
+            == StatusChangeSource.STATUS_CHANGE_SOURCE_RATE_LIMIT) {
+          RateLimitDetails.Builder rateLimitDetailsValue = RateLimitDetails.newBuilder();
+          ConfigProtoConverter.mergeFromValue(statusChangeDetailsValue, rateLimitDetailsValue);
+          statusChangeDetailsBuilder.setRateLimitDetails(rateLimitDetailsValue.build());
+        } else {
+          ConfigProtoConverter.mergeFromValue(statusChangeDetailsValue, statusChangeDetailsBuilder);
+        }
+      }
     } catch (Exception e) {
       LOGGER.warn(
           "Cannot parse status-change-value from actor-query struct - {} to proto StatusChangeDetails, error - ",

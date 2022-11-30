@@ -180,21 +180,6 @@ class ActorStoreTest {
             ? StatusChangeSource.STATUS_CHANGE_SOURCE_RATE_LIMIT
             : StatusChangeSource.STATUS_CHANGE_SOURCE_SYSTEM;
     Status status = (n % 2 == 0) ? STATUS_ALWAYS_DENIED : STATUS_ALWAYS_ALLOWED;
-    StatusChangeDetails statusChangeDetails =
-        (n % 2 == 0)
-            ? StatusChangeDetails.newBuilder()
-                .setRateLimitDetails(
-                    RateLimitDetails.newBuilder()
-                        .setRuleId("rate-limit-" + id)
-                        .setRuleName("Name: Rule - " + id))
-                .build()
-            : StatusChangeDetails.newBuilder().setStatusChangeReason("Test reason").build();
-    Value statusChangeDetailsValue = null;
-    try {
-      statusChangeDetailsValue = ConfigProtoConverter.convertToValue(statusChangeDetails);
-    } catch (Exception ignored) {
-    }
-    assert statusChangeDetailsValue != null;
     Builder rowBuilder =
         Struct.newBuilder()
             .putFields(
@@ -226,10 +211,23 @@ class ActorStoreTest {
                 .setStringValue(
                     StatusChangeSourceConverter.convert(statusChangeSource).get().name())
                 .build());
-        rowBuilder.putFields(ACTOR_FIELD_STATUS_CHANGE_DETAILS.name(), statusChangeDetailsValue);
         rowBuilder.putFields(
             ACTOR_FIELD_STATUS_EXPIRY_TIMESTAMP.name(),
             Value.newBuilder().setNumberValue(1000 + n).build());
+        if (n % 2 == 0) {
+          Value statusChangeDetailsValue = null;
+          try {
+            statusChangeDetailsValue =
+                ConfigProtoConverter.convertToValue(
+                    RateLimitDetails.newBuilder()
+                        .setRuleId("rate-limit-" + id)
+                        .setRuleName("Name: Rule - " + id)
+                        .build());
+          } catch (Exception ignored) {
+          }
+          assert statusChangeDetailsValue != null;
+          rowBuilder.putFields(ACTOR_FIELD_STATUS_CHANGE_DETAILS.name(), statusChangeDetailsValue);
+        }
       } else {
         rowBuilder.putFields(ACTOR_FIELD_STATUS_CHANGE_SOURCE.name(), Value.newBuilder().build());
         rowBuilder.putFields(ACTOR_FIELD_STATUS_CHANGE_DETAILS.name(), Value.newBuilder().build());
@@ -257,7 +255,7 @@ class ActorStoreTest {
                         .setRuleId("rate-limit-" + id)
                         .setRuleName("Name: Rule - " + id))
                 .build()
-            : StatusChangeDetails.newBuilder().setStatusChangeReason("Test reason").build();
+            : StatusChangeDetails.getDefaultInstance();
     long expirationTimestampMillis = 1000L + n;
 
     if (missingFields) {

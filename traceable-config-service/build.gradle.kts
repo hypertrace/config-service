@@ -164,6 +164,7 @@ dependencies {
   integrationTestImplementation(projects.sensitiveDataConfigServiceApi)
   integrationTestImplementation(projects.dataClassificationConfigServiceApi)
   integrationTestImplementation(projects.maliciousSourcesConfigServiceApi)
+  integrationTestImplementation(libs.traceable.opaDistributor.api)
 }
 
 application {
