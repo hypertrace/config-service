@@ -40,6 +40,8 @@ import ai.traceable.blocking.config.service.v1.BlockingConfigServiceGrpc.Blockin
 import ai.traceable.blocking.config.service.v1.BlockingPolicyConfiguration;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesRequest;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesResponse;
+import ai.traceable.blocking.config.service.v1.IpType;
+import ai.traceable.blocking.config.service.v1.IpTypeRule;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
@@ -61,6 +63,16 @@ import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc.IpRangeCo
 import ai.traceable.iprange.config.service.v1.IpRangeRuleDetails;
 import ai.traceable.iprange.config.service.v1.RuleAction;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
+import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleRequest;
+import ai.traceable.malicioussources.config.service.v1.IpLocationType;
+import ai.traceable.malicioussources.config.service.v1.IpLocationTypeCondition;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesConfigServiceGrpc;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesConfigServiceGrpc.MaliciousSourcesConfigServiceBlockingStub;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleAction;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleCondition;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleInfo;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleScope;
+import ai.traceable.malicioussources.config.service.v1.RuleActionType;
 import ai.traceable.platform.actor.v1.Actor;
 import ai.traceable.platform.actor.v1.Actor.Builder;
 import ai.traceable.platform.actor.v1.ActorServiceGrpc;
@@ -84,6 +96,8 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.entity.type.service.client.EntityTypeServiceClient;
@@ -107,6 +121,8 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
   private static IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub;
   private static RegionConfigServiceBlockingStub regionConfigServiceStub;
   private static ActorServiceBlockingStub actorServiceBlockingStub;
+  private static MaliciousSourcesConfigServiceBlockingStub
+      maliciousSourcesConfigServiceBlockingStub;
   protected static ManagedChannel managedChannelForEntityServiceClient;
   protected static ManagedChannel managedChannelForActorServices;
 
@@ -134,6 +150,11 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
 
     ipRangeConfigServiceStub =
         IpRangeConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+            .withCallCredentials(
+                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+
+    maliciousSourcesConfigServiceBlockingStub =
+        MaliciousSourcesConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
@@ -205,6 +226,13 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
             .getCustomModsecRulesBlob()
             .isEmpty()); // rules actually empty
 
+    assertEquals(emptyValueUuid, response.getIpTypeBlockingRules().getHash());
+    assertTrue(
+        response
+            .getIpTypeBlockingRules()
+            .getIpTypeRuleListList()
+            .isEmpty()); // rules actually empty
+
     final String modsecCrsBlockingRulesHash = response.getSafeCrsBlockingRules().getHash();
     assertNotEquals(emptyValueUuid, modsecCrsBlockingRulesHash);
     assertFalse(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
@@ -216,6 +244,14 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
     createRegionRules();
     createCustomSignatureRule(Optional.empty());
     createCustomSignatureRule(Optional.of(ENVIRONMENT_ID));
+    createIpTypeRule(
+        Optional.empty(),
+        List.of(
+            IpLocationType.IP_LOCATION_TYPE_BOT, IpLocationType.IP_LOCATION_TYPE_HOSTING_PROVIDER));
+    createIpTypeRule(
+        Optional.of(ENVIRONMENT_ID), List.of(IpLocationType.IP_LOCATION_TYPE_PUBLIC_PROXY));
+    createIpTypeRule(
+        Optional.of(ENVIRONMENT_ID), List.of(IpLocationType.IP_LOCATION_TYPE_TOR_EXIT_NODE));
 
     // Checking without environment
     response =
@@ -227,6 +263,7 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
                             .setRegionBlockingRulesHash(emptyValueUuid)
                             .setCustomModsecBlockingRulesHash(emptyValueUuid)
                             .setSafeCrsBlockingRulesHash(modsecCrsBlockingRulesHash)
+                            .setIpTypeBlockingRulesHash(emptyValueUuid)
                             .setBlockingPolicyConfigurationHash(emptyValueUuid)
                             .build()));
 
@@ -235,6 +272,14 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
 
     assertNotEquals(emptyValueUuid, response.getCustomModsecBlockingRules().getHash());
     assertFalse(response.getCustomModsecBlockingRules().getCustomModsecRulesBlob().isEmpty());
+
+    assertNotEquals(emptyValueUuid, response.getIpTypeBlockingRules().getHash());
+    assertEquals(2, response.getIpTypeBlockingRules().getIpTypeRuleListList().size());
+    assertEquals(
+        Set.of(IpType.IP_TYPE_BOT, IpType.IP_TYPE_HOSTING_PROVIDER),
+        response.getIpTypeBlockingRules().getIpTypeRuleListList().stream()
+            .map(IpTypeRule::getIpType)
+            .collect(Collectors.toSet()));
 
     assertEquals(
         modsecCrsBlockingRulesHash, response.getSafeCrsBlockingRules().getHash()); // not changed
@@ -254,6 +299,7 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
                             .setRegionBlockingRulesHash(emptyValueUuid)
                             .setCustomModsecBlockingRulesHash(emptyValueUuid)
                             .setSafeCrsBlockingRulesHash(modsecCrsBlockingRulesHash)
+                            .setIpTypeBlockingRulesHash(emptyValueUuid)
                             .setBlockingPolicyConfigurationHash(emptyValueUuid)
                             .setEnvironment(ENVIRONMENT_ID)
                             .build()));
@@ -261,6 +307,19 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
     String regionBlockingRulesHash = response.getRegionBlockingRules().getHash();
     assertNotEquals(emptyValueUuid, regionBlockingRulesHash);
     assertEquals(4, response.getRegionBlockingRules().getRegionIpBlockingRulesCount());
+
+    String ipTypeRulesHash = response.getIpTypeBlockingRules().getHash();
+    assertNotEquals(emptyValueUuid, ipTypeRulesHash);
+    assertEquals(4, response.getIpTypeBlockingRules().getIpTypeRuleListList().size());
+    assertEquals(
+        Set.of(
+            IpType.IP_TYPE_PROXY,
+            IpType.IP_TYPE_TOR,
+            IpType.IP_TYPE_BOT,
+            IpType.IP_TYPE_HOSTING_PROVIDER),
+        response.getIpTypeBlockingRules().getIpTypeRuleListList().stream()
+            .map(IpTypeRule::getIpType)
+            .collect(Collectors.toSet()));
 
     String customModsecBlockingRulesHash = response.getCustomModsecBlockingRules().getHash();
     assertNotEquals(emptyValueUuid, customModsecBlockingRulesHash);
@@ -284,6 +343,7 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
                             .setRegionBlockingRulesHash(regionBlockingRulesHash)
                             .setCustomModsecBlockingRulesHash(customModsecBlockingRulesHash)
                             .setSafeCrsBlockingRulesHash(emptyValueUuid)
+                            .setIpTypeBlockingRulesHash(ipTypeRulesHash)
                             .setBlockingPolicyConfigurationHash(blockingPolicyConfigurationHash)
                             .setEnvironment(ENVIRONMENT_ID)
                             .build()));
@@ -291,6 +351,9 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
     assertEquals(
         regionBlockingRulesHash, response.getRegionBlockingRules().getHash()); // not changed
     assertTrue(response.getRegionBlockingRules().getRegionIpBlockingRulesList().isEmpty());
+
+    assertEquals(ipTypeRulesHash, response.getIpTypeBlockingRules().getHash()); // not changed
+    assertTrue(response.getIpTypeBlockingRules().getIpTypeRuleListList().isEmpty());
 
     assertEquals(
         customModsecBlockingRulesHash,
@@ -320,6 +383,7 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
                             .setCustomModsecBlockingRulesHash(customModsecBlockingRulesHash)
                             .setSafeCrsBlockingRulesHash(modsecCrsBlockingRulesHash)
                             .setBlockingPolicyConfigurationHash(blockingPolicyConfigurationHash)
+                            .setIpTypeBlockingRulesHash(ipTypeRulesHash)
                             .setEnvironment(ENVIRONMENT_ID)
                             .build()));
     checkBlockingPolicy(response.getBlockingPolicyConfiguration());
@@ -475,6 +539,42 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
                             .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
                             .build())
                     .getRule());
+  }
+
+  private void createIpTypeRule(
+      Optional<String> environmentId, List<IpLocationType> ipLocationTypeList) {
+    RequestContext.forTenantId(TENANT_ID)
+        .call(
+            () ->
+                maliciousSourcesConfigServiceBlockingStub.createMaliciousSourcesRule(
+                    CreateMaliciousSourcesRuleRequest.newBuilder()
+                        .setRuleInfo(
+                            MaliciousSourcesRuleInfo.newBuilder()
+                                .setName("test-rule")
+                                .setDescription("test-desc")
+                                .setRuleAction(
+                                    MaliciousSourcesRuleAction.newBuilder()
+                                        .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK)
+                                        .setEventSeverity(
+                                            ai.traceable.malicioussources.config.service.v1
+                                                .EventSeverity.EVENT_SEVERITY_HIGH))
+                                .addConditions(
+                                    MaliciousSourcesRuleCondition.newBuilder()
+                                        .setIpLocationTypeCondition(
+                                            IpLocationTypeCondition.newBuilder()
+                                                .addAllIpLocationTypes(ipLocationTypeList))))
+                        .setRuleScope(
+                            environmentId
+                                .map(
+                                    envId ->
+                                        MaliciousSourcesRuleScope.newBuilder()
+                                            .setEnvironmentScope(
+                                                ai.traceable.malicioussources.config.service.v1
+                                                    .EnvironmentScope.newBuilder()
+                                                    .addEnvironmentIds(envId))
+                                            .build())
+                                .orElse(MaliciousSourcesRuleScope.getDefaultInstance()))
+                        .build()));
   }
 
   private void createCustomSignatureRule(Optional<String> environmentId) {

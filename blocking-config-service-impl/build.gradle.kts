@@ -11,6 +11,7 @@ dependencies {
   api(projects.regionConfigServiceApi)
   api(projects.iprangeConfigServiceApi)
   api(projects.rateLimitingConfigServiceApi)
+  api(projects.maliciousSourcesConfigServiceApi)
 
   implementation(libs.traceable.opaDistributor.api)
   implementation(libs.traceable.actorService.api)
@@ -23,6 +24,7 @@ dependencies {
   implementation(libs.protobuf.javautil)
   implementation(libs.typesafe.config)
   implementation(libs.slf4j.api)
+  implementation(libs.commons.csv)
 
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpcutils.client)

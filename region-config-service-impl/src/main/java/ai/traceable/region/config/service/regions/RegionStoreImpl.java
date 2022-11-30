@@ -1,6 +1,6 @@
 package ai.traceable.region.config.service.regions;
 
-import ai.traceable.region.config.service.RegionConfigServiceConfig;
+import ai.traceable.config.utils.refresh.FileRefreshConfig;
 import ai.traceable.region.config.service.v1.DetailedRegion;
 import java.util.Comparator;
 import java.util.List;
@@ -17,11 +17,9 @@ class RegionStoreImpl implements RegionStore {
   private final Supplier<Map<String, Region>> regionIdToRegionMapSupplier;
 
   RegionStoreImpl(
-      RegionBuilder regionBuilder,
-      RegionConverter regionConverter,
-      RegionConfigServiceConfig.CountriesDataConfig dataConfig) {
+      RegionBuilder regionBuilder, RegionConverter regionConverter, FileRefreshConfig dataConfig) {
     this.regionConverter = regionConverter;
-    this.regionIdToRegionMapSupplier = regionBuilder.buildRegions(dataConfig);
+    this.regionIdToRegionMapSupplier = regionBuilder.getLatestDataSupplier(dataConfig);
   }
 
   @Override

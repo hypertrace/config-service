@@ -7,11 +7,14 @@ import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceG
 import ai.traceable.blocking.config.service.blockingmodsec.ModsecBlockingManagerModule;
 import ai.traceable.blocking.config.service.blockingpolicy.BlockingPolicyConfigurationManagerModule;
 import ai.traceable.blocking.config.service.customsignature.CustomModsecBlockingManagerModule;
+import ai.traceable.blocking.config.service.iptype.IpTypeBlockingManagerModule;
 import ai.traceable.blocking.config.service.regions.RegionBlockingManagerModule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc.IpRangeConfigServiceBlockingStub;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesConfigServiceGrpc;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesConfigServiceGrpc.MaliciousSourcesConfigServiceBlockingStub;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceBlockingStub;
 import com.google.inject.AbstractModule;
@@ -45,6 +48,7 @@ class BlockingConfigServiceModule extends AbstractModule {
     install(new CustomModsecBlockingManagerModule());
     install(new ModsecBlockingManagerModule());
     install(new BlockingPolicyConfigurationManagerModule(config));
+    install(new IpTypeBlockingManagerModule(config));
   }
 
   @Provides
@@ -80,6 +84,14 @@ class BlockingConfigServiceModule extends AbstractModule {
   @Provides
   IpRangeConfigServiceBlockingStub providesIpRangeConfigServiceBlockingStub(Channel channel) {
     return IpRangeConfigServiceGrpc.newBlockingStub(channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  MaliciousSourcesConfigServiceBlockingStub providesMaliciousSourcesConfigServiceBlockingStub(
+      Channel channel) {
+    return MaliciousSourcesConfigServiceGrpc.newBlockingStub(channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

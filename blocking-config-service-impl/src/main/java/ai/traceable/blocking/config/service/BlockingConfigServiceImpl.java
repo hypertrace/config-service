@@ -4,6 +4,7 @@ import ai.traceable.blocking.config.service.blockingmodsec.ModsecBlockingManager
 import ai.traceable.blocking.config.service.blockingpolicy.BlockingPolicyConfigurationManager;
 import ai.traceable.blocking.config.service.customsignature.CustomModsecBlockingManager;
 import ai.traceable.blocking.config.service.entity.EntityFetcher;
+import ai.traceable.blocking.config.service.iptype.IpTypeBlockingManager;
 import ai.traceable.blocking.config.service.regions.RegionBlockingManager;
 import ai.traceable.blocking.config.service.v1.BlockingConfigServiceGrpc.BlockingConfigServiceImplBase;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesRequest;
@@ -20,6 +21,7 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
   private final RegionBlockingManager regionBlockingManager;
   private final CustomModsecBlockingManager customModsecBlockingManager;
   private final ModsecBlockingManager modsecBlockingManager;
+  private final IpTypeBlockingManager ipTypeBlockingManager;
   private final BlockingPolicyConfigurationManager blockingPolicyConfigurationManager;
   private final EntityFetcher entityFetcher;
 
@@ -28,11 +30,13 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
       RegionBlockingManager regionBlockingManager,
       CustomModsecBlockingManager customModsecBlockingManager,
       ModsecBlockingManager modsecBlockingManager,
+      IpTypeBlockingManager ipTypeBlockingManager,
       BlockingPolicyConfigurationManager blockingPolicyConfigurationManager,
       EntityFetcher entityFetcher) {
     this.regionBlockingManager = regionBlockingManager;
     this.customModsecBlockingManager = customModsecBlockingManager;
     this.modsecBlockingManager = modsecBlockingManager;
+    this.ipTypeBlockingManager = ipTypeBlockingManager;
     this.blockingPolicyConfigurationManager = blockingPolicyConfigurationManager;
     this.entityFetcher = entityFetcher;
   }
@@ -58,6 +62,10 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
 
       responseBuilder.setSafeCrsBlockingRules(
           modsecBlockingManager.getBlockingRules(request.getSafeCrsBlockingRulesHash()));
+
+      responseBuilder.setIpTypeBlockingRules(
+          ipTypeBlockingManager.getEnabledBlockingRules(
+              requestContext, request.getIpTypeBlockingRulesHash(), environmentId));
 
       responseBuilder.setBlockingPolicyConfiguration(
           blockingPolicyConfigurationManager.getBlockingPolicyConfiguration(

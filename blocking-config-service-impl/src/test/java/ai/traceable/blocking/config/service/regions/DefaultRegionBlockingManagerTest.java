@@ -94,17 +94,6 @@ class DefaultRegionBlockingManagerTest {
                         EnvironmentScope.newBuilder().addEnvironmentIds(environmentId).build())
                     .build())
             .build();
-    CreateRegionRuleRequest disabledRegionRuleRequest =
-        CreateRegionRuleRequest.newBuilder()
-            .setName("rule-4")
-            .addRegionId("region-id-4")
-            .setExpirationDetails(ExpirationDetails.newBuilder().setDuration("P1D").build())
-            .setRuleScope(
-                RuleScope.newBuilder()
-                    .setEnvironmentScope(
-                        EnvironmentScope.newBuilder().addEnvironmentIds(environmentId).build())
-                    .build())
-            .build();
 
     this.regionConfigServiceStub.createRegionRule(expiredRegionRuleRequest);
     this.regionConfigServiceStub.createRegionRule(alwaysActiveRegionRuleRequest);

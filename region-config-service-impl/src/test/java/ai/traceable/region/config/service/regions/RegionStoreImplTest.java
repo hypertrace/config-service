@@ -6,7 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.region.config.service.RegionConfigServiceConfig;
+import ai.traceable.config.utils.refresh.FileRefreshConfig;
 import ai.traceable.region.config.service.v1.DetailedRegion;
 import com.google.common.base.Suppliers;
 import com.typesafe.config.ConfigFactory;
@@ -26,14 +26,15 @@ class RegionStoreImplTest {
   void setup() {
     RegionBuilder regionBuilder = mock(RegionBuilder.class);
     RegionConverter regionConverter = mock(RegionConverter.class);
-    RegionConfigServiceConfig.CountriesDataConfig dataConfig =
-        new RegionConfigServiceConfig.CountriesDataConfig(
+    FileRefreshConfig dataConfig =
+        new FileRefreshConfig(
             ConfigFactory.parseMap(
                 Map.of("mode", "RESOURCE_FILE", "resource.file", "countries.csv")));
 
     when(regionConverter.convert(any(Region.class)))
         .thenReturn(ai.traceable.region.config.service.v1.Region.getDefaultInstance());
-    when(regionBuilder.buildRegions(dataConfig)).thenReturn(Suppliers.memoize(this::mockRegions));
+    when(regionBuilder.getLatestDataSupplier(dataConfig))
+        .thenReturn(Suppliers.memoize(this::mockRegions));
 
     this.regionStore = new RegionStoreImpl(regionBuilder, regionConverter, dataConfig);
   }

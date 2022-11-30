@@ -14,6 +14,8 @@ dependencies {
   implementation(libs.re2j)
   implementation(libs.commons.net)
   implementation(libs.commons.validator)
+  implementation(libs.typesafe.config)
+  implementation(libs.commons.csv)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

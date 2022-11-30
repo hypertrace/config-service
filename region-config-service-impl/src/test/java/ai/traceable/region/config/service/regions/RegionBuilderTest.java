@@ -7,7 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.LastModifiedPathFinder;
-import ai.traceable.region.config.service.RegionConfigServiceConfig;
+import ai.traceable.config.utils.refresh.FileRefreshConfig;
 import ai.traceable.region.config.service.utils.UuidGenerator;
 import com.google.common.base.Joiner;
 import com.typesafe.config.ConfigFactory;
@@ -50,8 +50,8 @@ class RegionBuilderTest {
     when(lastModifiedPathFinder.get(eq(tempDir.toUri()), any())).thenReturn(Optional.of(tempDir));
     Map<String, Region> regionIdToRegionMap =
         this.regionBuilder
-            .buildRegions(
-                new RegionConfigServiceConfig.CountriesDataConfig(
+            .getLatestDataSupplier(
+                new FileRefreshConfig(
                     ConfigFactory.parseMap(
                         Map.of(
                             "mode",
