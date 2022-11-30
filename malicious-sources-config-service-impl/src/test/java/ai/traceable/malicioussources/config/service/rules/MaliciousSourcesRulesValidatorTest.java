@@ -7,6 +7,9 @@ import static org.mockito.Mockito.when;
 import ai.traceable.config.utils.IpAddressParsingUtils;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.DeleteMaliciousSourcesRuleRequest;
+import ai.traceable.malicioussources.config.service.v1.EmailDomainCondition;
+import ai.traceable.malicioussources.config.service.v1.EmailFraudScore;
+import ai.traceable.malicioussources.config.service.v1.EmailFraudScoreLevel;
 import ai.traceable.malicioussources.config.service.v1.EnvironmentScope;
 import ai.traceable.malicioussources.config.service.v1.EventSeverity;
 import ai.traceable.malicioussources.config.service.v1.ExpirationDetails;
@@ -231,6 +234,117 @@ public class MaliciousSourcesRulesValidatorTest {
       Status status =
           rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Status.Code.NOT_FOUND, status.getCode());
+    }
+
+    @Test
+    @DisplayName("Should return not found as email fraud score is empty")
+    void validateCreateMaliciousSourcesRuleRequest_email_fraud_score1() {
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-1")
+              .setDescription("Malicious Sources Rule Test")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setEmailDomainCondition(
+                          EmailDomainCondition.newBuilder()
+                              .setEmailFraudScore(EmailFraudScore.getDefaultInstance())))
+              .build();
+
+      CreateMaliciousSourcesRuleRequest createMaliciousSourcesRuleRequest =
+          CreateMaliciousSourcesRuleRequest.newBuilder()
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .build();
+
+      Status status =
+          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Status.Code.NOT_FOUND, status.getCode());
+    }
+
+    @Test
+    @DisplayName("Should return invalid argument due to unspecified email fraud score level")
+    void validateCreateMaliciousSourcesRuleRequest_email_fraud_score2() {
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-1")
+              .setDescription("Malicious Sources Rule Test")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setEmailDomainCondition(
+                          EmailDomainCondition.newBuilder()
+                              .setEmailFraudScore(
+                                  EmailFraudScore.newBuilder()
+                                      .setMinEmailFraudScoreLevel(
+                                          EmailFraudScoreLevel
+                                              .EMAIL_FRAUD_SCORE_LEVEL_UNSPECIFIED))))
+              .build();
+      CreateMaliciousSourcesRuleRequest createMaliciousSourcesRuleRequest =
+          CreateMaliciousSourcesRuleRequest.newBuilder()
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .build();
+
+      Status status =
+          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName("Should return invalid argument due to min email fraud score <=0")
+    void validateCreateMaliciousSourcesRuleRequest_email_fraud_score3() {
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-1")
+              .setDescription("Malicious Sources Rule Test")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setEmailDomainCondition(
+                          EmailDomainCondition.newBuilder()
+                              .setEmailFraudScore(
+                                  EmailFraudScore.newBuilder().setMinEmailFraudScore(-5))))
+              .build();
+
+      CreateMaliciousSourcesRuleRequest createMaliciousSourcesRuleRequest =
+          CreateMaliciousSourcesRuleRequest.newBuilder()
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .build();
+
+      Status status =
+          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName("Should return invalid argument due to invalid email regex")
+    void validateCreateMaliciousSourcesRuleRequest_email_fraud_score4() {
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-1")
+              .setDescription("Malicious Sources Rule Test")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setEmailDomainCondition(
+                          EmailDomainCondition.newBuilder().addEmailRegexes("in**valid")))
+              .build();
+
+      CreateMaliciousSourcesRuleRequest createMaliciousSourcesRuleRequest =
+          CreateMaliciousSourcesRuleRequest.newBuilder()
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .build();
+
+      Status status =
+          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
     @Test
@@ -889,6 +1003,134 @@ public class MaliciousSourcesRulesValidatorTest {
                       .setInternal(false)
                       .setDisabled(true)
                       .build())
+              .build();
+      UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
+          UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
+      Status status =
+          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName("Should return not found as email fraud score is empty")
+    void validateUpdateMaliciousSourcesRuleRequest_email_fraud_score1() {
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-1")
+              .setDescription("Malicious Sources Rule Test")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setEmailDomainCondition(
+                          EmailDomainCondition.newBuilder()
+                              .setEmailFraudScore(EmailFraudScore.getDefaultInstance())))
+              .build();
+
+      MaliciousSourcesRule maliciousSourcesRule =
+          MaliciousSourcesRule.newBuilder()
+              .setId("First-test")
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .setRuleStatus(
+                  MaliciousSourcesRuleStatus.newBuilder().setInternal(false).setDisabled(true))
+              .build();
+      UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
+          UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
+      Status status =
+          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Status.Code.NOT_FOUND, status.getCode());
+    }
+
+    @Test
+    @DisplayName("Should return invalid argument due to unspecified email fraud score level ")
+    void validateUpdateMaliciousSourcesRuleRequest_email_fraud_score2() {
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-1")
+              .setDescription("Malicious Sources Rule Test")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setEmailDomainCondition(
+                          EmailDomainCondition.newBuilder()
+                              .setEmailFraudScore(
+                                  EmailFraudScore.newBuilder()
+                                      .setMinEmailFraudScoreLevel(
+                                          EmailFraudScoreLevel
+                                              .EMAIL_FRAUD_SCORE_LEVEL_UNSPECIFIED))))
+              .build();
+
+      MaliciousSourcesRule maliciousSourcesRule =
+          MaliciousSourcesRule.newBuilder()
+              .setId("First-test")
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .setRuleStatus(
+                  MaliciousSourcesRuleStatus.newBuilder().setInternal(false).setDisabled(true))
+              .build();
+      UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
+          UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
+      Status status =
+          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName("Should return not found due to min email fraud score <=0")
+    void validateUpdateMaliciousSourcesRuleInfoRequest_email_fraud_score3() {
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-1")
+              .setDescription("Malicious Sources Rule Test")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setEmailDomainCondition(
+                          EmailDomainCondition.newBuilder()
+                              .setEmailFraudScore(
+                                  EmailFraudScore.newBuilder().setMinEmailFraudScore(-5))))
+              .build();
+
+      MaliciousSourcesRule maliciousSourcesRule =
+          MaliciousSourcesRule.newBuilder()
+              .setId("First-test")
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .setRuleStatus(
+                  MaliciousSourcesRuleStatus.newBuilder().setInternal(false).setDisabled(true))
+              .build();
+      UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
+          UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
+      Status status =
+          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName("Should return invalid argument as email regex is not valid")
+    void validateUpdateMaliciousSourcesRuleRequest_email_fraud_score4() {
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-1")
+              .setDescription("Malicious Sources Rule Test")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setEmailDomainCondition(
+                          EmailDomainCondition.newBuilder().addEmailRegexes("in**valid")))
+              .build();
+
+      MaliciousSourcesRule maliciousSourcesRule =
+          MaliciousSourcesRule.newBuilder()
+              .setId("First-test")
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .setRuleStatus(
+                  MaliciousSourcesRuleStatus.newBuilder().setInternal(false).setDisabled(true))
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();

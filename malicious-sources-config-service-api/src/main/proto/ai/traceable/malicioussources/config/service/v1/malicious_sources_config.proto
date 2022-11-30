@@ -48,6 +48,7 @@ message MaliciousSourcesRuleCondition {
     RegionCondition region_condition = 2;
     IpLocationTypeCondition ip_location_type_condition = 3;
     IpReputationCondition ip_reputation_condition = 4;
+    EmailDomainCondition email_domain_condition = 5;
   }
 }
 
@@ -116,4 +117,24 @@ enum IpReputationSeverity {
   IP_REPUTATION_SEVERITY_MEDIUM = 2;
   IP_REPUTATION_SEVERITY_HIGH = 3;
   IP_REPUTATION_SEVERITY_CRITICAL = 4;
+}
+message EmailDomainCondition {
+  optional bool disposable_email_domain = 1;
+  optional bool data_leaked_email = 2;
+  repeated string email_domains = 3;
+  repeated string email_regexes = 4;
+  EmailFraudScore email_fraud_score = 5;
+}
+
+message EmailFraudScore {
+  oneof fraud_score {
+    EmailFraudScoreLevel min_email_fraud_score_level = 1;
+    int32 min_email_fraud_score = 2;
+  }
+}
+
+enum EmailFraudScoreLevel {
+  EMAIL_FRAUD_SCORE_LEVEL_UNSPECIFIED = 0;
+  EMAIL_FRAUD_SCORE_LEVEL_HIGH = 1;
+  EMAIL_FRAUD_SCORE_LEVEL_CRITICAL = 2;
 }

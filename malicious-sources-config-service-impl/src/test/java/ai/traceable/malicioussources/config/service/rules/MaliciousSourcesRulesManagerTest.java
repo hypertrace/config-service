@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleRequest;
+import ai.traceable.malicioussources.config.service.v1.EmailDomainCondition;
 import ai.traceable.malicioussources.config.service.v1.EnvironmentScope;
 import ai.traceable.malicioussources.config.service.v1.EventSeverity;
 import ai.traceable.malicioussources.config.service.v1.ExpirationDetails;
@@ -29,6 +30,7 @@ import ai.traceable.malicioussources.config.service.v1.Region;
 import ai.traceable.malicioussources.config.service.v1.RegionCondition;
 import ai.traceable.malicioussources.config.service.v1.RuleActionType;
 import ai.traceable.malicioussources.config.service.v1.UpdateMaliciousSourcesRuleRequest;
+import com.google.protobuf.Duration;
 import com.google.protobuf.Timestamp;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
@@ -215,8 +217,7 @@ public class MaliciousSourcesRulesManagerTest {
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALERT)
                       .setExpirationDetails(
                           ExpirationDetails.newBuilder()
-                              .setExpirationDuration(
-                                  com.google.protobuf.Duration.newBuilder().setSeconds(10))
+                              .setExpirationDuration(Duration.newBuilder().setSeconds(10))
                               .setExpirationTimestamp(Timestamp.newBuilder().setSeconds(20)))
                       .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL))
               .addConditions(
@@ -236,6 +237,13 @@ public class MaliciousSourcesRulesManagerTest {
                               .setMinIpReputationSeverity(
                                   IpReputationSeverity.IP_REPUTATION_SEVERITY_LOW)
                               .setMinIpReputationScore(1)))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setEmailDomainCondition(
+                          EmailDomainCondition.newBuilder()
+                              .setDisposableEmailDomain(true)
+                              .setDataLeakedEmail(true)
+                              .addEmailDomains("@darkweb.com")))
               .build();
 
       when(uuidGenerator.generateId(anyString())).thenReturn("First-test");
@@ -344,6 +352,13 @@ public class MaliciousSourcesRulesManagerTest {
                               .setMinIpReputationSeverity(
                                   IpReputationSeverity.IP_REPUTATION_SEVERITY_LOW)
                               .setMinIpReputationScore(1)))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setEmailDomainCondition(
+                          EmailDomainCondition.newBuilder()
+                              .setDisposableEmailDomain(true)
+                              .setDataLeakedEmail(true)
+                              .addEmailRegexes(".com")))
               .build();
       MaliciousSourcesRule maliciousSourcesRule =
           MaliciousSourcesRule.newBuilder()

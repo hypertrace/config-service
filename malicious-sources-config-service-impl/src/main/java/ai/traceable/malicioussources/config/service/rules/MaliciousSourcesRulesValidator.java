@@ -3,6 +3,9 @@ package ai.traceable.malicioussources.config.service.rules;
 import ai.traceable.config.utils.IpAddressParsingUtils;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.DeleteMaliciousSourcesRuleRequest;
+import ai.traceable.malicioussources.config.service.v1.EmailDomainCondition;
+import ai.traceable.malicioussources.config.service.v1.EmailFraudScore;
+import ai.traceable.malicioussources.config.service.v1.EmailFraudScoreLevel;
 import ai.traceable.malicioussources.config.service.v1.EventSeverity;
 import ai.traceable.malicioussources.config.service.v1.IpAddressCondition;
 import ai.traceable.malicioussources.config.service.v1.IpLocationType;
@@ -22,6 +25,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import javax.inject.Inject;
 
 public class MaliciousSourcesRulesValidator implements RulesValidator {
@@ -126,6 +131,8 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
         return validate(ruleCondition.getIpRangeCondition());
       case REGION_CONDITION:
         return validate(ruleCondition.getRegionCondition());
+      case EMAIL_DOMAIN_CONDITION:
+        return validate(ruleCondition.getEmailDomainCondition());
       default:
         return Status.INVALID_ARGUMENT.withDescription(
             "MaliciousSourcesRuleCondition should have a valid condition");
@@ -155,24 +162,24 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
   }
 
   private Status validate(IpReputationCondition ipReputationCondition) {
-    if (!ipReputationCondition.hasMinIpReputationScore()
-        && !ipReputationCondition.hasMinIpReputationSeverity()) {
-      return Status.NOT_FOUND.withDescription(
-          "IpReputationCondition in Malicious Sources rule should have either IpReputationScore or IpReputationSeverity");
-    }
-    if (ipReputationCondition.hasMinIpReputationSeverity()
-        && ipReputationCondition.getMinIpReputationSeverity()
+    switch (ipReputationCondition.getReputationCase()) {
+      case MIN_IP_REPUTATION_SCORE:
+        if (ipReputationCondition.getMinIpReputationScore() < 0) {
+          return Status.INVALID_ARGUMENT.withDescription(
+              "IpReputationCondition in Malicious Sources rule should have IpReputationScore > 0");
+        }
+        return Status.OK;
+      case MIN_IP_REPUTATION_SEVERITY:
+        if (ipReputationCondition.getMinIpReputationSeverity()
             == IpReputationSeverity.IP_REPUTATION_SEVERITY_UNSPECIFIED) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "IpReputationCondition in Malicious Sources rule should have a valid IP Reputation Severity");
+          return Status.INVALID_ARGUMENT.withDescription(
+              "IpReputationCondition in Malicious Sources rule should have a valid IP Reputation Severity");
+        }
+        return Status.OK;
+      default:
+        return Status.NOT_FOUND.withDescription(
+            "IpReputationCondition in Malicious Sources rule should have either IpReputationScore or IpReputationSeverity");
     }
-
-    if (ipReputationCondition.hasMinIpReputationScore()
-        && ipReputationCondition.getMinIpReputationScore() < 0) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "IpReputationCondition in Malicious Sources rule should have IpReputationScore > 0");
-    }
-    return Status.OK;
   }
 
   private Status validate(RegionCondition regionCondition) {
@@ -215,6 +222,23 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
     return Status.OK;
   }
 
+  private Status validate(EmailDomainCondition emailDomainCondition) {
+    Status status;
+    if (emailDomainCondition.hasEmailFraudScore()) {
+      status = validate(emailDomainCondition.getEmailFraudScore());
+      if (!status.isOk()) {
+        return status;
+      }
+    }
+    for (String regex : emailDomainCondition.getEmailRegexesList()) {
+      status = validateRegex(regex);
+      if (!status.isOk()) {
+        return status;
+      }
+    }
+    return Status.OK;
+  }
+
   private Status validate(MaliciousSourcesRuleScope scope) {
     if (scope.hasEnvironmentScope()) {
       List<String> environmentIdList = scope.getEnvironmentScope().getEnvironmentIdsList();
@@ -242,6 +266,39 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
           "MaliciousSourcesRuleAction in Malicious Sources rule with action other than ALLOW should have a valid severity");
     }
     return Status.OK;
+  }
+
+  private Status validateRegex(String regexPattern) {
+    // compiling an invalid regex throws PatternSyntaxException
+    try {
+      Pattern.compile(regexPattern);
+      return Status.OK;
+    } catch (PatternSyntaxException e) {
+      return Status.INVALID_ARGUMENT
+          .withCause(e)
+          .withDescription("Invalid Regex Value for the Email Domain Condition");
+    }
+  }
+
+  private Status validate(EmailFraudScore emailFraudScore) {
+    switch (emailFraudScore.getFraudScoreCase()) {
+      case MIN_EMAIL_FRAUD_SCORE:
+        if (emailFraudScore.getMinEmailFraudScore() < 0) {
+          return Status.INVALID_ARGUMENT.withDescription(
+              "EmailDomainCondition Malicious Sources rule should have EmailFraudScore > 0");
+        }
+        return Status.OK;
+      case MIN_EMAIL_FRAUD_SCORE_LEVEL:
+        if (emailFraudScore.getMinEmailFraudScoreLevel()
+            == EmailFraudScoreLevel.EMAIL_FRAUD_SCORE_LEVEL_UNSPECIFIED) {
+          return Status.INVALID_ARGUMENT.withDescription(
+              "EmailDomainCondition Malicious Sources rule should have a valid EmailFraudScoreLevel");
+        }
+        return Status.OK;
+      default:
+        return Status.NOT_FOUND.withDescription(
+            "EmailDomainCondition Malicious Sources rule should have either min EmailFraudScore or EmailFraudScoreLevel");
+    }
   }
 
   private boolean isDuplicateBlockAllExceptCreate(
