@@ -188,17 +188,17 @@ traceableConfigServiceConfig:
       mode: VERSIONS_DIR
       resourceFile: ipqs/countries.csv
       versions: |-
-        versionsDir = /var/data/models/ipqs/country_csv
-        versionsFileName = countries.csv
-        versionsRefreshDuration = 24h
+        versions.dir = /var/data/models/ipqs/country_csv
+        versions.file.name = countries.csv
+        versions.refresh.duration = 24h
   blockingConfigService:
     iptype:
       mode: VERSIONS_DIR
       resourceFile: iptype/empty_highrisk.csv
       versions: |-
-        versionsDir = /var/data/models/ipqs/highrisk_csv
-        versionsFileName = highrisk.csv
-        versionsRefreshDuration = 24h
+        versions.dir = /var/data/models/ipqs/highrisk_csv
+        versions.file.name = highrisk.csv
+        versions.refresh.duration = 24h
   featureFlagServiceConfig:
     host: feature-flag-service
     port: 51001
