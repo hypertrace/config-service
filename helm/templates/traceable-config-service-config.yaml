@@ -88,6 +88,15 @@ data:
       }
       shouldPublishActivityEvents = true
     }
+    blocking.config.service.iptype {
+      mode = {{ .Values.traceableConfigServiceConfig.blockingConfigService.iptype.mode }}
+      {{- if .Values.traceableConfigServiceConfig.blockingConfigService.iptype.resourceFile }}
+      resource.file = {{ .Values.traceableConfigServiceConfig.blockingConfigService.iptype.resourceFile }}
+      {{- end }}
+      {{- if .Values.traceableConfigServiceConfig.blockingConfigService.iptype.versions }}
+      {{ .Values.traceableConfigServiceConfig.blockingConfigService.iptype.versions | nindent 6 }}
+      {{- end }}
+    }
     api.naming.config {
       trieModels = {
         {{- if $.Values.trieModels.modelStores }}

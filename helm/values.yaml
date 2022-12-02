@@ -185,11 +185,19 @@ traceableConfigServiceConfig:
       mode: RESOURCE_FILE
       resourceFile: neustar/countries.csv
     ipqs:
-      mode: RESOURCE_FILE # TODO: switch to VERSIONS_DIR after cron job stabilizes
+      mode: VERSIONS_DIR
       resourceFile: ipqs/countries.csv
       versions: |-
         versionsDir = /var/data/models/ipqs/country_csv
         versionsFileName = countries.csv
+        versionsRefreshDuration = 24h
+  blockingConfigService:
+    iptype:
+      mode: VERSIONS_DIR
+      resourceFile: iptype/empty_highrisk.csv
+      versions: |-
+        versionsDir = /var/data/models/ipqs/highrisk_csv
+        versionsFileName = highrisk.csv
         versionsRefreshDuration = 24h
   featureFlagServiceConfig:
     host: feature-flag-service
