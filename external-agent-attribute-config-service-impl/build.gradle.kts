@@ -7,6 +7,7 @@ plugins {
 dependencies {
   api(projects.externalAgentAttributeConfigServiceApi)
   api(libs.typesafe.config)
+  api(projects.featureCachingClient)
   implementation(projects.userAttributionConfigServiceApi)
   implementation(libs.guice)
   implementation(libs.slf4j.api)
@@ -23,6 +24,7 @@ dependencies {
   testImplementation(libs.mockito.core)
   testImplementation(libs.mockito.junit)
   testImplementation(libs.protobuf.javautil)
+  testImplementation(testFixtures(libs.hypertrace.configservice.api))
 }
 
 tasks.test {

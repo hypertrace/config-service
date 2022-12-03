@@ -2,6 +2,7 @@ package ai.traceable.external.agent.attribute.config.service;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.external.agent.attribute.config.service.translator.ExternalAgentAttributeRuleTranslator;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.external.agent.attribute.config.service.v1.ExternalAgentAttributeConfigServiceGrpc.ExternalAgentAttributeConfigServiceImplBase;
@@ -28,15 +29,18 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
   private final UserAttributionConfigServiceBlockingStub userAttributionRuleStub;
   private final ExternalAgentAttributeRuleTranslator ruleTranslator;
   private final ExternalAgentAttributeRuleResponseBuilder responseBuilder;
+  private final FeatureCachingClient featureCachingClient;
 
   @Inject
   ExternalAgentAttributeConfigServiceImpl(
       UserAttributionConfigServiceBlockingStub userAttributionRuleStub,
       ExternalAgentAttributeRuleTranslator ruleTranslator,
-      ExternalAgentAttributeRuleResponseBuilder responseBuilder) {
+      ExternalAgentAttributeRuleResponseBuilder responseBuilder,
+      FeatureCachingClient featureCachingClient) {
     this.userAttributionRuleStub = userAttributionRuleStub;
     this.ruleTranslator = ruleTranslator;
     this.responseBuilder = responseBuilder;
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
@@ -45,10 +49,15 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
       StreamObserver<GetAgentAttributeRulesResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
+      if (!this.featureCachingClient.isUserAttributionV2Enabled(requestContext)) {
+        responseObserver.onNext(this.responseBuilder.buildDisabledResponse());
+        responseObserver.onCompleted();
+        return;
+      }
       List<AttributeRule> rules =
           this.ruleTranslator.translateRules(
               fetchActiveUserAttributionRules(requestContext, request));
-      responseObserver.onNext(this.responseBuilder.buildResponse(request, rules));
+      responseObserver.onNext(this.responseBuilder.buildEnabledResponse(request, rules));
       responseObserver.onCompleted();
     } catch (Exception exception) {
       log.error("Unable to get rules", exception);

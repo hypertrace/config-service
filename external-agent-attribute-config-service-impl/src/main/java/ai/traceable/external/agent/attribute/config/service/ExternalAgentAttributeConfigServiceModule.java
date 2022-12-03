@@ -1,5 +1,6 @@
 package ai.traceable.external.agent.attribute.config.service;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.external.agent.attribute.config.service.translator.BasicAuthRuleTranslator;
 import ai.traceable.external.agent.attribute.config.service.translator.CustomJsonRuleTranslator;
 import ai.traceable.external.agent.attribute.config.service.translator.CustomTokenRuleTranslator;
@@ -19,14 +20,18 @@ import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProvide
 
 class ExternalAgentAttributeConfigServiceModule extends AbstractModule {
   private final Channel channel;
+  private final FeatureCachingClient featureCachingClient;
 
-  ExternalAgentAttributeConfigServiceModule(Channel channel) {
+  ExternalAgentAttributeConfigServiceModule(
+      Channel channel, FeatureCachingClient featureCachingClient) {
     this.channel = channel;
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
   protected void configure() {
     bind(BindableService.class).to(ExternalAgentAttributeConfigServiceImpl.class);
+    bind(FeatureCachingClient.class).toInstance(this.featureCachingClient);
 
     Multibinder<RuleTranslator> multibinder =
         Multibinder.newSetBinder(binder(), RuleTranslator.class);

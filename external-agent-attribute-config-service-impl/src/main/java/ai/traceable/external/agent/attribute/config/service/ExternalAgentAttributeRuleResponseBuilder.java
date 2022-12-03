@@ -16,16 +16,20 @@ class ExternalAgentAttributeRuleResponseBuilder {
     this.uuidGenerator = uuidGenerator;
   }
 
-  GetAgentAttributeRulesResponse buildResponse(
+  GetAgentAttributeRulesResponse buildEnabledResponse(
       GetAgentAttributeRulesRequest request, List<AttributeRule> rules) {
     String responseHash = this.uuidGenerator.generateId(rules);
     GetAgentAttributeRulesResponse.Builder responseBuilder =
-        GetAgentAttributeRulesResponse.newBuilder().setHash(responseHash);
+        GetAgentAttributeRulesResponse.newBuilder().setHash(responseHash).setEnabled(true);
 
     if (!responseHash.equals(request.getFilter().getPreviousHash())) {
       responseBuilder.addAllAgentAttributeRules(rules);
     }
 
     return responseBuilder.build();
+  }
+
+  GetAgentAttributeRulesResponse buildDisabledResponse() {
+    return GetAgentAttributeRulesResponse.newBuilder().setEnabled(false).build();
   }
 }

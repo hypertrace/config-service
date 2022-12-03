@@ -32,4 +32,5 @@ message GetAgentAttributeRulesResponse {
   repeated AttributeRule agent_attribute_rules = 1;
   string hash = 2;
   google.protobuf.Duration refresh_after_duration = 3;
+  bool enabled = 4;
 }
