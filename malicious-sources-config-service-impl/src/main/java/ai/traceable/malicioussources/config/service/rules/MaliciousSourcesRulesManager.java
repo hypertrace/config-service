@@ -2,10 +2,14 @@ package ai.traceable.malicioussources.config.service.rules;
 
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleRequest;
+import ai.traceable.malicioussources.config.service.v1.ExpirationDetails;
 import ai.traceable.malicioussources.config.service.v1.GetRulesFilter;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleInfo;
 import ai.traceable.malicioussources.config.service.v1.UpdateMaliciousSourcesRuleRequest;
+import com.google.protobuf.util.Timestamps;
 import io.grpc.Status;
+import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -18,12 +22,16 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class MaliciousSourcesRulesManager implements RulesManager {
   private final MaliciousSourcesRulesStore maliciousSourcesRulesStore;
   private final UuidGenerator uuidGenerator;
+  private Clock clock;
 
   @Inject
   public MaliciousSourcesRulesManager(
-      MaliciousSourcesRulesStore maliciousSourcesRulesStore, UuidGenerator uuidGenerator) {
+      MaliciousSourcesRulesStore maliciousSourcesRulesStore,
+      UuidGenerator uuidGenerator,
+      Clock clock) {
     this.maliciousSourcesRulesStore = maliciousSourcesRulesStore;
     this.uuidGenerator = uuidGenerator;
+    this.clock = clock;
   }
 
   @Override
@@ -45,7 +53,7 @@ public class MaliciousSourcesRulesManager implements RulesManager {
         MaliciousSourcesRule.newBuilder()
             .setId(ruleId)
             .setRuleScope(createRuleRequest.getRuleScope())
-            .setRuleInfo(createRuleRequest.getRuleInfo())
+            .setRuleInfo(parseRuleInfo(createRuleRequest.getRuleInfo()))
             .build();
 
     return upsertObject(requestContext, maliciousSourcesRule);
@@ -62,8 +70,10 @@ public class MaliciousSourcesRulesManager implements RulesManager {
                   "Unable to update as Malicious Sources rule with id = %s does not exist", ruleId))
           .asRuntimeException();
     }
+    MaliciousSourcesRule.Builder builder = updateRuleRequest.getRule().toBuilder();
+    builder.setRuleInfo(parseRuleInfo(updateRuleRequest.getRule().getRuleInfo()));
 
-    return upsertObject(requestContext, updateRuleRequest.getRule());
+    return upsertObject(requestContext, builder.build());
   }
 
   @Override
@@ -83,5 +93,24 @@ public class MaliciousSourcesRulesManager implements RulesManager {
   private MaliciousSourcesRule upsertObject(
       RequestContext requestContext, MaliciousSourcesRule maliciousSourcesRule) {
     return maliciousSourcesRulesStore.upsertObject(requestContext, maliciousSourcesRule).getData();
+  }
+
+  private MaliciousSourcesRuleInfo parseRuleInfo(
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo) {
+    ExpirationDetails expirationDetails =
+        maliciousSourcesRuleInfo.getRuleAction().getExpirationDetails();
+    if (expirationDetails.hasExpirationDuration() && !expirationDetails.hasExpirationTimestamp()) {
+
+      MaliciousSourcesRuleInfo.Builder builder = maliciousSourcesRuleInfo.toBuilder();
+      builder
+          .getRuleActionBuilder()
+          .getExpirationDetailsBuilder()
+          .setExpirationTimestamp(
+              Timestamps.add(
+                  Timestamps.fromMillis(clock.millis()),
+                  expirationDetails.getExpirationDuration()));
+      return builder.build();
+    }
+    return maliciousSourcesRuleInfo;
   }
 }

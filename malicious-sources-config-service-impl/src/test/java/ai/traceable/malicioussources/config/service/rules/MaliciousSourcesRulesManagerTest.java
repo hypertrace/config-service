@@ -33,6 +33,7 @@ import ai.traceable.malicioussources.config.service.v1.UpdateMaliciousSourcesRul
 import com.google.protobuf.Duration;
 import com.google.protobuf.Timestamp;
 import io.grpc.StatusRuntimeException;
+import java.time.Clock;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -55,6 +56,7 @@ public class MaliciousSourcesRulesManagerTest {
   private MaliciousSourcesRulesManager rulesManager;
   private RequestContext requestContext;
   private MaliciousSourcesRulesStore maliciousSourcesRulesStore;
+  private Clock clock;
 
   @BeforeEach
   void setUp() {
@@ -64,11 +66,13 @@ public class MaliciousSourcesRulesManagerTest {
     ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     uuidGenerator = mock(UuidGenerator.class);
+    clock = mock(Clock.class);
 
     maliciousSourcesRulesStore =
         new MaliciousSourcesRulesStore(
             configServiceBlockingStub, mock(ConfigChangeEventGenerator.class));
-    this.rulesManager = new MaliciousSourcesRulesManager(maliciousSourcesRulesStore, uuidGenerator);
+    this.rulesManager =
+        new MaliciousSourcesRulesManager(maliciousSourcesRulesStore, uuidGenerator, clock);
     requestContext = RequestContext.forTenantId("default tenant");
   }
 
@@ -262,6 +266,50 @@ public class MaliciousSourcesRulesManagerTest {
                   .build());
 
       assertNotNull(maybeCreatedMaliciousSourcesRule);
+      assertEquals(maliciousSourcesRule, maybeCreatedMaliciousSourcesRule);
+    }
+
+    @Test
+    @DisplayName("should be able to create expiration timestamp when not present")
+    void shouldCreateMaliciousRule_withTimeStamp() {
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-1")
+              .setDescription("Malicious Sources Rule Test")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_ALERT)
+                      .setExpirationDetails(
+                          ExpirationDetails.newBuilder()
+                              .setExpirationDuration(Duration.newBuilder().setSeconds(10))))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setIpLocationTypeCondition(
+                          IpLocationTypeCondition.newBuilder()
+                              .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN)))
+              .build();
+
+      when(uuidGenerator.generateId(anyString())).thenReturn("First-test");
+      when(clock.millis()).thenReturn(1000L);
+      MaliciousSourcesRule maybeCreatedMaliciousSourcesRule =
+          rulesManager.createMaliciousSourcesRule(
+              requestContext,
+              CreateMaliciousSourcesRuleRequest.newBuilder()
+                  .setRuleInfo(maliciousSourcesRuleInfo)
+                  .setRuleScope(ruleScope)
+                  .build());
+      MaliciousSourcesRuleInfo.Builder builder = maliciousSourcesRuleInfo.toBuilder();
+      builder
+          .getRuleActionBuilder()
+          .getExpirationDetailsBuilder()
+          .setExpirationTimestamp(Timestamp.newBuilder().setSeconds(11));
+      assertNotNull(maybeCreatedMaliciousSourcesRule);
+      MaliciousSourcesRule maliciousSourcesRule =
+          MaliciousSourcesRule.newBuilder()
+              .setId("First-test")
+              .setRuleScope(ruleScope)
+              .setRuleInfo(builder.build())
+              .build();
       assertEquals(maliciousSourcesRule, maybeCreatedMaliciousSourcesRule);
     }
   }
