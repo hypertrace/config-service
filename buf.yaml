@@ -28,6 +28,7 @@ build:
     - traceable-span-processing-config-service-api/src/main/proto
     - api-spec-config-service-api/src/main/proto
     - auth-detection-config-service-api/src/main/proto
+    - ast-scan-profile-config-service-api/src/main/proto
 lint:
   use:
     - DEFAULT

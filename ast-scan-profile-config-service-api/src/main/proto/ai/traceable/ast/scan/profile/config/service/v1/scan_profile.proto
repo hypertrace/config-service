@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package ai.traceable.ast.scan.profile.config.service.v1;
+
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+
+message ScanProfile {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  ScanProfileConfiguration profile_configuration = 4;
+}
+
+message ScanProfileConfiguration {
+  repeated string plugin_names = 1;
+  SelectionRules selection_rules = 2;
+  string include_url_regex = 3;
+  string exclude_url_regex = 4;
+  string exclude_fqn_regex = 5;
+  string include_fqn_regex = 6;
+  repeated string plugin_categories = 7;
+}
+
+message SelectionRules {
+  repeated Selection include_selection_rule = 1;
+  repeated Selection exclude_selection_rule = 2;
+}
+message Selection {
+  SelectionType selection_type = 1;
+  repeated string selection_values = 2;
+  repeated MethodType method_types = 3;
+  repeated ProtocolType protocol_types = 4;
+  repeated ApiType api_types = 5;
+}
+enum SelectionType {
+  SELECTION_TYPE_UNSPECIFIED = 0;
+  SELECTION_TYPE_ENDPOINT = 1;
+  SELECTION_TYPE_SERVICE = 2;
+  SELECTION_TYPE_LABEL = 3;
+  SELECTION_TYPE_DOMAIN = 4;
+}
+enum MethodType {
+  METHOD_TYPE_UNSPECIFIED = 0;
+  METHOD_TYPE_GET = 1;
+  METHOD_TYPE_PUT = 2;
+  METHOD_TYPE_POST = 3;
+  METHOD_TYPE_DELETE = 4;
+  METHOD_TYPE_QUERY = 5;
+  METHOD_TYPE_MUTATION = 6;
+  METHOD_TYPE_SUBSCRIPTION = 7;
+}
+enum ProtocolType {
+  PROTOCOL_TYPE_UNSPECIFIED = 0;
+  PROTOCOL_TYPE_HTTP = 1;
+  PROTOCOL_TYPE_HTTPS = 2;
+  PROTOCOL_TYPE_RPC = 3;
+}
+enum ApiType {
+  API_TYPE_UNSPECIFIED = 0;
+  API_TYPE_REST = 1;
+  API_TYPE_GRAPHQL = 2;
+  API_TYPE_GRPC = 3;
+  API_TYPE_SOAP = 4;
+}
