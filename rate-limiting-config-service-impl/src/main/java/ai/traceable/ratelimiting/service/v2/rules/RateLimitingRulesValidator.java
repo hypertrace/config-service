@@ -286,8 +286,18 @@ public class RateLimitingRulesValidator implements RulesValidator {
   }
 
   private void validateUserAgentCondition(UserAgentCondition userAgentCondition) {
-    validateNonDefaultPresenceOrThrow(
-        userAgentCondition, UserAgentCondition.USER_AGENTS_FIELD_NUMBER);
+    List<String> userAgents = userAgentCondition.getUserAgentsList();
+    List<String> userAgentRegexes = userAgentCondition.getUserAgentRegexesList();
+    if (userAgents.isEmpty() && userAgentRegexes.isEmpty()) {
+      throwInvalidArgumentException(
+          String.format(
+              "Invalid condition for type %s:%n %s",
+              getName(userAgentCondition), printMessage(userAgentCondition)));
+    }
+
+    if (!userAgentRegexes.isEmpty()) {
+      userAgentRegexes.forEach(this::validateRegex);
+    }
   }
 
   private void validateIpConnectionTypeCondition(

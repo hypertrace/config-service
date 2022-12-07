@@ -172,6 +172,7 @@ message EmailDomainCondition {
 
 message UserAgentCondition {
   repeated string user_agents = 1;
+  repeated string user_agent_regexes = 2;
 }
 
 message ThresholdActionConfig {

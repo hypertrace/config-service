@@ -608,6 +608,7 @@ public class RateLimitingRulesValidatorTest {
                                             .setUserAgentCondition(
                                                 UserAgentCondition.newBuilder()
                                                     .addUserAgents("agent")
+                                                    .addUserAgentRegexes("userAgent.*")
                                                     .build())
                                             .build())
                                     .build())
