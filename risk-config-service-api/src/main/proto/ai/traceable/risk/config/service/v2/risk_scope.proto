@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package ai.traceable.risk.config.service.v2;
+
+option java_multiple_files = true;
+
+message RiskConfigScope {
+  oneof scope { // default is customer scope (all environments)
+    EnvironmentScope environment_scope = 1;
+  }
+}
+
+message EnvironmentScope {
+  string environment_id = 1;
+}

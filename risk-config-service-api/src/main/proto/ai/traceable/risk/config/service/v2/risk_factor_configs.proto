@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package ai.traceable.risk.config.service.v2;
+
+option java_multiple_files = true;
+
+import "ai/traceable/risk/config/service/v2/risk_element_configs.proto";
+import "ai/traceable/risk/config/service/v2/risk_scope.proto";
+
+message RiskContributorConfigs {
+  repeated RiskFactor risk_factors = 1;
+}
+
+message RiskFactor {
+  RiskFactorConfig risk_factor_config = 1;
+  RiskFactorInfo risk_factor_info = 2; // info is not persisted in DB
+}
+
+message RiskFactorConfig {
+  RiskFactorCategory risk_factor_category = 1;
+  bool disabled = 2;
+  repeated RiskElementConfig risk_element_configs = 3;
+  RiskConfigScope risk_config_scope = 4;
+}
+
+message RiskFactorInfo {
+  RiskContributorCategory risk_contributor_category = 1;
+  bool is_default = 2;
+}
+
+enum RiskContributorCategory {
+  RISK_CONTRIBUTOR_CATEGORY_UNSPECIFIED = 0;
+  RISK_CONTRIBUTOR_CATEGORY_LIKELIHOOD = 1;
+  RISK_CONTRIBUTOR_CATEGORY_IMPACT = 2;
+}
+
+enum RiskFactorCategory {
+  RISK_FACTOR_CATEGORY_UNSPECIFIED = 0;
+  RISK_FACTOR_CATEGORY_EASE_OF_ACCESS = 1;
+  RISK_FACTOR_CATEGORY_VULNERABILITY = 2;
+  RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY = 3;
+  RISK_FACTOR_CATEGORY_SENSITIVE_DATA_EXPOSURE = 4;
+  RISK_FACTOR_CATEGORY_BLAST_RADIUS = 5;
+  RISK_FACTOR_CATEGORY_LABELS = 6;
+}

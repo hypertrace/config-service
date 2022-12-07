@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package ai.traceable.risk.config.service.v2;
+
+option java_multiple_files = true;
+
+import "ai/traceable/risk/config/service/v2/risk_config_request_response.proto";
+
+
+service RiskConfigService {
+
+  rpc GetRiskScoringGridConfig (GetRiskScoringGridConfigRequest) returns (GetRiskScoringGridConfigResponse) {
+  }
+
+  rpc UpdateRiskScoringGridConfig (UpdateRiskScoringGridConfigRequest) returns (UpdateRiskScoringGridConfigResponse) {
+  }
+
+  rpc ResetRiskScoringGridConfig (ResetRiskScoringGridConfigRequest) returns (ResetRiskScoringGridConfigResponse) {
+  }
+
+  rpc GetRiskContributorConfigs (GetRiskContributorConfigsRequest) returns (GetRiskContributorConfigsResponse) {
+  }
+
+  rpc UpdateRiskContributorConfigs (UpdateRiskContributorConfigsRequest) returns (UpdateRiskContributorConfigsResponse) {
+  }
+
+  rpc ResetRiskContributorConfigs (ResetRiskContributorConfigsRequest) returns (ResetRiskContributorConfigsResponse) {
+  }
+}

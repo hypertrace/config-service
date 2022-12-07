@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package ai.traceable.risk.config.service.v2;
+
+option java_multiple_files = true;
+
+message RiskElementConfig {
+  string id = 1;
+  RiskElementPredicate risk_element_predicate = 2;
+  RiskElementScoring risk_element_scoring = 3;
+}
+
+message RiskElementPredicate {
+  oneof type {
+    StringPredicate external_unencrypted_auth_category = 1;
+    StringPredicate external_encrypted_auth_category = 2;
+    StringPredicate internal_unencrypted_auth_category = 3;
+    StringPredicate internal_encrypted_auth_category = 4;
+    StringPredicate path_param_type = 5;
+    StringPredicate vulnerability_severity = 6;
+    StringPredicate response_sensitivity = 7;
+    IntPredicate dependent_apis = 8;
+    IntPredicate third_party_apis = 9;
+    StringPredicate label_id = 10;
+  }
+}
+
+message RiskElementScoring {
+   int32 score = 1;
+}
+
+message IntPredicate {
+  IntOperator operator = 1;
+  int64 value = 2;
+}
+
+message StringPredicate {
+  StringOperator operator = 1;
+  string value = 2;
+}
+
+enum StringOperator {
+  STRING_OPERATOR_UNSPECIFIED = 0;
+  STRING_OPERATOR_EQUALS = 1;
+  STRING_OPERATOR_NOT_EQUALS = 2;
+  STRING_OPERATOR_CONTAINS = 3;
+  STRING_OPERATOR_NOT_CONTAINS = 4;
+}
+
+enum IntOperator {
+  INT_OPERATOR_UNSPECIFIED = 0;
+  INT_OPERATOR_EQUALS = 1;
+  INT_OPERATOR_NOT_EQUALS = 2;
+  INT_OPERATOR_LESS_THAN = 3;
+  INT_OPERATOR_LESS_THAN_EQUALS = 4;
+  INT_OPERATOR_GREATER_THAN = 5;
+  INT_OPERATOR_GREATER_THAN_EQUALS = 6;
+}

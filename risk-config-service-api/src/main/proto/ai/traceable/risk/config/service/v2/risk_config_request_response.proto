@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package ai.traceable.risk.config.service.v2;
+
+option java_multiple_files = true;
+
+import "ai/traceable/risk/config/service/v2/risk_scoring_configs.proto";
+import "ai/traceable/risk/config/service/v2/risk_factor_configs.proto";
+import "ai/traceable/risk/config/service/v2/risk_element_configs.proto";
+import "ai/traceable/risk/config/service/v2/risk_scope.proto";
+
+message GetRiskScoringGridConfigRequest {
+  RiskConfigScope risk_config_scope = 1;
+}
+
+message GetRiskScoringGridConfigResponse {
+  RiskScoringGridConfig risk_scoring_grid_config = 1;
+  RiskLevelConfigValues risk_level_config_values = 2;
+}
+
+message UpdateRiskScoringGridConfigRequest {
+  RiskConfigScope risk_config_scope = 1;
+  repeated RiskScoringGridCell risk_scoring_grid_cells = 2;
+}
+
+message UpdateRiskScoringGridConfigResponse {
+  RiskScoringGridConfig risk_scoring_grid_config = 1;
+  RiskLevelConfigValues risk_level_config_values = 2;
+}
+
+message ResetRiskScoringGridConfigRequest {
+  RiskConfigScope risk_config_scope = 1;
+}
+
+message ResetRiskScoringGridConfigResponse {
+  RiskScoringGridConfig risk_scoring_grid_config = 1;
+  RiskLevelConfigValues risk_level_config_values = 2;
+}
+
+message GetRiskContributorConfigsRequest {
+  RiskConfigScope risk_config_scope = 1;
+}
+
+message GetRiskContributorConfigsResponse {
+  RiskContributorConfigs risk_configs = 1;
+}
+
+message UpdateRiskContributorConfigsRequest {
+  RiskConfigScope risk_config_scope = 1;
+  repeated RiskFactorConfigUpdateDetails risk_factor_config_update_details = 2;
+}
+
+message UpdateRiskContributorConfigsResponse {
+  RiskContributorConfigs risk_configs = 1;
+}
+
+message RiskFactorConfigUpdateDetails {
+  RiskFactorCategory risk_factor_category = 1;
+  oneof update {
+    bool disabled = 2;
+    RiskElementConfigUpdates risk_element_config_updates = 3;
+  }
+}
+
+message RiskElementConfigUpdates {
+  repeated RiskElementConfigUpdateDetails risk_element_config_update_details = 1;
+}
+
+message RiskElementConfigUpdateDetails {
+  string id = 1;
+  RiskElementScoring risk_element_scoring = 2;
+}
+
+message ResetRiskContributorConfigsRequest {
+  RiskConfigScope risk_config_scope = 1;
+  repeated RiskFactorCategory risk_factor_categories = 2;
+}
+
+message ResetRiskContributorConfigsResponse {
+  RiskContributorConfigs risk_configs = 1;
+}
