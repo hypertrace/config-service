@@ -8,8 +8,15 @@ import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.CustomModsecDetectionRules;
 import com.google.inject.Inject;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class DefaultCustomModsecDetectionManager implements CustomModsecDetectionManager {
+  private static final CustomModsecDetectionRules EMPTY_MODSEC_RULES =
+      CustomModsecDetectionRules.newBuilder()
+          .setCustomModsecDetectionRulesBlob("")
+          .setHash(UuidGenerator.EMPTY_STRING_UUID)
+          .build();
+
   private final CustomSignatureConfigServiceBlockingStub configServiceBlockingStub;
   private final UuidGenerator uuidGenerator;
 
@@ -22,7 +29,8 @@ public class DefaultCustomModsecDetectionManager implements CustomModsecDetectio
   }
 
   @Override
-  public CustomModsecDetectionRules getEnabledRules(String requestHash) {
+  public CustomModsecDetectionRules getEnabledRules(
+      RequestContext requestContext, String requestHash) {
     GetCustomSignatureModsecRulesResponse response =
         configServiceBlockingStub.getCustomSignatureModsecRules(
             GetCustomSignatureModsecRulesRequest.newBuilder()
@@ -32,15 +40,20 @@ public class DefaultCustomModsecDetectionManager implements CustomModsecDetectio
                         .setDisabled(false)
                         .build())
                 .build());
+    String customModSecRulesBlob = response.getModsecRulesBlob();
 
-    String responseHash = uuidGenerator.generateId(response.getModsecRulesBlob());
+    String responseHash = uuidGenerator.generateId(customModSecRulesBlob);
 
     CustomModsecDetectionRules.Builder customModsecBlockingRulesBuilder =
         CustomModsecDetectionRules.newBuilder().setHash(responseHash);
     if (!responseHash.equals(requestHash)) {
-      customModsecBlockingRulesBuilder.setCustomModsecDetectionRulesBlob(
-          response.getModsecRulesBlob());
+      customModsecBlockingRulesBuilder.setCustomModsecDetectionRulesBlob(customModSecRulesBlob);
     }
     return customModsecBlockingRulesBuilder.build();
+  }
+
+  @Override
+  public CustomModsecDetectionRules getEmptyRules() {
+    return EMPTY_MODSEC_RULES;
   }
 }

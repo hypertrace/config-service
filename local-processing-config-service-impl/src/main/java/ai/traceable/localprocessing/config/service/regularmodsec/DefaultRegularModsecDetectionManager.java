@@ -8,8 +8,15 @@ import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.RegularModsecDetectionRules;
 import com.google.inject.Inject;
 import java.util.List;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
-class DefaultRegularModsecDetectionManager implements RegularModsecDetectionManager {
+public class DefaultRegularModsecDetectionManager implements RegularModsecDetectionManager {
+  private static final RegularModsecDetectionRules EMPTY_MODSEC_RULES =
+      RegularModsecDetectionRules.newBuilder()
+          .setRegularModsecDetectionRulesBlob("")
+          .setHash(UuidGenerator.EMPTY_STRING_UUID)
+          .build();
+
   private final AnomalyModsecConfigServiceBlockingStub configServiceBlockingStub;
   private final UuidGenerator uuidGenerator;
 
@@ -22,18 +29,18 @@ class DefaultRegularModsecDetectionManager implements RegularModsecDetectionMana
   }
 
   @Override
-  public RegularModsecDetectionRules getDetectionRules(String requestHash) {
+  public RegularModsecDetectionRules getDetectionRules(
+      RequestContext requestContext, String requestHash) {
     // https://traceableai.atlassian.net/browse/ENG-15496
-    // Only Safe CRS rules will be evaluated on sensitive params on Traceable Platform Agent due to
-    // perf constraints
+    // Only Safe CRS rules will be evaluated on sensitive params on Traceable Platform Agent due
+    // to perf constraints
+    String regularCrsRulesBlob;
     GetModsecCrsRulesResponse response =
         configServiceBlockingStub.getModsecCrsRules(
             GetModsecCrsRulesRequest.newBuilder()
                 .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
                 .setRemoveDisabledRules(true)
                 .build());
-
-    String regularCrsRulesBlob;
     if (response.getModsecCrsRulesList().size() == 1
         && response.getModsecCrsRulesList().get(0).getSubRuleType()
             == AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE) {
@@ -50,5 +57,10 @@ class DefaultRegularModsecDetectionManager implements RegularModsecDetectionMana
       builder.setRegularModsecDetectionRulesBlob(regularCrsRulesBlob);
     }
     return builder.build();
+  }
+
+  @Override
+  public RegularModsecDetectionRules getEmptyRules() {
+    return EMPTY_MODSEC_RULES;
   }
 }

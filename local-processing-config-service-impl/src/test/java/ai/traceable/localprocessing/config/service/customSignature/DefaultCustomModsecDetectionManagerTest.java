@@ -3,15 +3,18 @@ package ai.traceable.localprocessing.config.service.customsignature;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRuleDetails;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.CustomModsecDetectionRules;
 import java.util.List;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -23,6 +26,10 @@ class DefaultCustomModsecDetectionManagerTest {
   @BeforeEach
   void setup() {
     configServiceBlockingStub = mock(CustomSignatureConfigServiceBlockingStub.class);
+    FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
+    when(featureCachingClient.isTpaModSecProcessingDisabled(
+            argThat(requestContext -> "tenant1".equals(requestContext.getTenantId().orElse("")))))
+        .thenReturn(true);
     uuidGenerator = new UuidGenerator();
     customModsecDetectionManager =
         new DefaultCustomModsecDetectionManager(configServiceBlockingStub, uuidGenerator);
@@ -45,20 +52,25 @@ class DefaultCustomModsecDetectionManagerTest {
     when(configServiceBlockingStub.getCustomSignatureModsecRules(any())).thenReturn(stubResponse);
 
     // When hash does not match we expect the blob
-    assertEquals(expectedModsecDetectionRules, customModsecDetectionManager.getEnabledRules(""));
+    assertEquals(
+        expectedModsecDetectionRules,
+        customModsecDetectionManager.getEnabledRules(RequestContext.forTenantId("test"), ""));
 
     // When hash matches we don't expect the blob
     assertEquals(
         CustomModsecDetectionRules.newBuilder()
             .setHash(uuidGenerator.generateId("Tester rule blob"))
             .build(),
-        customModsecDetectionManager.getEnabledRules(uuidGenerator.generateId("Tester rule blob")));
+        customModsecDetectionManager.getEnabledRules(
+            RequestContext.forTenantId("test"), uuidGenerator.generateId("Tester rule blob")));
   }
 
   @Test
   void propagateErrors() {
     when(configServiceBlockingStub.getCustomSignatureModsecRules(any()))
         .thenThrow(RuntimeException.class);
-    assertThrows(RuntimeException.class, () -> customModsecDetectionManager.getEnabledRules(""));
+    assertThrows(
+        RuntimeException.class,
+        () -> customModsecDetectionManager.getEnabledRules(RequestContext.forTenantId("test"), ""));
   }
 }

@@ -3,6 +3,7 @@ package ai.traceable.localprocessing.config.service;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.mock;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.inject.Guice;
 import com.typesafe.config.Config;
 import io.grpc.Channel;
@@ -16,12 +17,16 @@ class LocalProcessingConfigServiceModuleTest {
     Config mockConfig = mock(Config.class);
     ConfigChangeEventGenerator mockConfigChangeEventGenerator =
         mock(ConfigChangeEventGenerator.class);
+    FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
 
     assertDoesNotThrow(
         () ->
             Guice.createInjector(
                     new LocalProcessingConfigServiceModule(
-                        mockChannel, mockConfig, mockConfigChangeEventGenerator))
+                        mockChannel,
+                        mockConfig,
+                        mockConfigChangeEventGenerator,
+                        featureCachingClient))
                 .getAllBindings());
   }
 }

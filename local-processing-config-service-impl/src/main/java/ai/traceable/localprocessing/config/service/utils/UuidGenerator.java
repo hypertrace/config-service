@@ -13,6 +13,9 @@ public class UuidGenerator {
   private static final UUID NAMESPACE_UUID =
       UUID.fromString("5088c92d-5e9c-43f4-a35b-2589474d5642");
 
+  public static final String EMPTY_STRING_UUID =
+      UuidCreator.getNameBasedSha1(NAMESPACE_UUID, "").toString();
+
   private final String emptyValueUuid = generateId(new byte[0]);
 
   public String generateId(String value) {

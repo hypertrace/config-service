@@ -1,5 +1,6 @@
 package ai.traceable.localprocessing.config.service;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.localprocessing.config.service.apinaming.http.HttpApiNamingManagerModule;
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinatorModule;
 import ai.traceable.localprocessing.config.service.customsignature.CustomModsecDetectionManagerModule;
@@ -20,11 +21,17 @@ public class LocalProcessingConfigServiceModule extends AbstractModule {
   private final Config config;
   private final ConfigChangeEventGenerator configChangeEventGenerator;
 
+  private final FeatureCachingClient featureCachingClient;
+
   public LocalProcessingConfigServiceModule(
-      Channel channel, Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
+      Channel channel,
+      Config config,
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      FeatureCachingClient featureCachingClient) {
     this.channel = channel;
     this.config = config;
     this.configChangeEventGenerator = configChangeEventGenerator;
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
@@ -32,6 +39,7 @@ public class LocalProcessingConfigServiceModule extends AbstractModule {
     bind(BindableService.class).to(LocalProcessingConfigServiceImpl.class);
     bind(Channel.class).toInstance(channel);
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
+    bind(FeatureCachingClient.class).toInstance(this.featureCachingClient);
     install(new ConfigServiceCoordinatorModule());
     install(new CustomModsecDetectionManagerModule());
     install(new RegularModsecDetectionManagerModule());

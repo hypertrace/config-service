@@ -1,5 +1,6 @@
 package ai.traceable.localprocessing.config.service;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.localprocessing.config.service.apinaming.http.HttpApiNamingManager;
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinator;
 import ai.traceable.localprocessing.config.service.customsignature.CustomModsecDetectionManager;
@@ -35,6 +36,7 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
   private final SpanProcessingRulesManager spanProcessingRulesManager;
   private final UuidGenerator uuidGenerator;
   private final LocalProcessingConfigRequestValidator localProcessingConfigRequestValidator;
+  private final FeatureCachingClient featureCachingClient;
 
   @Inject
   public LocalProcessingConfigServiceImpl(
@@ -44,7 +46,8 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
       HttpApiNamingManager httpApiNamingManager,
       SpanProcessingRulesManager spanProcessingRulesManager,
       UuidGenerator uuidGenerator,
-      LocalProcessingConfigRequestValidator localProcessingConfigRequestValidator) {
+      LocalProcessingConfigRequestValidator localProcessingConfigRequestValidator,
+      FeatureCachingClient featureCachingClient) {
     this.configServiceCoordinator = configServiceCoordinator;
     this.regularModsecDetectionManager = regularModsecDetectionManager;
     this.customModsecDetectionManager = customModsecDetectionManager;
@@ -52,6 +55,7 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
     this.spanProcessingRulesManager = spanProcessingRulesManager;
     this.uuidGenerator = uuidGenerator;
     this.localProcessingConfigRequestValidator = localProcessingConfigRequestValidator;
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
@@ -60,19 +64,26 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
       StreamObserver<GetLocalProcessingConfigResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      responseObserver.onNext(
+      GetLocalProcessingConfigResponse.Builder responseBuilder =
           GetLocalProcessingConfigResponse.newBuilder()
               .setProtectionModeConfig(
                   getProtectionModeConfig(request.getProtectionModeHash(), requestContext))
-              .setCustomModsecDetectionRules(
-                  customModsecDetectionManager.getEnabledRules(
-                      request.getCustomModsecDetectionRulesHash()))
-              .setRegularModsecDetectionRules(
-                  regularModsecDetectionManager.getDetectionRules(
-                      request.getRegularModsecDetectionRulesHash()))
               .setSamplingPolicies(getSamplingPoliciesConfig(request.getSamplingPoliciesHash()))
-              .setModsecConfig(configServiceCoordinator.getModsecConfig())
-              .build());
+              .setModsecConfig(configServiceCoordinator.getModsecConfig());
+      if (featureCachingClient.isTpaModSecProcessingDisabled(requestContext)) {
+        responseBuilder
+            .setCustomModsecDetectionRules(customModsecDetectionManager.getEmptyRules())
+            .setRegularModsecDetectionRules(regularModsecDetectionManager.getEmptyRules());
+      } else {
+        responseBuilder
+            .setCustomModsecDetectionRules(
+                customModsecDetectionManager.getEnabledRules(
+                    requestContext, request.getCustomModsecDetectionRulesHash()))
+            .setRegularModsecDetectionRules(
+                regularModsecDetectionManager.getDetectionRules(
+                    requestContext, request.getRegularModsecDetectionRulesHash()));
+      }
+      responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Get Local Processing Config RPC failed for request:{}", request, e);

@@ -31,17 +31,21 @@ public class FeatureCachingClient {
   private static final boolean DEFAULT_DATA_CLASSIFICATION_RP2_FLAG_VALUE = false;
   private static final boolean DEFAULT_IPQS_ENABLED_VALUE = false;
   private static final boolean DEFAULT_USER_ATTRIBUTION_V2_FLAG_VALUE = false;
+  private static final boolean DEFAULT_TPA_MODSEC_PROCESSING_DISABLED = false;
   private static final String DATA_CLASSIFICATION_RP1_FLAG = "data-classification.mvp";
   private static final String DATA_CLASSIFICATION_RP2_FLAG = "data-classification.rp2";
   private static final String IPQS_ENABLED_FLAG = "enricher.ipqs-ip-intelligence";
   // Flag is no longer UI-only and has been renamed, but key can't be changed without creating anew
   private static final String USER_ATTRIBUTION_V2_FLAG = "ui.user-attribution-v2";
+
+  private static final String TPA_MODSEC_PROCESSING_DISABLED = "tpa.modsec-processing-disabled";
   private static final List<String> ALL_FLAGS_TO_FETCH =
       List.of(
           DATA_CLASSIFICATION_RP1_FLAG,
           DATA_CLASSIFICATION_RP2_FLAG,
           IPQS_ENABLED_FLAG,
-          USER_ATTRIBUTION_V2_FLAG);
+          USER_ATTRIBUTION_V2_FLAG,
+          TPA_MODSEC_PROCESSING_DISABLED);
   private final FeatureFlagServiceBlockingStub featureFlagStub;
   private final LoadingCache<ContextualKey<Void>, Map<String, Boolean>> featureFlagCache;
   private final Duration featureFlagRequestTimeout;
@@ -113,6 +117,19 @@ public class FeatureCachingClient {
     } catch (Exception exception) {
       log.warn("Failed to retrieve current feature flag value for User Attribution V2", exception);
       return DEFAULT_USER_ATTRIBUTION_V2_FLAG_VALUE;
+    }
+  }
+
+  public boolean isTpaModSecProcessingDisabled(RequestContext requestContext) {
+    try {
+      return requireNonNull(
+          this.featureFlagCache
+              .get(requestContext.buildInternalContextualKey())
+              .get(TPA_MODSEC_PROCESSING_DISABLED));
+    } catch (Exception exception) {
+      log.warn(
+          "Failed to retrieve current feature flag value for TPA ModSec Processing", exception);
+      return DEFAULT_TPA_MODSEC_PROCESSING_DISABLED;
     }
   }
 
