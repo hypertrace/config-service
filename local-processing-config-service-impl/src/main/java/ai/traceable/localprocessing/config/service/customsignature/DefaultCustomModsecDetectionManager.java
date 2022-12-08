@@ -32,14 +32,17 @@ public class DefaultCustomModsecDetectionManager implements CustomModsecDetectio
   public CustomModsecDetectionRules getEnabledRules(
       RequestContext requestContext, String requestHash) {
     GetCustomSignatureModsecRulesResponse response =
-        configServiceBlockingStub.getCustomSignatureModsecRules(
-            GetCustomSignatureModsecRulesRequest.newBuilder()
-                .setFilter(
-                    GetRulesFilter.newBuilder()
-                        .addEventTypes(EventType.EVENT_TYPE_NORMAL_DETECTION)
-                        .setDisabled(false)
-                        .build())
-                .build());
+        requestContext.call(
+            () ->
+                configServiceBlockingStub.getCustomSignatureModsecRules(
+                    GetCustomSignatureModsecRulesRequest.newBuilder()
+                        .setFilter(
+                            GetRulesFilter.newBuilder()
+                                .addEventTypes(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                                .setDisabled(false)
+                                .build())
+                        .build()));
+
     String customModSecRulesBlob = response.getModsecRulesBlob();
 
     String responseHash = uuidGenerator.generateId(customModSecRulesBlob);

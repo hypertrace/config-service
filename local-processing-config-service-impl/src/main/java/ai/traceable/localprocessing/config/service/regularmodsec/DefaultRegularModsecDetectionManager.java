@@ -36,11 +36,13 @@ public class DefaultRegularModsecDetectionManager implements RegularModsecDetect
     // to perf constraints
     String regularCrsRulesBlob;
     GetModsecCrsRulesResponse response =
-        configServiceBlockingStub.getModsecCrsRules(
-            GetModsecCrsRulesRequest.newBuilder()
-                .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
-                .setRemoveDisabledRules(true)
-                .build());
+        requestContext.call(
+            () ->
+                configServiceBlockingStub.getModsecCrsRules(
+                    GetModsecCrsRulesRequest.newBuilder()
+                        .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
+                        .setRemoveDisabledRules(true)
+                        .build()));
     if (response.getModsecCrsRulesList().size() == 1
         && response.getModsecCrsRulesList().get(0).getSubRuleType()
             == AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE) {
