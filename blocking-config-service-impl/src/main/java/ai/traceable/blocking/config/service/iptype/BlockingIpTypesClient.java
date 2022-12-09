@@ -9,6 +9,7 @@ import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesConfigSer
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleScope;
 import ai.traceable.malicioussources.config.service.v1.RuleActionType;
+import com.google.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class BlockingIpTypesClient {
+  private final MaliciousSourcesConfigServiceBlockingStub maliciousSourcesConfigServiceBlockingStub;
   private static final Map<IpLocationType, IpType> ipTypeMapping =
       Map.of(
           IpLocationType.IP_LOCATION_TYPE_BOT,
@@ -30,10 +32,14 @@ public class BlockingIpTypesClient {
           IpLocationType.IP_LOCATION_TYPE_TOR_EXIT_NODE,
           IpType.IP_TYPE_TOR);
 
-  public List<IpType> getBlockingIpTypes(
-      MaliciousSourcesConfigServiceBlockingStub maliciousSourcesConfigServiceBlockingStub,
-      RequestContext requestContext,
-      Optional<String> environmentId) {
+  @Inject
+  public BlockingIpTypesClient(
+      MaliciousSourcesConfigServiceBlockingStub maliciousSourcesConfigServiceBlockingStub) {
+    this.maliciousSourcesConfigServiceBlockingStub = maliciousSourcesConfigServiceBlockingStub;
+  }
+
+  public List<MaliciousSourcesRule> fetchMaliciousSourceRules(
+      RequestContext requestContext, Optional<String> environmentId) {
     GetMaliciousSourcesRulesRequest rulesRequest =
         GetMaliciousSourcesRulesRequest.newBuilder()
             .setFilter(
@@ -52,16 +58,14 @@ public class BlockingIpTypesClient {
                                     .orElse(EnvironmentScope.getDefaultInstance()))))
             .build();
 
-    List<MaliciousSourcesRule> rulesList =
-        requestContext
-            .call(
-                () ->
-                    maliciousSourcesConfigServiceBlockingStub.getMaliciousSourcesRules(
-                        rulesRequest))
-            .getRulesList();
+    return requestContext
+        .call(
+            () -> maliciousSourcesConfigServiceBlockingStub.getMaliciousSourcesRules(rulesRequest))
+        .getRulesList();
+  }
 
-    return rulesList.stream()
-        .flatMap(rule -> rule.getRuleInfo().getConditionsList().stream())
+  public static List<IpType> getBlockingIpTypes(MaliciousSourcesRule maliciousSourcesRule) {
+    return maliciousSourcesRule.getRuleInfo().getConditionsList().stream()
         .flatMap(
             condition -> condition.getIpLocationTypeCondition().getIpLocationTypesList().stream())
         .distinct()

@@ -7,6 +7,7 @@ import static ai.traceable.blocking.config.service.v1.BlockingRuleType.BLOCKING_
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.ActorBasedDataFetcher;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.CustomIpBasedDataFetcher;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.CustomSignatureDataFetcher;
+import ai.traceable.blocking.config.service.blockingpolicy.fetchers.IpTypeDataFetcher;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.ModsecDataFetcher;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.RegionDataFetcher;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.ActorBasedRulesCollection;
@@ -32,6 +33,7 @@ public class DefaultBlockingPolicyConfigurationManager
   private final CustomSignatureDataFetcher customSignatureDataFetcher;
   private final ModsecDataFetcher modsecDataFetcher;
   private final RegionDataFetcher regionDataFetcher;
+  private final IpTypeDataFetcher ipTypeDataFetcher;
   private final UuidGenerator uuidGenerator;
 
   @Inject
@@ -41,12 +43,14 @@ public class DefaultBlockingPolicyConfigurationManager
       CustomSignatureDataFetcher customSignatureDataFetcher,
       ModsecDataFetcher modsecDataFetcher,
       RegionDataFetcher regionDataFetcher,
+      IpTypeDataFetcher ipTypeDataFetcher,
       UuidGenerator uuidGenerator) {
     this.actorBasedDataFetcher = actorBasedDataFetcher;
     this.customIpBasedDataFetcher = customIpBasedDataFetcher;
     this.customSignatureDataFetcher = customSignatureDataFetcher;
     this.modsecDataFetcher = modsecDataFetcher;
     this.regionDataFetcher = regionDataFetcher;
+    this.ipTypeDataFetcher = ipTypeDataFetcher;
     this.uuidGenerator = uuidGenerator;
   }
 
@@ -93,6 +97,7 @@ public class DefaultBlockingPolicyConfigurationManager
     List<BlockingDetails> customSignatureViolation =
         customSignatureRulesMap.get(BLOCKING_RULE_TYPE_BLOCK);
 
+    // Modsec
     List<BlockingDetails> modsecViolation =
         modsecDataFetcher.getModsecViolations(requestContext, environmentId);
 
@@ -113,6 +118,10 @@ public class DefaultBlockingPolicyConfigurationManager
         regionBasedRulesMap.get(BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT);
     List<BlockingDetails> regionViolation = regionBasedRulesMap.get(BLOCKING_RULE_TYPE_BLOCK);
 
+    // Ip-type
+    List<BlockingDetails> ipTypeViolation =
+        ipTypeDataFetcher.getIpTypeViolations(requestContext, environmentId);
+
     // TODO: cleaner way to enforce ordering
     /*
      Rules follow the precedence mentioned here
@@ -126,6 +135,7 @@ public class DefaultBlockingPolicyConfigurationManager
             "custom-ip-based-block-all-except",
             "custom-ip-based-violation",
             "threat-actor-violation",
+            "ip-type-violation",
             "region-block-all-except",
             "region-violation",
             "rate-limit-violation"
@@ -139,6 +149,7 @@ public class DefaultBlockingPolicyConfigurationManager
             customIpBasedBlockAllExcept,
             customIpBasedViolation,
             threatActorViolation,
+            ipTypeViolation,
             regionBlockAllExcept,
             regionViolation,
             rateLimitViolation)

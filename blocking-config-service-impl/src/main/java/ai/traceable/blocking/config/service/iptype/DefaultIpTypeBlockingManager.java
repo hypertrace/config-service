@@ -5,7 +5,7 @@ import ai.traceable.blocking.config.service.v1.IpTypeBlockingRules;
 import ai.traceable.blocking.config.service.v1.IpTypeRule;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.config.utils.refresh.FileRefreshConfig;
-import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesConfigServiceGrpc.MaliciousSourcesConfigServiceBlockingStub;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Optional;
@@ -16,7 +16,6 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class DefaultIpTypeBlockingManager implements IpTypeBlockingManager {
 
   Supplier<List<IpTypeRule>> ipTypeRules;
-  private final MaliciousSourcesConfigServiceBlockingStub maliciousSourcesConfigServiceBlockingStub;
   private final UuidGenerator uuidGenerator;
   private final BlockingIpTypesClient blockingIpTypesClient;
 
@@ -24,11 +23,9 @@ public class DefaultIpTypeBlockingManager implements IpTypeBlockingManager {
   public DefaultIpTypeBlockingManager(
       FileRefreshConfig ipTypeBlockingManagerConfig,
       IpTypeRulesLoader ipTypeRulesLoader,
-      MaliciousSourcesConfigServiceBlockingStub maliciousSourcesConfigServiceBlockingStub,
       UuidGenerator uuidGenerator,
       BlockingIpTypesClient blockingIpTypesClient) {
     this.ipTypeRules = ipTypeRulesLoader.getLatestDataSupplier(ipTypeBlockingManagerConfig);
-    this.maliciousSourcesConfigServiceBlockingStub = maliciousSourcesConfigServiceBlockingStub;
     this.uuidGenerator = uuidGenerator;
     this.blockingIpTypesClient = blockingIpTypesClient;
   }
@@ -37,9 +34,15 @@ public class DefaultIpTypeBlockingManager implements IpTypeBlockingManager {
   public IpTypeBlockingRules getEnabledBlockingRules(
       RequestContext requestContext, String requestHash, Optional<String> environmentId) {
 
+    List<MaliciousSourcesRule> maliciousSourcesRules =
+        blockingIpTypesClient.fetchMaliciousSourceRules(requestContext, environmentId);
     List<IpType> blockingIpTypes =
-        blockingIpTypesClient.getBlockingIpTypes(
-            maliciousSourcesConfigServiceBlockingStub, requestContext, environmentId);
+        maliciousSourcesRules.stream()
+            .flatMap(
+                maliciousSourcesRule ->
+                    BlockingIpTypesClient.getBlockingIpTypes(maliciousSourcesRule).stream())
+            .distinct()
+            .collect(Collectors.toUnmodifiableList());
 
     List<IpTypeRule> ipTypeBlockingRules =
         ipTypeRules.get().stream()

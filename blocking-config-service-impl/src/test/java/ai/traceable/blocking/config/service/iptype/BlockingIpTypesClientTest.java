@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +38,8 @@ class BlockingIpTypesClientTest {
 
   @Test
   void getBlockingIpTypes() {
-    BlockingIpTypesClient fetcher = new BlockingIpTypesClient();
+    BlockingIpTypesClient fetcher =
+        new BlockingIpTypesClient(maliciousSourcesConfigServiceBlockingStub);
     mockMaliciousSourcesConfigService.addRule(
         "1",
         List.of(IpLocationType.IP_LOCATION_TYPE_HOSTING_PROVIDER),
@@ -79,27 +81,39 @@ class BlockingIpTypesClientTest {
             .build());
 
     List<IpType> ipTypes =
-        fetcher.getBlockingIpTypes(
-            maliciousSourcesConfigServiceBlockingStub,
-            RequestContext.forTenantId("tenantId"),
-            Optional.empty());
+        fetcher
+            .fetchMaliciousSourceRules(RequestContext.forTenantId("tenantId"), Optional.empty())
+            .stream()
+            .flatMap(
+                maliciousSourcesRule ->
+                    BlockingIpTypesClient.getBlockingIpTypes(maliciousSourcesRule).stream())
+            .distinct()
+            .collect(Collectors.toUnmodifiableList());
     assertEquals(
         Set.of(IpType.IP_TYPE_PROXY, IpType.IP_TYPE_HOSTING_PROVIDER), new HashSet<>(ipTypes));
 
     ipTypes =
-        fetcher.getBlockingIpTypes(
-            maliciousSourcesConfigServiceBlockingStub,
-            RequestContext.forTenantId("tenantId"),
-            Optional.of("env-1"));
+        fetcher
+            .fetchMaliciousSourceRules(RequestContext.forTenantId("tenantId"), Optional.of("env-1"))
+            .stream()
+            .flatMap(
+                maliciousSourcesRule ->
+                    BlockingIpTypesClient.getBlockingIpTypes(maliciousSourcesRule).stream())
+            .distinct()
+            .collect(Collectors.toUnmodifiableList());
     assertEquals(
         Set.of(IpType.IP_TYPE_VPN, IpType.IP_TYPE_PROXY, IpType.IP_TYPE_HOSTING_PROVIDER),
         new HashSet<>(ipTypes));
 
     ipTypes =
-        fetcher.getBlockingIpTypes(
-            maliciousSourcesConfigServiceBlockingStub,
-            RequestContext.forTenantId("tenantId"),
-            Optional.of("env-2"));
+        fetcher
+            .fetchMaliciousSourceRules(RequestContext.forTenantId("tenantId"), Optional.of("env-2"))
+            .stream()
+            .flatMap(
+                maliciousSourcesRule ->
+                    BlockingIpTypesClient.getBlockingIpTypes(maliciousSourcesRule).stream())
+            .distinct()
+            .collect(Collectors.toUnmodifiableList());
     assertEquals(
         Set.of(
             IpType.IP_TYPE_BOT,

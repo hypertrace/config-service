@@ -103,7 +103,7 @@ class ActorStatusDetails {
     Builder statusChangeDetailsBuilder = StatusChangeDetails.newBuilder();
     try {
       Value statusChangeDetailsValue = actorFieldsMap.get(ACTOR_FIELD_STATUS_CHANGE_DETAILS.name());
-      if (statusChangeDetailsValue != null) {
+      if (statusChangeDetailsValue != null && statusChangeDetailsValue.hasStructValue()) {
         if (parseStatusChangeSource(actorFieldsMap)
             == StatusChangeSource.STATUS_CHANGE_SOURCE_RATE_LIMIT) {
           RateLimitDetails.Builder rateLimitDetailsValue = RateLimitDetails.newBuilder();

@@ -12,7 +12,11 @@ import ai.traceable.blocking.config.service.v1.IpTypeRule;
 import ai.traceable.blocking.config.service.v1.IpV4Range;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.config.utils.refresh.FileRefreshConfig;
-import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesConfigServiceGrpc.MaliciousSourcesConfigServiceBlockingStub;
+import ai.traceable.malicioussources.config.service.v1.IpLocationType;
+import ai.traceable.malicioussources.config.service.v1.IpLocationTypeCondition;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleCondition;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleInfo;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -37,17 +41,25 @@ class DefaultIpTypeBlockingManagerTest {
                 .build());
     Supplier<List<IpTypeRule>> ipTypeRuleSupplier = () -> ipTypeRuleList;
 
-    when(blockingIpTypesClient.getBlockingIpTypes(any(), any(), any()))
-        .thenReturn(List.of(IpType.IP_TYPE_BOT, IpType.IP_TYPE_HOSTING_PROVIDER));
+    when(blockingIpTypesClient.fetchMaliciousSourceRules(any(), any()))
+        .thenReturn(
+            List.of(
+                MaliciousSourcesRule.newBuilder()
+                    .setRuleInfo(
+                        MaliciousSourcesRuleInfo.newBuilder()
+                            .addConditions(
+                                MaliciousSourcesRuleCondition.newBuilder()
+                                    .setIpLocationTypeCondition(
+                                        IpLocationTypeCondition.newBuilder()
+                                            .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_BOT)
+                                            .addIpLocationTypes(
+                                                IpLocationType.IP_LOCATION_TYPE_HOSTING_PROVIDER))))
+                    .build()));
     when(ipTypeRulesLoader.getLatestDataSupplier(any())).thenReturn(ipTypeRuleSupplier);
 
     DefaultIpTypeBlockingManager manager =
         new DefaultIpTypeBlockingManager(
-            config,
-            ipTypeRulesLoader,
-            mock(MaliciousSourcesConfigServiceBlockingStub.class),
-            new UuidGenerator(),
-            blockingIpTypesClient);
+            config, ipTypeRulesLoader, new UuidGenerator(), blockingIpTypesClient);
 
     IpTypeBlockingRules rules =
         manager.getEnabledBlockingRules(

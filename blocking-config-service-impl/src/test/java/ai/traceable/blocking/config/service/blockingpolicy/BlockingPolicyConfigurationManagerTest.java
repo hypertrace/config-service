@@ -3,6 +3,7 @@ package ai.traceable.blocking.config.service.blockingpolicy;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_CUSTOM_IP_RULE;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_CUSTOM_REGION_RULE;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE;
+import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_MODSECURITY;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_RATE_LIMIT;
 import static ai.traceable.blocking.config.service.v1.BlockingRuleType.BLOCKING_RULE_TYPE_ALLOW;
@@ -17,6 +18,7 @@ import static org.mockito.Mockito.mock;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.ActorBasedDataFetcher;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.CustomIpBasedDataFetcher;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.CustomSignatureDataFetcher;
+import ai.traceable.blocking.config.service.blockingpolicy.fetchers.IpTypeDataFetcher;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.ModsecDataFetcher;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.RegionDataFetcher;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.ActorBasedRulesCollection;
@@ -24,6 +26,8 @@ import ai.traceable.blocking.config.service.v1.BlockingDetails;
 import ai.traceable.blocking.config.service.v1.BlockingPolicyConfiguration;
 import ai.traceable.blocking.config.service.v1.CustomSignatureDetails;
 import ai.traceable.blocking.config.service.v1.IpDetails;
+import ai.traceable.blocking.config.service.v1.IpType;
+import ai.traceable.blocking.config.service.v1.IpTypeDetails;
 import ai.traceable.blocking.config.service.v1.ModsecDetails;
 import ai.traceable.blocking.config.service.v1.RegionDetails;
 import ai.traceable.config.utils.UuidGenerator;
@@ -46,6 +50,7 @@ class BlockingPolicyConfigurationManagerTest {
   private CustomSignatureDataFetcher customSignatureDataFetcher;
   private ModsecDataFetcher modsecDataFetcher;
   private RegionDataFetcher regionDataFetcher;
+  private IpTypeDataFetcher ipTypeDataFetcher;
   private BlockingPolicyConfigurationManager blockingPolicyConfigurationManager;
 
   @BeforeEach
@@ -55,6 +60,7 @@ class BlockingPolicyConfigurationManagerTest {
     this.customSignatureDataFetcher = mock(CustomSignatureDataFetcher.class);
     this.modsecDataFetcher = mock(ModsecDataFetcher.class);
     this.regionDataFetcher = mock(RegionDataFetcher.class);
+    this.ipTypeDataFetcher = mock(IpTypeDataFetcher.class);
     blockingPolicyConfigurationManager =
         new DefaultBlockingPolicyConfigurationManager(
             actorBasedDataFetcher,
@@ -62,6 +68,7 @@ class BlockingPolicyConfigurationManagerTest {
             customSignatureDataFetcher,
             modsecDataFetcher,
             regionDataFetcher,
+            ipTypeDataFetcher,
             uuidGenerator);
   }
 
@@ -80,6 +87,7 @@ class BlockingPolicyConfigurationManagerTest {
                 "custom-ip-based-block-all-except",
                 "custom-ip-based-violation",
                 "threat-actor-violation",
+                "ip-type-violation",
                 "region-block-all-except",
                 "region-violation",
                 "rate-limit-violation"));
@@ -102,6 +110,8 @@ class BlockingPolicyConfigurationManagerTest {
     assertEquals(desiredPrecedenceOrder.get(9), blockingRules.getBlockingDetailsList(9).getInfo());
     assertEquals(
         desiredPrecedenceOrder.get(10), blockingRules.getBlockingDetailsList(10).getInfo());
+    assertEquals(
+        desiredPrecedenceOrder.get(11), blockingRules.getBlockingDetailsList(11).getInfo());
 
     // Test the hash based mechanism
     BlockingPolicyConfiguration blockingRules2 =
@@ -240,5 +250,17 @@ class BlockingPolicyConfigurationManagerTest {
                         .build())))
         .when(regionDataFetcher)
         .getRegionBasedRules(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
+
+    doReturn(
+            List.of(
+                BlockingDetails.newBuilder()
+                    .setIpTypeDetails(
+                        IpTypeDetails.newBuilder().addIpTypes(IpType.IP_TYPE_BOT).build())
+                    .setCategory(BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE)
+                    .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK)
+                    .setInfo("ip-type-violation")
+                    .build()))
+        .when(ipTypeDataFetcher)
+        .getIpTypeViolations(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
   }
 }
