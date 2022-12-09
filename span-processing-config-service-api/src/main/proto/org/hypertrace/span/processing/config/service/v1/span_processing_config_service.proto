@@ -26,7 +26,8 @@ message CreateExcludeSpanRuleRequest {
 }
 
 message CreateExcludeSpanRuleResponse {
-  ExcludeSpanRuleDetails rule_details = 2;
+  ExcludeSpanRuleDetails rule_details = 1;
+  string other = 2;
 }
 
 message GetAllExcludeSpanRulesRequest {
