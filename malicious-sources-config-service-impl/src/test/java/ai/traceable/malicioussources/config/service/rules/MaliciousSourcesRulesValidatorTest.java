@@ -348,6 +348,31 @@ public class MaliciousSourcesRulesValidatorTest {
     }
 
     @Test
+    @DisplayName("Should return not found email domain condition cannot be empty")
+    void validateCreateMaliciousSourcesRuleRequest_email_fraud_score5() {
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-1")
+              .setDescription("Malicious Sources Rule Test")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setEmailDomainCondition(EmailDomainCondition.newBuilder()))
+              .build();
+
+      CreateMaliciousSourcesRuleRequest createMaliciousSourcesRuleRequest =
+          CreateMaliciousSourcesRuleRequest.newBuilder()
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .build();
+
+      Status status =
+          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Status.Code.NOT_FOUND, status.getCode());
+    }
+
+    @Test
     @DisplayName("Should return not found as ip reputation severity is empty")
     void validateCreateMaliciousSourcesRuleRequest_ip_reputation1() {
       MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
@@ -1137,6 +1162,35 @@ public class MaliciousSourcesRulesValidatorTest {
       Status status =
           rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName("Should return not found as email domain condition cannot be empty")
+    void validateUpdateMaliciousSourcesRuleRequest_email_fraud_score5() {
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-1")
+              .setDescription("Malicious Sources Rule Test")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW))
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setEmailDomainCondition(EmailDomainCondition.newBuilder()))
+              .build();
+
+      MaliciousSourcesRule maliciousSourcesRule =
+          MaliciousSourcesRule.newBuilder()
+              .setId("First-test")
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .setRuleStatus(
+                  MaliciousSourcesRuleStatus.newBuilder().setInternal(false).setDisabled(true))
+              .build();
+      UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
+          UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
+      Status status =
+          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Status.Code.NOT_FOUND, status.getCode());
     }
 
     @Test

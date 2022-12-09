@@ -223,6 +223,14 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
   }
 
   private Status validate(EmailDomainCondition emailDomainCondition) {
+    if (!emailDomainCondition.hasDataLeakedEmail()
+        && !emailDomainCondition.hasDisposableEmailDomain()
+        && !emailDomainCondition.hasEmailFraudScore()
+        && emailDomainCondition.getEmailRegexesCount() == 0
+        && emailDomainCondition.getEmailDomainsCount() == 0) {
+      return Status.NOT_FOUND.withDescription(
+          "EmailDomainCondition in Malicious Sources rule should have  atleast one condition");
+    }
     Status status;
     if (emailDomainCondition.hasEmailFraudScore()) {
       status = validate(emailDomainCondition.getEmailFraudScore());
