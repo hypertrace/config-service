@@ -67,3 +67,13 @@ jobs:
 
       - name: validate charts
         uses: hypertrace/github-actions/validate-charts@main
+      - name: Setup buf
+        uses: bufbuild/buf-setup-action@v1.9.0
+
+      - name: Lint protos
+        uses: bufbuild/buf-lint-action@v1
+
+      - name: Check for breaking changes
+        uses: bufbuild/buf-breaking-action@v1
+        with:
+          against: '.git#branch=origin/main'
