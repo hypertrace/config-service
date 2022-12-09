@@ -12,13 +12,13 @@ message RiskElementConfig {
 
 message RiskElementPredicate {
   oneof type {
-    StringPredicate external_unencrypted_auth_category = 1;
-    StringPredicate external_encrypted_auth_category = 2;
-    StringPredicate internal_unencrypted_auth_category = 3;
-    StringPredicate internal_encrypted_auth_category = 4;
-    StringPredicate path_param_type = 5;
-    StringPredicate vulnerability_severity = 6;
-    StringPredicate response_sensitivity = 7;
+    AuthCategoryPredicate external_unencrypted_auth_category = 1;
+    AuthCategoryPredicate external_encrypted_auth_category = 2;
+    AuthCategoryPredicate internal_unencrypted_auth_category = 3;
+    AuthCategoryPredicate internal_encrypted_auth_category = 4;
+    PathParamTypePredicate path_param_type = 5;
+    VulnerabilitySeverityPredicate vulnerability_severity = 6;
+    ResponseSensitivityPredicate response_sensitivity = 7;
     IntPredicate dependent_apis = 8;
     IntPredicate third_party_apis = 9;
     StringPredicate label_id = 10;
@@ -26,7 +26,27 @@ message RiskElementPredicate {
 }
 
 message RiskElementScoring {
-   int32 score = 1;
+  int32 score = 1;
+}
+
+message AuthCategoryPredicate {
+  EnumOperator operator = 1;
+  AuthCategoryValue value = 2;
+}
+
+message PathParamTypePredicate {
+  EnumOperator operator = 1;
+  PathParamTypeValue value = 2;
+}
+
+message VulnerabilitySeverityPredicate {
+  EnumOperator operator = 1;
+  VulnerabilitySeverityValue value = 2;
+}
+
+message ResponseSensitivityPredicate {
+  EnumOperator operator = 1;
+  ResponseSensitivityValue value = 2;
 }
 
 message IntPredicate {
@@ -39,12 +59,39 @@ message StringPredicate {
   string value = 2;
 }
 
-enum StringOperator {
-  STRING_OPERATOR_UNSPECIFIED = 0;
-  STRING_OPERATOR_EQUALS = 1;
-  STRING_OPERATOR_NOT_EQUALS = 2;
-  STRING_OPERATOR_CONTAINS = 3;
-  STRING_OPERATOR_NOT_CONTAINS = 4;
+enum AuthCategoryValue {
+  AUTH_CATEGORY_VALUE_UNSPECIFIED = 0;
+  AUTH_CATEGORY_VALUE_NONE = 1;
+  AUTH_CATEGORY_VALUE_WEAK = 2;
+  AUTH_CATEGORY_VALUE_STRONG = 3;
+}
+
+enum PathParamTypeValue {
+  PATH_PARAM_TYPE_VALUE_UNSPECIFIED = 0;
+  PATH_PARAM_TYPE_VALUE_NONE = 1;
+  PATH_PARAM_TYPE_VALUE_DIGIT = 2;
+  PATH_PARAM_TYPE_VALUE_STRING = 3;
+}
+
+enum VulnerabilitySeverityValue {
+  VULNERABILITY_SEVERITY_VALUE_UNSPECIFIED = 0;
+  VULNERABILITY_SEVERITY_VALUE_CRITICAL = 1;
+  VULNERABILITY_SEVERITY_VALUE_HIGH = 2;
+  VULNERABILITY_SEVERITY_VALUE_MEDIUM = 3;
+  VULNERABILITY_SEVERITY_VALUE_LOW = 4;
+}
+
+enum ResponseSensitivityValue {
+  RESPONSE_SENSITIVITY_VALUE_UNSPECIFIED = 0;
+  RESPONSE_SENSITIVITY_VALUE_CRITICAL = 1;
+  RESPONSE_SENSITIVITY_VALUE_HIGH = 2;
+  RESPONSE_SENSITIVITY_VALUE_MEDIUM = 3;
+  RESPONSE_SENSITIVITY_VALUE_LOW = 4;
+}
+
+enum EnumOperator {
+  ENUM_OPERATOR_UNSPECIFIED = 0;
+  ENUM_OPERATOR_EQUALS = 1;
 }
 
 enum IntOperator {
@@ -55,4 +102,12 @@ enum IntOperator {
   INT_OPERATOR_LESS_THAN_EQUALS = 4;
   INT_OPERATOR_GREATER_THAN = 5;
   INT_OPERATOR_GREATER_THAN_EQUALS = 6;
+}
+
+enum StringOperator {
+  STRING_OPERATOR_UNSPECIFIED = 0;
+  STRING_OPERATOR_EQUALS = 1;
+  STRING_OPERATOR_NOT_EQUALS = 2;
+  STRING_OPERATOR_CONTAINS = 3;
+  STRING_OPERATOR_NOT_CONTAINS = 4;
 }
