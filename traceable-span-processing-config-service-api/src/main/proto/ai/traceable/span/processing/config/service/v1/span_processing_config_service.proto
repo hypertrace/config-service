@@ -6,7 +6,6 @@ option java_multiple_files = true;
 
 import "ai/traceable/span/processing/config/service/v1/sampling_configs.proto";
 import "ai/traceable/span/processing/config/service/v1/span_filter.proto";
-import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
 service SpanProcessingConfigService {

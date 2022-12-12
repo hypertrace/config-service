@@ -3,12 +3,9 @@ syntax = "proto3";
 // buf:lint:ignore PACKAGE_VERSION_SUFFIX
 package ai.traceable.anomaly.config.service.v1.override;
 
-import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
 import "ai/traceable/anomaly/config/service/v1/override/common_detection_override_configs.proto";
 import "ai/traceable/anomaly/config/service/v1/override/detection_override_actor_config.proto";
-import "ai/traceable/anomaly/config/service/v1/override/detection_override_conditions_config.proto";
 import "ai/traceable/anomaly/config/service/v1/override/detection_override_event_config.proto";
-import "ai/traceable/anomaly/config/service/v1/override/detection_override_scope_config.proto";
 
 option java_multiple_files = true;
 

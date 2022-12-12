@@ -5,7 +5,6 @@ package ai.traceable.anomaly.config.service.v1.override;
 
 option java_multiple_files = true;
 
-import "ai/traceable/anomaly/config/service/v1/override/exception_detection_override_configs.proto";
 import "ai/traceable/anomaly/config/service/v1/override/exclusion_detection_override_configs.proto";
 
 
@@ -21,14 +20,14 @@ service DetectionOverrideConfigService {
 
   rpc DeleteDetectionExclusionRule(DeleteDetectionExclusionRuleRequest) returns (DeleteDetectionExclusionRuleResponse) {}
 
-//  detection exception rules - to be implemented later
+  //  detection exception rules - to be implemented later
 
-//  rpc GetAllDetectionExceptionRules(GetAllDetectionExceptionRulesRequest) returns (GetAllDetectionExceptionRulesResponse) {}
+  //  rpc GetAllDetectionExceptionRules(GetAllDetectionExceptionRulesRequest) returns (GetAllDetectionExceptionRulesResponse) {}
 
-//  rpc CreateDetectionExceptionRuleConfig(CreateDetectionExceptionRuleConfigRequest) returns (CreateDetectionExceptionRuleConfigResponse) {}
+  //  rpc CreateDetectionExceptionRuleConfig(CreateDetectionExceptionRuleConfigRequest) returns (CreateDetectionExceptionRuleConfigResponse) {}
 
-//  rpc UpdateDetectionExceptionRule(UpdateDetectionExceptionRuleRequest) returns (UpdateDetectionExceptionRuleResponse) {}
+  //  rpc UpdateDetectionExceptionRule(UpdateDetectionExceptionRuleRequest) returns (UpdateDetectionExceptionRuleResponse) {}
 
-//  rpc DeleteDetectionExceptionRule(DeleteDetectionExceptionRuleRequest) returns (DeleteDetectionExceptionRuleResponse) {}
+  //  rpc DeleteDetectionExceptionRule(DeleteDetectionExceptionRuleRequest) returns (DeleteDetectionExceptionRuleResponse) {}
 
 }

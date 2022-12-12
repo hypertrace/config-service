@@ -1,0 +1,29 @@
+version: v1
+directories:
+  - anomaly-config-service-api/src/main/proto
+  - api-attribute-override-service-api/src/main/proto
+  - api-spec-config-service-api/src/main/proto
+  - ast-scan-profile-config-service-api/src/main/proto
+  - auth-detection-config-service-api/src/main/proto
+  - blocking-config-service-api/src/main/proto
+  - custom-signature-config-service-api/src/main/proto
+  - data-classification-config-service-api/src/main/proto
+  - data-exfiltration-config-service-api/src/main/proto
+  - external-agent-attribute-config-service-api/src/main/proto
+  - external-data-classification-config-service-api/src/main/proto
+  - external-user-attribution-config-service-api/src/main/proto
+  - hypertrace-config-service/alerting-config-service-api/src/main/proto
+  - iprange-config-service-api/src/main/proto
+  - license-status-config-service-api/src/main/proto
+  - local-processing-config-service-api/src/main/proto
+  - malicious-sources-config-service-api/src/main/proto
+  - rate-limiting-config-service-api/src/main/proto
+  - region-config-service-api/src/main/proto
+  - reporting-config-service-api/src/main/proto
+  - risk-config-service-api/src/main/proto
+  - sensitive-data-config-service-api/src/main/proto
+  - threat-management-config-service-api/src/main/proto
+  - traceable-alerting-config-service-api/src/main/proto
+  - traceable-span-processing-config-service-api/src/main/proto
+  - user-attribution-config-service-api/src/main/proto
+  - waf-provider-integration-service-api/src/main/proto
