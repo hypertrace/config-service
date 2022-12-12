@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.reporting.config.service.v2;
+
+message ReportConfiguration {
+  string id = 1;
+  string creator = 2;
+  CommonConfigurationDetails common_configuration_details = 3;
+}
+
+// common fields that can be passed during creation and subsequent update
+message CommonConfigurationDetails {
+  string name = 1;
+  optional string environment_id = 2;
+  // JSON serialised configuration for all templates within report
+  string templates_configuration = 3;
+  SchedulingDetails scheduling_details = 4;
+  NotificationDetails notification_details = 5;
+}
+
+message SchedulingDetails {
+  string scheduled_job_id = 1;
+}
+
+message NotificationDetails {
+  repeated string email_addresses = 1;
+  repeated string channel_ids = 2;
+}
+
+message GetReportsFilter {
+  optional string id = 1;
+  optional string environment_id = 2;
+}
