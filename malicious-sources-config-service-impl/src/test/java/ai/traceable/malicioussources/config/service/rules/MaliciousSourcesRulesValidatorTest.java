@@ -1176,7 +1176,10 @@ public class MaliciousSourcesRulesValidatorTest {
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW))
               .addConditions(
                   MaliciousSourcesRuleCondition.newBuilder()
-                      .setEmailDomainCondition(EmailDomainCondition.newBuilder()))
+                      .setEmailDomainCondition(
+                          EmailDomainCondition.newBuilder()
+                              .setDisposableEmailDomain(false)
+                              .setDataLeakedEmail(false)))
               .build();
 
       MaliciousSourcesRule maliciousSourcesRule =
