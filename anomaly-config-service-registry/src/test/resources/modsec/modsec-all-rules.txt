@@ -32,7 +32,7 @@ crs_931120 :: Possible Remote File Inclusion (RFI) Attack: URL Payload Used w/Tr
 crs_9320010 :: Spring Cloud Function RCE: malicious Spring Expression: (CVE-2022-22963) :: [ 'CWE:95' ]
 crs_9320020 :: Apache Struts RCE: multipart/form-data: (CVE-2017-5638) :: [ 'CWE:95' ]
 crs_9320021 :: Apache Struts RCE: OGNL in URL: CVE-2018-11776 :: [ 'CWE:95' ]
-crs_9320031 :: Solr DataImport Handler RCE : (CVE-2019-0193) :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API:API8' , 'CWE:78' ]
+crs_9320031 :: Apache Solr DataImport Handler RCE : (CVE-2019-0193) :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API:API8' , 'CWE:78' ]
 crs_9320030 :: Apache Solr Deserialization RCE : (CVE-2019-0192) :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API:API8' , 'CWE:78' ]
 crs_9320040 :: Atlassian Confluence SSTI RCE : (CVE-2019-3396) :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API:API8' , 'CWE:78' ]
 crs_9320041 :: Confluence Server and Data Center Path Traversal to RCE : (CVE-2019-3398) :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API:API8' , 'CWE:78' ]

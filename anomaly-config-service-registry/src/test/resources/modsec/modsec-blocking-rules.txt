@@ -17,7 +17,7 @@ crs_9320010 :: Spring Cloud Function RCE: malicious Spring Expression: (CVE-2022
 crs_9320020 :: Apache Struts RCE: multipart/form-data: (CVE-2017-5638)
 crs_9320021 :: Apache Struts RCE: OGNL in URL: CVE-2018-11776
 crs_9320030 :: Apache Solr Deserialization RCE : (CVE-2019-0192)
-crs_9320031 :: Solr DataImport Handler RCE : (CVE-2019-0193)
+crs_9320031 :: Apache Solr DataImport Handler RCE : (CVE-2019-0193)
 crs_9320040 :: Atlassian Confluence SSTI RCE : (CVE-2019-3396)
 crs_9320041 :: Confluence Server and Data Center Path Traversal to RCE : (CVE-2019-3398)
 crs_9320050 :: vBulletin RCE : (CVE-2019-16759)
