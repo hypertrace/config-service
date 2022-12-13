@@ -1207,6 +1207,308 @@
                           }
                         }
                       }
+                    },
+                    {
+                      "projector": {
+                        "conditionalProjector": {
+                          "predicate": {
+                            "logicalPredicate": {
+                              "operator": "LOGICAL_OPERATOR_AND",
+                              "children": [
+                                {
+                                  "logicalPredicate": {
+                                    "operator": "LOGICAL_OPERATOR_OR",
+                                    "children": [
+                                      {
+                                        "attributePredicate": {
+                                          "namePredicate": {
+                                            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                                            "value": "http.request.header.(?i)authorization$"
+                                          },
+                                          "valuePredicate": {
+                                            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                                            "value": "^Bearer\\s.*"
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "attributePredicate": {
+                                          "namePredicate": {
+                                            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                                            "value": "rpc.request.metadata.(?i)authorization$"
+                                          },
+                                          "valuePredicate": {
+                                            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                                            "value": "^Bearer\\s.*"
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                },
+                                {
+                                  "logicalPredicate": {
+                                    "operator": "LOGICAL_OPERATOR_OR",
+                                    "children": [
+                                      {
+                                        "logicalPredicate": {
+                                          "operator": "LOGICAL_OPERATOR_OR",
+                                          "children": [
+                                            {
+                                              "attributePredicate": {
+                                                "namePredicate": {
+                                                  "operator": "COMPARISON_OPERATOR_EQUALS",
+                                                  "value": "http.request.header.first"
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "attributePredicate": {
+                                                "namePredicate": {
+                                                  "operator": "COMPARISON_OPERATOR_EQUALS",
+                                                  "value": "rpc.request.metadata.first"
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      {
+                                        "logicalPredicate": {
+                                          "operator": "LOGICAL_OPERATOR_OR",
+                                          "children": [
+                                            {
+                                              "attributePredicate": {
+                                                "namePredicate": {
+                                                  "operator": "COMPARISON_OPERATOR_EQUALS",
+                                                  "value": "http.request.header.second"
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "attributePredicate": {
+                                                "namePredicate": {
+                                                  "operator": "COMPARISON_OPERATOR_EQUALS",
+                                                  "value": "rpc.request.metadata.second"
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "attributeRule": {
+                            "initialActions": [
+                              {
+                                "attributeArrayAppend": {
+                                  "attributeKey": "traceableai.auth.types",
+                                  "valueProjectionRule": {
+                                    "projector": {
+                                      "valueProjector": {
+                                        "value": "Composite Token"
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "attributeArrayAppend": {
+                                  "attributeKey": "traceableai.auth.rules",
+                                  "valueProjectionRule": {
+                                    "projector": {
+                                      "valueProjector": {
+                                        "value": "f496d554-4685-4de4-a074-4186ee579a4e"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "projector": {
+                        "conditionalProjector": {
+                          "predicate": {
+                            "logicalPredicate": {
+                              "operator": "LOGICAL_OPERATOR_OR",
+                              "children": [
+                                {
+                                  "attributePredicate": {
+                                    "namePredicate": {
+                                      "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                                      "value": "http.request.header.(?i)authorization$"
+                                    },
+                                    "valuePredicate": {
+                                      "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                                      "value": "^Bearer\\s.*"
+                                    }
+                                  }
+                                },
+                                {
+                                  "attributePredicate": {
+                                    "namePredicate": {
+                                      "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                                      "value": "rpc.request.metadata.(?i)authorization$"
+                                    },
+                                    "valuePredicate": {
+                                      "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                                      "value": "^Bearer\\s.*"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "attributeRule": {
+                            "initialActions": [
+                              {
+                                "attributeArrayAppend": {
+                                  "attributeKey": "traceableai.auth.types",
+                                  "valueProjectionRule": {
+                                    "projector": {
+                                      "valueProjector": {
+                                        "value": "Bearer Token"
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "attributeArrayAppend": {
+                                  "attributeKey": "traceableai.auth.rules",
+                                  "valueProjectionRule": {
+                                    "projector": {
+                                      "valueProjector": {
+                                        "value": "f496d554-4685-4de4-a074-4186ee579a4c"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "http.request.body",
+                          "attributeRule": {
+                            "projector": {
+                              "jsonProjector": {
+                                "jsonPathRule": {
+                                  "key": "$.authorization",
+                                  "attributeRule": {
+                                    "projector": {
+                                      "conditionalProjector": {
+                                        "predicate": {
+                                          "currentValuePredicate": {
+                                            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                                            "value": "^Bearer\\s.*"
+                                          }
+                                        },
+                                        "attributeRule": {
+                                          "initialActions": [
+                                            {
+                                              "attributeArrayAppend": {
+                                                "attributeKey": "traceableai.auth.types",
+                                                "valueProjectionRule": {
+                                                  "projector": {
+                                                    "valueProjector": {
+                                                      "value": "Bearer Body?"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "attributeArrayAppend": {
+                                                "attributeKey": "traceableai.auth.rules",
+                                                "valueProjectionRule": {
+                                                  "projector": {
+                                                    "valueProjector": {
+                                                      "value": "f496d554-4685-4de4-a074-4186ee579a4d"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "projector": {
+                        "attributeProjector": {
+                          "attributeKey": "rpc.request.body",
+                          "attributeRule": {
+                            "projector": {
+                              "jsonProjector": {
+                                "jsonPathRule": {
+                                  "key": "$.authorization",
+                                  "attributeRule": {
+                                    "projector": {
+                                      "conditionalProjector": {
+                                        "predicate": {
+                                          "currentValuePredicate": {
+                                            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                                            "value": "^Bearer\\s.*"
+                                          }
+                                        },
+                                        "attributeRule": {
+                                          "initialActions": [
+                                            {
+                                              "attributeArrayAppend": {
+                                                "attributeKey": "traceableai.auth.types",
+                                                "valueProjectionRule": {
+                                                  "projector": {
+                                                    "valueProjector": {
+                                                      "value": "Bearer Body?"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "attributeArrayAppend": {
+                                                "attributeKey": "traceableai.auth.rules",
+                                                "valueProjectionRule": {
+                                                  "projector": {
+                                                    "valueProjector": {
+                                                      "value": "f496d554-4685-4de4-a074-4186ee579a4d"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
                     }
                   ]
                 }

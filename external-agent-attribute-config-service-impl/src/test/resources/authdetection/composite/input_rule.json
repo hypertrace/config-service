@@ -1,0 +1,46 @@
+{
+  "id": "f496d554-4685-4de4-a074-4186ee579a4e",
+  "authType": "Composite Token",
+  "predicate": {
+    "compositePredicate": {
+      "operator": "LOGICAL_OPERATOR_AND",
+      "children": [
+        {
+          "headerPredicate": {
+            "keyPredicate": {
+              "operator": "RELATIONAL_OPERATOR_MATCHES_REGEX",
+              "value": "(?i)^authorization$"
+            },
+            "valuePredicate": {
+              "operator": "RELATIONAL_OPERATOR_MATCHES_REGEX",
+              "value": "^Bearer\\s.*"
+            }
+          }
+        },
+        {
+          "compositePredicate": {
+            "operator": "LOGICAL_OPERATOR_OR",
+            "children": [
+              {
+                "headerPredicate": {
+                  "keyPredicate": {
+                    "operator": "RELATIONAL_OPERATOR_EQUALS",
+                    "value": "first"
+                  }
+                }
+              },
+              {
+                "headerPredicate": {
+                  "keyPredicate": {
+                    "operator": "RELATIONAL_OPERATOR_EQUALS",
+                    "value": "second"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

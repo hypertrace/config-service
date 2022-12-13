@@ -1,19 +1,14 @@
 package ai.traceable.external.agent.attribute.config.service;
 
+import ai.traceable.auth.detection.config.service.v1.AuthDetectionConfigServiceGrpc;
+import ai.traceable.auth.detection.config.service.v1.AuthDetectionConfigServiceGrpc.AuthDetectionConfigServiceBlockingStub;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
-import ai.traceable.external.agent.attribute.config.service.translator.BasicAuthRuleTranslator;
-import ai.traceable.external.agent.attribute.config.service.translator.CustomJsonRuleTranslator;
-import ai.traceable.external.agent.attribute.config.service.translator.CustomTokenRuleTranslator;
-import ai.traceable.external.agent.attribute.config.service.translator.JwtRuleTranslator;
-import ai.traceable.external.agent.attribute.config.service.translator.NoOpYamlRuleTranslator;
-import ai.traceable.external.agent.attribute.config.service.translator.RequestHeaderRuleTranslator;
-import ai.traceable.external.agent.attribute.config.service.translator.ResponseBodyRuleTranslator;
-import ai.traceable.external.agent.attribute.config.service.translator.RuleTranslator;
+import ai.traceable.external.agent.attribute.config.service.translator.authdetection.AuthDetectionRuleTranslationModule;
+import ai.traceable.external.agent.attribute.config.service.translator.userattribution.UserAttributionRuleTranslationModule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServiceGrpc;
 import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServiceGrpc.UserAttributionConfigServiceBlockingStub;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.multibindings.Multibinder;
 import io.grpc.BindableService;
 import io.grpc.Channel;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
@@ -32,21 +27,20 @@ class ExternalAgentAttributeConfigServiceModule extends AbstractModule {
   protected void configure() {
     bind(BindableService.class).to(ExternalAgentAttributeConfigServiceImpl.class);
     bind(FeatureCachingClient.class).toInstance(this.featureCachingClient);
-
-    Multibinder<RuleTranslator> multibinder =
-        Multibinder.newSetBinder(binder(), RuleTranslator.class);
-    multibinder.addBinding().to(BasicAuthRuleTranslator.class);
-    multibinder.addBinding().to(CustomJsonRuleTranslator.class);
-    multibinder.addBinding().to(CustomTokenRuleTranslator.class);
-    multibinder.addBinding().to(NoOpYamlRuleTranslator.class);
-    multibinder.addBinding().to(JwtRuleTranslator.class);
-    multibinder.addBinding().to(RequestHeaderRuleTranslator.class);
-    multibinder.addBinding().to(ResponseBodyRuleTranslator.class);
+    install(new UserAttributionRuleTranslationModule());
+    install(new AuthDetectionRuleTranslationModule());
   }
 
   @Provides
   UserAttributionConfigServiceBlockingStub providesUserAttributionStub() {
     return UserAttributionConfigServiceGrpc.newBlockingStub(this.channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  AuthDetectionConfigServiceBlockingStub provideAuthDetectionStub() {
+    return AuthDetectionConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

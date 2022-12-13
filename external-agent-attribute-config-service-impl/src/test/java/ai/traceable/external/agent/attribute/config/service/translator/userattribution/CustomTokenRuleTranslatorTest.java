@@ -1,5 +1,7 @@
-package ai.traceable.external.agent.attribute.config.service.translator;
+package ai.traceable.external.agent.attribute.config.service.translator.userattribution;
 
+import ai.traceable.external.agent.attribute.config.service.translator.AttributeRuleBuilder;
+import ai.traceable.external.agent.attribute.config.service.translator.TestUtils;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import java.io.IOException;
 import java.util.List;

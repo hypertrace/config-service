@@ -9,6 +9,7 @@ dependencies {
   api(libs.typesafe.config)
   api(projects.featureCachingClient)
   implementation(projects.userAttributionConfigServiceApi)
+  implementation(projects.authDetectionConfigServiceApi)
   implementation(libs.guice)
   implementation(libs.slf4j.api)
   implementation(libs.hypertrace.grpcutils.client)
@@ -24,7 +25,11 @@ dependencies {
   testImplementation(libs.mockito.core)
   testImplementation(libs.mockito.junit)
   testImplementation(libs.protobuf.javautil)
+  testImplementation(libs.guava)
   testImplementation(testFixtures(libs.hypertrace.configservice.api))
+
+  testAnnotationProcessor(libs.lombok)
+  testCompileOnly(libs.lombok)
 }
 
 tasks.test {

@@ -1,5 +1,6 @@
-package ai.traceable.external.agent.attribute.config.service.translator;
+package ai.traceable.external.agent.attribute.config.service.translator.userattribution;
 
+import ai.traceable.external.agent.attribute.config.service.translator.AttributeRuleBuilder;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.DataCase;
@@ -13,7 +14,7 @@ import javax.inject.Inject;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(onConstructor_ = {@Inject})
-public class RequestHeaderRuleTranslator implements RuleTranslator {
+public class RequestHeaderRuleTranslator implements UserAttributionRuleTranslator {
 
   private final AttributeKeysExtractor attributeKeysExtractor;
   private final AttributeRuleBuilder attributeRuleBuilder;

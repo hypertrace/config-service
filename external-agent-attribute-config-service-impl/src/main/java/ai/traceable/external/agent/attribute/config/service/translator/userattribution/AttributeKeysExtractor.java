@@ -1,4 +1,4 @@
-package ai.traceable.external.agent.attribute.config.service.translator;
+package ai.traceable.external.agent.attribute.config.service.translator.userattribution;
 
 import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.COOKIE_HEADER_KEY;
 import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.REQUEST_HEADER_KEY_FORMAT_STRINGS;

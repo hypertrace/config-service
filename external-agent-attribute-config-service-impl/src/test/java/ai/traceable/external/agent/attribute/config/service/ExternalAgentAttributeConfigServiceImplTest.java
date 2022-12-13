@@ -1,11 +1,15 @@
 package ai.traceable.external.agent.attribute.config.service;
 
-import static java.util.Collections.*;
+import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.auth.detection.config.service.v1.AuthDetectionConfigServiceGrpc;
+import ai.traceable.auth.detection.config.service.v1.AuthDetectionConfigServiceGrpc.AuthDetectionConfigServiceImplBase;
+import ai.traceable.auth.detection.config.service.v1.GetAuthDetectionRulesRequest;
+import ai.traceable.auth.detection.config.service.v1.GetAuthDetectionRulesResponse;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.external.agent.attribute.config.service.translator.ExternalAgentAttributeRuleTranslator;
@@ -39,9 +43,12 @@ class ExternalAgentAttributeConfigServiceImplTest {
     mockGenericConfigService = new MockGenericConfigService();
     mockGenericConfigService
         .addService(new MockUserAttributionService())
+        .addService(new MockAuthDetectionConfigService())
         .addService(
             new ExternalAgentAttributeConfigServiceImpl(
                 UserAttributionConfigServiceGrpc.newBlockingStub(
+                    this.mockGenericConfigService.channel()),
+                AuthDetectionConfigServiceGrpc.newBlockingStub(
                     this.mockGenericConfigService.channel()),
                 mockRuleTranslator,
                 new ExternalAgentAttributeRuleResponseBuilder(mockUuidGenerator),
@@ -84,6 +91,16 @@ class ExternalAgentAttributeConfigServiceImplTest {
         GetUserAttributionRulesRequest request,
         StreamObserver<GetUserAttributionRulesResponse> responseObserver) {
       responseObserver.onNext(GetUserAttributionRulesResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    }
+  }
+
+  private static class MockAuthDetectionConfigService extends AuthDetectionConfigServiceImplBase {
+    @Override
+    public void getAuthDetectionRules(
+        GetAuthDetectionRulesRequest request,
+        StreamObserver<GetAuthDetectionRulesResponse> responseObserver) {
+      responseObserver.onNext(GetAuthDetectionRulesResponse.getDefaultInstance());
       responseObserver.onCompleted();
     }
   }

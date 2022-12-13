@@ -35,29 +35,29 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-class AttributeRuleBuilder {
+public class AttributeRuleBuilder {
 
-  AttributeRule buildActionAttributeRuleForUserId(String ruleId) {
+  public AttributeRule buildActionAttributeRuleForUserId(String ruleId) {
     return AttributeRule.newBuilder()
         .addInitialActions(buildAttributeAdditionAction(END_USER_ID_ATTRIBUTE_KEY))
         .addInitialActions(buildAttributeAdditionAction(END_USER_ID_RULE_ATTRIBUTE_KEY, ruleId))
         .build();
   }
 
-  AttributeRule buildActionAttributeRuleForUserRole(String ruleId) {
+  public AttributeRule buildActionAttributeRuleForUserRole(String ruleId) {
     return AttributeRule.newBuilder()
         .addInitialActions(buildAttributeAdditionAction(END_USER_ROLE_ATTRIBUTE_KEY))
         .addInitialActions(buildAttributeAdditionAction(END_USER_ROLE_RULE_ATTRIBUTE_KEY, ruleId))
         .build();
   }
 
-  AttributeRule buildActionAttributeRuleForAuthType(String authType, String ruleId) {
+  public AttributeRule buildActionAttributeRuleForAuthType(String authType, String ruleId) {
     return AttributeRule.newBuilder()
         .addAllInitialActions(buildActionsForAuthType(authType, ruleId))
         .build();
   }
 
-  List<Action> buildActionsForAuthType(String authType, String ruleId) {
+  public List<Action> buildActionsForAuthType(String authType, String ruleId) {
     return List.of(
         buildAttributeAppendAction(AUTH_TYPES_ATTRIBUTE_KEY, authType),
         buildAttributeAppendAction(AUTH_TYPES_RULE_ATTRIBUTE_KEY, ruleId));
@@ -104,7 +104,7 @@ class AttributeRuleBuilder {
         .build();
   }
 
-  AttributeRule buildRuleForAttribute(String attributeKey, AttributeRule childRule) {
+  public AttributeRule buildRuleForAttribute(String attributeKey, AttributeRule childRule) {
     return AttributeRule.newBuilder()
         .setProjector(
             Projector.newBuilder()
@@ -115,7 +115,8 @@ class AttributeRuleBuilder {
         .build();
   }
 
-  AttributeRule buildRuleForRegexCaptureGroup(String regexCaptureGroup, AttributeRule childRule) {
+  public AttributeRule buildRuleForRegexCaptureGroup(
+      String regexCaptureGroup, AttributeRule childRule) {
     return AttributeRule.newBuilder()
         .setProjector(
             Projector.newBuilder()
@@ -126,7 +127,7 @@ class AttributeRuleBuilder {
         .build();
   }
 
-  AttributeRule buildRuleForBase64(AttributeRule childRule) {
+  public AttributeRule buildRuleForBase64(AttributeRule childRule) {
     return AttributeRule.newBuilder()
         .setProjector(
             Projector.newBuilder()
@@ -134,7 +135,7 @@ class AttributeRuleBuilder {
         .build();
   }
 
-  AttributeRule buildRuleForJsonPath(String jsonPath, AttributeRule childRule) {
+  public AttributeRule buildRuleForJsonPath(String jsonPath, AttributeRule childRule) {
     return AttributeRule.newBuilder()
         .setProjector(
             Projector.newBuilder()
@@ -147,7 +148,7 @@ class AttributeRuleBuilder {
         .build();
   }
 
-  AttributeRule buildRuleForJwtClaim(String claim, AttributeRule childRule) {
+  public AttributeRule buildRuleForJwtClaim(String claim, AttributeRule childRule) {
     return AttributeRule.newBuilder()
         .setProjector(
             Projector.newBuilder()
@@ -160,14 +161,14 @@ class AttributeRuleBuilder {
         .build();
   }
 
-  AttributeRule buildRuleForParsingJwt(List<Action> beforeChildrenActions) {
+  public AttributeRule buildRuleForParsingJwt(List<Action> beforeChildrenActions) {
     return AttributeRule.newBuilder()
         .addAllBeforeChildrenActions(beforeChildrenActions)
         .setProjector(Projector.newBuilder().setJwtProjector(JwtProjector.newBuilder()))
         .build();
   }
 
-  AttributeRule buildRuleForCookie(String cookieName, AttributeRule childRule) {
+  public AttributeRule buildRuleForCookie(String cookieName, AttributeRule childRule) {
     return AttributeRule.newBuilder()
         .setProjector(
             Projector.newBuilder()
@@ -180,7 +181,7 @@ class AttributeRuleBuilder {
         .build();
   }
 
-  AttributeRule buildRuleForFirstMatchingProjector(List<AttributeRule> attributeRules) {
+  public AttributeRule buildRuleForFirstMatchingProjector(List<AttributeRule> attributeRules) {
     return AttributeRule.newBuilder()
         .setProjector(
             Projector.newBuilder()
@@ -189,7 +190,7 @@ class AttributeRuleBuilder {
         .build();
   }
 
-  AttributeRule buildRuleForEachMatchingProjector(List<AttributeRule> attributeRules) {
+  public AttributeRule buildRuleForEachMatchingProjector(List<AttributeRule> attributeRules) {
     return AttributeRule.newBuilder()
         .setProjector(
             Projector.newBuilder()
@@ -198,7 +199,7 @@ class AttributeRuleBuilder {
         .build();
   }
 
-  AttributeRule buildRuleForCondition(
+  public AttributeRule buildRuleForCondition(
       List<String> names, List<String> allowedRegexValues, AttributeRule childRule) {
     if (allowedRegexValues.isEmpty()) {
       return childRule;
@@ -250,7 +251,8 @@ class AttributeRuleBuilder {
         .build();
   }
 
-  AttributeRule buildRuleForParsingTarget(ParsingTarget parsingTarget, AttributeRule childRule) {
+  public AttributeRule buildRuleForParsingTarget(
+      ParsingTarget parsingTarget, AttributeRule childRule) {
     switch (parsingTarget.getTargetCase()) {
       case REGEX_CAPTURE_GROUP:
         return buildRuleForRegexCaptureGroup(parsingTarget.getRegexCaptureGroup(), childRule);
@@ -262,7 +264,7 @@ class AttributeRuleBuilder {
     }
   }
 
-  ParsingTarget parsingTargetWithFallback(ParsingTarget provided, String fallbackRegex) {
+  public ParsingTarget parsingTargetWithFallback(ParsingTarget provided, String fallbackRegex) {
     return provided.getTargetCase() == TargetCase.TARGET_NOT_SET
         ? ParsingTarget.newBuilder().setRegexCaptureGroup(fallbackRegex).build()
         : provided;

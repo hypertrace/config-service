@@ -1,0 +1,66 @@
+package ai.traceable.external.agent.attribute.config.service.translator;
+
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toUnmodifiableList;
+
+import ai.traceable.auth.detection.config.service.v1.AuthDetectionRule;
+import ai.traceable.external.agent.attribute.config.service.translator.authdetection.AuthDetectionRuleTranslatorLookup;
+import ai.traceable.external.agent.attribute.config.service.translator.userattribution.UserAttributionRuleTranslatorLookup;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
+import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
+import javax.inject.Inject;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@RequiredArgsConstructor(onConstructor_ = {@Inject})
+class AuthTypeAttributeRuleBuilder {
+
+  private final UrlScopeTranslator urlScopeTranslator;
+  private final AttributeRuleBuilder attributeRuleBuilder;
+  private final UserAttributionRuleTranslatorLookup userAttributionRuleTranslatorLookup;
+
+  private final AuthDetectionRuleTranslatorLookup authDetectionRuleTranslatorLookup;
+
+  Optional<AttributeRule> buildRule(
+      List<UserAttributionRule> userAttributionRules, List<AuthDetectionRule> authDetectionRules) {
+    return Stream.concat(
+            translateUserAttributionRules(userAttributionRules),
+            translateAuthDetectionRules(authDetectionRules))
+        .collect(collectingAndThen(toUnmodifiableList(), Optional::of))
+        .filter(not(Collection::isEmpty))
+        .map(attributeRuleBuilder::buildRuleForEachMatchingProjector);
+  }
+
+  private Stream<AttributeRule> translateUserAttributionRules(
+      List<UserAttributionRule> userAttributionRules) {
+    return userAttributionRules.stream().flatMap(this::translateUserAttributionRule);
+  }
+
+  private Stream<AttributeRule> translateUserAttributionRule(
+      UserAttributionRule userAttributionRule) {
+    return this.userAttributionRuleTranslatorLookup.getRuleTranslator(userAttributionRule).stream()
+        .flatMap(translator -> translator.translateRuleForAuthType(userAttributionRule))
+        .map(
+            translatedRule ->
+                urlScopeTranslator.addUrlScopeIfSet(
+                    userAttributionRule.getScope(), translatedRule));
+  }
+
+  private Stream<AttributeRule> translateAuthDetectionRules(
+      List<AuthDetectionRule> authDetectionRules) {
+    return authDetectionRules.stream()
+        .filter(AuthDetectionRule::hasAuthType) // TODO add support for fallback rules later
+        .flatMap(this::translateAuthDetectionRule);
+  }
+
+  private Stream<AttributeRule> translateAuthDetectionRule(AuthDetectionRule authDetectionRule) {
+    return this.authDetectionRuleTranslatorLookup.getRuleTranslator(authDetectionRule).stream()
+        .flatMap(translator -> translator.translateRuleForAuthType(authDetectionRule));
+  }
+}

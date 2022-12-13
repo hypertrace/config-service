@@ -1,0 +1,116 @@
+{
+  "attributeRules": [
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeKey": "http.request.body",
+          "attributeRule": {
+            "projector": {
+              "jsonProjector": {
+                "jsonPathRule": {
+                  "key": "$.authorization",
+                  "attributeRule": {
+                    "projector": {
+                      "conditionalProjector": {
+                        "predicate": {
+                          "currentValuePredicate": {
+                            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                            "value": "^Bearer\\s.*"
+                          }
+                        },
+                        "attributeRule": {
+                          "initialActions": [
+                            {
+                              "attributeArrayAppend": {
+                                "attributeKey": "traceableai.auth.types",
+                                "valueProjectionRule": {
+                                  "projector": {
+                                    "valueProjector": {
+                                      "value": "Bearer Body?"
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "attributeArrayAppend": {
+                                "attributeKey": "traceableai.auth.rules",
+                                "valueProjectionRule": {
+                                  "projector": {
+                                    "valueProjector": {
+                                      "value": "f496d554-4685-4de4-a074-4186ee579a4d"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeKey": "rpc.request.body",
+          "attributeRule": {
+            "projector": {
+              "jsonProjector": {
+                "jsonPathRule": {
+                  "key": "$.authorization",
+                  "attributeRule": {
+                    "projector": {
+                      "conditionalProjector": {
+                        "predicate": {
+                          "currentValuePredicate": {
+                            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                            "value": "^Bearer\\s.*"
+                          }
+                        },
+                        "attributeRule": {
+                          "initialActions": [
+                            {
+                              "attributeArrayAppend": {
+                                "attributeKey": "traceableai.auth.types",
+                                "valueProjectionRule": {
+                                  "projector": {
+                                    "valueProjector": {
+                                      "value": "Bearer Body?"
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "attributeArrayAppend": {
+                                "attributeKey": "traceableai.auth.rules",
+                                "valueProjectionRule": {
+                                  "projector": {
+                                    "valueProjector": {
+                                      "value": "f496d554-4685-4de4-a074-4186ee579a4d"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

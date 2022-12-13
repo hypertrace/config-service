@@ -1,0 +1,69 @@
+{
+  "attributeRules": [
+    {
+      "projector": {
+        "conditionalProjector": {
+          "predicate": {
+            "logicalPredicate": {
+              "operator": "LOGICAL_OPERATOR_OR",
+              "children": [
+                {
+                  "attributePredicate": {
+                    "namePredicate": {
+                      "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                      "value": "http.request.header.(?i)authorization$"
+                    },
+                    "valuePredicate": {
+                      "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                      "value": "^Bearer\\s.*"
+                    }
+                  }
+                },
+                {
+                  "attributePredicate": {
+                    "namePredicate": {
+                      "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                      "value": "rpc.request.metadata.(?i)authorization$"
+                    },
+                    "valuePredicate": {
+                      "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                      "value": "^Bearer\\s.*"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "attributeRule": {
+            "initialActions": [
+              {
+                "attributeArrayAppend": {
+                  "attributeKey": "traceableai.auth.types",
+                  "valueProjectionRule": {
+                    "projector": {
+                      "valueProjector": {
+                        "value": "Bearer Token"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "attributeArrayAppend": {
+                  "attributeKey": "traceableai.auth.rules",
+                  "valueProjectionRule": {
+                    "projector": {
+                      "valueProjector": {
+                        "value": "f496d554-4685-4de4-a074-4186ee579a4c"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

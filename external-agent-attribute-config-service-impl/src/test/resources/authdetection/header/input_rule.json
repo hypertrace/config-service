@@ -1,0 +1,16 @@
+{
+  "id": "f496d554-4685-4de4-a074-4186ee579a4c",
+  "authType": "Bearer Token",
+  "predicate": {
+    "headerPredicate": {
+      "keyPredicate": {
+        "operator": "RELATIONAL_OPERATOR_MATCHES_REGEX",
+        "value": "(?i)^authorization$"
+      },
+      "valuePredicate": {
+        "operator": "RELATIONAL_OPERATOR_MATCHES_REGEX",
+        "value": "^Bearer\\s.*"
+      }
+    }
+  }
+}

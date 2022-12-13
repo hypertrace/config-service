@@ -1,28 +1,25 @@
 package ai.traceable.external.agent.attribute.config.service.translator;
 
+import static com.google.inject.Stage.DEVELOPMENT;
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import ai.traceable.external.agent.attribute.config.service.translator.authdetection.AuthDetectionRuleTranslationModule;
+import ai.traceable.external.agent.attribute.config.service.translator.userattribution.UserAttributionRuleTranslationModule;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
+import com.google.inject.Guice;
 import java.io.IOException;
 import java.util.List;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class ExternalAgentAttributeRuleTranslatorTest {
 
-  private final AttributeKeysExtractor attributeKeysExtractor = new AttributeKeysExtractor();
-  private final AttributeRuleBuilder attributeRuleBuilder = new AttributeRuleBuilder();
   private final ExternalAgentAttributeRuleTranslator translator =
-      new ExternalAgentAttributeRuleTranslator(
-          Set.of(
-              new BasicAuthRuleTranslator(attributeKeysExtractor, attributeRuleBuilder),
-              new CustomTokenRuleTranslator(attributeKeysExtractor, attributeRuleBuilder),
-              new JwtRuleTranslator(attributeKeysExtractor, attributeRuleBuilder),
-              new RequestHeaderRuleTranslator(attributeKeysExtractor, attributeRuleBuilder),
-              new ResponseBodyRuleTranslator(attributeRuleBuilder)),
-          attributeRuleBuilder,
-          new UrlScopeTranslator(attributeRuleBuilder));
+      Guice.createInjector(
+              DEVELOPMENT,
+              new UserAttributionRuleTranslationModule(),
+              new AuthDetectionRuleTranslationModule())
+          .getInstance(ExternalAgentAttributeRuleTranslator.class);
 
   @Test
   void translateRules() throws IOException {
@@ -33,7 +30,11 @@ class ExternalAgentAttributeRuleTranslatorTest {
                 TestUtils.getUserAttributionRule("custom_token/request_body/input_rule.json"),
                 TestUtils.getUserAttributionRule("jwt/header/input_rule.json"),
                 TestUtils.getUserAttributionRule("request_header/input_rule.json"),
-                TestUtils.getUserAttributionRule("response_body/input_rule.json")));
+                TestUtils.getUserAttributionRule("response_body/input_rule.json")),
+            List.of(
+                TestUtils.getAuthDetectionRule("authdetection/composite/input_rule.json"),
+                TestUtils.getAuthDetectionRule("authdetection/header/input_rule.json"),
+                TestUtils.getAuthDetectionRule("authdetection/json_body/input_rule.json")));
 
     assertEquals(
         TestUtils.getExpectedAttributeRules("agent_attribute_rules.json"), translatedRules);
@@ -41,6 +42,6 @@ class ExternalAgentAttributeRuleTranslatorTest {
 
   @Test
   void translateNoRule() {
-    assertEquals(List.of(), translator.translateRules(emptyList()));
+    assertEquals(List.of(), translator.translateRules(emptyList(), emptyList()));
   }
 }

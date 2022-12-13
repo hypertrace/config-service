@@ -1,4 +1,4 @@
-package ai.traceable.external.agent.attribute.config.service.translator;
+package ai.traceable.external.agent.attribute.config.service.translator.userattribution;
 
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
@@ -10,7 +10,7 @@ import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class CustomJsonRuleTranslator implements RuleTranslator {
+public class CustomJsonRuleTranslator implements UserAttributionRuleTranslator {
 
   private static final Parser PARSER = JsonFormat.parser();
 

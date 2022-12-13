@@ -1,7 +1,8 @@
-package ai.traceable.external.agent.attribute.config.service.translator;
+package ai.traceable.external.agent.attribute.config.service.translator.userattribution;
 
 import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.AUTH_HEADER_KEYS;
 
+import ai.traceable.external.agent.attribute.config.service.translator.AttributeRuleBuilder;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.DataCase;
@@ -13,7 +14,7 @@ import javax.inject.Inject;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(onConstructor_ = {@Inject})
-public class JwtRuleTranslator implements RuleTranslator {
+public class JwtRuleTranslator implements UserAttributionRuleTranslator {
 
   private static final String BEARER_CAPTURE_GROUP = "^(?:(?i)Bearer:? )?(.*)$";
   private final AttributeKeysExtractor attributeKeysExtractor;
