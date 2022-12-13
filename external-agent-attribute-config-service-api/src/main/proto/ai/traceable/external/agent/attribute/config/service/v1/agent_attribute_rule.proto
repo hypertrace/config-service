@@ -61,6 +61,7 @@ message AttributeRule {
           AttributePredicate attribute_predicate = 1;
           LogicalPredicate logical_predicate = 2;
           StringPredicate current_value_predicate = 3;
+          ProjectorPredicate projector_predicate = 4;
         }
 
         message LogicalPredicate {
@@ -79,6 +80,11 @@ message AttributeRule {
           StringPredicate value_predicate = 2;
         }
 
+        message ProjectorPredicate {
+          // This predicate evaluates true if the projector matches a value (returns true)
+          Projector projector = 1;
+        }
+
         message StringPredicate {
           ComparisonOperator operator = 1;
           string value = 2;
@@ -88,6 +94,8 @@ message AttributeRule {
           COMPARISON_OPERATOR_UNSPECIFIED = 0;
           COMPARISON_OPERATOR_EQUALS = 1;
           COMPARISON_OPERATOR_MATCHES_REGEX = 2;
+          COMPARISON_OPERATOR_NOT_EQUALS = 3;
+          COMPARISON_OPERATOR_NOT_MATCHES_REGEX = 4;
         }
       }
     }
@@ -124,6 +132,11 @@ message AttributeRule {
 
     message ParsedObjectKeyRule {
       string key = 1;
+      // key ideally should be in one of too but can't be moved for backwards compat. Only one of key or key_match will be set
+      oneof key_match {
+        ConditionalProjector.Predicate.StringPredicate key_predicate = 3;
+      }
+
       AttributeRule attribute_rule = 2;
     }
 
@@ -139,7 +152,27 @@ message AttributeRule {
 
     message AttributeProjector {
       string attribute_key = 1;
+      // attribute_key ideally should be in one of too but can't be moved for backwards compat. Only one of attribute_key or attribute_key_match will be set
+      oneof attribute_key_match {
+        ConditionalProjector.Predicate.StringPredicate attribute_key_predicate = 3;
+      }
+
       AttributeRule attribute_rule = 2;
+    }
+
+    message UrlProjector {
+      oneof value {
+        ConditionalProjector.Predicate.StringPredicate query_parameter_predicate = 1;
+        int32 path_param_index = 2;
+        Empty host = 3;
+        Empty port = 4;
+        Empty scheme = 5;
+        Empty fragment = 6;
+      }
+
+      AttributeRule attribute_rule = 10;
     }
   }
 }
+
+message Empty {}
