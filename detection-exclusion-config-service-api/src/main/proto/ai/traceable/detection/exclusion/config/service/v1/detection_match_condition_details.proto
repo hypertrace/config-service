@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package ai.traceable.detection.exclusion.config.service.v1;
+
+option java_multiple_files = true;
+
+import "google/protobuf/struct.proto";
+
+message KeyMetadataMatchCondition {
+  KeyMetadata metadata = 1;
+  MatchCondition match_condition = 2; // optional, depending on the metadata
+}
+
+enum KeyMetadata {
+  KEY_METADATA_UNSPECIFIED = 0;
+  KEY_METADATA_URL = 1;
+  KEY_METADATA_HOST = 2;
+  KEY_METADATA_HTTP_METHOD = 3;
+  KEY_METADATA_USER_AGENT = 4;
+  KEY_METADATA_STATUS_CODE = 5;
+  KEY_METADATA_REQUEST_BODY = 6;
+  KEY_METADATA_RESPONSE_BODY = 7;
+  KEY_METADATA_REQUEST_HEADER = 8;
+  KEY_METADATA_RESPONSE_HEADER = 9;
+  KEY_METADATA_REQUEST_COOKIE = 10;
+  KEY_METADATA_RESPONSE_COOKIE = 11;
+  KEY_METADATA_QUERY_PARAMETER = 12;
+  KEY_METADATA_REQUEST_BODY_PARAMETER = 13;
+  KEY_METADATA_RESPONSE_BODY_PARAMETER = 14;
+}
+
+message MatchCondition {
+  MatchOperator operator = 1;
+  google.protobuf.Value value = 2;
+}
+
+enum MatchOperator {
+  MATCH_OPERATOR_UNSPECIFIED = 0;
+  MATCH_OPERATOR_EQUALS = 1;
+  MATCH_OPERATOR_NOT_EQUAL = 2;
+  MATCH_OPERATOR_MATCHES_REGEX = 3;
+  MATCH_OPERATOR_NOT_MATCH_REGEX = 4;
+}

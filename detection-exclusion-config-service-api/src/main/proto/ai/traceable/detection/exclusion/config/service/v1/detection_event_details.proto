@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package ai.traceable.detection.exclusion.config.service.v1;
+
+option java_multiple_files = true;
+
+
+message SystemDefinedEvent {
+  SystemDefinedEventFamily event_family = 1;
+  oneof type_id {
+    string event_type_id = 2;
+    string event_sub_type_id = 3;
+  }
+}
+
+enum SystemDefinedEventFamily {
+  SYSTEM_DEFINED_EVENT_FAMILY_UNSPECIFIED = 0;
+  SYSTEM_DEFINED_EVENT_FAMILY_API_DEF = 1;
+  SYSTEM_DEFINED_EVENT_FAMILY_MODSEC = 2;
+  SYSTEM_DEFINED_EVENT_FAMILY_SESSION = 3;
+}
+
+message CustomRuleEvent {
+  CustomRuleFamily rule_family = 1;
+  optional string rule_id = 2;
+}
+
+enum CustomRuleFamily {
+  CUSTOM_RULE_FAMILY_UNSPECIFIED = 0;
+  CUSTOM_RULE_FAMILY_SIGNATURE = 1;
+  CUSTOM_RULE_FAMILY_RATE_LIMIT = 2;
+  CUSTOM_RULE_FAMILY_MALICIOUS_SOURCES = 3;
+}

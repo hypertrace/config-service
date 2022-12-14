@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package ai.traceable.detection.exclusion.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/detection/exclusion/config/service/v1/detection_exclusion_conditions.proto";
+
+
+message DetectionExclusionRule {
+  string id = 1;
+  DetectionExclusionRuleScope rule_scope = 2;
+  DetectionExclusionRuleInfo rule_info = 3;
+}
+
+message DetectionExclusionRuleScope {
+  oneof scope { // if no option selected, default is customer scope (all environments)
+    EnvironmentScope environment_scope = 1;
+  }
+}
+
+message EnvironmentScope {
+  repeated string environment_ids = 1;
+}
+
+message DetectionExclusionRuleInfo {
+  string name = 1;
+  string description = 2;
+  repeated DetectionExclusionCondition conditions = 3;
+  DetectionExclusionRuleStatus rule_status = 4;
+}
+
+
+message DetectionExclusionCondition {
+  oneof condition {
+    ScopeCondition scope_condition = 1;
+    SpanAttributeMatchCondition attribute_match_condition = 2;
+    IpLocationTypeCondition ip_location_type_condition = 3;
+    IpReputationCondition ip_reputation_condition = 4;
+    UserIdCondition user_id_condition = 5;
+    EventCondition event_condition = 6;
+    AnomalousAttributeCondition anomalous_attribute_condition = 7;
+    ScopeCondition source_scope_condition = 8;
+    AnomalousAttributeCondition source_anomalous_attribute_match_condition = 9;
+  }
+}
+
+message DetectionExclusionRuleStatus {
+  bool disabled = 1;
+  bool hidden = 2;
+  bool generate_internal_events = 3;
+  RuleChangeSource change_source = 4;
+}
+
+enum RuleChangeSource {
+  RULE_CHANGE_SOURCE_UNSPECIFIED = 0;
+  RULE_CHANGE_SOURCE_DEFAULT = 1;
+  RULE_CHANGE_SOURCE_CUSTOMER = 2;
+  RULE_CHANGE_SOURCE_TRACEABLE = 3;
+  RULE_CHANGE_SOURCE_SYSTEM = 4;
+}

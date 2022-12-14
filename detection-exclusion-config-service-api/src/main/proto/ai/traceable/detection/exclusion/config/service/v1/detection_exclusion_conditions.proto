@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package ai.traceable.detection.exclusion.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/detection/exclusion/config/service/v1/detection_match_condition_details.proto";
+import "ai/traceable/detection/exclusion/config/service/v1/detection_scope_details.proto";
+import "ai/traceable/detection/exclusion/config/service/v1/detection_event_details.proto";
+
+
+message ScopeCondition {
+  oneof scope {
+    EntityScope entity_scope = 1;
+    LabelScope label_scope = 2;
+  }
+}
+
+message SpanAttributeMatchCondition {
+  KeyMetadataMatchCondition key_match_condition = 1;
+  MatchCondition value_match_condition = 2;
+}
+
+message IpLocationTypeCondition {
+  repeated IpLocationType ip_location_types = 1;
+}
+
+enum IpLocationType {
+  IP_LOCATION_TYPE_UNSPECIFIED = 0;
+  IP_LOCATION_TYPE_ANONYMOUS_VPN = 1;
+  IP_LOCATION_TYPE_HOSTING_PROVIDER = 2;
+  IP_LOCATION_TYPE_PUBLIC_PROXY = 3;
+  IP_LOCATION_TYPE_TOR_EXIT_NODE = 4;
+  IP_LOCATION_TYPE_BOT = 7;
+}
+
+message IpReputationCondition {
+  oneof reputation {
+    IpReputationSeverity max_ip_reputation_severity = 1;
+    int32 max_ip_reputation_score = 2;
+  }
+}
+
+message UserIdCondition {
+  repeated string user_id_regexes = 1;
+  repeated string actor_entity_ids = 2;
+}
+
+enum IpReputationSeverity {
+  IP_REPUTATION_SEVERITY_UNSPECIFIED = 0;
+  IP_REPUTATION_SEVERITY_LOW = 1;
+  IP_REPUTATION_SEVERITY_MEDIUM = 2;
+  IP_REPUTATION_SEVERITY_HIGH = 3;
+  IP_REPUTATION_SEVERITY_CRITICAL = 4;
+}
+
+message EventCondition {
+  repeated SystemDefinedEvent system_defined_events = 1;
+  repeated CustomRuleEvent custom_rule_events = 2;
+}
+
+message AnomalousAttributeCondition {
+  MatchCondition key_match_condition = 1;
+  MatchCondition value_match_condition = 2;
+}

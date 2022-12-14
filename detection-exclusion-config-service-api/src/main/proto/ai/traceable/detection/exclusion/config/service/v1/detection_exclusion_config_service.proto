@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package ai.traceable.detection.exclusion.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/detection/exclusion/config/service/v1/detection_exclusion_request_response.proto";
+
+service DetectionExclusionConfigService {
+
+    rpc GetDetectionExclusionRules (GetDetectionExclusionRulesRequest) returns (GetDetectionExclusionRulesResponse) {
+    }
+
+    rpc CreateDetectionExclusionRule (CreateDetectionExclusionRuleRequest) returns (CreateDetectionExclusionRuleResponse) {
+    }
+
+    rpc UpdateDetectionExclusionRule (UpdateDetectionExclusionRuleRequest) returns (UpdateDetectionExclusionRuleResponse) {
+    }
+
+    rpc DeleteDetectionExclusionRule (DeleteDetectionExclusionRuleRequest) returns (DeleteDetectionExclusionRuleResponse) {
+    }
+}

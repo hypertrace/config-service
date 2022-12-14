@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package ai.traceable.detection.exclusion.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/detection/exclusion/config/service/v1/detection_exclusion_rule.proto";
+
+message CreateDetectionExclusionRuleRequest {
+  DetectionExclusionRuleScope rule_scope = 1;
+  DetectionExclusionRuleInfo rule_info = 2;
+}
+
+message CreateDetectionExclusionRuleResponse {
+  DetectionExclusionRule rule = 1;
+}
+
+message UpdateDetectionExclusionRuleRequest {
+  DetectionExclusionRule rule = 1;
+}
+
+message UpdateDetectionExclusionRuleResponse {
+  DetectionExclusionRule rule = 1;
+}
+
+message DeleteDetectionExclusionRuleRequest {
+  string id = 1;
+}
+
+message DeleteDetectionExclusionRuleResponse {
+}
+
+message GetDetectionExclusionRulesRequest {
+  GetRulesFilter filter = 1;
+}
+
+message GetDetectionExclusionRulesResponse {
+  repeated DetectionExclusionRule rules = 1;
+}
+
+message GetRulesFilter {
+  repeated string rule_ids = 1;
+  DetectionExclusionRuleScope rule_scope = 2;
+  optional bool disabled = 3;
+  optional bool hidden = 4;
+  repeated RuleChangeSource rule_change_sources = 5;
+}

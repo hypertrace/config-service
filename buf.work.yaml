@@ -9,6 +9,7 @@ directories:
   - custom-signature-config-service-api/src/main/proto
   - data-classification-config-service-api/src/main/proto
   - data-exfiltration-config-service-api/src/main/proto
+  - detection-exclusion-config-service-api/src/main/proto
   - external-agent-attribute-config-service-api/src/main/proto
   - external-data-classification-config-service-api/src/main/proto
   - external-user-attribution-config-service-api/src/main/proto
