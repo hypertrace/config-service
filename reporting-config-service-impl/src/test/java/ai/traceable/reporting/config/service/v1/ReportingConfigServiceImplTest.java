@@ -1,18 +1,12 @@
-package ai.traceable.reporting.config.service;
+package ai.traceable.reporting.config.service.v1;
 
-import static ai.traceable.reporting.config.service.v1.ReportConfigurationDetails.*;
+import static ai.traceable.reporting.config.service.v1.ReportConfigurationDetails.ReportFrequency;
+import static ai.traceable.reporting.config.service.v1.ReportConfigurationDetails.newBuilder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
-import ai.traceable.reporting.config.service.v1.CreateReportConfigurationRequest;
-import ai.traceable.reporting.config.service.v1.DeleteReportConfigurationRequest;
-import ai.traceable.reporting.config.service.v1.GetAllReportConfigurationsRequest;
-import ai.traceable.reporting.config.service.v1.ReportConfiguration;
-import ai.traceable.reporting.config.service.v1.ReportConfigurationDetails;
 import ai.traceable.reporting.config.service.v1.ReportConfigurationDetails.ReportFrequency.DayOfWeek;
 import ai.traceable.reporting.config.service.v1.ReportConfigurationDetails.ReportFrequency.WeeklyFrequency;
-import ai.traceable.reporting.config.service.v1.ReportingConfigServiceGrpc;
-import ai.traceable.reporting.config.service.v1.UpdateReportConfigurationRequest;
 import java.util.Collections;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;

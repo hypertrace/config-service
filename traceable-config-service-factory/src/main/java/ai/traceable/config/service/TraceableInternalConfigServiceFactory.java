@@ -15,7 +15,7 @@ import ai.traceable.malicioussources.config.service.MaliciousSourcesConfigServic
 import ai.traceable.ratelimiting.service.v1.RateLimitingConfigServiceImpl;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceFactory;
 import ai.traceable.region.config.service.RegionConfigServiceFactory;
-import ai.traceable.reporting.config.service.ReportingConfigServiceFactory;
+import ai.traceable.reporting.config.service.v2.ReportingConfigServiceFactory;
 import ai.traceable.risk.config.service.RiskConfigServiceFactory;
 import ai.traceable.sensitivedata.config.service.SensitiveDataConfigServicesProvider;
 import ai.traceable.span.processing.config.service.SpanProcessingConfigServiceFactory;
@@ -146,7 +146,10 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
             wrap(new EventConditionConfigServiceImpl(providers.getLocalChannel())),
             wrap(
-                ReportingConfigServiceFactory.build(
+                ai.traceable.reporting.config.service.v1.ReportingConfigServiceFactory.build( // v1
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())),
+            wrap(
+                ReportingConfigServiceFactory.build( // v2
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
             wrap(
                 AuthDetectionConfigServiceFactory.build(

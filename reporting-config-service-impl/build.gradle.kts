@@ -19,6 +19,7 @@ dependencies {
   implementation(libs.hypertrace.configservice.changeeventgenerator)
   implementation(libs.hypertrace.configservice.validation)
   implementation(libs.uuidCreator)
+  implementation(projects.configUtils)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

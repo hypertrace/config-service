@@ -1,17 +1,5 @@
-package ai.traceable.reporting.config.service;
+package ai.traceable.reporting.config.service.v1;
 
-import ai.traceable.reporting.config.service.v1.CreateReportConfigurationRequest;
-import ai.traceable.reporting.config.service.v1.CreateReportConfigurationResponse;
-import ai.traceable.reporting.config.service.v1.DeleteReportConfigurationRequest;
-import ai.traceable.reporting.config.service.v1.DeleteReportConfigurationResponse;
-import ai.traceable.reporting.config.service.v1.GetAllReportConfigurationsRequest;
-import ai.traceable.reporting.config.service.v1.GetAllReportConfigurationsResponse;
-import ai.traceable.reporting.config.service.v1.ReportConfiguration;
-import ai.traceable.reporting.config.service.v1.ReportingConfigServiceGrpc;
-import ai.traceable.reporting.config.service.v1.UpdateReportConfigurationRequest;
-import ai.traceable.reporting.config.service.v1.UpdateReportConfigurationResponse;
-import ai.traceable.reporting.config.service.v1.UpdateReportExecutionTimeRequest;
-import ai.traceable.reporting.config.service.v1.UpdateReportExecutionTimeResponse;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;

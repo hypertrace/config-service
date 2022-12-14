@@ -1,10 +1,13 @@
-package ai.traceable.reporting.config.service;
+package ai.traceable.reporting.config.service.v2;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 import io.grpc.BindableService;
 import io.grpc.Channel;
-import java.time.Clock;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
+import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 public class ReportingConfigServiceModule extends AbstractModule {
   private final Channel channel;
@@ -18,9 +21,17 @@ public class ReportingConfigServiceModule extends AbstractModule {
 
   @Override
   protected void configure() {
-    bind(Clock.class).toInstance(Clock.systemUTC());
     bind(BindableService.class).to(ReportingConfigServiceImpl.class);
+    bind(ReportingConfigRequestValidator.class).to(ReportingConfigRequestValidatorImpl.class);
+    bind(ReportingConfigManager.class).to(ReportingConfigManagerImpl.class);
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
     bind(Channel.class).toInstance(channel);
+  }
+
+  @Provides
+  ConfigServiceBlockingStub providesConfigService() {
+    return ConfigServiceGrpc.newBlockingStub(channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }
 }

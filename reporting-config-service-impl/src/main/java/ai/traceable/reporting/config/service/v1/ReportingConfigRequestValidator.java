@@ -1,14 +1,8 @@
-package ai.traceable.reporting.config.service;
+package ai.traceable.reporting.config.service.v1;
 
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
-import ai.traceable.reporting.config.service.v1.CreateReportConfigurationRequest;
-import ai.traceable.reporting.config.service.v1.DeleteReportConfigurationRequest;
-import ai.traceable.reporting.config.service.v1.GetAllReportConfigurationsRequest;
-import ai.traceable.reporting.config.service.v1.ReportConfigurationDetails;
-import ai.traceable.reporting.config.service.v1.UpdateReportConfigurationRequest;
-import ai.traceable.reporting.config.service.v1.UpdateReportExecutionTimeRequest;
 import io.grpc.Status;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

@@ -1,4 +1,4 @@
-package ai.traceable.reporting.config.service;
+package ai.traceable.reporting.config.service.v2;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;

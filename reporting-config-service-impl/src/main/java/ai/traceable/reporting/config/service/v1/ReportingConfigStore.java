@@ -1,6 +1,5 @@
-package ai.traceable.reporting.config.service;
+package ai.traceable.reporting.config.service.v1;
 
-import ai.traceable.reporting.config.service.v1.ReportConfiguration;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import io.grpc.Channel;
