@@ -27,6 +27,18 @@ class CustomTokenRuleTranslatorTest {
   }
 
   @Test
+  void translateRequestCookieRuleForAuthType() throws IOException {
+    List<AttributeRule> translatedRules =
+        customTokenRuleTranslator
+            .translateRuleForAuthType(
+                TestUtils.getUserAttributionRule("custom_token/request_cookie/input_rule.json"))
+            .collect(Collectors.toUnmodifiableList());
+    Assertions.assertEquals(
+        TestUtils.getExpectedAttributeRules("custom_token/request_cookie/auth_type_rules.json"),
+        translatedRules);
+  }
+
+  @Test
   void translateRequestBodyRuleForAuthType() throws IOException {
     List<AttributeRule> translatedRules =
         customTokenRuleTranslator
