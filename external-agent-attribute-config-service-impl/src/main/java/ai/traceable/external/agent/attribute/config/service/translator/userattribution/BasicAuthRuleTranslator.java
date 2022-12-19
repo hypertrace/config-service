@@ -1,7 +1,6 @@
 package ai.traceable.external.agent.attribute.config.service.translator.userattribution;
 
 import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.AUTH_HEADER_KEYS;
-import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.BASIC_AUTH_TYPE;
 
 import ai.traceable.external.agent.attribute.config.service.translator.AttributeRuleBuilder;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
@@ -34,28 +33,10 @@ public class BasicAuthRuleTranslator implements UserAttributionRuleTranslator {
         .map(key -> translateRuleForUserId(key, rule.getId(), headerLocation.getParsingTarget()));
   }
 
-  @Override
-  public Stream<AttributeRule> translateRuleForAuthType(UserAttributionRule rule) {
-    HeaderLocation headerLocation = rule.getData().getBasicAuthenticationData().getLocation();
-    return attributeKeysExtractor
-        .getHeaderAttributeKeysIfSet(headerLocation)
-        .orElse(AUTH_HEADER_KEYS)
-        .stream()
-        .map(key -> translateRuleForAuthType(key, rule.getId(), headerLocation.getParsingTarget()));
-  }
-
   private AttributeRule translateRuleForUserId(
       String key, String ruleId, ParsingTarget parsingTarget) {
     return getRule(
         key, attributeRuleBuilder.buildActionAttributeRuleForUserId(ruleId), parsingTarget);
-  }
-
-  private AttributeRule translateRuleForAuthType(
-      String key, String ruleId, ParsingTarget parsingTarget) {
-    return getRule(
-        key,
-        attributeRuleBuilder.buildActionAttributeRuleForAuthType(BASIC_AUTH_TYPE, ruleId),
-        parsingTarget);
   }
 
   private AttributeRule getRule(

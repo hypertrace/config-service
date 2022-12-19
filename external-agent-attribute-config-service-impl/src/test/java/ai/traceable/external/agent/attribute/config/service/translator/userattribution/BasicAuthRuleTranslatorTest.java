@@ -4,6 +4,7 @@ import ai.traceable.external.agent.attribute.config.service.translator.Attribute
 import ai.traceable.external.agent.attribute.config.service.translator.TestUtils;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
@@ -31,7 +32,6 @@ class BasicAuthRuleTranslatorTest {
             .translateRuleForAuthType(
                 TestUtils.getUserAttributionRule("basic_auth/input_rule.json"))
             .collect(Collectors.toUnmodifiableList());
-    Assertions.assertEquals(
-        TestUtils.getExpectedAttributeRules("basic_auth/auth_type_rules.json"), translatedRules);
+    Assertions.assertEquals(Collections.emptyList(), translatedRules);
   }
 }
