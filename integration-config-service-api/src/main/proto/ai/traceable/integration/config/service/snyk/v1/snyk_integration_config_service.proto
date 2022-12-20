@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package ai.traceable.integration.config.service.snyk.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/integration/config/service/snyk/v1/snyk_integration.proto";
+
+service SnykIntegrationService {
+  rpc GetSnykIntegrationSummary (GetSnykIntegrationSummaryRequest) returns (GetSnykIntegrationSummaryResponse) {}
+  rpc GetSnykIntegrationDetails (GetSnykIntegrationDetailsRequest) returns (GetSnykIntegrationDetailsResponse) {}
+  rpc CreateSnykIntegration (CreateSnykIntegrationRequest) returns (CreateSnykIntegrationResponse) {}
+  rpc UpdateSnykIntegration (UpdateSnykIntegrationRequest) returns (UpdateSnykIntegrationResponse) {}
+  rpc DeleteSnykIntegration (DeleteSnykIntegrationRequest) returns (DeleteSnykIntegrationResponse) {}
+}
+
+message GetSnykIntegrationSummaryRequest {}
+
+message GetSnykIntegrationSummaryResponse {
+  SnykIntegrationSummary snyk_integration_summary = 1;
+}
+
+message GetSnykIntegrationDetailsRequest {}
+
+message GetSnykIntegrationDetailsResponse {
+  SnykIntegration snyk_integration = 1;
+}
+
+message CreateSnykIntegrationRequest {
+  string name = 1;
+  optional string description = 2;
+  EncryptedText api_token = 3;
+}
+
+message CreateSnykIntegrationResponse {
+  SnykIntegrationSummary snyk_integration_summary = 1;
+}
+
+message UpdateSnykIntegrationRequest {
+  string name = 1;
+  optional string description = 2;
+  EncryptedText encrypted_text = 3;
+}
+
+message UpdateSnykIntegrationResponse {
+  SnykIntegrationSummary snyk_integration_summary = 1;
+}
+
+message DeleteSnykIntegrationRequest {}
+
+message DeleteSnykIntegrationResponse {}
