@@ -8,6 +8,7 @@ import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_STATUS_CHANG
 import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_STATUS_CHANGE_SOURCE;
 import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_STATUS_EXPIRY_TIMESTAMP;
 
+import ai.traceable.platform.actor.v1.MaliciousSourcesDetails;
 import ai.traceable.platform.actor.v1.RateLimitDetails;
 import ai.traceable.platform.actor.v1.Status;
 import ai.traceable.platform.actor.v1.StatusChangeDetails;
@@ -104,13 +105,23 @@ class ActorStatusDetails {
     try {
       Value statusChangeDetailsValue = actorFieldsMap.get(ACTOR_FIELD_STATUS_CHANGE_DETAILS.name());
       if (statusChangeDetailsValue != null && statusChangeDetailsValue.hasStructValue()) {
-        if (parseStatusChangeSource(actorFieldsMap)
-            == StatusChangeSource.STATUS_CHANGE_SOURCE_RATE_LIMIT) {
-          RateLimitDetails.Builder rateLimitDetailsValue = RateLimitDetails.newBuilder();
-          ConfigProtoConverter.mergeFromValue(statusChangeDetailsValue, rateLimitDetailsValue);
-          statusChangeDetailsBuilder.setRateLimitDetails(rateLimitDetailsValue.build());
-        } else {
-          ConfigProtoConverter.mergeFromValue(statusChangeDetailsValue, statusChangeDetailsBuilder);
+        switch (parseStatusChangeSource(actorFieldsMap)) {
+          case STATUS_CHANGE_SOURCE_RATE_LIMIT:
+            RateLimitDetails.Builder rateLimitDetailsValue = RateLimitDetails.newBuilder();
+            ConfigProtoConverter.mergeFromValue(statusChangeDetailsValue, rateLimitDetailsValue);
+            statusChangeDetailsBuilder.setRateLimitDetails(rateLimitDetailsValue.build());
+            break;
+          case STATUS_CHANGE_SOURCE_MALICIOUS_SOURCES:
+            MaliciousSourcesDetails.Builder maliciousSourcesDetailsValue =
+                MaliciousSourcesDetails.newBuilder();
+            ConfigProtoConverter.mergeFromValue(
+                statusChangeDetailsValue, maliciousSourcesDetailsValue);
+            statusChangeDetailsBuilder.setMaliciousSourcesDetails(
+                maliciousSourcesDetailsValue.build());
+            break;
+          default:
+            ConfigProtoConverter.mergeFromValue(
+                statusChangeDetailsValue, statusChangeDetailsBuilder);
         }
       }
     } catch (Exception e) {

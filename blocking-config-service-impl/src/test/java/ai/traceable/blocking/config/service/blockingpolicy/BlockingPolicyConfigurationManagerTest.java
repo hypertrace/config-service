@@ -81,12 +81,14 @@ class BlockingPolicyConfigurationManagerTest {
             List.of(
                 "custom-ip-based-exemption",
                 "threat-actor-exemption",
+                "email-domain-exemption",
                 "custom-signature-exemption",
                 "custom-signature-violation",
                 "modsec-violation",
                 "custom-ip-based-block-all-except",
                 "custom-ip-based-violation",
                 "threat-actor-violation",
+                "email-domain-violation",
                 "ip-type-violation",
                 "region-block-all-except",
                 "region-violation",
@@ -98,20 +100,11 @@ class BlockingPolicyConfigurationManagerTest {
         blockingPolicyConfigurationManager.getBlockingPolicyConfiguration(
             REQUEST_CONTEXT, "", Optional.of(ENVIRONMENT_ID));
 
-    assertEquals(desiredPrecedenceOrder.get(0), blockingRules.getBlockingDetailsList(0).getInfo());
-    assertEquals(desiredPrecedenceOrder.get(1), blockingRules.getBlockingDetailsList(1).getInfo());
-    assertEquals(desiredPrecedenceOrder.get(2), blockingRules.getBlockingDetailsList(2).getInfo());
-    assertEquals(desiredPrecedenceOrder.get(3), blockingRules.getBlockingDetailsList(3).getInfo());
-    assertEquals(desiredPrecedenceOrder.get(4), blockingRules.getBlockingDetailsList(4).getInfo());
-    assertEquals(desiredPrecedenceOrder.get(5), blockingRules.getBlockingDetailsList(5).getInfo());
-    assertEquals(desiredPrecedenceOrder.get(6), blockingRules.getBlockingDetailsList(6).getInfo());
-    assertEquals(desiredPrecedenceOrder.get(7), blockingRules.getBlockingDetailsList(7).getInfo());
-    assertEquals(desiredPrecedenceOrder.get(8), blockingRules.getBlockingDetailsList(8).getInfo());
-    assertEquals(desiredPrecedenceOrder.get(9), blockingRules.getBlockingDetailsList(9).getInfo());
-    assertEquals(
-        desiredPrecedenceOrder.get(10), blockingRules.getBlockingDetailsList(10).getInfo());
-    assertEquals(
-        desiredPrecedenceOrder.get(11), blockingRules.getBlockingDetailsList(11).getInfo());
+    assertEquals(desiredPrecedenceOrder.size(), blockingRules.getBlockingDetailsListCount());
+    for (int i = 0; i < desiredPrecedenceOrder.size(); i++) {
+      assertEquals(
+          desiredPrecedenceOrder.get(i), blockingRules.getBlockingDetailsList(i).getInfo());
+    }
 
     // Test the hash based mechanism
     BlockingPolicyConfiguration blockingRules2 =
@@ -158,6 +151,20 @@ class BlockingPolicyConfigurationManagerTest {
                         .setCategory(BLOCKING_CATEGORY_RATE_LIMIT)
                         .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK)
                         .setInfo("rate-limit-violation")
+                        .build()),
+                List.of(
+                    BlockingDetails.newBuilder()
+                        .setIpDetails(IpDetails.newBuilder().addIpAddresses("1.2.3.4").build())
+                        .setCategory(BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE)
+                        .setBlockingRuleType(BLOCKING_RULE_TYPE_ALLOW)
+                        .setInfo("email-domain-exemption")
+                        .build()),
+                List.of(
+                    BlockingDetails.newBuilder()
+                        .setIpDetails(IpDetails.newBuilder().addIpAddresses("1.2.3.4").build())
+                        .setCategory(BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE)
+                        .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK)
+                        .setInfo("email-domain-violation")
                         .build())))
         .when(actorBasedDataFetcher)
         .getActorBasedRules(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));

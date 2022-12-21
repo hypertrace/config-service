@@ -82,44 +82,48 @@ public class DefaultBlockingPolicyConfigurationManager
     // Actor based rules
     ActorBasedRulesCollection actorBasedRulesCollection =
         actorBasedDataFetcher.getActorBasedRules(requestContext, environmentId);
-    List<BlockingDetails> threatActorExemption =
+    List<BlockingDetails> threatActorExemptions =
         actorBasedRulesCollection.getThreatActorBasedIpExemptions();
-    List<BlockingDetails> threatActorViolation =
+    List<BlockingDetails> threatActorViolations =
         actorBasedRulesCollection.getThreatActorBasedIpViolations();
-    List<BlockingDetails> rateLimitViolation =
+    List<BlockingDetails> rateLimitViolations =
         actorBasedRulesCollection.getRateLimitBasedIpViolations();
+    List<BlockingDetails> emailDomainBasedExemptions =
+        actorBasedRulesCollection.getEmailDomainBasedExemptions();
+    List<BlockingDetails> emailDomainBasedViolations =
+        actorBasedRulesCollection.getEmailDomainBasedViolations();
 
     // Custom signature rules
     Map<BlockingRuleType, List<BlockingDetails>> customSignatureRulesMap =
         customSignatureDataFetcher.getCustomSignatureRules(requestContext, environmentId);
-    List<BlockingDetails> customSignatureExemption =
+    List<BlockingDetails> customSignatureExemptions =
         customSignatureRulesMap.get(BLOCKING_RULE_TYPE_ALLOW);
-    List<BlockingDetails> customSignatureViolation =
+    List<BlockingDetails> customSignatureViolations =
         customSignatureRulesMap.get(BLOCKING_RULE_TYPE_BLOCK);
 
     // Modsec
-    List<BlockingDetails> modsecViolation =
+    List<BlockingDetails> modsecViolations =
         modsecDataFetcher.getModsecViolations(requestContext, environmentId);
 
     // Custom ip rules
     Map<BlockingRuleType, List<BlockingDetails>> customIpBasedRulesMap =
         customIpBasedDataFetcher.getCustomIpBasedRules(requestContext, environmentId);
-    List<BlockingDetails> customIpBasedExemption =
+    List<BlockingDetails> customIpBasedExemptions =
         customIpBasedRulesMap.get(BLOCKING_RULE_TYPE_ALLOW);
-    List<BlockingDetails> customIpBasedBlockAllExcept =
+    List<BlockingDetails> customIpBasedBlockAllExcepts =
         customIpBasedRulesMap.get(BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT);
-    List<BlockingDetails> customIpBasedViolation =
+    List<BlockingDetails> customIpBasedViolations =
         customIpBasedRulesMap.get(BLOCKING_RULE_TYPE_BLOCK);
 
     // Region based rules
     Map<BlockingRuleType, List<BlockingDetails>> regionBasedRulesMap =
         regionDataFetcher.getRegionBasedRules(requestContext, environmentId);
-    List<BlockingDetails> regionBlockAllExcept =
+    List<BlockingDetails> regionBlockAllExcepts =
         regionBasedRulesMap.get(BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT);
-    List<BlockingDetails> regionViolation = regionBasedRulesMap.get(BLOCKING_RULE_TYPE_BLOCK);
+    List<BlockingDetails> regionViolations = regionBasedRulesMap.get(BLOCKING_RULE_TYPE_BLOCK);
 
     // Ip-type
-    List<BlockingDetails> ipTypeViolation =
+    List<BlockingDetails> ipTypeViolations =
         ipTypeDataFetcher.getIpTypeViolations(requestContext, environmentId);
 
     // TODO: cleaner way to enforce ordering
@@ -129,30 +133,34 @@ public class DefaultBlockingPolicyConfigurationManager
     Current order -
             "custom-ip-based-exemption",
             "threat-actor-exemption",
+            "email-domain-exemption",
             "custom-signature-exemption",
             "custom-signature-violation",
             "modsec-violation",
             "custom-ip-based-block-all-except",
             "custom-ip-based-violation",
             "threat-actor-violation",
+            "email-domain-violation",
             "ip-type-violation",
             "region-block-all-except",
             "region-violation",
             "rate-limit-violation"
        */
     return Stream.of(
-            customIpBasedExemption,
-            threatActorExemption,
-            customSignatureExemption,
-            customSignatureViolation,
-            modsecViolation,
-            customIpBasedBlockAllExcept,
-            customIpBasedViolation,
-            threatActorViolation,
-            ipTypeViolation,
-            regionBlockAllExcept,
-            regionViolation,
-            rateLimitViolation)
+            customIpBasedExemptions,
+            threatActorExemptions,
+            emailDomainBasedExemptions,
+            customSignatureExemptions,
+            customSignatureViolations,
+            modsecViolations,
+            customIpBasedBlockAllExcepts,
+            customIpBasedViolations,
+            threatActorViolations,
+            emailDomainBasedViolations,
+            ipTypeViolations,
+            regionBlockAllExcepts,
+            regionViolations,
+            rateLimitViolations)
         .flatMap(Collection::stream)
         .collect(Collectors.toUnmodifiableList());
   }

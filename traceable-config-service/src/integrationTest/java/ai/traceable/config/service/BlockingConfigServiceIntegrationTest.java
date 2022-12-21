@@ -36,6 +36,7 @@ import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetecti
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigRequest;
+import ai.traceable.blocking.config.service.v1.BlockingCategory;
 import ai.traceable.blocking.config.service.v1.BlockingConfigServiceGrpc;
 import ai.traceable.blocking.config.service.v1.BlockingConfigServiceGrpc.BlockingConfigServiceBlockingStub;
 import ai.traceable.blocking.config.service.v1.BlockingPolicyConfiguration;
@@ -79,6 +80,7 @@ import ai.traceable.platform.actor.v1.Actor;
 import ai.traceable.platform.actor.v1.Actor.Builder;
 import ai.traceable.platform.actor.v1.ActorServiceGrpc;
 import ai.traceable.platform.actor.v1.ActorServiceGrpc.ActorServiceBlockingStub;
+import ai.traceable.platform.actor.v1.MaliciousSourcesDetails;
 import ai.traceable.platform.actor.v1.RateLimitDetails;
 import ai.traceable.platform.actor.v1.ScoreCategory;
 import ai.traceable.platform.actor.v1.Status;
@@ -193,11 +195,28 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
             .build());
 
     // Need to add actors upfront due to caching
-    actorEntityId.add(createActor(STATUS_ALWAYS_DENIED, 0L, "", true));
-    actorEntityId.add(createActor(STATUS_ALWAYS_ALLOWED, activeTimestamp, ENVIRONMENT_ID, false));
-    actorEntityId.add(createActor(STATUS_SNOOZED, inactiveTimestamp, ENVIRONMENT_ID, false));
-    actorEntityId.add(createActor(STATUS_SUSPENDED, activeTimestamp, "random-env", true));
-    actorEntityId.add(createActor(STATUS_RESOLVED, activeTimestamp, "", false));
+    actorEntityId.add(createActor(STATUS_ALWAYS_DENIED, 0L, "", BLOCKING_CATEGORY_RATE_LIMIT));
+    actorEntityId.add(
+        createActor(
+            STATUS_ALWAYS_ALLOWED,
+            activeTimestamp,
+            ENVIRONMENT_ID,
+            BLOCKING_CATEGORY_THREAT_ACTOR));
+    actorEntityId.add(
+        createActor(
+            STATUS_SNOOZED, inactiveTimestamp, ENVIRONMENT_ID, BLOCKING_CATEGORY_THREAT_ACTOR));
+    actorEntityId.add(
+        createActor(STATUS_SUSPENDED, activeTimestamp, "random-env", BLOCKING_CATEGORY_RATE_LIMIT));
+    actorEntityId.add(
+        createActor(STATUS_RESOLVED, activeTimestamp, "", BLOCKING_CATEGORY_THREAT_ACTOR));
+    actorEntityId.add(
+        createActor(
+            STATUS_SUSPENDED,
+            activeTimestamp,
+            ENVIRONMENT_ID,
+            BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE));
+    actorEntityId.add(
+        createActor(STATUS_ALWAYS_ALLOWED, 0L, "", BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE));
   }
 
   @AfterAll
@@ -245,9 +264,9 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
     assertNotEquals(emptyValueUuid, modsecCrsBlockingRulesHash);
     assertFalse(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
 
-    // 1 modsec rule is present + 2 * (1 threat-actors + 2 rate-limit)
+    // 1 modsec rule is present + 2 * (1 threat-actors + 2 rate-limit + 2 malicious-source)
     assertNotEquals(emptyValueUuid, response.getBlockingPolicyConfiguration().getHash());
-    assertEquals(7, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
+    assertEquals(11, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
 
     createRegionRules();
     customSignatureRuleId.add(createCustomSignatureRule(Optional.empty()));
@@ -293,10 +312,10 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
         modsecCrsBlockingRulesHash, response.getSafeCrsBlockingRules().getHash()); // not changed
     assertTrue(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
 
-    // 1 modsec + 2 region + 1 custom-signature rule + 2 * (1 threat-actors + 2 rate-limit) + 1
-    // ip-type
+    // 1 modsec + 2 region + 1 custom-signature rule + 2 * (1 threat-actors + 2 rate-limit + 2
+    // malicious-source) + 1 ip-type
     assertNotEquals(emptyValueUuid, response.getBlockingPolicyConfiguration().getHash());
-    assertEquals(11, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
+    assertEquals(15, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
 
     // Checking with environment
     response =
@@ -338,11 +357,11 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
         modsecCrsBlockingRulesHash, response.getSafeCrsBlockingRules().getHash()); // not changed
     assertTrue(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
 
-    // 2 modsec + 3 region + 2 custom-signature rule + 2 * (1 threat-actors + 1 rate-limit) + 3
-    // ip-type
+    // 2 modsec + 3 region + 2 custom-signature rule + 2 * (1 threat-actors + 1 rate-limit + 2
+    // malicious-source) + 3 ip-type
     String blockingPolicyConfigurationHash = response.getBlockingPolicyConfiguration().getHash();
     assertNotEquals(emptyValueUuid, response.getBlockingPolicyConfiguration().getHash());
-    assertEquals(14, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
+    assertEquals(18, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
 
     response =
         RequestContext.forTenantId(TENANT_ID)
@@ -400,9 +419,9 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
   }
 
   void checkBlockingPolicy(BlockingPolicyConfiguration blockingPolicyConfiguration) {
-    // 2 modsec + 3 region + 2 custom-signature rule + 2 * (1 threat-actors + 1 rate-limit) + 2
-    // custom-ip + 3 ip-type
-    assertEquals(16, blockingPolicyConfiguration.getBlockingDetailsListCount());
+    // 2 modsec + 3 region + 2 custom-signature rule + 2 * (1 threat-actors + 1 rate-limit + 2
+    // malicious-source) + 2 custom-ip + 3 ip-type
+    assertEquals(20, blockingPolicyConfiguration.getBlockingDetailsListCount());
 
     assertEquals(
         BLOCKING_CATEGORY_CUSTOM_IP_RULE,
@@ -430,78 +449,103 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
             .getBlockingDetailsList(1)
             .getActorDetails()
             .getIpAddressesList());
+    assertEquals(
+        List.of("197.23.5.0"),
+        blockingPolicyConfiguration.getBlockingDetailsList(2).getIpDetails().getIpAddressesList());
+
+    assertEquals(
+        BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE,
+        blockingPolicyConfiguration.getBlockingDetailsList(3).getCategory());
+    assertEquals(
+        BLOCKING_STATUS_ALLOWED, blockingPolicyConfiguration.getBlockingDetailsList(3).getStatus());
+    assertEquals(
+        ExemptionInfoEncoder.getEncodedMaliciousSourcesExemptionInfo(
+            "Email-domain-rule-id", "Email-domain-rule", "", Optional.of(actorEntityId.get(6))),
+        blockingPolicyConfiguration.getBlockingDetailsList(3).getInfo());
+    assertEquals(
+        BLOCKING_RULE_TYPE_ALLOW,
+        blockingPolicyConfiguration.getBlockingDetailsList(3).getBlockingRuleType());
+    assertEquals(
+        List.of("197.23.5.0"),
+        blockingPolicyConfiguration
+            .getBlockingDetailsList(3)
+            .getActorDetails()
+            .getIpAddressesList());
+    assertEquals(
+        List.of("197.23.5.0"),
+        blockingPolicyConfiguration.getBlockingDetailsList(4).getIpDetails().getIpAddressesList());
 
     assertEquals(
         BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE,
-        blockingPolicyConfiguration.getBlockingDetailsList(3).getCategory());
+        blockingPolicyConfiguration.getBlockingDetailsList(5).getCategory());
     assertEquals(
         ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
             customSignatureRuleId.get(1), "rule-1", "EVENT_SEVERITY_MEDIUM"),
-        blockingPolicyConfiguration.getBlockingDetailsList(3).getInfo());
+        blockingPolicyConfiguration.getBlockingDetailsList(5).getInfo());
     assertEquals(
-        BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(3).getStatus());
+        BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(5).getStatus());
 
     assertEquals(
         BLOCKING_CATEGORY_MODSECURITY,
-        blockingPolicyConfiguration.getBlockingDetailsList(5).getCategory());
-    assertEquals(
-        BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(5).getStatus());
-    assertEquals(
-        "913100",
-        blockingPolicyConfiguration.getBlockingDetailsList(5).getModsecDetails().getRuleId());
-    assertEquals(
-        "941280",
-        blockingPolicyConfiguration.getBlockingDetailsList(6).getModsecDetails().getRuleId());
-
-    assertEquals(
-        BLOCKING_CATEGORY_CUSTOM_IP_RULE,
         blockingPolicyConfiguration.getBlockingDetailsList(7).getCategory());
     assertEquals(
         BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(7).getStatus());
     assertEquals(
+        "913100",
+        blockingPolicyConfiguration.getBlockingDetailsList(7).getModsecDetails().getRuleId());
+    assertEquals(
+        "941280",
+        blockingPolicyConfiguration.getBlockingDetailsList(8).getModsecDetails().getRuleId());
+
+    assertEquals(
+        BLOCKING_CATEGORY_CUSTOM_IP_RULE,
+        blockingPolicyConfiguration.getBlockingDetailsList(9).getCategory());
+    assertEquals(
+        BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(9).getStatus());
+    assertEquals(
         List.of("11.11.11.11"),
-        blockingPolicyConfiguration.getBlockingDetailsList(7).getIpDetails().getIpAddressesList());
+        blockingPolicyConfiguration.getBlockingDetailsList(9).getIpDetails().getIpAddressesList());
 
     assertEquals(
         BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE,
-        blockingPolicyConfiguration.getBlockingDetailsList(8).getCategory());
+        blockingPolicyConfiguration.getBlockingDetailsList(12).getCategory());
     assertEquals(
-        BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(8).getStatus());
+        BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(12).getStatus());
     assertEquals(
         List.of(IpType.IP_TYPE_TOR),
-        blockingPolicyConfiguration.getBlockingDetailsList(8).getIpTypeDetails().getIpTypesList());
+        blockingPolicyConfiguration.getBlockingDetailsList(12).getIpTypeDetails().getIpTypesList());
 
     assertEquals(
         BLOCKING_CATEGORY_CUSTOM_REGION_RULE,
-        blockingPolicyConfiguration.getBlockingDetailsList(11).getCategory());
+        blockingPolicyConfiguration.getBlockingDetailsList(15).getCategory());
     assertEquals(
         BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT,
-        blockingPolicyConfiguration.getBlockingDetailsList(11).getBlockingRuleType());
+        blockingPolicyConfiguration.getBlockingDetailsList(15).getBlockingRuleType());
     assertEquals(
-        BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(11).getStatus());
+        BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(15).getStatus());
 
     assertEquals(
         BLOCKING_CATEGORY_CUSTOM_REGION_RULE,
-        blockingPolicyConfiguration.getBlockingDetailsList(13).getCategory());
+        blockingPolicyConfiguration.getBlockingDetailsList(17).getCategory());
     assertEquals(
         BLOCKING_RULE_TYPE_BLOCK,
-        blockingPolicyConfiguration.getBlockingDetailsList(13).getBlockingRuleType());
+        blockingPolicyConfiguration.getBlockingDetailsList(17).getBlockingRuleType());
     assertEquals(
-        BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(13).getStatus());
+        BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(17).getStatus());
 
     assertEquals(
         BLOCKING_CATEGORY_RATE_LIMIT,
-        blockingPolicyConfiguration.getBlockingDetailsList(14).getCategory());
+        blockingPolicyConfiguration.getBlockingDetailsList(18).getCategory());
     assertEquals(
-        BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(14).getStatus());
+        BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(18).getStatus());
     assertEquals(
         ViolationInfoEncoder.getEncodedRateLimitViolationInfo(
             actorEntityId.get(0), "rate-limit-rule-id", "Rate-limit-rule"),
-        blockingPolicyConfiguration.getBlockingDetailsList(14).getInfo());
+        blockingPolicyConfiguration.getBlockingDetailsList(18).getInfo());
     assertEquals(
         List.of("197.23.5.0"),
         blockingPolicyConfiguration
-            .getBlockingDetailsList(14)
+            .getBlockingDetailsList(18)
             .getActorDetails()
             .getIpAddressesList());
   }
@@ -717,7 +761,7 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
   }
 
   private static String createActor(
-      Status status, Long expiry, String environment, boolean isRateLimit) {
+      Status status, Long expiry, String environment, BlockingCategory blockingCategory) {
     Builder actorBuilder =
         Actor.newBuilder()
             .setActorId("user-" + environment + "-" + status.name())
@@ -728,7 +772,7 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
             .setStatusExpiryTimestamp(expiry)
             .setEnvironment(environment);
 
-    if (isRateLimit) {
+    if (blockingCategory == BLOCKING_CATEGORY_RATE_LIMIT) {
       actorBuilder.setStatusChangeSource(StatusChangeSource.STATUS_CHANGE_SOURCE_RATE_LIMIT);
       actorBuilder.setStatusChangeDetails(
           StatusChangeDetails.newBuilder()
@@ -736,6 +780,14 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
                   RateLimitDetails.newBuilder()
                       .setRuleName("Rate-limit-rule")
                       .setRuleId("rate-limit-rule-id")));
+    } else if (blockingCategory == BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE) {
+      actorBuilder.setStatusChangeSource(StatusChangeSource.STATUS_CHANGE_SOURCE_MALICIOUS_SOURCES);
+      actorBuilder.setStatusChangeDetails(
+          StatusChangeDetails.newBuilder()
+              .setMaliciousSourcesDetails(
+                  MaliciousSourcesDetails.newBuilder()
+                      .setRuleName("Email-domain-rule")
+                      .setRuleId("Email-domain-rule-id")));
     }
     Actor actor = actorBuilder.build();
     UpsertActorResponse response =

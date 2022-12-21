@@ -1,5 +1,6 @@
 package ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor;
 
+import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_RATE_LIMIT;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_THREAT_ACTOR;
 import static ai.traceable.blocking.config.service.v1.BlockingRuleType.BLOCKING_RULE_TYPE_ALLOW;
@@ -99,28 +100,36 @@ public class ActorBasedRulesCache {
     List<BlockingDetails> threatActorBasedIpViolations = new ArrayList<>();
     List<BlockingDetails> threatActorBasedIpExemptions = new ArrayList<>();
     List<BlockingDetails> rateLimitBasedIpViolations = new ArrayList<>();
+    List<BlockingDetails> emailDomainBasedExemptions = new ArrayList<>();
+    List<BlockingDetails> emailDomainBasedViolations = new ArrayList<>();
 
     actorStatusDetailsList.stream()
         .filter(
             actorStatusDetails -> !parseIpAddresses(actorStatusDetails.getIpAddresses()).isEmpty())
         .forEach(
             actor -> {
-              if (actor.getStatusChangeSource()
-                  == StatusChangeSource.STATUS_CHANGE_SOURCE_RATE_LIMIT) {
-                // Rate limit error
-                rateLimitBasedIpViolations.addAll(
-                    this.generateBlockingDetails(
-                        BLOCKING_CATEGORY_RATE_LIMIT,
-                        BLOCKING_RULE_TYPE_BLOCK,
-                        ViolationInfoEncoder.getEncodedRateLimitViolationInfo(
-                            actor.getEntityId(),
-                            actor.getStatusChangeDetails().getRateLimitDetails().getRuleId(),
-                            actor.getStatusChangeDetails().getRateLimitDetails().getRuleName()),
-                        actor));
-              } else {
-                if (actor.getStatus() == STATUS_ALWAYS_ALLOWED
-                    || actor.getStatus() == STATUS_SNOOZED) {
-                  // Exemption
+              if (actor.getStatus() == STATUS_ALWAYS_ALLOWED
+                  || actor.getStatus() == STATUS_SNOOZED) {
+                // Exemptions
+                if (actor.getStatusChangeSource()
+                    == StatusChangeSource.STATUS_CHANGE_SOURCE_MALICIOUS_SOURCES) {
+                  emailDomainBasedExemptions.addAll(
+                      this.generateBlockingDetails(
+                          BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE,
+                          BLOCKING_RULE_TYPE_ALLOW,
+                          ExemptionInfoEncoder.getEncodedMaliciousSourcesExemptionInfo(
+                              actor
+                                  .getStatusChangeDetails()
+                                  .getMaliciousSourcesDetails()
+                                  .getRuleId(),
+                              actor
+                                  .getStatusChangeDetails()
+                                  .getMaliciousSourcesDetails()
+                                  .getRuleName(),
+                              "",
+                              Optional.of(actor.getEntityId())),
+                          actor));
+                } else {
                   threatActorBasedIpExemptions.addAll(
                       this.generateBlockingDetails(
                           BLOCKING_CATEGORY_THREAT_ACTOR,
@@ -128,23 +137,59 @@ public class ActorBasedRulesCache {
                           ExemptionInfoEncoder.getEncodedThreatActorExemptionInfo(
                               actor.getEntityId()),
                           actor));
-                } else if (actor.getStatus() == STATUS_ALWAYS_DENIED
-                    || actor.getStatus() == STATUS_SUSPENDED) {
-                  // Violation
-                  threatActorBasedIpViolations.addAll(
-                      this.generateBlockingDetails(
-                          BLOCKING_CATEGORY_THREAT_ACTOR,
-                          BLOCKING_RULE_TYPE_BLOCK,
-                          ViolationInfoEncoder.getEncodedThreatActorViolationInfo(
-                              actor.getEntityId()),
-                          actor));
+                }
+              } else if (actor.getStatus() == STATUS_ALWAYS_DENIED
+                  || actor.getStatus() == STATUS_SUSPENDED) {
+                // Violations
+                switch (actor.getStatusChangeSource()) {
+                  case STATUS_CHANGE_SOURCE_RATE_LIMIT:
+                    rateLimitBasedIpViolations.addAll(
+                        this.generateBlockingDetails(
+                            BLOCKING_CATEGORY_RATE_LIMIT,
+                            BLOCKING_RULE_TYPE_BLOCK,
+                            ViolationInfoEncoder.getEncodedRateLimitViolationInfo(
+                                actor.getEntityId(),
+                                actor.getStatusChangeDetails().getRateLimitDetails().getRuleId(),
+                                actor.getStatusChangeDetails().getRateLimitDetails().getRuleName()),
+                            actor));
+                    break;
+                  case STATUS_CHANGE_SOURCE_MALICIOUS_SOURCES:
+                    emailDomainBasedViolations.addAll(
+                        this.generateBlockingDetails(
+                            BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE,
+                            BLOCKING_RULE_TYPE_BLOCK,
+                            ViolationInfoEncoder.getEncodedMaliciousSourcesViolationInfo(
+                                actor
+                                    .getStatusChangeDetails()
+                                    .getMaliciousSourcesDetails()
+                                    .getRuleId(),
+                                actor
+                                    .getStatusChangeDetails()
+                                    .getMaliciousSourcesDetails()
+                                    .getRuleName(),
+                                "",
+                                Optional.of(actor.getEntityId())),
+                            actor));
+                    break;
+                  default:
+                    threatActorBasedIpViolations.addAll(
+                        this.generateBlockingDetails(
+                            BLOCKING_CATEGORY_THREAT_ACTOR,
+                            BLOCKING_RULE_TYPE_BLOCK,
+                            ViolationInfoEncoder.getEncodedThreatActorViolationInfo(
+                                actor.getEntityId()),
+                            actor));
                 }
               }
             });
 
     ActorBasedRulesCollection response =
         new ActorBasedRulesCollection(
-            threatActorBasedIpViolations, threatActorBasedIpExemptions, rateLimitBasedIpViolations);
+            threatActorBasedIpViolations,
+            threatActorBasedIpExemptions,
+            rateLimitBasedIpViolations,
+            emailDomainBasedExemptions,
+            emailDomainBasedViolations);
 
     LOGGER.debug(
         String.format(

@@ -89,8 +89,8 @@ class IpTypeDataFetcherTest {
     assertEquals(BLOCKING_RULE_TYPE_BLOCK, violations.get(0).getBlockingRuleType());
     assertEquals(BLOCKING_STATUS_DENIED, violations.get(0).getStatus());
     assertEquals(
-        ViolationInfoEncoder.getEncodedMaliciousSourcesRuleViolationInfo(
-            "1", "rule-1", EVENT_SEVERITY_CRITICAL.name()),
+        ViolationInfoEncoder.getEncodedMaliciousSourcesViolationInfo(
+            "1", "rule-1", EVENT_SEVERITY_CRITICAL.name(), Optional.empty()),
         violations.get(0).getInfo());
 
     assertEquals(
@@ -100,8 +100,8 @@ class IpTypeDataFetcherTest {
     assertEquals(BLOCKING_RULE_TYPE_BLOCK, violations.get(1).getBlockingRuleType());
     assertEquals(BLOCKING_STATUS_DENIED, violations.get(1).getStatus());
     assertEquals(
-        ViolationInfoEncoder.getEncodedMaliciousSourcesRuleViolationInfo(
-            "2", "rule-2", EVENT_SEVERITY_CRITICAL.name()),
+        ViolationInfoEncoder.getEncodedMaliciousSourcesViolationInfo(
+            "2", "rule-2", EVENT_SEVERITY_CRITICAL.name(), Optional.empty()),
         violations.get(1).getInfo());
   }
 

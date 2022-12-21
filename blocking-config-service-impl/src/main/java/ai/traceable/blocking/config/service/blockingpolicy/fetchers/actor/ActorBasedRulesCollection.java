@@ -11,4 +11,6 @@ public class ActorBasedRulesCollection {
   private final List<BlockingDetails> threatActorBasedIpViolations;
   private final List<BlockingDetails> threatActorBasedIpExemptions;
   private final List<BlockingDetails> rateLimitBasedIpViolations;
+  private final List<BlockingDetails> emailDomainBasedExemptions;
+  private final List<BlockingDetails> emailDomainBasedViolations;
 }

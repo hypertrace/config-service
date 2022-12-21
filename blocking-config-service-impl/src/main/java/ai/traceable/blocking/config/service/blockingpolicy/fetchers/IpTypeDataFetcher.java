@@ -61,10 +61,11 @@ public class IpTypeDataFetcher {
         .setCategory(BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE)
         .setBlockingRuleType(BLOCKING_RULE_TYPE_BLOCK)
         .setInfo(
-            ViolationInfoEncoder.getEncodedMaliciousSourcesRuleViolationInfo(
+            ViolationInfoEncoder.getEncodedMaliciousSourcesViolationInfo(
                 maliciousSourcesRule.getId(),
                 maliciousSourcesRule.getRuleInfo().getName(),
-                maliciousSourcesRule.getRuleInfo().getRuleAction().getEventSeverity().name()))
+                maliciousSourcesRule.getRuleInfo().getRuleAction().getEventSeverity().name(),
+                Optional.empty()))
         .setExpirationTimestamp(expirationTimestampMillis)
         .setStatus(BLOCKING_STATUS_DENIED)
         .setIpTypeDetails(IpTypeDetails.newBuilder().addAllIpTypes(ipTypes))
