@@ -39,7 +39,7 @@ message CreateSnykIntegrationResponse {
 message UpdateSnykIntegrationRequest {
   string name = 1;
   optional string description = 2;
-  EncryptedText encrypted_text = 3;
+  EncryptedText api_token = 3;
 }
 
 message UpdateSnykIntegrationResponse {

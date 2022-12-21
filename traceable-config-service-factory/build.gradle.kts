@@ -39,6 +39,7 @@ dependencies {
   implementation(projects.maliciousSourcesConfigServiceImpl)
   implementation(projects.authDetectionConfigServiceImpl)
   implementation(projects.astScanProfileConfigServiceImpl)
+  implementation(projects.integrationConfigServiceImpl)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
