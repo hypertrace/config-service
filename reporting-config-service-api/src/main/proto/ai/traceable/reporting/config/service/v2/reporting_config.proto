@@ -18,6 +18,7 @@ message CommonConfigurationDetails {
   string templates_configuration = 3;
   SchedulingDetails scheduling_details = 4;
   NotificationDetails notification_details = 5;
+  Format format = 6;
 }
 
 message SchedulingDetails {
@@ -32,4 +33,10 @@ message NotificationDetails {
 message GetReportsFilter {
   optional string id = 1;
   optional string environment_id = 2;
+}
+
+enum Format {
+  FORMAT_UNSPECIFIED = 0;
+  FORMAT_PDF = 1;
+  FORMAT_CSV = 2;
 }

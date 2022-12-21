@@ -1,5 +1,6 @@
 package ai.traceable.reporting.config.service.v2;
 
+import static ai.traceable.reporting.config.service.v2.Format.FORMAT_UNSPECIFIED;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
@@ -37,6 +38,12 @@ public class ReportingConfigRequestValidatorImpl implements ReportingConfigReque
     if (data.hasSchedulingDetails() && !data.hasNotificationDetails()) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Scheduling is enabled, but missing notification details")
+          .asRuntimeException();
+    }
+
+    if (FORMAT_UNSPECIFIED.equals(data.getFormat())) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Unspecified report format")
           .asRuntimeException();
     }
   }
