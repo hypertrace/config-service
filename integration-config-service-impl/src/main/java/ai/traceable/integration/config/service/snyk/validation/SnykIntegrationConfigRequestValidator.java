@@ -9,7 +9,6 @@ import ai.traceable.integration.config.service.snyk.v1.EncryptedText;
 import ai.traceable.integration.config.service.snyk.v1.GetSnykIntegrationDetailsRequest;
 import ai.traceable.integration.config.service.snyk.v1.GetSnykIntegrationSummaryRequest;
 import ai.traceable.integration.config.service.snyk.v1.UpdateSnykIntegrationRequest;
-import io.grpc.Status;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class SnykIntegrationConfigRequestValidator {
@@ -27,13 +26,7 @@ public class SnykIntegrationConfigRequestValidator {
   public void validateOrThrow(RequestContext requestContext, CreateSnykIntegrationRequest request) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, CreateSnykIntegrationRequest.NAME_FIELD_NUMBER);
-    if (request.hasApiToken()) {
-      validateEncryptedText(request.getApiToken());
-    } else {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(String.format("Missing expected api_token: %s", request))
-          .asRuntimeException();
-    }
+    validateEncryptedText(request.getApiToken());
   }
 
   public void validateOrThrow(RequestContext requestContext, UpdateSnykIntegrationRequest request) {

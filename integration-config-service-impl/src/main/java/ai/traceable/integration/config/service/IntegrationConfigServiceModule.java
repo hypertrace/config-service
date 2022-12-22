@@ -1,10 +1,10 @@
 package ai.traceable.integration.config.service;
 
-import static ai.traceable.integration.config.service.IntegrationConfigServiceFactory.SNYK_INTEGRATION_ANNOTATION;
-
-import ai.traceable.integration.config.service.snyk.SnykIntegrationConfigServiceModule;
+import ai.traceable.integration.config.service.snyk.SnykIntegrationConfigServiceImpl;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import com.google.inject.multibindings.Multibinder;
+import io.grpc.BindableService;
 import io.grpc.Channel;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
@@ -19,7 +19,9 @@ class IntegrationConfigServiceModule extends AbstractModule {
 
   @Override
   protected void configure() {
-    install(new SnykIntegrationConfigServiceModule(SNYK_INTEGRATION_ANNOTATION));
+    Multibinder.newSetBinder(binder(), BindableService.class)
+        .addBinding()
+        .to(SnykIntegrationConfigServiceImpl.class);
   }
 
   @Provides

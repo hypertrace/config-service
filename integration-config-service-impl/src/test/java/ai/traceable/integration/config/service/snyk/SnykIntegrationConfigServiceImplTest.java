@@ -57,14 +57,16 @@ class SnykIntegrationConfigServiceImplTest {
 
   @Test
   void testSnykIntegrationConfigCrud() {
-    assertEquals(
-        GetSnykIntegrationDetailsResponse.getDefaultInstance(),
-        snykIntegrationServiceBlockingStub.getSnykIntegrationDetails(
-            GetSnykIntegrationDetailsRequest.getDefaultInstance()));
-    assertEquals(
-        GetSnykIntegrationSummaryResponse.getDefaultInstance(),
-        snykIntegrationServiceBlockingStub.getSnykIntegrationSummary(
-            GetSnykIntegrationSummaryRequest.getDefaultInstance()));
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            snykIntegrationServiceBlockingStub.getSnykIntegrationDetails(
+                GetSnykIntegrationDetailsRequest.getDefaultInstance()));
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            snykIntegrationServiceBlockingStub.getSnykIntegrationSummary(
+                GetSnykIntegrationSummaryRequest.getDefaultInstance()));
     assertThrows(
         RuntimeException.class,
         () ->
@@ -129,13 +131,15 @@ class SnykIntegrationConfigServiceImplTest {
         DeleteSnykIntegrationResponse.getDefaultInstance(),
         snykIntegrationServiceBlockingStub.deleteSnykIntegration(
             DeleteSnykIntegrationRequest.getDefaultInstance()));
-    assertEquals(
-        GetSnykIntegrationDetailsResponse.getDefaultInstance(),
-        snykIntegrationServiceBlockingStub.getSnykIntegrationDetails(
-            GetSnykIntegrationDetailsRequest.getDefaultInstance()));
-    assertEquals(
-        GetSnykIntegrationSummaryResponse.getDefaultInstance(),
-        snykIntegrationServiceBlockingStub.getSnykIntegrationSummary(
-            GetSnykIntegrationSummaryRequest.getDefaultInstance()));
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            snykIntegrationServiceBlockingStub.getSnykIntegrationDetails(
+                GetSnykIntegrationDetailsRequest.getDefaultInstance()));
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            snykIntegrationServiceBlockingStub.getSnykIntegrationSummary(
+                GetSnykIntegrationSummaryRequest.getDefaultInstance()));
   }
 }

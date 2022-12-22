@@ -88,7 +88,7 @@ class SnykIntegrationConfigRequestValidatorTest {
                     .build()));
 
     assertInvalidArgStatusContaining(
-        "api_token",
+        "EncryptedText.key_id",
         () ->
             requestValidator.validateOrThrow(
                 mockRequestContext,

@@ -1,5 +1,7 @@
 package ai.traceable.integration.config.service.snyk.store;
 
+import static ai.traceable.integration.config.service.constants.IntegrationServiceConstants.INTEGRATION_CONFIG_RESOURCE_NAMESPACE;
+
 import ai.traceable.integration.config.service.snyk.v1.SnykIntegration;
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -15,14 +17,13 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 public class SnykIntegrationConfigStore extends DefaultObjectStore<SnykIntegration> {
 
   private static final String SNYK_INTEGRATION_CONFIG_RESOURCE_NAME = "snyk-integration";
-  private static final String SNYK_INTEGRATION_CONFIG_RESOURCE_NAMESPACE = "integration-config";
 
   @Inject
   public SnykIntegrationConfigStore(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub) {
     super(
         configServiceBlockingStub,
-        SNYK_INTEGRATION_CONFIG_RESOURCE_NAMESPACE,
+        INTEGRATION_CONFIG_RESOURCE_NAMESPACE,
         SNYK_INTEGRATION_CONFIG_RESOURCE_NAME);
   }
 
