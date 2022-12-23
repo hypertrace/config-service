@@ -40,6 +40,7 @@ dependencies {
   implementation(projects.authDetectionConfigServiceImpl)
   implementation(projects.astScanProfileConfigServiceImpl)
   implementation(projects.integrationConfigServiceImpl)
+  implementation(projects.detectionExclusionConfigServiceImpl)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

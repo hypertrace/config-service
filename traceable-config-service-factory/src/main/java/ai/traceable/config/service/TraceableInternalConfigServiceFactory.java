@@ -9,6 +9,7 @@ import ai.traceable.auth.detection.config.service.AuthDetectionConfigServiceFact
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceFactory;
 import ai.traceable.data.classification.config.service.DataClassificationConfigServiceFactory;
 import ai.traceable.data.exfiltration.config.service.detection.rule.DataExfiltrationDetectionRulesConfigServiceFactory;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceFactory;
 import ai.traceable.integration.config.service.IntegrationConfigServiceFactory;
 import ai.traceable.iprange.config.service.IpRangeConfigServiceFactory;
 import ai.traceable.licensestatus.config.service.LicenseStatusConfigServiceFactory;
@@ -161,7 +162,10 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
             wrap(
                 AstScanProfileConfigServiceFactory.build(
                     providers.getLocalChannel(), providers.getConfig())),
-            wrap(IntegrationConfigServiceFactory.build(providers.getLocalChannel())))
+            wrap(IntegrationConfigServiceFactory.build(providers.getLocalChannel())),
+            wrap(
+                DetectionExclusionConfigServiceFactory.build(
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())))
         .flatMap(stream -> stream)
         .collect(Collectors.toUnmodifiableList());
   }
