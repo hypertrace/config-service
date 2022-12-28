@@ -25,16 +25,12 @@ public class SnykIntegrationConfigRequestValidator {
 
   public void validateOrThrow(RequestContext requestContext, CreateSnykIntegrationRequest request) {
     validateRequestContextOrThrow(requestContext);
-    validateNonDefaultPresenceOrThrow(request, CreateSnykIntegrationRequest.NAME_FIELD_NUMBER);
     validateEncryptedText(request.getApiToken());
   }
 
   public void validateOrThrow(RequestContext requestContext, UpdateSnykIntegrationRequest request) {
     validateRequestContextOrThrow(requestContext);
-    validateNonDefaultPresenceOrThrow(request, UpdateSnykIntegrationRequest.NAME_FIELD_NUMBER);
-    if (request.hasApiToken()) {
-      validateEncryptedText(request.getApiToken());
-    }
+    validateEncryptedText(request.getApiToken());
   }
 
   public void validateOrThrow(RequestContext requestContext, DeleteSnykIntegrationRequest request) {

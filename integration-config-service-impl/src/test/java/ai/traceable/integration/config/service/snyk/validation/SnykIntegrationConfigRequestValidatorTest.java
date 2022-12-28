@@ -78,21 +78,10 @@ class SnykIntegrationConfigRequestValidatorTest {
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
 
     assertInvalidArgStatusContaining(
-        "CreateSnykIntegrationRequest.name",
-        () ->
-            requestValidator.validateOrThrow(
-                mockRequestContext,
-                CreateSnykIntegrationRequest.newBuilder()
-                    .setApiToken(
-                        EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
-                    .build()));
-
-    assertInvalidArgStatusContaining(
         "EncryptedText.key_id",
         () ->
             requestValidator.validateOrThrow(
-                mockRequestContext,
-                CreateSnykIntegrationRequest.newBuilder().setName("name").build()));
+                mockRequestContext, CreateSnykIntegrationRequest.newBuilder().build()));
 
     assertInvalidArgStatusContaining(
         "EncryptedText.key_id",
@@ -100,7 +89,6 @@ class SnykIntegrationConfigRequestValidatorTest {
             requestValidator.validateOrThrow(
                 mockRequestContext,
                 CreateSnykIntegrationRequest.newBuilder()
-                    .setName("name")
                     .setApiToken(EncryptedText.newBuilder().build())
                     .build()));
 
@@ -110,7 +98,6 @@ class SnykIntegrationConfigRequestValidatorTest {
             requestValidator.validateOrThrow(
                 mockRequestContext,
                 CreateSnykIntegrationRequest.newBuilder()
-                    .setName("name")
                     .setApiToken(EncryptedText.newBuilder().setKeyId("keyId").build())
                     .build()));
 
@@ -119,7 +106,6 @@ class SnykIntegrationConfigRequestValidatorTest {
             requestValidator.validateOrThrow(
                 mockRequestContext,
                 CreateSnykIntegrationRequest.newBuilder()
-                    .setName("name")
                     .setApiToken(
                         EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
                     .build()));
@@ -136,16 +122,10 @@ class SnykIntegrationConfigRequestValidatorTest {
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
 
     assertInvalidArgStatusContaining(
-        "UpdateSnykIntegrationRequest.name",
+        "EncryptedText.key_id",
         () ->
             requestValidator.validateOrThrow(
                 mockRequestContext, UpdateSnykIntegrationRequest.newBuilder().build()));
-
-    assertDoesNotThrow(
-        () ->
-            requestValidator.validateOrThrow(
-                mockRequestContext,
-                UpdateSnykIntegrationRequest.newBuilder().setName("name").build()));
 
     assertInvalidArgStatusContaining(
         "EncryptedText.key_id",
@@ -153,7 +133,6 @@ class SnykIntegrationConfigRequestValidatorTest {
             requestValidator.validateOrThrow(
                 mockRequestContext,
                 UpdateSnykIntegrationRequest.newBuilder()
-                    .setName("name")
                     .setApiToken(EncryptedText.newBuilder().build())
                     .build()));
 
@@ -163,7 +142,6 @@ class SnykIntegrationConfigRequestValidatorTest {
             requestValidator.validateOrThrow(
                 mockRequestContext,
                 CreateSnykIntegrationRequest.newBuilder()
-                    .setName("name")
                     .setApiToken(EncryptedText.newBuilder().setKeyId("keyId").build())
                     .build()));
 
@@ -172,7 +150,6 @@ class SnykIntegrationConfigRequestValidatorTest {
             requestValidator.validateOrThrow(
                 mockRequestContext,
                 UpdateSnykIntegrationRequest.newBuilder()
-                    .setName("name")
                     .setApiToken(
                         EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
                     .build()));

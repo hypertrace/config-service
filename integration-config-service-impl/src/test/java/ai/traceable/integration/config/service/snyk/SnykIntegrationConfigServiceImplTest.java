@@ -15,7 +15,6 @@ import ai.traceable.integration.config.service.snyk.v1.GetSnykIntegrationSummary
 import ai.traceable.integration.config.service.snyk.v1.GetSnykIntegrationSummaryResponse;
 import ai.traceable.integration.config.service.snyk.v1.SnykIntegration;
 import ai.traceable.integration.config.service.snyk.v1.SnykIntegrationServiceGrpc;
-import ai.traceable.integration.config.service.snyk.v1.SnykIntegrationSummary;
 import ai.traceable.integration.config.service.snyk.v1.UpdateSnykIntegrationRequest;
 import ai.traceable.integration.config.service.snyk.v1.UpdateSnykIntegrationResponse;
 import ai.traceable.integration.config.service.snyk.validation.SnykIntegrationConfigRequestValidator;
@@ -71,22 +70,17 @@ class SnykIntegrationConfigServiceImplTest {
         RuntimeException.class,
         () ->
             snykIntegrationServiceBlockingStub.updateSnykIntegration(
-                UpdateSnykIntegrationRequest.newBuilder().setName("name").build()));
+                UpdateSnykIntegrationRequest.getDefaultInstance()));
     assertEquals(
-        CreateSnykIntegrationResponse.newBuilder()
-            .setSnykIntegrationSummary(SnykIntegrationSummary.newBuilder().setName("name").build())
-            .build(),
+        CreateSnykIntegrationResponse.getDefaultInstance(),
         snykIntegrationServiceBlockingStub.createSnykIntegration(
             CreateSnykIntegrationRequest.newBuilder()
-                .setName("name")
                 .setApiToken(EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
                 .build()));
     assertEquals(
         GetSnykIntegrationDetailsResponse.newBuilder()
             .setSnykIntegration(
                 SnykIntegration.newBuilder()
-                    .setSnykIntegrationSummary(
-                        SnykIntegrationSummary.newBuilder().setName("name").build())
                     .setApiToken(
                         EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
                     .build())
@@ -94,18 +88,13 @@ class SnykIntegrationConfigServiceImplTest {
         snykIntegrationServiceBlockingStub.getSnykIntegrationDetails(
             GetSnykIntegrationDetailsRequest.getDefaultInstance()));
     assertEquals(
-        GetSnykIntegrationSummaryResponse.newBuilder()
-            .setSnykIntegrationSummary(SnykIntegrationSummary.newBuilder().setName("name").build())
-            .build(),
+        GetSnykIntegrationSummaryResponse.getDefaultInstance(),
         snykIntegrationServiceBlockingStub.getSnykIntegrationSummary(
             GetSnykIntegrationSummaryRequest.getDefaultInstance()));
     assertEquals(
-        UpdateSnykIntegrationResponse.newBuilder()
-            .setSnykIntegrationSummary(SnykIntegrationSummary.newBuilder().setName("name1").build())
-            .build(),
+        UpdateSnykIntegrationResponse.newBuilder().build(),
         snykIntegrationServiceBlockingStub.updateSnykIntegration(
             UpdateSnykIntegrationRequest.newBuilder()
-                .setName("name1")
                 .setApiToken(
                     EncryptedText.newBuilder().setKeyId("keyId1").setValue("value").build())
                 .build()));
@@ -113,8 +102,6 @@ class SnykIntegrationConfigServiceImplTest {
         GetSnykIntegrationDetailsResponse.newBuilder()
             .setSnykIntegration(
                 SnykIntegration.newBuilder()
-                    .setSnykIntegrationSummary(
-                        SnykIntegrationSummary.newBuilder().setName("name1").build())
                     .setApiToken(
                         EncryptedText.newBuilder().setKeyId("keyId1").setValue("value").build())
                     .build())
@@ -122,9 +109,7 @@ class SnykIntegrationConfigServiceImplTest {
         snykIntegrationServiceBlockingStub.getSnykIntegrationDetails(
             GetSnykIntegrationDetailsRequest.getDefaultInstance()));
     assertEquals(
-        GetSnykIntegrationSummaryResponse.newBuilder()
-            .setSnykIntegrationSummary(SnykIntegrationSummary.newBuilder().setName("name1").build())
-            .build(),
+        GetSnykIntegrationSummaryResponse.getDefaultInstance(),
         snykIntegrationServiceBlockingStub.getSnykIntegrationSummary(
             GetSnykIntegrationSummaryRequest.getDefaultInstance()));
     assertEquals(

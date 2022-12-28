@@ -11,7 +11,6 @@ import ai.traceable.integration.config.service.snyk.v1.GetSnykIntegrationSummary
 import ai.traceable.integration.config.service.snyk.v1.GetSnykIntegrationSummaryResponse;
 import ai.traceable.integration.config.service.snyk.v1.SnykIntegration;
 import ai.traceable.integration.config.service.snyk.v1.SnykIntegrationServiceGrpc;
-import ai.traceable.integration.config.service.snyk.v1.SnykIntegrationSummary;
 import ai.traceable.integration.config.service.snyk.v1.UpdateSnykIntegrationRequest;
 import ai.traceable.integration.config.service.snyk.v1.UpdateSnykIntegrationResponse;
 import ai.traceable.integration.config.service.snyk.validation.SnykIntegrationConfigRequestValidator;
@@ -39,15 +38,11 @@ public class SnykIntegrationConfigServiceImpl
     try {
       requestValidator.validateOrThrow(requestContext, request);
 
-      final SnykIntegration snykIntegration =
-          snykIntegrationConfigStore
-              .getData(requestContext)
-              .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      snykIntegrationConfigStore
+          .getData(requestContext)
+          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
 
-      responseObserver.onNext(
-          GetSnykIntegrationSummaryResponse.newBuilder()
-              .setSnykIntegrationSummary(snykIntegration.getSnykIntegrationSummary())
-              .build());
+      responseObserver.onNext(GetSnykIntegrationSummaryResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Throwable throwable) {
       log.warn(
@@ -102,16 +97,9 @@ public class SnykIntegrationConfigServiceImpl
       }
 
       final SnykIntegration snykIntegration = buildSnykIntegrationConfig(request);
-      final SnykIntegrationSummary snykIntegrationSummary =
-          snykIntegrationConfigStore
-              .upsertObject(requestContext, snykIntegration)
-              .getData()
-              .getSnykIntegrationSummary();
+      snykIntegrationConfigStore.upsertObject(requestContext, snykIntegration);
 
-      responseObserver.onNext(
-          CreateSnykIntegrationResponse.newBuilder()
-              .setSnykIntegrationSummary(snykIntegrationSummary)
-              .build());
+      responseObserver.onNext(CreateSnykIntegrationResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Throwable throwable) {
       log.warn(
@@ -135,18 +123,10 @@ public class SnykIntegrationConfigServiceImpl
           snykIntegrationConfigStore
               .getData(requestContext)
               .orElseThrow(Status.NOT_FOUND::asRuntimeException);
-      final SnykIntegration updatedSnykIntegration =
-          buildUpdatedSnykIntegrationConfig(request, existingSnykIntegration);
-      final SnykIntegrationSummary updatedSnykIntegrationSummary =
-          snykIntegrationConfigStore
-              .upsertObject(requestContext, updatedSnykIntegration)
-              .getData()
-              .getSnykIntegrationSummary();
+      final SnykIntegration updatedSnykIntegration = buildUpdatedSnykIntegrationConfig(request);
+      snykIntegrationConfigStore.upsertObject(requestContext, updatedSnykIntegration);
 
-      responseObserver.onNext(
-          UpdateSnykIntegrationResponse.newBuilder()
-              .setSnykIntegrationSummary(updatedSnykIntegrationSummary)
-              .build());
+      responseObserver.onNext(UpdateSnykIntegrationResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Throwable throwable) {
       log.warn(
@@ -183,35 +163,10 @@ public class SnykIntegrationConfigServiceImpl
   }
 
   private SnykIntegration buildSnykIntegrationConfig(CreateSnykIntegrationRequest request) {
-    SnykIntegration.Builder builder =
-        SnykIntegration.newBuilder()
-            .setSnykIntegrationSummary(
-                SnykIntegrationSummary.newBuilder().setName(request.getName()))
-            .setApiToken(request.getApiToken());
-
-    if (request.hasDescription()) {
-      builder.getSnykIntegrationSummaryBuilder().setDescription(request.getDescription());
-    }
-
-    return builder.build();
+    return SnykIntegration.newBuilder().setApiToken(request.getApiToken()).build();
   }
 
-  private SnykIntegration buildUpdatedSnykIntegrationConfig(
-      UpdateSnykIntegrationRequest request, SnykIntegration existingSnykIntegration) {
-    SnykIntegration.Builder builder =
-        SnykIntegration.newBuilder(existingSnykIntegration)
-            .setSnykIntegrationSummary(
-                SnykIntegrationSummary.newBuilder(
-                        existingSnykIntegration.getSnykIntegrationSummary())
-                    .setName(request.getName()));
-
-    if (request.hasDescription()) {
-      builder.getSnykIntegrationSummaryBuilder().setDescription(request.getDescription());
-    }
-    if (request.hasApiToken()) {
-      builder.setApiToken(request.getApiToken());
-    }
-
-    return builder.build();
+  private SnykIntegration buildUpdatedSnykIntegrationConfig(UpdateSnykIntegrationRequest request) {
+    return SnykIntegration.newBuilder().setApiToken(request.getApiToken()).build();
   }
 }

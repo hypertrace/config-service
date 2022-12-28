@@ -16,9 +16,7 @@ service SnykIntegrationService {
 
 message GetSnykIntegrationSummaryRequest {}
 
-message GetSnykIntegrationSummaryResponse {
-  SnykIntegrationSummary snyk_integration_summary = 1;
-}
+message GetSnykIntegrationSummaryResponse {}
 
 message GetSnykIntegrationDetailsRequest {}
 
@@ -27,24 +25,16 @@ message GetSnykIntegrationDetailsResponse {
 }
 
 message CreateSnykIntegrationRequest {
-  string name = 1;
-  optional string description = 2;
-  EncryptedText api_token = 3;
+  EncryptedText api_token = 1;
 }
 
-message CreateSnykIntegrationResponse {
-  SnykIntegrationSummary snyk_integration_summary = 1;
-}
+message CreateSnykIntegrationResponse {}
 
 message UpdateSnykIntegrationRequest {
-  string name = 1;
-  optional string description = 2;
-  EncryptedText api_token = 3;
+  EncryptedText api_token = 1;
 }
 
-message UpdateSnykIntegrationResponse {
-  SnykIntegrationSummary snyk_integration_summary = 1;
-}
+message UpdateSnykIntegrationResponse {}
 
 message DeleteSnykIntegrationRequest {}
 
