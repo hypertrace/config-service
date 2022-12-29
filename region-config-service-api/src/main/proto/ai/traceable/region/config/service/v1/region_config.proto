@@ -76,7 +76,7 @@ message CreateRegionRuleRequest {
   ExpirationDetails expiration_details = 4;
   RuleScope rule_scope = 5;
   EventSeverity event_severity = 6;
-  RegionRuleConditions conditions = 7;
+  RegionRuleConditions conditions = 7 [deprecated = true]; //unused
   string description = 8;
 }
 

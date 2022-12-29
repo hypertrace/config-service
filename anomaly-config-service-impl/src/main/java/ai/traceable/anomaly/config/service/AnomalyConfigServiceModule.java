@@ -4,7 +4,6 @@ import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.AG
 import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.ANOMALY_EXCLUSION_CONFIG_ANNOTATION;
 import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.ANOMALY_GLOBAL_CONFIG_ANNOTATION;
 import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.ANOMALY_MODSEC_CONFIG_ANNOTATION;
-import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.DETECTION_OVERRIDE_EXCLUSION_CONFIG_ANNOTATION;
 import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.DETECTOR_CONFIG_ANNOTATION;
 import static ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory.TRAINER_CONFIG_ANNOTATION;
 
@@ -14,7 +13,6 @@ import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceModule;
 import ai.traceable.anomaly.config.service.exclusion.AnomalyExclusionConfigServiceModule;
 import ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceModule;
 import ai.traceable.anomaly.config.service.modsec.AnomalyModsecConfigServiceModule;
-import ai.traceable.anomaly.config.service.override.DetectionOverrideConfigServiceModule;
 import ai.traceable.anomaly.config.service.registry.AnomalyConfigRegistryModule;
 import ai.traceable.anomaly.config.service.trainer.TrainerConfigServiceModule;
 import com.google.inject.AbstractModule;
@@ -60,8 +58,6 @@ public class AnomalyConfigServiceModule extends AbstractModule {
     install(new DetectorConfigServiceModule(DETECTOR_CONFIG_ANNOTATION));
     install(new AggregationConfigServiceModule(AGGREGATOR_CONFIG_ANNOTATION));
     install(new AnomalyConfigRegistryModule());
-    install(
-        new DetectionOverrideConfigServiceModule(DETECTION_OVERRIDE_EXCLUSION_CONFIG_ANNOTATION));
   }
 
   @Provides

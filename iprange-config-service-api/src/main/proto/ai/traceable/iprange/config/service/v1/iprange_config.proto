@@ -76,7 +76,7 @@ message IpRangeRuleDetails {
   RuleAction rule_action = 4;
   ExpirationDetails expiration_details = 5;
   EventSeverity event_severity = 6;
-  IpRangeRuleConditions conditions = 7;
+  IpRangeRuleConditions conditions = 7 [deprecated = true]; //unused
 }
 
 message IpRangeRuleConditions {
