@@ -18,6 +18,9 @@ public class MockFeatureFlagService extends FeatureFlagServiceImplBase {
             .putValues(
                 "enricher.ipqs-ip-intelligence",
                 FeatureFlagValue.newBuilder().setBoolean(true).build())
+            .putValues(
+                "tpa.modsec-processing-disabled",
+                FeatureFlagValue.newBuilder().setBoolean(false).getDefaultInstanceForType())
             .build());
     responseObserver.onCompleted();
   }

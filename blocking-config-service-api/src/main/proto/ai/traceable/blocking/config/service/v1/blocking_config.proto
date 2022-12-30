@@ -13,6 +13,7 @@ message GetBlockingRulesRequest {
     string blocking_policy_configuration_hash = 4;
     string ip_type_blocking_rules_hash = 6;
     string environment = 5;
+    GetBlockingRulesFilter filter = 7;
 }
 
 message GetBlockingRulesResponse {
@@ -21,6 +22,15 @@ message GetBlockingRulesResponse {
     SafeCrsBlockingRules safe_crs_blocking_rules = 3;
     BlockingPolicyConfiguration blocking_policy_configuration = 4;
     IpTypeBlockingRules ip_type_blocking_rules = 5;
+}
+
+message GetBlockingRulesFilter {
+  BlockingConfigDataOption blocking_config_data_option = 1;
+}
+
+enum BlockingConfigDataOption {
+    BLOCKING_CONFIG_DATA_OPTION_UNSPECIFIED = 0;
+    BLOCKING_CONFIG_DATA_OPTION_POLICY_ONLY = 1;
 }
 
 message RegionBlockingRules {

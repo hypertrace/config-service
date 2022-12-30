@@ -12,8 +12,10 @@ import ai.traceable.blocking.config.service.customsignature.CustomModsecBlocking
 import ai.traceable.blocking.config.service.entity.EntityFetcher;
 import ai.traceable.blocking.config.service.iptype.IpTypeBlockingManager;
 import ai.traceable.blocking.config.service.regions.RegionBlockingManager;
+import ai.traceable.blocking.config.service.v1.BlockingConfigDataOption;
 import ai.traceable.blocking.config.service.v1.BlockingPolicyConfiguration;
 import ai.traceable.blocking.config.service.v1.CustomModsecBlockingRules;
+import ai.traceable.blocking.config.service.v1.GetBlockingRulesFilter;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesRequest;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesResponse;
 import ai.traceable.blocking.config.service.v1.IpTypeBlockingRules;
@@ -185,6 +187,38 @@ class BlockingConfigServiceImplTest {
     REQUEST_CONTEXT.run(runnable);
 
     verify(responseObserver, times(5)).onError(any(RuntimeException.class));
+    verify(responseObserver, times(1)).onCompleted();
+  }
+
+  @Test
+  void testOnlyPolicyResponse() {
+    StreamObserver<GetBlockingRulesResponse> responseObserver = mock(StreamObserver.class);
+
+    Runnable runnable =
+        () ->
+            blockingConfigService.getBlockingRules(
+                GetBlockingRulesRequest.newBuilder()
+                    .setRegionBlockingRulesHash(hash1)
+                    .setCustomModsecBlockingRulesHash(hash1)
+                    .setSafeCrsBlockingRulesHash(hash1)
+                    .setIpTypeBlockingRulesHash(hash1)
+                    .setBlockingPolicyConfigurationHash(hash1)
+                    .setEnvironment(environment)
+                    .setFilter(
+                        GetBlockingRulesFilter.newBuilder()
+                            .setBlockingConfigDataOption(
+                                BlockingConfigDataOption.BLOCKING_CONFIG_DATA_OPTION_POLICY_ONLY)
+                            .build())
+                    .build(),
+                responseObserver);
+
+    REQUEST_CONTEXT.run(runnable);
+    verify(responseObserver, times(1))
+        .onNext(
+            GetBlockingRulesResponse.newBuilder()
+                .setBlockingPolicyConfiguration(blockingPolicyConfiguration)
+                .build());
+
     verify(responseObserver, times(1)).onCompleted();
   }
 }
