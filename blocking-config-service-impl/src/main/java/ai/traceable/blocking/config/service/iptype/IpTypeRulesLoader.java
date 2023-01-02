@@ -5,7 +5,7 @@ import ai.traceable.blocking.config.service.v1.IpType;
 import ai.traceable.blocking.config.service.v1.IpTypeRule;
 import ai.traceable.blocking.config.service.v1.IpTypeRule.Builder;
 import ai.traceable.blocking.config.service.v1.IpV4Range;
-import ai.traceable.config.utils.LastModifiedPathFinder;
+import ai.traceable.config.utils.LatestInstantNamedPathFinder;
 import ai.traceable.config.utils.refresh.FileVersionBasedRefresh;
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -35,8 +35,8 @@ public class IpTypeRulesLoader extends FileVersionBasedRefresh<List<IpTypeRule>>
           IpType.IP_TYPE_HOSTING_PROVIDER);
 
   @Inject
-  public IpTypeRulesLoader(LastModifiedPathFinder lastModifiedPathFinder) {
-    super(lastModifiedPathFinder);
+  public IpTypeRulesLoader(LatestInstantNamedPathFinder latestInstantNamedPathFinder) {
+    super(latestInstantNamedPathFinder);
   }
 
   @Override

@@ -1,6 +1,6 @@
 package ai.traceable.region.config.service.regions;
 
-import ai.traceable.config.utils.LastModifiedPathFinder;
+import ai.traceable.config.utils.LatestInstantNamedPathFinder;
 import ai.traceable.config.utils.refresh.FileVersionBasedRefresh;
 import ai.traceable.region.config.service.utils.UuidGenerator;
 import com.google.common.collect.ImmutableMap;
@@ -20,8 +20,9 @@ class RegionBuilder extends FileVersionBasedRefresh<Map<String, Region>> {
   private final UuidGenerator uuidGenerator;
 
   @Inject
-  RegionBuilder(UuidGenerator uuidGenerator, LastModifiedPathFinder lastModifiedPathFinder) {
-    super(lastModifiedPathFinder);
+  RegionBuilder(
+      UuidGenerator uuidGenerator, LatestInstantNamedPathFinder latestInstantNamedPathFinder) {
+    super(latestInstantNamedPathFinder);
     this.uuidGenerator = uuidGenerator;
   }
 

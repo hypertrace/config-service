@@ -1,6 +1,6 @@
 package ai.traceable.config.utils.refresh;
 
-import ai.traceable.config.utils.LastModifiedPathFinder;
+import ai.traceable.config.utils.LatestInstantNamedPathFinder;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -12,14 +12,16 @@ import java.nio.file.Path;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 
+@Slf4j
 public abstract class FileVersionBasedRefresh<T> {
-  private final LastModifiedPathFinder lastModifiedPathFinder;
+  private final LatestInstantNamedPathFinder latestInstantNamedPathFinder;
 
-  protected FileVersionBasedRefresh(LastModifiedPathFinder lastModifiedPathFinder) {
-    this.lastModifiedPathFinder = lastModifiedPathFinder;
+  protected FileVersionBasedRefresh(LatestInstantNamedPathFinder latestInstantNamedPathFinder) {
+    this.latestInstantNamedPathFinder = latestInstantNamedPathFinder;
   }
 
   public Supplier<T> getLatestDataSupplier(FileRefreshConfig config) {
@@ -59,15 +61,18 @@ public abstract class FileVersionBasedRefresh<T> {
 
   @SneakyThrows
   private T fetchDataFromLatestFile(FileRefreshConfig config) {
-    Path lastModifiedPath =
-        lastModifiedPathFinder
+    Path latestDirPath =
+        latestInstantNamedPathFinder
             .get(Path.of(config.getVersionsDir()).toUri(), Files::isDirectory)
             .orElseThrow(
                 () ->
                     new IllegalArgumentException(
                         "Could not fetch latest file in dir: " + config.getVersionsDir()));
-
-    Reader reader = Files.newBufferedReader(lastModifiedPath.resolve(config.getVersionsFileName()));
-    return buildFromRecords(CSVFormat.DEFAULT.withHeader().withFirstRecordAsHeader().parse(reader));
+    Path latestFilePath = latestDirPath.resolve(config.getVersionsFileName());
+    log.info("Loading latest data from file {}", latestFilePath.toFile().getAbsolutePath());
+    try (Reader reader = Files.newBufferedReader(latestFilePath)) {
+      return buildFromRecords(
+          CSVFormat.DEFAULT.withHeader().withFirstRecordAsHeader().parse(reader));
+    }
   }
 }

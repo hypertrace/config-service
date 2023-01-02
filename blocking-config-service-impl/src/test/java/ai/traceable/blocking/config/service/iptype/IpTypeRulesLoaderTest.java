@@ -6,7 +6,7 @@ import ai.traceable.blocking.config.service.v1.IpRange;
 import ai.traceable.blocking.config.service.v1.IpType;
 import ai.traceable.blocking.config.service.v1.IpTypeRule;
 import ai.traceable.blocking.config.service.v1.IpV4Range;
-import ai.traceable.config.utils.LastModifiedPathFinder;
+import ai.traceable.config.utils.LatestInstantNamedPathFinder;
 import ai.traceable.config.utils.refresh.FileRefreshConfig;
 import com.typesafe.config.ConfigFactory;
 import java.util.ArrayList;
@@ -21,7 +21,7 @@ class IpTypeRulesLoaderTest {
   @Test
   void buildIpTypeRules() {
     insertTestDataForVerification();
-    IpTypeRulesLoader builder = new IpTypeRulesLoader(new LastModifiedPathFinder());
+    IpTypeRulesLoader builder = new IpTypeRulesLoader(new LatestInstantNamedPathFinder());
     List<IpTypeRule> ipTypeRules =
         builder
             .getLatestDataSupplier(

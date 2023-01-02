@@ -6,7 +6,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.config.utils.LastModifiedPathFinder;
+import ai.traceable.config.utils.LatestInstantNamedPathFinder;
 import ai.traceable.config.utils.refresh.FileRefreshConfig;
 import ai.traceable.region.config.service.utils.UuidGenerator;
 import com.google.common.base.Joiner;
@@ -33,13 +33,13 @@ class RegionBuilderTest {
 
   private UuidGenerator uuidGenerator;
   private RegionBuilder regionBuilder;
-  private LastModifiedPathFinder lastModifiedPathFinder;
+  private LatestInstantNamedPathFinder latestInstantNamedPathFinder;
 
   @BeforeEach
   void setup() {
     this.uuidGenerator = mock(UuidGenerator.class);
-    this.lastModifiedPathFinder = mock(LastModifiedPathFinder.class);
-    this.regionBuilder = new RegionBuilder(uuidGenerator, lastModifiedPathFinder);
+    this.latestInstantNamedPathFinder = mock(LatestInstantNamedPathFinder.class);
+    this.regionBuilder = new RegionBuilder(uuidGenerator, latestInstantNamedPathFinder);
   }
 
   @Test
@@ -47,7 +47,8 @@ class RegionBuilderTest {
     mockUuids();
     String fileName = "countries.csv";
     createMockRecords(tempDir.resolve(fileName));
-    when(lastModifiedPathFinder.get(eq(tempDir.toUri()), any())).thenReturn(Optional.of(tempDir));
+    when(latestInstantNamedPathFinder.get(eq(tempDir.toUri()), any()))
+        .thenReturn(Optional.of(tempDir));
     Map<String, Region> regionIdToRegionMap =
         this.regionBuilder
             .getLatestDataSupplier(
