@@ -1,18 +1,24 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class DetectionExclusionRulesStore
@@ -21,16 +27,37 @@ public class DetectionExclusionRulesStore
       "detectionExclusionRule";
   public static final String DETECTION_EXCLUSION_RULE_CONFIG_RESOURCE_NAMESPACE =
       "detectionExclusionRuleConfig";
+  private final List<DetectionExclusionRule> defaultDetectionExclusionRules;
 
   @Inject
   public DetectionExclusionRulesStore(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
-      ConfigChangeEventGenerator configChangeEventGenerator) {
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      DetectionExclusionConfigServiceConfig config) {
     super(
         configServiceBlockingStub,
         DETECTION_EXCLUSION_RULE_CONFIG_RESOURCE_NAMESPACE,
         DETECTION_EXCLUSION_RULE_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
+    this.defaultDetectionExclusionRules = config.getDefaultDetectionExclusionRules();
+  }
+
+  @Override
+  public List<DetectionExclusionRule> getAllConfigData(RequestContext context) {
+    List<DetectionExclusionRule> detectionExclusionRules = super.getAllConfigData(context);
+    return mergeDetectionExclusionRules(detectionExclusionRules, defaultDetectionExclusionRules);
+  }
+
+  @Override
+  public List<DetectionExclusionRule> getAllConfigData(
+      RequestContext context, GetRulesFilter filter) {
+    List<DetectionExclusionRule> filteredDefaultDetectionExclusionRules =
+        defaultDetectionExclusionRules.stream()
+            .filter(rule -> filterConfigData(rule, filter).isPresent())
+            .collect(Collectors.toUnmodifiableList());
+    List<DetectionExclusionRule> detectionExclusionRules = super.getAllConfigData(context, filter);
+    return mergeDetectionExclusionRules(
+        detectionExclusionRules, filteredDefaultDetectionExclusionRules);
   }
 
   @Override
@@ -103,5 +130,21 @@ public class DetectionExclusionRulesStore
 
     List<String> filterEnvironmentIds = ruleScope.getEnvironmentScope().getEnvironmentIdsList();
     return ruleEnvironmentIds.stream().anyMatch(filterEnvironmentIds::contains);
+  }
+
+  private List<DetectionExclusionRule> mergeDetectionExclusionRules(
+      List<DetectionExclusionRule> detectionExclusionRules,
+      List<DetectionExclusionRule> defaultDetectionExclusionRules) {
+    Map<String, DetectionExclusionRule> detectionExclusionRuleMap = new HashMap<>();
+    detectionExclusionRuleMap.putAll(this.getRuleIdToRuleMap(defaultDetectionExclusionRules));
+    detectionExclusionRuleMap.putAll(this.getRuleIdToRuleMap(detectionExclusionRules));
+
+    return detectionExclusionRuleMap.values().stream().collect(Collectors.toUnmodifiableList());
+  }
+
+  private Map<String, DetectionExclusionRule> getRuleIdToRuleMap(
+      List<DetectionExclusionRule> detectionExclusionRules) {
+    return detectionExclusionRules.stream()
+        .collect(Collectors.toUnmodifiableMap(DetectionExclusionRule::getId, Function.identity()));
   }
 }

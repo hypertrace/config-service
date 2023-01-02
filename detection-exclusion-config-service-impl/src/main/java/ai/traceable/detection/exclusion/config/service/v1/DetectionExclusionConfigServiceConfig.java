@@ -1,0 +1,40 @@
+package ai.traceable.detection.exclusion.config.service.v1;
+
+import com.google.protobuf.Message;
+import com.google.protobuf.util.JsonFormat;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigRenderOptions;
+import java.util.List;
+import java.util.stream.Collectors;
+import lombok.SneakyThrows;
+
+public class DetectionExclusionConfigServiceConfig {
+  private static final String DEFAULT_EXCLUSION_RULES_FILE_PATH = "default-exclusion-rules.conf";
+  private static final JsonFormat.Parser JSON_PARSER = JsonFormat.parser().ignoringUnknownFields();
+  private static final ConfigRenderOptions CONFIG_RENDER_CONCISE = ConfigRenderOptions.concise();
+  private static final String DETECTION_EXCLUSION_RULES_PATH = "detectionExclusionRules";
+
+  public List<DetectionExclusionRule> getDefaultDetectionExclusionRules() {
+    return this.convertToDetectionExclusionRules(
+        ConfigFactory.parseResources(DEFAULT_EXCLUSION_RULES_FILE_PATH)
+            .getConfigList(DETECTION_EXCLUSION_RULES_PATH));
+  }
+
+  private List<DetectionExclusionRule> convertToDetectionExclusionRules(
+      List<? extends Config> configList) {
+    return configList.stream()
+        .map(
+            config -> {
+              DetectionExclusionRule.Builder builder = DetectionExclusionRule.newBuilder();
+              mergeFromConfig(config, builder);
+              return builder.build();
+            })
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  @SneakyThrows
+  private void mergeFromConfig(Config config, Message.Builder builder) {
+    JSON_PARSER.merge(config.root().render(CONFIG_RENDER_CONCISE), builder);
+  }
+}

@@ -1,15 +1,17 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
-import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -33,7 +35,10 @@ class DetectionExclusionRulesManagerTest {
     ConfigChangeEventGenerator mockConfigChangeEventGenerator =
         mock(ConfigChangeEventGenerator.class);
     DetectionExclusionRulesStore rulesStore =
-        new DetectionExclusionRulesStore(configServiceBlockingStub, mockConfigChangeEventGenerator);
+        new DetectionExclusionRulesStore(
+            configServiceBlockingStub,
+            mockConfigChangeEventGenerator,
+            new DetectionExclusionConfigServiceConfig());
     uuidGenerator = mock(UuidGenerator.class);
     rulesManager = new DetectionExclusionRulesManager(rulesStore, uuidGenerator);
   }
@@ -60,14 +65,15 @@ class DetectionExclusionRulesManagerTest {
             requestContext, detectionExclusionRuleScope, detectionExclusionRuleInfo));
 
     // fetching detection exclusion rule
-    assertEquals(
-        List.of(detectionExclusionRule),
-        rulesManager.getDetectionExclusionRules(
-            requestContext, GetRulesFilter.getDefaultInstance()));
-    assertEquals(
-        List.of(detectionExclusionRule),
-        rulesManager.getDetectionExclusionRules(
-            requestContext, GetRulesFilter.newBuilder().setDisabled(false).build()));
+    assertTrue(
+        rulesManager
+            .getDetectionExclusionRules(requestContext, GetRulesFilter.getDefaultInstance())
+            .contains(detectionExclusionRule));
+    assertTrue(
+        rulesManager
+            .getDetectionExclusionRules(
+                requestContext, GetRulesFilter.newBuilder().setDisabled(false).build())
+            .contains(detectionExclusionRule));
 
     detectionExclusionRule =
         DetectionExclusionRule.newBuilder()
@@ -85,10 +91,10 @@ class DetectionExclusionRulesManagerTest {
     assertEquals(
         detectionExclusionRule, rulesManager.deleteDetectionExclusionRule(requestContext, "id"));
 
-    // no rules after deletion
-    assertEquals(
-        List.of(),
-        rulesManager.getDetectionExclusionRules(
-            requestContext, GetRulesFilter.getDefaultInstance()));
+    // rule not present after deletion
+    assertFalse(
+        rulesManager
+            .getDetectionExclusionRules(requestContext, GetRulesFilter.getDefaultInstance())
+            .contains(detectionExclusionRule));
   }
 }

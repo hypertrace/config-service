@@ -12,6 +12,7 @@ import ai.traceable.detection.exclusion.config.service.v1.EnvironmentScope;
 import ai.traceable.detection.exclusion.config.service.v1.GetDetectionExclusionRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.RuleChangeSource;
 import ai.traceable.detection.exclusion.config.service.v1.UpdateDetectionExclusionRuleRequest;
+import com.google.common.annotations.VisibleForTesting;
 import io.grpc.Status;
 import java.util.List;
 import java.util.Optional;
@@ -79,7 +80,8 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
     validateNonDefaultPresenceOrThrow(request, DeleteDetectionExclusionRuleRequest.ID_FIELD_NUMBER);
   }
 
-  private void validateRuleInfo(DetectionExclusionRuleInfo ruleInfo) {
+  @VisibleForTesting
+  public void validateRuleInfo(DetectionExclusionRuleInfo ruleInfo) {
     validateNonDefaultPresenceOrThrow(ruleInfo, DetectionExclusionRuleInfo.NAME_FIELD_NUMBER);
     if (ruleInfo.getConditionsList().isEmpty()) {
       throw Status.INVALID_ARGUMENT

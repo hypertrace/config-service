@@ -30,7 +30,7 @@ import io.grpc.Status;
 import java.util.List;
 import java.util.Optional;
 
-class DetectionExclusionConditionValidator {
+public class DetectionExclusionConditionValidator {
 
   void validateRuleCondition(DetectionExclusionCondition condition) {
     switch (condition.getConditionCase()) {
