@@ -11,7 +11,6 @@ import static org.hypertrace.config.service.store.DocumentConfigStore.CONFIGURAT
 import static org.hypertrace.config.service.store.DocumentConfigStore.DATA_STORE_TYPE;
 import static org.hypertrace.config.service.store.DocumentConfigStore.DOC_STORE_CONFIG_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -183,25 +182,23 @@ class DocumentConfigStoreTest {
         configStore.writeAllConfigs(
             ImmutableMap.of(resourceContext1, config2, resourceContext2, config1), USER_ID);
 
-    assertEquals(2, upsertedConfigs.size());
-    assertTrue(
-        upsertedConfigs.contains(
+    assertEquals(
+        List.of(
             UpsertedConfig.newBuilder()
                 .setContext(resourceContext1.getContext())
                 .setCreationTimestamp(TIMESTAMP1)
                 .setUpdateTimestamp(updateTime)
                 .setConfig(config2)
                 .setPrevConfig(config1)
-                .build()));
-    assertTrue(
-        upsertedConfigs.contains(
+                .build(),
             UpsertedConfig.newBuilder()
                 .setContext(resourceContext2.getContext())
                 .setCreationTimestamp(TIMESTAMP2)
                 .setUpdateTimestamp(updateTime)
                 .setConfig(config1)
                 .setPrevConfig(config2)
-                .build()));
+                .build()),
+        upsertedConfigs);
 
     verify(collection, times(1))
         .bulkUpsert(

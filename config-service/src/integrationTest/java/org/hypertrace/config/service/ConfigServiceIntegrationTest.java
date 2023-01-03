@@ -33,7 +33,6 @@ import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.DatastoreProvider;
-import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.core.serviceframework.IntegrationTestServerUtil;
@@ -119,12 +118,12 @@ public class ConfigServiceIntegrationTest {
         upsertConfigs(upsertAllConfigsRequest, TENANT_1);
     assertEquals(2, upsertAllConfigsResponse.getUpsertedConfigsCount());
     UpsertAllConfigsResponse.UpsertedConfig upsertedConfig1 =
-        upsertAllConfigsResponse.getUpsertedConfigs(1);
+        upsertAllConfigsResponse.getUpsertedConfigs(0);
     assertEquals(context1, upsertedConfig1.getContext());
     assertEquals(config1, upsertedConfig1.getConfig());
     assertFalse(upsertedConfig1.hasPrevConfig());
     UpsertAllConfigsResponse.UpsertedConfig upsertedConfig2 =
-        upsertAllConfigsResponse.getUpsertedConfigs(0);
+        upsertAllConfigsResponse.getUpsertedConfigs(1);
     assertEquals(context2, upsertedConfig2.getContext());
     assertEquals(config2, upsertedConfig2.getConfig());
     assertFalse(upsertedConfig2.hasPrevConfig());
@@ -139,13 +138,13 @@ public class ConfigServiceIntegrationTest {
     upsertAllConfigsResponse = upsertConfigs(upsertAllConfigsRequest, TENANT_1);
     assertEquals(2, upsertAllConfigsResponse.getUpsertedConfigsCount());
     upsertedConfig1 = upsertAllConfigsResponse.getUpsertedConfigs(0);
-    assertEquals(context2, upsertedConfig1.getContext());
-    assertEquals(config1, upsertedConfig1.getConfig());
-    assertEquals(config2, upsertedConfig1.getPrevConfig());
+    assertEquals(context1, upsertedConfig1.getContext());
+    assertEquals(config2, upsertedConfig1.getConfig());
+    assertEquals(config1, upsertedConfig1.getPrevConfig());
     upsertedConfig2 = upsertAllConfigsResponse.getUpsertedConfigs(1);
-    assertEquals(context1, upsertedConfig2.getContext());
-    assertEquals(config2, upsertedConfig2.getConfig());
-    assertEquals(config1, upsertedConfig2.getPrevConfig());
+    assertEquals(context2, upsertedConfig2.getContext());
+    assertEquals(config1, upsertedConfig2.getConfig());
+    assertEquals(config2, upsertedConfig2.getPrevConfig());
   }
 
   @Test
@@ -248,8 +247,8 @@ public class ConfigServiceIntegrationTest {
     if (context.isPresent()) {
       builder.setContext(context.get());
     }
-    return GrpcClientRequestContextUtil.executeInTenantContext(
-        tenantId, () -> configServiceBlockingStub.upsertConfig(builder.build()));
+    return RequestContext.forTenantId(tenantId)
+        .call(() -> configServiceBlockingStub.upsertConfig(builder.build()));
   }
 
   private UpsertAllConfigsResponse upsertConfigs(
@@ -275,8 +274,8 @@ public class ConfigServiceIntegrationTest {
             .setResourceNamespace(resourceNamespace)
             .addAllContexts(Arrays.asList(contexts))
             .build();
-    return GrpcClientRequestContextUtil.executeInTenantContext(
-        tenantId, () -> configServiceBlockingStub.getConfig(getConfigRequest));
+    return RequestContext.forTenantId(tenantId)
+        .call(() -> configServiceBlockingStub.getConfig(getConfigRequest));
   }
 
   private GetAllConfigsResponse getAllConfigs(
@@ -286,8 +285,8 @@ public class ConfigServiceIntegrationTest {
             .setResourceName(resourceName)
             .setResourceNamespace(resourceNamespace)
             .build();
-    return GrpcClientRequestContextUtil.executeInTenantContext(
-        tenantId, () -> configServiceBlockingStub.getAllConfigs(request));
+    return RequestContext.forTenantId(tenantId)
+        .call(() -> configServiceBlockingStub.getAllConfigs(request));
   }
 
   private DeleteConfigResponse deleteConfig(
@@ -297,8 +296,8 @@ public class ConfigServiceIntegrationTest {
             .setResourceName(resourceName)
             .setResourceNamespace(resourceNamespace)
             .build();
-    return GrpcClientRequestContextUtil.executeInTenantContext(
-        tenantId, () -> configServiceBlockingStub.deleteConfig(request));
+    return RequestContext.forTenantId(tenantId)
+        .call(() -> configServiceBlockingStub.deleteConfig(request));
   }
 
   private DeleteConfigResponse deleteConfig(
@@ -309,8 +308,8 @@ public class ConfigServiceIntegrationTest {
             .setResourceNamespace(resourceNamespace)
             .setContext(context)
             .build();
-    return GrpcClientRequestContextUtil.executeInTenantContext(
-        tenantId, () -> configServiceBlockingStub.deleteConfig(request));
+    return RequestContext.forTenantId(tenantId)
+        .call(() -> configServiceBlockingStub.deleteConfig(request));
   }
 
   private static Collection getConfigurationsCollection() {

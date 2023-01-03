@@ -14,8 +14,8 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -92,7 +92,7 @@ public class DocumentConfigStore implements ConfigStore {
       Map<ConfigResourceContext, Value> resourceContextValueMap, String userId) throws IOException {
     Map<ConfigResourceContext, Optional<ConfigDocument>> previousConfigDocs =
         getLatestVersionConfigDocs(resourceContextValueMap.keySet());
-    Map<Key, Document> documentsToBeUpserted = new HashMap<>();
+    Map<Key, Document> documentsToBeUpserted = new LinkedHashMap<>();
     List<UpsertedConfig> upsertedConfigs = new ArrayList<>();
     for (Entry<ConfigResourceContext, Optional<ConfigDocument>> configResourceContextOptionalEntry :
         previousConfigDocs.entrySet()) {
@@ -212,24 +212,22 @@ public class DocumentConfigStore implements ConfigStore {
   private Map<ConfigResourceContext, Optional<ConfigDocument>> getLatestVersionConfigDocs(
       Set<ConfigResourceContext> configResourceContexts) throws IOException {
     // build filter
-    Filter[] childFilters = new Filter[configResourceContexts.size()];
-    int index = 0;
+    List<Filter> childFilters = new ArrayList<>();
     for (ConfigResourceContext configResourceContext : configResourceContexts) {
-      childFilters[index] = getConfigResourceContextFilter(configResourceContext);
-      index += 1;
+      childFilters.add(getConfigResourceContextFilter(configResourceContext));
     }
     Filter filter = new Filter();
     filter.setOp(Filter.Op.OR);
-    filter.setChildFilters(childFilters);
+    filter.setChildFilters(childFilters.toArray(Filter[]::new));
 
     // build query
     Query query = new Query();
     query.setFilter(filter);
-    query.addOrderBy(new OrderBy(VERSION_FIELD_NAME, false));
     query.setLimit(configResourceContexts.size());
 
-    Map<ConfigResourceContext, Optional<ConfigDocument>> latestVersionConfigDocs = new HashMap<>();
-    // intitialize latestVersionConfigDocs
+    Map<ConfigResourceContext, Optional<ConfigDocument>> latestVersionConfigDocs =
+        new LinkedHashMap<>();
+    // initialize latestVersionConfigDocs
     for (ConfigResourceContext configResourceContext : configResourceContexts) {
       latestVersionConfigDocs.put(configResourceContext, Optional.empty());
     }
