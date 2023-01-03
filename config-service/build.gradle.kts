@@ -55,6 +55,7 @@ tasks.integrationTest {
 }
 
 dependencies {
+  implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpc.framework)
   implementation(projects.configServiceFactory)
 

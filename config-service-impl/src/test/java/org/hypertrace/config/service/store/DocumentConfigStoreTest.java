@@ -11,6 +11,7 @@ import static org.hypertrace.config.service.store.DocumentConfigStore.CONFIGURAT
 import static org.hypertrace.config.service.store.DocumentConfigStore.DATA_STORE_TYPE;
 import static org.hypertrace.config.service.store.DocumentConfigStore.DOC_STORE_CONFIG_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -162,68 +163,63 @@ class DocumentConfigStoreTest {
     ConfigResourceContext resourceContext1 = getConfigResourceContext("context-1");
     ConfigResourceContext resourceContext2 = getConfigResourceContext("context-2");
     long updateTime = 1234;
-    CloseableIterator<Document> firstGetResult =
+    CloseableIterator<Document> getResult =
         new CloseableIteratorImpl(
             List.of(
                 getConfigDocument(
-                    resourceContext1.getContext(),
-                    CONFIG_VERSION,
-                    config1,
-                    TIMESTAMP1,
-                    TIMESTAMP1)));
-
-    CloseableIterator<Document> secondGetResult =
-        new CloseableIteratorImpl(
-            List.of(
+                    resourceContext1.getContext(), CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP1),
                 getConfigDocument(
                     resourceContext2.getContext(),
                     CONFIG_VERSION,
                     config2,
                     TIMESTAMP2,
                     TIMESTAMP2)));
-    when(collection.search(any(Query.class))).thenReturn(firstGetResult, secondGetResult);
+
+    when(collection.search(any(Query.class))).thenReturn(getResult);
+    when(collection.bulkUpsert(any())).thenReturn(true);
     when(this.mockClock.millis()).thenReturn(updateTime);
     List<UpsertedConfig> upsertedConfigs =
         // Swap configs between contexts as an update
         configStore.writeAllConfigs(
             ImmutableMap.of(resourceContext1, config2, resourceContext2, config1), USER_ID);
 
-    assertEquals(
-        List.of(
+    assertEquals(2, upsertedConfigs.size());
+    assertTrue(
+        upsertedConfigs.contains(
             UpsertedConfig.newBuilder()
                 .setContext(resourceContext1.getContext())
                 .setCreationTimestamp(TIMESTAMP1)
                 .setUpdateTimestamp(updateTime)
                 .setConfig(config2)
                 .setPrevConfig(config1)
-                .build(),
+                .build()));
+    assertTrue(
+        upsertedConfigs.contains(
             UpsertedConfig.newBuilder()
                 .setContext(resourceContext2.getContext())
                 .setCreationTimestamp(TIMESTAMP2)
                 .setUpdateTimestamp(updateTime)
                 .setConfig(config1)
                 .setPrevConfig(config2)
-                .build()),
-        upsertedConfigs);
+                .build()));
 
     verify(collection, times(1))
-        .upsert(
-            new ConfigDocumentKey(resourceContext1),
-            getConfigDocument(
-                resourceContext1.getContext(),
-                CONFIG_VERSION + 1,
-                config2,
-                TIMESTAMP1,
-                updateTime));
-    verify(collection, times(1))
-        .upsert(
-            new ConfigDocumentKey(resourceContext2),
-            getConfigDocument(
-                resourceContext2.getContext(),
-                CONFIG_VERSION + 1,
-                config1,
-                TIMESTAMP2,
-                updateTime));
+        .bulkUpsert(
+            Map.of(
+                new ConfigDocumentKey(resourceContext1),
+                getConfigDocument(
+                    resourceContext1.getContext(),
+                    CONFIG_VERSION + 1,
+                    config2,
+                    TIMESTAMP1,
+                    updateTime),
+                new ConfigDocumentKey(resourceContext2),
+                getConfigDocument(
+                    resourceContext2.getContext(),
+                    CONFIG_VERSION + 1,
+                    config1,
+                    TIMESTAMP2,
+                    updateTime)));
   }
 
   private static Document getConfigDocument(

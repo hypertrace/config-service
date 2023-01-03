@@ -2,6 +2,7 @@ package org.hypertrace.config.service;
 
 import static org.hypertrace.config.service.IntegrationTestUtils.getConfigValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.protobuf.Value;
@@ -24,6 +25,9 @@ import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
+import org.hypertrace.config.service.v1.UpsertAllConfigsRequest;
+import org.hypertrace.config.service.v1.UpsertAllConfigsRequest.ConfigToUpsert;
+import org.hypertrace.config.service.v1.UpsertAllConfigsResponse;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.documentstore.Collection;
@@ -31,6 +35,7 @@ import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.DatastoreProvider;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.core.serviceframework.IntegrationTestServerUtil;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -98,6 +103,49 @@ public class ConfigServiceIntegrationTest {
     upsertConfigResponse =
         upsertConfig(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_2, Optional.empty(), config1);
     assertEquals(config1, upsertConfigResponse.getConfig());
+  }
+
+  @Test
+  public void testUpsertAllConfigs() {
+    String context1 = "context1";
+    String context2 = "context2";
+    UpsertAllConfigsRequest upsertAllConfigsRequest =
+        UpsertAllConfigsRequest.newBuilder()
+            .addAllConfigs(
+                List.of(
+                    buildConfigToUpsert(context1, config1), buildConfigToUpsert(context2, config2)))
+            .build();
+    UpsertAllConfigsResponse upsertAllConfigsResponse =
+        upsertConfigs(upsertAllConfigsRequest, TENANT_1);
+    assertEquals(2, upsertAllConfigsResponse.getUpsertedConfigsCount());
+    UpsertAllConfigsResponse.UpsertedConfig upsertedConfig1 =
+        upsertAllConfigsResponse.getUpsertedConfigs(1);
+    assertEquals(context1, upsertedConfig1.getContext());
+    assertEquals(config1, upsertedConfig1.getConfig());
+    assertFalse(upsertedConfig1.hasPrevConfig());
+    UpsertAllConfigsResponse.UpsertedConfig upsertedConfig2 =
+        upsertAllConfigsResponse.getUpsertedConfigs(0);
+    assertEquals(context2, upsertedConfig2.getContext());
+    assertEquals(config2, upsertedConfig2.getConfig());
+    assertFalse(upsertedConfig2.hasPrevConfig());
+
+    // Swap configs between contexts as an update
+    upsertAllConfigsRequest =
+        UpsertAllConfigsRequest.newBuilder()
+            .addAllConfigs(
+                List.of(
+                    buildConfigToUpsert(context1, config2), buildConfigToUpsert(context2, config1)))
+            .build();
+    upsertAllConfigsResponse = upsertConfigs(upsertAllConfigsRequest, TENANT_1);
+    assertEquals(2, upsertAllConfigsResponse.getUpsertedConfigsCount());
+    upsertedConfig1 = upsertAllConfigsResponse.getUpsertedConfigs(0);
+    assertEquals(context2, upsertedConfig1.getContext());
+    assertEquals(config1, upsertedConfig1.getConfig());
+    assertEquals(config2, upsertedConfig1.getPrevConfig());
+    upsertedConfig2 = upsertAllConfigsResponse.getUpsertedConfigs(1);
+    assertEquals(context1, upsertedConfig2.getContext());
+    assertEquals(config2, upsertedConfig2.getConfig());
+    assertEquals(config1, upsertedConfig2.getPrevConfig());
   }
 
   @Test
@@ -202,6 +250,21 @@ public class ConfigServiceIntegrationTest {
     }
     return GrpcClientRequestContextUtil.executeInTenantContext(
         tenantId, () -> configServiceBlockingStub.upsertConfig(builder.build()));
+  }
+
+  private UpsertAllConfigsResponse upsertConfigs(
+      UpsertAllConfigsRequest upsertAllConfigsRequest, String tenantId) {
+    return RequestContext.forTenantId(tenantId)
+        .call(() -> configServiceBlockingStub.upsertAllConfigs(upsertAllConfigsRequest));
+  }
+
+  private ConfigToUpsert buildConfigToUpsert(String context, Value config) {
+    return ConfigToUpsert.newBuilder()
+        .setResourceName(RESOURCE_NAME)
+        .setResourceNamespace(RESOURCE_NAMESPACE)
+        .setContext(context)
+        .setConfig(config)
+        .build();
   }
 
   private GetConfigResponse getConfig(
