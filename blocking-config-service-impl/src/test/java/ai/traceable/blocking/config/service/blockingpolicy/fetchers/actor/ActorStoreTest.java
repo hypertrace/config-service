@@ -28,6 +28,7 @@ import ai.traceable.platform.actor.v1.LogicalFilterExpression;
 import ai.traceable.platform.actor.v1.LogicalOperator;
 import ai.traceable.platform.actor.v1.QueryActorsRequest;
 import ai.traceable.platform.actor.v1.QueryActorsResponse;
+import ai.traceable.platform.actor.v1.RateLimitCategory;
 import ai.traceable.platform.actor.v1.RateLimitDetails;
 import ai.traceable.platform.actor.v1.RelationalFilterExpression;
 import ai.traceable.platform.actor.v1.RelationalOperator;
@@ -222,6 +223,7 @@ class ActorStoreTest {
                     RateLimitDetails.newBuilder()
                         .setRuleId("rate-limit-" + id)
                         .setRuleName("Name: Rule - " + id)
+                        .setRuleCategory(RateLimitCategory.RATE_LIMIT_CATEGORY_DATA_EXFILTRATION)
                         .build());
           } catch (Exception ignored) {
           }
@@ -253,7 +255,8 @@ class ActorStoreTest {
                 .setRateLimitDetails(
                     RateLimitDetails.newBuilder()
                         .setRuleId("rate-limit-" + id)
-                        .setRuleName("Name: Rule - " + id))
+                        .setRuleName("Name: Rule - " + id)
+                        .setRuleCategory(RateLimitCategory.RATE_LIMIT_CATEGORY_DATA_EXFILTRATION))
                 .build()
             : StatusChangeDetails.getDefaultInstance();
     long expirationTimestampMillis = 1000L + n;
