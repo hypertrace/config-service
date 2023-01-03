@@ -77,29 +77,11 @@ public class DocumentConfigStore implements ConfigStore {
     Optional<ConfigDocument> previousConfigDoc = getLatestVersionConfigDoc(configResourceContext);
     Optional<ContextSpecificConfig> optionalPreviousConfig =
         previousConfigDoc.flatMap(this::convertToContextSpecificConfig);
-    long updateTimestamp = clock.millis();
-    long creationTimestamp =
-        previousConfigDoc
-            .filter(configDocument -> !ConfigServiceUtils.isNull(configDocument.getConfig()))
-            .map(ConfigDocument::getCreationTimestamp)
-            .orElse(updateTimestamp);
-    long newVersion =
-        previousConfigDoc
-            .map(ConfigDocument::getConfigVersion)
-            .map(previousVersion -> previousVersion + 1)
-            .orElse(1L);
+
     Key latestDocKey = new ConfigDocumentKey(configResourceContext);
     ConfigDocument latestConfigDocument =
-        new ConfigDocument(
-            configResourceContext.getConfigResource().getResourceName(),
-            configResourceContext.getConfigResource().getResourceNamespace(),
-            configResourceContext.getConfigResource().getTenantId(),
-            configResourceContext.getContext(),
-            newVersion,
-            userId,
-            latestConfig,
-            creationTimestamp,
-            updateTimestamp);
+        buildConfigDocument(configResourceContext, latestConfig, userId, previousConfigDoc);
+
     collection.upsert(latestDocKey, latestConfigDocument);
     return optionalPreviousConfig
         .map(previousConfig -> this.buildUpsertResult(latestConfigDocument, previousConfig))
@@ -114,45 +96,58 @@ public class DocumentConfigStore implements ConfigStore {
     List<UpsertedConfig> upsertedConfigs = new ArrayList<>();
     for (Entry<ConfigResourceContext, Optional<ConfigDocument>> configResourceContextOptionalEntry :
         previousConfigDocs.entrySet()) {
-      Optional<ConfigDocument> previousConfigDoc = configResourceContextOptionalEntry.getValue();
-      Optional<ContextSpecificConfig> optionalPreviousConfig =
-          previousConfigDoc.flatMap(this::convertToContextSpecificConfig);
       ConfigResourceContext configResourceContext = configResourceContextOptionalEntry.getKey();
-      long updateTimestamp = clock.millis();
-      long creationTimestamp =
-          previousConfigDoc
-              .filter(configDocument -> !ConfigServiceUtils.isNull(configDocument.getConfig()))
-              .map(ConfigDocument::getCreationTimestamp)
-              .orElse(updateTimestamp);
-      long newVersion =
-          previousConfigDoc
-              .map(ConfigDocument::getConfigVersion)
-              .map(previousVersion -> previousVersion + 1)
-              .orElse(1L);
+      Optional<ConfigDocument> previousConfigDoc = configResourceContextOptionalEntry.getValue();
+
       Key latestDocKey = new ConfigDocumentKey(configResourceContext);
       ConfigDocument latestConfigDocument =
-          new ConfigDocument(
-              configResourceContext.getConfigResource().getResourceName(),
-              configResourceContext.getConfigResource().getResourceNamespace(),
-              configResourceContext.getConfigResource().getTenantId(),
-              configResourceContext.getContext(),
-              newVersion,
-              userId,
+          buildConfigDocument(
+              configResourceContext,
               resourceContextValueMap.get(configResourceContext),
-              creationTimestamp,
-              updateTimestamp);
+              userId,
+              previousConfigDoc);
       documentsToBeUpserted.put(latestDocKey, latestConfigDocument);
+
       upsertedConfigs.add(
-          optionalPreviousConfig
+          previousConfigDoc
+              .flatMap(this::convertToContextSpecificConfig)
               .map(previousConfig -> this.buildUpsertResult(latestConfigDocument, previousConfig))
               .orElseGet(() -> this.buildUpsertResult(latestConfigDocument)));
     }
 
-    boolean bulkUpsertDocumentsSuccessful = collection.bulkUpsert(documentsToBeUpserted);
-    if (bulkUpsertDocumentsSuccessful) {
+    boolean successfulBulkUpsertDocuments = collection.bulkUpsert(documentsToBeUpserted);
+    if (successfulBulkUpsertDocuments) {
       return Collections.unmodifiableList(upsertedConfigs);
     }
     return Collections.emptyList();
+  }
+
+  private ConfigDocument buildConfigDocument(
+      ConfigResourceContext configResourceContext,
+      Value latestConfig,
+      String userId,
+      Optional<ConfigDocument> previousConfigDoc) {
+    long updateTimestamp = clock.millis();
+    long creationTimestamp =
+        previousConfigDoc
+            .filter(configDocument -> !ConfigServiceUtils.isNull(configDocument.getConfig()))
+            .map(ConfigDocument::getCreationTimestamp)
+            .orElse(updateTimestamp);
+    long newVersion =
+        previousConfigDoc
+            .map(ConfigDocument::getConfigVersion)
+            .map(previousVersion -> previousVersion + 1)
+            .orElse(1L);
+    return new ConfigDocument(
+        configResourceContext.getConfigResource().getResourceName(),
+        configResourceContext.getConfigResource().getResourceNamespace(),
+        configResourceContext.getConfigResource().getTenantId(),
+        configResourceContext.getContext(),
+        newVersion,
+        userId,
+        latestConfig,
+        creationTimestamp,
+        updateTimestamp);
   }
 
   @Override
