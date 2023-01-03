@@ -1,5 +1,6 @@
 package ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor;
 
+import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_DATA_EXFILTRATION;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_RATE_LIMIT;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_THREAT_ACTOR;
@@ -25,6 +26,7 @@ import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.config
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
 import ai.traceable.platform.actor.v1.MaliciousSourcesDetails;
+import ai.traceable.platform.actor.v1.RateLimitCategory;
 import ai.traceable.platform.actor.v1.RateLimitDetails;
 import ai.traceable.platform.actor.v1.StatusChangeDetails;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
@@ -124,7 +126,7 @@ class ActorBasedRulesCacheTest {
 
     {
       List<BlockingDetails> rateLimitBasedIpViolation = response.getRateLimitBasedIpViolations();
-      assertEquals(2, rateLimitBasedIpViolation.size());
+      assertEquals(4, rateLimitBasedIpViolation.size());
       assertEquals(
           List.of("1.1.1.1"),
           rateLimitBasedIpViolation.get(0).getActorDetails().getIpAddressesList());
@@ -144,6 +146,12 @@ class ActorBasedRulesCacheTest {
           BLOCKING_RULE_TYPE_BLOCK, rateLimitBasedIpViolation.get(1).getBlockingRuleType());
       assertEquals(BLOCKING_CATEGORY_RATE_LIMIT, rateLimitBasedIpViolation.get(1).getCategory());
       assertEquals(BLOCKING_STATUS_SUSPENDED, rateLimitBasedIpViolation.get(1).getStatus());
+      assertEquals("actor-7", rateLimitBasedIpViolation.get(2).getActorDetails().getUserId());
+      assertEquals(
+          BLOCKING_CATEGORY_DATA_EXFILTRATION, rateLimitBasedIpViolation.get(2).getCategory());
+      // Addition ip detail rule
+      assertEquals(
+          List.of("7.7.7.7"), rateLimitBasedIpViolation.get(3).getIpDetails().getIpAddressesList());
     }
     {
       List<BlockingDetails> emailDomainBasedExemptions = response.getEmailDomainBasedExemptions();
@@ -217,7 +225,7 @@ class ActorBasedRulesCacheTest {
 
     assertEquals(2, response.getThreatActorBasedIpViolations().size());
     assertEquals(2, response.getThreatActorBasedIpExemptions().size());
-    assertEquals(2, response.getRateLimitBasedIpViolations().size());
+    assertEquals(4, response.getRateLimitBasedIpViolations().size());
     assertEquals(2, response.getEmailDomainBasedExemptions().size());
     assertEquals(2, response.getEmailDomainBasedViolations().size());
   }
@@ -285,6 +293,20 @@ class ActorBasedRulesCacheTest {
                     MaliciousSourcesDetails.newBuilder()
                         .setRuleId("email-domain-id-2")
                         .setRuleName("email-domain-name-2"))
+                .build(),
+            ACTIVE_TIMESTAMP),
+        new ActorStatusDetails(
+            "actor-7",
+            "entity-7",
+            List.of("7.7.7.7"),
+            STATUS_ALWAYS_DENIED,
+            STATUS_CHANGE_SOURCE_RATE_LIMIT,
+            StatusChangeDetails.newBuilder()
+                .setRateLimitDetails(
+                    RateLimitDetails.newBuilder()
+                        .setRuleId("rate-limit-id-7")
+                        .setRuleName("rate-limit-name-7")
+                        .setRuleCategory(RateLimitCategory.RATE_LIMIT_CATEGORY_DATA_EXFILTRATION))
                 .build(),
             ACTIVE_TIMESTAMP));
   }

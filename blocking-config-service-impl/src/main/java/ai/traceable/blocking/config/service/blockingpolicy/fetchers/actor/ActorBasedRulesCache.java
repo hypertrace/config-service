@@ -1,5 +1,7 @@
 package ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor;
 
+import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_DATA_EXFILTRATION;
+import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_ENUMERATION;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_RATE_LIMIT;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_THREAT_ACTOR;
@@ -18,6 +20,7 @@ import ai.traceable.blocking.config.service.v1.BlockingCategory;
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
 import ai.traceable.blocking.config.service.v1.BlockingRuleType;
 import ai.traceable.blocking.config.service.v1.IpDetails;
+import ai.traceable.platform.actor.v1.RateLimitCategory;
 import ai.traceable.platform.actor.v1.StatusChangeSource;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
@@ -145,7 +148,11 @@ public class ActorBasedRulesCache {
                   case STATUS_CHANGE_SOURCE_RATE_LIMIT:
                     rateLimitBasedIpViolations.addAll(
                         this.generateBlockingDetails(
-                            BLOCKING_CATEGORY_RATE_LIMIT,
+                            getBlockingCategory(
+                                actor
+                                    .getStatusChangeDetails()
+                                    .getRateLimitDetails()
+                                    .getRuleCategory()),
                             BLOCKING_RULE_TYPE_BLOCK,
                             ViolationInfoEncoder.getEncodedRateLimitViolationInfo(
                                 actor.getEntityId(),
@@ -197,6 +204,17 @@ public class ActorBasedRulesCache {
             requestContext.getTenantId(), response));
 
     return response;
+  }
+
+  private BlockingCategory getBlockingCategory(RateLimitCategory rateLimitCategory) {
+    switch (rateLimitCategory) {
+      case RATE_LIMIT_CATEGORY_DATA_EXFILTRATION:
+        return BLOCKING_CATEGORY_DATA_EXFILTRATION;
+      case RATE_LIMIT_CATEGORY_ENUMERATION:
+        return BLOCKING_CATEGORY_ENUMERATION;
+      default:
+        return BLOCKING_CATEGORY_RATE_LIMIT;
+    }
   }
 
   private List<BlockingDetails> generateBlockingDetails(
