@@ -23,10 +23,12 @@ import ai.traceable.malicioussources.config.service.v1.UpdateMaliciousSourcesRul
 import io.grpc.Status;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 public class MaliciousSourcesRulesValidator implements RulesValidator {
@@ -39,8 +41,17 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
 
   @Override
   public Status validate(
-      CreateMaliciousSourcesRuleRequest request,
-      Supplier<List<MaliciousSourcesRule>> blockAllExceptRulesSupplier) {
+      CreateMaliciousSourcesRuleRequest request, List<MaliciousSourcesRule> existingRules) {
+    if (request.getRuleInfo().getName().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "MaliciousSourcesRuleInfo in Malicious Source rule should have a valid name");
+    }
+    Optional<MaliciousSourcesRule> existingRuleWithSameName =
+        getRuleForName(request.getRuleInfo().getName(), existingRules);
+    if (existingRuleWithSameName.isPresent()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          String.format("Rule with name %s already exists", request.getRuleInfo().getName()));
+    }
     Status status = validate(request.getRuleInfo());
     if (!status.isOk()) {
       return status;
@@ -49,9 +60,18 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
     if (!status.isOk()) {
       return status;
     }
+    List<MaliciousSourcesRule> blockAllExceptRulesSupplier =
+        existingRules.stream()
+            .filter(
+                rule ->
+                    rule.getRuleInfo()
+                        .getRuleAction()
+                        .getActionType()
+                        .equals(RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT))
+            .collect(Collectors.toUnmodifiableList());
     if (RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT.equals(
             request.getRuleInfo().getRuleAction().getActionType())
-        && isDuplicateBlockAllExceptCreate(blockAllExceptRulesSupplier)) {
+        && isDuplicateBlockAllExceptCreate(() -> blockAllExceptRulesSupplier)) {
       return Status.ALREADY_EXISTS.withDescription(
           "Trying to create duplicate rule for action "
               + RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT);
@@ -61,12 +81,23 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
 
   @Override
   public Status validate(
-      UpdateMaliciousSourcesRuleRequest request,
-      Supplier<List<MaliciousSourcesRule>> blockAllExceptRulesSupplier) {
+      UpdateMaliciousSourcesRuleRequest request, List<MaliciousSourcesRule> existingRules) {
     MaliciousSourcesRule maliciousSourcesRule = request.getRule();
     if (maliciousSourcesRule.getId().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Update Malicious Sources rule should have a valid id");
+    }
+    if (request.getRule().getRuleInfo().getName().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "MaliciousSourcesRuleInfo in Malicious Source rule should have a valid name");
+    }
+    Optional<MaliciousSourcesRule> existingRuleWithSameName =
+        getRuleForName(request.getRule().getRuleInfo().getName(), existingRules);
+    if (existingRuleWithSameName.isPresent()
+        && !existingRuleWithSameName.get().getId().equals(request.getRule().getId())) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          String.format(
+              "Rule with name %s already exists", request.getRule().getRuleInfo().getName()));
     }
     Status status = validate(maliciousSourcesRule.getRuleInfo());
     if (!status.isOk()) {
@@ -76,10 +107,19 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
     if (!status.isOk()) {
       return status;
     }
+    List<MaliciousSourcesRule> blockAllExceptRulesSupplier =
+        existingRules.stream()
+            .filter(
+                rule ->
+                    rule.getRuleInfo()
+                        .getRuleAction()
+                        .getActionType()
+                        .equals(RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT))
+            .collect(Collectors.toUnmodifiableList());
     if (RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT.equals(
             maliciousSourcesRule.getRuleInfo().getRuleAction().getActionType())
         && isDuplicateBlockAllExceptUpdate(
-            maliciousSourcesRule.getId(), blockAllExceptRulesSupplier)) {
+            maliciousSourcesRule.getId(), () -> blockAllExceptRulesSupplier)) {
       return Status.ALREADY_EXISTS.withDescription(
           "Trying to change rule action to "
               + RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT
@@ -98,11 +138,6 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
   }
 
   private Status validate(MaliciousSourcesRuleInfo ruleInfo) {
-    if (ruleInfo.getName().isEmpty()) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "MaliciousSourcesRuleInfo in Malicious Source rule should have a valid name");
-    }
-
     Status status = validate(ruleInfo.getRuleAction());
     if (!status.isOk()) {
       return status;
@@ -117,7 +152,6 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
         return status;
       }
     }
-
     return Status.OK;
   }
 
@@ -318,5 +352,10 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
       String id, Supplier<List<MaliciousSourcesRule>> blockAllExceptRulesSupplier) {
     List<MaliciousSourcesRule> maliciousSourcesRules = blockAllExceptRulesSupplier.get();
     return maliciousSourcesRules.stream().anyMatch(rule -> !rule.getId().equals(id));
+  }
+
+  private Optional<MaliciousSourcesRule> getRuleForName(
+      String ruleName, List<MaliciousSourcesRule> rules) {
+    return rules.stream().filter(rule -> rule.getRuleInfo().getName().equals(ruleName)).findFirst();
   }
 }

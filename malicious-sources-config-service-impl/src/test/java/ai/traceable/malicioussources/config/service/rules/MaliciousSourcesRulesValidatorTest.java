@@ -38,14 +38,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class MaliciousSourcesRulesValidatorTest {
   @Mock private Supplier<List<MaliciousSourcesRule>> blockAllExceptRulesSupplier;
   @Mock private IpAddressParsingUtils ipAddressParsingUtils;
-
   @InjectMocks private MaliciousSourcesRulesValidator rulesValidator;
 
   @Nested
@@ -88,8 +86,7 @@ public class MaliciousSourcesRulesValidatorTest {
                       .build())
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.OK, status.getCode());
     }
 
@@ -116,8 +113,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.OK, status.getCode());
     }
 
@@ -145,8 +141,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -174,8 +169,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -204,8 +198,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -231,8 +224,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.NOT_FOUND, status.getCode());
     }
 
@@ -258,8 +250,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.NOT_FOUND, status.getCode());
     }
 
@@ -288,8 +279,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -316,8 +306,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -342,8 +331,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -367,8 +355,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.NOT_FOUND, status.getCode());
     }
 
@@ -394,8 +381,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.NOT_FOUND, status.getCode());
     }
 
@@ -425,8 +411,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -453,8 +438,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -480,8 +464,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.NOT_FOUND, status.getCode());
     }
 
@@ -510,8 +493,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -537,8 +519,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.NOT_FOUND, status.getCode());
     }
 
@@ -568,8 +549,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
       when(ipAddressParsingUtils.isValidIp(anyString())).thenReturn(false);
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -599,8 +579,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
       when(ipAddressParsingUtils.isValidSubnet(anyString())).thenReturn(false);
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -622,8 +601,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.NOT_FOUND, status.getCode());
     }
 
@@ -646,8 +624,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -680,8 +657,7 @@ public class MaliciousSourcesRulesValidatorTest {
                       .build())
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -714,8 +690,7 @@ public class MaliciousSourcesRulesValidatorTest {
                       .build())
               .build();
 
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -742,8 +717,49 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
 
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
+      assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName(
+        "Should return invalid argument status when same name Malicious Sources rule exist")
+    void validateCreateMaliciousSourcesRuleRequest_same_name() {
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-1")
+              .setDescription("Malicious Sources Rule Test With Same Name")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_ALERT)
+                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
+                      .build())
+              .build();
+
+      MaliciousSourcesRule maliciousSourcesRule =
+          MaliciousSourcesRule.newBuilder()
+              .setId("First-test")
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .build();
+
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo1 =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-1")
+              .setDescription("Malicious Sources Rule Test With Same Name Exist")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK)
+                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                      .build())
+              .build();
+
+      CreateMaliciousSourcesRuleRequest createMaliciousSourcesRuleRequest =
+          CreateMaliciousSourcesRuleRequest.newBuilder()
+              .setRuleInfo(maliciousSourcesRuleInfo1)
+              .build();
+
       Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+          rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of(maliciousSourcesRule));
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -767,17 +783,31 @@ public class MaliciousSourcesRulesValidatorTest {
                           IpAddressCondition.newBuilder().addIpAddresses("255.255.255.0").build())
                       .build())
               .build();
-
-      Mockito.when(blockAllExceptRulesSupplier.get())
-          .thenReturn(List.of(MaliciousSourcesRule.getDefaultInstance()));
-
-      CreateMaliciousSourcesRuleRequest createMaliciousSourcesRuleRequest =
-          CreateMaliciousSourcesRuleRequest.newBuilder()
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo1 =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-2")
+              .setDescription("Malicious Sources Rule Test")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_HIGH)
+                      .build())
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setIpRangeCondition(
+                          IpAddressCondition.newBuilder().addIpAddresses("255.255.255.0").build())
+                      .build())
+              .build();
+      MaliciousSourcesRule rule =
+          MaliciousSourcesRule.newBuilder()
+              .setId("First-test")
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
-
-      Status status =
-          rulesValidator.validate(createMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      CreateMaliciousSourcesRuleRequest createMaliciousSourcesRuleRequest =
+          CreateMaliciousSourcesRuleRequest.newBuilder()
+              .setRuleInfo(maliciousSourcesRuleInfo1)
+              .build();
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of(rule));
       assertEquals(Status.Code.ALREADY_EXISTS, status.getCode());
     }
   }
@@ -818,8 +848,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.OK, status.getCode());
     }
 
@@ -853,8 +882,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.OK, status.getCode());
     }
 
@@ -888,8 +916,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -925,8 +952,7 @@ public class MaliciousSourcesRulesValidatorTest {
 
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -962,8 +988,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -996,8 +1021,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.NOT_FOUND, status.getCode());
     }
 
@@ -1031,8 +1055,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -1062,8 +1085,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.NOT_FOUND, status.getCode());
     }
 
@@ -1097,8 +1119,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -1129,8 +1150,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -1159,8 +1179,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -1191,8 +1210,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.NOT_FOUND, status.getCode());
     }
 
@@ -1225,8 +1243,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.NOT_FOUND, status.getCode());
     }
 
@@ -1263,8 +1280,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -1297,8 +1313,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.NOT_FOUND, status.getCode());
     }
 
@@ -1334,8 +1349,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -1369,8 +1383,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -1403,8 +1416,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.NOT_FOUND, status.getCode());
     }
 
@@ -1442,8 +1454,7 @@ public class MaliciousSourcesRulesValidatorTest {
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
       when(ipAddressParsingUtils.isValidIp(anyString())).thenReturn(false);
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -1481,8 +1492,7 @@ public class MaliciousSourcesRulesValidatorTest {
       when(ipAddressParsingUtils.isValidSubnet(anyString())).thenReturn(false);
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -1511,8 +1521,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.NOT_FOUND, status.getCode());
     }
 
@@ -1542,8 +1551,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -1583,8 +1591,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -1624,8 +1631,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -1659,8 +1665,63 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
+      Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
+      assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName(
+        "Should return invalid argument status when same name exist on update Malicious Sources rule")
+    void validateUpdateMaliciousSourcesRuleRequest_same_name() {
+
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-1")
+              .setDescription("Malicious Sources Rule Test with Same Name")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_ALERT)
+                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
+                      .build())
+              .build();
+
+      MaliciousSourcesRule maliciousSourcesRule =
+          MaliciousSourcesRule.newBuilder()
+              .setId("First-test")
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .build();
+
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo1 =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-2")
+              .setDescription("Malicious Sources Rule Test with Same Name")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK)
+                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                      .build())
+              .build();
+
+      MaliciousSourcesRule maliciousSourcesRule1 =
+          MaliciousSourcesRule.newBuilder()
+              .setId("Second-test")
+              .setRuleInfo(maliciousSourcesRuleInfo1)
+              .build();
+
+      MaliciousSourcesRule maliciousSourcesRule2 =
+          MaliciousSourcesRule.newBuilder()
+              .setId("Second-test")
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .build();
+
+      UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
+          UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule2).build();
+
       Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+          rulesValidator.validate(
+              updateMaliciousSourcesRuleRequest,
+              List.of(maliciousSourcesRule, maliciousSourcesRule1));
+
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
 
@@ -1685,9 +1746,6 @@ public class MaliciousSourcesRulesValidatorTest {
                       .build())
               .build();
 
-      Mockito.when(blockAllExceptRulesSupplier.get())
-          .thenReturn(List.of(MaliciousSourcesRule.getDefaultInstance()));
-
       MaliciousSourcesRule maliciousSourcesRule =
           MaliciousSourcesRule.newBuilder()
               .setId("First-test")
@@ -1698,10 +1756,62 @@ public class MaliciousSourcesRulesValidatorTest {
                       .setDisabled(true)
                       .build())
               .build();
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo1 =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-2")
+              .setDescription("Malicious Sources Rule Test")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_HIGH)
+                      .build())
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setIpRangeCondition(
+                          IpAddressCondition.newBuilder().addIpAddresses("255.255.255.0").build())
+                      .build())
+              .build();
+
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo2 =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-3")
+              .setDescription("Malicious Sources Rule Test")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_HIGH)
+                      .build())
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setIpRangeCondition(
+                          IpAddressCondition.newBuilder().addIpAddresses("255.255.255.0").build())
+                      .build())
+              .build();
+
+      MaliciousSourcesRule maliciousSourcesRule1 =
+          MaliciousSourcesRule.newBuilder()
+              .setId("Second-test")
+              .setRuleInfo(maliciousSourcesRuleInfo1)
+              .setRuleStatus(
+                  MaliciousSourcesRuleStatus.newBuilder()
+                      .setInternal(false)
+                      .setDisabled(true)
+                      .build())
+              .build();
+
+      MaliciousSourcesRule maliciousSourcesRule2 =
+          MaliciousSourcesRule.newBuilder()
+              .setId("Second-test")
+              .setRuleInfo(maliciousSourcesRuleInfo2)
+              .build();
+
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
-          UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
+          UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule2).build();
+
       Status status =
-          rulesValidator.validate(updateMaliciousSourcesRuleRequest, blockAllExceptRulesSupplier);
+          rulesValidator.validate(
+              updateMaliciousSourcesRuleRequest,
+              List.of(maliciousSourcesRule, maliciousSourcesRule1));
       assertEquals(Status.Code.ALREADY_EXISTS, status.getCode());
     }
   }

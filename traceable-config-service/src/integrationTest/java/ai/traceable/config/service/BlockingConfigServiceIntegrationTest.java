@@ -272,13 +272,18 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
     customSignatureRuleId.add(createCustomSignatureRule(Optional.empty()));
     customSignatureRuleId.add(createCustomSignatureRule(Optional.of(ENVIRONMENT_ID)));
     createIpTypeRule(
+        "test-rule-1",
         Optional.empty(),
         List.of(
             IpLocationType.IP_LOCATION_TYPE_BOT, IpLocationType.IP_LOCATION_TYPE_HOSTING_PROVIDER));
     createIpTypeRule(
-        Optional.of(ENVIRONMENT_ID), List.of(IpLocationType.IP_LOCATION_TYPE_PUBLIC_PROXY));
+        "test-rule-2",
+        Optional.of(ENVIRONMENT_ID),
+        List.of(IpLocationType.IP_LOCATION_TYPE_PUBLIC_PROXY));
     createIpTypeRule(
-        Optional.of(ENVIRONMENT_ID), List.of(IpLocationType.IP_LOCATION_TYPE_TOR_EXIT_NODE));
+        "test-rule-3",
+        Optional.of(ENVIRONMENT_ID),
+        List.of(IpLocationType.IP_LOCATION_TYPE_TOR_EXIT_NODE));
 
     // Checking without environment
     response =
@@ -616,7 +621,7 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
   }
 
   private void createIpTypeRule(
-      Optional<String> environmentId, List<IpLocationType> ipLocationTypeList) {
+      String name, Optional<String> environmentId, List<IpLocationType> ipLocationTypeList) {
     RequestContext.forTenantId(TENANT_ID)
         .call(
             () ->
@@ -624,7 +629,7 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
                     CreateMaliciousSourcesRuleRequest.newBuilder()
                         .setRuleInfo(
                             MaliciousSourcesRuleInfo.newBuilder()
-                                .setName("test-rule")
+                                .setName(name)
                                 .setDescription("test-desc")
                                 .setRuleAction(
                                     MaliciousSourcesRuleAction.newBuilder()

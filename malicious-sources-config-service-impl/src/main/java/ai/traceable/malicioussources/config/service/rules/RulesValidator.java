@@ -6,16 +6,11 @@ import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.UpdateMaliciousSourcesRuleRequest;
 import io.grpc.Status;
 import java.util.List;
-import java.util.function.Supplier;
 
 public interface RulesValidator {
-  Status validate(
-      CreateMaliciousSourcesRuleRequest request,
-      Supplier<List<MaliciousSourcesRule>> blockAllExceptRulesSupplier);
+  Status validate(CreateMaliciousSourcesRuleRequest request, List<MaliciousSourcesRule> rules);
 
-  Status validate(
-      UpdateMaliciousSourcesRuleRequest request,
-      Supplier<List<MaliciousSourcesRule>> blockAllExceptRulesSupplier);
+  Status validate(UpdateMaliciousSourcesRuleRequest request, List<MaliciousSourcesRule> rules);
 
   Status validate(DeleteMaliciousSourcesRuleRequest request);
 }

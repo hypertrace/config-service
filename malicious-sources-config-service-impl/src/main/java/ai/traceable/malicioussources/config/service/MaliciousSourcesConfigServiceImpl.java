@@ -11,13 +11,11 @@ import ai.traceable.malicioussources.config.service.v1.GetMaliciousSourcesRulesR
 import ai.traceable.malicioussources.config.service.v1.GetRulesFilter;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesConfigServiceGrpc.MaliciousSourcesConfigServiceImplBase;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
-import ai.traceable.malicioussources.config.service.v1.RuleActionType;
 import ai.traceable.malicioussources.config.service.v1.UpdateMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.UpdateMaliciousSourcesRuleResponse;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
-import java.util.function.Supplier;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -55,9 +53,10 @@ public class MaliciousSourcesConfigServiceImpl extends MaliciousSourcesConfigSer
       CreateMaliciousSourcesRuleRequest request,
       StreamObserver<CreateMaliciousSourcesRuleResponse> responseObserver) {
     try {
-      Status status =
-          rulesValidator.validate(
-              request, getBlockAllExceptRulesSupplier(RequestContext.CURRENT.get()));
+      List<MaliciousSourcesRule> existingRules =
+          rulesManager.getMaliciousSourcesRules(
+              RequestContext.CURRENT.get(), GetRulesFilter.getDefaultInstance());
+      Status status = rulesValidator.validate(request, existingRules);
       if (!status.isOk()) {
         log.error("Create Malicious Sources Rule Request is not valid {}", status.getDescription());
         responseObserver.onError(status.asException());
@@ -81,15 +80,15 @@ public class MaliciousSourcesConfigServiceImpl extends MaliciousSourcesConfigSer
       UpdateMaliciousSourcesRuleRequest request,
       StreamObserver<UpdateMaliciousSourcesRuleResponse> responseObserver) {
     try {
-      Status status =
-          rulesValidator.validate(
-              request, getBlockAllExceptRulesSupplier(RequestContext.CURRENT.get()));
+      List<MaliciousSourcesRule> existingRules =
+          rulesManager.getMaliciousSourcesRules(
+              RequestContext.CURRENT.get(), GetRulesFilter.getDefaultInstance());
+      Status status = rulesValidator.validate(request, existingRules);
       if (!status.isOk()) {
         log.error("Update Malicious Sources Rule Request is not valid {}", status.getDescription());
         responseObserver.onError(status.asException());
         return;
       }
-
       MaliciousSourcesRule updatedMaliciousSourcesRule =
           rulesManager.updateMaliciousSourcesRule(RequestContext.CURRENT.get(), request);
       responseObserver.onNext(
@@ -123,14 +122,5 @@ public class MaliciousSourcesConfigServiceImpl extends MaliciousSourcesConfigSer
       log.error("Unable to delete malicious source rule with id {} :", request.getId(), e);
       responseObserver.onError(e);
     }
-  }
-
-  private Supplier<List<MaliciousSourcesRule>> getBlockAllExceptRulesSupplier(
-      RequestContext requestContext) {
-    GetRulesFilter actionFilter =
-        GetRulesFilter.newBuilder()
-            .addRuleActionTypes(RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
-            .build();
-    return () -> rulesManager.getMaliciousSourcesRules(requestContext, actionFilter);
   }
 }
