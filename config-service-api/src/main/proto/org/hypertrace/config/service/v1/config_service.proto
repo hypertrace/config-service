@@ -136,14 +136,7 @@ message DeleteConfigsRequest {
 }
 
 message DeleteConfigsResponse {
-  repeated DeletedConfig deleted_configs = 1;
-
-  message DeletedConfig {
-    string context = 1;
-    int64 creation_timestamp = 2;
-    int64 update_timestamp = 3;
-    google.protobuf.Value prev_config = 4;
-  }
+  repeated ContextSpecificConfig deleted_configs = 1;
 }
 
 message UpsertAllConfigsRequest {
