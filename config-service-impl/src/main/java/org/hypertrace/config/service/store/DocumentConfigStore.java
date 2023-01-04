@@ -1,5 +1,6 @@
 package org.hypertrace.config.service.store;
 
+import static com.google.common.collect.Streams.zip;
 import static org.hypertrace.config.service.ConfigServiceUtils.emptyConfig;
 import static org.hypertrace.config.service.store.ConfigDocument.CONTEXT_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_FIELD_NAME;
@@ -21,6 +22,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigResourceContext;
@@ -93,7 +95,6 @@ public class DocumentConfigStore implements ConfigStore {
     Map<ConfigResourceContext, Optional<ConfigDocument>> previousConfigDocs =
         getLatestVersionConfigDocs(resourceContextValueMap.keySet());
     Map<Key, Document> documentsToBeUpserted = new LinkedHashMap<>();
-    List<UpsertedConfig> upsertedConfigs = new ArrayList<>();
     for (Entry<ConfigResourceContext, Optional<ConfigDocument>> configResourceContextOptionalEntry :
         previousConfigDocs.entrySet()) {
       ConfigResourceContext configResourceContext = configResourceContextOptionalEntry.getKey();
@@ -107,17 +108,23 @@ public class DocumentConfigStore implements ConfigStore {
               userId,
               previousConfigDoc);
       documentsToBeUpserted.put(latestDocKey, latestConfigDocument);
-
-      upsertedConfigs.add(
-          previousConfigDoc
-              .flatMap(this::convertToContextSpecificConfig)
-              .map(previousConfig -> this.buildUpsertResult(latestConfigDocument, previousConfig))
-              .orElseGet(() -> this.buildUpsertResult(latestConfigDocument)));
     }
 
     boolean successfulBulkUpsertDocuments = collection.bulkUpsert(documentsToBeUpserted);
     if (successfulBulkUpsertDocuments) {
-      return Collections.unmodifiableList(upsertedConfigs);
+      return zip(
+              previousConfigDocs.values().stream(),
+              documentsToBeUpserted.values().stream(),
+              (previousConfigDoc, documentToBeUpserted) ->
+                  previousConfigDoc
+                      .flatMap(this::convertToContextSpecificConfig)
+                      .map(
+                          previousConfig ->
+                              this.buildUpsertResult(
+                                  (ConfigDocument) documentToBeUpserted, previousConfig))
+                      .orElseGet(
+                          () -> this.buildUpsertResult((ConfigDocument) documentToBeUpserted)))
+          .collect(Collectors.toUnmodifiableList());
     }
     return Collections.emptyList();
   }
