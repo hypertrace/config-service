@@ -19,7 +19,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -95,20 +94,11 @@ public class DocumentConfigStore implements ConfigStore {
     Map<ConfigResourceContext, Optional<ConfigDocument>> previousConfigDocs =
         getLatestVersionConfigDocs(resourceContextValueMap.keySet());
     Map<Key, Document> documentsToBeUpserted = new LinkedHashMap<>();
-    for (Entry<ConfigResourceContext, Optional<ConfigDocument>> configResourceContextOptionalEntry :
-        previousConfigDocs.entrySet()) {
-      ConfigResourceContext configResourceContext = configResourceContextOptionalEntry.getKey();
-      Optional<ConfigDocument> previousConfigDoc = configResourceContextOptionalEntry.getValue();
-
-      Key latestDocKey = new ConfigDocumentKey(configResourceContext);
-      ConfigDocument latestConfigDocument =
-          buildConfigDocument(
-              configResourceContext,
-              resourceContextValueMap.get(configResourceContext),
-              userId,
-              previousConfigDoc);
-      documentsToBeUpserted.put(latestDocKey, latestConfigDocument);
-    }
+    previousConfigDocs.forEach(
+        (key, value) ->
+            documentsToBeUpserted.put(
+                new ConfigDocumentKey(key),
+                buildConfigDocument(key, resourceContextValueMap.get(key), userId, value)));
 
     boolean successfulBulkUpsertDocuments = collection.bulkUpsert(documentsToBeUpserted);
     if (successfulBulkUpsertDocuments) {
@@ -219,10 +209,10 @@ public class DocumentConfigStore implements ConfigStore {
   private Map<ConfigResourceContext, Optional<ConfigDocument>> getLatestVersionConfigDocs(
       Set<ConfigResourceContext> configResourceContexts) throws IOException {
     // build filter
-    List<Filter> childFilters = new ArrayList<>();
-    for (ConfigResourceContext configResourceContext : configResourceContexts) {
-      childFilters.add(getConfigResourceContextFilter(configResourceContext));
-    }
+    List<Filter> childFilters =
+        configResourceContexts.stream()
+            .map(this::getConfigResourceContextFilter)
+            .collect(Collectors.toUnmodifiableList());
     Filter filter = new Filter();
     filter.setOp(Filter.Op.OR);
     filter.setChildFilters(childFilters.toArray(Filter[]::new));

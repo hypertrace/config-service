@@ -55,7 +55,6 @@ tasks.integrationTest {
 }
 
 dependencies {
-  implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpc.framework)
   implementation(projects.configServiceFactory)
 
@@ -69,6 +68,7 @@ dependencies {
   integrationTestImplementation(libs.snakeyaml)
   integrationTestImplementation(libs.hypertrace.framework.integrationtest)
   integrationTestImplementation(libs.hypertrace.grpcutils.client)
+  integrationTestImplementation(libs.hypertrace.grpcutils.context)
   integrationTestImplementation(libs.hypertrace.documentstore)
 }
 
