@@ -39,7 +39,7 @@ import org.hypertrace.config.service.v1.GetConfigResponse;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
-import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -73,14 +73,14 @@ class ConfigServiceGrpcImplTest {
         () -> configServiceGrpc.upsertConfig(getUpsertConfigRequest("", config1), responseObserver);
     Runnable runnableWithoutContext2 =
         () -> configServiceGrpc.upsertConfig(getUpsertConfigRequest("", config2), responseObserver);
-    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnableWithoutContext1);
-    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnableWithoutContext2);
+    RequestContext.forTenantId(TENANT_ID).run(runnableWithoutContext1);
+    RequestContext.forTenantId(TENANT_ID).run(runnableWithoutContext2);
 
     Runnable runnableWithContext =
         () ->
             configServiceGrpc.upsertConfig(
                 getUpsertConfigRequest(CONTEXT1, config2), responseObserver);
-    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnableWithContext);
+    RequestContext.forTenantId(TENANT_ID).run(runnableWithContext);
 
     ArgumentCaptor<UpsertConfigResponse> upsertConfigResponseCaptor =
         ArgumentCaptor.forClass(UpsertConfigResponse.class);
@@ -119,11 +119,11 @@ class ConfigServiceGrpcImplTest {
 
     Runnable runnableWithoutContext =
         () -> configServiceGrpc.getConfig(getGetConfigRequest(), responseObserver);
-    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnableWithoutContext);
+    RequestContext.forTenantId(TENANT_ID).run(runnableWithoutContext);
 
     Runnable runnableWithContext =
         () -> configServiceGrpc.getConfig(getGetConfigRequest(CONTEXT1), responseObserver);
-    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnableWithContext);
+    RequestContext.forTenantId(TENANT_ID).run(runnableWithContext);
 
     ArgumentCaptor<GetConfigResponse> getConfigResponseCaptor =
         ArgumentCaptor.forClass(GetConfigResponse.class);
@@ -164,7 +164,7 @@ class ConfigServiceGrpcImplTest {
 
     Runnable runnable =
         () -> configServiceGrpc.getAllConfigs(getGetAllConfigsRequest(), responseObserver);
-    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    RequestContext.forTenantId(TENANT_ID).run(runnable);
 
     ArgumentCaptor<GetAllConfigsResponse> getAllConfigsResponseCaptor =
         ArgumentCaptor.forClass(GetAllConfigsResponse.class);
@@ -187,7 +187,7 @@ class ConfigServiceGrpcImplTest {
 
     Runnable runnable =
         () -> configServiceGrpc.deleteConfig(getDeleteConfigRequest(), responseObserver);
-    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    RequestContext.forTenantId(TENANT_ID).run(runnable);
 
     verify(configStore, times(1))
         .writeConfig(eq(configResourceWithContext), eq(""), eq(emptyValue()));
@@ -210,7 +210,7 @@ class ConfigServiceGrpcImplTest {
         () ->
             configServiceGrpc.deleteConfig(
                 getDefaultContextDeleteConfigRequest(), responseObserver);
-    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    RequestContext.forTenantId(TENANT_ID).run(runnable);
 
     verify(configStore, times(1))
         .writeConfig(eq(configResourceWithoutContext), eq(""), eq(emptyValue()));
@@ -230,7 +230,7 @@ class ConfigServiceGrpcImplTest {
 
     Runnable runnable =
         () -> configServiceGrpc.deleteConfig(getDeleteConfigRequest(), responseObserver);
-    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    RequestContext.forTenantId(TENANT_ID).run(runnable);
 
     ArgumentCaptor<Throwable> throwableArgumentCaptor = ArgumentCaptor.forClass(Throwable.class);
     verify(responseObserver, times(1)).onError(throwableArgumentCaptor.capture());
