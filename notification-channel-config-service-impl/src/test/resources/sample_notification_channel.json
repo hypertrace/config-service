@@ -1,0 +1,25 @@
+{
+  "id": "ca793999-1ecd-4d8d-abf6-492ecd161350",
+  "notification_channel_mutable_data": {
+    "channel_name": "channel1",
+    "email_channel_config": [
+      {
+        "address": "localhost"
+      }
+    ],
+    "webhook_channel_config": [
+      {
+        "url": "htpp://efefe",
+        "format": "WEBHOOK_FORMAT_JSON",
+        "headers": [
+          {
+            "name": "1",
+            "value": "1",
+            "is_secret": true
+          }
+        ],
+        "id": "ahvhjhj"
+      }
+    ]
+  }
+}

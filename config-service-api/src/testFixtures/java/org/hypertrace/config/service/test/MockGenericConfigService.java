@@ -189,7 +189,7 @@ public class MockGenericConfigService {
                       currentValues.get(
                           ResourceType.of(
                               request.getResourceNamespace(), request.getResourceName()),
-                          request.getContext()));
+                          configContextOrDefault(request.getContext())));
               currentValues.remove(
                   ResourceType.of(request.getResourceNamespace(), request.getResourceName()),
                   configContextOrDefault(request.getContext()));

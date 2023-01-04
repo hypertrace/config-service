@@ -1,0 +1,10 @@
+version: v1
+directories:
+  - alerting-config-service-api/src/main/proto
+  - config-service-api/src/main/proto
+  - label-application-rule-config-service-api/src/main/proto
+  - labels-config-service-api/src/main/proto
+  - notification-channel-config-service-api/src/main/proto
+  - notification-rule-config-service-api/src/main/proto
+  - spaces-config-service-api/src/main/proto
+  - span-processing-config-service-api/src/main/proto

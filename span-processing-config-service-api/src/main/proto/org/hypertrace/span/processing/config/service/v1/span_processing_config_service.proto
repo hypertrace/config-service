@@ -5,7 +5,6 @@ package org.hypertrace.span.processing.config.service.v1;
 option java_multiple_files = true;
 
 import "org/hypertrace/span/processing/config/service/v1/span_filter.proto";
-import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
 service SpanProcessingConfigService {
@@ -19,27 +18,6 @@ service SpanProcessingConfigService {
   }
 
   rpc DeleteExcludeSpanRule (DeleteExcludeSpanRuleRequest) returns (DeleteExcludeSpanRuleResponse) {
-  }
-
-  rpc CreateApiNamingRule (CreateApiNamingRuleRequest) returns (CreateApiNamingRuleResponse) {
-  }
-
-  rpc CreateApiNamingRules (CreateApiNamingRulesRequest) returns (CreateApiNamingRulesResponse) {
-  }
-
-  rpc UpdateApiNamingRule (UpdateApiNamingRuleRequest) returns (UpdateApiNamingRuleResponse) {
-  }
-
-  rpc UpdateApiNamingRules (UpdateApiNamingRulesRequest) returns (UpdateApiNamingRulesResponse) {
-  }
-
-  rpc GetAllApiNamingRules (GetAllApiNamingRulesRequest) returns (GetAllApiNamingRulesResponse) {
-  }
-
-  rpc DeleteApiNamingRule (DeleteApiNamingRuleRequest) returns (DeleteApiNamingRuleResponse) {
-  }
-
-  rpc DeleteApiNamingRules (DeleteApiNamingRulesRequest) returns (DeleteApiNamingRulesResponse) {
   }
 }
 
@@ -87,6 +65,7 @@ message ExcludeSpanRuleInfo {
   string name = 1;
   SpanFilter filter = 2;
   bool disabled = 3;
+  RuleType type = 4;
 }
 
 message ExcludeSpanRuleMetadata {
@@ -101,103 +80,8 @@ message UpdateExcludeSpanRule {
   bool disabled = 4;
 }
 
-message CreateApiNamingRuleRequest {
-  ApiNamingRuleInfo rule_info = 1;
-}
-
-message CreateApiNamingRuleResponse {
-  ApiNamingRuleDetails rule_details = 1;
-}
-
-message CreateApiNamingRulesRequest {
-  repeated ApiNamingRuleInfo rules_info = 1;
-}
-
-message CreateApiNamingRulesResponse {
-  repeated ApiNamingRuleDetails rules_details = 1;
-}
-
-message GetAllApiNamingRulesRequest {
-}
-
-message GetAllApiNamingRulesResponse {
-  repeated ApiNamingRuleDetails rule_details = 1;
-}
-
-message UpdateApiNamingRuleRequest {
-  UpdateApiNamingRule rule = 1;
-}
-
-message UpdateApiNamingRuleResponse {
-  ApiNamingRuleDetails rule_details = 1;
-}
-
-message UpdateApiNamingRulesRequest {
-  repeated UpdateApiNamingRule rules = 1;
-}
-
-message UpdateApiNamingRulesResponse {
-  repeated ApiNamingRuleDetails rules_details = 1;
-}
-
-message DeleteApiNamingRuleRequest {
-  string id = 1;
-}
-
-message DeleteApiNamingRuleResponse {
-}
-
-message DeleteApiNamingRulesRequest {
-  repeated string ids = 1;
-}
-
-message DeleteApiNamingRulesResponse {
-}
-
-message ApiNamingRule {
-  string id = 1;
-  ApiNamingRuleInfo rule_info = 2;
-}
-
-message ApiNamingRuleDetails {
-  ApiNamingRule rule = 1;
-  ApiNamingRuleMetadata metadata = 2;
-}
-
-message ApiNamingRuleInfo {
-  string name = 1;
-  SpanFilter filter = 2;
-  ApiNamingRuleConfig rule_config = 3;
-  bool disabled = 4;
-}
-
-message UpdateApiNamingRule {
-  string id = 1;
-  string name = 2;
-  SpanFilter filter = 3;
-  ApiNamingRuleConfig rule_config = 4;
-  bool disabled = 5;
-}
-
-message ApiNamingRuleConfig {
-  oneof rule_config {
-    SegmentMatchingBasedConfig segment_matching_based_config = 1;
-    ApiSpecBasedConfig api_spec_based_config = 2;
-  }
-}
-
-message SegmentMatchingBasedConfig {
-  repeated string regexes = 1;
-  repeated string values = 2;
-}
-
-message ApiSpecBasedConfig {
-  string api_spec_id = 1;
-  repeated string regexes = 2;
-  repeated string values = 3;
-}
-
-message ApiNamingRuleMetadata {
-  google.protobuf.Timestamp creation_timestamp = 1;
-  google.protobuf.Timestamp last_updated_timestamp = 2;
+enum RuleType {
+  RULE_TYPE_UNSPECIFIED = 0;
+  RULE_TYPE_SYSTEM = 1;
+  RULE_TYPE_USER = 2;
 }
