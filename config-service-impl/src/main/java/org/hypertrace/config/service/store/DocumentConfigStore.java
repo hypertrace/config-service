@@ -223,7 +223,7 @@ public class DocumentConfigStore implements ConfigStore {
         Filter.eq(
             TENANT_ID_FIELD_NAME,
             configResourceContexts.iterator().next().getConfigResource().getTenantId());
-    Filter filter = new Filter().and(tenantIdFilter, configResourceFieldContextFilter);
+    Filter filter = tenantIdFilter.and(configResourceFieldContextFilter);
 
     // build query
     Query query = new Query();
