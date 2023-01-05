@@ -68,7 +68,6 @@ dependencies {
   integrationTestImplementation(libs.snakeyaml)
   integrationTestImplementation(libs.hypertrace.framework.integrationtest)
   integrationTestImplementation(libs.hypertrace.grpcutils.client)
-  integrationTestImplementation(libs.hypertrace.grpcutils.context)
   integrationTestImplementation(libs.hypertrace.documentstore)
 }
 

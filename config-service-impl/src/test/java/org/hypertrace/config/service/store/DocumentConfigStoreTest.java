@@ -162,20 +162,26 @@ class DocumentConfigStoreTest {
     ConfigResourceContext resourceContext1 = getConfigResourceContext("context-1");
     ConfigResourceContext resourceContext2 = getConfigResourceContext("context-2");
     long updateTime = 1234;
-    CloseableIterator<Document> getResult =
+    CloseableIterator<Document> firstGetResult =
         new CloseableIteratorImpl(
             List.of(
                 getConfigDocument(
-                    resourceContext1.getContext(), CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP1),
+                    resourceContext1.getContext(),
+                    CONFIG_VERSION,
+                    config1,
+                    TIMESTAMP1,
+                    TIMESTAMP1)));
+
+    CloseableIterator<Document> secondGetResult =
+        new CloseableIteratorImpl(
+            List.of(
                 getConfigDocument(
                     resourceContext2.getContext(),
                     CONFIG_VERSION,
                     config2,
                     TIMESTAMP2,
                     TIMESTAMP2)));
-
-    when(collection.search(any(Query.class))).thenReturn(getResult);
-    when(collection.bulkUpsert(any())).thenReturn(true);
+    when(collection.search(any(Query.class))).thenReturn(firstGetResult, secondGetResult);
     when(this.mockClock.millis()).thenReturn(updateTime);
     List<UpsertedConfig> upsertedConfigs =
         // Swap configs between contexts as an update
@@ -201,22 +207,23 @@ class DocumentConfigStoreTest {
         upsertedConfigs);
 
     verify(collection, times(1))
-        .bulkUpsert(
-            Map.of(
-                new ConfigDocumentKey(resourceContext1),
-                getConfigDocument(
-                    resourceContext1.getContext(),
-                    CONFIG_VERSION + 1,
-                    config2,
-                    TIMESTAMP1,
-                    updateTime),
-                new ConfigDocumentKey(resourceContext2),
-                getConfigDocument(
-                    resourceContext2.getContext(),
-                    CONFIG_VERSION + 1,
-                    config1,
-                    TIMESTAMP2,
-                    updateTime)));
+        .upsert(
+            new ConfigDocumentKey(resourceContext1),
+            getConfigDocument(
+                resourceContext1.getContext(),
+                CONFIG_VERSION + 1,
+                config2,
+                TIMESTAMP1,
+                updateTime));
+    verify(collection, times(1))
+        .upsert(
+            new ConfigDocumentKey(resourceContext2),
+            getConfigDocument(
+                resourceContext2.getContext(),
+                CONFIG_VERSION + 1,
+                config1,
+                TIMESTAMP2,
+                updateTime));
   }
 
   private static Document getConfigDocument(
