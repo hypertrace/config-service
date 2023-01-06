@@ -144,6 +144,10 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   public void upsertAllConfigs(
       UpsertAllConfigsRequest request, StreamObserver<UpsertAllConfigsResponse> responseObserver) {
     try {
+      if (request.getConfigsCount() == 0) {
+        responseObserver.onError(Status.INVALID_ARGUMENT.asException());
+        return;
+      }
       Map<ConfigResourceContext, Value> valuesByContext =
           request.getConfigsList().stream()
               .map(
