@@ -208,14 +208,22 @@ public class DocumentConfigStore implements ConfigStore {
 
   private Map<ConfigResourceContext, Optional<ConfigDocument>> getLatestVersionConfigDocs(
       Set<ConfigResourceContext> configResourceContexts) throws IOException {
+    if (configResourceContexts.isEmpty()) {
+      return Collections.emptyMap();
+    }
     // build filter
     List<Filter> childFilters =
         configResourceContexts.stream()
-            .map(this::getConfigResourceContextFilter)
+            .map(this::getConfigResourceFieldContextFilter)
             .collect(Collectors.toUnmodifiableList());
-    Filter filter = new Filter();
-    filter.setOp(Filter.Op.OR);
-    filter.setChildFilters(childFilters.toArray(Filter[]::new));
+    Filter configResourceFieldContextFilter = new Filter();
+    configResourceFieldContextFilter.setOp(Filter.Op.OR);
+    configResourceFieldContextFilter.setChildFilters(childFilters.toArray(Filter[]::new));
+    Filter tenantIdFilter =
+        Filter.eq(
+            TENANT_ID_FIELD_NAME,
+            configResourceContexts.iterator().next().getConfigResource().getTenantId());
+    Filter filter = tenantIdFilter.and(configResourceFieldContextFilter);
 
     // build query
     Query query = new Query();
@@ -243,6 +251,13 @@ public class DocumentConfigStore implements ConfigStore {
 
   private Filter getConfigResourceContextFilter(ConfigResourceContext configResourceContext) {
     return this.getConfigResourceFilter(configResourceContext.getConfigResource())
+        .and(Filter.eq(CONTEXT_FIELD_NAME, configResourceContext.getContext()));
+  }
+
+  private Filter getConfigResourceFieldContextFilter(ConfigResourceContext configResourceContext) {
+    ConfigResource configResource = configResourceContext.getConfigResource();
+    return Filter.eq(RESOURCE_FIELD_NAME, configResource.getResourceName())
+        .and(Filter.eq(RESOURCE_NAMESPACE_FIELD_NAME, configResource.getResourceNamespace()))
         .and(Filter.eq(CONTEXT_FIELD_NAME, configResourceContext.getContext()));
   }
 
