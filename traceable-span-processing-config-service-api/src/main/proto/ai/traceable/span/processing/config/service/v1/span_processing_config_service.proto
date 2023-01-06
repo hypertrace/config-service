@@ -46,6 +46,11 @@ service SpanProcessingConfigService {
   rpc DeleteApiNamingRule (DeleteApiNamingRuleRequest) returns (DeleteApiNamingRuleResponse) {}
 
   rpc DeleteApiNamingRules (DeleteApiNamingRulesRequest) returns (DeleteApiNamingRulesResponse) {}
+
+  rpc GetServiceNamingRules (GetServiceNamingRulesRequest) returns (GetServiceNamingRulesResponse) {}
+  rpc CreateServiceNamingRule (CreateServiceNamingRuleRequest) returns (CreateServiceNamingRuleResponse) {}
+  rpc UpdateServiceNamingRule (UpdateServiceNamingRuleRequest) returns (UpdateServiceNamingRuleResponse) {}
+  rpc DeleteServiceNamingRule (DeleteServiceNamingRuleRequest) returns (DeleteServiceNamingRuleResponse) {}
 }
 
 message GetAllResolvedSamplingConfigsRequest {}
@@ -273,4 +278,102 @@ message AstScanBasedConfig {
 message ApiNamingRuleMetadata {
   google.protobuf.Timestamp creation_timestamp = 1;
   google.protobuf.Timestamp last_updated_timestamp = 2;
+}
+
+message GetServiceNamingRulesRequest {
+  ServiceNamingRuleFilter filter = 1;
+}
+
+message GetServiceNamingRulesResponse {
+  repeated ServiceNamingRule rules = 1;
+}
+
+message CreateServiceNamingRuleRequest {
+  string name = 1;
+  optional string description = 2;
+  bool enabled = 3;
+  ServiceNamingRuleScope scope = 4;
+  repeated ServiceNamingRuleCondition conditions = 5;
+  ServiceNamingRuleAction action = 6;
+}
+
+message CreateServiceNamingRuleResponse {
+  ServiceNamingRule rule = 1;
+}
+
+message UpdateServiceNamingRuleRequest {
+  string id = 1;
+  string name = 2;
+  optional string description = 3;
+  bool enabled = 4;
+  ServiceNamingRuleScope scope = 5;
+  repeated ServiceNamingRuleCondition conditions = 6;
+  ServiceNamingRuleAction action = 7;
+}
+
+message UpdateServiceNamingRuleResponse {
+  ServiceNamingRule rule = 1;
+}
+
+message DeleteServiceNamingRuleRequest {
+  string id = 1;
+}
+
+message DeleteServiceNamingRuleResponse {
+}
+
+message ServiceNamingRule {
+  string id = 1;
+  string name = 2;
+  int32 rank = 3;
+  optional string description = 4;
+  bool enabled = 5;
+  ServiceNamingRuleScope scope = 6;
+  google.protobuf.Timestamp creation_timestamp = 7;
+  google.protobuf.Timestamp last_updated_timestamp = 8;
+  repeated ServiceNamingRuleCondition conditions = 9;
+  ServiceNamingRuleAction action = 10;
+}
+
+message ServiceNamingRuleCondition {
+  oneof condition {
+    AttributeCondition attribute_condition = 1;
+  }
+
+  message AttributeCondition {
+    string attribute_key = 1;
+    ConditionMatchOperator operator = 2;
+    string value = 3;
+  }
+
+  enum ConditionMatchOperator {
+    CONDITION_MATCH_OPERATOR_UNSPECIFIED = 0;
+    CONDITION_MATCH_OPERATOR_EQUALS = 1;
+    CONDITION_MATCH_OPERATOR_MATCHES_REGEX = 2;
+  }
+}
+
+message ServiceNamingRuleScope {
+  oneof scope {
+    EnvironmentScope environment_scope = 1;
+  }
+
+  message EnvironmentScope {
+    repeated string environment_names = 1;
+  }
+}
+
+message ServiceNamingRuleAction {
+  oneof action {
+    StaticNameAssignment static_name_assignment = 1;
+    // TODO - need product guidance on how we want dynamic naming to work
+  }
+
+  message StaticNameAssignment {
+    string service_name = 1;
+  }
+
+}
+message ServiceNamingRuleFilter {
+  ServiceNamingRuleScope scope = 1;
 }
