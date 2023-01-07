@@ -98,7 +98,7 @@ public class DocumentConfigStore implements ConfigStore {
     previousConfigDocs.forEach(
         (key, value) -> {
           if (!resourceContextValueMap.containsKey(key)) {
-            throw Status.INVALID_ARGUMENT.asRuntimeException();
+            throw Status.INTERNAL.asRuntimeException();
           }
           documentsToBeUpserted.put(
               new ConfigDocumentKey(key),
