@@ -10,6 +10,7 @@ import static org.hypertrace.config.service.store.ConfigDocument.VERSION_FIELD_N
 
 import com.google.protobuf.Value;
 import com.typesafe.config.Config;
+import io.grpc.Status;
 import java.io.IOException;
 import java.time.Clock;
 import java.util.ArrayList;
@@ -95,10 +96,14 @@ public class DocumentConfigStore implements ConfigStore {
         getLatestVersionConfigDocs(resourceContextValueMap.keySet());
     Map<Key, Document> documentsToBeUpserted = new LinkedHashMap<>();
     previousConfigDocs.forEach(
-        (key, value) ->
-            documentsToBeUpserted.put(
-                new ConfigDocumentKey(key),
-                buildConfigDocument(key, resourceContextValueMap.get(key), userId, value)));
+        (key, value) -> {
+          if (!resourceContextValueMap.containsKey(key)) {
+            throw Status.INTERNAL.asRuntimeException();
+          }
+          documentsToBeUpserted.put(
+              new ConfigDocumentKey(key),
+              buildConfigDocument(key, resourceContextValueMap.get(key), userId, value));
+        });
 
     boolean successfulBulkUpsertDocuments = collection.bulkUpsert(documentsToBeUpserted);
     if (successfulBulkUpsertDocuments) {
