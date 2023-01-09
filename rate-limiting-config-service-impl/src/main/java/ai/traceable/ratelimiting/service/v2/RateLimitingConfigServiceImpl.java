@@ -19,6 +19,7 @@ import ai.traceable.ratelimiting.service.v2.rules.RulesManager;
 import ai.traceable.ratelimiting.service.v2.rules.RulesValidator;
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -75,7 +76,10 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
       StreamObserver<UpdateRateLimitingRuleResponse> responseObserver) {
     try {
       RequestContext context = RequestContext.CURRENT.get();
-      rulesValidator.validateOrThrow(context, request);
+      List<RateLimitingRule> existingRules =
+          rulesManager.getRateLimitingRules(
+              RequestContext.CURRENT.get(), GetRateLimitingRulesFilter.getDefaultInstance());
+      rulesValidator.validateOrThrow(context, request, existingRules);
       UpdateRateLimitingRuleResponse response =
           UpdateRateLimitingRuleResponse.newBuilder()
               .setRule(
@@ -126,7 +130,10 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
       StreamObserver<CreateRateLimitingRuleResponse> responseObserver) {
     try {
       RequestContext context = RequestContext.CURRENT.get();
-      rulesValidator.validateOrThrow(context, request);
+      List<RateLimitingRule> existingRules =
+          rulesManager.getRateLimitingRules(
+              RequestContext.CURRENT.get(), GetRateLimitingRulesFilter.getDefaultInstance());
+      rulesValidator.validateOrThrow(context, request, existingRules);
       CreateRateLimitingRuleResponse response =
           CreateRateLimitingRuleResponse.newBuilder()
               .setRule(rulesManager.createRateLimitingRule(context, request.getData()))

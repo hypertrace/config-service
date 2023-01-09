@@ -27,6 +27,7 @@ import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperat
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.StringCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
+import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig;
@@ -34,6 +35,7 @@ import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
 import ai.traceable.ratelimiting.config.service.v2.ScopeCondition;
 import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
+import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.UserAgentCondition;
 import ai.traceable.ratelimiting.config.service.v2.UserAggregateType;
 import ai.traceable.ratelimiting.config.service.v2.UserIdCondition;
@@ -43,6 +45,7 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
 import java.util.Objects;
+import jdk.jfr.Description;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,7 +68,7 @@ public class RateLimitingRulesValidatorTest {
     Throwable throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> rulesValidator.validateOrThrow(requestContext, request));
+            () -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
     Status status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(
@@ -97,11 +100,130 @@ public class RateLimitingRulesValidatorTest {
     Throwable throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> rulesValidator.validateOrThrow(requestContext, request));
+            () -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
     Status status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(
         Objects.requireNonNull(status.getDescription()).contains("Scope condition not present"));
+  }
+
+  @Test
+  @Description("Should return invalid argument on creating rule with duplicate name in same type")
+  void validateCreateRateLimitingRule_same_name() {
+    RateLimitingRuleData ruleData =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule1")
+            .setCategory(Category.CATEGORY_RATE_LIMITING)
+            .setEnabled(false)
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setScopeCondition(
+                                ScopeCondition.newBuilder()
+                                    .setEntityScope(
+                                        ScopeCondition.EntityScope.newBuilder()
+                                            .setEntityType(
+                                                ScopeCondition.EntityType.ENTITY_TYPE_API)
+                                            .addEntityIds("id1")
+                                            .build())
+                                    .build())
+                            .setKeyValueCondition(
+                                KeyValueCondition.newBuilder()
+                                    .setType(Type.TYPE_REQUEST_BODY)
+                                    .setKeyCondition(
+                                        StringCondition.newBuilder()
+                                            .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                                            .setValue("^a")
+                                            .build())
+                                    .build()))
+                    .build())
+            .build();
+    RateLimitingRule rule = RateLimitingRule.newBuilder().setId("id-1").setData(ruleData).build();
+    RateLimitingRuleData ruleData1 =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule1")
+            .setCategory(Category.CATEGORY_RATE_LIMITING)
+            .setEnabled(true)
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setKeyValueCondition(
+                                KeyValueCondition.newBuilder()
+                                    .setType(Type.TYPE_REQUEST_BODY)
+                                    .setKeyCondition(
+                                        StringCondition.newBuilder()
+                                            .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                                            .setValue("^a")
+                                            .build())
+                                    .build()))
+                    .build())
+            .build();
+    CreateRateLimitingRuleRequest request =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData1).build();
+    Throwable throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request, List.of(rule)));
+    Status status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+  }
+
+  @Test
+  @Description(
+      "Should return invalid argument on updating rule with duplicate name in same category")
+  void validateUpdateRateLimitingRule_same_name() {
+    RateLimitingRuleData ruleData =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule1")
+            .setCategory(Category.CATEGORY_RATE_LIMITING)
+            .setEnabled(true)
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setKeyValueCondition(
+                                KeyValueCondition.newBuilder()
+                                    .setType(Type.TYPE_REQUEST_BODY)
+                                    .setKeyCondition(
+                                        StringCondition.newBuilder()
+                                            .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                                            .setValue("^a")
+                                            .build())
+                                    .build()))
+                    .build())
+            .build();
+    RateLimitingRule rule = RateLimitingRule.newBuilder().setId("id-1").setData(ruleData).build();
+    RateLimitingRuleData ruleData1 =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule2")
+            .setCategory(Category.CATEGORY_RATE_LIMITING)
+            .setEnabled(false)
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setKeyValueCondition(
+                                KeyValueCondition.newBuilder()
+                                    .setType(Type.TYPE_REQUEST_BODY)
+                                    .setKeyCondition(
+                                        StringCondition.newBuilder()
+                                            .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                                            .setValue("^a")
+                                            .build())
+                                    .build()))
+                    .build())
+            .build();
+    RateLimitingRule rule1 = RateLimitingRule.newBuilder().setId("id-2").setData(ruleData1).build();
+    UpdateRateLimitingRuleRequest request =
+        UpdateRateLimitingRuleRequest.newBuilder().setRuleId("id-2").setData(ruleData).build();
+    Throwable throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request, List.of(rule, rule1)));
+    Status status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
   }
 
   @Test
@@ -146,7 +268,7 @@ public class RateLimitingRulesValidatorTest {
     Throwable throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> rulesValidator.validateOrThrow(requestContext, request));
+            () -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
     Status status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(
@@ -213,7 +335,7 @@ public class RateLimitingRulesValidatorTest {
     Throwable throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> rulesValidator.validateOrThrow(requestContext, request));
+            () -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
     Status status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(
@@ -238,7 +360,7 @@ public class RateLimitingRulesValidatorTest {
     Throwable throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> rulesValidator.validateOrThrow(requestContext, request));
+            () -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
     Status status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(
@@ -262,7 +384,7 @@ public class RateLimitingRulesValidatorTest {
     throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> rulesValidator.validateOrThrow(requestContext, request1));
+            () -> rulesValidator.validateOrThrow(requestContext, request1, List.of()));
     status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(
@@ -284,7 +406,7 @@ public class RateLimitingRulesValidatorTest {
                         .setDurationIso("1h")
                         .build()))
             .build();
-    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request2));
+    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request2, List.of()));
   }
 
   @Test
@@ -364,7 +486,7 @@ public class RateLimitingRulesValidatorTest {
     Throwable throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> rulesValidator.validateOrThrow(requestContext, request));
+            () -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
     Status status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(
@@ -454,7 +576,7 @@ public class RateLimitingRulesValidatorTest {
     Throwable throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> rulesValidator.validateOrThrow(requestContext, request));
+            () -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
     Status status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertEquals(status.getDescription(), "Environment id should not be empty string.");
@@ -505,7 +627,7 @@ public class RateLimitingRulesValidatorTest {
         CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
     assertThrows(
         IllegalArgumentException.class,
-        () -> rulesValidator.validateOrThrow(requestContext, request));
+        () -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
   }
 
   @Test
@@ -649,7 +771,7 @@ public class RateLimitingRulesValidatorTest {
             .build();
     CreateRateLimitingRuleRequest request =
         CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
-    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request));
+    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
   }
 
   @Test
@@ -665,7 +787,7 @@ public class RateLimitingRulesValidatorTest {
     Throwable throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> rulesValidator.validateOrThrow(requestContext, request));
+            () -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
     Status status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(
@@ -691,7 +813,7 @@ public class RateLimitingRulesValidatorTest {
     throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> rulesValidator.validateOrThrow(requestContext, request1));
+            () -> rulesValidator.validateOrThrow(requestContext, request1, List.of()));
     status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertEquals(
@@ -712,7 +834,7 @@ public class RateLimitingRulesValidatorTest {
     throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> rulesValidator.validateOrThrow(requestContext, request2));
+            () -> rulesValidator.validateOrThrow(requestContext, request2, List.of()));
     status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertEquals("Dynamic threshold config does not have valid duration", status.getDescription());
@@ -732,7 +854,7 @@ public class RateLimitingRulesValidatorTest {
     throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> rulesValidator.validateOrThrow(requestContext, request3));
+            () -> rulesValidator.validateOrThrow(requestContext, request3, List.of()));
     status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertEquals(
@@ -754,7 +876,7 @@ public class RateLimitingRulesValidatorTest {
     throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> rulesValidator.validateOrThrow(requestContext, request4));
+            () -> rulesValidator.validateOrThrow(requestContext, request4, List.of()));
     status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertEquals(
@@ -776,7 +898,7 @@ public class RateLimitingRulesValidatorTest {
     throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> rulesValidator.validateOrThrow(requestContext, request5));
+            () -> rulesValidator.validateOrThrow(requestContext, request5, List.of()));
     status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertEquals(
@@ -795,7 +917,7 @@ public class RateLimitingRulesValidatorTest {
                     ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT,
                     UserAggregateType.USER_AGGREGATE_TYPE_PER_USER))
             .build();
-    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request6));
+    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request6, List.of()));
   }
 
   private RegionCondition buildRegionCondition(List<String> regions) {

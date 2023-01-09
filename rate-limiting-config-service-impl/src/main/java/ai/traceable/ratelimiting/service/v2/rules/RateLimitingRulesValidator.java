@@ -6,6 +6,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 
 import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.ApiAggregateType;
+import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
@@ -23,6 +24,7 @@ import ai.traceable.ratelimiting.config.service.v2.IpReputationCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperator;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
+import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig;
@@ -38,6 +40,7 @@ import com.google.re2j.Pattern;
 import com.google.re2j.PatternSyntaxException;
 import io.grpc.Status;
 import java.util.List;
+import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RateLimitingRulesValidator implements RulesValidator {
@@ -50,10 +53,22 @@ public class RateLimitingRulesValidator implements RulesValidator {
 
   @Override
   public void validateOrThrow(
-      RequestContext requestContext, UpdateRateLimitingRuleRequest request) {
+      RequestContext requestContext,
+      UpdateRateLimitingRuleRequest request,
+      List<RateLimitingRule> existingRules) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, UpdateRateLimitingRuleRequest.RULE_ID_FIELD_NUMBER);
-    validateRateLimitingRuleData(request.getData());
+    RateLimitingRuleData requestData = request.getData();
+    Optional<RateLimitingRule> rule =
+        getRuleOfSameNameAndCategory(
+            requestData.getCategory(), requestData.getName(), existingRules);
+    if (rule.isPresent() && !rule.get().getId().equals(request.getRuleId())) {
+      throwInvalidArgumentException(
+          String.format(
+              "Rate limiting rule with name (%s) already exists for category : %s",
+              requestData.getName(), requestData.getCategory()));
+    }
+    validateRateLimitingRuleData(requestData);
   }
 
   @Override
@@ -65,9 +80,33 @@ public class RateLimitingRulesValidator implements RulesValidator {
 
   @Override
   public void validateOrThrow(
-      RequestContext requestContext, CreateRateLimitingRuleRequest request) {
+      RequestContext requestContext,
+      CreateRateLimitingRuleRequest request,
+      List<RateLimitingRule> existingRules) {
     validateRequestContextOrThrow(requestContext);
-    validateRateLimitingRuleData(request.getData());
+    RateLimitingRuleData requestData = request.getData();
+    Optional<RateLimitingRule> rule =
+        getRuleOfSameNameAndCategory(
+            requestData.getCategory(), requestData.getName(), existingRules);
+    if (rule.isPresent()) {
+      throwInvalidArgumentException(
+          String.format(
+              "Rate limiting rule with name (%s) already exists for category : %s",
+              requestData.getName(), requestData.getCategory()));
+    }
+    validateRateLimitingRuleData(requestData);
+  }
+
+  private Optional<RateLimitingRule> getRuleOfSameNameAndCategory(
+      Category category, String name, List<RateLimitingRule> existingRules) {
+    Optional<RateLimitingRule> sameNameRuleOfSameCategory =
+        existingRules.stream()
+            .filter(
+                rule ->
+                    rule.getData().getCategory().equals(category)
+                        && rule.getData().getName().equals(name))
+            .findFirst();
+    return sameNameRuleOfSameCategory;
   }
 
   private void validateRateLimitingRuleData(RateLimitingRuleData data) {
@@ -77,7 +116,6 @@ public class RateLimitingRulesValidator implements RulesValidator {
     if (!isScopeConditionPresent(data.getCondition())) {
       throwInvalidArgumentException("Scope condition not present in rate limit rule");
     }
-
     validateNonDefaultPresenceOrThrow(
         data, RateLimitingRuleData.THRESHOLD_ACTION_CONFIGS_FIELD_NUMBER);
     data.getThresholdActionConfigsList().forEach(this::validateThresholdActionConfig);

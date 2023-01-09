@@ -40,6 +40,7 @@ public class RateLimitingConfigServiceImplTest {
     rulesValidator = mock(RulesValidator.class);
     rulesManager = mock(RulesManager.class);
     activityEventProducer = mock(ActivityEventProducer.class);
+    // existingRules = Collections.emptyList();
     RateLimitingConfigServiceConfig config = mock(RateLimitingConfigServiceConfig.class);
     when(config.shouldPublishActivityEvents()).thenReturn(true);
     configService =
@@ -57,7 +58,7 @@ public class RateLimitingConfigServiceImplTest {
 
     doThrow(Status.INVALID_ARGUMENT.asRuntimeException())
         .when(rulesValidator)
-        .validateOrThrow(any(), (CreateRateLimitingRuleRequest) any());
+        .validateOrThrow(any(), (CreateRateLimitingRuleRequest) any(), any());
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseObserver, times(1))
         .onError(
@@ -65,7 +66,9 @@ public class RateLimitingConfigServiceImplTest {
 
     RateLimitingRule rule = buildRateLimitingRule("id", "rule", Category.CATEGORY_RATE_LIMITING);
     reset(responseObserver);
-    doNothing().when(rulesValidator).validateOrThrow(any(), (CreateRateLimitingRuleRequest) any());
+    doNothing()
+        .when(rulesValidator)
+        .validateOrThrow(any(), (CreateRateLimitingRuleRequest) any(), any());
     when(rulesManager.createRateLimitingRule(any(), any())).thenReturn(rule);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseObserver, times(1))
@@ -118,7 +121,7 @@ public class RateLimitingConfigServiceImplTest {
 
     doThrow(Status.INVALID_ARGUMENT.asRuntimeException())
         .when(rulesValidator)
-        .validateOrThrow(any(), (UpdateRateLimitingRuleRequest) any());
+        .validateOrThrow(any(), (UpdateRateLimitingRuleRequest) any(), any());
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseObserver, times(1))
         .onError(
@@ -126,7 +129,9 @@ public class RateLimitingConfigServiceImplTest {
 
     RateLimitingRule rule = buildRateLimitingRule("id", "rule", Category.CATEGORY_RATE_LIMITING);
     reset(responseObserver);
-    doNothing().when(rulesValidator).validateOrThrow(any(), (UpdateRateLimitingRuleRequest) any());
+    doNothing()
+        .when(rulesValidator)
+        .validateOrThrow(any(), (UpdateRateLimitingRuleRequest) any(), any());
     when(rulesManager.updateRateLimitingRule(any(), any(), any())).thenReturn(rule);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseObserver, times(1))
