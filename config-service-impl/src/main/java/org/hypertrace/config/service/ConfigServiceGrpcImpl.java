@@ -11,12 +11,15 @@ import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.store.ConfigStore;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.DeleteConfigResponse;
+import org.hypertrace.config.service.v1.DeleteConfigsRequest;
+import org.hypertrace.config.service.v1.DeleteConfigsResponse;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.GetConfigRequest;
@@ -141,6 +144,49 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   }
 
   @Override
+  public void deleteConfigs(
+      DeleteConfigsRequest request, StreamObserver<DeleteConfigsResponse> responseObserver) {
+    try {
+      if (request.getConfigsCount() == 0) {
+        responseObserver.onError(
+            Status.INVALID_ARGUMENT
+                .withDescription("List of configs to delete provided is empty")
+                .asException());
+        return;
+      }
+      Map<ConfigResourceContext, Value> valuesByContext =
+          request.getConfigsList().stream()
+              .map(
+                  requestedDelete ->
+                      Map.entry(this.getConfigResourceContext(requestedDelete), emptyValue()))
+              .collect(ImmutableMap.toImmutableMap(Entry::getKey, Entry::getValue));
+
+      List<UpsertedConfig> deletedConfigs =
+          configStore.writeAllConfigs(valuesByContext, getUserId());
+
+      responseObserver.onNext(
+          DeleteConfigsResponse.newBuilder()
+              .addAllDeletedConfigs(
+                  deletedConfigs.stream()
+                      .map(this::buildDeletedContextSpecificConfig)
+                      .collect(Collectors.toUnmodifiableList()))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Delete configs failed for request: {}", request, e);
+    }
+  }
+
+  private ContextSpecificConfig buildDeletedContextSpecificConfig(UpsertedConfig deletedConfig) {
+    return ContextSpecificConfig.newBuilder()
+        .setContext(deletedConfig.getContext())
+        .setCreationTimestamp(deletedConfig.getCreationTimestamp())
+        .setUpdateTimestamp(deletedConfig.getUpdateTimestamp())
+        .setConfig(deletedConfig.getPrevConfig())
+        .build();
+  }
+
+  @Override
   public void upsertAllConfigs(
       UpsertAllConfigsRequest request, StreamObserver<UpsertAllConfigsResponse> responseObserver) {
     try {
@@ -179,6 +225,15 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
         upsertConfigRequest.getContext());
   }
 
+  private ConfigResourceContext getConfigResourceContext(DeleteConfigRequest upsertConfigRequest) {
+    return new ConfigResourceContext(
+        new ConfigResource(
+            upsertConfigRequest.getResourceName(),
+            upsertConfigRequest.getResourceNamespace(),
+            getTenantId()),
+        upsertConfigRequest.getContext());
+  }
+
   private ConfigResourceContext getConfigResourceContext(GetConfigRequest getConfigRequest) {
     return new ConfigResourceContext(
         new ConfigResource(
@@ -197,20 +252,19 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
         context);
   }
 
-  private ConfigResourceContext getConfigResourceContext(DeleteConfigRequest deleteConfigRequest) {
-    return new ConfigResourceContext(
-        new ConfigResource(
-            deleteConfigRequest.getResourceName(),
-            deleteConfigRequest.getResourceNamespace(),
-            getTenantId()),
-        deleteConfigRequest.getContext());
-  }
-
   private ConfigResourceContext getConfigResourceContext(ConfigToUpsert configToUpsert) {
     return new ConfigResourceContext(
         new ConfigResource(
             configToUpsert.getResourceName(), configToUpsert.getResourceNamespace(), getTenantId()),
         configToUpsert.getContext());
+  }
+
+  private ConfigResourceContext getConfigResourceContext(
+      DeleteConfigsRequest.ConfigToDelete configToDelete) {
+    return new ConfigResourceContext(
+        new ConfigResource(
+            configToDelete.getResourceName(), configToDelete.getResourceNamespace(), getTenantId()),
+        configToDelete.getContext());
   }
 
   private String getTenantId() {
