@@ -191,6 +191,9 @@ traceableConfigServiceConfig:
         versions.dir = /var/data/models/ipqs/country_csv
         versions.file.name = countries.csv
         versions.refresh.duration = 24h
+  customSignatureConfigService:
+    modsecurity:
+      ruleVersion: MODSEC_RULE_VERSION_V3
   blockingConfigService:
     iptype:
       mode: VERSIONS_DIR
@@ -237,6 +240,7 @@ logConfig:
 
 anomalyConfigServiceConfig:
   name: anomaly-config-service-config
+  modsecRuleVersion: MODSEC_RULE_VERSION_V3
   global:
     disabled: false
     internal: false

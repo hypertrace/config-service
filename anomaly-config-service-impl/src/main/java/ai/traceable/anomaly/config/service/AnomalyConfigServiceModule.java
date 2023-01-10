@@ -15,6 +15,7 @@ import ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceModu
 import ai.traceable.anomaly.config.service.modsec.AnomalyModsecConfigServiceModule;
 import ai.traceable.anomaly.config.service.registry.AnomalyConfigRegistryModule;
 import ai.traceable.anomaly.config.service.trainer.TrainerConfigServiceModule;
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
@@ -70,5 +71,11 @@ public class AnomalyConfigServiceModule extends AbstractModule {
     return ConfigServiceGrpc.newBlockingStub(channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  ModsecRuleVersion providesModsecRuleVersion(
+      AnomalyConfigServiceConfig anomalyConfigServiceConfig) {
+    return anomalyConfigServiceConfig.getModsecRuleVersion();
   }
 }

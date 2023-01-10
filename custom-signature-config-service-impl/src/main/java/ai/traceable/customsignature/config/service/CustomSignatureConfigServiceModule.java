@@ -1,9 +1,11 @@
 package ai.traceable.customsignature.config.service;
 
 import ai.traceable.activity.event.producer.ActivityEventProducer;
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManagerModule;
 import ai.traceable.customsignature.config.service.rules.RulesManagerModule;
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.Channel;
@@ -35,5 +37,11 @@ class CustomSignatureConfigServiceModule extends AbstractModule {
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
     install(new RulesManagerModule());
     install(new ModsecRulesManagerModule());
+  }
+
+  @Provides
+  ModsecRuleVersion providesModsecRuleVersion(
+      CustomSignatureConfigServiceConfig customSignatureConfigServiceConfig) {
+    return customSignatureConfigServiceConfig.getModsecRuleVersion();
   }
 }

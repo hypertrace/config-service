@@ -8,6 +8,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.customsignature.config.service.modsec.directives.ModsecDirectivesManager;
 import ai.traceable.customsignature.config.service.modsec.registry.ModsecRuleMappings;
 import ai.traceable.customsignature.config.service.v1.Clause;
@@ -45,10 +46,12 @@ public class CustomSignatureModsecRulesManagerTest {
   @Test
   public void testConvertRulesException() {
     ModsecDirectivesManager mockDirectivesManager = mock(ModsecDirectivesManager.class);
-    when(mockDirectivesManager.getModsecHeader()).thenReturn("");
+    when(mockDirectivesManager.getModsecHeader(ModsecRuleVersion.MODSEC_RULE_VERSION_V3))
+        .thenReturn("");
     ModsecRuleConversion modsecRuleConversion = mock(ModsecRuleConversion.class);
     CustomSignatureModsecRulesManager modsecRulesManager =
-        new CustomSignatureModsecRulesManager(modsecRuleConversion, mockDirectivesManager);
+        new CustomSignatureModsecRulesManager(
+            modsecRuleConversion, mockDirectivesManager, ModsecRuleVersion.MODSEC_RULE_VERSION_V3);
 
     GetCustomSignatureModsecRulesResponse response =
         modsecRulesManager.getModsecRules(List.of(CustomSignatureRule.newBuilder().build()));
@@ -93,7 +96,7 @@ public class CustomSignatureModsecRulesManagerTest {
   @Test
   public void testConvertRules() throws IOException {
     ModsecDirectivesManager mockDirectivesManager = mock(ModsecDirectivesManager.class);
-    when(mockDirectivesManager.getModsecHeader())
+    when(mockDirectivesManager.getModsecHeader(ModsecRuleVersion.MODSEC_RULE_VERSION_V3))
         .thenReturn(
             "SecRuleEngine On\n"
                 + "SecRequestBodyAccess On\n"
@@ -121,7 +124,9 @@ public class CustomSignatureModsecRulesManagerTest {
 
     CustomSignatureModsecRulesManager modsecRulesManager =
         new CustomSignatureModsecRulesManager(
-            new ModsecRuleConversion(new ModsecRuleMappings()), mockDirectivesManager);
+            new ModsecRuleConversion(new ModsecRuleMappings()),
+            mockDirectivesManager,
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3);
 
     List<CustomSignatureRule> rules = new ArrayList<>();
 

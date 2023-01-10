@@ -15,6 +15,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesResponse;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesData;
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
@@ -33,7 +34,9 @@ class AnomalyModsecConfigServiceImplTest {
   void setUp() {
     modsecValidator = mock(ModsecValidator.class);
     modsecManager = mock(ModsecManager.class);
-    modsecConfigService = new AnomalyModsecConfigServiceImpl(modsecValidator, modsecManager);
+    modsecConfigService =
+        new AnomalyModsecConfigServiceImpl(
+            modsecValidator, modsecManager, ModsecRuleVersion.MODSEC_RULE_VERSION_V3);
   }
 
   @Test
@@ -64,7 +67,7 @@ class AnomalyModsecConfigServiceImplTest {
 
     reset(responseStreamObserver);
 
-    when(modsecManager.getModsecCrsRules(any(), any(), eq(false)))
+    when(modsecManager.getModsecCrsRules(any(), any(), any(), eq(false)))
         .thenReturn(List.of(rule1, rule2));
 
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
@@ -97,7 +100,7 @@ class AnomalyModsecConfigServiceImplTest {
   @DisplayName("Should propagate expection on occured manager")
   void should_propagate_error() {
     when(modsecValidator.validate(any())).thenReturn(Status.OK);
-    when(modsecManager.getModsecCrsRules(any(), any(), eq(false)))
+    when(modsecManager.getModsecCrsRules(any(), any(), any(), eq(false)))
         .thenThrow(RuntimeException.class);
 
     StreamObserver<GetModsecCrsRulesResponse> responseStreamObserver = mock(StreamObserver.class);

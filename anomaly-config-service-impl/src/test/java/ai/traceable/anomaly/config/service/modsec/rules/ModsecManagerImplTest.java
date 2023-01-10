@@ -27,6 +27,7 @@ import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleCon
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesData;
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.Map;
@@ -58,13 +59,19 @@ class ModsecManagerImplTest {
   @DisplayName("Should return same rule type")
   void getModsecCrsRules() {
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
-            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR, Set.of()))
+            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR,
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
+            Set.of()))
         .thenReturn("regular");
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
-            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE, Set.of()))
+            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
+            Set.of()))
         .thenReturn("safe");
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
-            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK, Set.of()))
+            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK,
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
+            Set.of()))
         .thenReturn("block");
 
     when(anomalyDetectionConfigManager.getScopedAnomalyDetectionConfig(
@@ -90,7 +97,8 @@ class ModsecManagerImplTest {
                 .setModsecCrsRulesBlob("regular")
                 .build());
     List<ModsecCrsRulesData> response =
-        modsecManager.getModsecCrsRules(requestContext, request, true);
+        modsecManager.getModsecCrsRules(
+            requestContext, ModsecRuleVersion.MODSEC_RULE_VERSION_V3, request, true);
     assertEquals(expectedResponse.size(), response.size());
     assertTrue(response.containsAll(expectedResponse));
     assertTrue(expectedResponse.containsAll(response));
@@ -104,11 +112,14 @@ class ModsecManagerImplTest {
     // config status for subRule1 and subRule4 is disabled, subRule2 is blockingDisabled
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
             AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK,
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
             Set.of("subRule1", "subRule2", "subRule4")))
         .thenReturn("excluded_blocked");
 
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
-            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE, Set.of("subRule1", "subRule4")))
+            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
+            Set.of("subRule1", "subRule4")))
         .thenReturn("excluded_safe");
 
     request = List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK);
@@ -118,7 +129,9 @@ class ModsecManagerImplTest {
                 .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)
                 .setModsecCrsRulesBlob("excluded_blocked")
                 .build());
-    response = modsecManager.getModsecCrsRules(requestContext, request, true);
+    response =
+        modsecManager.getModsecCrsRules(
+            requestContext, ModsecRuleVersion.MODSEC_RULE_VERSION_V3, request, true);
     assertEquals(expectedResponse, response);
 
     request = List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);
@@ -128,7 +141,9 @@ class ModsecManagerImplTest {
                 .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)
                 .setModsecCrsRulesBlob("excluded_safe")
                 .build());
-    response = modsecManager.getModsecCrsRules(requestContext, request, true);
+    response =
+        modsecManager.getModsecCrsRules(
+            requestContext, ModsecRuleVersion.MODSEC_RULE_VERSION_V3, request, true);
     assertEquals(expectedResponse, response);
 
     // global config disabled
@@ -144,7 +159,9 @@ class ModsecManagerImplTest {
             ModsecCrsRulesData.newBuilder()
                 .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)
                 .build());
-    response = modsecManager.getModsecCrsRules(requestContext, request, true);
+    response =
+        modsecManager.getModsecCrsRules(
+            requestContext, ModsecRuleVersion.MODSEC_RULE_VERSION_V3, request, true);
     assertEquals(expectedResponse, response);
 
     // default blocking rules
@@ -169,7 +186,9 @@ class ModsecManagerImplTest {
             ModsecCrsRulesData.newBuilder()
                 .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)
                 .build());
-    response = modsecManager.getModsecCrsRules(requestContext, request, true);
+    response =
+        modsecManager.getModsecCrsRules(
+            requestContext, ModsecRuleVersion.MODSEC_RULE_VERSION_V3, request, true);
     assertEquals(expectedResponse, response);
   }
 

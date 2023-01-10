@@ -13,6 +13,7 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfigTyp
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesData;
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +51,7 @@ public class ModsecManagerImpl implements ModsecManager {
   @Override
   public List<ModsecCrsRulesData> getModsecCrsRules(
       RequestContext requestContext,
+      ModsecRuleVersion modsecRuleVersion,
       List<AnomalySubRuleType> requestTypes,
       boolean removeDisabledRules) {
     if (removeDisabledRules) {
@@ -68,6 +70,7 @@ public class ModsecManagerImpl implements ModsecManager {
           .map(
               requestType ->
                   getModsecCrsRulesData(
+                      modsecRuleVersion,
                       requestType,
                       configStatusDisabledModsecRuleIds,
                       blockingDisabledModsecRuleIds))
@@ -75,11 +78,14 @@ public class ModsecManagerImpl implements ModsecManager {
     }
 
     return requestTypes.stream()
-        .map(requestType -> getModsecCrsRulesData(requestType, Set.of(), Set.of()))
+        .map(
+            requestType ->
+                getModsecCrsRulesData(modsecRuleVersion, requestType, Set.of(), Set.of()))
         .collect(Collectors.toUnmodifiableList());
   }
 
   private ModsecCrsRulesData getModsecCrsRulesData(
+      ModsecRuleVersion modsecRuleVersion,
       AnomalySubRuleType subRuleType,
       Set<String> configStatusDisabledModsecRuleIds,
       Set<String> blockingDisabledModsecRuleIds) {
@@ -94,7 +100,8 @@ public class ModsecManagerImpl implements ModsecManager {
     return ModsecCrsRulesData.newBuilder()
         .setSubRuleType(subRuleType)
         .setModsecCrsRulesBlob(
-            modsecRulesRegistry.getModsecCrsRulesBlob(subRuleType, disabledModsecRuleIds))
+            modsecRulesRegistry.getModsecCrsRulesBlob(
+                subRuleType, modsecRuleVersion, disabledModsecRuleIds))
         .build();
   }
 

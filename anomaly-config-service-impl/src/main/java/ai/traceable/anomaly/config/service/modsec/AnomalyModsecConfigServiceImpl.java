@@ -5,6 +5,7 @@ import ai.traceable.anomaly.config.service.modsec.rules.ModsecValidator;
 import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc.AnomalyModsecConfigServiceImplBase;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesResponse;
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import javax.inject.Inject;
@@ -15,11 +16,16 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class AnomalyModsecConfigServiceImpl extends AnomalyModsecConfigServiceImplBase {
   private final ModsecValidator validator;
   private final ModsecManager manager;
+  private final ModsecRuleVersion defaultModsecRuleVersion;
 
   @Inject
-  public AnomalyModsecConfigServiceImpl(ModsecValidator validator, ModsecManager manager) {
+  public AnomalyModsecConfigServiceImpl(
+      ModsecValidator validator,
+      ModsecManager manager,
+      ModsecRuleVersion defaultModsecRuleVersion) {
     this.validator = validator;
     this.manager = manager;
+    this.defaultModsecRuleVersion = defaultModsecRuleVersion;
   }
 
   @Override
@@ -40,6 +46,10 @@ public class AnomalyModsecConfigServiceImpl extends AnomalyModsecConfigServiceIm
               .addAllModsecCrsRules(
                   manager.getModsecCrsRules(
                       RequestContext.CURRENT.get(),
+                      (request.getRuleVersion()
+                              == ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED)
+                          ? defaultModsecRuleVersion
+                          : request.getRuleVersion(),
                       request.getSubRuleTypesList(),
                       request.getRemoveDisabledRules()))
               .build();

@@ -1,5 +1,6 @@
 package ai.traceable.customsignature.config.service.modsec;
 
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.customsignature.config.service.modsec.directives.ModsecDirectivesManager;
 import ai.traceable.customsignature.config.service.modsec.registry.ModsecActions;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
@@ -44,9 +45,11 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
 
   @Inject
   public CustomSignatureModsecRulesManager(
-      ModsecRuleConversion modsecRuleConversion, ModsecDirectivesManager modsecDirectivesManager) {
+      ModsecRuleConversion modsecRuleConversion,
+      ModsecDirectivesManager modsecDirectivesManager,
+      ModsecRuleVersion modsecRuleVersion) {
     this.modsecRuleConversion = modsecRuleConversion;
-    modsecConfigDirectives = modsecDirectivesManager.getModsecHeader();
+    modsecConfigDirectives = modsecDirectivesManager.getModsecHeader(modsecRuleVersion);
   }
 
   @Override

@@ -88,6 +88,13 @@ data:
       }
       shouldPublishActivityEvents = true
     }
+    custom.signature.config.service {
+      modsecurity {
+        directives.data.path = modsecurity.conf
+        rule.version = {{ .Values.traceableConfigServiceConfig.customSignatureConfigService.modsecurity.ruleVersion }}
+      }
+      shouldPublishActivityEvents = true
+    }
     blocking.config.service.iptype {
       mode = {{ .Values.traceableConfigServiceConfig.blockingConfigService.iptype.mode }}
       {{- if .Values.traceableConfigServiceConfig.blockingConfigService.iptype.resourceFile }}
@@ -235,6 +242,7 @@ data:
       {{- end }}
     }
   anomaly.conf: |-
+    modsecRuleVersion = {{ .Values.anomalyConfigServiceConfig.modsecRuleVersion }}
     global {
       disabled = {{ .Values.anomalyConfigServiceConfig.global.disabled }}
       internal = {{ .Values.anomalyConfigServiceConfig.global.internal }}
