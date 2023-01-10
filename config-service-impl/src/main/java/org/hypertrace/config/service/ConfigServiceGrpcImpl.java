@@ -175,6 +175,7 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Delete configs failed for request: {}", request, e);
+      responseObserver.onError(e);
     }
   }
 
