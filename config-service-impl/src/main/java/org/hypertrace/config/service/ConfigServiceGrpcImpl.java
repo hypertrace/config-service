@@ -19,6 +19,7 @@ import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.DeleteConfigResponse;
 import org.hypertrace.config.service.v1.DeleteConfigsRequest;
+import org.hypertrace.config.service.v1.DeleteConfigsRequest.ConfigToDelete;
 import org.hypertrace.config.service.v1.DeleteConfigsResponse;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsResponse;
@@ -259,8 +260,7 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
         configToUpsert.getContext());
   }
 
-  private ConfigResourceContext getConfigResourceContext(
-      DeleteConfigsRequest.ConfigToDelete configToDelete) {
+  private ConfigResourceContext getConfigResourceContext(ConfigToDelete configToDelete) {
     return new ConfigResourceContext(
         new ConfigResource(
             configToDelete.getResourceName(), configToDelete.getResourceNamespace(), getTenantId()),
