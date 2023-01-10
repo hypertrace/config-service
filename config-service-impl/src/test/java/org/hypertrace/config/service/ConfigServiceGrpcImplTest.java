@@ -28,10 +28,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.hypertrace.config.service.store.ConfigStore;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.DeleteConfigResponse;
+import org.hypertrace.config.service.v1.DeleteConfigsRequest;
+import org.hypertrace.config.service.v1.DeleteConfigsRequest.ConfigToDelete;
+import org.hypertrace.config.service.v1.DeleteConfigsResponse;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.GetConfigRequest;
@@ -198,6 +202,55 @@ class ConfigServiceGrpcImplTest {
   }
 
   @Test
+  void deleteConfigs() throws IOException {
+    String context1 = "context1";
+    String context2 = "context2";
+    ConfigStore configStore = mock(ConfigStore.class);
+    ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
+    StreamObserver<DeleteConfigsResponse> responseObserver = mock(StreamObserver.class);
+
+    DeleteConfigsRequest deleteConfigsRequest =
+        DeleteConfigsRequest.newBuilder()
+            .addConfigs(getConfigToDelete(context1))
+            .addConfigs(getConfigToDelete(context2))
+            .build();
+
+    Map<ConfigResourceContext, Value> writeAllConfigsRequest =
+        Map.of(
+            getConfigResourceContext(context1),
+            emptyValue(),
+            getConfigResourceContext(context2),
+            emptyValue());
+
+    when(configStore.writeAllConfigs(writeAllConfigsRequest, ""))
+        .thenReturn(
+            List.of(
+                buildUpsertedConfig(context1, emptyValue(), config1, 10L, 20L),
+                buildUpsertedConfig(context2, emptyValue(), config2, 10L, 20L)));
+    Runnable runnable =
+        () -> configServiceGrpc.deleteConfigs(deleteConfigsRequest, responseObserver);
+    RequestContext.forTenantId(TENANT_ID).run(runnable);
+    verify(configStore, times(1)).writeAllConfigs(eq(writeAllConfigsRequest), eq(""));
+    verify(responseObserver, times(1))
+        .onNext(
+            DeleteConfigsResponse.newBuilder()
+                .addAllDeletedConfigs(
+                    List.of(
+                        buildContextSpecificConfig(context1, config1, 10L, 20L),
+                        buildContextSpecificConfig(context2, config2, 10L, 20L)))
+                .build());
+    verify(responseObserver, times(1)).onCompleted();
+    verify(responseObserver, never()).onError(any(Throwable.class));
+
+    runnable =
+        () ->
+            configServiceGrpc.deleteConfigs(
+                DeleteConfigsRequest.getDefaultInstance(), responseObserver);
+    RequestContext.forTenantId(TENANT_ID).run(runnable);
+    verify(responseObserver, times(1)).onError(any(Throwable.class));
+  }
+
+  @Test
   void deleteDefaultContextConfig() throws IOException {
     ConfigStore configStore = mock(ConfigStore.class);
     ContextSpecificConfig deletedConfig =
@@ -280,6 +333,39 @@ class ConfigServiceGrpcImplTest {
     return DeleteConfigRequest.newBuilder()
         .setResourceName(RESOURCE_NAME)
         .setResourceNamespace(RESOURCE_NAMESPACE)
+        .build();
+  }
+
+  private ConfigToDelete getConfigToDelete(String context) {
+    return ConfigToDelete.newBuilder()
+        .setResourceName(RESOURCE_NAME)
+        .setResourceNamespace(RESOURCE_NAMESPACE)
+        .setContext(context)
+        .build();
+  }
+
+  private UpsertedConfig buildUpsertedConfig(
+      String context,
+      Value config,
+      Value prevConfig,
+      long creationTimestamp,
+      long updateTimestamp) {
+    return UpsertedConfig.newBuilder()
+        .setContext(context)
+        .setConfig(config)
+        .setPrevConfig(prevConfig)
+        .setCreationTimestamp(creationTimestamp)
+        .setUpdateTimestamp(updateTimestamp)
+        .build();
+  }
+
+  private ContextSpecificConfig buildContextSpecificConfig(
+      String context, Value config, long creationTimestamp, long updateTimestamp) {
+    return ContextSpecificConfig.newBuilder()
+        .setContext(context)
+        .setConfig(config)
+        .setCreationTimestamp(creationTimestamp)
+        .setUpdateTimestamp(updateTimestamp)
         .build();
   }
 }
