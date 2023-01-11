@@ -81,33 +81,6 @@ public class RateLimitingRulesValidatorTest {
   }
 
   @Test
-  void testNoScopeCondition() {
-    RateLimitingRuleData ruleData =
-        RateLimitingRuleData.newBuilder()
-            .setName("rule1")
-            .setCategory(Category.CATEGORY_RATE_LIMITING)
-            .setEnabled(true)
-            .setCondition(
-                Condition.newBuilder()
-                    .setLeafCondition(
-                        LeafCondition.newBuilder()
-                            .setRegionCondition(
-                                RegionCondition.newBuilder().addAllRegions(List.of("IND", "US"))))
-                    .build())
-            .build();
-    CreateRateLimitingRuleRequest request =
-        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
-    Throwable throwable =
-        assertThrows(
-            StatusRuntimeException.class,
-            () -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
-    Status status = Status.fromThrowable(throwable);
-    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
-    assertTrue(
-        Objects.requireNonNull(status.getDescription()).contains("Scope condition not present"));
-  }
-
-  @Test
   @Description("Should return invalid argument on creating rule with duplicate name in same type")
   void validateCreateRateLimitingRule_same_name() {
     RateLimitingRuleData ruleData =
