@@ -32,6 +32,7 @@ message RateLimitConfig {
   RateLimit trace_limit_per_endpoint = 1;
   RateLimit trace_limit_global = 2;
   google.protobuf.Duration api_endpoint_cache_duration = 3;
+  RateLimitStrategy rate_limit_strategy = 4;
 }
 
 message RateLimit {
@@ -43,4 +44,10 @@ message RateLimit {
 message WindowedRateLimit {
   int64 quantity_allowed = 1;
   google.protobuf.Duration window_duration = 2;
+}
+
+enum RateLimitStrategy {
+  RATE_LIMIT_STRATEGY_UNSPECIFIED = 0;
+  RATE_LIMIT_STRATEGY_DROP = 1;
+  RATE_LIMIT_STRATEGY_BARESPAN = 2;
 }
