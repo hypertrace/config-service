@@ -10,6 +10,8 @@ import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
+import org.hypertrace.config.service.v1.DeleteConfigsRequest;
+import org.hypertrace.config.service.v1.DeleteConfigsRequest.ConfigToDelete;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
@@ -148,30 +150,21 @@ public abstract class IdentifiedObjectStore<T> {
         .orElseThrow(Status.INTERNAL::asRuntimeException);
   }
 
-  public Optional<ContextualConfigObject<T>> deleteObject(RequestContext context, String id) {
+  public Optional<ContextualConfigObject<T>> deleteObject(
+      RequestContext requestContext, String context) {
     try {
       ContextSpecificConfig deletedConfig =
-          context
+          requestContext
               .call(
                   () ->
                       this.configServiceBlockingStub.deleteConfig(
                           DeleteConfigRequest.newBuilder()
                               .setResourceName(this.resourceName)
                               .setResourceNamespace(this.resourceNamespace)
-                              .setContext(id)
+                              .setContext(context)
                               .build()))
               .getDeletedConfig();
-      ContextualConfigObject<T> object =
-          ContextualConfigObjectImpl.tryBuild(deletedConfig, this::buildDataFromValue)
-              .orElseThrow(Status.INTERNAL::asRuntimeException);
-      configChangeEventGeneratorOptional.ifPresent(
-          configChangeEventGenerator ->
-              configChangeEventGenerator.sendDeleteNotification(
-                  context,
-                  this.buildClassNameForChangeEvent(object.getData()),
-                  id,
-                  this.buildValueForChangeEvent(object.getData())));
-      return Optional.of(object);
+      return Optional.of(processDeleteResult(requestContext, deletedConfig));
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
         return Optional.empty();
@@ -202,6 +195,29 @@ public abstract class IdentifiedObjectStore<T> {
         .stream()
         .map(upsertedConfig -> this.processUpsertResult(context, upsertedConfig))
         .flatMap(Optional::stream)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  public List<ContextualConfigObject<T>> deleteObjects(
+      RequestContext requestContext, List<String> contexts) {
+    List<ConfigToDelete> configsToDelete =
+        contexts.stream()
+            .map(
+                context ->
+                    ConfigToDelete.newBuilder()
+                        .setResourceName(this.resourceName)
+                        .setResourceNamespace(this.resourceNamespace)
+                        .setContext(context)
+                        .build())
+            .collect(Collectors.toUnmodifiableList());
+    return requestContext
+        .call(
+            () ->
+                this.configServiceBlockingStub.deleteConfigs(
+                    DeleteConfigsRequest.newBuilder().addAllConfigs(configsToDelete).build()))
+        .getDeletedConfigsList()
+        .stream()
+        .map(deletedConfig -> processDeleteResult(requestContext, deletedConfig))
         .collect(Collectors.toUnmodifiableList());
   }
 
@@ -236,6 +252,21 @@ public abstract class IdentifiedObjectStore<T> {
           }
         });
     return optionalResult;
+  }
+
+  private ContextualConfigObject<T> processDeleteResult(
+      RequestContext requestContext, ContextSpecificConfig deletedConfig) {
+    ContextualConfigObject<T> object =
+        ContextualConfigObjectImpl.tryBuild(deletedConfig, this::buildDataFromValue)
+            .orElseThrow(Status.INTERNAL::asRuntimeException);
+    configChangeEventGeneratorOptional.ifPresent(
+        configChangeEventGenerator ->
+            configChangeEventGenerator.sendDeleteNotification(
+                requestContext,
+                this.buildClassNameForChangeEvent(object.getData()),
+                deletedConfig.getContext(),
+                this.buildValueForChangeEvent(object.getData())));
+    return object;
   }
 
   private void tryReportCreation(RequestContext requestContext, ContextualConfigObject<T> result) {
