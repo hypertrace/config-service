@@ -25,6 +25,7 @@ import ai.traceable.span.processing.config.service.protectionspanrules.DefaultPr
 import ai.traceable.span.processing.config.service.protectionspanrules.ProtectionSpanRulesManager;
 import ai.traceable.span.processing.config.service.samplingconfigs.DefaultSamplingConfigManager;
 import ai.traceable.span.processing.config.service.samplingconfigs.SamplingConfigManager;
+import ai.traceable.span.processing.config.service.servicenaming.ServiceNamingRulesManager;
 import ai.traceable.span.processing.config.service.store.ApiNamingRulesConfigStore;
 import ai.traceable.span.processing.config.service.store.DefaultProtectionSpanRuleEvaluationStatusConfigStore;
 import ai.traceable.span.processing.config.service.store.ProtectionSpanRulesConfigStore;
@@ -129,15 +130,17 @@ class SpanProcessingConfigServiceImplTest {
     DefaultProtectionSpanRuleEvaluationStatusConfigStore
         defaultProtectionSpanRuleEvaluationStatusConfigStore =
             new DefaultProtectionSpanRuleEvaluationStatusConfigStore(genericStub);
+    ServiceNamingRulesManager mockServiceNamingManager = mock(ServiceNamingRulesManager.class);
 
     this.mockGenericConfigService
         .addService(
             new SpanProcessingConfigServiceImpl(
+                new SpanProcessingConfigRequestValidator(),
                 samplingConfigManager,
                 apiNamingRulesManager,
                 protectionSpanRulesManager,
-                new SpanProcessingConfigRequestValidator(),
-                defaultProtectionSpanRuleEvaluationStatusConfigStore))
+                defaultProtectionSpanRuleEvaluationStatusConfigStore,
+                mockServiceNamingManager))
         .start();
 
     this.spanProcessingConfigServiceStub =

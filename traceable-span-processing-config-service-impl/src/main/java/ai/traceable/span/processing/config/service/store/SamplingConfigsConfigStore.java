@@ -1,6 +1,7 @@
 package ai.traceable.span.processing.config.service.store;
 
 import ai.traceable.config.utils.TimestampConverter;
+import ai.traceable.span.processing.config.service.SpanProcessingConfigConstants;
 import ai.traceable.span.processing.config.service.v1.SamplingConfig;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigDetails;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigMetadata;
@@ -18,8 +19,6 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class SamplingConfigsConfigStore extends IdentifiedObjectStore<SamplingConfig> {
 
   private static final String SAMPLING_CONFIGS_RESOURCE_NAME = "sampling-configs";
-  private static final String SAMPLING_CONFIGS_CONFIG_RESOURCE_NAMESPACE =
-      "span-processing-rules-config";
   private final TimestampConverter timestampConverter;
 
   @Inject
@@ -28,7 +27,7 @@ public class SamplingConfigsConfigStore extends IdentifiedObjectStore<SamplingCo
       TimestampConverter timestampConverter) {
     super(
         configServiceBlockingStub,
-        SAMPLING_CONFIGS_CONFIG_RESOURCE_NAMESPACE,
+        SpanProcessingConfigConstants.RESOURCE_NAMESPACE,
         SAMPLING_CONFIGS_RESOURCE_NAME);
     this.timestampConverter = timestampConverter;
   }

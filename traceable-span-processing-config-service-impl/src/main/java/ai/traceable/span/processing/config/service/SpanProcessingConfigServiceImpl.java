@@ -3,6 +3,7 @@ package ai.traceable.span.processing.config.service;
 import ai.traceable.span.processing.config.service.apinamingrules.ApiNamingRulesManager;
 import ai.traceable.span.processing.config.service.protectionspanrules.ProtectionSpanRulesManager;
 import ai.traceable.span.processing.config.service.samplingconfigs.SamplingConfigManager;
+import ai.traceable.span.processing.config.service.servicenaming.ServiceNamingRulesManager;
 import ai.traceable.span.processing.config.service.store.DefaultProtectionSpanRuleEvaluationStatusConfigStore;
 import ai.traceable.span.processing.config.service.v1.CreateApiNamingRuleRequest;
 import ai.traceable.span.processing.config.service.v1.CreateApiNamingRuleResponse;
@@ -12,6 +13,8 @@ import ai.traceable.span.processing.config.service.v1.CreateProtectionSpanRuleRe
 import ai.traceable.span.processing.config.service.v1.CreateProtectionSpanRuleResponse;
 import ai.traceable.span.processing.config.service.v1.CreateSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.CreateSamplingConfigResponse;
+import ai.traceable.span.processing.config.service.v1.CreateServiceNamingRuleRequest;
+import ai.traceable.span.processing.config.service.v1.CreateServiceNamingRuleResponse;
 import ai.traceable.span.processing.config.service.v1.DefaultProtectionSpanRuleEvaluationStatus;
 import ai.traceable.span.processing.config.service.v1.DeleteApiNamingRuleRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteApiNamingRuleResponse;
@@ -21,6 +24,8 @@ import ai.traceable.span.processing.config.service.v1.DeleteProtectionSpanRuleRe
 import ai.traceable.span.processing.config.service.v1.DeleteProtectionSpanRuleResponse;
 import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigResponse;
+import ai.traceable.span.processing.config.service.v1.DeleteServiceNamingRuleRequest;
+import ai.traceable.span.processing.config.service.v1.DeleteServiceNamingRuleResponse;
 import ai.traceable.span.processing.config.service.v1.GetAllApiNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllApiNamingRulesResponse;
 import ai.traceable.span.processing.config.service.v1.GetAllProtectionSpanRulesRequest;
@@ -33,6 +38,8 @@ import ai.traceable.span.processing.config.service.v1.GetAllSamplingConfigsReque
 import ai.traceable.span.processing.config.service.v1.GetAllSamplingConfigsResponse;
 import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRuleEvaluationStatusRequest;
 import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRuleEvaluationStatusResponse;
+import ai.traceable.span.processing.config.service.v1.GetServiceNamingRulesRequest;
+import ai.traceable.span.processing.config.service.v1.GetServiceNamingRulesResponse;
 import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRuleRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRuleResponse;
@@ -44,13 +51,17 @@ import ai.traceable.span.processing.config.service.v1.UpdateProtectionSpanRuleRe
 import ai.traceable.span.processing.config.service.v1.UpdateProtectionSpanRuleResponse;
 import ai.traceable.span.processing.config.service.v1.UpdateSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateSamplingConfigResponse;
+import ai.traceable.span.processing.config.service.v1.UpdateServiceNamingRuleRequest;
+import ai.traceable.span.processing.config.service.v1.UpdateServiceNamingRuleResponse;
 import ai.traceable.span.processing.config.service.validation.SpanProcessingConfigRequestValidator;
-import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
+import javax.inject.Inject;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class SpanProcessingConfigServiceImpl
     extends SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceImplBase {
 
@@ -60,23 +71,8 @@ public class SpanProcessingConfigServiceImpl
   private final ProtectionSpanRulesManager protectionSpanRulesManager;
   private final DefaultProtectionSpanRuleEvaluationStatusConfigStore
       defaultProtectionSpanRuleEvaluationStatusStore;
+  private final ServiceNamingRulesManager serviceNamingRulesManager;
   private static final boolean DEFAULT_PROTECTION_RULE_EVALUATION_STATUS = false;
-
-  @Inject
-  public SpanProcessingConfigServiceImpl(
-      SamplingConfigManager samplingConfigManager,
-      ApiNamingRulesManager apiNamingRulesManager,
-      ProtectionSpanRulesManager protectionSpanRulesManager,
-      SpanProcessingConfigRequestValidator requestValidator,
-      DefaultProtectionSpanRuleEvaluationStatusConfigStore
-          defaultProtectionSpanRuleEvaluationStatusStore) {
-    this.validator = requestValidator;
-    this.samplingConfigManager = samplingConfigManager;
-    this.apiNamingRulesManager = apiNamingRulesManager;
-    this.protectionSpanRulesManager = protectionSpanRulesManager;
-    this.defaultProtectionSpanRuleEvaluationStatusStore =
-        defaultProtectionSpanRuleEvaluationStatusStore;
-  }
 
   @Override
   public void getAllResolvedProtectionSpanRules(
@@ -458,6 +454,73 @@ public class SpanProcessingConfigServiceImpl
       responseObserver.onCompleted();
     } catch (Exception exception) {
       log.error("Error deleting api naming rules: {}", request, exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void getServiceNamingRules(
+      GetServiceNamingRulesRequest request,
+      StreamObserver<GetServiceNamingRulesResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      responseObserver.onNext(
+          GetServiceNamingRulesResponse.newBuilder()
+              .addAllRules(
+                  this.serviceNamingRulesManager.getRules(requestContext, request.getFilter()))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.warn("Failed to fetch service naming rules: {}", request, exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void createServiceNamingRule(
+      CreateServiceNamingRuleRequest request,
+      StreamObserver<CreateServiceNamingRuleResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      responseObserver.onNext(
+          CreateServiceNamingRuleResponse.newBuilder()
+              .setRule(this.serviceNamingRulesManager.createRule(requestContext, request))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.warn("Failed to create service naming rule: {}", request, exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void updateServiceNamingRule(
+      UpdateServiceNamingRuleRequest request,
+      StreamObserver<UpdateServiceNamingRuleResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      responseObserver.onNext(
+          UpdateServiceNamingRuleResponse.newBuilder()
+              .setRule(this.serviceNamingRulesManager.updateRule(requestContext, request))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.warn("Failed to update service naming rule: {}", request, exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void deleteServiceNamingRule(
+      DeleteServiceNamingRuleRequest request,
+      StreamObserver<DeleteServiceNamingRuleResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      this.serviceNamingRulesManager.deleteRule(requestContext, request.getId());
+      responseObserver.onNext(DeleteServiceNamingRuleResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.warn("Failed to delete service naming rule: {}", request, exception);
       responseObserver.onError(exception);
     }
   }

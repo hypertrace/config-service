@@ -1,6 +1,7 @@
 package ai.traceable.span.processing.config.service.store;
 
 import ai.traceable.config.utils.TimestampConverter;
+import ai.traceable.span.processing.config.service.SpanProcessingConfigConstants;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRule;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleDetails;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleMetadata;
@@ -18,8 +19,6 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class ApiNamingRulesConfigStore extends IdentifiedObjectStore<ApiNamingRule> {
 
   private static final String API_NAMING_RULES_RESOURCE_NAME = "api-naming-rules";
-  private static final String API_NAMING_RULES_CONFIG_RESOURCE_NAMESPACE =
-      "span-processing-rules-config";
   private final TimestampConverter timestampConverter;
 
   @Inject
@@ -28,7 +27,7 @@ public class ApiNamingRulesConfigStore extends IdentifiedObjectStore<ApiNamingRu
       TimestampConverter timestampConverter) {
     super(
         configServiceBlockingStub,
-        API_NAMING_RULES_CONFIG_RESOURCE_NAMESPACE,
+        SpanProcessingConfigConstants.RESOURCE_NAMESPACE,
         API_NAMING_RULES_RESOURCE_NAME);
     this.timestampConverter = timestampConverter;
   }

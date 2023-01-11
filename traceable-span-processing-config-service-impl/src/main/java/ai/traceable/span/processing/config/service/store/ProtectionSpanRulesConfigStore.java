@@ -1,6 +1,7 @@
 package ai.traceable.span.processing.config.service.store;
 
 import ai.traceable.config.utils.TimestampConverter;
+import ai.traceable.span.processing.config.service.SpanProcessingConfigConstants;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRule;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleDetails;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleMetadata;
@@ -18,8 +19,6 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class ProtectionSpanRulesConfigStore extends IdentifiedObjectStore<ProtectionSpanRule> {
 
   private static final String PROTECTION_SPAN_RULES_RESOURCE_NAME = "protection-span-rules";
-  private static final String PROTECTION_SPAN_RULES_CONFIG_RESOURCE_NAMESPACE =
-      "span-processing-rules-config";
   private final TimestampConverter timestampConverter;
 
   @Inject
@@ -28,7 +27,7 @@ public class ProtectionSpanRulesConfigStore extends IdentifiedObjectStore<Protec
       TimestampConverter timestampConverter) {
     super(
         configServiceBlockingStub,
-        PROTECTION_SPAN_RULES_CONFIG_RESOURCE_NAMESPACE,
+        SpanProcessingConfigConstants.RESOURCE_NAMESPACE,
         PROTECTION_SPAN_RULES_RESOURCE_NAME);
     this.timestampConverter = timestampConverter;
   }
