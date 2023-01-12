@@ -134,9 +134,11 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
       List<UserAttributionRule> rulesAfterDelete = this.ruleStore.getAllData(requestContext);
       List<UserAttributionRule> rerankedRules = this.rankCalculator.rankFromOrder(rulesAfterDelete);
 
-      this.ruleStore.upsertObjects(
-          requestContext,
-          this.objectDiffer.getNewOrUpdatedObjects(rulesAfterDelete, rerankedRules));
+      List<UserAttributionRule> newOrUpdatedObjects =
+          this.objectDiffer.getNewOrUpdatedObjects(rulesAfterDelete, rerankedRules);
+      if (!newOrUpdatedObjects.isEmpty()) {
+        this.ruleStore.upsertObjects(requestContext, newOrUpdatedObjects);
+      }
 
       responseObserver.onNext(
           DeleteUserAttributionRuleResponse.newBuilder().addAllRules(rerankedRules).build());
@@ -161,8 +163,11 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
                   request.getIdToUpdate(), request.getPrecedingRuleId(), existingRules)
               : this.rankCalculator.rerankAsHighestRank(request.getIdToUpdate(), existingRules);
 
-      this.ruleStore.upsertObjects(
-          requestContext, this.objectDiffer.getNewOrUpdatedObjects(existingRules, rerankedRules));
+      List<UserAttributionRule> newOrUpdatedObjects =
+          this.objectDiffer.getNewOrUpdatedObjects(existingRules, rerankedRules);
+      if (!newOrUpdatedObjects.isEmpty()) {
+        this.ruleStore.upsertObjects(requestContext, newOrUpdatedObjects);
+      }
       responseObserver.onNext(
           RankUserAttributionRuleResponse.newBuilder().addAllRules(rerankedRules).build());
       responseObserver.onCompleted();

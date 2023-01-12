@@ -40,6 +40,13 @@ public class ApiSpecConfigRequestValidator {
 
   public void validateOrThrow(RequestContext requestContext, UpdateApiSpecsRequest request) {
     validateRequestContextOrThrow(requestContext);
+    if (request.getApiSpecsCount() == 0) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Invalid request. At least 1 spec is to be provided in request: %s", request))
+          .asRuntimeException();
+    }
     for (UpdateApiSpec updateApiSpec : request.getApiSpecsList()) {
       this.validateUpdateApiSpec(updateApiSpec);
     }
@@ -52,6 +59,13 @@ public class ApiSpecConfigRequestValidator {
 
   public void validateOrThrow(RequestContext requestContext, DeleteApiSpecsRequest request) {
     validateRequestContextOrThrow(requestContext);
+    if (request.getSpecIdsCount() == 0) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Invalid request. At least 1 spec id is to be provided in request: %s", request))
+          .asRuntimeException();
+    }
     for (String id : request.getSpecIdsList()) {
       if (id.isEmpty() || id.isBlank()) {
         throw Status.INVALID_ARGUMENT

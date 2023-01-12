@@ -179,6 +179,12 @@ class ApiSpecConfigRequestValidatorTest {
                     .addApiSpecs(UpdateApiSpec.newBuilder().setSpecId("id").build())
                     .build()));
 
+    assertInvalidArgStatusContaining(
+        "Invalid request. At least 1 spec is to be provided in request",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, UpdateApiSpecsRequest.newBuilder().build()));
+
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
@@ -223,6 +229,12 @@ class ApiSpecConfigRequestValidatorTest {
             validator.validateOrThrow(
                 mockRequestContext, DeleteApiSpecsRequest.newBuilder().build()));
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+
+    assertInvalidArgStatusContaining(
+        "Invalid request. At least 1 spec id is to be provided in request",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, DeleteApiSpecsRequest.newBuilder().build()));
 
     assertInvalidArgStatusContaining(
         "Invalid specId in request",

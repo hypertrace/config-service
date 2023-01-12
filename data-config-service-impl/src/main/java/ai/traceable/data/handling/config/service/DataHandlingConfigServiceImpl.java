@@ -127,8 +127,11 @@ class DataHandlingConfigServiceImpl extends DataHandlingConfigServiceImplBase {
                   request.getRuleIdToUpdate(), request.getPrecedingRuleId(), existingRules)
               : this.rankCalculator.rerankAsHighestRank(request.getRuleIdToUpdate(), existingRules);
 
-      this.ruleStore.upsertObjects(
-          requestContext, this.differ.getNewOrUpdatedObjects(existingRules, rerankedRules));
+      List<DataHandlingRule> newOrUpdatedObjects =
+          this.differ.getNewOrUpdatedObjects(existingRules, rerankedRules);
+      if (!newOrUpdatedObjects.isEmpty()) {
+        this.ruleStore.upsertObjects(requestContext, newOrUpdatedObjects);
+      }
       responseObserver.onNext(
           RankDataHandlingRuleResponse.newBuilder().addAllRules(rerankedRules).build());
       responseObserver.onCompleted();
@@ -151,8 +154,11 @@ class DataHandlingConfigServiceImpl extends DataHandlingConfigServiceImplBase {
       List<DataHandlingRule> rulesAfterDelete = this.ruleStore.getAllData(requestContext);
       List<DataHandlingRule> rerankedRules = this.rankCalculator.rankFromOrder(rulesAfterDelete);
 
-      this.ruleStore.upsertObjects(
-          requestContext, this.differ.getNewOrUpdatedObjects(rulesAfterDelete, rerankedRules));
+      List<DataHandlingRule> newOrUpdatedObjects =
+          this.differ.getNewOrUpdatedObjects(rulesAfterDelete, rerankedRules);
+      if (!newOrUpdatedObjects.isEmpty()) {
+        this.ruleStore.upsertObjects(requestContext, newOrUpdatedObjects);
+      }
 
       responseObserver.onNext(
           DeleteDataHandlingRuleResponse.newBuilder().addAllRules(rerankedRules).build());

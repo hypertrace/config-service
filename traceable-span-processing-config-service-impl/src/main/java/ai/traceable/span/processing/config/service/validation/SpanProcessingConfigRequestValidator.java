@@ -133,6 +133,14 @@ public class SpanProcessingConfigRequestValidator {
 
   public void validateOrThrow(RequestContext requestContext, CreateApiNamingRulesRequest request) {
     validateRequestContextOrThrow(requestContext);
+    if (request.getRulesInfoCount() == 0) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Invalid request. At least 1 naming rule is to be provided in request: %s",
+                  request))
+          .asRuntimeException();
+    }
     for (ApiNamingRuleInfo apiNamingRuleInfo : request.getRulesInfoList()) {
       this.validateData(apiNamingRuleInfo);
     }
@@ -145,6 +153,14 @@ public class SpanProcessingConfigRequestValidator {
 
   public void validateOrThrow(RequestContext requestContext, UpdateApiNamingRulesRequest request) {
     validateRequestContextOrThrow(requestContext);
+    if (request.getRulesCount() == 0) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Invalid request. At least 1 naming rule is to be provided in request: %s",
+                  request))
+          .asRuntimeException();
+    }
     for (UpdateApiNamingRule updateApiNamingRule : request.getRulesList()) {
       this.validateUpdateRule(updateApiNamingRule);
     }
@@ -157,6 +173,14 @@ public class SpanProcessingConfigRequestValidator {
 
   public void validateOrThrow(RequestContext requestContext, DeleteApiNamingRulesRequest request) {
     validateRequestContextOrThrow(requestContext);
+    if (request.getIdsCount() == 0) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Invalid request. At least 1 naming rule id is to be provided in request: %s",
+                  request))
+          .asRuntimeException();
+    }
     for (String id : request.getIdsList()) {
       if (id.isEmpty() || id.isBlank()) {
         throw Status.INVALID_ARGUMENT

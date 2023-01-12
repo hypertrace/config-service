@@ -383,6 +383,12 @@ class SpanProcessingConfigRequestValidatorTest {
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
 
     assertInvalidArgStatusContaining(
+        "Invalid request. At least 1 naming rule id is to be provided in request",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, DeleteApiNamingRulesRequest.newBuilder().build()));
+
+    assertInvalidArgStatusContaining(
         "Invalid id in request",
         () ->
             validator.validateOrThrow(
@@ -504,6 +510,12 @@ class SpanProcessingConfigRequestValidatorTest {
             validator.validateOrThrow(
                 mockRequestContext, CreateApiNamingRulesRequest.newBuilder().build()));
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+
+    assertInvalidArgStatusContaining(
+        "Invalid request. At least 1 naming rule is to be provided in request",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, CreateApiNamingRulesRequest.newBuilder().build()));
 
     assertInvalidArgStatusContaining(
         "ApiNamingRuleInfo.name",
@@ -793,6 +805,12 @@ class SpanProcessingConfigRequestValidatorTest {
             validator.validateOrThrow(
                 mockRequestContext, UpdateApiNamingRulesRequest.newBuilder().build()));
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+
+    assertInvalidArgStatusContaining(
+        "Invalid request. At least 1 naming rule is to be provided in request",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, UpdateApiNamingRulesRequest.newBuilder().build()));
 
     assertInvalidArgStatusContaining(
         "UpdateApiNamingRule.id",
