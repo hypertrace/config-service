@@ -26,6 +26,7 @@ import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRu
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
 import ai.traceable.span.processing.config.service.v1.RateLimit;
 import ai.traceable.span.processing.config.service.v1.RateLimitConfig;
+import ai.traceable.span.processing.config.service.v1.RateLimitStrategy;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
 import ai.traceable.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 import ai.traceable.span.processing.config.service.v1.SpanFilter;
@@ -309,9 +310,9 @@ public class SpanProcessingConfigRequestValidator {
   }
 
   private void validateRateLimitConfig(RateLimitConfig rateLimitConfig) {
-    // TODO: add validation for rate limit strategy once graphQL changes are merged.
     this.validateRateLimit(rateLimitConfig.getTraceLimitGlobal());
     this.validateRateLimit(rateLimitConfig.getTraceLimitPerEndpoint());
+    this.validateRateLimitStrategy(rateLimitConfig.getRateLimitStrategy());
   }
 
   private void validateRateLimit(RateLimit rateLimit) {
@@ -321,6 +322,18 @@ public class SpanProcessingConfigRequestValidator {
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription("Unexpected rate limit case: " + printMessage(rateLimit))
+            .asRuntimeException();
+    }
+  }
+
+  private void validateRateLimitStrategy(RateLimitStrategy rateLimitStrategy) {
+    switch (rateLimitStrategy) {
+      case RATE_LIMIT_STRATEGY_DROP:
+      case RATE_LIMIT_STRATEGY_BARESPAN:
+        break;
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Unexpected rate limit strategy: " + rateLimitStrategy)
             .asRuntimeException();
     }
   }

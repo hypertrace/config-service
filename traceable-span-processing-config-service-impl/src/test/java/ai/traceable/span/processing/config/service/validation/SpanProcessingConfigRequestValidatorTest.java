@@ -29,6 +29,7 @@ import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRu
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
 import ai.traceable.span.processing.config.service.v1.RateLimit;
 import ai.traceable.span.processing.config.service.v1.RateLimitConfig;
+import ai.traceable.span.processing.config.service.v1.RateLimitStrategy;
 import ai.traceable.span.processing.config.service.v1.RelationalOperator;
 import ai.traceable.span.processing.config.service.v1.RelationalSpanFilterExpression;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
@@ -269,6 +270,21 @@ class SpanProcessingConfigRequestValidatorTest {
                 mockRequestContext, CreateSamplingConfigRequest.newBuilder().build()));
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
 
+    assertInvalidArgStatusContaining(
+        "Unexpected rate limit strategy",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setRateLimitConfig(
+                                buildTestRateLimitConfig(
+                                    RateLimitStrategy.RATE_LIMIT_STRATEGY_UNSPECIFIED))
+                            .setFilter(buildTestFilter())
+                            .build())
+                    .build()));
+
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
@@ -276,7 +292,9 @@ class SpanProcessingConfigRequestValidatorTest {
                 CreateSamplingConfigRequest.newBuilder()
                     .setSamplingConfigInfo(
                         SamplingConfigInfo.newBuilder()
-                            .setRateLimitConfig(buildTestRateLimitConfig())
+                            .setRateLimitConfig(
+                                buildTestRateLimitConfig(
+                                    RateLimitStrategy.RATE_LIMIT_STRATEGY_DROP))
                             .setFilter(buildTestFilter())
                             .build())
                     .build()));
@@ -308,7 +326,9 @@ class SpanProcessingConfigRequestValidatorTest {
                     .setSamplingConfig(
                         UpdateSamplingConfig.newBuilder()
                             .setId("id")
-                            .setRateLimitConfig(buildTestRateLimitConfig())
+                            .setRateLimitConfig(
+                                buildTestRateLimitConfig(
+                                    RateLimitStrategy.RATE_LIMIT_STRATEGY_BARESPAN))
                             .setFilter(buildTestFilter())
                             .build())
                     .build()));
@@ -935,7 +955,7 @@ class SpanProcessingConfigRequestValidatorTest {
         .build();
   }
 
-  private RateLimitConfig buildTestRateLimitConfig() {
+  private RateLimitConfig buildTestRateLimitConfig(RateLimitStrategy rateLimitStrategy) {
     return RateLimitConfig.newBuilder()
         .setTraceLimitGlobal(
             RateLimit.newBuilder()
@@ -954,6 +974,7 @@ class SpanProcessingConfigRequestValidatorTest {
                         .build())
                 .build())
         .setApiEndpointCacheDuration(Duration.newBuilder().setSeconds(100).setNanos(100).build())
+        .setRateLimitStrategy(rateLimitStrategy)
         .build();
   }
 

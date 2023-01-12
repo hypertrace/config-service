@@ -85,8 +85,6 @@ public class DefaultRateLimitConfigManager implements RateLimitConfigManager {
       case RATE_LIMIT_STRATEGY_DROP:
         return RateLimitStrategy.RATE_LIMIT_STRATEGY_DROP;
       case RATE_LIMIT_STRATEGY_BARESPAN:
-      case RATE_LIMIT_STRATEGY_UNSPECIFIED: // TODO: remove this conversion of unspecified->barespan
-        // as soon as migration is done
         return RateLimitStrategy.RATE_LIMIT_STRATEGY_BARESPAN;
       default:
         throw new UnsupportedOperationException(
