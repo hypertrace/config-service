@@ -4,6 +4,7 @@ import ai.traceable.config.utils.SpanFilterMatcher;
 import ai.traceable.localprocessing.config.service.utils.FilterConverter;
 import ai.traceable.localprocessing.config.service.v1.RateLimit;
 import ai.traceable.localprocessing.config.service.v1.RateLimitConfig;
+import ai.traceable.localprocessing.config.service.v1.RateLimitStrategy;
 import ai.traceable.localprocessing.config.service.v1.WindowedRateLimit;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
@@ -74,7 +75,23 @@ public class DefaultRateLimitConfigManager implements RateLimitConfigManager {
         .setApiEndpointCacheDuration(rateLimitConfig.getApiEndpointCacheDuration())
         .setTraceLimitGlobal(convertRateLimit(rateLimitConfig.getTraceLimitGlobal()))
         .setTraceLimitPerEndpoint(convertRateLimit(rateLimitConfig.getTraceLimitPerEndpoint()))
+        .setRateLimitStrategy(convertRateLimitStrategy(rateLimitConfig.getRateLimitStrategy()))
         .build();
+  }
+
+  private RateLimitStrategy convertRateLimitStrategy(
+      ai.traceable.span.processing.config.service.v1.RateLimitStrategy rateLimitStrategy) {
+    switch (rateLimitStrategy) {
+      case RATE_LIMIT_STRATEGY_DROP:
+        return RateLimitStrategy.RATE_LIMIT_STRATEGY_DROP;
+      case RATE_LIMIT_STRATEGY_BARESPAN:
+      case RATE_LIMIT_STRATEGY_UNSPECIFIED: // TODO: remove this conversion of unspecified->barespan
+        // as soon as migration is done
+        return RateLimitStrategy.RATE_LIMIT_STRATEGY_BARESPAN;
+      default:
+        throw new UnsupportedOperationException(
+            "Unknown rate limit strategy: " + rateLimitStrategy);
+    }
   }
 
   private RateLimit convertRateLimit(

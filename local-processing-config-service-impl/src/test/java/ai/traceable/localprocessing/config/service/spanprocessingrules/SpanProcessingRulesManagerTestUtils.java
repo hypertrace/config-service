@@ -9,6 +9,7 @@ import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSp
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsResponse;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRule;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
+import ai.traceable.span.processing.config.service.v1.RateLimitStrategy;
 import ai.traceable.span.processing.config.service.v1.SamplingConfig;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
 import com.google.protobuf.Duration;
@@ -655,6 +656,9 @@ public class SpanProcessingRulesManagerTestUtils {
                         .setWindowDuration(Duration.newBuilder().setSeconds(10).build())
                         .build())
                 .build())
+        .setRateLimitStrategy(
+            ai.traceable.localprocessing.config.service.v1.RateLimitStrategy
+                .RATE_LIMIT_STRATEGY_DROP)
         .build();
   }
 
@@ -678,6 +682,7 @@ public class SpanProcessingRulesManagerTestUtils {
                         .setWindowDuration(Duration.newBuilder().setSeconds(10).build())
                         .build())
                 .build())
+        .setRateLimitStrategy(RateLimitStrategy.RATE_LIMIT_STRATEGY_DROP)
         .build();
   }
 }

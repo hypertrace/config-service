@@ -57,6 +57,7 @@ import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleDetails;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
 import ai.traceable.span.processing.config.service.v1.RateLimit;
 import ai.traceable.span.processing.config.service.v1.RateLimitConfig;
+import ai.traceable.span.processing.config.service.v1.RateLimitStrategy;
 import ai.traceable.span.processing.config.service.v1.RelationalSpanFilterExpression;
 import ai.traceable.span.processing.config.service.v1.SamplingConfig;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigDetails;
@@ -424,6 +425,8 @@ class SpanProcessingConfigServiceImplTest {
                                             .build())
                                     .setApiEndpointCacheDuration(
                                         Duration.newBuilder().setSeconds(100).setNanos(100).build())
+                                    .setRateLimitStrategy(
+                                        RateLimitStrategy.RATE_LIMIT_STRATEGY_DROP)
                                     .build())
                             .setFilter(
                                 SpanFilter.newBuilder()
@@ -476,6 +479,8 @@ class SpanProcessingConfigServiceImplTest {
                                             .build())
                                     .setApiEndpointCacheDuration(
                                         Duration.newBuilder().setSeconds(100).setNanos(100).build())
+                                    .setRateLimitStrategy(
+                                        RateLimitStrategy.RATE_LIMIT_STRATEGY_BARESPAN)
                                     .build())
                             .setFilter(
                                 SpanFilter.newBuilder()
@@ -533,6 +538,8 @@ class SpanProcessingConfigServiceImplTest {
                                             .build())
                                     .setApiEndpointCacheDuration(
                                         Duration.newBuilder().setSeconds(100).setNanos(100).build())
+                                    .setRateLimitStrategy(
+                                        RateLimitStrategy.RATE_LIMIT_STRATEGY_BARESPAN)
                                     .build())
                             .setFilter(
                                 SpanFilter.newBuilder()
@@ -565,6 +572,7 @@ class SpanProcessingConfigServiceImplTest {
                     .build())
             .setApiEndpointCacheDuration(
                 Duration.newBuilder().setSeconds(100).setNanos(100).build())
+            .setRateLimitStrategy(RateLimitStrategy.RATE_LIMIT_STRATEGY_BARESPAN)
             .build(),
         updatedFirstSamplingConfig.getSamplingConfigInfo().getRateLimitConfig());
 

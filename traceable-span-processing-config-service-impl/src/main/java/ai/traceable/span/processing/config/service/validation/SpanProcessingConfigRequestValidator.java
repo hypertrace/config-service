@@ -309,6 +309,7 @@ public class SpanProcessingConfigRequestValidator {
   }
 
   private void validateRateLimitConfig(RateLimitConfig rateLimitConfig) {
+    // TODO: add validation for rate limit strategy once graphQL changes are merged.
     this.validateRateLimit(rateLimitConfig.getTraceLimitGlobal());
     this.validateRateLimit(rateLimitConfig.getTraceLimitPerEndpoint());
   }

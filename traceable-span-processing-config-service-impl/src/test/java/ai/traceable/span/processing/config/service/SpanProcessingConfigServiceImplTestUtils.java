@@ -6,6 +6,7 @@ import static ai.traceable.span.processing.config.service.v1.RelationalOperator.
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
 import ai.traceable.span.processing.config.service.v1.RateLimit;
 import ai.traceable.span.processing.config.service.v1.RateLimitConfig;
+import ai.traceable.span.processing.config.service.v1.RateLimitStrategy;
 import ai.traceable.span.processing.config.service.v1.RelationalSpanFilterExpression;
 import ai.traceable.span.processing.config.service.v1.SamplingConfig;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
@@ -56,6 +57,7 @@ class SpanProcessingConfigServiceImplTestUtils {
                         .build())
                 .build())
         .setApiEndpointCacheDuration(Duration.newBuilder().setSeconds(604800).build())
+        .setRateLimitStrategy(RateLimitStrategy.RATE_LIMIT_STRATEGY_DROP)
         .build();
   }
 
