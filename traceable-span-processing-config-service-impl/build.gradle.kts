@@ -7,7 +7,7 @@ plugins {
 dependencies {
   api(projects.licenseStatusConfigServiceApi)
   api(projects.traceableSpanProcessingConfigServiceApi)
-
+  implementation(libs.hypertrace.configservice.changeeventgenerator)
   implementation(projects.configUtils)
 
   implementation(libs.guice)

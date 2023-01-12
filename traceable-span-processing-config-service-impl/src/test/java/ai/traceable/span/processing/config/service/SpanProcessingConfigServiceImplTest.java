@@ -79,6 +79,7 @@ import com.google.protobuf.Duration;
 import com.google.protobuf.Timestamp;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.junit.jupiter.api.AfterEach;
@@ -107,6 +108,7 @@ class SpanProcessingConfigServiceImplTest {
     licenseStatusConfigServiceBlockingStub =
         mock(LicenseStatusConfigServiceGrpc.LicenseStatusConfigServiceBlockingStub.class);
 
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     LicenseStatusConfigManager licenseStatusConfigManager =
         new DefaultLicenseStatusConfigManager(licenseStatusConfigServiceBlockingStub);
 
@@ -117,7 +119,7 @@ class SpanProcessingConfigServiceImplTest {
     SamplingConfigsConfigStore samplingConfigsConfigStore =
         new SamplingConfigsConfigStore(genericStub, timestampConverter);
     ApiNamingRulesConfigStore apiNamingRulesConfigStore =
-        new ApiNamingRulesConfigStore(genericStub, timestampConverter);
+        new ApiNamingRulesConfigStore(genericStub, timestampConverter, configChangeEventGenerator);
     ProtectionSpanRulesConfigStore protectionSpanRulesConfigStore =
         new ProtectionSpanRulesConfigStore(genericStub, timestampConverter);
     SamplingConfigManager samplingConfigManager =
