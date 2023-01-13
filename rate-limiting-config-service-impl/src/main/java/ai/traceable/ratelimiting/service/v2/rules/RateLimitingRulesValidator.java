@@ -357,7 +357,17 @@ public class RateLimitingRulesValidator implements RulesValidator {
         .forEach(this::validateResourceAccessThresholdConfig);
     validateNonDefaultPresenceOrThrow(
         thresholdActionConfig, ThresholdActionConfig.ACTIONS_FIELD_NUMBER);
-    thresholdActionConfig.getActionsList().forEach(this::validateAction);
+
+    boolean userAggregationAcrossAllPresent =
+        thresholdActionConfig.getResourceAccessThresholdConfigsList().stream()
+            .map(ResourceAccessThresholdConfig::getUserAggregateType)
+            .anyMatch(
+                userAggregateType ->
+                    userAggregateType.equals(UserAggregateType.USER_AGGREGATE_TYPE_ACROSS_USERS));
+
+    thresholdActionConfig
+        .getActionsList()
+        .forEach(action -> validateAction(action, userAggregationAcrossAllPresent));
   }
 
   private void validateResourceAccessThresholdConfig(
@@ -452,10 +462,13 @@ public class RateLimitingRulesValidator implements RulesValidator {
     }
   }
 
-  private void validateAction(Action action) {
+  private void validateAction(Action action, boolean aggregateAcrossAllUsersPresent) {
     switch (action.getActionCase()) {
       case ALERT:
       case BLOCK:
+        if (aggregateAcrossAllUsersPresent) {
+          throwInvalidArgumentException("Block action unsupported on aggregation across users");
+        }
         break;
       default:
         throwInvalidArgumentException(
