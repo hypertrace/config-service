@@ -42,6 +42,7 @@ message DetectionExclusionCondition {
     AnomalousAttributeCondition anomalous_attribute_condition = 7;
     ScopeCondition source_scope_condition = 8;
     AnomalousAttributeCondition source_anomalous_attribute_match_condition = 9;
+    IpAddressCondition ip_address_condition = 10;
   }
 }
 

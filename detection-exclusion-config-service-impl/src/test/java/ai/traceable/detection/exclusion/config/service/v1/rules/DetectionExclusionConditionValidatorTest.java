@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ai.traceable.config.utils.IpAddressParsingUtils;
 import ai.traceable.detection.exclusion.config.service.v1.AnomalousAttributeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.CustomRuleEvent;
 import ai.traceable.detection.exclusion.config.service.v1.CustomRuleFamily;
@@ -11,6 +12,7 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCond
 import ai.traceable.detection.exclusion.config.service.v1.EntityScope;
 import ai.traceable.detection.exclusion.config.service.v1.EntityType;
 import ai.traceable.detection.exclusion.config.service.v1.EventCondition;
+import ai.traceable.detection.exclusion.config.service.v1.IpAddressCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpLocationType;
 import ai.traceable.detection.exclusion.config.service.v1.IpLocationTypeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpReputationCondition;
@@ -37,7 +39,7 @@ class DetectionExclusionConditionValidatorTest {
 
   @BeforeEach
   void setUp() {
-    conditionValidator = new DetectionExclusionConditionValidator();
+    conditionValidator = new DetectionExclusionConditionValidator(new IpAddressParsingUtils());
   }
 
   @Test
@@ -523,6 +525,61 @@ class DetectionExclusionConditionValidatorTest {
                           MatchCondition.newBuilder()
                               .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
                               .setValue(Value.newBuilder().setStringValue("abc.*"))))
+              .build();
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+    }
+  }
+
+  @Test
+  void testValidateIpAddressCondition() {
+    // condition not set
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setIpAddressCondition(IpAddressCondition.getDefaultInstance())
+              .build();
+      Throwable throwable =
+          assertThrows(
+              StatusRuntimeException.class,
+              () -> conditionValidator.validateRuleCondition(condition));
+      assertTrue(throwable.getMessage().contains("Invalid ipAddressCondition"));
+    }
+
+    // invalid ip address
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setIpAddressCondition(
+                  IpAddressCondition.newBuilder().addIpAddresses("300.300.300.300"))
+              .build();
+      Throwable throwable =
+          assertThrows(
+              StatusRuntimeException.class,
+              () -> conditionValidator.validateRuleCondition(condition));
+      assertTrue(throwable.getMessage().contains("should have valid IP addresses"));
+    }
+
+    // invalid cidr range
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setIpAddressCondition(IpAddressCondition.newBuilder().addCidrIpRanges("2.3.4.5/50"))
+              .build();
+      Throwable throwable =
+          assertThrows(
+              StatusRuntimeException.class,
+              () -> conditionValidator.validateRuleCondition(condition));
+      assertTrue(throwable.getMessage().contains("should have valid CIDR IP ranges"));
+    }
+
+    // valid condition
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setIpAddressCondition(
+                  IpAddressCondition.newBuilder()
+                      .addIpAddresses("1.2.3.4")
+                      .addCidrIpRanges("2.3.4.5/24"))
               .build();
       assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
     }

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ai.traceable.config.utils.IpAddressParsingUtils;
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionConditionValidator;
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesValidator;
 import java.util.List;
@@ -12,7 +13,8 @@ import org.junit.jupiter.api.Test;
 class DetectionExclusionConfigServiceConfigTest {
 
   private final DetectionExclusionRulesValidator rulesValidator =
-      new DetectionExclusionRulesValidator(new DetectionExclusionConditionValidator());
+      new DetectionExclusionRulesValidator(
+          new DetectionExclusionConditionValidator(new IpAddressParsingUtils()));
 
   @Test
   void testConfig() {

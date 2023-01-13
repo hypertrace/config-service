@@ -3,12 +3,14 @@ package ai.traceable.detection.exclusion.config.service.v1.rules;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
+import ai.traceable.config.utils.IpAddressParsingUtils;
 import ai.traceable.detection.exclusion.config.service.v1.AnomalousAttributeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.CustomRuleEvent;
 import ai.traceable.detection.exclusion.config.service.v1.CustomRuleFamily;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.EntityScope;
 import ai.traceable.detection.exclusion.config.service.v1.EventCondition;
+import ai.traceable.detection.exclusion.config.service.v1.IpAddressCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpLocationType;
 import ai.traceable.detection.exclusion.config.service.v1.IpLocationTypeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpReputationCondition;
@@ -29,8 +31,16 @@ import com.google.re2j.PatternSyntaxException;
 import io.grpc.Status;
 import java.util.List;
 import java.util.Optional;
+import javax.inject.Inject;
 
 public class DetectionExclusionConditionValidator {
+
+  private final IpAddressParsingUtils ipAddressParsingUtils;
+
+  @Inject
+  public DetectionExclusionConditionValidator(IpAddressParsingUtils ipAddressParsingUtils) {
+    this.ipAddressParsingUtils = ipAddressParsingUtils;
+  }
 
   void validateRuleCondition(DetectionExclusionCondition condition) {
     switch (condition.getConditionCase()) {
@@ -60,6 +70,9 @@ public class DetectionExclusionConditionValidator {
         break;
       case SOURCE_ANOMALOUS_ATTRIBUTE_MATCH_CONDITION:
         validateAnomalousAttributeCondition(condition.getSourceAnomalousAttributeMatchCondition());
+        break;
+      case IP_ADDRESS_CONDITION:
+        validateIpAddressCondition(condition.getIpAddressCondition());
         break;
       default:
         throw Status.INVALID_ARGUMENT
@@ -294,6 +307,29 @@ public class DetectionExclusionConditionValidator {
             .map(Value::getStringValue)
             .forEach(this::validateRegex);
       }
+    }
+  }
+
+  private void validateIpAddressCondition(IpAddressCondition condition) {
+    if (condition.getCidrIpRangesList().isEmpty() && condition.getIpAddressesList().isEmpty()) {
+      throw Status.NOT_FOUND
+          .withDescription(
+              String.format(
+                  "Invalid ipAddressCondition for detection exclusion rule :%n %s",
+                  printMessage(condition)))
+          .asRuntimeException();
+    }
+
+    if (!condition.getIpAddressesList().stream().allMatch(ipAddressParsingUtils::isValidIp)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("IpAddressCondition should have valid IP addresses")
+          .asRuntimeException();
+    }
+
+    if (!condition.getCidrIpRangesList().stream().allMatch(ipAddressParsingUtils::isValidSubnet)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("IpAddressCondition should have valid CIDR IP ranges")
+          .asRuntimeException();
     }
   }
 

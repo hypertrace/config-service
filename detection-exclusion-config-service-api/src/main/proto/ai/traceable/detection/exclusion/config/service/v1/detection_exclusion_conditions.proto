@@ -63,3 +63,8 @@ message AnomalousAttributeCondition {
   MatchCondition key_match_condition = 1;
   MatchCondition value_match_condition = 2;
 }
+
+message IpAddressCondition {
+  repeated string cidr_ip_ranges = 1;
+  repeated string ip_addresses = 2;
+}
