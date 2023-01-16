@@ -13,9 +13,12 @@ import ai.traceable.api.spec.config.service.v1.UpdateApiSpec;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpecsRequest;
 import io.grpc.Status;
+import java.util.regex.Pattern;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class ApiSpecConfigRequestValidator {
+
+  private static final Pattern SHA256_PATTERN = Pattern.compile("^[a-fA-F0-9]{64}$");
 
   public void validateOrThrow(RequestContext requestContext, GetApiSpecsRequest request) {
     validateRequestContextOrThrow(requestContext);
@@ -31,6 +34,13 @@ public class ApiSpecConfigRequestValidator {
     CreateApiSpec createApiSpec = request.getCreateApiSpec();
     validateNonDefaultPresenceOrThrow(createApiSpec, CreateApiSpec.NAME_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(createApiSpec, CreateApiSpec.STATUS_FIELD_NUMBER);
+    if (createApiSpec.hasFileContentSha256()) {
+      if (!SHA256_PATTERN.matcher(createApiSpec.getFileContentSha256()).matches()) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription("File Content Hash is not SHA256")
+            .asRuntimeException(requestContext.buildTrailers());
+      }
+    }
   }
 
   public void validateOrThrow(RequestContext requestContext, UpdateApiSpecRequest request) {

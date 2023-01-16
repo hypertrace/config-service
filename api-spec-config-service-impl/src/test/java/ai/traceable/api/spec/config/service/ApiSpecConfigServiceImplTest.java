@@ -191,6 +191,76 @@ class ApiSpecConfigServiceImplTest {
   }
 
   @Test
+  void testCreateApiSpecWithFileHash() {
+    ApiSpec createdApiSpec =
+        this.apiSpecConfigServiceBlockingStub
+            .createApiSpec(
+                CreateApiSpecRequest.newBuilder()
+                    .setCreateApiSpec(
+                        CreateApiSpec.newBuilder()
+                            .setName("spec1")
+                            .setApiNamingEnabled(true)
+                            .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                            .setFileContentSha256(
+                                "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"))
+                    .build())
+            .getApiSpec();
+    Timestamp expectedTimestamp = Timestamp.newBuilder().setSeconds(100).build();
+    assertEquals(expectedTimestamp, createdApiSpec.getCreationTimestamp());
+    assertEquals(expectedTimestamp, createdApiSpec.getLastUpdatedTimestamp());
+    assertEquals(
+        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+        createdApiSpec.getFileContentSha256());
+
+    // Check if spec-config with same file hash is uploaded, exception is thrown.
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            this.apiSpecConfigServiceBlockingStub.createApiSpec(
+                CreateApiSpecRequest.newBuilder()
+                    .setCreateApiSpec(
+                        CreateApiSpec.newBuilder()
+                            .setName("spec2")
+                            .setApiNamingEnabled(true)
+                            .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                            .setFileContentSha256(
+                                "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"))
+                    .build()));
+
+    // Check if hash is not SHA256, error is thrown.
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            this.apiSpecConfigServiceBlockingStub.createApiSpec(
+                CreateApiSpecRequest.newBuilder()
+                    .setCreateApiSpec(
+                        CreateApiSpec.newBuilder()
+                            .setName("spec3")
+                            .setApiNamingEnabled(true)
+                            .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                            .setFileContentSha256("filehash1"))
+                    .build()));
+
+    ApiSpec updatedApiSpec =
+        this.apiSpecConfigServiceBlockingStub
+            .updateApiSpec(
+                UpdateApiSpecRequest.newBuilder()
+                    .setApiSpec(
+                        UpdateApiSpec.newBuilder()
+                            .setSpecId(createdApiSpec.getSpecId())
+                            .setName("updatedSpec1")
+                            .setApiNamingEnabled(false))
+                    .build())
+            .getApiSpec();
+    assertEquals("updatedSpec1", updatedApiSpec.getName());
+    assertFalse(updatedApiSpec.getApiNamingEnabled());
+    assertEquals(
+        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+        updatedApiSpec.getFileContentSha256());
+    assertEquals(API_SPEC_STATUS_IN_PROGRESS, updatedApiSpec.getStatus());
+  }
+
+  @Test
   void testBulkApiSpecUpdateAndDelete() {
     ApiSpec firstCreatedApiSpec =
         this.apiSpecConfigServiceBlockingStub

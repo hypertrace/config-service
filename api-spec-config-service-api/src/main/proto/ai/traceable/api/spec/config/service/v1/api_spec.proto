@@ -35,6 +35,7 @@ message CreateApiSpec {
   string name = 1;
   bool api_naming_enabled = 2;
   ApiSpecStatus status = 3;
+  optional string file_content_sha256 = 4;
 }
 
 // update
@@ -83,6 +84,7 @@ message ApiSpec {
   ApiSpecStatus status = 4;
   google.protobuf.Timestamp creation_timestamp = 5;
   google.protobuf.Timestamp last_updated_timestamp = 6;
+  optional string file_content_sha256 = 7;
 }
 
 enum ApiSpecStatus {

@@ -99,16 +99,37 @@ public class ApiSpecConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
-
       CreateApiSpec createApiSpec = request.getCreateApiSpec();
 
-      ApiSpec apiSpec =
+      ApiSpec.Builder apiSpecBuilder =
           ApiSpec.newBuilder()
               .setSpecId(UUID.randomUUID().toString())
               .setName(createApiSpec.getName())
               .setApiNamingEnabled(createApiSpec.getApiNamingEnabled())
-              .setStatus(createApiSpec.getStatus())
-              .build();
+              .setStatus(createApiSpec.getStatus());
+
+      // If optional file hash is supplied in the request.
+      if (createApiSpec.hasFileContentSha256()) {
+        List<ApiSpec> existingApiSpecs = this.apiSpecConfigStore.getAllData(requestContext);
+        String inputSha256Hash = createApiSpec.getFileContentSha256();
+        boolean sha256Exists =
+            existingApiSpecs.stream()
+                .map(ApiSpec::getFileContentSha256)
+                .anyMatch(inputSha256Hash::equals);
+        if (sha256Exists) {
+          log.warn(
+              "An API spec with the file hash specified in request: {} within context: {} already exists",
+              request,
+              requestContext);
+          throw Status.ALREADY_EXISTS
+              .withDescription("An API spec with the same SHA256 file content hash already exists.")
+              .asRuntimeException(requestContext.buildTrailers());
+        } else {
+          apiSpecBuilder.setFileContentSha256(createApiSpec.getFileContentSha256());
+        }
+      }
+
+      ApiSpec apiSpec = apiSpecBuilder.build();
 
       ContextualConfigObject<ApiSpec> contextualConfigObject =
           this.apiSpecConfigStore.upsertObject(requestContext, apiSpec);
