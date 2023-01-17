@@ -2,6 +2,7 @@ package org.hypertrace.config.objectstore;
 
 import com.google.protobuf.Value;
 import io.grpc.Status;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -256,17 +257,29 @@ public abstract class IdentifiedObjectStore<T> {
 
   private ContextualConfigObject<T> processDeleteResult(
       RequestContext requestContext, ContextSpecificConfig deletedConfig) {
-    ContextualConfigObject<T> object =
-        ContextualConfigObjectImpl.tryBuild(deletedConfig, this::buildDataFromValue)
-            .orElseThrow(Status.INTERNAL::asRuntimeException);
-    configChangeEventGeneratorOptional.ifPresent(
-        configChangeEventGenerator ->
-            configChangeEventGenerator.sendDeleteNotification(
-                requestContext,
-                this.buildClassNameForChangeEvent(object.getData()),
-                deletedConfig.getContext(),
-                this.buildValueForChangeEvent(object.getData())));
-    return object;
+    Optional<ContextualConfigObject<T>> optionalObject =
+        ContextualConfigObjectImpl.tryBuild(deletedConfig, this::buildDataFromValue);
+
+    ContextualConfigObject<T> contextualConfigObject;
+    if (optionalObject.isPresent()) {
+      contextualConfigObject = optionalObject.get();
+      configChangeEventGeneratorOptional.ifPresent(
+          configChangeEventGenerator ->
+              configChangeEventGenerator.sendDeleteNotification(
+                  requestContext,
+                  this.buildClassNameForChangeEvent(contextualConfigObject.getData()),
+                  deletedConfig.getContext(),
+                  this.buildValueForChangeEvent(contextualConfigObject.getData())));
+    } else {
+      contextualConfigObject =
+          new ContextualConfigObjectImpl<>(
+              deletedConfig.getContext(),
+              null,
+              Instant.ofEpochMilli(deletedConfig.getCreationTimestamp()),
+              Instant.ofEpochMilli(deletedConfig.getUpdateTimestamp()));
+      log.warn("Could not parse value:{} into proto message", deletedConfig);
+    }
+    return contextualConfigObject;
   }
 
   private void tryReportCreation(RequestContext requestContext, ContextualConfigObject<T> result) {
