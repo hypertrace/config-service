@@ -11,6 +11,7 @@ import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProvide
 public class ApiSpecConfigServiceModule extends AbstractModule {
   private final Channel channel;
   private final Config config;
+  private static final String API_SPEC_CONFIG_SERVICE_CONFIG_PATH = "api.spec.config";
 
   public ApiSpecConfigServiceModule(Channel channel, Config config) {
     this.channel = channel;
@@ -32,5 +33,10 @@ public class ApiSpecConfigServiceModule extends AbstractModule {
     return ConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  ApiSpecConfig provideApiSpecConfig() {
+    return new ApiSpecConfig(this.config.getConfig(API_SPEC_CONFIG_SERVICE_CONFIG_PATH));
   }
 }

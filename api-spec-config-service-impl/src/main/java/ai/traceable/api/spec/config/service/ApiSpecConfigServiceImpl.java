@@ -43,15 +43,18 @@ public class ApiSpecConfigServiceImpl
   private final TimestampConverter timestampConverter;
   private final ApiSpecConfigRequestValidator validator;
   private final ApiSpecConfigStore apiSpecConfigStore;
+  private final ApiSpecConfig apiSpecConfig;
 
   @Inject
   public ApiSpecConfigServiceImpl(
       ApiSpecConfigRequestValidator requestValidator,
       ApiSpecConfigStore apiSpecConfigStore,
-      TimestampConverter timestampConverter) {
+      TimestampConverter timestampConverter,
+      ApiSpecConfig apiSpecConfig) {
     this.validator = requestValidator;
     this.apiSpecConfigStore = apiSpecConfigStore;
     this.timestampConverter = timestampConverter;
+    this.apiSpecConfig = apiSpecConfig;
   }
 
   @Override
@@ -108,9 +111,10 @@ public class ApiSpecConfigServiceImpl
               .setApiNamingEnabled(createApiSpec.getApiNamingEnabled())
               .setStatus(createApiSpec.getStatus());
 
+      List<ApiSpec> existingApiSpecs = this.apiSpecConfigStore.getAllData(requestContext);
+
       // If optional file hash is supplied in the request.
       if (createApiSpec.hasFileContentSha256()) {
-        List<ApiSpec> existingApiSpecs = this.apiSpecConfigStore.getAllData(requestContext);
         String inputSha256Hash = createApiSpec.getFileContentSha256();
         boolean sha256Exists =
             existingApiSpecs.stream()
@@ -127,6 +131,16 @@ public class ApiSpecConfigServiceImpl
         } else {
           apiSpecBuilder.setFileContentSha256(createApiSpec.getFileContentSha256());
         }
+      }
+
+      // Limit number of API specs per tenant.
+      if (existingApiSpecs.size() >= apiSpecConfig.getMaxAllowedSpecsPerTenant()) {
+        throw Status.RESOURCE_EXHAUSTED
+            .withDescription(
+                String.format(
+                    "Total number of ApiSpec configs created has exceeded the limit for this context: %s",
+                    requestContext))
+            .asRuntimeException(requestContext.buildTrailers());
       }
 
       ApiSpec apiSpec = apiSpecBuilder.build();

@@ -25,8 +25,11 @@ import ai.traceable.api.spec.config.service.v1.UpdateApiSpecsRequest;
 import ai.traceable.api.spec.config.service.validation.ApiSpecConfigRequestValidator;
 import ai.traceable.config.utils.TimestampConverter;
 import com.google.protobuf.Timestamp;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -37,6 +40,7 @@ class ApiSpecConfigServiceImplTest {
 
   private ApiSpecConfigServiceGrpc.ApiSpecConfigServiceBlockingStub
       apiSpecConfigServiceBlockingStub;
+  private final int TEST_MAX_ALLOWED_SPECS_PER_TENANT = 7;
 
   @BeforeEach
   void beforeEach() {
@@ -53,11 +57,16 @@ class ApiSpecConfigServiceImplTest {
     TimestampConverter timestampConverter = mock(TimestampConverter.class);
 
     ApiSpecConfigStore apiSpecConfigStore = new ApiSpecConfigStore(genericStub, timestampConverter);
-
+    Config testConfig =
+        ConfigFactory.parseMap(
+            Map.of("maxAllowedSpecsPerTenant", TEST_MAX_ALLOWED_SPECS_PER_TENANT));
     mockGenericConfigService
         .addService(
             new ApiSpecConfigServiceImpl(
-                new ApiSpecConfigRequestValidator(), apiSpecConfigStore, timestampConverter))
+                new ApiSpecConfigRequestValidator(),
+                apiSpecConfigStore,
+                timestampConverter,
+                new ApiSpecConfig(testConfig)))
         .start();
 
     this.apiSpecConfigServiceBlockingStub =
@@ -258,6 +267,39 @@ class ApiSpecConfigServiceImplTest {
         "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
         updatedApiSpec.getFileContentSha256());
     assertEquals(API_SPEC_STATUS_IN_PROGRESS, updatedApiSpec.getStatus());
+  }
+
+  @Test
+  void testLimitSpecConfigs() {
+    // Create max_allowed number of spec configs.
+    for (int i = 0; i < TEST_MAX_ALLOWED_SPECS_PER_TENANT; i++) {
+      this.apiSpecConfigServiceBlockingStub.createApiSpec(
+          CreateApiSpecRequest.newBuilder()
+              .setCreateApiSpec(
+                  CreateApiSpec.newBuilder()
+                      .setName(String.format("spec %d", i))
+                      .setApiNamingEnabled(true)
+                      .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                      .setFileContentSha256(
+                          String.format(
+                              "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f2001%03d",
+                              i)))
+              .build());
+    }
+    // Check if in second exception is thrown if more spec configs are created.
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            this.apiSpecConfigServiceBlockingStub.createApiSpec(
+                CreateApiSpecRequest.newBuilder()
+                    .setCreateApiSpec(
+                        CreateApiSpec.newBuilder()
+                            .setName("spec2")
+                            .setApiNamingEnabled(true)
+                            .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                            .setFileContentSha256(
+                                "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015az"))
+                    .build()));
   }
 
   @Test
