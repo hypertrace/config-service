@@ -3,6 +3,7 @@ package ai.traceable.reporting.config.service.v2;
 import ai.traceable.config.utils.UuidGenerator;
 import io.grpc.Status;
 import java.util.List;
+import java.util.Optional;
 import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -23,7 +24,7 @@ public class ReportingConfigManagerImpl implements ReportingConfigManager {
     ReportConfiguration reportConfiguration =
         ReportConfiguration.newBuilder()
             .setId(uuidGenerator.generateRandomId())
-            .setCreator(requestContext.getUserId().orElseThrow())
+            .setCreator(getReportCreator(requestContext).orElseThrow())
             .setCommonConfigurationDetails(commonConfigurationDetails)
             .build();
 
@@ -60,5 +61,15 @@ public class ReportingConfigManagerImpl implements ReportingConfigManager {
         .deleteObject(requestContext, reportConfigId)
         .orElseThrow(Status.NOT_FOUND::asRuntimeException)
         .getData();
+  }
+
+  private Optional<String> getReportCreator(RequestContext requestContext) {
+    if (requestContext.getName().isPresent()) {
+      return requestContext.getName();
+    } else if (requestContext.getEmail().isPresent()) {
+      return requestContext.getEmail();
+    } else {
+      return requestContext.getUserId();
+    }
   }
 }
