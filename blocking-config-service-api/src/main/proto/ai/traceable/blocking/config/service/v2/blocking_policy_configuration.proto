@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package ai.traceable.blocking.config.service.v2;
+
+option java_multiple_files = true;
+option go_package = "github.com/Traceableai/config-service/blocking/v2";
+
+message BlockingPolicyConfigurationRequest {}
+
+message BlockingPolicyConfiguration {
+  repeated BlockingDetails blocking_details_list = 1;
+}
+
+message BlockingDetails {
+  BlockingCategory category = 1;
+  BlockingRuleType blocking_rule_type = 2;
+  string info = 3;
+  optional int64 expiration_timestamp = 4;
+  BlockingStatus status = 9;
+  oneof details {
+    IpDetails ip_details = 5;
+    ModsecDetails modsec_details = 6;
+    CustomSignatureDetails custom_signature_details = 7;
+    RegionDetails region_details = 8;
+    ActorDetails actor_details = 10;
+    IpTypeDetails ip_type_details = 11;
+  }
+}
+
+message ModsecDetails {
+  string rule_id = 1;
+}
+
+message IpDetails {
+  repeated string ip_addresses = 1;
+  repeated string ip_ranges = 2;
+}
+
+message ActorDetails {
+  string user_id = 1;
+  repeated string ip_addresses = 2;
+}
+
+message CustomSignatureDetails {
+  string rule_id = 1;
+}
+
+message RegionDetails {
+  repeated string regions = 1;
+}
+
+message IpTypeDetails {
+  repeated IpType ip_types = 1;
+}
+
+enum BlockingCategory {
+  BLOCKING_CATEGORY_UNSPECIFIED = 0;
+  BLOCKING_CATEGORY_THREAT_ACTOR = 1;
+  BLOCKING_CATEGORY_RATE_LIMIT = 2;
+  BLOCKING_CATEGORY_MODSECURITY = 3;
+  BLOCKING_CATEGORY_CUSTOM_IP_RULE = 4;
+  BLOCKING_CATEGORY_CUSTOM_REGION_RULE = 5;
+  BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE = 6;
+  BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE = 7;
+  BLOCKING_CATEGORY_DATA_EXFILTRATION = 8;
+  BLOCKING_CATEGORY_ENUMERATION = 9;
+}
+
+enum BlockingRuleType {
+  BLOCKING_RULE_TYPE_UNSPECIFIED = 0;
+  BLOCKING_RULE_TYPE_ALLOW = 1;
+  BLOCKING_RULE_TYPE_BLOCK = 2;
+  BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT = 3;
+}
+
+enum BlockingStatus {
+  BLOCKING_STATUS_UNSPECIFIED = 0;
+  BLOCKING_STATUS_ALLOWED = 1;
+  BLOCKING_STATUS_DENIED = 2;
+  BLOCKING_STATUS_SUSPENDED = 3;
+  BLOCKING_STATUS_SNOOZED = 4;
+}
+
+enum IpType {
+  IP_TYPE_UNSPECIFIED = 0;
+  IP_TYPE_BOT = 1;
+  IP_TYPE_VPN = 2;
+  IP_TYPE_TOR = 3;
+  IP_TYPE_PROXY = 4;
+  IP_TYPE_HOSTING_PROVIDER = 5;
+}

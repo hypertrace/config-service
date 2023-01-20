@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package ai.traceable.blocking.config.service.v2;
+
+option java_multiple_files = true;
+option go_package = "github.com/Traceableai/config-service/blocking/v2";
+
+import "ai/traceable/blocking/config/service/v2/blocking_policy_configuration.proto";
+import "google/protobuf/duration.proto";
+
+message GetBlockingRulesRequest {
+  string environment = 1;
+  string previous_hash = 2;
+  repeated BlockingConfigRequestElement request_elements = 3;
+}
+
+message BlockingConfigRequestElement {
+  string previous_hash = 1; // Only of the rules
+  repeated AgentCapabilities supported_agent_capabilities = 2;
+  oneof request {
+    BlockingPolicyConfigurationRequest blocking_policy_configuration_request = 4;
+    RegionBlockingRulesRequest region_blocking_rules_request = 5;
+    CustomSignatureBlockingRulesRequest custom_signature_blocking_rules_request = 6;
+    CrsBlockingRulesRequest crs_blocking_rules_request = 7;
+    IpTypeBlockingRulesRequest ip_type_blocking_rules_request = 8;
+  }
+}
+message GetBlockingRulesResponse {
+  string hash = 1;
+  google.protobuf.Duration refresh_after_duration = 2;
+  repeated BlockingConfigResponseElement response_elements = 3;
+}
+
+message BlockingConfigResponseElement {
+  string hash = 1; // Only of the rules
+  repeated AgentCapabilities agent_capabilities = 2;
+  oneof rules {
+    BlockingPolicyConfiguration blocking_policy_configuration = 4;
+    RegionBlockingRules region_blocking_rules = 5;
+    CustomSignatureBlockingRules custom_signature_blocking_rules = 6;
+    CrsBlockingRules crs_blocking_rules = 7;
+    IpTypeBlockingRules ip_type_blocking_rules = 8;
+  }
+}
+
+message AgentCapabilities {
+  repeated Component components = 1;
+}
+
+message Component {
+  oneof value {
+    string libtraceable_version = 1;
+    string traceable_platform_agent_version = 2;
+   }
+}
+
+message RegionBlockingRulesRequest {}
+
+message RegionBlockingRules {
+  repeated RegionIpBlockingRule region_ip_blocking_rules = 1;
+}
+
+message CustomSignatureBlockingRulesRequest {}
+
+message CustomSignatureBlockingRules {
+  optional string custom_signature_rules_blob = 1;
+}
+
+message CrsBlockingRulesRequest {}
+
+message CrsBlockingRules {
+  optional string crs_rules_blob = 1;
+}
+
+message IpTypeBlockingRulesRequest {}
+
+message IpTypeBlockingRules {
+  repeated IpTypeRule ip_type_rule_list = 1;
+}
+
+message RegionIpBlockingRule {
+  repeated IpRange ip_ranges = 1;
+  string region_id = 2;
+}
+
+message IpRange {
+  oneof value {
+    IpV4Range ipv4_range = 1;
+    int32 ipv4_address = 2;
+  }
+}
+
+message IpV4Range {
+  int32 start_ip = 1;
+  int32 end_ip = 2;
+}
+
+message IpTypeRule {
+  IpType ip_type = 1;
+  repeated IpRange ip_ranges = 2;
+}
