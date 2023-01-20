@@ -22,6 +22,7 @@ public class AnomalyDetectionConfigHandler {
   private final ApiStateBasedConfigHandler apiStateBasedConfigHandler;
   private final BlockingMetadataConfigHandler blockingMetadataConfigHandler;
   private final ModsecConfigHandler modsecConfigHandler;
+  private final CustomRulesConfigHandler customRulesConfigHandler;
 
   @Inject
   public AnomalyDetectionConfigHandler(
@@ -31,6 +32,7 @@ public class AnomalyDetectionConfigHandler {
     this.apiStateBasedConfigHandler = new ApiStateBasedConfigHandler();
     this.blockingMetadataConfigHandler = new BlockingMetadataConfigHandler();
     this.modsecConfigHandler = new ModsecConfigHandler();
+    this.customRulesConfigHandler = new CustomRulesConfigHandler();
   }
 
   public Value convert(ScopedAnomalyDetectionConfig config) throws InvalidProtocolBufferException {
@@ -83,6 +85,10 @@ public class AnomalyDetectionConfigHandler {
                   builder.addAllAnomalyDetectionConfigs(
                       blockingMetadataConfigHandler.merge(preferredConfig, fallbackConfig));
                   break;
+                case ANOMALY_DETECTION_CONFIG_TYPE_CUSTOM_RULES:
+                  builder.addAllAnomalyDetectionConfigs(
+                      customRulesConfigHandler.merge(preferredConfig, fallbackConfig));
+                  break;
                 default:
                   LOGGER.error(
                       "Invalid configType {} in anomalyDetectionConfigsFilter", configType);
@@ -107,6 +113,8 @@ public class AnomalyDetectionConfigHandler {
             blockingMetadataConfigHandler.merge(preferredConfig, fallbackConfig))
         .addAllAnomalyDetectionConfigs(
             sessionDefinitionConfigHandler.merge(preferredConfig, fallbackConfig))
+        .addAllAnomalyDetectionConfigs(
+            customRulesConfigHandler.merge(preferredConfig, fallbackConfig))
         .build();
   }
 
@@ -137,6 +145,9 @@ public class AnomalyDetectionConfigHandler {
             anomalyDetectionConfigs, detectionConfigsToDelete, deletedConfigBuilder);
     anomalyDetectionConfigs =
         modsecConfigHandler.deleteWholeAnomalyDetectionConfigs(
+            anomalyDetectionConfigs, detectionConfigsToDelete, deletedConfigBuilder);
+    anomalyDetectionConfigs =
+        customRulesConfigHandler.deleteWholeAnomalyDetectionConfigs(
             anomalyDetectionConfigs, detectionConfigsToDelete, deletedConfigBuilder);
 
     filteredConfigBuilder.addAllAnomalyDetectionConfigs(anomalyDetectionConfigs);

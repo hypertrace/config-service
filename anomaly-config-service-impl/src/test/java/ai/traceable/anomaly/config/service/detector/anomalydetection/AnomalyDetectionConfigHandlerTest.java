@@ -24,6 +24,11 @@ import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnom
 import ai.traceable.anomaly.config.service.v1.detector.ApiStateBasedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.BlockingMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.CustomIpAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.AbuseVelocity;
+import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.EmailDomainAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.IpTypeAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.MaliciousSourcesRulesAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.EnumerationsAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.IntegerAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.LearntApiAnomalyConfig;
@@ -588,6 +593,82 @@ public class AnomalyDetectionConfigHandlerTest {
     assertEquals(
         AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW,
         detectionConfig.getCategoryConfig().getEventScoreCategory());
+  }
+
+  @Test
+  void testCustomRulesDetectionConfigsConvert() throws InvalidProtocolBufferException {
+    ScopedAnomalyDetectionConfig config1 =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setConfigStatus(
+                        AnomalyConfigStatusChange.newBuilder()
+                            .setDisabled(true)
+                            .setInternal(true)
+                            .build())
+                    .setCustomRulesAnomalyDetectionConfig(
+                        CustomRulesAnomalyDetectionConfig.newBuilder()
+                            .setMaliciousSources(
+                                MaliciousSourcesRulesAnomalyConfig.newBuilder()
+                                    .setEmailDomain(
+                                        EmailDomainAnomalyConfig.newBuilder()
+                                            .setCriticalEmailFraudScoreMinThreshold(90))
+                                    .setIpType(
+                                        IpTypeAnomalyConfig.newBuilder()
+                                            .setIpReputationScoreMinThreshold(90)))))
+            .build();
+
+    ScopedAnomalyDetectionConfig config2 =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setCategoryConfig(
+                        AnomalyCategoryConfig.newBuilder()
+                            .setEventCategory(AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT)
+                            .setEventScoreCategory(
+                                AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW))
+                    .setCustomRulesAnomalyDetectionConfig(
+                        CustomRulesAnomalyDetectionConfig.newBuilder()
+                            .setMaliciousSources(
+                                MaliciousSourcesRulesAnomalyConfig.newBuilder()
+                                    .setEmailDomain(
+                                        EmailDomainAnomalyConfig.newBuilder()
+                                            .setCriticalEmailFraudScoreMinThreshold(95)
+                                            .setHighEmailFraudScoreMinThreshold(90))
+                                    .setIpType(
+                                        IpTypeAnomalyConfig.newBuilder()
+                                            .setAbuseVelocityMinThreshold(
+                                                AbuseVelocity.ABUSE_VELOCITY_MEDIUM)))))
+            .build();
+
+    Value value = detectionConfigConverter.convert(config1);
+    assertEquals(config1, detectionConfigConverter.convert(value));
+
+    ScopedAnomalyDetectionConfig mergedConfig = detectionConfigConverter.merge(config2, config1);
+    AnomalyDetectionConfig detectionConfig = mergedConfig.getAnomalyDetectionConfigsList().get(0);
+
+    assertTrue(detectionConfig.getConfigStatus().getDisabled());
+    assertTrue(detectionConfig.getConfigStatus().getInternal());
+    assertEquals(
+        AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT,
+        detectionConfig.getCategoryConfig().getEventCategory());
+    assertEquals(
+        AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW,
+        detectionConfig.getCategoryConfig().getEventScoreCategory());
+
+    EmailDomainAnomalyConfig emailDomainAnomalyConfig =
+        detectionConfig
+            .getCustomRulesAnomalyDetectionConfig()
+            .getMaliciousSources()
+            .getEmailDomain();
+    IpTypeAnomalyConfig ipTypeAnomalyConfig =
+        detectionConfig.getCustomRulesAnomalyDetectionConfig().getMaliciousSources().getIpType();
+
+    assertEquals(95, emailDomainAnomalyConfig.getCriticalEmailFraudScoreMinThreshold());
+    assertEquals(90, emailDomainAnomalyConfig.getHighEmailFraudScoreMinThreshold());
+    assertEquals(
+        AbuseVelocity.ABUSE_VELOCITY_MEDIUM, ipTypeAnomalyConfig.getAbuseVelocityMinThreshold());
+    assertEquals(90, ipTypeAnomalyConfig.getIpReputationScoreMinThreshold());
   }
 
   private AnomalyDetectionConfig getAnomalyDetectionConfig(

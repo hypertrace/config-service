@@ -15,9 +15,13 @@ public class DetectorConfigServiceConfig {
       "apiDefinitionDetectionConfigs";
   private static final String SESSION_DEFINITION_DETECTION_CONFIGS_PATH =
       "sessionDefinitionDetectionConfigs";
+  private static final String CUSTOM_RULES_DETECTION_CONFIGS_PATH = "customRulesDetectionConfigs";
+
   private final List<AnomalyDetectionConfig> modsecDetectionConfigs;
   private final List<AnomalyDetectionConfig> apiDefinitionDetectionConfigs;
   private final List<AnomalyDetectionConfig> sessionDefinitionDetectionConfigs;
+  private final List<AnomalyDetectionConfig> customRulesDetectionConfigs;
+
   private final ConfigConverter configConverter = new ConfigConverter();
 
   public DetectorConfigServiceConfig(
@@ -47,6 +51,9 @@ public class DetectorConfigServiceConfig {
                             .setSessionDefinitionMetadataAnomalyDetectionConfig(detectionConfig)
                             .build())
                 .collect(Collectors.toList()));
+    this.customRulesDetectionConfigs =
+        configConverter.convertToAnomalyDetectionConfigs(
+            config.getConfigList(CUSTOM_RULES_DETECTION_CONFIGS_PATH));
   }
 
   public List<AnomalyDetectionConfig> getDefaultModsecDetectionConfigs() {
@@ -59,6 +66,10 @@ public class DetectorConfigServiceConfig {
 
   public List<AnomalyDetectionConfig> getDefaultSessionDefinitionDetectionConfigs() {
     return sessionDefinitionDetectionConfigs;
+  }
+
+  public List<AnomalyDetectionConfig> getDefaultCustomRulesDetectionConfigs() {
+    return customRulesDetectionConfigs;
   }
 
   private List<AnomalyDetectionConfig> loadDefaultApiDefinitionDetectionConfigs(

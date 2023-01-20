@@ -39,6 +39,7 @@ public class AnomalyDetectionConfigManagerImpl
   private final List<AnomalyDetectionConfig> defaultModsecConfigs;
   private final List<AnomalyDetectionConfig> defaultApiDefinitionDetectionConfigs;
   private final List<AnomalyDetectionConfig> defaultSessionDefinitionDetectionConfigs;
+  private final List<AnomalyDetectionConfig> defaultCustomRulesDetectionConfigs;
 
   @Inject
   public AnomalyDetectionConfigManagerImpl(
@@ -58,6 +59,7 @@ public class AnomalyDetectionConfigManagerImpl
     this.defaultApiDefinitionDetectionConfigs = config.getDefaultApiDefinitionDetectionConfigs();
     this.defaultSessionDefinitionDetectionConfigs =
         config.getDefaultSessionDefinitionDetectionConfigs();
+    this.defaultCustomRulesDetectionConfigs = config.getDefaultCustomRulesDetectionConfigs();
   }
 
   @Override
@@ -136,6 +138,7 @@ public class AnomalyDetectionConfigManagerImpl
             .addAllAnomalyDetectionConfigs(defaultModsecConfigs)
             .addAllAnomalyDetectionConfigs(defaultApiDefinitionDetectionConfigs)
             .addAllAnomalyDetectionConfigs(defaultSessionDefinitionDetectionConfigs)
+            .addAllAnomalyDetectionConfigs(defaultCustomRulesDetectionConfigs)
             .build());
 
     return scopedAnomalyDetectionConfigs.stream()
@@ -256,6 +259,7 @@ public class AnomalyDetectionConfigManagerImpl
             .addAllAnomalyDetectionConfigs(defaultModsecConfigs)
             .addAllAnomalyDetectionConfigs(defaultApiDefinitionDetectionConfigs)
             .addAllAnomalyDetectionConfigs(defaultSessionDefinitionDetectionConfigs)
+            .addAllAnomalyDetectionConfigs(defaultCustomRulesDetectionConfigs)
             .build();
     for (String context : contextsWithIncreasingPriority) {
       anomalyDetectionConfig =

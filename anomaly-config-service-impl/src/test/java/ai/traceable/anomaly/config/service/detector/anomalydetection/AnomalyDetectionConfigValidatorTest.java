@@ -20,6 +20,10 @@ import ai.traceable.anomaly.config.service.v1.detector.BlockingMetadataAnomalyDe
 import ai.traceable.anomaly.config.service.v1.detector.ContentSizeAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.CustomIpAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.CustomRegionAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.EmailDomainAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.IpTypeAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.MaliciousSourcesRulesAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.DeleteAnomalyConfigOption;
 import ai.traceable.anomaly.config.service.v1.detector.DeleteScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
@@ -654,6 +658,87 @@ public class AnomalyDetectionConfigValidatorTest {
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(
         status.getDescription().contains("Invalid session definition metadata detection config"));
+  }
+
+  @Test
+  void testCustomRulesUpdateValidation() {
+    AnomalyDetectionConfig detectionConfig =
+        AnomalyDetectionConfig.newBuilder()
+            .setCustomRulesAnomalyDetectionConfig(
+                CustomRulesAnomalyDetectionConfig.newBuilder()
+                    .setMaliciousSources(
+                        MaliciousSourcesRulesAnomalyConfig.newBuilder()
+                            .setEmailDomain(EmailDomainAnomalyConfig.newBuilder().setDisabled(true))
+                            .setIpType(
+                                IpTypeAnomalyConfig.newBuilder()
+                                    .setAbuseVelocityMinThresholdValue(90))))
+            .build();
+
+    UpdateScopedAnomalyDetectionConfigRequest request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig)))
+            .build();
+
+    assertEquals(Status.OK.getCode(), validator.validate(request).getCode());
+
+    detectionConfig =
+        AnomalyDetectionConfig.newBuilder()
+            .setCustomRulesAnomalyDetectionConfig(
+                CustomRulesAnomalyDetectionConfig.newBuilder()
+                    .setMaliciousSources(
+                        MaliciousSourcesRulesAnomalyConfig.newBuilder()
+                            .setEmailDomain(
+                                EmailDomainAnomalyConfig.newBuilder()
+                                    .setDisabled(true)
+                                    .setHighEmailFraudScoreMinThreshold(50)
+                                    .setCriticalEmailFraudScoreMinThreshold(70))
+                            .setIpType(
+                                IpTypeAnomalyConfig.newBuilder()
+                                    .setAbuseVelocityMinThresholdValue(90))))
+            .build();
+
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig)))
+            .build();
+
+    assertEquals(Status.OK.getCode(), validator.validate(request).getCode());
+
+    detectionConfig =
+        AnomalyDetectionConfig.newBuilder()
+            .setCustomRulesAnomalyDetectionConfig(
+                CustomRulesAnomalyDetectionConfig.newBuilder()
+                    .setMaliciousSources(
+                        MaliciousSourcesRulesAnomalyConfig.newBuilder()
+                            .setEmailDomain(
+                                EmailDomainAnomalyConfig.newBuilder()
+                                    .setDisabled(true)
+                                    .setHighEmailFraudScoreMinThreshold(70)
+                                    .setCriticalEmailFraudScoreMinThreshold(50))
+                            .setIpType(
+                                IpTypeAnomalyConfig.newBuilder()
+                                    .setAbuseVelocityMinThresholdValue(90))))
+            .build();
+
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig)))
+            .build();
+
+    Status status = validator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals(
+        "Invalid EmailDomainAnomalyConfig: highEmailFraudScoreMinThreshold > criticalEmailFraudScoreMinThreshold",
+        status.getDescription());
   }
 
   private AnomalyDetectionConfig buildModSecConfig(String ruleId, Optional<String> subRuleId) {

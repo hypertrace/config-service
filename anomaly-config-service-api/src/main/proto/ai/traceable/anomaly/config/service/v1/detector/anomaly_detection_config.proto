@@ -13,6 +13,7 @@ enum AnomalyDetectionConfigType {
   ANOMALY_DETECTION_CONFIG_TYPE_API_STATE_BASED = 3;
   ANOMALY_DETECTION_CONFIG_TYPE_SESSION_DEFINITION = 4;
   ANOMALY_DETECTION_CONFIG_TYPE_BLOCKING_METADATA = 5;
+  ANOMALY_DETECTION_CONFIG_TYPE_CUSTOM_RULES = 6;
 }
 
 message AnomalyCategoryConfig {
@@ -108,6 +109,7 @@ message AnomalyDetectionConfig {
     ApiStateBasedAnomalyDetectionConfig api_state_based_anomaly_detection_config = 7;
     SessionDefinitionMetadataAnomalyDetectionConfig session_definition_metadata_anomaly_detection_config = 8;
     BlockingMetadataAnomalyDetectionConfig blocking_metadata_anomaly_detection_config = 9;
+    CustomRulesAnomalyDetectionConfig custom_rules_anomaly_detection_config = 10;
   }
 }
 
@@ -164,6 +166,35 @@ message BlockingMetadataAnomalyDetectionConfig {
     SafeCrsAnomalyConfig safe_crs = 6;
     InAgentVulnerableLibraryConfig in_agent_vulnerable_library = 7;
     MaliciousSourcesAnomalyConfig malicious_sources = 8;
+  }
+}
+
+message CustomRulesAnomalyDetectionConfig {
+  oneof config {
+    MaliciousSourcesRulesAnomalyConfig malicious_sources = 1;
+  }
+
+  message MaliciousSourcesRulesAnomalyConfig {
+    EmailDomainAnomalyConfig email_domain = 1;
+    IpTypeAnomalyConfig ip_type = 2;
+  }
+
+  message EmailDomainAnomalyConfig {
+    int32 high_email_fraud_score_min_threshold = 1;
+    int32 critical_email_fraud_score_min_threshold = 2;
+    bool disabled = 3;
+  }
+
+  message IpTypeAnomalyConfig {
+    AbuseVelocity abuse_velocity_min_threshold = 1;
+    int32 ip_reputation_score_min_threshold = 2;
+  }
+
+  enum AbuseVelocity {
+    ABUSE_VELOCITY_UNSPECIFIED = 0;
+    ABUSE_VELOCITY_LOW = 1;
+    ABUSE_VELOCITY_MEDIUM = 2;
+    ABUSE_VELOCITY_HIGH = 3;
   }
 }
 

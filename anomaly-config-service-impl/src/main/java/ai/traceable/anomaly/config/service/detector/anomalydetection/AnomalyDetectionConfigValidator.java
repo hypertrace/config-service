@@ -12,6 +12,9 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiStateBasedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.BlockingMetadataAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.EmailDomainAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.MaliciousSourcesRulesAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.DeleteAnomalyConfigOption;
 import ai.traceable.anomaly.config.service.v1.detector.DeleteScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigRequest;
@@ -28,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class AnomalyDetectionConfigValidator {
@@ -167,6 +171,18 @@ public class AnomalyDetectionConfigValidator {
             .collect(Collectors.toList());
 
     status = validateBlockingDetectionConfigs(blockingAnomalyDetectionConfigs);
+
+    if (!status.isOk()) {
+      return status;
+    }
+
+    List<CustomRulesAnomalyDetectionConfig> customRulesAnomalyDetectionConfigs =
+        detectionConfigs.stream()
+            .filter(AnomalyDetectionConfig::hasCustomRulesAnomalyDetectionConfig)
+            .map(AnomalyDetectionConfig::getCustomRulesAnomalyDetectionConfig)
+            .collect(Collectors.toList());
+
+    status = validateCustomRulesDetectionConfigs(customRulesAnomalyDetectionConfigs);
 
     return status;
   }
@@ -348,8 +364,7 @@ public class AnomalyDetectionConfigValidator {
       stateBasedDetectionConfigs.stream()
           .collect(
               Collectors.toMap(
-                  ApiStateBasedAnomalyDetectionConfig::getConfigCase,
-                  detectionConfig -> detectionConfig));
+                  ApiStateBasedAnomalyDetectionConfig::getConfigCase, Function.identity()));
     } catch (IllegalStateException e) {
       return Status.INVALID_ARGUMENT.withDescription(e.getMessage());
     }
@@ -367,12 +382,52 @@ public class AnomalyDetectionConfigValidator {
       blockingAnomalyDetectionConfigs.stream()
           .collect(
               Collectors.toMap(
-                  BlockingMetadataAnomalyDetectionConfig::getConfigCase,
-                  detectionConfig -> detectionConfig));
+                  BlockingMetadataAnomalyDetectionConfig::getConfigCase, Function.identity()));
     } catch (IllegalStateException e) {
       return Status.INVALID_ARGUMENT.withDescription(e.getMessage());
     }
     return Status.OK;
+  }
+
+  /**
+   * @param customRulesAnomalyDetectionConfigs
+   * @return Status.INVALID_ARGUMENT in case of presence of configs with same config case or
+   *     presence of emailDomainConfigs with highThreshold > criticalThreshold . Status.OK in all
+   *     other cases.
+   */
+  private Status validateCustomRulesDetectionConfigs(
+      List<CustomRulesAnomalyDetectionConfig> customRulesAnomalyDetectionConfigs) {
+    try {
+      customRulesAnomalyDetectionConfigs.stream()
+          .collect(
+              Collectors.toMap(
+                  CustomRulesAnomalyDetectionConfig::getConfigCase, Function.identity()));
+    } catch (IllegalStateException e) {
+      return Status.INVALID_ARGUMENT.withDescription(e.getMessage());
+    }
+
+    List<EmailDomainAnomalyConfig> emailDomainAnomalyConfigs =
+        customRulesAnomalyDetectionConfigs.stream()
+            .map(CustomRulesAnomalyDetectionConfig::getMaliciousSources)
+            .map(MaliciousSourcesRulesAnomalyConfig::getEmailDomain)
+            .collect(Collectors.toList());
+
+    return validateEmailDomainConfigs(emailDomainAnomalyConfigs);
+  }
+
+  private Status validateEmailDomainConfigs(
+      List<EmailDomainAnomalyConfig> emailDomainAnomalyConfigs) {
+    boolean hasInvalidConfig =
+        emailDomainAnomalyConfigs.stream()
+            .anyMatch(
+                config ->
+                    config.getHighEmailFraudScoreMinThreshold()
+                        > config.getCriticalEmailFraudScoreMinThreshold());
+
+    return hasInvalidConfig
+        ? Status.INVALID_ARGUMENT.withDescription(
+            "Invalid EmailDomainAnomalyConfig: highEmailFraudScoreMinThreshold > criticalEmailFraudScoreMinThreshold")
+        : Status.OK;
   }
 
   private Status validateSubRuleConfigs(

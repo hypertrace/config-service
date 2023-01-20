@@ -318,6 +318,7 @@ public class AnomalyDetectionConfigManagerTest {
     defaultDetectionConfigs.addAll(config.getDefaultModsecDetectionConfigs());
     defaultDetectionConfigs.addAll(config.getDefaultApiDefinitionDetectionConfigs());
     defaultDetectionConfigs.addAll(config.getDefaultSessionDefinitionDetectionConfigs());
+    defaultDetectionConfigs.addAll(config.getDefaultCustomRulesDetectionConfigs());
 
     List<AnomalyDetectionConfig> detectionConfigs =
         configManager
@@ -666,7 +667,36 @@ public class AnomalyDetectionConfigManagerTest {
                 + "        anomalyRuleId = \"bola\"\n"
                 + "      }\n"
                 + "    }\n"
-                + "]"),
+                + "]\n"
+                + "customRulesDetectionConfigs = [\n"
+                + "    {\n"
+                + "      categoryConfig = {\n"
+                + "        eventScoreCategory = \"ANOMALY_EVENT_SCORE_CATEGORY_HIGH\"\n"
+                + "      }\n"
+                + "      customRulesAnomalyDetectionConfig = {\n"
+                + "        maliciousSources = {\n"
+                + "          emailDomain = {\n"
+                + "            highEmailFraudScoreMinThreshold = 85\n"
+                + "            criticalEmailFraudScoreMinThreshold = 95\n"
+                + "            disabled = true\n"
+                + "          }\n"
+                + "        }\n"
+                + "      }\n"
+                + "    },\n"
+                + "    {\n"
+                + "      categoryConfig = {\n"
+                + "        eventScoreCategory = \"ANOMALY_EVENT_SCORE_CATEGORY_HIGH\"\n"
+                + "      }\n"
+                + "      customRulesAnomalyDetectionConfig = {\n"
+                + "        maliciousSources = {\n"
+                + "          ipType = {\n"
+                + "            abuseVelocityMinThreshold = \"ABUSE_VELOCITY_HIGH\"\n"
+                + "            ipReputationScoreMinThreshold = 100\n"
+                + "          }\n"
+                + "        }\n"
+                + "      }\n"
+                + "    }\n"
+                + "  ]"),
         new ApiDefinitionRegistryImpl(new ConfigConverter()),
         new SessionRulesRegistryImpl(new ConfigConverter()));
   }
