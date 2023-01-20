@@ -248,7 +248,9 @@ public class ApiSpecConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
 
-      this.apiSpecConfigStore.deleteObject(requestContext, request.getSpecId());
+      this.apiSpecConfigStore
+          .deleteObject(requestContext, request.getSpecId())
+          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       log.info("Deleting spec with specId: " + request.getSpecId());
 
       responseObserver.onNext(DeleteApiSpecResponse.newBuilder().build());
