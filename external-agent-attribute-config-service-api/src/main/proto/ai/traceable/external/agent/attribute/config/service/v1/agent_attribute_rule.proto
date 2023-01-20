@@ -18,6 +18,8 @@ message AttributeRule {
     oneof action {
       AttributeAddition attribute_addition = 1;
       AttributeArrayAppend attribute_array_append = 2;
+      AttributeAddition resource_attribute_addition = 3;
+      AttributeArrayAppend resource_attribute_array_append = 4;
     }
 
     message AttributeAddition {
@@ -25,6 +27,8 @@ message AttributeRule {
       string attribute_key = 1;
       // rule to get the value of this attribute
       AttributeRule value_projection_rule = 2;
+      // option to overwrite to the attribute even if present
+      bool allow_overwrite = 3;
     }
 
     // adds or appends value as an array to an attribute
