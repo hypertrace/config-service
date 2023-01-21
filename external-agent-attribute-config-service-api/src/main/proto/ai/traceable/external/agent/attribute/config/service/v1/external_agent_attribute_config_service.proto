@@ -16,6 +16,7 @@ service ExternalAgentAttributeConfigService {
 message GetAgentAttributeRulesRequest {
   OnlyIfChangedFilter filter = 1;
   Scope scope = 2;
+  AgentCapabilities agent_capabilities = 3;
 
   message OnlyIfChangedFilter {
     string previous_hash = 1;
@@ -24,6 +25,16 @@ message GetAgentAttributeRulesRequest {
   message Scope {
     oneof scope {
       string environment_name = 1;
+    }
+  }
+
+  message AgentCapabilities {
+    repeated Component components = 1;
+  }
+
+  message Component {
+    oneof value {
+      string traceable_platform_agent_version = 1;
     }
   }
 }
