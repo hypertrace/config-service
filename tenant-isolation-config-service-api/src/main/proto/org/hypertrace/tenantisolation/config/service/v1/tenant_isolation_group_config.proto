@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package org.hypertrace.tenantisolation.config.service.v1;
+
+option java_multiple_files = true;
+
+message TenantIsolationGroupConfig{
+  string id = 1;
+  string group_name = 2;
+  repeated string members = 3;
+  int32 weight = 4;
+}
+
+message NewTenantIsolationGroupConfig{
+  string group_name = 1;
+  repeated string members = 2;
+  int32 weight = 3;
+}

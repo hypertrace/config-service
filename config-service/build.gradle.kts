@@ -63,6 +63,8 @@ dependencies {
 
   // Integration test dependencies
   integrationTestImplementation(projects.configServiceImpl)
+  integrationTestImplementation(projects.tenantIsolationConfigServiceImpl)
+  integrationTestImplementation(projects.tenantIsolationConfigServiceApi)
   integrationTestImplementation(libs.junit.jupiter)
   integrationTestImplementation(libs.guava)
   integrationTestImplementation(libs.snakeyaml)

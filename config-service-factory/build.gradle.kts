@@ -15,4 +15,5 @@ dependencies {
   implementation(projects.notificationRuleConfigServiceImpl)
   implementation(projects.notificationChannelConfigServiceImpl)
   implementation(projects.spanProcessingConfigServiceImpl)
+  implementation(projects.tenantIsolationConfigServiceImpl)
 }

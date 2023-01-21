@@ -1,97 +1,20 @@
 package org.hypertrace.config.service;
 
-import static org.hypertrace.config.service.IntegrationTestUtils.getConfigValue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.protobuf.Value;
-import com.typesafe.config.ConfigFactory;
-import io.grpc.Channel;
-import io.grpc.ManagedChannelBuilder;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import org.hypertrace.config.service.v1.ConfigServiceGrpc;
-import org.hypertrace.config.service.v1.ContextSpecificConfig;
-import org.hypertrace.config.service.v1.DeleteConfigRequest;
-import org.hypertrace.config.service.v1.DeleteConfigResponse;
-import org.hypertrace.config.service.v1.DeleteConfigsRequest;
-import org.hypertrace.config.service.v1.DeleteConfigsRequest.ConfigToDelete;
-import org.hypertrace.config.service.v1.DeleteConfigsResponse;
-import org.hypertrace.config.service.v1.GetAllConfigsRequest;
-import org.hypertrace.config.service.v1.GetAllConfigsResponse;
-import org.hypertrace.config.service.v1.GetConfigRequest;
-import org.hypertrace.config.service.v1.GetConfigResponse;
-import org.hypertrace.config.service.v1.UpsertAllConfigsRequest;
-import org.hypertrace.config.service.v1.UpsertAllConfigsRequest.ConfigToUpsert;
-import org.hypertrace.config.service.v1.UpsertAllConfigsResponse;
-import org.hypertrace.config.service.v1.UpsertConfigRequest;
-import org.hypertrace.config.service.v1.UpsertConfigResponse;
-import org.hypertrace.core.documentstore.Collection;
-import org.hypertrace.core.documentstore.Datastore;
-import org.hypertrace.core.documentstore.DatastoreProvider;
-import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
+import org.hypertrace.config.service.v1.*;
 import org.hypertrace.core.grpcutils.context.RequestContext;
-import org.hypertrace.core.serviceframework.IntegrationTestServerUtil;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-/** Integration test for ConfigService */
-public class ConfigServiceIntegrationTest {
-
-  private static final String RESOURCE_NAME_1 = "foo1";
-  private static final String RESOURCE_NAME_2 = "foo2";
-  private static final String RESOURCE_NAMESPACE_1 = "bar1";
-  private static final String RESOURCE_NAMESPACE_2 = "bar2";
-  private static final String TENANT_1 = "tenant1";
-  private static final String TENANT_2 = "tenant2";
-  private static final String CONTEXT_1 = "ctx1";
-  private static final String CONTEXT_2 = "ctx2";
-  private static final String DATA_STORE_COLLECTION = "configurations";
-  private static final Collection CONFIGURATIONS_COLLECTION = getConfigurationsCollection();
-
-  private static ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub;
-  private static Value config1;
-  private static Value config2;
-  private static Value config3;
-
-  @BeforeAll
-  public static void setup() throws IOException {
-    System.out.println("Starting Config Service E2E Test");
-    IntegrationTestServerUtil.startServices(new String[] {"config-service"});
-
-    Channel channel = ManagedChannelBuilder.forAddress("localhost", 50101).usePlaintext().build();
-
-    configServiceBlockingStub =
-        ConfigServiceGrpc.newBlockingStub(channel)
-            .withCallCredentials(
-                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
-
-    config1 = getConfigValue("config1.yaml");
-    config2 = getConfigValue("config2.yaml");
-    config3 = getConfigValue("config3.yaml");
-  }
-
-  @AfterAll
-  public static void teardown() {
-    IntegrationTestServerUtil.shutdownServices();
-  }
-
-  // Need to delete the collection after each test for stateless integration testing
-  @AfterEach
-  void delete() {
-    CONFIGURATIONS_COLLECTION.deleteAll();
-  }
+public class ConfigServiceIntegrationTest extends ConfigServiceIntegrationTestBase {
 
   @Test
   public void testUpsertConfig() {
@@ -338,9 +261,9 @@ public class ConfigServiceIntegrationTest {
         .call(() -> configServiceBlockingStub.upsertAllConfigs(upsertAllConfigsRequest));
   }
 
-  private ConfigToUpsert buildConfigToUpsert(
+  private UpsertAllConfigsRequest.ConfigToUpsert buildConfigToUpsert(
       String resourceName, String resourceNamespace, String context, Value config) {
-    return ConfigToUpsert.newBuilder()
+    return UpsertAllConfigsRequest.ConfigToUpsert.newBuilder()
         .setResourceName(resourceName)
         .setResourceNamespace(resourceNamespace)
         .setContext(context)
@@ -348,9 +271,9 @@ public class ConfigServiceIntegrationTest {
         .build();
   }
 
-  private ConfigToDelete buildConfigToDelete(
+  private DeleteConfigsRequest.ConfigToDelete buildConfigToDelete(
       String context, String resourceName, String resourceNamespace) {
-    return ConfigToDelete.newBuilder()
+    return DeleteConfigsRequest.ConfigToDelete.newBuilder()
         .setContext(context)
         .setResourceName(resourceName)
         .setResourceNamespace(resourceNamespace)
@@ -392,7 +315,7 @@ public class ConfigServiceIntegrationTest {
   }
 
   private DeleteConfigsResponse deleteConfigs(
-      List<ConfigToDelete> configsToDelete, String tenantId) {
+      List<DeleteConfigsRequest.ConfigToDelete> configsToDelete, String tenantId) {
     DeleteConfigsRequest deleteConfigsRequest =
         DeleteConfigsRequest.newBuilder().addAllConfigs(configsToDelete).build();
     return RequestContext.forTenantId(tenantId)
@@ -409,14 +332,5 @@ public class ConfigServiceIntegrationTest {
             .build();
     return RequestContext.forTenantId(tenantId)
         .call(() -> configServiceBlockingStub.deleteConfig(request));
-  }
-
-  private static Collection getConfigurationsCollection() {
-    Map<String, Object> configMap = new HashMap<>();
-    configMap.put("host", "localhost");
-    configMap.put("port", "37017");
-    Datastore datastore =
-        DatastoreProvider.getDatastore("mongo", ConfigFactory.parseMap(configMap));
-    return datastore.getCollection(DATA_STORE_COLLECTION);
   }
 }

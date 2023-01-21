@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package org.hypertrace.tenantisolation.config.service.v1;
+
+option java_multiple_files = true;
+
+import "org/hypertrace/tenantisolation/config/service/v1/tenant_isolation_group_config.proto";
+
+service TenantIsolationConfigService{
+  rpc GetAllTenantIsolationGroupConfigs(GetAllTenantIsolationGroupConfigsRequest) returns (GetAllTenantIsolationGroupConfigsResponse) {}
+  rpc CreateTenantIsolationGroupConfig(CreateTenantIsolationGroupConfigRequest) returns (CreateTenantIsolationGroupConfigResponse) {}
+  rpc UpdateTenantIsolationGroupConfig(UpdateTenantIsolationGroupConfigRequest) returns (UpdateTenantIsolationGroupConfigResponse) {}
+  rpc DeleteTenantIsolationGroupConfig(DeleteTenantIsolationGroupConfigRequest) returns (DeleteTenantIsolationGroupConfigResponse) {}
+}
+
+message GetAllTenantIsolationGroupConfigsRequest{
+}
+
+message GetAllTenantIsolationGroupConfigsResponse{
+  repeated TenantIsolationGroupConfig configs = 1;
+}
+
+message CreateTenantIsolationGroupConfigRequest{
+  NewTenantIsolationGroupConfig config = 1;
+}
+
+message CreateTenantIsolationGroupConfigResponse{
+  TenantIsolationGroupConfig config = 1;
+}
+
+message UpdateTenantIsolationGroupConfigRequest{
+  TenantIsolationGroupConfig config = 1;
+}
+
+message UpdateTenantIsolationGroupConfigResponse{
+  TenantIsolationGroupConfig config = 1;
+}
+
+message DeleteTenantIsolationGroupConfigRequest{
+  string group_name = 1;
+}
+
+message DeleteTenantIsolationGroupConfigResponse{
+}
