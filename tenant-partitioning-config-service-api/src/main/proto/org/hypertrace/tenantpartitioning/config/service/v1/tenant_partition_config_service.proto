@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package org.hypertrace.tenantpartitioning.config.service.v1;
+
+option java_multiple_files = true;
+
+import "org/hypertrace/tenantpartitioning/config/service/v1/tenant_partition_group_config.proto";
+
+service TenantPartitioningConfigService{
+  rpc GetTenantPartitionGroupConfigs(GetTenantPartitionGroupConfigsRequest) returns (GetTenantPartitionGroupConfigsResponse) {}
+  rpc CreateTenantPartitionGroupConfig(CreateTenantPartitionGroupConfigRequest) returns (CreateTenantPartitionGroupConfigResponse) {}
+  rpc UpdateTenantPartitionGroupConfig(UpdateTenantPartitionGroupConfigRequest) returns (UpdateTenantPartitionGroupConfigResponse) {}
+  rpc DeleteTenantPartitionGroupConfig(DeleteTenantPartitionGroupConfigRequest) returns (DeleteTenantPartitionGroupConfigResponse) {}
+}
+
+message GetTenantPartitionGroupConfigsRequest{
+}
+
+message GetTenantPartitionGroupConfigsResponse{
+  repeated TenantPartitionGroupConfig configs = 1;
+}
+
+message CreateTenantPartitionGroupConfigRequest{
+  NewTenantPartitionGroupConfig config = 1;
+}
+
+message CreateTenantPartitionGroupConfigResponse{
+  TenantPartitionGroupConfig config = 1;
+}
+
+message UpdateTenantPartitionGroupConfigRequest{
+  TenantPartitionGroupConfigForUpdate config = 1;
+}
+
+message UpdateTenantPartitionGroupConfigResponse{
+  TenantPartitionGroupConfig config = 1;
+}
+
+message DeleteTenantPartitionGroupConfigRequest{
+  string id = 1;
+}
+
+message DeleteTenantPartitionGroupConfigResponse{
+}

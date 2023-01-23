@@ -4,7 +4,7 @@ import java.util.List;
 import org.hypertrace.core.serviceframework.grpc.GrpcPlatformService;
 import org.hypertrace.core.serviceframework.grpc.GrpcPlatformServiceFactory;
 import org.hypertrace.core.serviceframework.grpc.GrpcServiceContainerEnvironment;
-import org.hypertrace.tenantisolation.config.service.TenantIsolationConfigServiceImpl;
+import org.hypertrace.tenantpartitioning.config.service.TenantPartitioningConfigServiceFactory;
 
 /**
  * This is meant to be used to construct global config services that are not tied to any tenant and
@@ -21,7 +21,7 @@ public class GlobalConfigServiceFactory implements GrpcPlatformServiceFactory {
       GrpcServiceContainerEnvironment grpcServiceContainerEnvironment) {
     return List.of(
         new GrpcPlatformService(
-            new TenantIsolationConfigServiceImpl(
+            TenantPartitioningConfigServiceFactory.build(
                 grpcServiceContainerEnvironment.getConfig(SERVICE_NAME))));
   }
 }

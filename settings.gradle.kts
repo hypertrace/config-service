@@ -50,6 +50,6 @@ include(":span-processing-config-service-impl")
 
 include(":span-processing-utils")
 
-include(":tenant-isolation-config-service-api")
-include(":tenant-isolation-config-service-impl")
+include(":tenant-partitioning-config-service-api")
+include(":tenant-partitioning-config-service-impl")
 
