@@ -2,6 +2,8 @@ package org.hypertrace.tenantpartitioning.config.service.store;
 
 import java.io.IOException;
 import java.util.*;
+
+import com.google.common.collect.ImmutableList;
 import org.hypertrace.core.documentstore.*;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.tenantpartitioning.config.service.v1.TenantPartitionGroupsConfig;
@@ -18,10 +20,7 @@ public class TenantPartitionGroupsConfigDocumentStore implements TenantPartition
   @Override
   public Optional<TenantPartitionGroupsConfig> getConfig() throws IOException {
     try (CloseableIterator<Document> it = collection.search(new Query())) {
-      List<Document> list = new ArrayList<>();
-      while (it.hasNext()) {
-        list.add(it.next());
-      }
+      List<Document> list = ImmutableList.copyOf(it);
       if (list.size() == 1) {
         return Optional.of(TenantPartitionGroupsConfigDocument.fromJson(list.get(0).toJson()));
       } else if (list.size() > 1) {
