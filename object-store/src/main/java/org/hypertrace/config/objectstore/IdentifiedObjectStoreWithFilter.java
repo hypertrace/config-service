@@ -32,7 +32,6 @@ public abstract class IdentifiedObjectStoreWithFilter<T, F> extends IdentifiedOb
   public List<T> getAllConfigData(RequestContext context, F filter) {
     return getAllObjects(context, filter).stream()
         .map(ConfigObject::getData)
-        .filter(Optional::isPresent)
         .map(Optional::get)
         .collect(Collectors.toUnmodifiableList());
   }

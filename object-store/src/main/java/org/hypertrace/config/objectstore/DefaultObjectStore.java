@@ -71,12 +71,21 @@ public abstract class DefaultObjectStore<T> {
                           .setResourceNamespace(this.resourceNamespace)
                           .build()));
 
-      return Optional.of(
+      ConfigObject<T> tConfigObject =
           ConfigObjectImpl.tryBuild(
               getConfigResponse.getConfig(),
               getConfigResponse.getCreationTimestamp(),
               getConfigResponse.getUpdateTimestamp(),
-              this::buildDataFromValue));
+              this::buildDataFromValue);
+      if (tConfigObject.getData().isEmpty()) {
+        throw Status.INTERNAL
+            .withDescription(
+                "Could not convert config "
+                    + getConfigResponse.getConfig()
+                    + " into corresponding proto")
+            .asRuntimeException(context.buildTrailers());
+      }
+      return Optional.of(tConfigObject);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
         return Optional.empty();
@@ -119,10 +128,15 @@ public abstract class DefaultObjectStore<T> {
                         .build()));
 
     ConfigObject<T> upsertedObject = ConfigObjectImpl.tryBuild(response, this::buildDataFromValue);
+    if (upsertedObject.getData().isEmpty()) {
+      throw Status.INTERNAL
+          .withDescription("Could not convert upserted config into corresponding proto")
+          .asRuntimeException(context.buildTrailers());
+    }
 
     configChangeEventGeneratorOptional.ifPresent(
         configChangeEventGenerator -> {
-          if (response.hasPrevConfig() && upsertedObject.getData().isPresent()) {
+          if (response.hasPrevConfig()) {
             configChangeEventGenerator.sendUpdateNotification(
                 context,
                 this.buildClassNameForChangeEvent(upsertedObject.getData().get()),
@@ -136,7 +150,7 @@ public abstract class DefaultObjectStore<T> {
                           return response.getPrevConfig();
                         }),
                 this.buildValueForChangeEvent(upsertedObject.getData().get()));
-          } else if (upsertedObject.getData().isPresent()) {
+          } else {
             configChangeEventGenerator.sendCreateNotification(
                 context,
                 this.buildClassNameForChangeEvent(upsertedObject.getData().get()),

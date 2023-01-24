@@ -158,7 +158,8 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     if (!newLabels.isEmpty()) {
       createdLabelsMap =
           labelStore.upsertObjects(requestContext, newLabels).stream()
-              .map(labelContextualConfigObject -> labelContextualConfigObject.getData().get())
+              .map(org.hypertrace.config.objectstore.ConfigObject::getData)
+              .map(Optional::get)
               .collect(Collectors.toUnmodifiableMap(label -> label.getData().getKey(), identity()));
     } else {
       createdLabelsMap = Collections.emptyMap();
@@ -287,7 +288,8 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
   private Map<String, Label> getLabelsMap(RequestContext requestContext) {
     Map<String, Label> existingLabelsMap = new HashMap<>(systemLabelsKeyLabelMap);
     labelStore.getAllObjects(requestContext).stream()
-        .map(labelContextualConfigObject -> labelContextualConfigObject.getData().get())
+        .map(ContextualConfigObject::getData)
+        .map(Optional::get)
         .forEach(label -> existingLabelsMap.put(label.getData().getKey(), label));
     return Collections.unmodifiableMap(existingLabelsMap);
   }
