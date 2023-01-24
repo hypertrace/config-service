@@ -1,7 +1,6 @@
 package org.hypertrace.tenantpartitioning.config.service;
 
 import com.google.inject.Inject;
-import com.typesafe.config.Config;
 import io.grpc.stub.StreamObserver;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +16,6 @@ public class TenantPartitioningConfigServiceImpl
 
   @Inject
   public TenantPartitioningConfigServiceImpl(
-      Config config,
       TenantPartitionGroupsConfigStore tenantIsolationConfigStore,
       TenantPartitioningConfigServiceRequestValidator validator) {
     this.tenantIsolationConfigStore = tenantIsolationConfigStore;

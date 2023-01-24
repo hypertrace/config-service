@@ -6,20 +6,12 @@ plugins {
 
 dependencies {
   api(projects.tenantPartitioningConfigServiceApi)
-  implementation(projects.configServiceApi)
-  implementation(projects.objectStore)
-  implementation(projects.validationUtils)
-  implementation(projects.configProtoConverter)
   implementation(libs.protobuf.javautil)
-  implementation(libs.hypertrace.grpcutils.context)
-  implementation(libs.hypertrace.grpcutils.client)
 
   implementation(libs.guice)
-  implementation(libs.guava)
   implementation(libs.slf4j.api)
   implementation(libs.typesafe.config)
   implementation(libs.hypertrace.documentstore)
-  implementation(libs.jackson.databind)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
