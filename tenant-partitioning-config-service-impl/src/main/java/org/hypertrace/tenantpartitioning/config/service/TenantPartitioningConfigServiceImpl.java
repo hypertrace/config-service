@@ -5,7 +5,12 @@ import io.grpc.stub.StreamObserver;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.tenantpartitioning.config.service.store.TenantPartitionGroupsConfigStore;
-import org.hypertrace.tenantpartitioning.config.service.v1.*;
+import org.hypertrace.tenantpartitioning.config.service.v1.GetTenantPartitionGroupsConfigRequest;
+import org.hypertrace.tenantpartitioning.config.service.v1.GetTenantPartitionGroupsConfigResponse;
+import org.hypertrace.tenantpartitioning.config.service.v1.PutTenantPartitionGroupsConfigRequest;
+import org.hypertrace.tenantpartitioning.config.service.v1.PutTenantPartitionGroupsConfigResponse;
+import org.hypertrace.tenantpartitioning.config.service.v1.TenantPartitionGroupsConfig;
+import org.hypertrace.tenantpartitioning.config.service.v1.TenantPartitioningConfigServiceGrpc;
 
 @Slf4j
 public class TenantPartitioningConfigServiceImpl
@@ -56,22 +61,6 @@ public class TenantPartitioningConfigServiceImpl
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("putTenantPartitionGroupsConfig failed for request {} with error ", request, e);
-      responseObserver.onError(e);
-    }
-  }
-
-  /** */
-  public void deleteTenantPartitionGroupsConfig(
-      DeleteTenantPartitionGroupsConfigRequest request,
-      StreamObserver<DeleteTenantPartitionGroupsConfigResponse> responseObserver) {
-
-    try {
-      validator.validateOrThrow(request);
-      this.tenantIsolationConfigStore.deleteConfig();
-      responseObserver.onNext(DeleteTenantPartitionGroupsConfigResponse.newBuilder().build());
-      responseObserver.onCompleted();
-    } catch (Exception e) {
-      log.error("deleteTenantPartitionGroupsConfig failed with error ", e);
       responseObserver.onError(e);
     }
   }

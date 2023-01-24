@@ -1,26 +1,31 @@
 package org.hypertrace.tenantpartitioning.config.service.store;
 
 import java.io.IOException;
-import java.util.Optional;
+import java.util.*;
 import org.hypertrace.core.documentstore.*;
+import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.tenantpartitioning.config.service.v1.TenantPartitionGroupsConfig;
 
 public class TenantPartitionGroupsConfigDocumentStore implements TenantPartitionGroupsConfigStore {
-  public static final String TENANT_ISOLATION_CONFIG_COLLECTION = "tenant_isolation_config";
-  private static final String ID_FIELD_NAME = "id";
+  public static final String TENANT_PARTITION_GROUPS_CONFIG = "tenant_partition_groups_config";
 
   private final Collection collection;
 
   public TenantPartitionGroupsConfigDocumentStore(Datastore datastore) {
-    this.collection = datastore.getCollection(TENANT_ISOLATION_CONFIG_COLLECTION);
+    this.collection = datastore.getCollection(TENANT_PARTITION_GROUPS_CONFIG);
   }
 
   @Override
   public Optional<TenantPartitionGroupsConfig> getConfig() throws IOException {
     try (CloseableIterator<Document> it = collection.search(new Query())) {
-      if (it.hasNext()) {
-        String json = it.next().toJson();
-        return Optional.of(TenantPartitionGroupsConfigDocument.fromJson(json));
+      List<Document> list = new ArrayList<>();
+      while (it.hasNext()) {
+        list.add(it.next());
+      }
+      if (list.size() == 1) {
+        return Optional.of(TenantPartitionGroupsConfigDocument.fromJson(list.get(0).toJson()));
+      } else if (list.size() > 1) {
+        throw new IllegalStateException("More than 1 TenantPartitionGroupsConfig returned");
       }
     }
     return Optional.empty();
@@ -33,10 +38,5 @@ public class TenantPartitionGroupsConfigDocumentStore implements TenantPartition
         this.collection.upsertAndReturn(
             new TenantPartitionGroupsConfigKey(), new TenantPartitionGroupsConfigDocument(config));
     return TenantPartitionGroupsConfigDocument.fromJson(upsertedDoc.toJson());
-  }
-
-  @Override
-  public void deleteConfig() {
-    this.collection.deleteAll();
   }
 }

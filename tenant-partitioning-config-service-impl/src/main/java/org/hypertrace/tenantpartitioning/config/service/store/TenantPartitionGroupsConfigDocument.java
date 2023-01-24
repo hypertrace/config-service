@@ -12,8 +12,8 @@ public class TenantPartitionGroupsConfigDocument implements Document {
   private final TenantPartitionGroupsConfig config;
 
   public TenantPartitionGroupsConfigDocument(
-      TenantPartitionGroupsConfig tenantIsolationGroupConfig) {
-    this.config = tenantIsolationGroupConfig;
+      TenantPartitionGroupsConfig tenantPartitionGroupsConfig) {
+    this.config = tenantPartitionGroupsConfig;
   }
 
   public static TenantPartitionGroupsConfig fromJson(String json) {
@@ -23,7 +23,7 @@ public class TenantPartitionGroupsConfigDocument implements Document {
       return builder.build();
     } catch (Exception e) {
       throw new RuntimeException(
-          "Error in converting json string to TenantIsolationGroupsConfig object", e);
+          "Error in converting json string to TenantPartitionGroupsConfig object", e);
     }
   }
 
@@ -33,7 +33,7 @@ public class TenantPartitionGroupsConfigDocument implements Document {
       return JSON_PRINTER.print(config);
     } catch (Exception e) {
       throw new RuntimeException(
-          "Error in converting TenantIsolationGroupsConfig document to json", e);
+          "Error in converting TenantPartitionGroupsConfig document to json", e);
     }
   }
 }

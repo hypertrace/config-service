@@ -9,6 +9,4 @@ public interface TenantPartitionGroupsConfigStore {
   Optional<TenantPartitionGroupsConfig> getConfig() throws IOException;
 
   TenantPartitionGroupsConfig putConfig(TenantPartitionGroupsConfig config) throws IOException;
-
-  void deleteConfig();
 }

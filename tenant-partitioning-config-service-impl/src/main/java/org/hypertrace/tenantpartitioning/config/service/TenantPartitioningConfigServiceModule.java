@@ -22,7 +22,6 @@ public class TenantPartitioningConfigServiceModule extends AbstractModule {
 
   @Override
   protected void configure() {
-    bind(Config.class).toInstance(this.config);
     bind(BindableService.class).to(TenantPartitioningConfigServiceImpl.class);
     bind(TenantPartitionGroupsConfigStore.class)
         .toInstance(getDocumentStore(config.getConfig(GENERIC_CONFIG_SERVICE)));

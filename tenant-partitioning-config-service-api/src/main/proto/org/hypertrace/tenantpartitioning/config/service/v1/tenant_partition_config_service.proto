@@ -10,8 +10,6 @@ service TenantPartitioningConfigService {
   rpc GetTenantPartitionGroupsConfig(GetTenantPartitionGroupsConfigRequest) returns (GetTenantPartitionGroupsConfigResponse) {}
 
   rpc PutTenantPartitionGroupsConfig(PutTenantPartitionGroupsConfigRequest) returns (PutTenantPartitionGroupsConfigResponse) {}
-
-  rpc DeleteTenantPartitionGroupsConfig(DeleteTenantPartitionGroupsConfigRequest) returns (DeleteTenantPartitionGroupsConfigResponse) {}
 }
 
 message GetTenantPartitionGroupsConfigRequest {
@@ -27,10 +25,4 @@ message PutTenantPartitionGroupsConfigRequest {
 
 message PutTenantPartitionGroupsConfigResponse {
   TenantPartitionGroupsConfig config = 1;
-}
-
-message DeleteTenantPartitionGroupsConfigRequest {
-}
-
-message DeleteTenantPartitionGroupsConfigResponse {
 }
