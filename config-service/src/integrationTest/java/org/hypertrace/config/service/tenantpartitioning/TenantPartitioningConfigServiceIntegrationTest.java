@@ -1,7 +1,6 @@
 package org.hypertrace.config.service.tenantpartitioning;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.typesafe.config.ConfigFactory;
 import io.grpc.ManagedChannel;
@@ -16,20 +15,15 @@ import org.hypertrace.core.documentstore.DatastoreProvider;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.serviceframework.IntegrationTestServerUtil;
-import org.hypertrace.tenantpartitioning.config.service.store.TenantPartitionConfigDocumentStore;
-import org.hypertrace.tenantpartitioning.config.service.store.TenantPartitionGroupConfigKey;
-import org.hypertrace.tenantpartitioning.config.service.v1.CreateTenantPartitionGroupConfigRequest;
-import org.hypertrace.tenantpartitioning.config.service.v1.CreateTenantPartitionGroupConfigResponse;
-import org.hypertrace.tenantpartitioning.config.service.v1.DeleteTenantPartitionGroupConfigRequest;
-import org.hypertrace.tenantpartitioning.config.service.v1.DeleteTenantPartitionGroupConfigResponse;
-import org.hypertrace.tenantpartitioning.config.service.v1.GetTenantPartitionGroupConfigsRequest;
-import org.hypertrace.tenantpartitioning.config.service.v1.GetTenantPartitionGroupConfigsResponse;
-import org.hypertrace.tenantpartitioning.config.service.v1.NewTenantPartitionGroupConfig;
+import org.hypertrace.tenantpartitioning.config.service.store.TenantPartitionGroupsConfigDocumentStore;
+import org.hypertrace.tenantpartitioning.config.service.v1.DeleteTenantPartitionGroupsConfigRequest;
+import org.hypertrace.tenantpartitioning.config.service.v1.GetTenantPartitionGroupsConfigRequest;
+import org.hypertrace.tenantpartitioning.config.service.v1.GetTenantPartitionGroupsConfigResponse;
+import org.hypertrace.tenantpartitioning.config.service.v1.PutTenantPartitionGroupsConfigRequest;
+import org.hypertrace.tenantpartitioning.config.service.v1.PutTenantPartitionGroupsConfigResponse;
 import org.hypertrace.tenantpartitioning.config.service.v1.TenantPartitionGroupConfig;
-import org.hypertrace.tenantpartitioning.config.service.v1.TenantPartitionGroupConfigForUpdate;
+import org.hypertrace.tenantpartitioning.config.service.v1.TenantPartitionGroupsConfig;
 import org.hypertrace.tenantpartitioning.config.service.v1.TenantPartitioningConfigServiceGrpc;
-import org.hypertrace.tenantpartitioning.config.service.v1.UpdateTenantPartitionGroupConfigRequest;
-import org.hypertrace.tenantpartitioning.config.service.v1.UpdateTenantPartitionGroupConfigResponse;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -72,18 +66,28 @@ public class TenantPartitioningConfigServiceIntegrationTest {
     GrpcClientRequestContextUtil.executeWithHeadersContext(
         Collections.emptyMap(),
         () -> {
-          CreateTenantPartitionGroupConfigRequest request =
-              CreateTenantPartitionGroupConfigRequest.newBuilder()
+          PutTenantPartitionGroupsConfigRequest request =
+              PutTenantPartitionGroupsConfigRequest.newBuilder()
                   .setConfig(
-                      NewTenantPartitionGroupConfig.newBuilder()
-                          .setGroupName("group1")
-                          .setWeight(20)
-                          .addAllMemberTenantIds(List.of("tenant1", "tenant2"))
+                      TenantPartitionGroupsConfig.newBuilder()
+                          .addConfigs(
+                              TenantPartitionGroupConfig.newBuilder()
+                                  .setGroupName("group1")
+                                  .setWeight(20)
+                                  .addAllMemberTenantIds(List.of("tenant1", "tenant2"))
+                                  .build())
+                          .addConfigs(
+                              TenantPartitionGroupConfig.newBuilder()
+                                  .setGroupName("group2")
+                                  .setWeight(40)
+                                  .addAllMemberTenantIds(List.of("tenant3", "tenant4"))
+                                  .build())
                           .build())
                   .build();
-          CreateTenantPartitionGroupConfigResponse response =
-              tenantPartitionConfigServiceBlockingStub.createTenantPartitionGroupConfig(request);
-          assertEquals("group1", response.getConfig().getGroupName());
+
+          PutTenantPartitionGroupsConfigResponse response =
+              tenantPartitionConfigServiceBlockingStub.putTenantPartitionGroupsConfig(request);
+          assertEquals(2, response.getConfig().getConfigsCount());
         });
   }
 
@@ -109,70 +113,131 @@ public class TenantPartitioningConfigServiceIntegrationTest {
             .addAllMemberTenantIds(List.of("tenant5", "tenant6"))
             .build();
 
-    insertConfig(group1);
-    insertConfig(group2);
-    insertConfig(group3);
+    insertConfig(
+        TenantPartitionGroupsConfig.newBuilder()
+            .addConfigs(group1)
+            .addConfigs(group2)
+            .addConfigs(group3)
+            .build());
 
     GrpcClientRequestContextUtil.executeWithHeadersContext(
         Collections.emptyMap(),
         () -> {
-          GetTenantPartitionGroupConfigsResponse response =
-              tenantPartitionConfigServiceBlockingStub.getTenantPartitionGroupConfigs(
-                  GetTenantPartitionGroupConfigsRequest.newBuilder().build());
-          assertEquals(3, response.getConfigsList().size());
+          GetTenantPartitionGroupsConfigResponse response =
+              tenantPartitionConfigServiceBlockingStub.getTenantPartitionGroupsConfig(
+                  GetTenantPartitionGroupsConfigRequest.newBuilder().build());
+          assertEquals(3, response.getConfig().getConfigsCount());
         });
   }
 
   @Test
-  public void whenDeleteAConfig_thenExpectAllButThisOneToBeReturned() {
-
+  public void whenMultiplePuts_thenExpectTheLatest() {
     TenantPartitionGroupConfig group1 =
         TenantPartitionGroupConfig.newBuilder()
-            .setId(new TenantPartitionGroupConfigKey("group1").toString())
             .setGroupName("group1")
             .setWeight(20)
             .addAllMemberTenantIds(List.of("tenant1", "tenant2"))
             .build();
     TenantPartitionGroupConfig group2 =
         TenantPartitionGroupConfig.newBuilder()
-            .setId(new TenantPartitionGroupConfigKey("group2").toString())
             .setGroupName("group2")
             .setWeight(40)
             .addAllMemberTenantIds(List.of("tenant3", "tenant4"))
             .build();
     TenantPartitionGroupConfig group3 =
         TenantPartitionGroupConfig.newBuilder()
-            .setId(new TenantPartitionGroupConfigKey("group3").toString())
             .setGroupName("group3")
             .setWeight(40)
             .addAllMemberTenantIds(List.of("tenant5", "tenant6"))
             .build();
 
-    insertConfig(group1);
-    insertConfig(group2);
-    insertConfig(group3);
+    insertConfig(
+        TenantPartitionGroupsConfig.newBuilder()
+            .addConfigs(group1)
+            .addConfigs(group2)
+            .addConfigs(group3)
+            .build());
+
+    TenantPartitionGroupConfig group4 =
+        TenantPartitionGroupConfig.newBuilder()
+            .setGroupName("group1")
+            .setWeight(20)
+            .addAllMemberTenantIds(List.of("tenant1", "tenant2"))
+            .build();
+    TenantPartitionGroupConfig group5 =
+        TenantPartitionGroupConfig.newBuilder()
+            .setGroupName("group2")
+            .setWeight(40)
+            .addAllMemberTenantIds(List.of("tenant3", "tenant4"))
+            .build();
+    TenantPartitionGroupConfig group6 =
+        TenantPartitionGroupConfig.newBuilder()
+            .setGroupName("group3")
+            .setWeight(40)
+            .addAllMemberTenantIds(List.of("tenant5", "tenant6"))
+            .build();
+
+    insertConfig(
+        TenantPartitionGroupsConfig.newBuilder()
+            .addConfigs(group4)
+            .addConfigs(group5)
+            .addConfigs(group6)
+            .build());
 
     GrpcClientRequestContextUtil.executeWithHeadersContext(
         Collections.emptyMap(),
         () -> {
-          DeleteTenantPartitionGroupConfigResponse response =
-              tenantPartitionConfigServiceBlockingStub.deleteTenantPartitionGroupConfig(
-                  DeleteTenantPartitionGroupConfigRequest.newBuilder()
-                      .setId(group2.getId())
-                      .build());
+          GetTenantPartitionGroupsConfigResponse response =
+              tenantPartitionConfigServiceBlockingStub.getTenantPartitionGroupsConfig(
+                  GetTenantPartitionGroupsConfigRequest.newBuilder().build());
+          assertEquals(3, response.getConfig().getConfigsCount());
+          assertEquals(List.of(group4, group5, group6), response.getConfig().getConfigsList());
+        });
+  }
+
+  @Test
+  public void whenDeleteConfig_thenExpectAllToBeDeleted() {
+
+    TenantPartitionGroupConfig group1 =
+        TenantPartitionGroupConfig.newBuilder()
+            .setGroupName("group1")
+            .setWeight(20)
+            .addAllMemberTenantIds(List.of("tenant1", "tenant2"))
+            .build();
+    TenantPartitionGroupConfig group2 =
+        TenantPartitionGroupConfig.newBuilder()
+            .setGroupName("group2")
+            .setWeight(40)
+            .addAllMemberTenantIds(List.of("tenant3", "tenant4"))
+            .build();
+    TenantPartitionGroupConfig group3 =
+        TenantPartitionGroupConfig.newBuilder()
+            .setGroupName("group3")
+            .setWeight(40)
+            .addAllMemberTenantIds(List.of("tenant5", "tenant6"))
+            .build();
+
+    insertConfig(
+        TenantPartitionGroupsConfig.newBuilder()
+            .addConfigs(group1)
+            .addConfigs(group2)
+            .addConfigs(group3)
+            .build());
+
+    GrpcClientRequestContextUtil.executeWithHeadersContext(
+        Collections.emptyMap(),
+        () -> {
+          tenantPartitionConfigServiceBlockingStub.deleteTenantPartitionGroupsConfig(
+              DeleteTenantPartitionGroupsConfigRequest.newBuilder().build());
         });
 
     GrpcClientRequestContextUtil.executeWithHeadersContext(
         Collections.emptyMap(),
         () -> {
-          GetTenantPartitionGroupConfigsResponse response =
-              tenantPartitionConfigServiceBlockingStub.getTenantPartitionGroupConfigs(
-                  GetTenantPartitionGroupConfigsRequest.newBuilder().build());
-          assertEquals(2, response.getConfigsList().size());
-          assertFalse(
-              response.getConfigsList().stream()
-                  .anyMatch(
-                      tenantPartitionGroupConfig -> tenantPartitionGroupConfig.equals("group2")));
+          GetTenantPartitionGroupsConfigResponse response =
+              tenantPartitionConfigServiceBlockingStub.getTenantPartitionGroupsConfig(
+                  GetTenantPartitionGroupsConfigRequest.newBuilder().build());
+          assertEquals(0, response.getConfig().getConfigsCount());
         });
   }
 
@@ -192,43 +257,32 @@ public class TenantPartitioningConfigServiceIntegrationTest {
             .addAllMemberTenantIds(List.of("tenant1", "tenant4"))
             .build();
 
-    insertConfig(group1);
+    insertConfig(TenantPartitionGroupsConfig.newBuilder().addConfigs(group1).build());
 
     GrpcClientRequestContextUtil.executeWithHeadersContext(
         Collections.emptyMap(),
         () -> {
-          UpdateTenantPartitionGroupConfigRequest request =
-              UpdateTenantPartitionGroupConfigRequest.newBuilder()
-                  .setConfig(
-                      TenantPartitionGroupConfigForUpdate.newBuilder()
-                          .setWeight(expected.getWeight())
-                          .addAllMemberTenantIds(expected.getMemberTenantIdsList())
-                          .build())
-                  .build();
-          UpdateTenantPartitionGroupConfigResponse response =
-              tenantPartitionConfigServiceBlockingStub.updateTenantPartitionGroupConfig(request);
+          PutTenantPartitionGroupsConfigResponse response =
+              tenantPartitionConfigServiceBlockingStub.putTenantPartitionGroupsConfig(
+                  PutTenantPartitionGroupsConfigRequest.newBuilder()
+                      .setConfig(
+                          TenantPartitionGroupsConfig.newBuilder().addConfigs(expected).build())
+                      .build());
 
-          assertEquals(expected.getWeight(), response.getConfig().getWeight());
+          assertEquals(expected.getWeight(), response.getConfig().getConfigs(0).getWeight());
           assertEquals(
-              expected.getMemberTenantIdsList(), response.getConfig().getMemberTenantIdsList());
+              expected.getMemberTenantIdsList(),
+              response.getConfig().getConfigs(0).getMemberTenantIdsList());
         });
   }
 
-  private void insertConfig(TenantPartitionGroupConfig config) {
+  private void insertConfig(TenantPartitionGroupsConfig config) {
     GrpcClientRequestContextUtil.executeWithHeadersContext(
         Collections.emptyMap(),
         () -> {
-          CreateTenantPartitionGroupConfigRequest request =
-              CreateTenantPartitionGroupConfigRequest.newBuilder()
-                  .setConfig(
-                      NewTenantPartitionGroupConfig.newBuilder()
-                          .setGroupName(config.getGroupName())
-                          .setWeight(config.getWeight())
-                          .addAllMemberTenantIds(config.getMemberTenantIdsList())
-                          .build())
-                  .build();
-          CreateTenantPartitionGroupConfigResponse response =
-              tenantPartitionConfigServiceBlockingStub.createTenantPartitionGroupConfig(request);
+          PutTenantPartitionGroupsConfigRequest request =
+              PutTenantPartitionGroupsConfigRequest.newBuilder().setConfig(config).build();
+          tenantPartitionConfigServiceBlockingStub.putTenantPartitionGroupsConfig(request);
         });
   }
 
@@ -239,6 +293,6 @@ public class TenantPartitioningConfigServiceIntegrationTest {
     Datastore datastore =
         DatastoreProvider.getDatastore("mongo", ConfigFactory.parseMap(configMap));
     return datastore.getCollection(
-        TenantPartitionConfigDocumentStore.TENANT_ISOLATION_CONFIG_COLLECTION);
+        TenantPartitionGroupsConfigDocumentStore.TENANT_ISOLATION_CONFIG_COLLECTION);
   }
 }

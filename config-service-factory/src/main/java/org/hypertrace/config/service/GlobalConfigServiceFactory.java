@@ -13,8 +13,7 @@ import org.hypertrace.tenantpartitioning.config.service.TenantPartitioningConfig
  */
 public class GlobalConfigServiceFactory implements GrpcPlatformServiceFactory {
   private static final String SERVICE_NAME = "config-service";
-  public static final String GLOBAL_CONFIG_SERVICE_INTERNAL_PORT_CONFIG =
-      "global.config.service.port.internal";
+  public static final String GLOBAL_CONFIG_SERVICE_PORT_CONFIG = "global.config.service.port";
 
   @Override
   public List<GrpcPlatformService> buildServices(

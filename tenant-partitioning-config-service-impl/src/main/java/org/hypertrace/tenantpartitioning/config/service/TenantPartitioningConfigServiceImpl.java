@@ -3,137 +3,72 @@ package org.hypertrace.tenantpartitioning.config.service;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import io.grpc.stub.StreamObserver;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.tenantpartitioning.config.service.store.TenantPartitionConfigStore;
-import org.hypertrace.tenantpartitioning.config.service.store.TenantPartitionGroupConfigKey;
+import org.hypertrace.tenantpartitioning.config.service.store.TenantPartitionGroupsConfigStore;
 import org.hypertrace.tenantpartitioning.config.service.v1.*;
 
 @Slf4j
 public class TenantPartitioningConfigServiceImpl
     extends TenantPartitioningConfigServiceGrpc.TenantPartitioningConfigServiceImplBase {
 
-  public static final String GENERIC_CONFIG_SERVICE = "generic.config.service";
-
-  private final TenantPartitionConfigStore tenantIsolationConfigStore;
+  private final TenantPartitionGroupsConfigStore tenantIsolationConfigStore;
   private final TenantPartitioningConfigServiceRequestValidator validator;
 
   @Inject
   public TenantPartitioningConfigServiceImpl(
       Config config,
-      TenantPartitionConfigStore tenantIsolationConfigStore,
+      TenantPartitionGroupsConfigStore tenantIsolationConfigStore,
       TenantPartitioningConfigServiceRequestValidator validator) {
     this.tenantIsolationConfigStore = tenantIsolationConfigStore;
     this.validator = validator;
-    Config cfg = config.getConfig(GENERIC_CONFIG_SERVICE);
-    // this.tenantIsolationConfigStore = TenantPartitionConfigStoreProvider.getDocumentStore(cfg);
   }
 
-  public void getTenantPartitionGroupConfigs(
-      GetTenantPartitionGroupConfigsRequest request,
-      StreamObserver<GetTenantPartitionGroupConfigsResponse> responseObserver) {
+  public void getTenantPartitionGroupsConfig(
+      GetTenantPartitionGroupsConfigRequest request,
+      StreamObserver<GetTenantPartitionGroupsConfigResponse> responseObserver) {
     try {
-      validator.validateOrThrow(request);
-      List<TenantPartitionGroupConfig> configDTOs = tenantIsolationConfigStore.getAllGroupConfigs();
-      List<TenantPartitionGroupConfig> configs =
-          configDTOs.stream()
-              .map(
-                  TenantPartitionGroupConfigDTO ->
-                      TenantPartitionGroupConfig.newBuilder()
-                          .setGroupName(TenantPartitionGroupConfigDTO.getGroupName())
-                          .setWeight(TenantPartitionGroupConfigDTO.getWeight())
-                          .addAllMemberTenantIds(
-                              TenantPartitionGroupConfigDTO.getMemberTenantIdsList())
-                          .build())
-              .collect(Collectors.toList());
-
-      responseObserver.onNext(
-          GetTenantPartitionGroupConfigsResponse.newBuilder().addAllConfigs(configs).build());
+      Optional<TenantPartitionGroupsConfig> config = tenantIsolationConfigStore.getConfig();
+      if (config.isPresent()) {
+        responseObserver.onNext(
+            GetTenantPartitionGroupsConfigResponse.newBuilder().setConfig(config.get()).build());
+      } else {
+        responseObserver.onNext(GetTenantPartitionGroupsConfigResponse.newBuilder().build());
+      }
       responseObserver.onCompleted();
     } catch (Exception e) {
-      log.error("getAllTenantPartitionGroupConfigs failed ", e);
+      log.error("getTenantPartitionGroupsConfig failed with error ", e);
       responseObserver.onError(e);
     }
   }
 
-  public void createTenantPartitionGroupConfig(
-      CreateTenantPartitionGroupConfigRequest request,
-      StreamObserver<CreateTenantPartitionGroupConfigResponse> responseObserver) {
+  /** */
+  public void putTenantPartitionGroupsConfig(
+      PutTenantPartitionGroupsConfigRequest request,
+      StreamObserver<PutTenantPartitionGroupsConfigResponse> responseObserver) {
+
     try {
-      validator.validateOrThrow(request);
-      TenantPartitionGroupConfig upsertedConfigDTO =
-          tenantIsolationConfigStore.upsert(
-              TenantPartitionGroupConfig.newBuilder()
-                  .setId(
-                      new TenantPartitionGroupConfigKey(request.getConfig().getGroupName())
-                          .toString())
-                  .setGroupName(request.getConfig().getGroupName())
-                  .setWeight(request.getConfig().getWeight())
-                  .addAllMemberTenantIds(request.getConfig().getMemberTenantIdsList())
-                  .build());
+      TenantPartitionGroupsConfig config =
+          this.tenantIsolationConfigStore.putConfig(request.getConfig());
       responseObserver.onNext(
-          CreateTenantPartitionGroupConfigResponse.newBuilder()
-              .setConfig(
-                  TenantPartitionGroupConfig.newBuilder()
-                      .setGroupName(upsertedConfigDTO.getGroupName())
-                      .setWeight(upsertedConfigDTO.getWeight())
-                      .addAllMemberTenantIds(upsertedConfigDTO.getMemberTenantIdsList())
-                      .build())
-              .build());
+          PutTenantPartitionGroupsConfigResponse.newBuilder().setConfig(config).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
-      log.error(
-          String.format(
-              "createTenantPartitionGroupConfig failed for request {%s} with error ", request),
-          e);
+      log.error("putTenantPartitionGroupsConfig failed for request {} with error ", request, e);
       responseObserver.onError(e);
     }
   }
 
-  public void updateTenantPartitionGroupConfig(
-      UpdateTenantPartitionGroupConfigRequest request,
-      StreamObserver<UpdateTenantPartitionGroupConfigResponse> responseObserver) {
+  /** */
+  public void deleteTenantPartitionGroupsConfig(
+      DeleteTenantPartitionGroupsConfigRequest request,
+      StreamObserver<DeleteTenantPartitionGroupsConfigResponse> responseObserver) {
     try {
-      validator.validateOrThrow(request);
-      TenantPartitionGroupConfig upsertedConfigDTO =
-          tenantIsolationConfigStore.upsert(
-              TenantPartitionGroupConfig.newBuilder()
-                  .addAllMemberTenantIds(request.getConfig().getMemberTenantIdsList())
-                  .setWeight(request.getConfig().getWeight())
-                  .build());
-      responseObserver.onNext(
-          UpdateTenantPartitionGroupConfigResponse.newBuilder()
-              .setConfig(
-                  TenantPartitionGroupConfig.newBuilder()
-                      .setGroupName(upsertedConfigDTO.getGroupName())
-                      .setWeight(upsertedConfigDTO.getWeight())
-                      .addAllMemberTenantIds(upsertedConfigDTO.getMemberTenantIdsList())
-                      .build())
-              .build());
+      this.tenantIsolationConfigStore.deleteConfig();
+      responseObserver.onNext(DeleteTenantPartitionGroupsConfigResponse.newBuilder().build());
       responseObserver.onCompleted();
     } catch (Exception e) {
-      log.error(
-          String.format(
-              "updateTenantPartitionGroupConfig failed for request {%s} with error ", request),
-          e);
-      responseObserver.onError(e);
-    }
-  }
-
-  public void deleteTenantPartitionGroupConfig(
-      DeleteTenantPartitionGroupConfigRequest request,
-      StreamObserver<DeleteTenantPartitionGroupConfigResponse> responseObserver) {
-    try {
-      validator.validateOrThrow(request);
-      tenantIsolationConfigStore.delete(request.getId());
-      responseObserver.onNext(DeleteTenantPartitionGroupConfigResponse.newBuilder().build());
-      responseObserver.onCompleted();
-    } catch (Exception e) {
-      log.error(
-          String.format(
-              "deleteTenantPartitionGroupConfig failed for request {%s} with error ", request),
-          e);
+      log.error("deleteTenantPartitionGroupsConfig failed with error ", e);
       responseObserver.onError(e);
     }
   }

@@ -37,8 +37,7 @@ public class ConfigService extends StandAloneGrpcPlatformServiceContainer {
         GrpcPlatformServerDefinition.builder()
             .name("networked-internal-global-config-service")
             .port(
-                getAppConfig()
-                    .getInt(GlobalConfigServiceFactory.GLOBAL_CONFIG_SERVICE_INTERNAL_PORT_CONFIG))
+                getAppConfig().getInt(GlobalConfigServiceFactory.GLOBAL_CONFIG_SERVICE_PORT_CONFIG))
             .serviceFactory(globalConfigServiceFactory)
             .build());
   }

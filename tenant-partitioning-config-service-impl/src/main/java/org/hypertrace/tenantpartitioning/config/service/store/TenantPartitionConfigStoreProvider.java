@@ -10,11 +10,11 @@ public class TenantPartitionConfigStoreProvider {
 
   private TenantPartitionConfigStoreProvider() {}
 
-  public static TenantPartitionConfigDocumentStore getDocumentStore(Config config) {
+  public static TenantPartitionGroupsConfigDocumentStore getDocumentStore(Config config) {
     Config docStoreConfig = config.getConfig(DOC_STORE_CONFIG_KEY);
     String dataStoreType = docStoreConfig.getString(DATA_STORE_TYPE);
     Config dataStoreConfig = docStoreConfig.getConfig(dataStoreType);
     Datastore datastore = DatastoreProvider.getDatastore(dataStoreType, dataStoreConfig);
-    return new TenantPartitionConfigDocumentStore(datastore);
+    return new TenantPartitionGroupsConfigDocumentStore(datastore);
   }
 }
