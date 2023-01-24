@@ -11,11 +11,4 @@ public interface TenantPartitionGroupsConfigStore {
   TenantPartitionGroupsConfig putConfig(TenantPartitionGroupsConfig config) throws IOException;
 
   void deleteConfig();
-
-  //  TenantPartitionGroupConfig upsert(TenantPartitionGroupConfig tenantIsolationGroupConfig)
-  //      throws IOException;
-  //
-  //  boolean delete(String id);
-  //
-  //  List<TenantPartitionGroupConfig> getAllGroupConfigs() throws IOException;
 }
