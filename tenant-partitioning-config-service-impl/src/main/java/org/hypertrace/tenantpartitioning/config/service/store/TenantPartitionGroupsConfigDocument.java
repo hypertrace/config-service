@@ -23,7 +23,7 @@ public class TenantPartitionGroupsConfigDocument implements Document {
       return builder.build();
     } catch (Exception e) {
       throw new RuntimeException(
-          "Error in converting json string to TenantIsolationGroupConfig object", e);
+          "Error in converting json string to TenantIsolationGroupsConfig object", e);
     }
   }
 
@@ -33,7 +33,7 @@ public class TenantPartitionGroupsConfigDocument implements Document {
       return JSON_PRINTER.print(config);
     } catch (Exception e) {
       throw new RuntimeException(
-          "Error in converting TenantIsolationGroupConfig document to json", e);
+          "Error in converting TenantIsolationGroupsConfig document to json", e);
     }
   }
 }

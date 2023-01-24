@@ -25,7 +25,9 @@ public class TenantPartitioningConfigServiceImpl
   public void getTenantPartitionGroupsConfig(
       GetTenantPartitionGroupsConfigRequest request,
       StreamObserver<GetTenantPartitionGroupsConfigResponse> responseObserver) {
+
     try {
+      validator.validateOrThrow(request);
       Optional<TenantPartitionGroupsConfig> config = tenantIsolationConfigStore.getConfig();
       if (config.isPresent()) {
         responseObserver.onNext(
@@ -46,6 +48,7 @@ public class TenantPartitioningConfigServiceImpl
       StreamObserver<PutTenantPartitionGroupsConfigResponse> responseObserver) {
 
     try {
+      validator.validateOrThrow(request);
       TenantPartitionGroupsConfig config =
           this.tenantIsolationConfigStore.putConfig(request.getConfig());
       responseObserver.onNext(
@@ -61,7 +64,9 @@ public class TenantPartitioningConfigServiceImpl
   public void deleteTenantPartitionGroupsConfig(
       DeleteTenantPartitionGroupsConfigRequest request,
       StreamObserver<DeleteTenantPartitionGroupsConfigResponse> responseObserver) {
+
     try {
+      validator.validateOrThrow(request);
       this.tenantIsolationConfigStore.deleteConfig();
       responseObserver.onNext(DeleteTenantPartitionGroupsConfigResponse.newBuilder().build());
       responseObserver.onCompleted();
