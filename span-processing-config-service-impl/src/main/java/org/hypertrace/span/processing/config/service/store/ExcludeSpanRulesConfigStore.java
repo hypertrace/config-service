@@ -38,7 +38,7 @@ public class ExcludeSpanRulesConfigStore extends IdentifiedObjectStore<ExcludeSp
         .map(
             contextualConfigObject ->
                 ExcludeSpanRuleDetails.newBuilder()
-                    .setRule(contextualConfigObject.getData())
+                    .setRule(contextualConfigObject.getData().get())
                     .setMetadata(
                         ExcludeSpanRuleMetadata.newBuilder()
                             .setCreationTimestamp(

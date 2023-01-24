@@ -3,6 +3,7 @@ package org.hypertrace.notification.config.service;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -50,7 +51,10 @@ public class NotificationRuleConfigServiceImpl
       responseObserver.onNext(
           CreateNotificationRuleResponse.newBuilder()
               .setNotificationRule(
-                  notificationRuleStore.upsertObject(requestContext, builder.build()).getData())
+                  notificationRuleStore
+                      .upsertObject(requestContext, builder.build())
+                      .getData()
+                      .get())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -77,7 +81,8 @@ public class NotificationRuleConfigServiceImpl
                               .setNotificationRuleMutableData(
                                   request.getNotificationRuleMutableData())
                               .build())
-                      .getData())
+                      .getData()
+                      .get())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -98,6 +103,7 @@ public class NotificationRuleConfigServiceImpl
               .addAllNotificationRules(
                   notificationRuleStore.getAllObjects(requestContext).stream()
                       .map(ConfigObject::getData)
+                      .map(Optional::get)
                       .collect(Collectors.toUnmodifiableList()))
               .build());
       responseObserver.onCompleted();
