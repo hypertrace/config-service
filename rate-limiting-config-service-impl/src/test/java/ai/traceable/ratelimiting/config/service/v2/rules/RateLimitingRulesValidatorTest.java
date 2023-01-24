@@ -379,7 +379,34 @@ public class RateLimitingRulesValidatorTest {
                         .setDurationIso("1h")
                         .build()))
             .build();
-    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request2, List.of()));
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request2, List.of()));
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(
+        Objects.requireNonNull(status.getDescription())
+            .contains(
+                String.format(
+                    "Expected field value %s but not present",
+                    ResourceAccessThresholdConfig.ValueBasedThresholdConfig.getDescriptor()
+                        .findFieldByNumber(
+                            ResourceAccessThresholdConfig.ValueBasedThresholdConfig
+                                .VALUE_TYPE_FIELD_NUMBER))));
+
+    CreateRateLimitingRuleRequest request3 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                getRateLimitingRuleDataWithValueBasedCondition(
+                    ResourceAccessThresholdConfig.ValueBasedThresholdConfig.newBuilder()
+                        .setUniqueValuesAllowed(10)
+                        .setDurationIso("1h")
+                        .setValueType(
+                            ResourceAccessThresholdConfig.ValueType.VALUE_TYPE_SENSITIVE_PARAMS)
+                        .build()))
+            .build();
+    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request3, List.of()));
   }
 
   @Test

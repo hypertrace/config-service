@@ -429,6 +429,9 @@ public class RateLimitingRulesValidator implements RulesValidator {
     validateNonDefaultPresenceOrThrow(
         valueBasedThresholdConfig,
         ResourceAccessThresholdConfig.ValueBasedThresholdConfig.DURATION_ISO_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        valueBasedThresholdConfig,
+        ResourceAccessThresholdConfig.ValueBasedThresholdConfig.VALUE_TYPE_FIELD_NUMBER);
   }
 
   private void validateDynamicThresholdConfig(

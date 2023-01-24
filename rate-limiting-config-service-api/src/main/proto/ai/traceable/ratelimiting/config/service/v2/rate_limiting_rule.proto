@@ -183,7 +183,7 @@ message ResourceAccessThresholdConfig {
   UserAggregateType user_aggregate_type = 1;
   ApiAggregateType api_aggregate_type = 2;
   oneof threshold_config {
-    RollingWindowThresholdConfig rolling_window_threshold_config = 3;
+    RollingWindowThresholdConfig rolling_window_threshold_config = 3; // static
     ValueBasedThresholdConfig value_based_threshold_config = 4;
     DynamicThresholdConfig dynamic_threshold_config = 5;
   }
@@ -196,6 +196,14 @@ message ResourceAccessThresholdConfig {
   message ValueBasedThresholdConfig {
     int64 unique_values_allowed = 1;
     string duration_iso = 2;
+    ValueType value_type = 3;
+  }
+
+  enum ValueType {
+    VALUE_TYPE_UNSPECIFIED = 0;
+    VALUE_TYPE_REQUEST_BODY = 1;
+    VALUE_TYPE_SENSITIVE_PARAMS = 2;
+    VALUE_TYPE_PATH_PARAMS = 3;
   }
 
   message DynamicThresholdConfig {
