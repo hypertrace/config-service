@@ -296,7 +296,8 @@ public class MockGenericConfigService {
                                   configContextOrDefault(configToDelete.getContext())))
                       .collect(Collectors.toUnmodifiableList());
 
-              request.getConfigsList().stream()
+              request
+                  .getConfigsList()
                   .forEach(
                       configToDelete ->
                           currentValues.remove(
