@@ -87,20 +87,10 @@ public abstract class IdentifiedObjectStore<T> {
         .getContextSpecificConfigsList()
         .stream()
         .map(
-            contextSpecificConfig -> {
-              ContextualConfigObject<T> contextualConfigObject =
-                  ContextualConfigObjectImpl.tryBuild(
-                      contextSpecificConfig, this::buildDataFromValue);
-              if (contextualConfigObject.getData().isEmpty()) {
-                throw Status.INTERNAL
-                    .withDescription(
-                        "Could not convert config: "
-                            + contextSpecificConfig.getConfig()
-                            + " into proto")
-                    .asRuntimeException(context.buildTrailers());
-              }
-              return contextualConfigObject;
-            })
+            contextSpecificConfig ->
+                ContextualConfigObjectImpl.tryBuild(
+                    contextSpecificConfig, this::buildDataFromValue))
+        .flatMap(Optional::stream)
         .collect(
             Collectors.collectingAndThen(
                 Collectors.toUnmodifiableList(), this::orderFetchedObjects));
@@ -109,8 +99,6 @@ public abstract class IdentifiedObjectStore<T> {
   public List<T> getAllConfigData(RequestContext context) {
     return getAllObjects(context).stream()
         .map(ConfigObject::getData)
-        .filter(Optional::isPresent)
-        .map(Optional::get)
         .collect(Collectors.toUnmodifiableList());
   }
 
@@ -133,8 +121,7 @@ public abstract class IdentifiedObjectStore<T> {
               .setCreationTimestamp(getConfigResponse.getCreationTimestamp())
               .setUpdateTimestamp(getConfigResponse.getUpdateTimestamp())
               .build();
-      return Optional.of(
-          ContextualConfigObjectImpl.tryBuild(contextSpecificConfig, this::buildDataFromValue));
+      return ContextualConfigObjectImpl.tryBuild(contextSpecificConfig, this::buildDataFromValue);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
         return Optional.empty();
@@ -144,11 +131,7 @@ public abstract class IdentifiedObjectStore<T> {
   }
 
   public Optional<T> getData(RequestContext context, String id) {
-    Optional<Optional<T>> object = getObject(context, id).map(ConfigObject::getData);
-    if (object.isEmpty()) {
-      return Optional.empty();
-    }
-    return object.get();
+    return getObject(context, id).map(ConfigObject::getData);
   }
 
   public ContextualConfigObject<T> upsertObject(RequestContext context, T data) {
@@ -240,13 +223,8 @@ public abstract class IdentifiedObjectStore<T> {
       RequestContext requestContext, UpsertConfigResponse response) {
     ContextualConfigObject<T> result =
         ContextualConfigObjectImpl.tryBuild(
-            response, this::buildDataFromValue, this::getContextFromData);
-
-    if (result.getData().isEmpty()) {
-      throw Status.INTERNAL
-          .withDescription("Could not convert upserted config into corresponding proto")
-          .asRuntimeException(requestContext.buildTrailers());
-    }
+                response, this::buildDataFromValue, this::getContextFromData)
+            .orElseThrow(Status.INTERNAL::asRuntimeException);
 
     if (response.hasPrevConfig()) {
       tryReportUpdate(requestContext, result, response.getPrevConfig());
@@ -260,12 +238,8 @@ public abstract class IdentifiedObjectStore<T> {
   private ContextualConfigObject<T> processUpsertResult(
       RequestContext requestContext, UpsertedConfig upsertedConfig) {
     ContextualConfigObject<T> result =
-        ContextualConfigObjectImpl.tryBuild(upsertedConfig, this::buildDataFromValue);
-    if (result.getData().isEmpty()) {
-      throw Status.INTERNAL
-          .withDescription("Could not convert upserted config into corresponding proto")
-          .asRuntimeException(requestContext.buildTrailers());
-    }
+        ContextualConfigObjectImpl.tryBuild(upsertedConfig, this::buildDataFromValue)
+            .orElseThrow(Status.INTERNAL::asRuntimeException);
 
     if (upsertedConfig.hasPrevConfig()) {
       tryReportUpdate(requestContext, result, upsertedConfig.getPrevConfig());
@@ -298,9 +272,9 @@ public abstract class IdentifiedObjectStore<T> {
         configChangeEventGenerator ->
             configChangeEventGenerator.sendCreateNotification(
                 requestContext,
-                this.buildClassNameForChangeEvent(result.getData().get()),
+                this.buildClassNameForChangeEvent(result.getData()),
                 result.getContext(),
-                this.buildValueForChangeEvent(result.getData().get())));
+                this.buildValueForChangeEvent(result.getData())));
   }
 
   private void tryReportUpdate(
@@ -309,7 +283,7 @@ public abstract class IdentifiedObjectStore<T> {
         configChangeEventGenerator ->
             configChangeEventGenerator.sendUpdateNotification(
                 requestContext,
-                this.buildClassNameForChangeEvent(result.getData().get()),
+                this.buildClassNameForChangeEvent(result.getData()),
                 result.getContext(),
                 this.buildDataFromValue(previousValue)
                     .map(this::buildValueForChangeEvent)
@@ -320,6 +294,6 @@ public abstract class IdentifiedObjectStore<T> {
                               previousValue);
                           return previousValue;
                         }),
-                this.buildValueForChangeEvent(result.getData().get())));
+                this.buildValueForChangeEvent(result.getData())));
   }
 }

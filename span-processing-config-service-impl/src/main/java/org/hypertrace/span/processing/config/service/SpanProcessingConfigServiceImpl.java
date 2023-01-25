@@ -284,7 +284,7 @@ class SpanProcessingConfigServiceImpl
   private ExcludeSpanRuleDetails buildExcludeSpanRuleDetails(
       ContextualConfigObject<ExcludeSpanRule> configObject) {
     return ExcludeSpanRuleDetails.newBuilder()
-        .setRule(configObject.getData().get())
+        .setRule(configObject.getData())
         .setMetadata(
             ExcludeSpanRuleMetadata.newBuilder()
                 .setCreationTimestamp(

@@ -335,7 +335,7 @@ class IdentifiedObjectStoreWithFilterTest {
     protected List<ContextualConfigObject<TestInternalObject>> orderFetchedObjects(
         List<ContextualConfigObject<TestInternalObject>> objects) {
       return objects.stream()
-          .sorted(Comparator.comparing(object -> object.getData().get().getRank()))
+          .sorted(Comparator.comparing(object -> object.getData().getRank()))
           .collect(Collectors.toUnmodifiableList());
     }
 

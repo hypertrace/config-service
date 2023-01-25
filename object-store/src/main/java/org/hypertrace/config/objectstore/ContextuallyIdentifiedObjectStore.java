@@ -78,8 +78,7 @@ public abstract class ContextuallyIdentifiedObjectStore<T> {
               .setCreationTimestamp(getConfigResponse.getCreationTimestamp())
               .setUpdateTimestamp(getConfigResponse.getUpdateTimestamp())
               .build();
-      return Optional.of(
-          ConfigObjectImpl.tryBuild(contextSpecificConfig, this::buildDataFromValue));
+      return ConfigObjectImpl.tryBuild(contextSpecificConfig, this::buildDataFromValue);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
         return Optional.empty();
