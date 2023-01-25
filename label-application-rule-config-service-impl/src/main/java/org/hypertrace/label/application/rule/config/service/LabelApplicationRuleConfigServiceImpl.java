@@ -5,6 +5,7 @@ import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.hypertrace.config.objectstore.ConfigObject;
@@ -74,7 +75,8 @@ public class LabelApplicationRuleConfigServiceImpl
       LabelApplicationRule createdLabelApplicationRule =
           this.labelApplicationRuleStore
               .upsertObject(requestContext, labelApplicationRule)
-              .getData();
+              .getData()
+              .get();
       responseObserver.onNext(
           CreateLabelApplicationRuleResponse.newBuilder()
               .setLabelApplicationRule(createdLabelApplicationRule)
@@ -95,6 +97,7 @@ public class LabelApplicationRuleConfigServiceImpl
       List<LabelApplicationRule> labelApplicationRules =
           this.labelApplicationRuleStore.getAllObjects(requestContext).stream()
               .map(ConfigObject::getData)
+              .map(Optional::get)
               .collect(Collectors.toUnmodifiableList());
       responseObserver.onNext(
           GetLabelApplicationRulesResponse.newBuilder()
@@ -122,7 +125,8 @@ public class LabelApplicationRuleConfigServiceImpl
       LabelApplicationRule upsertedLabelApplicationRule =
           this.labelApplicationRuleStore
               .upsertObject(requestContext, updateLabelApplicationRule)
-              .getData();
+              .getData()
+              .get();
       responseObserver.onNext(
           UpdateLabelApplicationRuleResponse.newBuilder()
               .setLabelApplicationRule(upsertedLabelApplicationRule)
@@ -157,7 +161,7 @@ public class LabelApplicationRuleConfigServiceImpl
       int dynamicLabelApplicationRules =
           (int)
               this.labelApplicationRuleStore.getAllObjects(requestContext).stream()
-                  .map(configObject -> configObject.getData().getData().getLabelAction())
+                  .map(configObject -> configObject.getData().get().getData().getLabelAction())
                   .filter(
                       action -> action.hasDynamicLabelExpression() || action.hasDynamicLabelKey())
                   .count();

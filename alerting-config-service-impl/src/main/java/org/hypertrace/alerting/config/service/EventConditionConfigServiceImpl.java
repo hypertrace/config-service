@@ -3,6 +3,7 @@ package org.hypertrace.alerting.config.service;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +54,7 @@ public class EventConditionConfigServiceImpl
       responseObserver.onNext(
           CreateEventConditionResponse.newBuilder()
               .setEventCondition(
-                  eventConditionStore.upsertObject(requestContext, builder.build()).getData())
+                  eventConditionStore.upsertObject(requestContext, builder.build()).getData().get())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -74,7 +75,8 @@ public class EventConditionConfigServiceImpl
               .setEventCondition(
                   eventConditionStore
                       .upsertObject(requestContext, request.getEventCondition())
-                      .getData())
+                      .getData()
+                      .get())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -95,6 +97,7 @@ public class EventConditionConfigServiceImpl
               .addAllEventCondition(
                   eventConditionStore.getAllObjects(requestContext).stream()
                       .map(ContextualConfigObject::getData)
+                      .map(Optional::get)
                       .collect(Collectors.toUnmodifiableList()))
               .build());
       responseObserver.onCompleted();

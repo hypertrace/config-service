@@ -4,6 +4,7 @@ import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -51,7 +52,10 @@ public class NotificationChannelConfigServiceImpl
       responseObserver.onNext(
           CreateNotificationChannelResponse.newBuilder()
               .setNotificationChannel(
-                  notificationChannelStore.upsertObject(requestContext, builder.build()).getData())
+                  notificationChannelStore
+                      .upsertObject(requestContext, builder.build())
+                      .getData()
+                      .get())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -78,7 +82,8 @@ public class NotificationChannelConfigServiceImpl
                               .setNotificationChannelMutableData(
                                   request.getNotificationChannelMutableData())
                               .build())
-                      .getData())
+                      .getData()
+                      .get())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -97,6 +102,7 @@ public class NotificationChannelConfigServiceImpl
       List<NotificationChannel> notificationChannels =
           notificationChannelStore.getAllObjects(requestContext).stream()
               .map(ConfigObject::getData)
+              .map(Optional::get)
               .collect(Collectors.toUnmodifiableList());
       GetAllNotificationChannelsResponse getAllNotificationChannelsResponse =
           GetAllNotificationChannelsResponse.newBuilder()

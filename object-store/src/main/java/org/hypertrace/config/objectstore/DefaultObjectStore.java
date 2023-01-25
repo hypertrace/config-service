@@ -71,11 +71,21 @@ public abstract class DefaultObjectStore<T> {
                           .setResourceNamespace(this.resourceNamespace)
                           .build()));
 
-      return ConfigObjectImpl.tryBuild(
-          getConfigResponse.getConfig(),
-          getConfigResponse.getCreationTimestamp(),
-          getConfigResponse.getUpdateTimestamp(),
-          this::buildDataFromValue);
+      ConfigObject<T> tConfigObject =
+          ConfigObjectImpl.tryBuild(
+              getConfigResponse.getConfig(),
+              getConfigResponse.getCreationTimestamp(),
+              getConfigResponse.getUpdateTimestamp(),
+              this::buildDataFromValue);
+      if (tConfigObject.getData().isEmpty()) {
+        throw Status.INTERNAL
+            .withDescription(
+                "Could not convert config "
+                    + getConfigResponse.getConfig()
+                    + " into corresponding proto")
+            .asRuntimeException(context.buildTrailers());
+      }
+      return Optional.of(tConfigObject);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
         return Optional.empty();
@@ -117,16 +127,19 @@ public abstract class DefaultObjectStore<T> {
                         .setConfig(this.buildValueFromData(data))
                         .build()));
 
-    ConfigObject<T> upsertedObject =
-        ConfigObjectImpl.tryBuild(response, this::buildDataFromValue)
-            .orElseThrow(Status.INTERNAL::asRuntimeException);
+    ConfigObject<T> upsertedObject = ConfigObjectImpl.tryBuild(response, this::buildDataFromValue);
+    if (upsertedObject.getData().isEmpty()) {
+      throw Status.INTERNAL
+          .withDescription("Could not convert upserted config into corresponding proto")
+          .asRuntimeException(context.buildTrailers());
+    }
 
     configChangeEventGeneratorOptional.ifPresent(
         configChangeEventGenerator -> {
           if (response.hasPrevConfig()) {
             configChangeEventGenerator.sendUpdateNotification(
                 context,
-                this.buildClassNameForChangeEvent(upsertedObject.getData()),
+                this.buildClassNameForChangeEvent(upsertedObject.getData().get()),
                 this.buildDataFromValue(response.getPrevConfig())
                     .map(this::buildValueForChangeEvent)
                     .orElseGet(
@@ -136,12 +149,12 @@ public abstract class DefaultObjectStore<T> {
                               response.getPrevConfig());
                           return response.getPrevConfig();
                         }),
-                this.buildValueForChangeEvent(upsertedObject.getData()));
+                this.buildValueForChangeEvent(upsertedObject.getData().get()));
           } else {
             configChangeEventGenerator.sendCreateNotification(
                 context,
-                this.buildClassNameForChangeEvent(upsertedObject.getData()),
-                this.buildValueForChangeEvent(upsertedObject.getData()));
+                this.buildClassNameForChangeEvent(upsertedObject.getData().get()),
+                this.buildValueForChangeEvent(upsertedObject.getData().get()));
           }
         });
     return upsertedObject;
@@ -159,15 +172,16 @@ public abstract class DefaultObjectStore<T> {
                               .setResourceNamespace(this.resourceNamespace)
                               .build()))
               .getDeletedConfig();
-      ConfigObject<T> object =
-          ConfigObjectImpl.tryBuild(deletedConfig, this::buildDataFromValue)
-              .orElseThrow(Status.INTERNAL::asRuntimeException);
+      ConfigObject<T> object = ConfigObjectImpl.tryBuild(deletedConfig, this::buildDataFromValue);
       configChangeEventGeneratorOptional.ifPresent(
-          configChangeEventGenerator ->
+          configChangeEventGenerator -> {
+            if (object.getData().isPresent()) {
               configChangeEventGenerator.sendDeleteNotification(
                   context,
-                  this.buildClassNameForChangeEvent(object.getData()),
-                  this.buildValueForChangeEvent(object.getData())));
+                  this.buildClassNameForChangeEvent(object.getData().get()),
+                  this.buildValueForChangeEvent(object.getData().get()));
+            }
+          });
       return Optional.of(object);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {

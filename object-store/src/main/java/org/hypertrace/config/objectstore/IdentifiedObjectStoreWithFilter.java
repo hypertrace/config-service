@@ -32,6 +32,7 @@ public abstract class IdentifiedObjectStoreWithFilter<T, F> extends IdentifiedOb
   public List<T> getAllConfigData(RequestContext context, F filter) {
     return getAllObjects(context, filter).stream()
         .map(ConfigObject::getData)
+        .map(Optional::get)
         .collect(Collectors.toUnmodifiableList());
   }
 
@@ -41,7 +42,11 @@ public abstract class IdentifiedObjectStoreWithFilter<T, F> extends IdentifiedOb
   }
 
   public Optional<T> getData(RequestContext context, String id, F filter) {
-    return getObject(context, id, filter).map(ConfigObject::getData);
+    Optional<Optional<T>> t = getObject(context, id, filter).map(ConfigObject::getData);
+    if (t.isEmpty()) {
+      return Optional.empty();
+    }
+    return t.get();
   }
 
   /**
@@ -57,12 +62,20 @@ public abstract class IdentifiedObjectStoreWithFilter<T, F> extends IdentifiedOb
 
   private Optional<ContextualConfigObject<T>> filterObject(
       ContextualConfigObject<T> configObject, F filter) {
-    return filterConfigData(configObject.getData(), filter)
+    if (configObject.getData().isEmpty()) {
+      return Optional.empty();
+    }
+    return filterConfigData(configObject.getData().get(), filter)
         .map(filteredData -> updateConfigData(configObject, filteredData));
   }
 
   private ContextualConfigObject<T> updateConfigData(
       ContextualConfigObject<T> configObject, T updatedData) {
-    return ((ContextualConfigObjectImpl) configObject).toBuilder().data(updatedData).build();
+    ContextualConfigObject<T> contextualConfigObject = (ContextualConfigObjectImpl) configObject;
+    return new ContextualConfigObjectImpl<>(
+        contextualConfigObject.getContext(),
+        updatedData,
+        contextualConfigObject.getCreationTimestamp(),
+        contextualConfigObject.getLastUpdatedTimestamp());
   }
 }

@@ -9,11 +9,23 @@ import org.hypertrace.config.service.v1.UpsertConfigResponse;
 
 @lombok.Value
 class ConfigObjectImpl<T> implements ConfigObject<T> {
-  T data;
+  Optional<T> data;
   Instant creationTimestamp;
   Instant lastUpdatedTimestamp;
 
-  static <T> Optional<ConfigObject<T>> tryBuild(
+  public ConfigObjectImpl(T data, Instant creationTimestamp, Instant lastUpdatedTimestamp) {
+    this.data = Optional.of(data);
+    this.creationTimestamp = creationTimestamp;
+    this.lastUpdatedTimestamp = lastUpdatedTimestamp;
+  }
+
+  public ConfigObjectImpl(Instant creationTimestamp, Instant lastUpdatedTimestamp) {
+    this.data = Optional.empty();
+    this.creationTimestamp = creationTimestamp;
+    this.lastUpdatedTimestamp = lastUpdatedTimestamp;
+  }
+
+  static <T> ConfigObject<T> tryBuild(
       ContextSpecificConfig contextSpecificConfig, Function<Value, Optional<T>> dataBuilder) {
     return tryBuild(
         contextSpecificConfig.getConfig(),
@@ -22,7 +34,7 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
         dataBuilder);
   }
 
-  static <T> Optional<ConfigObject<T>> tryBuild(
+  static <T> ConfigObject<T> tryBuild(
       UpsertConfigResponse upsertResponse, Function<Value, Optional<T>> dataBuilder) {
     return tryBuild(
         upsertResponse.getConfig(),
@@ -31,7 +43,7 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
         dataBuilder);
   }
 
-  static <T> Optional<ConfigObject<T>> tryBuild(
+  static <T> ConfigObject<T> tryBuild(
       Value config,
       long creationTimestamp,
       long updateTimestamp,
@@ -43,6 +55,9 @@ class ConfigObjectImpl<T> implements ConfigObject<T> {
                 new ConfigObjectImpl<>(
                     data,
                     Instant.ofEpochMilli(creationTimestamp),
-                    Instant.ofEpochMilli(updateTimestamp)));
+                    Instant.ofEpochMilli(updateTimestamp)))
+        .orElse(
+            new ConfigObjectImpl<>(
+                Instant.ofEpochMilli(creationTimestamp), Instant.ofEpochMilli(updateTimestamp)));
   }
 }

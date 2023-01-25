@@ -117,7 +117,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
                 .setCreatedByApplicationRuleId(request.getCreatedByApplicationRuleId())
                 .build();
       }
-      Label createdLabel = labelStore.upsertObject(requestContext, label).getData();
+      Label createdLabel = labelStore.upsertObject(requestContext, label).getData().get();
       responseObserver.onNext(CreateLabelResponse.newBuilder().setLabel(createdLabel).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -159,6 +159,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
       createdLabelsMap =
           labelStore.upsertObjects(requestContext, newLabels).stream()
               .map(org.hypertrace.config.objectstore.ConfigObject::getData)
+              .map(Optional::get)
               .collect(Collectors.toUnmodifiableMap(label -> label.getData().getKey(), identity()));
     } else {
       createdLabelsMap = Collections.emptyMap();
@@ -218,6 +219,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     List<Label> tenantLabels =
         labelStore.getAllObjects(requestContext).stream()
             .map(ContextualConfigObject::getData)
+            .map(Optional::get)
             .collect(Collectors.toUnmodifiableList());
     allLabels.addAll(tenantLabels);
     responseObserver.onNext(GetLabelsResponse.newBuilder().addAllLabels(allLabels).build());
@@ -244,7 +246,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
               .getData(requestContext, request.getId())
               .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       Label updateLabel = oldLabel.toBuilder().setData(updateLabelData).build();
-      Label updateLabelInRes = labelStore.upsertObject(requestContext, updateLabel).getData();
+      Label updateLabelInRes = labelStore.upsertObject(requestContext, updateLabel).getData().get();
       responseObserver.onNext(UpdateLabelResponse.newBuilder().setLabel(updateLabelInRes).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -287,6 +289,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     Map<String, Label> existingLabelsMap = new HashMap<>(systemLabelsKeyLabelMap);
     labelStore.getAllObjects(requestContext).stream()
         .map(ContextualConfigObject::getData)
+        .map(Optional::get)
         .forEach(label -> existingLabelsMap.put(label.getData().getKey(), label));
     return Collections.unmodifiableMap(existingLabelsMap);
   }
