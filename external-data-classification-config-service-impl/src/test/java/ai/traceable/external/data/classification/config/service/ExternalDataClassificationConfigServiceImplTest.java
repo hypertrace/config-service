@@ -3,7 +3,6 @@ package ai.traceable.external.data.classification.config.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
@@ -53,39 +52,35 @@ import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
 import java.util.List;
 import org.hypertrace.config.service.test.MockGenericConfigService;
-import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class ExternalDataClassificationConfigServiceImplTest {
   MockGenericConfigService mockGenericConfigService;
   ExternalDataClassificationServiceBlockingStub externalDataClassificationServiceBlockingStub;
   SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub;
   DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceBlockingStub;
-  InsightsServiceCoordinator insightsServiceCoordinator;
-  UuidGenerator uuidGenerator;
-  FeatureCachingClient featureCachingClient;
-  List<DataClassificationOverride> dataClassificationOverrides;
+  @Mock InsightsServiceCoordinator insightsServiceCoordinator;
 
-  ExternalDataClassificationConfig externalDataClassificationConfig;
+  UuidGenerator uuidGenerator = new UuidGenerator();
+  @Mock FeatureCachingClient featureCachingClient;
+  List<DataClassificationOverride> dataClassificationOverrides;
+  @Mock ExternalDataClassificationConfig externalDataClassificationConfig;
 
   @BeforeEach
   void setup() {
-    mockGenericConfigService =
-        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    mockGenericConfigService = new MockGenericConfigService();
     sensitiveDataConfigServiceBlockingStub =
         SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     dataClassificationConfigServiceBlockingStub =
         DataClassificationConfigServiceGrpc.newBlockingStub(
             this.mockGenericConfigService.channel());
-    uuidGenerator = new UuidGenerator();
-    featureCachingClient = mock(FeatureCachingClient.class);
     when(featureCachingClient.isDataClassificationRp2Enabled(any())).thenReturn(true);
-    insightsServiceCoordinator = mock(InsightsServiceCoordinatorImpl.class);
-    when(insightsServiceCoordinator.getSensitiveHeaderParameters(RequestContext.CURRENT.get()))
-        .thenReturn(List.of());
-    externalDataClassificationConfig = mock(ExternalDataClassificationConfig.class);
     mockGenericConfigService
         .addService(
             new ExternalDataClassificationConfigServiceImpl(
@@ -192,6 +187,34 @@ public class ExternalDataClassificationConfigServiceImplTest {
             .getDataClassificationConfig(GetDataClassificationConfigRequest.getDefaultInstance())
             .getDataTypesList()
             .contains(defaultDataType));
+  }
+
+  @Test
+  void omitsDefaultRuleIfOverriddenSuppression() {
+    this.dataClassificationOverrides =
+        List.of(
+            DataClassificationOverride.newBuilder()
+                .setDataClassificationOverrideRule(
+                    DataClassificationOverrideRule.newBuilder()
+                        .setDataSuppressionOverride(
+                            DataClassificationOverrideRule.DataSuppressionOverride.newBuilder()
+                                .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW)))
+                .build());
+    when(this.externalDataClassificationConfig.getDefaultExternalDataTypes())
+        .thenReturn(
+            List.of(
+                ai.traceable.external.data.classification.config.service.v1.DataType.newBuilder()
+                    .setDataTypeId("default-rule")
+                    .build()));
+    assertEquals(
+        List.of(),
+        externalDataClassificationServiceBlockingStub
+            .getDataClassificationConfig(
+                GetDataClassificationConfigRequest.newBuilder()
+                    .setEnvironmentFilter(
+                        EnvironmentFilter.newBuilder().setEnvironmentName("random"))
+                    .build())
+            .getDataTypesList());
   }
 
   class MockDataClassificationConfigService
@@ -331,7 +354,7 @@ public class ExternalDataClassificationConfigServiceImplTest {
     }
   }
 
-  class MockSensitiveDataConfigService
+  static class MockSensitiveDataConfigService
       extends SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceImplBase {
 
     @Override

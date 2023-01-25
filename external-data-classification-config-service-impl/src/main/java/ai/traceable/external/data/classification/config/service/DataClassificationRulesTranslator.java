@@ -262,16 +262,18 @@ class DataClassificationRulesTranslator {
     }
   }
 
-  private Optional<DataTransformation> translateDataSuppression(DataSuppression dataSuppression) {
+  Optional<DataTransformation> translateDataSuppression(DataSuppression dataSuppression) {
     switch (dataSuppression) {
       case DATA_SUPPRESSION_REDACT:
         return Optional.of(DataTransformation.DATA_TRANSFORMATION_REDACT);
       case DATA_SUPPRESSION_OBFUSCATE:
         return Optional.of(DataTransformation.DATA_TRANSFORMATION_OBFUSCATE);
       case DATA_SUPPRESSION_RAW:
-      case UNRECOGNIZED:
       case DATA_SUPPRESSION_UNSPECIFIED:
+        return Optional.empty();
+      case UNRECOGNIZED:
       default:
+        log.error("Received unknown data suppression mode : {}", dataSuppression);
         return Optional.empty();
     }
   }

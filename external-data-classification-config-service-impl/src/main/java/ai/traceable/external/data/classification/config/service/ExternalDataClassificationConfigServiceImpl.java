@@ -10,6 +10,7 @@ import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
 import ai.traceable.data.classification.config.service.v1.DataType;
+import ai.traceable.external.data.classification.config.service.v1.DataType.Builder;
 import ai.traceable.external.data.classification.config.service.v1.ExternalDataClassificationServiceGrpc.ExternalDataClassificationServiceImplBase;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigResponse;
@@ -175,8 +176,10 @@ class ExternalDataClassificationConfigServiceImpl
             .ifPresent(externalDataTypes::add);
       }
 
-      // Default external-only types
-      externalDataTypes.addAll(this.externalDataClassificationConfig.getDefaultExternalDataTypes());
+      externalDataTypes.addAll(
+          dataSuppressionOverrideOptional
+              .map(this::resolveDefaultDataTypes)
+              .orElseGet(this::resolveDefaultDataTypes));
       responseObserver.onNext(
           this.responseBuilder.buildEnabledResponse(
               request,
@@ -270,5 +273,31 @@ class ExternalDataClassificationConfigServiceImpl
             dataSuppression);
         return Optional.empty();
     }
+  }
+
+  private List<ai.traceable.external.data.classification.config.service.v1.DataType>
+      resolveDefaultDataTypes(DataSuppression dataSuppressionOverride) {
+    return this.externalDataClassificationConfig.getDefaultExternalDataTypes().stream()
+        .map(defaultType -> this.applyDataSuppressionOverride(defaultType, dataSuppressionOverride))
+        .filter(
+            ai.traceable.external.data.classification.config.service.v1.DataType
+                ::hasTransformation) // Only need to use ones that resolve with a transformation
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private List<ai.traceable.external.data.classification.config.service.v1.DataType>
+      resolveDefaultDataTypes() {
+    return this.externalDataClassificationConfig.getDefaultExternalDataTypes();
+  }
+
+  private ai.traceable.external.data.classification.config.service.v1.DataType
+      applyDataSuppressionOverride(
+          ai.traceable.external.data.classification.config.service.v1.DataType dataType,
+          DataSuppression dataSuppressionOverride) {
+    return this.dataClassificationRulesTranslator
+        .translateDataSuppression(dataSuppressionOverride)
+        .map(transformation -> dataType.toBuilder().setTransformation(transformation))
+        .map(Builder::build)
+        .orElse(dataType);
   }
 }
