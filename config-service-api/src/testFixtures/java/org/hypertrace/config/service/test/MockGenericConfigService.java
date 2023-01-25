@@ -34,6 +34,8 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceImplBase;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.DeleteConfigResponse;
+import org.hypertrace.config.service.v1.DeleteConfigsRequest;
+import org.hypertrace.config.service.v1.DeleteConfigsResponse;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.GetConfigRequest;
@@ -272,6 +274,44 @@ public class MockGenericConfigService {
             })
         .when(this.mockConfigService)
         .upsertAllConfigs(ArgumentMatchers.any(), ArgumentMatchers.any());
+
+    return this;
+  }
+
+  public MockGenericConfigService mockDeleteAll() {
+    Mockito.doAnswer(
+            invocation -> {
+              DeleteConfigsRequest request = invocation.getArgument(0, DeleteConfigsRequest.class);
+              StreamObserver<DeleteConfigsResponse> responseStreamObserver =
+                  invocation.getArgument(1, StreamObserver.class);
+
+              List<ContextSpecificConfig> configsToDelete =
+                  request.getConfigsList().stream()
+                      .map(
+                          configToDelete ->
+                              currentValues.get(
+                                  ResourceType.of(
+                                      configToDelete.getResourceNamespace(),
+                                      configToDelete.getResourceName()),
+                                  configContextOrDefault(configToDelete.getContext())))
+                      .collect(Collectors.toUnmodifiableList());
+
+              request.getConfigsList().stream()
+                  .forEach(
+                      configToDelete ->
+                          currentValues.remove(
+                              ResourceType.of(
+                                  configToDelete.getResourceNamespace(),
+                                  configToDelete.getResourceName()),
+                              configContextOrDefault(configToDelete.getContext())));
+
+              responseStreamObserver.onNext(
+                  DeleteConfigsResponse.newBuilder().addAllDeletedConfigs(configsToDelete).build());
+              responseStreamObserver.onCompleted();
+              return null;
+            })
+        .when(this.mockConfigService)
+        .deleteConfigs(ArgumentMatchers.any(), ArgumentMatchers.any());
 
     return this;
   }

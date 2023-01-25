@@ -7,13 +7,13 @@ import java.util.function.Function;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 
 @lombok.Value
-class DeletedContextualConfigObjectImpl<T> implements DeletedContextualConfigObject<T> {
+public class DeletedContextualConfigObjectImpl<T> implements DeletedContextualConfigObject<T> {
   String context;
   Optional<T> deletedData;
   Instant creationTimestamp;
   Instant lastUpdatedTimestamp;
 
-  DeletedContextualConfigObjectImpl(
+  public DeletedContextualConfigObjectImpl(
       String context, T data, Instant creationTimestamp, Instant lastUpdatedTimestamp) {
     this.context = context;
     this.deletedData = Optional.of(data);
