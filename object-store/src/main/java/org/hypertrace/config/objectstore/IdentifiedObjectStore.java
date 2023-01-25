@@ -2,7 +2,6 @@ package org.hypertrace.config.objectstore;
 
 import com.google.protobuf.Value;
 import io.grpc.Status;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -151,7 +150,7 @@ public abstract class IdentifiedObjectStore<T> {
         .orElseThrow(Status.INTERNAL::asRuntimeException);
   }
 
-  public Optional<ContextualConfigObject<T>> deleteObject(
+  public Optional<DeletedContextualConfigObject<T>> deleteObject(
       RequestContext requestContext, String context) {
     try {
       ContextSpecificConfig deletedConfig =
@@ -199,7 +198,7 @@ public abstract class IdentifiedObjectStore<T> {
         .collect(Collectors.toUnmodifiableList());
   }
 
-  public List<ContextualConfigObject<T>> deleteObjects(
+  public List<DeletedContextualConfigObject<T>> deleteObjects(
       RequestContext requestContext, List<String> contexts) {
     List<ConfigToDelete> configsToDelete =
         contexts.stream()
@@ -255,31 +254,22 @@ public abstract class IdentifiedObjectStore<T> {
     return optionalResult;
   }
 
-  private ContextualConfigObject<T> processDeleteResult(
+  private DeletedContextualConfigObject<T> processDeleteResult(
       RequestContext requestContext, ContextSpecificConfig deletedConfig) {
-    Optional<ContextualConfigObject<T>> optionalObject =
-        ContextualConfigObjectImpl.tryBuild(deletedConfig, this::buildDataFromValue);
+    DeletedContextualConfigObject<T> deletedContextualConfigObject =
+        DeletedContextualConfigObjectImpl.tryBuild(deletedConfig, this::buildDataFromValue);
 
-    ContextualConfigObject<T> contextualConfigObject;
-    if (optionalObject.isPresent()) {
-      contextualConfigObject = optionalObject.get();
+    if (deletedContextualConfigObject.getOptionalData().isPresent()) {
+      T data = deletedContextualConfigObject.getOptionalData().get();
       configChangeEventGeneratorOptional.ifPresent(
           configChangeEventGenerator ->
               configChangeEventGenerator.sendDeleteNotification(
                   requestContext,
-                  this.buildClassNameForChangeEvent(contextualConfigObject.getData()),
+                  this.buildClassNameForChangeEvent(data),
                   deletedConfig.getContext(),
-                  this.buildValueForChangeEvent(contextualConfigObject.getData())));
-    } else {
-      contextualConfigObject =
-          new ContextualConfigObjectImpl<>(
-              deletedConfig.getContext(),
-              null,
-              Instant.ofEpochMilli(deletedConfig.getCreationTimestamp()),
-              Instant.ofEpochMilli(deletedConfig.getUpdateTimestamp()));
-      log.warn("Could not parse value:{} into proto message", deletedConfig);
+                  this.buildValueForChangeEvent(data)));
     }
-    return contextualConfigObject;
+    return deletedContextualConfigObject;
   }
 
   private void tryReportCreation(RequestContext requestContext, ContextualConfigObject<T> result) {

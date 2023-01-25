@@ -202,7 +202,7 @@ class IdentifiedObjectStoreTest {
                 .build());
     assertEquals(
         Optional.of(
-            new ContextualConfigObjectImpl<>(
+            new DeletedContextualConfigObjectImpl<>(
                 OBJECT_1.getId(), OBJECT_1, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP)),
         this.store.deleteObject(mockRequestContext, "first-id"));
 
@@ -333,9 +333,9 @@ class IdentifiedObjectStoreTest {
                 .build());
     assertEquals(
         List.of(
-            new ContextualConfigObjectImpl<>(
+            new DeletedContextualConfigObjectImpl<>(
                 OBJECT_1.getId(), OBJECT_1, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP),
-            new ContextualConfigObjectImpl<>(
+            new DeletedContextualConfigObjectImpl<>(
                 OBJECT_2.getId(), OBJECT_2, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP)),
         this.store.deleteObjects(
             this.mockRequestContext, List.of(OBJECT_1.getId(), OBJECT_2.getId())));
