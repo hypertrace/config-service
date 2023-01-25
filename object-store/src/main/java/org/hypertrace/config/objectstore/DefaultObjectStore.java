@@ -163,12 +163,11 @@ public abstract class DefaultObjectStore<T> {
           ConfigObjectImpl.tryBuild(deletedConfig, this::buildDataFromValue)
               .orElseThrow(Status.INTERNAL::asRuntimeException);
       configChangeEventGeneratorOptional.ifPresent(
-          configChangeEventGenerator -> {
-            configChangeEventGenerator.sendDeleteNotification(
-                context,
-                this.buildClassNameForChangeEvent(object.getData()),
-                this.buildValueForChangeEvent(object.getData()));
-          });
+          configChangeEventGenerator ->
+              configChangeEventGenerator.sendDeleteNotification(
+                  context,
+                  this.buildClassNameForChangeEvent(object.getData()),
+                  this.buildValueForChangeEvent(object.getData())));
       return Optional.of(object);
     } catch (Exception exception) {
       if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {

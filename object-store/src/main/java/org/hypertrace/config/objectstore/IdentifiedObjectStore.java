@@ -146,7 +146,8 @@ public abstract class IdentifiedObjectStore<T> {
                         .setConfig(this.buildValueFromData(data))
                         .build()));
 
-    return this.processUpsertResult(context, response);
+    return this.processUpsertResult(context, response)
+        .orElseThrow(Status.INTERNAL::asRuntimeException);
   }
 
   public Optional<DeletedContextualConfigObject<T>> deleteObject(
@@ -193,6 +194,7 @@ public abstract class IdentifiedObjectStore<T> {
         .getUpsertedConfigsList()
         .stream()
         .map(upsertedConfig -> this.processUpsertResult(context, upsertedConfig))
+        .flatMap(Optional::stream)
         .collect(Collectors.toUnmodifiableList());
   }
 
@@ -219,34 +221,37 @@ public abstract class IdentifiedObjectStore<T> {
         .collect(Collectors.toUnmodifiableList());
   }
 
-  private ContextualConfigObject<T> processUpsertResult(
+  private Optional<ContextualConfigObject<T>> processUpsertResult(
       RequestContext requestContext, UpsertConfigResponse response) {
-    ContextualConfigObject<T> result =
+    Optional<ContextualConfigObject<T>> optionalResult =
         ContextualConfigObjectImpl.tryBuild(
-                response, this::buildDataFromValue, this::getContextFromData)
-            .orElseThrow(Status.INTERNAL::asRuntimeException);
+            response, this::buildDataFromValue, this::getContextFromData);
 
-    if (response.hasPrevConfig()) {
-      tryReportUpdate(requestContext, result, response.getPrevConfig());
-    } else {
-      tryReportCreation(requestContext, result);
-    }
-
-    return result;
+    optionalResult.ifPresent(
+        result -> {
+          if (response.hasPrevConfig()) {
+            tryReportUpdate(requestContext, result, response.getPrevConfig());
+          } else {
+            tryReportCreation(requestContext, result);
+          }
+        });
+    return optionalResult;
   }
 
-  private ContextualConfigObject<T> processUpsertResult(
+  private Optional<ContextualConfigObject<T>> processUpsertResult(
       RequestContext requestContext, UpsertedConfig upsertedConfig) {
-    ContextualConfigObject<T> result =
-        ContextualConfigObjectImpl.tryBuild(upsertedConfig, this::buildDataFromValue)
-            .orElseThrow(Status.INTERNAL::asRuntimeException);
+    Optional<ContextualConfigObject<T>> optionalResult =
+        ContextualConfigObjectImpl.tryBuild(upsertedConfig, this::buildDataFromValue);
 
-    if (upsertedConfig.hasPrevConfig()) {
-      tryReportUpdate(requestContext, result, upsertedConfig.getPrevConfig());
-    } else {
-      tryReportCreation(requestContext, result);
-    }
-    return result;
+    optionalResult.ifPresent(
+        result -> {
+          if (upsertedConfig.hasPrevConfig()) {
+            tryReportUpdate(requestContext, result, upsertedConfig.getPrevConfig());
+          } else {
+            tryReportCreation(requestContext, result);
+          }
+        });
+    return optionalResult;
   }
 
   private DeletedContextualConfigObject<T> processDeleteResult(
