@@ -9,14 +9,14 @@ import org.hypertrace.config.service.v1.ContextSpecificConfig;
 @lombok.Value
 class DeletedContextualConfigObjectImpl<T> implements DeletedContextualConfigObject<T> {
   String context;
-  Optional<T> optionalData;
+  Optional<T> deletedData;
   Instant creationTimestamp;
   Instant lastUpdatedTimestamp;
 
   DeletedContextualConfigObjectImpl(
       String context, T data, Instant creationTimestamp, Instant lastUpdatedTimestamp) {
     this.context = context;
-    this.optionalData = Optional.of(data);
+    this.deletedData = Optional.of(data);
     this.creationTimestamp = creationTimestamp;
     this.lastUpdatedTimestamp = lastUpdatedTimestamp;
   }
@@ -24,7 +24,7 @@ class DeletedContextualConfigObjectImpl<T> implements DeletedContextualConfigObj
   DeletedContextualConfigObjectImpl(
       String context, Instant creationTimestamp, Instant lastUpdatedTimestamp) {
     this.context = context;
-    this.optionalData = Optional.empty();
+    this.deletedData = Optional.empty();
     this.creationTimestamp = creationTimestamp;
     this.lastUpdatedTimestamp = lastUpdatedTimestamp;
   }

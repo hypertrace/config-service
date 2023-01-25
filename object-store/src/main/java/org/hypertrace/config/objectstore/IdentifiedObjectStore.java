@@ -259,8 +259,8 @@ public abstract class IdentifiedObjectStore<T> {
     DeletedContextualConfigObject<T> deletedContextualConfigObject =
         DeletedContextualConfigObjectImpl.tryBuild(deletedConfig, this::buildDataFromValue);
 
-    if (deletedContextualConfigObject.getOptionalData().isPresent()) {
-      T data = deletedContextualConfigObject.getOptionalData().get();
+    if (deletedContextualConfigObject.getDeletedData().isPresent()) {
+      T data = deletedContextualConfigObject.getDeletedData().get();
       configChangeEventGeneratorOptional.ifPresent(
           configChangeEventGenerator ->
               configChangeEventGenerator.sendDeleteNotification(
