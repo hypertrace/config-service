@@ -7,6 +7,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.StringList;
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.GibberishConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.LocalTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ThresholdRegexConfig;
@@ -401,6 +402,11 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
                 ApiNamingTrainingConfig.newBuilder()
                     .setTrieModelTrainingConfig(
                         TrieModelTrainingConfig.newBuilder()
+                            .setGibberishConfig(
+                                GibberishConfig.newBuilder()
+                                    .setDisabled(true)
+                                    .setThreshold(10)
+                                    .build())
                             .setIds(
                                 ThresholdRegexConfig.newBuilder()
                                     .setThreshold(10)
