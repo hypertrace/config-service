@@ -23,6 +23,9 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingS
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.DeleteConfigResponse;
+import org.hypertrace.config.service.v1.DeleteConfigsRequest;
+import org.hypertrace.config.service.v1.DeleteConfigsRequest.ConfigToDelete;
+import org.hypertrace.config.service.v1.DeleteConfigsResponse;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.GetConfigRequest;
@@ -199,16 +202,16 @@ class IdentifiedObjectStoreTest {
                 .build());
     assertEquals(
         Optional.of(
-            new ContextualConfigObjectImpl<>(
+            new DeletedContextualConfigObjectImpl<>(
                 OBJECT_1.getId(), OBJECT_1, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP)),
-        this.store.deleteObject(mockRequestContext, "some-id"));
+        this.store.deleteObject(mockRequestContext, "first-id"));
 
     verify(this.mockStub)
         .deleteConfig(
             DeleteConfigRequest.newBuilder()
                 .setResourceName(TEST_RESOURCE_NAME)
                 .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
-                .setContext("some-id")
+                .setContext("first-id")
                 .build());
 
     when(this.mockStub.deleteConfig(any())).thenThrow(Status.NOT_FOUND.asRuntimeException());
@@ -219,7 +222,7 @@ class IdentifiedObjectStoreTest {
         .sendDeleteNotification(
             eq(this.mockRequestContext),
             eq(TestApiObject.class.getName()),
-            eq("some-id"),
+            eq("first-id"),
             eq(
                 Value.newBuilder()
                     .setStructValue(
@@ -305,6 +308,50 @@ class IdentifiedObjectStoreTest {
                         .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
                         .setContext("second-id")
                         .setConfig(OBJECT_2_AS_VALUE))
+                .build());
+  }
+
+  @Test
+  void generatesDeleteRequestsForDeleteConfigs() {
+    when(this.mockStub.deleteConfigs(any()))
+        .thenReturn(
+            DeleteConfigsResponse.newBuilder()
+                .addAllDeletedConfigs(
+                    List.of(
+                        ContextSpecificConfig.newBuilder()
+                            .setConfig(OBJECT_1_AS_VALUE)
+                            .setContext(OBJECT_1.getId())
+                            .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
+                            .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                            .build(),
+                        ContextSpecificConfig.newBuilder()
+                            .setConfig(OBJECT_2_AS_VALUE)
+                            .setContext(OBJECT_2.getId())
+                            .setCreationTimestamp(TEST_CREATE_TIMESTAMP_1.toEpochMilli())
+                            .setUpdateTimestamp(TEST_UPDATE_TIMESTAMP.toEpochMilli())
+                            .build()))
+                .build());
+    assertEquals(
+        List.of(
+            new DeletedContextualConfigObjectImpl<>(
+                OBJECT_1.getId(), OBJECT_1, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP),
+            new DeletedContextualConfigObjectImpl<>(
+                OBJECT_2.getId(), OBJECT_2, TEST_CREATE_TIMESTAMP_1, TEST_UPDATE_TIMESTAMP)),
+        this.store.deleteObjects(
+            this.mockRequestContext, List.of(OBJECT_1.getId(), OBJECT_2.getId())));
+    verify(this.mockStub, times(1))
+        .deleteConfigs(
+            DeleteConfigsRequest.newBuilder()
+                .addConfigs(
+                    ConfigToDelete.newBuilder()
+                        .setResourceName(TEST_RESOURCE_NAME)
+                        .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
+                        .setContext("first-id"))
+                .addConfigs(
+                    ConfigToDelete.newBuilder()
+                        .setResourceName(TEST_RESOURCE_NAME)
+                        .setResourceNamespace(TEST_RESOURCE_NAMESPACE)
+                        .setContext("second-id"))
                 .build());
   }
 

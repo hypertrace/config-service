@@ -96,7 +96,7 @@ public abstract class ContextuallyIdentifiedObjectStore<T> {
     return this.buildObjectStoreForContext(context).upsertObject(context, data);
   }
 
-  public Optional<ConfigObject<T>> deleteObject(RequestContext context) {
+  public Optional<DeletedConfigObject<T>> deleteObject(RequestContext context) {
     return this.buildObjectStoreForContext(context)
         .deleteObject(context, this.getConfigContextFromRequestContext(context))
         .map(Function.identity());
