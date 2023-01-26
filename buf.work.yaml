@@ -8,3 +8,4 @@ directories:
   - notification-rule-config-service-api/src/main/proto
   - spaces-config-service-api/src/main/proto
   - span-processing-config-service-api/src/main/proto
+  - partitioner-config-service-api/src/main/proto

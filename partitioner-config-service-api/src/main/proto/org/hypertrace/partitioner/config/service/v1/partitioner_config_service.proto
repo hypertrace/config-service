@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package org.hypertrace.partitioner.config.service.v1;
+
+option java_multiple_files = true;
+
+
+service PartitionerConfigService {
+
+  rpc GetPartitionerProfile(GetPartitionerProfileRequest) returns (GetPartitionerProfileResponse) {}
+
+  rpc GetPartitionerProfiles(GetPartitionerProfilesRequest) returns (GetPartitionerProfilesResponse) {}
+
+  rpc PutPartitionerProfiles(PutPartitionerProfilesRequest) returns (PutPartitionerProfilesResponse) {}
+
+  rpc DeletePartitionerProfiles(DeletePartitionerProfilesRequest) returns (DeletePartitionerProfilesResponse) {}
+
+}
+
+message GetPartitionerProfileRequest {
+  string profile_name = 1; // not optional
+}
+
+message GetPartitionerProfileResponse {
+  PartitionerProfile profile = 1;
+}
+
+message PutPartitionerProfilesRequest {
+  repeated PartitionerProfile profiles = 1;
+}
+
+message PutPartitionerProfilesResponse {
+}
+
+message GetPartitionerProfilesRequest {
+}
+
+message GetPartitionerProfilesResponse {
+  repeated PartitionerProfile profiles = 1;
+}
+
+message DeletePartitionerProfilesRequest {
+  repeated string profile_names = 1;
+}
+
+message DeletePartitionerProfilesResponse {
+}
+
+message PartitionerProfile {
+  string name = 1;
+  string partition_key = 2;
+  repeated PartitionerGroup groups = 3;
+  int32 default_group_weight = 4;
+}
+
+message PartitionerGroup {
+  string name = 1;
+  repeated string member_ids = 2;
+  int32 weight = 3;
+}
