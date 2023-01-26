@@ -80,7 +80,7 @@ public class PartitionerConfigServiceImpl
       StreamObserver<DeletePartitionerProfilesResponse> responseObserver) {
     try {
       validator.validateOrThrow(request);
-      partitionerProfilesStore.deletePartitionerProfiles(request.getProfileList());
+      partitionerProfilesStore.deletePartitionerProfiles(request.getProfileNamesList());
       responseObserver.onNext(DeletePartitionerProfilesResponse.newBuilder().build());
       responseObserver.onCompleted();
     } catch (Exception e) {

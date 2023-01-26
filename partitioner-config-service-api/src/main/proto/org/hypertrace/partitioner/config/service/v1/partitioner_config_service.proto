@@ -40,7 +40,7 @@ message GetPartitionerProfilesResponse {
 }
 
 message DeletePartitionerProfilesRequest {
-  repeated string profile = 1;
+  repeated string profile_names = 1;
 }
 
 message DeletePartitionerProfilesResponse {

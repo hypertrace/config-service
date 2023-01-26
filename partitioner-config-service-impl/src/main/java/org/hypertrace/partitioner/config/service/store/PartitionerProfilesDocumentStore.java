@@ -48,12 +48,14 @@ public class PartitionerProfilesDocumentStore implements PartitionerProfilesStor
   @Override
   public void putPartitionerProfiles(List<PartitionerProfile> partitionerProfiles)
       throws Exception {
-    Map<Key, Document> map = new LinkedHashMap<>();
-    partitionerProfiles.forEach(
-        partitionerProfile ->
-            map.put(
-                new PartitionerProfileKey(partitionerProfile.getName()),
-                new PartitionerProfileDocument(partitionerProfile)));
+
+    Map<Key, Document> map =
+        partitionerProfiles.stream()
+            .collect(
+                Collectors.toUnmodifiableMap(
+                    partitionerProfile -> new PartitionerProfileKey(partitionerProfile.getName()),
+                    PartitionerProfileDocument::new));
+
     this.collection.bulkUpsert(map);
   }
 

@@ -14,6 +14,10 @@ public class PartitionerConfigServiceRequestValidator {
   }
 
   public void validateOrThrow(PutPartitionerProfilesRequest request) {
+    if (request.getProfilesCount() == 0) {
+      throw Status.INVALID_ARGUMENT.withDescription("profiles can't be empty").asRuntimeException();
+    }
+
     request
         .getProfilesList()
         .forEach(
@@ -49,7 +53,7 @@ public class PartitionerConfigServiceRequestValidator {
                         }
                       });
 
-              Map<String, String> memberId2PartitionerGroupName = new HashMap<>();
+              Map<String, String> memberIdPartitionerGroupName = new HashMap<>();
               profile
                   .getGroupsList()
                   .forEach(
@@ -58,16 +62,16 @@ public class PartitionerConfigServiceRequestValidator {
                             .getMemberIdsList()
                             .forEach(
                                 memberId -> {
-                                  if (memberId2PartitionerGroupName.containsKey(memberId)) {
+                                  if (memberIdPartitionerGroupName.containsKey(memberId)) {
                                     throw Status.INVALID_ARGUMENT
                                         .withDescription(
                                             String.format(
                                                 "memberId {%s} already member of group {%s}",
                                                 memberId,
-                                                memberId2PartitionerGroupName.get(memberId)))
+                                                memberIdPartitionerGroupName.get(memberId)))
                                         .asRuntimeException();
                                   } else {
-                                    memberId2PartitionerGroupName.put(
+                                    memberIdPartitionerGroupName.put(
                                         memberId, partitionerGroup.getName());
                                   }
                                 });
@@ -76,8 +80,14 @@ public class PartitionerConfigServiceRequestValidator {
   }
 
   public void validateOrThrow(DeletePartitionerProfilesRequest request) {
+    if (request.getProfileNamesCount() == 0) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("profile names can't be empty")
+          .asRuntimeException();
+    }
+
     request
-        .getProfileList()
+        .getProfileNamesList()
         .forEach(
             profile -> {
               if (profile.isBlank()) {
