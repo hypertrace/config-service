@@ -1,6 +1,7 @@
 package org.hypertrace.partitioner.config.service;
 
 import com.google.inject.Inject;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.Optional;
@@ -29,57 +30,61 @@ public class PartitionerConfigServiceImpl
     try {
       validator.validateOrThrow(request);
       Optional<PartitionerProfile> profile =
-          partitionerProfilesStore.getPartitionerProfile(request.getProfile());
+          partitionerProfilesStore.getPartitionerProfile(request.getProfileName());
       if (profile.isPresent()) {
         responseObserver.onNext(
             GetPartitionerProfileResponse.newBuilder().setProfile(profile.get()).build());
       } else {
-        responseObserver.onNext(GetPartitionerProfileResponse.newBuilder().build());
+        throw Status.NOT_FOUND
+            .withDescription(
+                String.format("Partitioner profile for {} not found", request.getProfileName()))
+            .asRuntimeException();
       }
       responseObserver.onCompleted();
     } catch (Exception e) {
+      log.error("Get profile failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }
 
-  /** */
-  public void putPartitionerConfig(
-      PutPartitionerConfigRequest request,
-      StreamObserver<PutPartitionerConfigResponse> responseObserver) {
+  public void putPartitionerProfiles(
+      PutPartitionerProfilesRequest request,
+      StreamObserver<PutPartitionerProfilesResponse> responseObserver) {
     try {
       validator.validateOrThrow(request);
-      partitionerProfilesStore.putPartitionerProfile(request.getProfile());
-      responseObserver.onNext(PutPartitionerConfigResponse.newBuilder().build());
+      partitionerProfilesStore.putPartitionerProfiles(request.getProfilesList());
+      responseObserver.onNext(PutPartitionerProfilesResponse.newBuilder().build());
       responseObserver.onCompleted();
     } catch (Exception e) {
+      log.error("Put profiles failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }
 
-  /** */
-  public void getAllPartitionerConfig(
-      GetAllPartitionerConfigRequest request,
-      StreamObserver<GetAllPartitionerConfigResponse> responseObserver) {
+  public void getPartitionerProfiles(
+      GetPartitionerProfilesRequest request,
+      StreamObserver<GetPartitionerProfilesResponse> responseObserver) {
     try {
       List<PartitionerProfile> profiles = partitionerProfilesStore.getAllPartitionProfiles();
       responseObserver.onNext(
-          GetAllPartitionerConfigResponse.newBuilder().addAllProfiles(profiles).build());
+          GetPartitionerProfilesResponse.newBuilder().addAllProfiles(profiles).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
+      log.error("Get profiles failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }
 
-  /** */
-  public void deletePartitionerConfig(
-      DeletePartitionerConfigRequest request,
-      StreamObserver<DeletePartitionerConfigResponse> responseObserver) {
+  public void deletePartitionerProfiles(
+      DeletePartitionerProfilesRequest request,
+      StreamObserver<DeletePartitionerProfilesResponse> responseObserver) {
     try {
       validator.validateOrThrow(request);
-      boolean deleted = partitionerProfilesStore.deletePartitionerProfile(request.getProfile());
-      responseObserver.onNext(DeletePartitionerConfigResponse.newBuilder().build());
+      partitionerProfilesStore.deletePartitionerProfiles(request.getProfileList());
+      responseObserver.onNext(DeletePartitionerProfilesResponse.newBuilder().build());
       responseObserver.onCompleted();
     } catch (Exception e) {
+      log.error("Delete profiles failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }

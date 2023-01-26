@@ -1,6 +1,7 @@
 package org.hypertrace.partitioner.config.service.store;
 
 import com.google.common.collect.ImmutableList;
+import io.grpc.Status;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.hypertrace.core.documentstore.*;
@@ -26,7 +27,9 @@ public class PartitionerProfilesDocumentStore implements PartitionerProfilesStor
       if (list.size() == 1) {
         return Optional.of(PartitionerProfileDocument.fromJson(list.get(0).toJson()));
       } else if (list.size() > 1) {
-        throw new IllegalStateException("More than 1 PartitionerProfile documents returned");
+        throw Status.INTERNAL
+            .withDescription("More than 1 PartitionerProfile documents returned")
+            .asRuntimeException();
       }
     }
     return Optional.empty();
@@ -43,17 +46,20 @@ public class PartitionerProfilesDocumentStore implements PartitionerProfilesStor
   }
 
   @Override
-  public Optional<PartitionerProfile> putPartitionerProfile(PartitionerProfile partitionerProfile)
+  public void putPartitionerProfiles(List<PartitionerProfile> partitionerProfiles)
       throws Exception {
-    Document upsertedDoc =
-        this.collection.upsertAndReturn(
-            new PartitionerProfileKey(partitionerProfile.getName()),
-            new PartitionerProfileDocument(partitionerProfile));
-    return Optional.of(PartitionerProfileDocument.fromJson(upsertedDoc.toJson()));
+    Map<Key, Document> map = new LinkedHashMap<>();
+    partitionerProfiles.forEach(
+        partitionerProfile ->
+            map.put(
+                new PartitionerProfileKey(partitionerProfile.getName()),
+                new PartitionerProfileDocument(partitionerProfile)));
+    this.collection.bulkUpsert(map);
   }
 
   @Override
-  public boolean deletePartitionerProfile(String profile) throws Exception {
-    return this.collection.delete(new PartitionerProfileKey(profile));
+  public void deletePartitionerProfiles(List<String> profiles) throws Exception {
+    this.collection.delete(
+        profiles.stream().map(PartitionerProfileKey::new).collect(Collectors.toSet()));
   }
 }

@@ -10,8 +10,7 @@ public interface PartitionerProfilesStore {
 
   List<PartitionerProfile> getAllPartitionProfiles() throws Exception;
 
-  Optional<PartitionerProfile> putPartitionerProfile(PartitionerProfile partitionerProfile)
-      throws Exception;
+  void putPartitionerProfiles(List<PartitionerProfile> partitionerProfiles) throws Exception;
 
-  boolean deletePartitionerProfile(String profile) throws Exception;
+  void deletePartitionerProfiles(List<String> profiles) throws Exception;
 }

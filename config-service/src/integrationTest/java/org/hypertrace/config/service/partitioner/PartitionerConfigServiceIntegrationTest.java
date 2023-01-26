@@ -93,23 +93,27 @@ public class PartitionerConfigServiceIntegrationTest {
                               .build()))
                   .build();
 
-          PutPartitionerConfigRequest request =
-              PutPartitionerConfigRequest.newBuilder().setProfile(spanCountProfile).build();
+          PutPartitionerProfilesRequest request =
+              PutPartitionerProfilesRequest.newBuilder()
+                  .addProfiles(spanCountProfile)
+                  .addProfiles(apiCountProfile)
+                  .build();
 
-          partitionerConfigServiceBlockingStub.putPartitionerConfig(request);
-
-          partitionerConfigServiceBlockingStub.putPartitionerConfig(
-              PutPartitionerConfigRequest.newBuilder().setProfile(apiCountProfile).build());
+          partitionerConfigServiceBlockingStub.putPartitionerProfiles(request);
 
           GetPartitionerProfileResponse response =
               partitionerConfigServiceBlockingStub.getPartitionerProfile(
-                  GetPartitionerProfileRequest.newBuilder().setProfile("spanCountProfile").build());
+                  GetPartitionerProfileRequest.newBuilder()
+                      .setProfileName("spanCountProfile")
+                      .build());
           PartitionerProfile actual = response.getProfile();
           assertEquals(spanCountProfile, actual);
 
           response =
               partitionerConfigServiceBlockingStub.getPartitionerProfile(
-                  GetPartitionerProfileRequest.newBuilder().setProfile("apiCountProfile").build());
+                  GetPartitionerProfileRequest.newBuilder()
+                      .setProfileName("apiCountProfile")
+                      .build());
           actual = response.getProfile();
           assertEquals(apiCountProfile, actual);
         });
@@ -174,26 +178,24 @@ public class PartitionerConfigServiceIntegrationTest {
                               .build()))
                   .build();
 
-          PutPartitionerConfigRequest request =
-              PutPartitionerConfigRequest.newBuilder().setProfile(spanCountProfile).build();
+          PutPartitionerProfilesRequest request =
+              PutPartitionerProfilesRequest.newBuilder()
+                  .addProfiles(spanCountProfile)
+                  .addProfiles(apiCountProfile)
+                  .addProfiles(sessionsCountProfile)
+                  .build();
 
-          partitionerConfigServiceBlockingStub.putPartitionerConfig(request);
+          partitionerConfigServiceBlockingStub.putPartitionerProfiles(request);
 
-          partitionerConfigServiceBlockingStub.putPartitionerConfig(
-              PutPartitionerConfigRequest.newBuilder().setProfile(apiCountProfile).build());
-
-          partitionerConfigServiceBlockingStub.putPartitionerConfig(
-              PutPartitionerConfigRequest.newBuilder().setProfile(sessionsCountProfile).build());
-
-          GetAllPartitionerConfigResponse getAllPartitionerConfigResponse =
-              partitionerConfigServiceBlockingStub.getAllPartitionerConfig(
-                  GetAllPartitionerConfigRequest.newBuilder().build());
-          assertEquals(3, getAllPartitionerConfigResponse.getProfilesCount());
+          GetPartitionerProfilesResponse partitionerProfilesResponse =
+              partitionerConfigServiceBlockingStub.getPartitionerProfiles(
+                  GetPartitionerProfilesRequest.newBuilder().build());
+          assertEquals(3, partitionerProfilesResponse.getProfilesCount());
         });
   }
 
   @Test
-  public void whenDeleteAProfile_thenExpectOthersToBeIntact() {
+  public void whenDeleteProfiles_thenExpectOthersToBeIntact() {
     GrpcClientRequestContextUtil.executeWithHeadersContext(
         Collections.emptyMap(),
         () -> {
@@ -251,30 +253,32 @@ public class PartitionerConfigServiceIntegrationTest {
                               .build()))
                   .build();
 
-          PutPartitionerConfigRequest request =
-              PutPartitionerConfigRequest.newBuilder().setProfile(spanCountProfile).build();
+          PutPartitionerProfilesRequest request =
+              PutPartitionerProfilesRequest.newBuilder()
+                  .addProfiles(spanCountProfile)
+                  .addProfiles(apiCountProfile)
+                  .addProfiles(sessionsCountProfile)
+                  .build();
 
-          partitionerConfigServiceBlockingStub.putPartitionerConfig(request);
+          partitionerConfigServiceBlockingStub.putPartitionerProfiles(request);
 
-          partitionerConfigServiceBlockingStub.putPartitionerConfig(
-              PutPartitionerConfigRequest.newBuilder().setProfile(apiCountProfile).build());
+          partitionerConfigServiceBlockingStub.deletePartitionerProfiles(
+              DeletePartitionerProfilesRequest.newBuilder()
+                  .addProfile("spanCountProfile")
+                  .addProfile("sessionsCountProfile")
+                  .build());
 
-          partitionerConfigServiceBlockingStub.putPartitionerConfig(
-              PutPartitionerConfigRequest.newBuilder().setProfile(sessionsCountProfile).build());
-
-          partitionerConfigServiceBlockingStub.deletePartitionerConfig(
-              DeletePartitionerConfigRequest.newBuilder().setProfile("spanCountProfile").build());
-
-          GetAllPartitionerConfigResponse getAllPartitionerConfigResponse =
-              partitionerConfigServiceBlockingStub.getAllPartitionerConfig(
-                  GetAllPartitionerConfigRequest.newBuilder().build());
-          assertEquals(2, getAllPartitionerConfigResponse.getProfilesCount());
+          GetPartitionerProfilesResponse partitionerProfilesResponse =
+              partitionerConfigServiceBlockingStub.getPartitionerProfiles(
+                  GetPartitionerProfilesRequest.newBuilder().build());
+          assertEquals(1, partitionerProfilesResponse.getProfilesCount());
 
           assertFalse(
-              getAllPartitionerConfigResponse.getProfilesList().stream()
+              partitionerProfilesResponse.getProfilesList().stream()
                   .anyMatch(
                       partitionerProfile ->
-                          partitionerProfile.getName().equals("spanCountProfile")));
+                          partitionerProfile.getName().equals("spanCountProfile")
+                              || partitionerProfile.getName().equals("sessionsCountProfile")));
         });
   }
 
