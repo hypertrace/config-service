@@ -70,7 +70,6 @@ dependencies {
   integrationTestImplementation(libs.hypertrace.grpcutils.client)
   integrationTestImplementation(libs.hypertrace.grpcutils.context)
   integrationTestImplementation(libs.hypertrace.documentstore)
-  integrationTestImplementation(projects.partitionerConfigServiceImpl)
 }
 
 application {
