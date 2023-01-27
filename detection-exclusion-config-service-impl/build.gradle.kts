@@ -21,6 +21,7 @@ dependencies {
   implementation(libs.hypertrace.configservice.validation)
   implementation(libs.hypertrace.configservice.changeeventgenerator)
   implementation(libs.protobuf.javautil)
+  implementation(libs.traceable.platformGateway.ipUtils)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

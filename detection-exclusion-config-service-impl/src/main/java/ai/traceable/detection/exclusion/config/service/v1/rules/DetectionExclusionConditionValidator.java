@@ -3,7 +3,6 @@ package ai.traceable.detection.exclusion.config.service.v1.rules;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
-import ai.traceable.config.utils.IpAddressParsingUtils;
 import ai.traceable.detection.exclusion.config.service.v1.AnomalousAttributeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.CustomRuleEvent;
 import ai.traceable.detection.exclusion.config.service.v1.CustomRuleFamily;
@@ -24,6 +23,7 @@ import ai.traceable.detection.exclusion.config.service.v1.SpanAttributeMatchCond
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
 import ai.traceable.detection.exclusion.config.service.v1.UserIdCondition;
+import ai.traceable.platform.utils.ip.IpValidationUtils;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
 import com.google.re2j.Pattern;
@@ -31,16 +31,8 @@ import com.google.re2j.PatternSyntaxException;
 import io.grpc.Status;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 
 public class DetectionExclusionConditionValidator {
-
-  private final IpAddressParsingUtils ipAddressParsingUtils;
-
-  @Inject
-  public DetectionExclusionConditionValidator(IpAddressParsingUtils ipAddressParsingUtils) {
-    this.ipAddressParsingUtils = ipAddressParsingUtils;
-  }
 
   void validateRuleCondition(DetectionExclusionCondition condition) {
     switch (condition.getConditionCase()) {
@@ -320,13 +312,13 @@ public class DetectionExclusionConditionValidator {
           .asRuntimeException();
     }
 
-    if (!condition.getIpAddressesList().stream().allMatch(ipAddressParsingUtils::isValidIp)) {
+    if (!condition.getIpAddressesList().stream().allMatch(IpValidationUtils::isValidIpAddress)) {
       throw Status.INVALID_ARGUMENT
           .withDescription("IpAddressCondition should have valid IP addresses")
           .asRuntimeException();
     }
 
-    if (!condition.getCidrIpRangesList().stream().allMatch(ipAddressParsingUtils::isValidSubnet)) {
+    if (!condition.getCidrIpRangesList().stream().allMatch(IpValidationUtils::isValidSubnet)) {
       throw Status.INVALID_ARGUMENT
           .withDescription("IpAddressCondition should have valid CIDR IP ranges")
           .asRuntimeException();

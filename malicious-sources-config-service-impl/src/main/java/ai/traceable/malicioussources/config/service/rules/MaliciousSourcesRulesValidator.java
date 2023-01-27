@@ -1,6 +1,5 @@
 package ai.traceable.malicioussources.config.service.rules;
 
-import ai.traceable.config.utils.IpAddressParsingUtils;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.DeleteMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.EmailDomainCondition;
@@ -20,6 +19,7 @@ import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleScope
 import ai.traceable.malicioussources.config.service.v1.RegionCondition;
 import ai.traceable.malicioussources.config.service.v1.RuleActionType;
 import ai.traceable.malicioussources.config.service.v1.UpdateMaliciousSourcesRuleRequest;
+import ai.traceable.platform.utils.ip.IpValidationUtils;
 import io.grpc.Status;
 import java.util.List;
 import java.util.Locale;
@@ -29,15 +29,8 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 
 public class MaliciousSourcesRulesValidator implements RulesValidator {
-  private final IpAddressParsingUtils ipAddressParsingUtils;
-
-  @Inject
-  public MaliciousSourcesRulesValidator(IpAddressParsingUtils ipAddressParsingUtils) {
-    this.ipAddressParsingUtils = ipAddressParsingUtils;
-  }
 
   @Override
   public Status validate(
@@ -181,13 +174,13 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
     }
 
     if (!ipAddressCondition.getIpAddressesList().stream()
-        .allMatch(ipAddressParsingUtils::isValidIp)) {
+        .allMatch(IpValidationUtils::isValidIpAddress)) {
       return Status.INVALID_ARGUMENT.withDescription(
           "IpAddressCondition in Malicious Sources rule should have a valid IP address");
     }
 
     if (!ipAddressCondition.getCidrIpRangesList().stream()
-        .allMatch(ipAddressParsingUtils::isValidSubnet)) {
+        .allMatch(IpValidationUtils::isValidSubnet)) {
       return Status.INVALID_ARGUMENT.withDescription(
           "IpAddressCondition in Malicious Sources rule should have a valid CIDR address");
     }

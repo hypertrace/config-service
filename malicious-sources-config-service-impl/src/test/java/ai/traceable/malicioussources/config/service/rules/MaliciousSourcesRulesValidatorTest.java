@@ -1,10 +1,7 @@
 package ai.traceable.malicioussources.config.service.rules;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
 
-import ai.traceable.config.utils.IpAddressParsingUtils;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.DeleteMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.EmailDomainCondition;
@@ -43,7 +40,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class MaliciousSourcesRulesValidatorTest {
   @Mock private Supplier<List<MaliciousSourcesRule>> blockAllExceptRulesSupplier;
-  @Mock private IpAddressParsingUtils ipAddressParsingUtils;
   @InjectMocks private MaliciousSourcesRulesValidator rulesValidator;
 
   @Nested
@@ -526,7 +522,6 @@ public class MaliciousSourcesRulesValidatorTest {
     @Test
     @DisplayName("Should return invalid argument due to invalid ip address")
     void validateCreateMaliciousSourcesRuleRequest_ip_range2() {
-      when(ipAddressParsingUtils.isValidIp(anyString())).thenReturn(true);
       MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
           MaliciousSourcesRuleInfo.newBuilder()
               .setName("Tester-1")
@@ -548,7 +543,6 @@ public class MaliciousSourcesRulesValidatorTest {
           CreateMaliciousSourcesRuleRequest.newBuilder()
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
-      when(ipAddressParsingUtils.isValidIp(anyString())).thenReturn(false);
       Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
@@ -556,7 +550,6 @@ public class MaliciousSourcesRulesValidatorTest {
     @Test
     @DisplayName("Should return invalid argument due to invalid CIDR address")
     void validateCreateMaliciousSourcesRuleRequest_ip_range3() {
-      when(ipAddressParsingUtils.isValidSubnet(anyString())).thenReturn(true);
       MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
           MaliciousSourcesRuleInfo.newBuilder()
               .setName("Tester-1")
@@ -578,7 +571,6 @@ public class MaliciousSourcesRulesValidatorTest {
           CreateMaliciousSourcesRuleRequest.newBuilder()
               .setRuleInfo(maliciousSourcesRuleInfo)
               .build();
-      when(ipAddressParsingUtils.isValidSubnet(anyString())).thenReturn(false);
       Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
@@ -631,7 +623,6 @@ public class MaliciousSourcesRulesValidatorTest {
     @Test
     @DisplayName("Should return invalid status because of empty env id list")
     void validateCreateMaliciousSourcesRuleRequest_empty_env_scope() {
-      when(ipAddressParsingUtils.isValidIp(anyString())).thenReturn(true);
       MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
           MaliciousSourcesRuleInfo.newBuilder()
               .setName("Tester-1")
@@ -664,7 +655,6 @@ public class MaliciousSourcesRulesValidatorTest {
     @Test
     @DisplayName("Should return invalid status because of empty env id")
     void validateCreateMaliciousSourcesRuleRequest_empty_env_id() {
-      when(ipAddressParsingUtils.isValidIp(anyString())).thenReturn(true);
       MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
           MaliciousSourcesRuleInfo.newBuilder()
               .setName("Tester-1")
@@ -767,7 +757,6 @@ public class MaliciousSourcesRulesValidatorTest {
     @DisplayName(
         "Should return ALREADY_EXISTS status when creating a duplicate block all except rule")
     void validateCreateMaliciousSourcesRuleRequest_incorrect_duplicateBlockAllExcept() {
-      when(ipAddressParsingUtils.isValidIp(anyString())).thenReturn(true);
       MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
           MaliciousSourcesRuleInfo.newBuilder()
               .setName("Tester-1")
@@ -855,7 +844,6 @@ public class MaliciousSourcesRulesValidatorTest {
     @Test
     @DisplayName("Should return OK status when a given valid update Malicious Sources rule")
     void validateUpdateMaliciousSourcesRuleRequest_correct_2() {
-      when(ipAddressParsingUtils.isValidIp(anyString())).thenReturn(true);
       MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
           MaliciousSourcesRuleInfo.newBuilder()
               .setName("Tester-1")
@@ -1423,7 +1411,6 @@ public class MaliciousSourcesRulesValidatorTest {
     @Test
     @DisplayName("Should return invalid argument due to invalid ip address")
     void validateUpdateMaliciousSourcesRuleRequest_ip_range2() {
-      when(ipAddressParsingUtils.isValidIp(anyString())).thenReturn(true);
       MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
           MaliciousSourcesRuleInfo.newBuilder()
               .setName("Tester-1")
@@ -1453,7 +1440,6 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
-      when(ipAddressParsingUtils.isValidIp(anyString())).thenReturn(false);
       Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
@@ -1461,7 +1447,6 @@ public class MaliciousSourcesRulesValidatorTest {
     @Test
     @DisplayName("Should return invalid argument due to invalid CIDR address")
     void validateUpdateMaliciousSourcesRuleRequest_ip_range3() {
-      when(ipAddressParsingUtils.isValidSubnet(anyString())).thenReturn(true);
       MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
           MaliciousSourcesRuleInfo.newBuilder()
               .setName("Tester-1")
@@ -1489,7 +1474,6 @@ public class MaliciousSourcesRulesValidatorTest {
                       .setDisabled(true)
                       .build())
               .build();
-      when(ipAddressParsingUtils.isValidSubnet(anyString())).thenReturn(false);
       UpdateMaliciousSourcesRuleRequest updateMaliciousSourcesRuleRequest =
           UpdateMaliciousSourcesRuleRequest.newBuilder().setRule(maliciousSourcesRule).build();
       Status status = rulesValidator.validate(updateMaliciousSourcesRuleRequest, List.of());
@@ -1558,7 +1542,6 @@ public class MaliciousSourcesRulesValidatorTest {
     @Test
     @DisplayName("Should return invalid status because of empty env id list")
     void validateUpdateMaliciousSourcesRuleRequest_empty_env_scope() {
-      when(ipAddressParsingUtils.isValidIp(anyString())).thenReturn(true);
       MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
           MaliciousSourcesRuleInfo.newBuilder()
               .setName("Tester-1")
@@ -1598,7 +1581,6 @@ public class MaliciousSourcesRulesValidatorTest {
     @Test
     @DisplayName("Should return invalid status because of empty env id")
     void validateUpdateMaliciousSourcesRuleRequest_empty_env_id() {
-      when(ipAddressParsingUtils.isValidIp(anyString())).thenReturn(true);
       MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
           MaliciousSourcesRuleInfo.newBuilder()
               .setName("Tester-1")
@@ -1729,7 +1711,6 @@ public class MaliciousSourcesRulesValidatorTest {
     @DisplayName(
         "Should return ALREADY_EXISTS status when creating a duplicate block all except rule")
     void validateUpdateMaliciousSourcesRuleRequest_incorrect_duplicateBlockAllExcept() {
-      when(ipAddressParsingUtils.isValidIp(anyString())).thenReturn(true);
       MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
           MaliciousSourcesRuleInfo.newBuilder()
               .setName("Tester-1")

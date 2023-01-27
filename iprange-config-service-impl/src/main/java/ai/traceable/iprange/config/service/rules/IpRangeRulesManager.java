@@ -1,9 +1,10 @@
 package ai.traceable.iprange.config.service.rules;
 
-import ai.traceable.config.utils.IpAddressParsingUtils;
-import ai.traceable.config.utils.IpAddressParsingUtils.IpParsingResults;
+import static ai.traceable.platform.utils.ip.IpAddressParsingUtils.parseRawIpRange;
+
 import ai.traceable.iprange.config.service.utils.UuidGenerator;
 import ai.traceable.iprange.config.service.v1.*;
+import ai.traceable.platform.utils.ip.IpAddressParsingUtils.IpParsingResults;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import java.time.Clock;
@@ -19,18 +20,13 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 class IpRangeRulesManager implements RulesManager {
   private final IpRangeRulesStore ipRangeRulesStore;
   private final UuidGenerator uuidGenerator;
-  private final IpAddressParsingUtils ipAddressParsingUtils;
   private final Clock clock;
 
   @Inject
   IpRangeRulesManager(
-      IpRangeRulesStore ipRangeRulesStore,
-      UuidGenerator uuidGenerator,
-      IpAddressParsingUtils ipAddressParsingUtils,
-      Clock clock) {
+      IpRangeRulesStore ipRangeRulesStore, UuidGenerator uuidGenerator, Clock clock) {
     this.ipRangeRulesStore = ipRangeRulesStore;
     this.uuidGenerator = uuidGenerator;
-    this.ipAddressParsingUtils = ipAddressParsingUtils;
     this.clock = clock;
   }
 
@@ -47,8 +43,7 @@ class IpRangeRulesManager implements RulesManager {
   public IpRangeRule createIpRangeRule(
       RequestContext requestContext, CreateIpRangeRuleRequest createRuleRequest) {
     IpParsingResults parsedRawIpRange =
-        ipAddressParsingUtils.parseRawIpRange(
-            createRuleRequest.getRuleDetails().getRawInputIpDataList());
+        parseRawIpRange(createRuleRequest.getRuleDetails().getRawInputIpDataList());
 
     String ruleId = this.uuidGenerator.generateId();
 
@@ -74,8 +69,7 @@ class IpRangeRulesManager implements RulesManager {
     }
 
     IpParsingResults parsedRawIpRange =
-        ipAddressParsingUtils.parseRawIpRange(
-            updateRuleRequest.getRuleDetails().getRawInputIpDataList());
+        parseRawIpRange(updateRuleRequest.getRuleDetails().getRawInputIpDataList());
 
     IpRangeRule ipRangeRule =
         IpRangeRule.newBuilder()

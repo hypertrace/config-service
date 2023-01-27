@@ -1,8 +1,9 @@
 package ai.traceable.ratelimiting.service.v2.rules;
 
-import ai.traceable.config.utils.IpAddressParsingUtils;
-import ai.traceable.config.utils.IpAddressParsingUtils.IpParsingResults;
+import static ai.traceable.platform.utils.ip.IpAddressParsingUtils.parseRawIpRange;
+
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.platform.utils.ip.IpAddressParsingUtils.IpParsingResults;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
@@ -18,14 +19,12 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class RateLimitingRulesManager implements RulesManager {
   private final RateLimitingRulesStore rateLimitingRulesStore;
   private final UuidGenerator uuidGenerator;
-  private final IpAddressParsingUtils ipAddressParsingUtils;
 
   @Inject
   public RateLimitingRulesManager(
       RateLimitingRulesStore rateLimitingRulesStore, UuidGenerator uuidGenerator) {
     this.rateLimitingRulesStore = rateLimitingRulesStore;
     this.uuidGenerator = uuidGenerator;
-    this.ipAddressParsingUtils = new IpAddressParsingUtils();
   }
 
   @Override
@@ -74,7 +73,7 @@ public class RateLimitingRulesManager implements RulesManager {
     if (condition.hasLeafCondition() && condition.getLeafCondition().hasIpAddressCondition()) {
       List<String> rawIps =
           condition.getLeafCondition().getIpAddressCondition().getRawInputIpDataList();
-      IpParsingResults parsedResults = ipAddressParsingUtils.parseRawIpRange(rawIps);
+      IpParsingResults parsedResults = parseRawIpRange(rawIps);
       IpAddressCondition.Builder ipAddressConditionBuilder =
           builder.getLeafConditionBuilder().getIpAddressConditionBuilder();
       ipAddressConditionBuilder.clearCidrIpRanges().clearIpAddresses();

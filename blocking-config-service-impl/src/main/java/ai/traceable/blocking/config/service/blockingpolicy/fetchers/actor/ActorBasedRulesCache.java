@@ -24,7 +24,7 @@ import ai.traceable.platform.actor.v1.RateLimitCategory;
 import ai.traceable.platform.actor.v1.StatusChangeSource;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
-import ai.traceable.platform.validator.ExternalIpAddressValidator;
+import ai.traceable.platform.utils.ip.IpValidationUtils;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -47,8 +47,6 @@ import org.slf4j.LoggerFactory;
 public class ActorBasedRulesCache {
   private static final Logger LOGGER = LoggerFactory.getLogger(ActorBasedRulesCache.class);
   private static final String ACTOR_BASED_RULES_CACHE = "ActorBasedRulesCache";
-  private static final ExternalIpAddressValidator externalIpAddressValidator =
-      ExternalIpAddressValidator.getInstance();
 
   private final LoadingCache<ContextualKey<Optional<String>>, ActorBasedRulesCollection> actorCache;
   private final BlockingRulesUtils blockingRulesUtils;
@@ -251,7 +249,7 @@ public class ActorBasedRulesCache {
 
   private static List<String> parseIpAddresses(List<String> ipAddresses) {
     return ipAddresses.stream()
-        .filter(externalIpAddressValidator::validate)
+        .filter(ip -> IpValidationUtils.getIpValidationResult(ip).isExternalIp())
         .collect(Collectors.toUnmodifiableList());
   }
 }

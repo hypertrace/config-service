@@ -12,6 +12,7 @@ dependencies {
   implementation(libs.hypertrace.configservice.objectstore)
   implementation(libs.hypertrace.configservice.changeeventgenerator)
   implementation(libs.hypertrace.configservice.protoconverter)
+  implementation(libs.traceable.platformGateway.ipUtils)
 
   implementation(libs.guice)
   implementation(libs.protobuf.javautil)

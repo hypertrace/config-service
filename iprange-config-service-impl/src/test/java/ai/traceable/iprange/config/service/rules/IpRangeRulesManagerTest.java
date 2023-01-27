@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.config.utils.IpAddressParsingUtils;
 import ai.traceable.iprange.config.service.utils.UuidGenerator;
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.EnvironmentScope;
@@ -57,12 +56,10 @@ class IpRangeRulesManagerTest {
     ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     uuidGenerator = mock(UuidGenerator.class);
-    IpAddressParsingUtils ipAddressParsingUtils = new IpAddressParsingUtils();
     mockClock = mock(Clock.class);
     ipRangeRulesStore =
         new IpRangeRulesStore(configServiceBlockingStub, mock(ConfigChangeEventGenerator.class));
-    this.rulesManager =
-        new IpRangeRulesManager(ipRangeRulesStore, uuidGenerator, ipAddressParsingUtils, mockClock);
+    this.rulesManager = new IpRangeRulesManager(ipRangeRulesStore, uuidGenerator, mockClock);
     requestContext = RequestContext.forTenantId("default tenant");
   }
 

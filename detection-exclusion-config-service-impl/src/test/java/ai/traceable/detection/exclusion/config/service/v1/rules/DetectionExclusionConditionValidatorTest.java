@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import ai.traceable.config.utils.IpAddressParsingUtils;
 import ai.traceable.detection.exclusion.config.service.v1.AnomalousAttributeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.CustomRuleEvent;
 import ai.traceable.detection.exclusion.config.service.v1.CustomRuleFamily;
@@ -39,7 +38,7 @@ class DetectionExclusionConditionValidatorTest {
 
   @BeforeEach
   void setUp() {
-    conditionValidator = new DetectionExclusionConditionValidator(new IpAddressParsingUtils());
+    conditionValidator = new DetectionExclusionConditionValidator();
   }
 
   @Test

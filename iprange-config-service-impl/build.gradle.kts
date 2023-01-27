@@ -18,6 +18,7 @@ dependencies {
   implementation(libs.slf4j.api)
   implementation(libs.uuidCreator)
   implementation(libs.guava)
+  implementation(libs.traceable.platformGateway.ipUtils)
 
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpcutils.client)
