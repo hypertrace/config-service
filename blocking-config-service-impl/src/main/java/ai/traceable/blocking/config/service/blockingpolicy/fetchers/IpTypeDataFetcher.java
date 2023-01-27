@@ -10,6 +10,7 @@ import ai.traceable.blocking.config.service.v1.BlockingDetails;
 import ai.traceable.blocking.config.service.v1.IpType;
 import ai.traceable.blocking.config.service.v1.IpTypeDetails;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleCondition;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import com.google.inject.Inject;
 import com.google.protobuf.util.Timestamps;
@@ -65,7 +66,10 @@ public class IpTypeDataFetcher {
                 maliciousSourcesRule.getId(),
                 maliciousSourcesRule.getRuleInfo().getName(),
                 maliciousSourcesRule.getRuleInfo().getRuleAction().getEventSeverity().name(),
-                Optional.empty()))
+                Optional.empty(),
+                maliciousSourcesRule.getRuleInfo().getConditionsList().stream()
+                    .map(MaliciousSourcesRuleCondition::getConditionCase)
+                    .collect(Collectors.toUnmodifiableList())))
         .setExpirationTimestamp(expirationTimestampMillis)
         .setStatus(BLOCKING_STATUS_DENIED)
         .setIpTypeDetails(IpTypeDetails.newBuilder().addAllIpTypes(ipTypes))

@@ -25,6 +25,7 @@ import ai.traceable.blocking.config.service.BlockingDataCacheConfig;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.actor.config.ActorServiceConfig;
 import ai.traceable.blocking.config.service.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleCondition;
 import ai.traceable.platform.actor.v1.MaliciousSourcesDetails;
 import ai.traceable.platform.actor.v1.RateLimitCategory;
 import ai.traceable.platform.actor.v1.RateLimitDetails;
@@ -168,7 +169,11 @@ class ActorBasedRulesCacheTest {
       assertEquals(BLOCKING_STATUS_ALLOWED, emailDomainBasedExemptions.get(0).getStatus());
       assertEquals(
           ExemptionInfoEncoder.getEncodedMaliciousSourcesExemptionInfo(
-              "email-domain-id-1", "email-domain-name-1", "", Optional.of("entity-5")),
+              "email-domain-id-1",
+              "email-domain-name-1",
+              "",
+              Optional.of("entity-5"),
+              List.of(MaliciousSourcesRuleCondition.ConditionCase.EMAIL_DOMAIN_CONDITION)),
           emailDomainBasedExemptions.get(0).getInfo());
       // Addition ip detail rule
       assertEquals(
@@ -197,7 +202,11 @@ class ActorBasedRulesCacheTest {
       assertEquals(BLOCKING_STATUS_SUSPENDED, emailDomainBasedViolations.get(0).getStatus());
       assertEquals(
           ViolationInfoEncoder.getEncodedMaliciousSourcesViolationInfo(
-              "email-domain-id-2", "email-domain-name-2", "", Optional.of("entity-6")),
+              "email-domain-id-2",
+              "email-domain-name-2",
+              "",
+              Optional.of("entity-6"),
+              List.of(MaliciousSourcesRuleCondition.ConditionCase.EMAIL_DOMAIN_CONDITION)),
           emailDomainBasedViolations.get(0).getInfo());
       // Addition ip detail rule
       assertEquals(

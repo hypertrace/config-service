@@ -20,6 +20,7 @@ import ai.traceable.blocking.config.service.v1.BlockingCategory;
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
 import ai.traceable.blocking.config.service.v1.BlockingRuleType;
 import ai.traceable.blocking.config.service.v1.IpDetails;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleCondition;
 import ai.traceable.platform.actor.v1.RateLimitCategory;
 import ai.traceable.platform.actor.v1.StatusChangeSource;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
@@ -128,7 +129,10 @@ public class ActorBasedRulesCache {
                                   .getMaliciousSourcesDetails()
                                   .getRuleName(),
                               "",
-                              Optional.of(actor.getEntityId())),
+                              Optional.of(actor.getEntityId()),
+                              List.of(
+                                  MaliciousSourcesRuleCondition.ConditionCase
+                                      .EMAIL_DOMAIN_CONDITION)),
                           actor));
                 } else {
                   threatActorBasedIpExemptions.addAll(
@@ -173,7 +177,10 @@ public class ActorBasedRulesCache {
                                     .getMaliciousSourcesDetails()
                                     .getRuleName(),
                                 "",
-                                Optional.of(actor.getEntityId())),
+                                Optional.of(actor.getEntityId()),
+                                List.of(
+                                    MaliciousSourcesRuleCondition.ConditionCase
+                                        .EMAIL_DOMAIN_CONDITION)),
                             actor));
                     break;
                   default:

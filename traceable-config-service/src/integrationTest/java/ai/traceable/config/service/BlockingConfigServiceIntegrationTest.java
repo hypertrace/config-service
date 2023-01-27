@@ -465,7 +465,11 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
         BLOCKING_STATUS_ALLOWED, blockingPolicyConfiguration.getBlockingDetailsList(3).getStatus());
     assertEquals(
         ExemptionInfoEncoder.getEncodedMaliciousSourcesExemptionInfo(
-            "Email-domain-rule-id", "Email-domain-rule", "", Optional.of(actorEntityId.get(6))),
+            "Email-domain-rule-id",
+            "Email-domain-rule",
+            "",
+            Optional.of(actorEntityId.get(6)),
+            List.of(MaliciousSourcesRuleCondition.ConditionCase.EMAIL_DOMAIN_CONDITION)),
         blockingPolicyConfiguration.getBlockingDetailsList(3).getInfo());
     assertEquals(
         BLOCKING_RULE_TYPE_ALLOW,

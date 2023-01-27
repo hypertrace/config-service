@@ -34,7 +34,8 @@ class IpTypeDataFetcherTest {
   private static final String TENANT_ID = "tenant-id";
   private static final String ENVIRONMENT_ID = "environment-id";
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
-
+  private static final MaliciousSourcesRuleCondition.ConditionCase conditionCase =
+      MaliciousSourcesRuleCondition.ConditionCase.IP_LOCATION_TYPE_CONDITION;
   private BlockingIpTypesClient blockingIpTypesClient;
   private IpTypeDataFetcher ipTypeDataFetcher;
 
@@ -90,7 +91,11 @@ class IpTypeDataFetcherTest {
     assertEquals(BLOCKING_STATUS_DENIED, violations.get(0).getStatus());
     assertEquals(
         ViolationInfoEncoder.getEncodedMaliciousSourcesViolationInfo(
-            "1", "rule-1", EVENT_SEVERITY_CRITICAL.name(), Optional.empty()),
+            "1",
+            "rule-1",
+            EVENT_SEVERITY_CRITICAL.name(),
+            Optional.empty(),
+            List.of(conditionCase)),
         violations.get(0).getInfo());
 
     assertEquals(
@@ -101,7 +106,11 @@ class IpTypeDataFetcherTest {
     assertEquals(BLOCKING_STATUS_DENIED, violations.get(1).getStatus());
     assertEquals(
         ViolationInfoEncoder.getEncodedMaliciousSourcesViolationInfo(
-            "2", "rule-2", EVENT_SEVERITY_CRITICAL.name(), Optional.empty()),
+            "2",
+            "rule-2",
+            EVENT_SEVERITY_CRITICAL.name(),
+            Optional.empty(),
+            List.of(conditionCase)),
         violations.get(1).getInfo());
   }
 
