@@ -138,7 +138,14 @@ message DatatypeCondition {
 }
 
 message RegionCondition {
-  repeated string regions = 1;
+  repeated string regions = 1 [deprecated = true];
+  repeated Region region_identifiers = 2;
+
+  message Region {
+    oneof region {
+      string country_iso_code = 1;
+    }
+  }
 }
 
 message IpAddressCondition {

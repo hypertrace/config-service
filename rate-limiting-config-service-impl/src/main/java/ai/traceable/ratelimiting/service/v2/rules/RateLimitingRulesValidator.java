@@ -253,7 +253,35 @@ public class RateLimitingRulesValidator implements RulesValidator {
   }
 
   private void validateRegionCondition(RegionCondition regionCondition) {
-    validateNonDefaultPresenceOrThrow(regionCondition, RegionCondition.REGIONS_FIELD_NUMBER);
+    if (regionCondition.getRegionsList().isEmpty()
+        && regionCondition.getRegionIdentifiersList().isEmpty()) {
+      throwInvalidArgumentException(
+          String.format(
+              "At least one region value should be provided for region condition : %s",
+              regionCondition));
+    }
+
+    regionCondition
+        .getRegionsList()
+        .forEach(
+            region -> {
+              if (region.isEmpty()) {
+                throwInvalidArgumentException(
+                    String.format(
+                        "Region value cannot be empty for region condition : %s", regionCondition));
+              }
+            });
+
+    regionCondition
+        .getRegionIdentifiersList()
+        .forEach(
+            region -> {
+              if (region.getCountryIsoCode().isEmpty()) {
+                throwInvalidArgumentException(
+                    String.format(
+                        "Region value cannot be empty for region condition : %s", regionCondition));
+              }
+            });
   }
 
   private void validateIpAddressCondition(IpAddressCondition ipAddressCondition) {

@@ -30,6 +30,7 @@ import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
+import ai.traceable.ratelimiting.config.service.v2.RegionCondition.Region;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig.RollingWindowThresholdConfig;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
@@ -48,6 +49,7 @@ import java.util.Objects;
 import jdk.jfr.Description;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 public class RateLimitingRulesValidatorTest {
@@ -918,6 +920,254 @@ public class RateLimitingRulesValidatorTest {
                     UserAggregateType.USER_AGGREGATE_TYPE_PER_USER))
             .build();
     assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request6, List.of()));
+  }
+
+  @Nested
+  class testRegionCondition {
+    @Test
+    void invalidRule_NoRegionSet() {
+      RateLimitingRuleData ruleData =
+          RateLimitingRuleData.newBuilder()
+              .setName("rule1")
+              .setCategory(Category.CATEGORY_RATE_LIMITING)
+              .setEnabled(true)
+              .setCondition(
+                  Condition.newBuilder()
+                      .setLeafCondition(
+                          LeafCondition.newBuilder()
+                              .setRegionCondition(RegionCondition.newBuilder())))
+              .addThresholdActionConfigs(
+                  ThresholdActionConfig.newBuilder()
+                      .addActions(
+                          Action.newBuilder()
+                              .setBlock(
+                                  Block.newBuilder()
+                                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                                      .build())
+                              .build())
+                      .addResourceAccessThresholdConfigs(
+                          ResourceAccessThresholdConfig.newBuilder()
+                              .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                              .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                              .setRollingWindowThresholdConfig(
+                                  RollingWindowThresholdConfig.newBuilder()
+                                      .setCountAllowed(1000)
+                                      .setDurationIso("P3Y6M4DT12H30M5S")
+                                      .build())
+                              .build()))
+              .setRuleConfigScope(RuleConfigScope.newBuilder())
+              .build();
+      CreateRateLimitingRuleRequest request =
+          CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+      assertThrows(
+          RuntimeException.class,
+          () -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
+    }
+
+    @Test
+    void invalidRule_EmptyRegionsDeprecatedFlow() {
+      RateLimitingRuleData ruleData =
+          RateLimitingRuleData.newBuilder()
+              .setName("rule1")
+              .setCategory(Category.CATEGORY_RATE_LIMITING)
+              .setEnabled(true)
+              .setCondition(
+                  Condition.newBuilder()
+                      .setLeafCondition(
+                          LeafCondition.newBuilder()
+                              .setRegionCondition(RegionCondition.newBuilder().addRegions(""))))
+              .addThresholdActionConfigs(
+                  ThresholdActionConfig.newBuilder()
+                      .addActions(
+                          Action.newBuilder()
+                              .setBlock(
+                                  Block.newBuilder()
+                                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                                      .build())
+                              .build())
+                      .addResourceAccessThresholdConfigs(
+                          ResourceAccessThresholdConfig.newBuilder()
+                              .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                              .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                              .setRollingWindowThresholdConfig(
+                                  RollingWindowThresholdConfig.newBuilder()
+                                      .setCountAllowed(1000)
+                                      .setDurationIso("P3Y6M4DT12H30M5S")
+                                      .build())
+                              .build()))
+              .setRuleConfigScope(RuleConfigScope.newBuilder())
+              .build();
+      CreateRateLimitingRuleRequest request =
+          CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+      assertThrows(
+          RuntimeException.class,
+          () -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
+    }
+
+    @Test
+    void validRule_DeprecatedFlow() {
+      RateLimitingRuleData ruleData =
+          RateLimitingRuleData.newBuilder()
+              .setName("rule1")
+              .setCategory(Category.CATEGORY_RATE_LIMITING)
+              .setEnabled(true)
+              .setCondition(
+                  Condition.newBuilder()
+                      .setLeafCondition(
+                          LeafCondition.newBuilder()
+                              .setRegionCondition(
+                                  RegionCondition.newBuilder().addRegions("efefef"))))
+              .addThresholdActionConfigs(
+                  ThresholdActionConfig.newBuilder()
+                      .addActions(
+                          Action.newBuilder()
+                              .setBlock(
+                                  Block.newBuilder()
+                                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                                      .build())
+                              .build())
+                      .addResourceAccessThresholdConfigs(
+                          ResourceAccessThresholdConfig.newBuilder()
+                              .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                              .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                              .setRollingWindowThresholdConfig(
+                                  RollingWindowThresholdConfig.newBuilder()
+                                      .setCountAllowed(1000)
+                                      .setDurationIso("P3Y6M4DT12H30M5S")
+                                      .build())
+                              .build()))
+              .setRuleConfigScope(RuleConfigScope.newBuilder())
+              .build();
+      CreateRateLimitingRuleRequest request =
+          CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+      assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
+    }
+
+    @Test
+    void invalidRule_EmptyRegions() {
+      RateLimitingRuleData ruleData =
+          RateLimitingRuleData.newBuilder()
+              .setName("rule1")
+              .setCategory(Category.CATEGORY_RATE_LIMITING)
+              .setEnabled(true)
+              .setCondition(
+                  Condition.newBuilder()
+                      .setLeafCondition(
+                          LeafCondition.newBuilder()
+                              .setRegionCondition(
+                                  RegionCondition.newBuilder()
+                                      .addRegionIdentifiers(Region.getDefaultInstance()))))
+              .addThresholdActionConfigs(
+                  ThresholdActionConfig.newBuilder()
+                      .addActions(
+                          Action.newBuilder()
+                              .setBlock(
+                                  Block.newBuilder()
+                                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                                      .build())
+                              .build())
+                      .addResourceAccessThresholdConfigs(
+                          ResourceAccessThresholdConfig.newBuilder()
+                              .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                              .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                              .setRollingWindowThresholdConfig(
+                                  RollingWindowThresholdConfig.newBuilder()
+                                      .setCountAllowed(1000)
+                                      .setDurationIso("P3Y6M4DT12H30M5S")
+                                      .build())
+                              .build()))
+              .setRuleConfigScope(RuleConfigScope.newBuilder())
+              .build();
+      CreateRateLimitingRuleRequest request =
+          CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+      assertThrows(
+          RuntimeException.class,
+          () -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
+    }
+
+    @Test
+    void invalidRule_EmptyRegions2() {
+      RateLimitingRuleData ruleData =
+          RateLimitingRuleData.newBuilder()
+              .setName("rule1")
+              .setCategory(Category.CATEGORY_RATE_LIMITING)
+              .setEnabled(true)
+              .setCondition(
+                  Condition.newBuilder()
+                      .setLeafCondition(
+                          LeafCondition.newBuilder()
+                              .setRegionCondition(
+                                  RegionCondition.newBuilder()
+                                      .addRegionIdentifiers(
+                                          Region.newBuilder().setCountryIsoCode("")))))
+              .addThresholdActionConfigs(
+                  ThresholdActionConfig.newBuilder()
+                      .addActions(
+                          Action.newBuilder()
+                              .setBlock(
+                                  Block.newBuilder()
+                                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                                      .build())
+                              .build())
+                      .addResourceAccessThresholdConfigs(
+                          ResourceAccessThresholdConfig.newBuilder()
+                              .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                              .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                              .setRollingWindowThresholdConfig(
+                                  RollingWindowThresholdConfig.newBuilder()
+                                      .setCountAllowed(1000)
+                                      .setDurationIso("P3Y6M4DT12H30M5S")
+                                      .build())
+                              .build()))
+              .setRuleConfigScope(RuleConfigScope.newBuilder())
+              .build();
+      CreateRateLimitingRuleRequest request =
+          CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+      assertThrows(
+          RuntimeException.class,
+          () -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
+    }
+
+    @Test
+    void validRule() {
+      RateLimitingRuleData ruleData =
+          RateLimitingRuleData.newBuilder()
+              .setName("rule1")
+              .setCategory(Category.CATEGORY_RATE_LIMITING)
+              .setEnabled(true)
+              .setCondition(
+                  Condition.newBuilder()
+                      .setLeafCondition(
+                          LeafCondition.newBuilder()
+                              .setRegionCondition(
+                                  RegionCondition.newBuilder()
+                                      .addRegionIdentifiers(
+                                          Region.newBuilder().setCountryIsoCode("ssfsd")))))
+              .addThresholdActionConfigs(
+                  ThresholdActionConfig.newBuilder()
+                      .addActions(
+                          Action.newBuilder()
+                              .setBlock(
+                                  Block.newBuilder()
+                                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                                      .build())
+                              .build())
+                      .addResourceAccessThresholdConfigs(
+                          ResourceAccessThresholdConfig.newBuilder()
+                              .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                              .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                              .setRollingWindowThresholdConfig(
+                                  RollingWindowThresholdConfig.newBuilder()
+                                      .setCountAllowed(1000)
+                                      .setDurationIso("P3Y6M4DT12H30M5S")
+                                      .build())
+                              .build()))
+              .setRuleConfigScope(RuleConfigScope.newBuilder())
+              .build();
+      CreateRateLimitingRuleRequest request =
+          CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+      assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
+    }
   }
 
   private RegionCondition buildRegionCondition(List<String> regions) {
