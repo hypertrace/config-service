@@ -125,7 +125,7 @@ class ContextuallyIdentifiedObjectStoreTest {
                 .build());
     assertEquals(
         Optional.of(
-            new ContextualConfigObjectImpl<>(
+            new DeletedContextualConfigObjectImpl<>(
                 "delete-tenant",
                 new TestObject("test"),
                 TEST_CREATE_TIMESTAMP,

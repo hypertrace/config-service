@@ -49,3 +49,7 @@ include(":span-processing-config-service-api")
 include(":span-processing-config-service-impl")
 
 include(":span-processing-utils")
+
+include(":partitioner-config-service-api")
+include(":partitioner-config-service-impl")
+
