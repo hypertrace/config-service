@@ -6,6 +6,7 @@ import ai.traceable.iprange.config.service.v1.IpRangeRule;
 import ai.traceable.iprange.config.service.v1.UpdateIpRangeRuleRequest;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.List;
+import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public interface RulesManager {
@@ -18,6 +19,6 @@ public interface RulesManager {
   IpRangeRule updateIpRangeRule(
       RequestContext requestContext, UpdateIpRangeRuleRequest updateIpRangeRuleRequest);
 
-  IpRangeRule deleteIpRangeRule(RequestContext requestContext, String id)
+  Optional<IpRangeRule> deleteIpRangeRule(RequestContext requestContext, String id)
       throws InvalidProtocolBufferException;
 }

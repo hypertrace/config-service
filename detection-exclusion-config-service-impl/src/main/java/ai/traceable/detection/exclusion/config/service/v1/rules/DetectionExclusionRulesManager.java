@@ -8,7 +8,6 @@ import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import io.grpc.Status;
 import java.util.List;
 import javax.inject.Inject;
-import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class DetectionExclusionRulesManager implements RulesManager {
@@ -52,11 +51,9 @@ public class DetectionExclusionRulesManager implements RulesManager {
   }
 
   @Override
-  public DetectionExclusionRule deleteDetectionExclusionRule(
-      RequestContext requestContext, String ruleId) {
-    return rulesStore
+  public void deleteDetectionExclusionRule(RequestContext requestContext, String ruleId) {
+    rulesStore
         .deleteObject(requestContext, ruleId)
-        .map(ConfigObject::getData)
-        .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+        .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
   }
 }

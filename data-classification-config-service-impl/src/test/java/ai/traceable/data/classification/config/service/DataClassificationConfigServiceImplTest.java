@@ -92,7 +92,12 @@ class DataClassificationConfigServiceImplTest {
   @BeforeEach
   void setUp() {
     mockGenericConfigService =
-        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+        new MockGenericConfigService()
+            .mockUpsert()
+            .mockGet()
+            .mockGetAll()
+            .mockDelete()
+            .mockDeleteAll();
     ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =

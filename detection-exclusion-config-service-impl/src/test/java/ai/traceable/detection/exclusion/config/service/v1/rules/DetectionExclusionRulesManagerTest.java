@@ -1,5 +1,6 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -88,8 +89,7 @@ class DetectionExclusionRulesManagerTest {
         rulesManager.updateDetectionExclusionRule(requestContext, detectionExclusionRule));
 
     // deleting detection exclusion rule
-    assertEquals(
-        detectionExclusionRule, rulesManager.deleteDetectionExclusionRule(requestContext, "id"));
+    assertDoesNotThrow(() -> rulesManager.deleteDetectionExclusionRule(requestContext, "id"));
 
     // rule not present after deletion
     assertFalse(

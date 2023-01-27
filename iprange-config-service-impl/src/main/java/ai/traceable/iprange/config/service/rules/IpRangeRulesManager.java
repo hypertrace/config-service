@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.config.objectstore.ConfigObject;
+import org.hypertrace.config.objectstore.DeletedConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
@@ -86,12 +86,11 @@ class IpRangeRulesManager implements RulesManager {
   }
 
   @Override
-  public IpRangeRule deleteIpRangeRule(RequestContext requestContext, String id) {
-
+  public Optional<IpRangeRule> deleteIpRangeRule(RequestContext requestContext, String id) {
     return ipRangeRulesStore
         .deleteObject(requestContext, id)
-        .map(ConfigObject::getData)
-        .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+        .map(DeletedConfigObject::getDeletedData)
+        .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
   }
 
   private IpRangeRule upsertConfig(RequestContext requestContext, IpRangeRule ipRangeRule) {

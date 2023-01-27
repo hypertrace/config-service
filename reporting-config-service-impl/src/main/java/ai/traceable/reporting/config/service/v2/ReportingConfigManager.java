@@ -16,6 +16,5 @@ public interface ReportingConfigManager {
       String reportConfigId,
       CommonConfigurationDetails commonConfigurationDetails);
 
-  ReportConfiguration deleteReportConfiguration(
-      RequestContext requestContext, String reportConfigId);
+  void deleteReportConfiguration(RequestContext requestContext, String reportConfigId);
 }

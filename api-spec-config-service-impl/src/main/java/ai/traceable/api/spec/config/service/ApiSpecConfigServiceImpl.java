@@ -250,7 +250,7 @@ public class ApiSpecConfigServiceImpl
 
       this.apiSpecConfigStore
           .deleteObject(requestContext, request.getSpecId())
-          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+          .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
       log.info("Deleting spec with specId: " + request.getSpecId());
 
       responseObserver.onNext(DeleteApiSpecResponse.newBuilder().build());
@@ -268,10 +268,8 @@ public class ApiSpecConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
 
-      for (String id : request.getSpecIdsList()) {
-        this.apiSpecConfigStore.deleteObject(requestContext, id);
-        log.info("Deleting spec with specId: " + id);
-      }
+      this.apiSpecConfigStore.deleteObjects(requestContext, request.getSpecIdsList());
+
       responseObserver.onNext(DeleteApiSpecsResponse.newBuilder().build());
       responseObserver.onCompleted();
     } catch (Exception exception) {

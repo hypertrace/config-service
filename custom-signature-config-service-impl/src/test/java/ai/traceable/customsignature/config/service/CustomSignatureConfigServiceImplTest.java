@@ -195,7 +195,7 @@ public class CustomSignatureConfigServiceImplTest {
     reset(responseObserver);
     when(rulesValidator.validate((DeleteCustomSignatureRuleRequest) any())).thenReturn(Status.OK);
     when(rulesManager.deleteCustomSignatureRule(any(), eq("id")))
-        .thenReturn(CustomSignatureRule.newBuilder().setId("id").build());
+        .thenReturn(Optional.of(CustomSignatureRule.newBuilder().setId("id").build()));
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseObserver, times(1))
         .onNext(DeleteCustomSignatureRuleResponse.getDefaultInstance());

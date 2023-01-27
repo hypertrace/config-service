@@ -13,6 +13,7 @@ import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -148,15 +149,15 @@ class IpRangeConfigServiceImpl extends IpRangeConfigServiceImplBase {
         responseObserver.onError(status.asException());
         return;
       }
-      IpRangeRule deletedIpRangeRuleConfig =
+      Optional<IpRangeRule> deletedIpRangeRuleConfig =
           rulesManager.deleteIpRangeRule(RequestContext.CURRENT.get(), request.getId());
       responseObserver.onNext(DeleteIpRangeRuleResponse.newBuilder().build());
       responseObserver.onCompleted();
-      if (shouldPublishActivityEvents) {
+      if (shouldPublishActivityEvents && deletedIpRangeRuleConfig.isPresent()) {
         activityEventProducer.publishSecurityConfigurationChangeEvent(
             RequestContext.CURRENT.get(),
             buildSecurityConfigurationChangeEvent(
-                deletedIpRangeRuleConfig, SecurityConfigurationAction.REMOVE));
+                deletedIpRangeRuleConfig.get(), SecurityConfigurationAction.REMOVE));
       }
     } catch (Exception e) {
       log.error("Unable to delete ip range rule with id {} :", request.getId(), e);

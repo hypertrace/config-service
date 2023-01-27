@@ -194,26 +194,24 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   }
 
   @Override
-  public RedactionRule deleteRedactionRule(RequestContext requestContext, String redactionRuleId) {
+  public void deleteRedactionRule(RequestContext requestContext, String redactionRuleId) {
     if (this.defaultRedactionRules.isDefaultRuleId(redactionRuleId)
         && !this.getDefaultRulePersistence(requestContext).hasRuleBeenPersisted(redactionRuleId)) {
       // Just mark as persisted, so we don't return it from config again
-      RedactionRule rule =
-          this.defaultRedactionRules
-              .getRule(redactionRuleId)
-              .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      this.defaultRedactionRules
+          .getRule(redactionRuleId)
+          .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
+
       this.updateDefaultRulePersistenceStatus(
           requestContext,
           this.getDefaultRulePersistence(requestContext)
               .withAdditionalPersistedRuleId(redactionRuleId));
-      return rule;
+      return;
     }
 
-    return this.redactionRuleConfigStore
+    this.redactionRuleConfigStore
         .deleteObject(requestContext, redactionRuleId)
-        .map(ContextualConfigObject::getData)
-        .map(RedactionRuleConfig::getRedactionRule)
-        .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+        .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
   }
 
   @Override

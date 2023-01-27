@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
+import org.hypertrace.config.objectstore.DeletedContextualConfigObject;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -275,9 +276,10 @@ public class MockFactorConfigsData {
     }
 
     @Override
-    public Optional<ContextualConfigObject<RiskFactorConfig>> deleteObject(
+    public Optional<DeletedContextualConfigObject<RiskFactorConfig>> deleteObject(
         RequestContext requestContext, String id) {
-      return requestContext.getTenantId().map(tenantFactorsMap::get).map(map -> map.remove(id));
+      requestContext.getTenantId().map(tenantFactorsMap::get).ifPresent(map -> map.remove(id));
+      return Optional.of(mock(DeletedContextualConfigObject.class));
     }
   }
 }

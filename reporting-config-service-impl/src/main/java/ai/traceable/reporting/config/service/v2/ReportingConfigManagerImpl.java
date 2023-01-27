@@ -39,7 +39,7 @@ public class ReportingConfigManagerImpl implements ReportingConfigManager {
     ReportConfiguration existingConfiguration =
         reportingConfigStore
             .getData(requestContext, reportConfigId)
-            .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+            .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
 
     ReportConfiguration updatedConfiguration =
         existingConfiguration.toBuilder()
@@ -55,12 +55,10 @@ public class ReportingConfigManagerImpl implements ReportingConfigManager {
   }
 
   @Override
-  public ReportConfiguration deleteReportConfiguration(
-      RequestContext requestContext, String reportConfigId) {
-    return reportingConfigStore
+  public void deleteReportConfiguration(RequestContext requestContext, String reportConfigId) {
+    reportingConfigStore
         .deleteObject(requestContext, reportConfigId)
-        .orElseThrow(Status.NOT_FOUND::asRuntimeException)
-        .getData();
+        .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
   }
 
   private Optional<String> getReportCreator(RequestContext requestContext) {

@@ -31,6 +31,7 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -408,7 +409,7 @@ public class MaliciousSourcesConfigServiceImplTest {
       when(rulesValidator.validate(deleteMaliciousSourcesRuleRequest)).thenReturn(Status.OK);
 
       when(rulesManager.deleteMaliciousSourcesRule(any(), eq("id")))
-          .thenReturn(MaliciousSourcesRule.newBuilder().setId("id").build());
+          .thenReturn(Optional.of(MaliciousSourcesRule.newBuilder().setId("id").build()));
 
       StreamObserver<DeleteMaliciousSourcesRuleResponse> responseStreamObserver =
           mock(StreamObserver.class);

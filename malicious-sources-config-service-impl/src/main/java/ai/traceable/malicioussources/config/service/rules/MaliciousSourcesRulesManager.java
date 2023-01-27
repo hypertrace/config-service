@@ -15,7 +15,7 @@ import java.util.Optional;
 import java.util.UUID;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.config.objectstore.ConfigObject;
+import org.hypertrace.config.objectstore.DeletedConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
@@ -77,11 +77,12 @@ public class MaliciousSourcesRulesManager implements RulesManager {
   }
 
   @Override
-  public MaliciousSourcesRule deleteMaliciousSourcesRule(RequestContext requestContext, String id) {
+  public Optional<MaliciousSourcesRule> deleteMaliciousSourcesRule(
+      RequestContext requestContext, String id) {
     return maliciousSourcesRulesStore
         .deleteObject(requestContext, id)
-        .map(ConfigObject::getData)
-        .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+        .map(DeletedConfigObject::getDeletedData)
+        .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
   }
 
   private boolean doesMaliciousSourcesRuleExist(RequestContext requestContext, String ruleId) {

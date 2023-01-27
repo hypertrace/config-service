@@ -150,15 +150,15 @@ public class CustomSignatureConfigServiceImpl
         return;
       }
       String ruleId = request.getId();
-      CustomSignatureRule deletedCustomSignatureRuleConfig =
+      Optional<CustomSignatureRule> deletedCustomSignatureRuleConfig =
           rulesManager.deleteCustomSignatureRule(RequestContext.CURRENT.get(), ruleId);
       responseObserver.onNext(DeleteCustomSignatureRuleResponse.getDefaultInstance());
       responseObserver.onCompleted();
-      if (shouldPublishActivityEvents) {
+      if (shouldPublishActivityEvents && deletedCustomSignatureRuleConfig.isPresent()) {
         activityEventProducer.publishSecurityConfigurationChangeEvent(
             RequestContext.CURRENT.get(),
             buildSecurityConfigurationChangeEvent(
-                deletedCustomSignatureRuleConfig, SecurityConfigurationAction.REMOVE));
+                deletedCustomSignatureRuleConfig.get(), SecurityConfigurationAction.REMOVE));
       }
     } catch (Exception e) {
       log.error("Unable to delete custom signature rule with id {} :", request.getId(), e);

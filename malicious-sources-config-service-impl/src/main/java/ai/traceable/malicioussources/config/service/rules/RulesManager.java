@@ -5,6 +5,7 @@ import ai.traceable.malicioussources.config.service.v1.GetRulesFilter;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.UpdateMaliciousSourcesRuleRequest;
 import java.util.List;
+import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public interface RulesManager {
@@ -17,5 +18,6 @@ public interface RulesManager {
   MaliciousSourcesRule updateMaliciousSourcesRule(
       RequestContext requestContext, UpdateMaliciousSourcesRuleRequest updateRuleRequest);
 
-  MaliciousSourcesRule deleteMaliciousSourcesRule(RequestContext requestContext, String id);
+  Optional<MaliciousSourcesRule> deleteMaliciousSourcesRule(
+      RequestContext requestContext, String id);
 }

@@ -20,5 +20,5 @@ public interface RulesManager {
       DetectionExclusionRuleScope ruleScope,
       DetectionExclusionRuleInfo ruleInfo);
 
-  DetectionExclusionRule deleteDetectionExclusionRule(RequestContext requestContext, String ruleId);
+  void deleteDetectionExclusionRule(RequestContext requestContext, String ruleId);
 }

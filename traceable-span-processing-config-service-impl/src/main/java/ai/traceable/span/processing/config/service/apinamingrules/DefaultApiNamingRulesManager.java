@@ -150,11 +150,7 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
   public void deleteApiNamingRules(
       RequestContext requestContext, DeleteApiNamingRulesRequest request) {
     // TODO: need to handle priorities
-    for (String id : request.getIdsList()) {
-      this.apiNamingRulesConfigStore
-          .deleteObject(requestContext, id)
-          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
-    }
+    this.apiNamingRulesConfigStore.deleteObjects(requestContext, request.getIdsList());
   }
 
   private ApiNamingRule buildUpdatedRule(

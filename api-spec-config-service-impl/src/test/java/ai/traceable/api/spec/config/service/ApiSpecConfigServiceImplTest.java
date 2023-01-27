@@ -50,6 +50,7 @@ class ApiSpecConfigServiceImplTest {
             .mockGet()
             .mockGetAll()
             .mockDelete()
+            .mockDeleteAll()
             .mockUpsertAll();
 
     ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =

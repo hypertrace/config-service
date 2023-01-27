@@ -12,8 +12,9 @@ import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
-import org.hypertrace.config.objectstore.ConfigObject;
+import org.hypertrace.config.objectstore.DeletedConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RateLimitingRulesManager implements RulesManager {
@@ -92,10 +93,11 @@ public class RateLimitingRulesManager implements RulesManager {
   }
 
   @Override
-  public RateLimitingRule deleteRateLimitingRule(RequestContext requestContext, String ruleId) {
+  public Optional<RateLimitingRule> deleteRateLimitingRule(
+      RequestContext requestContext, String ruleId) {
     return rateLimitingRulesStore
         .deleteObject(requestContext, ruleId)
-        .map(ConfigObject::getData)
-        .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+        .map(DeletedConfigObject::getDeletedData)
+        .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
   }
 }

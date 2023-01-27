@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ConfigObject;
-import org.hypertrace.config.objectstore.ContextualConfigObject;
+import org.hypertrace.config.objectstore.DeletedContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -397,7 +397,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       if (LEGACY_DATA_SET_IDS.contains(dataSetId)) {
         this.redactionRulesDao.deleteDataSet(requestContext, dataSetId);
       } else {
-        Optional<ContextualConfigObject<DataSet>> optionalContextualConfigObject =
+        Optional<DeletedContextualConfigObject<DataSet>> optionalDeletedContextualConfigObject =
             this.dataSetStore.deleteObject(requestContext, dataSetId);
         Optional<DataSet> systemDataSetOptional = getSystemDataSet(requestContext, dataSetId);
         if (systemDataSetOptional.isPresent()) {
@@ -406,9 +406,9 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
           this.deletedDataSetStore.upsertObject(requestContext, deletedSystemDataSet);
           sendSystemDataSetDeletionEvent(
               requestContext,
-              optionalContextualConfigObject.isEmpty(),
+              optionalDeletedContextualConfigObject.isEmpty(),
               systemDataSetOptional.get());
-        } else if (optionalContextualConfigObject.isEmpty()) {
+        } else if (optionalDeletedContextualConfigObject.isEmpty()) {
           throw Status.NOT_FOUND.asRuntimeException();
         }
       }
@@ -508,18 +508,17 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.dataClassificationOverrideConfigRequestValidator.validateOrThrow(
           requestContext, request);
-      List<DataClassificationOverride> dataClassificationOverrides =
-          getDataClassificationOverridesListByFilter(requestContext, request.getFilter());
-      List<DataClassificationOverride> deletedDataClassificationOverrides = new ArrayList<>();
-      dataClassificationOverrides.forEach(
-          dataClassificationOverride -> {
-            Optional<ContextualConfigObject<DataClassificationOverride>> deletedConfigObject =
-                this.dataClassificationOverrideStore.deleteObject(
-                    requestContext, dataClassificationOverride.getId());
-            if (deletedConfigObject.isPresent()) {
-              deletedDataClassificationOverrides.add(deletedConfigObject.get().getData());
-            }
-          });
+      List<String> dataClassificationOverrideIds =
+          getDataClassificationOverridesListByFilter(requestContext, request.getFilter()).stream()
+              .map(DataClassificationOverride::getId)
+              .collect(Collectors.toUnmodifiableList());
+      List<DataClassificationOverride> deletedDataClassificationOverrides =
+          this.dataClassificationOverrideStore
+              .deleteObjects(requestContext, dataClassificationOverrideIds)
+              .stream()
+              .map(DeletedContextualConfigObject::getDeletedData)
+              .flatMap(Optional::stream)
+              .collect(Collectors.toUnmodifiableList());
       responseObserver.onNext(
           DeleteDataClassificationOverridesResponse.newBuilder()
               .addAllDeletedDataClassificationOverrides(deletedDataClassificationOverrides)

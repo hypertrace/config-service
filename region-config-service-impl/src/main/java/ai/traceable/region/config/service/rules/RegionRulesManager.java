@@ -14,7 +14,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.config.objectstore.ConfigObject;
+import org.hypertrace.config.objectstore.DeletedConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
@@ -82,11 +82,11 @@ class RegionRulesManager implements RulesManager {
   }
 
   @Override
-  public RegionRule deleteRegionRule(RequestContext requestContext, String id) {
+  public Optional<RegionRule> deleteRegionRule(RequestContext requestContext, String id) {
     return regionRulesStore
         .deleteObject(requestContext, id)
-        .map(ConfigObject::getData)
-        .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+        .map(DeletedConfigObject::getDeletedData)
+        .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
   }
 
   private Optional<RegionRule> upsertConfig(RequestContext requestContext, RegionRule regionRule) {

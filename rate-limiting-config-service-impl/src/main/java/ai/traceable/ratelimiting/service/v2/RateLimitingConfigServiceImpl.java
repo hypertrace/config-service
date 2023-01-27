@@ -20,6 +20,7 @@ import ai.traceable.ratelimiting.service.v2.rules.RulesValidator;
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -108,15 +109,16 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
     try {
       RequestContext context = RequestContext.CURRENT.get();
       rulesValidator.validateOrThrow(context, request);
-      RateLimitingRule deletedRule =
+      Optional<RateLimitingRule> deletedRule =
           rulesManager.deleteRateLimitingRule(context, request.getRuleId());
       responseObserver.onNext(DeleteRateLimitingRuleResponse.getDefaultInstance());
       responseObserver.onCompleted();
 
-      if (shouldPublishActivityEvents) {
+      if (shouldPublishActivityEvents && deletedRule.isPresent()) {
         activityEventProducer.publishSecurityConfigurationChangeEvent(
             context,
-            buildSecurityConfigurationChangeEvent(deletedRule, SecurityConfigurationAction.REMOVE));
+            buildSecurityConfigurationChangeEvent(
+                deletedRule.get(), SecurityConfigurationAction.REMOVE));
       }
     } catch (Exception exception) {
       log.error(exception.getMessage(), exception);

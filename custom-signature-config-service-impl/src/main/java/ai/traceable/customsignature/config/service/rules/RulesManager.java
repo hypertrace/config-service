@@ -19,7 +19,7 @@ public interface RulesManager {
   Optional<CustomSignatureRule> updateCustomSignatureRule(
       RequestContext requestContext, CustomSignatureRule customSignatureRule);
 
-  CustomSignatureRule deleteCustomSignatureRule(RequestContext requestContext, String id)
+  Optional<CustomSignatureRule> deleteCustomSignatureRule(RequestContext requestContext, String id)
       throws InvalidProtocolBufferException;
 
   default String generateRuleId() {

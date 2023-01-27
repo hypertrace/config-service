@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.config.objectstore.ContextualConfigObject;
+import org.hypertrace.config.objectstore.DeletedContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
@@ -69,11 +69,12 @@ class CustomSignatureRulesManager implements RulesManager {
   }
 
   @Override
-  public CustomSignatureRule deleteCustomSignatureRule(RequestContext requestContext, String id) {
+  public Optional<CustomSignatureRule> deleteCustomSignatureRule(
+      RequestContext requestContext, String id) {
     return rulesStore
         .deleteObject(requestContext, id)
-        .map(ContextualConfigObject::getData)
-        .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+        .map(DeletedContextualConfigObject::getDeletedData)
+        .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
   }
 
   private Optional<CustomSignatureRule> getCustomSignatureRule(

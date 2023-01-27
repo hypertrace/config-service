@@ -140,24 +140,9 @@ public class AstScanProfileConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.requestValidator.validateOrThrow(requestContext, request);
-      for (String name : request.getFilter().getScanProfileNamesList()) {
-        Optional<ContextualConfigObject<ScanProfile>> maybeContextualConfigObject =
-            this.configStore.deleteObject(requestContext, name);
-        this.configStore.deleteObject(requestContext, name);
-        if (maybeContextualConfigObject.isPresent()) {
-          log.info(
-              "Deleting ast scan profile with Name: "
-                  + name
-                  + " for tenant: "
-                  + requestContext.getTenantId());
-        } else {
-          log.info(
-              "Not able to delete ast scan profile with name: "
-                  + name
-                  + " for tenant: "
-                  + requestContext.getTenantId());
-        }
-      }
+
+      this.configStore.deleteObjects(requestContext, request.getFilter().getScanProfileNamesList());
+
       responseObserver.onNext(DeleteScanProfilesResponse.newBuilder().build());
       responseObserver.onCompleted();
     } catch (Exception exception) {

@@ -24,6 +24,7 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -350,13 +351,15 @@ public class RateLimitingRulesManagerTest {
     ruleDataList.stream()
         .map(ruleData -> rulesManager.createRateLimitingRule(requestContext, ruleData))
         .collect(Collectors.toList());
-    RateLimitingRule deletedRule;
-    deletedRule = rulesManager.deleteRateLimitingRule(requestContext, "id1");
+    Optional<RateLimitingRule> deletedRule =
+        rulesManager.deleteRateLimitingRule(requestContext, "id1");
     assertEquals(
-        buildRateLimitingRule("id1", "rule1", Category.CATEGORY_RATE_LIMITING), deletedRule);
+        Optional.of(buildRateLimitingRule("id1", "rule1", Category.CATEGORY_RATE_LIMITING)),
+        deletedRule);
     deletedRule = rulesManager.deleteRateLimitingRule(requestContext, "id3");
     assertEquals(
-        buildRateLimitingRule("id3", "rule3", Category.CATEGORY_DATA_EXFILTRATION), deletedRule);
+        Optional.of(buildRateLimitingRule("id3", "rule3", Category.CATEGORY_DATA_EXFILTRATION)),
+        deletedRule);
 
     Throwable throwable =
         assertThrows(

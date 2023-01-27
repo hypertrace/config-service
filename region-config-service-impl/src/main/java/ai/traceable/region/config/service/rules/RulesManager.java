@@ -18,6 +18,6 @@ public interface RulesManager {
   Optional<RegionRule> updateRegionRule(
       RequestContext requestContext, UpdateRegionRuleRequest request);
 
-  RegionRule deleteRegionRule(RequestContext requestContext, String id)
+  Optional<RegionRule> deleteRegionRule(RequestContext requestContext, String id)
       throws InvalidProtocolBufferException;
 }

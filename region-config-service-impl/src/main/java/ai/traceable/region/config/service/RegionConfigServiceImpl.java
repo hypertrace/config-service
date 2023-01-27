@@ -208,15 +208,15 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
       }
 
       String ruleId = request.getId();
-      RegionRule deletedRegionRuleConfig =
+      Optional<RegionRule> deletedRegionRuleConfig =
           rulesManager.deleteRegionRule(RequestContext.CURRENT.get(), ruleId);
       responseObserver.onNext(DeleteRegionRuleResponse.getDefaultInstance());
       responseObserver.onCompleted();
-      if (shouldPublishActivityEvents) {
+      if (shouldPublishActivityEvents && deletedRegionRuleConfig.isPresent()) {
         activityEventProducer.publishSecurityConfigurationChangeEvent(
             RequestContext.CURRENT.get(),
             buildSecurityConfigurationChangeEvent(
-                deletedRegionRuleConfig, SecurityConfigurationAction.REMOVE));
+                deletedRegionRuleConfig.get(), SecurityConfigurationAction.REMOVE));
       }
     } catch (Exception e) {
       log.error("Unable to delete region rule with id {} :", request.getId(), e);

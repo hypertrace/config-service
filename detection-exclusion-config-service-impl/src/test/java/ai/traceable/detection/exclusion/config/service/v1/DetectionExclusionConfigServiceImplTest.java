@@ -134,14 +134,10 @@ class DetectionExclusionConfigServiceImplTest {
 
   @Test
   void testDeleteDetectionExclusionRule() {
-    DetectionExclusionRule detectionExclusionRule = DetectionExclusionRule.getDefaultInstance();
     DeleteDetectionExclusionRuleRequest request =
         DeleteDetectionExclusionRuleRequest.getDefaultInstance();
     StreamObserver<DeleteDetectionExclusionRuleResponse> streamObserver =
         mock(StreamObserver.class);
-
-    when(rulesManager.deleteDetectionExclusionRule(eq(requestContext), any()))
-        .thenReturn(detectionExclusionRule);
 
     // validation throws error
     Exception exception = Status.INVALID_ARGUMENT.asRuntimeException();
@@ -158,6 +154,7 @@ class DetectionExclusionConfigServiceImplTest {
     requestContext.run(
         () ->
             detectionExclusionConfigService.deleteDetectionExclusionRule(request, streamObserver));
+    verify(rulesManager, times(1)).deleteDetectionExclusionRule(eq(requestContext), any());
     verify(streamObserver, times(1))
         .onNext(DeleteDetectionExclusionRuleResponse.getDefaultInstance());
     verify(streamObserver, times(1)).onCompleted();

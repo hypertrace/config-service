@@ -22,6 +22,7 @@ import ai.traceable.ratelimiting.service.v2.rules.RulesValidator;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
+import java.util.Optional;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -168,7 +169,7 @@ public class RateLimitingConfigServiceImplTest {
     RateLimitingRule rule = buildRateLimitingRule("id", "rule", Category.CATEGORY_RATE_LIMITING);
     reset(responseObserver);
     doNothing().when(rulesValidator).validateOrThrow(any(), (DeleteRateLimitingRuleRequest) any());
-    when(rulesManager.deleteRateLimitingRule(any(), any())).thenReturn(rule);
+    when(rulesManager.deleteRateLimitingRule(any(), any())).thenReturn(Optional.of(rule));
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseObserver, times(1)).onNext(DeleteRateLimitingRuleResponse.getDefaultInstance());
     verify(responseObserver, times(1)).onCompleted();

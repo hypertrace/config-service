@@ -43,7 +43,7 @@ interface ConfigServiceCoordinator {
   List<RedactionRule> getAllRedactionRules(
       RequestContext requestContext, GetAllRedactionRulesRequest.RedactionRuleFilter filter);
 
-  RedactionRule deleteRedactionRule(RequestContext requestContext, String redactionRuleId);
+  void deleteRedactionRule(RequestContext requestContext, String redactionRuleId);
 
   boolean isFullPrivacyModeEnabled(RequestContext requestContext);
 

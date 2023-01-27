@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
+import org.hypertrace.config.objectstore.DeletedContextualConfigObject;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -109,9 +110,10 @@ public class MockGridConfigsData {
     }
 
     @Override
-    public Optional<ContextualConfigObject<RiskScoringGridConfigValues>> deleteObject(
+    public Optional<DeletedContextualConfigObject<RiskScoringGridConfigValues>> deleteObject(
         RequestContext requestContext, String id) {
-      return requestContext.getTenantId().map(tenantValuesMap::get).map(map -> map.remove(id));
+      requestContext.getTenantId().map(tenantValuesMap::get).ifPresent(map -> map.remove(id));
+      return Optional.of(mock(DeletedContextualConfigObject.class));
     }
   }
 }

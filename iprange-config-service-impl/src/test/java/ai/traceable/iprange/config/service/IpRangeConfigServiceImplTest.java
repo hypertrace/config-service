@@ -16,6 +16,7 @@ import io.grpc.stub.StreamObserver;
 import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.function.Supplier;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -396,7 +397,7 @@ class IpRangeConfigServiceImplTest {
       when(rulesValidator.validate(deleteIpRangeRuleRequest)).thenReturn(Status.OK);
 
       when(rulesManager.deleteIpRangeRule(any(), eq("id")))
-          .thenReturn(IpRangeRule.newBuilder().setId("id").build());
+          .thenReturn(Optional.of(IpRangeRule.newBuilder().setId("id").build()));
 
       StreamObserver<DeleteIpRangeRuleResponse> responseStreamObserver = mock(StreamObserver.class);
       Runnable runnable =

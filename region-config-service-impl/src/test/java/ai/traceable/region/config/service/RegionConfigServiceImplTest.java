@@ -433,7 +433,7 @@ class RegionConfigServiceImplTest {
 
       RegionRule regionRule = RegionRule.newBuilder().setId("id").build();
       when(rulesValidator.validate(deleteRegionRuleRequest)).thenReturn(Status.OK);
-      when(rulesManager.deleteRegionRule(any(), eq("id"))).thenReturn(regionRule);
+      when(rulesManager.deleteRegionRule(any(), eq("id"))).thenReturn(Optional.of(regionRule));
 
       StreamObserver<DeleteRegionRuleResponse> responseObserver = mock(StreamObserver.class);
 

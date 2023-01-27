@@ -103,6 +103,7 @@ class SpanProcessingConfigServiceImplTest {
             .mockGet()
             .mockGetAll()
             .mockDelete()
+            .mockDeleteAll()
             .mockUpsertAll();
 
     licenseStatusConfigServiceBlockingStub =
