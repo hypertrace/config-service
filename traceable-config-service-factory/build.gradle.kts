@@ -9,6 +9,7 @@ dependencies {
   implementation(libs.hypertrace.configservice.impl)
   implementation(libs.hypertrace.configservice.changeeventgenerator)
   implementation(libs.typesafe.config)
+  implementation(libs.hypertrace.configservice.partitioner.config.impl)
 
   implementation(projects.activityEventProducer)
   implementation(projects.sensitiveDataConfigServiceImpl)

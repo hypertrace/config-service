@@ -12,10 +12,14 @@ import org.hypertrace.core.serviceframework.grpc.StandAloneGrpcPlatformServiceCo
 public class TraceableConfigService extends StandAloneGrpcPlatformServiceContainer {
   private static final String INTERNAL_PORT_CONFIG = "service.port.internal";
   private static final String EXTERNAL_PORT_CONFIG = "service.port.external";
+  private static final String GLOBAL_SERVICE_INTERNAL_PORT_CONFIG = "global.service.port.internal";
   private final SharedConfigServiceProvidersFactory providersFactory =
       new SharedConfigServiceProvidersFactory();
   private final TraceableInternalConfigServiceFactory internalServiceFactory =
       new TraceableInternalConfigServiceFactory(this.providersFactory);
+
+  private final TraceableInternalGlobalConfigServiceFactory internalGlobalConfigServiceFactory =
+      new TraceableInternalGlobalConfigServiceFactory(this.providersFactory);
 
   public TraceableConfigService(ConfigClient configClient) {
     super(configClient);
@@ -40,6 +44,11 @@ public class TraceableConfigService extends StandAloneGrpcPlatformServiceContain
             .name("networked-external-traceable-config-service")
             .port(getAppConfig().getInt(EXTERNAL_PORT_CONFIG))
             .serviceFactory(new TraceableExternalConfigServiceFactory(this.providersFactory))
+            .build(),
+        GrpcPlatformServerDefinition.builder()
+            .name("networked-internal-traceable-global-config-service")
+            .port(getAppConfig().getInt(GLOBAL_SERVICE_INTERNAL_PORT_CONFIG))
+            .serviceFactory(internalGlobalConfigServiceFactory)
             .build());
   }
 }

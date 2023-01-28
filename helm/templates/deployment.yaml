@@ -87,6 +87,9 @@ spec:
             - name: {{ .Values.internalContainerPortName }}
               containerPort: {{ .Values.internalContainerPort }}
               protocol: TCP
+            - name: {{ .Values.internalGlobalServiceContainerPortName }}
+              containerPort: {{ .Values.internalGlobalServiceContainerPort }}
+              protocol: TCP
             - name: {{ .Values.externalContainerPortName }}
               containerPort: {{ .Values.externalContainerPort }}
               protocol: TCP

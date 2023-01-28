@@ -52,6 +52,7 @@ hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:documen
 # We would ideally want to segregate config service into 2 services - agent-configuration-service, and config-service and not have config-service depend on entity-service
 hypertrace-entityservice-api = { module = "org.hypertrace.entity.service:entity-service-api", version.ref = "hypertrace-entityService" }
 hypertrace-entityservice-client = { module = "org.hypertrace.entity.service:entity-service-client", version.ref = "hypertrace-entityService" }
+hypertrace-configservice-partitioner-config-impl = { module = "org.hypertrace.config.service:partitioner-config-service-impl" }
 
 guava = { module = "com.google.guava:guava", version = "31.1-jre" }
 guice = { module = "com.google.inject:guice", version = "5.0.1" }
