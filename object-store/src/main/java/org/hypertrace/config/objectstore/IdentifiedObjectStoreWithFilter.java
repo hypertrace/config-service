@@ -23,6 +23,13 @@ public abstract class IdentifiedObjectStoreWithFilter<T, F> extends IdentifiedOb
     super(configServiceBlockingStub, resourceNamespace, resourceName, configChangeEventGenerator);
   }
 
+  protected IdentifiedObjectStoreWithFilter(
+      ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
+      String resourceNamespace,
+      String resourceName) {
+    super(configServiceBlockingStub, resourceNamespace, resourceName);
+  }
+
   public List<ContextualConfigObject<T>> getAllObjects(RequestContext context, F filter) {
     return getAllObjects(context).stream()
         .flatMap(configObject -> filterObject(configObject, filter).stream())
