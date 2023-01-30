@@ -135,6 +135,7 @@ message ApiDefinitionMetadataAnomalyDetectionConfig {
     SsrfAnomalyConfig ssrf = 11;
     UnknownParamAnomalyConfig unknown_param = 12;
     BflaAnomalyConfig bfla = 13;
+    JwtAnomalyConfig jwt = 14;
   }
 }
 
@@ -282,6 +283,10 @@ message SsrfAnomalyConfig {
 
 message BflaAnomalyConfig {
   optional double min_percent_seen = 1;
+}
+
+message JwtAnomalyConfig {
+  optional double time_difference_buffer_millis = 1;
 }
 
 message LearntApiAnomalyConfig {

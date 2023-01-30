@@ -135,6 +135,7 @@ message MetadataTrainingConfig {
     UserRoleTrainingConfig user_role = 21;
     HtmlTagsTrainingConfig html_tags = 22;
     HtmlTagAttributesTrainingConfig html_tag_attributes = 23;
+    JwtParamsTrainingConfig jwt_params = 24;
   }
 }
 
@@ -258,6 +259,12 @@ message StartTimeTrainingConfig {}
 message UserAgentTrainingConfig {}
 
 message UserRoleTrainingConfig {}
+
+message JwtParamsTrainingConfig {
+  ThresholdFamilyConfig threshold_family_config = 1;
+  optional int32 max_params = 2;
+  repeated string include_param_regexes = 3;
+}
 
 message ParamContainsSensitiveDataTrainingConfig {
   MinOccurrenceConfig query_param_pii_type_config = 1;

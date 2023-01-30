@@ -140,6 +140,7 @@ enum AnomalyRuleCategory {
   ANOMALY_RULE_CATEGORY_CUSTOM_RULES = 12 [(string_value) = "Custom Rules"];
   ANOMALY_RULE_CATEGORY_RATE_LIMIT = 13 [(string_value) = "Rate Limit"];
   ANOMALY_RULE_CATEGORY_ATTACKER = 14 [(string_value) = "Attacker"];
+  ANOMALY_RULE_CATEGORY_TOKEN_VIOLATIONS = 15 [(string_value) = "Token Violations and Anomalies"];
 }
 
 enum AnomalyConfidenceLevel {

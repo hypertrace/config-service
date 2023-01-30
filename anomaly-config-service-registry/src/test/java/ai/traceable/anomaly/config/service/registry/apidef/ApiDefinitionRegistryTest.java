@@ -1,6 +1,8 @@
 package ai.traceable.anomaly.config.service.registry.apidef;
 
+import static ai.traceable.anomaly.config.service.v1.AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
@@ -11,6 +13,7 @@ import ai.traceable.anomaly.config.service.v1.detector.DeviceAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.EnumerationsAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.HttpStatusAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.IntegerAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.JwtAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.MissingParamAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.SsrfAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.TypeAnomalyConfig;
@@ -30,7 +33,25 @@ public class ApiDefinitionRegistryTest {
   void testRuleIds() {
     Set<String> ruleIdsFromApiDefRuleInfos =
         apiDefinitionRegistry.getApiDefRuleInfos().values().stream()
-            .map(anomalyRuleInfo -> anomalyRuleInfo.getRuleId())
+            .map(
+                anomalyRuleInfo -> {
+                  String jwtRuleId = "jwt";
+                  if (anomalyRuleInfo.getRuleId().equals(jwtRuleId)) {
+                    assertEquals(3, anomalyRuleInfo.getSubRuleInfosCount());
+                    anomalyRuleInfo
+                        .getSubRuleInfosList()
+                        .forEach(
+                            subRuleInfo -> {
+                              assertEquals(1, subRuleInfo.getSubRuleTypesCount());
+                              assertEquals(
+                                  ANOMALY_SUB_RULE_TYPE_REGULAR, subRuleInfo.getSubRuleTypes(0));
+                              assertTrue(subRuleInfo.getRuleId().startsWith(jwtRuleId));
+                            });
+                  } else {
+                    assertEquals(0, anomalyRuleInfo.getSubRuleInfosCount());
+                  }
+                  return anomalyRuleInfo.getRuleId();
+                })
             .collect(Collectors.toSet());
 
     Set<String> ruleIdsFromApiDefDetectionConfigs =
@@ -113,6 +134,12 @@ public class ApiDefinitionRegistryTest {
         ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
             .setAnomalyRuleId("bfla")
             .setBfla(BflaAnomalyConfig.getDefaultInstance())
+            .build());
+    expectedMap.put(
+        "jwt",
+        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+            .setAnomalyRuleId("jwt")
+            .setJwt(JwtAnomalyConfig.getDefaultInstance())
             .build());
 
     assertEquals(expectedMap, ruleIdToConfigMap);
