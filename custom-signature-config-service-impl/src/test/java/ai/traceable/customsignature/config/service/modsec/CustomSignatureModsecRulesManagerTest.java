@@ -110,7 +110,7 @@ public class CustomSignatureModsecRulesManagerTest {
                 + "SecTmpDir /tmp/\n"
                 + "SecDataDir /tmp/\n"
                 + "SecAuditEngine Off\n"
-                + "SecAuditLogRelevantStatus \"^(?:5|4(?!04))\"\n"
+                + "SecAuditLogRelevantStatus \"^(?:5|404|403|401)\"\n"
                 + "SecAuditLogParts ABIJDEFHZ\n"
                 + "SecAuditLogType Serial\n"
                 + "SecAuditLog /var/log/modsec_audit.log\n"

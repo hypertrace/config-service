@@ -3,6 +3,7 @@ package ai.traceable.config.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
@@ -28,6 +29,10 @@ import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
+import com.google.common.io.Resources;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -169,85 +174,13 @@ public class CustomSignatureConfigServiceIntegrationTest
 
   @Test
   public void testGetModsecRules() {
-    String modsecDirectives =
-        "SecRuleEngine On\n"
-            + "SecRequestBodyAccess On\n"
-            + "SecRequestBodyLimit 13107200\n"
-            + "SecRequestBodyNoFilesLimit 131072\n"
-            + "SecRequestBodyLimitAction Reject\n"
-            + "SecPcreMatchLimit 1000\n"
-            + "SecPcreMatchLimitRecursion 1000\n"
-            + "SecResponseBodyAccess On\n"
-            + "SecResponseBodyLimit 524288\n"
-            + "SecTmpDir /tmp/\n"
-            + "SecDataDir /tmp/\n"
-            + "SecAuditEngine Off\n"
-            + "SecAuditLogRelevantStatus \"^(?:5|4(?!04))\"\n"
-            + "SecAuditLogParts ABIJDEFHZ\n"
-            + "SecAuditLogType Serial\n"
-            + "SecAuditLog /var/log/modsec_audit.log\n"
-            + "SecArgumentSeparator &\n"
-            + "SecCookieFormat 0\n"
-            + "SecStatusEngine Off\n"
-            + "# Reverted rule action to block and exit till the issue around match attributes for multiple matches is resolved\n"
-            + "SecDefaultAction \"phase:1,log,auditlog,deny,status:403\"\n"
-            + "SecDefaultAction \"phase:2,log,auditlog,deny,status:403\"\n"
-            + "SecCollectionTimeout 600\n"
-            + "\n"
-            + "# If no content type specified process as URLENCODED\n"
-            + "# static_extensions used by DOS rules\n"
-            + "SecAction \\\n"
-            + "  \"id:900000,\\\n"
-            + "   phase:1,\\\n"
-            + "   nolog,\\\n"
-            + "   pass,\\\n"
-            + "   t:none,\\\n"
-            + "   setvar:tx.paranoia_level=1,\\\n"
-            + "   setvar:'tx.enforce_bodyproc_urlencoded=1',\\\n"
-            + "   setvar:'tx.static_extensions=/.jpg/ /.jpeg/ /.png/ /.gif/ /.js/ /.css/ /.ico/ /.svg/ /.webp/'\""
-            + "\n"
-            + "# Initialize both Global and IP collections for rules to use.\n"
-            + "SecRule REQUEST_HEADERS:User-Agent \"@rx ^.*$\" \\\n"
-            + "    \"id:901318,\\\n"
-            + "    phase:1,\\\n"
-            + "    pass,\\\n"
-            + "    t:none,t:sha1,t:hexEncode,\\\n"
-            + "    nolog,\\\n"
-            + "    setvar:'tx.ua_hash=%{MATCHED_VAR}'\"\n"
-            + "SecAction \\\n"
-            + "    \"id:901321,\\\n"
-            + "    phase:1,\\\n"
-            + "    pass,\\\n"
-            + "    t:none,\\\n"
-            + "    nolog,\\\n"
-            + "    initcol:global=global,\\\n"
-            + "    initcol:ip=%{remote_addr}_%{tx.ua_hash},\\\n"
-            + "    setvar:'tx.real_ip=%{remote_addr}'\"\n"
-            + "\n"
-            + "# Initialize Correct Body Processing\n"
-            + "# Force request body variable\n"
-            + "SecRule REQBODY_PROCESSOR \"!@rx (?:URLENCODED|MULTIPART|XML|JSON)\" \\\n"
-            + "    \"id:901340,\\\n"
-            + "    phase:1,\\\n"
-            + "    pass,\\\n"
-            + "    nolog,\\\n"
-            + "    noauditlog,\\\n"
-            + "    msg:'Enabling body inspection',\\\n"
-            + "    tag:'paranoia-level/1',\\\n"
-            + "    ctl:forceRequestBodyVariable=On\"\n"
-            + "# Force body processor URLENCODED\n"
-            + "SecRule TX:enforce_bodyproc_urlencoded \"@eq 1\" \\\n"
-            + "    \"id:901350,\\\n"
-            + "    phase:1,\\\n"
-            + "    pass,\\\n"
-            + "    t:none,t:urlDecodeUni,\\\n"
-            + "    nolog,\\\n"
-            + "    noauditlog,\\\n"
-            + "    msg:'Enabling forced body inspection for ASCII content',\\\n"
-            + "    chain\"\n"
-            + "    SecRule REQBODY_PROCESSOR \"!@rx (?:URLENCODED|MULTIPART|XML|JSON)\" \\\n"
-            + "        \"ctl:requestBodyProcessor=URLENCODED\""
-            + "\n\n";
+    String modsecDirectives = "";
+    URL directiveUrl = Resources.getResource("waf/waf-directives-test.conf");
+    try {
+      modsecDirectives = Resources.toString(directiveUrl, StandardCharsets.UTF_8) + "\n\n";
+    } catch (IOException e) {
+      fail("Failed to read waf directives file");
+    }
 
     assertTrue(fetchAllRules().isEmpty());
     List<CustomSignatureRule> createdRules = createDefaultRules();
