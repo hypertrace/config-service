@@ -8,8 +8,10 @@ import ai.traceable.anomaly.config.service.v1.StringList;
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.GibberishConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.LevelThresholdConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.LocalTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.SegmentMergeConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ThresholdRegexConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainerConfigServiceGrpc;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainerConfigServiceGrpc.TrainerConfigServiceBlockingStub;
@@ -406,6 +408,19 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
                                 GibberishConfig.newBuilder()
                                     .setDisabled(true)
                                     .setThreshold(10)
+                                    .build())
+                            .addSegmentMergeConfig(
+                                SegmentMergeConfig.newBuilder()
+                                    .setDisabled(true)
+                                    .setSegmentDepth("2")
+                                    .addLevelThresholdConfig(
+                                        LevelThresholdConfig.newBuilder()
+                                            .setLevel(1)
+                                            .setIdsThreshold(100)
+                                            .setLowCardinalityThreshold(100)
+                                            .setMediumCardinalityThreshold(500)
+                                            .setHighCardinalityThreshold(1000)
+                                            .build())
                                     .build())
                             .setIds(
                                 ThresholdRegexConfig.newBuilder()

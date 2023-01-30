@@ -383,11 +383,26 @@ message TrieModelTrainingConfig {
   optional int32 max_number_of_trie_paths = 8;
   optional int32 non_mergeable_depth = 9;
   GibberishConfig gibberish_config = 10;
+  repeated SegmentMergeConfig segment_merge_config = 11;
 }
 
 message GibberishConfig {
   optional int32 threshold = 1;
   bool disabled = 2;
+}
+
+message SegmentMergeConfig {
+  bool disabled = 1;
+  optional string segment_depth = 2;
+  repeated LevelThresholdConfig level_threshold_config = 3;
+}
+
+message LevelThresholdConfig {
+  int32 level = 1;
+  optional int32 ids_threshold = 2;
+  optional int32 low_cardinality_threshold = 3;
+  optional int32 high_cardinality_threshold = 4;
+  optional int32 medium_cardinality_threshold = 5;
 }
 
 message UserAgentFilterConfig {
