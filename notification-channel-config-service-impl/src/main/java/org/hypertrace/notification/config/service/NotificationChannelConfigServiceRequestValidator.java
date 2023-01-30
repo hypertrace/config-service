@@ -37,7 +37,7 @@ public class NotificationChannelConfigServiceRequestValidator {
         data, NotificationChannelMutableData.CHANNEL_NAME_FIELD_NUMBER);
     if (data.getEmailChannelConfigCount() == 0
         && data.getWebhookChannelConfigCount() == 0
-        && data.getEmailChannelConfigCount() == 0) {
+        && data.getS3BucketChannelConfigCount() == 0) {
       throw Status.INVALID_ARGUMENT.withDescription("No config present").asRuntimeException();
     }
     data.getEmailChannelConfigList().forEach(this::validateEmailChannelConfig);
