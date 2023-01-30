@@ -24,17 +24,22 @@ public class PartitionerConfigServiceRequestValidator {
             profile -> {
               if (profile.getName().isBlank()) {
                 throw Status.INVALID_ARGUMENT
-                    .withDescription("profile cannot be empty")
+                    .withDescription("profile name cannot be empty")
                     .asRuntimeException();
               }
-              if (profile.getGroupsCount() == 0) {
+              if (profile.getDefaultGroupWeight() <= 0) {
                 throw Status.INVALID_ARGUMENT
-                    .withDescription("partition_groups cannot be empty")
+                    .withDescription("default group weight should be > 0")
                     .asRuntimeException();
               }
               if (profile.getPartitionKey().isBlank()) {
                 throw Status.INVALID_ARGUMENT
                     .withDescription("partition key cannot be empty")
+                    .asRuntimeException();
+              }
+              if (profile.getGroupsCount() == 0) {
+                throw Status.INVALID_ARGUMENT
+                    .withDescription("partition_groups cannot be empty")
                     .asRuntimeException();
               }
               profile
@@ -92,7 +97,7 @@ public class PartitionerConfigServiceRequestValidator {
             profile -> {
               if (profile.isBlank()) {
                 throw Status.INVALID_ARGUMENT
-                    .withDescription("profile cannot be empty")
+                    .withDescription("profile name cannot be empty")
                     .asRuntimeException();
               }
             });
