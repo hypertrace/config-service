@@ -13,7 +13,21 @@ message NotificationChannelMutableData {
   string channel_name = 1;
   repeated EmailChannelConfig email_channel_config = 2;
   repeated WebhookChannelConfig webhook_channel_config = 3;
+  repeated AwsS3BucketChannelConfig s3_bucket_channel_config = 4;
 }
+
+message AwsS3BucketChannelConfig {
+  oneof authentication_credential {
+    WebIdentityAuthenticationCredential web_identity_auth_credential = 1;
+  }
+  string bucket_name = 2;
+  string region = 3;
+
+  message WebIdentityAuthenticationCredential {
+    string role_arn = 1;
+  }
+}
+
 
 enum WebhookFormat {
   WEBHOOK_FORMAT_UNSPECIFIED = 0;
