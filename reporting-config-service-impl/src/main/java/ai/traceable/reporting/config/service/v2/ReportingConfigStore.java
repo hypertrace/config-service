@@ -57,7 +57,9 @@ public class ReportingConfigStore
       ReportConfiguration reportConfiguration, GetReportsFilter reportsFilter) {
     return Optional.of(reportConfiguration)
         .filter(report -> filterById(report, reportsFilter))
-        .filter(report -> filterByEnvironmentId(report, reportsFilter));
+        .filter(report -> filterByEnvironmentId(report, reportsFilter))
+        .filter(report -> filterByName(report, reportsFilter))
+        .filter(report -> filterByCreator(report, reportsFilter));
   }
 
   private boolean filterById(ReportConfiguration reportConfiguration, GetReportsFilter filter) {
@@ -72,5 +74,18 @@ public class ReportingConfigStore
         || filter
             .getEnvironmentId()
             .equals(reportConfiguration.getCommonConfigurationDetails().getEnvironmentId());
+  }
+
+  private boolean filterByName(ReportConfiguration reportConfiguration, GetReportsFilter filter) {
+    return filter.getNamesList().isEmpty()
+        || filter
+            .getNamesList()
+            .contains(reportConfiguration.getCommonConfigurationDetails().getName());
+  }
+
+  private boolean filterByCreator(
+      ReportConfiguration reportConfiguration, GetReportsFilter filter) {
+    return filter.getCreatorsList().isEmpty()
+        || filter.getCreatorsList().contains(reportConfiguration.getCreator());
   }
 }
