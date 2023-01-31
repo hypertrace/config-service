@@ -262,8 +262,7 @@ message UserRoleTrainingConfig {}
 
 message JwtParamsTrainingConfig {
   ThresholdFamilyConfig threshold_family_config = 1;
-  optional int32 max_params = 2;
-  repeated string include_param_regexes = 3;
+  repeated string include_param_regexes = 2;
 }
 
 message ParamContainsSensitiveDataTrainingConfig {

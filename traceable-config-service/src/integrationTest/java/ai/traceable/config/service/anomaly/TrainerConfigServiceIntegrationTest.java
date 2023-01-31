@@ -18,6 +18,7 @@ import ai.traceable.anomaly.config.service.v1.trainer.EnumerationsTrainingConfig
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllScopedTrainingConfigsRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllTrainingActionsRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.GetScopedTrainingConfigRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.JwtParamsTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.LackOfEncryptionTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.MetadataTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.MinOccurrenceConfig;
@@ -679,6 +680,27 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     assertEquals(99.9, enumerationsTrainingConfig.getMinEnumOccurrencePercent());
 
     assertFalse(metadataTrainingConfigs.get(11).getDisabled());
+
+    assertTrue(metadataTrainingConfigs.get(12).getDisabled());
+    JwtParamsTrainingConfig jwtParamsTrainingConfig =
+        metadataTrainingConfigs.get(12).getMetadataTrainingConfig().getJwtParams();
+    ThresholdFamilyConfig jwtParamsFamilyConfig =
+        jwtParamsTrainingConfig.getThresholdFamilyConfig();
+    ThresholdCountConfig jwtParamsIpDiverseUserFamilyConfig =
+        jwtParamsFamilyConfig.getDiverseIpDiverseUserFamilyConfig();
+    ThresholdCountConfig jwtParamsIpLimitedUserFamilyConfig =
+        jwtParamsFamilyConfig.getDiverseIpLimitedUserFamilyConfig();
+    ThresholdCountConfig jwtParamsIpFamilyConfig = jwtParamsFamilyConfig.getLimitedIpFamilyConfig();
+    assertEquals(20, jwtParamsIpDiverseUserFamilyConfig.getRequiredCallsCount());
+    assertEquals(10, jwtParamsIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
+    assertEquals(10, jwtParamsIpDiverseUserFamilyConfig.getRequiredUniqueIpsCount());
+    assertEquals(20, jwtParamsIpLimitedUserFamilyConfig.getRequiredCallsCount());
+    assertEquals(0, jwtParamsIpLimitedUserFamilyConfig.getRequiredUniqueUserIdsCount());
+    assertEquals(10, jwtParamsIpLimitedUserFamilyConfig.getRequiredUniqueIpsCount());
+    assertEquals(20, jwtParamsIpFamilyConfig.getRequiredCallsCount());
+    assertEquals(0, jwtParamsIpFamilyConfig.getRequiredUniqueUserIdsCount());
+    assertEquals(0, jwtParamsIpFamilyConfig.getRequiredUniqueIpsCount());
+    assertEquals(List.of("iss", "aud"), jwtParamsTrainingConfig.getIncludeParamRegexesList());
   }
 
   @Test
@@ -906,7 +928,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     updateTrainerConfig(scopedTrainingConfig);
     List<TrainingConfig> trainingConfigs =
         fetchTrainerConfig(customerConfigScope).getTrainingConfigsList();
-    assertEquals(16, trainingConfigs.size());
+    assertEquals(17, trainingConfigs.size());
     for (TrainingConfig trainingConfig : trainingConfigs) {
       if (trainingConfig.getTrainingConfigCase() == TrainingConfigCase.METADATA_TRAINING_CONFIG
           && trainingConfig.getMetadataTrainingConfig().getConfigCase()
