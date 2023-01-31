@@ -413,6 +413,7 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
                                 SegmentMergeConfig.newBuilder()
                                     .setDisabled(true)
                                     .setSegmentDepth("2")
+                                    .setNonMergeableDepth(1)
                                     .addLevelThresholdConfig(
                                         LevelThresholdConfig.newBuilder()
                                             .setLevel(1)

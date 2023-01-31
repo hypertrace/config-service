@@ -394,6 +394,7 @@ message SegmentMergeConfig {
   bool disabled = 1;
   optional string segment_depth = 2;
   repeated LevelThresholdConfig level_threshold_config = 3;
+  optional int32 non_mergeable_depth = 4;
 }
 
 message LevelThresholdConfig {
