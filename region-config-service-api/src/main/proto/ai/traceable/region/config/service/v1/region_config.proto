@@ -9,7 +9,8 @@ message GetRegionsRequest {
 }
 
 message RegionsFilter {
-  repeated string id = 1;
+  repeated string id = 1 [deprecated = true];
+  repeated RegionIdentifier region_identifier = 2;
 }
 
 message GetRegionsResponse {
@@ -17,7 +18,8 @@ message GetRegionsResponse {
 }
 
 message GetRegionRequest {
-  string id = 1;
+  string id = 1 [deprecated = true];
+  RegionIdentifier region_identifier = 2;
 }
 
 message GetRegionResponse {
@@ -33,14 +35,29 @@ message GetDetailedRegionsResponse {
 }
 
 message Region {
-  string id = 1;
-  string name = 2;
+  string id = 1 [deprecated = true];
+  string name = 2 [deprecated = true];
+  oneof region {
+    Country country = 3;
+  }
 }
 
 message DetailedRegion {
-  string id = 1;
-  string name = 2;
+  string id = 1 [deprecated = true];
+  string name = 2 [deprecated = true];
   repeated IpRange ip_range = 3;
+  Region region = 4;
+}
+
+message RegionIdentifier {
+  oneof identifier {
+    string country_iso_code = 1;
+  }
+}
+
+message Country {
+  string name = 1;
+  string iso_code = 2;
 }
 
 message IpRange {
