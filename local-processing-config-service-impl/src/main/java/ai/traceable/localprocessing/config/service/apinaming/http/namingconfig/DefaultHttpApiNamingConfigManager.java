@@ -15,7 +15,7 @@ import ai.traceable.localprocessing.config.service.v1.ApiNamingPattern;
 import ai.traceable.localprocessing.config.service.v1.HttpApiNamingCustomRule;
 import ai.traceable.localprocessing.config.service.v1.Segment;
 import ai.traceable.localprocessing.config.service.v1.Wildcard;
-import ai.traceable.platform.apientity.TrieNodeType;
+import ai.traceable.platform.apientity.http.model.NodeType;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRule;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig;
 import ai.traceable.span.processing.config.service.v1.ApiSpecBasedConfig;
@@ -67,7 +67,7 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
 
     List<String> segmentWhitelistRegexes = new ArrayList<>();
     List<String> extensions = new ArrayList<>();
-    EnumMap<TrieNodeType, String> wildcardConfigsMap = new EnumMap<>(TrieNodeType.class);
+    EnumMap<NodeType, String> wildcardConfigsMap = new EnumMap<>(NodeType.class);
     if (maybeTrieModelTrainingConfig.isPresent()) {
       TrieModelTrainingConfig trieModelTrainingConfig = maybeTrieModelTrainingConfig.get();
       extensions = trieModelTrainingConfig.getExtensions().getValuesList();
@@ -105,19 +105,19 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
         maxNumberOfTriePaths);
   }
 
-  private EnumMap<TrieNodeType, String> buildWildcardConfigMap(
+  private EnumMap<NodeType, String> buildWildcardConfigMap(
       TrieModelTrainingConfig trieModelTrainingConfig) {
-    EnumMap<TrieNodeType, String> wildcardConfigMap = new EnumMap<>(TrieNodeType.class);
+    EnumMap<NodeType, String> wildcardConfigMap = new EnumMap<>(NodeType.class);
     wildcardConfigMap.put(
-        TrieNodeType.ID, buildWildcardIdentificationRegex(trieModelTrainingConfig.getIds()));
+        NodeType.ID, buildWildcardIdentificationRegex(trieModelTrainingConfig.getIds()));
     wildcardConfigMap.put(
-        TrieNodeType.LOW_CARDINALITY,
+        NodeType.LOW_CARDINALITY,
         buildWildcardIdentificationRegex(trieModelTrainingConfig.getLowCardinality()));
     wildcardConfigMap.put(
-        TrieNodeType.MEDIUM_CARDINALITY,
+        NodeType.MEDIUM_CARDINALITY,
         buildMediumCardinalityWildcardIdentificationRegex(trieModelTrainingConfig));
     wildcardConfigMap.put(
-        TrieNodeType.HIGH_CARDINALITY,
+        NodeType.HIGH_CARDINALITY,
         buildWildcardIdentificationRegex(trieModelTrainingConfig.getHighCardinality()));
 
     return wildcardConfigMap;

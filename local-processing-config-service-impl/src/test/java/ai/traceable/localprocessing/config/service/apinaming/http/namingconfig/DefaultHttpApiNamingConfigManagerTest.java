@@ -15,7 +15,7 @@ import ai.traceable.anomaly.config.service.v1.trainer.TrieModelTrainingConfig;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.apinaming.http.utils.HttpApiNamingConfigInfo;
 import ai.traceable.localprocessing.config.service.config.http.HttpApiNamingConfig;
-import ai.traceable.platform.apientity.TrieNodeType;
+import ai.traceable.platform.apientity.http.model.NodeType;
 import com.google.protobuf.GeneratedMessageV3;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -87,31 +87,31 @@ class DefaultHttpApiNamingConfigManagerTest {
         response.getHttpApiNamingConfig().getFallbackWildcardRegexesList());
     assertEquals(List.of("allow-regex"), response.getSegmentWhitelistRegexes());
     assertEquals(List.of("extension-1", "extension-2"), response.getExtensions());
-    assertEquals("id-regex", response.getWildcardConfigMap().get(TrieNodeType.ID));
-    assertEquals("low-regex", response.getWildcardConfigMap().get(TrieNodeType.LOW_CARDINALITY));
-    assertEquals("high-regex", response.getWildcardConfigMap().get(TrieNodeType.HIGH_CARDINALITY));
+    assertEquals("id-regex", response.getWildcardConfigMap().get(NodeType.ID));
+    assertEquals("low-regex", response.getWildcardConfigMap().get(NodeType.LOW_CARDINALITY));
+    assertEquals("high-regex", response.getWildcardConfigMap().get(NodeType.HIGH_CARDINALITY));
     assertEquals(
         "(?!^(id-regex|low-regex|high-regex|allow-regex|.*\\.extension-1|.*\\.extension-2)$)^.*$",
-        response.getWildcardConfigMap().get(TrieNodeType.MEDIUM_CARDINALITY));
+        response.getWildcardConfigMap().get(NodeType.MEDIUM_CARDINALITY));
 
     assertTrue(
         Pattern.matches(
-            response.getWildcardConfigMap().get(TrieNodeType.MEDIUM_CARDINALITY), "medium-regex"));
+            response.getWildcardConfigMap().get(NodeType.MEDIUM_CARDINALITY), "medium-regex"));
     assertFalse(
         Pattern.matches(
-            response.getWildcardConfigMap().get(TrieNodeType.MEDIUM_CARDINALITY), "high-regex"));
+            response.getWildcardConfigMap().get(NodeType.MEDIUM_CARDINALITY), "high-regex"));
     assertFalse(
         Pattern.matches(
-            response.getWildcardConfigMap().get(TrieNodeType.MEDIUM_CARDINALITY), "low-regex"));
+            response.getWildcardConfigMap().get(NodeType.MEDIUM_CARDINALITY), "low-regex"));
     assertFalse(
         Pattern.matches(
-            response.getWildcardConfigMap().get(TrieNodeType.MEDIUM_CARDINALITY), "id-regex"));
+            response.getWildcardConfigMap().get(NodeType.MEDIUM_CARDINALITY), "id-regex"));
     assertFalse(
         Pattern.matches(
-            response.getWildcardConfigMap().get(TrieNodeType.MEDIUM_CARDINALITY), "allow-regex"));
+            response.getWildcardConfigMap().get(NodeType.MEDIUM_CARDINALITY), "allow-regex"));
     assertFalse(
         Pattern.matches(
-            response.getWildcardConfigMap().get(TrieNodeType.MEDIUM_CARDINALITY), "1.extension-2"));
+            response.getWildcardConfigMap().get(NodeType.MEDIUM_CARDINALITY), "1.extension-2"));
   }
 
   @Test
@@ -172,10 +172,9 @@ class DefaultHttpApiNamingConfigManagerTest {
         response.getHttpApiNamingConfig().getFallbackWildcardRegexesList());
     assertEquals(List.of("allow-regex"), response.getSegmentWhitelistRegexes());
     assertEquals(List.of("extension"), response.getExtensions());
-    assertEquals("id-regex-1|id-regex-2", response.getWildcardConfigMap().get(TrieNodeType.ID));
-    assertEquals("low-regex", response.getWildcardConfigMap().get(TrieNodeType.LOW_CARDINALITY));
-    assertEquals("high-regex", response.getWildcardConfigMap().get(TrieNodeType.HIGH_CARDINALITY));
-    assertEquals(
-        "medium-regex", response.getWildcardConfigMap().get(TrieNodeType.MEDIUM_CARDINALITY));
+    assertEquals("id-regex-1|id-regex-2", response.getWildcardConfigMap().get(NodeType.ID));
+    assertEquals("low-regex", response.getWildcardConfigMap().get(NodeType.LOW_CARDINALITY));
+    assertEquals("high-regex", response.getWildcardConfigMap().get(NodeType.HIGH_CARDINALITY));
+    assertEquals("medium-regex", response.getWildcardConfigMap().get(NodeType.MEDIUM_CARDINALITY));
   }
 }

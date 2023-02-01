@@ -10,8 +10,8 @@ import ai.traceable.localprocessing.config.service.v1.Segment;
 import ai.traceable.platform.apientity.Addition;
 import ai.traceable.platform.apientity.Deletion;
 import ai.traceable.platform.apientity.TrieDiffLog;
-import ai.traceable.platform.apientity.TrieNodeType;
 import ai.traceable.platform.apientity.http.difflog.TrieDiffLogModel;
+import ai.traceable.platform.apientity.http.model.NodeType;
 import ai.traceable.platform.model.PersistedModel;
 import ai.traceable.platform.model.filter.ModelFilter;
 import ai.traceable.platform.model.store.ModelPersistentStore;
@@ -175,7 +175,7 @@ public class TrieDiffLogManager {
 
   public List<DiffLog> getAllTrieDiffLogs(
       List<PersistedModel<TrieDiffLogModel>> persistedModels,
-      Map<TrieNodeType, String> wildcardConfigMap) {
+      Map<NodeType, String> wildcardConfigMap) {
     return persistedModels.stream()
         .map(PersistedModel::getModel)
         .map(
@@ -186,7 +186,7 @@ public class TrieDiffLogManager {
   }
 
   private List<DiffLog> getTrieDiffLogs(
-      TrieDiffLog trieDiffLog, Map<TrieNodeType, String> wildcardConfigMap) {
+      TrieDiffLog trieDiffLog, Map<NodeType, String> wildcardConfigMap) {
     List<DiffLog> pathAdditionTrieDiffLogs =
         convertPathAdditions(trieDiffLog.getPathAdditions(), wildcardConfigMap);
     List<DiffLog> nodeDeletionTrieDiffLogs =
@@ -196,7 +196,7 @@ public class TrieDiffLogManager {
   }
 
   private List<DiffLog> convertPathAdditions(
-      List<Addition> additions, Map<TrieNodeType, String> wildcardConfigMap) {
+      List<Addition> additions, Map<NodeType, String> wildcardConfigMap) {
     return additions.stream()
         .map(addition -> convertAdditionToValues(addition, wildcardConfigMap))
         .filter(not(List::isEmpty))
@@ -210,7 +210,7 @@ public class TrieDiffLogManager {
   }
 
   private List<DiffLog> convertNodeDeletions(
-      List<Deletion> deletions, Map<TrieNodeType, String> wildcardConfigMap) {
+      List<Deletion> deletions, Map<NodeType, String> wildcardConfigMap) {
     return deletions.stream()
         .map(deletion -> convertDeletionToValues(deletion, wildcardConfigMap))
         .filter(not(List::isEmpty))
@@ -224,14 +224,14 @@ public class TrieDiffLogManager {
   }
 
   private List<Segment> convertAdditionToValues(
-      Addition addition, Map<TrieNodeType, String> wildcardConfigMap) {
+      Addition addition, Map<NodeType, String> wildcardConfigMap) {
     return addition.getSegments().stream()
         .map(segment -> segmentConverter.convertSegment(segment, wildcardConfigMap))
         .collect(Collectors.toUnmodifiableList());
   }
 
   private List<Segment> convertDeletionToValues(
-      Deletion deletion, Map<TrieNodeType, String> wildcardConfigMap) {
+      Deletion deletion, Map<NodeType, String> wildcardConfigMap) {
     return deletion.getSegments().stream()
         .map(segment -> segmentConverter.convertSegment(segment, wildcardConfigMap))
         .collect(Collectors.toUnmodifiableList());

@@ -27,7 +27,7 @@ import ai.traceable.platform.apientity.Addition;
 import ai.traceable.platform.apientity.Deletion;
 import ai.traceable.platform.apientity.Segment;
 import ai.traceable.platform.apientity.TrieDiffLog;
-import ai.traceable.platform.apientity.TrieNodeType;
+import ai.traceable.platform.apientity.http.model.NodeType;
 import ai.traceable.platform.apientity.http.model.TrieNodeConfig;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRule;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig;
@@ -226,7 +226,7 @@ public class ApiNamingManagerTestUtils {
               Segment.newBuilder()
                   .setName(
                       ai.traceable.platform.apientity.Wildcard.newBuilder()
-                          .setWildcardType(TrieNodeType.ID)
+                          .setType(NodeType.ID.name())
                           .setExtension("e")
                           .build())
                   .build()));
@@ -287,7 +287,7 @@ public class ApiNamingManagerTestUtils {
                               Segment.newBuilder()
                                   .setName(
                                       ai.traceable.platform.apientity.Wildcard.newBuilder()
-                                          .setWildcardType(TrieNodeType.ID)
+                                          .setType(NodeType.ID.name())
                                           .setExtension("e")
                                           .build())
                                   .build()))
@@ -303,7 +303,7 @@ public class ApiNamingManagerTestUtils {
                               Segment.newBuilder()
                                   .setName(
                                       ai.traceable.platform.apientity.Wildcard.newBuilder()
-                                          .setWildcardType(TrieNodeType.ID)
+                                          .setType(NodeType.ID.name())
                                           .setExtension("ex")
                                           .build())
                                   .build()))
