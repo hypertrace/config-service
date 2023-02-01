@@ -421,6 +421,7 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
                                             .setLowCardinalityThreshold(100)
                                             .setMediumCardinalityThreshold(500)
                                             .setHighCardinalityThreshold(1000)
+                                            .setGibberishThreshold(100)
                                             .build())
                                     .build())
                             .setIds(

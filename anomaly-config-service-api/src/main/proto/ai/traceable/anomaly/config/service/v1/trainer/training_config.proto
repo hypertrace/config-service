@@ -403,6 +403,7 @@ message LevelThresholdConfig {
   optional int32 low_cardinality_threshold = 3;
   optional int32 high_cardinality_threshold = 4;
   optional int32 medium_cardinality_threshold = 5;
+  optional int32 gibberish_threshold = 6;
 }
 
 message UserAgentFilterConfig {
