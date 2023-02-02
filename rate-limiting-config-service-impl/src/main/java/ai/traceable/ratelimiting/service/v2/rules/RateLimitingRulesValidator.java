@@ -496,6 +496,7 @@ public class RateLimitingRulesValidator implements RulesValidator {
   private void validateAction(Action action, boolean aggregateAcrossAllUsersPresent) {
     switch (action.getActionCase()) {
       case ALERT:
+        break;
       case BLOCK:
         if (aggregateAcrossAllUsersPresent) {
           throwInvalidArgumentException("Block action unsupported on aggregation across users");
