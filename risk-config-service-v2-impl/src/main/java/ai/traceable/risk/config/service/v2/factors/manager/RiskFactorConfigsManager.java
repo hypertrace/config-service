@@ -4,7 +4,7 @@ import ai.traceable.risk.config.service.v2.RiskConfigScope;
 import ai.traceable.risk.config.service.v2.RiskContributorConfigs;
 import ai.traceable.risk.config.service.v2.RiskFactorCategory;
 import ai.traceable.risk.config.service.v2.RiskFactorConfigUpdateDetails;
-import java.util.List;
+import java.util.Collection;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public interface RiskFactorConfigsManager {
@@ -14,11 +14,11 @@ public interface RiskFactorConfigsManager {
 
   RiskContributorConfigs updateRiskContributorConfigs(
       RequestContext requestContext,
-      List<RiskFactorConfigUpdateDetails> riskFactorConfigUpdateDetailsList,
+      Collection<RiskFactorConfigUpdateDetails> riskFactorConfigUpdateDetailsList,
       RiskConfigScope riskConfigScope);
 
   RiskContributorConfigs resetRiskContributorConfigs(
       RequestContext requestContext,
-      List<RiskFactorCategory> riskFactorCategoriesList,
+      Collection<RiskFactorCategory> riskFactorCategoriesList,
       RiskConfigScope riskConfigScope);
 }

@@ -9,7 +9,7 @@ import ai.traceable.risk.config.service.v2.RiskScoringGridCell;
 import ai.traceable.risk.config.service.v2.RiskScoringGridConfigValues;
 import ai.traceable.risk.config.service.v2.UpdateRiskScoringGridConfigRequest;
 import io.grpc.Status;
-import java.util.List;
+import java.util.Collection;
 import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -48,7 +48,7 @@ public class RiskScoringGridConfigValidatorImpl implements RiskScoringGridConfig
     return validateGridCells(values.getRiskScoringGridCellsList());
   }
 
-  private Status validateGridCells(List<RiskScoringGridCell> riskScoringGridCellsList) {
+  private Status validateGridCells(Collection<RiskScoringGridCell> riskScoringGridCellsList) {
     for (RiskScoringGridCell cell : riskScoringGridCellsList) {
       Status status = requestValidator.validateScoreValue(cell.getScore());
       if (!status.isOk()) {

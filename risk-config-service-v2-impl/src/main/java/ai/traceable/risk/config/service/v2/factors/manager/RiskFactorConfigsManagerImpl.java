@@ -15,7 +15,6 @@ import ai.traceable.risk.config.service.v2.RiskFactorConfigUpdateDetails;
 import ai.traceable.risk.config.service.v2.factors.builder.RiskFactorListBuilder;
 import ai.traceable.risk.config.service.v2.factors.comparator.RiskFactorConfigsComparator;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -38,7 +37,8 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
   @Override
   public RiskContributorConfigs getRiskContributorConfigs(
       RequestContext requestContext, RiskConfigScope riskConfigScope) {
-    List<RiskFactor> scopedDefaultRiskFactors = buildScopedDefaultRiskFactors(riskConfigScope);
+    Collection<RiskFactor> scopedDefaultRiskFactors =
+        buildMergedGlobalAndDefaultRiskFactors(requestContext, riskConfigScope);
     return RiskContributorConfigs.newBuilder()
         .addAllRiskFactors(
             getRiskFactors(requestContext, scopedDefaultRiskFactors, riskConfigScope))
@@ -48,9 +48,10 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
   @Override
   public RiskContributorConfigs updateRiskContributorConfigs(
       RequestContext requestContext,
-      List<RiskFactorConfigUpdateDetails> riskFactorConfigUpdateDetailsList,
+      Collection<RiskFactorConfigUpdateDetails> riskFactorConfigUpdateDetailsList,
       RiskConfigScope riskConfigScope) {
-    List<RiskFactor> scopedDefaultRiskFactors = buildScopedDefaultRiskFactors(riskConfigScope);
+    Collection<RiskFactor> scopedDefaultRiskFactors =
+        buildMergedGlobalAndDefaultRiskFactors(requestContext, riskConfigScope);
     return RiskContributorConfigs.newBuilder()
         .addAllRiskFactors(
             updateRiskFactors(
@@ -64,9 +65,10 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
   @Override
   public RiskContributorConfigs resetRiskContributorConfigs(
       RequestContext requestContext,
-      List<RiskFactorCategory> riskFactorCategoriesList,
+      Collection<RiskFactorCategory> riskFactorCategoriesList,
       RiskConfigScope riskConfigScope) {
-    List<RiskFactor> scopedDefaultRiskFactors = buildScopedDefaultRiskFactors(riskConfigScope);
+    Collection<RiskFactor> scopedDefaultRiskFactors =
+        buildMergedGlobalAndDefaultRiskFactors(requestContext, riskConfigScope);
     return RiskContributorConfigs.newBuilder()
         .addAllRiskFactors(
             resetRiskFactors(
@@ -79,9 +81,9 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
 
   private Collection<RiskFactor> getRiskFactors(
       RequestContext requestContext,
-      List<RiskFactor> defaultRiskFactors,
+      Collection<RiskFactor> defaultRiskFactors,
       RiskConfigScope riskConfigScope) {
-    List<RiskFactorConfig> fetchedRiskFactorConfigs =
+    Collection<RiskFactorConfig> fetchedRiskFactorConfigs =
         defaultRiskFactors.stream()
             .map(RiskFactor::getRiskFactorConfig)
             .map(RiskFactorConfig::getRiskFactorCategory)
@@ -95,8 +97,8 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
 
   private Collection<RiskFactor> updateRiskFactors(
       RequestContext requestContext,
-      List<RiskFactorConfigUpdateDetails> riskFactorConfigUpdateDetailsList,
-      List<RiskFactor> defaultRiskFactorsList,
+      Collection<RiskFactorConfigUpdateDetails> riskFactorConfigUpdateDetailsList,
+      Collection<RiskFactor> defaultRiskFactorsList,
       RiskConfigScope riskConfigScope) {
 
     Map<RiskFactorCategory, RiskFactor> defaultListFactorsMap =
@@ -109,7 +111,7 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
     Collection<RiskFactorConfig> updateRiskFactorConfigs =
         buildUpdateConfigs(riskFactorConfigUpdateDetailsList, riskConfigScope);
 
-    List<RiskFactorConfig> updatedRiskFactorConfigs =
+    Collection<RiskFactorConfig> updatedRiskFactorConfigs =
         updateRiskFactorConfigs.stream()
             .map(
                 updateConfig ->
@@ -131,7 +133,7 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
   }
 
   private Collection<RiskFactorConfig> buildUpdateConfigs(
-      List<RiskFactorConfigUpdateDetails> riskFactorConfigUpdateDetailsList,
+      Collection<RiskFactorConfigUpdateDetails> riskFactorConfigUpdateDetailsList,
       RiskConfigScope riskConfigScope) {
     return riskFactorConfigUpdateDetailsList.stream()
         .map(
@@ -155,8 +157,8 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
 
   private Collection<RiskFactor> resetRiskFactors(
       RequestContext requestContext,
-      List<RiskFactorCategory> riskFactorCategoriesList,
-      List<RiskFactor> defaultRiskFactorsList,
+      Collection<RiskFactorCategory> riskFactorCategoriesList,
+      Collection<RiskFactor> defaultRiskFactorsList,
       RiskConfigScope riskConfigScope) {
     riskFactorCategoriesList.forEach(
         riskFactorCategory ->
@@ -184,8 +186,17 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
         .collect(Collectors.toUnmodifiableList());
   }
 
-  public List<RiskFactor> buildScopedDefaultRiskFactors(RiskConfigScope riskConfigScope) {
-    return defaultRiskContributorConfigs.getRiskFactorsList().stream()
+  public Collection<RiskFactor> buildMergedGlobalAndDefaultRiskFactors(
+      RequestContext requestContext, RiskConfigScope riskConfigScope) {
+    Collection<RiskFactor> globalRiskFactors =
+        getRiskFactors(
+            requestContext,
+            defaultRiskContributorConfigs.getRiskFactorsList(),
+            RiskConfigScope.getDefaultInstance());
+    Collection<RiskFactor> mergedGlobalAndDefaultFactors =
+        riskFactorListBuilder.mergeDefaultFactors(
+            globalRiskFactors, defaultRiskContributorConfigs.getRiskFactorsList());
+    return mergedGlobalAndDefaultFactors.stream()
         .map(
             riskFactor ->
                 RiskFactor.newBuilder()

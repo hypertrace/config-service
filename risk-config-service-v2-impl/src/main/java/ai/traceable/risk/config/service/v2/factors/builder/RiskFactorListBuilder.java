@@ -8,7 +8,6 @@ import ai.traceable.risk.config.service.v2.RiskFactorInfo;
 import ai.traceable.risk.config.service.v2.factors.comparator.RiskFactorConfigsComparator;
 import io.grpc.Status;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -22,7 +21,7 @@ public class RiskFactorListBuilder {
   private final RiskFactorConfigsComparator factorConfigsComparator;
 
   public Collection<RiskFactor> mergeDefaultFactors(
-      List<RiskFactor> factorList, List<RiskFactor> defaultRiskFactors) {
+      Collection<RiskFactor> factorList, Collection<RiskFactor> defaultRiskFactors) {
 
     Map<RiskFactorCategory, RiskFactor> defaultFactorMap =
         defaultRiskFactors.stream()
@@ -39,7 +38,8 @@ public class RiskFactorListBuilder {
   }
 
   public Collection<RiskFactor> mergeFactors(
-      List<RiskFactorConfig> fetchedRiskFactorConfigs, List<RiskFactor> defaultRiskFactors) {
+      Collection<RiskFactorConfig> fetchedRiskFactorConfigs,
+      Collection<RiskFactor> defaultRiskFactors) {
 
     Map<RiskFactorCategory, RiskFactor> defaultFactorsMap =
         defaultRiskFactors.stream()

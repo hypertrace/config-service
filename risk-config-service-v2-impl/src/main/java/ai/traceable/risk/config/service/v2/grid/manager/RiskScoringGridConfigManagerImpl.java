@@ -7,7 +7,7 @@ import ai.traceable.risk.config.service.v2.RiskScoringGridCell;
 import ai.traceable.risk.config.service.v2.RiskScoringGridConfig;
 import ai.traceable.risk.config.service.v2.RiskScoringGridConfigValues;
 import ai.traceable.risk.config.service.v2.grid.comparator.RiskScoringGridConfigComparator;
-import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 import javax.inject.Inject;
 import lombok.AllArgsConstructor;
@@ -28,7 +28,7 @@ public class RiskScoringGridConfigManagerImpl implements RiskScoringGridConfigMa
   public RiskScoringGridConfig getRiskScoringGridConfig(
       RequestContext requestContext, RiskConfigScope riskConfigScope) {
     RiskScoringGridConfigValues scopedDefaultRiskScoringGridConfigValues =
-        buildScopedConfigValues(defaultRiskScoringGridConfigValues, riskConfigScope);
+        buildMergedGlobalAndDefaultConfigValues(requestContext, riskConfigScope);
     Optional<RiskScoringGridConfigValues> fetchedConfig =
         configStore.getData(requestContext, configIdGenerator.generateId(ID_NAME, riskConfigScope));
     if (fetchedConfig.isEmpty()) {
@@ -44,10 +44,10 @@ public class RiskScoringGridConfigManagerImpl implements RiskScoringGridConfigMa
   public RiskScoringGridConfig updateRiskScoringGridConfig(
       RequestContext requestContext,
       RiskConfigScope riskConfigScope,
-      List<RiskScoringGridCell> riskScoringGridCells) {
+      Collection<RiskScoringGridCell> riskScoringGridCells) {
 
     RiskScoringGridConfigValues scopedDefaultRiskScoringGridConfigValues =
-        buildScopedConfigValues(defaultRiskScoringGridConfigValues, riskConfigScope);
+        buildMergedGlobalAndDefaultConfigValues(requestContext, riskConfigScope);
     RiskScoringGridConfigValues configValues =
         RiskScoringGridConfigValues.newBuilder()
             .setRiskConfigScope(riskConfigScope)
@@ -85,7 +85,7 @@ public class RiskScoringGridConfigManagerImpl implements RiskScoringGridConfigMa
     configStore.deleteObject(
         requestContext, configIdGenerator.generateId(ID_NAME, riskConfigScope));
     RiskScoringGridConfigValues scopedDefaultRiskScoringGridConfigValues =
-        buildScopedConfigValues(defaultRiskScoringGridConfigValues, riskConfigScope);
+        buildMergedGlobalAndDefaultConfigValues(requestContext, riskConfigScope);
     return buildRiskScoringGridConfig(scopedDefaultRiskScoringGridConfigValues, true);
   }
 
@@ -97,11 +97,19 @@ public class RiskScoringGridConfigManagerImpl implements RiskScoringGridConfigMa
         .build();
   }
 
-  private RiskScoringGridConfigValues buildScopedConfigValues(
-      RiskScoringGridConfigValues riskScoringGridConfigValues, RiskConfigScope riskConfigScope) {
+  private RiskScoringGridConfigValues buildMergedGlobalAndDefaultConfigValues(
+      RequestContext requestContext, RiskConfigScope riskConfigScope) {
+    RiskScoringGridConfigValues fetchedGlobalConfig =
+        configStore
+            .getData(
+                requestContext,
+                configIdGenerator.generateId(ID_NAME, RiskConfigScope.getDefaultInstance()))
+            .orElse(RiskScoringGridConfigValues.getDefaultInstance());
+    RiskScoringGridConfigValues mergedGlobalAndDefaultConfig =
+        riskConfigBuilder.mergeConfigs(fetchedGlobalConfig, defaultRiskScoringGridConfigValues);
     return RiskScoringGridConfigValues.newBuilder()
         .setRiskConfigScope(riskConfigScope)
-        .addAllRiskScoringGridCells(riskScoringGridConfigValues.getRiskScoringGridCellsList())
+        .addAllRiskScoringGridCells(mergedGlobalAndDefaultConfig.getRiskScoringGridCellsList())
         .build();
   }
 }

@@ -5,7 +5,6 @@ import ai.traceable.risk.config.service.v2.RiskElementConfig;
 import ai.traceable.risk.config.service.v2.RiskFactorConfig;
 import io.grpc.Status;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -41,8 +40,8 @@ public class RiskFactorConfigBuilder extends RiskConfigBuilder<RiskFactorConfig>
   }
 
   private Collection<RiskElementConfig> mergeRiskElementConfigs(
-      List<RiskElementConfig> highPriorityRiskElementConfigsList,
-      List<RiskElementConfig> lowPriorityRiskElementConfigsList) {
+      Collection<RiskElementConfig> highPriorityRiskElementConfigsList,
+      Collection<RiskElementConfig> lowPriorityRiskElementConfigsList) {
 
     Map<String, RiskElementConfig> lowPriorityElementConfigsMap =
         lowPriorityRiskElementConfigsList.stream()

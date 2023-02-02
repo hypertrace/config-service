@@ -9,7 +9,7 @@ import ai.traceable.risk.config.service.v2.RiskFactorConfigUpdateDetails;
 import ai.traceable.risk.config.service.v2.RiskFactorInfo;
 import ai.traceable.risk.config.service.v2.elements.validator.RiskElementConfigValidator;
 import io.grpc.Status;
-import java.util.List;
+import java.util.Collection;
 import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 
@@ -21,7 +21,7 @@ public class RiskFactorConfigsValidatorImpl implements RiskFactorConfigsValidato
 
   @Override
   public void validateRiskFactorConfigUpdateDetails(
-      List<RiskFactorConfigUpdateDetails> riskFactorConfigUpdateDetailsList) {
+      Collection<RiskFactorConfigUpdateDetails> riskFactorConfigUpdateDetailsList) {
     for (RiskFactorConfigUpdateDetails updateDetails : riskFactorConfigUpdateDetailsList) {
       validateNonDefaultPresenceOrThrow(
           updateDetails, RiskFactorConfigUpdateDetails.RISK_FACTOR_CATEGORY_FIELD_NUMBER);
