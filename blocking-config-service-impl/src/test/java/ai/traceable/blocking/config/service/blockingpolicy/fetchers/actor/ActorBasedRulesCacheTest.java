@@ -10,6 +10,8 @@ import static ai.traceable.blocking.config.service.v1.BlockingStatus.BLOCKING_ST
 import static ai.traceable.blocking.config.service.v1.BlockingStatus.BLOCKING_STATUS_DENIED;
 import static ai.traceable.blocking.config.service.v1.BlockingStatus.BLOCKING_STATUS_SNOOZED;
 import static ai.traceable.blocking.config.service.v1.BlockingStatus.BLOCKING_STATUS_SUSPENDED;
+import static ai.traceable.platform.actor.v1.RateLimitCategory.RATE_LIMIT_CATEGORY_DATA_EXFILTRATION;
+import static ai.traceable.platform.actor.v1.RateLimitCategory.RATE_LIMIT_CATEGORY_RATE_LIMITING;
 import static ai.traceable.platform.actor.v1.Status.STATUS_ALWAYS_ALLOWED;
 import static ai.traceable.platform.actor.v1.Status.STATUS_ALWAYS_DENIED;
 import static ai.traceable.platform.actor.v1.Status.STATUS_SNOOZED;
@@ -27,7 +29,6 @@ import ai.traceable.blocking.config.service.blockingpolicy.fetchers.utils.Blocki
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleCondition;
 import ai.traceable.platform.actor.v1.MaliciousSourcesDetails;
-import ai.traceable.platform.actor.v1.RateLimitCategory;
 import ai.traceable.platform.actor.v1.RateLimitDetails;
 import ai.traceable.platform.actor.v1.StatusChangeDetails;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
@@ -138,7 +139,10 @@ class ActorBasedRulesCacheTest {
       assertEquals(BLOCKING_STATUS_SUSPENDED, rateLimitBasedIpViolation.get(0).getStatus());
       assertEquals(
           ViolationInfoEncoder.getEncodedRateLimitViolationInfo(
-              "entity-1", "rate-limit-id-1", "rate-limit-name-1"),
+              "entity-1",
+              "rate-limit-id-1",
+              "rate-limit-name-1",
+              RATE_LIMIT_CATEGORY_RATE_LIMITING),
           rateLimitBasedIpViolation.get(0).getInfo());
       // Addition ip detail rule
       assertEquals(
@@ -251,7 +255,8 @@ class ActorBasedRulesCacheTest {
                 .setRateLimitDetails(
                     RateLimitDetails.newBuilder()
                         .setRuleId("rate-limit-id-1")
-                        .setRuleName("rate-limit-name-1"))
+                        .setRuleName("rate-limit-name-1")
+                        .setRuleCategory(RATE_LIMIT_CATEGORY_RATE_LIMITING))
                 .build(),
             ACTIVE_TIMESTAMP),
         new ActorStatusDetails(
@@ -315,7 +320,7 @@ class ActorBasedRulesCacheTest {
                     RateLimitDetails.newBuilder()
                         .setRuleId("rate-limit-id-7")
                         .setRuleName("rate-limit-name-7")
-                        .setRuleCategory(RateLimitCategory.RATE_LIMIT_CATEGORY_DATA_EXFILTRATION))
+                        .setRuleCategory(RATE_LIMIT_CATEGORY_DATA_EXFILTRATION))
                 .build(),
             ACTIVE_TIMESTAMP));
   }

@@ -32,11 +32,11 @@ tasks.register<DockerPullImage>("pullMongoImage") {
 }
 
 tasks.register<DockerPullImage>("pullEntityServiceImage") {
-  image.set(docker.registryCredentials.url.get() + "/hypertrace/entity-service:0.8.37")
+  image.set(docker.registryCredentials.url.get() + "/hypertrace/entity-service:0.8.58")
 }
 
 tasks.register<DockerPullImage>("pullActorServiceImage") {
-  image.set(docker.registryCredentials.url.get() + "/traceable/actor-service:0.2.83")
+  image.set(docker.registryCredentials.url.get() + "/traceable/actor-service:0.2.91")
 }
 
 tasks.register<DockerStartContainer>("startMongoContainer") {

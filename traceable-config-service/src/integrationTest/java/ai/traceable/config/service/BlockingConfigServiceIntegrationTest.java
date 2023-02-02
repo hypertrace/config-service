@@ -3,6 +3,7 @@ package ai.traceable.config.service;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_CUSTOM_IP_RULE;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_CUSTOM_REGION_RULE;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE;
+import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_ENUMERATION;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_MODSECURITY;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_RATE_LIMIT;
@@ -81,6 +82,7 @@ import ai.traceable.platform.actor.v1.Actor.Builder;
 import ai.traceable.platform.actor.v1.ActorServiceGrpc;
 import ai.traceable.platform.actor.v1.ActorServiceGrpc.ActorServiceBlockingStub;
 import ai.traceable.platform.actor.v1.MaliciousSourcesDetails;
+import ai.traceable.platform.actor.v1.RateLimitCategory;
 import ai.traceable.platform.actor.v1.RateLimitDetails;
 import ai.traceable.platform.actor.v1.ScoreCategory;
 import ai.traceable.platform.actor.v1.Status;
@@ -543,13 +545,16 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
         BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(17).getStatus());
 
     assertEquals(
-        BLOCKING_CATEGORY_RATE_LIMIT,
+        BLOCKING_CATEGORY_ENUMERATION,
         blockingPolicyConfiguration.getBlockingDetailsList(18).getCategory());
     assertEquals(
         BLOCKING_STATUS_DENIED, blockingPolicyConfiguration.getBlockingDetailsList(18).getStatus());
     assertEquals(
         ViolationInfoEncoder.getEncodedRateLimitViolationInfo(
-            actorEntityId.get(0), "rate-limit-rule-id", "Rate-limit-rule"),
+            actorEntityId.get(0),
+            "rate-limit-rule-id",
+            "Rate-limit-rule",
+            RateLimitCategory.RATE_LIMIT_CATEGORY_ENUMERATION),
         blockingPolicyConfiguration.getBlockingDetailsList(18).getInfo());
     assertEquals(
         List.of("197.23.5.0"),
@@ -788,7 +793,8 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
               .setRateLimitDetails(
                   RateLimitDetails.newBuilder()
                       .setRuleName("Rate-limit-rule")
-                      .setRuleId("rate-limit-rule-id")));
+                      .setRuleId("rate-limit-rule-id")
+                      .setRuleCategory(RateLimitCategory.RATE_LIMIT_CATEGORY_ENUMERATION)));
     } else if (blockingCategory == BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE) {
       actorBuilder.setStatusChangeSource(StatusChangeSource.STATUS_CHANGE_SOURCE_MALICIOUS_SOURCES);
       actorBuilder.setStatusChangeDetails(

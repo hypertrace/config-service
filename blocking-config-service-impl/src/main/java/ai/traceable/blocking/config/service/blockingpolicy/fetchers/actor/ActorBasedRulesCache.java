@@ -159,7 +159,11 @@ public class ActorBasedRulesCache {
                             ViolationInfoEncoder.getEncodedRateLimitViolationInfo(
                                 actor.getEntityId(),
                                 actor.getStatusChangeDetails().getRateLimitDetails().getRuleId(),
-                                actor.getStatusChangeDetails().getRateLimitDetails().getRuleName()),
+                                actor.getStatusChangeDetails().getRateLimitDetails().getRuleName(),
+                                actor
+                                    .getStatusChangeDetails()
+                                    .getRateLimitDetails()
+                                    .getRuleCategory()),
                             actor));
                     break;
                   case STATUS_CHANGE_SOURCE_MALICIOUS_SOURCES:
