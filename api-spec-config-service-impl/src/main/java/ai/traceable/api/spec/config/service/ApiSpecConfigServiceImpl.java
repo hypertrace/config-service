@@ -1,6 +1,7 @@
 package ai.traceable.api.spec.config.service;
 
 import static ai.traceable.api.spec.config.service.v1.ApiSpecStatus.API_SPEC_STATUS_UNSPECIFIED;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 import ai.traceable.api.spec.config.service.store.ApiSpecConfigStore;
 import ai.traceable.api.spec.config.service.v1.ApiSpec;
@@ -64,10 +65,24 @@ public class ApiSpecConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
 
-      responseObserver.onNext(
-          GetApiSpecsResponse.newBuilder()
-              .addAllApiSpecs(this.apiSpecConfigStore.getAllData(requestContext))
-              .build());
+      List<ApiSpec> existingApiSpecs = this.apiSpecConfigStore.getAllData(requestContext);
+      GetApiSpecsResponse.Builder getApiSpecsResponse = GetApiSpecsResponse.newBuilder();
+      if (!request.getApiSpecFilter().hasFileContentSha256()) {
+        getApiSpecsResponse.addAllApiSpecs(existingApiSpecs);
+      } else {
+        List<ApiSpec> matchedApiSpecs =
+            existingApiSpecs.stream()
+                .filter(
+                    spec ->
+                        request
+                            .getApiSpecFilter()
+                            .getFileContentSha256()
+                            .getFileContentSha256List()
+                            .contains(spec.getFileContentSha256()))
+                .collect(Collectors.toUnmodifiableList());
+        getApiSpecsResponse.addAllApiSpecs(matchedApiSpecs);
+      }
+      responseObserver.onNext(getApiSpecsResponse.build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Error getting api specs for request: {}", request, e);
@@ -228,9 +243,7 @@ public class ApiSpecConfigServiceImpl
       List<ContextualConfigObject<ApiSpec>> contextualConfigObjects =
           this.apiSpecConfigStore.upsertObjects(requestContext, updatedApiSpecs);
       updatedApiSpecs =
-          contextualConfigObjects.stream()
-              .map(this::buildApiSpec)
-              .collect(Collectors.toUnmodifiableList());
+          contextualConfigObjects.stream().map(this::buildApiSpec).collect(toUnmodifiableList());
 
       responseObserver.onNext(
           UpdateApiSpecsResponse.newBuilder().addAllApiSpecs(updatedApiSpecs).build());

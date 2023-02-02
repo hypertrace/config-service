@@ -705,7 +705,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
             "^token.jwt.payload(.+)\\.aud$",
             "^token.jwt.payload(.+)\\.iss$",
             "^token.jwt.header(.+)\\.alg$"),
-        jwtParamsTrainingConfig.getIncludeParamRegexesList());
+        jwtParamsTrainingConfig.getIncludeParamRegexes().getValuesList());
   }
 
   @Test

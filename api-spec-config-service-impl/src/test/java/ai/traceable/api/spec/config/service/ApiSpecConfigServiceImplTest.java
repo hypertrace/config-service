@@ -13,10 +13,12 @@ import static org.mockito.Mockito.when;
 import ai.traceable.api.spec.config.service.store.ApiSpecConfigStore;
 import ai.traceable.api.spec.config.service.v1.ApiSpec;
 import ai.traceable.api.spec.config.service.v1.ApiSpecConfigServiceGrpc;
+import ai.traceable.api.spec.config.service.v1.ApiSpecFilter;
 import ai.traceable.api.spec.config.service.v1.CreateApiSpec;
 import ai.traceable.api.spec.config.service.v1.CreateApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.DeleteApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.DeleteApiSpecsRequest;
+import ai.traceable.api.spec.config.service.v1.FileContentSha256Filter;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecsRequest;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpec;
@@ -268,6 +270,51 @@ class ApiSpecConfigServiceImplTest {
         "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
         updatedApiSpec.getFileContentSha256());
     assertEquals(API_SPEC_STATUS_IN_PROGRESS, updatedApiSpec.getStatus());
+  }
+
+  @Test
+  void testGetApiSpecsWithFilter() {
+    assertTrue(
+        this.apiSpecConfigServiceBlockingStub
+                .getApiSpecs(
+                    GetApiSpecsRequest.newBuilder()
+                        .setApiSpecFilter(
+                            ApiSpecFilter.newBuilder()
+                                .setFileContentSha256(
+                                    FileContentSha256Filter.newBuilder()
+                                        .addFileContentSha256(
+                                            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+                                        .build()))
+                        .build())
+                .getApiSpecsCount()
+            == 0);
+    ApiSpec createdApiSpec =
+        this.apiSpecConfigServiceBlockingStub
+            .createApiSpec(
+                CreateApiSpecRequest.newBuilder()
+                    .setCreateApiSpec(
+                        CreateApiSpec.newBuilder()
+                            .setName("spec1")
+                            .setApiNamingEnabled(true)
+                            .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                            .setFileContentSha256(
+                                "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"))
+                    .build())
+            .getApiSpec();
+    assertEquals(
+        createdApiSpec,
+        this.apiSpecConfigServiceBlockingStub
+            .getApiSpecs(
+                GetApiSpecsRequest.newBuilder()
+                    .setApiSpecFilter(
+                        ApiSpecFilter.newBuilder()
+                            .setFileContentSha256(
+                                FileContentSha256Filter.newBuilder()
+                                    .addFileContentSha256(
+                                        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+                                    .build()))
+                    .build())
+            .getApiSpecs(0));
   }
 
   @Test

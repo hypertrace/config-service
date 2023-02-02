@@ -8,6 +8,17 @@ import "google/protobuf/timestamp.proto";
 
 // get
 message GetApiSpecsRequest {
+  ApiSpecFilter api_spec_filter = 1;
+}
+
+message ApiSpecFilter {
+  oneof filter {
+    FileContentSha256Filter file_content_sha_256 = 1;
+  }
+}
+
+message FileContentSha256Filter {
+  repeated string file_content_sha256 = 1;
 }
 
 message GetApiSpecsResponse {
