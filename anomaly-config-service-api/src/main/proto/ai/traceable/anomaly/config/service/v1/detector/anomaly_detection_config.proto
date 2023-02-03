@@ -287,6 +287,7 @@ message BflaAnomalyConfig {
 
 message JwtAnomalyConfig {
   optional double time_difference_buffer_millis = 1;
+  optional double min_percent_seen = 2;
 }
 
 message LearntApiAnomalyConfig {
