@@ -13,5 +13,8 @@ spec:
     - port: {{ .Values.service.externalPort }}
       targetPort: {{ .Values.externalContainerPortName }}
       name: {{ .Values.externalContainerPortName }}-{{ .Chart.Name }}
+    - port: {{ .Values.service.internalGlobalPort }}
+      targetPort: {{ .Values.internalGlobalServiceContainerPortName }}
+      name: {{ .Values.internalGlobalServiceContainerPortName }}-{{ .Chart.Name }}
   selector:
     {{- toYaml .Values.serviceSelectorLabels | nindent 4 }}
