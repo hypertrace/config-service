@@ -1,5 +1,6 @@
 package ai.traceable.sensitivedata.config.service;
 
+import static ai.traceable.data.classification.config.service.v1.SystemDataSetVersion.SYSTEM_DATA_SET_VERSION_RP1;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.CORE_MODE_RULE_CATEGORY;
 
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
@@ -330,7 +331,9 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
         .call(
             () ->
                 dataClassificationConfigServiceBlockingStub.getDataTypes(
-                    GetDataTypesRequest.getDefaultInstance()))
+                    GetDataTypesRequest.newBuilder()
+                        .setSystemDataSetVersion(SYSTEM_DATA_SET_VERSION_RP1)
+                        .build()))
         .getDataTypesList()
         .stream()
         .filter(this::isNotLegacyDataType)
@@ -342,7 +345,9 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
         .call(
             () ->
                 dataClassificationConfigServiceBlockingStub.getDataSets(
-                    GetDataSetsRequest.getDefaultInstance()))
+                    GetDataSetsRequest.newBuilder()
+                        .setSystemDataSetVersion(SYSTEM_DATA_SET_VERSION_RP1)
+                        .build()))
         .getDataSetsList()
         .stream()
         .filter(dataSet -> dataSet.getInfo().getEnabled())

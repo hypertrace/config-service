@@ -1,6 +1,7 @@
 package ai.traceable.data.classification.config.service;
 
 import static ai.traceable.data.classification.config.service.RedactionRulesDao.LEGACY_DATA_SET_IDS;
+import static ai.traceable.data.classification.config.service.v1.SystemDataSetVersion.SYSTEM_DATA_SET_VERSION_RP1;
 import static java.util.function.Function.identity;
 import static org.hypertrace.config.proto.converter.ConfigProtoConverter.convertToValue;
 
@@ -16,6 +17,7 @@ import ai.traceable.data.classification.config.service.v1.DataClassificationConf
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverride;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideFilter;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideRule;
+import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideRule.DataClassificationOverrideScope;
 import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.DeleteDataClassificationOverridesRequest;
@@ -32,18 +34,19 @@ import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataSetsResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
+import ai.traceable.data.classification.config.service.v1.SystemDataSetVersion;
 import ai.traceable.data.classification.config.service.v1.UpdateDataClassificationOverrideRequest;
 import ai.traceable.data.classification.config.service.v1.UpdateDataClassificationOverrideResponse;
 import ai.traceable.data.classification.config.service.v1.UpdateDataSetRequest;
 import ai.traceable.data.classification.config.service.v1.UpdateDataSetResponse;
 import ai.traceable.data.classification.config.service.v1.UpdateDataTypeRequest;
 import ai.traceable.data.classification.config.service.v1.UpdateDataTypeResponse;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -209,7 +212,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
           tenantDataTypes.stream()
               .collect(Collectors.toUnmodifiableMap(DataType::getId, identity()));
       List<DataType> filteredSystemDataTypes =
-          getSystemDataTypes(requestContext).stream()
+          getSystemDataTypes(requestContext, request.getSystemDataSetVersion()).stream()
               .filter(dataType -> !tenantDataTypesToIdMap.containsKey(dataType.getId()))
               .collect(Collectors.toUnmodifiableList());
       List<DataType> convertedRedactionRules =
@@ -233,14 +236,14 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.dataTypeConfigRequestValidator.validateOrThrow(requestContext, request);
-      DataType existingDataType =
-          this.dataTypeStore
-              .getData(requestContext, request.getId())
-              .or(() -> getSystemDataType(requestContext, request.getId()))
-              .orElseThrow(Status.NOT_FOUND::asRuntimeException);
-      DataType updatedDataType = existingDataType.toBuilder().setRule(request.getRule()).build();
+      if (!this.isSystemDataType(request.getId())
+          && this.dataTypeStore.getData(requestContext, request.getId()).isEmpty()) {
+        throw Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers());
+      }
+      DataType dataTypeToUpdate =
+          DataType.newBuilder().setId(request.getId()).setRule(request.getRule()).build();
       DataType upsertedDataType =
-          this.dataTypeStore.upsertObject(requestContext, updatedDataType).getData();
+          this.dataTypeStore.upsertObject(requestContext, dataTypeToUpdate).getData();
       responseObserver.onNext(
           UpdateDataTypeResponse.newBuilder().setDataType(upsertedDataType).build());
       responseObserver.onCompleted();
@@ -290,7 +293,14 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
     }
   }
 
+  /**
+   * @deprecated This has been deprecated to standardize our API, as a data set can be fetched
+   *     through the plural version. Further, the plural version allows overriding the system data
+   *     set version which helps the caller get the appropriate system data sets for a given tenant
+   *     based on their current state (which version TPAs are in use).
+   */
   @Override
+  @Deprecated
   public void getDataSet(
       GetDataSetRequest request, StreamObserver<GetDataSetResponse> responseObserver) {
     try {
@@ -304,7 +314,9 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
                   () ->
                       this.redactionRulesDao.getDataSetWithIdFromRedactionRules(
                           requestContext, request.getId()));
-      DataSet dataSet = dataSetOptional.orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      DataSet dataSet =
+          dataSetOptional.orElseThrow(
+              () -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
       responseObserver.onNext(GetDataSetResponse.newBuilder().setDataSet(dataSet).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -324,7 +336,8 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
           this.dataSetStore.getAllObjects(requestContext).stream()
               .map(ConfigObject::getData)
               .collect(Collectors.toUnmodifiableList());
-      Map<String, DataSet> systemDataSetsToIdMap = getSystemDataSetsToIdMap(requestContext);
+      Map<String, DataSet> systemDataSetsToIdMap =
+          getSystemDataSetsToIdMap(requestContext, request.getSystemDataSetVersion());
       // filter out system data sets as we need to maintain order of system data sets
       List<DataSet> filteredTenantDataSets =
           tenantDataSets.stream()
@@ -335,13 +348,11 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       // filter out deleted system data sets
       // also if overridden by tenant, then pick the overridden one
       List<DataSet> filteredSystemDataSets =
-          getSystemDataSets(requestContext).stream()
+          getSystemDataSets(requestContext, request.getSystemDataSetVersion()).stream()
               .filter(dataSet -> !deletedSystemDataSetsIds.contains(dataSet.getId()))
               .map(
                   systemDataSet ->
-                      tenantDataSetsToIdMap.containsKey(systemDataSet.getId())
-                          ? tenantDataSetsToIdMap.get(systemDataSet.getId())
-                          : systemDataSet)
+                      tenantDataSetsToIdMap.getOrDefault(systemDataSet.getId(), systemDataSet))
               .collect(Collectors.toUnmodifiableList());
       List<DataSet> redactionRulesToDataSets =
           this.redactionRulesDao.getDataSetsFromRedactionRules(requestContext);
@@ -370,12 +381,13 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
         upsertedDataSet =
             this.redactionRulesDao.updateDataSet(requestContext, dataSetId, request.getInfo());
       } else {
-        Optional<DataSet> existingDataSet =
-            this.dataSetStore
-                .getData(requestContext, dataSetId)
-                .or(() -> this.getSystemDataSet(requestContext, dataSetId));
-        DataSet dataSet = existingDataSet.orElseThrow(Status.NOT_FOUND::asRuntimeException);
-        DataSet updatedDataSet = dataSet.toBuilder().setInfo(request.getInfo()).build();
+        // Check that it exists
+        this.dataSetStore
+            .getData(requestContext, dataSetId)
+            .or(() -> this.getSystemDataSet(requestContext, dataSetId))
+            .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
+        DataSet updatedDataSet =
+            DataSet.newBuilder().setId(dataSetId).setInfo(request.getInfo()).build();
         upsertedDataSet = this.dataSetStore.upsertObject(requestContext, updatedDataSet).getData();
       }
       responseObserver.onNext(
@@ -548,7 +560,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
   }
 
   private Optional<DataSet> getSystemDataSet(RequestContext requestContext, String id) {
-    Map<String, DataSet> dataSetMap = getSystemDataSetsToIdMap(requestContext);
+    Map<String, DataSet> dataSetMap = getAllSystemDataSetsMap();
     if (dataSetMap.containsKey(id)) {
       Optional<DeletedSystemDataSet> isSystemDataSetDeleted =
           this.deletedDataSetStore.getData(requestContext, id);
@@ -596,40 +608,56 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
     return builder.build();
   }
 
-  private List<DataType> getSystemDataTypes(RequestContext requestContext) {
-    if (featureCachingClient.isDataClassificationRp2Enabled(requestContext)) {
+  private List<DataType> getSystemDataTypes(
+      RequestContext requestContext, SystemDataSetVersion systemDataSetVersion) {
+    if (useRp2SystemTypes(requestContext, systemDataSetVersion)) {
       return systemDataTypesRp2;
     }
     return systemDataTypesRp1;
   }
 
-  private Optional<DataType> getSystemDataType(RequestContext requestContext, String dataTypeId) {
-    Map<String, DataType> dataTypesMap;
-    if (featureCachingClient.isDataClassificationRp2Enabled(requestContext)) {
-      dataTypesMap = systemDataTypesRp2ToIdMap;
-    } else {
-      dataTypesMap = systemDataTypesRp1ToIdMap;
-    }
-    return Optional.ofNullable(dataTypesMap.get(dataTypeId));
+  private boolean isSystemDataType(String dataTypeId) {
+    return systemDataTypesRp2ToIdMap.containsKey(dataTypeId)
+        || systemDataTypesRp1ToIdMap.containsKey(dataTypeId);
   }
 
-  private List<DataSet> getSystemDataSets(RequestContext requestContext) {
-    if (featureCachingClient.isDataClassificationRp2Enabled(requestContext)) {
+  private List<DataSet> getSystemDataSets(
+      RequestContext requestContext, SystemDataSetVersion systemDataSetVersion) {
+    if (useRp2SystemTypes(requestContext, systemDataSetVersion)) {
       return systemDataSetsRp2;
     }
     return systemDataSetsRp1;
   }
 
-  private Map<String, DataSet> getSystemDataSetsToIdMap(RequestContext requestContext) {
-    if (featureCachingClient.isDataClassificationRp2Enabled(requestContext)) {
+  private Map<String, DataSet> getSystemDataSetsToIdMap(
+      RequestContext requestContext, SystemDataSetVersion systemDataSetVersion) {
+    if (useRp2SystemTypes(requestContext, systemDataSetVersion)) {
       return systemDataSetsRp2ToIdMap;
     }
     return systemDataSetsRp1ToIdMap;
   }
 
+  /**
+   * Unlike {@link DataClassificationConfigServiceImpl#getSystemDataSetsToIdMap(RequestContext,
+   * SystemDataSetVersion)} which uses a version argument to return the specific system data sets
+   * available to a request, this returns all data sets regardless of version. These are not meant
+   * to be returned, but can be used for looking up by ID when the version is unknown
+   */
+  private Map<String, DataSet> getAllSystemDataSetsMap() {
+    return ImmutableMap.<String, DataSet>builder()
+        .putAll(systemDataSetsRp1ToIdMap)
+        .putAll(systemDataSetsRp2ToIdMap)
+        .buildKeepingLast();
+  }
+
+  private boolean useRp2SystemTypes(
+      RequestContext requestContext, SystemDataSetVersion systemDataSetVersion) {
+    return systemDataSetVersion != SYSTEM_DATA_SET_VERSION_RP1
+        && featureCachingClient.isDataClassificationRp2Enabled(requestContext);
+  }
+
   private List<DataClassificationOverride> getDataClassificationOverridesListByFilter(
       RequestContext requestContext, DataClassificationOverrideFilter filter) {
-    List<DataClassificationOverride> dataClassificationOverrides = new ArrayList<>();
     List<DataClassificationOverride> tenantDataClassificationOverrides =
         this.dataClassificationOverrideStore.getAllObjects(requestContext).stream()
             .map(ConfigObject::getData)
@@ -650,19 +678,18 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
               filter.getScopeFilter().getScopesList();
           Set<String> environmentFilterSet =
               scopesList.stream()
-                  .filter(scope -> scope.hasEnvironmentScope())
+                  .filter(DataClassificationOverrideScope::hasEnvironmentScope)
                   .map(scope -> scope.getEnvironmentScope().getEnvironmentId())
                   .collect(Collectors.toUnmodifiableSet());
           return tenantDataClassificationOverrides.stream()
               .filter(
-                  tenantDataClassificationOverride -> {
-                    return environmentFilterSet.contains(
-                        tenantDataClassificationOverride
-                            .getDataClassificationOverrideRule()
-                            .getScope()
-                            .getEnvironmentScope()
-                            .getEnvironmentId());
-                  })
+                  tenantDataClassificationOverride ->
+                      environmentFilterSet.contains(
+                          tenantDataClassificationOverride
+                              .getDataClassificationOverrideRule()
+                              .getScope()
+                              .getEnvironmentScope()
+                              .getEnvironmentId()))
               .collect(Collectors.toUnmodifiableList());
         }
       default:

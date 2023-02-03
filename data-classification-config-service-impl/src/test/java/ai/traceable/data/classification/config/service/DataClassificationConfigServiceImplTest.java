@@ -46,6 +46,7 @@ import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
 import ai.traceable.data.classification.config.service.v1.IdFilter;
 import ai.traceable.data.classification.config.service.v1.ScopeFilter;
+import ai.traceable.data.classification.config.service.v1.SystemDataSetVersion;
 import ai.traceable.data.classification.config.service.v1.UpdateDataClassificationOverrideRequest;
 import ai.traceable.data.classification.config.service.v1.UpdateDataClassificationOverrideResponse;
 import ai.traceable.data.classification.config.service.v1.UpdateDataSetRequest;
@@ -1074,8 +1075,6 @@ class DataClassificationConfigServiceImplTest {
         StreamObserver<GetRedactionStrategyForTypeResponse> responseObserver) {
       responseObserver.onNext(
           GetRedactionStrategyForTypeResponse.newBuilder()
-              .build()
-              .newBuilder()
               .setRedactionStrategy(REDACTION_STRATEGY_UNSPECIFIED)
               .build());
       responseObserver.onCompleted();
@@ -1336,6 +1335,73 @@ class DataClassificationConfigServiceImplTest {
           new DataClassificationOverrideConfigRequestValidator()
               .validateOrThrow(requestContext, request);
         });
+  }
+
+  @Test
+  void getRp1DataTypesRegardlessOfFeatureFlagIfRequested() {
+    mockGenericConfigService.shutdown();
+    mockGenericConfigService = new MockGenericConfigService().mockGetAll();
+    ConfigServiceBlockingStub genericStub =
+        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
+        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    mockConfig = mock(Config.class);
+    when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(true);
+    String jsonString =
+        "system : {\n"
+            + "datatypes : {\n"
+            + "rp1 : [\n"
+            + "{\n"
+            + "id : systemdatatyperp1,\n"
+            + "rule : {\n"
+            + "name : systemdatatyperulerp1,\n"
+            + "scoped_patterns : [\n"
+            + "{\n"
+            + "global_scope : {},\n"
+            + "locations : [LOCATION_REQUEST_HEADER],\n"
+            + "key_pattern : {operator : OPERATOR_MATCHES_REGEX, value : systemvalue},\n"
+            + "action : ACTION_MATCH\n"
+            + "}\n"
+            + "]\n"
+            + "}\n"
+            + "}\n"
+            + "]\n"
+            + "}\n"
+            + "}";
+    Config dataClassificationConfig = ConfigFactory.parseString(jsonString);
+    when(mockConfig.getConfig(DATA_CLASSIFICATION_CONFIG_SERVICE))
+        .thenReturn(dataClassificationConfig);
+    FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
+    when(featureCachingClient.isDataClassificationRp2Enabled(any())).thenReturn(true);
+    mockGenericConfigService
+        .addService(
+            new DataClassificationConfigServiceImpl(
+                new DataSetStore(genericStub, configChangeEventGenerator),
+                new DataTypeStore(genericStub, configChangeEventGenerator),
+                new DeletedDataSetStore(genericStub),
+                new DataClassificationOverrideStore(genericStub, configChangeEventGenerator),
+                new DataSetConfigRequestValidator(),
+                new DataTypeConfigRequestValidator(),
+                new DataClassificationOverrideConfigRequestValidator(),
+                mockConfig,
+                null,
+                new RedactionRulesDao(
+                    sensitiveDataConfigServiceBlockingStub,
+                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
+                featureCachingClient))
+        .addService(new MockSensitiveDataConfigService())
+        .start();
+    dataClassificationConfigServiceBlockingStub =
+        DataClassificationConfigServiceGrpc.newBlockingStub(
+            this.mockGenericConfigService.channel());
+
+    GetDataTypesResponse response =
+        dataClassificationConfigServiceBlockingStub.getDataTypes(
+            GetDataTypesRequest.newBuilder()
+                .setSystemDataSetVersion(SystemDataSetVersion.SYSTEM_DATA_SET_VERSION_RP1)
+                .build());
+    assertEquals(1, response.getDataTypesCount());
   }
 
   private DataClassificationOverrideRule getDataClassificationOverrideRule() {

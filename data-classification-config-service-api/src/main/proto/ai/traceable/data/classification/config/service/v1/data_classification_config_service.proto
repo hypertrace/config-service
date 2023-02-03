@@ -24,7 +24,10 @@ service DataClassificationConfigService {
   rpc CreateDataSet(CreateDataSetRequest) returns (CreateDataSetResponse) {}
 
   // get data set by id
-  rpc GetDataSet(GetDataSetRequest) returns (GetDataSetResponse) {}
+  rpc GetDataSet(GetDataSetRequest) returns (GetDataSetResponse) {
+    // Prefer using GetDataSets
+    option deprecated = true;
+  }
 
   // get all data sets
   rpc GetDataSets(GetDataSetsRequest) returns (GetDataSetsResponse) {}
@@ -57,6 +60,7 @@ message CreateDataTypeResponse {
 }
 
 message GetDataTypesRequest {
+  optional SystemDataSetVersion system_data_set_version = 1;
 }
 
 message GetDataTypesResponse {
@@ -88,14 +92,17 @@ message CreateDataSetResponse {
 }
 
 message GetDataSetRequest {
+  option deprecated = true;
   string id = 1;
 }
 
 message GetDataSetResponse {
+  option deprecated = true;
   DataSet data_set = 1;
 }
 
 message GetDataSetsRequest {
+  optional SystemDataSetVersion system_data_set_version = 1;
 }
 
 message GetDataSetsResponse {
@@ -149,4 +156,9 @@ message DeleteDataClassificationOverridesRequest {
 
 message DeleteDataClassificationOverridesResponse {
   repeated DataClassificationOverride deleted_data_classification_overrides = 1;
+}
+
+enum SystemDataSetVersion {
+  SYSTEM_DATA_SET_VERSION_UNSPECIFIED = 0;
+  SYSTEM_DATA_SET_VERSION_RP1 = 1;
 }
