@@ -18,8 +18,6 @@ message AttributeRule {
     oneof action {
       AttributeAddition attribute_addition = 1;
       AttributeArrayAppend attribute_array_append = 2;
-      AttributeAddition resource_attribute_addition = 3;
-      AttributeArrayAppend resource_attribute_array_append = 4;
     }
 
     message AttributeAddition {
