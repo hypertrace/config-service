@@ -1,15 +1,15 @@
 package ai.traceable.blocking.config.service;
 
 import ai.traceable.blocking.config.service.blockingmodsec.ModsecBlockingManager;
-import ai.traceable.blocking.config.service.blockingpolicy.BlockingPolicyConfigurationManager;
+import ai.traceable.blocking.config.service.common.entity.EntityFetcher;
 import ai.traceable.blocking.config.service.customsignature.CustomModsecBlockingManager;
-import ai.traceable.blocking.config.service.entity.EntityFetcher;
 import ai.traceable.blocking.config.service.iptype.IpTypeBlockingManager;
 import ai.traceable.blocking.config.service.regions.RegionBlockingManager;
 import ai.traceable.blocking.config.service.v1.BlockingConfigDataOption;
 import ai.traceable.blocking.config.service.v1.BlockingConfigServiceGrpc.BlockingConfigServiceImplBase;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesRequest;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesResponse;
+import ai.traceable.blocking.config.service.v1.blockingpolicy.BlockingPolicyConfigurationManager;
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
 import java.util.Optional;

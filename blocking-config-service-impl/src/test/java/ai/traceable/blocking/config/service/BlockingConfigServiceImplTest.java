@@ -7,9 +7,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import ai.traceable.blocking.config.service.blockingmodsec.ModsecBlockingManager;
-import ai.traceable.blocking.config.service.blockingpolicy.BlockingPolicyConfigurationManager;
+import ai.traceable.blocking.config.service.common.entity.EntityFetcher;
 import ai.traceable.blocking.config.service.customsignature.CustomModsecBlockingManager;
-import ai.traceable.blocking.config.service.entity.EntityFetcher;
 import ai.traceable.blocking.config.service.iptype.IpTypeBlockingManager;
 import ai.traceable.blocking.config.service.regions.RegionBlockingManager;
 import ai.traceable.blocking.config.service.v1.BlockingConfigDataOption;
@@ -21,6 +20,7 @@ import ai.traceable.blocking.config.service.v1.GetBlockingRulesResponse;
 import ai.traceable.blocking.config.service.v1.IpTypeBlockingRules;
 import ai.traceable.blocking.config.service.v1.RegionBlockingRules;
 import ai.traceable.blocking.config.service.v1.SafeCrsBlockingRules;
+import ai.traceable.blocking.config.service.v1.blockingpolicy.BlockingPolicyConfigurationManager;
 import io.grpc.stub.StreamObserver;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;

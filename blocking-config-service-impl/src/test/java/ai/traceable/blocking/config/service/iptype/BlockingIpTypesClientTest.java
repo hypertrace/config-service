@@ -3,6 +3,7 @@ package ai.traceable.blocking.config.service.iptype;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ai.traceable.blocking.config.service.v1.IpType;
+import ai.traceable.blocking.config.service.v1.iptype.IpTypeConverter;
 import ai.traceable.malicioussources.config.service.v1.EnvironmentScope;
 import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesConfigServiceGrpc;
@@ -88,6 +89,7 @@ class BlockingIpTypesClientTest {
                 maliciousSourcesRule ->
                     BlockingIpTypesClient.getBlockingIpTypes(maliciousSourcesRule).stream())
             .distinct()
+            .map(IpTypeConverter::getIpType)
             .collect(Collectors.toUnmodifiableList());
     assertEquals(
         Set.of(IpType.IP_TYPE_PROXY, IpType.IP_TYPE_HOSTING_PROVIDER), new HashSet<>(ipTypes));
@@ -100,6 +102,7 @@ class BlockingIpTypesClientTest {
                 maliciousSourcesRule ->
                     BlockingIpTypesClient.getBlockingIpTypes(maliciousSourcesRule).stream())
             .distinct()
+            .map(IpTypeConverter::getIpType)
             .collect(Collectors.toUnmodifiableList());
     assertEquals(
         Set.of(IpType.IP_TYPE_VPN, IpType.IP_TYPE_PROXY, IpType.IP_TYPE_HOSTING_PROVIDER),
@@ -113,6 +116,7 @@ class BlockingIpTypesClientTest {
                 maliciousSourcesRule ->
                     BlockingIpTypesClient.getBlockingIpTypes(maliciousSourcesRule).stream())
             .distinct()
+            .map(IpTypeConverter::getIpType)
             .collect(Collectors.toUnmodifiableList());
     assertEquals(
         Set.of(

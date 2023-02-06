@@ -3,6 +3,7 @@ package ai.traceable.blocking.config.service.iptype;
 import ai.traceable.blocking.config.service.v1.IpType;
 import ai.traceable.blocking.config.service.v1.IpTypeBlockingRules;
 import ai.traceable.blocking.config.service.v1.IpTypeRule;
+import ai.traceable.blocking.config.service.v1.iptype.IpTypeConverter;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.config.utils.refresh.FileRefreshConfig;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
@@ -14,7 +15,6 @@ import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class DefaultIpTypeBlockingManager implements IpTypeBlockingManager {
-
   Supplier<List<IpTypeRule>> ipTypeRules;
   private final UuidGenerator uuidGenerator;
   private final BlockingIpTypesClient blockingIpTypesClient;
@@ -42,6 +42,7 @@ public class DefaultIpTypeBlockingManager implements IpTypeBlockingManager {
                 maliciousSourcesRule ->
                     BlockingIpTypesClient.getBlockingIpTypes(maliciousSourcesRule).stream())
             .distinct()
+            .map(IpTypeConverter::getIpType)
             .collect(Collectors.toUnmodifiableList());
 
     List<IpTypeRule> ipTypeBlockingRules =

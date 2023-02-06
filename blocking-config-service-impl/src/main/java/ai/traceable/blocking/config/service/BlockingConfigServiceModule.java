@@ -5,10 +5,11 @@ import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc
 import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceGrpc;
 import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceGrpc.AnomalyGlobalConfigServiceBlockingStub;
 import ai.traceable.blocking.config.service.blockingmodsec.ModsecBlockingManagerModule;
-import ai.traceable.blocking.config.service.blockingpolicy.BlockingPolicyConfigurationManagerModule;
+import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyConfigurationCommonModule;
 import ai.traceable.blocking.config.service.customsignature.CustomModsecBlockingManagerModule;
 import ai.traceable.blocking.config.service.iptype.IpTypeBlockingManagerModule;
 import ai.traceable.blocking.config.service.regions.RegionBlockingManagerModule;
+import ai.traceable.blocking.config.service.v1.blockingpolicy.BlockingPolicyConfigurationManagerModule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc;
@@ -47,7 +48,8 @@ class BlockingConfigServiceModule extends AbstractModule {
     install(new RegionBlockingManagerModule());
     install(new CustomModsecBlockingManagerModule());
     install(new ModsecBlockingManagerModule());
-    install(new BlockingPolicyConfigurationManagerModule(config));
+    install(new BlockingPolicyConfigurationCommonModule(config));
+    install(new BlockingPolicyConfigurationManagerModule());
     install(new IpTypeBlockingManagerModule(config));
   }
 
