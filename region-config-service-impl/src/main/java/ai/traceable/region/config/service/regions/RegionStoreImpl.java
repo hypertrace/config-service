@@ -83,6 +83,7 @@ class RegionStoreImpl implements RegionStore {
                             RegionIdentifier.newBuilder()
                                 .setCountryIsoCode(region.getIsoCode())
                                 .build(),
-                        Function.identity())));
+                        Function.identity(),
+                        (v1, v2) -> v1)));
   }
 }
