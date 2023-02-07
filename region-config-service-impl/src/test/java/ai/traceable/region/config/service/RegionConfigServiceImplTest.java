@@ -31,8 +31,10 @@ import ai.traceable.region.config.service.v1.GetRegionResponse;
 import ai.traceable.region.config.service.v1.GetRegionsRequest;
 import ai.traceable.region.config.service.v1.GetRegionsResponse;
 import ai.traceable.region.config.service.v1.Region;
+import ai.traceable.region.config.service.v1.RegionIdentifier;
 import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRuleActionType;
+import ai.traceable.region.config.service.v1.RegionsFilter;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleResponse;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -90,9 +92,12 @@ class RegionConfigServiceImplTest {
   class GetRegions {
     @Test
     void shouldGetCountries() {
+      when(rulesValidator.validate((RegionsFilter) any())).thenReturn(Status.OK);
+
       StreamObserver<GetRegionsResponse> responseObserver = mock(StreamObserver.class);
       List<Region> regions = List.of(Region.newBuilder().setId("id").setName("name").build());
-      when(neustarRegionStore.getCountries(Collections.emptyList())).thenReturn(regions);
+      when(neustarRegionStore.getCountries(Collections.emptyList(), Collections.emptyList()))
+          .thenReturn(regions);
 
       Runnable runnable =
           () ->
@@ -105,7 +110,8 @@ class RegionConfigServiceImplTest {
       verify(responseObserver, times(1)).onCompleted();
 
       regions = List.of(Region.newBuilder().setId("id2").setName("name2").build());
-      when(ipqsRegionStore.getCountries(Collections.emptyList())).thenReturn(regions);
+      when(ipqsRegionStore.getCountries(Collections.emptyList(), Collections.emptyList()))
+          .thenReturn(regions);
       when(featureCachingClient.isIpqsEnabledForRegionToIpMapping(requestContext)).thenReturn(true);
       runnable =
           () ->
@@ -122,10 +128,13 @@ class RegionConfigServiceImplTest {
   class GetDetailedRegions {
     @Test
     void shouldGetDetailedRegions() {
+      when(rulesValidator.validate((RegionsFilter) any())).thenReturn(Status.OK);
+
       StreamObserver<GetDetailedRegionsResponse> responseObserver = mock(StreamObserver.class);
       List<DetailedRegion> regions =
           List.of(DetailedRegion.newBuilder().setId("id").setName("name").build());
-      when(neustarRegionStore.getDetailedRegions(Collections.emptyList())).thenReturn(regions);
+      when(neustarRegionStore.getDetailedRegions(Collections.emptyList(), Collections.emptyList()))
+          .thenReturn(regions);
 
       Runnable runnable =
           () ->
@@ -138,7 +147,8 @@ class RegionConfigServiceImplTest {
       verify(responseObserver, times(1)).onCompleted();
 
       regions = List.of(DetailedRegion.newBuilder().setId("id2").setName("name2").build());
-      when(ipqsRegionStore.getDetailedRegions(Collections.emptyList())).thenReturn(regions);
+      when(ipqsRegionStore.getDetailedRegions(Collections.emptyList(), Collections.emptyList()))
+          .thenReturn(regions);
       when(featureCachingClient.isIpqsEnabledForRegionToIpMapping(requestContext)).thenReturn(true);
 
       runnable =
@@ -156,9 +166,12 @@ class RegionConfigServiceImplTest {
   class GetRegion {
     @Test
     void shouldGetRegion() {
+      when(rulesValidator.validate((GetRegionRequest) any())).thenReturn(Status.OK);
+
       StreamObserver<GetRegionResponse> responseObserver = mock(StreamObserver.class);
       Region region = Region.newBuilder().setId("id").setName("name").build();
-      when(neustarRegionStore.getRegion("id")).thenReturn(Optional.of(region));
+      when(neustarRegionStore.getRegion("id", RegionIdentifier.getDefaultInstance()))
+          .thenReturn(Optional.of(region));
 
       Runnable runnable =
           () ->
@@ -171,7 +184,8 @@ class RegionConfigServiceImplTest {
       verify(responseObserver, times(1)).onCompleted();
 
       region = Region.newBuilder().setId("id2").setName("name2").build();
-      when(ipqsRegionStore.getRegion("id2")).thenReturn(Optional.of(region));
+      when(ipqsRegionStore.getRegion("id2", RegionIdentifier.getDefaultInstance()))
+          .thenReturn(Optional.of(region));
       when(featureCachingClient.isIpqsEnabledForRegionToIpMapping(requestContext)).thenReturn(true);
 
       runnable =
@@ -182,37 +196,6 @@ class RegionConfigServiceImplTest {
 
       verify(responseObserver, times(1))
           .onNext(GetRegionResponse.newBuilder().setRegion(region).build());
-    }
-
-    @Test
-    @DisplayName("should return not found for missing region id in request")
-    void should_error_noRegionId() {
-      StreamObserver<GetRegionResponse> responseObserver = mock(StreamObserver.class);
-
-      Runnable runnable =
-          () ->
-              regionConfigService.getRegion(
-                  GetRegionRequest.getDefaultInstance(), responseObserver);
-      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
-
-      verify(responseObserver, times(1))
-          .onError(argThat(err -> Status.fromThrowable(err).getCode() == Code.INVALID_ARGUMENT));
-    }
-
-    @Test
-    @DisplayName("should return not found for invalid region id")
-    void should_error_invalidRegionId() {
-      StreamObserver<GetRegionResponse> responseObserver = mock(StreamObserver.class);
-      when(neustarRegionStore.getRegion("id")).thenReturn(Optional.empty());
-
-      Runnable runnable =
-          () ->
-              regionConfigService.getRegion(
-                  GetRegionRequest.newBuilder().setId("id").build(), responseObserver);
-      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
-
-      verify(responseObserver, times(1))
-          .onError(argThat(err -> Status.fromThrowable(err).getCode() == Code.NOT_FOUND));
     }
   }
 
@@ -226,7 +209,7 @@ class RegionConfigServiceImplTest {
           RegionRule.newBuilder().setId("id-2").addRegionId("region-id-2").build();
       when(rulesManager.getRegionRules(eq(requestContext), any()))
           .thenReturn(List.of(regionRule1, regionRule2));
-      when(neustarRegionStore.getCountries(any()))
+      when(neustarRegionStore.getCountries(any(), any()))
           .thenReturn(
               List.of(
                   Region.newBuilder().setId("region-id-1").setName("region-1").build(),

@@ -1,14 +1,18 @@
 package ai.traceable.region.config.service.rules;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.DeleteRegionRuleRequest;
 import ai.traceable.region.config.service.v1.EnvironmentScope;
+import ai.traceable.region.config.service.v1.GetRegionRequest;
+import ai.traceable.region.config.service.v1.RegionIdentifier;
 import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRuleActionType;
+import ai.traceable.region.config.service.v1.RegionsFilter;
 import ai.traceable.region.config.service.v1.RuleScope;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import io.grpc.Status;
@@ -377,6 +381,119 @@ class RegionRulesValidatorTest {
       Status status = rulesValidator.validate(deleteRegionRuleRequest);
 
       assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    }
+  }
+
+  @Nested
+  class ValidateRegionsFilter {
+    @Test
+    @DisplayName("should return invalid argument when both id and region identifier set")
+    void should_fail_validate_filter_invalid_input() {
+      RegionsFilter filter =
+          RegionsFilter.newBuilder()
+              .addAllId(List.of("id-1"))
+              .addAllRegionIdentifier(
+                  List.of(RegionIdentifier.newBuilder().setCountryIsoCode("iso-1").build()))
+              .build();
+      Status status = rulesValidator.validate(filter);
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+      assertTrue(
+          status.getDescription().contains("Both id and region identifier should not be present"));
+    }
+
+    @Test
+    @DisplayName("should pass when no id or region identifier")
+    void should_pass_validate_filter_valid_empty_filter() {
+      RegionsFilter filter =
+          RegionsFilter.newBuilder().addAllId(List.of()).addAllRegionIdentifier(List.of()).build();
+      assertEquals(Code.OK, rulesValidator.validate(filter).getCode());
+    }
+
+    @Test
+    @DisplayName("should pass when only id")
+    void should_pass_validate_filter_valid_filter_with_id() {
+      RegionsFilter filter = RegionsFilter.newBuilder().addAllId(List.of("id-1")).build();
+      assertEquals(Code.OK, rulesValidator.validate(filter).getCode());
+    }
+
+    @Test
+    @DisplayName("should pass when only valid identifier")
+    void should_pass_validate_filter_valid_filter_with_identifier() {
+      RegionsFilter filter =
+          RegionsFilter.newBuilder()
+              .addAllRegionIdentifier(
+                  List.of(RegionIdentifier.newBuilder().setCountryIsoCode("iso-1").build()))
+              .build();
+      assertEquals(Code.OK, rulesValidator.validate(filter).getCode());
+    }
+
+    @Test
+    @DisplayName("should return invalid argument when invalid identifier")
+    void should_fail_validate_filter_invalid_filter_with_identifier() {
+      RegionsFilter filter =
+          RegionsFilter.newBuilder()
+              .addAllRegionIdentifier(List.of(RegionIdentifier.newBuilder().build()))
+              .build();
+      Status status = rulesValidator.validate(filter);
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+      assertTrue(status.getDescription().contains("Invalid case"));
+    }
+
+    @Test
+    @DisplayName("should return invalid argument when empty iso")
+    void should_fail_validate_filter_invalid_filter_with_empty_iso() {
+      RegionsFilter filter =
+          RegionsFilter.newBuilder()
+              .addAllRegionIdentifier(
+                  List.of(RegionIdentifier.newBuilder().setCountryIsoCode("").build()))
+              .build();
+      Status status = rulesValidator.validate(filter);
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+      assertTrue(status.getDescription().contains("Country iso code cannot be empty"));
+    }
+  }
+
+  @Nested
+  class ValidateGetRegionRequest {
+    @Test
+    @DisplayName("should return invalid argument when both id and region identifier set")
+    void should_fail_validate_request_invalid_input() {
+      GetRegionRequest request =
+          GetRegionRequest.newBuilder()
+              .setId("id-1")
+              .setRegionIdentifier(RegionIdentifier.newBuilder().setCountryIsoCode("iso-1").build())
+              .build();
+      Status status = rulesValidator.validate(request);
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+      assertTrue(
+          status.getDescription().contains("Both id and region identifier should not be present"));
+    }
+
+    @Test
+    @DisplayName("should return invalid argument when both id and region identifier not set")
+    void should_fail_validate_request_invalid_input2() {
+      GetRegionRequest request = GetRegionRequest.newBuilder().build();
+      Status status = rulesValidator.validate(request);
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+      assertTrue(
+          status.getDescription().contains("Both id and region identifier should not be absent"));
+    }
+
+    @Test
+    @DisplayName("should pass when only id set")
+    void should_pass_validate_request_valid_input() {
+      GetRegionRequest request = GetRegionRequest.newBuilder().setId("id-1").build();
+      assertEquals(Code.OK, rulesValidator.validate(request).getCode());
+    }
+
+    @Test
+    @DisplayName("should pass when only identifier set")
+    void should_pass_validate_request_valid_input2() {
+      GetRegionRequest request =
+          GetRegionRequest.newBuilder()
+              .setRegionIdentifier(RegionIdentifier.newBuilder().setCountryIsoCode("iso-1").build())
+              .build();
+      assertEquals(Code.OK, rulesValidator.validate(request).getCode());
     }
   }
 }

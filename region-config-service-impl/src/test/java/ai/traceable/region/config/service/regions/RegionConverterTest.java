@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.region.config.service.v1.Country;
 import ai.traceable.region.config.service.v1.DetailedRegion;
 import ai.traceable.region.config.service.v1.IpRange;
 import java.util.Collections;
@@ -24,11 +25,14 @@ class RegionConverterTest {
   @Test
   void shouldConvertRegion() {
     Region region =
-        new Region("region-id", "region-name", RegionType.COUNTRY, Collections.emptyList());
+        new Region(
+            "region-id", "region-name", RegionType.COUNTRY, Collections.emptyList(), "region-iso");
     assertEquals(
         ai.traceable.region.config.service.v1.Region.newBuilder()
             .setId("region-id")
             .setName("region-name")
+            .setCountry(
+                Country.newBuilder().setName("region-name").setIsoCode("region-iso").build())
             .build(),
         regionConverter.convert(region));
   }
@@ -36,7 +40,8 @@ class RegionConverterTest {
   @Test
   void shouldConvertToDetailedRegion() {
     List<IpV4Range> ipV4Ranges = List.of(new IpV4Range(123L, 789L));
-    Region region = new Region("region-id", "region-name", RegionType.COUNTRY, ipV4Ranges);
+    Region region =
+        new Region("region-id", "region-name", RegionType.COUNTRY, ipV4Ranges, "region-iso");
     List<IpRange> ipRanges = List.of(IpRange.getDefaultInstance());
     when(this.ipRangeConverter.convert(ipV4Ranges)).thenReturn(ipRanges);
 
@@ -45,6 +50,15 @@ class RegionConverterTest {
             .setId("region-id")
             .setName("region-name")
             .addAllIpRange(ipRanges)
+            .setRegion(
+                ai.traceable.region.config.service.v1.Region.newBuilder()
+                    .setId("region-id")
+                    .setName("region-name")
+                    .setCountry(
+                        Country.newBuilder()
+                            .setName("region-name")
+                            .setIsoCode("region-iso")
+                            .build()))
             .build(),
         regionConverter.convertToDetailedRegion(region));
   }

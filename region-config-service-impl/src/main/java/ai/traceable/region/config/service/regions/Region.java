@@ -9,4 +9,5 @@ public class Region {
   String name;
   RegionType type;
   List<IpV4Range> ipV4Ranges;
+  String isoCode;
 }

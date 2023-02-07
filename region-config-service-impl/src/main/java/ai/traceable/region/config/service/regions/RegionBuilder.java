@@ -16,6 +16,7 @@ class RegionBuilder extends FileVersionBasedRefresh<Map<String, Region>> {
   private static final String START_IP_INT_CSV_HEADER = "start_ip_int";
   private static final String END_IP_INT_CSV_HEADER = "end_ip_int";
   private static final String COUNTRY_CSV_HEADER = "country";
+  private static final String ISO_CODE_CSV_HEADER = "country_iso_code";
 
   private final UuidGenerator uuidGenerator;
 
@@ -34,10 +35,12 @@ class RegionBuilder extends FileVersionBasedRefresh<Map<String, Region>> {
         long startIp = Long.parseLong(record.get(START_IP_INT_CSV_HEADER));
         long endIp = Long.parseLong(record.get(END_IP_INT_CSV_HEADER));
         String country = record.get(COUNTRY_CSV_HEADER);
+        String isoCode = record.get(ISO_CODE_CSV_HEADER);
         String regionId = uuidGenerator.generateId(country);
 
         if (!regionIdToRegionMap.containsKey(regionId)) {
-          Region region = new Region(regionId, country, RegionType.COUNTRY, new ArrayList<>());
+          Region region =
+              new Region(regionId, country, RegionType.COUNTRY, new ArrayList<>(), isoCode);
           regionIdToRegionMap.put(regionId, region);
         }
 

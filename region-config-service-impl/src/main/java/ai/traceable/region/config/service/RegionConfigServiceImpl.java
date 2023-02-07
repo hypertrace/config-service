@@ -27,6 +27,7 @@ import ai.traceable.region.config.service.v1.GetRegionsResponse;
 import ai.traceable.region.config.service.v1.Region;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceImplBase;
 import ai.traceable.region.config.service.v1.RegionRule;
+import ai.traceable.region.config.service.v1.RegionsFilter;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleResponse;
 import com.google.inject.Inject;
@@ -77,9 +78,19 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
       GetRegionsRequest request, StreamObserver<GetRegionsResponse> responseObserver) {
 
     RegionStore regionStore = getRegionStore(RequestContext.CURRENT.get());
-    List<Region> countries =
-        regionStore.getCountries(
-            request.hasFilter() ? request.getFilter().getIdList() : Collections.emptyList());
+    List<Region> countries;
+
+    if (request.hasFilter()) {
+      RegionsFilter filter = request.getFilter();
+      Status status = rulesValidator.validate(filter);
+      if (!status.isOk()) {
+        responseObserver.onError(status.asException());
+        return;
+      }
+      countries = regionStore.getCountries(filter.getIdList(), filter.getRegionIdentifierList());
+    } else {
+      countries = regionStore.getCountries(Collections.emptyList(), Collections.emptyList());
+    }
 
     responseObserver.onNext(GetRegionsResponse.newBuilder().addAllRegion(countries).build());
     responseObserver.onCompleted();
@@ -89,10 +100,22 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
   public void getDetailedRegions(
       GetDetailedRegionsRequest request,
       StreamObserver<GetDetailedRegionsResponse> responseObserver) {
+
     RegionStore regionStore = getRegionStore(RequestContext.CURRENT.get());
-    List<DetailedRegion> regions =
-        regionStore.getDetailedRegions(
-            request.hasFilter() ? request.getFilter().getIdList() : Collections.emptyList());
+    List<DetailedRegion> regions;
+
+    if (request.hasFilter()) {
+      RegionsFilter filter = request.getFilter();
+      Status status = rulesValidator.validate(filter);
+      if (!status.isOk()) {
+        responseObserver.onError(status.asException());
+        return;
+      }
+      regions =
+          regionStore.getDetailedRegions(filter.getIdList(), filter.getRegionIdentifierList());
+    } else {
+      regions = regionStore.getDetailedRegions(Collections.emptyList(), Collections.emptyList());
+    }
 
     responseObserver.onNext(GetDetailedRegionsResponse.newBuilder().addAllRegion(regions).build());
     responseObserver.onCompleted();
@@ -101,16 +124,17 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
   @Override
   public void getRegion(
       GetRegionRequest request, StreamObserver<GetRegionResponse> responseObserver) {
-    if (request.getId().isEmpty()) {
-      responseObserver.onError(
-          Status.INVALID_ARGUMENT
-              .withDescription("GetRegion API should have a valid id")
-              .asException());
+
+    Status status = rulesValidator.validate(request);
+    if (!status.isOk()) {
+      responseObserver.onError(status.asException());
       return;
     }
 
     RegionStore regionStore = getRegionStore(RequestContext.CURRENT.get());
-    Optional<Region> maybeRegion = regionStore.getRegion(request.getId());
+    Optional<Region> maybeRegion =
+        regionStore.getRegion(request.getId(), request.getRegionIdentifier());
+
     if (maybeRegion.isEmpty()) {
       responseObserver.onError(Status.NOT_FOUND.asException());
       return;
@@ -254,7 +278,7 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
             .collect(Collectors.toUnmodifiableSet());
     RegionStore regionStore = getRegionStore(requestContext);
     Map<String, String> regionMapping =
-        regionStore.getCountries(new ArrayList<>(regionIds)).stream()
+        regionStore.getCountries(new ArrayList<>(regionIds), Collections.emptyList()).stream()
             .collect(Collectors.toUnmodifiableMap(Region::getId, Region::getName, (v1, v2) -> v1));
 
     return regionRules.stream()

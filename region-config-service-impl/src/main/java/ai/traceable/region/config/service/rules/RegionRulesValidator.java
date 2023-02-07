@@ -3,8 +3,11 @@ package ai.traceable.region.config.service.rules;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.DeleteRegionRuleRequest;
 import ai.traceable.region.config.service.v1.EventSeverity;
+import ai.traceable.region.config.service.v1.GetRegionRequest;
+import ai.traceable.region.config.service.v1.RegionIdentifier;
 import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRuleActionType;
+import ai.traceable.region.config.service.v1.RegionsFilter;
 import ai.traceable.region.config.service.v1.RuleScope;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import io.grpc.Status;
@@ -102,6 +105,35 @@ class RegionRulesValidator implements RulesValidator {
     return Status.OK;
   }
 
+  @Override
+  public Status validate(RegionsFilter filter) {
+    if (!filter.getIdList().isEmpty() && !filter.getRegionIdentifierList().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Both id and region identifier should not be present.");
+    }
+
+    return filter.getRegionIdentifierList().stream()
+        .map(this::validate)
+        .filter(status -> !status.isOk())
+        .findFirst()
+        .orElse(Status.OK);
+  }
+
+  @Override
+  public Status validate(GetRegionRequest request) {
+    if (request.hasRegionIdentifier() && !request.getId().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Both id and region identifier should not be present.");
+    } else if (!request.hasRegionIdentifier() && request.getId().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Both id and region identifier should not be absent.");
+    } else if (request.hasRegionIdentifier()) {
+      return validate(request.getRegionIdentifier());
+    } else {
+      return Status.OK;
+    }
+  }
+
   private Status validate(RuleScope scope) {
     if (scope.hasEnvironmentScope()) {
       List<String> environmentIdList = scope.getEnvironmentScope().getEnvironmentIdsList();
@@ -135,5 +167,18 @@ class RegionRulesValidator implements RulesValidator {
                 RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT.equals(
                         regionRule.getActionType())
                     && !id.equals(regionRule.getId()));
+  }
+
+  private Status validate(RegionIdentifier identifier) {
+    switch (identifier.getIdentifierCase()) {
+      case COUNTRY_ISO_CODE:
+        return identifier.getCountryIsoCode().isEmpty()
+            ? Status.INVALID_ARGUMENT.withDescription("Country iso code cannot be empty")
+            : Status.OK;
+      default:
+        return Status.INVALID_ARGUMENT.withDescription(
+            String.format(
+                "Invalid case: %s found for region identifier.", identifier.getIdentifierCase()));
+    }
   }
 }
