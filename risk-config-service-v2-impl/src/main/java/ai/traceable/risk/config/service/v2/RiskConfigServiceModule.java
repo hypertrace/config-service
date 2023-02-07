@@ -19,7 +19,7 @@ import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProvide
 @AllArgsConstructor
 public class RiskConfigServiceModule extends AbstractModule {
 
-  private static final String RISK_CONFIG_SERVICE_CONFIG_PATH = "risk.config.service";
+  private static final String API_RISK_CONFIG_SERVICE_CONFIG_PATH = "api.risk.config.service";
 
   private final Channel channel;
   private final Config config;
@@ -39,7 +39,7 @@ public class RiskConfigServiceModule extends AbstractModule {
   @Provides
   @Singleton
   RiskConfigServiceConfig providesRiskServiceConfig() {
-    return new RiskConfigServiceConfig(config.getConfig(RISK_CONFIG_SERVICE_CONFIG_PATH));
+    return new RiskConfigServiceConfig(config.getConfig(API_RISK_CONFIG_SERVICE_CONFIG_PATH));
   }
 
   @Provides
