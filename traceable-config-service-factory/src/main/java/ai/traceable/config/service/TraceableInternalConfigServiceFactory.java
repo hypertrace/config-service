@@ -20,6 +20,7 @@ import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceFactory;
 import ai.traceable.region.config.service.RegionConfigServiceFactory;
 import ai.traceable.reporting.config.service.v2.ReportingConfigServiceFactory;
 import ai.traceable.risk.config.service.RiskConfigServiceFactory;
+import ai.traceable.risk.config.service.v2.ApiRiskConfigServiceFactory;
 import ai.traceable.sensitivedata.config.service.SensitiveDataConfigServicesProvider;
 import ai.traceable.span.processing.config.service.SpanProcessingConfigServiceFactory;
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceFactory;
@@ -104,6 +105,11 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getChangeEventGenerator())),
             wrap(
                 RiskConfigServiceFactory.build(
+                    providers.getLocalChannel(),
+                    providers.getConfig(),
+                    providers.getChangeEventGenerator())),
+            wrap(
+                ApiRiskConfigServiceFactory.build(
                     providers.getLocalChannel(),
                     providers.getConfig(),
                     providers.getChangeEventGenerator())),

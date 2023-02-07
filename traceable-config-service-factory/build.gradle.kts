@@ -27,6 +27,7 @@ dependencies {
   implementation(projects.userAttributionConfigServiceImpl)
   implementation(projects.threatManagementConfigServiceImpl)
   implementation(projects.riskConfigServiceImpl)
+  implementation(projects.riskConfigServiceV2Impl)
   implementation(projects.dataClassificationConfigServiceImpl)
   implementation(projects.dataExfiltrationConfigServiceImpl)
   implementation(projects.wafProviderIntegrationServiceImpl)

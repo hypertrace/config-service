@@ -7,7 +7,7 @@ import io.grpc.BindableService;
 import io.grpc.Channel;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 
-public class RiskConfigServiceFactory {
+public class ApiRiskConfigServiceFactory {
   public static BindableService build(
       Channel channel, Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
     Injector injector =
