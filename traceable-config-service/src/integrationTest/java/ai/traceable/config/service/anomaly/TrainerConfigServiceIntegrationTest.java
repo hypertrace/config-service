@@ -701,10 +701,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     assertEquals(0, jwtParamsIpFamilyConfig.getRequiredUniqueUserIdsCount());
     assertEquals(0, jwtParamsIpFamilyConfig.getRequiredUniqueIpsCount());
     assertEquals(
-        List.of(
-            "^token.jwt.payload(.+)\\.aud$",
-            "^token.jwt.payload(.+)\\.iss$",
-            "^token.jwt.header(.+)\\.alg$"),
+        List.of("^token.jwt.payload(.+)\\.(aud|iss)$", "^token.jwt.header(.+)\\.(alg|jwk)$"),
         jwtParamsTrainingConfig.getIncludeParamRegexes().getValuesList());
   }
 

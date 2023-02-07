@@ -37,7 +37,7 @@ public class ApiDefinitionRegistryTest {
                 anomalyRuleInfo -> {
                   String jwtRuleId = "jwt";
                   if (anomalyRuleInfo.getRuleId().equals(jwtRuleId)) {
-                    assertEquals(3, anomalyRuleInfo.getSubRuleInfosCount());
+                    assertEquals(5, anomalyRuleInfo.getSubRuleInfosCount());
                     anomalyRuleInfo
                         .getSubRuleInfosList()
                         .forEach(
