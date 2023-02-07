@@ -4,6 +4,7 @@ crs_1010100 :: Server Side Request Forgery (SSRF): Cloud Provider Metadata Endpo
 crs_1010110 :: Server Side Request Forgery (SSRF): Common Collaborators :: [ 'OWASP_2021:A10' , 'CWE:918' ]
 crs_1020100 :: XML External Entity Injection: Local/Remote Includes (T100) :: [ 'OWASP_2017:A4' , 'OWASP_2021:A5' , 'CWE:611' ]
 crs_1020110 :: XML External Entity Injection: Entity Tags (T110) :: [ 'OWASP_2017:A4' , 'OWASP_2021:A5' , 'CWE:611' ]
+crs_1030100 :: Basic Authentication: Missing Password
 crs_913100 :: User-Agent associated with security scanner
 crs_913110 :: Request header associated with security scanner
 crs_913120 :: Request filename/argument associated with security scanner

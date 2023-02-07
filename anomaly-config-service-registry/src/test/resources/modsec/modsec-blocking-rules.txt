@@ -1,6 +1,7 @@
 crs_1010010 :: Apache HTTP Server SSRF (CVE-2021-40438)
 crs_1010020 :: Jira SSRF: plugins/servlet/gadgets/makeRequest: (CVE-2019-8451)
 crs_1020100 :: XML External Entity Injection: Local/Remote Includes (T100)
+crs_1030100 :: Basic Authentication: Missing Password
 crs_913100 :: User-Agent associated with security scanner
 crs_913110 :: Request header associated with security scanner
 crs_913120 :: Request filename/argument associated with security scanner
@@ -52,4 +53,3 @@ crs_9440910 :: Java Log4j: RCE DoS Exploitation (CVE-2021-45105) (T910)
 crs_9440920 :: Java Spring Core: RCE (CVE-2022-22965)
 crs_9440930 :: Confluence Server OGNL Injection: Webwork: (CVE-2021-26084)
 crs_944120 :: Remote Command Execution: Java serialization (CVE-2015-4852) (120)
-
