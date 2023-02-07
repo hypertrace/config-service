@@ -140,6 +140,8 @@ message MetadataTrainingConfig {
 }
 
 message VulnerabilityTrainingConfig {
+  AutoResolutionConfig auto_resolution_config = 12;
+
   oneof config {
     ParamContainsSensitiveDataTrainingConfig param_contains_sensitive_data = 1;
     LackOfEncryptionTrainingConfig lack_of_encryption = 3;
@@ -325,6 +327,10 @@ message ThresholdFamilyConfig {
 message MinOccurrenceConfig {
   optional int32 min_total_occurrences = 1;
   optional int32 min_percent = 2;
+}
+
+message AutoResolutionConfig {
+  bool disabled = 1;
 }
 
 enum UserIdSource {
