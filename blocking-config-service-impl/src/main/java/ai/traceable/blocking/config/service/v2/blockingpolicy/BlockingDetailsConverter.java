@@ -15,7 +15,7 @@ import ai.traceable.blocking.config.service.v2.IpDetails;
 import ai.traceable.blocking.config.service.v2.IpTypeDetails;
 import ai.traceable.blocking.config.service.v2.ModsecDetails;
 import ai.traceable.blocking.config.service.v2.RegionDetails;
-import ai.traceable.blocking.config.service.v2.iptype.IpTypeConverter;
+import ai.traceable.blocking.config.service.v2.iptype.IpTypeRuleConverter;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -92,7 +92,7 @@ final class BlockingDetailsConverter implements BlockingDetailsConverterBase<Blo
             IpTypeDetails.newBuilder()
                 .addAllIpTypes(
                     blockingPolicyData.getIpTypes().stream()
-                        .map(IpTypeConverter::getIpType)
+                        .map(IpTypeRuleConverter::convert)
                         .collect(Collectors.toUnmodifiableList())));
         return List.of(blockingDetailsBuilder.build());
       case DATA_EXFILTRATION:

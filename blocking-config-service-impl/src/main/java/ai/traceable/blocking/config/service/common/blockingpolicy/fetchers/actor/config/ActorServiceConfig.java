@@ -1,6 +1,6 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.actor.config;
 
-import ai.traceable.blocking.config.service.BlockingDataCacheConfig;
+import ai.traceable.blocking.config.service.common.BlockingDataCacheConfig;
 import com.typesafe.config.Config;
 import java.time.Duration;
 import lombok.AccessLevel;

@@ -17,13 +17,17 @@ import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProvide
 
 public class DataFetcherModule extends AbstractModule {
   private final Config config;
+  private final GrpcChannelRegistry grpcChannelRegistry;
 
-  public DataFetcherModule(Config config) {
+  public DataFetcherModule(Config config, GrpcChannelRegistry grpcChannelRegistry) {
     this.config = config;
+    this.grpcChannelRegistry = grpcChannelRegistry;
   }
 
   @Override
   protected void configure() {
+    bind(GrpcChannelRegistry.class).toInstance(grpcChannelRegistry);
+
     requireBinding(AnomalyGlobalConfigServiceBlockingStub.class);
     requireBinding(DetectorConfigServiceBlockingStub.class);
     requireBinding(CustomSignatureConfigServiceBlockingStub.class);

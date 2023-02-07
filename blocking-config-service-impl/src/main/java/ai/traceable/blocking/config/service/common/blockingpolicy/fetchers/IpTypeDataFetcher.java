@@ -5,7 +5,7 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicy
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.RuleType;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Status;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
-import ai.traceable.blocking.config.service.iptype.BlockingIpTypesClient;
+import ai.traceable.blocking.config.service.common.iptype.BlockingIpTypesClient;
 import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleCondition;

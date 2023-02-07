@@ -15,13 +15,14 @@ import ai.traceable.blocking.config.service.v1.IpDetails;
 import ai.traceable.blocking.config.service.v1.IpTypeDetails;
 import ai.traceable.blocking.config.service.v1.ModsecDetails;
 import ai.traceable.blocking.config.service.v1.RegionDetails;
-import ai.traceable.blocking.config.service.v1.iptype.IpTypeConverter;
+import ai.traceable.blocking.config.service.v1.iptype.IpTypeRuleConverter;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 final class BlockingDetailsConverter implements BlockingDetailsConverterBase<BlockingDetails> {
+
   @Override
   public List<BlockingDetails> convert(BlockingPolicyData blockingPolicyData) {
     Builder blockingDetailsBuilder =
@@ -92,7 +93,7 @@ final class BlockingDetailsConverter implements BlockingDetailsConverterBase<Blo
             IpTypeDetails.newBuilder()
                 .addAllIpTypes(
                     blockingPolicyData.getIpTypes().stream()
-                        .map(IpTypeConverter::getIpType)
+                        .map(IpTypeRuleConverter::convert)
                         .collect(Collectors.toUnmodifiableList())));
         return List.of(blockingDetailsBuilder.build());
       case DATA_EXFILTRATION:

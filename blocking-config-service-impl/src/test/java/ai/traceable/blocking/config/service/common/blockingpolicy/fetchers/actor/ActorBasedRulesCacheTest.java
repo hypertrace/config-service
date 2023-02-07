@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
-import ai.traceable.blocking.config.service.BlockingDataCacheConfig;
+import ai.traceable.blocking.config.service.common.BlockingDataCacheConfig;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Category;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.RuleType;

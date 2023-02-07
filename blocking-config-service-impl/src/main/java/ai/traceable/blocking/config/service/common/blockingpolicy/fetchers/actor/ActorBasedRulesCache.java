@@ -5,7 +5,7 @@ import static ai.traceable.platform.actor.v1.Status.STATUS_ALWAYS_DENIED;
 import static ai.traceable.platform.actor.v1.Status.STATUS_SNOOZED;
 import static ai.traceable.platform.actor.v1.Status.STATUS_SUSPENDED;
 
-import ai.traceable.blocking.config.service.BlockingDataCacheConfig;
+import ai.traceable.blocking.config.service.common.BlockingDataCacheConfig;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Category;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.RuleType;
