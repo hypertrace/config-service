@@ -307,7 +307,8 @@ public class RateLimitingRulesValidator implements RulesValidator {
   private void validateUserIdCondition(UserIdCondition userIdCondition) {
     List<String> actorEntityIds = userIdCondition.getActorEntityIdsList();
     List<String> userIdRegexes = userIdCondition.getUserIdRegexesList();
-    if (actorEntityIds.isEmpty() && userIdRegexes.isEmpty()) {
+    List<String> userIds = userIdCondition.getUserIdsList();
+    if (actorEntityIds.isEmpty() && userIdRegexes.isEmpty() && userIds.isEmpty()) {
       throwInvalidArgumentException(
           String.format(
               "Invalid condition for type %s:%n %s",

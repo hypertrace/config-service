@@ -160,7 +160,8 @@ message IpLocationTypeCondition {
 
 message UserIdCondition {
   repeated string user_id_regexes = 1;
-  repeated string actor_entity_ids = 2;
+  repeated string actor_entity_ids = 2; // not supported currently
+  repeated string user_ids = 3;
 }
 
 message IpReputationCondition {

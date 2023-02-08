@@ -711,6 +711,7 @@ public class RateLimitingRulesValidatorTest {
                                                 UserIdCondition.newBuilder()
                                                     .addActorEntityIds("userId")
                                                     .addUserIdRegexes("userId.*")
+                                                    .addUserIds("userId")
                                                     .build())
                                             .build())
                                     .build())
