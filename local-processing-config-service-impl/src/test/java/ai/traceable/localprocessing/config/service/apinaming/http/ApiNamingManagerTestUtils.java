@@ -238,7 +238,8 @@ public class ApiNamingManagerTestUtils {
           List.of("regexLow"),
           List.of("regexHigh"),
           new HashSet<>(List.of("extension")),
-          123);
+          123,
+          true);
 
   public static FullPattern builtExpectedFullPattern =
       FullPattern.newBuilder()

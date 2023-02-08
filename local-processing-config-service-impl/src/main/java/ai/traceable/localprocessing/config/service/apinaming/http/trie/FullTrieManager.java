@@ -192,7 +192,8 @@ public class FullTrieManager {
         List.of(httpApiNamingConfigInfo.getWildcardConfigMap().get(NodeType.LOW_CARDINALITY)),
         List.of(httpApiNamingConfigInfo.getWildcardConfigMap().get(NodeType.HIGH_CARDINALITY)),
         new HashSet<>(httpApiNamingConfigInfo.getExtensions()),
-        httpApiNamingConfigInfo.getEmbryonicThreshold());
+        httpApiNamingConfigInfo.getEmbryonicThreshold(),
+        true);
   }
 
   private ThreadFactory buildFullTrieCacheThreadFactory() {
