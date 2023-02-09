@@ -53,6 +53,7 @@ message IpTypeDetails {
   repeated IpType ip_types = 1;
 }
 
+// BlockingCategory should be consistent with v1 due to use of ordinal parsing in detector
 enum BlockingCategory {
   BLOCKING_CATEGORY_UNSPECIFIED = 0;
   BLOCKING_CATEGORY_THREAT_ACTOR = 1;
@@ -73,6 +74,7 @@ enum BlockingRuleType {
   BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT = 3;
 }
 
+// BlockingStatus should be consistent with v1 due to use of ordinal parsing in detector
 enum BlockingStatus {
   BLOCKING_STATUS_UNSPECIFIED = 0;
   BLOCKING_STATUS_ALLOWED = 1;
