@@ -283,6 +283,7 @@ message SsrfAnomalyConfig {
 
 message BflaAnomalyConfig {
   optional double min_percent_seen = 1;
+  optional bool disabled_for_unknown_roles = 2;
 }
 
 message JwtAnomalyConfig {
