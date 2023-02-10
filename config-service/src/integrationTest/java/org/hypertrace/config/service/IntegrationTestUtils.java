@@ -9,6 +9,13 @@ import java.nio.charset.Charset;
 
 public class IntegrationTestUtils {
 
+  /**
+   * Reads the Json file and converts it into {@link Value} object
+   *
+   * @param jsonFileName
+   * @return
+   * @throws IOException
+   */
   public static Value getConfigValue(String jsonFileName) throws IOException {
     String jsonConfigString = getConfigString(jsonFileName);
     Value.Builder valueBuilder = Value.newBuilder();
