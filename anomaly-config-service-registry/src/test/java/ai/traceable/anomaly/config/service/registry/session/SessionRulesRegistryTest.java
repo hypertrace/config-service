@@ -6,6 +6,7 @@ import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.detector.ObjectBolaAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.SessionDefinitionMetadataAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.SessionViolationConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UserIdBolaAnomalyConfig;
 import java.util.Map;
 import java.util.Set;
@@ -20,9 +21,9 @@ public class SessionRulesRegistryTest {
         new SessionRulesRegistryImpl(new ConfigConverter());
 
     Map<String, AnomalyRuleInfo> anomalyRuleInfos = sessionRulesRegistry.getSessionRuleInfos();
-    assertEquals(2, anomalyRuleInfos.size());
+    assertEquals(3, anomalyRuleInfos.size());
     assertEquals(
-        "bola :: Authorization Bypass - Object Level\nuserIdBola :: Authorization Bypass - User Level",
+        "bola :: Authorization Bypass - Object Level\nsessionv :: Session Violation\nuserIdBola :: Authorization Bypass - User Level",
         anomalyRuleInfos.values().stream()
             .map(
                 anomalyRuleInfo ->
@@ -50,6 +51,11 @@ public class SessionRulesRegistryTest {
             SessionDefinitionMetadataAnomalyDetectionConfig.newBuilder()
                 .setAnomalyRuleId("userIdBola")
                 .setUserIdBola(UserIdBolaAnomalyConfig.getDefaultInstance())
+                .build(),
+            "sessionv",
+            SessionDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                .setAnomalyRuleId("sessionv")
+                .setSessionViolation(SessionViolationConfig.getDefaultInstance())
                 .build());
 
     assertEquals(expectedMap, ruleIdToConfigMap);

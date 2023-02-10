@@ -15,6 +15,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.StringList;
+import ai.traceable.anomaly.config.service.v1.detector.AbuseVelocity;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyCategoryConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyEventCategory;
@@ -25,7 +26,6 @@ import ai.traceable.anomaly.config.service.v1.detector.ApiStateBasedAnomalyDetec
 import ai.traceable.anomaly.config.service.v1.detector.BlockingMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.CustomIpAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.AbuseVelocity;
 import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.EmailDomainAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.IpTypeAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.MaliciousSourcesRulesAnomalyConfig;

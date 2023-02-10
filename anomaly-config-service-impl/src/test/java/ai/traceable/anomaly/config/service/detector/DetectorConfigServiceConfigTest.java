@@ -7,9 +7,9 @@ import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
+import ai.traceable.anomaly.config.service.v1.detector.AbuseVelocity;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyEventScoreCategory;
-import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.AbuseVelocity;
 import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.EmailDomainAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.IpTypeAnomalyConfig;
 import com.typesafe.config.ConfigFactory;

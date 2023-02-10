@@ -154,6 +154,7 @@ message SessionDefinitionMetadataAnomalyDetectionConfig {
     ObjectBolaAnomalyConfig object_bola = 2;
     UserIdBolaAnomalyConfig user_id_bola = 3;
     SequenceAnomalyConfig sequence_anomaly = 4;
+    SessionViolationConfig session_violation = 5;
   }
 }
 
@@ -189,13 +190,6 @@ message CustomRulesAnomalyDetectionConfig {
   message IpTypeAnomalyConfig {
     AbuseVelocity abuse_velocity_min_threshold = 1;
     int32 ip_reputation_score_min_threshold = 2;
-  }
-
-  enum AbuseVelocity {
-    ABUSE_VELOCITY_UNSPECIFIED = 0;
-    ABUSE_VELOCITY_LOW = 1;
-    ABUSE_VELOCITY_MEDIUM = 2;
-    ABUSE_VELOCITY_HIGH = 3;
   }
 }
 
@@ -372,6 +366,22 @@ message ParamValueTypeModsecExclude {
   StringList excluded_modsec_rule_ids = 2;
 }
 
+enum IpType {
+  IP_TYPE_UNSPECIFIED = 0;
+  IP_TYPE_VPN = 1;
+  IP_TYPE_PUBLIC_PROXY = 2;
+  IP_TYPE_HOSTING_PROVIDER = 3;
+  IP_TYPE_TOR = 4;
+  IP_TYPE_BOT = 5;
+}
+
+enum AbuseVelocity {
+  ABUSE_VELOCITY_UNSPECIFIED = 0;
+  ABUSE_VELOCITY_LOW = 1;
+  ABUSE_VELOCITY_MEDIUM = 2;
+  ABUSE_VELOCITY_HIGH = 3;
+}
+
 enum ParamValueType {
   PARAM_VALUE_TYPE_UNSPECIFIED = 0;
   PARAM_VALUE_TYPE_HTML = 1;
@@ -393,4 +403,25 @@ message MultiValuedStringParamRule {
   string key_regex = 1;
   string value_delimiter = 2;
   optional string value_regex = 3;
+}
+
+message SessionViolationConfig {
+  LandSpeedViolationConfig land_speed = 1;
+  SessionExpiryConfig session_expiry = 2;
+}
+
+message LandSpeedViolationConfig {
+  IpTypeList ip_types = 1;
+  AbuseVelocity min_ip_abuse_velocity = 2;
+  optional int32 min_ip_reputation_score = 3;
+  optional int32 unique_user_cities_min_count = 4;
+  optional int32 unique_external_ip_addresses_min_count = 5;
+}
+
+message SessionExpiryConfig {
+  optional int64 time_difference_buffer_millis = 1;
+}
+
+message IpTypeList {
+  repeated IpType values = 1;
 }
