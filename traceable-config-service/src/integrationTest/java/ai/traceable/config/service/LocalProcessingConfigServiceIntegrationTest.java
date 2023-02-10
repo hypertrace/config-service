@@ -176,7 +176,7 @@ public class LocalProcessingConfigServiceIntegrationTest
         GrpcClientRequestContextUtil.executeInTenantContext(
             TENANT_ID, () -> localProcessingConfigStub.getLocalProcessingConfig(request));
 
-    String expectedVal = readModsecRules();
+    String expectedVal = readModsecRules(Set.of("crs_1030100"));
     assertEquals(
         expectedVal,
         response.getRegularModsecDetectionRules().getRegularModsecDetectionRulesBlob());
@@ -294,14 +294,14 @@ public class LocalProcessingConfigServiceIntegrationTest
         TENANT_ID, () -> localProcessingRulesStub.createLocalProcessingRule(request));
   }
 
-  private String readModsecRules() {
+  private String readModsecRules(Set<String> disabledRuleIds) {
     ModsecCrsRulesHandler modsecCrsRulesHandler = new ModsecCrsRulesHandler(new ModsecRuleUtils());
     ModsecRulesRegistry registry =
         new ModsecRulesRegistryImpl(new ConfigConverter(), modsecCrsRulesHandler);
     return registry.getModsecCrsRulesBlob(
         AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
         ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-        Set.of());
+        disabledRuleIds);
   }
 
   private void createAndGetCustomSignatureRule(EventType eventType) {
