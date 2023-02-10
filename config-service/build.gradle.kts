@@ -63,9 +63,9 @@ dependencies {
 
   // Integration test dependencies
   integrationTestImplementation(projects.configServiceImpl)
+  integrationTestImplementation(projects.configProtoConverter)
   integrationTestImplementation(libs.junit.jupiter)
   integrationTestImplementation(libs.guava)
-  integrationTestImplementation(libs.snakeyaml)
   integrationTestImplementation(libs.hypertrace.framework.integrationtest)
   integrationTestImplementation(libs.hypertrace.grpcutils.client)
   integrationTestImplementation(libs.hypertrace.grpcutils.context)
