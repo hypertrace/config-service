@@ -117,7 +117,18 @@ message AttributeRule {
     }
 
     message JwtProjector {
+      // project the value of the claim
       ParsedObjectKeyRule claim_rule = 1;
+      // claim_rule should be in one of too, but can't be moved for backwards compatibility.
+      // Only one of claim_rule or parsed_object_rule should be set
+      oneof parsed_object_rule {
+        // project the value of the header
+        ParsedObjectKeyRule header_rule = 2;
+        // project the list of keys in claims
+        ParsedObjectKeysProjector claim_keys_projector = 3;
+        // project the list of keys in headers
+        ParsedObjectKeysProjector header_keys_projector = 4;
+      }
     }
 
     message JsonProjector {
@@ -132,6 +143,7 @@ message AttributeRule {
       ParsedObjectKeyRule url_param_rule = 1;
     }
 
+    // Will project the value associated with the key in this rule
     message ParsedObjectKeyRule {
       string key = 1;
       // key ideally should be in one of too but can't be moved for backwards compat. Only one of key or key_match will be set
@@ -140,6 +152,14 @@ message AttributeRule {
       }
 
       AttributeRule attribute_rule = 2;
+    }
+
+    // Will project only the keys of the parsed object as a string of comma separated keys
+    message ParsedObjectKeysProjector {
+      oneof key_match {
+        ConditionalProjector.Predicate.StringPredicate key_predicate = 1;
+      }
+      AttributeRule attribute_rule = 5;
     }
 
     message RegexCaptureGroupProjector {
