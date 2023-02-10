@@ -77,9 +77,9 @@ public class ConfigServiceIntegrationTest {
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
-    config1 = getConfigValue("config1.yaml");
-    config2 = getConfigValue("config2.yaml");
-    config3 = getConfigValue("config3.yaml");
+    config1 = getConfigValue("config1.json");
+    config2 = getConfigValue("config2.json");
+    config3 = getConfigValue("config3.json");
   }
 
   @AfterAll
