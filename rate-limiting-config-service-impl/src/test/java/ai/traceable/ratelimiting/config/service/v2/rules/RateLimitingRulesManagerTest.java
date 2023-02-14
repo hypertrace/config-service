@@ -18,7 +18,6 @@ import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
-import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesManager;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesStore;
 import io.grpc.Status;
@@ -53,14 +52,9 @@ public class RateLimitingRulesManagerTest {
     ConfigChangeEventGenerator mockConfigChangeEventGenerator =
         mock(ConfigChangeEventGenerator.class);
     RateLimitingRulesStore rulesStore =
-        new RateLimitingRulesStore(
-            configServiceBlockingStub,
-            mockConfigChangeEventGenerator,
-            mock(RateLimitingConfigServiceConfig.class));
+        new RateLimitingRulesStore(configServiceBlockingStub, mockConfigChangeEventGenerator);
     uuidGenerator = mock(UuidGenerator.class);
-    rulesManager =
-        new RateLimitingRulesManager(
-            rulesStore, uuidGenerator, mock(RateLimitingConfigServiceConfig.class));
+    rulesManager = new RateLimitingRulesManager(rulesStore, uuidGenerator);
   }
 
   @AfterEach

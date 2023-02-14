@@ -24,7 +24,6 @@ dependencies {
   implementation(libs.traceable.platformGateway.ipUtils)
 
   implementation(libs.traceable.activityevent.api)
-  implementation(libs.protobuf.javautil)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

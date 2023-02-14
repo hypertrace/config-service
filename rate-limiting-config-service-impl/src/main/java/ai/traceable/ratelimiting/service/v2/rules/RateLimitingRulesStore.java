@@ -7,57 +7,31 @@ import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
-import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
-import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RateLimitingRulesStore
     extends IdentifiedObjectStoreWithFilter<RateLimitingRule, GetRateLimitingRulesFilter> {
   Logger log = LoggerFactory.getLogger(RateLimitingRulesManager.class);
-  private final List<RateLimitingRule> defaultRateLimitingRules;
 
   @Inject
   public RateLimitingRulesStore(
       ConfigServiceBlockingStub configServiceBlockingStub,
-      ConfigChangeEventGenerator configChangeEventGenerator,
-      RateLimitingConfigServiceConfig config) {
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
         configServiceBlockingStub,
         RATE_LIMITING_RULE_CONFIG_RESOURCE_NAMESPACE,
         RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
-    this.defaultRateLimitingRules = config.getDefaultRateLimitingRules();
-  }
-
-  @Override
-  public List<RateLimitingRule> getAllConfigData(RequestContext context) {
-    List<RateLimitingRule> rateLimitingRules = super.getAllConfigData(context);
-    return mergeRateLimitingRules(rateLimitingRules, defaultRateLimitingRules);
-  }
-
-  @Override
-  public List<RateLimitingRule> getAllConfigData(
-      RequestContext context, GetRateLimitingRulesFilter filter) {
-    List<RateLimitingRule> filteredDefaultRateLimitingRules =
-        defaultRateLimitingRules.stream()
-            .filter(rule -> filterConfigData(rule, filter).isPresent())
-            .collect(Collectors.toUnmodifiableList());
-    List<RateLimitingRule> rateLimitingRules = super.getAllConfigData(context, filter);
-    return mergeRateLimitingRules(rateLimitingRules, filteredDefaultRateLimitingRules);
   }
 
   @Override
@@ -112,18 +86,5 @@ public class RateLimitingRulesStore
 
     List<String> filterEnvironmentIds = filterScope.getEnvironmentScope().getEnvironmentIdsList();
     return ruleEnvironmentIds.stream().anyMatch(filterEnvironmentIds::contains);
-  }
-
-  private List<RateLimitingRule> mergeRateLimitingRules(
-      List<RateLimitingRule> rateLimitingRules, List<RateLimitingRule> defaultRateLimitingRules) {
-    ImmutableMap.Builder<String, RateLimitingRule> builder = ImmutableMap.builder();
-    builder.putAll(this.getRuleIdToRuleMap(defaultRateLimitingRules));
-    builder.putAll(this.getRuleIdToRuleMap(rateLimitingRules));
-    return builder.build().values().stream().collect(Collectors.toUnmodifiableList());
-  }
-
-  private Map<String, RateLimitingRule> getRuleIdToRuleMap(
-      List<RateLimitingRule> rateLimitingRules) {
-    return Maps.uniqueIndex(rateLimitingRules, RateLimitingRule::getId);
   }
 }

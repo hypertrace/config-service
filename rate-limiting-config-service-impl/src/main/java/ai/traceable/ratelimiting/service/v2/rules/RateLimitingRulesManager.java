@@ -9,7 +9,6 @@ import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
-import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import java.util.List;
@@ -21,16 +20,12 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class RateLimitingRulesManager implements RulesManager {
   private final RateLimitingRulesStore rateLimitingRulesStore;
   private final UuidGenerator uuidGenerator;
-  private final RateLimitingConfigServiceConfig rateLimitingConfigServiceConfig;
 
   @Inject
   public RateLimitingRulesManager(
-      RateLimitingRulesStore rateLimitingRulesStore,
-      UuidGenerator uuidGenerator,
-      RateLimitingConfigServiceConfig rateLimitingConfigServiceConfig) {
+      RateLimitingRulesStore rateLimitingRulesStore, UuidGenerator uuidGenerator) {
     this.rateLimitingRulesStore = rateLimitingRulesStore;
     this.uuidGenerator = uuidGenerator;
-    this.rateLimitingConfigServiceConfig = rateLimitingConfigServiceConfig;
   }
 
   @Override
@@ -48,13 +43,7 @@ public class RateLimitingRulesManager implements RulesManager {
     RateLimitingRule rule =
         rateLimitingRulesStore
             .getData(requestContext, ruleId)
-            .orElseGet(
-                () ->
-                    rateLimitingConfigServiceConfig.getDefaultRateLimitingRules().stream()
-                        .filter(rateLimitingRule -> rateLimitingRule.getId().equals(ruleId))
-                        .findFirst()
-                        .orElseThrow(Status.NOT_FOUND::asRuntimeException));
-
+            .orElseThrow(Status.NOT_FOUND::asRuntimeException);
     RateLimitingRule modifiedRule =
         rule.toBuilder().setData(processRateLimitRuleData(ruleData)).build();
     return rateLimitingRulesStore.upsertObject(requestContext, modifiedRule).getData();
