@@ -139,8 +139,9 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
       return Status.NOT_FOUND.withDescription(
           "MaliciousSourcesRule should have at least one valid condition");
     }
+    RuleActionType actionType = ruleInfo.getRuleAction().getActionType();
     for (MaliciousSourcesRuleCondition condition : ruleInfo.getConditionsList()) {
-      status = validate(condition);
+      status = validate(condition, actionType);
       if (!status.isOk()) {
         return status;
       }
@@ -148,18 +149,18 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
     return Status.OK;
   }
 
-  private Status validate(MaliciousSourcesRuleCondition ruleCondition) {
+  private Status validate(MaliciousSourcesRuleCondition ruleCondition, RuleActionType actionType) {
     switch (ruleCondition.getConditionCase()) {
       case IP_LOCATION_TYPE_CONDITION:
-        return validate(ruleCondition.getIpLocationTypeCondition());
+        return validate(ruleCondition.getIpLocationTypeCondition(), actionType);
       case IP_REPUTATION_CONDITION:
         return validate(ruleCondition.getIpReputationCondition());
       case IP_RANGE_CONDITION:
         return validate(ruleCondition.getIpRangeCondition());
       case REGION_CONDITION:
-        return validate(ruleCondition.getRegionCondition());
+        return validate(ruleCondition.getRegionCondition(), actionType);
       case EMAIL_DOMAIN_CONDITION:
-        return validate(ruleCondition.getEmailDomainCondition());
+        return validate(ruleCondition.getEmailDomainCondition(), actionType);
       default:
         return Status.INVALID_ARGUMENT.withDescription(
             "MaliciousSourcesRuleCondition should have a valid condition");
@@ -209,10 +210,17 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
     }
   }
 
-  private Status validate(RegionCondition regionCondition) {
+  private Status validate(RegionCondition regionCondition, RuleActionType actionType) {
     if (regionCondition.getRegionsCount() == 0) {
       return Status.NOT_FOUND.withDescription(
           "RegionCondition in Malicious Sources rule should not have empty Region list");
+    }
+    if (actionType.equals(RuleActionType.RULE_ACTION_TYPE_ALLOW)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          String.format(
+              "Malicious Source rule with condition type {} should not have rule action type {}",
+              regionCondition,
+              actionType));
     }
 
     Set<String> fourLettersIsoCountriesCodes = Locale.getISOCountries(Locale.IsoCountryCode.PART3);
@@ -235,10 +243,19 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
     return Status.OK;
   }
 
-  private Status validate(IpLocationTypeCondition ipLocationTypeCondition) {
+  private Status validate(
+      IpLocationTypeCondition ipLocationTypeCondition, RuleActionType actionType) {
     if (ipLocationTypeCondition.getIpLocationTypesList().isEmpty()) {
       return Status.NOT_FOUND.withDescription(
           "IpLocationTypeCondition in Malicious Sources rule should have a empty IP location type list");
+    }
+    if (actionType.equals(RuleActionType.RULE_ACTION_TYPE_ALLOW)
+        || actionType.equals(RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          String.format(
+              "Malicious Source rule with condition type {} should not have rule action type {}",
+              ipLocationTypeCondition,
+              actionType));
     }
     if (ipLocationTypeCondition.getIpLocationTypesCount() != 0
         && ipLocationTypeCondition.getIpLocationTypesList().stream()
@@ -249,7 +266,7 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
     return Status.OK;
   }
 
-  private Status validate(EmailDomainCondition emailDomainCondition) {
+  private Status validate(EmailDomainCondition emailDomainCondition, RuleActionType actionType) {
     if (!emailDomainCondition.getDataLeakedEmail()
         && !emailDomainCondition.getDisposableEmailDomain()
         && !emailDomainCondition.hasEmailFraudScore()
@@ -257,6 +274,13 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
         && emailDomainCondition.getEmailDomainsCount() == 0) {
       return Status.NOT_FOUND.withDescription(
           "EmailDomainCondition in Malicious Sources rule should have at least one condition");
+    }
+    if (actionType.equals(RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          String.format(
+              "Malicious Source rule with condition type {} should not have rule action type {}",
+              emailDomainCondition,
+              actionType));
     }
     Status status;
     if (emailDomainCondition.hasEmailFraudScore()) {

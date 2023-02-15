@@ -1,5 +1,8 @@
 package ai.traceable.malicioussources.config.service.rules;
 
+import static ai.traceable.malicioussources.config.service.v1.EventSeverity.EVENT_SEVERITY_CRITICAL;
+import static ai.traceable.malicioussources.config.service.v1.IpLocationType.IP_LOCATION_TYPE_HOSTING_PROVIDER;
+import static ai.traceable.malicioussources.config.service.v1.IpLocationType.IP_LOCATION_TYPE_PUBLIC_PROXY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleRequest;
@@ -60,7 +63,7 @@ public class MaliciousSourcesRulesValidatorTest {
                                   com.google.protobuf.Duration.newBuilder().setSeconds(10).build())
                               .setExpirationTimestamp(Timestamp.newBuilder().setSeconds(20).build())
                               .build())
-                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
+                      .setEventSeverity(EVENT_SEVERITY_CRITICAL)
                       .build())
               .addConditions(
                   MaliciousSourcesRuleCondition.newBuilder()
@@ -96,7 +99,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleAction(
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK)
-                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
+                      .setEventSeverity(EVENT_SEVERITY_CRITICAL)
                       .build())
               .addConditions(
                   MaliciousSourcesRuleCondition.newBuilder()
@@ -123,7 +126,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleAction(
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_UNSPECIFIED)
-                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
+                      .setEventSeverity(EVENT_SEVERITY_CRITICAL)
                       .build())
               .addConditions(
                   MaliciousSourcesRuleCondition.newBuilder()
@@ -722,7 +725,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleAction(
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALERT)
-                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
+                      .setEventSeverity(EVENT_SEVERITY_CRITICAL)
                       .build())
               .build();
 
@@ -799,6 +802,131 @@ public class MaliciousSourcesRulesValidatorTest {
       Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of(rule));
       assertEquals(Status.Code.ALREADY_EXISTS, status.getCode());
     }
+
+    @Test
+    @DisplayName(
+        "Should return INVALID_ARGUMENT status when ip type condition and action type is allow")
+    void
+        validateCreateMaliciousSourcesRuleRequest_not_allowing_rule_with_email_domain_condition_and_action_type_block_all_except() {
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("ruleId-1")
+              .setDescription("test-1")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+                      .build())
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setEmailDomainCondition(
+                          EmailDomainCondition.newBuilder().addEmailDomains("test@gmail.com"))
+                      .build())
+              .build();
+
+      CreateMaliciousSourcesRuleRequest createMaliciousSourcesRuleRequest =
+          CreateMaliciousSourcesRuleRequest.newBuilder()
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .build();
+
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
+      assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName(
+        "Should return INVALID_ARGUMENT status when ip type condition and action type is allow")
+    void
+        validateCreateMaliciousSourcesRuleRequest_not_allowing_rule_with_ip_type_condition_and_action_type_allow() {
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("ruleId-1")
+              .setDescription("test-1")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
+                      .build())
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setIpLocationTypeCondition(
+                          IpLocationTypeCondition.newBuilder()
+                              .addIpLocationTypes(IP_LOCATION_TYPE_HOSTING_PROVIDER)
+                              .addIpLocationTypes(IP_LOCATION_TYPE_PUBLIC_PROXY)
+                              .build())
+                      .build())
+              .build();
+
+      CreateMaliciousSourcesRuleRequest createMaliciousSourcesRuleRequest =
+          CreateMaliciousSourcesRuleRequest.newBuilder()
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .build();
+
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
+      assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName(
+        "Should return INVALID_ARGUMENT status when ip type condition and action type is block all except")
+    void
+        validateCreateMaliciousSourcesRuleRequest_not_allowing_rule_with_ip_type_condition_and_action_type_block_all_except() {
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("ruleId-1")
+              .setDescription("test-1")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+                      .build())
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setIpLocationTypeCondition(
+                          IpLocationTypeCondition.newBuilder()
+                              .addIpLocationTypes(IP_LOCATION_TYPE_HOSTING_PROVIDER)
+                              .addIpLocationTypes(IP_LOCATION_TYPE_PUBLIC_PROXY)
+                              .build())
+                      .build())
+              .build();
+
+      CreateMaliciousSourcesRuleRequest createMaliciousSourcesRuleRequest =
+          CreateMaliciousSourcesRuleRequest.newBuilder()
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .build();
+
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
+      assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    @Test
+    @DisplayName(
+        "Should return INVALID_ARGUMENT status when region condition and action type is allow")
+    void
+        validateCreateMaliciousSourcesRuleRequest_not_allowing_rule_with_region_condition_and_action_type_allow() {
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("ruleId-1")
+              .setDescription("test-1")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_ALLOW)
+                      .build())
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setRegionCondition(
+                          RegionCondition.newBuilder()
+                              .addAllRegions(
+                                  List.of(Region.newBuilder().setCountryIsoCode("AFG").build()))
+                              .build())
+                      .build())
+              .build();
+
+      CreateMaliciousSourcesRuleRequest createMaliciousSourcesRuleRequest =
+          CreateMaliciousSourcesRuleRequest.newBuilder()
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .build();
+
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of());
+      assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    }
   }
 
   @Nested
@@ -819,7 +947,7 @@ public class MaliciousSourcesRulesValidatorTest {
                                   com.google.protobuf.Duration.newBuilder().setSeconds(10).build())
                               .setExpirationTimestamp(Timestamp.newBuilder().setSeconds(20).build())
                               .build())
-                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
+                      .setEventSeverity(EVENT_SEVERITY_CRITICAL)
                       .build())
               .addConditions(
                   MaliciousSourcesRuleCondition.newBuilder()
@@ -918,7 +1046,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleAction(
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_UNSPECIFIED)
-                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
+                      .setEventSeverity(EVENT_SEVERITY_CRITICAL)
                       .build())
               .addConditions(
                   MaliciousSourcesRuleCondition.newBuilder()
@@ -1663,7 +1791,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .setRuleAction(
                   MaliciousSourcesRuleAction.newBuilder()
                       .setActionType(RuleActionType.RULE_ACTION_TYPE_ALERT)
-                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
+                      .setEventSeverity(EVENT_SEVERITY_CRITICAL)
                       .build())
               .build();
 

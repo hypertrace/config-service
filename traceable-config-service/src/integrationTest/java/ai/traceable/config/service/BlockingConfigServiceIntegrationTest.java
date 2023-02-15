@@ -438,7 +438,6 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
     assertEquals(
         List.of("11.11.11.11"),
         blockingPolicyConfiguration.getBlockingDetailsList(0).getIpDetails().getIpAddressesList());
-
     assertEquals(
         BLOCKING_CATEGORY_THREAT_ACTOR,
         blockingPolicyConfiguration.getBlockingDetailsList(1).getCategory());
