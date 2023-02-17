@@ -19,6 +19,20 @@ message RateLimitingRuleData {
   Condition condition = 5;
   repeated ThresholdActionConfig threshold_action_configs = 6;
   RuleConfigScope rule_config_scope = 7;
+  RuleStatus rule_status = 8;
+}
+
+message RuleStatus {
+  bool hidden = 1;
+  bool generate_internal_events = 2;
+  RuleSource rule_creation_source = 3;
+
+  enum RuleSource {
+    RULE_SOURCE_UNSPECIFIED = 0;
+    RULE_SOURCE_DEFAULT = 1;
+    RULE_SOURCE_CUSTOMER = 2;
+    RULE_SOURCE_TRACEABLE = 3;
+  }
 }
 
 message RuleConfigScope {
