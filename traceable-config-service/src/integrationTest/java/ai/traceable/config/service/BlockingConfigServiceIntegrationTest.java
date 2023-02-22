@@ -81,6 +81,7 @@ import ai.traceable.platform.actor.v1.Actor;
 import ai.traceable.platform.actor.v1.Actor.Builder;
 import ai.traceable.platform.actor.v1.ActorServiceGrpc;
 import ai.traceable.platform.actor.v1.ActorServiceGrpc.ActorServiceBlockingStub;
+import ai.traceable.platform.actor.v1.IpMetadata;
 import ai.traceable.platform.actor.v1.MaliciousSourcesDetails;
 import ai.traceable.platform.actor.v1.RateLimitCategory;
 import ai.traceable.platform.actor.v1.RateLimitDetails;
@@ -781,6 +782,11 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
             .setScoreCategory(ScoreCategory.SCORE_CATEGORY_HIGH)
             .setStatus(status)
             .addIpAddresses("197.23.5.0")
+            .addIpMetadata(
+                IpMetadata.newBuilder()
+                    .setLastActivityTimestampMillis(20)
+                    .setIpTraitJson("iptrait")
+                    .setIpAddress("197.23.5.0"))
             .addAllLabels(List.of("label1"))
             .setStatusExpiryTimestamp(expiry)
             .setEnvironment(environment);

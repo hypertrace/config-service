@@ -36,7 +36,7 @@ tasks.register<DockerPullImage>("pullEntityServiceImage") {
 }
 
 tasks.register<DockerPullImage>("pullActorServiceImage") {
-  image.set(docker.registryCredentials.url.get() + "/traceable/actor-service:0.2.91")
+  image.set(docker.registryCredentials.url.get() + "/traceable/actor-service:0.2.98")
 }
 
 tasks.register<DockerStartContainer>("startMongoContainer") {
