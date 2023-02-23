@@ -74,6 +74,7 @@ public class WafIntegrationBuilderUtils {
     AwsIntegrationUpdateParams awsIntegrationUpdateParams =
         request.getUpdatedWafIntegrationDetails().getUpdatedAwsIntegrationParams();
     return WafIntegration.newBuilder()
+        .setId(existingWafIntegration.getId())
         .setWafIntegrationDetails(
             WafIntegrationDetails.newBuilder()
                 .setDescription(request.getUpdatedWafIntegrationDetails().getDescription())
