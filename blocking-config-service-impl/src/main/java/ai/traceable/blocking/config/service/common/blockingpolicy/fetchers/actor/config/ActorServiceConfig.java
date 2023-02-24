@@ -13,7 +13,7 @@ import lombok.experimental.FieldDefaults;
 @ToString
 public class ActorServiceConfig {
 
-  private static final String ACTOR_SERVICE_CONFIG_NAME = "actor.service.config";
+  private static final String ACTOR_FETCHER_CONFIG_NAME = "actor.fetcher.config";
   private static final String HOST_CONFIG_NAME = "host";
   private static final String PORT_CONFIG_NAME = "port";
   private static final String CALL_TIMEOUT_CONFIG_NAME = "request.timeout";
@@ -26,11 +26,11 @@ public class ActorServiceConfig {
   int maxNumberOfActors;
 
   public ActorServiceConfig(Config config) {
-    host = config.getConfig(ACTOR_SERVICE_CONFIG_NAME).getString(HOST_CONFIG_NAME);
-    port = config.getConfig(ACTOR_SERVICE_CONFIG_NAME).getInt(PORT_CONFIG_NAME);
+    host = config.getConfig(ACTOR_FETCHER_CONFIG_NAME).getString(HOST_CONFIG_NAME);
+    port = config.getConfig(ACTOR_FETCHER_CONFIG_NAME).getInt(PORT_CONFIG_NAME);
     callTimeoutDuration =
-        config.getConfig(ACTOR_SERVICE_CONFIG_NAME).getDuration(CALL_TIMEOUT_CONFIG_NAME);
-    cacheConfig = new BlockingDataCacheConfig(config.getConfig(ACTOR_SERVICE_CONFIG_NAME));
-    maxNumberOfActors = config.getConfig(ACTOR_SERVICE_CONFIG_NAME).getInt(MAX_NUMBER_OF_ACTORS);
+        config.getConfig(ACTOR_FETCHER_CONFIG_NAME).getDuration(CALL_TIMEOUT_CONFIG_NAME);
+    cacheConfig = new BlockingDataCacheConfig(config.getConfig(ACTOR_FETCHER_CONFIG_NAME));
+    maxNumberOfActors = config.getConfig(ACTOR_FETCHER_CONFIG_NAME).getInt(MAX_NUMBER_OF_ACTORS);
   }
 }

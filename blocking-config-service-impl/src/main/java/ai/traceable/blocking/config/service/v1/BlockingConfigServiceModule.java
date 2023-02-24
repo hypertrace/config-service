@@ -1,9 +1,5 @@
 package ai.traceable.blocking.config.service.v1;
 
-import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc;
-import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc.DetectorConfigServiceBlockingStub;
-import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceGrpc;
-import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceGrpc.AnomalyGlobalConfigServiceBlockingStub;
 import ai.traceable.blocking.config.service.common.BlockingConfigCommonModule;
 import ai.traceable.blocking.config.service.v1.blockingmodsec.ModsecBlockingManagerModule;
 import ai.traceable.blocking.config.service.v1.blockingpolicy.BlockingPolicyConfigurationManagerModule;
@@ -21,6 +17,8 @@ import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 class BlockingConfigServiceModule extends AbstractModule {
+  private static final String BLOCKING_CONFIG_SERVICE_CONFIG_NAME = "blocking.config.service";
+
   private final Channel channel;
   private final Config config;
   private final GrpcChannelRegistry grpcChannelRegistry;
@@ -28,7 +26,7 @@ class BlockingConfigServiceModule extends AbstractModule {
   public BlockingConfigServiceModule(
       Channel channel, Config config, GrpcChannelRegistry grpcChannelRegistry) {
     this.channel = channel;
-    this.config = config;
+    this.config = config.getConfig(BLOCKING_CONFIG_SERVICE_CONFIG_NAME);
     this.grpcChannelRegistry = grpcChannelRegistry;
   }
 
@@ -42,21 +40,6 @@ class BlockingConfigServiceModule extends AbstractModule {
     install(new BlockingPolicyConfigurationManagerModule());
     install(new IpTypeBlockingManagerModule());
     install(new BlockingConfigCommonModule(channel, config, grpcChannelRegistry));
-  }
-
-  @Provides
-  AnomalyGlobalConfigServiceBlockingStub providesAnomalyGlobalConfigServiceBlockingStub(
-      Channel channel) {
-    return AnomalyGlobalConfigServiceGrpc.newBlockingStub(channel)
-        .withCallCredentials(
-            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
-  }
-
-  @Provides
-  DetectorConfigServiceBlockingStub providesDetectorConfigServiceBlockingStub(Channel channel) {
-    return DetectorConfigServiceGrpc.newBlockingStub(channel)
-        .withCallCredentials(
-            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }
 
   @Provides

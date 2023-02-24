@@ -158,16 +158,6 @@ traceableConfigServiceConfig:
   mongo:
     host: mongo
     url: ""
-  actorServiceConfig:
-    host: actor-service
-    port: 50888
-    request:
-      timeout: 10s
-    cache:
-      maxCacheSize: 10000
-      expireAfterWriteDuration: 10m
-      refreshAfterWriteDuration: 30s
-    maxNumberOfActors: 10000
 
   insightsServiceConfig:
     host: insights-service
@@ -200,6 +190,7 @@ traceableConfigServiceConfig:
     modsecurity:
       ruleVersion: MODSEC_RULE_VERSION_V3
   blockingConfigService:
+    agentPollingFrequency: 30s
     iptype:
       mode: VERSIONS_DIR
       resourceFile: iptype/empty_highrisk.csv
@@ -207,6 +198,16 @@ traceableConfigServiceConfig:
         versions.dir = /var/data/models/ipqs/highrisk_csv
         versions.file.name = highrisk.csv
         versions.refresh.duration = 24h
+    actorFetcherConfig:
+      host: actor-service
+      port: 50888
+      request:
+        timeout: 10s
+      cache:
+        maxCacheSize: 10000
+        expireAfterWriteDuration: 10m
+        refreshAfterWriteDuration: 30s
+      maxNumberOfActors: 10000
   featureFlagServiceConfig:
     host: feature-flag-service
     port: 51001

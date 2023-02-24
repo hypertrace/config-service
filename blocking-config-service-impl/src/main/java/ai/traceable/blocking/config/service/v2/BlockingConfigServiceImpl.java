@@ -2,33 +2,37 @@ package ai.traceable.blocking.config.service.v2;
 
 import ai.traceable.blocking.config.service.common.entity.EntityFetcher;
 import ai.traceable.blocking.config.service.v2.BlockingConfigServiceGrpc.BlockingConfigServiceImplBase;
-import ai.traceable.blocking.config.service.v2.blockingpolicy.BlockingPolicyConfigurationManager;
-import ai.traceable.blocking.config.service.v2.iptype.IpTypeBlockingManager;
-import ai.traceable.blocking.config.service.v2.regions.RegionBlockingManager;
+import ai.traceable.config.utils.UuidGenerator;
 import com.google.inject.Inject;
+import com.google.protobuf.Duration;
+import com.typesafe.config.Config;
 import io.grpc.stub.StreamObserver;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
-  private final RegionBlockingManager regionBlockingManager;
-  private final IpTypeBlockingManager ipTypeBlockingManager;
-  private final BlockingPolicyConfigurationManager blockingPolicyConfigurationManager;
+  private static final String AGENT_POLLING_FREQUENCY_CONFIG_NAME = "agent.polling.frequency";
+  private final Set<BlockingConfigManagerBase> blockingConfigManagers;
+  private final java.time.Duration agentPollingFrequency;
   private final EntityFetcher entityFetcher;
+  private final UuidGenerator uuidGenerator;
 
   @Inject
   public BlockingConfigServiceImpl(
-      RegionBlockingManager regionBlockingManager,
-      IpTypeBlockingManager ipTypeBlockingManager,
-      BlockingPolicyConfigurationManager blockingPolicyConfigurationManager,
-      EntityFetcher entityFetcher) {
-    this.regionBlockingManager = regionBlockingManager;
-    this.ipTypeBlockingManager = ipTypeBlockingManager;
-    this.blockingPolicyConfigurationManager = blockingPolicyConfigurationManager;
+      Set<BlockingConfigManagerBase> blockingConfigManagers,
+      Config config,
+      EntityFetcher entityFetcher,
+      UuidGenerator uuidGenerator) {
+    this.blockingConfigManagers = blockingConfigManagers;
+    this.agentPollingFrequency = config.getDuration(AGENT_POLLING_FREQUENCY_CONFIG_NAME);
     this.entityFetcher = entityFetcher;
+    this.uuidGenerator = uuidGenerator;
   }
 
   @Override
@@ -41,6 +45,28 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
 
       Optional<String> environmentId =
           entityFetcher.getEnvironmentId(requestContext, request.getEnvironment());
+
+      List<BlockingConfigResponseElement> responseElements =
+          blockingConfigManagers.stream()
+              .flatMap(
+                  blockingConfigManagerBase ->
+                      blockingConfigManagerBase
+                          .generateBlockingElements(
+                              request.getRequestElementsList(), requestContext, environmentId)
+                          .stream())
+              .collect(Collectors.toUnmodifiableList());
+
+      String hash = uuidGenerator.generateId(responseElements);
+      responseBuilder.setHash(hash);
+      if (!request.getPreviousHash().equals(hash)) {
+        responseBuilder.addAllResponseElements(responseElements);
+      }
+
+      responseBuilder.setRefreshAfterDuration(
+          Duration.newBuilder()
+              .setSeconds(agentPollingFrequency.getSeconds())
+              .setNanos(agentPollingFrequency.getNano())
+              .build());
 
       responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();

@@ -9,7 +9,6 @@ public class RegionBlockingManagerModule extends AbstractModule {
 
   @Override
   protected void configure() {
-    bind(RegionBlockingManager.class).to(DefaultRegionBlockingManager.class);
     bind(new TypeLiteral<GenericRegionRuleConverter<RegionIpBlockingRule>>() {})
         .to(RegionIpRulesConverter.class);
   }

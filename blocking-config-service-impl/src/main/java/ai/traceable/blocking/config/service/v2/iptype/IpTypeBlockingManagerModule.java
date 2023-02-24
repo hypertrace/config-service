@@ -8,7 +8,6 @@ import com.google.inject.TypeLiteral;
 public class IpTypeBlockingManagerModule extends AbstractModule {
   @Override
   protected void configure() {
-    bind(IpTypeBlockingManager.class).to(DefaultIpTypeBlockingManager.class);
     bind(new TypeLiteral<GenericIpTypeRuleConverter<IpTypeRule>>() {})
         .to(IpTypeRuleConverter.class);
   }

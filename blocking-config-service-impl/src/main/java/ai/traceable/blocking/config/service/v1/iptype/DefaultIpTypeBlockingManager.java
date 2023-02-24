@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public class DefaultIpTypeBlockingManager implements IpTypeBlockingManager {
+class DefaultIpTypeBlockingManager implements IpTypeBlockingManager {
   private final IpTypeRuleAggregatorBase<IpTypeRule> ipTypeRuleAggregator;
   private final UuidGenerator uuidGenerator;
 

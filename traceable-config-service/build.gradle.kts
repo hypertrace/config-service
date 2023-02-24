@@ -166,7 +166,7 @@ dependencies {
   integrationTestImplementation(projects.maliciousSourcesConfigServiceApi)
   integrationTestImplementation(projects.detectionExclusionConfigServiceApi)
   integrationTestImplementation(libs.traceable.opaDistributor.api)
-  integrationTestImplementation("org.hypertrace.config.service:partitioner-config-service-impl")
+  integrationTestImplementation(libs.hypertrace.configservice.partitioner.config.impl)
 }
 
 application {

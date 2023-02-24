@@ -1,9 +1,8 @@
 package ai.traceable.blocking.config.service.common;
 
-import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc.DetectorConfigServiceBlockingStub;
-import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceGrpc.AnomalyGlobalConfigServiceBlockingStub;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyConfigurationCommonModule;
 import ai.traceable.blocking.config.service.common.iptype.IpTypeCommonModule;
+import ai.traceable.blocking.config.service.common.modsec.ModsecCommonModule;
 import ai.traceable.blocking.config.service.common.regions.RegionRulesCommonModule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc;
@@ -39,8 +38,7 @@ public class BlockingConfigCommonModule extends AbstractModule {
     install(new BlockingPolicyConfigurationCommonModule(config, grpcChannelRegistry));
     install(new IpTypeCommonModule(config));
     install(new RegionRulesCommonModule());
-    requireBinding(AnomalyGlobalConfigServiceBlockingStub.class);
-    requireBinding(DetectorConfigServiceBlockingStub.class);
+    install(new ModsecCommonModule());
     requireBinding(CustomSignatureConfigServiceBlockingStub.class);
   }
 

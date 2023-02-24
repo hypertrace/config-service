@@ -43,17 +43,6 @@ data:
       }
     }
     {{- end }}
-    actor.service.config = {
-      host = {{ .Values.traceableConfigServiceConfig.actorServiceConfig.host }}
-      port = {{ .Values.traceableConfigServiceConfig.actorServiceConfig.port }}
-      request.timeout = {{ .Values.traceableConfigServiceConfig.actorServiceConfig.request.timeout }}
-      cache = {
-        maxCacheSize = {{ .Values.traceableConfigServiceConfig.actorServiceConfig.cache.maxCacheSize }}
-        refreshAfterWriteDuration = {{ .Values.traceableConfigServiceConfig.actorServiceConfig.cache.refreshAfterWriteDuration }}
-        expireAfterWriteDuration = {{ .Values.traceableConfigServiceConfig.actorServiceConfig.cache.expireAfterWriteDuration }}
-      }
-      maxNumberOfActors = {{ .Values.traceableConfigServiceConfig.actorServiceConfig.maxNumberOfActors }}
-    }
     insights.service.config = {
       host = {{ .Values.traceableConfigServiceConfig.insightsServiceConfig.host }}
       port = {{ .Values.traceableConfigServiceConfig.insightsServiceConfig.port }}
@@ -96,14 +85,28 @@ data:
       }
       shouldPublishActivityEvents = true
     }
-    blocking.config.service.iptype {
-      mode = {{ .Values.traceableConfigServiceConfig.blockingConfigService.iptype.mode }}
-      {{- if .Values.traceableConfigServiceConfig.blockingConfigService.iptype.resourceFile }}
-      resource.file = {{ .Values.traceableConfigServiceConfig.blockingConfigService.iptype.resourceFile }}
-      {{- end }}
-      {{- if .Values.traceableConfigServiceConfig.blockingConfigService.iptype.versions }}
-      {{ .Values.traceableConfigServiceConfig.blockingConfigService.iptype.versions | nindent 6 }}
-      {{- end }}
+    blocking.config.service {
+      agent.polling.frequency = {{ .Values.traceableConfigServiceConfig.blockingConfigService.agentPollingFrequency }}
+      actor.fetcher.config = {
+        host = {{ .Values.traceableConfigServiceConfig.blockingConfigService.actorFetcherConfig.host }}
+        port = {{ .Values.traceableConfigServiceConfig.blockingConfigService.actorFetcherConfig.port }}
+        request.timeout = {{ .Values.traceableConfigServiceConfig.blockingConfigService.actorFetcherConfig.request.timeout }}
+        cache = {
+          maxCacheSize = {{ .Values.traceableConfigServiceConfig.blockingConfigService.actorFetcherConfig.cache.maxCacheSize }}
+          refreshAfterWriteDuration = {{ .Values.traceableConfigServiceConfig.blockingConfigService.actorFetcherConfig.cache.refreshAfterWriteDuration }}
+          expireAfterWriteDuration = {{ .Values.traceableConfigServiceConfig.blockingConfigService.actorFetcherConfig.cache.expireAfterWriteDuration }}
+        }
+        maxNumberOfActors = {{ .Values.traceableConfigServiceConfig.blockingConfigService.actorFetcherConfig.maxNumberOfActors }}
+      }
+      iptype {
+        mode = {{ .Values.traceableConfigServiceConfig.blockingConfigService.iptype.mode }}
+        {{- if .Values.traceableConfigServiceConfig.blockingConfigService.iptype.resourceFile }}
+        resource.file = {{ .Values.traceableConfigServiceConfig.blockingConfigService.iptype.resourceFile }}
+        {{- end }}
+        {{- if .Values.traceableConfigServiceConfig.blockingConfigService.iptype.versions }}
+        {{ .Values.traceableConfigServiceConfig.blockingConfigService.iptype.versions | nindent 6 }}
+        {{- end }}
+      }
     }
     api.naming.config {
       trieModels = {

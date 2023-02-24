@@ -25,6 +25,7 @@ message BlockingConfigRequestElement {
     IpTypeBlockingRulesRequest ip_type_blocking_rules_request = 8;
   }
 }
+
 message GetBlockingRulesResponse {
   string hash = 1;
   google.protobuf.Duration refresh_after_duration = 2;

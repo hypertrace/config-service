@@ -7,7 +7,7 @@ import com.typesafe.config.Config;
 
 public class IpTypeCommonModule extends AbstractModule {
 
-  private static final String IP_TYPE_BLOCKING_CONFIG = "blocking.config.service.iptype";
+  private static final String IP_TYPE_BLOCKING_CONFIG = "iptype";
   private final FileRefreshConfig ipTypeRulesBuilderFileRefreshConfig;
 
   public IpTypeCommonModule(Config config) {

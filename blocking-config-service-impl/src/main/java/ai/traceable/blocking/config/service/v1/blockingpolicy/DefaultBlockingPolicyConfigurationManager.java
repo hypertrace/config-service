@@ -11,8 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-public class DefaultBlockingPolicyConfigurationManager
-    implements BlockingPolicyConfigurationManager {
+class DefaultBlockingPolicyConfigurationManager implements BlockingPolicyConfigurationManager {
   private final GenericBlockingDetailsAggregator<BlockingDetails> blockingDetailsAggregator;
   private final UuidGenerator uuidGenerator;
 

@@ -1,6 +1,8 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers;
 
+import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc;
 import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc.DetectorConfigServiceBlockingStub;
+import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceGrpc;
 import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceGrpc.AnomalyGlobalConfigServiceBlockingStub;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.actor.config.ActorServiceConfig;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
@@ -12,6 +14,7 @@ import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfi
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
+import io.grpc.Channel;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
@@ -28,8 +31,6 @@ public class DataFetcherModule extends AbstractModule {
   protected void configure() {
     bind(GrpcChannelRegistry.class).toInstance(grpcChannelRegistry);
 
-    requireBinding(AnomalyGlobalConfigServiceBlockingStub.class);
-    requireBinding(DetectorConfigServiceBlockingStub.class);
     requireBinding(CustomSignatureConfigServiceBlockingStub.class);
     requireBinding(RegionConfigServiceBlockingStub.class);
     requireBinding(IpRangeConfigServiceBlockingStub.class);
@@ -47,6 +48,21 @@ public class DataFetcherModule extends AbstractModule {
     return ActorServiceGrpc.newBlockingStub(
             channelRegistry.forPlaintextAddress(
                 actorServiceConfig.getHost(), actorServiceConfig.getPort()))
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  AnomalyGlobalConfigServiceBlockingStub providesAnomalyGlobalConfigServiceBlockingStub(
+      Channel channel) {
+    return AnomalyGlobalConfigServiceGrpc.newBlockingStub(channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  DetectorConfigServiceBlockingStub providesDetectorConfigServiceBlockingStub(Channel channel) {
+    return DetectorConfigServiceGrpc.newBlockingStub(channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

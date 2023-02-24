@@ -8,8 +8,6 @@ import com.google.inject.TypeLiteral;
 public class BlockingPolicyConfigurationManagerModule extends AbstractModule {
   @Override
   protected void configure() {
-    bind(BlockingPolicyConfigurationManager.class)
-        .to(DefaultBlockingPolicyConfigurationManager.class);
     bind(new TypeLiteral<BlockingDetailsConverterBase<BlockingDetails>>() {})
         .to(BlockingDetailsConverter.class);
   }

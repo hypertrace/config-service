@@ -86,16 +86,6 @@ class BlockingPolicyDataAggregatorTest {
     for (int i = 0; i < desiredPrecedenceOrder.size(); i++) {
       assertEquals(desiredPrecedenceOrder.get(i), blockingRules.get(i).getInfo());
     }
-
-    // TODO test in v1
-    //    // Test error handling
-    //    doThrow(new RuntimeException())
-    //        .when(actorBasedDataFetcher)
-    //        .getActorBasedRules(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
-    //    blockingRules =
-    //        orderedBlockingDetailsBase.getOrderedBlockingRules(
-    //            REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
-    //    assertEquals(0, blockingRules.size());
   }
 
   private void initializeMocks() {
