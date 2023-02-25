@@ -16,7 +16,6 @@ import ai.traceable.risk.config.service.v2.RiskElementConfig;
 import ai.traceable.risk.config.service.v2.RiskElementConfigUpdateDetails;
 import ai.traceable.risk.config.service.v2.RiskElementConfigUpdates;
 import ai.traceable.risk.config.service.v2.RiskElementPredicate;
-import ai.traceable.risk.config.service.v2.RiskElementScoring;
 import ai.traceable.risk.config.service.v2.StringOperator;
 import ai.traceable.risk.config.service.v2.StringPredicate;
 import ai.traceable.risk.config.service.v2.VulnerabilitySeverityPredicate;
@@ -49,9 +48,6 @@ public class RiskElementConfigValidatorImpl implements RiskElementConfigValidato
             .withDescription("No element config update score provided in request")
             .asRuntimeException();
       }
-
-      validateNonDefaultPresenceOrThrow(
-          updateDetails.getRiskElementScoring(), RiskElementScoring.SCORE_FIELD_NUMBER);
 
       status =
           requestValidator.validateScoreValue(updateDetails.getRiskElementScoring().getScore());

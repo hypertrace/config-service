@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doReturn;
 
 import ai.traceable.risk.config.service.v2.AuthCategoryPredicate;
@@ -75,6 +76,7 @@ class RiskElementConfigValidatorImplTest {
   @Test
   void testValidateRiskElementUpdateDetailsWithNoScore() {
     doReturn(Status.OK).when(mockRequestValidator).validateElementId(any());
+    doReturn(Status.OK).when(mockRequestValidator).validateScoreValue(anyInt());
     final RiskElementConfigUpdates updates =
         RiskElementConfigUpdates.newBuilder()
             .addRiskElementConfigUpdateDetails(
@@ -82,9 +84,7 @@ class RiskElementConfigValidatorImplTest {
                     .setId("responseSensitivityCritical")
                     .setRiskElementScoring(RiskElementScoring.getDefaultInstance()))
             .build();
-    assertThrows(
-        StatusRuntimeException.class,
-        () -> elementConfigValidator.validateRiskElementUpdateDetails(updates));
+    assertDoesNotThrow(() -> elementConfigValidator.validateRiskElementUpdateDetails(updates));
   }
 
   @Test

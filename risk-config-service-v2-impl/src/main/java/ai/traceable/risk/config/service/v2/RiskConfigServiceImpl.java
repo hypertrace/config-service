@@ -34,7 +34,8 @@ public class RiskConfigServiceImpl extends RiskConfigServiceGrpc.RiskConfigServi
       log.error(
           "Get risk scoring grid config failed with the request: {} and context: {}",
           request,
-          RequestContext.CURRENT.get());
+          RequestContext.CURRENT.get(),
+          e);
       responseObserver.onError(e);
     }
   }
@@ -54,7 +55,8 @@ public class RiskConfigServiceImpl extends RiskConfigServiceGrpc.RiskConfigServi
       log.error(
           "Update risk scoring grid config failed with the request: {} and context: {}",
           request,
-          RequestContext.CURRENT.get());
+          RequestContext.CURRENT.get(),
+          e);
       responseObserver.onError(e);
     }
   }
@@ -74,7 +76,8 @@ public class RiskConfigServiceImpl extends RiskConfigServiceGrpc.RiskConfigServi
       log.error(
           "Reset risk scoring grid config failed with the request: {} and context: {}",
           request,
-          RequestContext.CURRENT.get());
+          RequestContext.CURRENT.get(),
+          e);
       responseObserver.onError(e);
     }
   }
@@ -93,7 +96,8 @@ public class RiskConfigServiceImpl extends RiskConfigServiceGrpc.RiskConfigServi
       log.error(
           "Get risk Contributor configs failed with the request: {} and context: {}",
           request,
-          RequestContext.CURRENT.get());
+          RequestContext.CURRENT.get(),
+          e);
       responseObserver.onError(e);
     }
   }
@@ -113,7 +117,8 @@ public class RiskConfigServiceImpl extends RiskConfigServiceGrpc.RiskConfigServi
       log.error(
           "Update risk Contributor configs failed with the request: {} and context: {}",
           request,
-          RequestContext.CURRENT.get());
+          RequestContext.CURRENT.get(),
+          e);
       responseObserver.onError(e);
     }
   }
@@ -138,7 +143,8 @@ public class RiskConfigServiceImpl extends RiskConfigServiceGrpc.RiskConfigServi
       log.error(
           "Reset risk Contributor configs failed with the request: {} and context: {}",
           request,
-          RequestContext.CURRENT.get());
+          RequestContext.CURRENT.get(),
+          e);
       responseObserver.onError(e);
     }
   }
