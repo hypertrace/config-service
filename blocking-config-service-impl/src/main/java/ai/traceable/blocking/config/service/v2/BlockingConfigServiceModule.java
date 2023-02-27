@@ -3,6 +3,7 @@ package ai.traceable.blocking.config.service.v2;
 import ai.traceable.blocking.config.service.common.BlockingConfigCommonModule;
 import ai.traceable.blocking.config.service.v2.blockingpolicy.BlockingPolicyConfigurationManager;
 import ai.traceable.blocking.config.service.v2.blockingpolicy.BlockingPolicyConfigurationManagerModule;
+import ai.traceable.blocking.config.service.v2.customsignature.CustomSignatureBlockingManager;
 import ai.traceable.blocking.config.service.v2.iptype.IpTypeBlockingManager;
 import ai.traceable.blocking.config.service.v2.iptype.IpTypeBlockingManagerModule;
 import ai.traceable.blocking.config.service.v2.modsec.ModsecBlockingManager;
@@ -41,6 +42,7 @@ class BlockingConfigServiceModule extends AbstractModule {
     managerBaseMultibinder.addBinding().to(IpTypeBlockingManager.class);
     managerBaseMultibinder.addBinding().to(ModsecBlockingManager.class);
     managerBaseMultibinder.addBinding().to(RegionBlockingManager.class);
+    managerBaseMultibinder.addBinding().to(CustomSignatureBlockingManager.class);
 
     bind(Channel.class).toInstance(channel);
     bind(Config.class).toInstance(config);

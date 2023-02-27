@@ -173,7 +173,8 @@ public class CustomSignatureConfigServiceImpl
     try {
       List<CustomSignatureRule> rules =
           rulesManager.getCustomSignatureRules(RequestContext.CURRENT.get(), request.getFilter());
-      GetCustomSignatureModsecRulesResponse response = modsecRulesManager.getModsecRules(rules);
+      GetCustomSignatureModsecRulesResponse response =
+          modsecRulesManager.getModsecRules(rules, request.getRuleVersion());
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception e) {

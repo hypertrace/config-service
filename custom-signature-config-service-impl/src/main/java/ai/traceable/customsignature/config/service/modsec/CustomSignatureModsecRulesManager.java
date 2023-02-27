@@ -5,6 +5,7 @@ import ai.traceable.customsignature.config.service.modsec.directives.ModsecDirec
 import ai.traceable.customsignature.config.service.modsec.registry.ModsecActions;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
+import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRuleDetails;
 import ai.traceable.customsignature.config.service.v1.EventType;
@@ -41,20 +42,19 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
   }
 
   private final ModsecRuleConversion modsecRuleConversion;
-  private final String modsecConfigDirectives;
+  private final ModsecDirectivesManager modsecDirectivesManager;
 
   @Inject
   public CustomSignatureModsecRulesManager(
-      ModsecRuleConversion modsecRuleConversion,
-      ModsecDirectivesManager modsecDirectivesManager,
-      ModsecRuleVersion modsecRuleVersion) {
+      ModsecRuleConversion modsecRuleConversion, ModsecDirectivesManager modsecDirectivesManager) {
     this.modsecRuleConversion = modsecRuleConversion;
-    modsecConfigDirectives = modsecDirectivesManager.getModsecHeader(modsecRuleVersion);
+    this.modsecDirectivesManager = modsecDirectivesManager;
   }
 
   @Override
   public GetCustomSignatureModsecRulesResponse getModsecRules(
-      List<CustomSignatureRule> customSignatureRules) {
+      List<CustomSignatureRule> customSignatureRules,
+      CustomModsecRuleVersion customModsecRuleVersion) {
     List<CustomSignatureRuleDetails> ruleDetailsList = new ArrayList<>();
     List<String> allowModsecRules = new ArrayList<>();
     List<String> violationModsecRules = new ArrayList<>();
@@ -99,7 +99,9 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
         Stream.concat(allowModsecRules.stream(), violationModsecRules.stream())
             .collect(Collectors.toList());
     return GetCustomSignatureModsecRulesResponse.newBuilder()
-        .setModsecRulesBlob(modsecConfigDirectives + String.join(NEW_LINES_DELIMITER, modsecRules))
+        .setModsecRulesBlob(
+            getModsecDirective(customModsecRuleVersion)
+                + String.join(NEW_LINES_DELIMITER, modsecRules))
         .addAllRules(ruleDetailsList)
         .build();
   }
@@ -155,5 +157,15 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
     ModsecActions modsecActions = new ModsecActions(modsecIdAssignment, ruleId, ruleName);
     return modsecRuleConversion.getModsecRuleForANDClauses(
         clauseGroup.getClausesList(), modsecActions);
+  }
+
+  private String getModsecDirective(CustomModsecRuleVersion customModsecRuleVersion) {
+    switch (customModsecRuleVersion) {
+      case CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS:
+        return modsecDirectivesManager.getModsecHeader(
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS);
+      default:
+        return modsecDirectivesManager.getModsecHeader(ModsecRuleVersion.MODSEC_RULE_VERSION_V3);
+    }
   }
 }

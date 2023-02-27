@@ -42,6 +42,7 @@ message GetCustomSignatureRulesResponse {
 
 message GetCustomSignatureModsecRulesRequest {
   GetRulesFilter filter = 1;
+  CustomModsecRuleVersion rule_version = 2;
 }
 
 message GetCustomSignatureModsecRulesResponse {
@@ -217,4 +218,10 @@ enum MatchCategory {
   MATCH_CATEGORY_UNSPECIFIED = 0;
   MATCH_CATEGORY_REQUEST = 1;
   MATCH_CATEGORY_RESPONSE = 2;
+}
+
+enum CustomModsecRuleVersion {
+  CUSTOM_MODSEC_RULE_VERSION_UNSPECIFIED = 0;
+  CUSTOM_MODSEC_RULE_VERSION_V3 = 1;
+  CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS = 2;
 }

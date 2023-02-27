@@ -1,6 +1,7 @@
 package ai.traceable.blocking.config.service.common;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyConfigurationCommonModule;
+import ai.traceable.blocking.config.service.common.customsignature.CustomSignatureCommonModule;
 import ai.traceable.blocking.config.service.common.iptype.IpTypeCommonModule;
 import ai.traceable.blocking.config.service.common.modsec.ModsecCommonModule;
 import ai.traceable.blocking.config.service.common.regions.RegionRulesCommonModule;
@@ -39,6 +40,7 @@ public class BlockingConfigCommonModule extends AbstractModule {
     install(new IpTypeCommonModule(config));
     install(new RegionRulesCommonModule());
     install(new ModsecCommonModule());
+    install(new CustomSignatureCommonModule());
     requireBinding(CustomSignatureConfigServiceBlockingStub.class);
   }
 
