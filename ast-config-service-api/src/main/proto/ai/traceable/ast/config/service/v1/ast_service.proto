@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package ai.traceable.ast.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/ast/config/service/v1/ast.proto";
+
+service AstConfigService {
+  rpc CreateScanPurgeConfig (CreateScanPurgeConfigRequest) returns (CreateScanPurgeConfigResponse) {}
+  rpc GetScanPurgeConfig (GetScanPurgeConfigRequest) returns (GetScanPurgeConfigResponse) {}
+}
+
+message CreateScanPurgeConfigRequest {
+  ScanPurgeConfig purge_config = 1;
+}
+
+message CreateScanPurgeConfigResponse {
+  ScanPurgeConfig purge_config = 1;
+}
+
+message GetScanPurgeConfigRequest {}
+
+message GetScanPurgeConfigResponse {
+  ScanPurgeConfig purge_config = 1;
+}
