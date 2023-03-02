@@ -321,21 +321,6 @@ class WafIntegrationConfigRequestValidatorTest {
           wafIntegrationConfigRequestValidator.validateOrThrow(request2, REQUEST_CONTEXT);
         });
 
-    // access key id field is absent
-    UpdateWafIntegrationRequest request3 =
-        UpdateWafIntegrationRequest.newBuilder()
-            .setId("id")
-            .setUpdatedWafIntegrationDetails(
-                UpdatedWafIntegrationDetails.newBuilder()
-                    .setName("name")
-                    .setUpdatedAwsIntegrationParams(awsIntegrationUpdateParams.clearAccessKeyId()))
-            .build();
-    assertThrows(
-        StatusRuntimeException.class,
-        () -> {
-          wafIntegrationConfigRequestValidator.validateOrThrow(request3, REQUEST_CONTEXT);
-        });
-
     // resources field is absent
     UpdateWafIntegrationRequest request4 =
         UpdateWafIntegrationRequest.newBuilder()

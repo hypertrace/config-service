@@ -139,8 +139,6 @@ public class WafIntegrationConfigRequestValidator {
   private void validateUpdatedAwsIntegrationParams(
       AwsIntegrationUpdateParams awsIntegrationUpdateParams) {
     validateNonDefaultPresenceOrThrow(
-        awsIntegrationUpdateParams, AwsIntegrationUpdateParams.ACCESS_KEY_ID_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(
         awsIntegrationUpdateParams, AwsIntegrationUpdateParams.RESOURCES_FIELD_NUMBER);
     awsIntegrationUpdateParams.getResourcesList().forEach(this::validateAwsResource);
   }
