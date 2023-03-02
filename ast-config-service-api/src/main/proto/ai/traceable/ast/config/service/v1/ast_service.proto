@@ -7,15 +7,18 @@ option java_multiple_files = true;
 import "ai/traceable/ast/config/service/v1/ast.proto";
 
 service AstConfigService {
-  rpc CreateScanPurgeConfig (CreateScanPurgeConfigRequest) returns (CreateScanPurgeConfigResponse) {}
+  // read api
   rpc GetScanPurgeConfig (GetScanPurgeConfigRequest) returns (GetScanPurgeConfigResponse) {}
+
+  // write api
+  rpc UpdateScanPurgeConfig (UpdateScanPurgeConfigRequest) returns (UpdateScanPurgeConfigResponse) {}
 }
 
-message CreateScanPurgeConfigRequest {
+message UpdateScanPurgeConfigRequest {
   ScanPurgeConfig purge_config = 1;
 }
 
-message CreateScanPurgeConfigResponse {
+message UpdateScanPurgeConfigResponse {
   ScanPurgeConfig purge_config = 1;
 }
 
