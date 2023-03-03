@@ -20,10 +20,14 @@ import java.util.List;
 
 public class TrainingConfigValidator {
   private final AnomalyConfigValidator anomalyConfigValidator;
+  private final TrainingConfigRegexValidator trainingConfigRegexValidator;
 
   @Inject
-  public TrainingConfigValidator(AnomalyConfigValidator anomalyConfigValidator) {
+  public TrainingConfigValidator(
+      AnomalyConfigValidator anomalyConfigValidator,
+      TrainingConfigRegexValidator trainingConfigRegexValidator) {
     this.anomalyConfigValidator = anomalyConfigValidator;
+    this.trainingConfigRegexValidator = trainingConfigRegexValidator;
   }
 
   public Status validate(GetScopedTrainingConfigRequest request) {
@@ -99,7 +103,7 @@ public class TrainingConfigValidator {
         new EnumMap<>(LocalTrainingConfig.ConfigCase.class);
 
     for (TrainingConfig trainingConfig : trainingConfigs) {
-
+      Status status;
       switch (trainingConfig.getTrainingConfigCase()) {
         case METADATA_TRAINING_CONFIG:
           MetadataTrainingConfig.ConfigCase metadataTrainingConfigCase =
@@ -110,6 +114,14 @@ public class TrainingConfigValidator {
                     "UpdateScopedTrainingConfigRequest should have only one training config for metadataTrainingConfigType: %s",
                     metadataTrainingConfigCase));
           } else {
+            MetadataTrainingConfig metadataTrainingConfig =
+                trainingConfig.getMetadataTrainingConfig();
+            status =
+                trainingConfigRegexValidator.validateMetadataTrainingConfigRegex(
+                    metadataTrainingConfig);
+            if (!status.isOk()) {
+              return status;
+            }
             metadataTrainingConfigMap.put(metadataTrainingConfigCase, trainingConfig);
           }
           break;
@@ -122,6 +134,14 @@ public class TrainingConfigValidator {
                     "UpdateScopedTrainingConfigRequest should have only one training config for vulnerabilityTrainingConfigType: %s",
                     vulnerabilityTrainingConfigCase));
           } else {
+            VulnerabilityTrainingConfig vulnerabilityTrainingConfig =
+                trainingConfig.getVulnerabilityTrainingConfig();
+            status =
+                trainingConfigRegexValidator.validateVulnerabilityTrainingConfigRegex(
+                    vulnerabilityTrainingConfig);
+            if (!status.isOk()) {
+              return status;
+            }
             vulnerabilityTrainingConfigMap.put(vulnerabilityTrainingConfigCase, trainingConfig);
           }
           break;
@@ -134,6 +154,13 @@ public class TrainingConfigValidator {
                     "UpdateScopedTrainingConfigRequest should have only one training config for sessionTrainingConfigType: %s",
                     sessionTrainingConfigCase));
           } else {
+            SessionTrainingConfig sessionTrainingConfig = trainingConfig.getSessionTrainingConfig();
+            status =
+                trainingConfigRegexValidator.validateSessionTrainingConfigRegex(
+                    sessionTrainingConfig);
+            if (!status.isOk()) {
+              return status;
+            }
             sessionTrainingConfigMap.put(sessionTrainingConfigCase, trainingConfig);
           }
           break;
@@ -146,6 +173,14 @@ public class TrainingConfigValidator {
                     "UpdateScopedTrainingConfigRequest should have only one training config for apiNamingTrainingConfigType: %s",
                     apiNamingTrainingConfigCase));
           } else {
+            ApiNamingTrainingConfig apiNamingTrainingConfig =
+                trainingConfig.getApiNamingTrainingConfig();
+            status =
+                trainingConfigRegexValidator.validateApiNamingTrainingConfigRegex(
+                    apiNamingTrainingConfig);
+            if (!status.isOk()) {
+              return status;
+            }
             apiNamingTrainingConfigMap.put(apiNamingTrainingConfigCase, trainingConfig);
           }
           break;

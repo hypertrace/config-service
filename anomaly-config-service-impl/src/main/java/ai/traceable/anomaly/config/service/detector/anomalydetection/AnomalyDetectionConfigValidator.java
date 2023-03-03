@@ -32,10 +32,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class AnomalyDetectionConfigValidator {
   private final AnomalyConfigValidator anomalyConfigValidator;
+  private final AnomalyDetectionConfigRegexValidator anomalyDetectionConfigRegexValidator;
   private final Map<String, ApiDefinitionMetadataAnomalyDetectionConfig> apiDefRuleIdToConfigMap;
   private final Map<String, SessionDefinitionMetadataAnomalyDetectionConfig>
       sessionDefRuleIdToConfigMap;
@@ -44,10 +46,12 @@ public class AnomalyDetectionConfigValidator {
   @Inject
   public AnomalyDetectionConfigValidator(
       AnomalyConfigValidator anomalyConfigValidator,
+      AnomalyDetectionConfigRegexValidator anomalyDetectionConfigRegexValidator,
       ApiDefinitionRegistry apiDefinitionRegistry,
       SessionRulesRegistry sessionRulesRegistry,
       ModsecRulesRegistry modsecRulesRegistry) {
     this.anomalyConfigValidator = anomalyConfigValidator;
+    this.anomalyDetectionConfigRegexValidator = anomalyDetectionConfigRegexValidator;
     this.apiDefRuleIdToConfigMap = apiDefinitionRegistry.getApiDefRuleIdToDetectionConfigMap();
     this.sessionDefRuleIdToConfigMap =
         sessionRulesRegistry.getSessionDefRuleIdToDetectionConfigMap();
@@ -236,7 +240,12 @@ public class AnomalyDetectionConfigValidator {
                 "UpdateScopedAnomalyDetectionConfigRequest should have only one session definition metadata detection config for configCase: %s",
                 configCase));
       }
-
+      Status status =
+          anomalyDetectionConfigRegexValidator
+              .validateSessionDefinitionMetadataAnomalyDetectionConfigRegex(detectionConfig);
+      if (!status.isOk()) {
+        return status;
+      }
       if (ruleId.isEmpty()) {
         configCaseMap.put(configCase, detectionConfig);
       } else {
@@ -265,7 +274,6 @@ public class AnomalyDetectionConfigValidator {
       String ruleId = detectionConfig.getAnomalyRuleId();
       ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase configCase =
           detectionConfig.getConfigCase();
-
       if (ruleId.isEmpty()) {
         if (configCase.equals(
             ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase.CONFIG_NOT_SET)) {
@@ -297,14 +305,18 @@ public class AnomalyDetectionConfigValidator {
                 "UpdateScopedAnomalyDetectionConfigRequest should have only one api definition detection config for configCase: %s",
                 configCase));
       }
-
+      Status status =
+          anomalyDetectionConfigRegexValidator
+              .validateApiDefinitionMetadataAnomalyDetectionConfigRegex(detectionConfig);
+      if (!status.isOk()) {
+        return status;
+      }
       if (ruleId.isEmpty()) {
         configCaseMap.put(configCase, detectionConfig);
       } else {
         ruleIdMap.put(ruleId, detectionConfig);
       }
     }
-
     return Status.OK;
   }
 
@@ -361,6 +373,17 @@ public class AnomalyDetectionConfigValidator {
   private Status validateStateBasedDetectionConfigs(
       List<ApiStateBasedAnomalyDetectionConfig> stateBasedDetectionConfigs) {
     try {
+      Status status =
+          stateBasedDetectionConfigs.stream()
+              .map(
+                  anomalyDetectionConfigRegexValidator
+                      ::validateApiStateBasedAnomalyDetectionConfigRegex)
+              .filter(Predicate.not(Status::isOk))
+              .findFirst()
+              .orElse(Status.OK);
+      if (!status.isOk()) {
+        return status;
+      }
       stateBasedDetectionConfigs.stream()
           .collect(
               Collectors.toMap(

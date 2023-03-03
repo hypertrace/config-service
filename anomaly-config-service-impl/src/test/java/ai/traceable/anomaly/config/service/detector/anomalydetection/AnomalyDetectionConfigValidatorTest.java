@@ -12,6 +12,7 @@ import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry
 import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.StringList;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
@@ -31,13 +32,18 @@ import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetection
 import ai.traceable.anomaly.config.service.v1.detector.GetUnresolvedScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.IntegerAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.LearntApiAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.MissingParamAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAllDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
+import ai.traceable.anomaly.config.service.v1.detector.MultiValuedStringParamRule;
+import ai.traceable.anomaly.config.service.v1.detector.MultiValuedStringParamRulesList;
 import ai.traceable.anomaly.config.service.v1.detector.ObjectBolaAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.SessionDefinitionMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UnderDiscoveryApiAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.UnderThresholdLearningApiAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.UnknownParamAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.UserIdBolaAnomalyConfig;
 import io.grpc.Status;
@@ -48,6 +54,8 @@ import org.junit.jupiter.api.Test;
 public class AnomalyDetectionConfigValidatorTest {
 
   private final AnomalyConfigValidator anomalyConfigValidator = new AnomalyConfigValidator();
+  private final AnomalyDetectionConfigRegexValidator anomalyDetectionConfigRegexValidator =
+      new AnomalyDetectionConfigRegexValidator();
   private final ConfigConverter configConverter = new ConfigConverter();
   private final ModsecRuleUtils modsecRuleUtils = new ModsecRuleUtils();
   private final ModsecCrsRulesHandler modsecCrsRulesHandler =
@@ -55,6 +63,7 @@ public class AnomalyDetectionConfigValidatorTest {
   private final AnomalyDetectionConfigValidator validator =
       new AnomalyDetectionConfigValidator(
           anomalyConfigValidator,
+          anomalyDetectionConfigRegexValidator,
           new ApiDefinitionRegistryImpl(configConverter),
           new SessionRulesRegistryImpl(configConverter),
           new ModsecRulesRegistryImpl(configConverter, modsecCrsRulesHandler));
@@ -739,6 +748,269 @@ public class AnomalyDetectionConfigValidatorTest {
     assertEquals(
         "Invalid EmailDomainAnomalyConfig: highEmailFraudScoreMinThreshold > criticalEmailFraudScoreMinThreshold",
         status.getDescription());
+  }
+
+  @Test
+  void testApiStateBasedAnomalyDetectionConfigRegexValidation() {
+    UpdateScopedAnomalyDetectionConfigRequest request;
+
+    AnomalyDetectionConfig detectionConfig =
+        AnomalyDetectionConfig.newBuilder()
+            .setApiStateBasedAnomalyDetectionConfig(
+                ApiStateBasedAnomalyDetectionConfig.newBuilder()
+                    .setUnderThresholdLearningApi(
+                        UnderThresholdLearningApiAnomalyConfig.newBuilder()
+                            .setRejectUrlRegexStrings(
+                                StringList.newBuilder().addAllValues(List.of("[")).build())
+                            .build())
+                    .build())
+            .build();
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig)))
+            .build();
+    Status status = validator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("Invalid Regex pattern: ["));
+
+    AnomalyDetectionConfig detectionConfig1 =
+        AnomalyDetectionConfig.newBuilder()
+            .setApiStateBasedAnomalyDetectionConfig(
+                ApiStateBasedAnomalyDetectionConfig.newBuilder()
+                    .setUnderThresholdLearningApi(
+                        UnderThresholdLearningApiAnomalyConfig.newBuilder()
+                            .setRejectUrlRegexStrings(
+                                StringList.newBuilder()
+                                    .addAllValues(
+                                        List.of(
+                                            "/^[(]{0,1}[0-9]{3}[)]{0,1}[-\\s\\.]{0,1}[0-9]{3}[-\\s\\.]{0,1}[0-9]{4}$/\n"))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig1)))
+            .build();
+    status = validator.validate(request);
+    assertEquals(Status.OK.getCode(), status.getCode());
+
+    AnomalyDetectionConfig detectionConfig2 =
+        AnomalyDetectionConfig.newBuilder()
+            .setApiStateBasedAnomalyDetectionConfig(
+                ApiStateBasedAnomalyDetectionConfig.newBuilder()
+                    .setUnderDiscoveryApi(
+                        UnderDiscoveryApiAnomalyConfig.newBuilder()
+                            .setRejectUrlRegexStrings(
+                                StringList.newBuilder().addAllValues(List.of("[")).build())
+                            .build())
+                    .build())
+            .build();
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig2)))
+            .build();
+    status = validator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("Invalid Regex pattern: ["));
+
+    AnomalyDetectionConfig detectionConfig3 =
+        AnomalyDetectionConfig.newBuilder()
+            .setApiStateBasedAnomalyDetectionConfig(
+                ApiStateBasedAnomalyDetectionConfig.newBuilder()
+                    .setUnderDiscoveryApi(
+                        UnderDiscoveryApiAnomalyConfig.newBuilder()
+                            .setRejectUrlRegexStrings(
+                                StringList.newBuilder()
+                                    .addAllValues(
+                                        List.of(
+                                            "/^[(]{0,1}[0-9]{3}[)]{0,1}[-\\s\\.]{0,1}[0-9]{3}[-\\s\\.]{0,1}[0-9]{4}$/\n"))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig3)))
+            .build();
+    status = validator.validate(request);
+    assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
+  void testApiDefinitionRegexValidation() {
+
+    UpdateScopedAnomalyDetectionConfigRequest request;
+
+    AnomalyDetectionConfig detectionConfig =
+        AnomalyDetectionConfig.newBuilder()
+            .setApiDefinitionMetadataAnomalyDetectionConfig(
+                ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                    .setMissingParam(
+                        MissingParamAnomalyConfig.newBuilder()
+                            .setSevereRegexStrings(
+                                StringList.newBuilder().addAllValues(List.of("[")).build())
+                            .setAuthRegexStrings(
+                                StringList.newBuilder().addAllValues(List.of("[")).build())
+                            .build()))
+            .build();
+
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig)))
+            .build();
+    Status status = validator.validate(request);
+
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("Invalid Regex pattern: ["));
+
+    AnomalyDetectionConfig detectionConfig1 =
+        AnomalyDetectionConfig.newBuilder()
+            .setApiDefinitionMetadataAnomalyDetectionConfig(
+                ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                    .setUnknownParam(
+                        UnknownParamAnomalyConfig.newBuilder()
+                            .setSevereRegexStrings(
+                                StringList.newBuilder()
+                                    .addAllValues(
+                                        List.of(
+                                            "[",
+                                            "/^[(]{0,1}[0-9]{3}[)]{0,1}[-\\s\\.]{0,1}[0-9]{3}[-\\s\\.]{0,1}[0-9]{4}$/"))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig1)))
+            .build();
+
+    status = validator.validate(request);
+
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("Invalid Regex pattern: ["));
+
+    AnomalyDetectionConfig detectionConfig2 =
+        AnomalyDetectionConfig.newBuilder()
+            .setApiDefinitionMetadataAnomalyDetectionConfig(
+                ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                    .setUnknownParam(
+                        UnknownParamAnomalyConfig.newBuilder()
+                            .setSevereRegexStrings(
+                                StringList.newBuilder()
+                                    .addAllValues(
+                                        List.of(
+                                            "/^[(]{0,1}[0-9]{3}[)]{0,1}[-\\s\\.]{0,1}[0-9]{3}[-\\s\\.]{0,1}[0-9]{4}$/"))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig2)))
+            .build();
+
+    status = validator.validate(request);
+
+    assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
+  void testSessionDefinitionMetadataRegexValidation() {
+
+    UpdateScopedAnomalyDetectionConfigRequest request;
+
+    AnomalyDetectionConfig detectionConfig =
+        AnomalyDetectionConfig.newBuilder()
+            .setSessionDefinitionMetadataAnomalyDetectionConfig(
+                SessionDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                    .setObjectBola(
+                        ObjectBolaAnomalyConfig.newBuilder()
+                            .setRequestParamValuesNotAllowed(
+                                StringList.newBuilder().addAllValues(List.of("params")).build())
+                            .setMultiValuedStringParamRules(
+                                MultiValuedStringParamRulesList.newBuilder()
+                                    .addAllRules(
+                                        List.of(
+                                            MultiValuedStringParamRule.newBuilder()
+                                                .setKeyRegex("[")
+                                                .setValueDelimiter("/")
+                                                .setValueRegex("]")
+                                                .build()))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig)))
+            .build();
+
+    Status status = validator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("Invalid Regex pattern: ["));
+
+    AnomalyDetectionConfig detectionConfig1 =
+        AnomalyDetectionConfig.newBuilder()
+            .setSessionDefinitionMetadataAnomalyDetectionConfig(
+                SessionDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+                    .setObjectBola(
+                        ObjectBolaAnomalyConfig.newBuilder()
+                            .setRequestParamValuesNotAllowed(
+                                StringList.newBuilder().addAllValues(List.of("params")).build())
+                            .setMultiValuedStringParamRules(
+                                MultiValuedStringParamRulesList.newBuilder()
+                                    .addAllRules(
+                                        List.of(
+                                            MultiValuedStringParamRule.newBuilder()
+                                                .setKeyRegex(
+                                                    "/^[(]{0,1}[0-9]{3}[)]{0,1}[-\\s\\.]{0,1}[0-9]{3}[-\\s\\.]{0,1}[0-9]{4}$/\n")
+                                                .setValueDelimiter("/")
+                                                .setValueRegex(
+                                                    "/^[(]{0,1}[0-9]{3}[)]{0,1}[-\\s\\.]{0,1}[0-9]{3}[-\\s\\.]{0,1}[0-9]{4}$/\n")
+                                                .build()))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    request =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllAnomalyDetectionConfigs(List.of(detectionConfig1)))
+            .build();
+
+    status = validator.validate(request);
+    assertEquals(Status.OK.getCode(), status.getCode());
   }
 
   private AnomalyDetectionConfig buildModSecConfig(String ruleId, Optional<String> subRuleId) {

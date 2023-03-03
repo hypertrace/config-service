@@ -9,20 +9,32 @@ import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.StringList;
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ContentSizeTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.CustomRuleConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.CustomRulesListConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.DeleteAnomalyConfigOption;
 import ai.traceable.anomaly.config.service.v1.trainer.DeleteScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.DeviceTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.EnumerableParamTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.GetScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.GetTrainingConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.trainer.GetUnresolvedScopedTrainingConfigRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.JwtParamsTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.LackOfEncryptionTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.MetadataTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.MultiValuedStringParamRule;
+import ai.traceable.anomaly.config.service.v1.trainer.MultiValuedStringParamRulesList;
+import ai.traceable.anomaly.config.service.v1.trainer.ObjectBolaTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.ParamSusceptibilityConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.PiiSensitiveDataTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.RejectFilterConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.SensitiveDataTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.SessionTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.TrieModelTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.UpdateScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.UrlFilterConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.UrlPathFilterConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig;
 import io.grpc.Status;
 import java.util.List;
@@ -31,6 +43,9 @@ import org.junit.jupiter.api.Test;
 
 class TrainingConfigValidatorTest {
   private final AnomalyConfigValidator configValidator = new AnomalyConfigValidator();
+
+  private final TrainingConfigRegexValidator trainingConfigRegexValidator =
+      new TrainingConfigRegexValidator();
   private final AnomalyConfigScope configScope =
       AnomalyConfigScope.newBuilder()
           .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
@@ -40,7 +55,7 @@ class TrainingConfigValidatorTest {
 
   @BeforeEach
   void setUp() {
-    this.validator = new TrainingConfigValidator(configValidator);
+    this.validator = new TrainingConfigValidator(configValidator, trainingConfigRegexValidator);
   }
 
   @Test
@@ -240,6 +255,418 @@ class TrainingConfigValidatorTest {
 
     status = validator.validate(request);
 
+    assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
+  void testMetadataTrainingConfigRegexValidator() {
+    UpdateScopedTrainingConfigRequest request;
+
+    TrainingConfig trainingConfig =
+        TrainingConfig.newBuilder()
+            .setMetadataTrainingConfig(
+                MetadataTrainingConfig.newBuilder()
+                    .setJwtParams(
+                        JwtParamsTrainingConfig.newBuilder()
+                            .setIncludeParamRegexes(
+                                StringList.newBuilder()
+                                    .addAllValues(
+                                        List.of(
+                                            "/^[(]{0,1}[0-9]{3}[)]{0,1}[-\\s\\.]{0,1}[0-9]{3}[-\\s\\.]{0,1}[0-9]{4}$/\n",
+                                            "["))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    request =
+        UpdateScopedTrainingConfigRequest.newBuilder()
+            .setScopedTrainingConfig(
+                ScopedTrainingConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllTrainingConfigs(List.of(trainingConfig)))
+            .build();
+
+    Status status = validator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("Invalid Regex pattern: ["));
+
+    TrainingConfig trainingConfig1 =
+        TrainingConfig.newBuilder()
+            .setMetadataTrainingConfig(
+                MetadataTrainingConfig.newBuilder()
+                    .setJwtParams(
+                        JwtParamsTrainingConfig.newBuilder()
+                            .setIncludeParamRegexes(
+                                StringList.newBuilder()
+                                    .addAllValues(
+                                        List.of(
+                                            "/^[(]{0,1}[0-9]{3}[)]{0,1}[-\\s\\.]{0,1}[0-9]{3}[-\\s\\.]{0,1}[0-9]{4}$/\n"))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    request =
+        UpdateScopedTrainingConfigRequest.newBuilder()
+            .setScopedTrainingConfig(
+                ScopedTrainingConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllTrainingConfigs(List.of(trainingConfig1)))
+            .build();
+
+    status = validator.validate(request);
+    assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
+  void testVulnerabilityTrainingConfigRegexValidator() {
+
+    UpdateScopedTrainingConfigRequest request;
+
+    TrainingConfig trainingConfig =
+        TrainingConfig.newBuilder()
+            .setVulnerabilityTrainingConfig(
+                VulnerabilityTrainingConfig.newBuilder()
+                    .setEnumerableParam(
+                        EnumerableParamTrainingConfig.newBuilder()
+                            .setIncludeParamRegex("[")
+                            .build())
+                    .build())
+            .build();
+
+    request =
+        UpdateScopedTrainingConfigRequest.newBuilder()
+            .setScopedTrainingConfig(
+                ScopedTrainingConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllTrainingConfigs(List.of(trainingConfig)))
+            .build();
+
+    Status status = validator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("Invalid Regex pattern: ["));
+
+    TrainingConfig trainingConfig1 =
+        TrainingConfig.newBuilder()
+            .setVulnerabilityTrainingConfig(
+                VulnerabilityTrainingConfig.newBuilder()
+                    .setEnumerableParam(
+                        EnumerableParamTrainingConfig.newBuilder()
+                            .setIncludeParamRegex(
+                                "\"/^[(]{0,1}[0-9]{3}[)]{0,1}[-\\\\s\\\\.]{0,1}[0-9]{3}[-\\\\s\\\\.]{0,1}[0-9]{4}$/\\n\"")
+                            .build())
+                    .build())
+            .build();
+    ;
+
+    request =
+        UpdateScopedTrainingConfigRequest.newBuilder()
+            .setScopedTrainingConfig(
+                ScopedTrainingConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllTrainingConfigs(List.of(trainingConfig1)))
+            .build();
+
+    status = validator.validate(request);
+    assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
+  void testSessionTrainingConfigRegexValidtor() {
+    UpdateScopedTrainingConfigRequest request;
+
+    TrainingConfig trainingConfig =
+        TrainingConfig.newBuilder()
+            .setSessionTrainingConfig(
+                SessionTrainingConfig.newBuilder()
+                    .setObjectBola(
+                        ObjectBolaTrainingConfig.newBuilder()
+                            .setParamSusceptibilityConfig(
+                                ParamSusceptibilityConfig.newBuilder()
+                                    .setRequestParamValueRegex("[")
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    request =
+        UpdateScopedTrainingConfigRequest.newBuilder()
+            .setScopedTrainingConfig(
+                ScopedTrainingConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllTrainingConfigs(List.of(trainingConfig)))
+            .build();
+
+    Status status = validator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("Invalid Regex pattern: ["));
+
+    TrainingConfig trainingConfig1 =
+        TrainingConfig.newBuilder()
+            .setSessionTrainingConfig(
+                SessionTrainingConfig.newBuilder()
+                    .setObjectBola(
+                        ObjectBolaTrainingConfig.newBuilder()
+                            .setParamSusceptibilityConfig(
+                                ParamSusceptibilityConfig.newBuilder()
+                                    .setRequestParamValueRegex(
+                                        "\"/^[(]{0,1}[0-9]{3}[)]{0,1}[-\\\\s\\\\.]{0,1}[0-9]{3}[-\\\\s\\\\.]{0,1}[0-9]{4}$/\\n\"")
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    request =
+        UpdateScopedTrainingConfigRequest.newBuilder()
+            .setScopedTrainingConfig(
+                ScopedTrainingConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllTrainingConfigs(List.of(trainingConfig1)))
+            .build();
+
+    status = validator.validate(request);
+    assertEquals(Status.OK.getCode(), status.getCode());
+
+    TrainingConfig trainingConfig2 =
+        TrainingConfig.newBuilder()
+            .setSessionTrainingConfig(
+                SessionTrainingConfig.newBuilder()
+                    .setObjectBola(
+                        ObjectBolaTrainingConfig.newBuilder()
+                            .setMultiValuedStringParamRules(
+                                MultiValuedStringParamRulesList.newBuilder()
+                                    .addAllRules(
+                                        List.of(
+                                            MultiValuedStringParamRule.newBuilder()
+                                                .setKeyRegex(
+                                                    "\"/^[(]{0,1}[0-9]{3}[)]{0,1}[-\\\\s\\\\.]{0,1}[0-9]{3}[-\\\\s\\\\.]{0,1}[0-9]{4}$/\\n\"")
+                                                .build(),
+                                            MultiValuedStringParamRule.newBuilder()
+                                                .setKeyRegex("[")
+                                                .build()))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    request =
+        UpdateScopedTrainingConfigRequest.newBuilder()
+            .setScopedTrainingConfig(
+                ScopedTrainingConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllTrainingConfigs(List.of(trainingConfig2)))
+            .build();
+
+    status = validator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("Invalid Regex pattern: ["));
+  }
+
+  @Test
+  void testApiNamingTrainingConfigRegexValidator() {
+    UpdateScopedTrainingConfigRequest request;
+
+    TrainingConfig trainingConfig =
+        TrainingConfig.newBuilder()
+            .setApiNamingTrainingConfig(
+                ApiNamingTrainingConfig.newBuilder()
+                    .setTrieModelTrainingConfig(
+                        TrieModelTrainingConfig.newBuilder()
+                            .setAllowRegexList(
+                                StringList.newBuilder().addAllValues(List.of("[")).build())
+                            .build())
+                    .build())
+            .build();
+
+    request =
+        UpdateScopedTrainingConfigRequest.newBuilder()
+            .setScopedTrainingConfig(
+                ScopedTrainingConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllTrainingConfigs(List.of(trainingConfig)))
+            .build();
+
+    Status status = validator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("Invalid Regex pattern: ["));
+
+    TrainingConfig trainingConfig1 =
+        TrainingConfig.newBuilder()
+            .setApiNamingTrainingConfig(
+                ApiNamingTrainingConfig.newBuilder()
+                    .setTrieModelTrainingConfig(
+                        TrieModelTrainingConfig.newBuilder()
+                            .setAllowRegexList(
+                                StringList.newBuilder()
+                                    .addAllValues(
+                                        List.of(
+                                            "\"/^[(]{0,1}[0-9]{3}[)]{0,1}[-\\\\s\\\\.]{0,1}[0-9]{3}[-\\\\s\\\\.]{0,1}[0-9]{4}$/\\n\""))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    request =
+        UpdateScopedTrainingConfigRequest.newBuilder()
+            .setScopedTrainingConfig(
+                ScopedTrainingConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllTrainingConfigs(List.of(trainingConfig1)))
+            .build();
+
+    status = validator.validate(request);
+    assertEquals(Status.OK.getCode(), status.getCode());
+
+    TrainingConfig trainingConfig2 =
+        TrainingConfig.newBuilder()
+            .setApiNamingTrainingConfig(
+                ApiNamingTrainingConfig.newBuilder()
+                    .setRejectFilterConfig(
+                        RejectFilterConfig.newBuilder()
+                            .setUrlPathFilterConfig(
+                                UrlPathFilterConfig.newBuilder()
+                                    .setUrlPathRegexPatterns(
+                                        StringList.newBuilder().addAllValues(List.of("[")).build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    request =
+        UpdateScopedTrainingConfigRequest.newBuilder()
+            .setScopedTrainingConfig(
+                ScopedTrainingConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllTrainingConfigs(List.of(trainingConfig2)))
+            .build();
+
+    status = validator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("Invalid Regex pattern: ["));
+
+    TrainingConfig trainingConfig3 =
+        TrainingConfig.newBuilder()
+            .setApiNamingTrainingConfig(
+                ApiNamingTrainingConfig.newBuilder()
+                    .setRejectFilterConfig(
+                        RejectFilterConfig.newBuilder()
+                            .setUrlPathFilterConfig(
+                                UrlPathFilterConfig.newBuilder()
+                                    .setUrlPathRegexPatterns(
+                                        StringList.newBuilder()
+                                            .addAllValues(
+                                                List.of(
+                                                    "\"/^[(]{0,1}[0-9]{3}[)]{0,1}[-\\\\s\\\\.]{0,1}[0-9]{3}[-\\\\s\\\\.]{0,1}[0-9]{4}$/\\n\""))
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    request =
+        UpdateScopedTrainingConfigRequest.newBuilder()
+            .setScopedTrainingConfig(
+                ScopedTrainingConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllTrainingConfigs(List.of(trainingConfig3)))
+            .build();
+
+    status = validator.validate(request);
+    assertEquals(Status.OK.getCode(), status.getCode());
+
+    TrainingConfig trainingConfig4 =
+        TrainingConfig.newBuilder()
+            .setApiNamingTrainingConfig(
+                ApiNamingTrainingConfig.newBuilder()
+                    .setUrlFilterConfig(
+                        UrlFilterConfig.newBuilder()
+                            .setUrlRejectRegexPatterns(
+                                StringList.newBuilder().addAllValues(List.of("[")).build())
+                            .build())
+                    .build())
+            .build();
+    request =
+        UpdateScopedTrainingConfigRequest.newBuilder()
+            .setScopedTrainingConfig(
+                ScopedTrainingConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllTrainingConfigs(List.of(trainingConfig4)))
+            .build();
+
+    status = validator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("Invalid Regex pattern: ["));
+
+    TrainingConfig trainingConfig5 =
+        TrainingConfig.newBuilder()
+            .setApiNamingTrainingConfig(
+                ApiNamingTrainingConfig.newBuilder()
+                    .setUrlFilterConfig(
+                        UrlFilterConfig.newBuilder()
+                            .setUrlRejectRegexPatterns(
+                                StringList.newBuilder()
+                                    .addAllValues(
+                                        List.of(
+                                            "\"\\\"/^[(]{0,1}[0-9]{3}[)]{0,1}[-\\\\\\\\s\\\\\\\\.]{0,1}[0-9]{3}[-\\\\\\\\s\\\\\\\\.]{0,1}[0-9]{4}$/\\\\n\\\"\""))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    request =
+        UpdateScopedTrainingConfigRequest.newBuilder()
+            .setScopedTrainingConfig(
+                ScopedTrainingConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllTrainingConfigs(List.of(trainingConfig5)))
+            .build();
+
+    status = validator.validate(request);
+    assertEquals(Status.OK.getCode(), status.getCode());
+
+    TrainingConfig trainingConfig6 =
+        TrainingConfig.newBuilder()
+            .setApiNamingTrainingConfig(
+                ApiNamingTrainingConfig.newBuilder()
+                    .setCustomRulesListConfig(
+                        CustomRulesListConfig.newBuilder()
+                            .addCustomRulesConfig(
+                                CustomRuleConfig.newBuilder().setRegex("[").build())
+                            .build())
+                    .build())
+            .build();
+    request =
+        UpdateScopedTrainingConfigRequest.newBuilder()
+            .setScopedTrainingConfig(
+                ScopedTrainingConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllTrainingConfigs(List.of(trainingConfig6)))
+            .build();
+
+    status = validator.validate(request);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("Invalid Regex pattern: ["));
+
+    TrainingConfig trainingConfig7 =
+        TrainingConfig.newBuilder()
+            .setApiNamingTrainingConfig(
+                ApiNamingTrainingConfig.newBuilder()
+                    .setCustomRulesListConfig(
+                        CustomRulesListConfig.newBuilder()
+                            .addCustomRulesConfig(
+                                CustomRuleConfig.newBuilder()
+                                    .setRegex(
+                                        "\"\\\"/^[(]{0,1}[0-9]{3}[)]{0,1}[-\\\\\\\\s\\\\\\\\.]{0,1}[0-9]{3}[-\\\\\\\\s\\\\\\\\.]{0,1}[0-9]{4}$/\\\\n\\\"\"")
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    request =
+        UpdateScopedTrainingConfigRequest.newBuilder()
+            .setScopedTrainingConfig(
+                ScopedTrainingConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAllTrainingConfigs(List.of(trainingConfig7)))
+            .build();
+
+    status = validator.validate(request);
     assertEquals(Status.OK.getCode(), status.getCode());
   }
 
