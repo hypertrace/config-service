@@ -2,6 +2,7 @@ version: v1
 directories:
   - anomaly-config-service-api/src/main/proto
   - api-attribute-override-service-api/src/main/proto
+  - api-gateway-config-service-api/src/main/proto
   - api-spec-config-service-api/src/main/proto
   - ast-scan-profile-config-service-api/src/main/proto
   - ast-config-service-api/src/main/proto

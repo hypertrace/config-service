@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package ai.traceable.api.route.config.service.v1;
+
+option java_multiple_files = true;
+
+message ApiRoute {
+  string id = 1;
+  RouteInfo info = 2;
+  Metadata metadata = 3;
+}
+
+message NewApiRoute {
+  RouteInfo info = 1;
+  Metadata metadata = 2;
+}
+
+message RouteInfo {
+  string path = 1;
+  bool is_deprecated = 2;
+}
+
+message Metadata {
+  string org_id = 1;
+}
