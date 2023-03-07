@@ -5,6 +5,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
+import ai.traceable.config.utils.RegexValidator;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleInfo;
 import ai.traceable.span.processing.config.service.v1.ApiSpecBasedConfig;
@@ -40,7 +41,7 @@ import ai.traceable.span.processing.config.service.v1.UpdateSamplingConfig;
 import ai.traceable.span.processing.config.service.v1.UpdateSamplingConfigRequest;
 import io.grpc.Status;
 import java.util.List;
-import java.util.regex.Pattern;
+import java.util.function.Predicate;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class SpanProcessingConfigRequestValidator {
@@ -351,9 +352,13 @@ public class SpanProcessingConfigRequestValidator {
   }
 
   private void validateRegex(List<String> regexes) {
-    try {
-      Pattern.compile(String.join("/", regexes));
-    } catch (Exception e) {
+    Status status =
+        regexes.stream()
+            .map(RegexValidator::validate)
+            .filter(Predicate.not(Status::isOk))
+            .findFirst()
+            .orElse(Status.OK);
+    if (!status.isOk()) {
       throw Status.INVALID_ARGUMENT
           .withDescription(String.format("Invalid regexes : %s.", regexes))
           .asRuntimeException();
