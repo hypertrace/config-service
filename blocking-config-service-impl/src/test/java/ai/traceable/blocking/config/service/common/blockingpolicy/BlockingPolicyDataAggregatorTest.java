@@ -3,19 +3,21 @@ package ai.traceable.blocking.config.service.common.blockingpolicy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Category;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.RuleType;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.ActorBasedDataFetcher;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.CustomIpBasedDataFetcher;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.CustomSignatureDataFetcher;
-import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.IpTypeDataFetcher;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.ModsecDataFetcher;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.RegionDataFetcher;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.actor.ActorBasedRulesCollection;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.malicioussources.MaliciousSourcesDataFetcher;
 import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,14 +29,13 @@ class BlockingPolicyDataAggregatorTest {
   private static final String TENANT_ID = "tenant-id";
   private static final String ENVIRONMENT_ID = "environment-id";
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
-
   private ActorBasedDataFetcher actorBasedDataFetcher;
   private CustomIpBasedDataFetcher customIpBasedDataFetcher;
   private CustomSignatureDataFetcher customSignatureDataFetcher;
   private ModsecDataFetcher modsecDataFetcher;
   private RegionDataFetcher regionDataFetcher;
-  private IpTypeDataFetcher ipTypeDataFetcher;
   private BlockingPolicyDataAggregator orderedBlockingDetailsBase;
+  private MaliciousSourcesDataFetcher maliciousSourceRuleDataFetcher;
 
   @BeforeEach
   void setUp() {
@@ -43,7 +44,7 @@ class BlockingPolicyDataAggregatorTest {
     this.customSignatureDataFetcher = mock(CustomSignatureDataFetcher.class);
     this.modsecDataFetcher = mock(ModsecDataFetcher.class);
     this.regionDataFetcher = mock(RegionDataFetcher.class);
-    this.ipTypeDataFetcher = mock(IpTypeDataFetcher.class);
+    this.maliciousSourceRuleDataFetcher = mock(MaliciousSourcesDataFetcher.class);
     orderedBlockingDetailsBase =
         new BlockingPolicyDataAggregator(
             actorBasedDataFetcher,
@@ -51,7 +52,7 @@ class BlockingPolicyDataAggregatorTest {
             customSignatureDataFetcher,
             modsecDataFetcher,
             regionDataFetcher,
-            ipTypeDataFetcher);
+            maliciousSourceRuleDataFetcher);
   }
 
   @Test
@@ -61,18 +62,23 @@ class BlockingPolicyDataAggregatorTest {
     ArrayList<String> desiredPrecedenceOrder =
         new ArrayList<>(
             List.of(
+                "malicious-source-ip-range-exemption",
                 "custom-ip-based-exemption",
                 "threat-actor-exemption",
                 "email-domain-exemption",
                 "custom-signature-exemption",
                 "custom-signature-violation",
                 "modsec-violation",
+                "malicious-source-ip-range-block-all-except",
                 "custom-ip-based-block-all-except",
+                "malicious-source-ip-range-violation",
                 "custom-ip-based-violation",
                 "threat-actor-violation",
                 "email-domain-violation",
-                "ip-type-violation",
+                "malicious-source-ip-type-violation",
+                "malicious-source-region-block-all-except",
                 "region-block-all-except",
+                "malicious-source-region-violation",
                 "region-violation",
                 "rate-limit-violation"));
 
@@ -214,15 +220,67 @@ class BlockingPolicyDataAggregatorTest {
         .when(regionDataFetcher)
         .getRegionBasedRules(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
 
-    doReturn(
-            List.of(
-                BlockingPolicyData.builder()
-                    .ipTypes(List.of(IpLocationType.IP_LOCATION_TYPE_BOT))
-                    .category(Category.IP_TYPE_RULE)
-                    .ruleType(RuleType.BLOCK)
-                    .info("ip-type-violation")
-                    .build()))
-        .when(ipTypeDataFetcher)
-        .getIpTypeViolations(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
+    Map<BlockingPolicyDataBucket, List<BlockingPolicyData>> blockingPolicyDetails = new HashMap<>();
+
+    blockingPolicyDetails.put(
+        BlockingPolicyDataBucket.IP_TYPE_VIOLATIONS,
+        List.of(
+            BlockingPolicyData.builder()
+                .ipTypes(List.of(IpLocationType.IP_LOCATION_TYPE_BOT))
+                .category(Category.IP_TYPE_RULE)
+                .ruleType(RuleType.BLOCK)
+                .info("malicious-source-ip-type-violation")
+                .build()));
+    blockingPolicyDetails.put(
+        BlockingPolicyDataBucket.IP_RANGE_VIOLATIONS,
+        List.of(
+            BlockingPolicyData.builder()
+                .ipRanges(List.of("1.2.3.4"))
+                .ipAddresses(List.of("1.2.3.4"))
+                .category(Category.CUSTOM_IP_RULE)
+                .ruleType(RuleType.BLOCK)
+                .info("malicious-source-ip-range-violation")
+                .build()));
+    blockingPolicyDetails.put(
+        BlockingPolicyDataBucket.IP_RANGE_EXEMPTIONS,
+        List.of(
+            BlockingPolicyData.builder()
+                .ipRanges(List.of("1.2.3.4"))
+                .ipAddresses(List.of("1.2.3.4"))
+                .category(Category.CUSTOM_IP_RULE)
+                .ruleType(RuleType.ALLOW)
+                .info("malicious-source-ip-range-exemption")
+                .build()));
+    blockingPolicyDetails.put(
+        BlockingPolicyDataBucket.IP_RANGE_BLOCK_ALL_EXCEPT_VIOLATIONS,
+        List.of(
+            BlockingPolicyData.builder()
+                .ipRanges(List.of("1.2.3.4"))
+                .ipAddresses(List.of("1.2.3.4"))
+                .category(Category.CUSTOM_IP_RULE)
+                .ruleType(RuleType.BLOCK_ALL_EXCEPT)
+                .info("malicious-source-ip-range-block-all-except")
+                .build()));
+    blockingPolicyDetails.put(
+        BlockingPolicyDataBucket.REGION_VIOLATIONS,
+        List.of(
+            BlockingPolicyData.builder()
+                .regions(List.of("afghanistan"))
+                .category(Category.CUSTOM_REGION_RULE)
+                .ruleType(RuleType.BLOCK)
+                .info("malicious-source-region-violation")
+                .build()));
+    blockingPolicyDetails.put(
+        BlockingPolicyDataBucket.REGION_BLOCK_ALL_EXCEPT_VIOLATIONS,
+        List.of(
+            BlockingPolicyData.builder()
+                .regions(List.of("afghanistan"))
+                .category(Category.CUSTOM_REGION_RULE)
+                .ruleType(RuleType.BLOCK_ALL_EXCEPT)
+                .info("malicious-source-region-block-all-except")
+                .build()));
+    when(maliciousSourceRuleDataFetcher.getMaliciousSourceRuleBlockingDetails(
+            REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID)))
+        .thenReturn(blockingPolicyDetails);
   }
 }

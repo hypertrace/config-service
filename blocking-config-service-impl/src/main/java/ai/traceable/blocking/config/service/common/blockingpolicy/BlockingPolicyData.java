@@ -19,6 +19,7 @@ public class BlockingPolicyData {
   List<String> ipRanges;
   List<String> regions;
   List<IpLocationType> ipTypes;
+  BlockingPolicyDataBucket bucket;
 
   public enum Category {
     THREAT_ACTOR,

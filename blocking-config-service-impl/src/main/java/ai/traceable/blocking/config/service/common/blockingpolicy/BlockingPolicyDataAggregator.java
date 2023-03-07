@@ -4,12 +4,13 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicy
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.ActorBasedDataFetcher;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.CustomIpBasedDataFetcher;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.CustomSignatureDataFetcher;
-import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.IpTypeDataFetcher;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.ModsecDataFetcher;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.RegionDataFetcher;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.actor.ActorBasedRulesCollection;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.malicioussources.MaliciousSourcesDataFetcher;
 import com.google.inject.Inject;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -23,7 +24,7 @@ class BlockingPolicyDataAggregator {
   private final CustomSignatureDataFetcher customSignatureDataFetcher;
   private final ModsecDataFetcher modsecDataFetcher;
   private final RegionDataFetcher regionDataFetcher;
-  private final IpTypeDataFetcher ipTypeDataFetcher;
+  private final MaliciousSourcesDataFetcher maliciousSourceRuleDataFetcher;
 
   @Inject
   BlockingPolicyDataAggregator(
@@ -32,13 +33,13 @@ class BlockingPolicyDataAggregator {
       CustomSignatureDataFetcher customSignatureDataFetcher,
       ModsecDataFetcher modsecDataFetcher,
       RegionDataFetcher regionDataFetcher,
-      IpTypeDataFetcher ipTypeDataFetcher) {
+      MaliciousSourcesDataFetcher maliciousSourceRuleDataFetcher) {
     this.actorBasedDataFetcher = actorBasedDataFetcher;
     this.customIpBasedDataFetcher = customIpBasedDataFetcher;
     this.customSignatureDataFetcher = customSignatureDataFetcher;
     this.modsecDataFetcher = modsecDataFetcher;
     this.regionDataFetcher = regionDataFetcher;
-    this.ipTypeDataFetcher = ipTypeDataFetcher;
+    this.maliciousSourceRuleDataFetcher = maliciousSourceRuleDataFetcher;
   }
 
   List<BlockingPolicyData> getOrderedBlockingRules(
@@ -84,43 +85,60 @@ class BlockingPolicyDataAggregator {
         regionBasedRulesMap.get(RuleType.BLOCK_ALL_EXCEPT);
     List<BlockingPolicyData> regionViolations = regionBasedRulesMap.get(RuleType.BLOCK);
 
-    // Ip-type
-    List<BlockingPolicyData> ipTypeViolations =
-        ipTypeDataFetcher.getIpTypeViolations(requestContext, environmentId);
-
+    Map<BlockingPolicyDataBucket, List<BlockingPolicyData>> maliciousSourcesRulesBlockingData =
+        maliciousSourceRuleDataFetcher.getMaliciousSourceRuleBlockingDetails(
+            requestContext, environmentId);
     // TODO: cleaner way to enforce ordering
     /*
      Rules follow the precedence mentioned here
      https://traceableai.atlassian.net/wiki/spaces/Engineering/pages/1265139838/Blocking+rules+-+evaluation+order+of+precedence
     Current order -
-            "custom-ip-based-exemption",
-            "threat-actor-exemption",
-            "email-domain-exemption",
-            "custom-signature-exemption",
-            "custom-signature-violation",
-            "modsec-violation",
-            "custom-ip-based-block-all-except",
-            "custom-ip-based-violation",
-            "threat-actor-violation",
-            "email-domain-violation",
-            "ip-type-violation",
-            "region-block-all-except",
-            "region-violation",
-            "rate-limit-violation"
+            "malicious-source-ip-range-exemption",
+                "custom-ip-based-exemption",
+                "threat-actor-exemption",
+                "email-domain-exemption",
+                "custom-signature-exemption",
+                "custom-signature-violation",
+                "modsec-violation",
+                "malicious-source-ip-range-block-all-except",
+                "custom-ip-based-block-all-except",
+                "malicious-source-ip-range-violation",
+                "custom-ip-based-violation",
+                "threat-actor-violation",
+                "email-domain-violation",
+                "malicious-source-ip-type-violation",
+                "malicious-source-region-block-all-except",
+                "region-block-all-except",
+                "malicious-source-region-violation",
+                "region-violation",
+                "rate-limit-violation"
        */
     return Stream.of(
+            maliciousSourcesRulesBlockingData.getOrDefault(
+                BlockingPolicyDataBucket.IP_RANGE_EXEMPTIONS, Collections.emptyList()),
             customIpBasedExemptions,
             threatActorExemptions,
             emailDomainBasedExemptions,
             customSignatureExemptions,
             customSignatureViolations,
             modsecViolations,
+            maliciousSourcesRulesBlockingData.getOrDefault(
+                BlockingPolicyDataBucket.IP_RANGE_BLOCK_ALL_EXCEPT_VIOLATIONS,
+                Collections.emptyList()),
             customIpBasedBlockAllExcepts,
+            maliciousSourcesRulesBlockingData.getOrDefault(
+                BlockingPolicyDataBucket.IP_RANGE_VIOLATIONS, Collections.emptyList()),
             customIpBasedViolations,
             threatActorViolations,
             emailDomainBasedViolations,
-            ipTypeViolations,
+            maliciousSourcesRulesBlockingData.getOrDefault(
+                BlockingPolicyDataBucket.IP_TYPE_VIOLATIONS, Collections.emptyList()),
+            maliciousSourcesRulesBlockingData.getOrDefault(
+                BlockingPolicyDataBucket.REGION_BLOCK_ALL_EXCEPT_VIOLATIONS,
+                Collections.emptyList()),
             regionBlockAllExcepts,
+            maliciousSourcesRulesBlockingData.getOrDefault(
+                BlockingPolicyDataBucket.REGION_VIOLATIONS, Collections.emptyList()),
             regionViolations,
             rateLimitViolations)
         .flatMap(Collection::stream)
