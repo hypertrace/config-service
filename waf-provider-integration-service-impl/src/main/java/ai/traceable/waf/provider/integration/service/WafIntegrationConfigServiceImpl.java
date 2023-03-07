@@ -43,6 +43,11 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       wafIntegrationConfigRequestValidator.validateOrThrow(request, requestContext);
+      if (isIntegrationConfigured(requestContext)) {
+        throw Status.ALREADY_EXISTS
+            .withDescription("Only a single integration can be configured")
+            .asRuntimeException();
+      }
       WafIntegration wafIntegration =
           WafIntegration.newBuilder()
               .setId(UUID.randomUUID().toString())
@@ -180,5 +185,9 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
       return true;
     }
     return requiredTypes.contains(type);
+  }
+
+  private boolean isIntegrationConfigured(RequestContext requestContext) {
+    return wafIntegrationStore.getAllObjects(requestContext).stream().findAny().isPresent();
   }
 }

@@ -66,9 +66,8 @@ class WafIntegrationConfigServiceImplTest {
   }
 
   @Test
-  void createWafIntegrationTest() {
+  void createWafIntegrationCloudflareTest() {
 
-    // Cloudflare
     WafIntegrationDetails expectedDetails =
         createWafIntegrationDetails(
             "name", "email", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS);
@@ -77,20 +76,54 @@ class WafIntegrationConfigServiceImplTest {
     CreateWafIntegrationResponse response =
         wafProviderServiceBlockingStub.createWafIntegration(request);
     assertEquals(expectedDetails, response.getWafIntegration().getWafIntegrationDetails());
+  }
 
-    // AWS
-    expectedDetails =
+  @Test
+  void createWafIntegrationAWSTest() {
+
+    WafIntegrationDetails expectedDetails =
         createWafIntegrationDetails("name", "email", IntegrationParamsCase.AWS_INTEGRATION_PARAMS);
-    request =
+    CreateWafIntegrationRequest request =
         CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
-    response = wafProviderServiceBlockingStub.createWafIntegration(request);
+    CreateWafIntegrationResponse response =
+        wafProviderServiceBlockingStub.createWafIntegration(request);
     assertEquals(expectedDetails, response.getWafIntegration().getWafIntegrationDetails());
   }
 
   @Test
-  void getWafIntegrationTest() {
+  void createWafIntegrationsAlreadyExistsExceptionTest() {
+    WafIntegrationDetails expectedDetails1 =
+        createWafIntegrationDetails(
+            "name1", "email1", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest request1 =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails1).build();
+    WafIntegrationDetails expectedDetails2 =
+        createWafIntegrationDetails(
+            "name2", "email2", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest request2 =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails2).build();
+    WafIntegrationDetails expectedDetails3 =
+        createWafIntegrationDetails(
+            "name3", "email3", IntegrationParamsCase.AWS_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest request3 =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails3).build();
+    wafProviderServiceBlockingStub.createWafIntegration(request1);
+    Throwable exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> wafProviderServiceBlockingStub.createWafIntegration(request2));
+    assertEquals(Status.ALREADY_EXISTS.getCode(), Status.fromThrowable(exception).getCode());
 
-    // Cloudflare
+    exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> wafProviderServiceBlockingStub.createWafIntegration(request3));
+    assertEquals(Status.ALREADY_EXISTS.getCode(), Status.fromThrowable(exception).getCode());
+  }
+
+  @Test
+  void getWafIntegrationCloudflareTest() {
+
     WafIntegrationDetails expectedDetails =
         createWafIntegrationDetails(
             "name", "email", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS);
@@ -105,15 +138,18 @@ class WafIntegrationConfigServiceImplTest {
     assertEquals(
         WafIntegration.newBuilder().setWafIntegrationDetails(expectedDetails).setId(id).build(),
         getResponse.getWafIntegration());
+  }
 
-    // AWS
-    expectedDetails =
+  @Test
+  void getWafIntegrationAWSTest() {
+    WafIntegrationDetails expectedDetails =
         createWafIntegrationDetails("name", "email", IntegrationParamsCase.AWS_INTEGRATION_PARAMS);
-    request =
+    CreateWafIntegrationRequest request =
         CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
-    response = wafProviderServiceBlockingStub.createWafIntegration(request);
-    id = response.getWafIntegration().getId();
-    getResponse =
+    CreateWafIntegrationResponse response =
+        wafProviderServiceBlockingStub.createWafIntegration(request);
+    String id = response.getWafIntegration().getId();
+    GetWafIntegrationResponse getResponse =
         wafProviderServiceBlockingStub.getWafIntegration(
             GetWafIntegrationRequest.newBuilder().setId(id).build());
     assertEquals(
@@ -122,78 +158,56 @@ class WafIntegrationConfigServiceImplTest {
   }
 
   @Test
-  void getWafIntegrationsTest() {
-    WafIntegrationDetails expectedDetails1 =
+  void getWafIntegrationsCloudflareTest() {
+    WafIntegrationDetails expectedDetails =
         createWafIntegrationDetails(
             "name1", "email1", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS);
-    CreateWafIntegrationRequest createRequest1 =
-        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails1).build();
-    CreateWafIntegrationResponse createResponse1 =
-        wafProviderServiceBlockingStub.createWafIntegration(createRequest1);
-    String id1 = createResponse1.getWafIntegration().getId();
-    WafIntegrationDetails expectedDetails2 =
-        createWafIntegrationDetails(
-            "name2", "email2", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS);
-    CreateWafIntegrationRequest createRequest2 =
-        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails2).build();
-    wafProviderServiceBlockingStub.createWafIntegration(createRequest2);
-    WafIntegrationDetails expectedDetails3 =
-        createWafIntegrationDetails(
-            "name3", "email3", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS);
-    CreateWafIntegrationRequest createRequest3 =
-        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails3).build();
-    CreateWafIntegrationResponse createResponse3 =
-        wafProviderServiceBlockingStub.createWafIntegration(createRequest3);
-    String id3 = createResponse3.getWafIntegration().getId();
-    WafIntegrationDetails expectedDetails4 =
-        createWafIntegrationDetails(
-            "name3", "email3", IntegrationParamsCase.AWS_INTEGRATION_PARAMS);
-    CreateWafIntegrationRequest createRequest4 =
-        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails4).build();
-    wafProviderServiceBlockingStub.createWafIntegration(createRequest4);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
 
     GetWafIntegrationsRequest request =
         GetWafIntegrationsRequest.newBuilder()
             .setFilter(
                 GetWafIntegrationsFilter.newBuilder()
-                    .addAllIds(List.of(id1, id3))
+                    .addAllIds(List.of(id))
                     .addWafProviderTypes(
                         GetWafIntegrationsFilter.WafProviderType.WAF_PROVIDER_TYPE_CLOUDFLARE))
             .build();
     GetWafIntegrationsResponse response =
         wafProviderServiceBlockingStub.getWafIntegrations(request);
-    assertEquals(2, response.getWafIntegrationCount());
+    assertEquals(1, response.getWafIntegrationCount());
     assertEquals(
-        expectedDetails1, response.getWafIntegrationList().get(1).getWafIntegrationDetails());
-    assertEquals(
-        expectedDetails3, response.getWafIntegrationList().get(0).getWafIntegrationDetails());
+        expectedDetails, response.getWafIntegrationList().get(0).getWafIntegrationDetails());
+  }
 
-    // AWS filter
-    request =
+  @Test
+  void getWafIntegrationsAWSTest() {
+    WafIntegrationDetails expectedDetails =
+        createWafIntegrationDetails(
+            "name3", "email3", IntegrationParamsCase.AWS_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
+    wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+
+    GetWafIntegrationsRequest request =
         GetWafIntegrationsRequest.newBuilder()
             .setFilter(
                 GetWafIntegrationsFilter.newBuilder()
                     .addWafProviderTypes(WafProviderType.WAF_PROVIDER_TYPE_AWS))
             .build();
-    response = wafProviderServiceBlockingStub.getWafIntegrations(request);
+    GetWafIntegrationsResponse response =
+        wafProviderServiceBlockingStub.getWafIntegrations(request);
     assertEquals(1, response.getWafIntegrationCount());
     assertEquals(
-        expectedDetails4, response.getWafIntegrationList().get(0).getWafIntegrationDetails());
-
-    // empty filter case
-    GetWafIntegrationsRequest request2 =
-        GetWafIntegrationsRequest.newBuilder()
-            .setFilter(GetWafIntegrationsFilter.getDefaultInstance())
-            .build();
-    GetWafIntegrationsResponse response2 =
-        wafProviderServiceBlockingStub.getWafIntegrations(request2);
-    assertEquals(4, response2.getWafIntegrationCount());
+        expectedDetails, response.getWafIntegrationList().get(0).getWafIntegrationDetails());
   }
 
   @Test
-  void updateWafIntegrationTest() {
+  void updateWafIntegrationCloudflareTest() {
 
-    // Cloudflare
     WafIntegrationDetails details =
         createWafIntegrationDetails(
             "name", "email", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS);
@@ -225,16 +239,20 @@ class WafIntegrationConfigServiceImplTest {
             .getWafIntegrationDetails()
             .getCloudflareIntegrationParams()
             .getEmail());
+  }
 
-    // AWS
-    details =
+  @Test
+  void updateWafIntegrationAWSTest() {
+
+    WafIntegrationDetails details =
         createWafIntegrationDetails("name", "email", IntegrationParamsCase.AWS_INTEGRATION_PARAMS);
-    createRequest =
+    CreateWafIntegrationRequest createRequest =
         CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
-    createResponse = wafProviderServiceBlockingStub.createWafIntegration(createRequest);
-    id = createResponse.getWafIntegration().getId();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
 
-    updatedDetails =
+    UpdatedWafIntegrationDetails updatedDetails =
         UpdatedWafIntegrationDetails.newBuilder()
             .setName("name1")
             .setDescription("des")
@@ -244,12 +262,13 @@ class WafIntegrationConfigServiceImplTest {
                     .setEncryptedSecretAccessKey("key-1")
                     .addResources(AwsResource.newBuilder().setArn("arn-1").setRegion("region-1")))
             .build();
-    updateRequest =
+    UpdateWafIntegrationRequest updateRequest =
         UpdateWafIntegrationRequest.newBuilder()
             .setId(id)
             .setUpdatedWafIntegrationDetails(updatedDetails)
             .build();
-    updateResponse = wafProviderServiceBlockingStub.updateWafIntegration(updateRequest);
+    UpdateWafIntegrationResponse updateResponse =
+        wafProviderServiceBlockingStub.updateWafIntegration(updateRequest);
     assertEquals("name1", updateResponse.getWafIntegration().getWafIntegrationDetails().getName());
     assertEquals(
         "id-1",
@@ -275,9 +294,8 @@ class WafIntegrationConfigServiceImplTest {
   }
 
   @Test
-  void deleteWafIntegrationTest() {
+  void deleteWafIntegrationCloudflareTest() {
 
-    // Cloudflare
     WafIntegrationDetails details =
         createWafIntegrationDetails(
             "name", "email", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS);
@@ -297,20 +315,24 @@ class WafIntegrationConfigServiceImplTest {
             RuntimeException.class,
             () -> wafProviderServiceBlockingStub.getWafIntegration(getRequest));
     assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
+  }
 
-    // AWS
-    details =
+  @Test
+  void deleteWafIntegrationAWSTest() {
+    WafIntegrationDetails details =
         createWafIntegrationDetails("name", "email", IntegrationParamsCase.AWS_INTEGRATION_PARAMS);
-    createRequest =
+    CreateWafIntegrationRequest createRequest =
         CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
-    createResponse = wafProviderServiceBlockingStub.createWafIntegration(createRequest);
-    id = createResponse.getWafIntegration().getId();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
 
-    deleteRequest = DeleteWafIntegrationRequest.newBuilder().setId(id).build();
+    DeleteWafIntegrationRequest deleteRequest =
+        DeleteWafIntegrationRequest.newBuilder().setId(id).build();
     wafProviderServiceBlockingStub.deleteWafIntegration(deleteRequest);
 
     GetWafIntegrationRequest getRequest1 = GetWafIntegrationRequest.newBuilder().setId(id).build();
-    exception =
+    Throwable exception =
         assertThrows(
             RuntimeException.class,
             () -> wafProviderServiceBlockingStub.getWafIntegration(getRequest1));
