@@ -26,14 +26,21 @@ public class GrpcValidatorUtils {
 
     if (descriptor.isRepeated()) {
       validateNonDefaultPresenceRepeatedOrThrow(source, descriptor);
-    } else if (descriptor.getType() == Type.MESSAGE && descriptor.getMessageType().toProto().getDefaultInstanceForType().equals(source.getField(descriptor))) {
+    } else if (descriptor.getType() == Type.MESSAGE
+        && descriptor
+            .getMessageType()
+            .toProto()
+            .getDefaultInstanceForType()
+            .equals(source.getField(descriptor))) {
       throw Status.INVALID_ARGUMENT
-          .withDescription(String.format(
-              "Expected field value %s but not present:%n %s",
-              descriptor.getFullName(), printMessage(source)))
+          .withDescription(
+              String.format(
+                  "Expected field value %s but not present:%n %s",
+                  descriptor.getFullName(), printMessage(source)))
           .asRuntimeException();
-    } else if (descriptor.getType() != Type.MESSAGE && (!source.hasField(descriptor)
-        || source.getField(descriptor).equals(descriptor.getDefaultValue()))) {
+    } else if (descriptor.getType() != Type.MESSAGE
+        && (!source.hasField(descriptor)
+            || source.getField(descriptor).equals(descriptor.getDefaultValue()))) {
       throw Status.INVALID_ARGUMENT
           .withDescription(
               String.format(
