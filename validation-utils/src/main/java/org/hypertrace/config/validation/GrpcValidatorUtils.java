@@ -1,6 +1,7 @@
 package org.hypertrace.config.validation;
 
 import com.google.protobuf.Descriptors.FieldDescriptor;
+import com.google.protobuf.Descriptors.FieldDescriptor.Type;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import io.grpc.Status;
@@ -25,8 +26,14 @@ public class GrpcValidatorUtils {
 
     if (descriptor.isRepeated()) {
       validateNonDefaultPresenceRepeatedOrThrow(source, descriptor);
-    } else if (!source.hasField(descriptor)
-        || source.getField(descriptor).equals(descriptor.getDefaultValue())) {
+    } else if (descriptor.getType() == Type.MESSAGE && descriptor.getMessageType().toProto().getDefaultInstanceForType().equals(source.getField(descriptor))) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(String.format(
+              "Expected field value %s but not present:%n %s",
+              descriptor.getFullName(), printMessage(source)))
+          .asRuntimeException();
+    } else if (descriptor.getType() != Type.MESSAGE && (!source.hasField(descriptor)
+        || source.getField(descriptor).equals(descriptor.getDefaultValue()))) {
       throw Status.INVALID_ARGUMENT
           .withDescription(
               String.format(
