@@ -5,6 +5,9 @@ import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_
 import static ai.traceable.span.processing.config.service.SpanProcessingConfigServiceImplTestUtils.buildProtectionSpanRuleInfo;
 import static ai.traceable.span.processing.config.service.SpanProcessingConfigServiceImplTestUtils.buildSamplingConfig;
 import static ai.traceable.span.processing.config.service.SpanProcessingConfigServiceImplTestUtils.buildSamplingConfigInfo;
+import static ai.traceable.span.processing.config.service.v1.RateLimitStrategy.RATE_LIMIT_STRATEGY_BARESPAN;
+import static ai.traceable.span.processing.config.service.v1.RateLimitStrategy.RATE_LIMIT_STRATEGY_DO_NOT_PERSIST;
+import static ai.traceable.span.processing.config.service.v1.RateLimitStrategy.RATE_LIMIT_STRATEGY_DROP;
 import static ai.traceable.span.processing.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_CONTAINS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -57,7 +60,6 @@ import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleDetails;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
 import ai.traceable.span.processing.config.service.v1.RateLimit;
 import ai.traceable.span.processing.config.service.v1.RateLimitConfig;
-import ai.traceable.span.processing.config.service.v1.RateLimitStrategy;
 import ai.traceable.span.processing.config.service.v1.RelationalSpanFilterExpression;
 import ai.traceable.span.processing.config.service.v1.SamplingConfig;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigDetails;
@@ -428,8 +430,7 @@ class SpanProcessingConfigServiceImplTest {
                                             .build())
                                     .setApiEndpointCacheDuration(
                                         Duration.newBuilder().setSeconds(100).setNanos(100).build())
-                                    .setRateLimitStrategy(
-                                        RateLimitStrategy.RATE_LIMIT_STRATEGY_DROP)
+                                    .setRateLimitStrategy(RATE_LIMIT_STRATEGY_DROP)
                                     .build())
                             .setFilter(
                                 SpanFilter.newBuilder()
@@ -482,8 +483,53 @@ class SpanProcessingConfigServiceImplTest {
                                             .build())
                                     .setApiEndpointCacheDuration(
                                         Duration.newBuilder().setSeconds(100).setNanos(100).build())
-                                    .setRateLimitStrategy(
-                                        RateLimitStrategy.RATE_LIMIT_STRATEGY_BARESPAN)
+                                    .setRateLimitStrategy(RATE_LIMIT_STRATEGY_BARESPAN)
+                                    .build())
+                            .setFilter(
+                                SpanFilter.newBuilder()
+                                    .setRelationalSpanFilter(
+                                        RelationalSpanFilterExpression.newBuilder()
+                                            .setField(Field.FIELD_SERVICE_NAME)
+                                            .setOperator(RELATIONAL_OPERATOR_CONTAINS)
+                                            .setRightOperand(
+                                                SpanFilterValue.newBuilder().setStringValue("b")))))
+                    .build())
+            .getSamplingConfigDetails()
+            .getSamplingConfig();
+
+    SamplingConfig thirdCreatedSamplingConfig =
+        this.spanProcessingConfigServiceStub
+            .createSamplingConfig(
+                CreateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setRateLimitConfig(
+                                RateLimitConfig.newBuilder()
+                                    .setTraceLimitGlobal(
+                                        RateLimit.newBuilder()
+                                            .setFixedWindowLimit(
+                                                WindowedRateLimit.newBuilder()
+                                                    .setQuantityAllowed(200)
+                                                    .setWindowDuration(
+                                                        Duration.newBuilder()
+                                                            .setSeconds(60)
+                                                            .build())
+                                                    .build())
+                                            .build())
+                                    .setTraceLimitPerEndpoint(
+                                        RateLimit.newBuilder()
+                                            .setFixedWindowLimit(
+                                                WindowedRateLimit.newBuilder()
+                                                    .setQuantityAllowed(200)
+                                                    .setWindowDuration(
+                                                        Duration.newBuilder()
+                                                            .setSeconds(60)
+                                                            .build())
+                                                    .build())
+                                            .build())
+                                    .setApiEndpointCacheDuration(
+                                        Duration.newBuilder().setSeconds(100).setNanos(100).build())
+                                    .setRateLimitStrategy(RATE_LIMIT_STRATEGY_DO_NOT_PERSIST)
                                     .build())
                             .setFilter(
                                 SpanFilter.newBuilder()
@@ -504,9 +550,10 @@ class SpanProcessingConfigServiceImplTest {
             .stream()
             .map(SamplingConfigDetails::getSamplingConfig)
             .collect(Collectors.toUnmodifiableList());
-    assertEquals(2, samplingConfigs.size());
+    assertEquals(3, samplingConfigs.size());
     assertTrue(samplingConfigs.contains(firstCreatedSamplingConfig));
     assertTrue(samplingConfigs.contains(secondCreatedSamplingConfig));
+    assertTrue(samplingConfigs.contains(thirdCreatedSamplingConfig));
 
     SamplingConfig updatedFirstSamplingConfig =
         this.spanProcessingConfigServiceStub
@@ -541,8 +588,7 @@ class SpanProcessingConfigServiceImplTest {
                                             .build())
                                     .setApiEndpointCacheDuration(
                                         Duration.newBuilder().setSeconds(100).setNanos(100).build())
-                                    .setRateLimitStrategy(
-                                        RateLimitStrategy.RATE_LIMIT_STRATEGY_BARESPAN)
+                                    .setRateLimitStrategy(RATE_LIMIT_STRATEGY_BARESPAN)
                                     .build())
                             .setFilter(
                                 SpanFilter.newBuilder()
@@ -575,7 +621,7 @@ class SpanProcessingConfigServiceImplTest {
                     .build())
             .setApiEndpointCacheDuration(
                 Duration.newBuilder().setSeconds(100).setNanos(100).build())
-            .setRateLimitStrategy(RateLimitStrategy.RATE_LIMIT_STRATEGY_BARESPAN)
+            .setRateLimitStrategy(RATE_LIMIT_STRATEGY_BARESPAN)
             .build(),
         updatedFirstSamplingConfig.getSamplingConfigInfo().getRateLimitConfig());
 
@@ -586,7 +632,7 @@ class SpanProcessingConfigServiceImplTest {
             .stream()
             .map(SamplingConfigDetails::getSamplingConfig)
             .collect(Collectors.toUnmodifiableList());
-    assertEquals(2, samplingConfigs.size());
+    assertEquals(3, samplingConfigs.size());
     assertTrue(samplingConfigs.contains(updatedFirstSamplingConfig));
 
     this.spanProcessingConfigServiceStub.deleteSamplingConfig(
@@ -599,8 +645,9 @@ class SpanProcessingConfigServiceImplTest {
             .stream()
             .map(SamplingConfigDetails::getSamplingConfig)
             .collect(Collectors.toUnmodifiableList());
-    assertEquals(1, samplingConfigs.size());
-    assertEquals(secondCreatedSamplingConfig, samplingConfigs.get(0));
+    assertEquals(2, samplingConfigs.size());
+    assertTrue(samplingConfigs.contains(secondCreatedSamplingConfig));
+    assertTrue(samplingConfigs.contains(thirdCreatedSamplingConfig));
   }
 
   @Test

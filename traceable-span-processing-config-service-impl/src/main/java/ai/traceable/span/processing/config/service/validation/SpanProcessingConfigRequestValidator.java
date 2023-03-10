@@ -331,6 +331,7 @@ public class SpanProcessingConfigRequestValidator {
     switch (rateLimitStrategy) {
       case RATE_LIMIT_STRATEGY_DROP:
       case RATE_LIMIT_STRATEGY_BARESPAN:
+      case RATE_LIMIT_STRATEGY_DO_NOT_PERSIST:
         break;
       default:
         throw Status.INVALID_ARGUMENT

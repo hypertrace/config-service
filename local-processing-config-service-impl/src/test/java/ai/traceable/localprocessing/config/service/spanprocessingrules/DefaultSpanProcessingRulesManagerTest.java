@@ -18,7 +18,6 @@ import ai.traceable.localprocessing.config.service.spanprocessingrules.excludesp
 import ai.traceable.localprocessing.config.service.spanprocessingrules.excludespanrules.ExcludeSpanRulesManager;
 import ai.traceable.localprocessing.config.service.spanprocessingrules.ratelimitconfig.DefaultRateLimitConfigManager;
 import ai.traceable.localprocessing.config.service.spanprocessingrules.ratelimitconfig.RateLimitConfigManager;
-import ai.traceable.localprocessing.config.service.utils.FilterConverter;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.GetSpanProcessingRulesRequest;
@@ -58,13 +57,12 @@ class DefaultSpanProcessingRulesManagerTest {
     uuidGenerator = new UuidGenerator();
     ai.traceable.config.utils.SpanFilterMatcher spanFilterMatcher =
         new ai.traceable.config.utils.SpanFilterMatcher();
-    FilterConverter filterConverter = new FilterConverter();
     ExcludeSpanRulesManager excludeSpanRulesManager =
         new DefaultExcludeSpanRulesManager(
             spanProcessingConfigServiceBlockingStub, new SpanFilterMatcher());
     RateLimitConfigManager rateLimitConfigManager =
         new DefaultRateLimitConfigManager(
-            traceableSpanProcessingConfigServiceBlockingStub, spanFilterMatcher, filterConverter);
+            traceableSpanProcessingConfigServiceBlockingStub, spanFilterMatcher);
     spanProcessingRulesManager =
         new DefaultSpanProcessingRulesManager(
             excludeSpanRulesManager, rateLimitConfigManager, uuidGenerator);
