@@ -18,6 +18,7 @@ import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
+import ai.traceable.ratelimiting.config.service.v2.RuleStatus;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesManager;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesStore;
@@ -41,9 +42,11 @@ public class RateLimitingRulesManagerTest {
   private MockGenericConfigService mockConfigService;
   private UuidGenerator uuidGenerator;
   private RateLimitingRulesManager rulesManager;
+  private RateLimitingConfigServiceConfig rateLimitingConfigServiceConfig;
 
   @BeforeEach
   void setUp() {
+    rateLimitingConfigServiceConfig = mock(RateLimitingConfigServiceConfig.class);
     requestContext = RequestContext.forTenantId("default tenant");
     mockConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
@@ -56,11 +59,10 @@ public class RateLimitingRulesManagerTest {
         new RateLimitingRulesStore(
             configServiceBlockingStub,
             mockConfigChangeEventGenerator,
-            mock(RateLimitingConfigServiceConfig.class));
+            rateLimitingConfigServiceConfig);
     uuidGenerator = mock(UuidGenerator.class);
     rulesManager =
-        new RateLimitingRulesManager(
-            rulesStore, uuidGenerator, mock(RateLimitingConfigServiceConfig.class));
+        new RateLimitingRulesManager(rulesStore, uuidGenerator, rateLimitingConfigServiceConfig);
   }
 
   @AfterEach
@@ -275,6 +277,41 @@ public class RateLimitingRulesManagerTest {
   }
 
   @Test
+  void testMergedStatusOnUpdateRateLimitingRule() {
+    RateLimitingRule rule =
+        RateLimitingRule.newBuilder()
+            .setId("id-1")
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setCategory(Category.CATEGORY_RATE_LIMITING)
+                    .setRuleStatus(
+                        RuleStatus.newBuilder()
+                            .setRuleCreationSource(RuleStatus.RuleSource.RULE_SOURCE_CUSTOMER)
+                            .setHidden(false)
+                            .setGenerateInternalEvents(true)
+                            .build())
+                    .build())
+            .build();
+    when(rateLimitingConfigServiceConfig.getDefaultRateLimitingRules()).thenReturn(List.of(rule));
+    RateLimitingRule updatedRule =
+        rulesManager.updateRateLimitingRule(
+            requestContext,
+            "id-1",
+            RateLimitingRuleData.newBuilder()
+                .setRuleStatus(
+                    RuleStatus.newBuilder()
+                        .setRuleCreationSource(RuleStatus.RuleSource.RULE_SOURCE_UNSPECIFIED)
+                        .setHidden(true)
+                        .build())
+                .build());
+    assertEquals(
+        updatedRule.getData().getRuleStatus().getRuleCreationSource(),
+        RuleStatus.RuleSource.RULE_SOURCE_CUSTOMER);
+    assertEquals(updatedRule.getData().getRuleStatus().getHidden(), true);
+    assertEquals(updatedRule.getData().getRuleStatus().getGenerateInternalEvents(), true);
+  }
+
+  @Test
   void testUpdateRateLimitingRule() {
     RuleConfigScope scope =
         RuleConfigScope.newBuilder()
@@ -374,6 +411,23 @@ public class RateLimitingRulesManagerTest {
     assertEquals(Status.NOT_FOUND, Status.fromThrowable(throwable));
   }
 
+  private RateLimitingRule buildRateLimitingRule(
+      String id, String name, Category category, RuleStatus ruleStatus) {
+    return RateLimitingRule.newBuilder()
+        .setId(id)
+        .setData(buildRateLimitingRuleData(name, category, ruleStatus))
+        .build();
+  }
+
+  private RateLimitingRuleData buildRateLimitingRuleData(
+      String name, Category category, RuleStatus ruleStatus) {
+    return RateLimitingRuleData.newBuilder()
+        .setName(name)
+        .setCategory(category)
+        .setRuleStatus(ruleStatus)
+        .build();
+  }
+
   private RateLimitingRule buildRateLimitingRule(String id, String name, Category category) {
     return RateLimitingRule.newBuilder()
         .setId(id)
@@ -382,7 +436,11 @@ public class RateLimitingRulesManagerTest {
   }
 
   private RateLimitingRuleData buildRateLimitingRuleData(String name, Category category) {
-    return RateLimitingRuleData.newBuilder().setName(name).setCategory(category).build();
+    return RateLimitingRuleData.newBuilder()
+        .setName(name)
+        .setCategory(category)
+        .setRuleStatus(RuleStatus.newBuilder().build())
+        .build();
   }
 
   private RateLimitingRuleData buildRateLimitingRuleData(
@@ -417,6 +475,7 @@ public class RateLimitingRulesManagerTest {
         .setName(name)
         .setCategory(category)
         .setRuleConfigScope(scope)
+        .setRuleStatus(RuleStatus.newBuilder().build())
         .build();
   }
 }

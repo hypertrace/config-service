@@ -9,6 +9,7 @@ import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
+import ai.traceable.ratelimiting.config.service.v2.RuleStatus;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
 import com.google.inject.Inject;
 import io.grpc.Status;
@@ -56,8 +57,21 @@ public class RateLimitingRulesManager implements RulesManager {
                         .orElseThrow(Status.NOT_FOUND::asRuntimeException));
 
     RateLimitingRule modifiedRule =
-        rule.toBuilder().setData(processRateLimitRuleData(ruleData)).build();
+        rule.toBuilder()
+            .setData(processRateLimitRuleData(ruleData, rule.getData().getRuleStatus()))
+            .build();
     return rateLimitingRulesStore.upsertObject(requestContext, modifiedRule).getData();
+  }
+
+  private RateLimitingRuleData processRateLimitRuleData(
+      RateLimitingRuleData ruleData, RuleStatus ruleStatus) {
+    RateLimitingRuleData data = processRateLimitRuleData(ruleData);
+    RuleStatus mergedRuleStatus =
+        ruleStatus.toBuilder()
+            .mergeFrom(data.getRuleStatus())
+            .setRuleCreationSource(ruleStatus.getRuleCreationSource())
+            .build();
+    return data.toBuilder().setRuleStatus(mergedRuleStatus).build();
   }
 
   @Override

@@ -34,6 +34,7 @@ import ai.traceable.ratelimiting.config.service.v2.RegionCondition.Region;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig.RollingWindowThresholdConfig;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
+import ai.traceable.ratelimiting.config.service.v2.RuleStatus;
 import ai.traceable.ratelimiting.config.service.v2.ScopeCondition;
 import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
 import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleRequest;
@@ -199,6 +200,76 @@ public class RateLimitingRulesValidatorTest {
             () -> rulesValidator.validateOrThrow(requestContext, request, List.of(rule, rule1)));
     Status status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+  }
+
+  @Test
+  void validateUpdateRateLimitingRule_cannot_update_rule_creation_source() {
+    RateLimitingRuleData ruleData1 =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule1")
+            .setCategory(Category.CATEGORY_RATE_LIMITING)
+            .setEnabled(true)
+            .setRuleStatus(
+                RuleStatus.newBuilder()
+                    .setRuleCreationSource(RuleStatus.RuleSource.RULE_SOURCE_DEFAULT)
+                    .setHidden(true)
+                    .setGenerateInternalEvents(false)
+                    .build())
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setKeyValueCondition(
+                                KeyValueCondition.newBuilder()
+                                    .setType(Type.TYPE_REQUEST_BODY)
+                                    .setKeyCondition(
+                                        StringCondition.newBuilder()
+                                            .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                                            .setValue("^a")
+                                            .build())
+                                    .build()))
+                    .build())
+            .build();
+    RateLimitingRule rule1 = RateLimitingRule.newBuilder().setId("id-1").setData(ruleData1).build();
+    RateLimitingRuleData ruleData2 =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule2")
+            .setCategory(Category.CATEGORY_DATA_EXFILTRATION)
+            .setEnabled(false)
+            .setRuleStatus(
+                RuleStatus.newBuilder()
+                    .setRuleCreationSource(RuleStatus.RuleSource.RULE_SOURCE_CUSTOMER)
+                    .setHidden(true)
+                    .setGenerateInternalEvents(false)
+                    .build())
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setKeyValueCondition(
+                                KeyValueCondition.newBuilder()
+                                    .setType(Type.TYPE_REQUEST_BODY)
+                                    .setKeyCondition(
+                                        StringCondition.newBuilder()
+                                            .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                                            .setValue("^a")
+                                            .build())
+                                    .build()))
+                    .build())
+            .build();
+    RateLimitingRule rule2 = RateLimitingRule.newBuilder().setId("id-2").setData(ruleData2).build();
+
+    UpdateRateLimitingRuleRequest request =
+        UpdateRateLimitingRuleRequest.newBuilder().setRuleId("id-2").setData(ruleData1).build();
+    Throwable throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request, List.of(rule1, rule2)));
+    Status status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals(
+        status.getDescription(),
+        "Update request does not allow to update rule creation source for rule with id: id-2");
   }
 
   @Test

@@ -1,5 +1,6 @@
 package ai.traceable.ratelimiting.service.v2.rules;
 
+import static ai.traceable.ratelimiting.config.service.v2.RuleStatus.RuleSource.RULE_SOURCE_UNSPECIFIED;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
@@ -59,6 +60,12 @@ public class RateLimitingRulesValidator implements RulesValidator {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, UpdateRateLimitingRuleRequest.RULE_ID_FIELD_NUMBER);
     RateLimitingRuleData requestData = request.getData();
+    if (!requestData.getRuleStatus().getRuleCreationSource().equals(RULE_SOURCE_UNSPECIFIED)) {
+      throwInvalidArgumentException(
+          String.format(
+              "Update request does not allow to update rule creation source for rule with id: %s",
+              request.getRuleId()));
+    }
     Optional<RateLimitingRule> rule =
         getRuleOfSameNameAndCategory(
             requestData.getCategory(), requestData.getName(), existingRules);

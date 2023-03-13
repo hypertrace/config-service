@@ -57,16 +57,21 @@ class RateLimitingConfigServiceConfigTest {
                         .equals(RuleStatus.RuleSource.RULE_SOURCE_DEFAULT)));
     // rule ids conform to UUID
     assertDoesNotThrow(() -> rateLimitingRules.forEach(rule -> UUID.fromString(rule.getId())));
-    assertDoesNotThrow(
-        () ->
-            rateLimitingRules.forEach(
-                rule ->
-                    rulesValidator.validateOrThrow(
-                        RequestContext.forTenantId("default tenant"),
-                        UpdateRateLimitingRuleRequest.newBuilder()
-                            .setRuleId(rule.getId())
-                            .setData(rule.getData())
-                            .build(),
-                        List.of())));
+    rateLimitingRules.forEach(
+        rule -> {
+          RuleStatus ruleStatus =
+              rule.getData().getRuleStatus().toBuilder().clearRuleCreationSource().build();
+          RateLimitingRuleData ruleData =
+              rule.getData().toBuilder().setRuleStatus(ruleStatus).build();
+          UpdateRateLimitingRuleRequest request =
+              UpdateRateLimitingRuleRequest.newBuilder()
+                  .setRuleId(rule.getId())
+                  .setData(ruleData)
+                  .build();
+          assertDoesNotThrow(
+              () ->
+                  rulesValidator.validateOrThrow(
+                      RequestContext.forTenantId("default tenant"), request, List.of()));
+        });
   }
 }

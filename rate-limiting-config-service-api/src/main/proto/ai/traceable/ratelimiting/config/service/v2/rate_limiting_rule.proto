@@ -23,8 +23,8 @@ message RateLimitingRuleData {
 }
 
 message RuleStatus {
-  bool hidden = 1;
-  bool generate_internal_events = 2;
+  optional bool hidden = 1;
+  optional bool generate_internal_events = 2;
   RuleSource rule_creation_source = 3;
 
   enum RuleSource {
