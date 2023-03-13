@@ -13,6 +13,7 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyEventCategory;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyEventScoreCategory;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
+import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfigMap;
 import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc;
 import ai.traceable.anomaly.config.service.v1.detector.GetAllScopedAnomalyDetectionConfigsRequest;
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigRequest;
@@ -78,6 +79,19 @@ public class DetectorConfigServiceIntegrationTest
                                     .setAnySourceCorrelationProbability(0.5)
                                     .setDisabledForMissingPrecedingParam(true)
                                     .build())
+                            .setSubRuleConfigs(
+                                AnomalySubRuleConfigMap.newBuilder()
+                                    .putSubRuleConfigs(
+                                        "sr2",
+                                        AnomalySubRuleConfig.newBuilder()
+                                            .setSubRuleId("sr2")
+                                            .setCategoryConfig(
+                                                AnomalyCategoryConfig.newBuilder()
+                                                    .setEventCategory(
+                                                        AnomalyEventCategory
+                                                            .ANOMALY_EVENT_CATEGORY_LATENT))
+                                            .build())
+                                    .build())
                             .build()))
             .build();
     updateDetectorConfig(detectionConfig);
@@ -90,6 +104,14 @@ public class DetectorConfigServiceIntegrationTest
             .get(0);
     assertEquals(0.5, sessionDefinitionConfig.getObjectBola().getAnySourceCorrelationProbability());
     assertTrue(sessionDefinitionConfig.getObjectBola().getDisabledForMissingPrecedingParam());
+    assertEquals(
+        AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT,
+        sessionDefinitionConfig
+            .getSubRuleConfigs()
+            .getSubRuleConfigsMap()
+            .get("sr2")
+            .getCategoryConfig()
+            .getEventCategory());
   }
 
   @Test

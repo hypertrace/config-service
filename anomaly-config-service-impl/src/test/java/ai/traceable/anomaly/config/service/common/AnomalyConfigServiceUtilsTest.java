@@ -3,7 +3,11 @@ package ai.traceable.anomaly.config.service.common;
 import static ai.traceable.anomaly.config.service.common.AnomalyConfigServiceUtils.mergeConfigs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.StringList;
+import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
+import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfigMap;
+import ai.traceable.anomaly.config.service.v1.detector.SessionDefinitionMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.CustomRuleConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.CustomRulesListConfig;
@@ -117,6 +121,38 @@ public class AnomalyConfigServiceUtilsTest {
     assertEquals(trainingConfig1, mergedConfig);
   }
 
+  @Test
+  void testMergeMapFields() {
+    SessionDefinitionMetadataAnomalyDetectionConfig config1 =
+        SessionDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+            .setSubRuleConfigs(
+                AnomalySubRuleConfigMap.newBuilder()
+                    .putSubRuleConfigs("k1", buildAnomalySubRuleConfig("k1", false, true))
+                    .putSubRuleConfigs("k2", buildAnomalySubRuleConfig("k2", true, true)))
+            .build();
+    SessionDefinitionMetadataAnomalyDetectionConfig config2 =
+        SessionDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+            .setSubRuleConfigs(
+                AnomalySubRuleConfigMap.newBuilder()
+                    .putSubRuleConfigs("k1", buildAnomalySubRuleConfig("k1", true, false))
+                    .putSubRuleConfigs("k2", buildAnomalySubRuleConfig("k2", false, false))
+                    .putSubRuleConfigs("k3", buildAnomalySubRuleConfig("k3", false, true)))
+            .build();
+
+    SessionDefinitionMetadataAnomalyDetectionConfig mergedConfig;
+    mergedConfig = (SessionDefinitionMetadataAnomalyDetectionConfig) mergeConfigs(config1, config2);
+    assertEquals(config2, mergedConfig);
+
+    mergedConfig = (SessionDefinitionMetadataAnomalyDetectionConfig) mergeConfigs(config2, config1);
+    SessionDefinitionMetadataAnomalyDetectionConfig expectedMergedConfig1 =
+        config1.toBuilder()
+            .setSubRuleConfigs(
+                config1.getSubRuleConfigs().toBuilder()
+                    .putSubRuleConfigs("k3", buildAnomalySubRuleConfig("k3", false, true)))
+            .build();
+    assertEquals(expectedMergedConfig1, mergedConfig);
+  }
+
   private ThresholdRegexConfig buildThresholdRegexConfig(int threshold, List<String> regexList) {
     return ThresholdRegexConfig.newBuilder()
         .setThreshold(threshold)
@@ -130,5 +166,14 @@ public class AnomalyConfigServiceUtilsTest {
 
   private CustomRuleConfig buildCustomRuleConfig(String regex, String url) {
     return CustomRuleConfig.newBuilder().setRegex(regex).setUrlPattern(url).build();
+  }
+
+  private AnomalySubRuleConfig buildAnomalySubRuleConfig(
+      String subRuleId, boolean disabled, boolean internal) {
+    return AnomalySubRuleConfig.newBuilder()
+        .setSubRuleId(subRuleId)
+        .setConfigStatus(
+            AnomalyConfigStatusChange.newBuilder().setDisabled(disabled).setInternal(internal))
+        .build();
   }
 }

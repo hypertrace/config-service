@@ -21,6 +21,7 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyEventCategory;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyEventScoreCategory;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
+import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfigMap;
 import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiStateBasedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.BlockingMetadataAnomalyDetectionConfig;
@@ -344,6 +345,28 @@ public class AnomalyDetectionConfigHandlerTest {
                                 IntegerAnomalyConfig.newBuilder()
                                     .setMaxLengthDifference(5)
                                     .setThresholdPercent(0.1))
+                            .setSubRuleConfigs(
+                                AnomalySubRuleConfigMap.newBuilder()
+                                    .putSubRuleConfigs(
+                                        "sr1",
+                                        AnomalySubRuleConfig.newBuilder()
+                                            .setSubRuleId("sr1")
+                                            .setConfigStatus(
+                                                AnomalyConfigStatusChange.newBuilder()
+                                                    .setDisabled(false)
+                                                    .setInternal(true))
+                                            .build())
+                                    .putSubRuleConfigs(
+                                        "sr2",
+                                        AnomalySubRuleConfig.newBuilder()
+                                            .setSubRuleId("sr2")
+                                            .setCategoryConfig(
+                                                AnomalyCategoryConfig.newBuilder()
+                                                    .setEventCategory(
+                                                        AnomalyEventCategory
+                                                            .ANOMALY_EVENT_CATEGORY_LATENT))
+                                            .build())
+                                    .build())
                             .build())
                     .build())
             .addAnomalyDetectionConfigs(
@@ -369,6 +392,28 @@ public class AnomalyDetectionConfigHandlerTest {
                         ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
                             .setInteger(
                                 IntegerAnomalyConfig.newBuilder().setMaxLengthDifference(10))
+                            .setSubRuleConfigs(
+                                AnomalySubRuleConfigMap.newBuilder()
+                                    .putSubRuleConfigs(
+                                        "sr1",
+                                        AnomalySubRuleConfig.newBuilder()
+                                            .setSubRuleId("sr1")
+                                            .setConfigStatus(
+                                                AnomalyConfigStatusChange.newBuilder()
+                                                    .setDisabled(true)
+                                                    .setInternal(false))
+                                            .build())
+                                    .putSubRuleConfigs(
+                                        "sr2",
+                                        AnomalySubRuleConfig.newBuilder()
+                                            .setSubRuleId("sr2")
+                                            .setCategoryConfig(
+                                                AnomalyCategoryConfig.newBuilder()
+                                                    .setEventCategory(
+                                                        AnomalyEventCategory
+                                                            .ANOMALY_EVENT_CATEGORY_MALICIOUS))
+                                            .build())
+                                    .build())
                             .build())
                     .build())
             .addAnomalyDetectionConfigs(
@@ -419,6 +464,23 @@ public class AnomalyDetectionConfigHandlerTest {
             .getInteger()
             .getMaxLengthDifference());
     assertEquals(
+        AnomalyConfigStatusChange.newBuilder().setDisabled(true).setInternal(false).build(),
+        detectionConfig
+            .getApiDefinitionMetadataAnomalyDetectionConfig()
+            .getSubRuleConfigs()
+            .getSubRuleConfigsMap()
+            .get("sr1")
+            .getConfigStatus());
+    assertEquals(
+        AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_MALICIOUS,
+        detectionConfig
+            .getApiDefinitionMetadataAnomalyDetectionConfig()
+            .getSubRuleConfigs()
+            .getSubRuleConfigsMap()
+            .get("sr2")
+            .getCategoryConfig()
+            .getEventCategory());
+    assertEquals(
         AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT,
         detectionConfig.getCategoryConfig().getEventCategory());
     assertEquals(
@@ -457,6 +519,17 @@ public class AnomalyDetectionConfigHandlerTest {
                     .setSessionDefinitionMetadataAnomalyDetectionConfig(
                         SessionDefinitionMetadataAnomalyDetectionConfig.newBuilder()
                             .setUserIdBola(UserIdBolaAnomalyConfig.getDefaultInstance())
+                            .setSubRuleConfigs(
+                                AnomalySubRuleConfigMap.newBuilder()
+                                    .putSubRuleConfigs(
+                                        "sr1",
+                                        AnomalySubRuleConfig.newBuilder()
+                                            .setSubRuleId("sr1")
+                                            .setConfigStatus(
+                                                AnomalyConfigStatusChange.newBuilder()
+                                                    .setDisabled(false)
+                                                    .setInternal(true))
+                                            .build()))
                             .build()))
             .build();
     ScopedAnomalyDetectionConfig config2 =
@@ -481,7 +554,20 @@ public class AnomalyDetectionConfigHandlerTest {
                             .setAnomalyRuleId("userIdBola")
                             .setUserIdBola(
                                 UserIdBolaAnomalyConfig.newBuilder()
-                                    .setMinCorrelationProbability(0.8))))
+                                    .setMinCorrelationProbability(0.8))
+                            .setSubRuleConfigs(
+                                AnomalySubRuleConfigMap.newBuilder()
+                                    .putSubRuleConfigs(
+                                        "sr2",
+                                        AnomalySubRuleConfig.newBuilder()
+                                            .setSubRuleId("sr2")
+                                            .setCategoryConfig(
+                                                AnomalyCategoryConfig.newBuilder()
+                                                    .setEventCategory(
+                                                        AnomalyEventCategory
+                                                            .ANOMALY_EVENT_CATEGORY_LATENT))
+                                            .build())
+                                    .build())))
             .build();
     Value value = detectionConfigConverter.convert(config1);
     assertEquals(config1, detectionConfigConverter.convert(value));
@@ -542,6 +628,23 @@ public class AnomalyDetectionConfigHandlerTest {
             .getSessionDefinitionMetadataAnomalyDetectionConfig()
             .getUserIdBola()
             .getMinCorrelationProbability());
+    assertEquals(
+        AnomalyConfigStatusChange.newBuilder().setDisabled(false).setInternal(true).build(),
+        detectionConfig
+            .getSessionDefinitionMetadataAnomalyDetectionConfig()
+            .getSubRuleConfigs()
+            .getSubRuleConfigsMap()
+            .get("sr1")
+            .getConfigStatus());
+    assertEquals(
+        AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT,
+        detectionConfig
+            .getSessionDefinitionMetadataAnomalyDetectionConfig()
+            .getSubRuleConfigs()
+            .getSubRuleConfigsMap()
+            .get("sr2")
+            .getCategoryConfig()
+            .getEventCategory());
   }
 
   @Test

@@ -137,6 +137,7 @@ message ApiDefinitionMetadataAnomalyDetectionConfig {
     BflaAnomalyConfig bfla = 13;
     JwtAnomalyConfig jwt = 14;
   }
+  AnomalySubRuleConfigMap sub_rule_configs = 15;
 }
 
 message ApiStateBasedAnomalyDetectionConfig {
@@ -156,6 +157,7 @@ message SessionDefinitionMetadataAnomalyDetectionConfig {
     SequenceAnomalyConfig sequence_anomaly = 4;
     SessionViolationConfig session_violation = 5;
   }
+  AnomalySubRuleConfigMap sub_rule_configs = 6;
 }
 
 message BlockingMetadataAnomalyDetectionConfig {
@@ -424,4 +426,8 @@ message SessionExpiryConfig {
 
 message IpTypeList {
   repeated IpType values = 1;
+}
+
+message AnomalySubRuleConfigMap {
+  map<string, AnomalySubRuleConfig> sub_rule_configs = 1;
 }
