@@ -193,25 +193,15 @@ class CustomSignatureBlockingManagerTest {
         manager.generateBlockingElements(
             List.of(
                 BlockingConfigRequestElement.newBuilder()
-                    .setPreviousHash(V3_SEG_ARG_HASH)
+                    .setPreviousHash("random")
                     .addSupportedAgentCapabilities(
                         AgentCapabilities.newBuilder()
                             .addComponents(
                                 Component.newBuilder().setLibtraceableVersion("0.1.98-rc.139")))
-                    .setCustomSignatureBlockingRulesRequest(
-                        CustomSignatureBlockingRulesRequest.getDefaultInstance())
-                    .build(),
-                BlockingConfigRequestElement.newBuilder()
-                    .setPreviousHash("hg2")
                     .addSupportedAgentCapabilities(
                         AgentCapabilities.newBuilder()
                             .addComponents(
                                 Component.newBuilder().setLibtraceableVersion("0.1.98-rc.140")))
-                    .setCustomSignatureBlockingRulesRequest(
-                        CustomSignatureBlockingRulesRequest.getDefaultInstance())
-                    .build(),
-                BlockingConfigRequestElement.newBuilder()
-                    .setPreviousHash("random")
                     .addSupportedAgentCapabilities(
                         AgentCapabilities.newBuilder()
                             .addComponents(

@@ -85,7 +85,8 @@ public class ModsecBlockingManager implements BlockingConfigManagerBase {
         filteredRequestElements.stream()
             .flatMap(requestElement -> requestElement.getSupportedAgentCapabilitiesList().stream())
             .flatMap(agentCapabilities -> agentCapabilities.getComponentsList().stream())
-            .filter(Predicate.not(Component::hasTraceablePlatformAgentVersion))
+            .filter(Component::hasLibtraceableVersion)
+            .filter(component -> this.getSupportedRuleVersion(component) == modsecRuleVersion)
             .distinct()
             .map(component -> AgentCapabilities.newBuilder().addComponents(component).build())
             .collect(Collectors.toUnmodifiableList());
@@ -113,31 +114,34 @@ public class ModsecBlockingManager implements BlockingConfigManagerBase {
 
   private boolean isModsecVersionSupported(
       BlockingConfigRequestElement requestElement, ModsecRuleVersion modsecRuleVersion) {
-    Predicate<AgentCapabilities> checker = this::isSecArgLimitsSupported;
-    if (modsecRuleVersion == ModsecRuleVersion.MODSEC_RULE_VERSION_V3) {
-      // By default send v3
-      if (requestElement.getSupportedAgentCapabilitiesList().isEmpty()) {
-        return true;
-      }
-      checker = Predicate.not(checker);
-    }
-
     // Concerned with only libtraceable version for returning modsec with seg args
     // TPA version can is irrelevant as the object type is string blob in both cases
-    return requestElement.getSupportedAgentCapabilitiesList().stream().anyMatch(checker);
+    if (modsecRuleVersion == ModsecRuleVersion.MODSEC_RULE_VERSION_V3
+        && requestElement.getSupportedAgentCapabilitiesList().isEmpty()) {
+      return true;
+    }
+    return requestElement.getSupportedAgentCapabilitiesList().stream()
+        .anyMatch(
+            agentCapabilities -> isSecArgLimitsSupported(agentCapabilities, modsecRuleVersion));
   }
 
-  private boolean isSecArgLimitsSupported(AgentCapabilities agentCapabilities) {
+  private boolean isSecArgLimitsSupported(
+      AgentCapabilities agentCapabilities, ModsecRuleVersion modsecRuleVersion) {
     // An agent can be said to support seg arg limit if it has any component with desired
     // libtraceable version
-    return agentCapabilities.getComponentsList().stream().anyMatch(this::isSecArgLimitsSupported);
+    return agentCapabilities.getComponentsList().stream()
+        .map(this::getSupportedRuleVersion)
+        .anyMatch(Predicate.isEqual(modsecRuleVersion));
   }
 
-  private boolean isSecArgLimitsSupported(Component component) {
+  private ModsecRuleVersion getSupportedRuleVersion(Component component) {
     // A component can be said to support seg arg limit if it has desired libtraceable version
-    return component.hasLibtraceableVersion()
+    if (component.hasLibtraceableVersion()
         && semanticVersioningComparator.compare(
                 component.getLibtraceableVersion(), MINIMUM_LIBTRACEABLE_VERSION_FOR_V3_SECARG)
-            >= 0;
+            >= 0) {
+      return ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS;
+    }
+    return ModsecRuleVersion.MODSEC_RULE_VERSION_V3;
   }
 }

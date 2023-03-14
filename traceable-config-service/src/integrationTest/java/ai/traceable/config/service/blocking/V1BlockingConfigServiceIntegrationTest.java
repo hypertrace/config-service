@@ -1,4 +1,4 @@
-package ai.traceable.config.service;
+package ai.traceable.config.service.blocking;
 
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_CUSTOM_IP_RULE;
 import static ai.traceable.blocking.config.service.v1.BlockingCategory.BLOCKING_CATEGORY_CUSTOM_REGION_RULE;
@@ -47,6 +47,7 @@ import ai.traceable.blocking.config.service.v1.GetBlockingRulesRequest;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesResponse;
 import ai.traceable.blocking.config.service.v1.IpType;
 import ai.traceable.blocking.config.service.v1.IpTypeRule;
+import ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
@@ -123,8 +124,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegrationTestBase {
-  private static final String TENANT_ID = "tenant-blocking-test";
+class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegrationTestBase {
+  private static final String TENANT_ID = "tenant-blocking-test-v1";
   private static final UuidGenerator uuidGenerator = new UuidGenerator();
   private static final String ENVIRONMENT_ID = "environment-id";
   private static final long inactiveTimestamp = System.currentTimeMillis() - 100000L;
@@ -144,7 +145,7 @@ class BlockingConfigServiceIntegrationTest extends TraceableConfigServiceIntegra
   private static final List<String> customSignatureRuleId = new ArrayList<>();
 
   @BeforeAll
-  static void init() throws InterruptedException {
+  static void init() {
     regionConfigServiceStub =
         RegionConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
             .withCallCredentials(

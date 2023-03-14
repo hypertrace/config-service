@@ -25,6 +25,10 @@ public class SemanticVersioningComparator implements Comparator<String> {
 
   @Override
   public int compare(String a, String b) {
+    if (a.isEmpty() || b.isEmpty()) {
+      return a.length() - b.length();
+    }
+
     // Assumes strings are of form
     Matcher matcherA = SEMVER_VERSION_PATTERN.matcher(a);
     Matcher matcherB = SEMVER_VERSION_PATTERN.matcher(b);

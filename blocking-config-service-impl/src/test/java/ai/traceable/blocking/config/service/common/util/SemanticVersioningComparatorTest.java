@@ -31,5 +31,9 @@ class SemanticVersioningComparatorTest {
     assertTrue(semanticVersioningComparator.compare("1.2.3", "1.12.3") < 0);
     assertTrue(semanticVersioningComparator.compare("1.2.4", "1.2.13") < 0);
     assertTrue(semanticVersioningComparator.compare("1.2.3-rc.4", "1.2.3-rc.13") < 0);
+
+    assertTrue(semanticVersioningComparator.compare("1.2.3", "") > 0);
+    assertTrue(semanticVersioningComparator.compare("", "1.12.3") < 0);
+    assertEquals(0, semanticVersioningComparator.compare("", ""));
   }
 }

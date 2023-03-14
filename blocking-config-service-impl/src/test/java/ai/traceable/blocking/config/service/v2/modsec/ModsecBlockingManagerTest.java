@@ -99,6 +99,9 @@ class ModsecBlockingManagerTest {
                     AgentCapabilities.newBuilder()
                         .addComponents(
                             Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
+                .addAgentCapabilities(
+                    AgentCapabilities.newBuilder()
+                        .addComponents(Component.newBuilder().setLibtraceableVersion("")))
                 .setCrsBlockingRules(CrsBlockingRules.getDefaultInstance())
                 .build()),
         manager.generateBlockingElements(
@@ -113,6 +116,9 @@ class ModsecBlockingManagerTest {
                         AgentCapabilities.newBuilder()
                             .addComponents(
                                 Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
+                    .addSupportedAgentCapabilities(
+                        AgentCapabilities.newBuilder()
+                            .addComponents(Component.newBuilder().setLibtraceableVersion("")))
                     .setCrsBlockingRulesRequest(CrsBlockingRulesRequest.getDefaultInstance())
                     .build()),
             requestContext,
@@ -163,6 +169,9 @@ class ModsecBlockingManagerTest {
                     AgentCapabilities.newBuilder()
                         .addComponents(
                             Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
+                .addAgentCapabilities(
+                    AgentCapabilities.newBuilder()
+                        .addComponents(Component.newBuilder().setLibtraceableVersion("")))
                 .setCrsBlockingRules(CrsBlockingRules.newBuilder().setCrsRulesBlob(V3_blob))
                 .build(),
             getV4Response(
@@ -178,27 +187,22 @@ class ModsecBlockingManagerTest {
         manager.generateBlockingElements(
             List.of(
                 BlockingConfigRequestElement.newBuilder()
-                    .setPreviousHash(V3_SEG_ARG_HASH)
-                    .addSupportedAgentCapabilities(
-                        AgentCapabilities.newBuilder()
-                            .addComponents(
-                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.139")))
-                    .setCrsBlockingRulesRequest(CrsBlockingRulesRequest.getDefaultInstance())
-                    .build(),
-                BlockingConfigRequestElement.newBuilder()
-                    .setPreviousHash("hg2")
-                    .addSupportedAgentCapabilities(
-                        AgentCapabilities.newBuilder()
-                            .addComponents(
-                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.140")))
-                    .setCrsBlockingRulesRequest(CrsBlockingRulesRequest.getDefaultInstance())
-                    .build(),
-                BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("random")
                     .addSupportedAgentCapabilities(
                         AgentCapabilities.newBuilder()
                             .addComponents(
+                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.139")))
+                    .addSupportedAgentCapabilities(
+                        AgentCapabilities.newBuilder()
+                            .addComponents(
+                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.140")))
+                    .addSupportedAgentCapabilities(
+                        AgentCapabilities.newBuilder()
+                            .addComponents(
                                 Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
+                    .addSupportedAgentCapabilities(
+                        AgentCapabilities.newBuilder()
+                            .addComponents(Component.newBuilder().setLibtraceableVersion("")))
                     .setCrsBlockingRulesRequest(CrsBlockingRulesRequest.getDefaultInstance())
                     .build()),
             requestContext,
