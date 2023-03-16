@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package ai.traceable.api.route.config.service.v1;
+package ai.traceable.api.gateway.config.service.v1;
 
 option java_multiple_files = true;
 
@@ -16,6 +16,7 @@ message NewApiRoute {
 }
 
 message RouteInfo {
+  optional string service_name = 3;
   string path = 1;
   bool is_deprecated = 2;
 }

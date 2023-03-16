@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package ai.traceable.api.route.config.service.v1;
+package ai.traceable.api.gateway.config.service.v1;
 
 option java_multiple_files = true;
 
-import "ai/traceable/api/route/config/service/v1/api_route.proto";
+import "ai/traceable/api/gateway/config/service/v1/api_route.proto";
 
 service ApiGatewayConfigService {
   rpc CreateRoutes (CreateRoutesRequest) returns (CreateRoutesResponse) {
@@ -18,7 +18,7 @@ service ApiGatewayConfigService {
 }
 
 message GetRoutesRequest {
-  Filter filter = 1;
+  ApiRouteFilter filter = 1;
 }
 
 message GetRoutesResponse {
@@ -34,19 +34,19 @@ message CreateRoutesResponse {
 }
 
 message DeleteRoutesRequest {
-  Filter filter = 1;
+  ApiRouteFilter filter = 1;
 }
 
 message DeleteRoutesResponse {
 
 }
 
-message Filter {
+message ApiRouteFilter {
   oneof type {
-    SourceConfigIds source_config_ids = 1;
+    OrgIds org_ids = 1;
   }
 }
 
-message SourceConfigIds {
-  repeated string source_config_id = 1;
+message OrgIds {
+  repeated string org_id = 1;
 }

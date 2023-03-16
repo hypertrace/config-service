@@ -83,6 +83,7 @@ include(":api-spec-config-service-impl")
 include(":feature-caching-client")
 include(":traceable-config-service-factory")
 include(":api-gateway-config-service-api")
+include(":api-gateway-config-service-impl")
 
 include(":mock-config-service")
 include(":ast-scan-profile-config-service-api")

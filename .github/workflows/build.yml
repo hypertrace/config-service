@@ -184,7 +184,7 @@ jobs:
           path: /tmp/test-reports
 
       - name: Publish Unit Test Results
-        uses: docker://ghcr.io/enricomi/publish-unit-test-result-action:v1.19
+        uses: docker://ghcr.io/enricomi/publish-unit-test-result-action:v2
         if: always()
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -251,7 +251,7 @@ jobs:
         if: always()
 
       - name: Publish Integration Test Results
-        uses: docker://ghcr.io/enricomi/publish-unit-test-result-action:v1.19
+        uses: docker://ghcr.io/enricomi/publish-unit-test-result-action:v2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           files: ./**/build/test-results/**/*.xml
