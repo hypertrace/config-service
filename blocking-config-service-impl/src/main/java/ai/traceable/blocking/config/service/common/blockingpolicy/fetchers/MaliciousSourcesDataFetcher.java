@@ -37,23 +37,13 @@ public class MaliciousSourcesDataFetcher implements DataFetcherBase {
   public List<BlockingPolicyData> getBlockingPolicyData(
       RequestContext requestContext, Optional<String> environmentId) {
     List<MaliciousSourcesRule> ruleList = fetchMaliciousSourceRules(requestContext, environmentId);
-    Optional<BlockingPolicyData> emptyOptionalOfBlockingPolicyData = Optional.empty();
     return ruleList.stream()
         .map(
-            maliciousSourcesRule -> {
-              MaliciousSourceDataHandler maliciousSourceDataHandler =
-                  maliciousSourceDataHandlerMap.get(
-                      maliciousSourcesRule.getRuleInfo().getConditions(0).getConditionCase());
-              if (maliciousSourceDataHandler == null) {
-                log.info(
-                    "maliciousSourceDataHandler could not find class for condition case : {} and rule id : {}",
-                    maliciousSourcesRule.getRuleInfo().getConditions(0).getConditionCase(),
-                    maliciousSourcesRule.getId());
-                return emptyOptionalOfBlockingPolicyData;
-              } else {
-                return maliciousSourceDataHandler.getBlockingDetails(maliciousSourcesRule);
-              }
-            })
+            maliciousSourcesRule ->
+                Optional.ofNullable(
+                        maliciousSourceDataHandlerMap.get(
+                            maliciousSourcesRule.getRuleInfo().getConditions(0).getConditionCase()))
+                    .flatMap(handler -> handler.getBlockingDetails(maliciousSourcesRule)))
         .filter(Optional::isPresent)
         .map(Optional::get)
         .collect(Collectors.toUnmodifiableList());
