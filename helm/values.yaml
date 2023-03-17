@@ -223,6 +223,8 @@ traceableConfigServiceConfig:
           size: 2
   labelApplicationRuleConfigServiceConfig:
     maxDynamicLabelApplicationRulesPerTenant: 100
+  astConfigService:
+    defaultPurgeDuration: 30d
 
 localApiNamingConfig:
   agentPollingFrequency: 5m
