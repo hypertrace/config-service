@@ -95,7 +95,7 @@ public class ModsecRulesRegistryTest {
       // few rules in file not marked safe
       assertEquals(
           allRulesCount - safeRulesCount, crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
-      assertEquals(33, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
+      assertEquals(34, crsRulesBlob.split(secRuleRemoveByIdKeyword).length, "Non safe rules count");
     }
     {
       String crsRulesBlob =
@@ -281,9 +281,10 @@ public class ModsecRulesRegistryTest {
             .collect(Collectors.toList());
     // assertEquals(subRulesRead, subRulesCollected);
     for (int i = 0; i < subRulesRead.size(); i++) {
-      assertEquals(subRulesRead.get(i), subRulesCollected.get(i));
+      assertEquals(
+          subRulesRead.get(i), subRulesCollected.get(i), "Regular rule mismatch at index " + i);
     }
-    assertEquals(subRulesRead.size(), subRulesCollected.size());
+    assertEquals(subRulesRead.size(), subRulesCollected.size(), "Regular rule count mismatch");
 
     // check safe rules
     subRulesRead =
@@ -303,9 +304,10 @@ public class ModsecRulesRegistryTest {
             .sorted()
             .collect(Collectors.toList());
     for (int i = 0; i < subRulesRead.size(); i++) {
-      assertEquals(subRulesRead.get(i), subRulesCollected.get(i));
+      assertEquals(
+          subRulesRead.get(i), subRulesCollected.get(i), "Safe rule mismatch at index " + i);
     }
-    assertEquals(subRulesRead.size(), subRulesCollected.size());
+    assertEquals(subRulesRead.size(), subRulesCollected.size(), "Safe rule count mismatch");
 
     // check blocking rules
     subRulesRead =
@@ -326,9 +328,10 @@ public class ModsecRulesRegistryTest {
             .collect(Collectors.toList());
     // assertEquals(subRulesRead, subRulesCollected);
     for (int i = 0; i < subRulesRead.size(); i++) {
-      assertEquals(subRulesRead.get(i), subRulesCollected.get(i));
+      assertEquals(
+          subRulesRead.get(i), subRulesCollected.get(i), "Blocking rule mismatch at index " + i);
     }
-    assertEquals(subRulesRead.size(), subRulesCollected.size());
+    assertEquals(subRulesRead.size(), subRulesCollected.size(), "Blocking rule count mismatch");
   }
 
   private Set<String> getIdMatches(String text) {

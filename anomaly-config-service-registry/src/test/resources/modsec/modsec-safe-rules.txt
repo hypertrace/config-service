@@ -19,7 +19,6 @@ crs_9300010 :: Rails Action View LFI: Accept header: (CVE-2019-5418)
 crs_9300120 :: OS File Access Attempt (T120)
 crs_930100 :: Path Traversal Attack (/../) (100)
 crs_930110 :: Path Traversal Attack (/../) (110)
-crs_930120 :: OS File Access Attempt (120)
 crs_930130 :: Restricted File Access Attempt
 crs_931120 :: Possible Remote File Inclusion (RFI) Attack: URL Payload Used w/Trailing Question Mark Character (?)
 crs_9320010 :: Spring Cloud Function RCE: malicious Spring Expression: (CVE-2022-22963)
