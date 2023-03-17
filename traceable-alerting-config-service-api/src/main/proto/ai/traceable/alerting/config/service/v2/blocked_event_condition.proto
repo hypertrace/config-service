@@ -5,10 +5,41 @@ option java_multiple_files = true;
 package ai.traceable.alerting.config.service.v2;
 
 message BlockedEventCondition {
-  repeated BlockedEventType blocked_event_types = 1;
+  repeated BlockedEventType blocked_event_types = 1 [deprecated=true];
+  repeated BlockedThreatActivityCondition threat_activity_conditions = 2;
+}
+
+message BlockedThreatActivityCondition {
+    oneof condition {
+        PreDefinedBlockingCondition pre_defined_condition = 1;
+        CustomBlockingCondition custom_condition = 2;
+    }
+}
+
+message PreDefinedBlockingCondition {
+    string anomaly_rule_id = 1;
+}
+
+message CustomBlockingCondition {
+    CustomBlockingType custom_blocking_type = 1;
+}
+
+enum CustomBlockingType {
+    CUSTOM_BLOCKING_TYPE_UNSPECIFIED = 0;
+    CUSTOM_BLOCKING_TYPE_CUSTOM_SIGNATURE = 1;
+    CUSTOM_BLOCKING_TYPE_RATE_LIMITING = 2;
+    CUSTOM_BLOCKING_TYPE_DATA_ACCESS = 3;
+    CUSTOM_BLOCKING_TYPE_ENUMERATION = 4;
+    CUSTOM_BLOCKING_TYPE_MALICIOUS_SOURCES_IP_RANGE = 5;
+    CUSTOM_BLOCKING_TYPE_MALICIOUS_SOURCES_IP_TYPE = 6;
+    CUSTOM_BLOCKING_TYPE_MALICIOUS_SOURCES_REGION = 7;
+    CUSTOM_BLOCKING_TYPE_MALICIOUS_SOURCES_EMAIL = 8;
+    CUSTOM_BLOCKING_TYPE_THREAT_ACTOR = 9;
+    CUSTOM_BLOCKING_TYPE_IN_AGENT_VULNERABLE_LIBRARY = 10;
 }
 
 enum BlockedEventType {
+    option deprecated = true;
     BLOCKED_EVENT_TYPE_UNSPECIFIED = 0;
     BLOCKED_EVENT_TYPE_THREAT_ACTOR = 1;
     BLOCKED_EVENT_TYPE_SIGNATURE_BASED = 2;

@@ -5,8 +5,24 @@ option java_multiple_files = true;
 package ai.traceable.alerting.config.service.v2;
 
 message DetectedSecurityEventCondition {
-  repeated SecurityEventType event_types = 1;
+  repeated SecurityEventType event_types = 1 [deprecated=true];
   repeated SecurityEventSeverity severities = 2;
+  repeated DetectedThreatActivityCondition threat_activity_conditions = 3;
+}
+
+message DetectedThreatActivityCondition {
+  oneof condition {
+    PreDefinedDetectionCondition pre_defined_condition = 1;
+    CustomDetectionCondition custom_condition = 2;
+  }
+}
+
+message PreDefinedDetectionCondition {
+  string anomaly_rule_id = 1;
+}
+
+message CustomDetectionCondition {
+  CustomDetectionType custom_detection_type = 1;
 }
 
 enum SecurityEventSeverity {
@@ -17,18 +33,31 @@ enum SecurityEventSeverity {
   SECURITY_EVENT_SEVERITY_CRITICAL = 4;
 }
 
+enum CustomDetectionType {
+  CUSTOM_DETECTION_TYPE_UNSPECIFIED = 0;
+  CUSTOM_DETECTION_TYPE_CUSTOM_SIGNATURE = 1;
+  CUSTOM_DETECTION_TYPE_RATE_LIMITING = 2;
+  CUSTOM_DETECTION_TYPE_DATA_ACCESS = 3;
+  CUSTOM_DETECTION_TYPE_ENUMERATION = 4;
+  CUSTOM_DETECTION_TYPE_MALICIOUS_SOURCES_IP_RANGE = 5;
+  CUSTOM_DETECTION_TYPE_MALICIOUS_SOURCES_IP_TYPE = 6;
+  CUSTOM_DETECTION_TYPE_MALICIOUS_SOURCES_REGION = 7;
+  CUSTOM_DETECTION_TYPE_MALICIOUS_SOURCES_EMAIL = 8;
+}
+
 enum SecurityEventType {
-    SECURITY_EVENT_TYPE_UNSPECIFIED = 0;
-    SECURITY_EVENT_TYPE_XSS = 1;
-    SECURITY_EVENT_TYPE_SCANNER_DETECTED = 2;
-    SECURITY_EVENT_TYPE_SESSION_FIXATION = 3;
-    SECURITY_EVENT_TYPE_PATH_MANIPULATION = 4;
-    SECURITY_EVENT_TYPE_KNOWN_VULNERABILITIES = 5;
-    SECURITY_EVENT_TYPE_REQUEST_RESPONSE_METADATA_ANOMALIES = 6;
-    SECURITY_EVENT_TYPE_INJECTIONS = 7;
-    SECURITY_EVENT_TYPE_PARAMETER_ANOMALIES =8;
-    SECURITY_EVENT_TYPE_AUTHORIZATION_VIOLATIONS = 9;
-    SECURITY_EVENT_TYPE_RATE_LIMITING = 10;
-    SECURITY_EVENT_TYPE_SSRF = 11;
-    SECURITY_EVENT_TYPE_CUSTOM_SIGNATURE_RULES = 12;
+  option deprecated = true;
+  SECURITY_EVENT_TYPE_UNSPECIFIED = 0;
+  SECURITY_EVENT_TYPE_XSS = 1;
+  SECURITY_EVENT_TYPE_SCANNER_DETECTED = 2;
+  SECURITY_EVENT_TYPE_SESSION_FIXATION = 3;
+  SECURITY_EVENT_TYPE_PATH_MANIPULATION = 4;
+  SECURITY_EVENT_TYPE_KNOWN_VULNERABILITIES = 5;
+  SECURITY_EVENT_TYPE_REQUEST_RESPONSE_METADATA_ANOMALIES = 6;
+  SECURITY_EVENT_TYPE_INJECTIONS = 7;
+  SECURITY_EVENT_TYPE_PARAMETER_ANOMALIES =8;
+  SECURITY_EVENT_TYPE_AUTHORIZATION_VIOLATIONS = 9;
+  SECURITY_EVENT_TYPE_RATE_LIMITING = 10;
+  SECURITY_EVENT_TYPE_SSRF = 11;
+  SECURITY_EVENT_TYPE_CUSTOM_SIGNATURE_RULES = 12;
 }

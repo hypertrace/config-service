@@ -151,18 +151,18 @@ enum AnomalyConfidenceLevel {
   ANOMALY_CONFIDENCE_LEVEL_HIGH = 3;
 }
 
-enum AnomalySeverityLevel {
-  ANOMALY_SEVERITY_LEVEL_UNSPECIFIED = 0;
-  ANOMALY_SEVERITY_LEVEL_LOW = 1;
-  ANOMALY_SEVERITY_LEVEL_MEDIUM = 2;
-  ANOMALY_SEVERITY_LEVEL_HIGH = 3;
-}
-
-enum AnomalyThreatCategory {
-  ANOMALY_THREAT_CATEGORY_UNSPECIFIED = 0;
-  ANOMALY_THREAT_CATEGORY_MALICIOUS_ACTIVITIES = 1;
-  ANOMALY_THREAT_CATEGORY_ANOMALIES = 2;
-  ANOMALY_THREAT_CATEGORY_TESTS = 3;
+enum AnomalyCustomType {
+  ANOMALY_CUSTOM_TYPE_UNSPECIFIED = 0 [(string_value) = "Unspecified"];
+  ANOMALY_CUSTOM_TYPE_CUSTOM_SIGNATURE = 1 [(string_value) = "Custom Signature"];
+  ANOMALY_CUSTOM_TYPE_RATE_LIMITING = 2 [(string_value) = "Rate Limiting"];
+  ANOMALY_CUSTOM_TYPE_DATA_ACCESS = 3 [(string_value) = "Data Access"];
+  ANOMALY_CUSTOM_TYPE_ENUMERATION = 4 [(string_value) = "Enumeration"];
+  ANOMALY_CUSTOM_TYPE_MALICIOUS_SOURCES_IP_RANGE = 5 [(string_value) = "IP Range"];
+  ANOMALY_CUSTOM_TYPE_MALICIOUS_SOURCES_IP_TYPE = 6 [(string_value) = "IP Type"];
+  ANOMALY_CUSTOM_TYPE_MALICIOUS_SOURCES_REGION = 7 [(string_value) = "Region"];
+  ANOMALY_CUSTOM_TYPE_MALICIOUS_SOURCES_EMAIL = 8 [(string_value) = "Email"];
+  ANOMALY_CUSTOM_TYPE_THREAT_ACTOR = 9 [(string_value) = "Threat Actor"];
+  ANOMALY_CUSTOM_TYPE_IN_AGENT_VULNERABLE_LIBRARY = 10 [(string_value) = "In-Agent Vulnerable Library"];
 }
 
 message StringList {
