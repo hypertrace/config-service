@@ -4,6 +4,8 @@ package ai.traceable.api.gateway.config.service.v1;
 
 option java_multiple_files = true;
 
+import "ai/traceable/api/gateway/config/service/v1/api_gateway.proto";
+
 message ApiRoute {
   string id = 1;
   RouteInfo info = 2;
@@ -17,10 +19,12 @@ message NewApiRoute {
 
 message RouteInfo {
   optional string service_name = 3;
+  optional string http_method = 4;
   string path = 1;
   bool is_deprecated = 2;
 }
 
 message Metadata {
   string org_id = 1;
+  GatewayType gateway_type = 2;
 }

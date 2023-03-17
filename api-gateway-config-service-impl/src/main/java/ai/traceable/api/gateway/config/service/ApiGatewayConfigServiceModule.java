@@ -1,6 +1,7 @@
 package ai.traceable.api.gateway.config.service;
 
 import ai.traceable.api.gateway.config.service.delegate.ApiGatewayDelegateModule;
+import ai.traceable.api.gateway.config.service.filter.ApiRouteFilterModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import io.grpc.BindableService;
@@ -20,6 +21,7 @@ public class ApiGatewayConfigServiceModule extends AbstractModule {
     bind(BindableService.class).to(ApiGatewayConfigServiceImpl.class);
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
     install(new ApiGatewayDelegateModule());
+    install(new ApiRouteFilterModule());
   }
 
   @SuppressWarnings("unused")

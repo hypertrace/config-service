@@ -1,8 +1,11 @@
 package ai.traceable.api.gateway.config.service.store;
 
+import ai.traceable.api.gateway.config.service.filter.ApiRouteFilterToPredicateConverter;
 import ai.traceable.api.gateway.config.service.v1.ApiRoute;
 import ai.traceable.api.gateway.config.service.v1.ApiRouteFilter;
+import ai.traceable.api.gateway.config.service.v1.ApiRouteFilter.TypeCase;
 import com.google.protobuf.Value;
+import java.util.Map;
 import java.util.Optional;
 import javax.inject.Inject;
 import lombok.SneakyThrows;
@@ -10,23 +13,26 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
-import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 
 @Slf4j
 public class ApiRoutesConfigStore
     extends IdentifiedObjectStoreWithFilter<ApiRoute, ApiRouteFilter> {
   private static final String API_GATEWAY_CONFIG_RESOURCE_NAME = "api-gateway-route";
   private static final String API_GATEWAY_CONFIG_RESOURCE_NAMESPACE = "api-gateway";
+  private final Map<TypeCase, ApiRouteFilterToPredicateConverter> filterConverterMap;
 
   @Inject
   public ApiRoutesConfigStore(
-      final ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
-      final ConfigChangeEventGenerator configChangeEventGenerator) {
+      final ConfigServiceBlockingStub configServiceBlockingStub,
+      final ConfigChangeEventGenerator configChangeEventGenerator,
+      final Map<TypeCase, ApiRouteFilterToPredicateConverter> filterConverterMap) {
     super(
         configServiceBlockingStub,
         API_GATEWAY_CONFIG_RESOURCE_NAMESPACE,
         API_GATEWAY_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
+    this.filterConverterMap = filterConverterMap;
   }
 
   @SneakyThrows
@@ -51,17 +57,14 @@ public class ApiRoutesConfigStore
   @Override
   protected Optional<ApiRoute> filterConfigData(
       final ApiRoute apiRoute, final ApiRouteFilter filter) {
-    final Optional<ApiRoute> optionalRoute = Optional.of(apiRoute);
-    if (ApiRouteFilter.getDefaultInstance().equals(filter)) {
-      return optionalRoute;
+    final ApiRouteFilter.TypeCase filterCase = filter.getTypeCase();
+    final ApiRouteFilterToPredicateConverter converter = filterConverterMap.get(filterCase);
+
+    if (converter == null) {
+      log.error("Unhandled filter case: " + filterCase);
+      return Optional.empty();
     }
 
-    if (filter.hasOrgIds()) {
-      return optionalRoute.filter(
-          route -> filter.getOrgIds().getOrgIdList().contains(route.getMetadata().getOrgId()));
-    }
-
-    log.error("Unhandled filter case: " + filter.getTypeCase());
-    return Optional.empty();
+    return Optional.of(apiRoute).filter(converter.convert(filter));
   }
 }

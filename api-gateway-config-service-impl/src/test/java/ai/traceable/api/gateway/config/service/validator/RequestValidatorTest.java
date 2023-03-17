@@ -7,7 +7,10 @@ import ai.traceable.api.gateway.config.service.v1.ApiRouteFilter;
 import ai.traceable.api.gateway.config.service.v1.CreateRoutesRequest;
 import ai.traceable.api.gateway.config.service.v1.DeleteRoutesRequest;
 import ai.traceable.api.gateway.config.service.v1.GetRoutesRequest;
+import ai.traceable.api.gateway.config.service.v1.Metadata;
+import ai.traceable.api.gateway.config.service.v1.NewApiRoute;
 import ai.traceable.api.gateway.config.service.v1.OrgIds;
+import ai.traceable.api.gateway.config.service.v1.RouteInfo;
 import io.grpc.StatusRuntimeException;
 import java.util.UUID;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -41,6 +44,33 @@ class RequestValidatorTest {
       final RequestContext requestContext = RequestContext.forTenantId("tenant-id");
 
       assertDoesNotThrow(() -> requestValidator.validate(request, requestContext));
+    }
+
+    @Test
+    void testValidateCreateWithoutPath() {
+      final CreateRoutesRequest request =
+          CreateRoutesRequest.newBuilder()
+              .addRoutes(
+                  NewApiRoute.newBuilder()
+                      .setMetadata(Metadata.newBuilder().setOrgId(UUID.randomUUID().toString())))
+              .build();
+      final RequestContext requestContext = new RequestContext();
+
+      assertThrows(
+          StatusRuntimeException.class, () -> requestValidator.validate(request, requestContext));
+    }
+
+    @Test
+    void testValidateCreateWithoutOrgId() {
+      final CreateRoutesRequest request =
+          CreateRoutesRequest.newBuilder()
+              .addRoutes(
+                  NewApiRoute.newBuilder().setInfo(RouteInfo.newBuilder().setPath("/hello/Mars")))
+              .build();
+      final RequestContext requestContext = new RequestContext();
+
+      assertThrows(
+          StatusRuntimeException.class, () -> requestValidator.validate(request, requestContext));
     }
   }
 

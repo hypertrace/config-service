@@ -8,8 +8,11 @@ import static org.mockito.quality.Strictness.LENIENT;
 import ai.traceable.api.gateway.config.service.delegate.ApiRoutesCreatorImpl;
 import ai.traceable.api.gateway.config.service.delegate.ApiRoutesDeleterImpl;
 import ai.traceable.api.gateway.config.service.delegate.ApiRoutesGetterImpl;
+import ai.traceable.api.gateway.config.service.filter.ApiRouteFilterModule;
+import ai.traceable.api.gateway.config.service.filter.ApiRouteFilterToPredicateConverter;
 import ai.traceable.api.gateway.config.service.store.ApiRoutesConfigStore;
 import ai.traceable.api.gateway.config.service.v1.ApiGatewayConfigServiceGrpc;
+import ai.traceable.api.gateway.config.service.v1.ApiInfo;
 import ai.traceable.api.gateway.config.service.v1.ApiRoute;
 import ai.traceable.api.gateway.config.service.v1.ApiRouteFilter;
 import ai.traceable.api.gateway.config.service.v1.CreateRoutesRequest;
@@ -24,7 +27,11 @@ import ai.traceable.api.gateway.config.service.v1.OrgIds;
 import ai.traceable.api.gateway.config.service.v1.RouteInfo;
 import ai.traceable.api.gateway.config.service.validator.RequestValidator;
 import ai.traceable.config.utils.UuidGenerator;
+import com.google.inject.Guice;
+import com.google.inject.Key;
+import com.google.inject.TypeLiteral;
 import io.grpc.StatusRuntimeException;
+import java.util.Map;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -44,6 +51,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 class ApiGatewayConfigServiceImplTest {
   private ApiGatewayConfigServiceGrpc.ApiGatewayConfigServiceBlockingStub apiGatewayConfigService;
 
+  @SuppressWarnings("Convert2Diamond")
   @BeforeAll
   void setup() {
     final MockGenericConfigService mockGenericConfigService =
@@ -58,7 +66,16 @@ class ApiGatewayConfigServiceImplTest {
     final ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(mockGenericConfigService.channel());
     final ApiRoutesConfigStore apiRoutesConfigStore =
-        new ApiRoutesConfigStore(genericStub, mock(ConfigChangeEventGenerator.class));
+        new ApiRoutesConfigStore(
+            genericStub,
+            mock(ConfigChangeEventGenerator.class),
+            Guice.createInjector(new ApiRouteFilterModule())
+                .getInstance(
+                    Key.get(
+                        new TypeLiteral<
+                            Map<
+                                ApiRouteFilter.TypeCase,
+                                ApiRouteFilterToPredicateConverter>>() {})));
 
     mockGenericConfigService
         .addService(
@@ -193,6 +210,69 @@ class ApiGatewayConfigServiceImplTest {
                       .setOrgIds(OrgIds.newBuilder().addOrgId(nonExistingOrgId)))
               .build();
       final GetRoutesResponse expectedResponse = GetRoutesResponse.newBuilder().build();
+      final GetRoutesResponse response = apiGatewayConfigService.getRoutes(getRequest);
+      assertEquals(expectedResponse, response);
+    }
+
+    @Test
+    void testGetRoutesWithApiPathExactFilter() {
+      final GetRoutesRequest getRequest =
+          GetRoutesRequest.newBuilder()
+              .setFilter(
+                  ApiRouteFilter.newBuilder()
+                      .setApiInfo(ApiInfo.newBuilder().setPath("/planet/Mars")))
+              .build();
+      final GetRoutesResponse expectedResponse =
+          GetRoutesResponse.newBuilder().addRoutes(apiRoute1).build();
+      final GetRoutesResponse response = apiGatewayConfigService.getRoutes(getRequest);
+      assertEquals(expectedResponse, response);
+    }
+
+    @Test
+    void testGetRoutesWithApiPathPrefixFilter() {
+      final GetRoutesRequest getRequest =
+          GetRoutesRequest.newBuilder()
+              .setFilter(
+                  ApiRouteFilter.newBuilder()
+                      .setApiInfo(ApiInfo.newBuilder().setPath("/planet/Mars/south_pole")))
+              .build();
+      final GetRoutesResponse expectedResponse =
+          GetRoutesResponse.newBuilder().addRoutes(apiRoute1).build();
+      final GetRoutesResponse response = apiGatewayConfigService.getRoutes(getRequest);
+      assertEquals(expectedResponse, response);
+    }
+
+    @Test
+    void testGetRoutesWithPathAndServiceNameFilter() {
+      final GetRoutesRequest getRequest =
+          GetRoutesRequest.newBuilder()
+              .setFilter(
+                  ApiRouteFilter.newBuilder()
+                      .setApiInfo(
+                          ApiInfo.newBuilder()
+                              .setPath("/planet/Mars/south_pole")
+                              .setServiceName("new_service")))
+              .build();
+      final GetRoutesResponse expectedResponse =
+          GetRoutesResponse.newBuilder().addRoutes(apiRoute1).build();
+      final GetRoutesResponse response = apiGatewayConfigService.getRoutes(getRequest);
+      assertEquals(expectedResponse, response);
+    }
+
+    @Test
+    void testGetRoutesWithPathServiceNameAndMethodFilter() {
+      final GetRoutesRequest getRequest =
+          GetRoutesRequest.newBuilder()
+              .setFilter(
+                  ApiRouteFilter.newBuilder()
+                      .setApiInfo(
+                          ApiInfo.newBuilder()
+                              .setPath("/planet/Mars/south_pole")
+                              .setServiceName("new_service")
+                              .setHttpMethod("PUT")))
+              .build();
+      final GetRoutesResponse expectedResponse =
+          GetRoutesResponse.newBuilder().addRoutes(apiRoute1).build();
       final GetRoutesResponse response = apiGatewayConfigService.getRoutes(getRequest);
       assertEquals(expectedResponse, response);
     }

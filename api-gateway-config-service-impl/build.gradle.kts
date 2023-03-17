@@ -7,6 +7,7 @@ plugins {
 dependencies {
   api(projects.apiGatewayConfigServiceApi)
 
+  implementation(projects.apiGatewayConfigServiceCommon)
   implementation(projects.configUtils)
 
   implementation(libs.guice)

@@ -44,9 +44,16 @@ message DeleteRoutesResponse {
 message ApiRouteFilter {
   oneof type {
     OrgIds org_ids = 1;
+    ApiInfo api_info = 2;
   }
 }
 
 message OrgIds {
   repeated string org_id = 1;
+}
+
+message ApiInfo {
+  optional string http_method = 1;
+  optional string path = 2;
+  optional string service_name = 3;
 }

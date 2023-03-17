@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package ai.traceable.api.gateway.config.service.v1;
+
+option java_multiple_files = true;
+
+enum GatewayType {
+  GATEWAY_TYPE_UNSPECIFIED = 0;
+  GATEWAY_TYPE_MULESOFT = 1;
+}
