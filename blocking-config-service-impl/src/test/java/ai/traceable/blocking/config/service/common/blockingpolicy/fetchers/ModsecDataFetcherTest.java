@@ -26,6 +26,7 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicy
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Category;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.RuleType;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Status;
+import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import java.util.List;
 import java.util.Optional;
@@ -76,13 +77,14 @@ class ModsecDataFetcherTest {
                 .build());
 
     List<BlockingPolicyData> violations =
-        modsecDataFetcher.getModsecViolations(REQUEST_CONTEXT, Optional.empty());
+        modsecDataFetcher.getBlockingPolicyData(REQUEST_CONTEXT, Optional.empty());
 
     assertEquals(1, violations.size());
     assertEquals("123456", violations.get(0).getRuleId());
     assertEquals(Category.MODSECURITY, violations.get(0).getCategory());
     assertEquals(RuleType.BLOCK, violations.get(0).getRuleType());
     assertEquals(Status.DENIED, violations.get(0).getStatus());
+    assertEquals(BlockingPolicyDataBucket.MODSEC_VIOLATIONS, violations.get(0).getBucket());
     assertEquals(
         ViolationInfoEncoder.getEncodedSafeCrsViolationInfo("crs_123456"),
         violations.get(0).getInfo());
@@ -101,7 +103,7 @@ class ModsecDataFetcherTest {
                 .setConfigScope(defaultCustomerScope)
                 .build());
     List<BlockingPolicyData> violations2 =
-        modsecDataFetcher.getModsecViolations(REQUEST_CONTEXT, Optional.empty());
+        modsecDataFetcher.getBlockingPolicyData(REQUEST_CONTEXT, Optional.empty());
     assertEquals(0, violations2.size());
   }
 
@@ -132,7 +134,7 @@ class ModsecDataFetcherTest {
                 .build());
 
     List<BlockingPolicyData> violations =
-        modsecDataFetcher.getModsecViolations(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
+        modsecDataFetcher.getBlockingPolicyData(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
 
     assertEquals(1, violations.size());
     assertEquals("123456", violations.get(0).getRuleId());

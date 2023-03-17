@@ -1,11 +1,11 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers;
 
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.REGION_VIOLATIONS;
 import static ai.traceable.region.config.service.v1.RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK;
 import static ai.traceable.region.config.service.v1.RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Category;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.RuleType;
+import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import ai.traceable.region.config.service.v1.EnvironmentScope;
@@ -17,20 +17,17 @@ import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRuleActionType;
 import ai.traceable.region.config.service.v1.RuleScope;
 import com.google.common.collect.ImmutableList;
-import com.google.inject.Inject;
-import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-public class RegionDataFetcher {
+public class RegionDataFetcher implements DataFetcherBase {
   private static final List<RegionRuleActionType> SUPPORTED_RULE_ACTIONS =
       ImmutableList.of(REGION_RULE_ACTION_TYPE_BLOCK, REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT);
-
   private final RegionConfigServiceBlockingStub regionConfigServiceStub;
   private final BlockingRulesUtils blockingRulesUtils;
 
@@ -42,12 +39,77 @@ public class RegionDataFetcher {
     this.blockingRulesUtils = blockingRulesUtils;
   }
 
-  public Map<RuleType, List<BlockingPolicyData>> getRegionBasedRules(
+  @Override
+  public List<BlockingPolicyData> getBlockingPolicyData(
       RequestContext requestContext, Optional<String> environmentId) {
-    List<BlockingPolicyData> violations = new ArrayList<>();
-    List<BlockingPolicyData> blockAllExcepts = new ArrayList<>();
+    List<RegionRule> ruleList = fetchRegionRules(requestContext, environmentId);
+    return ruleList.stream()
+        .map(this::getBlockingDetails)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .collect(Collectors.toUnmodifiableList());
+  }
 
-    // empty env scope will only return rules with rule-scope as all-envs
+  public Optional<BlockingPolicyData> getBlockingDetails(RegionRule regionRule) {
+
+    Optional<BlockingPolicyData> emptyOptionalOfBlockingPolicyData = Optional.empty();
+    if (regionRule.getRegionIdList().isEmpty()
+        || !blockingRulesUtils.isRuleActive(
+            regionRule.getExpirationDetails().getTimestampMillis())) {
+      return emptyOptionalOfBlockingPolicyData;
+    }
+    Optional<BlockingPolicyData.RuleType> ruleType =
+        getRuleType(regionRule.getId(), regionRule.getActionType());
+    Optional<BlockingPolicyDataBucket> bucket =
+        getRuleBucket(regionRule.getId(), regionRule.getActionType());
+    if (ruleType.isEmpty() || bucket.isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        BlockingPolicyData.builder()
+            .category(BlockingPolicyData.Category.CUSTOM_REGION_RULE)
+            .bucket(bucket.get())
+            .ruleType(ruleType.get())
+            .info(
+                ViolationInfoEncoder.getEncodedCustomRegionRuleViolationInfo(
+                    regionRule.getId(), regionRule.getName()))
+            .timestamp(regionRule.getExpirationDetails().getTimestampMillis())
+            .status(
+                blockingRulesUtils.generateBlockingStatus(
+                    regionRule.getExpirationDetails().getTimestampMillis(), ruleType.get()))
+            .regions(regionRule.getRegionIdList())
+            .build());
+  }
+
+  private static Optional<BlockingPolicyDataBucket> getRuleBucket(
+      String id, RegionRuleActionType actionType) {
+    switch (actionType) {
+      case REGION_RULE_ACTION_TYPE_BLOCK:
+        return Optional.of(REGION_VIOLATIONS);
+      case REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT:
+        return Optional.of(BlockingPolicyDataBucket.REGION_BLOCK_ALL_EXCEPT_VIOLATIONS);
+      default:
+        log.info(
+            "No bucket type exist for rule with rule type : {} and rule id {}", actionType, id);
+        return Optional.empty();
+    }
+  }
+
+  private static Optional<BlockingPolicyData.RuleType> getRuleType(
+      String id, RegionRuleActionType actionType) {
+    switch (actionType) {
+      case REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT:
+        return Optional.of(BlockingPolicyData.RuleType.BLOCK_ALL_EXCEPT);
+      case REGION_RULE_ACTION_TYPE_BLOCK:
+        return Optional.of(BlockingPolicyData.RuleType.BLOCK);
+      default:
+        log.error("Invalid rule action type: {} for rule with rule id: {}", actionType, id);
+        return Optional.empty();
+    }
+  }
+
+  private List<RegionRule> fetchRegionRules(
+      RequestContext requestContext, Optional<String> environmentId) {
     GetAllRegionRulesRequest rulesRequest =
         GetAllRegionRulesRequest.newBuilder()
             .setFilter(
@@ -64,50 +126,6 @@ public class RegionDataFetcher {
 
     GetAllRegionRulesResponse response =
         requestContext.call(() -> regionConfigServiceStub.getAllRegionRules(rulesRequest));
-
-    response.getRuleList().stream()
-        .filter(this::filterRule)
-        .forEach(
-            regionRule -> {
-              switch (regionRule.getActionType()) {
-                case REGION_RULE_ACTION_TYPE_BLOCK:
-                  violations.add(this.generateBlockingDetails(regionRule, RuleType.BLOCK));
-                  break;
-                case REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT:
-                  blockAllExcepts.add(
-                      this.generateBlockingDetails(regionRule, RuleType.BLOCK_ALL_EXCEPT));
-                  break;
-                default:
-                  log.warn(
-                      "Unsupported region based rule event type {} for request-context:{} and ruleID:{}",
-                      regionRule.getActionType(),
-                      requestContext,
-                      regionRule.getId());
-              }
-            });
-    return new EnumMap<>(
-        Map.of(
-            RuleType.BLOCK, violations,
-            RuleType.BLOCK_ALL_EXCEPT, blockAllExcepts));
-  }
-
-  private boolean filterRule(RegionRule regionRule) {
-    return !regionRule.getRegionIdList().isEmpty()
-        && blockingRulesUtils.isRuleActive(regionRule.getExpirationDetails().getTimestampMillis());
-  }
-
-  private BlockingPolicyData generateBlockingDetails(RegionRule regionRule, RuleType ruleType) {
-    return BlockingPolicyData.builder()
-        .category(Category.CUSTOM_REGION_RULE)
-        .ruleType(ruleType)
-        .info(
-            ViolationInfoEncoder.getEncodedCustomRegionRuleViolationInfo(
-                regionRule.getId(), regionRule.getName()))
-        .timestamp(regionRule.getExpirationDetails().getTimestampMillis())
-        .status(
-            blockingRulesUtils.generateBlockingStatus(
-                regionRule.getExpirationDetails().getTimestampMillis(), ruleType))
-        .regions(regionRule.getRegionIdList())
-        .build();
+    return response.getRuleList();
   }
 }

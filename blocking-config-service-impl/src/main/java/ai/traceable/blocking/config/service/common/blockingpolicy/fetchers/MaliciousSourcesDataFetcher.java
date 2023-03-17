@@ -1,7 +1,6 @@
-package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.malicioussources;
+package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.malicioussources.handlers.MaliciousSourceDataHandler;
 import ai.traceable.malicioussources.config.service.v1.EnvironmentScope;
 import ai.traceable.malicioussources.config.service.v1.GetMaliciousSourcesRulesRequest;
@@ -20,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-public class MaliciousSourcesDataFetcher {
+public class MaliciousSourcesDataFetcher implements DataFetcherBase {
   private final MaliciousSourcesConfigServiceBlockingStub maliciousSourcesConfigServiceBlockingStub;
   private final Map<MaliciousSourcesRuleCondition.ConditionCase, MaliciousSourceDataHandler>
       maliciousSourceDataHandlerMap;
@@ -34,9 +33,9 @@ public class MaliciousSourcesDataFetcher {
     this.maliciousSourcesConfigServiceBlockingStub = maliciousSourcesConfigServiceBlockingStub;
   }
 
-  public Map<BlockingPolicyDataBucket, List<BlockingPolicyData>>
-      getMaliciousSourceRuleBlockingDetails(
-          RequestContext requestContext, Optional<String> environmentId) {
+  @Override
+  public List<BlockingPolicyData> getBlockingPolicyData(
+      RequestContext requestContext, Optional<String> environmentId) {
     List<MaliciousSourcesRule> ruleList = fetchMaliciousSourceRules(requestContext, environmentId);
     Optional<BlockingPolicyData> emptyOptionalOfBlockingPolicyData = Optional.empty();
     return ruleList.stream()
@@ -57,7 +56,7 @@ public class MaliciousSourcesDataFetcher {
             })
         .filter(Optional::isPresent)
         .map(Optional::get)
-        .collect(Collectors.groupingBy(BlockingPolicyData::getBucket));
+        .collect(Collectors.toUnmodifiableList());
   }
 
   private List<MaliciousSourcesRule> fetchMaliciousSourceRules(

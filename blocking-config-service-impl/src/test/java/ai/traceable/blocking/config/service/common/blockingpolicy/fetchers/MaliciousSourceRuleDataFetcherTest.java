@@ -1,4 +1,4 @@
-package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.malicioussources;
+package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers;
 
 import static ai.traceable.malicioussources.config.service.v1.EventSeverity.EVENT_SEVERITY_CRITICAL;
 import static ai.traceable.malicioussources.config.service.v1.IpLocationType.IP_LOCATION_TYPE_HOSTING_PROVIDER;
@@ -10,10 +10,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.malicioussources.handlers.IpRangeDataHandler;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.malicioussources.handlers.IpTypeDataHandler;
-import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.malicioussources.handlers.MaliciousSourceDataHandler;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.malicioussources.handlers.RegionDataHandler;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.malicioussources.config.service.v1.ExpirationDetails;
@@ -48,9 +46,6 @@ class MaliciousSourceRuleDataFetcherTest {
   private MaliciousSourcesDataFetcher maliciousSourceRuleDataFetcher;
   private MaliciousSourcesConfigServiceGrpc.MaliciousSourcesConfigServiceBlockingStub
       maliciousSourcesConfigServiceBlockingStub;
-
-  private Map<MaliciousSourcesRuleCondition.ConditionCase, MaliciousSourceDataHandler>
-      maliciousSourceDataHandlerMap;
 
   @BeforeEach
   void setUp() {
@@ -120,13 +115,9 @@ class MaliciousSourceRuleDataFetcherTest {
                                 .build())))
                 .build());
 
-    Map<BlockingPolicyDataBucket, List<BlockingPolicyData>> getMaliciousSourceRuleBlockingDetails =
-        maliciousSourceRuleDataFetcher.getMaliciousSourceRuleBlockingDetails(
-            REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
-
     List<BlockingPolicyData> maliciousSourceIpTypeViolations =
-        getMaliciousSourceRuleBlockingDetails.get(BlockingPolicyDataBucket.IP_TYPE_VIOLATIONS);
-
+        maliciousSourceRuleDataFetcher.getBlockingPolicyData(
+            REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
     assertEquals(2, maliciousSourceIpTypeViolations.size());
     assertEquals(
         List.of(IP_LOCATION_TYPE_HOSTING_PROVIDER),
@@ -201,12 +192,10 @@ class MaliciousSourceRuleDataFetcherTest {
                             List.of("1.2.3.5"),
                             RuleActionType.RULE_ACTION_TYPE_BLOCK)))
                 .build());
-    Map<BlockingPolicyDataBucket, List<BlockingPolicyData>> getMaliciousSourceRuleBlockingDetails =
-        maliciousSourceRuleDataFetcher.getMaliciousSourceRuleBlockingDetails(
-            REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
 
     List<BlockingPolicyData> maliciousSourceIpRangeViolations =
-        getMaliciousSourceRuleBlockingDetails.get(BlockingPolicyDataBucket.IP_RANGE_VIOLATIONS);
+        maliciousSourceRuleDataFetcher.getBlockingPolicyData(
+            REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
 
     assertEquals(2, maliciousSourceIpRangeViolations.size());
     assertEquals(1, maliciousSourceIpRangeViolations.get(0).getIpRanges().size());
@@ -288,14 +277,9 @@ class MaliciousSourceRuleDataFetcherTest {
                             List.of("1.2.3.5"),
                             RuleActionType.RULE_ACTION_TYPE_ALLOW)))
                 .build());
-
-    Map<BlockingPolicyDataBucket, List<BlockingPolicyData>> getMaliciousSourceRuleBlockingDetails =
-        maliciousSourceRuleDataFetcher.getMaliciousSourceRuleBlockingDetails(
-            REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
-
     List<BlockingPolicyData> maliciousSourceIpRangeExemptions =
-        getMaliciousSourceRuleBlockingDetails.get(BlockingPolicyDataBucket.IP_RANGE_EXEMPTIONS);
-
+        maliciousSourceRuleDataFetcher.getBlockingPolicyData(
+            REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
     assertEquals(2, maliciousSourceIpRangeExemptions.size());
     assertEquals(1, maliciousSourceIpRangeExemptions.get(0).getIpRanges().size());
     assertEquals(1, maliciousSourceIpRangeExemptions.get(0).getIpAddresses().size());
@@ -378,13 +362,9 @@ class MaliciousSourceRuleDataFetcherTest {
                             RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)))
                 .build());
 
-    Map<BlockingPolicyDataBucket, List<BlockingPolicyData>> getMaliciousSourceRuleBlockingDetails =
-        maliciousSourceRuleDataFetcher.getMaliciousSourceRuleBlockingDetails(
-            REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
-
     List<BlockingPolicyData> maliciousSourceIpRangeBlockAllExcept =
-        getMaliciousSourceRuleBlockingDetails.get(
-            BlockingPolicyDataBucket.IP_RANGE_BLOCK_ALL_EXCEPT_VIOLATIONS);
+        maliciousSourceRuleDataFetcher.getBlockingPolicyData(
+            REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
 
     assertEquals(2, maliciousSourceIpRangeBlockAllExcept.size());
     assertEquals(1, maliciousSourceIpRangeBlockAllExcept.get(0).getIpRanges().size());
@@ -471,13 +451,10 @@ class MaliciousSourceRuleDataFetcherTest {
                             List.of(Region.newBuilder().setCountryIsoCode("AFG").build()),
                             RuleActionType.RULE_ACTION_TYPE_BLOCK)))
                 .build());
-    Map<BlockingPolicyDataBucket, List<BlockingPolicyData>> getMaliciousSourceRuleBlockingDetails =
-        maliciousSourceRuleDataFetcher.getMaliciousSourceRuleBlockingDetails(
-            REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
 
     List<BlockingPolicyData> maliciousSourceRegionViolations =
-        getMaliciousSourceRuleBlockingDetails.get(BlockingPolicyDataBucket.REGION_VIOLATIONS);
-
+        maliciousSourceRuleDataFetcher.getBlockingPolicyData(
+            REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
     assertEquals(2, maliciousSourceRegionViolations.size());
     assertEquals(2, maliciousSourceRegionViolations.get(0).getRegions().size());
     assertEquals(List.of("AFG", "IND"), maliciousSourceRegionViolations.get(0).getRegions());
@@ -553,13 +530,9 @@ class MaliciousSourceRuleDataFetcherTest {
                             RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)))
                 .build());
 
-    Map<BlockingPolicyDataBucket, List<BlockingPolicyData>> getMaliciousSourceRuleBlockingDetails =
-        maliciousSourceRuleDataFetcher.getMaliciousSourceRuleBlockingDetails(
-            REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
-
     List<BlockingPolicyData> maliciousSourceRegionBlockAllExcept =
-        getMaliciousSourceRuleBlockingDetails.get(
-            BlockingPolicyDataBucket.REGION_BLOCK_ALL_EXCEPT_VIOLATIONS);
+        maliciousSourceRuleDataFetcher.getBlockingPolicyData(
+            REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
 
     assertEquals(2, maliciousSourceRegionBlockAllExcept.size());
     assertEquals(2, maliciousSourceRegionBlockAllExcept.get(0).getRegions().size());

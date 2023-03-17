@@ -7,13 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Category;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.RuleType;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Status;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
-import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
+import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
@@ -25,7 +23,6 @@ import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,25 +43,38 @@ class CustomSignatureDataFetcherTest {
                       RuleScope.newBuilder().setEnvironmentScope(EnvironmentScope.newBuilder())))
           .build();
 
-  private CustomSignatureConfigServiceBlockingStub customSignatureConfigServiceBlockingStub;
+  private CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub
+      customSignatureConfigServiceBlockingStub;
   private CustomSignatureDataFetcher customSignatureDataFetcher;
-
   private static final long inactiveTimestamp = System.currentTimeMillis() - 10000L;
   private static final long activeTimestamp = System.currentTimeMillis() + 10000L;
 
   @BeforeEach
   void setUp() {
-    customSignatureConfigServiceBlockingStub = mock(CustomSignatureConfigServiceBlockingStub.class);
+    customSignatureConfigServiceBlockingStub =
+        mock(CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub.class);
 
     BlockingRulesUtils blockingRulesUtils = mock(BlockingRulesUtils.class);
     doReturn(true).when(blockingRulesUtils).isRuleActive(activeTimestamp);
+    doReturn(true).when(blockingRulesUtils).isRuleActive(0);
     doReturn(false).when(blockingRulesUtils).isRuleActive(inactiveTimestamp);
-    doReturn(Status.ALLOWED)
-        .when(blockingRulesUtils)
-        .generateBlockingStatus(activeTimestamp, RuleType.ALLOW);
-    doReturn(Status.DENIED)
-        .when(blockingRulesUtils)
-        .generateBlockingStatus(activeTimestamp, RuleType.BLOCK);
+
+    when(blockingRulesUtils.generateBlockingStatus(0, BlockingPolicyData.RuleType.ALLOW))
+        .thenReturn(BlockingPolicyData.Status.ALLOWED);
+    when(blockingRulesUtils.generateBlockingStatus(0, BlockingPolicyData.RuleType.BLOCK))
+        .thenReturn(BlockingPolicyData.Status.DENIED);
+    when(blockingRulesUtils.generateBlockingStatus(0, BlockingPolicyData.RuleType.BLOCK_ALL_EXCEPT))
+        .thenReturn(BlockingPolicyData.Status.DENIED);
+
+    when(blockingRulesUtils.generateBlockingStatus(
+            activeTimestamp, BlockingPolicyData.RuleType.ALLOW))
+        .thenReturn(BlockingPolicyData.Status.SNOOZED);
+    when(blockingRulesUtils.generateBlockingStatus(
+            activeTimestamp, BlockingPolicyData.RuleType.BLOCK))
+        .thenReturn(BlockingPolicyData.Status.SUSPENDED);
+    when(blockingRulesUtils.generateBlockingStatus(
+            activeTimestamp, BlockingPolicyData.RuleType.BLOCK_ALL_EXCEPT))
+        .thenReturn(BlockingPolicyData.Status.SUSPENDED);
 
     customSignatureDataFetcher =
         new CustomSignatureDataFetcher(
@@ -76,13 +86,9 @@ class CustomSignatureDataFetcherTest {
     doReturn(GetCustomSignatureRulesResponse.getDefaultInstance())
         .when(customSignatureConfigServiceBlockingStub)
         .getCustomSignatureRules(DEFAULT_GET_REQUEST);
-
-    Map<RuleType, List<BlockingPolicyData>> customSignatureRuleMap =
-        customSignatureDataFetcher.getCustomSignatureRules(REQUEST_CONTEXT, Optional.empty());
-
-    assertEquals(2, customSignatureRuleMap.size());
-    assertEquals(0, customSignatureRuleMap.get(RuleType.ALLOW).size());
-    assertEquals(0, customSignatureRuleMap.get(RuleType.BLOCK).size());
+    List<BlockingPolicyData> customSignatureRuleList =
+        customSignatureDataFetcher.getBlockingPolicyData(REQUEST_CONTEXT, Optional.empty());
+    assertEquals(0, customSignatureRuleList.size());
   }
 
   @Test
@@ -91,34 +97,34 @@ class CustomSignatureDataFetcherTest {
         .when(customSignatureConfigServiceBlockingStub)
         .getCustomSignatureRules(DEFAULT_GET_REQUEST);
 
-    Map<RuleType, List<BlockingPolicyData>> customSignatureRuleMap =
-        customSignatureDataFetcher.getCustomSignatureRules(REQUEST_CONTEXT, Optional.empty());
+    List<BlockingPolicyData> customSignatureRuleList =
+        customSignatureDataFetcher.getBlockingPolicyData(REQUEST_CONTEXT, Optional.empty());
 
-    assertEquals(2, customSignatureRuleMap.size());
+    assertEquals(2, customSignatureRuleList.size());
 
-    List<BlockingPolicyData> exemptions = customSignatureRuleMap.get(RuleType.ALLOW);
-    assertEquals(1, exemptions.size());
-    assertEquals("rule-id-1", exemptions.get(0).getRuleId());
-    assertEquals(Category.CUSTOM_SIGNATURE_RULE, exemptions.get(0).getCategory());
-    assertEquals(RuleType.ALLOW, exemptions.get(0).getRuleType());
-    assertEquals(Status.ALLOWED, exemptions.get(0).getStatus());
-    assertEquals(activeTimestamp, exemptions.get(0).getTimestamp());
+    assertEquals("rule-id-1", customSignatureRuleList.get(0).getRuleId());
+    assertEquals(
+        BlockingPolicyData.Category.CUSTOM_SIGNATURE_RULE,
+        customSignatureRuleList.get(0).getCategory());
+    assertEquals(BlockingPolicyData.RuleType.ALLOW, customSignatureRuleList.get(0).getRuleType());
+    assertEquals(BlockingPolicyData.Status.SNOOZED, customSignatureRuleList.get(0).getStatus());
+    assertEquals(activeTimestamp, customSignatureRuleList.get(0).getTimestamp());
     assertEquals(
         ExemptionInfoEncoder.getEncodedCustomSignatureRuleExemptionInfo(
             "rule-id-1", "rule-name-1", EVENT_SEVERITY_HIGH.name()),
-        exemptions.get(0).getInfo());
+        customSignatureRuleList.get(0).getInfo());
 
-    List<BlockingPolicyData> violations = customSignatureRuleMap.get(RuleType.BLOCK);
-    assertEquals(1, violations.size());
-    assertEquals("rule-id-3", violations.get(0).getRuleId());
-    assertEquals(Category.CUSTOM_SIGNATURE_RULE, violations.get(0).getCategory());
-    assertEquals(RuleType.BLOCK, violations.get(0).getRuleType());
-    assertEquals(Status.DENIED, violations.get(0).getStatus());
-    assertEquals(activeTimestamp, violations.get(0).getTimestamp());
+    assertEquals("rule-id-3", customSignatureRuleList.get(1).getRuleId());
+    assertEquals(
+        BlockingPolicyData.Category.CUSTOM_SIGNATURE_RULE,
+        customSignatureRuleList.get(1).getCategory());
+    assertEquals(BlockingPolicyData.RuleType.BLOCK, customSignatureRuleList.get(1).getRuleType());
+    assertEquals(BlockingPolicyData.Status.SUSPENDED, customSignatureRuleList.get(1).getStatus());
+    assertEquals(activeTimestamp, customSignatureRuleList.get(1).getTimestamp());
     assertEquals(
         ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
             "rule-id-3", "rule-name-3", EVENT_SEVERITY_HIGH.name()),
-        violations.get(0).getInfo());
+        customSignatureRuleList.get(1).getInfo());
   }
 
   @Test
@@ -138,26 +144,19 @@ class CustomSignatureDataFetcherTest {
                                         .addEnvironmentIds(ENVIRONMENT_ID)))
                         .setDisabled(false))
                 .build());
-
-    Map<RuleType, List<BlockingPolicyData>> customSignatureRuleMap =
-        customSignatureDataFetcher.getCustomSignatureRules(
+    List<BlockingPolicyData> customSignatureRuleList =
+        customSignatureDataFetcher.getBlockingPolicyData(
             REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
-
-    assertEquals(2, customSignatureRuleMap.size());
-    assertEquals(2, customSignatureRuleMap.get(RuleType.ALLOW).size());
-    assertEquals(1, customSignatureRuleMap.get(RuleType.BLOCK).size());
-
-    // Without environment
+    assertEquals(3, customSignatureRuleList.size());
     assertThrows(
         NullPointerException.class,
-        () ->
-            customSignatureDataFetcher.getCustomSignatureRules(REQUEST_CONTEXT, Optional.empty()));
+        () -> customSignatureDataFetcher.getBlockingPolicyData(REQUEST_CONTEXT, Optional.empty()));
 
     // Wrong environment
     assertThrows(
         NullPointerException.class,
         () ->
-            customSignatureDataFetcher.getCustomSignatureRules(
+            customSignatureDataFetcher.getBlockingPolicyData(
                 REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID + "random")));
   }
 
@@ -215,7 +214,6 @@ class CustomSignatureDataFetcherTest {
                   .setBlockingExpiryDetails(
                       ExpiryDetails.newBuilder().setExpiryTimestampMillis(inactiveTimestamp)))
           .build();
-
   private static final GetCustomSignatureRulesResponse sampleCustomSignatureAllRulesResponse =
       sampleCustomSignatureAllEnvRulesResponse.toBuilder()
           .addRules(

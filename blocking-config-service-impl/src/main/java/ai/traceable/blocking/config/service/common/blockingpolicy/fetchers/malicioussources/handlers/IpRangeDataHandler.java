@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class IpRangeDataHandler extends MaliciousSourceDataHandler {
+
   @Inject
   public IpRangeDataHandler(BlockingRulesUtils blockingRulesUtils) {
     super(blockingRulesUtils);

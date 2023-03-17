@@ -78,91 +78,70 @@ class ActorBasedRulesCacheTest {
         .when(actorStore)
         .getActiveThreatActors(REQUEST_CONTEXT, Optional.empty());
 
-    ActorBasedRulesCollection response =
+    List<BlockingPolicyData> response =
         actorBasedRulesCache.getActorBasedRules(
             REQUEST_CONTEXT.buildInternalContextualKey(Optional.empty()));
-    {
-      List<BlockingPolicyData> violations = response.getThreatActorBasedIpViolations();
-      assertEquals(1, violations.size());
-      assertEquals(List.of("2.2.2.2"), violations.get(0).getIpAddresses());
-      assertEquals(Category.THREAT_ACTOR, violations.get(0).getCategory());
-      assertEquals("actor-2", violations.get(0).getUserId());
-      assertEquals(RuleType.BLOCK, violations.get(0).getRuleType());
-      assertEquals(Status.DENIED, violations.get(0).getStatus());
-      assertEquals(
-          ViolationInfoEncoder.getEncodedThreatActorViolationInfo("entity-2"),
-          violations.get(0).getInfo());
-    }
 
-    {
-      List<BlockingPolicyData> exemptions = response.getThreatActorBasedIpExemptions();
-      assertEquals(1, exemptions.size());
-      assertEquals(List.of("3.3.3.3"), exemptions.get(0).getIpAddresses());
-      assertEquals("actor-3", exemptions.get(0).getUserId());
-      assertEquals(Category.THREAT_ACTOR, exemptions.get(0).getCategory());
-      assertEquals(RuleType.ALLOW, exemptions.get(0).getRuleType());
-      assertEquals(Status.SNOOZED, exemptions.get(0).getStatus());
-      assertEquals(
-          ExemptionInfoEncoder.getEncodedThreatActorExemptionInfo("entity-3"),
-          exemptions.get(0).getInfo());
-    }
+    assertEquals(6, response.size());
 
-    {
-      List<BlockingPolicyData> rateLimitBasedIpViolation = response.getRateLimitBasedIpViolations();
-      assertEquals(2, rateLimitBasedIpViolation.size());
-      assertEquals(List.of("1.1.1.1"), rateLimitBasedIpViolation.get(0).getIpAddresses());
-      assertEquals("actor-1", rateLimitBasedIpViolation.get(0).getUserId());
-      assertEquals(Category.RATE_LIMIT, rateLimitBasedIpViolation.get(0).getCategory());
-      assertEquals(RuleType.BLOCK, rateLimitBasedIpViolation.get(0).getRuleType());
-      assertEquals(Status.SUSPENDED, rateLimitBasedIpViolation.get(0).getStatus());
-      assertEquals(
-          ViolationInfoEncoder.getEncodedRateLimitViolationInfo(
-              "entity-1",
-              "rate-limit-id-1",
-              "rate-limit-name-1",
-              RATE_LIMIT_CATEGORY_RATE_LIMITING),
-          rateLimitBasedIpViolation.get(0).getInfo());
+    assertEquals(List.of("1.1.1.1"), response.get(0).getIpAddresses());
+    assertEquals("actor-1", response.get(0).getUserId());
+    assertEquals(Category.RATE_LIMIT, response.get(0).getCategory());
+    assertEquals(RuleType.BLOCK, response.get(0).getRuleType());
+    assertEquals(Status.SUSPENDED, response.get(0).getStatus());
+    assertEquals(
+        ViolationInfoEncoder.getEncodedRateLimitViolationInfo(
+            "entity-1", "rate-limit-id-1", "rate-limit-name-1", RATE_LIMIT_CATEGORY_RATE_LIMITING),
+        response.get(0).getInfo());
 
-      assertEquals("actor-7", rateLimitBasedIpViolation.get(1).getUserId());
-      assertEquals(Category.DATA_EXFILTRATION, rateLimitBasedIpViolation.get(1).getCategory());
-    }
-    {
-      List<BlockingPolicyData> emailDomainBasedExemptions =
-          response.getEmailDomainBasedExemptions();
-      assertEquals(1, emailDomainBasedExemptions.size());
-      assertEquals(List.of("5.5.5.5"), emailDomainBasedExemptions.get(0).getIpAddresses());
-      assertEquals("actor-5", emailDomainBasedExemptions.get(0).getUserId());
-      assertEquals(Category.EMAIL_DOMAIN_RULE, emailDomainBasedExemptions.get(0).getCategory());
-      assertEquals(RuleType.ALLOW, emailDomainBasedExemptions.get(0).getRuleType());
-      assertEquals(Status.ALLOWED, emailDomainBasedExemptions.get(0).getStatus());
-      assertEquals(
-          ExemptionInfoEncoder.getEncodedMaliciousSourcesExemptionInfo(
-              "email-domain-id-1",
-              "email-domain-name-1",
-              "",
-              Optional.of("entity-5"),
-              List.of(MaliciousSourcesRuleCondition.ConditionCase.EMAIL_DOMAIN_CONDITION)),
-          emailDomainBasedExemptions.get(0).getInfo());
-    }
+    assertEquals(List.of("2.2.2.2"), response.get(1).getIpAddresses());
+    assertEquals(Category.THREAT_ACTOR, response.get(1).getCategory());
+    assertEquals("actor-2", response.get(1).getUserId());
+    assertEquals(RuleType.BLOCK, response.get(1).getRuleType());
+    assertEquals(Status.DENIED, response.get(1).getStatus());
+    assertEquals(
+        ViolationInfoEncoder.getEncodedThreatActorViolationInfo("entity-2"),
+        response.get(1).getInfo());
 
-    {
-      List<BlockingPolicyData> emailDomainBasedViolations =
-          response.getEmailDomainBasedViolations();
-      assertEquals(1, emailDomainBasedViolations.size());
-      assertEquals(List.of("6.6.6.6"), emailDomainBasedViolations.get(0).getIpAddresses());
-      assertEquals("actor-6", emailDomainBasedViolations.get(0).getUserId());
-      assertEquals(Category.EMAIL_DOMAIN_RULE, emailDomainBasedViolations.get(0).getCategory());
-      assertEquals(RuleType.BLOCK, emailDomainBasedViolations.get(0).getRuleType());
-      assertEquals(Status.SUSPENDED, emailDomainBasedViolations.get(0).getStatus());
-      assertEquals(
-          ViolationInfoEncoder.getEncodedMaliciousSourcesViolationInfo(
-              "email-domain-id-2",
-              "email-domain-name-2",
-              "",
-              Optional.of("entity-6"),
-              List.of(MaliciousSourcesRuleCondition.ConditionCase.EMAIL_DOMAIN_CONDITION)),
-          emailDomainBasedViolations.get(0).getInfo());
-    }
+    assertEquals(List.of("3.3.3.3"), response.get(2).getIpAddresses());
+    assertEquals("actor-3", response.get(2).getUserId());
+    assertEquals(Category.THREAT_ACTOR, response.get(2).getCategory());
+    assertEquals(RuleType.ALLOW, response.get(2).getRuleType());
+    assertEquals(Status.SNOOZED, response.get(2).getStatus());
+    assertEquals(
+        ExemptionInfoEncoder.getEncodedThreatActorExemptionInfo("entity-3"),
+        response.get(2).getInfo());
+
+    assertEquals(List.of("5.5.5.5"), response.get(3).getIpAddresses());
+    assertEquals("actor-5", response.get(3).getUserId());
+    assertEquals(Category.EMAIL_DOMAIN_RULE, response.get(3).getCategory());
+    assertEquals(RuleType.ALLOW, response.get(3).getRuleType());
+    assertEquals(Status.ALLOWED, response.get(3).getStatus());
+    assertEquals(
+        ExemptionInfoEncoder.getEncodedMaliciousSourcesExemptionInfo(
+            "email-domain-id-1",
+            "email-domain-name-1",
+            "",
+            Optional.of("entity-5"),
+            List.of(MaliciousSourcesRuleCondition.ConditionCase.EMAIL_DOMAIN_CONDITION)),
+        response.get(3).getInfo());
+
+    assertEquals(List.of("6.6.6.6"), response.get(4).getIpAddresses());
+    assertEquals("actor-6", response.get(4).getUserId());
+    assertEquals(Category.EMAIL_DOMAIN_RULE, response.get(4).getCategory());
+    assertEquals(RuleType.BLOCK, response.get(4).getRuleType());
+    assertEquals(Status.SUSPENDED, response.get(4).getStatus());
+    assertEquals(
+        ViolationInfoEncoder.getEncodedMaliciousSourcesViolationInfo(
+            "email-domain-id-2",
+            "email-domain-name-2",
+            "",
+            Optional.of("entity-6"),
+            List.of(MaliciousSourcesRuleCondition.ConditionCase.EMAIL_DOMAIN_CONDITION)),
+        response.get(4).getInfo());
+
+    assertEquals("actor-7", response.get(5).getUserId());
+    assertEquals(Category.DATA_EXFILTRATION, response.get(5).getCategory());
   }
 
   @Test
@@ -172,15 +151,10 @@ class ActorBasedRulesCacheTest {
         .when(actorStore)
         .getActiveThreatActors(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
 
-    ActorBasedRulesCollection response =
+    List<BlockingPolicyData> response =
         actorBasedRulesCache.getActorBasedRules(
             REQUEST_CONTEXT.buildInternalContextualKey(Optional.of(ENVIRONMENT_ID)));
-
-    assertEquals(1, response.getThreatActorBasedIpViolations().size());
-    assertEquals(1, response.getThreatActorBasedIpExemptions().size());
-    assertEquals(2, response.getRateLimitBasedIpViolations().size());
-    assertEquals(1, response.getEmailDomainBasedExemptions().size());
-    assertEquals(1, response.getEmailDomainBasedViolations().size());
+    assertEquals(6, response.size());
   }
 
   private static List<ActorStatusDetails> generateSampleResponse() {

@@ -14,6 +14,7 @@ import ai.traceable.platform.actor.v1.ActorServiceGrpc.ActorServiceBlockingStub;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceBlockingStub;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import com.google.inject.multibindings.Multibinder;
 import com.typesafe.config.Config;
 import io.grpc.Channel;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
@@ -31,6 +32,16 @@ public class DataFetcherModule extends AbstractModule {
   @Override
   protected void configure() {
     install(new MaliciousSourcesDataFetcherModule());
+
+    Multibinder<DataFetcherBase> managerBaseMultibinder =
+        Multibinder.newSetBinder(binder(), DataFetcherBase.class);
+    managerBaseMultibinder.addBinding().to(CustomSignatureDataFetcher.class);
+    managerBaseMultibinder.addBinding().to(CustomIpBasedDataFetcher.class);
+    managerBaseMultibinder.addBinding().to(ActorBasedDataFetcher.class);
+    managerBaseMultibinder.addBinding().to(ModsecDataFetcher.class);
+    managerBaseMultibinder.addBinding().to(RegionDataFetcher.class);
+    managerBaseMultibinder.addBinding().to(MaliciousSourcesDataFetcher.class);
+
     bind(GrpcChannelRegistry.class).toInstance(grpcChannelRegistry);
     requireBinding(CustomSignatureConfigServiceBlockingStub.class);
     requireBinding(RegionConfigServiceBlockingStub.class);

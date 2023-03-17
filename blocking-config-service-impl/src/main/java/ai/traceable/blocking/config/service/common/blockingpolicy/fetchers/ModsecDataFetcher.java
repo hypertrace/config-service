@@ -16,6 +16,7 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicy
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Category;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.RuleType;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Status;
+import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -24,7 +25,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public class ModsecDataFetcher {
+public class ModsecDataFetcher implements DataFetcherBase {
   private static final String CRS_RULE_ID_REGEX = "^crs_";
   private static final AnomalyConfigScope DEFAULT_ANOMALY_CONFIG_SCOPE =
       AnomalyConfigScope.newBuilder()
@@ -42,7 +43,8 @@ public class ModsecDataFetcher {
     this.detectorConfigServiceBlockingStub = detectorConfigServiceBlockingStub;
   }
 
-  public List<BlockingPolicyData> getModsecViolations(
+  @Override
+  public List<BlockingPolicyData> getBlockingPolicyData(
       RequestContext requestContext, Optional<String> environmentId) {
     AnomalyConfigScope anomalyConfigScope =
         environmentId
@@ -119,6 +121,7 @@ public class ModsecDataFetcher {
   private static BlockingPolicyData generateBlockingDetails(String ruleId) {
     return BlockingPolicyData.builder()
         .category(Category.MODSECURITY)
+        .bucket(BlockingPolicyDataBucket.MODSEC_VIOLATIONS)
         .ruleType(RuleType.BLOCK)
         .info(ViolationInfoEncoder.getEncodedSafeCrsViolationInfo(ruleId))
         .status(Status.DENIED)

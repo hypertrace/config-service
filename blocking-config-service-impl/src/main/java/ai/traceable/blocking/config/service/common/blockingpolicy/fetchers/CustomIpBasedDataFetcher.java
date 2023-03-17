@@ -1,12 +1,14 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers;
 
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.IP_RANGE_BLOCK_ALL_EXCEPT_VIOLATIONS;
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.IP_RANGE_EXEMPTIONS;
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.IP_RANGE_VIOLATIONS;
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_ALLOW;
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_BLOCK;
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Category;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.RuleType;
+import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.iprange.config.service.v1.EnvironmentScope;
 import ai.traceable.iprange.config.service.v1.GetIpRangeRulesRequest;
@@ -19,21 +21,17 @@ import ai.traceable.iprange.config.service.v1.RuleScope;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import com.google.common.collect.ImmutableList;
-import com.google.inject.Inject;
-import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import javax.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class CustomIpBasedDataFetcher {
-  private static final Logger LOGGER = LoggerFactory.getLogger(CustomIpBasedDataFetcher.class);
+@Slf4j
+public class CustomIpBasedDataFetcher implements DataFetcherBase {
   private static final List<RuleAction> SUPPORTED_RULE_ACTIONS =
       ImmutableList.of(RULE_ACTION_BLOCK, RULE_ACTION_ALLOW, RULE_ACTION_BLOCK_ALL_EXCEPT);
-
   private final IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub;
   private final BlockingRulesUtils blockingRulesUtils;
 
@@ -45,12 +43,106 @@ public class CustomIpBasedDataFetcher {
     this.blockingRulesUtils = blockingRulesUtils;
   }
 
-  public Map<RuleType, List<BlockingPolicyData>> getCustomIpBasedRules(
+  @Override
+  public List<BlockingPolicyData> getBlockingPolicyData(
       RequestContext requestContext, Optional<String> environmentId) {
-    List<BlockingPolicyData> exemptions = new ArrayList<>();
-    List<BlockingPolicyData> violations = new ArrayList<>();
-    List<BlockingPolicyData> blockAllExcepts = new ArrayList<>();
+    List<IpRangeRule> ruleList = fetchIpRangeRules(requestContext, environmentId);
+    return ruleList.stream()
+        .map(this::getBlockingDetails)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .collect(Collectors.toUnmodifiableList());
+  }
 
+  public Optional<BlockingPolicyData> getBlockingDetails(IpRangeRule ipRule) {
+    if (!filterRule(ipRule)) {
+      return Optional.empty();
+    }
+
+    Optional<BlockingPolicyData.RuleType> ruleType =
+        getRuleType(ipRule.getId(), ipRule.getRuleDetails().getRuleAction());
+    Optional<BlockingPolicyDataBucket> ruleBucket =
+        getRuleBucket(ipRule.getId(), ipRule.getRuleDetails().getRuleAction());
+    Optional<String> ruleInfo = getInfo(ipRule);
+    if (ruleType.isEmpty() || ruleBucket.isEmpty() || ruleInfo.isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        BlockingPolicyData.builder()
+            .category(BlockingPolicyData.Category.CUSTOM_IP_RULE)
+            .ruleType(ruleType.get())
+            .info(ruleInfo.get())
+            .bucket(ruleBucket.get())
+            .status(
+                blockingRulesUtils.generateBlockingStatus(
+                    ipRule.getRuleDetails().getExpirationDetails().getExpirationTimestampMillis(),
+                    ruleType.get()))
+            .timestamp(
+                ipRule.getRuleDetails().getExpirationDetails().getExpirationTimestampMillis())
+            .ipAddresses(ipRule.getIpAddressesList())
+            .ipRanges(ipRule.getIpRangesList())
+            .build());
+  }
+
+  private static Optional<String> getInfo(IpRangeRule ipRangeRule) {
+    switch (ipRangeRule.getRuleDetails().getRuleAction()) {
+      case RULE_ACTION_ALLOW:
+        return Optional.of(
+            ExemptionInfoEncoder.getEncodedCustomIpRuleExemptionInfo(
+                ipRangeRule.getId(), ipRangeRule.getRuleDetails().getName()));
+      case RULE_ACTION_BLOCK_ALL_EXCEPT:
+      case RULE_ACTION_BLOCK:
+        return Optional.of(
+            ViolationInfoEncoder.getEncodedCustomIpRuleViolationInfo(
+                ipRangeRule.getId(), ipRangeRule.getRuleDetails().getName()));
+      default:
+        log.info(
+            "No info exist for rule with rule action type: {}  with rule id: {}",
+            ipRangeRule.getRuleDetails().getRuleAction(),
+            ipRangeRule.getId());
+        return Optional.empty();
+    }
+  }
+
+  private static Optional<BlockingPolicyDataBucket> getRuleBucket(
+      String id, RuleAction ruleAction) {
+    switch (ruleAction) {
+      case RULE_ACTION_ALLOW:
+        return Optional.of(IP_RANGE_EXEMPTIONS);
+      case RULE_ACTION_BLOCK_ALL_EXCEPT:
+        return Optional.of(IP_RANGE_BLOCK_ALL_EXCEPT_VIOLATIONS);
+      case RULE_ACTION_BLOCK:
+        return Optional.of(IP_RANGE_VIOLATIONS);
+      default:
+        log.info(
+            "No Bucket exist for rule with rule action type: {}  with rule id: {}", ruleAction, id);
+        return Optional.empty();
+    }
+  }
+
+  private static Optional<BlockingPolicyData.RuleType> getRuleType(
+      String id, RuleAction ruleAction) {
+    switch (ruleAction) {
+      case RULE_ACTION_ALLOW:
+        return Optional.of(BlockingPolicyData.RuleType.ALLOW);
+      case RULE_ACTION_BLOCK_ALL_EXCEPT:
+        return Optional.of(BlockingPolicyData.RuleType.BLOCK_ALL_EXCEPT);
+      case RULE_ACTION_BLOCK:
+        return Optional.of(BlockingPolicyData.RuleType.BLOCK);
+      default:
+        log.info("Invalid rule action type: {} for rule with rule id: {}", ruleAction, id);
+        return Optional.empty();
+    }
+  }
+
+  private boolean filterRule(IpRangeRule ipRule) {
+    return (!ipRule.getIpAddressesList().isEmpty() || !ipRule.getIpRangesList().isEmpty())
+        && blockingRulesUtils.isRuleActive(
+            ipRule.getRuleDetails().getExpirationDetails().getExpirationTimestampMillis());
+  }
+
+  private List<IpRangeRule> fetchIpRangeRules(
+      RequestContext requestContext, Optional<String> environmentId) {
     // empty env scope will only return rules with rule-scope as all-environments
     GetIpRangeRulesRequest getIpRangeRulesRequest =
         GetIpRangeRulesRequest.newBuilder()
@@ -68,71 +160,6 @@ public class CustomIpBasedDataFetcher {
 
     GetIpRangeRulesResponse response =
         requestContext.call(() -> ipRangeConfigServiceStub.getIpRangeRules(getIpRangeRulesRequest));
-
-    response.getRulesList().stream()
-        .filter(this::filterRule)
-        .forEach(
-            ipRangeRule -> {
-              switch (ipRangeRule.getRuleDetails().getRuleAction()) {
-                case RULE_ACTION_BLOCK:
-                  violations.add(
-                      this.generateBlockingDetails(
-                          ipRangeRule,
-                          RuleType.BLOCK,
-                          ViolationInfoEncoder.getEncodedCustomIpRuleViolationInfo(
-                              ipRangeRule.getId(), ipRangeRule.getRuleDetails().getName())));
-                  break;
-                case RULE_ACTION_ALLOW:
-                  exemptions.add(
-                      this.generateBlockingDetails(
-                          ipRangeRule,
-                          RuleType.ALLOW,
-                          ExemptionInfoEncoder.getEncodedCustomIpRuleExemptionInfo(
-                              ipRangeRule.getId(), ipRangeRule.getRuleDetails().getName())));
-                  break;
-                case RULE_ACTION_BLOCK_ALL_EXCEPT:
-                  blockAllExcepts.add(
-                      generateBlockingDetails(
-                          ipRangeRule,
-                          RuleType.BLOCK_ALL_EXCEPT,
-                          ViolationInfoEncoder.getEncodedCustomIpRuleViolationInfo(
-                              ipRangeRule.getId(), ipRangeRule.getRuleDetails().getName())));
-                  break;
-                default:
-                  LOGGER.warn(
-                      "Unsupported custom ip based rule event type {} for request-context:{} and ruleID:{}",
-                      ipRangeRule.getRuleDetails().getRuleAction(),
-                      requestContext,
-                      ipRangeRule.getId());
-              }
-            });
-
-    return new EnumMap<>(
-        Map.of(
-            RuleType.ALLOW, exemptions,
-            RuleType.BLOCK, violations,
-            RuleType.BLOCK_ALL_EXCEPT, blockAllExcepts));
-  }
-
-  private boolean filterRule(IpRangeRule ipRule) {
-    return (!ipRule.getIpAddressesList().isEmpty() || !ipRule.getIpRangesList().isEmpty())
-        && blockingRulesUtils.isRuleActive(
-            ipRule.getRuleDetails().getExpirationDetails().getExpirationTimestampMillis());
-  }
-
-  private BlockingPolicyData generateBlockingDetails(
-      IpRangeRule ipRule, RuleType ruleType, String info) {
-    return BlockingPolicyData.builder()
-        .category(Category.CUSTOM_IP_RULE)
-        .ruleType(ruleType)
-        .info(info)
-        .status(
-            blockingRulesUtils.generateBlockingStatus(
-                ipRule.getRuleDetails().getExpirationDetails().getExpirationTimestampMillis(),
-                ruleType))
-        .timestamp(ipRule.getRuleDetails().getExpirationDetails().getExpirationTimestampMillis())
-        .ipAddresses(ipRule.getIpAddressesList())
-        .ipRanges(ipRule.getIpRangesList())
-        .build();
+    return response.getRulesList();
   }
 }

@@ -76,7 +76,8 @@ public abstract class MaliciousSourceDataHandler {
     return Optional.of(blockingPolicyData);
   }
 
-  private Optional<BlockingPolicyData.RuleType> getRuleType(String id, RuleActionType actionType) {
+  private static Optional<BlockingPolicyData.RuleType> getRuleType(
+      String id, RuleActionType actionType) {
     switch (actionType) {
       case RULE_ACTION_TYPE_ALLOW:
         return Optional.of(BlockingPolicyData.RuleType.ALLOW);

@@ -571,8 +571,34 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertEquals(
         "941280",
         blockingPolicyConfiguration.getBlockingDetailsList(index).getModsecDetails().getRuleId());
-
+    List<String> ipAddress = new ArrayList<>();
+    List<String> ipRange = new ArrayList<>();
     index++;
+    ipAddress.add(
+        blockingPolicyConfiguration
+            .getBlockingDetailsList(index)
+            .getIpDetails()
+            .getIpAddressesList()
+            .get(0));
+    assertEquals(
+        BLOCKING_CATEGORY_CUSTOM_IP_RULE,
+        blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
+    assertEquals(
+        BLOCKING_STATUS_DENIED,
+        blockingPolicyConfiguration.getBlockingDetailsList(index).getStatus());
+    index++;
+    ipAddress.add(
+        blockingPolicyConfiguration
+            .getBlockingDetailsList(index)
+            .getIpDetails()
+            .getIpAddressesList()
+            .get(0));
+    ipRange.add(
+        blockingPolicyConfiguration
+            .getBlockingDetailsList(index)
+            .getIpDetails()
+            .getIpRangesList()
+            .get(0));
     assertEquals(
         BLOCKING_CATEGORY_CUSTOM_IP_RULE,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
@@ -580,31 +606,12 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
         BLOCKING_RULE_TYPE_BLOCK,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getBlockingRuleType());
     assertEquals(
-        List.of("1.2.3.4"),
-        blockingPolicyConfiguration
-            .getBlockingDetailsList(index)
-            .getIpDetails()
-            .getIpAddressesList());
-    assertEquals(
-        List.of("1.2.3.4/5"),
-        blockingPolicyConfiguration.getBlockingDetailsList(index).getIpDetails().getIpRangesList());
-    assertEquals(
-        BLOCKING_STATUS_DENIED,
-        blockingPolicyConfiguration.getBlockingDetailsList(index).getStatus());
-    index++;
-    assertEquals(
-        BLOCKING_CATEGORY_CUSTOM_IP_RULE,
-        blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
-    assertEquals(
         BLOCKING_STATUS_DENIED,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getStatus());
     assertEquals(
-        List.of("11.11.11.11"),
-        blockingPolicyConfiguration
-            .getBlockingDetailsList(index)
-            .getIpDetails()
-            .getIpAddressesList());
-
+        ipAddress.stream().sorted().collect(Collectors.toList()),
+        List.of("1.2.3.4", "11.11.11.11"));
+    assertEquals(ipRange, List.of("1.2.3.4/5"));
     index += 3;
 
     assertEquals(
@@ -629,7 +636,7 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertEquals(
         BLOCKING_STATUS_DENIED,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getStatus());
-    index++;
+    index += 3;
     assertEquals(
         BLOCKING_CATEGORY_CUSTOM_REGION_RULE,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
@@ -646,16 +653,7 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             .getRegionDetails()
             .getRegionsList());
     index++;
-    assertEquals(
-        BLOCKING_CATEGORY_CUSTOM_REGION_RULE,
-        blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
-    assertEquals(
-        BLOCKING_RULE_TYPE_BLOCK,
-        blockingPolicyConfiguration.getBlockingDetailsList(index).getBlockingRuleType());
-    assertEquals(
-        BLOCKING_STATUS_DENIED,
-        blockingPolicyConfiguration.getBlockingDetailsList(index).getStatus());
-    index += 2;
+
     assertEquals(
         BLOCKING_CATEGORY_ENUMERATION,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());

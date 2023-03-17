@@ -1,8 +1,10 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers;
 
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.CUSTOM_SIGNATURE_EXEMPTIONS;
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.CUSTOM_SIGNATURE_VIOLATIONS;
+
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Category;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.RuleType;
+import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
@@ -15,22 +17,18 @@ import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import com.google.common.collect.ImmutableList;
-import com.google.inject.Inject;
-import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import javax.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class CustomSignatureDataFetcher {
-  private static final Logger LOGGER = LoggerFactory.getLogger(CustomSignatureDataFetcher.class);
+@Slf4j
+public class CustomSignatureDataFetcher implements DataFetcherBase {
+  private final CustomSignatureConfigServiceBlockingStub configServiceBlockingStub;
   private static final List<EventType> EVENT_TYPES_LIST =
       ImmutableList.of(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING, EventType.EVENT_TYPE_ALLOW);
-
-  private final CustomSignatureConfigServiceBlockingStub configServiceBlockingStub;
   private final BlockingRulesUtils blockingRulesUtils;
 
   @Inject
@@ -41,11 +39,89 @@ public class CustomSignatureDataFetcher {
     this.blockingRulesUtils = blockingRulesUtils;
   }
 
-  public Map<RuleType, List<BlockingPolicyData>> getCustomSignatureRules(
+  @Override
+  public List<BlockingPolicyData> getBlockingPolicyData(
       RequestContext requestContext, Optional<String> environmentId) {
-    List<BlockingPolicyData> exemptions = new ArrayList<>();
-    List<BlockingPolicyData> violations = new ArrayList<>();
+    List<CustomSignatureRule> ruleList = fetchCustomSignatureRule(requestContext, environmentId);
+    return ruleList.stream()
+        .map(this::getBlockingDetails)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .collect(Collectors.toUnmodifiableList());
+  }
 
+  private Optional<BlockingPolicyData> getBlockingDetails(CustomSignatureRule customSignatureRule) {
+    if (!blockingRulesUtils.isRuleActive(
+        customSignatureRule.getBlockingExpiryDetails().getExpiryTimestampMillis())) {
+      return Optional.empty();
+    }
+    Optional<BlockingPolicyData.RuleType> ruleType =
+        getRuleType(customSignatureRule.getId(), customSignatureRule.getEffect().getEventType());
+    Optional<BlockingPolicyDataBucket> ruleBucket =
+        getRuleBucket(customSignatureRule.getEffect().getEventType());
+    Optional<String> info = getInfo(customSignatureRule);
+    if (ruleType.isEmpty() || ruleBucket.isEmpty() || info.isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        BlockingPolicyData.builder()
+            .category(BlockingPolicyData.Category.CUSTOM_SIGNATURE_RULE)
+            .ruleType(ruleType.get())
+            .bucket(ruleBucket.get())
+            .info(info.get())
+            .timestamp(customSignatureRule.getBlockingExpiryDetails().getExpiryTimestampMillis())
+            .status(
+                blockingRulesUtils.generateBlockingStatus(
+                    customSignatureRule.getBlockingExpiryDetails().getExpiryTimestampMillis(),
+                    ruleType.get()))
+            .ruleId(customSignatureRule.getId())
+            .build());
+  }
+
+  private static Optional<String> getInfo(CustomSignatureRule rule) {
+    switch (rule.getEffect().getEventType()) {
+      case EVENT_TYPE_ALLOW:
+        return Optional.of(
+            ExemptionInfoEncoder.getEncodedCustomSignatureRuleExemptionInfo(
+                rule.getId(), rule.getName(), rule.getEffect().getEventSeverity().name()));
+
+      case EVENT_TYPE_DETECTION_AND_BLOCKING:
+        return Optional.of(
+            ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
+                rule.getId(), rule.getName(), rule.getEffect().getEventSeverity().name()));
+
+      default:
+        log.info("Could not find info for rule with rule id", rule.getId());
+        return Optional.empty();
+    }
+  }
+
+  private static Optional<BlockingPolicyDataBucket> getRuleBucket(EventType eventType) {
+    switch (eventType) {
+      case EVENT_TYPE_ALLOW:
+        return Optional.of(CUSTOM_SIGNATURE_EXEMPTIONS);
+      case EVENT_TYPE_DETECTION_AND_BLOCKING:
+        return Optional.of(CUSTOM_SIGNATURE_VIOLATIONS);
+      default:
+        log.info("No bucket type exist for event type : {}", eventType);
+        return Optional.empty();
+    }
+  }
+
+  private static Optional<BlockingPolicyData.RuleType> getRuleType(String id, EventType eventType) {
+    switch (eventType) {
+      case EVENT_TYPE_ALLOW:
+        return Optional.of(BlockingPolicyData.RuleType.ALLOW);
+      case EVENT_TYPE_DETECTION_AND_BLOCKING:
+        return Optional.of(BlockingPolicyData.RuleType.BLOCK);
+      default:
+        log.info("Invalid rule event type: {} for rule with rule id: {}", eventType, id);
+        return Optional.empty();
+    }
+  }
+
+  private List<CustomSignatureRule> fetchCustomSignatureRule(
+      RequestContext requestContext, Optional<String> environmentId) {
     // empty env scope will only return rules with rule-scope as all-envs
     GetCustomSignatureRulesRequest getCustomSignatureRulesRequest =
         GetCustomSignatureRulesRequest.newBuilder()
@@ -65,61 +141,6 @@ public class CustomSignatureDataFetcher {
         requestContext.call(
             () ->
                 configServiceBlockingStub.getCustomSignatureRules(getCustomSignatureRulesRequest));
-
-    response.getRulesList().stream()
-        .filter(this::filterRule)
-        .forEach(
-            customSignatureRule -> {
-              switch (customSignatureRule.getEffect().getEventType()) {
-                case EVENT_TYPE_ALLOW:
-                  exemptions.add(
-                      this.generateBlockingDetails(
-                          customSignatureRule,
-                          RuleType.ALLOW,
-                          ExemptionInfoEncoder.getEncodedCustomSignatureRuleExemptionInfo(
-                              customSignatureRule.getId(),
-                              customSignatureRule.getName(),
-                              customSignatureRule.getEffect().getEventSeverity().name())));
-                  break;
-                case EVENT_TYPE_DETECTION_AND_BLOCKING:
-                  violations.add(
-                      this.generateBlockingDetails(
-                          customSignatureRule,
-                          RuleType.BLOCK,
-                          ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
-                              customSignatureRule.getId(),
-                              customSignatureRule.getName(),
-                              customSignatureRule.getEffect().getEventSeverity().name())));
-                  break;
-                default:
-                  LOGGER.warn(
-                      "Unsupported custom signature based rule event type {} for request-context:{} and ruleID:{}",
-                      customSignatureRule.getEffect().getEventType(),
-                      requestContext,
-                      customSignatureRule.getId());
-              }
-            });
-
-    return new EnumMap<>(Map.of(RuleType.ALLOW, exemptions, RuleType.BLOCK, violations));
-  }
-
-  private boolean filterRule(CustomSignatureRule customSignatureRule) {
-    return blockingRulesUtils.isRuleActive(
-        customSignatureRule.getBlockingExpiryDetails().getExpiryTimestampMillis());
-  }
-
-  private BlockingPolicyData generateBlockingDetails(
-      CustomSignatureRule customSignatureRule, RuleType ruleType, String info) {
-    return BlockingPolicyData.builder()
-        .category(Category.CUSTOM_SIGNATURE_RULE)
-        .ruleType(ruleType)
-        .info(info)
-        .timestamp(customSignatureRule.getBlockingExpiryDetails().getExpiryTimestampMillis())
-        .status(
-            blockingRulesUtils.generateBlockingStatus(
-                customSignatureRule.getBlockingExpiryDetails().getExpiryTimestampMillis(),
-                ruleType))
-        .ruleId(customSignatureRule.getId())
-        .build();
+    return response.getRulesList();
   }
 }

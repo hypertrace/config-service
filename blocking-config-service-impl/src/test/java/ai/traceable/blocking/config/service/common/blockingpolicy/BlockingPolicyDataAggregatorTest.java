@@ -1,5 +1,19 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy;
 
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.CUSTOM_SIGNATURE_EXEMPTIONS;
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.CUSTOM_SIGNATURE_VIOLATIONS;
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.EMAIL_DOMAIN_BASED_EXEMPTIONS;
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.EMAIL_DOMAIN_BASED_VIOLATIONS;
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.IP_RANGE_BLOCK_ALL_EXCEPT_VIOLATIONS;
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.IP_RANGE_EXEMPTIONS;
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.IP_RANGE_VIOLATIONS;
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.IP_TYPE_VIOLATIONS;
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.MODSEC_VIOLATIONS;
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.RATE_LIMITING_BASED_IP_VIOLATIONS;
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.REGION_BLOCK_ALL_EXCEPT_VIOLATIONS;
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.REGION_VIOLATIONS;
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.THREAT_ACTOR_BASED_IP_EXEMPTIONS;
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.THREAT_ACTOR_BASED_IP_VIOLATIONS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -10,17 +24,15 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicy
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.ActorBasedDataFetcher;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.CustomIpBasedDataFetcher;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.CustomSignatureDataFetcher;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.DataFetcherBase;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.MaliciousSourcesDataFetcher;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.ModsecDataFetcher;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.RegionDataFetcher;
-import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.actor.ActorBasedRulesCollection;
-import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.malicioussources.MaliciousSourcesDataFetcher;
 import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +48,7 @@ class BlockingPolicyDataAggregatorTest {
   private RegionDataFetcher regionDataFetcher;
   private BlockingPolicyDataAggregator orderedBlockingDetailsBase;
   private MaliciousSourcesDataFetcher maliciousSourceRuleDataFetcher;
+  private Set<DataFetcherBase> dataFetcherBases;
 
   @BeforeEach
   void setUp() {
@@ -45,14 +58,15 @@ class BlockingPolicyDataAggregatorTest {
     this.modsecDataFetcher = mock(ModsecDataFetcher.class);
     this.regionDataFetcher = mock(RegionDataFetcher.class);
     this.maliciousSourceRuleDataFetcher = mock(MaliciousSourcesDataFetcher.class);
-    orderedBlockingDetailsBase =
-        new BlockingPolicyDataAggregator(
+    this.dataFetcherBases =
+        Set.of(
+            customSignatureDataFetcher,
+            maliciousSourceRuleDataFetcher,
+            regionDataFetcher,
             actorBasedDataFetcher,
             customIpBasedDataFetcher,
-            customSignatureDataFetcher,
-            modsecDataFetcher,
-            regionDataFetcher,
-            maliciousSourceRuleDataFetcher);
+            modsecDataFetcher);
+    orderedBlockingDetailsBase = new BlockingPolicyDataAggregator(this.dataFetcherBases);
   }
 
   @Test
@@ -62,7 +76,6 @@ class BlockingPolicyDataAggregatorTest {
     ArrayList<String> desiredPrecedenceOrder =
         new ArrayList<>(
             List.of(
-                "malicious-source-ip-range-exemption",
                 "custom-ip-based-exemption",
                 "threat-actor-exemption",
                 "email-domain-exemption",
@@ -70,15 +83,11 @@ class BlockingPolicyDataAggregatorTest {
                 "custom-signature-violation",
                 "modsec-violation",
                 "malicious-source-ip-range-block-all-except",
-                "custom-ip-based-block-all-except",
                 "malicious-source-ip-range-violation",
-                "custom-ip-based-violation",
                 "threat-actor-violation",
                 "email-domain-violation",
                 "malicious-source-ip-type-violation",
-                "malicious-source-region-block-all-except",
                 "region-block-all-except",
-                "malicious-source-region-violation",
                 "region-violation",
                 "rate-limit-violation"));
 
@@ -96,96 +105,75 @@ class BlockingPolicyDataAggregatorTest {
 
   private void initializeMocks() {
     doReturn(
-            new ActorBasedRulesCollection(
-                List.of(
-                    BlockingPolicyData.builder()
-                        .ipAddresses(List.of("1.2.3.4"))
-                        .category(Category.RATE_LIMIT)
-                        .ruleType(RuleType.BLOCK)
-                        .info("threat-actor-violation")
-                        .build()),
-                List.of(
-                    BlockingPolicyData.builder()
-                        .ipAddresses(List.of("1.2.3.4"))
-                        .category(Category.RATE_LIMIT)
-                        .ruleType(RuleType.ALLOW)
-                        .info("threat-actor-exemption")
-                        .build()),
-                List.of(
-                    BlockingPolicyData.builder()
-                        .ipAddresses(List.of("1.2.3.4"))
-                        .category(Category.RATE_LIMIT)
-                        .ruleType(RuleType.BLOCK)
-                        .info("rate-limit-violation")
-                        .build()),
-                List.of(
-                    BlockingPolicyData.builder()
-                        .ipAddresses(List.of("1.2.3.4"))
-                        .category(Category.EMAIL_DOMAIN_RULE)
-                        .ruleType(RuleType.ALLOW)
-                        .info("email-domain-exemption")
-                        .build()),
-                List.of(
-                    BlockingPolicyData.builder()
-                        .ipAddresses(List.of("1.2.3.4"))
-                        .category(Category.EMAIL_DOMAIN_RULE)
-                        .ruleType(RuleType.BLOCK)
-                        .info("email-domain-violation")
-                        .build())))
+            List.of(
+                BlockingPolicyData.builder()
+                    .ipAddresses(List.of("1.2.3.4"))
+                    .category(Category.THREAT_ACTOR)
+                    .ruleType(RuleType.BLOCK)
+                    .bucket(THREAT_ACTOR_BASED_IP_VIOLATIONS)
+                    .info("threat-actor-violation")
+                    .build(),
+                BlockingPolicyData.builder()
+                    .ipAddresses(List.of("1.2.3.4"))
+                    .category(Category.THREAT_ACTOR)
+                    .ruleType(RuleType.ALLOW)
+                    .bucket(THREAT_ACTOR_BASED_IP_EXEMPTIONS)
+                    .info("threat-actor-exemption")
+                    .build(),
+                BlockingPolicyData.builder()
+                    .ipAddresses(List.of("1.2.3.4"))
+                    .category(Category.RATE_LIMIT)
+                    .ruleType(RuleType.BLOCK)
+                    .bucket(RATE_LIMITING_BASED_IP_VIOLATIONS)
+                    .info("rate-limit-violation")
+                    .build(),
+                BlockingPolicyData.builder()
+                    .ipAddresses(List.of("1.2.3.4"))
+                    .category(Category.EMAIL_DOMAIN_RULE)
+                    .ruleType(RuleType.ALLOW)
+                    .bucket(EMAIL_DOMAIN_BASED_EXEMPTIONS)
+                    .info("email-domain-exemption")
+                    .build(),
+                BlockingPolicyData.builder()
+                    .ipAddresses(List.of("1.2.3.4"))
+                    .category(Category.EMAIL_DOMAIN_RULE)
+                    .ruleType(RuleType.BLOCK)
+                    .bucket(EMAIL_DOMAIN_BASED_VIOLATIONS)
+                    .info("email-domain-violation")
+                    .build()))
         .when(actorBasedDataFetcher)
-        .getActorBasedRules(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
+        .getBlockingPolicyData(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
 
     doReturn(
-            new EnumMap<>(
-                Map.of(
-                    RuleType.BLOCK,
-                    List.of(
-                        BlockingPolicyData.builder()
-                            .ipAddresses(List.of("1.2.3.4"))
-                            .category(Category.CUSTOM_IP_RULE)
-                            .ruleType(RuleType.BLOCK)
-                            .info("custom-ip-based-violation")
-                            .build()),
-                    RuleType.ALLOW,
-                    List.of(
-                        BlockingPolicyData.builder()
-                            .ipAddresses(List.of("1.2.3.4"))
-                            .category(Category.CUSTOM_IP_RULE)
-                            .ruleType(RuleType.ALLOW)
-                            .info("custom-ip-based-exemption")
-                            .build()),
-                    RuleType.BLOCK_ALL_EXCEPT,
-                    List.of(
-                        BlockingPolicyData.builder()
-                            .ipAddresses(List.of("1.2.3.4"))
-                            .category(Category.CUSTOM_IP_RULE)
-                            .ruleType(RuleType.BLOCK_ALL_EXCEPT)
-                            .info("custom-ip-based-block-all-except")
-                            .build()))))
+            List.of(
+                BlockingPolicyData.builder()
+                    .ipAddresses(List.of("1.2.3.4"))
+                    .category(Category.CUSTOM_IP_RULE)
+                    .ruleType(RuleType.ALLOW)
+                    .bucket(IP_RANGE_EXEMPTIONS)
+                    .info("custom-ip-based-exemption")
+                    .build()))
         .when(customIpBasedDataFetcher)
-        .getCustomIpBasedRules(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
+        .getBlockingPolicyData(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
 
     doReturn(
-            new EnumMap<>(
-                Map.of(
-                    RuleType.BLOCK,
-                    List.of(
-                        BlockingPolicyData.builder()
-                            .category(Category.CUSTOM_SIGNATURE_RULE)
-                            .ruleType(RuleType.BLOCK)
-                            .info("custom-signature-violation")
-                            .ruleId("custom-signature-rule-id")
-                            .build()),
-                    RuleType.ALLOW,
-                    List.of(
-                        BlockingPolicyData.builder()
-                            .category(Category.CUSTOM_SIGNATURE_RULE)
-                            .ruleType(RuleType.ALLOW)
-                            .info("custom-signature-exemption")
-                            .ruleId("custom-signature-rule-id")
-                            .build()))))
+            List.of(
+                BlockingPolicyData.builder()
+                    .category(Category.CUSTOM_SIGNATURE_RULE)
+                    .ruleType(RuleType.BLOCK)
+                    .bucket(CUSTOM_SIGNATURE_VIOLATIONS)
+                    .info("custom-signature-violation")
+                    .ruleId("custom-signature-rule-id")
+                    .build(),
+                BlockingPolicyData.builder()
+                    .category(Category.CUSTOM_SIGNATURE_RULE)
+                    .ruleType(RuleType.ALLOW)
+                    .bucket(CUSTOM_SIGNATURE_EXEMPTIONS)
+                    .info("custom-signature-exemption")
+                    .ruleId("custom-signature-rule-id")
+                    .build()))
         .when(customSignatureDataFetcher)
-        .getCustomSignatureRules(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
+        .getBlockingPolicyData(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
 
     doReturn(
             List.of(
@@ -193,94 +181,57 @@ class BlockingPolicyDataAggregatorTest {
                     .ruleId("modsec-rule-id-1")
                     .category(Category.MODSECURITY)
                     .ruleType(RuleType.BLOCK)
+                    .bucket(MODSEC_VIOLATIONS)
                     .info("modsec-violation")
                     .build()))
         .when(modsecDataFetcher)
-        .getModsecViolations(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
+        .getBlockingPolicyData(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
 
     doReturn(
-            new EnumMap<>(
-                Map.of(
-                    RuleType.BLOCK,
-                    List.of(
-                        BlockingPolicyData.builder()
-                            .category(Category.CUSTOM_REGION_RULE)
-                            .ruleType(RuleType.BLOCK_ALL_EXCEPT)
-                            .info("region-violation")
-                            .regions(List.of("Bhutan"))
-                            .build()),
-                    RuleType.BLOCK_ALL_EXCEPT,
-                    List.of(
-                        BlockingPolicyData.builder()
-                            .category(Category.CUSTOM_REGION_RULE)
-                            .ruleType(RuleType.BLOCK_ALL_EXCEPT)
-                            .info("region-block-all-except")
-                            .regions(List.of("Bhutan"))
-                            .build()))))
+            List.of(
+                BlockingPolicyData.builder()
+                    .category(Category.CUSTOM_REGION_RULE)
+                    .ruleType(RuleType.BLOCK_ALL_EXCEPT)
+                    .info("region-violation")
+                    .bucket(REGION_VIOLATIONS)
+                    .regions(List.of("Bhutan"))
+                    .build(),
+                BlockingPolicyData.builder()
+                    .category(Category.CUSTOM_REGION_RULE)
+                    .ruleType(RuleType.BLOCK_ALL_EXCEPT)
+                    .bucket(REGION_BLOCK_ALL_EXCEPT_VIOLATIONS)
+                    .info("region-block-all-except")
+                    .regions(List.of("Bhutan"))
+                    .build()))
         .when(regionDataFetcher)
-        .getRegionBasedRules(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
+        .getBlockingPolicyData(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
 
-    Map<BlockingPolicyDataBucket, List<BlockingPolicyData>> blockingPolicyDetails = new HashMap<>();
-
-    blockingPolicyDetails.put(
-        BlockingPolicyDataBucket.IP_TYPE_VIOLATIONS,
-        List.of(
-            BlockingPolicyData.builder()
-                .ipTypes(List.of(IpLocationType.IP_LOCATION_TYPE_BOT))
-                .category(Category.IP_TYPE_RULE)
-                .ruleType(RuleType.BLOCK)
-                .info("malicious-source-ip-type-violation")
-                .build()));
-    blockingPolicyDetails.put(
-        BlockingPolicyDataBucket.IP_RANGE_VIOLATIONS,
-        List.of(
-            BlockingPolicyData.builder()
-                .ipRanges(List.of("1.2.3.4"))
-                .ipAddresses(List.of("1.2.3.4"))
-                .category(Category.CUSTOM_IP_RULE)
-                .ruleType(RuleType.BLOCK)
-                .info("malicious-source-ip-range-violation")
-                .build()));
-    blockingPolicyDetails.put(
-        BlockingPolicyDataBucket.IP_RANGE_EXEMPTIONS,
-        List.of(
-            BlockingPolicyData.builder()
-                .ipRanges(List.of("1.2.3.4"))
-                .ipAddresses(List.of("1.2.3.4"))
-                .category(Category.CUSTOM_IP_RULE)
-                .ruleType(RuleType.ALLOW)
-                .info("malicious-source-ip-range-exemption")
-                .build()));
-    blockingPolicyDetails.put(
-        BlockingPolicyDataBucket.IP_RANGE_BLOCK_ALL_EXCEPT_VIOLATIONS,
-        List.of(
-            BlockingPolicyData.builder()
-                .ipRanges(List.of("1.2.3.4"))
-                .ipAddresses(List.of("1.2.3.4"))
-                .category(Category.CUSTOM_IP_RULE)
-                .ruleType(RuleType.BLOCK_ALL_EXCEPT)
-                .info("malicious-source-ip-range-block-all-except")
-                .build()));
-    blockingPolicyDetails.put(
-        BlockingPolicyDataBucket.REGION_VIOLATIONS,
-        List.of(
-            BlockingPolicyData.builder()
-                .regions(List.of("afghanistan"))
-                .category(Category.CUSTOM_REGION_RULE)
-                .ruleType(RuleType.BLOCK)
-                .info("malicious-source-region-violation")
-                .build()));
-    blockingPolicyDetails.put(
-        BlockingPolicyDataBucket.REGION_BLOCK_ALL_EXCEPT_VIOLATIONS,
-        List.of(
-            BlockingPolicyData.builder()
-                .regions(List.of("afghanistan"))
-                .category(Category.CUSTOM_REGION_RULE)
-                .ruleType(RuleType.BLOCK_ALL_EXCEPT)
-                .info("malicious-source-region-block-all-except")
-                .build()));
-    when(maliciousSourceRuleDataFetcher.getMaliciousSourceRuleBlockingDetails(
+    when(maliciousSourceRuleDataFetcher.getBlockingPolicyData(
             REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID)))
-        .thenReturn(blockingPolicyDetails);
+        .thenReturn(
+            List.of(
+                BlockingPolicyData.builder()
+                    .ipTypes(List.of(IpLocationType.IP_LOCATION_TYPE_BOT))
+                    .category(Category.IP_TYPE_RULE)
+                    .ruleType(RuleType.BLOCK)
+                    .bucket(IP_TYPE_VIOLATIONS)
+                    .info("malicious-source-ip-type-violation")
+                    .build(),
+                BlockingPolicyData.builder()
+                    .ipRanges(List.of("1.2.3.4"))
+                    .ipAddresses(List.of("1.2.3.4"))
+                    .category(Category.CUSTOM_IP_RULE)
+                    .ruleType(RuleType.BLOCK)
+                    .bucket(IP_RANGE_VIOLATIONS)
+                    .info("malicious-source-ip-range-violation")
+                    .build(),
+                BlockingPolicyData.builder()
+                    .ipRanges(List.of("1.2.3.4"))
+                    .ipAddresses(List.of("1.2.3.4"))
+                    .category(Category.CUSTOM_IP_RULE)
+                    .ruleType(RuleType.BLOCK_ALL_EXCEPT)
+                    .bucket(IP_RANGE_BLOCK_ALL_EXCEPT_VIOLATIONS)
+                    .info("malicious-source-ip-range-block-all-except")
+                    .build()));
   }
 }
