@@ -2,6 +2,7 @@ plugins {
   `java-library`
   jacoco
   id("org.hypertrace.jacoco-report-plugin")
+  id("ai.traceable.publish-plugin")
 }
 
 dependencies {
