@@ -15,7 +15,7 @@ dependencies {
 
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpcutils.client)
-  implementation(libs.hypertrace.configservice.changeeventgenerator)
+  implementation(libs.hypertrace.configservice.changeeventapi)
 
   implementation(libs.traceable.platformGateway.eventInvalidationCache)
 

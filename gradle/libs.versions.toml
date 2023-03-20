@@ -42,6 +42,7 @@ hypertrace-configservice-objectstore = { module = "org.hypertrace.config.service
 hypertrace-configservice-validation = { module = "org.hypertrace.config.service:validation-utils" }
 hypertrace-configservice-spanProcessingUtils = { module = "org.hypertrace.config.service:span-processing-utils" }
 hypertrace-configservice-changeeventgenerator = { module = "org.hypertrace.config.service:config-service-change-event-generator" }
+hypertrace-configservice-changeeventapi = { module = "org.hypertrace.config.service:config-service-change-event-api" }
 hypertrace-configservice-factory = { module = "org.hypertrace.config.service:config-service-factory" }
 hypertrace-grpc-framework = { module = "org.hypertrace.core.serviceframework:platform-grpc-service-framework", version.ref = "hypertrace-framework" }
 hypertrace-framework-metrics = { module = "org.hypertrace.core.serviceframework:platform-metrics", version.ref = "hypertrace-framework" }
