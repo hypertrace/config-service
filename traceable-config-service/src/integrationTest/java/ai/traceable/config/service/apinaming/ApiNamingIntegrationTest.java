@@ -409,6 +409,13 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
                                     .setDisabled(true)
                                     .setThreshold(10)
                                     .build())
+                            .setIdEnums(
+                                StringList.newBuilder()
+                                    .addAllValues(
+                                        List.of(
+                                            "AF", "AX", "AL", "DZ", "AS", "AD", "AO", "AI", "AQ",
+                                            "AG", "AR", "AM", "AW", "AU", "AT"))
+                                    .build())
                             .addSegmentMergeConfig(
                                 SegmentMergeConfig.newBuilder()
                                     .setDisabled(true)

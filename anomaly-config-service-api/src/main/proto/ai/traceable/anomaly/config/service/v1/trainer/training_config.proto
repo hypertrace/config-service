@@ -389,6 +389,7 @@ message TrieModelTrainingConfig {
   optional int32 non_mergeable_depth = 9;
   GibberishConfig gibberish_config = 10;
   repeated SegmentMergeConfig segment_merge_config = 11;
+  StringList id_enums = 12;
 }
 
 message GibberishConfig {
