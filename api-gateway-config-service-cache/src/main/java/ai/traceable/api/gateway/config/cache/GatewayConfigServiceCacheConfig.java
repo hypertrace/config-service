@@ -17,7 +17,7 @@ import lombok.experimental.Accessors;
 
 @Value
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-class GatewayConfigServiceCacheConfig {
+public class GatewayConfigServiceCacheConfig {
   private static final String CONNECTION_DETAILS_KEY = "connection";
   @NonNull ConnectionDetails connectionDetails;
   @NonNull Channel channel;
