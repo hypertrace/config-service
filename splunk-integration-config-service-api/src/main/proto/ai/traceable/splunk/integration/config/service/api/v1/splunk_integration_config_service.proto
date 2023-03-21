@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package ai.traceable.splunk.integration.config.service.api.v1;
+
+option java_multiple_files = true;
+
+service SplunkIntegrationConfigService {
+  rpc GetSplunkIntegrations(GetSplunkIntegrationsRequest) returns (GetSplunkIntegrationsResponse) {}
+  rpc CreateSplunkIntegration(CreateSplunkIntegrationRequest) returns (CreateSplunkIntegrationResponse) {}
+  rpc UpdateSplunkIntegration(UpdateSplunkIntegrationRequest) returns (UpdateSplunkIntegrationResponse) {}
+  rpc DeleteSplunkIntegration(DeleteSplunkIntegrationRequest) returns (DeleteSplunkIntegrationResponse) {}
+}
+
+message GetSplunkIntegrationsRequest {
+  SplunkIntegrationsFilter filter = 1;
+}
+
+message GetSplunkIntegrationsResponse {
+  repeated SplunkIntegration integrations = 1;
+}
+
+message CreateSplunkIntegrationRequest {
+  string name = 1;
+  optional string description = 2;
+  EncryptedText api_token = 3;
+  string http_event_collector_url = 4;
+}
+
+message CreateSplunkIntegrationResponse {
+  SplunkIntegration integration = 1;
+}
+
+message UpdateSplunkIntegrationRequest {
+  string id = 1;
+  string name = 2;
+  optional string description = 3;
+  EncryptedText api_token = 4;
+  string http_event_collector_url = 5;
+}
+
+message UpdateSplunkIntegrationResponse {
+  SplunkIntegration integration = 1;
+}
+
+message DeleteSplunkIntegrationRequest {
+  string id = 1;
+}
+
+message DeleteSplunkIntegrationResponse {
+}
+
+message SplunkIntegrationDetails {
+  string name = 1;
+  string description = 2;
+  EncryptedText api_token = 3;
+  string http_event_collector_url = 4;
+}
+
+message SplunkIntegration {
+  string id = 1;
+  SplunkIntegrationDetails details = 2;
+}
+
+message EncryptedText {
+  string key_id = 1;
+  string value = 2;
+}
+
+message SplunkIntegrationsFilter {
+  repeated string ids = 1;
+}

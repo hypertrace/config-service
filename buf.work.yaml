@@ -31,3 +31,4 @@ directories:
   - traceable-span-processing-config-service-api/src/main/proto
   - user-attribution-config-service-api/src/main/proto
   - waf-provider-integration-service-api/src/main/proto
+  - splunk-integration-config-service-api/src/main/proto
