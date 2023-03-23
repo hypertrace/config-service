@@ -114,6 +114,7 @@ message AnomalySubRuleInfo {
   string rule_name = 2;
   repeated AnomalySubRuleType sub_rule_types = 3;
   map<string, string> event_labels = 4;
+  AnomalySeverityLevel severity_level = 5;
 }
 
 enum AnomalySubRuleType {
@@ -163,6 +164,14 @@ enum AnomalyCustomType {
   ANOMALY_CUSTOM_TYPE_MALICIOUS_SOURCES_EMAIL = 8 [(string_value) = "Email"];
   ANOMALY_CUSTOM_TYPE_THREAT_ACTOR = 9 [(string_value) = "Threat Actor"];
   ANOMALY_CUSTOM_TYPE_IN_AGENT_VULNERABLE_LIBRARY = 10 [(string_value) = "In-Agent Vulnerable Library"];
+}
+
+enum AnomalySeverityLevel {
+  ANOMALY_SEVERITY_LEVEL_UNSPECIFIED = 0;
+  ANOMALY_SEVERITY_LEVEL_LOW = 1;
+  ANOMALY_SEVERITY_LEVEL_MEDIUM = 2;
+  ANOMALY_SEVERITY_LEVEL_HIGH = 3;
+  ANOMALY_SEVERITY_LEVEL_CRITICAL = 4;
 }
 
 message StringList {

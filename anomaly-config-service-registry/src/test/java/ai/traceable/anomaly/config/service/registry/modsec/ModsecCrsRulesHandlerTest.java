@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
+import ai.traceable.anomaly.config.service.v1.AnomalySeverityLevel;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,7 @@ class ModsecCrsRulesHandlerTest {
             + "    t:none,t:lowercase,\\\n"
             + "    msg:'User-Agent associated with security scanner',\\\n"
             + "    tag:'traceable/type/regular,safe,block',\\\n"
+            + "    tag:'traceable/severity/LOW',\\\n"
             + "    logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n"
             + "    tag:'paranoia-level/1',\\\n"
             + "    severity:'CRITICAL'\"\n"
@@ -36,6 +38,7 @@ class ModsecCrsRulesHandlerTest {
             + "    t:none,t:lowercase,\\\n"
             + "    msg:'Request header associated with security scanner',\\\n"
             + "    tag:'traceable/type/regular,safe,block',\\\n"
+            + "    tag:'traceable/severity/HIGH',\\\n"
             + "    logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',\\\n"
             + "    tag:'paranoia-level/1',\\\n"
             + "    severity:'CRITICAL'\"\n"
@@ -60,9 +63,13 @@ class ModsecCrsRulesHandlerTest {
             subRule -> {
               if (subRule.getRuleId().equals("crs_913100")) {
                 assertEquals("User-Agent associated with security scanner", subRule.getRuleName());
+                assertEquals(
+                    AnomalySeverityLevel.ANOMALY_SEVERITY_LEVEL_LOW, subRule.getSeverityLevel());
               } else if (subRule.getRuleId().equals("crs_913110")) {
                 assertEquals(
                     "Request header associated with security scanner", subRule.getRuleName());
+                assertEquals(
+                    AnomalySeverityLevel.ANOMALY_SEVERITY_LEVEL_HIGH, subRule.getSeverityLevel());
               } else {
                 fail();
               }

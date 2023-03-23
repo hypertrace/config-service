@@ -2,9 +2,12 @@ package ai.traceable.anomaly.config.service.registry.modsec;
 
 import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
+import ai.traceable.anomaly.config.service.v1.AnomalySeverityLevel;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import com.google.common.io.Resources;
+import com.google.re2j.Matcher;
+import com.google.re2j.Pattern;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -15,8 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 
@@ -32,8 +33,15 @@ public class ModsecCrsRulesHandler {
       Pattern.compile("tag:'traceable/type/(.*)'");
   private static final Pattern SUB_RULE_LABELS_TAG_PATTERN =
       Pattern.compile("tag:'traceable/labels/(.*)'");
+  private static final Pattern SEVERITY_TAG_PATTERN =
+      Pattern.compile("tag:'traceable/severity/(.*)'");
+
   private static final String SEC_RULE_REMOVE_BY_ID_FORMAT = "SecRuleRemoveById %d";
   private static final String EMPTY_STRING = "";
+  private static final String CRITICAL_SEVERITY = "CRITICAL";
+  private static final String HIGH_SEVERITY = "HIGH";
+  private static final String MEDIUM_SEVERITY = "MEDIUM";
+  private static final String LOW_SEVERITY = "LOW";
   private final ModsecRuleUtils modsecRuleUtils;
 
   @Inject
@@ -55,12 +63,17 @@ public class ModsecCrsRulesHandler {
       Matcher msgMatcher = MSG_PATTERN.matcher(rule);
       Matcher tagMatcher = SUB_RULE_TYPE_TAG_PATTERN.matcher(rule);
       Matcher labelMatcher = SUB_RULE_LABELS_TAG_PATTERN.matcher(rule);
+      Matcher severityMatcher = SEVERITY_TAG_PATTERN.matcher(rule);
 
       if (idMatcher.find() && msgMatcher.find()) {
         long id = Long.parseLong(idMatcher.group(1));
         String subRuleId = modsecRuleUtils.getModsecRuleId(id);
         String parentId = modsecRuleUtils.getModsecParentRuleId(subRuleId);
         String msg = msgMatcher.group(1).trim();
+        AnomalySeverityLevel severityLevel =
+            severityMatcher.find()
+                ? getAnomalySeverityLevel(severityMatcher.group(1).trim())
+                : AnomalySeverityLevel.ANOMALY_SEVERITY_LEVEL_UNSPECIFIED;
         if (msg.isEmpty()) {
           throw new RuntimeException(
               String.format(
@@ -69,7 +82,10 @@ public class ModsecCrsRulesHandler {
         }
 
         AnomalySubRuleInfo.Builder builder =
-            AnomalySubRuleInfo.newBuilder().setRuleId(subRuleId).setRuleName(msg);
+            AnomalySubRuleInfo.newBuilder()
+                .setRuleId(subRuleId)
+                .setRuleName(msg)
+                .setSeverityLevel(severityLevel);
         tagMatcher.find();
         Arrays.asList(tagMatcher.group(1).split(COMMA_DELIMITER))
             .forEach(subRuleType -> builder.addSubRuleTypes(getSubRuleType(subRuleType)));
@@ -169,6 +185,21 @@ public class ModsecCrsRulesHandler {
           && !anomalySubRuleTypeList.contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);
     } else {
       return anomalySubRuleTypeList.contains(anomalySubRuleType);
+    }
+  }
+
+  private AnomalySeverityLevel getAnomalySeverityLevel(String severity) {
+    switch (severity) {
+      case CRITICAL_SEVERITY:
+        return AnomalySeverityLevel.ANOMALY_SEVERITY_LEVEL_CRITICAL;
+      case HIGH_SEVERITY:
+        return AnomalySeverityLevel.ANOMALY_SEVERITY_LEVEL_HIGH;
+      case MEDIUM_SEVERITY:
+        return AnomalySeverityLevel.ANOMALY_SEVERITY_LEVEL_MEDIUM;
+      case LOW_SEVERITY:
+        return AnomalySeverityLevel.ANOMALY_SEVERITY_LEVEL_LOW;
+      default:
+        return AnomalySeverityLevel.ANOMALY_SEVERITY_LEVEL_UNSPECIFIED;
     }
   }
 }
