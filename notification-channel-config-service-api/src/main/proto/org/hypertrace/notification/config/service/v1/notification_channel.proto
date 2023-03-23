@@ -14,6 +14,7 @@ message NotificationChannelMutableData {
   repeated EmailChannelConfig email_channel_config = 2;
   repeated WebhookChannelConfig webhook_channel_config = 3;
   repeated AwsS3BucketChannelConfig s3_bucket_channel_config = 4;
+  repeated SplunkWebhookChannelConfig splunk_webhook_channel_config = 5;
 }
 
 message AwsS3BucketChannelConfig {
@@ -49,4 +50,8 @@ message WebhookHeader {
   string name = 1;
   string value = 2; // omitted on response if isSecret is true
   bool is_secret = 3;
+}
+
+message SplunkWebhookChannelConfig {
+  repeated string splunk_integration_ids = 1;
 }
