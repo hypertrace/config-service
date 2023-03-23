@@ -13,7 +13,7 @@ import org.hypertrace.notification.config.service.v1.EmailChannelConfig;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsRequest;
 import org.hypertrace.notification.config.service.v1.GetNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.NotificationChannelMutableData;
-import org.hypertrace.notification.config.service.v1.SplunkWebhookChannelConfig;
+import org.hypertrace.notification.config.service.v1.SplunkIntegrationChannelConfig;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.WebhookChannelConfig;
 import org.hypertrace.notification.config.service.v1.WebhookHeader;
@@ -39,13 +39,14 @@ public class NotificationChannelConfigServiceRequestValidator {
     if (data.getEmailChannelConfigCount() == 0
         && data.getWebhookChannelConfigCount() == 0
         && data.getS3BucketChannelConfigCount() == 0
-        && data.getSplunkWebhookChannelConfigCount() == 0) {
+        && data.getSplunkIntegrationChannelConfigCount() == 0) {
       throw Status.INVALID_ARGUMENT.withDescription("No config present").asRuntimeException();
     }
     data.getEmailChannelConfigList().forEach(this::validateEmailChannelConfig);
     data.getWebhookChannelConfigList().forEach(this::validateWebhookChannelConfig);
     data.getS3BucketChannelConfigList().forEach(this::validateS3BucketConfig);
-    data.getSplunkWebhookChannelConfigList().forEach(this::validateSplunkWebhookChannelConfig);
+    data.getSplunkIntegrationChannelConfigList()
+        .forEach(this::validateSplunkIntegrationChannelConfig);
   }
 
   public void validateGetAllNotificationChannelsRequest(
@@ -100,14 +101,10 @@ public class NotificationChannelConfigServiceRequestValidator {
     validateNonDefaultPresenceOrThrow(webhookHeader, WebhookHeader.NAME_FIELD_NUMBER);
   }
 
-  private void validateSplunkWebhookChannelConfig(
-      SplunkWebhookChannelConfig splunkWebhookChannelConfig) {
+  private void validateSplunkIntegrationChannelConfig(
+      SplunkIntegrationChannelConfig splunkIntegrationChannelConfig) {
     validateNonDefaultPresenceOrThrow(
-        splunkWebhookChannelConfig, SplunkWebhookChannelConfig.SPLUNK_INTEGRATION_IDS_FIELD_NUMBER);
-    if (splunkWebhookChannelConfig.getSplunkIntegrationIdsCount() == 0) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription("No splunk integration id present in splunk webhook channel config")
-          .asRuntimeException();
-    }
+        splunkIntegrationChannelConfig,
+        SplunkIntegrationChannelConfig.SPLUNK_INTEGRATION_ID_FIELD_NUMBER);
   }
 }
