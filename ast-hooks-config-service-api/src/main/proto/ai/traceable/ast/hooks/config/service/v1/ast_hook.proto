@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package ai.traceable.ast.hooks.config.service.v1;
+
+option java_multiple_files = true;
+
+message AstHook {
+  string id = 1;
+  AstHookDetails hook_details = 2;
+}
+
+message AstHookDetails {
+  string name = 1;
+  string description = 2;
+  AstHookType hook_type = 3;
+  string code_snippet = 4;
+}
+
+enum AstHookType {
+  AST_HOOK_TYPE_UNSPECIFIED = 0;
+  AST_HOOK_TYPE_AUTHENTICATION = 1;
+}

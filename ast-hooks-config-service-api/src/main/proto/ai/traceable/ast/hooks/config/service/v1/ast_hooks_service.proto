@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package ai.traceable.ast.hooks.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/ast/hooks/config/service/v1/ast_hook.proto";
+
+service AstHooksConfigService {
+  rpc CreateAstHook(CreateAstHookRequest) returns (CreateAstHookResponse);
+  rpc UpdateAstHook(UpdateAstHookRequest) returns (UpdateAstHookResponse);
+  rpc DeleteAstHook(DeleteAstHookRequest) returns (DeleteAstHookResponse);
+  rpc GetAllAstHooks(GetAllAstHooksRequest) returns (GetAllAstHooksResponse);
+}
+
+message UpdateAstHookRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string description = 3;
+  optional AstHookType hook_type = 4;
+  optional string code_snippet = 5;
+}
+
+message UpdateAstHookResponse {
+  AstHook ast_hook = 1;
+}
+
+message CreateAstHookRequest {
+  AstHookDetails hook_details = 1;
+}
+
+message CreateAstHookResponse {
+  AstHook ast_hook = 1;
+}
+
+message DeleteAstHookRequest {
+  string id = 1;
+}
+
+message DeleteAstHookResponse {
+
+}
+
+message GetAllAstHooksRequest {
+
+}
+
+message GetAllAstHooksResponse {
+  repeated AstHook ast_hooks = 1;
+}

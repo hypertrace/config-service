@@ -96,4 +96,6 @@ include(":ast-config-service-api")
 include(":ast-config-service-impl")
 include(":splunk-integration-config-service-api")
 include(":splunk-integration-config-service-impl")
+include(":ast-hooks-config-service-api")
+include(":ast-hooks-config-service-impl")
 
