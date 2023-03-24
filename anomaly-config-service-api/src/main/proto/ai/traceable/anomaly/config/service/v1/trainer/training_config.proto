@@ -153,6 +153,7 @@ message VulnerabilityTrainingConfig {
     CspSecurityHeaderTrainingConfig csp_security_header = 9;
     DirectoryListingTrainingConfig directory_listing = 10;
     EnumerableParamTrainingConfig enumerable_param = 11;
+    DeprecatedApiRouteTrainingConfig deprecated_api_route = 13;
   }
 }
 
@@ -289,6 +290,8 @@ message DirectoryListingTrainingConfig {}
 message JavaSerializedObjectTrainingConfig {}
 
 message ServiceUsesBasicAuthTrainingConfig {}
+
+message DeprecatedApiRouteTrainingConfig {}
 
 message EnumerableParamTrainingConfig {
   optional string include_param_regex = 1;
