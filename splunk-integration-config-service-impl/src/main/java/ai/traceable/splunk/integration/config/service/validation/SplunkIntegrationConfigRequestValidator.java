@@ -31,7 +31,6 @@ public class SplunkIntegrationConfigRequestValidator {
     validateNonDefaultPresenceOrThrow(request, UpdateSplunkIntegrationRequest.NAME_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         request, UpdateSplunkIntegrationRequest.HTTP_EVENT_COLLECTOR_URL_FIELD_NUMBER);
-    validateEncryptedText(request.getApiToken());
 
     // let us check if the id exists in DB or not
     boolean exists =

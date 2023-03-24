@@ -92,18 +92,26 @@ public class SplunkIntegrationConfigServiceImpl extends SplunkIntegrationConfigS
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
       requestValidator.validateOrThrow(requestContext, request);
+      SplunkIntegration.Builder builder = SplunkIntegration.newBuilder();
+      builder.setId(request.getId());
+      SplunkIntegrationDetails.Builder detailsBuilder = SplunkIntegrationDetails.newBuilder();
+
+      detailsBuilder.setName(request.getName());
+      detailsBuilder.setDescription(request.getDescription());
+      detailsBuilder.setHttpEventCollectorUrl(request.getHttpEventCollectorUrl());
+
+      EncryptedText apiToken =
+          request.hasApiToken()
+              ? request.getApiToken()
+              : splunkIntegrationConfigStore
+                  .getData(requestContext, request.getId())
+                  .map(SplunkIntegration::getDetails)
+                  .map(SplunkIntegrationDetails::getApiToken)
+                  .orElseThrow();
+      detailsBuilder.setApiToken(apiToken);
 
       final SplunkIntegration splunkIntegration =
-          SplunkIntegration.newBuilder()
-              .setId(request.getId())
-              .setDetails(
-                  SplunkIntegrationDetails.newBuilder()
-                      .setName(request.getName())
-                      .setDescription(request.getDescription())
-                      .setApiToken(request.getApiToken())
-                      .setHttpEventCollectorUrl(request.getHttpEventCollectorUrl())
-                      .build())
-              .build();
+          builder.setDetails(detailsBuilder.build()).build();
       SplunkIntegration upserted =
           splunkIntegrationConfigStore.upsertObject(requestContext, splunkIntegration).getData();
 

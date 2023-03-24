@@ -106,6 +106,97 @@ class SplunkIntegrationConfigServiceImplTest {
   }
 
   @Test
+  public void testUpdateSplunkIntegrationWithUpdatedApiToken() {
+    setupMocks(new MockGenericConfigService().mockUpsert().mockGet().mockGetAll());
+
+    CreateSplunkIntegrationRequest expected =
+        CreateSplunkIntegrationRequest.newBuilder()
+            .setHttpEventCollectorUrl("http://splunk-hec.traceable.ai")
+            .setName("splunk integration")
+            .setDescription("Splunk integration")
+            .setApiToken(
+                EncryptedText.newBuilder().setKeyId("keyid").setValue("cypherText").build())
+            .build();
+
+    SplunkIntegration existing = createIntegration(expected);
+
+    SplunkIntegration withUpdates =
+        SplunkIntegration.newBuilder()
+            .setId(existing.getId())
+            .setDetails(
+                SplunkIntegrationDetails.newBuilder()
+                    .setName("update-name")
+                    .setHttpEventCollectorUrl(existing.getDetails().getHttpEventCollectorUrl())
+                    .setApiToken(
+                        EncryptedText.newBuilder()
+                            .setKeyId("keyid")
+                            .setValue("updatedcypherText")
+                            .build())
+                    .setDescription(existing.getDetails().getDescription())
+                    .build())
+            .build();
+
+    SplunkIntegration upserted =
+        splunkIntegrationServiceBlockingStub
+            .updateSplunkIntegration(
+                UpdateSplunkIntegrationRequest.newBuilder()
+                    .setId(existing.getId())
+                    .setName("update-name")
+                    .setHttpEventCollectorUrl(existing.getDetails().getHttpEventCollectorUrl())
+                    .setApiToken(
+                        EncryptedText.newBuilder()
+                            .setKeyId("keyid")
+                            .setValue("updatedcypherText")
+                            .build())
+                    .setDescription(existing.getDetails().getDescription())
+                    .build())
+            .getIntegration();
+
+    GetSplunkIntegrationsResponse response =
+        splunkIntegrationServiceBlockingStub.getSplunkIntegrations(
+            GetSplunkIntegrationsRequest.newBuilder().build());
+
+    assertEquals(1, response.getIntegrationsList().size());
+
+    assertEquals(withUpdates, upserted);
+  }
+
+  @Test
+  public void testUpdateSplunkIntegrationWithNoUpdatedApiToken() {
+    setupMocks(new MockGenericConfigService().mockUpsert().mockGet().mockGetAll());
+
+    CreateSplunkIntegrationRequest expected =
+        CreateSplunkIntegrationRequest.newBuilder()
+            .setHttpEventCollectorUrl("http://splunk-hec.traceable.ai")
+            .setName("splunk integration")
+            .setDescription("Splunk integration")
+            .setApiToken(
+                EncryptedText.newBuilder().setKeyId("keyid").setValue("cypherText").build())
+            .build();
+
+    SplunkIntegration existing = createIntegration(expected);
+
+    SplunkIntegration upserted =
+        splunkIntegrationServiceBlockingStub
+            .updateSplunkIntegration(
+                UpdateSplunkIntegrationRequest.newBuilder()
+                    .setId(existing.getId())
+                    .setName("update-name")
+                    .setHttpEventCollectorUrl(existing.getDetails().getHttpEventCollectorUrl())
+                    .setDescription(existing.getDetails().getDescription())
+                    .build())
+            .getIntegration();
+
+    GetSplunkIntegrationsResponse response =
+        splunkIntegrationServiceBlockingStub.getSplunkIntegrations(
+            GetSplunkIntegrationsRequest.newBuilder().build());
+
+    assertEquals(1, response.getIntegrationsList().size());
+
+    assertEquals(response.getIntegrationsList().get(0), upserted);
+  }
+
+  @Test
   public void testUpdateNonExistentSplunkIntegration() {
     setupMocks(new MockGenericConfigService().mockUpsert());
 
