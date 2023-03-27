@@ -13,6 +13,7 @@ import org.hypertrace.notification.config.service.v1.EmailChannelConfig;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsRequest;
 import org.hypertrace.notification.config.service.v1.GetNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.NotificationChannelMutableData;
+import org.hypertrace.notification.config.service.v1.SplunkIntegrationChannelConfig;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.WebhookChannelConfig;
 import org.hypertrace.notification.config.service.v1.WebhookHeader;
@@ -37,12 +38,15 @@ public class NotificationChannelConfigServiceRequestValidator {
         data, NotificationChannelMutableData.CHANNEL_NAME_FIELD_NUMBER);
     if (data.getEmailChannelConfigCount() == 0
         && data.getWebhookChannelConfigCount() == 0
-        && data.getS3BucketChannelConfigCount() == 0) {
+        && data.getS3BucketChannelConfigCount() == 0
+        && data.getSplunkIntegrationChannelConfigCount() == 0) {
       throw Status.INVALID_ARGUMENT.withDescription("No config present").asRuntimeException();
     }
     data.getEmailChannelConfigList().forEach(this::validateEmailChannelConfig);
     data.getWebhookChannelConfigList().forEach(this::validateWebhookChannelConfig);
     data.getS3BucketChannelConfigList().forEach(this::validateS3BucketConfig);
+    data.getSplunkIntegrationChannelConfigList()
+        .forEach(this::validateSplunkIntegrationChannelConfig);
   }
 
   public void validateGetAllNotificationChannelsRequest(
@@ -95,5 +99,12 @@ public class NotificationChannelConfigServiceRequestValidator {
 
   private void validateWebhookHeader(WebhookHeader webhookHeader) {
     validateNonDefaultPresenceOrThrow(webhookHeader, WebhookHeader.NAME_FIELD_NUMBER);
+  }
+
+  private void validateSplunkIntegrationChannelConfig(
+      SplunkIntegrationChannelConfig splunkIntegrationChannelConfig) {
+    validateNonDefaultPresenceOrThrow(
+        splunkIntegrationChannelConfig,
+        SplunkIntegrationChannelConfig.SPLUNK_INTEGRATION_ID_FIELD_NUMBER);
   }
 }
