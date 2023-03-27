@@ -16,7 +16,7 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
 import ai.traceable.detection.exclusion.config.service.v1.EnvironmentScope;
 import ai.traceable.detection.exclusion.config.service.v1.GetDetectionExclusionRulesRequest;
-import ai.traceable.detection.exclusion.config.service.v1.RuleChangeSource;
+import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import ai.traceable.detection.exclusion.config.service.v1.UpdateDetectionExclusionRuleRequest;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
@@ -107,10 +107,7 @@ class DetectionExclusionRulesValidatorTest {
               .setRuleInfo(
                   DetectionExclusionRuleInfo.newBuilder()
                       .setName("rule")
-                      .addConditions(DetectionExclusionCondition.getDefaultInstance())
-                      .setRuleStatus(
-                          DetectionExclusionRuleStatus.newBuilder()
-                              .setChangeSource(RuleChangeSource.RULE_CHANGE_SOURCE_CUSTOMER)))
+                      .addConditions(DetectionExclusionCondition.getDefaultInstance()))
               .setRuleScope(
                   DetectionExclusionRuleScope.newBuilder()
                       .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("")))
@@ -131,10 +128,7 @@ class DetectionExclusionRulesValidatorTest {
               .setRuleInfo(
                   DetectionExclusionRuleInfo.newBuilder()
                       .setName("ruleName")
-                      .addConditions(DetectionExclusionCondition.getDefaultInstance())
-                      .setRuleStatus(
-                          DetectionExclusionRuleStatus.newBuilder()
-                              .setChangeSource(RuleChangeSource.RULE_CHANGE_SOURCE_CUSTOMER)))
+                      .addConditions(DetectionExclusionCondition.getDefaultInstance()))
               .build();
       Throwable throwable =
           assertThrows(
@@ -158,10 +152,7 @@ class DetectionExclusionRulesValidatorTest {
               .setRuleInfo(
                   DetectionExclusionRuleInfo.newBuilder()
                       .setName("ruleName1")
-                      .addConditions(DetectionExclusionCondition.getDefaultInstance())
-                      .setRuleStatus(
-                          DetectionExclusionRuleStatus.newBuilder()
-                              .setChangeSource(RuleChangeSource.RULE_CHANGE_SOURCE_CUSTOMER)))
+                      .addConditions(DetectionExclusionCondition.getDefaultInstance()))
               .build();
       assertDoesNotThrow(
           () ->
@@ -178,27 +169,6 @@ class DetectionExclusionRulesValidatorTest {
   @Test
   void testValidateUpdateDetectionExclusionRulesRequest() {
     RequestContext requestContext = RequestContext.forTenantId("tenantId");
-    // rule change source not set
-    {
-      UpdateDetectionExclusionRuleRequest request =
-          UpdateDetectionExclusionRuleRequest.newBuilder()
-              .setRule(
-                  DetectionExclusionRule.newBuilder()
-                      .setId("id")
-                      .setRuleInfo(
-                          DetectionExclusionRuleInfo.newBuilder()
-                              .setName("rule")
-                              .addConditions(DetectionExclusionCondition.getDefaultInstance())))
-              .build();
-      Throwable throwable =
-          assertThrows(
-              StatusRuntimeException.class,
-              () ->
-                  detectionExclusionRulesValidator.validateOrThrow(
-                      requestContext, request, List.of()));
-      assertTrue(throwable.getMessage().contains("Invalid ruleChangeSource"));
-    }
-
     // Rule name already exists
     {
       UpdateDetectionExclusionRuleRequest request =
@@ -212,8 +182,7 @@ class DetectionExclusionRulesValidatorTest {
                               .addConditions(DetectionExclusionCondition.getDefaultInstance())
                               .setRuleStatus(
                                   DetectionExclusionRuleStatus.newBuilder()
-                                      .setChangeSource(
-                                          RuleChangeSource.RULE_CHANGE_SOURCE_CUSTOMER))))
+                                      .setRuleCreationSource(RuleSource.RULE_SOURCE_UNSPECIFIED))))
               .build();
       Throwable throwable =
           assertThrows(
@@ -229,6 +198,31 @@ class DetectionExclusionRulesValidatorTest {
                               .build())));
       assertTrue(throwable.getMessage().contains("Rule with name ruleName already exists"));
     }
+    // throws INVALID_ARGUMENT if rule creation source is not unspecified.
+    {
+      UpdateDetectionExclusionRuleRequest request =
+          UpdateDetectionExclusionRuleRequest.newBuilder()
+              .setRule(
+                  DetectionExclusionRule.newBuilder()
+                      .setId("id-1")
+                      .setRuleInfo(
+                          DetectionExclusionRuleInfo.newBuilder()
+                              .setName("test-1")
+                              .setRuleStatus(
+                                  DetectionExclusionRuleStatus.newBuilder()
+                                      .setRuleCreationSource(RuleSource.RULE_SOURCE_DEFAULT)
+                                      .setDisabled(true)
+                                      .setHidden(true)
+                                      .setGenerateInternalEvents(false)
+                                      .build())
+                              .build())
+                      .build())
+              .build();
+      assertThrows(
+          StatusRuntimeException.class,
+          () ->
+              detectionExclusionRulesValidator.validateOrThrow(requestContext, request, List.of()));
+    }
 
     // valid request
     {
@@ -243,8 +237,7 @@ class DetectionExclusionRulesValidatorTest {
                               .addConditions(DetectionExclusionCondition.getDefaultInstance())
                               .setRuleStatus(
                                   DetectionExclusionRuleStatus.newBuilder()
-                                      .setChangeSource(
-                                          RuleChangeSource.RULE_CHANGE_SOURCE_CUSTOMER))))
+                                      .setRuleCreationSource(RuleSource.RULE_SOURCE_UNSPECIFIED))))
               .build();
       assertDoesNotThrow(
           () ->

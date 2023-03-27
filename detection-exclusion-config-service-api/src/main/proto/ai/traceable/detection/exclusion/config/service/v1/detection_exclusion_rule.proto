@@ -50,10 +50,19 @@ message DetectionExclusionRuleStatus {
   bool disabled = 1;
   bool hidden = 2;
   bool generate_internal_events = 3;
-  RuleChangeSource change_source = 4;
+  RuleChangeSource change_source = 4 [deprecated = true];
+  RuleSource rule_creation_source = 5;
+}
+
+enum RuleSource{
+  RULE_SOURCE_UNSPECIFIED = 0;
+  RULE_SOURCE_DEFAULT = 1;
+  RULE_SOURCE_CUSTOMER = 2;
+  RULE_SOURCE_TRACEABLE = 3;
 }
 
 enum RuleChangeSource {
+  option deprecated = true;
   RULE_CHANGE_SOURCE_UNSPECIFIED = 0;
   RULE_CHANGE_SOURCE_DEFAULT = 1;
   RULE_CHANGE_SOURCE_CUSTOMER = 2;

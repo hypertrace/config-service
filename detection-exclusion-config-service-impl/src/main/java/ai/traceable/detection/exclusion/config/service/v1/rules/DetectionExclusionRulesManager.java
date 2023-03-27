@@ -4,6 +4,7 @@ import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import io.grpc.Status;
 import java.util.List;
@@ -33,6 +34,18 @@ public class DetectionExclusionRulesManager implements RulesManager {
   @Override
   public DetectionExclusionRule updateDetectionExclusionRule(
       RequestContext requestContext, DetectionExclusionRule rule) {
+    String ruleId = rule.getId();
+    List<DetectionExclusionRule> ruleList = rulesStore.getAllConfigData(requestContext);
+    DetectionExclusionRule originalRule =
+        ruleList.stream()
+            .filter(detectionExclusionRule -> detectionExclusionRule.getId().equals(ruleId))
+            .findFirst()
+            .orElseThrow(
+                Status.NOT_FOUND.withDescription(
+                        String.format(
+                            "Detection exclusion rule with rule id : {} does not exists", ruleId))
+                    ::asRuntimeException);
+    rule = getModifiedRule(rule, originalRule.getRuleInfo().getRuleStatus());
     return rulesStore.upsertObject(requestContext, rule).getData();
   }
 
@@ -55,5 +68,23 @@ public class DetectionExclusionRulesManager implements RulesManager {
     rulesStore
         .deleteObject(requestContext, ruleId)
         .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
+  }
+
+  private DetectionExclusionRuleStatus getMergeRuleStatus(
+      DetectionExclusionRuleStatus ruleStatus, DetectionExclusionRuleStatus originalRuleStatus) {
+    return originalRuleStatus.toBuilder()
+        .mergeFrom(ruleStatus)
+        .setRuleCreationSource(originalRuleStatus.getRuleCreationSource())
+        .build();
+  }
+
+  private DetectionExclusionRule getModifiedRule(
+      DetectionExclusionRule rule, DetectionExclusionRuleStatus originalRuleStatus) {
+    DetectionExclusionRuleStatus mergedRuleStatus =
+        getMergeRuleStatus(rule.getRuleInfo().getRuleStatus(), originalRuleStatus);
+    DetectionExclusionRuleInfo modifiedRuleInfo =
+        rule.getRuleInfo().toBuilder().setRuleStatus(mergedRuleStatus).build();
+    rule = rule.toBuilder().setRuleInfo(modifiedRuleInfo).build();
+    return rule;
   }
 }

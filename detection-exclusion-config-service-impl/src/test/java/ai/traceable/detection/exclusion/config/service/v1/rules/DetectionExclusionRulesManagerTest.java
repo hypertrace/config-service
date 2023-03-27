@@ -8,11 +8,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
+import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
+import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -47,7 +51,10 @@ class DetectionExclusionRulesManagerTest {
   @Test
   void testCRUDDetectionExclusionRules() {
     DetectionExclusionRuleInfo detectionExclusionRuleInfo =
-        DetectionExclusionRuleInfo.newBuilder().setName("rule").build();
+        DetectionExclusionRuleInfo.newBuilder()
+            .setName("rule")
+            .setRuleStatus(DetectionExclusionRuleStatus.newBuilder().build())
+            .build();
     DetectionExclusionRuleScope detectionExclusionRuleScope =
         DetectionExclusionRuleScope.getDefaultInstance();
     DetectionExclusionRule detectionExclusionRule =
@@ -84,6 +91,11 @@ class DetectionExclusionRulesManagerTest {
             .build();
 
     // updating detection exclusion rule
+    DetectionExclusionRuleInfo info =
+        detectionExclusionRule.getRuleInfo().toBuilder()
+            .setRuleStatus(DetectionExclusionRuleStatus.getDefaultInstance())
+            .build();
+    detectionExclusionRule = detectionExclusionRule.toBuilder().setRuleInfo(info).build();
     assertEquals(
         detectionExclusionRule,
         rulesManager.updateDetectionExclusionRule(requestContext, detectionExclusionRule));
@@ -96,5 +108,50 @@ class DetectionExclusionRulesManagerTest {
         rulesManager
             .getDetectionExclusionRules(requestContext, GetRulesFilter.getDefaultInstance())
             .contains(detectionExclusionRule));
+  }
+
+  @Test
+  void testMergedStatusOnUpdateDetectionExclusionRule() {
+    DetectionExclusionRuleInfo detectionExclusionRuleInfo =
+        DetectionExclusionRuleInfo.newBuilder()
+            .setName("rule-1")
+            .addAllConditions(List.of(DetectionExclusionCondition.getDefaultInstance()))
+            .setRuleStatus(
+                DetectionExclusionRuleStatus.newBuilder()
+                    .setRuleCreationSource(RuleSource.RULE_SOURCE_CUSTOMER)
+                    .setDisabled(false)
+                    .setHidden(true)
+                    .setGenerateInternalEvents(true)
+                    .build())
+            .build();
+    DetectionExclusionRuleScope detectionExclusionRuleScope =
+        DetectionExclusionRuleScope.getDefaultInstance();
+    when(uuidGenerator.generateRandomId()).thenReturn("id-1");
+    rulesManager.createDetectionExclusionRule(
+        requestContext, detectionExclusionRuleScope, detectionExclusionRuleInfo);
+    DetectionExclusionRule rule =
+        DetectionExclusionRule.newBuilder()
+            .setId("id-1")
+            .setRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .setName("rule-2")
+                    .setRuleStatus(
+                        DetectionExclusionRuleStatus.newBuilder()
+                            .setDisabled(true)
+                            .setRuleCreationSource(RuleSource.RULE_SOURCE_UNSPECIFIED)
+                            .setHidden(false)))
+            .setRuleScope(detectionExclusionRuleScope)
+            .build();
+
+    DetectionExclusionRule updateRule =
+        rulesManager.updateDetectionExclusionRule(requestContext, rule);
+    DetectionExclusionRuleStatus updatedRuleStatus = updateRule.getRuleInfo().getRuleStatus();
+
+    assertEquals("id-1", updateRule.getId());
+    assertEquals("rule-2", updateRule.getRuleInfo().getName());
+    assertEquals(RuleSource.RULE_SOURCE_CUSTOMER, updatedRuleStatus.getRuleCreationSource());
+    assertTrue(updatedRuleStatus.getDisabled());
+    assertTrue(updatedRuleStatus.getHidden());
+    assertTrue(updatedRuleStatus.getGenerateInternalEvents());
   }
 }

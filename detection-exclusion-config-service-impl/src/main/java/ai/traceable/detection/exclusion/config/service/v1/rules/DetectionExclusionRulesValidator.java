@@ -10,7 +10,7 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
 import ai.traceable.detection.exclusion.config.service.v1.EnvironmentScope;
 import ai.traceable.detection.exclusion.config.service.v1.GetDetectionExclusionRulesRequest;
-import ai.traceable.detection.exclusion.config.service.v1.RuleChangeSource;
+import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import ai.traceable.detection.exclusion.config.service.v1.UpdateDetectionExclusionRuleRequest;
 import com.google.common.annotations.VisibleForTesting;
 import io.grpc.Status;
@@ -42,6 +42,17 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
     validateRequestContextOrThrow(requestContext);
     DetectionExclusionRule rule = request.getRule();
     String ruleName = rule.getRuleInfo().getName();
+    if (!rule.getRuleInfo()
+        .getRuleStatus()
+        .getRuleCreationSource()
+        .equals(RuleSource.RULE_SOURCE_UNSPECIFIED)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Update request does not allow to update rule creation source for rule with id: %s",
+                  rule.getId()))
+          .asRuntimeException();
+    }
     Optional<DetectionExclusionRule> existingRuleWithSameName =
         getRuleForName(ruleName, existingRules);
     if (existingRuleWithSameName.isPresent()
@@ -89,16 +100,6 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
           .asRuntimeException();
     }
     ruleInfo.getConditionsList().forEach(conditionValidator::validateRuleCondition);
-    validateRuleChangeSource(ruleInfo.getRuleStatus().getChangeSource());
-  }
-
-  private void validateRuleChangeSource(RuleChangeSource ruleChangeSource) {
-    if (ruleChangeSource.equals(RuleChangeSource.RULE_CHANGE_SOURCE_UNSPECIFIED)
-        || ruleChangeSource.equals(RuleChangeSource.UNRECOGNIZED)) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(String.format("Invalid ruleChangeSource : %s", ruleChangeSource))
-          .asRuntimeException();
-    }
   }
 
   private void validateRuleScope(DetectionExclusionRuleScope scope) {
