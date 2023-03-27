@@ -1,0 +1,150 @@
+syntax = "proto3";
+
+package ai.traceable.jwt.extraction.config.service.v1;
+
+option java_multiple_files = true;
+
+message JwtExtractionRuleScope {
+  // if environment_scopes is not set -> system wide scope
+  EnvironmentScope environment_scope = 1;
+
+  message EnvironmentScope {
+    repeated string environment_names = 1;
+  }
+}
+
+message JwtExtractionRuleFilter {
+  JwtExtractionRuleScope scope = 1;
+  optional bool disabled = 2;
+}
+
+message JwtExtractionRule {
+  string id = 1;
+  string name = 2;
+  JwtExtractionRuleScope scope = 3;
+  Predicate predicate = 4;
+  // first match is considered in searched locations
+  repeated JwtLocation locations = 5;
+  repeated JwtProcessingInstruction instructions = 6;
+  bool disabled = 7;
+  bool default = 8;
+}
+
+message Predicate {
+  oneof predicate {
+    CompositePredicate composite_predicate = 1;
+    StringPredicate url_predicate = 2;
+  }
+
+  message CompositePredicate {
+    LogicalOperator operator = 1;
+    repeated Predicate children = 2;
+
+    enum LogicalOperator {
+      LOGICAL_OPERATOR_UNSPECIFIED = 0;
+      LOGICAL_OPERATOR_AND = 1;
+      LOGICAL_OPERATOR_OR = 2;
+    }
+  }
+}
+
+message JwtLocation {
+  // regex with single capture group to extract jwt from value
+  optional string regex_capture_group = 1;
+  oneof location {
+    StringPredicate request_header= 2;
+    StringPredicate request_cookie = 3;
+    StringPredicate query_parameter = 4;
+    StringPredicate form_request_body = 5;
+    PathPredicate json_request_body = 6;
+  }
+}
+
+message JwtProcessingInstruction {
+  ValueExtraction value_extraction = 1;
+  Action action = 2;
+
+  message ValueExtraction {
+    oneof source {
+      string header_key = 1;
+      string payload_claim_name = 2;
+    }
+    oneof capture {
+      RawValue raw_value = 3;
+      string regex_capture_group = 4;
+    }
+
+    message RawValue {
+
+    }
+  }
+
+  message Action {
+    oneof action {
+      string add_new_attribute = 1;
+    }
+  }
+}
+
+
+message StringPredicate {
+  RelationalOperator operator = 1;
+  string value = 2;
+
+  enum RelationalOperator {
+    RELATIONAL_OPERATOR_UNSPECIFIED = 0;
+    RELATIONAL_OPERATOR_EQUALS = 1;
+    RELATIONAL_OPERATOR_NOT_EQUALS = 2;
+    RELATIONAL_OPERATOR_MATCHES_REGEX = 3;
+    RELATIONAL_OPERATOR_NOT_MATCHES_REGEX = 4;
+  }
+}
+
+message PathPredicate {
+  // Currently this is just a fancy string predicate, but with room for nested expressions in future
+  oneof path {
+    StringPredicate key_predicate = 1; // Single level match
+  }
+}
+
+message GetJwtExtractionRulesRequest {
+  JwtExtractionRuleFilter filter = 1;
+}
+
+message GetJwtExtractionRulesResponse {
+  repeated JwtExtractionRule rules = 1;
+}
+
+message CreateJwtExtractionRuleRequest {
+  string name = 1;
+  JwtExtractionRuleScope scope = 2;
+  Predicate predicate = 3;
+  repeated JwtLocation locations = 4;
+  repeated JwtProcessingInstruction instructions = 5;
+}
+
+message CreateJwtExtractionRuleResponse {
+  JwtExtractionRule rule = 1;
+}
+
+message UpdateJwtExtractionRuleRequest {
+  string id = 1;
+  string name = 2;
+  JwtExtractionRuleScope scope = 3;
+  Predicate predicate = 4;
+  repeated JwtLocation locations = 5;
+  repeated JwtProcessingInstruction instructions = 6;
+  bool disabled = 7;
+}
+
+message UpdateJwtExtractionRuleResponse {
+  JwtExtractionRule rule = 1;
+}
+
+message DeleteJwtExtractionRuleRequest {
+  string id = 1;
+}
+
+message DeleteJwtExtractionRuleResponse {
+
+}
