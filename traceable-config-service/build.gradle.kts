@@ -165,6 +165,7 @@ dependencies {
   integrationTestImplementation(projects.dataClassificationConfigServiceApi)
   integrationTestImplementation(projects.maliciousSourcesConfigServiceApi)
   integrationTestImplementation(projects.detectionExclusionConfigServiceApi)
+  integrationTestImplementation(projects.splunkIntegrationConfigServiceApi)
   integrationTestImplementation(libs.traceable.opaDistributor.api)
   integrationTestImplementation(libs.hypertrace.configservice.partitioner.config.impl)
 }

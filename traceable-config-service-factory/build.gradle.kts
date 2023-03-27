@@ -45,6 +45,7 @@ dependencies {
   implementation(projects.detectionExclusionConfigServiceImpl)
   implementation(projects.astConfigServiceImpl)
   implementation(projects.apiGatewayConfigServiceImpl)
+  implementation(projects.splunkIntegrationConfigServiceImpl)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
