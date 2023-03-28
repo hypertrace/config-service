@@ -11,6 +11,7 @@ service AstHooksConfigService {
   rpc UpdateAstHook(UpdateAstHookRequest) returns (UpdateAstHookResponse);
   rpc DeleteAstHook(DeleteAstHookRequest) returns (DeleteAstHookResponse);
   rpc GetAllAstHooks(GetAllAstHooksRequest) returns (GetAllAstHooksResponse);
+  rpc GetAstHook(GetAstHookRequest) returns (GetAstHookResponse);
 }
 
 message UpdateAstHookRequest {
@@ -47,4 +48,12 @@ message GetAllAstHooksRequest {
 
 message GetAllAstHooksResponse {
   repeated AstHook ast_hooks = 1;
+}
+
+message GetAstHookRequest {
+  string id = 1;
+}
+
+message GetAstHookResponse {
+  AstHook ast_hook = 1;
 }

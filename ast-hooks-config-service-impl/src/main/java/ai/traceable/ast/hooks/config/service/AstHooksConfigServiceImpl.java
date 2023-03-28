@@ -10,8 +10,11 @@ import ai.traceable.ast.hooks.config.service.v1.DeleteAstHookRequest;
 import ai.traceable.ast.hooks.config.service.v1.DeleteAstHookResponse;
 import ai.traceable.ast.hooks.config.service.v1.GetAllAstHooksRequest;
 import ai.traceable.ast.hooks.config.service.v1.GetAllAstHooksResponse;
+import ai.traceable.ast.hooks.config.service.v1.GetAstHookRequest;
+import ai.traceable.ast.hooks.config.service.v1.GetAstHookResponse;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookRequest;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookResponse;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import javax.inject.Inject;
@@ -59,6 +62,25 @@ public class AstHooksConfigServiceImpl extends AstHooksConfigServiceImplBase {
   }
 
   @Override
+  public void getAstHook(
+      GetAstHookRequest request, StreamObserver<GetAstHookResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      AstHook astHook =
+          configStore
+              .getData(requestContext, request.getId())
+              .orElseThrow(
+                  () -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
+      GetAstHookResponse response = GetAstHookResponse.newBuilder().setAstHook(astHook).build();
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Error getting ast hooks for id: " + request.getId(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
   public void deleteAstHook(
       DeleteAstHookRequest request, StreamObserver<DeleteAstHookResponse> responseObserver) {
     try {
@@ -72,12 +94,13 @@ public class AstHooksConfigServiceImpl extends AstHooksConfigServiceImplBase {
 
   @Override
   public void updateAstHook(
-      UpdateAstHookRequest request, StreamObserver<UpdateAstHookResponse> reponseObserver) {
+      UpdateAstHookRequest request, StreamObserver<UpdateAstHookResponse> responseObserver) {
     try {
       requestValidator.validate(request);
       updateAstHookHandler.updateHook(request, RequestContext.CURRENT.get());
     } catch (Exception e) {
-
+      log.error("Error updating hook for id: " + request.getId(), e);
+      responseObserver.onError(e);
     }
   }
 }
