@@ -21,13 +21,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Category;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.RuleType;
-import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.ActorBasedDataFetcher;
-import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.CustomIpBasedDataFetcher;
-import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.CustomSignatureDataFetcher;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.DataFetcherBase;
-import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.MaliciousSourcesDataFetcher;
-import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.ModsecDataFetcher;
-import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.RegionDataFetcher;
 import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,23 +35,23 @@ class BlockingPolicyDataAggregatorTest {
   private static final String TENANT_ID = "tenant-id";
   private static final String ENVIRONMENT_ID = "environment-id";
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
-  private ActorBasedDataFetcher actorBasedDataFetcher;
-  private CustomIpBasedDataFetcher customIpBasedDataFetcher;
-  private CustomSignatureDataFetcher customSignatureDataFetcher;
-  private ModsecDataFetcher modsecDataFetcher;
-  private RegionDataFetcher regionDataFetcher;
-  private BlockingPolicyDataAggregator orderedBlockingDetailsBase;
-  private MaliciousSourcesDataFetcher maliciousSourceRuleDataFetcher;
+  private DataFetcherBase actorBasedDataFetcher;
+  private DataFetcherBase customIpBasedDataFetcher;
+  private DataFetcherBase customSignatureDataFetcher;
+  private DataFetcherBase modsecDataFetcher;
+  private DataFetcherBase regionDataFetcher;
+  private DataFetcherBase maliciousSourceRuleDataFetcher;
   private Set<DataFetcherBase> dataFetcherBases;
+  private BlockingPolicyDataAggregator orderedBlockingDetailsBase;
 
   @BeforeEach
   void setUp() {
-    this.actorBasedDataFetcher = mock(ActorBasedDataFetcher.class);
-    this.customIpBasedDataFetcher = mock(CustomIpBasedDataFetcher.class);
-    this.customSignatureDataFetcher = mock(CustomSignatureDataFetcher.class);
-    this.modsecDataFetcher = mock(ModsecDataFetcher.class);
-    this.regionDataFetcher = mock(RegionDataFetcher.class);
-    this.maliciousSourceRuleDataFetcher = mock(MaliciousSourcesDataFetcher.class);
+    this.actorBasedDataFetcher = mock(DataFetcherBase.class);
+    this.customIpBasedDataFetcher = mock(DataFetcherBase.class);
+    this.customSignatureDataFetcher = mock(DataFetcherBase.class);
+    this.modsecDataFetcher = mock(DataFetcherBase.class);
+    this.regionDataFetcher = mock(DataFetcherBase.class);
+    this.maliciousSourceRuleDataFetcher = mock(DataFetcherBase.class);
     this.dataFetcherBases =
         Set.of(
             customSignatureDataFetcher,

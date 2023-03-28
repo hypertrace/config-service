@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.inject.Guice;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -18,6 +19,7 @@ class BlockingConfigServiceModuleTest {
     Channel mockChannel = mock(Channel.class);
     Config mockConfig = mock(Config.class);
     GrpcChannelRegistry mockGrpcChannelRegistry = mock(GrpcChannelRegistry.class);
+    FeatureCachingClient mockFeatureCachingClient = mock(FeatureCachingClient.class);
 
     when(mockConfig.getConfig("blocking.config.service"))
         .thenReturn(
@@ -43,7 +45,7 @@ class BlockingConfigServiceModuleTest {
         () ->
             Guice.createInjector(
                     new BlockingConfigServiceModule(
-                        mockChannel, mockConfig, mockGrpcChannelRegistry))
+                        mockChannel, mockConfig, mockGrpcChannelRegistry, mockFeatureCachingClient))
                 .getAllBindings());
   }
 }

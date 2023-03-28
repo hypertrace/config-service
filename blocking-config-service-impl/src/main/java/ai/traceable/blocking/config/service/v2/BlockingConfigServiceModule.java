@@ -9,6 +9,7 @@ import ai.traceable.blocking.config.service.v2.iptype.IpTypeBlockingManagerModul
 import ai.traceable.blocking.config.service.v2.modsec.ModsecBlockingManager;
 import ai.traceable.blocking.config.service.v2.regions.RegionBlockingManager;
 import ai.traceable.blocking.config.service.v2.regions.RegionBlockingManagerModule;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import com.google.inject.AbstractModule;
@@ -26,12 +27,17 @@ class BlockingConfigServiceModule extends AbstractModule {
   private final Channel channel;
   private final Config config;
   private final GrpcChannelRegistry grpcChannelRegistry;
+  private final FeatureCachingClient featureCachingClient;
 
   public BlockingConfigServiceModule(
-      Channel channel, Config config, GrpcChannelRegistry grpcChannelRegistry) {
+      Channel channel,
+      Config config,
+      GrpcChannelRegistry grpcChannelRegistry,
+      FeatureCachingClient featureCachingClient) {
     this.channel = channel;
     this.config = config.getConfig(BLOCKING_CONFIG_SERVICE_CONFIG_NAME);
     this.grpcChannelRegistry = grpcChannelRegistry;
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
@@ -46,6 +52,7 @@ class BlockingConfigServiceModule extends AbstractModule {
 
     bind(Channel.class).toInstance(channel);
     bind(Config.class).toInstance(config);
+    bind(FeatureCachingClient.class).toInstance(this.featureCachingClient);
 
     install(new RegionBlockingManagerModule());
     install(new BlockingPolicyConfigurationManagerModule());

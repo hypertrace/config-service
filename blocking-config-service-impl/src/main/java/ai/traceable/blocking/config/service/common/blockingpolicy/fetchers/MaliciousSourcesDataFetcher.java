@@ -19,13 +19,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-public class MaliciousSourcesDataFetcher implements DataFetcherBase {
+class MaliciousSourcesDataFetcher implements DataFetcherBase {
   private final MaliciousSourcesConfigServiceBlockingStub maliciousSourcesConfigServiceBlockingStub;
   private final Map<MaliciousSourcesRuleCondition.ConditionCase, MaliciousSourceDataHandler>
       maliciousSourceDataHandlerMap;
 
   @Inject
-  public MaliciousSourcesDataFetcher(
+  MaliciousSourcesDataFetcher(
       MaliciousSourcesConfigServiceBlockingStub maliciousSourcesConfigServiceBlockingStub,
       Map<MaliciousSourcesRuleCondition.ConditionCase, MaliciousSourceDataHandler>
           maliciousSourceDataHandlerMap) {

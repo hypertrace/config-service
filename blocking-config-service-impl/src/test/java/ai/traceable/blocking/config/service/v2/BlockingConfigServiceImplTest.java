@@ -9,6 +9,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import ai.traceable.blocking.config.service.common.entity.EntityFetcher;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.protobuf.Duration;
 import com.typesafe.config.ConfigFactory;
@@ -35,6 +36,7 @@ class BlockingConfigServiceImplTest {
   private static final String ENVIRONMENT = "env-id";
   private static final BlockingConfigManagerBase blockingManager1 =
       mock(BlockingConfigManagerBase.class);
+  private static final FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
 
   private BlockingConfigServiceImpl blockingConfigService;
 
@@ -65,11 +67,13 @@ class BlockingConfigServiceImplTest {
             Set.of(blockingManager1, blockingManager2),
             ConfigFactory.parseMap(Map.of("agent.polling.frequency", "30s")),
             entityFetcher,
-            uuidGenerator);
+            uuidGenerator,
+            featureCachingClient);
   }
 
   @Test
   void testValidResponse() {
+    doReturn(true).when(featureCachingClient).isBlockingConfigV2Enabled(REQUEST_CONTEXT);
     StreamObserver<GetBlockingRulesResponse> responseObserver = mock(StreamObserver.class);
     Runnable runnable =
         () ->
@@ -88,11 +92,13 @@ class BlockingConfigServiceImplTest {
                 .setRefreshAfterDuration(Duration.newBuilder().setSeconds(30))
                 .addAllResponseElements(sampleResponseElements)
                 .addAllResponseElements(sampleResponseElements)
+                .setEnabled(true)
                 .build());
   }
 
   @Test
   void testValidResponseSameHash() {
+    doReturn(true).when(featureCachingClient).isBlockingConfigV2Enabled(REQUEST_CONTEXT);
     StreamObserver<GetBlockingRulesResponse> responseObserver = mock(StreamObserver.class);
     Runnable runnable =
         () ->
@@ -109,11 +115,13 @@ class BlockingConfigServiceImplTest {
             GetBlockingRulesResponse.newBuilder()
                 .setHash(HASH)
                 .setRefreshAfterDuration(Duration.newBuilder().setSeconds(30))
+                .setEnabled(true)
                 .build());
   }
 
   @Test
   void testResponseOnException() {
+    doReturn(true).when(featureCachingClient).isBlockingConfigV2Enabled(REQUEST_CONTEXT);
     doThrow(RuntimeException.class)
         .when(blockingManager1)
         .generateBlockingElements(
@@ -131,5 +139,23 @@ class BlockingConfigServiceImplTest {
                 responseObserver);
     REQUEST_CONTEXT.run(runnable);
     verify(responseObserver, times(1)).onError(any(RuntimeException.class));
+  }
+
+  @Test
+  void testResponseWhenFeatureFlagIsDisabled() {
+    doReturn(false).when(featureCachingClient).isBlockingConfigV2Enabled(REQUEST_CONTEXT);
+    StreamObserver<GetBlockingRulesResponse> responseObserver = mock(StreamObserver.class);
+    Runnable runnable =
+        () ->
+            blockingConfigService.getBlockingRules(
+                GetBlockingRulesRequest.newBuilder()
+                    .setPreviousHash(HASH)
+                    .addAllRequestElements(blockingConfigRequestElements)
+                    .setEnvironment(ENVIRONMENT)
+                    .build(),
+                responseObserver);
+    REQUEST_CONTEXT.run(runnable);
+    verify(responseObserver, times(1))
+        .onNext(GetBlockingRulesResponse.newBuilder().setEnabled(false).build());
   }
 }

@@ -25,14 +25,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-public class CustomSignatureDataFetcher implements DataFetcherBase {
+class CustomSignatureDataFetcher implements DataFetcherBase {
   private final CustomSignatureConfigServiceBlockingStub configServiceBlockingStub;
   private static final List<EventType> EVENT_TYPES_LIST =
       ImmutableList.of(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING, EventType.EVENT_TYPE_ALLOW);
   private final BlockingRulesUtils blockingRulesUtils;
 
   @Inject
-  public CustomSignatureDataFetcher(
+  CustomSignatureDataFetcher(
       CustomSignatureConfigServiceBlockingStub configServiceBlockingStub,
       BlockingRulesUtils blockingRulesUtils) {
     this.configServiceBlockingStub = configServiceBlockingStub;

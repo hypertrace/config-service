@@ -25,14 +25,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-public class RegionDataFetcher implements DataFetcherBase {
+class RegionDataFetcher implements DataFetcherBase {
   private static final List<RegionRuleActionType> SUPPORTED_RULE_ACTIONS =
       ImmutableList.of(REGION_RULE_ACTION_TYPE_BLOCK, REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT);
   private final RegionConfigServiceBlockingStub regionConfigServiceStub;
   private final BlockingRulesUtils blockingRulesUtils;
 
   @Inject
-  public RegionDataFetcher(
+  RegionDataFetcher(
       RegionConfigServiceBlockingStub regionConfigServiceStub,
       BlockingRulesUtils blockingRulesUtils) {
     this.regionConfigServiceStub = regionConfigServiceStub;
@@ -50,8 +50,7 @@ public class RegionDataFetcher implements DataFetcherBase {
         .collect(Collectors.toUnmodifiableList());
   }
 
-  public Optional<BlockingPolicyData> getBlockingDetails(RegionRule regionRule) {
-
+  private Optional<BlockingPolicyData> getBlockingDetails(RegionRule regionRule) {
     Optional<BlockingPolicyData> emptyOptionalOfBlockingPolicyData = Optional.empty();
     if (regionRule.getRegionIdList().isEmpty()
         || !blockingRulesUtils.isRuleActive(

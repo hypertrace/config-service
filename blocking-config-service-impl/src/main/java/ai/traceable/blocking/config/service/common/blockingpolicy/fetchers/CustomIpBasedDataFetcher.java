@@ -29,14 +29,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-public class CustomIpBasedDataFetcher implements DataFetcherBase {
+class CustomIpBasedDataFetcher implements DataFetcherBase {
   private static final List<RuleAction> SUPPORTED_RULE_ACTIONS =
       ImmutableList.of(RULE_ACTION_BLOCK, RULE_ACTION_ALLOW, RULE_ACTION_BLOCK_ALL_EXCEPT);
   private final IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub;
   private final BlockingRulesUtils blockingRulesUtils;
 
   @Inject
-  public CustomIpBasedDataFetcher(
+  CustomIpBasedDataFetcher(
       IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub,
       BlockingRulesUtils blockingRulesUtils) {
     this.ipRangeConfigServiceStub = ipRangeConfigServiceStub;
@@ -54,7 +54,7 @@ public class CustomIpBasedDataFetcher implements DataFetcherBase {
         .collect(Collectors.toUnmodifiableList());
   }
 
-  public Optional<BlockingPolicyData> getBlockingDetails(IpRangeRule ipRule) {
+  private Optional<BlockingPolicyData> getBlockingDetails(IpRangeRule ipRule) {
     if (!filterRule(ipRule)) {
       return Optional.empty();
     }

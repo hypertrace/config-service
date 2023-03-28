@@ -33,8 +33,6 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc;
 import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc.DetectorConfigServiceBlockingStub;
-import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
-import ai.traceable.anomaly.config.service.v1.detector.GetUnresolvedScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
@@ -230,22 +228,6 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
   @Test
   // This test is tests the same functionality as v1
   void testAgentVersioning() {
-    RequestContext.forTenantId(TENANT_ID)
-        .run(
-            () ->
-                System.out.println(
-                    detectorConfigServiceStub
-                        .getUnresolvedScopedAnomalyDetectionConfig(
-                            GetUnresolvedScopedAnomalyDetectionConfigRequest.newBuilder()
-                                .setConfigScope(
-                                    AnomalyConfigScope.newBuilder()
-                                        .setEnvironmentScope(
-                                            AnomalyEnvironmentScope.newBuilder()
-                                                .setEnvironmentId(ENVIRONMENT_ID)))
-                                .setFilter(GetAnomalyDetectionConfigsFilter.getDefaultInstance())
-                                .build())
-                        .getScopedAnomalyDetectionConfig()));
-
     GetBlockingRulesResponse response =
         RequestContext.forTenantId(TENANT_ID)
             .call(
@@ -871,6 +853,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
         GetBlockingRulesResponse.newBuilder()
             .setHash(globalHash)
             .setRefreshAfterDuration(Duration.newBuilder().setSeconds(30))
+            .setEnabled(true)
             .build(),
         response);
   }

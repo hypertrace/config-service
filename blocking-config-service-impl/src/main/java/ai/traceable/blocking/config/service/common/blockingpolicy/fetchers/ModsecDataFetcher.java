@@ -25,7 +25,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public class ModsecDataFetcher implements DataFetcherBase {
+class ModsecDataFetcher implements DataFetcherBase {
   private static final String CRS_RULE_ID_REGEX = "^crs_";
   private static final AnomalyConfigScope DEFAULT_ANOMALY_CONFIG_SCOPE =
       AnomalyConfigScope.newBuilder()
@@ -36,7 +36,7 @@ public class ModsecDataFetcher implements DataFetcherBase {
   private final DetectorConfigServiceBlockingStub detectorConfigServiceBlockingStub;
 
   @Inject
-  public ModsecDataFetcher(
+  ModsecDataFetcher(
       AnomalyGlobalConfigServiceBlockingStub anomalyGlobalConfigServiceStub,
       DetectorConfigServiceBlockingStub detectorConfigServiceBlockingStub) {
     this.anomalyGlobalConfigServiceStub = anomalyGlobalConfigServiceStub;

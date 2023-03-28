@@ -7,11 +7,11 @@ import java.util.List;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public class ActorBasedDataFetcher implements DataFetcherBase {
+class ActorBasedDataFetcher implements DataFetcherBase {
   private final ActorBasedRulesCache activeActorsCache;
 
   @Inject
-  public ActorBasedDataFetcher(ActorBasedRulesCache activeActorsCache) {
+  ActorBasedDataFetcher(ActorBasedRulesCache activeActorsCache) {
     this.activeActorsCache = activeActorsCache;
   }
 

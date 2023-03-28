@@ -30,6 +30,7 @@ message GetBlockingRulesResponse {
   string hash = 1;
   google.protobuf.Duration refresh_after_duration = 2;
   repeated BlockingConfigResponseElement response_elements = 3;
+  bool enabled = 4;
 }
 
 message BlockingConfigResponseElement {
