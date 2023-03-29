@@ -120,7 +120,6 @@ class DetectionExclusionRulesManagerTest {
                 DetectionExclusionRuleStatus.newBuilder()
                     .setRuleCreationSource(RuleSource.RULE_SOURCE_CUSTOMER)
                     .setDisabled(false)
-                    .setHidden(true)
                     .setGenerateInternalEvents(true)
                     .build())
             .build();
@@ -151,7 +150,7 @@ class DetectionExclusionRulesManagerTest {
     assertEquals("rule-2", updateRule.getRuleInfo().getName());
     assertEquals(RuleSource.RULE_SOURCE_CUSTOMER, updatedRuleStatus.getRuleCreationSource());
     assertTrue(updatedRuleStatus.getDisabled());
-    assertTrue(updatedRuleStatus.getHidden());
+    assertFalse(updatedRuleStatus.getHidden());
     assertTrue(updatedRuleStatus.getGenerateInternalEvents());
   }
 }

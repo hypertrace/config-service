@@ -48,8 +48,8 @@ message DetectionExclusionCondition {
 
 message DetectionExclusionRuleStatus {
   bool disabled = 1;
-  bool hidden = 2;
-  bool generate_internal_events = 3;
+  optional bool hidden = 2;
+  optional bool generate_internal_events = 3;
   RuleChangeSource change_source = 4 [deprecated = true];
   RuleSource rule_creation_source = 5;
 }
