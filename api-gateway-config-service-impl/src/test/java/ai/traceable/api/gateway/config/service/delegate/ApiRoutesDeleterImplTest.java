@@ -2,6 +2,7 @@ package ai.traceable.api.gateway.config.service.delegate;
 
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -55,13 +56,10 @@ class ApiRoutesDeleterImplTest {
 
     when(mockApiRoutesConfigStore.getAllConfigData(requestContext, filter)).thenReturn(emptyList());
 
-    when(mockApiRoutesConfigStore.deleteObjects(requestContext, emptyList()))
-        .thenReturn(emptyList());
-
     final DeleteRoutesResponse result = apiRoutesDeleterImpl.delete(request, requestContext);
 
     assertEquals(expectedResult, result);
     verify(mockApiRoutesConfigStore).getAllConfigData(requestContext, filter);
-    verify(mockApiRoutesConfigStore).deleteObjects(requestContext, emptyList());
+    verify(mockApiRoutesConfigStore, never()).deleteObjects(requestContext, emptyList());
   }
 }

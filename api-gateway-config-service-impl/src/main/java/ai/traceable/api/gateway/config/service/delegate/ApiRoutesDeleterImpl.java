@@ -22,7 +22,9 @@ public class ApiRoutesDeleterImpl implements ApiRoutesDeleter {
         apiRoutesConfigStore.getAllConfigData(requestContext, request.getFilter());
     final List<String> ids =
         apiRoutesToDelete.stream().map(ApiRoute::getId).collect(toUnmodifiableList());
-    apiRoutesConfigStore.deleteObjects(requestContext, ids);
+    if (!ids.isEmpty()) {
+      apiRoutesConfigStore.deleteObjects(requestContext, ids);
+    }
     return DeleteRoutesResponse.newBuilder().build();
   }
 }
