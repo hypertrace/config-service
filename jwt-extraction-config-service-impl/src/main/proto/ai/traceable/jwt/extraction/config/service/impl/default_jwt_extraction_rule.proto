@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package ai.traceable.jwt.extraction.config.service.impl;
+
+message DeletedDefaultJwtExtractionRule {
+  string id = 1;
+}
