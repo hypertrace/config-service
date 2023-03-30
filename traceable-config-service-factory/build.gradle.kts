@@ -46,6 +46,7 @@ dependencies {
   implementation(projects.astConfigServiceImpl)
   implementation(projects.apiGatewayConfigServiceImpl)
   implementation(projects.splunkIntegrationConfigServiceImpl)
+  implementation(projects.astHooksConfigServiceImpl)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

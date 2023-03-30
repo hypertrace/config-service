@@ -6,6 +6,7 @@ import ai.traceable.api.attribute.override.service.ApiAttributeOverridesServiceF
 import ai.traceable.api.gateway.config.service.ApiGatewayConfigServiceFactory;
 import ai.traceable.api.spec.config.service.ApiSpecConfigServiceFactory;
 import ai.traceable.ast.config.service.AstConfigServiceFactory;
+import ai.traceable.ast.hooks.config.service.AstHooksConfigServiceFactory;
 import ai.traceable.ast.scan.profile.config.service.AstScanProfileConfigServiceFactory;
 import ai.traceable.auth.detection.config.service.AuthDetectionConfigServiceFactory;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceFactory;
@@ -178,6 +179,7 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                 DetectionExclusionConfigServiceFactory.build(
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
             wrap(AstConfigServiceFactory.build(providers.getLocalChannel(), providers.getConfig())),
+            wrap(AstHooksConfigServiceFactory.build(providers.getLocalChannel())),
             wrap(
                 ApiGatewayConfigServiceFactory.build(
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
