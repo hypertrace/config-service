@@ -27,5 +27,16 @@ message EventConditionMutableData {
     SecurityConfigChangeEventCondition security_config_change_event_condition = 7;
     UserChangeEventCondition user_change_event_condition = 8;
   }
-  optional string environment = 5;
+  optional string environment = 5 [deprecated = true];// use the EventConditionScope moving forward
+  EventConditionScope scope = 9;
+}
+
+message EventConditionScope {
+  oneof scope {
+    EnvironmentScope environment_scope = 1;
+  }
+
+  message EnvironmentScope {
+    repeated string environment_names = 1;
+  }
 }

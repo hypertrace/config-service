@@ -6,6 +6,8 @@ import ai.traceable.alerting.config.service.v2.DeleteEventConditionRequest;
 import ai.traceable.alerting.config.service.v2.DeleteEventConditionResponse;
 import ai.traceable.alerting.config.service.v2.EventCondition;
 import ai.traceable.alerting.config.service.v2.EventConditionConfigServiceGrpc;
+import ai.traceable.alerting.config.service.v2.EventConditionMutableData;
+import ai.traceable.alerting.config.service.v2.EventConditionScope;
 import ai.traceable.alerting.config.service.v2.GetAllEventConditionsRequest;
 import ai.traceable.alerting.config.service.v2.GetAllEventConditionsResponse;
 import ai.traceable.alerting.config.service.v2.UpdateEventConditionRequest;
@@ -14,7 +16,11 @@ import ai.traceable.config.utils.UuidGenerator;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -48,7 +54,8 @@ public class EventConditionConfigServiceImpl
                           requestContext,
                           EventCondition.newBuilder()
                               .setId(uuidGenerator.generateRandomId())
-                              .setEventConditionMutableData(request.getEventConditionMutableData())
+                              .setEventConditionMutableData(
+                                  adaptForWrite(request.getEventConditionMutableData()))
                               .build())
                       .getData())
               .build());
@@ -74,7 +81,8 @@ public class EventConditionConfigServiceImpl
                           requestContext,
                           EventCondition.newBuilder()
                               .setId(request.getId())
-                              .setEventConditionMutableData(request.getEventConditionMutableData())
+                              .setEventConditionMutableData(
+                                  adaptForWrite(request.getEventConditionMutableData()))
                               .build())
                       .getData())
               .build());
@@ -97,6 +105,7 @@ public class EventConditionConfigServiceImpl
               .addAllEventConditions(
                   eventConditionStore.getAllObjects(requestContext).stream()
                       .map(ContextualConfigObject::getData)
+                      .map(this::adaptForRead)
                       .collect(Collectors.toUnmodifiableList()))
               .build());
       responseObserver.onCompleted();
@@ -122,5 +131,75 @@ public class EventConditionConfigServiceImpl
       log.error("Delete EventConditions RPC failed for request:{}", request, e);
       responseObserver.onError(e);
     }
+  }
+
+  /**
+   * If env field is set just merge it with the envScope list
+   *
+   * @param input
+   * @return adapted data
+   */
+  EventConditionMutableData adaptForWrite(EventConditionMutableData input) {
+    if (!input.getEnvironment().isBlank()) {
+
+      List<String> mergedList =
+          Stream.concat(
+                  input.getScope().getEnvironmentScope().getEnvironmentNamesList().stream(),
+                  Stream.of(input.getEnvironment()))
+              .distinct()
+              .collect(Collectors.toUnmodifiableList());
+
+      return input.toBuilder()
+          .setScope(
+              EventConditionScope.newBuilder()
+                  .setEnvironmentScope(
+                      EventConditionScope.EnvironmentScope.newBuilder()
+                          .addAllEnvironmentNames(mergedList)))
+          .build();
+    }
+
+    return input;
+  }
+
+  /**
+   * Just merge the envs and return the existing env field as well the env scope list If env field
+   * is empty and envScope list has exactly one env then add it to the env field as well and return
+   * both
+   *
+   * @param input
+   * @return adapted EventCondition
+   */
+  EventCondition adaptForRead(EventCondition input) {
+    EventConditionMutableData.Builder builder = input.getEventConditionMutableData().toBuilder();
+    Set<String> environments = new LinkedHashSet<>();
+    if (input.getEventConditionMutableData().hasEnvironment()) {
+      environments.add(input.getEventConditionMutableData().getEnvironment());
+    } else if (input
+            .getEventConditionMutableData()
+            .getScope()
+            .getEnvironmentScope()
+            .getEnvironmentNamesCount()
+        == 1) {
+      builder.setEnvironment(
+          input
+              .getEventConditionMutableData()
+              .getScope()
+              .getEnvironmentScope()
+              .getEnvironmentNames(0));
+    }
+    environments.addAll(
+        input
+            .getEventConditionMutableData()
+            .getScope()
+            .getEnvironmentScope()
+            .getEnvironmentNamesList());
+
+    builder.setScope(
+        input.getEventConditionMutableData().getScope().toBuilder()
+            .setEnvironmentScope(
+                EventConditionScope.EnvironmentScope.newBuilder()
+                    .addAllEnvironmentNames(environments)));
+
+    return input.toBuilder().setEventConditionMutableData(builder).build();
   }
 }

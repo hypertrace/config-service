@@ -4,17 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 
-import ai.traceable.alerting.config.service.v2.CreateEventConditionRequest;
-import ai.traceable.alerting.config.service.v2.DeleteEventConditionRequest;
-import ai.traceable.alerting.config.service.v2.DetectedSecurityEventCondition;
-import ai.traceable.alerting.config.service.v2.EventCondition;
-import ai.traceable.alerting.config.service.v2.EventConditionConfigServiceGrpc;
+import ai.traceable.alerting.config.service.v2.*;
 import ai.traceable.alerting.config.service.v2.EventConditionConfigServiceGrpc.EventConditionConfigServiceBlockingStub;
-import ai.traceable.alerting.config.service.v2.EventConditionMutableData;
-import ai.traceable.alerting.config.service.v2.GetAllEventConditionsRequest;
-import ai.traceable.alerting.config.service.v2.SecurityEventSeverity;
-import ai.traceable.alerting.config.service.v2.SecurityEventType;
-import ai.traceable.alerting.config.service.v2.UpdateEventConditionRequest;
 import java.util.Collections;
 import java.util.List;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -79,6 +70,13 @@ public class EventConditionConfigServiceImplTest {
         eventCondition1.toBuilder()
             .setEventConditionMutableData(
                 EventConditionMutableData.newBuilder()
+                    .setScope(
+                        EventConditionScope.newBuilder()
+                            .setEnvironmentScope(
+                                EventConditionScope.EnvironmentScope.newBuilder()
+                                    .addAllEnvironmentNames(List.of("env1", "env2"))
+                                    .build())
+                            .build())
                     .setDetectedSecurityEventCondition(
                         DetectedSecurityEventCondition.newBuilder()
                             .addAllEventTypes(
@@ -93,6 +91,13 @@ public class EventConditionConfigServiceImplTest {
         eventCondition2.toBuilder()
             .setEventConditionMutableData(
                 EventConditionMutableData.newBuilder()
+                    .setScope(
+                        EventConditionScope.newBuilder()
+                            .setEnvironmentScope(
+                                EventConditionScope.EnvironmentScope.newBuilder()
+                                    .addAllEnvironmentNames(List.of("env1", "env2"))
+                                    .build())
+                            .build())
                     .setDetectedSecurityEventCondition(
                         DetectedSecurityEventCondition.newBuilder()
                             .addAllEventTypes(
@@ -144,6 +149,208 @@ public class EventConditionConfigServiceImplTest {
             .getEventConditionsList());
   }
 
+  @Test
+  public void when_EnvIsNotEmpty_And_EnvScopeListINotEmpty_ThenExpectEnvScopeListOnRead() {
+    EventConditionMutableData data1 =
+        EventConditionMutableData.newBuilder()
+            .setDetectedSecurityEventCondition(
+                DetectedSecurityEventCondition.newBuilder()
+                    .addAllEventTypes(
+                        Collections.singletonList(
+                            SecurityEventType.SECURITY_EVENT_TYPE_SCANNER_DETECTED))
+                    .addAllSeverities(
+                        Collections.singletonList(
+                            SecurityEventSeverity.SECURITY_EVENT_SEVERITY_HIGH))
+                    .build())
+            .setEnvironment("env3")
+            .build();
+
+    // create with env field set
+    EventCondition actual1 =
+        eventConditionsStub
+            .createEventCondition(
+                CreateEventConditionRequest.newBuilder()
+                    .setEventConditionMutableData(data1)
+                    .build())
+            .getEventCondition();
+
+    EventConditionMutableData data2 =
+        EventConditionMutableData.newBuilder()
+            .setDetectedSecurityEventCondition(
+                DetectedSecurityEventCondition.newBuilder()
+                    .addAllEventTypes(
+                        Collections.singletonList(
+                            SecurityEventType.SECURITY_EVENT_TYPE_SCANNER_DETECTED))
+                    .addAllSeverities(
+                        Collections.singletonList(
+                            SecurityEventSeverity.SECURITY_EVENT_SEVERITY_HIGH))
+                    .build())
+            .setScope(
+                EventConditionScope.newBuilder()
+                    .setEnvironmentScope(
+                        EventConditionScope.EnvironmentScope.newBuilder()
+                            .addAllEnvironmentNames(List.of("env1", "env2"))
+                            .build())
+                    .build())
+            .build();
+
+    // update with envScope list and no env field set
+    eventConditionsStub
+        .updateEventCondition(
+            UpdateEventConditionRequest.newBuilder()
+                .setId(actual1.getId())
+                .setEventConditionMutableData(data2)
+                .build())
+        .getEventCondition();
+
+    EventCondition actual2 =
+        eventConditionsStub
+            .getAllEventConditions(GetAllEventConditionsRequest.newBuilder().build())
+            .getEventConditionsList()
+            .get(0);
+
+    // if both env field and envScope list is present then only the list should be returned
+    EventCondition expected =
+        EventCondition.newBuilder()
+            .setId(actual2.getId())
+            .setEventConditionMutableData(
+                EventConditionMutableData.newBuilder(data2)
+                    .clearEnvironment()
+                    .setScope(
+                        EventConditionScope.newBuilder(data1.getScope())
+                            .setEnvironmentScope(
+                                EventConditionScope.EnvironmentScope.newBuilder()
+                                    .addAllEnvironmentNames(List.of("env1", "env2"))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    assertEquals(expected, actual2);
+    assertFalse(actual2.getEventConditionMutableData().hasEnvironment());
+  }
+
+  @Test
+  public void when_EnvIsNotEmpty_And_EnvScopeListINotEmpty_ThenExpectMergedEnvScopeListOnWrite() {
+    EventConditionMutableData data =
+        EventConditionMutableData.newBuilder()
+            .setDetectedSecurityEventCondition(
+                DetectedSecurityEventCondition.newBuilder()
+                    .addAllEventTypes(
+                        Collections.singletonList(
+                            SecurityEventType.SECURITY_EVENT_TYPE_SCANNER_DETECTED))
+                    .addAllSeverities(
+                        Collections.singletonList(
+                            SecurityEventSeverity.SECURITY_EVENT_SEVERITY_HIGH))
+                    .build())
+            .setScope(
+                EventConditionScope.newBuilder()
+                    .setEnvironmentScope(
+                        EventConditionScope.EnvironmentScope.newBuilder()
+                            .addAllEnvironmentNames(List.of("env1", "env2"))
+                            .build())
+                    .build())
+            .setEnvironment("env3")
+            .build();
+
+    EventCondition actual =
+        eventConditionsStub
+            .createEventCondition(
+                CreateEventConditionRequest.newBuilder().setEventConditionMutableData(data).build())
+            .getEventCondition();
+
+    EventCondition expected =
+        EventCondition.newBuilder()
+            .setId(actual.getId())
+            .setEventConditionMutableData(
+                EventConditionMutableData.newBuilder(data)
+                    .setScope(
+                        EventConditionScope.newBuilder(data.getScope())
+                            .setEnvironmentScope(
+                                EventConditionScope.EnvironmentScope.newBuilder()
+                                    .addAllEnvironmentNames(List.of("env1", "env2", "env3"))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    assertEquals(expected, actual);
+  }
+
+  @Test
+  public void when_EnvIsEmpty_And_EnvScopeListINotEmpty_ThenExpectTheSameDuringReads() {
+    EventConditionMutableData data =
+        EventConditionMutableData.newBuilder()
+            .setDetectedSecurityEventCondition(
+                DetectedSecurityEventCondition.newBuilder()
+                    .addAllEventTypes(
+                        Collections.singletonList(
+                            SecurityEventType.SECURITY_EVENT_TYPE_SCANNER_DETECTED))
+                    .addAllSeverities(
+                        Collections.singletonList(
+                            SecurityEventSeverity.SECURITY_EVENT_SEVERITY_HIGH))
+                    .build())
+            .setScope(
+                EventConditionScope.newBuilder()
+                    .setEnvironmentScope(
+                        EventConditionScope.EnvironmentScope.newBuilder()
+                            .addAllEnvironmentNames(List.of("env1", "env2"))
+                            .build())
+                    .build())
+            .build();
+
+    EventCondition actual =
+        eventConditionsStub
+            .createEventCondition(
+                CreateEventConditionRequest.newBuilder().setEventConditionMutableData(data).build())
+            .getEventCondition();
+    EventCondition expected =
+        EventCondition.newBuilder()
+            .setId(actual.getId())
+            .setEventConditionMutableData(data)
+            .build();
+    assertEquals(expected, actual);
+  }
+
+  @Test
+  public void
+      when_EnvIsNotEmpty_And_EnvScopeListIEmpty_ThenExpectBothTheFieldAndListToHaveTheSameEnv() {
+    EventConditionMutableData data =
+        EventConditionMutableData.newBuilder()
+            .setDetectedSecurityEventCondition(
+                DetectedSecurityEventCondition.newBuilder()
+                    .addAllEventTypes(
+                        Collections.singletonList(
+                            SecurityEventType.SECURITY_EVENT_TYPE_SCANNER_DETECTED))
+                    .addAllSeverities(
+                        Collections.singletonList(
+                            SecurityEventSeverity.SECURITY_EVENT_SEVERITY_HIGH))
+                    .build())
+            .setEnvironment("env1")
+            .build();
+
+    eventConditionsStub
+        .createEventCondition(
+            CreateEventConditionRequest.newBuilder()
+                .setEventConditionMutableData(EventConditionMutableData.newBuilder(data).build())
+                .build())
+        .getEventCondition();
+
+    EventCondition actual =
+        eventConditionsStub
+            .getAllEventConditions(GetAllEventConditionsRequest.getDefaultInstance())
+            .getEventConditionsList()
+            .get(0);
+
+    assertEquals(
+        List.of("env1"),
+        actual
+            .getEventConditionMutableData()
+            .getScope()
+            .getEnvironmentScope()
+            .getEnvironmentNamesList());
+  }
+
   private EventConditionMutableData getEventConditionMutableData() {
     return EventConditionMutableData.newBuilder()
         .setDetectedSecurityEventCondition(
@@ -154,7 +361,13 @@ public class EventConditionConfigServiceImplTest {
                 .addAllSeverities(
                     Collections.singletonList(SecurityEventSeverity.SECURITY_EVENT_SEVERITY_HIGH))
                 .build())
-        .setEnvironment("dev")
+        .setScope(
+            EventConditionScope.newBuilder()
+                .setEnvironmentScope(
+                    EventConditionScope.EnvironmentScope.newBuilder()
+                        .addAllEnvironmentNames(List.of("dev1", "dev2"))
+                        .build())
+                .build())
         .build();
   }
 }
