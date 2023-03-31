@@ -146,9 +146,23 @@ message KeyValueCondition {
   }
 }
 
+enum DataSensitivityLevel{
+  DATA_SENSITIVITY_LEVEL_UNSPECIFIED = 0;
+  DATA_SENSITIVITY_LEVEL_LOW = 1;
+  DATA_SENSITIVITY_LEVEL_MEDIUM = 2;
+  DATA_SENSITIVITY_LEVEL_HIGH = 3;
+  DATA_SENSITIVITY_LEVEL_CRITICAL = 4;
+}
+enum DataLocation{
+  DATA_LOCATION_UNSPECIFIED = 0;
+  DATA_LOCATION_REQUEST = 1;
+  DATA_LOCATION_RESPONSE = 2;
+}
 message DatatypeCondition {
   repeated string dataset_ids = 1;
   repeated string datatype_ids = 2;
+  repeated DataSensitivityLevel data_sensitivity_levels = 3;
+  DataLocation data_location = 4;
 }
 
 message RegionCondition {

@@ -1,5 +1,6 @@
 package ai.traceable.ratelimiting.service.v2.rules;
 
+import static ai.traceable.ratelimiting.config.service.v2.DataSensitivityLevel.DATA_SENSITIVITY_LEVEL_UNSPECIFIED;
 import static ai.traceable.ratelimiting.config.service.v2.RuleStatus.RuleSource.RULE_SOURCE_UNSPECIFIED;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
@@ -251,7 +252,19 @@ public class RateLimitingRulesValidator implements RulesValidator {
 
   private void validateDatatypeCondition(DatatypeCondition datatypeCondition) {
     if (datatypeCondition.getDatasetIdsList().isEmpty()
-        && datatypeCondition.getDatatypeIdsList().isEmpty()) {
+        && datatypeCondition.getDatatypeIdsList().isEmpty()
+        && datatypeCondition.getDataSensitivityLevelsList().isEmpty()) {
+      throwInvalidArgumentException(
+          String.format(
+              "Invalid condition for type %s:%n %s",
+              getName(datatypeCondition), printMessage(datatypeCondition)));
+    }
+    validateDataSensitivityLevels(datatypeCondition);
+  }
+
+  private void validateDataSensitivityLevels(DatatypeCondition datatypeCondition) {
+    if (datatypeCondition.getDataSensitivityLevelsList().stream()
+        .anyMatch(dataSensitivity -> dataSensitivity.equals(DATA_SENSITIVITY_LEVEL_UNSPECIFIED))) {
       throwInvalidArgumentException(
           String.format(
               "Invalid condition for type %s:%n %s",
