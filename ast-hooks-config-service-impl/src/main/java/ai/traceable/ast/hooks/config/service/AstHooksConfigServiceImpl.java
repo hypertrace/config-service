@@ -86,6 +86,8 @@ public class AstHooksConfigServiceImpl extends AstHooksConfigServiceImplBase {
     try {
       requestValidator.validate(request);
       configStore.deleteObject(RequestContext.CURRENT.get(), request.getId());
+      responseObserver.onNext(DeleteAstHookResponse.newBuilder().build());
+      responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Error deleting hooks for hook id " + request.getId());
       responseObserver.onError(e);
@@ -97,7 +99,9 @@ public class AstHooksConfigServiceImpl extends AstHooksConfigServiceImplBase {
       UpdateAstHookRequest request, StreamObserver<UpdateAstHookResponse> responseObserver) {
     try {
       requestValidator.validate(request);
-      updateAstHookHandler.updateHook(request, RequestContext.CURRENT.get());
+      AstHook astHook = updateAstHookHandler.updateHook(request, RequestContext.CURRENT.get());
+      responseObserver.onNext(UpdateAstHookResponse.newBuilder().setAstHook(astHook).build());
+      responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Error updating hook for id: " + request.getId(), e);
       responseObserver.onError(e);
