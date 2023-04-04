@@ -1,5 +1,6 @@
 package ai.traceable.jwt.extraction.config.service;
 
+import static ai.traceable.jwt.extraction.config.service.DefaultJwtExtractionRuleTest.DEFAULT_RULE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -112,37 +113,6 @@ class JwtExtractionConfigServiceImplTest {
                   .setValueExtraction(
                       JwtProcessingInstruction.ValueExtraction.newBuilder()
                           .setHeaderKey("alg")
-                          .setRawValue(
-                              JwtProcessingInstruction.ValueExtraction.RawValue.newBuilder()
-                                  .build())
-                          .build())
-                  .build())
-          .build();
-
-  JwtExtractionRule DEFAULT_RULE =
-      JwtExtractionRule.newBuilder()
-          .setId("f496d554-4685-4de4-a074-4186ee579a4c")
-          .setDefault(true)
-          .setPredicate(Predicate.newBuilder().build())
-          .addLocations(
-              JwtLocation.newBuilder()
-                  .setRequestHeader(
-                      StringPredicate.newBuilder()
-                          .setOperator(
-                              StringPredicate.RelationalOperator.RELATIONAL_OPERATOR_EQUALS)
-                          .setValue("Authorization")
-                          .build())
-                  .setRegexCaptureGroup("^(?:(?i)Bearer:? )?(.*)$")
-                  .build())
-          .addInstructions(
-              JwtProcessingInstruction.newBuilder()
-                  .setAction(
-                      JwtProcessingInstruction.Action.newBuilder()
-                          .setAddNewAttribute("token.jwt.header.role")
-                          .build())
-                  .setValueExtraction(
-                      JwtProcessingInstruction.ValueExtraction.newBuilder()
-                          .setPayloadClaimName("role")
                           .setRawValue(
                               JwtProcessingInstruction.ValueExtraction.RawValue.newBuilder()
                                   .build())
