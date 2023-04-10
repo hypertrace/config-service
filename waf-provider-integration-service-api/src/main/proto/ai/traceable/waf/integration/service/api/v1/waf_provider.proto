@@ -5,6 +5,7 @@ package ai.traceable.waf.integration.service.api.v1;
 option java_multiple_files = true;
 
 import "ai/traceable/waf/integration/service/api/v1/aws_waf_provider.proto";
+import "ai/traceable/waf/integration/service/api/v1/imperva_waf_provider.proto";
 
 message WafIntegration {
   string id = 1;
@@ -17,6 +18,7 @@ message WafIntegrationDetails {
   oneof integration_params {
     CloudflareIntegrationParams cloudflare_integration_params = 3;
     AwsIntegrationParams aws_integration_params = 4;
+    ImpervaIntegrationParams imperva_integration_params = 5;
   }
 }
 
@@ -32,6 +34,7 @@ message UpdatedWafIntegrationDetails {
   oneof integration_params {
     UpdatedCloudflareIntegrationParams updated_cloudflare_integration_params = 3;
     AwsIntegrationUpdateParams updated_aws_integration_params = 4;
+    ImpervaIntegrationUpdateParams updated_imperva_integration_params = 5;
   }
 }
 

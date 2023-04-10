@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package ai.traceable.waf.integration.service.api.v1;
+
+option java_multiple_files = true;
+
+message ImpervaIntegrationParams {
+  string api_id = 1;
+  string encrypted_api_key = 2;
+}
+
+message ImpervaIntegrationUpdateParams {
+  string api_id = 1;
+  string encrypted_api_key = 2;
+}
