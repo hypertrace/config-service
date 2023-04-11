@@ -11,12 +11,15 @@ import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationResponse;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
+import ai.traceable.waf.integration.service.api.v1.EncryptedText;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationResponse;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter.WafProviderType;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsResponse;
+import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationResponse;
 import ai.traceable.waf.integration.service.api.v1.UpdatedCloudflareIntegrationParams;
@@ -91,6 +94,18 @@ class WafIntegrationConfigServiceImplTest {
   }
 
   @Test
+  void createWafIntegrationImpervaTest() {
+    WafIntegrationDetails expectedDetails =
+        createWafIntegrationDetails(
+            "name", "email", IntegrationParamsCase.IMPERVA_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest request =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
+    CreateWafIntegrationResponse response =
+        wafProviderServiceBlockingStub.createWafIntegration(request);
+    assertEquals(expectedDetails, response.getWafIntegration().getWafIntegrationDetails());
+  }
+
+  @Test
   void createWafIntegrationsAlreadyExistsExceptionTest() {
     WafIntegrationDetails expectedDetails1 =
         createWafIntegrationDetails(
@@ -107,6 +122,11 @@ class WafIntegrationConfigServiceImplTest {
             "name3", "email3", IntegrationParamsCase.AWS_INTEGRATION_PARAMS);
     CreateWafIntegrationRequest request3 =
         CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails3).build();
+    WafIntegrationDetails expectedDetails4 =
+        createWafIntegrationDetails(
+            "name4", "email4", IntegrationParamsCase.IMPERVA_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest request4 =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails3).build();
     wafProviderServiceBlockingStub.createWafIntegration(request1);
     Throwable exception =
         assertThrows(
@@ -118,6 +138,12 @@ class WafIntegrationConfigServiceImplTest {
         assertThrows(
             RuntimeException.class,
             () -> wafProviderServiceBlockingStub.createWafIntegration(request3));
+    assertEquals(Status.ALREADY_EXISTS.getCode(), Status.fromThrowable(exception).getCode());
+
+    exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> wafProviderServiceBlockingStub.createWafIntegration(request4));
     assertEquals(Status.ALREADY_EXISTS.getCode(), Status.fromThrowable(exception).getCode());
   }
 
@@ -144,6 +170,25 @@ class WafIntegrationConfigServiceImplTest {
   void getWafIntegrationAWSTest() {
     WafIntegrationDetails expectedDetails =
         createWafIntegrationDetails("name", "email", IntegrationParamsCase.AWS_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest request =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
+    CreateWafIntegrationResponse response =
+        wafProviderServiceBlockingStub.createWafIntegration(request);
+    String id = response.getWafIntegration().getId();
+    GetWafIntegrationResponse getResponse =
+        wafProviderServiceBlockingStub.getWafIntegration(
+            GetWafIntegrationRequest.newBuilder().setId(id).build());
+    assertEquals(
+        WafIntegration.newBuilder().setWafIntegrationDetails(expectedDetails).setId(id).build(),
+        getResponse.getWafIntegration());
+  }
+
+  @Test
+  void getWafIntegrationImpervaTest() {
+
+    WafIntegrationDetails expectedDetails =
+        createWafIntegrationDetails(
+            "name", "email", IntegrationParamsCase.IMPERVA_INTEGRATION_PARAMS);
     CreateWafIntegrationRequest request =
         CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
     CreateWafIntegrationResponse response =
@@ -197,6 +242,31 @@ class WafIntegrationConfigServiceImplTest {
             .setFilter(
                 GetWafIntegrationsFilter.newBuilder()
                     .addWafProviderTypes(WafProviderType.WAF_PROVIDER_TYPE_AWS))
+            .build();
+    GetWafIntegrationsResponse response =
+        wafProviderServiceBlockingStub.getWafIntegrations(request);
+    assertEquals(1, response.getWafIntegrationCount());
+    assertEquals(
+        expectedDetails, response.getWafIntegrationList().get(0).getWafIntegrationDetails());
+  }
+
+  @Test
+  void getWafIntegrationsImpervaTest() {
+    WafIntegrationDetails expectedDetails =
+        createWafIntegrationDetails(
+            "name1", "email1", IntegrationParamsCase.IMPERVA_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
+
+    GetWafIntegrationsRequest request =
+        GetWafIntegrationsRequest.newBuilder()
+            .setFilter(
+                GetWafIntegrationsFilter.newBuilder()
+                    .addAllIds(List.of(id))
+                    .addWafProviderTypes(WafProviderType.WAF_PROVIDER_TYPE_IMPERVA))
             .build();
     GetWafIntegrationsResponse response =
         wafProviderServiceBlockingStub.getWafIntegrations(request);
@@ -294,6 +364,47 @@ class WafIntegrationConfigServiceImplTest {
   }
 
   @Test
+  void updateWafIntegrationImpervaTest() {
+
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+            "name", "email", IntegrationParamsCase.IMPERVA_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
+
+    UpdatedWafIntegrationDetails updatedDetails =
+        UpdatedWafIntegrationDetails.newBuilder()
+            .setName("name1")
+            .setDescription("des")
+            .setUpdatedImpervaIntegrationParams(
+                ImpervaIntegrationUpdateParams.newBuilder()
+                    .setApiId("id-1")
+                    .setApiKey(
+                        EncryptedText.newBuilder()
+                            .setKeyId("secret-key-id-1")
+                            .setValue("secret-value-1")
+                            .build())
+                    .build())
+            .build();
+    UpdateWafIntegrationRequest updateRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId(id)
+            .setUpdatedWafIntegrationDetails(updatedDetails)
+            .build();
+    UpdateWafIntegrationResponse updateResponse =
+        wafProviderServiceBlockingStub.updateWafIntegration(updateRequest);
+    ImpervaIntegrationParams impervaIntegrationParams =
+        updateResponse.getWafIntegration().getWafIntegrationDetails().getImpervaIntegrationParams();
+    assertEquals("name1", updateResponse.getWafIntegration().getWafIntegrationDetails().getName());
+    assertEquals("id-1", impervaIntegrationParams.getApiId());
+    assertEquals("secret-key-id-1", impervaIntegrationParams.getApiKey().getKeyId());
+    assertEquals("secret-value-1", impervaIntegrationParams.getApiKey().getValue());
+  }
+
+  @Test
   void deleteWafIntegrationCloudflareTest() {
 
     WafIntegrationDetails details =
@@ -339,6 +450,30 @@ class WafIntegrationConfigServiceImplTest {
     assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
   }
 
+  @Test
+  void deleteWafIntegrationImpervaTest() {
+
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+            "name", "email", IntegrationParamsCase.IMPERVA_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
+
+    DeleteWafIntegrationRequest deleteRequest =
+        DeleteWafIntegrationRequest.newBuilder().setId(id).build();
+    wafProviderServiceBlockingStub.deleteWafIntegration(deleteRequest);
+
+    GetWafIntegrationRequest getRequest = GetWafIntegrationRequest.newBuilder().setId(id).build();
+    Throwable exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> wafProviderServiceBlockingStub.getWafIntegration(getRequest));
+    assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
+  }
+
   private WafIntegrationDetails createWafIntegrationDetails(
       String name, String email, IntegrationParamsCase paramsCase) {
     switch (paramsCase) {
@@ -362,6 +497,20 @@ class WafIntegrationConfigServiceImplTest {
                     .setEncryptedSecretAccessKey("secret")
                     .addResources(
                         AwsResource.newBuilder().setArn("arn").setRegion("region").build()))
+            .build();
+      case IMPERVA_INTEGRATION_PARAMS:
+        return WafIntegrationDetails.newBuilder()
+            .setName(name)
+            .setDescription("des")
+            .setImpervaIntegrationParams(
+                ImpervaIntegrationParams.newBuilder()
+                    .setApiId("id")
+                    .setApiKey(
+                        EncryptedText.newBuilder()
+                            .setKeyId("secret-id")
+                            .setValue("secret-value")
+                            .build())
+                    .build())
             .build();
       default:
         throw new RuntimeException();

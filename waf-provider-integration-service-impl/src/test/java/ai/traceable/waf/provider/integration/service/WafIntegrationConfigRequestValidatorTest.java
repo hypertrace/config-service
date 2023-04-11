@@ -9,10 +9,13 @@ import ai.traceable.waf.integration.service.api.v1.AwsResource;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
+import ai.traceable.waf.integration.service.api.v1.EncryptedText;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter.WafProviderType;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsRequest;
+import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdatedCloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.UpdatedWafIntegrationDetails;
@@ -62,7 +65,8 @@ class WafIntegrationConfigRequestValidatorTest {
                     .addAllWafProviderTypes(
                         List.of(
                             WafProviderType.WAF_PROVIDER_TYPE_AWS,
-                            WafProviderType.WAF_PROVIDER_TYPE_CLOUDFLARE)))
+                            WafProviderType.WAF_PROVIDER_TYPE_CLOUDFLARE,
+                            WafProviderType.WAF_PROVIDER_TYPE_IMPERVA)))
             .build();
 
     assertDoesNotThrow(
@@ -193,6 +197,173 @@ class WafIntegrationConfigRequestValidatorTest {
         StatusRuntimeException.class,
         () -> {
           wafIntegrationConfigRequestValidator.validateOrThrow(deleteRequest, REQUEST_CONTEXT);
+        });
+  }
+
+  @Test
+  void invalidCreateImpervaWafIntegrationTest() {
+
+    ImpervaIntegrationParams.Builder impervaIntegrationParamsBuilder =
+        ImpervaIntegrationParams.newBuilder()
+            .setApiId("access-key")
+            .setApiKey(
+                EncryptedText.newBuilder().setKeyId("secret-id").setValue("secret-value").build());
+
+    // name field is absent
+    CreateWafIntegrationRequest request1 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setImpervaIntegrationParams(impervaIntegrationParamsBuilder))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(request1, REQUEST_CONTEXT);
+        });
+
+    // access id field is absent
+    CreateWafIntegrationRequest request2 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setImpervaIntegrationParams(impervaIntegrationParamsBuilder.clearApiId()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(request2, REQUEST_CONTEXT);
+        });
+
+    // api key field is absent
+    CreateWafIntegrationRequest request3 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setImpervaIntegrationParams(impervaIntegrationParamsBuilder.clearApiKey()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(request3, REQUEST_CONTEXT);
+        });
+
+    // valid request
+    CreateWafIntegrationRequest validRequest =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setImpervaIntegrationParams(
+                        ImpervaIntegrationParams.newBuilder()
+                            .setApiId("id")
+                            .setApiKey(
+                                EncryptedText.newBuilder()
+                                    .setKeyId("secret-id")
+                                    .setValue("secret-value")
+                                    .build())
+                            .build()))
+            .build();
+    assertDoesNotThrow(
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(validRequest, REQUEST_CONTEXT);
+        });
+  }
+
+  @Test
+  void invalidUpdateImpervaWafIntegrationTest() {
+
+    ImpervaIntegrationUpdateParams.Builder impervaIntegrationUpdateParams =
+        ImpervaIntegrationUpdateParams.newBuilder()
+            .setApiId("api-id")
+            .setApiKey(
+                EncryptedText.newBuilder().setKeyId("secret-id").setValue("secret-value").build());
+
+    // id field is absent
+    UpdateWafIntegrationRequest request1 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setDescription("desc")
+                    .setName("name")
+                    .setUpdatedImpervaIntegrationParams(impervaIntegrationUpdateParams))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(request1, REQUEST_CONTEXT);
+        });
+
+    // name field is absent
+    UpdateWafIntegrationRequest request2 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setUpdatedImpervaIntegrationParams(impervaIntegrationUpdateParams))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(request2, REQUEST_CONTEXT);
+        });
+
+    // api id is absent
+    UpdateWafIntegrationRequest request4 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedImpervaIntegrationParams(
+                        impervaIntegrationUpdateParams.clearApiId()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(request4, REQUEST_CONTEXT);
+        });
+
+    // api key is absent
+    UpdateWafIntegrationRequest request5 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedImpervaIntegrationParams(
+                        impervaIntegrationUpdateParams.clearApiKey()))
+            .build();
+
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(request5, REQUEST_CONTEXT);
+        });
+
+    UpdateWafIntegrationRequest validRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedImpervaIntegrationParams(
+                        ImpervaIntegrationUpdateParams.newBuilder()
+                            .setApiId("api-id")
+                            .setApiKey(
+                                EncryptedText.newBuilder()
+                                    .setKeyId("secret-id")
+                                    .setValue("secret-value")
+                                    .build())
+                            .build()))
+            .build();
+
+    // valid request
+    assertDoesNotThrow(
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(validRequest, REQUEST_CONTEXT);
         });
   }
 

@@ -10,10 +10,13 @@ import ai.traceable.waf.integration.service.api.v1.AwsResource;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
+import ai.traceable.waf.integration.service.api.v1.EncryptedText;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter.WafProviderType;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsRequest;
+import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdatedCloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.UpdatedWafIntegrationDetails;
@@ -75,6 +78,7 @@ public class WafIntegrationConfigRequestValidator {
     switch (type) {
       case WAF_PROVIDER_TYPE_CLOUDFLARE:
       case WAF_PROVIDER_TYPE_AWS:
+      case WAF_PROVIDER_TYPE_IMPERVA:
         break;
       case WAF_PROVIDER_TYPE_UNSPECIFIED:
       case UNRECOGNIZED:
@@ -96,6 +100,10 @@ public class WafIntegrationConfigRequestValidator {
         validateUpdatedAwsIntegrationParams(
             updatedWafIntegrationDetails.getUpdatedAwsIntegrationParams());
         break;
+      case UPDATED_IMPERVA_INTEGRATION_PARAMS:
+        validateUpdatedImpervaIntegrationParam(
+            updatedWafIntegrationDetails.getUpdatedImpervaIntegrationParams());
+        break;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
         throw Status.INVALID_ARGUMENT
@@ -112,6 +120,9 @@ public class WafIntegrationConfigRequestValidator {
         break;
       case AWS_INTEGRATION_PARAMS:
         validateAwsIntegrationParams(wafIntegrationDetails.getAwsIntegrationParams());
+        break;
+      case IMPERVA_INTEGRATION_PARAMS:
+        validateImpervaIntegrationParam(wafIntegrationDetails.getImpervaIntegrationParams());
         break;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
@@ -136,11 +147,29 @@ public class WafIntegrationConfigRequestValidator {
     }
   }
 
+  private void validateUpdatedImpervaIntegrationParam(
+      ImpervaIntegrationUpdateParams impervaIntegrationParams) {
+    validateNonDefaultPresenceOrThrow(
+        impervaIntegrationParams, ImpervaIntegrationUpdateParams.API_ID_FIELD_NUMBER);
+    validateImpervaApiKey(impervaIntegrationParams.getApiKey());
+  }
+
+  private void validateImpervaApiKey(EncryptedText apiKey) {
+    validateNonDefaultPresenceOrThrow(apiKey, apiKey.KEY_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(apiKey, apiKey.VALUE_FIELD_NUMBER);
+  }
+
   private void validateUpdatedAwsIntegrationParams(
       AwsIntegrationUpdateParams awsIntegrationUpdateParams) {
     validateNonDefaultPresenceOrThrow(
         awsIntegrationUpdateParams, AwsIntegrationUpdateParams.RESOURCES_FIELD_NUMBER);
     awsIntegrationUpdateParams.getResourcesList().forEach(this::validateAwsResource);
+  }
+
+  private void validateImpervaIntegrationParam(ImpervaIntegrationParams impervaIntegrationParams) {
+    validateNonDefaultPresenceOrThrow(
+        impervaIntegrationParams, ImpervaIntegrationParams.API_ID_FIELD_NUMBER);
+    validateImpervaApiKey(impervaIntegrationParams.getApiKey());
   }
 
   private void validateCloudFlareIntegrationParams(

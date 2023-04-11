@@ -166,6 +166,8 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
         return WafProviderType.WAF_PROVIDER_TYPE_CLOUDFLARE;
       case AWS_INTEGRATION_PARAMS:
         return WafProviderType.WAF_PROVIDER_TYPE_AWS;
+      case IMPERVA_INTEGRATION_PARAMS:
+        return WafProviderType.WAF_PROVIDER_TYPE_IMPERVA;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
         return WafProviderType.WAF_PROVIDER_TYPE_UNSPECIFIED;

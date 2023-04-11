@@ -3,6 +3,8 @@ package ai.traceable.waf.provider.integration.service;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.WafIntegration;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
@@ -18,6 +20,9 @@ public class WafIntegrationBuilderUtils {
         break;
       case UPDATED_AWS_INTEGRATION_PARAMS:
         updatedWafIntegration = getUpdatedAwsWafIntegration(request, existingWafIntegration);
+        break;
+      case UPDATED_IMPERVA_INTEGRATION_PARAMS:
+        updatedWafIntegration = getUpdatedImpervaWafIntegration(request, existingWafIntegration);
         break;
       default:
         throw Status.INVALID_ARGUMENT
@@ -90,6 +95,24 @@ public class WafIntegrationBuilderUtils {
                                     .getAwsIntegrationParams()
                                     .getEncryptedSecretAccessKey())
                         .addAllResources(awsIntegrationUpdateParams.getResourcesList())))
+        .build();
+  }
+
+  private static WafIntegration getUpdatedImpervaWafIntegration(
+      UpdateWafIntegrationRequest request, WafIntegration existingWafIntegration) {
+    ImpervaIntegrationUpdateParams updatedImpervaIntegrationParams =
+        request.getUpdatedWafIntegrationDetails().getUpdatedImpervaIntegrationParams();
+    return WafIntegration.newBuilder()
+        .setId(existingWafIntegration.getId())
+        .setWafIntegrationDetails(
+            WafIntegrationDetails.newBuilder()
+                .setDescription(request.getUpdatedWafIntegrationDetails().getDescription())
+                .setName(request.getUpdatedWafIntegrationDetails().getName())
+                .setImpervaIntegrationParams(
+                    ImpervaIntegrationParams.newBuilder()
+                        .setApiId(updatedImpervaIntegrationParams.getApiId())
+                        .setApiKey(updatedImpervaIntegrationParams.getApiKey())
+                        .build()))
         .build();
   }
 }
