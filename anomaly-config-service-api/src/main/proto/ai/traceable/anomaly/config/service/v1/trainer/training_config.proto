@@ -136,6 +136,7 @@ message MetadataTrainingConfig {
     HtmlTagsTrainingConfig html_tags = 22;
     HtmlTagAttributesTrainingConfig html_tag_attributes = 23;
     JwtParamsTrainingConfig jwt_params = 24;
+    ApiEncryptionTrainingConfig api_encryption = 25;
   }
 }
 
@@ -274,6 +275,10 @@ message ParamContainsSensitiveDataTrainingConfig {
 }
 
 message LackOfEncryptionTrainingConfig {
+  MinOccurrenceConfig https_calls_config = 1;
+}
+
+message ApiEncryptionTrainingConfig {
   MinOccurrenceConfig https_calls_config = 1;
 }
 
