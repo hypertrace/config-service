@@ -47,6 +47,8 @@ topologySpreadConstraints: []
 
 hostNetwork: false
 
+securityContext: {}
+
 javaOpts: "-XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=60.0 -XX:MaxDirectMemorySize=128M -XX:+ExitOnOutOfMemoryError"
 
 livenessProbe:
@@ -285,20 +287,3 @@ cleanupJob:
   nodeSelector: {}
   securityContext: {}
   tolerations: []
-
-kafka-topic-creator:
-  enabled: true
-  jobName: traceable-config-service-kafka-topics-creator
-  helmHook: pre-install,pre-upgrade
-  kafka:
-    topics:
-      config-change-events:
-        replicationFactor: 3
-        partitions: 8
-        configs:
-          retention.bytes: 1073741824 # default = -1
-          retention.ms: 86400000 # default = 604800000 (7 days)
-  zookeeper:
-    address: zookeeper:2181
-  imagePullSecrets: []
-  podAnnotations: {}
