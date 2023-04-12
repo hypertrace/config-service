@@ -39,6 +39,11 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
 
   public List<ExcludeSpanProcessingRule> getAllExcludeSpanProcessingRules(
       RequestContext requestContext, String serviceName, Optional<String> environment) {
+    log.debug(
+        "Requesting for exclude span processing rules within request context: {} for service name: {} and environment: {}",
+        requestContext,
+        serviceName,
+        environment);
     return requestContext
         .call(
             () ->
