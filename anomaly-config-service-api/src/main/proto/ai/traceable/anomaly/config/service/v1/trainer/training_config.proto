@@ -155,6 +155,7 @@ message VulnerabilityTrainingConfig {
     DirectoryListingTrainingConfig directory_listing = 10;
     EnumerableParamTrainingConfig enumerable_param = 11;
     DeprecatedApiRouteTrainingConfig deprecated_api_route = 13;
+    MultipleApiVersionsTrainingConfig multiple_api_versions = 14;
   }
 }
 
@@ -293,6 +294,8 @@ message CspSecurityHeaderTrainingConfig {}
 message DirectoryListingTrainingConfig {}
 
 message JavaSerializedObjectTrainingConfig {}
+
+message MultipleApiVersionsTrainingConfig {}
 
 message ServiceUsesBasicAuthTrainingConfig {}
 
