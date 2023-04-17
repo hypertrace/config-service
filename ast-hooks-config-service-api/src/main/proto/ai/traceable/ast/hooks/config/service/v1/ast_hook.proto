@@ -7,6 +7,7 @@ option java_multiple_files = true;
 message AstHook {
   string id = 1;
   AstHookDetails hook_details = 2;
+  string created_by = 3;
 }
 
 message AstHookDetails {
