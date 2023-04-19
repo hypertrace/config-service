@@ -155,6 +155,7 @@ message VulnerabilityTrainingConfig {
     EnumerableParamTrainingConfig enumerable_param = 11;
     DeprecatedApiRouteTrainingConfig deprecated_api_route = 13;
     MultipleApiVersionsTrainingConfig multiple_api_versions = 14;
+    ExcessDataExposureTrainingConfig excess_data_exposure = 15;
   }
 }
 
@@ -278,6 +279,14 @@ message LackOfEncryptionTrainingConfig {
   MinOccurrenceConfig https_calls_config = 1;
 }
 
+message ExcessDataExposureTrainingConfig {
+  MinDataTypeOccurrenceConfig data_occurrence_config = 1;
+}
+
+message ApiEncryptionTrainingConfig {
+  MinOccurrenceConfig https_calls_config = 1;
+}
+
 message ApiParamContainsUrlTrainingConfig {}
 
 message ContentTypeOptionsSecurityHeaderTrainingConfig {}
@@ -333,6 +342,12 @@ message ThresholdFamilyConfig {
 message MinOccurrenceConfig {
   optional int32 min_total_occurrences = 1;
   optional int32 min_percent = 2;
+}
+
+message MinDataTypeOccurrenceConfig {
+  optional int32 min_total_occurrences = 1;
+  optional int32 min_percent = 2;
+  optional int32 min_data_type_occurrences = 3;
 }
 
 message AutoResolutionConfig {
