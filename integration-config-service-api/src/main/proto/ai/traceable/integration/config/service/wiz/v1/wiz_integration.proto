@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package ai.traceable.integration.config.service.wiz.v1;
+
+option java_multiple_files = true;
+
+message WizIntegration {
+  string id = 1;
+  EncryptedText api_token = 2;
+  WizIntegrationInfo info = 3;
+}
+
+message WizIntegrationSummary {
+  string id = 1;
+  WizIntegrationInfo info = 2;
+}
+
+message EncryptedText {
+  string key_id = 1;
+  string value = 2;
+}
+
+message WizIntegrationInfo {
+  string name = 1;
+  string description = 2;
+  string client_id = 3;
+  string token_url = 4;
+  string api_endpoint_url = 5;
+}

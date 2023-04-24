@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package ai.traceable.integration.config.service.wiz.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/integration/config/service/wiz/v1/wiz_integration.proto";
+
+service WizIntegrationConfigService {
+  rpc GetWizIntegrationSummaries(GetWizIntegrationSummariesRequest) returns (GetWizIntegrationSummariesResponse) {}
+  rpc GetWizIntegrations(GetWizIntegrationsRequest) returns (GetWizIntegrationsResponse) {}
+  rpc CreateWizIntegration(CreateWizIntegrationRequest) returns (CreateWizIntegrationResponse) {}
+  rpc UpdateWizIntegration(UpdateWizIntegrationRequest) returns (UpdateWizIntegrationResponse) {}
+  rpc DeleteWizIntegration(DeleteWizIntegrationRequest) returns (DeleteWizIntegrationResponse) {}
+}
+
+message GetWizIntegrationSummariesRequest {
+  WizIntegrationFilter filter = 1;
+}
+
+message GetWizIntegrationSummariesResponse {
+  repeated WizIntegrationSummary integration_summaries = 1;
+}
+
+message GetWizIntegrationsRequest {
+  WizIntegrationFilter filter = 1;
+}
+
+message GetWizIntegrationsResponse {
+  repeated WizIntegration integrations = 1;
+}
+
+message CreateWizIntegrationRequest {
+  string name = 1;
+  optional string description = 2;
+  EncryptedText api_token = 3;
+  string client_id = 4;
+  string token_url = 5;
+  string api_endpoint_url = 6;
+}
+
+message CreateWizIntegrationResponse {
+  WizIntegration integration = 1;
+}
+
+message WizIntegrationFilter {
+  repeated string ids = 1;
+}
+
+message UpdateWizIntegrationRequest {
+  string id = 1;
+  string name = 2;
+  optional string description = 3;
+  EncryptedText api_token = 4;
+  string client_id = 5;
+  string token_url = 6;
+  string api_endpoint_url = 7;
+}
+
+message UpdateWizIntegrationResponse {
+  WizIntegration integration = 1;
+}
+
+message DeleteWizIntegrationRequest {
+  string id = 1;
+}
+
+message DeleteWizIntegrationResponse {
+}
