@@ -221,7 +221,7 @@ public class AttributeRuleBuilder {
         .build();
   }
 
-  private Predicate buildPredicate(
+  public Predicate buildPredicate(
       ComparisonOperator nameComparisonOperator,
       List<String> names,
       ComparisonOperator valueComparisonOperator,

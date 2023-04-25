@@ -1,0 +1,55 @@
+{
+  "attributeRules": [
+    {
+      "projector": {
+        "cookieProjector": {
+          "cookieNameRule": {
+            "key": "jwt-cookie",
+            "attributeRule": {
+              "initialActions": [
+                {
+                  "attributeAddition": {
+                    "attributeKey": "traceableai.jwt.payload.http.request.header.cookie.jwt-cookie.exp",
+                    "valueProjectionRule": {
+                      "projector": {
+                        "jwtProjector": {
+                          "claimRule": {
+                            "key": "exp",
+                            "attributeRule": {
+                              "projector": {
+                                "noOpProjector": {}
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "attributeAddition": {
+                    "attributeKey": "traceableai.jwt.header.http.request.header.cookie.jwt-cookie.alg",
+                    "valueProjectionRule": {
+                      "projector": {
+                        "jwtProjector": {
+                          "headerRule": {
+                            "key": "alg",
+                            "attributeRule": {
+                              "projector": {
+                                "noOpProjector": {}
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ]
+}

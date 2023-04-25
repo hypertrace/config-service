@@ -1,0 +1,30 @@
+{
+  "locations": [
+    {
+      "queryParameter": {
+        "operator": "RELATIONAL_OPERATOR_EQUALS",
+        "value": "jwt-query-param"
+      }
+    }
+  ],
+  "instructions": [
+    {
+      "valueExtraction": {
+        "payloadClaimName": "exp",
+        "rawValue": {}
+      },
+      "action": {
+        "addNewAttribute": "exp"
+      }
+    },
+    {
+      "valueExtraction": {
+        "headerKey": "alg",
+        "rawValue": {}
+      },
+      "action": {
+        "addNewAttribute": "alg"
+      }
+    }
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "attributeRules": [
+    {
+      "projector": {
+        "regexCaptureGroupProjector": {
+          "regexCaptureGroup": "\\?(.*)$",
+          "attributeRule": {
+            "projector": {
+              "urlEncodedProjector": {
+                "urlParamRule": {
+                  "key": "jwt-query-param",
+                  "attributeRule": {
+                    "initialActions": [
+                      {
+                        "attributeAddition": {
+                          "attributeKey": "traceableai.jwt.payload.http.url.jwt-query-param.exp",
+                          "valueProjectionRule": {
+                            "projector": {
+                              "jwtProjector": {
+                                "claimRule": {
+                                  "key": "exp",
+                                  "attributeRule": {
+                                    "projector": {
+                                      "noOpProjector": {}
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "attributeAddition": {
+                          "attributeKey": "traceableai.jwt.header.http.url.jwt-query-param.alg",
+                          "valueProjectionRule": {
+                            "projector": {
+                              "jwtProjector": {
+                                "headerRule": {
+                                  "key": "alg",
+                                  "attributeRule": {
+                                    "projector": {
+                                      "noOpProjector": {}
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "projector": {
+        "regexCaptureGroupProjector": {
+          "regexCaptureGroup": "\\?(.*)$",
+          "attributeRule": {
+            "projector": {
+              "urlEncodedProjector": {
+                "urlParamRule": {
+                  "key": "jwt-query-param",
+                  "attributeRule": {
+                    "initialActions": [
+                      {
+                        "attributeAddition": {
+                          "attributeKey": "traceableai.jwt.payload.http.target.jwt-query-param.exp",
+                          "valueProjectionRule": {
+                            "projector": {
+                              "jwtProjector": {
+                                "claimRule": {
+                                  "key": "exp",
+                                  "attributeRule": {
+                                    "projector": {
+                                      "noOpProjector": {}
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "attributeAddition": {
+                          "attributeKey": "traceableai.jwt.header.http.target.jwt-query-param.alg",
+                          "valueProjectionRule": {
+                            "projector": {
+                              "jwtProjector": {
+                                "headerRule": {
+                                  "key": "alg",
+                                  "attributeRule": {
+                                    "projector": {
+                                      "noOpProjector": {}
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

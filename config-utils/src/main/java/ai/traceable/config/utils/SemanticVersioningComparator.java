@@ -1,4 +1,4 @@
-package ai.traceable.blocking.config.service.common.util;
+package ai.traceable.config.utils;
 
 import java.util.Comparator;
 import java.util.regex.Matcher;
@@ -22,6 +22,10 @@ public class SemanticVersioningComparator implements Comparator<String> {
       "^([\\d]+)\\.([\\d]+)\\.([\\d]+)(-(.*)\\.([\\d]+))?$";
 
   private static final Pattern SEMVER_VERSION_PATTERN = Pattern.compile(SEMVER_VERSION_REGEX);
+
+  public boolean isVersionSupported(String version, String requiredVersion) {
+    return this.compare(version, requiredVersion) >= 0;
+  }
 
   @Override
   public int compare(String a, String b) {

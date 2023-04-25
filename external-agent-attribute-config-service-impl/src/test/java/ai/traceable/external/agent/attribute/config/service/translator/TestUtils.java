@@ -3,6 +3,7 @@ package ai.traceable.external.agent.attribute.config.service.translator;
 import ai.traceable.auth.detection.config.service.v1.AuthDetectionRule;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.FirstMatchingProjector;
+import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import com.google.common.io.Resources;
 import com.google.protobuf.util.JsonFormat;
@@ -33,6 +34,13 @@ public class TestUtils {
   public static UserAttributionRule getUserAttributionRule(String filename) throws IOException {
     UserAttributionRule.Builder ruleBuilder = UserAttributionRule.newBuilder();
     PARSER.merge(reader(filename), ruleBuilder);
+    return ruleBuilder.build();
+  }
+
+  @SneakyThrows
+  public static JwtExtractionRule getJwtExtractionRule(String fileName) {
+    JwtExtractionRule.Builder ruleBuilder = JwtExtractionRule.newBuilder();
+    PARSER.merge(reader(fileName), ruleBuilder);
     return ruleBuilder.build();
   }
 

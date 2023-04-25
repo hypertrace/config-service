@@ -11,11 +11,16 @@ import ai.traceable.auth.detection.config.service.v1.AuthDetectionConfigServiceG
 import ai.traceable.auth.detection.config.service.v1.GetAuthDetectionRulesRequest;
 import ai.traceable.auth.detection.config.service.v1.GetAuthDetectionRulesResponse;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
+import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.external.agent.attribute.config.service.translator.ExternalAgentAttributeRuleTranslator;
 import ai.traceable.external.agent.attribute.config.service.v1.ExternalAgentAttributeConfigServiceGrpc;
 import ai.traceable.external.agent.attribute.config.service.v1.ExternalAgentAttributeConfigServiceGrpc.ExternalAgentAttributeConfigServiceBlockingStub;
 import ai.traceable.external.agent.attribute.config.service.v1.GetAgentAttributeRulesRequest;
+import ai.traceable.jwt.extraction.config.service.v1.GetJwtExtractionRulesRequest;
+import ai.traceable.jwt.extraction.config.service.v1.GetJwtExtractionRulesResponse;
+import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc;
+import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc.JwtExtractionConfigServiceImplBase;
 import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest;
 import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesResponse;
 import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServiceGrpc;
@@ -44,15 +49,19 @@ class ExternalAgentAttributeConfigServiceImplTest {
     mockGenericConfigService
         .addService(new MockUserAttributionService())
         .addService(new MockAuthDetectionConfigService())
+        .addService(new MockJwtExtractionConfigService())
         .addService(
             new ExternalAgentAttributeConfigServiceImpl(
                 UserAttributionConfigServiceGrpc.newBlockingStub(
                     this.mockGenericConfigService.channel()),
                 AuthDetectionConfigServiceGrpc.newBlockingStub(
                     this.mockGenericConfigService.channel()),
+                JwtExtractionConfigServiceGrpc.newBlockingStub(
+                    this.mockGenericConfigService.channel()),
                 mockRuleTranslator,
                 new ExternalAgentAttributeRuleResponseBuilder(mockUuidGenerator),
-                mockFeatureClient))
+                mockFeatureClient,
+                new SemanticVersioningComparator()))
         .start();
     stub =
         ExternalAgentAttributeConfigServiceGrpc.newBlockingStub(
@@ -101,6 +110,16 @@ class ExternalAgentAttributeConfigServiceImplTest {
         GetAuthDetectionRulesRequest request,
         StreamObserver<GetAuthDetectionRulesResponse> responseObserver) {
       responseObserver.onNext(GetAuthDetectionRulesResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    }
+  }
+
+  private static class MockJwtExtractionConfigService extends JwtExtractionConfigServiceImplBase {
+    @Override
+    public void getJwtExtractionRules(
+        GetJwtExtractionRulesRequest request,
+        StreamObserver<GetJwtExtractionRulesResponse> responseObserver) {
+      responseObserver.onNext(GetJwtExtractionRulesResponse.getDefaultInstance());
       responseObserver.onCompleted();
     }
   }

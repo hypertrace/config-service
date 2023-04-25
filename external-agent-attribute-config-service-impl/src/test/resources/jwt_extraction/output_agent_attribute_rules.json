@@ -1,0 +1,285 @@
+{
+  "attributeRules": [
+    {
+      "projector": {
+        "conditionalProjector": {
+          "predicate": {
+            "logicalPredicate": {
+              "operator": "LOGICAL_OPERATOR_OR",
+              "children": [
+                {
+                  "attributePredicate": {
+                    "namePredicate": {
+                      "operator": "COMPARISON_OPERATOR_EQUALS",
+                      "value": "http.url"
+                    },
+                    "valuePredicate": {
+                      "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                      "value": "abc$"
+                    }
+                  }
+                },
+                {
+                  "attributePredicate": {
+                    "namePredicate": {
+                      "operator": "COMPARISON_OPERATOR_EQUALS",
+                      "value": "http.target"
+                    },
+                    "valuePredicate": {
+                      "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                      "value": "abc$"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "attributeRule": {
+            "projector": {
+              "eachMatchingProjector": {
+                "attributeRules": [
+                  {
+                    "projector": {
+                      "attributeProjector": {
+                        "attributeKey": "http.request.header.req-header+capture-group",
+                        "attributeRule": {
+                          "projector": {
+                            "regexCaptureGroupProjector": {
+                              "regexCaptureGroup": "^(?:(?i)Bearer:? )?(.*)$",
+                              "attributeRule": {
+                                "initialActions": [
+                                  {
+                                    "attributeAddition": {
+                                      "attributeKey": "traceableai.jwt.payload.http.request.header.req-header+capture-group.aud",
+                                      "valueProjectionRule": {
+                                        "projector": {
+                                          "jwtProjector": {
+                                            "claimRule": {
+                                              "key": "aud",
+                                              "attributeRule": {
+                                                "projector": {
+                                                  "noOpProjector": {}
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  {
+                                    "attributeAddition": {
+                                      "attributeKey": "traceableai.jwt.header.http.request.header.req-header+capture-group.alg-decoded",
+                                      "valueProjectionRule": {
+                                        "projector": {
+                                          "jwtProjector": {
+                                            "headerRule": {
+                                              "key": "alg",
+                                              "attributeRule": {
+                                                "projector": {
+                                                  "regexCaptureGroupProjector": {
+                                                    "regexCaptureGroup": "HS(.*)"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "projector": {
+                      "attributeProjector": {
+                        "attributeKey": "rpc.request.metadata.req-header+capture-group",
+                        "attributeRule": {
+                          "projector": {
+                            "regexCaptureGroupProjector": {
+                              "regexCaptureGroup": "^(?:(?i)Bearer:? )?(.*)$",
+                              "attributeRule": {
+                                "initialActions": [
+                                  {
+                                    "attributeAddition": {
+                                      "attributeKey": "traceableai.jwt.payload.rpc.request.metadata.req-header+capture-group.aud",
+                                      "valueProjectionRule": {
+                                        "projector": {
+                                          "jwtProjector": {
+                                            "claimRule": {
+                                              "key": "aud",
+                                              "attributeRule": {
+                                                "projector": {
+                                                  "noOpProjector": {}
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  {
+                                    "attributeAddition": {
+                                      "attributeKey": "traceableai.jwt.header.rpc.request.metadata.req-header+capture-group.alg-decoded",
+                                      "valueProjectionRule": {
+                                        "projector": {
+                                          "jwtProjector": {
+                                            "headerRule": {
+                                              "key": "alg",
+                                              "attributeRule": {
+                                                "projector": {
+                                                  "regexCaptureGroupProjector": {
+                                                    "regexCaptureGroup": "HS(.*)"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "projector": {
+                      "attributeProjector": {
+                        "attributeKey": "http.request.body",
+                        "attributeRule": {
+                          "projector": {
+                            "jsonProjector": {
+                              "jsonPathRule": {
+                                "key": "json-body-key+no-regex",
+                                "attributeRule": {
+                                  "initialActions": [
+                                    {
+                                      "attributeAddition": {
+                                        "attributeKey": "traceableai.jwt.payload.http.request.body.json-body-key+no-regex.aud",
+                                        "valueProjectionRule": {
+                                          "projector": {
+                                            "jwtProjector": {
+                                              "claimRule": {
+                                                "key": "aud",
+                                                "attributeRule": {
+                                                  "projector": {
+                                                    "noOpProjector": {}
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "attributeAddition": {
+                                        "attributeKey": "traceableai.jwt.header.http.request.body.json-body-key+no-regex.alg-decoded",
+                                        "valueProjectionRule": {
+                                          "projector": {
+                                            "jwtProjector": {
+                                              "headerRule": {
+                                                "key": "alg",
+                                                "attributeRule": {
+                                                  "projector": {
+                                                    "regexCaptureGroupProjector": {
+                                                      "regexCaptureGroup": "HS(.*)"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "projector": {
+                      "attributeProjector": {
+                        "attributeKey": "rpc.request.body",
+                        "attributeRule": {
+                          "projector": {
+                            "jsonProjector": {
+                              "jsonPathRule": {
+                                "key": "json-body-key+no-regex",
+                                "attributeRule": {
+                                  "initialActions": [
+                                    {
+                                      "attributeAddition": {
+                                        "attributeKey": "traceableai.jwt.payload.rpc.request.body.json-body-key+no-regex.aud",
+                                        "valueProjectionRule": {
+                                          "projector": {
+                                            "jwtProjector": {
+                                              "claimRule": {
+                                                "key": "aud",
+                                                "attributeRule": {
+                                                  "projector": {
+                                                    "noOpProjector": {}
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "attributeAddition": {
+                                        "attributeKey": "traceableai.jwt.header.rpc.request.body.json-body-key+no-regex.alg-decoded",
+                                        "valueProjectionRule": {
+                                          "projector": {
+                                            "jwtProjector": {
+                                              "headerRule": {
+                                                "key": "alg",
+                                                "attributeRule": {
+                                                  "projector": {
+                                                    "regexCaptureGroupProjector": {
+                                                      "regexCaptureGroup": "HS(.*)"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

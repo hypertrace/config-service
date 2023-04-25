@@ -1,0 +1,32 @@
+{
+  "locations": [
+    {
+      "jsonRequestBody": {
+        "keyPredicate": {
+          "operator": "RELATIONAL_OPERATOR_EQUALS",
+          "value": "jwt-json-req-body"
+        }
+      }
+    }
+  ],
+  "instructions": [
+    {
+      "valueExtraction": {
+        "payloadClaimName": "exp",
+        "rawValue": {}
+      },
+      "action": {
+        "addNewAttribute": "exp"
+      }
+    },
+    {
+      "valueExtraction": {
+        "headerKey": "alg",
+        "rawValue": {}
+      },
+      "action": {
+        "addNewAttribute": "alg"
+      }
+    }
+  ]
+}

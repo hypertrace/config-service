@@ -1,0 +1,88 @@
+{
+  "attributeRules": [
+    {
+      "initialActions": [
+        {
+          "attributeAddition": {
+            "attributeKey": "traceableai.jwt.payload.http.request.header.jwt-req-header.exp",
+            "valueProjectionRule": {
+              "projector": {
+                "jwtProjector": {
+                  "claimRule": {
+                    "key": "exp",
+                    "attributeRule": {
+                      "projector": {
+                        "noOpProjector": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "attributeAddition": {
+            "attributeKey": "traceableai.jwt.header.http.request.header.jwt-req-header.alg",
+            "valueProjectionRule": {
+              "projector": {
+                "jwtProjector": {
+                  "headerRule": {
+                    "key": "alg",
+                    "attributeRule": {
+                      "projector": {
+                        "noOpProjector": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "initialActions": [
+        {
+          "attributeAddition": {
+            "attributeKey": "traceableai.jwt.payload.rpc.request.metadata.jwt-req-header.exp",
+            "valueProjectionRule": {
+              "projector": {
+                "jwtProjector": {
+                  "claimRule": {
+                    "key": "exp",
+                    "attributeRule": {
+                      "projector": {
+                        "noOpProjector": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "attributeAddition": {
+            "attributeKey": "traceableai.jwt.header.rpc.request.metadata.jwt-req-header.alg",
+            "valueProjectionRule": {
+              "projector": {
+                "jwtProjector": {
+                  "headerRule": {
+                    "key": "alg",
+                    "attributeRule": {
+                      "projector": {
+                        "noOpProjector": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

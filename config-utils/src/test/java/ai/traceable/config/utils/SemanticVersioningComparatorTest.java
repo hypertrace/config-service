@@ -1,6 +1,7 @@
-package ai.traceable.blocking.config.service.common.util;
+package ai.traceable.config.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -35,5 +36,12 @@ class SemanticVersioningComparatorTest {
     assertTrue(semanticVersioningComparator.compare("1.2.3", "") > 0);
     assertTrue(semanticVersioningComparator.compare("", "1.12.3") < 0);
     assertEquals(0, semanticVersioningComparator.compare("", ""));
+  }
+
+  @Test
+  void isVersionSupported() {
+    assertTrue(semanticVersioningComparator.isVersionSupported("1.2.3", "1.2.3"));
+    assertTrue(semanticVersioningComparator.isVersionSupported("1.3.3", "1.2.3"));
+    assertFalse(semanticVersioningComparator.isVersionSupported("1.2.2", "1.2.3"));
   }
 }

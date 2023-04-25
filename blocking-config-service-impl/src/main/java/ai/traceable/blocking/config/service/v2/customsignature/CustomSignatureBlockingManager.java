@@ -1,13 +1,13 @@
 package ai.traceable.blocking.config.service.v2.customsignature;
 
 import ai.traceable.blocking.config.service.common.customsignature.CustomSignatureBlobFetcher;
-import ai.traceable.blocking.config.service.common.util.SemanticVersioningComparator;
 import ai.traceable.blocking.config.service.v2.AgentCapabilities;
 import ai.traceable.blocking.config.service.v2.BlockingConfigManagerBase;
 import ai.traceable.blocking.config.service.v2.BlockingConfigRequestElement;
 import ai.traceable.blocking.config.service.v2.BlockingConfigResponseElement;
 import ai.traceable.blocking.config.service.v2.Component;
 import ai.traceable.blocking.config.service.v2.CustomSignatureBlockingRules;
+import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import com.google.inject.Inject;

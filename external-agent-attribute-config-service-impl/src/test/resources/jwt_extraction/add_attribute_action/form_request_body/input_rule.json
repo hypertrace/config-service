@@ -1,0 +1,30 @@
+{
+  "locations": [
+    {
+      "formRequestBody": {
+        "operator": "RELATIONAL_OPERATOR_EQUALS",
+        "value": "jwt-form-req-body"
+      }
+    }
+  ],
+  "instructions": [
+    {
+      "valueExtraction": {
+        "payloadClaimName": "exp",
+        "rawValue": {}
+      },
+      "action": {
+        "addNewAttribute": "exp"
+      }
+    },
+    {
+      "valueExtraction": {
+        "headerKey": "alg",
+        "rawValue": {}
+      },
+      "action": {
+        "addNewAttribute": "alg"
+      }
+    }
+  ]
+}

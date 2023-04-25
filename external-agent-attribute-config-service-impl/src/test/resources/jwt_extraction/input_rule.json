@@ -1,0 +1,45 @@
+{
+  "predicate": {
+    "urlPredicate": {
+      "operator": "RELATIONAL_OPERATOR_MATCHES_REGEX",
+      "value": "abc$"
+    }
+  },
+  "locations": [
+    {
+      "regexCaptureGroup": "^(?:(?i)Bearer:? )?(.*)$",
+      "requestHeader": {
+        "operator": "RELATIONAL_OPERATOR_EQUALS",
+        "value": "req-header+capture-group"
+      }
+    },
+    {
+      "jsonRequestBody": {
+        "keyPredicate": {
+          "operator": "RELATIONAL_OPERATOR_EQUALS",
+          "value": "json-body-key+no-regex"
+        }
+      }
+    }
+  ],
+  "instructions": [
+    {
+      "valueExtraction": {
+        "payloadClaimName": "aud",
+        "rawValue": {}
+      },
+      "action": {
+        "addNewAttribute": "aud"
+      }
+    },
+    {
+      "valueExtraction": {
+        "headerKey": "alg",
+        "regexCaptureGroup": "HS(.*)"
+      },
+      "action": {
+        "addNewAttribute": "alg-decoded"
+      }
+    }
+  ]
+}

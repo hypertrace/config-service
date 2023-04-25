@@ -1,0 +1,55 @@
+{
+  "attributeRules": [
+    {
+      "projector": {
+        "urlEncodedProjector": {
+          "urlParamRule": {
+            "key": "jwt-form-req-body",
+            "attributeRule": {
+              "initialActions": [
+                {
+                  "attributeAddition": {
+                    "attributeKey": "traceableai.jwt.payload.http.request.body.jwt-form-req-body.exp",
+                    "valueProjectionRule": {
+                      "projector": {
+                        "jwtProjector": {
+                          "claimRule": {
+                            "key": "exp",
+                            "attributeRule": {
+                              "projector": {
+                                "noOpProjector": {}
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "attributeAddition": {
+                    "attributeKey": "traceableai.jwt.header.http.request.body.jwt-form-req-body.alg",
+                    "valueProjectionRule": {
+                      "projector": {
+                        "jwtProjector": {
+                          "headerRule": {
+                            "key": "alg",
+                            "attributeRule": {
+                              "projector": {
+                                "noOpProjector": {}
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ]
+}

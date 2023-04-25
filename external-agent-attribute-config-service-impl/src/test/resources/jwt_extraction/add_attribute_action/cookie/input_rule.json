@@ -1,0 +1,30 @@
+{
+  "locations": [
+    {
+      "requestCookie": {
+        "operator": "RELATIONAL_OPERATOR_EQUALS",
+        "value": "jwt-cookie"
+      }
+    }
+  ],
+  "instructions": [
+    {
+      "valueExtraction": {
+        "payloadClaimName": "exp",
+        "rawValue": {}
+      },
+      "action": {
+        "addNewAttribute": "exp"
+      }
+    },
+    {
+      "valueExtraction": {
+        "headerKey": "alg",
+        "rawValue": {}
+      },
+      "action": {
+        "addNewAttribute": "alg"
+      }
+    }
+  ]
+}

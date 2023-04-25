@@ -10,6 +10,7 @@ dependencies {
   api(projects.featureCachingClient)
   implementation(projects.userAttributionConfigServiceApi)
   implementation(projects.authDetectionConfigServiceApi)
+  implementation(projects.jwtExtractionConfigServiceApi)
   implementation(libs.guice)
   implementation(libs.slf4j.api)
   implementation(libs.hypertrace.grpcutils.client)

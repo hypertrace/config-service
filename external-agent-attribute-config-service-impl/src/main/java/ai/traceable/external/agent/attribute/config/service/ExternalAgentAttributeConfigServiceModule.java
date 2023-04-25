@@ -4,7 +4,10 @@ import ai.traceable.auth.detection.config.service.v1.AuthDetectionConfigServiceG
 import ai.traceable.auth.detection.config.service.v1.AuthDetectionConfigServiceGrpc.AuthDetectionConfigServiceBlockingStub;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.external.agent.attribute.config.service.translator.authdetection.AuthDetectionRuleTranslationModule;
+import ai.traceable.external.agent.attribute.config.service.translator.jwtextraction.JwtExtractionTranslationModule;
 import ai.traceable.external.agent.attribute.config.service.translator.userattribution.UserAttributionRuleTranslationModule;
+import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc;
+import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc.JwtExtractionConfigServiceBlockingStub;
 import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServiceGrpc;
 import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServiceGrpc.UserAttributionConfigServiceBlockingStub;
 import com.google.inject.AbstractModule;
@@ -29,6 +32,7 @@ class ExternalAgentAttributeConfigServiceModule extends AbstractModule {
     bind(FeatureCachingClient.class).toInstance(this.featureCachingClient);
     install(new UserAttributionRuleTranslationModule());
     install(new AuthDetectionRuleTranslationModule());
+    install(new JwtExtractionTranslationModule());
   }
 
   @Provides
@@ -41,6 +45,13 @@ class ExternalAgentAttributeConfigServiceModule extends AbstractModule {
   @Provides
   AuthDetectionConfigServiceBlockingStub provideAuthDetectionStub() {
     return AuthDetectionConfigServiceGrpc.newBlockingStub(this.channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  JwtExtractionConfigServiceBlockingStub provideJwtExtractionStub() {
+    return JwtExtractionConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

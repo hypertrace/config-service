@@ -1,8 +1,10 @@
 package ai.traceable.external.agent.attribute.config.service.translator;
 
 import ai.traceable.auth.detection.config.service.v1.AuthDetectionRule;
+import ai.traceable.external.agent.attribute.config.service.translator.jwtextraction.JwtExtractionRuleTranslator;
 import ai.traceable.external.agent.attribute.config.service.translator.userattribution.UserAttributionRuleTranslatorLookup;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
+import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,19 +25,25 @@ public class ExternalAgentAttributeRuleTranslator {
   private final AuthTypeAttributeRuleBuilder authTypeRuleBuilder;
 
   private final UserAttributionRuleTranslatorLookup ruleTranslatorLookup;
+  private final JwtExtractionRuleTranslator jwtExtractionRuleTranslator;
 
   public List<AttributeRule> translateRules(
-      List<UserAttributionRule> userAttributionRules, List<AuthDetectionRule> authDetectionRules) {
-    List<AttributeRule> attributeRulesForFields = new ArrayList<>();
-    getAttributeRuleForUserId(userAttributionRules).ifPresent(attributeRulesForFields::add);
-    getAttributeRuleForUserRole(userAttributionRules).ifPresent(attributeRulesForFields::add);
+      List<UserAttributionRule> userAttributionRules,
+      List<AuthDetectionRule> authDetectionRules,
+      List<JwtExtractionRule> jwtExtractionRules) {
+    List<AttributeRule> agentAttributeRules = new ArrayList<>();
+    getAttributeRuleForUserId(userAttributionRules).ifPresent(agentAttributeRules::add);
+    getAttributeRuleForUserRole(userAttributionRules).ifPresent(agentAttributeRules::add);
     // Auth type rules come from both UA and auth detection rules, so delegated to a separate class
     this.authTypeRuleBuilder
         .buildRule(userAttributionRules, authDetectionRules)
-        .ifPresent(attributeRulesForFields::add);
-    return attributeRulesForFields.isEmpty()
+        .ifPresent(agentAttributeRules::add);
+    jwtExtractionRuleTranslator
+        .translateJwtExtractionRules(jwtExtractionRules)
+        .forEach(agentAttributeRules::add);
+    return agentAttributeRules.isEmpty()
         ? List.of()
-        : List.of(attributeRuleBuilder.buildRuleForEachMatchingProjector(attributeRulesForFields));
+        : List.of(attributeRuleBuilder.buildRuleForEachMatchingProjector(agentAttributeRules));
   }
 
   private Optional<AttributeRule> getAttributeRuleForUserId(List<UserAttributionRule> rules) {

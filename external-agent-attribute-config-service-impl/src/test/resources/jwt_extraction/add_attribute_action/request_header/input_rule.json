@@ -1,0 +1,30 @@
+{
+  "locations": [
+    {
+      "requestHeader": {
+        "operator": "RELATIONAL_OPERATOR_EQUALS",
+        "value": "jwt-req-header"
+      }
+    }
+  ],
+  "instructions": [
+    {
+      "valueExtraction": {
+        "payloadClaimName": "exp",
+        "rawValue": {}
+      },
+      "action": {
+        "addNewAttribute": "exp"
+      }
+    },
+    {
+      "valueExtraction": {
+        "headerKey": "alg",
+        "rawValue": {}
+      },
+      "action": {
+        "addNewAttribute": "alg"
+      }
+    }
+  ]
+}

@@ -23,7 +23,6 @@ message JwtExtractionRule {
   string name = 2;
   JwtExtractionRuleScope scope = 3;
   Predicate predicate = 4;
-  // first match is considered in searched locations
   repeated JwtLocation locations = 5;
   repeated JwtProcessingInstruction instructions = 6;
   bool disabled = 7;
