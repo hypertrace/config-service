@@ -29,11 +29,20 @@ public class ModsecCrsConfig {
               MODSEC_CRS_RULES_DIRECTORY + "modsec-initialization-901-rules.conf")
           .rulesFilePath(MODSEC_CRS_RULES_DIRECTORY + "modsec-crs-rules.conf")
           .build();
+  public static final ModsecCrsConfig CORAZA_V3_CONFIG =
+      ModsecCrsConfig.builder()
+          .directivesFilePath(MODSEC_CRS_RULES_DIRECTORY + "directives/coraza-v3-directives.conf")
+          .initializationRulesFilePath(
+              MODSEC_CRS_RULES_DIRECTORY + "modsec-initialization-901-rules.conf")
+          .rulesFilePath(MODSEC_CRS_RULES_DIRECTORY + "modsec-crs-rules.conf")
+          .build();
 
   public static final Map<ModsecRuleVersion, ModsecCrsConfig> ruleVersionToConfigMap =
       Map.of(
           ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
           MODSEC_CRS_V3_CONFIG,
           ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
-          MODSEC_CRS_V3_SECARG_LIMITS_CONFIG);
+          MODSEC_CRS_V3_SECARG_LIMITS_CONFIG,
+          ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3,
+          CORAZA_V3_CONFIG);
 }
