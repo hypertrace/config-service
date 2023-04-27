@@ -1,5 +1,8 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
+import static ai.traceable.detection.exclusion.config.service.v1.Type.TYPE_CREDIT_CARD;
+import static ai.traceable.detection.exclusion.config.service.v1.Type.TYPE_DATE;
+import static ai.traceable.detection.exclusion.config.service.v1.Type.TYPE_UNSPECIFIED;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -29,6 +32,7 @@ import ai.traceable.detection.exclusion.config.service.v1.UserIdCondition;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
 import io.grpc.StatusRuntimeException;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -482,7 +486,104 @@ class DetectionExclusionConditionValidatorTest {
               () -> conditionValidator.validateRuleCondition(condition));
       assertTrue(throwable.getMessage().contains("TypeId provided is empty"));
     }
+    // value not set for match condition
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setEventCondition(
+                  EventCondition.newBuilder()
+                      .addSystemDefinedEvents(
+                          SystemDefinedEvent.newBuilder()
+                              .setDescriptionMatchCondition(
+                                  MatchCondition.newBuilder()
+                                      .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS))
+                              .setEventFamily(
+                                  SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF)
+                              .setEventTypeId("integer")))
+              .build();
+      Throwable throwable =
+          assertThrows(
+              StatusRuntimeException.class,
+              () -> conditionValidator.validateRuleCondition(condition));
+      assertTrue(throwable.getMessage().contains("Match condition should have a valid value"));
+    }
 
+    // invalid value type for regex match condition
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setEventCondition(
+                  EventCondition.newBuilder()
+                      .addSystemDefinedEvents(
+                          SystemDefinedEvent.newBuilder()
+                              .setDescriptionMatchCondition(
+                                  MatchCondition.newBuilder()
+                                      .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                                      .setValue(Value.newBuilder().setNumberValue(2)))
+                              .setEventFamily(
+                                  SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF)
+                              .setEventTypeId("integer")))
+              .build();
+      Throwable throwable =
+          assertThrows(
+              StatusRuntimeException.class,
+              () -> conditionValidator.validateRuleCondition(condition));
+      assertTrue(
+          throwable
+              .getMessage()
+              .contains("value should be string or list of strings for regex matching"));
+    }
+    // invalid list value for regex match condition
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setEventCondition(
+                  EventCondition.newBuilder()
+                      .addSystemDefinedEvents(
+                          SystemDefinedEvent.newBuilder()
+                              .setDescriptionMatchCondition(
+                                  MatchCondition.newBuilder()
+                                      .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                                      .setValue(
+                                          Value.newBuilder()
+                                              .setListValue(
+                                                  ListValue.newBuilder()
+                                                      .addValues(Value.getDefaultInstance()))))
+                              .setEventFamily(
+                                  SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF)
+                              .setEventTypeId("integer")))
+              .build();
+      Throwable throwable =
+          assertThrows(
+              StatusRuntimeException.class,
+              () -> conditionValidator.validateRuleCondition(condition));
+      assertTrue(
+          throwable
+              .getMessage()
+              .contains("value should be string or list of strings for regex matching"));
+    }
+    // invalid regex for match condition
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setEventCondition(
+                  EventCondition.newBuilder()
+                      .addSystemDefinedEvents(
+                          SystemDefinedEvent.newBuilder()
+                              .setDescriptionMatchCondition(
+                                  MatchCondition.newBuilder()
+                                      .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                                      .setValue(Value.newBuilder().setStringValue("*")))
+                              .setEventFamily(
+                                  SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF)
+                              .setEventTypeId("integer")))
+              .build();
+      Throwable throwable =
+          assertThrows(
+              StatusRuntimeException.class,
+              () -> conditionValidator.validateRuleCondition(condition));
+      assertTrue(throwable.getMessage().contains("Invalid Regex"));
+    }
     // valid condition
     {
       DetectionExclusionCondition condition =
@@ -491,6 +592,10 @@ class DetectionExclusionConditionValidatorTest {
                   EventCondition.newBuilder()
                       .addSystemDefinedEvents(
                           SystemDefinedEvent.newBuilder()
+                              .setDescriptionMatchCondition(
+                                  MatchCondition.newBuilder()
+                                      .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                                      .setValue(Value.newBuilder().setStringValue("abc.*")))
                               .setEventFamily(
                                   SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF)
                               .setEventTypeId("integer")))
@@ -514,12 +619,52 @@ class DetectionExclusionConditionValidatorTest {
       assertTrue(throwable.getMessage().contains("Invalid anomalousAttributeCondition"));
     }
 
+    // invalid enum condition
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setAnomalousAttributeCondition(
+                  AnomalousAttributeCondition.newBuilder()
+                      .addAllObservedTypes(List.of(TYPE_UNSPECIFIED))
+                      .addAllLearntTypes(List.of(TYPE_CREDIT_CARD, TYPE_DATE))
+                      .setKeyMatchCondition(
+                          MatchCondition.newBuilder()
+                              .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                              .setValue(Value.newBuilder().setStringValue("abc.*"))))
+              .build();
+      Throwable throwable =
+          assertThrows(
+              StatusRuntimeException.class,
+              () -> conditionValidator.validateRuleCondition(condition));
+
+      assertTrue(throwable.getMessage().contains(String.format("Invalid type : TYPE_UNSPECIFIED")));
+
+      DetectionExclusionCondition condition1 =
+          DetectionExclusionCondition.newBuilder()
+              .setAnomalousAttributeCondition(
+                  AnomalousAttributeCondition.newBuilder()
+                      .addAllObservedTypes(List.of(TYPE_CREDIT_CARD))
+                      .addAllLearntTypes(List.of(TYPE_CREDIT_CARD, TYPE_UNSPECIFIED))
+                      .setKeyMatchCondition(
+                          MatchCondition.newBuilder()
+                              .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                              .setValue(Value.newBuilder().setStringValue("abc.*"))))
+              .build();
+      throwable =
+          assertThrows(
+              StatusRuntimeException.class,
+              () -> conditionValidator.validateRuleCondition(condition1));
+
+      assertTrue(throwable.getMessage().contains(String.format("Invalid type : TYPE_UNSPECIFIED")));
+    }
     // valid condition
     {
       DetectionExclusionCondition condition =
           DetectionExclusionCondition.newBuilder()
               .setAnomalousAttributeCondition(
                   AnomalousAttributeCondition.newBuilder()
+                      .addAllObservedTypes(List.of(TYPE_CREDIT_CARD))
+                      .addAllLearntTypes(List.of(TYPE_CREDIT_CARD, TYPE_DATE))
                       .setKeyMatchCondition(
                           MatchCondition.newBuilder()
                               .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)

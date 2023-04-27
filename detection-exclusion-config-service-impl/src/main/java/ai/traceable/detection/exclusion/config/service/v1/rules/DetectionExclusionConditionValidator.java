@@ -22,6 +22,7 @@ import ai.traceable.detection.exclusion.config.service.v1.ScopeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SpanAttributeMatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
+import ai.traceable.detection.exclusion.config.service.v1.Type;
 import ai.traceable.detection.exclusion.config.service.v1.UserIdCondition;
 import ai.traceable.platform.utils.ip.IpValidationUtils;
 import com.google.protobuf.ListValue;
@@ -31,7 +32,9 @@ import com.google.re2j.PatternSyntaxException;
 import io.grpc.Status;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class DetectionExclusionConditionValidator {
 
   void validateRuleCondition(DetectionExclusionCondition condition) {
@@ -241,6 +244,10 @@ public class DetectionExclusionConditionValidator {
                   systemDefinedEventFamily))
           .asRuntimeException();
     }
+
+    if (systemDefinedEvent.hasDescriptionMatchCondition()) {
+      validateMatchCondition(systemDefinedEvent.getDescriptionMatchCondition());
+    }
   }
 
   private Optional<String> getSystemDefinedEventTypeId(SystemDefinedEvent systemDefinedEvent) {
@@ -263,12 +270,25 @@ public class DetectionExclusionConditionValidator {
                   printMessage(condition)))
           .asRuntimeException();
     }
-
     if (condition.hasKeyMatchCondition()) {
       validateMatchCondition(condition.getKeyMatchCondition());
     }
     if (condition.hasValueMatchCondition()) {
       validateMatchCondition(condition.getValueMatchCondition());
+    }
+    validateNonDefaultPresenceOrThrow(
+        condition, AnomalousAttributeCondition.OBSERVED_TYPES_FIELD_NUMBER);
+    condition.getObservedTypesList().forEach(this::validateType);
+    validateNonDefaultPresenceOrThrow(
+        condition, AnomalousAttributeCondition.LEARNT_TYPES_FIELD_NUMBER);
+    condition.getLearntTypesList().forEach(this::validateType);
+  }
+
+  private void validateType(Type type) {
+    if (type.equals(Type.TYPE_UNSPECIFIED) || type.equals(Type.UNRECOGNIZED)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(String.format("Invalid type : %s", type))
+          .asRuntimeException();
     }
   }
 

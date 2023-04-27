@@ -62,9 +62,31 @@ message EventCondition {
 message AnomalousAttributeCondition {
   MatchCondition key_match_condition = 1;
   MatchCondition value_match_condition = 2;
+  repeated Type observed_types = 3;
+  repeated Type learnt_types = 4;
 }
 
 message IpAddressCondition {
   repeated string cidr_ip_ranges = 1;
   repeated string ip_addresses = 2;
+}
+
+enum Type {
+  TYPE_UNSPECIFIED = 0;
+  TYPE_BOOLEAN = 1;
+  TYPE_INTEGER = 2;
+  TYPE_FLOAT = 3;
+  TYPE_CHAR = 4;
+  TYPE_STRING = 5;
+  TYPE_OBJECT = 6;
+  TYPE_URL = 7;
+  TYPE_EMAIL = 8;
+  TYPE_JSON = 9;
+  TYPE_CREDIT_CARD = 10;
+  TYPE_DATE = 11;
+  TYPE_ARRAY = 12;
+  TYPE_HTML = 13;
+  TYPE_RICH_TEXT_HTML = 14;
+  TYPE_CLOB = 15;
+  TYPE_FREE_TEXT = 16;
 }
