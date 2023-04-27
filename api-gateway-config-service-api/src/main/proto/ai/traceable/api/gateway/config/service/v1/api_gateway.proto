@@ -8,3 +8,22 @@ enum GatewayType {
   GATEWAY_TYPE_UNSPECIFIED = 0;
   GATEWAY_TYPE_MULESOFT = 1;
 }
+
+message ConfigMetadata {
+  string org_id = 1;
+  repeated SourceInfo source_info = 2;
+}
+
+message SourceInfo {
+  RequestInfo request_info = 1;
+  StorageInfo storage_info = 2;
+}
+
+message RequestInfo {
+  string url = 1;
+  map<string, string> env_vars = 2;
+}
+
+message StorageInfo {
+  string dir_name = 1;
+}

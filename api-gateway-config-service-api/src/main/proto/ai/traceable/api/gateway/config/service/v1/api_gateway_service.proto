@@ -5,6 +5,7 @@ package ai.traceable.api.gateway.config.service.v1;
 option java_multiple_files = true;
 
 import "ai/traceable/api/gateway/config/service/v1/api_route.proto";
+import "ai/traceable/api/gateway/config/service/v1/api_gateway.proto";
 
 service ApiGatewayConfigService {
   rpc CreateRoutes (CreateRoutesRequest) returns (CreateRoutesResponse) {
@@ -14,6 +15,15 @@ service ApiGatewayConfigService {
   }
 
   rpc DeleteRoutes (DeleteRoutesRequest) returns (DeleteRoutesResponse) {
+  }
+
+  rpc CreateMetadata (CreateMetadataRequest) returns (CreateMetadataResponse) {
+  }
+
+  rpc GetMetadata (GetMetadataRequest) returns (GetMetadataResponse) {
+  }
+
+  rpc DeleteMetadata (DeleteMetadataRequest) returns (DeleteMetadataResponse) {
   }
 }
 
@@ -56,4 +66,34 @@ message ApiInfo {
   optional string http_method = 1;
   optional string path = 2;
   optional string service_name = 3;
+}
+
+message CreateMetadataRequest {
+  ConfigMetadata config_metadata = 1;
+}
+
+message CreateMetadataResponse {
+
+}
+
+message GetMetadataRequest {
+  MetadataFilter metadata_filter = 1;
+}
+
+message GetMetadataResponse {
+  repeated ConfigMetadata config_metadata = 1;
+}
+
+message DeleteMetadataRequest {
+  MetadataFilter metadata_filter = 1;
+}
+
+message DeleteMetadataResponse {
+
+}
+
+message MetadataFilter {
+  oneof type {
+    OrgIds org_ids = 1;
+  }
 }
