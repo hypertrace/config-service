@@ -159,6 +159,7 @@ message VulnerabilityTrainingConfig {
     OpenRedirectTrainingConfig open_redirect = 16;
     MassParameterAssignmentConfig mass_parameter_assignment = 17;
     SqlInjectionErrorBasedTrainingConfig sql_injection_error_based = 18;
+    JwtExpiryIssueAtTrainingConfig jwt_expiry_and_issue_at_not_set = 20;
     JwtAlgoWeaknessTrainingConfig jwt_algo_weakness = 19;
   }
 }
@@ -268,6 +269,8 @@ message StartTimeTrainingConfig {}
 message UserAgentTrainingConfig {}
 
 message UserRoleTrainingConfig {}
+
+message JwtExpiryIssueAtTrainingConfig {};
 
 message JwtAlgoWeaknessTrainingConfig {};
 
