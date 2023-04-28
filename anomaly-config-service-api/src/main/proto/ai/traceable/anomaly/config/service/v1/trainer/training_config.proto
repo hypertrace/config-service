@@ -157,6 +157,9 @@ message VulnerabilityTrainingConfig {
     MultipleApiVersionsTrainingConfig multiple_api_versions = 14;
     ExcessDataExposureTrainingConfig excess_data_exposure = 15;
     OpenRedirectTrainingConfig open_redirect = 16;
+    MassParameterAssignmentConfig mass_parameter_assignment = 17;
+    SQLInjectionErrorBasedTrainingConfig sql_injection_error_based = 18;
+    JwtAlgoWeaknessTrainingConfig jwt_algo_weakness = 19;
   }
 }
 
@@ -266,6 +269,12 @@ message UserAgentTrainingConfig {}
 
 message UserRoleTrainingConfig {}
 
+message JwtAlgoWeaknessTrainingConfig {};
+
+message MassParameterAssignmentConfig {
+  MinOccurrenceConfig threshold_parameter_config = 1;
+}
+
 message JwtParamsTrainingConfig {
   ThresholdFamilyConfig threshold_family_config = 1;
   StringList include_param_regexes = 2;
@@ -307,6 +316,8 @@ message ServiceUsesBasicAuthTrainingConfig {}
 message DeprecatedApiRouteTrainingConfig {}
 
 message OpenRedirectTrainingConfig {}
+
+message SQLInjectionErrorBasedTrainingConfig {}
 
 message EnumerableParamTrainingConfig {
   optional string include_param_regex = 1;
