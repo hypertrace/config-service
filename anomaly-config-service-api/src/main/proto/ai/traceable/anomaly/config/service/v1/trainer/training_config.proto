@@ -156,6 +156,7 @@ message VulnerabilityTrainingConfig {
     DeprecatedApiRouteTrainingConfig deprecated_api_route = 13;
     MultipleApiVersionsTrainingConfig multiple_api_versions = 14;
     ExcessDataExposureTrainingConfig excess_data_exposure = 15;
+    OpenRedirectTrainingConfig open_redirect = 16;
   }
 }
 
@@ -304,6 +305,8 @@ message MultipleApiVersionsTrainingConfig {}
 message ServiceUsesBasicAuthTrainingConfig {}
 
 message DeprecatedApiRouteTrainingConfig {}
+
+message OpenRedirectTrainingConfig {}
 
 message EnumerableParamTrainingConfig {
   optional string include_param_regex = 1;
