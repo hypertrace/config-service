@@ -7,6 +7,7 @@ import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -35,15 +36,19 @@ public class ExternalAgentAttributeRuleTranslator {
     getAttributeRuleForUserId(userAttributionRules).ifPresent(agentAttributeRules::add);
     getAttributeRuleForUserRole(userAttributionRules).ifPresent(agentAttributeRules::add);
     // Auth type rules come from both UA and auth detection rules, so delegated to a separate class
-    this.authTypeRuleBuilder
+    authTypeRuleBuilder
         .buildRule(userAttributionRules, authDetectionRules)
         .ifPresent(agentAttributeRules::add);
     jwtExtractionRuleTranslator
         .translateJwtExtractionRules(jwtExtractionRules)
         .forEach(agentAttributeRules::add);
-    return agentAttributeRules.isEmpty()
-        ? List.of()
-        : List.of(attributeRuleBuilder.buildRuleForEachMatchingProjector(agentAttributeRules));
+    return Collections.unmodifiableList(agentAttributeRules);
+  }
+
+  public List<AttributeRule> condenseToSingleRule(List<AttributeRule> rules) {
+    return rules.isEmpty()
+        ? Collections.emptyList()
+        : List.of(attributeRuleBuilder.buildRuleForEachMatchingProjector(rules));
   }
 
   private Optional<AttributeRule> getAttributeRuleForUserId(List<UserAttributionRule> rules) {

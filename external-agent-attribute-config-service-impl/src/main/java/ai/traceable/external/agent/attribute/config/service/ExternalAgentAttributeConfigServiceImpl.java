@@ -26,12 +26,19 @@ import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesReq
 import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest.GetUserAttributionRulesFilter.ScopeFilter.EnvironmentScopeFilter;
 import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServiceGrpc.UserAttributionConfigServiceBlockingStub;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import io.grpc.stub.StreamObserver;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
@@ -46,6 +53,17 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
   private final ExternalAgentAttributeRuleResponseBuilder responseBuilder;
   private final FeatureCachingClient featureCachingClient;
   private final SemanticVersioningComparator semanticVersioningComparator;
+  private final LoadingCache<ContextualKey<AgentAttributeIdentifier>, List<AttributeRule>>
+      attributeRulesCache =
+          CacheBuilder.newBuilder()
+              .refreshAfterWrite(1, TimeUnit.MINUTES)
+              .expireAfterAccess(5, TimeUnit.MINUTES)
+              .maximumSize(10000)
+              .recordStats()
+              .build(
+                  CacheLoader.asyncReloading(
+                      CacheLoader.from(this::fetchAgentAttributeRules),
+                      Executors.newSingleThreadExecutor()));
 
   @Override
   public void getAgentAttributeRules(
@@ -58,12 +76,17 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
         responseObserver.onCompleted();
         return;
       }
-      List<AttributeRule> rules =
-          this.ruleTranslator.translateRules(
-              fetchActiveUserAttributionRules(requestContext, request),
-              fetchAuthDetectionRules(requestContext, request),
-              fetchActiveJwtAttributionRules(requestContext, request));
-      responseObserver.onNext(this.responseBuilder.buildEnabledResponse(request, rules));
+      ContextualKey<AgentAttributeIdentifier> agentAttributeIdentifier =
+          requestContext.buildInternalContextualKey(
+              new AgentAttributeIdentifier(
+                  getEnvironmentName(request),
+                  semanticVersioningComparator.isVersionSupported(
+                      getTPAVersion(request.getAgentCapabilities()),
+                      JWT_EXTRACTION_MIN_TPA_VERSION)));
+      List<AttributeRule> rules = attributeRulesCache.getUnchecked(agentAttributeIdentifier);
+      responseObserver.onNext(
+          this.responseBuilder.buildEnabledResponse(
+              request, ruleTranslator.condenseToSingleRule(rules)));
       responseObserver.onCompleted();
     } catch (Exception exception) {
       log.error("Unable to get rules", exception);
@@ -71,18 +94,28 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
     }
   }
 
-  private List<UserAttributionRule> fetchActiveUserAttributionRules(
-      RequestContext requestContext, GetAgentAttributeRulesRequest request) {
-    EnvironmentScopeFilter environmentScopeFilter;
-    if (request.getScope().hasEnvironmentName()) {
-      environmentScopeFilter =
-          EnvironmentScopeFilter.newBuilder()
-              .addEnvironmentNames(request.getScope().getEnvironmentName())
-              .build();
-    } else {
-      environmentScopeFilter = EnvironmentScopeFilter.getDefaultInstance();
-    }
+  private List<AttributeRule> fetchAgentAttributeRules(
+      ContextualKey<AgentAttributeIdentifier> agentAttributeIdentifierContextualKey) {
+    RequestContext requestContext = agentAttributeIdentifierContextualKey.getContext();
+    Optional<String> environmentName =
+        agentAttributeIdentifierContextualKey.getData().getEnvironmentName();
+    boolean jwtExtractionSupported =
+        agentAttributeIdentifierContextualKey.getData().isJwtExtractionSupported();
+    return ruleTranslator.translateRules(
+        fetchActiveUserAttributionRules(requestContext, environmentName),
+        fetchAuthDetectionRules(requestContext, environmentName),
+        jwtExtractionSupported
+            ? fetchActiveJwtAttributionRules(requestContext, environmentName)
+            : Collections.emptyList());
+  }
 
+  private List<UserAttributionRule> fetchActiveUserAttributionRules(
+      RequestContext requestContext, Optional<String> environmentName) {
+    EnvironmentScopeFilter environmentScopeFilter =
+        environmentName
+            .map(
+                envName -> EnvironmentScopeFilter.newBuilder().addEnvironmentNames(envName).build())
+            .orElse(EnvironmentScopeFilter.getDefaultInstance());
     return requestContext.call(
         () ->
             List.copyOf(
@@ -101,31 +134,39 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
   }
 
   private List<AuthDetectionRule> fetchAuthDetectionRules(
-      RequestContext requestContext, GetAgentAttributeRulesRequest request) {
+      RequestContext requestContext, Optional<String> environmentName) {
+    GetAuthDetectionRulesRequest authDetectionRulesRequest =
+        environmentName
+            .map(
+                envName ->
+                    GetAuthDetectionRulesRequest.newBuilder()
+                        .setFilter(
+                            AuthDetectionRuleFilter.newBuilder()
+                                .setScope(
+                                    AuthDetectionRuleScope.newBuilder()
+                                        .addEnvironmentNames(envName)))
+                        .build())
+            .orElse(GetAuthDetectionRulesRequest.getDefaultInstance());
     return requestContext.call(
         () ->
             List.copyOf(
                 authDetectionConfigServiceBlockingStub
                     .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
-                    .getAuthDetectionRules(this.buildEquivalentAuthRuleRequest(request))
+                    .getAuthDetectionRules(authDetectionRulesRequest)
                     .getRulesList()));
   }
 
   private List<JwtExtractionRule> fetchActiveJwtAttributionRules(
-      RequestContext requestContext, GetAgentAttributeRulesRequest request) {
-    if (!semanticVersioningComparator.isVersionSupported(
-        getTPAVersion(request.getAgentCapabilities()), JWT_EXTRACTION_MIN_TPA_VERSION)) {
-      return Collections.emptyList();
-    }
+      RequestContext requestContext, Optional<String> environmentName) {
     JwtExtractionRuleFilter.Builder filterBuilder =
         JwtExtractionRuleFilter.newBuilder().setDisabled(false);
-    if (request.getScope().hasEnvironmentName()) {
-      filterBuilder.setScope(
-          JwtExtractionRuleScope.newBuilder()
-              .setEnvironmentScope(
-                  JwtExtractionRuleScope.EnvironmentScope.newBuilder()
-                      .addEnvironmentNames(request.getScope().getEnvironmentName())));
-    }
+    environmentName.ifPresent(
+        envName ->
+            filterBuilder.setScope(
+                JwtExtractionRuleScope.newBuilder()
+                    .setEnvironmentScope(
+                        JwtExtractionRuleScope.EnvironmentScope.newBuilder()
+                            .addEnvironmentNames(envName))));
     return requestContext.call(
         () ->
             List.copyOf(
@@ -138,19 +179,11 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
                     .getRulesList()));
   }
 
-  private GetAuthDetectionRulesRequest buildEquivalentAuthRuleRequest(
-      GetAgentAttributeRulesRequest request) {
-    if (!request.getScope().hasEnvironmentName()) {
-      return GetAuthDetectionRulesRequest.getDefaultInstance();
+  private Optional<String> getEnvironmentName(GetAgentAttributeRulesRequest request) {
+    if (request.getScope().hasEnvironmentName()) {
+      return Optional.of(request.getScope().getEnvironmentName());
     }
-
-    return GetAuthDetectionRulesRequest.newBuilder()
-        .setFilter(
-            AuthDetectionRuleFilter.newBuilder()
-                .setScope(
-                    AuthDetectionRuleScope.newBuilder()
-                        .addEnvironmentNames(request.getScope().getEnvironmentName())))
-        .build();
+    return Optional.empty();
   }
 
   private String getTPAVersion(GetAgentAttributeRulesRequest.AgentCapabilities agentCapabilities) {

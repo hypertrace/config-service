@@ -3,6 +3,7 @@ package ai.traceable.external.agent.attribute.config.service.translator;
 import static com.google.inject.Stage.DEVELOPMENT;
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.external.agent.attribute.config.service.translator.authdetection.AuthDetectionRuleTranslationModule;
 import ai.traceable.external.agent.attribute.config.service.translator.jwtextraction.JwtExtractionTranslationModule;
@@ -25,7 +26,7 @@ class ExternalAgentAttributeRuleTranslatorTest {
 
   @Test
   void translateRules() throws IOException {
-    List<AttributeRule> translatedRules =
+    List<AttributeRule> attributeRules =
         translator.translateRules(
             List.of(
                 TestUtils.getUserAttributionRule("basic_auth/input_rule.json"),
@@ -38,13 +39,13 @@ class ExternalAgentAttributeRuleTranslatorTest {
                 TestUtils.getAuthDetectionRule("authdetection/header/input_rule.json"),
                 TestUtils.getAuthDetectionRule("authdetection/json_body/input_rule.json")),
             emptyList());
-
     assertEquals(
-        TestUtils.getExpectedAttributeRules("agent_attribute_rules.json"), translatedRules);
+        TestUtils.getExpectedAttributeRules("agent_attribute_rules.json"),
+        translator.condenseToSingleRule(attributeRules));
   }
 
   @Test
   void translateNoRule() {
-    assertEquals(List.of(), translator.translateRules(emptyList(), emptyList(), emptyList()));
+    assertTrue(translator.translateRules(emptyList(), emptyList(), emptyList()).isEmpty());
   }
 }
