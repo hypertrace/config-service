@@ -129,7 +129,7 @@ public class DefaultRiskContributorConfigsProviderTest {
       assertEquals(
           RiskContributorCategory.RISK_CONTRIBUTOR_CATEGORY_IMPACT,
           factor.getRiskFactorInfo().getRiskContributorCategory());
-      assertFalse(factor.getRiskFactorConfig().getDisabled());
+      assertTrue(factor.getRiskFactorConfig().getDisabled());
       assertEquals(4, factor.getRiskFactorConfig().getRiskElementConfigsCount());
       factor
           .getRiskFactorConfig()
