@@ -105,7 +105,7 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
         fetchActiveUserAttributionRules(requestContext, environmentName),
         fetchAuthDetectionRules(requestContext, environmentName),
         jwtExtractionSupported
-            ? fetchActiveJwtAttributionRules(requestContext, environmentName)
+            ? fetchActiveJwtExtractionRules(requestContext, environmentName)
             : Collections.emptyList());
   }
 
@@ -116,21 +116,26 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
             .map(
                 envName -> EnvironmentScopeFilter.newBuilder().addEnvironmentNames(envName).build())
             .orElse(EnvironmentScopeFilter.getDefaultInstance());
-    return requestContext.call(
-        () ->
-            List.copyOf(
-                userAttributionRuleStub
-                    .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
-                    .getUserAttributionRules(
-                        GetUserAttributionRulesRequest.newBuilder()
-                            .setFilter(
-                                GetUserAttributionRulesFilter.newBuilder()
-                                    .setScopeFilter(
-                                        ScopeFilter.newBuilder()
-                                            .setEnvironmentScopeFilter(environmentScopeFilter))
-                                    .setDisabled(false))
-                            .build())
-                    .getRulesList()));
+    try {
+      return requestContext.call(
+          () ->
+              List.copyOf(
+                  userAttributionRuleStub
+                      .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
+                      .getUserAttributionRules(
+                          GetUserAttributionRulesRequest.newBuilder()
+                              .setFilter(
+                                  GetUserAttributionRulesFilter.newBuilder()
+                                      .setScopeFilter(
+                                          ScopeFilter.newBuilder()
+                                              .setEnvironmentScopeFilter(environmentScopeFilter))
+                                      .setDisabled(false))
+                              .build())
+                      .getRulesList()));
+    } catch (Exception e) {
+      log.error("Failed to fetch user attribution rules. RequestContest {}", requestContext, e);
+    }
+    return Collections.emptyList();
   }
 
   private List<AuthDetectionRule> fetchAuthDetectionRules(
@@ -147,16 +152,21 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
                                         .addEnvironmentNames(envName)))
                         .build())
             .orElse(GetAuthDetectionRulesRequest.getDefaultInstance());
-    return requestContext.call(
-        () ->
-            List.copyOf(
-                authDetectionConfigServiceBlockingStub
-                    .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
-                    .getAuthDetectionRules(authDetectionRulesRequest)
-                    .getRulesList()));
+    try {
+      return requestContext.call(
+          () ->
+              List.copyOf(
+                  authDetectionConfigServiceBlockingStub
+                      .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
+                      .getAuthDetectionRules(authDetectionRulesRequest)
+                      .getRulesList()));
+    } catch (Exception e) {
+      log.error("Failed to fetch auth detection rules. RequestContest {}", requestContext, e);
+    }
+    return Collections.emptyList();
   }
 
-  private List<JwtExtractionRule> fetchActiveJwtAttributionRules(
+  private List<JwtExtractionRule> fetchActiveJwtExtractionRules(
       RequestContext requestContext, Optional<String> environmentName) {
     JwtExtractionRuleFilter.Builder filterBuilder =
         JwtExtractionRuleFilter.newBuilder().setDisabled(false);
@@ -167,16 +177,21 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
                     .setEnvironmentScope(
                         JwtExtractionRuleScope.EnvironmentScope.newBuilder()
                             .addEnvironmentNames(envName))));
-    return requestContext.call(
-        () ->
-            List.copyOf(
-                jwtExtractionBlockingStub
-                    .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
-                    .getJwtExtractionRules(
-                        GetJwtExtractionRulesRequest.newBuilder()
-                            .setFilter(filterBuilder.build())
-                            .build())
-                    .getRulesList()));
+    try {
+      return requestContext.call(
+          () ->
+              List.copyOf(
+                  jwtExtractionBlockingStub
+                      .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
+                      .getJwtExtractionRules(
+                          GetJwtExtractionRulesRequest.newBuilder()
+                              .setFilter(filterBuilder.build())
+                              .build())
+                      .getRulesList()));
+    } catch (Exception e) {
+      log.error("Failed to fetch jwt extraction rules. RequestContest {}", requestContext, e);
+    }
+    return Collections.emptyList();
   }
 
   private Optional<String> getEnvironmentName(GetAgentAttributeRulesRequest request) {
