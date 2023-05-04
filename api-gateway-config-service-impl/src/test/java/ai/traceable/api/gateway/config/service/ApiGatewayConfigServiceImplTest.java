@@ -476,7 +476,7 @@ class ApiGatewayConfigServiceImplTest {
                       .setRequestInfo(
                           RequestInfo.newBuilder()
                               .setUrl("/hello/Mars")
-                              .putEnvVars("key1", "value1"))
+                              .putHeaders("key1", "value1"))
                       .setStorageInfo(StorageInfo.newBuilder().setDirName(uuid)))
               .build();
 
@@ -506,7 +506,7 @@ class ApiGatewayConfigServiceImplTest {
             .addSourceInfo(
                 SourceInfo.newBuilder()
                     .setRequestInfo(
-                        RequestInfo.newBuilder().setUrl("/hello/Mars").putEnvVars("key1", "value1"))
+                        RequestInfo.newBuilder().setUrl("/hello/Mars").putHeaders("key1", "value1"))
                     .setStorageInfo(StorageInfo.newBuilder().setDirName(id1)))
             .build();
 
@@ -516,7 +516,7 @@ class ApiGatewayConfigServiceImplTest {
             .addSourceInfo(
                 SourceInfo.newBuilder()
                     .setRequestInfo(
-                        RequestInfo.newBuilder().setUrl("/hello/Moon").putEnvVars("key1", "value2"))
+                        RequestInfo.newBuilder().setUrl("/hello/Moon").putHeaders("key1", "value2"))
                     .setStorageInfo(StorageInfo.newBuilder().setDirName(id2)))
             .build();
 
@@ -607,7 +607,7 @@ class ApiGatewayConfigServiceImplTest {
             .addSourceInfo(
                 SourceInfo.newBuilder()
                     .setRequestInfo(
-                        RequestInfo.newBuilder().setUrl("/hello/Mars").putEnvVars("key1", "value1"))
+                        RequestInfo.newBuilder().setUrl("/hello/Mars").putHeaders("key1", "value1"))
                     .setStorageInfo(StorageInfo.newBuilder().setDirName(id1)))
             .build();
 
@@ -617,7 +617,7 @@ class ApiGatewayConfigServiceImplTest {
             .addSourceInfo(
                 SourceInfo.newBuilder()
                     .setRequestInfo(
-                        RequestInfo.newBuilder().setUrl("/hello/Moon").putEnvVars("key1", "value2"))
+                        RequestInfo.newBuilder().setUrl("/hello/Moon").putHeaders("key1", "value2"))
                     .setStorageInfo(StorageInfo.newBuilder().setDirName(id2)))
             .build();
 

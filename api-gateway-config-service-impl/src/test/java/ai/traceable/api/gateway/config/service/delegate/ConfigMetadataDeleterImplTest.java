@@ -47,7 +47,7 @@ class ConfigMetadataDeleterImplTest {
             .addSourceInfo(
                 SourceInfo.newBuilder()
                     .setRequestInfo(
-                        RequestInfo.newBuilder().setUrl("/hello/Mars").putEnvVars("key1", "value1"))
+                        RequestInfo.newBuilder().setUrl("/hello/Mars").putHeaders("key1", "value1"))
                     .setStorageInfo(StorageInfo.newBuilder().setDirName(uuid)))
             .build();
     final List<ConfigMetadata> metadataList = List.of(metadata);
