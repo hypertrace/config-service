@@ -136,6 +136,7 @@ message MetadataTrainingConfig {
     HtmlTagsTrainingConfig html_tags = 22;
     HtmlTagAttributesTrainingConfig html_tag_attributes = 23;
     JwtParamsTrainingConfig jwt_params = 24;
+    ParamExclusionsConfig param_exclusions = 25;
   }
 }
 
@@ -281,6 +282,96 @@ message MassParameterAssignmentConfig {
 message JwtParamsTrainingConfig {
   ThresholdFamilyConfig threshold_family_config = 1;
   StringList include_param_regexes = 2;
+}
+
+message ParamExclusionsConfig {
+  repeated ParamKeyExclusionConfig param_key_exclusion_configs = 1;
+}
+
+message ParamKeyExclusionConfig {
+  oneof config {
+    PathParamKeyConfig path_param_key_config = 1;
+    QueryParamKeyConfig query_param_key_config = 2;
+    HttpRequestHeaderKeyConfig http_request_header_key_config = 3;
+    HttpResponseHeaderKeyConfig http_response_header_key_config = 4;
+    HttpRequestBodyKeyConfig http_request_body_key_config = 5;
+    HttpResponseBodyKeyConfig http_response_body_key_config = 6;
+    HttpRequestCookieKeyConfig http_request_cookie_key_config = 7;
+    HttpResponseCookieKeyConfig http_response_cookie_key_config = 8;
+  }
+}
+
+message PathParamKeyConfig {
+  LengthConfig length_config = 1;
+  FilterConfig filter_config = 2;
+  GibberishConfig gibberish_config = 3;
+  FilterConfig exception_config = 4;
+}
+
+message QueryParamKeyConfig {
+  LengthConfig length_config = 1;
+  FilterConfig filter_config = 2;
+  GibberishConfig gibberish_config = 3;
+  FilterConfig exception_config = 4;
+}
+
+message HttpRequestHeaderKeyConfig {
+  LengthConfig length_config = 1;
+  FilterConfig filter_config = 2;
+  GibberishConfig gibberish_config = 3;
+  FilterConfig exception_config = 4;
+}
+
+message HttpResponseHeaderKeyConfig {
+  LengthConfig length_config = 1;
+  FilterConfig filter_config = 2;
+  GibberishConfig gibberish_config = 3;
+  FilterConfig exception_config = 4;
+}
+
+message HttpRequestBodyKeyConfig {
+  LengthConfig length_config = 1;
+  FilterConfig filter_config = 2;
+  GibberishConfig gibberish_config = 3;
+  FilterConfig exception_config = 4;
+}
+
+message HttpResponseBodyKeyConfig {
+  LengthConfig length_config = 1;
+  FilterConfig filter_config = 2;
+  GibberishConfig gibberish_config = 3;
+  FilterConfig exception_config = 4;
+}
+
+message HttpRequestCookieKeyConfig {
+  LengthConfig length_config = 1;
+  FilterConfig filter_config = 2;
+  GibberishConfig gibberish_config = 3;
+  FilterConfig exception_config = 4;
+}
+
+message HttpResponseCookieKeyConfig {
+  LengthConfig length_config = 1;
+  FilterConfig filter_config = 2;
+  GibberishConfig gibberish_config = 3;
+  FilterConfig exception_config = 4;
+}
+
+message LengthConfig {
+  bool disabled = 1;
+  int32 max_length = 2;
+}
+
+message FilterConfig {
+  bool disabled = 1;
+  Operator operator = 2;
+  repeated string values = 3;
+}
+
+enum Operator {
+  OPERATOR_UNSPECIFIED = 0;
+  OPERATOR_CONTAINS = 1;
+  OPERATOR_MATCHES_REGEX = 2;
 }
 
 message ParamContainsSensitiveDataTrainingConfig {
