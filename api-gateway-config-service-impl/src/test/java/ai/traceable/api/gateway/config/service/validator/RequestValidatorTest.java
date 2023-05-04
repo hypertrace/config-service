@@ -4,10 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.traceable.api.gateway.config.service.v1.ApiRouteFilter;
+import ai.traceable.api.gateway.config.service.v1.CreateMetadataRequest;
 import ai.traceable.api.gateway.config.service.v1.CreateRoutesRequest;
+import ai.traceable.api.gateway.config.service.v1.DeleteMetadataRequest;
 import ai.traceable.api.gateway.config.service.v1.DeleteRoutesRequest;
+import ai.traceable.api.gateway.config.service.v1.GetMetadataRequest;
 import ai.traceable.api.gateway.config.service.v1.GetRoutesRequest;
 import ai.traceable.api.gateway.config.service.v1.Metadata;
+import ai.traceable.api.gateway.config.service.v1.MetadataFilter;
 import ai.traceable.api.gateway.config.service.v1.NewApiRoute;
 import ai.traceable.api.gateway.config.service.v1.OrgIds;
 import ai.traceable.api.gateway.config.service.v1.RouteInfo;
@@ -142,6 +146,103 @@ class RequestValidatorTest {
           DeleteRoutesRequest.newBuilder()
               .setFilter(
                   ApiRouteFilter.newBuilder()
+                      .setOrgIds(OrgIds.newBuilder().addOrgId(UUID.randomUUID().toString())))
+              .build();
+      final RequestContext requestContext = RequestContext.forTenantId("tenant-id");
+
+      assertDoesNotThrow(() -> requestValidator.validate(request, requestContext));
+    }
+  }
+
+  @Nested
+  class ValidateMetadataCreateRequest {
+    @Test
+    void testValidateCreateWithoutTenantId() {
+      final CreateMetadataRequest request = CreateMetadataRequest.newBuilder().build();
+      final RequestContext requestContext = new RequestContext();
+
+      assertThrows(
+          StatusRuntimeException.class, () -> requestValidator.validate(request, requestContext));
+    }
+
+    @Test
+    void testValidateCreateWithoutOrgId() {
+      final CreateMetadataRequest request = CreateMetadataRequest.newBuilder().build();
+      final RequestContext requestContext = RequestContext.forTenantId("tenant-id");
+
+      assertThrows(
+          StatusRuntimeException.class, () -> requestValidator.validate(request, requestContext));
+    }
+  }
+
+  @Nested
+  class ValidateGetMetadataRequest {
+    @Test
+    void testValidateGetWithoutTenantId() {
+      final GetMetadataRequest request = GetMetadataRequest.newBuilder().build();
+      final RequestContext requestContext = new RequestContext();
+
+      assertThrows(
+          StatusRuntimeException.class, () -> requestValidator.validate(request, requestContext));
+    }
+
+    @Test
+    void testValidateGetWithTenantId() {
+      final GetMetadataRequest request = GetMetadataRequest.newBuilder().build();
+      final RequestContext requestContext = RequestContext.forTenantId("tenant-id");
+
+      assertDoesNotThrow(() -> requestValidator.validate(request, requestContext));
+    }
+  }
+
+  @Nested
+  class ValidateDeleteMetadataRequest {
+    @Test
+    void testValidateDeleteWithoutTenantId() {
+      final DeleteMetadataRequest request = DeleteMetadataRequest.newBuilder().build();
+      final RequestContext requestContext = new RequestContext();
+
+      assertThrows(
+          StatusRuntimeException.class, () -> requestValidator.validate(request, requestContext));
+    }
+
+    @Test
+    void testValidateDeleteWithoutFilter() {
+      final DeleteMetadataRequest request = DeleteMetadataRequest.newBuilder().build();
+      final RequestContext requestContext = RequestContext.forTenantId("tenant-id");
+
+      assertThrows(
+          StatusRuntimeException.class, () -> requestValidator.validate(request, requestContext));
+    }
+
+    @Test
+    void testValidateDeleteWithoutOrgIdFilter() {
+      final DeleteMetadataRequest request =
+          DeleteMetadataRequest.newBuilder().setMetadataFilter(MetadataFilter.newBuilder()).build();
+      final RequestContext requestContext = RequestContext.forTenantId("tenant-id");
+
+      assertThrows(
+          StatusRuntimeException.class, () -> requestValidator.validate(request, requestContext));
+    }
+
+    @Test
+    void testValidateDeleteWithoutOrgId() {
+      final DeleteMetadataRequest request =
+          DeleteMetadataRequest.newBuilder()
+              .setMetadataFilter(MetadataFilter.newBuilder().setOrgIds(OrgIds.newBuilder()))
+              .build();
+      final RequestContext requestContext = RequestContext.forTenantId("tenant-id");
+
+      assertThrows(
+          StatusRuntimeException.class, () -> requestValidator.validate(request, requestContext));
+    }
+
+    @Test
+    void testValidateDeleteWithOrgIds() {
+      final DeleteMetadataRequest request =
+          DeleteMetadataRequest.newBuilder()
+              .setMetadataFilter(
+                  MetadataFilter.newBuilder()
                       .setOrgIds(OrgIds.newBuilder().addOrgId(UUID.randomUUID().toString())))
               .build();
       final RequestContext requestContext = RequestContext.forTenantId("tenant-id");

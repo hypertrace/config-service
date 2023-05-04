@@ -14,11 +14,11 @@ import org.junit.jupiter.api.Test;
 
 class ApiRouteFilterModuleTest {
 
-  private ApiRouteFilterModule apiRouteFilterModule;
+  private ApiGatewayFilterModule apiRouteFilterModule;
 
   @BeforeEach
   void setUp() {
-    apiRouteFilterModule = new ApiRouteFilterModule();
+    apiRouteFilterModule = new ApiGatewayFilterModule();
   }
 
   @Test

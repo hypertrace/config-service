@@ -4,7 +4,7 @@ import static java.util.Collections.emptyList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-import ai.traceable.api.gateway.config.service.filter.ApiRouteFilterModule;
+import ai.traceable.api.gateway.config.service.filter.ApiGatewayFilterModule;
 import ai.traceable.api.gateway.config.service.filter.ApiRouteFilterToPredicateConverter;
 import ai.traceable.api.gateway.config.service.v1.ApiGatewayConfigServiceGrpc;
 import ai.traceable.api.gateway.config.service.v1.ApiGatewayConfigServiceGrpc.ApiGatewayConfigServiceBlockingStub;
@@ -113,7 +113,7 @@ public class DefaultCachedApiRouteProvider
 
   @SuppressWarnings("Convert2Diamond")
   private Map<TypeCase, ApiRouteFilterToPredicateConverter> getPredicateConverterMap() {
-    return Guice.createInjector(new ApiRouteFilterModule())
+    return Guice.createInjector(new ApiGatewayFilterModule())
         .getInstance(
             Key.get(new TypeLiteral<Map<TypeCase, ApiRouteFilterToPredicateConverter>>() {}));
   }

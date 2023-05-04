@@ -5,14 +5,16 @@ import static ai.traceable.api.gateway.config.service.v1.ApiRouteFilter.TypeCase
 import static ai.traceable.api.gateway.config.service.v1.ApiRouteFilter.TypeCase.TYPE_NOT_SET;
 
 import ai.traceable.api.gateway.config.service.v1.ApiRouteFilter;
+import ai.traceable.api.gateway.config.service.v1.MetadataFilter;
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.MapBinder;
 
-public class ApiRouteFilterModule extends AbstractModule {
+public class ApiGatewayFilterModule extends AbstractModule {
 
   @Override
   protected void configure() {
     bindFilterToPredicateConverters();
+    bindMetadataFilterToPredicateConverters();
   }
 
   private void bindFilterToPredicateConverters() {
@@ -22,5 +24,19 @@ public class ApiRouteFilterModule extends AbstractModule {
     binderMap.addBinding(TYPE_NOT_SET).to(EmptyFilterToPredicateConverter.class);
     binderMap.addBinding(ORG_IDS).to(OrgIdFilterToPredicateConverter.class);
     binderMap.addBinding(API_INFO).to(ApiInfoFilterToPredicateConverter.class);
+  }
+
+  private void bindMetadataFilterToPredicateConverters() {
+    final MapBinder<MetadataFilter.TypeCase, MetadataConfigFilterToPredicateConverter> binderMap =
+        MapBinder.newMapBinder(
+            binder(),
+            MetadataFilter.TypeCase.class,
+            MetadataConfigFilterToPredicateConverter.class);
+    binderMap
+        .addBinding(MetadataFilter.TypeCase.TYPE_NOT_SET)
+        .to(EmptyMetadataFilterToPredicateConverter.class);
+    binderMap
+        .addBinding(MetadataFilter.TypeCase.ORG_IDS)
+        .to(OrgIdMetadataFilterToPredicateConverter.class);
   }
 }
