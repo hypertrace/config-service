@@ -149,14 +149,18 @@ public class WafIntegrationConfigRequestValidator {
 
   private void validateUpdatedImpervaIntegrationParam(
       ImpervaIntegrationUpdateParams impervaIntegrationParams) {
-    validateNonDefaultPresenceOrThrow(
-        impervaIntegrationParams, ImpervaIntegrationUpdateParams.API_ID_FIELD_NUMBER);
-    validateImpervaApiKey(impervaIntegrationParams.getApiKey());
+    if (impervaIntegrationParams.hasApiId()) {
+      validateNonDefaultPresenceOrThrow(
+          impervaIntegrationParams, ImpervaIntegrationUpdateParams.API_ID_FIELD_NUMBER);
+    }
+    if (impervaIntegrationParams.hasApiKey()) {
+      validateImpervaApiKey(impervaIntegrationParams.getApiKey());
+    }
   }
 
   private void validateImpervaApiKey(EncryptedText apiKey) {
-    validateNonDefaultPresenceOrThrow(apiKey, apiKey.KEY_ID_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(apiKey, apiKey.VALUE_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(apiKey, EncryptedText.KEY_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(apiKey, EncryptedText.VALUE_FIELD_NUMBER);
   }
 
   private void validateUpdatedAwsIntegrationParams(

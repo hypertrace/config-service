@@ -110,9 +110,20 @@ public class WafIntegrationBuilderUtils {
                 .setName(request.getUpdatedWafIntegrationDetails().getName())
                 .setImpervaIntegrationParams(
                     ImpervaIntegrationParams.newBuilder()
-                        .setApiId(updatedImpervaIntegrationParams.getApiId())
-                        .setApiKey(updatedImpervaIntegrationParams.getApiKey())
-                        .build()))
+                        .setApiId(
+                            updatedImpervaIntegrationParams.hasApiId()
+                                ? updatedImpervaIntegrationParams.getApiId()
+                                : existingWafIntegration
+                                    .getWafIntegrationDetails()
+                                    .getImpervaIntegrationParams()
+                                    .getApiId())
+                        .setApiKey(
+                            updatedImpervaIntegrationParams.hasApiKey()
+                                ? updatedImpervaIntegrationParams.getApiKey()
+                                : existingWafIntegration
+                                    .getWafIntegrationDetails()
+                                    .getImpervaIntegrationParams()
+                                    .getApiKey())))
         .build();
   }
 }

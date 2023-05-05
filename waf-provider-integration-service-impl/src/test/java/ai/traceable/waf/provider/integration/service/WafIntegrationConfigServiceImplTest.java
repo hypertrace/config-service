@@ -378,7 +378,7 @@ class WafIntegrationConfigServiceImplTest {
     UpdatedWafIntegrationDetails updatedDetails =
         UpdatedWafIntegrationDetails.newBuilder()
             .setName("name1")
-            .setDescription("des")
+            .setDescription("des1")
             .setUpdatedImpervaIntegrationParams(
                 ImpervaIntegrationUpdateParams.newBuilder()
                     .setApiId("id-1")
@@ -399,7 +399,31 @@ class WafIntegrationConfigServiceImplTest {
     ImpervaIntegrationParams impervaIntegrationParams =
         updateResponse.getWafIntegration().getWafIntegrationDetails().getImpervaIntegrationParams();
     assertEquals("name1", updateResponse.getWafIntegration().getWafIntegrationDetails().getName());
+    assertEquals(
+        "des1", updateResponse.getWafIntegration().getWafIntegrationDetails().getDescription());
     assertEquals("id-1", impervaIntegrationParams.getApiId());
+    assertEquals("secret-key-id-1", impervaIntegrationParams.getApiKey().getKeyId());
+    assertEquals("secret-value-1", impervaIntegrationParams.getApiKey().getValue());
+
+    updatedDetails =
+        UpdatedWafIntegrationDetails.newBuilder()
+            .setName("name2")
+            .setDescription("des")
+            .setUpdatedImpervaIntegrationParams(
+                ImpervaIntegrationUpdateParams.newBuilder().setApiId("id-2"))
+            .build();
+    updateRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId(id)
+            .setUpdatedWafIntegrationDetails(updatedDetails)
+            .build();
+    updateResponse = wafProviderServiceBlockingStub.updateWafIntegration(updateRequest);
+    impervaIntegrationParams =
+        updateResponse.getWafIntegration().getWafIntegrationDetails().getImpervaIntegrationParams();
+    assertEquals("name2", updateResponse.getWafIntegration().getWafIntegrationDetails().getName());
+    assertEquals(
+        "des", updateResponse.getWafIntegration().getWafIntegrationDetails().getDescription());
+    assertEquals("id-2", impervaIntegrationParams.getApiId());
     assertEquals("secret-key-id-1", impervaIntegrationParams.getApiKey().getKeyId());
     assertEquals("secret-value-1", impervaIntegrationParams.getApiKey().getValue());
   }
