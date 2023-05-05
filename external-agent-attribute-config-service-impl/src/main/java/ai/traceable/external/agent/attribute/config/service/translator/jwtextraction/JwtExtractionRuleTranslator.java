@@ -7,6 +7,7 @@ import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionRule;
 import ai.traceable.jwt.extraction.config.service.v1.JwtLocation;
 import ai.traceable.jwt.extraction.config.service.v1.JwtProcessingInstruction;
+import ai.traceable.jwt.extraction.config.service.v1.Predicate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +68,8 @@ public class JwtExtractionRuleTranslator {
       Optional<AttributeRule.Projector.ConditionalProjector.Predicate>
           topLevelConditionalPredicateOptional =
               jwtExtractionRule.hasPredicate()
+                      && jwtExtractionRule.getPredicate().getPredicateCase()
+                          != Predicate.PredicateCase.PREDICATE_NOT_SET
                   ? Optional.of(
                       predicateTranslator.translatePredicate(jwtExtractionRule.getPredicate()))
                   : Optional.empty();
