@@ -1,7 +1,6 @@
 package ai.traceable.config.utils;
 
 import com.github.f4b6a3.uuid.UuidCreator;
-import com.google.protobuf.ByteString;
 import com.google.protobuf.GeneratedMessageV3;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -25,16 +24,15 @@ public class UuidGenerator {
     return UuidCreator.getNameBasedSha1(NAMESPACE_UUID, value).toString();
   }
 
-  public String generateId(List<? extends GeneratedMessageV3> protoMessages) {
-    return protoMessages.stream()
-        .map(GeneratedMessageV3::toByteString)
-        .reduce(ByteString::concat)
-        .map(ByteString::toByteArray)
-        .map(this::generateId)
-        .orElse(emptyValueUuid);
-  }
-
   public String generateId(String value) {
     return this.generateId(value.getBytes(StandardCharsets.UTF_8));
+  }
+
+  public <T> String generateId(List<T> values) {
+    return values.stream()
+        .map(Object::toString)
+        .reduce(String::concat)
+        .map(this::generateId)
+        .orElse(emptyValueUuid);
   }
 }

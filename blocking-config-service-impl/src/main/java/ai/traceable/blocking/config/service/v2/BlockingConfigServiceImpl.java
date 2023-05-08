@@ -61,7 +61,12 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
                             .stream())
                 .collect(Collectors.toUnmodifiableList());
 
-        String hash = uuidGenerator.generateId(responseElements);
+        String hash =
+            uuidGenerator.generateId(
+                responseElements.stream()
+                    .map(BlockingConfigResponseElement::getHash)
+                    .collect(Collectors.toUnmodifiableList()));
+
         responseBuilder.setHash(hash);
         if (!request.getPreviousHash().equals(hash)) {
           responseBuilder.addAllResponseElements(responseElements);
@@ -75,6 +80,7 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
 
         responseBuilder.setEnabled(true);
       } else {
+        log.warn("Blocking config v2 not enabled for request context: {}", requestContext);
         responseBuilder.setEnabled(false);
       }
       responseObserver.onNext(responseBuilder.build());
