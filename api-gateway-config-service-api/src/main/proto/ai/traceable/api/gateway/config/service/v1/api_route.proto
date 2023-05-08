@@ -22,9 +22,16 @@ message RouteInfo {
   optional string http_method = 4;
   string path = 1;
   optional bool is_deprecated = 2;
+  repeated Policy policies = 5;
 }
 
 message Metadata {
   string org_id = 1;
   GatewayType gateway_type = 2;
+}
+
+message Policy {
+  oneof type {
+    string name = 1;
+  }
 }
