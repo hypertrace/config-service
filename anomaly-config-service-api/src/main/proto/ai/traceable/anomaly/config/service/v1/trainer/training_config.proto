@@ -162,6 +162,7 @@ message VulnerabilityTrainingConfig {
     SqlInjectionErrorBasedTrainingConfig sql_injection_error_based = 18;
     JwtExpiryIssueAtTrainingConfig jwt_expiry_and_issue_at_not_set = 20;
     JwtAlgoWeaknessTrainingConfig jwt_algo_weakness = 19;
+    MissingGatewayPoliciesTrainingConfig missing_gateway_policies = 21;
   }
 }
 
@@ -282,6 +283,23 @@ message MassParameterAssignmentConfig {
 message JwtParamsTrainingConfig {
   ThresholdFamilyConfig threshold_family_config = 1;
   StringList include_param_regexes = 2;
+}
+
+message MissingGatewayPoliciesTrainingConfig {
+  GatewayType gateway_type = 1;
+  repeated RecommendedGatewayPolicy recommended_policies = 2;
+}
+
+message RecommendedGatewayPolicy {
+  oneof type {
+    string policy_name = 1;
+  }
+}
+
+enum GatewayType {
+  GATEWAY_TYPE_UNSPECIFIED = 0;
+  GATEWAY_TYPE_MULESOFT = 1;
+  GATEWAY_TYPE_APIGEE = 2;
 }
 
 message ParamExclusionsConfig {

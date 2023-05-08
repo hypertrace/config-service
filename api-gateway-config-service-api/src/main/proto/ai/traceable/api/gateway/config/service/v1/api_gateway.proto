@@ -7,6 +7,7 @@ option java_multiple_files = true;
 enum GatewayType {
   GATEWAY_TYPE_UNSPECIFIED = 0;
   GATEWAY_TYPE_MULESOFT = 1;
+  GATEWAY_TYPE_APIGEE = 2;
 }
 
 message ConfigMetadata {
