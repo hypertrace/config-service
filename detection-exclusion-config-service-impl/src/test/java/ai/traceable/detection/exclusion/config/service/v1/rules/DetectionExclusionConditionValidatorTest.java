@@ -15,6 +15,8 @@ import ai.traceable.detection.exclusion.config.service.v1.EntityScope;
 import ai.traceable.detection.exclusion.config.service.v1.EntityType;
 import ai.traceable.detection.exclusion.config.service.v1.EventCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpAddressCondition;
+import ai.traceable.detection.exclusion.config.service.v1.IpConnectionType;
+import ai.traceable.detection.exclusion.config.service.v1.IpConnectionTypeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpLocationType;
 import ai.traceable.detection.exclusion.config.service.v1.IpLocationTypeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpReputationCondition;
@@ -727,5 +729,34 @@ class DetectionExclusionConditionValidatorTest {
               .build();
       assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
     }
+  }
+
+  @Test
+  void testValidateIpConnectionTypeCondition() {
+    DetectionExclusionCondition condition =
+        DetectionExclusionCondition.newBuilder()
+            .setIpConnectionTypeCondition(
+                IpConnectionTypeCondition.newBuilder()
+                    .addIpConnectionTypes(IpConnectionType.IP_CONNECTION_TYPE_UNSPECIFIED)
+                    .build())
+            .build();
+    Throwable throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> conditionValidator.validateRuleCondition(condition));
+    assertTrue(
+        throwable
+            .getMessage()
+            .contains("Invalid IP Connection Type : IP_CONNECTION_TYPE_UNSPECIFIED"));
+
+    // valid condition
+    DetectionExclusionCondition condition1 =
+        DetectionExclusionCondition.newBuilder()
+            .setIpConnectionTypeCondition(
+                IpConnectionTypeCondition.newBuilder()
+                    .addIpConnectionTypes(IpConnectionType.IP_CONNECTION_TYPE_MOBILE)
+                    .build())
+            .build();
+    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition1));
   }
 }

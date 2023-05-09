@@ -10,6 +10,8 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCond
 import ai.traceable.detection.exclusion.config.service.v1.EntityScope;
 import ai.traceable.detection.exclusion.config.service.v1.EventCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpAddressCondition;
+import ai.traceable.detection.exclusion.config.service.v1.IpConnectionType;
+import ai.traceable.detection.exclusion.config.service.v1.IpConnectionTypeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpLocationType;
 import ai.traceable.detection.exclusion.config.service.v1.IpLocationTypeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpReputationCondition;
@@ -69,6 +71,9 @@ public class DetectionExclusionConditionValidator {
       case IP_ADDRESS_CONDITION:
         validateIpAddressCondition(condition.getIpAddressCondition());
         break;
+      case IP_CONNECTION_TYPE_CONDITION:
+        validateIpConnectionTypeCondition(condition.getIpConnectionTypeCondition());
+        break;
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription(
@@ -76,6 +81,22 @@ public class DetectionExclusionConditionValidator {
                     "Invalid detection exclusion condition type : %s",
                     condition.getConditionCase()))
             .asRuntimeException();
+    }
+  }
+
+  private void validateIpConnectionTypeCondition(
+      IpConnectionTypeCondition ipConnectionTypeCondition) {
+    validateNonDefaultPresenceOrThrow(
+        ipConnectionTypeCondition, IpConnectionTypeCondition.IP_CONNECTION_TYPES_FIELD_NUMBER);
+    ipConnectionTypeCondition.getIpConnectionTypesList().forEach(this::validateIpConnectionType);
+  }
+
+  private void validateIpConnectionType(IpConnectionType ipConnectionType) {
+    if (ipConnectionType.equals(IpConnectionType.IP_CONNECTION_TYPE_UNSPECIFIED)
+        || ipConnectionType.equals(IpConnectionType.UNRECOGNIZED)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(String.format("Invalid IP Connection Type : %s", ipConnectionType))
+          .asRuntimeException();
     }
   }
 

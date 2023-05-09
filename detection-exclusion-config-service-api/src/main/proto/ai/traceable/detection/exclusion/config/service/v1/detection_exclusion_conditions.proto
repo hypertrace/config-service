@@ -71,6 +71,21 @@ message IpAddressCondition {
   repeated string ip_addresses = 2;
 }
 
+
+message IpConnectionTypeCondition {
+  repeated IpConnectionType ip_connection_types = 1;
+}
+
+enum IpConnectionType {
+  IP_CONNECTION_TYPE_UNSPECIFIED = 0;
+  IP_CONNECTION_TYPE_RESIDENTIAL = 1;
+  IP_CONNECTION_TYPE_MOBILE = 2;
+  IP_CONNECTION_TYPE_CORPORATE= 3;
+  IP_CONNECTION_TYPE_DATA_CENTER = 4;
+  IP_CONNECTION_TYPE_EDUCATION = 5;
+}
+
+
 enum Type {
   TYPE_UNSPECIFIED = 0;
   TYPE_BOOLEAN = 1;
