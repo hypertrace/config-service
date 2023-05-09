@@ -4,6 +4,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
 import ai.traceable.detection.exclusion.config.service.v1.AnomalousAttributeCondition;
+import ai.traceable.detection.exclusion.config.service.v1.AttributeValueType;
 import ai.traceable.detection.exclusion.config.service.v1.CustomRuleEvent;
 import ai.traceable.detection.exclusion.config.service.v1.CustomRuleFamily;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
@@ -24,7 +25,6 @@ import ai.traceable.detection.exclusion.config.service.v1.ScopeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SpanAttributeMatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
-import ai.traceable.detection.exclusion.config.service.v1.Type;
 import ai.traceable.detection.exclusion.config.service.v1.UserIdCondition;
 import ai.traceable.platform.utils.ip.IpValidationUtils;
 import com.google.protobuf.ListValue;
@@ -299,14 +299,15 @@ public class DetectionExclusionConditionValidator {
     }
     validateNonDefaultPresenceOrThrow(
         condition, AnomalousAttributeCondition.OBSERVED_TYPES_FIELD_NUMBER);
-    condition.getObservedTypesList().forEach(this::validateType);
+    condition.getObservedTypesList().forEach(this::validateAttributeValueType);
     validateNonDefaultPresenceOrThrow(
         condition, AnomalousAttributeCondition.LEARNT_TYPES_FIELD_NUMBER);
-    condition.getLearntTypesList().forEach(this::validateType);
+    condition.getLearntTypesList().forEach(this::validateAttributeValueType);
   }
 
-  private void validateType(Type type) {
-    if (type.equals(Type.TYPE_UNSPECIFIED) || type.equals(Type.UNRECOGNIZED)) {
+  private void validateAttributeValueType(AttributeValueType type) {
+    if (type.equals(AttributeValueType.ATTRIBUTE_VALUE_TYPE_UNSPECIFIED)
+        || type.equals(AttributeValueType.UNRECOGNIZED)) {
       throw Status.INVALID_ARGUMENT
           .withDescription(String.format("Invalid type : %s", type))
           .asRuntimeException();

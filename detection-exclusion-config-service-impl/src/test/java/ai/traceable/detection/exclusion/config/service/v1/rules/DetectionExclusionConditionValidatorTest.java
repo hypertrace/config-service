@@ -1,8 +1,8 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
-import static ai.traceable.detection.exclusion.config.service.v1.Type.TYPE_CREDIT_CARD;
-import static ai.traceable.detection.exclusion.config.service.v1.Type.TYPE_DATE;
-import static ai.traceable.detection.exclusion.config.service.v1.Type.TYPE_UNSPECIFIED;
+import static ai.traceable.detection.exclusion.config.service.v1.AttributeValueType.ATTRIBUTE_VALUE_TYPE_CREDIT_CARD;
+import static ai.traceable.detection.exclusion.config.service.v1.AttributeValueType.ATTRIBUTE_VALUE_TYPE_DATE;
+import static ai.traceable.detection.exclusion.config.service.v1.AttributeValueType.ATTRIBUTE_VALUE_TYPE_UNSPECIFIED;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -627,8 +627,9 @@ class DetectionExclusionConditionValidatorTest {
           DetectionExclusionCondition.newBuilder()
               .setAnomalousAttributeCondition(
                   AnomalousAttributeCondition.newBuilder()
-                      .addAllObservedTypes(List.of(TYPE_UNSPECIFIED))
-                      .addAllLearntTypes(List.of(TYPE_CREDIT_CARD, TYPE_DATE))
+                      .addAllObservedTypes(List.of(ATTRIBUTE_VALUE_TYPE_UNSPECIFIED))
+                      .addAllLearntTypes(
+                          List.of(ATTRIBUTE_VALUE_TYPE_CREDIT_CARD, ATTRIBUTE_VALUE_TYPE_DATE))
                       .setKeyMatchCondition(
                           MatchCondition.newBuilder()
                               .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
@@ -639,14 +640,19 @@ class DetectionExclusionConditionValidatorTest {
               StatusRuntimeException.class,
               () -> conditionValidator.validateRuleCondition(condition));
 
-      assertTrue(throwable.getMessage().contains(String.format("Invalid type : TYPE_UNSPECIFIED")));
+      assertTrue(
+          throwable
+              .getMessage()
+              .contains(String.format("Invalid type : ATTRIBUTE_VALUE_TYPE_UNSPECIFIED")));
 
       DetectionExclusionCondition condition1 =
           DetectionExclusionCondition.newBuilder()
               .setAnomalousAttributeCondition(
                   AnomalousAttributeCondition.newBuilder()
-                      .addAllObservedTypes(List.of(TYPE_CREDIT_CARD))
-                      .addAllLearntTypes(List.of(TYPE_CREDIT_CARD, TYPE_UNSPECIFIED))
+                      .addAllObservedTypes(List.of(ATTRIBUTE_VALUE_TYPE_CREDIT_CARD))
+                      .addAllLearntTypes(
+                          List.of(
+                              ATTRIBUTE_VALUE_TYPE_CREDIT_CARD, ATTRIBUTE_VALUE_TYPE_UNSPECIFIED))
                       .setKeyMatchCondition(
                           MatchCondition.newBuilder()
                               .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
@@ -657,7 +663,10 @@ class DetectionExclusionConditionValidatorTest {
               StatusRuntimeException.class,
               () -> conditionValidator.validateRuleCondition(condition1));
 
-      assertTrue(throwable.getMessage().contains(String.format("Invalid type : TYPE_UNSPECIFIED")));
+      assertTrue(
+          throwable
+              .getMessage()
+              .contains(String.format("Invalid type : ATTRIBUTE_VALUE_TYPE_UNSPECIFIED")));
     }
     // valid condition
     {
@@ -665,8 +674,9 @@ class DetectionExclusionConditionValidatorTest {
           DetectionExclusionCondition.newBuilder()
               .setAnomalousAttributeCondition(
                   AnomalousAttributeCondition.newBuilder()
-                      .addAllObservedTypes(List.of(TYPE_CREDIT_CARD))
-                      .addAllLearntTypes(List.of(TYPE_CREDIT_CARD, TYPE_DATE))
+                      .addAllObservedTypes(List.of(ATTRIBUTE_VALUE_TYPE_CREDIT_CARD))
+                      .addAllLearntTypes(
+                          List.of(ATTRIBUTE_VALUE_TYPE_CREDIT_CARD, ATTRIBUTE_VALUE_TYPE_DATE))
                       .setKeyMatchCondition(
                           MatchCondition.newBuilder()
                               .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
