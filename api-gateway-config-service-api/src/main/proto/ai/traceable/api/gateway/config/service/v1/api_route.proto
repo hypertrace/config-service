@@ -31,7 +31,5 @@ message Metadata {
 }
 
 message Policy {
-  oneof type {
-    string name = 1;
-  }
+  string type = 1;
 }
