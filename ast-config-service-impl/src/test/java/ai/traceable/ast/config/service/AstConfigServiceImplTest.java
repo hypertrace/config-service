@@ -11,11 +11,19 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.ast.config.service.rules.RulesManager;
 import ai.traceable.ast.config.service.rules.RulesValidator;
+import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
+import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigResponse;
+import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
+import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesResponse;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigResponse;
+import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
+import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesResponse;
+import ai.traceable.ast.config.service.v1.IdentifyingAttributes;
 import ai.traceable.ast.config.service.v1.ScanPurgeConfig;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigResponse;
+import ai.traceable.ast.config.service.v1.VulnerabilityMetadataOverrides;
 import com.google.protobuf.Duration;
 import io.grpc.Status;
 import io.grpc.Status.Code;
@@ -186,6 +194,184 @@ class AstConfigServiceImplTest {
       verify(responseStreamObserver, times(1))
           .onNext(GetScanPurgeConfigResponse.newBuilder().setPurgeConfig(purgeConfig).build());
       verify(responseStreamObserver, times(1)).onCompleted();
+    }
+  }
+
+  @Nested
+  class testEditVulnerabilityMetadataConfig {
+
+    @Test
+    @DisplayName("Should update metadata on valid request")
+    void should_update_the_plugin_config() {
+      VulnerabilityMetadataOverrides vulnerabilityMetadataOverrides =
+          VulnerabilityMetadataOverrides.newBuilder()
+              .setIdentifyingAttributes(
+                  IdentifyingAttributes.newBuilder()
+                      .setCategory("category")
+                      .setSubcategory("subcategory")
+                      .setMetadataId("metadataId")
+                      .build())
+              .setCvssScore(7.7)
+              .build();
+      EditVulnerabilityMetadataOverridesRequest request =
+          EditVulnerabilityMetadataOverridesRequest.newBuilder()
+              .setVulnerabilityMetadataOverrides(vulnerabilityMetadataOverrides)
+              .build();
+
+      when(rulesManager.updateVulnerabilityMetadataOverridesConfig(any(), eq(request)))
+          .thenReturn(vulnerabilityMetadataOverrides);
+
+      StreamObserver<EditVulnerabilityMetadataOverridesResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+      Runnable runnable =
+          () ->
+              astConfigService.editVulnerabilityMetadataOverrides(request, responseStreamObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onNext(
+              EditVulnerabilityMetadataOverridesResponse.newBuilder()
+                  .setVulnerabilityMetadataOverrides(vulnerabilityMetadataOverrides)
+                  .build());
+      verify(responseStreamObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    @DisplayName("Should throw error on invalid request")
+    void should_not_update_the_plugin_config_on_invalid_request() {
+      VulnerabilityMetadataOverrides vulnerabilityMetadataOverrides =
+          VulnerabilityMetadataOverrides.newBuilder().setCvssScore(7.7).build();
+      EditVulnerabilityMetadataOverridesRequest request =
+          EditVulnerabilityMetadataOverridesRequest.newBuilder()
+              .setVulnerabilityMetadataOverrides(vulnerabilityMetadataOverrides)
+              .build();
+
+      doThrow(Status.INVALID_ARGUMENT.asRuntimeException())
+          .when(rulesValidator)
+          .validateOrThrow(any(), eq(request));
+
+      StreamObserver<EditVulnerabilityMetadataOverridesResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+      Runnable runnable =
+          () ->
+              astConfigService.editVulnerabilityMetadataOverrides(request, responseStreamObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onError(
+              argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INVALID_ARGUMENT));
+    }
+  }
+
+  @Nested
+  class ResetPluginConfigToDefault {
+    @Test
+    @DisplayName("Should reset plugin config on valid request")
+    void should_reset_the_plugin_config_on_valid_request() {
+      String metadataId = "metadata_id";
+      DeleteVulnerabilityMetadataOverridesConfigRequest request =
+          DeleteVulnerabilityMetadataOverridesConfigRequest.newBuilder()
+              .setMetadataId(metadataId)
+              .build();
+
+      when(rulesManager.deleteVulnerabilityMetadataOverridesConfig(any(), eq(request)))
+          .thenReturn(Optional.of(VulnerabilityMetadataOverrides.getDefaultInstance()));
+
+      StreamObserver<DeleteVulnerabilityMetadataOverridesConfigResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+      Runnable runnable =
+          () ->
+              astConfigService.deleteVulnerabilityMetadataOverridesConfig(
+                  request, responseStreamObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onNext(DeleteVulnerabilityMetadataOverridesConfigResponse.newBuilder().build());
+      verify(responseStreamObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    @DisplayName("Should not reset plugin config on invalid request")
+    void should_fail_on_invalid_request() {
+      DeleteVulnerabilityMetadataOverridesConfigRequest request =
+          DeleteVulnerabilityMetadataOverridesConfigRequest.newBuilder().build();
+
+      doThrow(Status.INVALID_ARGUMENT.asRuntimeException())
+          .when(rulesValidator)
+          .validateOrThrow(any(), eq(request));
+
+      StreamObserver<DeleteVulnerabilityMetadataOverridesConfigResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+      Runnable runnable =
+          () ->
+              astConfigService.deleteVulnerabilityMetadataOverridesConfig(
+                  request, responseStreamObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onError(
+              argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INVALID_ARGUMENT));
+    }
+  }
+
+  @Nested
+  class GetVulnerabilityMetadataOverridesOverrides {
+    @Test
+    @DisplayName("Should reset plugin config on valid request")
+    void should_get_vulnerability_metad_overrides_data_on_valid_request() {
+      IdentifyingAttributes identifyingAttributes =
+          IdentifyingAttributes.newBuilder()
+              .setCategory("category")
+              .setSubcategory("subcategory")
+              .setMetadataId("metadataId")
+              .build();
+      String metadataId = "metadata_id";
+      GetVulnerabilityMetadataOverridesRequest request =
+          GetVulnerabilityMetadataOverridesRequest.newBuilder().setMetadataId(metadataId).build();
+
+      when(rulesManager.getVulnerabilityMetadataOverridesConfig(any(), eq(request)))
+          .thenReturn(
+              Optional.of(
+                  VulnerabilityMetadataOverrides.newBuilder()
+                      .setIdentifyingAttributes(identifyingAttributes)
+                      .build()));
+
+      StreamObserver<GetVulnerabilityMetadataOverridesResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+      Runnable runnable =
+          () -> astConfigService.getVulnerabilityMetadataOverrides(request, responseStreamObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onNext(
+              GetVulnerabilityMetadataOverridesResponse.newBuilder()
+                  .setVulnerabilityMetadataOverrides(
+                      VulnerabilityMetadataOverrides.newBuilder()
+                          .setIdentifyingAttributes(identifyingAttributes)
+                          .build())
+                  .build());
+      verify(responseStreamObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    @DisplayName("Should not reset plugin config on invalid request")
+    void should_fail_on_invalid_request() {
+      GetVulnerabilityMetadataOverridesRequest request =
+          GetVulnerabilityMetadataOverridesRequest.newBuilder().build();
+
+      doThrow(Status.INVALID_ARGUMENT.asRuntimeException())
+          .when(rulesValidator)
+          .validateOrThrow(any(), eq(request));
+
+      StreamObserver<GetVulnerabilityMetadataOverridesResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+      Runnable runnable =
+          () -> astConfigService.getVulnerabilityMetadataOverrides(request, responseStreamObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onError(
+              argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INVALID_ARGUMENT));
     }
   }
 }

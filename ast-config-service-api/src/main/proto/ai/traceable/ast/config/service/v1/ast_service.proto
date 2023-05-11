@@ -12,6 +12,13 @@ service AstConfigService {
 
   // write api
   rpc UpdateScanPurgeConfig (UpdateScanPurgeConfigRequest) returns (UpdateScanPurgeConfigResponse) {}
+
+  // edit plugin fields api.
+  rpc EditVulnerabilityMetadataOverrides (EditVulnerabilityMetadataOverridesRequest) returns (EditVulnerabilityMetadataOverridesResponse) {}
+
+  rpc DeleteVulnerabilityMetadataOverridesConfig(DeleteVulnerabilityMetadataOverridesConfigRequest) returns (DeleteVulnerabilityMetadataOverridesConfigResponse) {}
+
+  rpc GetVulnerabilityMetadataOverrides(GetVulnerabilityMetadataOverridesRequest) returns (GetVulnerabilityMetadataOverridesResponse) {}
 }
 
 message UpdateScanPurgeConfigRequest {
@@ -27,3 +34,25 @@ message GetScanPurgeConfigRequest {}
 message GetScanPurgeConfigResponse {
   ScanPurgeConfig purge_config = 1;
 }
+
+message EditVulnerabilityMetadataOverridesRequest {
+  VulnerabilityMetadataOverrides vulnerability_metadata_overrides = 1;
+}
+
+message EditVulnerabilityMetadataOverridesResponse {
+  VulnerabilityMetadataOverrides vulnerability_metadata_overrides = 1;
+}
+
+message GetVulnerabilityMetadataOverridesRequest {
+  string metadata_id = 1;
+}
+
+message GetVulnerabilityMetadataOverridesResponse {
+  VulnerabilityMetadataOverrides vulnerability_metadata_overrides = 1;
+}
+
+message DeleteVulnerabilityMetadataOverridesConfigRequest {
+  string metadata_id = 1;
+}
+
+message DeleteVulnerabilityMetadataOverridesConfigResponse {}

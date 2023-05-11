@@ -3,13 +3,21 @@ package ai.traceable.ast.config.service;
 import ai.traceable.ast.config.service.rules.RulesManager;
 import ai.traceable.ast.config.service.rules.RulesValidator;
 import ai.traceable.ast.config.service.v1.AstConfigServiceGrpc.AstConfigServiceImplBase;
+import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
+import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigResponse;
+import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
+import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesResponse;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigResponse;
+import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
+import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesResponse;
 import ai.traceable.ast.config.service.v1.ScanPurgeConfig;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigResponse;
+import ai.traceable.ast.config.service.v1.VulnerabilityMetadataOverrides;
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
+import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -66,5 +74,78 @@ class AstConfigServiceImpl extends AstConfigServiceImplBase {
 
   private ScanPurgeConfig getDefaultScanPurgeConfig() {
     return ScanPurgeConfig.newBuilder().setPurgeDuration(config.getDefaultPurgeDuration()).build();
+  }
+
+  @Override
+  public void editVulnerabilityMetadataOverrides(
+      EditVulnerabilityMetadataOverridesRequest request,
+      StreamObserver<EditVulnerabilityMetadataOverridesResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      rulesValidator.validateOrThrow(requestContext, request);
+      VulnerabilityMetadataOverrides updatedMetadata =
+          rulesManager.updateVulnerabilityMetadataOverridesConfig(requestContext, request);
+      responseObserver.onNext(
+          EditVulnerabilityMetadataOverridesResponse.newBuilder()
+              .setVulnerabilityMetadataOverrides(updatedMetadata)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(
+          "Unable to update fields for plugin for request {} with context {}",
+          request,
+          requestContext,
+          exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void getVulnerabilityMetadataOverrides(
+      GetVulnerabilityMetadataOverridesRequest request,
+      StreamObserver<GetVulnerabilityMetadataOverridesResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      rulesValidator.validateOrThrow(requestContext, request);
+      Optional<VulnerabilityMetadataOverrides> vulnerabilityMetadataOptional =
+          rulesManager.getVulnerabilityMetadataOverridesConfig(requestContext, request);
+      if (vulnerabilityMetadataOptional.isPresent()) {
+        responseObserver.onNext(
+            GetVulnerabilityMetadataOverridesResponse.newBuilder()
+                .setVulnerabilityMetadataOverrides(vulnerabilityMetadataOptional.get())
+                .build());
+      } else {
+        responseObserver.onNext(GetVulnerabilityMetadataOverridesResponse.newBuilder().build());
+      }
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(
+          "Unable to get vulnerability metadata overrides for plugin for request {} with context {}",
+          request,
+          requestContext,
+          exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void deleteVulnerabilityMetadataOverridesConfig(
+      DeleteVulnerabilityMetadataOverridesConfigRequest request,
+      StreamObserver<DeleteVulnerabilityMetadataOverridesConfigResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      rulesValidator.validateOrThrow(requestContext, request);
+      rulesManager.deleteVulnerabilityMetadataOverridesConfig(requestContext, request);
+      responseObserver.onNext(
+          DeleteVulnerabilityMetadataOverridesConfigResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(
+          "Unable to delete vulnerability metadata config for request {} with context {}",
+          request,
+          requestContext,
+          exception);
+      responseObserver.onError(exception);
+    }
   }
 }

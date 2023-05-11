@@ -184,7 +184,11 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
             wrap(
                 DetectionExclusionConfigServiceFactory.build(
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
-            wrap(AstConfigServiceFactory.build(providers.getLocalChannel(), providers.getConfig())),
+            wrap(
+                AstConfigServiceFactory.build(
+                    providers.getLocalChannel(),
+                    providers.getChangeEventGenerator(),
+                    providers.getConfig())),
             wrap(AstHooksConfigServiceFactory.build(providers.getLocalChannel())),
             wrap(
                 ApiGatewayConfigServiceFactory.build(

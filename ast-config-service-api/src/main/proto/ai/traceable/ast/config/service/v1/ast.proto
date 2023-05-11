@@ -9,3 +9,32 @@ import "google/protobuf/duration.proto";
 message ScanPurgeConfig {
   google.protobuf.Duration purge_duration = 1;
 }
+
+message VulnerabilityMetadataOverrides {
+  IdentifyingAttributes identifying_attributes = 1;
+  map<string, TagValue> customer_defined_tags = 2;
+  optional double cvss_score = 3;
+  optional string cvss_vector_string = 4;
+  optional VulnerabilitySeverity severity = 5;
+
+}
+
+message TagValue {
+  repeated string value = 1;
+}
+
+// The metadata_id is the context key identifier here. The category and subcategory will be used in scan-manager when a
+// config-change event is published to read from plugin template files
+message IdentifyingAttributes {
+  string metadata_id = 1;
+  string category = 2;
+  string subcategory = 3;
+}
+
+enum VulnerabilitySeverity {
+  VULNERABILITY_SEVERITY_UNSPECIFIED = 0;
+  VULNERABILITY_SEVERITY_CRITICAL = 1;
+  VULNERABILITY_SEVERITY_HIGH = 2;
+  VULNERABILITY_SEVERITY_MEDIUM = 3;
+  VULNERABILITY_SEVERITY_LOW = 4;
+}
