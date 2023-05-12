@@ -36,4 +36,5 @@ message GetDataClassificationConfigResponse {
   repeated DataType data_types = 2;
   repeated DataParsingRule data_parsing_rules = 3;
   bool enabled = 4;
+  ObfuscationStrategy obfuscation_strategy = 5;
 }

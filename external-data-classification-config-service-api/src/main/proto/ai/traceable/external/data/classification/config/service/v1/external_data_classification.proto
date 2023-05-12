@@ -99,3 +99,13 @@ enum Operator {
   OPERATOR_EQUALS = 1;
   OPERATOR_MATCHES_REGEX = 2;
 }
+
+message ObfuscationStrategy {
+  HashFunction hash_function = 1;
+  string salt = 2;
+
+  enum HashFunction {
+    HASH_FUNCTION_UNSPECIFIED = 0;
+    HASH_FUNCTION_SHA256 = 1;
+  }
+}
