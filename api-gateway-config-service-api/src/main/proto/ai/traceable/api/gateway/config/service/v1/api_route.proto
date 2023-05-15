@@ -32,4 +32,5 @@ message Metadata {
 
 message Policy {
   string type = 1;
+  optional string name = 2;
 }
