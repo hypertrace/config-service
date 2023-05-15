@@ -6,7 +6,7 @@ option java_multiple_files = true;
 
 message WizIntegration {
   string id = 1;
-  EncryptedText api_token = 2;
+  EncryptedText client_secret = 2;
   WizIntegrationInfo info = 3;
 }
 
@@ -26,4 +26,5 @@ message WizIntegrationInfo {
   string client_id = 3;
   string token_url = 4;
   string api_endpoint_url = 5;
+  string project_id = 6;
 }

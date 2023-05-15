@@ -11,9 +11,11 @@ dependencies {
   implementation(libs.hypertrace.configservice.api)
   implementation(libs.hypertrace.configservice.protoconverter)
   implementation(libs.hypertrace.configservice.validation)
+  implementation(libs.hypertrace.configservice.changeeventgenerator)
   implementation(libs.hypertrace.grpcutils.client)
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.guice)
+  implementation(projects.configUtils)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
