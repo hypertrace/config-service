@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package ai.traceable.saved.filter.config.service.v1;
+
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+message SavedFilter {
+  // Unique ID generated for a saved filter
+  string id = 1;
+  // Name of the saved filter
+  string name = 2;
+  // Usually the entity to which the saved filter is associated to
+  string scope = 3;
+  // Visibility of the saved filter
+  Visibility visibility = 4;
+  // Filtering criteria
+  FilterCriteria filter_criteria = 5;
+  // ID of the user who created the saved filter
+  string created_by_user_id = 6;
+  // Creation timestamp of the saved filter
+  google.protobuf.Timestamp created_timestamp = 7;
+  // Last updated timestamp of the saved filter
+  google.protobuf.Timestamp updated_timestamp = 8;
+}
+
+message Visibility {
+  oneof visibility_type {
+    // The saved filter will be available only for the user who created it
+    PrivateVisibility private = 1;
+    // The saved filter will be available across all users
+    PublicVisibility public = 2;
+  }
+}
+
+message PrivateVisibility {
+}
+
+message PublicVisibility {
+}
+
+message FilterCriteria {
+  oneof filter_condition {
+    LogicalFilterCondition logical_filter = 1;
+    RelationalFilterCondition relational_filter = 2;
+  }
+}
+
+message LogicalFilterCondition {
+  LogicalOperator operator = 1;
+  repeated FilterCriteria filter_criteria = 2;
+}
+
+message RelationalFilterCondition {
+  // Filed name for the filter condition
+  string field_name = 1;
+  // Comparison operator for the condition
+  RelationalOperator operator = 2;
+  // Value to compare with
+  google.protobuf.Value field_value = 3;
+}
+
+enum LogicalOperator {
+  LOGICAL_OPERATOR_UNSPECIFIED = 0;
+  LOGICAL_OPERATOR_AND = 1;
+}
+
+enum RelationalOperator {
+  RELATIONAL_OPERATOR_UNSPECIFIED = 0;
+  RELATIONAL_OPERATOR_EQ = 1;
+  RELATIONAL_OPERATOR_NEQ = 2;
+  RELATIONAL_OPERATOR_IN = 3;
+  RELATIONAL_OPERATOR_NOT_IN = 4;
+}

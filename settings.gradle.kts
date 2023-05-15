@@ -100,4 +100,5 @@ include(":splunk-integration-config-service-api")
 include(":splunk-integration-config-service-impl")
 include(":ast-hooks-config-service-api")
 include(":ast-hooks-config-service-impl")
+include(":saved-filter-config-service-api")
 

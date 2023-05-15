@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package ai.traceable.saved.filter.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/saved/filter/config/service/v1/saved_filter.proto";
+
+service SavedFilterService {
+  // Create a new saved filter
+  rpc CreateSavedFilter(CreateSavedFilterRequest) returns (CreateSavedFilterResponse);
+  // Update an existing saved filter
+  rpc UpdateSavedFilter(UpdateSavedFilterRequest) returns (UpdateSavedFilterResponse);
+  // Delete an existing saved filter
+  rpc DeleteSavedFilter(DeleteSavedFilterRequest) returns (DeleteSavedFilterResponse);
+  // Get saved filters based on the specified fields
+  rpc GetSavedFilters(GetSavedFiltersRequest) returns (GetSavedFiltersResponse);
+}
+
+message CreateSavedFilterRequest {
+  // Name for the saved Filter
+  string name = 1;
+  // Usually the entity to which the saved filter is associated to
+  string scope = 2;
+  // Visibility of the saved Filter
+  Visibility visibility = 3;
+  // Criteria for filtering
+  FilterCriteria filter_criteria = 4;
+}
+
+message CreateSavedFilterResponse {
+  SavedFilter saved_filter = 1;
+}
+
+message UpdateSavedFilterRequest {
+  // Unique ID generated for a saved Filter
+  string id = 1;
+  // Name of the saved Filter
+  string name = 2;
+  // Visibility of the saved Filter
+  Visibility visibility = 3;
+  // Criteria for filtering
+  FilterCriteria filter_criteria = 4;
+}
+
+message UpdateSavedFilterResponse {
+  SavedFilter saved_filter = 1;
+}
+
+message GetSavedFiltersRequest {
+  // user_id will be extracted from the request context and applied as a default filter
+  string scope = 1;
+}
+
+message GetSavedFiltersResponse {
+  repeated SavedFilter saved_filters = 1;
+}
+
+message DeleteSavedFilterRequest {
+  string id = 1;
+}
+
+message DeleteSavedFilterResponse {
+}
