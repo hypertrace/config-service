@@ -65,7 +65,9 @@ public class DefaultCachedApiRouteProvider
   @VisibleForTesting
   DefaultCachedApiRouteProvider(
       final GatewayConfigServiceCacheConfig config,
-      final ChangeEventConsumer<String, List<ApiRoute>> changeEventConsumer,
+      final ChangeEventConsumer<
+              ConfigChangeEventKey, ConfigChangeEventValue, String, List<ApiRoute>>
+          changeEventConsumer,
       final ApiGatewayConfigServiceGrpc.ApiGatewayConfigServiceBlockingStub
           gatewayConfigServiceClient) {
     super(CACHE_NAME, Clock.systemUTC(), config.getTimedCacheConfig(), changeEventConsumer);

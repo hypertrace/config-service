@@ -87,7 +87,11 @@ class DefaultCachedApiRouteProviderTest {
   private static final RequestContext context = RequestContext.forTenantId(CUSTOMER_ID);
 
   @Mock private ApiGatewayConfigServiceBlockingStub mockGatewayConfigServiceClient;
-  @Mock private ChangeEventConsumer<String, List<ApiRoute>> mockChangeEventConsumer;
+
+  @Mock
+  private ChangeEventConsumer<ConfigChangeEventKey, ConfigChangeEventValue, String, List<ApiRoute>>
+      mockChangeEventConsumer;
+
   private DefaultCachedApiRouteProvider apiRouteProvider;
 
   @BeforeEach
