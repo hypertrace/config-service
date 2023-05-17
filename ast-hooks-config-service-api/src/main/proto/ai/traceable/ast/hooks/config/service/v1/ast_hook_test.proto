@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package ai.traceable.ast.hooks.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/ast/hooks/config/service/v1/ast_hook.proto";
+
+message AstHookTest {
+  string id = 1;
+  AstHookDetails ast_hook_details = 2;
+  TestStatus test_status = 3;
+  AllowedRunners allowed_runners = 4;
+  string logs = 5;
+}
+
+message TestHookResult {
+  string id = 1;
+  TestStatus test_status = 2;
+  string logs = 3;
+}
+
+message AllowedRunners {
+  oneof allowed_runners {
+    AllowedRunnersInfo runners_info = 1;
+    bool any_runner = 2;
+  }
+}
+
+message AllowedRunnersInfo {
+  repeated RunnerInfo runners_info = 1;
+}
+
+message RunnerInfo {
+  string id = 1;
+}
+
+enum TestStatus {
+  TEST_STATUS_UNSPECIFIED = 0;
+  TEST_STATUS_PASSED = 1;
+  TEST_STATUS_FAILED = 2;
+  TEST_STATUS_PENDING = 3;
+  TEST_STATUS_ABORTED = 4;
+  TEST_STATUS_RUNNER_ASSIGNED = 5;
+}
+
+message AstHookTestFilter {
+  oneof filter {
+    TestStatusFilter test_status_filter = 1;
+  }
+}
+
+message TestStatusFilter {
+  repeated TestStatus statuses = 1;
+}

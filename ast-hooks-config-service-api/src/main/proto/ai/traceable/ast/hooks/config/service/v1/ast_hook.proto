@@ -8,6 +8,7 @@ message AstHook {
   string id = 1;
   AstHookDetails hook_details = 2;
   string created_by = 3;
+  optional string ast_hook_test_id = 4;
 }
 
 message AstHookDetails {

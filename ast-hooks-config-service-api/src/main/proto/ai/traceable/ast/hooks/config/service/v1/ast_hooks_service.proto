@@ -5,6 +5,7 @@ package ai.traceable.ast.hooks.config.service.v1;
 option java_multiple_files = true;
 
 import "ai/traceable/ast/hooks/config/service/v1/ast_hook.proto";
+import "ai/traceable/ast/hooks/config/service/v1/ast_hook_test.proto";
 
 service AstHooksConfigService {
   rpc CreateAstHook(CreateAstHookRequest) returns (CreateAstHookResponse);
@@ -12,6 +13,11 @@ service AstHooksConfigService {
   rpc DeleteAstHook(DeleteAstHookRequest) returns (DeleteAstHookResponse);
   rpc GetAllAstHooks(GetAllAstHooksRequest) returns (GetAllAstHooksResponse);
   rpc GetAstHook(GetAstHookRequest) returns (GetAstHookResponse);
+  rpc CreateAstHookTest(CreateAstHookTestRequest) returns (CreateAstHookTestResponse);
+  rpc UpdateAstHookTest(UpdateAstHookTestRequest) returns (UpdateAstHookTestResponse);
+  rpc DeleteAstHookTests(DeleteAstHookTestsRequest) returns (DeleteAstHookTestsResponse);
+  rpc GetAstHookTest(GetAstHookTestRequest) returns (GetAstHookTestResponse);
+  rpc GetAstHookTests(GetAstHookTestsRequest) returns (GetAstHookTestsResponse);
 }
 
 message UpdateAstHookRequest {
@@ -56,4 +62,50 @@ message GetAstHookRequest {
 
 message GetAstHookResponse {
   AstHook ast_hook = 1;
+}
+
+message CreateAstHookTestRequest {
+  AstHookDetails hook_details = 1;
+  AllowedRunners allowed_runners = 2;
+}
+
+message CreateAstHookTestResponse {
+  AstHookTest ast_hook_test = 1;
+}
+
+message GetAstHookTestRequest {
+  string id = 1;
+}
+
+message GetAstHookTestResponse {
+  TestHookResult test_hook_result = 1;
+}
+
+message GetAstHookTestsRequest {
+  repeated AstHookTestFilter ast_hook_test_filters = 1;
+}
+
+message GetAstHookTestsResponse {
+  repeated AstHookTest ast_hook_tests = 1;
+}
+
+message DeleteAstHookTestsRequest {
+  repeated string ids = 1;
+}
+
+message DeleteAstHookTestsResponse {}
+
+message UpdateAstHookTestRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string description = 3;
+  optional AstHookType hook_type = 4;
+  optional string code_snippet = 5;
+  optional TestStatus test_status = 6;
+  AllowedRunners allowed_runners = 7;
+  optional string logs = 8;
+}
+
+message UpdateAstHookTestResponse {
+  AstHookTest ast_hook_test = 1;
 }
