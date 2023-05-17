@@ -27,6 +27,8 @@ message RouteInfo {
 
 message Metadata {
   string org_id = 1;
+  // Different from the environment we detect in Traceable
+  string gateway_environment = 3;
   GatewayType gateway_type = 2;
 }
 
