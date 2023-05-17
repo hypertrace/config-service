@@ -12,7 +12,6 @@ dependencies {
   api(projects.iprangeConfigServiceApi)
   api(projects.rateLimitingConfigServiceApi)
   api(projects.maliciousSourcesConfigServiceApi)
-  api(projects.featureCachingClient)
 
   implementation(libs.traceable.opaDistributor.api)
   implementation(libs.traceable.actorService.api)

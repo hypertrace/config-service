@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.inject.Guice;
+import com.google.inject.Stage;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.Channel;
@@ -37,6 +38,7 @@ class RegionConfigServiceModuleTest {
     assertDoesNotThrow(
         () ->
             Guice.createInjector(
+                    Stage.PRODUCTION,
                     new RegionConfigServiceModule(
                         mockChannel,
                         mockConfig,

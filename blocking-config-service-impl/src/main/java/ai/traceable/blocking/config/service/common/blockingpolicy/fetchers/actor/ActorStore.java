@@ -29,6 +29,7 @@ import ai.traceable.platform.actor.v1.Status;
 import ai.traceable.platform.actor.v1.converter.StatusConverter;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
 import java.time.Clock;
@@ -43,6 +44,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Singleton
 public class ActorStore {
   private static final Logger LOGGER = LoggerFactory.getLogger(ActorStore.class);
 

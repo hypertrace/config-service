@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.region.config.service.utils.UuidGenerator;
+import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.EnvironmentScope;
 import ai.traceable.region.config.service.v1.EventSeverity;
@@ -196,7 +196,7 @@ class RegionRulesManagerTest {
 
     @Test
     void shouldCreateRegionRule() {
-      when(uuidGenerator.generateId()).thenReturn("id-1");
+      when(uuidGenerator.generateRandomId()).thenReturn("id-1");
       RegionRuleConditions conditions =
           RegionRuleConditions.newBuilder()
               .setIpReputation(

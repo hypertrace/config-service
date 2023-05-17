@@ -51,7 +51,7 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
   private final RegionStore ipqsRegionStore;
   private final RulesValidator rulesValidator;
   private final RulesManager rulesManager;
-  private ActivityEventProducer activityEventProducer;
+  private final ActivityEventProducer activityEventProducer;
   private final boolean shouldPublishActivityEvents;
   private final FeatureCachingClient featureCachingClient;
 

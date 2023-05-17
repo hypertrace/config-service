@@ -19,17 +19,27 @@ import org.apache.commons.csv.CSVRecord;
 @Slf4j
 public abstract class FileVersionBasedRefresh<T> {
   private final LatestInstantNamedPathFinder latestInstantNamedPathFinder;
+  private Supplier<T> supplier = null;
 
   protected FileVersionBasedRefresh(LatestInstantNamedPathFinder latestInstantNamedPathFinder) {
     this.latestInstantNamedPathFinder = latestInstantNamedPathFinder;
   }
 
-  public Supplier<T> getLatestDataSupplier(FileRefreshConfig config) {
+  public Supplier<T> getLatestDataSupplier() {
+    if (supplier == null) {
+      throw new RuntimeException("VersionBasedRefreshConfig config not found");
+    }
+    return supplier;
+  }
+
+  protected void initializeSupplier(FileRefreshConfig config) {
     switch (config.getMode()) {
       case RESOURCE_FILE:
         T dataFromResources = fetchDataFromResources(config.getResourceFile());
-        return () -> dataFromResources;
+        this.supplier = () -> dataFromResources;
+        break;
       case VERSIONS_DIR:
+        // Using cache to ensure async refresh of data
         LoadingCache<FileRefreshConfig, T> cache =
             CacheBuilder.newBuilder()
                 .refreshAfterWrite(config.getVersionRefreshDuration())
@@ -40,7 +50,8 @@ public abstract class FileVersionBasedRefresh<T> {
         // Seed the cache
         T dataFromVersionedFile = fetchDataFromLatestFile(config);
         cache.put(config, dataFromVersionedFile);
-        return () -> cache.getUnchecked(config);
+        this.supplier = () -> cache.getUnchecked(config);
+        break;
       default:
         throw new IllegalArgumentException(
             "Unsupported VersionBasedRefreshConfig config mode for CsvVersionBasedRefresh");

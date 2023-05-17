@@ -2,12 +2,12 @@ package ai.traceable.blocking.config.service.common.iptype;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleAggregatorBase.GenericIpTypeRuleConverter;
 import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleInfo.IpRangeInfo;
-import ai.traceable.config.utils.refresh.FileRefreshConfig;
 import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import ai.traceable.malicioussources.config.service.v1.IpLocationTypeCondition;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
@@ -23,7 +23,6 @@ import org.mockito.Mockito;
 class IpTypeRuleAggregatorBaseTest {
   @Test
   void testGetEnabledRules() {
-    FileRefreshConfig config = mock(FileRefreshConfig.class);
     IpTypeRulesLoader ipTypeRulesLoader = mock(IpTypeRulesLoader.class);
     BlockingIpTypesClient blockingIpTypesClient = mock(BlockingIpTypesClient.class);
 
@@ -36,6 +35,7 @@ class IpTypeRuleAggregatorBaseTest {
     rule1.getIpv4Ranges().add(new IpRangeInfo(252, 262));
 
     Supplier<List<IpTypeRuleInfo>> ipTypeRuleSupplier = () -> List.of(rule1, rule2);
+    doReturn(ipTypeRuleSupplier).when(ipTypeRulesLoader).getLatestDataSupplier();
 
     when(blockingIpTypesClient.fetchMaliciousSourceRules(any(), any()))
         .thenReturn(
@@ -52,8 +52,6 @@ class IpTypeRuleAggregatorBaseTest {
                                                 IpLocationType.IP_LOCATION_TYPE_HOSTING_PROVIDER))))
                     .build()));
 
-    when(ipTypeRulesLoader.getLatestDataSupplier(any())).thenReturn(ipTypeRuleSupplier);
-
     GenericIpTypeRuleConverter<String> mockIpTypeRuleConverter =
         (GenericIpTypeRuleConverter<String>) Mockito.mock(GenericIpTypeRuleConverter.class);
     // Mock converter response for expected rule
@@ -61,7 +59,7 @@ class IpTypeRuleAggregatorBaseTest {
 
     IpTypeRuleAggregatorBase<String> ipTypeRuleAggregator =
         new IpTypeRuleAggregatorBase<>(
-            config, ipTypeRulesLoader, blockingIpTypesClient, mockIpTypeRuleConverter);
+            ipTypeRulesLoader, blockingIpTypesClient, mockIpTypeRuleConverter);
 
     List<String> enabledBlockingRules =
         ipTypeRuleAggregator.getEnabledBlockingRules(

@@ -1,6 +1,5 @@
 package ai.traceable.blocking.config.service.common.iptype;
 
-import ai.traceable.config.utils.refresh.FileRefreshConfig;
 import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import java.util.List;
@@ -11,17 +10,16 @@ import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class IpTypeRuleAggregatorBase<T> {
-  Supplier<List<IpTypeRuleInfo>> ipTypeRules;
+  Supplier<List<IpTypeRuleInfo>> ipTypeRulesSupplier;
   private final BlockingIpTypesClient blockingIpTypesClient;
   private final GenericIpTypeRuleConverter<T> ipTypeConverter;
 
   @Inject
   public IpTypeRuleAggregatorBase(
-      FileRefreshConfig ipTypeBlockingManagerConfig,
       IpTypeRulesLoader ipTypeRulesLoader,
       BlockingIpTypesClient blockingIpTypesClient,
       GenericIpTypeRuleConverter<T> ipTypeConverter) {
-    this.ipTypeRules = ipTypeRulesLoader.getLatestDataSupplier(ipTypeBlockingManagerConfig);
+    this.ipTypeRulesSupplier = ipTypeRulesLoader.getLatestDataSupplier();
     this.blockingIpTypesClient = blockingIpTypesClient;
     this.ipTypeConverter = ipTypeConverter;
   }
@@ -39,7 +37,7 @@ public class IpTypeRuleAggregatorBase<T> {
             .distinct()
             .collect(Collectors.toUnmodifiableList());
 
-    return ipTypeRules.get().stream()
+    return ipTypeRulesSupplier.get().stream()
         .filter(ipTypeRule -> blockingIpTypes.contains(ipTypeRule.getIpLocationType()))
         .map(ipTypeConverter::convert)
         .collect(Collectors.toUnmodifiableList());

@@ -1,6 +1,6 @@
 package ai.traceable.config.service;
 
-import ai.traceable.blocking.config.service.v1.BlockingConfigServiceFactory;
+import ai.traceable.blocking.config.service.BlockingConfigServiceFactory;
 import ai.traceable.external.agent.attribute.config.service.ExternalAgentAttributeConfigServiceFactory;
 import ai.traceable.external.data.classification.config.service.ExternalDataClassificationConfigServiceFactory;
 import ai.traceable.external.userattribution.config.service.ExternalUserAttributionConfigServiceFactory;
@@ -23,36 +23,33 @@ public class TraceableExternalConfigServiceFactory implements GrpcPlatformServic
   public List<GrpcPlatformService> buildServices(GrpcServiceContainerEnvironment environment) {
     SharedConfigServiceProviders providers =
         providersFactory.getProvidersForEnvironment(environment);
-    return Stream.of(
-            new SensitiveDataConfigServicesProvider(
+    return Stream.concat(
+            Stream.of(
+                new SensitiveDataConfigServicesProvider(
+                        providers.getLocalChannel(),
+                        providers.getConfig(),
+                        environment.getChannelRegistry(),
+                        providers.getChangeEventGenerator(),
+                        providers.getFeatureCachingClient())
+                    .getPiiFilterConfigService(),
+                LocalProcessingConfigServiceFactory.build(
+                    providers.getLocalChannel(),
+                    providers.getConfig(),
+                    providers.getChangeEventGenerator(),
+                    providers.getFeatureCachingClient()),
+                ExternalUserAttributionConfigServiceFactory.build(providers.getLocalChannel()),
+                ExternalAgentAttributeConfigServiceFactory.build(
+                    providers.getLocalChannel(), providers.getFeatureCachingClient()),
+                ExternalDataClassificationConfigServiceFactory.build(
                     providers.getLocalChannel(),
                     providers.getConfig(),
                     environment.getChannelRegistry(),
-                    providers.getChangeEventGenerator(),
-                    providers.getFeatureCachingClient())
-                .getPiiFilterConfigService(),
-            LocalProcessingConfigServiceFactory.build(
-                providers.getLocalChannel(),
-                providers.getConfig(),
-                providers.getChangeEventGenerator(),
-                providers.getFeatureCachingClient()),
+                    providers.getFeatureCachingClient())),
             BlockingConfigServiceFactory.build(
                 providers.getLocalChannel(),
                 providers.getConfig(),
-                environment.getChannelRegistry()),
-            ai.traceable.blocking.config.service.v2.BlockingConfigServiceFactory.build(
-                providers.getLocalChannel(),
-                providers.getConfig(),
-                environment.getChannelRegistry(),
-                providers.getFeatureCachingClient()),
-            ExternalUserAttributionConfigServiceFactory.build(providers.getLocalChannel()),
-            ExternalAgentAttributeConfigServiceFactory.build(
-                providers.getLocalChannel(), providers.getFeatureCachingClient()),
-            ExternalDataClassificationConfigServiceFactory.build(
-                providers.getLocalChannel(),
-                providers.getConfig(),
-                environment.getChannelRegistry(),
-                providers.getFeatureCachingClient()))
+                environment.getChannelRegistry())
+                .stream())
         .map(GrpcPlatformService::new)
         .collect(Collectors.toUnmodifiableList());
   }

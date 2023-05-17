@@ -2,7 +2,6 @@ package ai.traceable.blocking.config.service.v2;
 
 import ai.traceable.blocking.config.service.common.entity.EntityFetcher;
 import ai.traceable.blocking.config.service.v2.BlockingConfigServiceGrpc.BlockingConfigServiceImplBase;
-import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.inject.Inject;
 import com.google.protobuf.Duration;
@@ -23,20 +22,17 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
   private final java.time.Duration agentPollingFrequency;
   private final EntityFetcher entityFetcher;
   private final UuidGenerator uuidGenerator;
-  private final FeatureCachingClient featureCachingClient;
 
   @Inject
   public BlockingConfigServiceImpl(
       Set<BlockingConfigManagerBase> blockingConfigManagers,
       Config config,
       EntityFetcher entityFetcher,
-      UuidGenerator uuidGenerator,
-      FeatureCachingClient featureCachingClient) {
+      UuidGenerator uuidGenerator) {
     this.blockingConfigManagers = blockingConfigManagers;
     this.agentPollingFrequency = config.getDuration(AGENT_POLLING_FREQUENCY_CONFIG_NAME);
     this.entityFetcher = entityFetcher;
     this.uuidGenerator = uuidGenerator;
-    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
@@ -47,42 +43,37 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
 
-      if (featureCachingClient.isBlockingConfigV2Enabled(requestContext)) {
-        Optional<String> environmentId =
-            entityFetcher.getEnvironmentId(requestContext, request.getEnvironment());
+      Optional<String> environmentId =
+          entityFetcher.getEnvironmentId(requestContext, request.getEnvironment());
 
-        List<BlockingConfigResponseElement> responseElements =
-            blockingConfigManagers.stream()
-                .flatMap(
-                    blockingConfigManagerBase ->
-                        blockingConfigManagerBase
-                            .generateBlockingElements(
-                                request.getRequestElementsList(), requestContext, environmentId)
-                            .stream())
-                .collect(Collectors.toUnmodifiableList());
+      List<BlockingConfigResponseElement> responseElements =
+          blockingConfigManagers.stream()
+              .flatMap(
+                  blockingConfigManagerBase ->
+                      blockingConfigManagerBase
+                          .generateBlockingElements(
+                              request.getRequestElementsList(), requestContext, environmentId)
+                          .stream())
+              .collect(Collectors.toUnmodifiableList());
 
-        String hash =
-            uuidGenerator.generateId(
-                responseElements.stream()
-                    .map(BlockingConfigResponseElement::getHash)
-                    .collect(Collectors.toUnmodifiableList()));
+      String hash =
+          uuidGenerator.generateId(
+              responseElements.stream()
+                  .map(BlockingConfigResponseElement::getHash)
+                  .collect(Collectors.toUnmodifiableList()));
 
-        responseBuilder.setHash(hash);
-        if (!request.getPreviousHash().equals(hash)) {
-          responseBuilder.addAllResponseElements(responseElements);
-        }
-
-        responseBuilder.setRefreshAfterDuration(
-            Duration.newBuilder()
-                .setSeconds(agentPollingFrequency.getSeconds())
-                .setNanos(agentPollingFrequency.getNano())
-                .build());
-
-        responseBuilder.setEnabled(true);
-      } else {
-        log.warn("Blocking config v2 not enabled for request context: {}", requestContext);
-        responseBuilder.setEnabled(false);
+      responseBuilder.setHash(hash);
+      if (!request.getPreviousHash().equals(hash)) {
+        responseBuilder.addAllResponseElements(responseElements);
       }
+
+      responseBuilder.setRefreshAfterDuration(
+          Duration.newBuilder()
+              .setSeconds(agentPollingFrequency.getSeconds())
+              .setNanos(agentPollingFrequency.getNano())
+              .build());
+
+      responseBuilder.setEnabled(true);
       responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();
     } catch (RuntimeException | ExecutionException e) {

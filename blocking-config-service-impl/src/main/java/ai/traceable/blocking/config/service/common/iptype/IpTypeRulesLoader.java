@@ -2,9 +2,11 @@ package ai.traceable.blocking.config.service.common.iptype;
 
 import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleInfo.IpRangeInfo;
 import ai.traceable.config.utils.LatestInstantNamedPathFinder;
+import ai.traceable.config.utils.refresh.FileRefreshConfig;
 import ai.traceable.config.utils.refresh.FileVersionBasedRefresh;
 import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
@@ -13,6 +15,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVRecord;
 
+@Singleton
 @Slf4j
 public class IpTypeRulesLoader extends FileVersionBasedRefresh<List<IpTypeRuleInfo>> {
   private static final String START_IP_INT_CSV_HEADER = "start_ip_int";
@@ -32,12 +35,15 @@ public class IpTypeRulesLoader extends FileVersionBasedRefresh<List<IpTypeRuleIn
           IpLocationType.IP_LOCATION_TYPE_HOSTING_PROVIDER);
 
   @Inject
-  public IpTypeRulesLoader(LatestInstantNamedPathFinder latestInstantNamedPathFinder) {
+  public IpTypeRulesLoader(
+      LatestInstantNamedPathFinder latestInstantNamedPathFinder,
+      FileRefreshConfig fileRefreshConfig) {
     super(latestInstantNamedPathFinder);
+    initializeSupplier(fileRefreshConfig);
   }
 
   @Override
-  public List<IpTypeRuleInfo> buildFromRecords(Iterable<CSVRecord> records) {
+  protected List<IpTypeRuleInfo> buildFromRecords(Iterable<CSVRecord> records) {
     if (!records.iterator().hasNext()) {
       log.warn("Received empty highrisk CSV, builder not returning ip types for blocking");
       return Collections.emptyList();

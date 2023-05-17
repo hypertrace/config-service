@@ -1,6 +1,6 @@
 package ai.traceable.region.config.service.rules;
 
-import ai.traceable.region.config.service.utils.UuidGenerator;
+import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.GetRegionRulesFilter;
 import ai.traceable.region.config.service.v1.RegionRule;
@@ -43,7 +43,7 @@ class RegionRulesManager implements RulesManager {
   @Override
   public Optional<RegionRule> createRegionRule(
       RequestContext requestContext, CreateRegionRuleRequest createRuleRequest) {
-    String ruleId = this.uuidGenerator.generateId();
+    String ruleId = this.uuidGenerator.generateRandomId();
     RegionRule regionRule;
     if (createRuleRequest.hasExpirationDetails()) {
       regionRule = createRegionRuleWithExpirationDetails(createRuleRequest, ruleId);

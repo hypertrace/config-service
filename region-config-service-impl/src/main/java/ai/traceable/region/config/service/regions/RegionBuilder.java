@@ -1,8 +1,9 @@
 package ai.traceable.region.config.service.regions;
 
 import ai.traceable.config.utils.LatestInstantNamedPathFinder;
+import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.config.utils.refresh.FileRefreshConfig;
 import ai.traceable.config.utils.refresh.FileVersionBasedRefresh;
-import ai.traceable.region.config.service.utils.UuidGenerator;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -22,9 +23,12 @@ class RegionBuilder extends FileVersionBasedRefresh<Map<String, Region>> {
 
   @Inject
   RegionBuilder(
-      UuidGenerator uuidGenerator, LatestInstantNamedPathFinder latestInstantNamedPathFinder) {
+      LatestInstantNamedPathFinder latestInstantNamedPathFinder,
+      UuidGenerator uuidGenerator,
+      FileRefreshConfig fileRefreshConfig) {
     super(latestInstantNamedPathFinder);
     this.uuidGenerator = uuidGenerator;
+    initializeSupplier(fileRefreshConfig);
   }
 
   @Override
@@ -36,6 +40,7 @@ class RegionBuilder extends FileVersionBasedRefresh<Map<String, Region>> {
         long endIp = Long.parseLong(record.get(END_IP_INT_CSV_HEADER));
         String country = record.get(COUNTRY_CSV_HEADER);
         String isoCode = record.get(ISO_CODE_CSV_HEADER);
+
         String regionId = uuidGenerator.generateId(country);
 
         if (!regionIdToRegionMap.containsKey(regionId)) {

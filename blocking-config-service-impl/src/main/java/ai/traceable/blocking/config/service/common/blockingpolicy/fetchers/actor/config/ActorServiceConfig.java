@@ -1,6 +1,7 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.actor.config;
 
 import ai.traceable.blocking.config.service.common.BlockingDataCacheConfig;
+import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import java.time.Duration;
 import lombok.AccessLevel;
@@ -25,6 +26,7 @@ public class ActorServiceConfig {
   BlockingDataCacheConfig cacheConfig;
   int maxNumberOfActors;
 
+  @Inject
   public ActorServiceConfig(Config config) {
     host = config.getConfig(ACTOR_FETCHER_CONFIG_NAME).getString(HOST_CONFIG_NAME);
     port = config.getConfig(ACTOR_FETCHER_CONFIG_NAME).getInt(PORT_CONFIG_NAME);

@@ -19,14 +19,13 @@ class IpTypeRulesLoaderTest {
   @Test
   void buildIpTypeRules() {
     insertTestDataForVerification();
-    IpTypeRulesLoader builder = new IpTypeRulesLoader(new LatestInstantNamedPathFinder());
-    List<IpTypeRuleInfo> ipTypeRules =
-        builder
-            .getLatestDataSupplier(
-                new FileRefreshConfig(
-                    ConfigFactory.parseMap(
-                        Map.of("mode", "RESOURCE_FILE", "resource.file", "iptype/highrisk.csv"))))
-            .get();
+    IpTypeRulesLoader builder =
+        new IpTypeRulesLoader(
+            new LatestInstantNamedPathFinder(),
+            new FileRefreshConfig(
+                ConfigFactory.parseMap(
+                    Map.of("mode", "RESOURCE_FILE", "resource.file", "iptype/highrisk.csv"))));
+    List<IpTypeRuleInfo> ipTypeRules = builder.getLatestDataSupplier().get();
     assertEquals(5, ipTypeRules.size());
     ipTypeRules.forEach(rule -> assertEquals(testIpTypeRules.get(rule.getIpLocationType()), rule));
   }
