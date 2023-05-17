@@ -34,3 +34,4 @@ directories:
   - waf-provider-integration-service-api/src/main/proto
   - splunk-integration-config-service-api/src/main/proto
   - saved-filter-config-service-api/src/main/proto
+  - session-attribution-config-service-api/src/main/proto

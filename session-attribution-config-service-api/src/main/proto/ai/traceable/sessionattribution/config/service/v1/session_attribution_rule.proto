@@ -1,0 +1,147 @@
+syntax = "proto3";
+
+package ai.traceable.sessionattribution.config.service.v1;
+
+option java_multiple_files = true;
+
+message SessionAttributionRule {
+  string id = 1;
+  string name = 2;
+  optional string description = 3;
+  int32 rank = 4;
+  SessionAttributionRuleScope scope = 5;
+  SessionAttributionRuleStatus status = 6;
+  repeated SessionTokenRule token_rules = 7;
+}
+
+message SessionAttributionRuleScope {
+  // scope matching `OR` within each repeated and `AND` across fields
+  repeated string environment_names = 1;
+  repeated string service_name_regexes = 2;
+  repeated string url_match_regexes = 3;
+}
+
+message SessionAttributionRuleStatus {
+  bool disabled = 1;
+}
+
+message SessionTokenRule {
+  SessionTokenConditionalPredicate conditional_predicate = 1;
+  SessionTokenValueRule token_value_rule = 2;
+  oneof token_type {
+    RequestSessionTokenDetails request_session_token_details = 3;
+    ResponseRefreshTokenDetails response_refresh_token_details = 4;
+    ResponseAccessTokenDetails response_access_token_details = 5;
+  }
+}
+
+message RequestSessionTokenDetails {
+  oneof expiration {
+    JwtExpiration jwt_expiration = 1;
+  }
+}
+
+message ResponseRefreshTokenDetails {
+  oneof expiration {
+    JwtExpiration jwt_expiration = 1;
+    AttributeExpiration attribute_expiration = 2;
+  }
+}
+
+message ResponseAccessTokenDetails {
+  oneof expiration {
+    JwtExpiration jwt_expiration = 1;
+    AttributeExpiration attribute_expiration = 2;
+  }
+}
+
+message JwtExpiration {
+  // empty means standard `exp` claim - expiration timestamp in epoch seconds
+}
+
+message AttributeExpiration {
+  AttributeProjection attribute_projection = 1;
+  ExpirationFormat expiration_format = 2;
+}
+
+enum ExpirationFormat {
+  EXPIRATION_FORMAT_UNSPECIFIED = 0;
+  EXPIRATION_FORMAT_DURATION_SECONDS = 1;
+  EXPIRATION_FORMAT_TIMESTAMP_EPOCH_SECONDS = 2;
+  EXPIRATION_FORMAT_DURATION_MILLIS = 3;
+  EXPIRATION_FORMAT_TIMESTAMP_EPOCH_MILLIS = 4;
+}
+
+message SessionTokenConditionalPredicate {
+  AttributeProjection value_projection = 1;
+  MatchCondition value_match_condition = 2;
+}
+
+message SessionTokenValueRule {
+  AttributeProjection token_value_projection = 1;
+  SessionTokenValueTransformation value_transformation = 2;
+}
+
+message SessionTokenValueTransformation {
+  oneof transformation {
+    ObfuscationStrategy obfuscation_strategy = 1;
+  }
+
+  message ObfuscationStrategy {
+    HashFunction hash_function = 1;
+    string salt = 2;
+
+    enum HashFunction {
+      HASH_FUNCTION_UNSPECIFIED = 0;
+      HASH_FUNCTION_SHA256 = 1;
+    }
+  }
+}
+
+message AttributeProjection {
+  AttributeKeyLocation key_location = 1;
+  MatchCondition key_match_condition = 2;
+  repeated ValueProjection value_projections_in_order = 3;  // empty list means no projection, return the value as-is
+}
+
+enum AttributeKeyLocation {
+  ATTRIBUTE_KEY_LOCATION_UNSPECIFIED = 0;
+  ATTRIBUTE_KEY_LOCATION_HEADER = 1;
+  ATTRIBUTE_KEY_LOCATION_COOKIE = 2;
+  ATTRIBUTE_KEY_LOCATION_BODY = 3;
+}
+
+message MatchCondition {
+  MatchOperator operator = 1;
+  LiteralValue match_value = 2;
+}
+
+enum MatchOperator {
+  MATCH_OPERATOR_UNSPECIFIED = 0;
+  MATCH_OPERATOR_EQUALS = 1;
+  MATCH_OPERATOR_NOT_EQUALS = 2;
+  MATCH_OPERATOR_STARTS_WITH = 3;
+  MATCH_OPERATOR_CONTAINS = 4;
+  MATCH_OPERATOR_MATCHES_REGEX = 5;
+}
+
+message LiteralValue {
+  oneof value { // no selection means null value
+    string string_value = 1;
+  }
+}
+
+message ValueProjection {
+  oneof projection {
+    RegexCaptureGroupProjection regex_capture_group = 1;
+    JsonPathProjection json_path = 2;
+  }
+
+  message RegexCaptureGroupProjection {
+    string regex_capture_group = 1;
+  }
+
+  message JsonPathProjection {
+    string path = 1;
+  }
+}

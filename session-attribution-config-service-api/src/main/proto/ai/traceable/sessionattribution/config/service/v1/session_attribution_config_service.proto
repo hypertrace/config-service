@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package ai.traceable.sessionattribution.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/sessionattribution/config/service/v1/session_attribution_rule.proto";
+
+service SessionAttributionConfigService {
+  rpc GetSessionAttributionRules (GetSessionAttributionRulesRequest) returns (GetSessionAttributionRulesResponse) {}
+  rpc CreateSessionAttributionRule (CreateSessionAttributionRuleRequest) returns (CreateSessionAttributionRuleResponse) {}
+  rpc UpdateSessionAttributionRule (UpdateSessionAttributionRuleRequest) returns (UpdateSessionAttributionRuleResponse) {}
+  rpc DeleteSessionAttributionRule (DeleteSessionAttributionRuleRequest) returns (DeleteSessionAttributionRuleResponse) {}
+  rpc RankSessionAttributionRule (RankSessionAttributionRuleRequest) returns (RankSessionAttributionRuleResponse) {}
+}
+
+message GetSessionAttributionRulesRequest {
+  GetSessionAttributionRulesFilter filter = 1;
+
+  message GetSessionAttributionRulesFilter {
+    SessionAttributionRuleScope scope = 1;
+  }
+}
+
+message GetSessionAttributionRulesResponse {
+  repeated SessionAttributionRule rules = 1;
+}
+
+message CreateSessionAttributionRuleRequest {
+  string name = 1;
+  optional string description = 2;
+  SessionAttributionRuleScope scope = 3;
+  repeated SessionTokenRule token_rules = 4;
+}
+
+message CreateSessionAttributionRuleResponse {
+  SessionAttributionRule rule = 1;
+}
+
+message UpdateSessionAttributionRuleRequest {
+  string id = 1;
+  string name = 2;
+  optional string description = 3;
+  int32 rank = 4;
+  SessionAttributionRuleScope scope = 5;
+  repeated SessionTokenRule token_rules = 6;
+  SessionAttributionRuleStatus status = 7;
+}
+
+message UpdateSessionAttributionRuleResponse {
+  SessionAttributionRule rule = 1;
+}
+
+message DeleteSessionAttributionRuleRequest {
+  string id = 1;
+}
+
+message DeleteSessionAttributionRuleResponse {
+}
+
+message RankSessionAttributionRuleRequest {
+  string id_to_update = 1;
+  optional string preceding_rule_id = 2;
+}
+
+message RankSessionAttributionRuleResponse {
+}
