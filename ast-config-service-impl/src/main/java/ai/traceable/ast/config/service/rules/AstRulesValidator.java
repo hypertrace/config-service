@@ -2,6 +2,7 @@ package ai.traceable.ast.config.service.rules;
 
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
+import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.IdentifyingAttributes;
@@ -63,6 +64,12 @@ class AstRulesValidator implements RulesValidator {
           .withDescription("Request should have metadata_id to update the Plugin")
           .asRuntimeException(requestContext.buildTrailers());
     }
+  }
+
+  @Override
+  public void validateOrThrow(
+      RequestContext requestContext, GetAllVulnerabilityMetadataOverridesRequest request) {
+    validateOrThrow(requestContext);
   }
 
   private void validateOrThrow(RequestContext requestContext) {

@@ -2,6 +2,7 @@ package ai.traceable.ast.config.service.rules;
 
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
+import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
@@ -20,4 +21,7 @@ public interface RulesValidator {
 
   void validateOrThrow(
       RequestContext requestContext, DeleteVulnerabilityMetadataOverridesConfigRequest request);
+
+  void validateOrThrow(
+      RequestContext requestContext, GetAllVulnerabilityMetadataOverridesRequest request);
 }

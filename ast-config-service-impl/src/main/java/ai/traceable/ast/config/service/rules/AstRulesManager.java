@@ -2,12 +2,14 @@ package ai.traceable.ast.config.service.rules;
 
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
+import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.ScanPurgeConfig;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.VulnerabilityMetadataOverrides;
 import com.google.inject.Inject;
 import io.grpc.Status;
+import java.util.List;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,6 +60,12 @@ class AstRulesManager implements RulesManager {
   public Optional<VulnerabilityMetadataOverrides> getVulnerabilityMetadataOverridesConfig(
       RequestContext requestContext, GetVulnerabilityMetadataOverridesRequest request) {
     return vulnerabilityMetadataOverridesStore.getData(requestContext, request.getMetadataId());
+  }
+
+  @Override
+  public List<VulnerabilityMetadataOverrides> getAllVulnerabilityMetadataOverridesConfig(
+      RequestContext requestContext, GetAllVulnerabilityMetadataOverridesRequest request) {
+    return vulnerabilityMetadataOverridesStore.getAllConfigData(requestContext);
   }
 
   @Override

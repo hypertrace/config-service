@@ -15,6 +15,8 @@ import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesCo
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigResponse;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesResponse;
+import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
+import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesResponse;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigResponse;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
@@ -28,6 +30,7 @@ import com.google.protobuf.Duration;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import io.grpc.stub.StreamObserver;
+import java.util.List;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -315,9 +318,9 @@ class AstConfigServiceImplTest {
   }
 
   @Nested
-  class GetVulnerabilityMetadataOverridesOverrides {
+  class GetVulnerabilityMetadataOverrides {
     @Test
-    @DisplayName("Should reset plugin config on valid request")
+    @DisplayName("Should get vulnerability metadata on valid request")
     void should_get_vulnerability_metad_overrides_data_on_valid_request() {
       IdentifyingAttributes identifyingAttributes =
           IdentifyingAttributes.newBuilder()
@@ -354,7 +357,7 @@ class AstConfigServiceImplTest {
     }
 
     @Test
-    @DisplayName("Should not reset plugin config on invalid request")
+    @DisplayName("Should fail on invalid request")
     void should_fail_on_invalid_request() {
       GetVulnerabilityMetadataOverridesRequest request =
           GetVulnerabilityMetadataOverridesRequest.newBuilder().build();
@@ -372,6 +375,48 @@ class AstConfigServiceImplTest {
       verify(responseStreamObserver, times(1))
           .onError(
               argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INVALID_ARGUMENT));
+    }
+  }
+
+  @Nested
+  class GetAllVulnerabilityMetadataOverrides {
+    @Test
+    @DisplayName("Should get all metadata overrides on valid request")
+    void should_get_all_vulnerability_metadata_overrides_data_on_valid_request() {
+      IdentifyingAttributes identifyingAttributes =
+          IdentifyingAttributes.newBuilder()
+              .setCategory("category")
+              .setSubcategory("subcategory")
+              .setMetadataId("metadataId")
+              .build();
+      GetAllVulnerabilityMetadataOverridesRequest request =
+          GetAllVulnerabilityMetadataOverridesRequest.newBuilder().build();
+
+      when(rulesManager.getAllVulnerabilityMetadataOverridesConfig(any(), eq(request)))
+          .thenReturn(
+              List.of(
+                  VulnerabilityMetadataOverrides.newBuilder()
+                      .setIdentifyingAttributes(identifyingAttributes)
+                      .build()));
+
+      StreamObserver<GetAllVulnerabilityMetadataOverridesResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+      Runnable runnable =
+          () ->
+              astConfigService.getAllVulnerabilityMetadataOverrides(
+                  request, responseStreamObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onNext(
+              GetAllVulnerabilityMetadataOverridesResponse.newBuilder()
+                  .addAllVulnerabilityMetadataOverrides(
+                      List.of(
+                          VulnerabilityMetadataOverrides.newBuilder()
+                              .setIdentifyingAttributes(identifyingAttributes)
+                              .build()))
+                  .build());
+      verify(responseStreamObserver, times(1)).onCompleted();
     }
   }
 }

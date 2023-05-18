@@ -7,6 +7,8 @@ import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesCo
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigResponse;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesResponse;
+import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
+import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesResponse;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigResponse;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
@@ -142,6 +144,29 @@ class AstConfigServiceImpl extends AstConfigServiceImplBase {
     } catch (Exception exception) {
       log.error(
           "Unable to delete vulnerability metadata config for request {} with context {}",
+          request,
+          requestContext,
+          exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void getAllVulnerabilityMetadataOverrides(
+      GetAllVulnerabilityMetadataOverridesRequest request,
+      StreamObserver<GetAllVulnerabilityMetadataOverridesResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      rulesValidator.validateOrThrow(requestContext, request);
+      responseObserver.onNext(
+          GetAllVulnerabilityMetadataOverridesResponse.newBuilder()
+              .addAllVulnerabilityMetadataOverrides(
+                  rulesManager.getAllVulnerabilityMetadataOverridesConfig(requestContext, request))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(
+          "Unable to fetch all vulnerability metadata overrides for request {} with context {}",
           request,
           requestContext,
           exception);

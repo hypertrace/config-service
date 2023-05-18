@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
+import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.IdentifyingAttributes;
@@ -194,5 +195,26 @@ class AstRulesValidatorTest {
                 GetVulnerabilityMetadataOverridesRequest.newBuilder()
                     .setMetadataId("metadata_id")
                     .build()));
+  }
+
+  @Test
+  void validateGetAllVulnerabilityMetadataOverridesRequest() {
+
+    // invalid request context
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext,
+                GetAllVulnerabilityMetadataOverridesRequest.getDefaultInstance()));
+
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TENANT_ID));
+
+    // valid request
+    assertDoesNotThrow(
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext,
+                GetAllVulnerabilityMetadataOverridesRequest.getDefaultInstance()));
   }
 }

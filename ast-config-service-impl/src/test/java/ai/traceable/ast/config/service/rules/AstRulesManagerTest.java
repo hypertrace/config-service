@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
+import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.IdentifyingAttributes;
 import ai.traceable.ast.config.service.v1.ScanPurgeConfig;
@@ -290,5 +291,70 @@ class AstRulesManagerTest {
 
     // Check if not present
     assertFalse(responseVulnerabilityMetadataOverrides.isPresent());
+  }
+
+  @Test
+  void testGetAllVulnerabilityMetadataOverrides() {
+    IdentifyingAttributes identifyingAttributes =
+        IdentifyingAttributes.newBuilder()
+            .setCategory("category")
+            .setSubcategory("subcategory")
+            .setMetadataId("metadataId")
+            .build();
+    String metadataId = "metadataId";
+    VulnerabilityMetadataOverrides vulnerabilityMetadata =
+        VulnerabilityMetadataOverrides.newBuilder()
+            .setIdentifyingAttributes(identifyingAttributes)
+            .setCvssScore(7.7)
+            .putAllCustomerDefinedTags(
+                Map.of(
+                    "TAG_NAME_1",
+                    TagValue.newBuilder()
+                        .addAllValue(List.of("VALUE1", "VALUE2", "VALUE3"))
+                        .build(),
+                    "TAG_NAME_2",
+                    TagValue.newBuilder().addAllValue(List.of("VALUE4", "VALUE5")).build()))
+            .build();
+    EditVulnerabilityMetadataOverridesRequest request =
+        EditVulnerabilityMetadataOverridesRequest.newBuilder()
+            .setVulnerabilityMetadataOverrides(vulnerabilityMetadata)
+            .build();
+
+    VulnerabilityMetadataOverrides returnedVulnerabilityMetadataOverrides =
+        rulesManager.updateVulnerabilityMetadataOverridesConfig(requestContext, request);
+    // Check if being stored.
+    assertEquals(vulnerabilityMetadata, returnedVulnerabilityMetadataOverrides);
+
+    GetAllVulnerabilityMetadataOverridesRequest getAllVulnerabilityMetadataOverridesRequest =
+        GetAllVulnerabilityMetadataOverridesRequest.newBuilder().build();
+    List<VulnerabilityMetadataOverrides> responseVulnerabilityMetadataOverrides =
+        rulesManager.getAllVulnerabilityMetadataOverridesConfig(
+            requestContext, getAllVulnerabilityMetadataOverridesRequest);
+
+    // Check if present
+    assertFalse(responseVulnerabilityMetadataOverrides.isEmpty());
+    assertEquals(responseVulnerabilityMetadataOverrides, List.of(vulnerabilityMetadata));
+
+    DeleteVulnerabilityMetadataOverridesConfigRequest
+        deleteVulnerabilityMetadataOverridesConfigRequest =
+            DeleteVulnerabilityMetadataOverridesConfigRequest.newBuilder()
+                .setMetadataId(metadataId)
+                .build();
+    Optional<VulnerabilityMetadataOverrides> deletedVulnerabilityMetadataOverrides =
+        rulesManager.deleteVulnerabilityMetadataOverridesConfig(
+            requestContext, deleteVulnerabilityMetadataOverridesConfigRequest);
+
+    // Check if deleted
+    assertTrue(deletedVulnerabilityMetadataOverrides.isPresent());
+    assertEquals(deletedVulnerabilityMetadataOverrides.get(), vulnerabilityMetadata);
+
+    getAllVulnerabilityMetadataOverridesRequest =
+        GetAllVulnerabilityMetadataOverridesRequest.newBuilder().build();
+    responseVulnerabilityMetadataOverrides =
+        rulesManager.getAllVulnerabilityMetadataOverridesConfig(
+            requestContext, getAllVulnerabilityMetadataOverridesRequest);
+
+    // Check if not present
+    assertTrue(responseVulnerabilityMetadataOverrides.isEmpty());
   }
 }
