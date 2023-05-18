@@ -19,6 +19,9 @@ service AstConfigService {
   rpc DeleteVulnerabilityMetadataOverridesConfig(DeleteVulnerabilityMetadataOverridesConfigRequest) returns (DeleteVulnerabilityMetadataOverridesConfigResponse) {}
 
   rpc GetVulnerabilityMetadataOverrides(GetVulnerabilityMetadataOverridesRequest) returns (GetVulnerabilityMetadataOverridesResponse) {}
+
+  rpc GetAllVulnerabilityMetadataOverrides(GetAllVulnerabilityMetadataOverridesRequest) returns (GetAllVulnerabilityMetadataOverridesResponse) {}
+
 }
 
 message UpdateScanPurgeConfigRequest {
@@ -56,3 +59,9 @@ message DeleteVulnerabilityMetadataOverridesConfigRequest {
 }
 
 message DeleteVulnerabilityMetadataOverridesConfigResponse {}
+
+message GetAllVulnerabilityMetadataOverridesRequest {}
+
+message GetAllVulnerabilityMetadataOverridesResponse {
+  repeated VulnerabilityMetadataOverrides vulnerability_metadata_overrides = 1;
+}
