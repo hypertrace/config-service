@@ -18,7 +18,12 @@ message GetSessionAttributionRulesRequest {
   GetSessionAttributionRulesFilter filter = 1;
 
   message GetSessionAttributionRulesFilter {
-    SessionAttributionRuleScope scope = 1;
+    optional bool disabled = 1;
+    EnvironmentFilter environment_filter = 2;
+
+    message EnvironmentFilter {
+      repeated string environment_names = 1;
+    }
   }
 }
 
