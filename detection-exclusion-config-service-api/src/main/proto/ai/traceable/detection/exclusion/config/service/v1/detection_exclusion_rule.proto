@@ -60,6 +60,7 @@ enum RuleSource{
   RULE_SOURCE_DEFAULT = 1;
   RULE_SOURCE_CUSTOMER = 2;
   RULE_SOURCE_TRACEABLE = 3;
+  RULE_SOURCE_OLD_API = 4;
 }
 
 enum RuleChangeSource {

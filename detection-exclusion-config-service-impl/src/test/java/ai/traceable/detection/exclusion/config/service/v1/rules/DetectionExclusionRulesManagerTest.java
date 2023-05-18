@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -16,6 +17,8 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
+import ai.traceable.detection.exclusion.config.service.v1.rules.migration.DetectionExclusionRulesMigrationManager;
+import ai.traceable.detection.exclusion.config.service.v1.rules.migration.RulesMigrationManager;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -39,13 +42,16 @@ class DetectionExclusionRulesManagerTest {
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     ConfigChangeEventGenerator mockConfigChangeEventGenerator =
         mock(ConfigChangeEventGenerator.class);
+    DetectionExclusionConfigServiceConfig config = new DetectionExclusionConfigServiceConfig();
     DetectionExclusionRulesStore rulesStore =
         new DetectionExclusionRulesStore(
-            configServiceBlockingStub,
-            mockConfigChangeEventGenerator,
-            new DetectionExclusionConfigServiceConfig());
+            configServiceBlockingStub, mockConfigChangeEventGenerator, config);
     uuidGenerator = mock(UuidGenerator.class);
-    rulesManager = new DetectionExclusionRulesManager(rulesStore, uuidGenerator);
+    RulesMigrationManager rulesMigrationManager =
+        mock(DetectionExclusionRulesMigrationManager.class);
+    when(rulesMigrationManager.shouldMigrateFromOldStore(any())).thenReturn(false);
+    rulesManager =
+        new DetectionExclusionRulesManager(rulesStore, uuidGenerator, rulesMigrationManager);
   }
 
   @Test

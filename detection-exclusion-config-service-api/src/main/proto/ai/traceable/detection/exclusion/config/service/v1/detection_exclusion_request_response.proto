@@ -43,5 +43,6 @@ message GetRulesFilter {
   DetectionExclusionRuleScope rule_scope = 2;
   optional bool disabled = 3;
   optional bool hidden = 4;
-  repeated RuleChangeSource rule_change_sources = 5;
+  repeated RuleChangeSource rule_change_sources = 5 [deprecated = true];
+  repeated RuleSource rule_creation_sources = 6;
 }

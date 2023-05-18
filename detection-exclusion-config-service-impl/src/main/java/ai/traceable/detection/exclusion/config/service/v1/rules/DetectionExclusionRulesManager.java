@@ -6,6 +6,7 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
+import ai.traceable.detection.exclusion.config.service.v1.rules.migration.RulesMigrationManager;
 import io.grpc.Status;
 import java.util.List;
 import javax.inject.Inject;
@@ -14,17 +15,24 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class DetectionExclusionRulesManager implements RulesManager {
   private final DetectionExclusionRulesStore rulesStore;
   private final UuidGenerator uuidGenerator;
+  private final RulesMigrationManager rulesMigrationManager;
 
   @Inject
   public DetectionExclusionRulesManager(
-      DetectionExclusionRulesStore rulesStore, UuidGenerator uuidGenerator) {
+      DetectionExclusionRulesStore rulesStore,
+      UuidGenerator uuidGenerator,
+      RulesMigrationManager rulesMigrationManager) {
     this.rulesStore = rulesStore;
     this.uuidGenerator = uuidGenerator;
+    this.rulesMigrationManager = rulesMigrationManager;
   }
 
   @Override
   public List<DetectionExclusionRule> getDetectionExclusionRules(
       RequestContext requestContext, GetRulesFilter filter) {
+    if (rulesMigrationManager.shouldMigrateFromOldStore(requestContext)) {
+      rulesMigrationManager.updateDetectionExclusionRulesFromOldStore(requestContext);
+    }
     if (filter.equals(GetRulesFilter.getDefaultInstance())) {
       return rulesStore.getAllConfigData(requestContext);
     }

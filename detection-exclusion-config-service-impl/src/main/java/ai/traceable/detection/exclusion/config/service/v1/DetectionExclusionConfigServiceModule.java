@@ -1,9 +1,11 @@
 package ai.traceable.detection.exclusion.config.service.v1;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesValidator;
 import ai.traceable.detection.exclusion.config.service.v1.rules.RulesManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.RulesValidator;
+import ai.traceable.detection.exclusion.config.service.v1.rules.migration.DetectionExclusionRulesMigrationModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import io.grpc.BindableService;
@@ -15,11 +17,15 @@ import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProvide
 class DetectionExclusionConfigServiceModule extends AbstractModule {
   private final Channel channel;
   private final ConfigChangeEventGenerator configChangeEventGenerator;
+  private final FeatureCachingClient featureCachingClient;
 
   DetectionExclusionConfigServiceModule(
-      Channel channel, ConfigChangeEventGenerator configChangeEventGenerator) {
+      Channel channel,
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      FeatureCachingClient featureCachingClient) {
     this.channel = channel;
     this.configChangeEventGenerator = configChangeEventGenerator;
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
@@ -28,6 +34,8 @@ class DetectionExclusionConfigServiceModule extends AbstractModule {
     bind(RulesManager.class).to(DetectionExclusionRulesManager.class);
     bind(RulesValidator.class).to(DetectionExclusionRulesValidator.class);
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
+
+    install(new DetectionExclusionRulesMigrationModule(featureCachingClient));
   }
 
   @Provides

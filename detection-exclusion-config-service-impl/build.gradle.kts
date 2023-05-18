@@ -6,6 +6,8 @@ plugins {
 
 dependencies {
   api(projects.detectionExclusionConfigServiceApi)
+  api(projects.anomalyConfigServiceImpl)
+  api(projects.featureCachingClient)
   api(libs.hypertrace.configservice.api)
 
   implementation(projects.configUtils)
