@@ -683,6 +683,17 @@ class DetectionExclusionConditionValidatorTest {
                               .setValue(Value.newBuilder().setStringValue("abc.*"))))
               .build();
       assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+
+      DetectionExclusionCondition condition1 =
+          DetectionExclusionCondition.newBuilder()
+              .setAnomalousAttributeCondition(
+                  AnomalousAttributeCondition.newBuilder()
+                      .setKeyMatchCondition(
+                          MatchCondition.newBuilder()
+                              .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                              .setValue(Value.newBuilder().setStringValue("abc.*"))))
+              .build();
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition1));
     }
   }
 

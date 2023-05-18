@@ -297,11 +297,7 @@ public class DetectionExclusionConditionValidator {
     if (condition.hasValueMatchCondition()) {
       validateMatchCondition(condition.getValueMatchCondition());
     }
-    validateNonDefaultPresenceOrThrow(
-        condition, AnomalousAttributeCondition.OBSERVED_TYPES_FIELD_NUMBER);
     condition.getObservedTypesList().forEach(this::validateAttributeValueType);
-    validateNonDefaultPresenceOrThrow(
-        condition, AnomalousAttributeCondition.LEARNT_TYPES_FIELD_NUMBER);
     condition.getLearntTypesList().forEach(this::validateAttributeValueType);
   }
 
