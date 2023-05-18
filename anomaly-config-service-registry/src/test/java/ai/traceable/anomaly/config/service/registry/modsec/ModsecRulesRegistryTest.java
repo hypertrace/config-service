@@ -233,6 +233,7 @@ public class ModsecRulesRegistryTest {
     List<String> subRulesRead =
         Arrays.asList(loadModsecFileContents("modsec/modsec-all-rules.txt").split("\\n"));
     Collections.sort(subRulesRead);
+
     List<String> subRulesCollected =
         anomalyRuleInfos.values().stream()
             .flatMap(rule -> rule.getSubRuleInfosList().stream())
@@ -242,7 +243,9 @@ public class ModsecRulesRegistryTest {
                       new StringBuilder(
                           anomalySubRuleInfo.getRuleId()
                               + " :: "
-                              + anomalySubRuleInfo.getRuleName());
+                              + anomalySubRuleInfo.getRuleName()
+                              + " :: "
+                              + anomalySubRuleInfo.getSeverityLevel());
                   String labels =
                       anomalySubRuleInfo.getEventLabelsMap().entrySet().stream()
                           .map(entry -> String.format("'%s:%s'", entry.getKey(), entry.getValue()))
