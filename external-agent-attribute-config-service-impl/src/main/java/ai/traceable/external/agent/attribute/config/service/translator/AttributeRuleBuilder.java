@@ -76,7 +76,7 @@ public class AttributeRuleBuilder {
         .build();
   }
 
-  private Action buildAttributeAdditionAction(String key, String value) {
+  public Action buildAttributeAdditionAction(String key, String value) {
     return Action.newBuilder()
         .setAttributeAddition(
             AttributeAddition.newBuilder()

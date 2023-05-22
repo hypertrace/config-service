@@ -1,0 +1,26 @@
+{
+  "id": "multiple-condition-rule-id",
+  "rank": 1,
+  "enabled": true,
+  "conditions": [
+    {
+      "attributeCondition": {
+        "attributeKey": "first-key",
+        "operator": "CONDITION_MATCH_OPERATOR_EQUALS",
+        "value": "first key value"
+      }
+    },
+    {
+      "attributeCondition": {
+        "attributeKey": "second-key",
+        "operator": "CONDITION_MATCH_OPERATOR_MATCHES_REGEX",
+        "value": "second-regex$"
+      }
+    }
+  ],
+  "action": {
+    "staticNameAssignment": {
+      "serviceName": "multiple condition service name"
+    }
+  }
+}

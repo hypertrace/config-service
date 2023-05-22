@@ -20,6 +20,12 @@ import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceG
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionRule;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionRuleFilter;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionRuleScope;
+import ai.traceable.span.processing.config.service.v1.GetServiceNamingRulesRequest;
+import ai.traceable.span.processing.config.service.v1.ServiceNamingRule;
+import ai.traceable.span.processing.config.service.v1.ServiceNamingRuleFilter;
+import ai.traceable.span.processing.config.service.v1.ServiceNamingRuleScope;
+import ai.traceable.span.processing.config.service.v1.ServiceNamingRuleScope.EnvironmentScope;
+import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub;
 import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest;
 import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest.GetUserAttributionRulesFilter;
 import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest.GetUserAttributionRulesFilter.ScopeFilter;
@@ -49,6 +55,7 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
   private final UserAttributionConfigServiceBlockingStub userAttributionRuleStub;
   private final AuthDetectionConfigServiceBlockingStub authDetectionConfigServiceBlockingStub;
   private final JwtExtractionConfigServiceBlockingStub jwtExtractionBlockingStub;
+  private final SpanProcessingConfigServiceBlockingStub spanProcessingConfigServiceBlockingStub;
   private final ExternalAgentAttributeRuleTranslator ruleTranslator;
   private final ExternalAgentAttributeRuleResponseBuilder responseBuilder;
   private final FeatureCachingClient featureCachingClient;
@@ -84,9 +91,7 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
                       getTPAVersion(request.getAgentCapabilities()),
                       JWT_EXTRACTION_MIN_TPA_VERSION)));
       List<AttributeRule> rules = attributeRulesCache.getUnchecked(agentAttributeIdentifier);
-      responseObserver.onNext(
-          this.responseBuilder.buildEnabledResponse(
-              request, ruleTranslator.condenseToSingleRule(rules)));
+      responseObserver.onNext(this.responseBuilder.buildEnabledResponse(request, rules));
       responseObserver.onCompleted();
     } catch (Exception exception) {
       log.error("Unable to get rules", exception);
@@ -96,6 +101,7 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
 
   private List<AttributeRule> fetchAgentAttributeRules(
       ContextualKey<AgentAttributeIdentifier> agentAttributeIdentifierContextualKey) {
+
     RequestContext requestContext = agentAttributeIdentifierContextualKey.getContext();
     Optional<String> environmentName =
         agentAttributeIdentifierContextualKey.getData().getEnvironmentName();
@@ -106,7 +112,8 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
         fetchAuthDetectionRules(requestContext, environmentName),
         jwtExtractionSupported
             ? fetchActiveJwtExtractionRules(requestContext, environmentName)
-            : Collections.emptyList());
+            : Collections.emptyList(),
+        fetchServiceNamingRules(requestContext, environmentName));
   }
 
   private List<UserAttributionRule> fetchActiveUserAttributionRules(
@@ -206,5 +213,31 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
         .map(GetAgentAttributeRulesRequest.Component::getTraceablePlatformAgentVersion)
         .findFirst()
         .orElse("0.0.0");
+  }
+
+  private List<ServiceNamingRule> fetchServiceNamingRules(
+      RequestContext requestContext, Optional<String> maybeEnvName) {
+
+    GetServiceNamingRulesRequest request =
+        maybeEnvName
+            .map(
+                envName ->
+                    GetServiceNamingRulesRequest.newBuilder()
+                        .setFilter(
+                            ServiceNamingRuleFilter.newBuilder()
+                                .setScope(
+                                    ServiceNamingRuleScope.newBuilder()
+                                        .setEnvironmentScope(
+                                            EnvironmentScope.newBuilder()
+                                                .addEnvironmentNames(envName))))
+                        .build())
+            .orElseGet(GetServiceNamingRulesRequest::getDefaultInstance);
+    return requestContext.call(
+        () ->
+            List.copyOf(
+                this.spanProcessingConfigServiceBlockingStub
+                    .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
+                    .getServiceNamingRules(request)
+                    .getRulesList()));
   }
 }

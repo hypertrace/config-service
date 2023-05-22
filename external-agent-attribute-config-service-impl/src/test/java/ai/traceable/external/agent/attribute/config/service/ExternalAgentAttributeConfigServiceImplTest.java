@@ -21,6 +21,10 @@ import ai.traceable.jwt.extraction.config.service.v1.GetJwtExtractionRulesReques
 import ai.traceable.jwt.extraction.config.service.v1.GetJwtExtractionRulesResponse;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc.JwtExtractionConfigServiceImplBase;
+import ai.traceable.span.processing.config.service.v1.GetServiceNamingRulesRequest;
+import ai.traceable.span.processing.config.service.v1.GetServiceNamingRulesResponse;
+import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
+import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceImplBase;
 import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest;
 import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesResponse;
 import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServiceGrpc;
@@ -50,6 +54,7 @@ class ExternalAgentAttributeConfigServiceImplTest {
         .addService(new MockUserAttributionService())
         .addService(new MockAuthDetectionConfigService())
         .addService(new MockJwtExtractionConfigService())
+        .addService(new MockSpanProcessingConfigService())
         .addService(
             new ExternalAgentAttributeConfigServiceImpl(
                 UserAttributionConfigServiceGrpc.newBlockingStub(
@@ -57,6 +62,8 @@ class ExternalAgentAttributeConfigServiceImplTest {
                 AuthDetectionConfigServiceGrpc.newBlockingStub(
                     this.mockGenericConfigService.channel()),
                 JwtExtractionConfigServiceGrpc.newBlockingStub(
+                    this.mockGenericConfigService.channel()),
+                SpanProcessingConfigServiceGrpc.newBlockingStub(
                     this.mockGenericConfigService.channel()),
                 mockRuleTranslator,
                 new ExternalAgentAttributeRuleResponseBuilder(mockUuidGenerator),
@@ -120,6 +127,16 @@ class ExternalAgentAttributeConfigServiceImplTest {
         GetJwtExtractionRulesRequest request,
         StreamObserver<GetJwtExtractionRulesResponse> responseObserver) {
       responseObserver.onNext(GetJwtExtractionRulesResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    }
+  }
+
+  private static class MockSpanProcessingConfigService extends SpanProcessingConfigServiceImplBase {
+    @Override
+    public void getServiceNamingRules(
+        GetServiceNamingRulesRequest request,
+        StreamObserver<GetServiceNamingRulesResponse> responseObserver) {
+      responseObserver.onNext(GetServiceNamingRulesResponse.getDefaultInstance());
       responseObserver.onCompleted();
     }
   }

@@ -1,0 +1,54 @@
+{
+  "projector": {
+    "firstMatchingProjector": {
+      "attributeRules": [
+        {
+          "projector": {
+            "conditionalProjector": {
+              "predicate": {
+                "attributePredicate": {
+                  "namePredicate": {
+                    "operator": "COMPARISON_OPERATOR_EQUALS",
+                    "value": "single-key"
+                  },
+                  "valuePredicate": {
+                    "operator": "COMPARISON_OPERATOR_EQUALS",
+                    "value": "single key value"
+                  }
+                }
+              },
+              "attributeRule": {
+                "initialActions": [
+                  {
+                    "attributeAddition": {
+                      "attributeKey": "traceableai.service.name",
+                      "valueProjectionRule": {
+                        "projector": {
+                          "valueProjector": {
+                            "value": "single condition service name"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "attributeAddition": {
+                      "attributeKey": "traceableai.servicenaming.rule",
+                      "valueProjectionRule": {
+                        "projector": {
+                          "valueProjector": {
+                            "value": "single-condition-rule-id"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

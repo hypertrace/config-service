@@ -1,0 +1,73 @@
+{
+  "projector": {
+    "firstMatchingProjector": {
+      "attributeRules": [
+        {
+          "projector": {
+            "conditionalProjector": {
+              "predicate": {
+                "logicalPredicate": {
+                  "operator": "LOGICAL_OPERATOR_AND",
+                  "children": [
+                    {
+                      "attributePredicate": {
+                        "namePredicate": {
+                          "operator": "COMPARISON_OPERATOR_EQUALS",
+                          "value": "first-key"
+                        },
+                        "valuePredicate": {
+                          "operator": "COMPARISON_OPERATOR_EQUALS",
+                          "value": "first key value"
+                        }
+                      }
+                    },
+                    {
+                      "attributePredicate": {
+                        "namePredicate": {
+                          "operator": "COMPARISON_OPERATOR_EQUALS",
+                          "value": "second-key"
+                        },
+                        "valuePredicate": {
+                          "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                          "value": "second-regex$"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "attributeRule": {
+                "initialActions": [
+                  {
+                    "attributeAddition": {
+                      "attributeKey": "traceableai.service.name",
+                      "valueProjectionRule": {
+                        "projector": {
+                          "valueProjector": {
+                            "value": "multiple condition service name"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "attributeAddition": {
+                      "attributeKey": "traceableai.servicenaming.rule",
+                      "valueProjectionRule": {
+                        "projector": {
+                          "valueProjector": {
+                            "value": "multiple-condition-rule-id"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

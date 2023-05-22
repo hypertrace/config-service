@@ -2,12 +2,13 @@ package ai.traceable.external.agent.attribute.config.service.translator;
 
 import ai.traceable.auth.detection.config.service.v1.AuthDetectionRule;
 import ai.traceable.external.agent.attribute.config.service.translator.jwtextraction.JwtExtractionRuleTranslator;
+import ai.traceable.external.agent.attribute.config.service.translator.servicenaming.ServiceNamingRuleTranslator;
 import ai.traceable.external.agent.attribute.config.service.translator.userattribution.UserAttributionRuleTranslatorLookup;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionRule;
+import ai.traceable.span.processing.config.service.v1.ServiceNamingRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -24,14 +25,15 @@ public class ExternalAgentAttributeRuleTranslator {
   private final AttributeRuleBuilder attributeRuleBuilder;
   private final UrlScopeTranslator urlScopeTranslator;
   private final AuthTypeAttributeRuleBuilder authTypeRuleBuilder;
-
   private final UserAttributionRuleTranslatorLookup ruleTranslatorLookup;
   private final JwtExtractionRuleTranslator jwtExtractionRuleTranslator;
+  private final ServiceNamingRuleTranslator serviceNamingRuleTranslator;
 
   public List<AttributeRule> translateRules(
       List<UserAttributionRule> userAttributionRules,
       List<AuthDetectionRule> authDetectionRules,
-      List<JwtExtractionRule> jwtExtractionRules) {
+      List<JwtExtractionRule> jwtExtractionRules,
+      List<ServiceNamingRule> serviceNamingRules) {
     List<AttributeRule> agentAttributeRules = new ArrayList<>();
     getAttributeRuleForUserId(userAttributionRules).ifPresent(agentAttributeRules::add);
     getAttributeRuleForUserRole(userAttributionRules).ifPresent(agentAttributeRules::add);
@@ -42,13 +44,9 @@ public class ExternalAgentAttributeRuleTranslator {
     jwtExtractionRuleTranslator
         .translateJwtExtractionRules(jwtExtractionRules)
         .forEach(agentAttributeRules::add);
-    return Collections.unmodifiableList(agentAttributeRules);
-  }
 
-  public List<AttributeRule> condenseToSingleRule(List<AttributeRule> rules) {
-    return rules.isEmpty()
-        ? Collections.emptyList()
-        : List.of(attributeRuleBuilder.buildRuleForEachMatchingProjector(rules));
+    serviceNamingRuleTranslator.buildRule(serviceNamingRules).ifPresent(agentAttributeRules::add);
+    return List.copyOf(agentAttributeRules);
   }
 
   private Optional<AttributeRule> getAttributeRuleForUserId(List<UserAttributionRule> rules) {

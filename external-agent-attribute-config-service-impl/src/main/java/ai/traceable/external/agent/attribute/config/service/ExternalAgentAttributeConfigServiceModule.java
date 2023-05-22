@@ -8,6 +8,8 @@ import ai.traceable.external.agent.attribute.config.service.translator.jwtextrac
 import ai.traceable.external.agent.attribute.config.service.translator.userattribution.UserAttributionRuleTranslationModule;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc.JwtExtractionConfigServiceBlockingStub;
+import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
+import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub;
 import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServiceGrpc;
 import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServiceGrpc.UserAttributionConfigServiceBlockingStub;
 import com.google.inject.AbstractModule;
@@ -52,6 +54,13 @@ class ExternalAgentAttributeConfigServiceModule extends AbstractModule {
   @Provides
   JwtExtractionConfigServiceBlockingStub provideJwtExtractionStub() {
     return JwtExtractionConfigServiceGrpc.newBlockingStub(this.channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  SpanProcessingConfigServiceBlockingStub provideSpanProcessingStub() {
+    return SpanProcessingConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

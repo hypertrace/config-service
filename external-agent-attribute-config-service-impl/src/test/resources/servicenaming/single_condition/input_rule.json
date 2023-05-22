@@ -1,0 +1,19 @@
+{
+  "id": "single-condition-rule-id",
+  "rank": 2,
+  "enabled": true,
+  "conditions": [
+    {
+      "attributeCondition": {
+        "attributeKey": "single-key",
+        "operator": "CONDITION_MATCH_OPERATOR_EQUALS",
+        "value": "single key value"
+      }
+    }
+  ],
+  "action": {
+    "staticNameAssignment": {
+      "serviceName": "single condition service name"
+    }
+  }
+}
