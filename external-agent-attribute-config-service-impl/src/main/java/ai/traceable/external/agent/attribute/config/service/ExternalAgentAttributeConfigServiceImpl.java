@@ -126,19 +126,18 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
     try {
       return requestContext.call(
           () ->
-              List.copyOf(
-                  userAttributionRuleStub
-                      .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
-                      .getUserAttributionRules(
-                          GetUserAttributionRulesRequest.newBuilder()
-                              .setFilter(
-                                  GetUserAttributionRulesFilter.newBuilder()
-                                      .setScopeFilter(
-                                          ScopeFilter.newBuilder()
-                                              .setEnvironmentScopeFilter(environmentScopeFilter))
-                                      .setDisabled(false))
-                              .build())
-                      .getRulesList()));
+              userAttributionRuleStub
+                  .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
+                  .getUserAttributionRules(
+                      GetUserAttributionRulesRequest.newBuilder()
+                          .setFilter(
+                              GetUserAttributionRulesFilter.newBuilder()
+                                  .setScopeFilter(
+                                      ScopeFilter.newBuilder()
+                                          .setEnvironmentScopeFilter(environmentScopeFilter))
+                                  .setDisabled(false))
+                          .build())
+                  .getRulesList());
     } catch (Exception e) {
       log.error("Failed to fetch user attribution rules. RequestContest {}", requestContext, e);
     }
@@ -162,11 +161,10 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
     try {
       return requestContext.call(
           () ->
-              List.copyOf(
-                  authDetectionConfigServiceBlockingStub
-                      .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
-                      .getAuthDetectionRules(authDetectionRulesRequest)
-                      .getRulesList()));
+              authDetectionConfigServiceBlockingStub
+                  .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
+                  .getAuthDetectionRules(authDetectionRulesRequest)
+                  .getRulesList());
     } catch (Exception e) {
       log.error("Failed to fetch auth detection rules. RequestContest {}", requestContext, e);
     }
@@ -187,14 +185,13 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
     try {
       return requestContext.call(
           () ->
-              List.copyOf(
-                  jwtExtractionBlockingStub
-                      .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
-                      .getJwtExtractionRules(
-                          GetJwtExtractionRulesRequest.newBuilder()
-                              .setFilter(filterBuilder.build())
-                              .build())
-                      .getRulesList()));
+              jwtExtractionBlockingStub
+                  .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
+                  .getJwtExtractionRules(
+                      GetJwtExtractionRulesRequest.newBuilder()
+                          .setFilter(filterBuilder.build())
+                          .build())
+                  .getRulesList());
     } catch (Exception e) {
       log.error("Failed to fetch jwt extraction rules. RequestContest {}", requestContext, e);
     }
@@ -234,10 +231,9 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
             .orElseGet(GetServiceNamingRulesRequest::getDefaultInstance);
     return requestContext.call(
         () ->
-            List.copyOf(
-                this.spanProcessingConfigServiceBlockingStub
-                    .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
-                    .getServiceNamingRules(request)
-                    .getRulesList()));
+            this.spanProcessingConfigServiceBlockingStub
+                .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
+                .getServiceNamingRules(request)
+                .getRulesList());
   }
 }
