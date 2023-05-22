@@ -26,7 +26,7 @@ message SessionAttributionRuleStatus {
 }
 
 message SessionTokenRule {
-  SessionTokenConditionalPredicate conditional_predicate = 1;
+  Predicate token_conditional_predicate = 1;
   SessionTokenValueRule token_value_rule = 2;
   oneof token_type {
     RequestSessionTokenDetails request_session_token_details = 3;
@@ -36,22 +36,25 @@ message SessionTokenRule {
 }
 
 message RequestSessionTokenDetails {
+  RequestAttributeKeyLocation token_location = 1;
   oneof expiration {
-    JwtExpiration jwt_expiration = 1;
+    JwtExpiration jwt_expiration = 2;
   }
 }
 
 message ResponseRefreshTokenDetails {
+  ResponseAttributeKeyLocation token_location = 1;
   oneof expiration {
-    JwtExpiration jwt_expiration = 1;
-    AttributeExpiration attribute_expiration = 2;
+    JwtExpiration jwt_expiration = 2;
+    AttributeExpiration attribute_expiration = 3;
   }
 }
 
 message ResponseAccessTokenDetails {
+  ResponseAttributeKeyLocation token_location = 1;
   oneof expiration {
-    JwtExpiration jwt_expiration = 1;
-    AttributeExpiration attribute_expiration = 2;
+    JwtExpiration jwt_expiration = 2;
+    AttributeExpiration attribute_expiration = 3;
   }
 }
 
@@ -60,8 +63,9 @@ message JwtExpiration {
 }
 
 message AttributeExpiration {
-  AttributeProjection attribute_projection = 1;
-  ExpirationFormat expiration_format = 2;
+  ResponseAttributeKeyLocation attribute_key_location = 1;
+  AttributeProjection attribute_projection = 2;
+  ExpirationFormat expiration_format = 3;
 }
 
 enum ExpirationFormat {
@@ -70,11 +74,6 @@ enum ExpirationFormat {
   EXPIRATION_FORMAT_TIMESTAMP_EPOCH_SECONDS = 2;
   EXPIRATION_FORMAT_DURATION_MILLIS = 3;
   EXPIRATION_FORMAT_TIMESTAMP_EPOCH_MILLIS = 4;
-}
-
-message SessionTokenConditionalPredicate {
-  AttributeProjection value_projection = 1;
-  MatchCondition value_match_condition = 2;
 }
 
 message SessionTokenValueRule {
@@ -98,17 +97,24 @@ message SessionTokenValueTransformation {
   }
 }
 
-message AttributeProjection {
-  AttributeKeyLocation key_location = 1;
-  MatchCondition key_match_condition = 2;
-  repeated ValueProjection value_projections_in_order = 3;  // empty list means no projection, return the value as-is
+enum RequestAttributeKeyLocation {
+  REQUEST_ATTRIBUTE_KEY_LOCATION_UNSPECIFIED = 0;
+  REQUEST_ATTRIBUTE_KEY_LOCATION_HEADER = 1;
+  REQUEST_ATTRIBUTE_KEY_LOCATION_COOKIE = 2;
+  REQUEST_ATTRIBUTE_KEY_LOCATION_BODY = 3;
+  REQUEST_ATTRIBUTE_KEY_LOCATION_QUERY_PARAMETER = 4;
 }
 
-enum AttributeKeyLocation {
-  ATTRIBUTE_KEY_LOCATION_UNSPECIFIED = 0;
-  ATTRIBUTE_KEY_LOCATION_HEADER = 1;
-  ATTRIBUTE_KEY_LOCATION_COOKIE = 2;
-  ATTRIBUTE_KEY_LOCATION_BODY = 3;
+enum ResponseAttributeKeyLocation {
+  RESPONSE_ATTRIBUTE_KEY_LOCATION_UNSPECIFIED = 0;
+  RESPONSE_ATTRIBUTE_KEY_LOCATION_HEADER = 1;
+  RESPONSE_ATTRIBUTE_KEY_LOCATION_COOKIE = 2;
+  RESPONSE_ATTRIBUTE_KEY_LOCATION_BODY = 3;
+}
+
+message AttributeProjection {
+  MatchCondition attribute_key_match_condition = 1;
+  repeated ValueProjection value_projections_in_order = 2;  // empty list means no projection, return the value as-is
 }
 
 message MatchCondition {
@@ -128,6 +134,21 @@ enum MatchOperator {
 message LiteralValue {
   oneof value { // no selection means null value
     string string_value = 1;
+  }
+}
+
+message Predicate {
+  oneof predicate {
+      AttributePredicate attribute_predicate = 1;
+  }
+
+  message AttributePredicate {
+    oneof attribute_key_location {
+      RequestAttributeKeyLocation request = 1;
+      ResponseAttributeKeyLocation response = 2;
+    }
+    AttributeProjection value_projection = 3;
+    MatchCondition value_match_condition = 4;
   }
 }
 
