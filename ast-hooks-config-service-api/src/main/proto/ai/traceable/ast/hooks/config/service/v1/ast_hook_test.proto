@@ -11,13 +11,13 @@ message AstHookTest {
   AstHookDetails ast_hook_details = 2;
   TestStatus test_status = 3;
   AllowedRunners allowed_runners = 4;
-  string logs = 5;
+  repeated string logs = 5;
 }
 
-message TestHookResult {
+message AstHookTestResult {
   string id = 1;
   TestStatus test_status = 2;
-  string logs = 3;
+  repeated string logs = 3;
 }
 
 message AllowedRunners {

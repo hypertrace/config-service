@@ -16,7 +16,7 @@ service AstHooksConfigService {
   rpc CreateAstHookTest(CreateAstHookTestRequest) returns (CreateAstHookTestResponse);
   rpc UpdateAstHookTest(UpdateAstHookTestRequest) returns (UpdateAstHookTestResponse);
   rpc DeleteAstHookTests(DeleteAstHookTestsRequest) returns (DeleteAstHookTestsResponse);
-  rpc GetAstHookTest(GetAstHookTestRequest) returns (GetAstHookTestResponse);
+  rpc GetAstHookTestResult(GetAstHookTestResultRequest) returns (GetAstHookTestResultResponse);
   rpc GetAstHookTests(GetAstHookTestsRequest) returns (GetAstHookTestsResponse);
 }
 
@@ -73,12 +73,12 @@ message CreateAstHookTestResponse {
   AstHookTest ast_hook_test = 1;
 }
 
-message GetAstHookTestRequest {
+message GetAstHookTestResultRequest {
   string id = 1;
 }
 
-message GetAstHookTestResponse {
-  TestHookResult test_hook_result = 1;
+message GetAstHookTestResultResponse {
+  AstHookTestResult hook_test_result = 1;
 }
 
 message GetAstHookTestsRequest {
@@ -102,8 +102,7 @@ message UpdateAstHookTestRequest {
   optional AstHookType hook_type = 4;
   optional string code_snippet = 5;
   optional TestStatus test_status = 6;
-  AllowedRunners allowed_runners = 7;
-  optional string logs = 8;
+  optional string logs = 7;
 }
 
 message UpdateAstHookTestResponse {
