@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package ai.traceable.anomalyscoring.config.service.v1;
+
+option java_multiple_files = true;
+
+message ConfidenceScoreLevelConfig {
+  int32 medium_level_min_score = 1;
+  int32 high_level_min_score = 2;
+}
+
+message ImpactScoreLevelConfig {
+  int32 medium_level_min_score = 1;
+  int32 high_level_min_score = 2;
+}
+
+message ImpactScoringConfig {
+  ImpactScoreLevelConfig impact_score_level_config = 1;
+}
+
+message ConfidenceScoringConfig {
+  ConfidenceScoreLevelConfig confidence_score_level_config = 1;
+}
+
+message AnomalyScoringConfig {
+  ImpactScoringConfig impact_scoring_config = 1;
+  ConfidenceScoringConfig confidence_scoring_config = 2;
+}

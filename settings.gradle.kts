@@ -88,6 +88,7 @@ include(":api-gateway-config-service-api")
 include(":api-gateway-config-service-cache")
 include(":api-gateway-config-service-common")
 include(":api-gateway-config-service-impl")
+include(":anomaly-scoring-config-service-api")
 
 include(":mock-config-service")
 include(":ast-scan-profile-config-service-api")
