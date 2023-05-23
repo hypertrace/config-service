@@ -159,6 +159,7 @@ dependencies {
   integrationTestImplementation(projects.anomalyConfigServiceRegistry)
   integrationTestImplementation(projects.anomalyConfigServiceUtils)
   integrationTestImplementation(projects.rateLimitingConfigServiceApi)
+  integrationTestImplementation(projects.anomalyScoringConfigServiceApi)
   integrationTestImplementation(projects.regionConfigServiceApi)
   integrationTestImplementation(projects.riskConfigServiceApi)
   integrationTestImplementation(projects.sensitiveDataConfigServiceApi)

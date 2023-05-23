@@ -2,6 +2,7 @@ package ai.traceable.config.service;
 
 import ai.traceable.alerting.config.service.EventConditionConfigServiceImpl;
 import ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory;
+import ai.traceable.anomalyscoring.config.service.AnomalyScoringConfigServiceFactory;
 import ai.traceable.api.attribute.override.service.ApiAttributeOverridesServiceFactory;
 import ai.traceable.api.gateway.config.service.ApiGatewayConfigServiceFactory;
 import ai.traceable.api.spec.config.service.ApiSpecConfigServiceFactory;
@@ -105,6 +106,11 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
             wrap(
                 ThreatManagementConfigServiceFactory.build(
+                    providers.getLocalChannel(),
+                    providers.getConfig(),
+                    providers.getChangeEventGenerator())),
+            wrap(
+                AnomalyScoringConfigServiceFactory.build(
                     providers.getLocalChannel(),
                     providers.getConfig(),
                     providers.getChangeEventGenerator())),
