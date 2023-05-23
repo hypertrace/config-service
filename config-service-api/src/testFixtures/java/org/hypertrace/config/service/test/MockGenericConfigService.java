@@ -58,9 +58,9 @@ public class MockGenericConfigService {
 
   private Server grpcServer;
   private Clock clock = Clock.systemUTC();
-  private final RequestContext defaultContext = RequestContext.forTenantId("default tenant");
   private final InProcessServerBuilder serverBuilder;
   private final ManagedChannel configChannel;
+  private final RequestContext defaultContext = RequestContext.forTenantId("default tenant");
   private final String DEFAULT_CONFIG_CONTEXT = "__default";
   private final Table<ResourceType, String, ContextSpecificConfig> currentValues =
       Tables.newCustomTable(new LinkedHashMap<>(), LinkedHashMap::new);
