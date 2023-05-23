@@ -58,7 +58,7 @@ public class MockGenericConfigService {
 
   private Server grpcServer;
   private Clock clock = Clock.systemUTC();
-  private RequestContext context = RequestContext.forTenantId("default tenant");
+  private final RequestContext defaultContext = RequestContext.forTenantId("default tenant");
   private final InProcessServerBuilder serverBuilder;
   private final ManagedChannel configChannel;
   private final String DEFAULT_CONFIG_CONTEXT = "__default";
@@ -111,11 +111,6 @@ public class MockGenericConfigService {
 
   public MockGenericConfigService withClock(Clock clock) {
     this.clock = clock;
-    return this;
-  }
-
-  public MockGenericConfigService withRequestContext(RequestContext context) {
-    this.context = context;
     return this;
   }
 
@@ -376,6 +371,10 @@ public class MockGenericConfigService {
     @Override
     public <ReqT, RespT> Listener<ReqT> interceptCall(
         ServerCall<ReqT, RespT> call, Metadata headers, ServerCallHandler<ReqT, RespT> next) {
+      RequestContext context =
+          Optional.of(RequestContext.fromMetadata(headers))
+              .filter(requestContext -> requestContext.getTenantId().isPresent())
+              .orElse(defaultContext);
       Context ctx = Context.current().withValue(RequestContext.CURRENT, context);
       return Contexts.interceptCall(ctx, call, headers, next);
     }
