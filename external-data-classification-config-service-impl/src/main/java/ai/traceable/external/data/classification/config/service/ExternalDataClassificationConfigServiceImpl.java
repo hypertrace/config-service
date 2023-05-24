@@ -48,6 +48,7 @@ class ExternalDataClassificationConfigServiceImpl
   private static final String LEGACY_SENSITIVE_HEADERS_DATA_SET_ID =
       "legacy-dataset-sensitive-headers-id";
 
+  private static final String DB_STATEMENT_DATA_TYPE_ID = "db_query_attributes";
   private final ExternalDataClassificationConfig externalDataClassificationConfig;
   private final ExternalDataClassificationConfigRequestValidator
       externalDataClassificationConfigRequestValidator;
@@ -178,8 +179,10 @@ class ExternalDataClassificationConfigServiceImpl
 
       externalDataTypes.addAll(
           dataSuppressionOverrideOptional
-              .map(this::resolveDefaultDataTypes)
-              .orElseGet(this::resolveDefaultDataTypes));
+              .map(
+                  dataSuppressionOverride ->
+                      resolveDefaultDataTypes(requestContext, dataSuppressionOverride))
+              .orElseGet(() -> resolveDefaultDataTypes(requestContext)));
       responseObserver.onNext(
           this.responseBuilder.buildEnabledResponse(
               request,
@@ -276,8 +279,9 @@ class ExternalDataClassificationConfigServiceImpl
   }
 
   private List<ai.traceable.external.data.classification.config.service.v1.DataType>
-      resolveDefaultDataTypes(DataSuppression dataSuppressionOverride) {
-    return this.externalDataClassificationConfig.getDefaultExternalDataTypes().stream()
+      resolveDefaultDataTypes(
+          RequestContext requestContext, DataSuppression dataSuppressionOverride) {
+    return resolveDefaultDataTypes(requestContext).stream()
         .map(defaultType -> this.applyDataSuppressionOverride(defaultType, dataSuppressionOverride))
         .filter(
             ai.traceable.external.data.classification.config.service.v1.DataType
@@ -286,8 +290,13 @@ class ExternalDataClassificationConfigServiceImpl
   }
 
   private List<ai.traceable.external.data.classification.config.service.v1.DataType>
-      resolveDefaultDataTypes() {
-    return this.externalDataClassificationConfig.getDefaultExternalDataTypes();
+      resolveDefaultDataTypes(RequestContext requestContext) {
+    return this.externalDataClassificationConfig.getDefaultExternalDataTypes().stream()
+        .filter(
+            dataType ->
+                !featureCachingClient.isRaspInspectionEnabled(requestContext)
+                    || !DB_STATEMENT_DATA_TYPE_ID.equals(dataType.getDataTypeId()))
+        .collect(Collectors.toUnmodifiableList());
   }
 
   private ai.traceable.external.data.classification.config.service.v1.DataType
