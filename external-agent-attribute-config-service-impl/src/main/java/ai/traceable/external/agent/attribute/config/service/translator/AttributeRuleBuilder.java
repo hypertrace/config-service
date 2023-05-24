@@ -63,7 +63,7 @@ public class AttributeRuleBuilder {
         buildAttributeAppendAction(AUTH_TYPES_RULE_ATTRIBUTE_KEY, ruleId));
   }
 
-  private Action buildAttributeAdditionAction(String key) {
+  public Action buildAttributeAdditionAction(String key) {
     return Action.newBuilder()
         .setAttributeAddition(
             AttributeAddition.newBuilder()
@@ -81,12 +81,24 @@ public class AttributeRuleBuilder {
         .setAttributeAddition(
             AttributeAddition.newBuilder()
                 .setAttributeKey(key)
-                .setValueProjectionRule(
-                    AttributeRule.newBuilder()
-                        .setProjector(
-                            Projector.newBuilder()
-                                .setValueProjector(
-                                    StaticValueProjector.newBuilder().setValue(value)))))
+                .setValueProjectionRule(buildStaticAttributeRule(value)))
+        .build();
+  }
+
+  public AttributeRule buildStaticAttributeRule(String value) {
+    return AttributeRule.newBuilder()
+        .setProjector(
+            Projector.newBuilder()
+                .setValueProjector(StaticValueProjector.newBuilder().setValue(value)))
+        .build();
+  }
+
+  public AttributeRule buildStaticAttributeRule(String value, AttributeRule child) {
+    return AttributeRule.newBuilder()
+        .setProjector(
+            Projector.newBuilder()
+                .setValueProjector(
+                    StaticValueProjector.newBuilder().setValue(value).setAttributeRule(child)))
         .build();
   }
 
@@ -95,12 +107,7 @@ public class AttributeRuleBuilder {
         .setAttributeArrayAppend(
             AttributeArrayAppend.newBuilder()
                 .setAttributeKey(key)
-                .setValueProjectionRule(
-                    AttributeRule.newBuilder()
-                        .setProjector(
-                            Projector.newBuilder()
-                                .setValueProjector(
-                                    StaticValueProjector.newBuilder().setValue(value)))))
+                .setValueProjectionRule(buildStaticAttributeRule(value)))
         .build();
   }
 

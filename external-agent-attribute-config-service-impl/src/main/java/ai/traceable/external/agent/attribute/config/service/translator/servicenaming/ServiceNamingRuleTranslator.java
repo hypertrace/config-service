@@ -6,7 +6,6 @@ import static ai.traceable.external.agent.attribute.config.service.v1.AttributeR
 
 import ai.traceable.external.agent.attribute.config.service.translator.AttributeRuleBuilder;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
-import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Action;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate;
@@ -50,48 +49,55 @@ public class ServiceNamingRuleTranslator {
   }
 
   private Optional<AttributeRule> buildRule(ServiceNamingRule rule) {
-    return this.translateConditions(rule.getConditionsList(), rule.getId())
-        .flatMap(predicate -> this.buildConditionalRule(predicate, rule));
+    if (rule.getConditionsCount() > 0) {
+      return this.translateConditions(rule.getConditionsList(), rule.getId())
+          .flatMap(predicate -> this.buildConditionalRule(predicate, rule));
+    }
+
+    return this.buildServiceNameAssignmentRule(rule);
   }
 
   private Optional<AttributeRule> buildConditionalRule(
       Predicate predicate, ServiceNamingRule rule) {
-    return this.buildActionRule(rule)
+    return this.buildServiceNameAssignmentRule(rule)
         .map(
-            actionRule ->
+            assignmentRule ->
                 AttributeRule.newBuilder()
                     .setProjector(
                         Projector.newBuilder()
                             .setConditionalProjector(
                                 ConditionalProjector.newBuilder()
                                     .setPredicate(predicate)
-                                    .setAttributeRule(actionRule)))
+                                    .setAttributeRule(assignmentRule)))
                     .build());
   }
 
-  private Optional<AttributeRule> buildActionRule(ServiceNamingRule rule) {
-    return this.buildServiceNameReplacementAction(rule.getAction(), rule.getId())
-        .map(
-            serviceNameAction ->
-                AttributeRule.newBuilder()
-                    .addInitialActions(serviceNameAction)
-                    .addInitialActions(
-                        attributeRuleBuilder.buildAttributeAdditionAction(
-                            SERVICE_NAMING_RULE_ATTRIBUTE, rule.getId()))
-                    .build());
-  }
+  private Optional<AttributeRule> buildServiceNameAssignmentRule(ServiceNamingRule rule) {
+    ServiceNamingRuleAction action = rule.getAction();
+    AttributeRule assignmentRule =
+        AttributeRule.newBuilder()
+            .addInitialActions(
+                attributeRuleBuilder.buildAttributeAdditionAction(SERVICE_NAME_OVERRIDE_ATTRIBUTE))
+            .addInitialActions(
+                attributeRuleBuilder.buildAttributeAdditionAction(
+                    SERVICE_NAMING_RULE_ATTRIBUTE, rule.getId()))
+            .build();
 
-  private Optional<Action> buildServiceNameReplacementAction(
-      ServiceNamingRuleAction action, String ruleId) {
     switch (action.getActionCase()) {
       case STATIC_NAME_ASSIGNMENT:
         return Optional.of(
-            attributeRuleBuilder.buildAttributeAdditionAction(
-                SERVICE_NAME_OVERRIDE_ATTRIBUTE,
-                action.getStaticNameAssignment().getServiceName()));
+            this.attributeRuleBuilder.buildStaticAttributeRule(
+                action.getStaticNameAssignment().getServiceName(), assignmentRule));
+      case REGEX_CAPTURE_GROUP_NAME_ASSIGNMENT:
+        return Optional.of(
+            this.attributeRuleBuilder.buildRuleForAttribute(
+                action.getRegexCaptureGroupNameAssignment().getAttributeKey(),
+                this.attributeRuleBuilder.buildRuleForRegexCaptureGroup(
+                    action.getRegexCaptureGroupNameAssignment().getRegexCaptureGroup(),
+                    assignmentRule)));
       case ACTION_NOT_SET:
       default:
-        log.error("Dropping Rule {}: Unsupported ServiceNamingRuleAction {}", ruleId, action);
+        log.error("Dropping Rule {}: Unsupported ServiceNamingRuleAction {}", rule.getId(), action);
         return Optional.empty();
     }
   }

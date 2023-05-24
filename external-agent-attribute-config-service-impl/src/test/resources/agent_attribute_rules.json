@@ -1439,32 +1439,37 @@
                     }
                   },
                   "attributeRule": {
-                    "initialActions": [
-                      {
-                        "attributeAddition": {
-                          "attributeKey": "traceableai.service.name",
-                          "valueProjectionRule": {
-                            "projector": {
-                              "valueProjector": {
-                                "value": "multiple condition service name"
+                    "projector": {
+                      "valueProjector": {
+                        "value": "multiple condition service name",
+                        "attributeRule": {
+                          "initialActions": [
+                            {
+                              "attributeAddition": {
+                                "attributeKey": "traceableai.service.name",
+                                "valueProjectionRule": {
+                                  "projector": {
+                                    "noOpProjector": {}
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "attributeAddition": {
+                                "attributeKey": "traceableai.servicenaming.rule",
+                                "valueProjectionRule": {
+                                  "projector": {
+                                    "valueProjector": {
+                                      "value": "multiple-condition-rule-id"
+                                    }
+                                  }
+                                }
                               }
                             }
-                          }
-                        }
-                      },
-                      {
-                        "attributeAddition": {
-                          "attributeKey": "traceableai.servicenaming.rule",
-                          "valueProjectionRule": {
-                            "projector": {
-                              "valueProjector": {
-                                "value": "multiple-condition-rule-id"
-                              }
-                            }
-                          }
+                          ]
                         }
                       }
-                    ]
+                    }
                   }
                 }
               }
@@ -1485,32 +1490,77 @@
                     }
                   },
                   "attributeRule": {
-                    "initialActions": [
-                      {
-                        "attributeAddition": {
-                          "attributeKey": "traceableai.service.name",
-                          "valueProjectionRule": {
-                            "projector": {
-                              "valueProjector": {
-                                "value": "single condition service name"
+                    "projector": {
+                      "valueProjector": {
+                        "value": "single condition service name",
+                        "attributeRule": {
+                          "initialActions": [
+                            {
+                              "attributeAddition": {
+                                "attributeKey": "traceableai.service.name",
+                                "valueProjectionRule": {
+                                  "projector": {
+                                    "noOpProjector": {}
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "attributeAddition": {
+                                "attributeKey": "traceableai.servicenaming.rule",
+                                "valueProjectionRule": {
+                                  "projector": {
+                                    "valueProjector": {
+                                      "value": "single-condition-rule-id"
+                                    }
+                                  }
+                                }
                               }
                             }
-                          }
-                        }
-                      },
-                      {
-                        "attributeAddition": {
-                          "attributeKey": "traceableai.servicenaming.rule",
-                          "valueProjectionRule": {
-                            "projector": {
-                              "valueProjector": {
-                                "value": "single-condition-rule-id"
-                              }
-                            }
-                          }
+                          ]
                         }
                       }
-                    ]
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "projector": {
+                "attributeProjector": {
+                  "attributeKey": "http.url",
+                  "attributeRule": {
+                    "projector": {
+                      "regexCaptureGroupProjector": {
+                        "regexCaptureGroup": "host.com\/(.*)\/.*",
+                        "attributeRule": {
+                          "initialActions": [
+                            {
+                              "attributeAddition": {
+                                "attributeKey": "traceableai.service.name",
+                                "valueProjectionRule": {
+                                  "projector": {
+                                    "noOpProjector": {}
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "attributeAddition": {
+                                "attributeKey": "traceableai.servicenaming.rule",
+                                "valueProjectionRule": {
+                                  "projector": {
+                                    "valueProjector": {
+                                      "value": "dynamic-naming-rule-id"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
                   }
                 }
               }

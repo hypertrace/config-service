@@ -41,8 +41,8 @@ class ExternalAgentAttributeRuleTranslatorTest {
             List.of(
                 TestUtils.getServiceNamingRule("servicenaming/single_condition/input_rule.json"),
                 TestUtils.getServiceNamingRule("servicenaming/disabled_rule/input_rule.json"),
-                TestUtils.getServiceNamingRule(
-                    "servicenaming/multiple_condition/input_rule.json")));
+                TestUtils.getServiceNamingRule("servicenaming/multiple_condition/input_rule.json"),
+                TestUtils.getServiceNamingRule("servicenaming/dynamic_naming/input_rule.json")));
     assertEquals(TestUtils.getExpectedAttributeRules("agent_attribute_rules.json"), attributeRules);
   }
 

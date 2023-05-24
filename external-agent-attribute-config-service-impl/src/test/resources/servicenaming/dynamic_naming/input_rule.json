@@ -1,0 +1,11 @@
+{
+  "id": "dynamic-naming-rule-id",
+  "rank": 3,
+  "enabled": true,
+  "action": {
+    "regexCaptureGroupNameAssignment": {
+      "attributeKey": "http.url",
+      "regexCaptureGroup": "host.com\/(.*)\/.*"
+    }
+  }
+}

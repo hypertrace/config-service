@@ -4,23 +4,12 @@
       "attributeRules": [
         {
           "projector": {
-            "conditionalProjector": {
-              "predicate": {
-                "attributePredicate": {
-                  "namePredicate": {
-                    "operator": "COMPARISON_OPERATOR_EQUALS",
-                    "value": "single-key"
-                  },
-                  "valuePredicate": {
-                    "operator": "COMPARISON_OPERATOR_EQUALS",
-                    "value": "single key value"
-                  }
-                }
-              },
+            "attributeProjector": {
+              "attributeKey": "http.url",
               "attributeRule": {
                 "projector": {
-                  "valueProjector": {
-                    "value": "single condition service name",
+                  "regexCaptureGroupProjector": {
+                    "regexCaptureGroup": "host.com\/(.*)\/.*",
                     "attributeRule": {
                       "initialActions": [
                         {
@@ -39,7 +28,7 @@
                             "valueProjectionRule": {
                               "projector": {
                                 "valueProjector": {
-                                  "value": "single-condition-rule-id"
+                                  "value": "dynamic-naming-rule-id"
                                 }
                               }
                             }

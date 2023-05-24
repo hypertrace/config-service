@@ -39,6 +39,16 @@ class ServiceNamingRuleTranslatorTest {
   }
 
   @Test
+  void test_translateDynamicRule() {
+    Assertions.assertEquals(
+        Optional.of(
+            TestUtils.getExpectedAttributeRule("servicenaming/dynamic_naming/expected_rule.json")),
+        translator.buildRule(
+            List.of(
+                TestUtils.getServiceNamingRule("servicenaming/dynamic_naming/input_rule.json"))));
+  }
+
+  @Test
   void test_translateDisabledRule() {
     Assertions.assertEquals(
         Optional.empty(),

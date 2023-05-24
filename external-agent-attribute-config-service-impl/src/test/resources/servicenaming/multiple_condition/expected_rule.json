@@ -37,32 +37,37 @@
                 }
               },
               "attributeRule": {
-                "initialActions": [
-                  {
-                    "attributeAddition": {
-                      "attributeKey": "traceableai.service.name",
-                      "valueProjectionRule": {
-                        "projector": {
-                          "valueProjector": {
-                            "value": "multiple condition service name"
+                "projector": {
+                  "valueProjector": {
+                    "value": "multiple condition service name",
+                    "attributeRule": {
+                      "initialActions": [
+                        {
+                          "attributeAddition": {
+                            "attributeKey": "traceableai.service.name",
+                            "valueProjectionRule": {
+                              "projector": {
+                                "noOpProjector": {}
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "attributeAddition": {
+                            "attributeKey": "traceableai.servicenaming.rule",
+                            "valueProjectionRule": {
+                              "projector": {
+                                "valueProjector": {
+                                  "value": "multiple-condition-rule-id"
+                                }
+                              }
+                            }
                           }
                         }
-                      }
-                    }
-                  },
-                  {
-                    "attributeAddition": {
-                      "attributeKey": "traceableai.servicenaming.rule",
-                      "valueProjectionRule": {
-                        "projector": {
-                          "valueProjector": {
-                            "value": "multiple-condition-rule-id"
-                          }
-                        }
-                      }
+                      ]
                     }
                   }
-                ]
+                }
               }
             }
           }
