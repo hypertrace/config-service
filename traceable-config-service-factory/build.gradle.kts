@@ -25,6 +25,7 @@ dependencies {
   implementation(projects.iprangeConfigServiceImpl)
   implementation(projects.customSignatureConfigServiceImpl)
   implementation(projects.userAttributionConfigServiceImpl)
+  implementation(projects.sessionAttributionConfigServiceImpl)
   implementation(projects.threatManagementConfigServiceImpl)
   implementation(projects.riskConfigServiceImpl)
   implementation(projects.riskConfigServiceV2Impl)
