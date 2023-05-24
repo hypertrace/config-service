@@ -172,11 +172,6 @@ class ServiceNamingRequestValidatorTest {
         () ->
             this.validator.validateOrThrow(
                 VALID_REQUEST_CONTEXT,
-                VALID_STATIC_UPDATE_REQUEST.toBuilder().clearConditions().build()));
-    assertInvalidArg(
-        () ->
-            this.validator.validateOrThrow(
-                VALID_REQUEST_CONTEXT,
                 VALID_STATIC_UPDATE_REQUEST.toBuilder()
                     .clearConditions()
                     .addConditions(

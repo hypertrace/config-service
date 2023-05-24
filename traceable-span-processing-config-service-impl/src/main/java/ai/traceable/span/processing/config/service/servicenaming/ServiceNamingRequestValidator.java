@@ -27,8 +27,6 @@ class ServiceNamingRequestValidator {
         request, UpdateServiceNamingRuleRequest.ID_FIELD_NUMBER);
     GrpcValidatorUtils.validateNonDefaultPresenceOrThrow(
         request, UpdateServiceNamingRuleRequest.NAME_FIELD_NUMBER);
-    GrpcValidatorUtils.validateNonDefaultPresenceOrThrow(
-        request, UpdateServiceNamingRuleRequest.CONDITIONS_FIELD_NUMBER);
     request.getConditionsList().forEach(this::validateConditionOrThrow);
     this.validateActionOrThrow(request.getAction());
   }
