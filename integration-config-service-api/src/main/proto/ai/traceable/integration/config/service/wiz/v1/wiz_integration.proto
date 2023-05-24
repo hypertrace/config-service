@@ -26,5 +26,4 @@ message WizIntegrationInfo {
   string client_id = 3;
   string token_url = 4;
   string api_endpoint_url = 5;
-  string project_id = 6;
 }

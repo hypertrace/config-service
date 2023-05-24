@@ -44,7 +44,6 @@ public class WizIntegrationConfigServiceImplTest {
         CreateWizIntegrationRequest.newBuilder()
             .setName("wiz integration")
             .setDescription("wiz integration for unit test")
-            .setProjectId("987354-fsdfkh-345")
             .setClientSecret(
                 EncryptedText.newBuilder().setKeyId("keyid").setValue("cipher text").build())
             .setClientId("test customer")
@@ -64,7 +63,6 @@ public class WizIntegrationConfigServiceImplTest {
     assertEquals(expected.getClientId(), actual.getInfo().getClientId());
     assertEquals(expected.getTokenUrl(), actual.getInfo().getTokenUrl());
     assertEquals(expected.getApiEndpointUrl(), actual.getInfo().getApiEndpointUrl());
-    assertEquals(expected.getProjectId(), actual.getInfo().getProjectId());
   }
 
   @Test

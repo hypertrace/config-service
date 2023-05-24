@@ -52,7 +52,6 @@ public class WizIntegrationConfigServiceImpl extends WizIntegrationConfigService
                       .setTokenUrl(request.getTokenUrl())
                       .setDescription(request.getDescription())
                       .setApiEndpointUrl(request.getApiEndpointUrl())
-                      .setProjectId(request.getProjectId())
                       .build())
               .build();
       WizIntegration createdWizIntegrationConfig =
@@ -150,7 +149,6 @@ public class WizIntegrationConfigServiceImpl extends WizIntegrationConfigService
       infoBuilder.setClientId(request.getClientId());
       infoBuilder.setTokenUrl(request.getTokenUrl());
       infoBuilder.setApiEndpointUrl(request.getApiEndpointUrl());
-      infoBuilder.setProjectId(request.getProjectId());
 
       EncryptedText clientSecret =
           request.hasClientSecret()
