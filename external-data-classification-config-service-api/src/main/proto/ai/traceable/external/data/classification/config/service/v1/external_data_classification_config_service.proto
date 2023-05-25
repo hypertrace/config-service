@@ -14,6 +14,7 @@ message GetDataClassificationConfigRequest {
   OnlyIfChangedFilter change_filter = 1;
   EnvironmentFilter environment_filter = 2;
   PredicateSupportLevel predicate_support_level = 3;
+  AgentCapabilities agent_capabilities = 4;
 
   message OnlyIfChangedFilter {
     string previous_hash = 1;
@@ -28,6 +29,16 @@ message GetDataClassificationConfigRequest {
   enum PredicateSupportLevel {
     PREDICATE_SUPPORT_LEVEL_UNSPECIFIED = 0;
     PREDICATE_SUPPORT_LEVEL_LEAF_PATH_SEGMENT = 1;
+  }
+
+  message AgentCapabilities {
+    repeated Component components = 1;
+  }
+
+  message Component {
+    oneof value {
+      string traceable_platform_agent_version = 1;
+    }
   }
 }
 
