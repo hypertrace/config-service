@@ -17,6 +17,23 @@ message AstHookDetails {
   AstHookType hook_type = 3;
   string code_snippet = 4;
   AuthMechanism auth_mechanism = 5;
+  HookMode hook_mode = 6;
+  HookConfig hook_config = 7;
+  Role role = 8;
+}
+
+
+message RequestTokenInfo {
+  TokenPlacement token_placement = 1;
+  string token_key = 2;
+  optional string token_value_template = 3;
+}
+
+enum TokenPlacement {
+  TOKEN_PLACEMENT_UNSPECIFIED = 0;
+  TOKEN_PLACEMENT_HEADER = 1;
+  TOKEN_PLACEMENT_QUERY = 2;
+  TOKEN_PLACEMENT_COOKIE = 3;
 }
 
 enum AstHookType {
@@ -37,4 +54,126 @@ enum AuthMechanism {
   AUTH_MECHANISM_OAUTH_CLEINT_CREDENTIALS = 9;
   AUTH_MECHANISM_COGNITO_USER_PASSWORD = 10;
   AUTH_MECHANISM_CUSTOM = 11;
+}
+
+message HookConfig {
+  oneof hook_config {
+    PostmanHookConfig postman_hook_config = 1;
+    BasicAuthConfig basic_auth_config = 2;
+    JwtConfig jwt_config = 3;
+    Hmac hmac = 4;
+    Oauth2 oauth2 = 5;
+    ContentSignature content_signature = 6;
+    Bearer bearer = 7;
+    MutualTls mutualTls = 8;
+    AwsSignatureV4 aws_signature_v4 = 9;
+    PopTokenSignature pop_token_signature = 10;
+  }
+}
+
+message PopTokenSignature {
+  string pop_private_key = 1;
+  repeated string external_headers_to_sign = 2;
+  string pop_header_key = 3;
+  string pop_header_prefix = 4;
+}
+
+message AwsSignatureV4 {
+  string access_id_key = 1;
+  string secret_access_key = 2;
+  string aws_region = 3;
+  string service_name = 4;
+}
+
+message MutualTls {
+  message MutualTlsAdvanced {
+    string cert_authority_cert = 1;
+    string client_key_passphrase = 2;
+    string sni = 3;
+  }
+
+  string client_cert = 1;
+  string client_key = 2;
+  MutualTlsAdvanced advanced_options = 3;
+}
+
+message Bearer {
+  oneof generation_info {
+    string bearer_token = 1;
+    DynamicBearer dynamic_bearer = 2;
+  }
+}
+
+message DynamicBearer {
+  oneof BearerAuthType {
+    BasicAuthConfig basic_auth = 1;
+    Oauth2 oauth2 = 2;
+  }
+}
+
+message ContentSignature {
+  string header_key = 1;
+  string private_key = 2;
+}
+
+message BasicAuthConfig {
+  string username = 1;
+  string password = 2;
+}
+
+message Hmac {
+  KeyGenAlgo key_gen_algo = 1;
+  string signature_header = 2;
+  HmacAdvanced hmac_advanced = 3;
+}
+
+message HmacAdvanced {
+  string timestamp_header = 1;
+  string canonical_request_format = 2;
+  int64 allowed_time_skew = 3;
+}
+
+message Oauth2 {
+  // TODO: OauthTokenGenInfo : if we need to show the token gen info back in UI.
+  string token = 1;
+  RequestTokenInfo token_info = 2;
+}
+
+message JwtConfig {
+  oneof jwt_info {
+    string jwt_token = 1;
+    DynamicJwt dynamic_jwt = 2;
+  }
+  RequestTokenInfo token_info = 3;
+}
+
+message DynamicJwt {
+  string secret_key = 1;
+  KeyGenAlgo key_gen_algo = 2;
+  map<string, string> claims = 3;
+  int64 token_expiry_mins = 4;
+}
+
+message PostmanHookConfig {
+  string collection_url = 1;
+}
+
+enum HookMode {
+  HOOK_MODE_UNSPECIFIED = 0;
+  HOOK_MODE_NORMAL = 1;
+  HOOK_MODE_ADVANCED = 2;
+}
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_STANDARD = 1;
+  ROLE_ADMIN = 2;
+  ROLE_READER = 3;
+  ROLE_WRITER = 4;
+}
+
+enum KeyGenAlgo {
+  KEY_GEN_ALGO_UNSPECIFIED = 0;
+  KEY_GEN_ALGO_HMAC_SHA256 = 1;
+  KEY_GEN_ALGO_HMAC_SHA1 = 2;
 }
