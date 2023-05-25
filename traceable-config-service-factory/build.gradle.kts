@@ -49,6 +49,7 @@ dependencies {
   implementation(projects.apiGatewayConfigServiceImpl)
   implementation(projects.splunkIntegrationConfigServiceImpl)
   implementation(projects.astHooksConfigServiceImpl)
+  implementation(projects.savedFilterConfigServiceImpl)
   implementation(projects.anomalyScoringConfigServiceImpl)
 
   annotationProcessor(libs.lombok)

@@ -26,6 +26,7 @@ import ai.traceable.region.config.service.RegionConfigServiceFactory;
 import ai.traceable.reporting.config.service.v2.ReportingConfigServiceFactory;
 import ai.traceable.risk.config.service.RiskConfigServiceFactory;
 import ai.traceable.risk.config.service.v2.ApiRiskConfigServiceFactory;
+import ai.traceable.saved.filter.config.service.SavedFilterConfigServiceFactory;
 import ai.traceable.sensitivedata.config.service.SensitiveDataConfigServicesProvider;
 import ai.traceable.sessionattribution.config.service.SessionAttributionConfigServiceFactory;
 import ai.traceable.span.processing.config.service.SpanProcessingConfigServiceFactory;
@@ -211,7 +212,10 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                 SplunkIntegrationConfigServiceFactory.build(
                     providers.getLocalChannel(),
                     providers.getConfig(),
-                    providers.getChangeEventGenerator())))
+                    providers.getChangeEventGenerator())),
+            wrap(
+                SavedFilterConfigServiceFactory.build(
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())))
         .flatMap(stream -> stream)
         .collect(Collectors.toUnmodifiableList());
   }
