@@ -1,7 +1,6 @@
 package ai.traceable.external.data.classification.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -32,7 +31,6 @@ import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataSetsResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
-import ai.traceable.external.data.classification.config.service.v1.AttributeFilter;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTypeMatchRule;
 import ai.traceable.external.data.classification.config.service.v1.DataType.Result;
 import ai.traceable.external.data.classification.config.service.v1.ExternalDataClassificationServiceGrpc;
@@ -53,7 +51,6 @@ import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGr
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -218,42 +215,6 @@ public class ExternalDataClassificationConfigServiceImplTest {
                         EnvironmentFilter.newBuilder().setEnvironmentName("random"))
                     .build())
             .getDataTypesList());
-  }
-
-  @Test
-  void omitDbStatementDataTypeIfRASPIsEnabled() {
-    when(featureCachingClient.isRaspInspectionEnabled(any())).thenReturn(true);
-    dataClassificationOverrides = new ArrayList<>();
-    ai.traceable.external.data.classification.config.service.v1.DataType defaultDataType =
-        ai.traceable.external.data.classification.config.service.v1.DataType.newBuilder()
-            .setDataTypeId("db_query_attributes")
-            .addMatchRules(
-                DataTypeMatchRule.newBuilder()
-                    .setAttributeFilter(
-                        AttributeFilter.newBuilder().addPrefixes("db.statement").build())
-                    .setResult(Result.RESULT_MATCH)
-                    .setPathPredicate(
-                        PathPredicate.newBuilder()
-                            .setPathSegmentPredicate(
-                                StringPredicate.newBuilder()
-                                    .setValue(".*")
-                                    .setOperator(
-                                        ai.traceable.external.data.classification.config.service.v1
-                                            .Operator.OPERATOR_MATCHES_REGEX))))
-            .build();
-
-    when(this.externalDataClassificationConfig.getDefaultExternalDataTypes())
-        .thenReturn(List.of(defaultDataType));
-
-    List<String> returnedDataTypeIdsList =
-        externalDataClassificationServiceBlockingStub
-            .getDataClassificationConfig(GetDataClassificationConfigRequest.getDefaultInstance())
-            .getDataTypesList()
-            .stream()
-            .map(
-                ai.traceable.external.data.classification.config.service.v1.DataType::getDataTypeId)
-            .collect(Collectors.toList());
-    assertFalse(returnedDataTypeIdsList.contains("db_query_attributes"));
   }
 
   class MockDataClassificationConfigService
