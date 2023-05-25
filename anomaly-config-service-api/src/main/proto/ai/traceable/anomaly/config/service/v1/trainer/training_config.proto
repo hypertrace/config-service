@@ -306,6 +306,7 @@ enum GatewayType {
 
 message ParamExclusionsConfig {
   repeated ParamKeyExclusionConfig param_key_exclusion_configs = 1;
+  repeated ParamLevelExclusionConfig param_level_exclusion_configs = 2;
 }
 
 message ParamKeyExclusionConfig {
@@ -317,6 +318,15 @@ message ParamKeyExclusionConfig {
     ParamKeyConfig http_response_body_key_config = 5;
     ParamKeyConfig http_request_cookie_key_config = 6;
     ParamKeyConfig http_response_cookie_key_config = 7;
+  }
+}
+
+message ParamLevelExclusionConfig {
+  oneof config {
+    ParamLevelConfig http_request_body_level_config = 1;
+    ParamLevelConfig http_response_body_level_config = 2;
+    ParamLevelConfig rpc_request_body_level_config = 3;
+    ParamLevelConfig rpc_response_body_level_config = 4;
   }
 }
 
@@ -351,6 +361,11 @@ enum ParamKeyAction {
   PARAM_KEY_ACTION_UNSPECIFIED = 0;
   PARAM_KEY_ACTION_WILDCARD = 1;
   PARAM_KEY_ACTION_REMOVE = 2;
+}
+
+message ParamLevelConfig {
+  bool disabled = 1;
+  int32 max_level = 2;
 }
 
 message ParamContainsSensitiveDataTrainingConfig {
