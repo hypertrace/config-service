@@ -930,7 +930,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     updateTrainerConfig(scopedTrainingConfig);
     List<TrainingConfig> trainingConfigs =
         fetchTrainerConfig(customerConfigScope).getTrainingConfigsList();
-    assertEquals(17, trainingConfigs.size());
+    assertEquals(18, trainingConfigs.size());
     for (TrainingConfig trainingConfig : trainingConfigs) {
       if (trainingConfig.getTrainingConfigCase() == TrainingConfigCase.METADATA_TRAINING_CONFIG
           && trainingConfig.getMetadataTrainingConfig().getConfigCase()
@@ -938,6 +938,24 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
         assertEquals(
             2000,
             trainingConfig.getMetadataTrainingConfig().getContentSize().getRequestRangeSize());
+      } else if (trainingConfig.getTrainingConfigCase()
+              == TrainingConfigCase.METADATA_TRAINING_CONFIG
+          && trainingConfig.getMetadataTrainingConfig().getConfigCase()
+              == MetadataTrainingConfig.ConfigCase.PARAM_EXCLUSIONS) {
+        assertEquals(
+            7,
+            trainingConfig
+                .getMetadataTrainingConfig()
+                .getParamExclusions()
+                .getParamKeyExclusionConfigsList()
+                .size());
+        assertEquals(
+            4,
+            trainingConfig
+                .getMetadataTrainingConfig()
+                .getParamExclusions()
+                .getParamLevelExclusionConfigsList()
+                .size());
       } else if (trainingConfig.getTrainingConfigCase()
           == TrainingConfigCase.VULNERABILITY_TRAINING_CONFIG) {
         assertEquals(
