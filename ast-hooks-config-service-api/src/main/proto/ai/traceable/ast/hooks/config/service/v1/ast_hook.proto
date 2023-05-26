@@ -65,7 +65,7 @@ message HookConfig {
     Oauth2 oauth2 = 5;
     ContentSignature content_signature = 6;
     Bearer bearer = 7;
-    MutualTls mutualTls = 8;
+    MutualTls mutual_tls = 8;
     AwsSignatureV4 aws_signature_v4 = 9;
     PopTokenSignature pop_token_signature = 10;
   }
@@ -105,7 +105,7 @@ message Bearer {
 }
 
 message DynamicBearer {
-  oneof BearerAuthType {
+  oneof bearer_auth_type {
     BasicAuthConfig basic_auth = 1;
     Oauth2 oauth2 = 2;
   }
