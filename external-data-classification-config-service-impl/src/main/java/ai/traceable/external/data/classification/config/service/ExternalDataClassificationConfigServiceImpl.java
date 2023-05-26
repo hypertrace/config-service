@@ -48,6 +48,7 @@ class ExternalDataClassificationConfigServiceImpl
   private static final String LEGACY_SENSITIVE_HEADERS_DATA_SET_ID =
       "legacy-dataset-sensitive-headers-id";
 
+  private static final String DB_STATEMENT_DATA_TYPE_ID = "db_query_attributes";
   private final ExternalDataClassificationConfig externalDataClassificationConfig;
   private final ExternalDataClassificationConfigRequestValidator
       externalDataClassificationConfigRequestValidator;
@@ -178,8 +179,10 @@ class ExternalDataClassificationConfigServiceImpl
 
       externalDataTypes.addAll(
           dataSuppressionOverrideOptional
-              .map(this::resolveDefaultDataTypes)
-              .orElseGet(this::resolveDefaultDataTypes));
+              .map(
+                  dataSuppressionOverride ->
+                      resolveDefaultDataTypes(requestContext, dataSuppressionOverride))
+              .orElseGet(() -> resolveDefaultDataTypes(requestContext)));
       responseObserver.onNext(
           this.responseBuilder.buildEnabledResponse(
               request,
@@ -276,17 +279,27 @@ class ExternalDataClassificationConfigServiceImpl
   }
 
   private List<ai.traceable.external.data.classification.config.service.v1.DataType>
-      resolveDefaultDataTypes(DataSuppression dataSuppressionOverride) {
-    return this.externalDataClassificationConfig.getDefaultExternalDataTypes().stream()
+      resolveDefaultDataTypes(
+          RequestContext requestContext, DataSuppression dataSuppressionOverride) {
+    // Default rules are always sent, even if they don't redact (TPA bug)
+    return resolveDefaultDataTypes(requestContext).stream()
         .map(defaultType -> this.applyDataSuppressionOverride(defaultType, dataSuppressionOverride))
-        .filter(
-            ai.traceable.external.data.classification.config.service.v1.DataType
-                ::hasTransformation) // Only need to use ones that resolve with a transformation
         .collect(Collectors.toUnmodifiableList());
   }
 
   private List<ai.traceable.external.data.classification.config.service.v1.DataType>
-      resolveDefaultDataTypes() {
+      resolveDefaultDataTypes(RequestContext requestContext) {
+    if (featureCachingClient.isRaspInspectionEnabled(requestContext)) {
+      return externalDataClassificationConfig.getDefaultExternalDataTypes().stream()
+          .map(
+              dataType -> {
+                if (DB_STATEMENT_DATA_TYPE_ID.equals(dataType.getDataTypeId())) {
+                  return dataType.toBuilder().clearTransformation().build();
+                }
+                return dataType;
+              })
+          .collect(Collectors.toUnmodifiableList());
+    }
     return this.externalDataClassificationConfig.getDefaultExternalDataTypes();
   }
 
@@ -294,6 +307,10 @@ class ExternalDataClassificationConfigServiceImpl
       applyDataSuppressionOverride(
           ai.traceable.external.data.classification.config.service.v1.DataType dataType,
           DataSuppression dataSuppressionOverride) {
+    if (dataSuppressionOverride == DataSuppression.DATA_SUPPRESSION_RAW) {
+      return dataType.toBuilder().clearTransformation().build();
+    }
+
     return this.dataClassificationRulesTranslator
         .translateDataSuppression(dataSuppressionOverride)
         .map(transformation -> dataType.toBuilder().setTransformation(transformation))

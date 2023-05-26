@@ -51,6 +51,7 @@ import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGr
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -190,7 +191,7 @@ public class ExternalDataClassificationConfigServiceImplTest {
   }
 
   @Test
-  void omitsDefaultRuleIfOverriddenSuppression() {
+  void updatesDefaultRuleIfOverriddenSuppression() {
     this.dataClassificationOverrides =
         List.of(
             DataClassificationOverride.newBuilder()
@@ -205,9 +206,15 @@ public class ExternalDataClassificationConfigServiceImplTest {
             List.of(
                 ai.traceable.external.data.classification.config.service.v1.DataType.newBuilder()
                     .setDataTypeId("default-rule")
+                    .setTransformation(
+                        ai.traceable.external.data.classification.config.service.v1.DataType
+                            .DataTransformation.DATA_TRANSFORMATION_REDACT)
                     .build()));
     assertEquals(
-        List.of(),
+        List.of(
+            ai.traceable.external.data.classification.config.service.v1.DataType.newBuilder()
+                .setDataTypeId("default-rule")
+                .build()),
         externalDataClassificationServiceBlockingStub
             .getDataClassificationConfig(
                 GetDataClassificationConfigRequest.newBuilder()
@@ -215,6 +222,47 @@ public class ExternalDataClassificationConfigServiceImplTest {
                         EnvironmentFilter.newBuilder().setEnvironmentName("random"))
                     .build())
             .getDataTypesList());
+  }
+
+  @Test
+  void omitDbStatementDataTypeIfRASPIsEnabled() {
+    when(featureCachingClient.isRaspInspectionEnabled(any())).thenReturn(true);
+    dataClassificationOverrides = new ArrayList<>();
+    ai.traceable.external.data.classification.config.service.v1.DataType defaultDataType =
+        ai.traceable.external.data.classification.config.service.v1.DataType.newBuilder()
+            .setDataTypeId("db_query_attributes")
+            .setTransformation(
+                ai.traceable.external.data.classification.config.service.v1.DataType
+                    .DataTransformation.DATA_TRANSFORMATION_REDACT)
+            .build();
+
+    when(this.externalDataClassificationConfig.getDefaultExternalDataTypes())
+        .thenReturn(List.of(defaultDataType));
+
+    Optional<ai.traceable.external.data.classification.config.service.v1.DataType>
+        dbStatementDataType =
+            externalDataClassificationServiceBlockingStub
+                .getDataClassificationConfig(
+                    GetDataClassificationConfigRequest.getDefaultInstance())
+                .getDataTypesList()
+                .stream()
+                .filter(dataType -> "db_query_attributes".equals(dataType.getDataTypeId()))
+                .findFirst();
+
+    assertEquals(
+        Optional.of(defaultDataType.toBuilder().clearTransformation().build()),
+        dbStatementDataType);
+
+    when(featureCachingClient.isRaspInspectionEnabled(any())).thenReturn(false);
+    dbStatementDataType =
+        externalDataClassificationServiceBlockingStub
+            .getDataClassificationConfig(GetDataClassificationConfigRequest.getDefaultInstance())
+            .getDataTypesList()
+            .stream()
+            .filter(dataType -> "db_query_attributes".equals(dataType.getDataTypeId()))
+            .findFirst();
+
+    assertEquals(Optional.of(defaultDataType), dbStatementDataType);
   }
 
   class MockDataClassificationConfigService
