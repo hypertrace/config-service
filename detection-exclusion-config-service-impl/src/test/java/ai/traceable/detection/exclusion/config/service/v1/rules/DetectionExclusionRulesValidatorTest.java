@@ -15,8 +15,11 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
 import ai.traceable.detection.exclusion.config.service.v1.EnvironmentScope;
+import ai.traceable.detection.exclusion.config.service.v1.EventCondition;
 import ai.traceable.detection.exclusion.config.service.v1.GetDetectionExclusionRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
+import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
+import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
 import ai.traceable.detection.exclusion.config.service.v1.UpdateDetectionExclusionRuleRequest;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
@@ -100,7 +103,7 @@ class DetectionExclusionRulesValidatorTest {
           throwable.getMessage().contains("DetectionExclusionRule has no specified conditions"));
     }
 
-    // empty env Id string for env scope
+    // no event condition
     {
       CreateDetectionExclusionRuleRequest request =
           CreateDetectionExclusionRuleRequest.newBuilder()
@@ -108,6 +111,27 @@ class DetectionExclusionRulesValidatorTest {
                   DetectionExclusionRuleInfo.newBuilder()
                       .setName("rule")
                       .addConditions(DetectionExclusionCondition.getDefaultInstance()))
+              .build();
+      Throwable throwable =
+          assertThrows(
+              StatusRuntimeException.class,
+              () ->
+                  detectionExclusionRulesValidator.validateOrThrow(
+                      requestContext, request, List.of()));
+      assertTrue(
+          throwable
+              .getMessage()
+              .contains("DetectionExclusionRule should have at least one event condition"));
+    }
+
+    // empty env Id string for env scope
+    {
+      CreateDetectionExclusionRuleRequest request =
+          CreateDetectionExclusionRuleRequest.newBuilder()
+              .setRuleInfo(
+                  DetectionExclusionRuleInfo.newBuilder()
+                      .setName("rule")
+                      .addConditions(getDefaultEventCondition()))
               .setRuleScope(
                   DetectionExclusionRuleScope.newBuilder()
                       .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("")))
@@ -128,7 +152,7 @@ class DetectionExclusionRulesValidatorTest {
               .setRuleInfo(
                   DetectionExclusionRuleInfo.newBuilder()
                       .setName("ruleName")
-                      .addConditions(DetectionExclusionCondition.getDefaultInstance()))
+                      .addConditions(getDefaultEventCondition()))
               .build();
       Throwable throwable =
           assertThrows(
@@ -152,7 +176,7 @@ class DetectionExclusionRulesValidatorTest {
               .setRuleInfo(
                   DetectionExclusionRuleInfo.newBuilder()
                       .setName("ruleName1")
-                      .addConditions(DetectionExclusionCondition.getDefaultInstance()))
+                      .addConditions(getDefaultEventCondition()))
               .build();
       assertDoesNotThrow(
           () ->
@@ -179,7 +203,7 @@ class DetectionExclusionRulesValidatorTest {
                       .setRuleInfo(
                           DetectionExclusionRuleInfo.newBuilder()
                               .setName("ruleName")
-                              .addConditions(DetectionExclusionCondition.getDefaultInstance())
+                              .addConditions(getDefaultEventCondition())
                               .setRuleStatus(
                                   DetectionExclusionRuleStatus.newBuilder()
                                       .setRuleCreationSource(RuleSource.RULE_SOURCE_UNSPECIFIED))))
@@ -234,7 +258,7 @@ class DetectionExclusionRulesValidatorTest {
                       .setRuleInfo(
                           DetectionExclusionRuleInfo.newBuilder()
                               .setName("ruleName1")
-                              .addConditions(DetectionExclusionCondition.getDefaultInstance())
+                              .addConditions(getDefaultEventCondition())
                               .setRuleStatus(
                                   DetectionExclusionRuleStatus.newBuilder()
                                       .setRuleCreationSource(RuleSource.RULE_SOURCE_UNSPECIFIED))))
@@ -249,5 +273,16 @@ class DetectionExclusionRulesValidatorTest {
                           .setRuleInfo(DetectionExclusionRuleInfo.newBuilder().setName("ruleName"))
                           .build())));
     }
+  }
+
+  private DetectionExclusionCondition getDefaultEventCondition() {
+    return DetectionExclusionCondition.newBuilder()
+        .setEventCondition(
+            EventCondition.newBuilder()
+                .addSystemDefinedEvents(
+                    SystemDefinedEvent.newBuilder()
+                        .setEventFamily(
+                            SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF)))
+        .build();
   }
 }

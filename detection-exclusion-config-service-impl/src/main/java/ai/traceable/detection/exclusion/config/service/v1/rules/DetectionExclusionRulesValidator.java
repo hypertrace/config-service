@@ -5,6 +5,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 
 import ai.traceable.detection.exclusion.config.service.v1.CreateDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.DeleteDetectionExclusionRuleRequest;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
@@ -97,6 +98,12 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
     if (ruleInfo.getConditionsList().isEmpty()) {
       throw Status.INVALID_ARGUMENT
           .withDescription("DetectionExclusionRule has no specified conditions")
+          .asRuntimeException();
+    }
+    if (ruleInfo.getConditionsList().stream()
+        .noneMatch(DetectionExclusionCondition::hasEventCondition)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("DetectionExclusionRule should have at least one event condition")
           .asRuntimeException();
     }
     ruleInfo.getConditionsList().forEach(conditionValidator::validateRuleCondition);

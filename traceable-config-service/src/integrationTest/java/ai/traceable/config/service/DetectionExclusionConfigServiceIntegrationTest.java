@@ -41,6 +41,15 @@ public class DetectionExclusionConfigServiceIntegrationTest
                       IpReputationCondition.newBuilder()
                           .setMaxIpReputationSeverity(
                               IpReputationSeverity.IP_REPUTATION_SEVERITY_MEDIUM)))
+          .addConditions(
+              DetectionExclusionCondition.newBuilder()
+                  .setEventCondition(
+                      EventCondition.newBuilder()
+                          .addSystemDefinedEvents(
+                              SystemDefinedEvent.newBuilder()
+                                  .setEventFamily(
+                                      SystemDefinedEventFamily
+                                          .SYSTEM_DEFINED_EVENT_FAMILY_API_DEF))))
           .setRuleStatus(
               DetectionExclusionRuleStatus.newBuilder()
                   .setChangeSource(RuleChangeSource.RULE_CHANGE_SOURCE_CUSTOMER))
