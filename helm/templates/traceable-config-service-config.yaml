@@ -18,7 +18,7 @@ data:
         {{ $dst }} {
           {{- range $key, $value := (index .Values "traceableConfigServiceConfig" (printf "%s" $dst)) }}
           {{- if $value }}
-          {{ $key }} = {{ $value | quote }}
+          {{ $key }} = {{ $value }}
           {{- end }}
           {{- end }}
         }
@@ -256,7 +256,7 @@ data:
       licenseTiers = {{ .Values.anomalyConfigServiceConfig.global.licenseTiers | nindent 6 }}
     }
     {{- if .Values.defaultApiNamingTrainerConfig }}
-    trainer.config.service = {{ .Values.defaultApiNamingTrainerConfig | nindent 4 }} 
+    trainer.config.service = {{ .Values.defaultApiNamingTrainerConfig | nindent 4 }}
     {{- end }}
 
   risk.conf: |-
