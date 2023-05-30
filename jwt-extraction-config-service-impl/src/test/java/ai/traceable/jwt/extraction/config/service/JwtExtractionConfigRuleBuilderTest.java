@@ -51,7 +51,7 @@ class JwtExtractionConfigRuleBuilderTest {
                 JwtProcessingInstruction.newBuilder()
                     .setAction(
                         JwtProcessingInstruction.Action.newBuilder()
-                            .setAddNewAttribute("token.jwt.header.alg")
+                            .setAddNewAttribute("traceableai.jwt.header.alg")
                             .build())
                     .setValueExtraction(
                         JwtProcessingInstruction.ValueExtraction.newBuilder()
@@ -113,7 +113,7 @@ class JwtExtractionConfigRuleBuilderTest {
                 JwtProcessingInstruction.newBuilder()
                     .setAction(
                         JwtProcessingInstruction.Action.newBuilder()
-                            .setAddNewAttribute("token.jwt.header.alg")
+                            .setAddNewAttribute("traceableai.jwt.header.alg")
                             .build())
                     .setValueExtraction(
                         JwtProcessingInstruction.ValueExtraction.newBuilder()
