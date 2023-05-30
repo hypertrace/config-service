@@ -14,6 +14,7 @@ import ai.traceable.ast.hooks.config.service.v1.GetAstHookRequest;
 import ai.traceable.ast.hooks.config.service.v1.GetAstHookResponse;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookRequest;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookResponse;
+import ai.traceable.ast.hooks.config.service.validators.RequestValidator;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;

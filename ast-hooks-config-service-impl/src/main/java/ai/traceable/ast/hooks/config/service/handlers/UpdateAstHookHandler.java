@@ -3,7 +3,6 @@ package ai.traceable.ast.hooks.config.service.handlers;
 import ai.traceable.ast.hooks.config.service.AstHooksConfigStore;
 import ai.traceable.ast.hooks.config.service.v1.AstHook;
 import ai.traceable.ast.hooks.config.service.v1.AstHookDetails;
-import ai.traceable.ast.hooks.config.service.v1.AstHookType;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookRequest;
 import javax.inject.Inject;
 import lombok.AllArgsConstructor;
@@ -23,9 +22,10 @@ public class UpdateAstHookHandler {
     AstHookDetails.Builder updatedHookDetailsBuilder = oldHook.getHookDetails().toBuilder();
     applyNameUpdate(request, updatedHookDetailsBuilder);
     applyDescriptionUpdate(request, updatedHookDetailsBuilder);
-    applyHookTypeUpdate(request, updatedHookDetailsBuilder);
     applyCodeSnippetUpdate(request, updatedHookDetailsBuilder);
-
+    if (request.hasAstHookDetails()) {
+      updatedHookDetailsBuilder = AstHookDetails.newBuilder(request.getAstHookDetails());
+    }
     AstHook updatedHook =
         oldHook.toBuilder().setHookDetails(updatedHookDetailsBuilder.build()).build();
     return configStore.upsertObject(requestContext, updatedHook).getData();
@@ -41,12 +41,6 @@ public class UpdateAstHookHandler {
       UpdateAstHookRequest request, AstHookDetails.Builder builder) {
     if (request.hasDescription()) {
       builder.setDescription(request.getDescription());
-    }
-  }
-
-  private void applyHookTypeUpdate(UpdateAstHookRequest request, AstHookDetails.Builder builder) {
-    if (!request.getHookType().equals(AstHookType.AST_HOOK_TYPE_UNSPECIFIED)) {
-      builder.setHookType(request.getHookType());
     }
   }
 

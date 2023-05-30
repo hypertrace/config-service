@@ -14,14 +14,19 @@ message AstHook {
 message AstHookDetails {
   string name = 1;
   string description = 2;
-  AstHookType hook_type = 3;
-  string code_snippet = 4;
-  AuthMechanism auth_mechanism = 5;
-  HookMode hook_mode = 6;
-  HookConfig hook_config = 7;
+  oneof ast_hook_type {
+    HookConfig hook_config = 7;
+    AdvancedMode advanced_mode = 9;
+  }
+  string code_snippet = 4 [deprecated = true];
+  AuthMechanism auth_mechanism = 5 [deprecated = true];
   Role role = 8;
 }
 
+message AdvancedMode {
+  string code_snippet = 1;
+  AuthMechanism auth_mechanism = 2;
+}
 
 message RequestTokenInfo {
   TokenPlacement token_placement = 1;
