@@ -158,5 +158,20 @@ class DetectionExclusionRulesManagerTest {
     assertTrue(updatedRuleStatus.getDisabled());
     assertFalse(updatedRuleStatus.getHidden());
     assertTrue(updatedRuleStatus.getGenerateInternalEvents());
+
+    // enabling the rule again
+    rule =
+        DetectionExclusionRule.newBuilder()
+            .setId("id-1")
+            .setRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .setName("rule-2")
+                    .setRuleStatus(DetectionExclusionRuleStatus.newBuilder().setDisabled(false)))
+            .setRuleScope(detectionExclusionRuleScope)
+            .build();
+
+    updateRule = rulesManager.updateDetectionExclusionRule(requestContext, rule);
+    updatedRuleStatus = updateRule.getRuleInfo().getRuleStatus();
+    assertFalse(updatedRuleStatus.getDisabled());
   }
 }

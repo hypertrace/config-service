@@ -82,6 +82,7 @@ public class DetectionExclusionRulesManager implements RulesManager {
       DetectionExclusionRuleStatus ruleStatus, DetectionExclusionRuleStatus originalRuleStatus) {
     return originalRuleStatus.toBuilder()
         .mergeFrom(ruleStatus)
+        .setDisabled(ruleStatus.getDisabled())
         .setRuleCreationSource(originalRuleStatus.getRuleCreationSource())
         .build();
   }
