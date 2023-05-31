@@ -75,7 +75,7 @@ public class RequestValidator extends ValidatorBase {
     }
     validateStringNotBlank(
         astHookDetails.getName(), "name not found while trying to create ast hooks config");
-    validateRole(astHookDetails.getRole());
+    //    validateRole(astHookDetails.getRole());
   }
 
   private void validateHookConfig(HookConfig hookConfig) {
