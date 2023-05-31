@@ -8,10 +8,18 @@ import "ai/traceable/ast/hooks/config/service/v1/ast_hook.proto";
 
 message AstHookTest {
   string id = 1;
-  AstHookDetails ast_hook_details = 2;
+  AstHookTestDetails ast_hook_test_details = 2;
   TestStatus test_status = 3;
   AllowedRunners allowed_runners = 4;
   repeated string logs = 5;
+}
+
+message AstHookTestDetails {
+  oneof ast_hook_type {
+    HookConfig hook_config = 1;
+    AdvancedMode advanced_mode = 2;
+  }
+  Role role = 3;
 }
 
 message AstHookTestResult {

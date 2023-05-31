@@ -98,12 +98,9 @@ message DeleteAstHookTestsResponse {}
 
 message UpdateAstHookTestRequest {
   string id = 1;
-  optional string name = 2;
-  optional string description = 3;
-  optional AstHookType hook_type = 4;
-  optional string code_snippet = 5;
-  optional TestStatus test_status = 6;
-  optional string logs = 7;
+  AstHookTestDetails ast_hook_test_details = 2;
+  optional TestStatus test_status = 3;
+  optional string logs = 4;
 }
 
 message UpdateAstHookTestResponse {
