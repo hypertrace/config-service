@@ -98,5 +98,9 @@ class AstRulesManager implements RulesManager {
       existingVulnerabilityMetadata.setCvssVectorString(
           overriddenVulnerabilityMetadata.getCvssVectorString());
     }
+    if (overriddenVulnerabilityMetadata.hasEstimatedFixTime()) {
+      existingVulnerabilityMetadata.setEstimatedFixTime(
+          overriddenVulnerabilityMetadata.getEstimatedFixTime());
+    }
   }
 }

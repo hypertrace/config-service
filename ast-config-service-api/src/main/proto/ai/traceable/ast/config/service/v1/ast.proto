@@ -16,7 +16,7 @@ message VulnerabilityMetadataOverrides {
   optional double cvss_score = 3;
   optional string cvss_vector_string = 4;
   optional VulnerabilitySeverity severity = 5;
-
+  optional google.protobuf.Duration estimated_fix_time = 6;
 }
 
 message TagValue {
