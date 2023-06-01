@@ -36,6 +36,7 @@ import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesStore;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -49,6 +50,18 @@ class DetectionExclusionRulesMigrationManagerTest {
   private final DetectionExclusionRule sampleNewRule = getSampleNewRule();
   private final Instant creationTimestamp = Instant.now();
 
+  private final List<ContextualConfigObject<DetectionExclusionRule>> newRules =
+      List.of(
+          getNewRuleContextualConfigObject("id1", creationTimestamp.plusSeconds(10)),
+          getNewRuleContextualConfigObject("id2", creationTimestamp.plusSeconds(20)),
+          getNewRuleContextualConfigObject("id3", creationTimestamp.plusSeconds(30)));
+
+  private final List<ContextualConfigObject<AnomalyExclusionRuleConfig>> oldRules =
+      List.of(
+          getOldRuleContextualConfigObject("id0", creationTimestamp),
+          getOldRuleContextualConfigObject("id1", creationTimestamp.plusSeconds(5)),
+          getOldRuleContextualConfigObject("id2", creationTimestamp.plusSeconds(25)));
+
   private FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
   private DetectionExclusionRulesStore newRulesStore = mock(DetectionExclusionRulesStore.class);
   private AnomalyExclusionRuleConfigStore oldRulesStore =
@@ -57,18 +70,10 @@ class DetectionExclusionRulesMigrationManagerTest {
 
   @BeforeEach
   void setup() {
-    when(newRulesStore.getAllObjects(any(), any()))
-        .thenReturn(
-            List.of(
-                getNewRuleContextualConfigObject("id1", creationTimestamp.plusSeconds(10)),
-                getNewRuleContextualConfigObject("id2", creationTimestamp.plusSeconds(20)),
-                getNewRuleContextualConfigObject("id3", creationTimestamp.plusSeconds(30))));
-    when(oldRulesStore.getAllObjects(any()))
-        .thenReturn(
-            List.of(
-                getOldRuleContextualConfigObject("id0", creationTimestamp),
-                getOldRuleContextualConfigObject("id1", creationTimestamp.plusSeconds(5)),
-                getOldRuleContextualConfigObject("id2", creationTimestamp.plusSeconds(25))));
+    featureCachingClient = mock(FeatureCachingClient.class);
+    newRulesStore = mock(DetectionExclusionRulesStore.class);
+    oldRulesStore = mock(AnomalyExclusionRuleConfigStore.class);
+
     migrationManager =
         new DetectionExclusionRulesMigrationManager(
             featureCachingClient,
@@ -83,6 +88,8 @@ class DetectionExclusionRulesMigrationManagerTest {
 
     when(featureCachingClient.isDetectionExclusionV2EnabledForTenant(requestContext))
         .thenReturn(true);
+    when(newRulesStore.getAllObjects(any(), any())).thenReturn(newRules);
+    when(oldRulesStore.getAllObjects(any())).thenReturn(oldRules);
     assertTrue(migrationManager.shouldMigrateFromOldStore(requestContext));
 
     migrationManager.updateDetectionExclusionRulesFromOldStore(requestContext);
@@ -98,6 +105,36 @@ class DetectionExclusionRulesMigrationManagerTest {
         .upsertObjects(
             eq(requestContext),
             argThat(list -> list.size() == 1 && list.get(0).getId().equals("id2")));
+    assertFalse(migrationManager.shouldMigrateFromOldStore(requestContext));
+  }
+
+  @Test
+  void testMigration_noDelete() {
+    when(featureCachingClient.isDetectionExclusionV2EnabledForTenant(requestContext))
+        .thenReturn(true);
+    when(newRulesStore.getAllObjects(any(), any())).thenReturn(Collections.emptyList());
+    when(oldRulesStore.getAllObjects(any())).thenReturn(oldRules);
+    assertTrue(migrationManager.shouldMigrateFromOldStore(requestContext));
+
+    migrationManager.updateDetectionExclusionRulesFromOldStore(requestContext);
+    verify(newRulesStore, times(0)).deleteObjects(any(), any());
+    verify(newRulesStore, times(1)).upsertObjects(any(), any());
+    verify(newRulesStore, times(1))
+        .upsertObjects(eq(requestContext), argThat(list -> list.size() == 3));
+    assertFalse(migrationManager.shouldMigrateFromOldStore(requestContext));
+  }
+
+  @Test
+  void testMigration_noUpdate() {
+    when(featureCachingClient.isDetectionExclusionV2EnabledForTenant(requestContext))
+        .thenReturn(true);
+    when(newRulesStore.getAllObjects(any(), any())).thenReturn(Collections.emptyList());
+    when(oldRulesStore.getAllObjects(any())).thenReturn(Collections.emptyList());
+    assertTrue(migrationManager.shouldMigrateFromOldStore(requestContext));
+
+    migrationManager.updateDetectionExclusionRulesFromOldStore(requestContext);
+    verify(newRulesStore, times(0)).deleteObjects(any(), any());
+    verify(newRulesStore, times(0)).upsertObjects(any(), any());
     assertFalse(migrationManager.shouldMigrateFromOldStore(requestContext));
   }
 

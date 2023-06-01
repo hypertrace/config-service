@@ -83,9 +83,15 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
             .filter(Objects::nonNull)
             .collect(Collectors.toUnmodifiableList());
 
-    newRulesStore.deleteObjects(requestContext, oldRuleIdsToDelete);
-    newRulesStore.upsertObjects(requestContext, oldRulesToCreate);
-    newRulesStore.upsertObjects(requestContext, oldRulesToUpdate);
+    if (!oldRuleIdsToDelete.isEmpty()) {
+      newRulesStore.deleteObjects(requestContext, oldRuleIdsToDelete);
+    }
+    if (!oldRulesToCreate.isEmpty()) {
+      newRulesStore.upsertObjects(requestContext, oldRulesToCreate);
+    }
+    if (!oldRulesToUpdate.isEmpty()) {
+      newRulesStore.upsertObjects(requestContext, oldRulesToUpdate);
+    }
 
     tenantMigrationCompletedMap.put(requestContext.buildInternalContextualKey(), true);
   }
