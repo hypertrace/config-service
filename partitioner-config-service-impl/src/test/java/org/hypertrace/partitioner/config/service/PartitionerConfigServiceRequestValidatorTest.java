@@ -56,10 +56,7 @@ class PartitionerConfigServiceRequestValidatorTest {
   public void testPartitionGroupsExist() {
     PartitionerConfigServiceRequestValidator underTest =
         new PartitionerConfigServiceRequestValidator();
-
-    Exception exception =
-        assertThrows(
-            RuntimeException.class,
+assertDoesNotThrow(
             () ->
                 underTest.validateOrThrow(
                     PutPartitionerProfilesRequest.newBuilder()

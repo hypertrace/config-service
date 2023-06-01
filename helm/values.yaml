@@ -85,6 +85,13 @@ configServiceConfig:
     host: mongo
     url: ""
 
+partitionServiceConfig:
+  default:
+    profile:
+      names: []
+      weight: 100
+      partition.key: ""
+
 logConfig:
   name: config-service-log-config
   monitorInterval: 30

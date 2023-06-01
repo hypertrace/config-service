@@ -1,11 +1,13 @@
 package org.hypertrace.partitioner.config.service.store;
 
 import com.google.common.collect.ImmutableList;
+import com.typesafe.config.Config;
 import io.grpc.Status;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.hypertrace.core.documentstore.*;
 import org.hypertrace.core.documentstore.Collection;
+import org.hypertrace.partitioner.config.service.v1.PartitionerGroup;
 import org.hypertrace.partitioner.config.service.v1.PartitionerProfile;
 
 public class PartitionerProfilesDocumentStore implements PartitionerProfilesStore {
@@ -14,8 +16,9 @@ public class PartitionerProfilesDocumentStore implements PartitionerProfilesStor
 
   private final Collection collection;
 
-  public PartitionerProfilesDocumentStore(Datastore datastore) {
+  public PartitionerProfilesDocumentStore(Datastore datastore, Config defaultProfile) {
     this.collection = datastore.getCollection(PARTITIONER_PROFILES);
+    setUpDefaultProfile(defaultProfile);
   }
 
   @Override
@@ -63,5 +66,27 @@ public class PartitionerProfilesDocumentStore implements PartitionerProfilesStor
   public void deletePartitionerProfiles(List<String> profiles) throws Exception {
     this.collection.delete(
         profiles.stream().map(PartitionerProfileKey::new).collect(Collectors.toSet()));
+  }
+
+  private void setUpDefaultProfile(Config defaultProfile) {
+    ArrayList<PartitionerProfile> partitionerProfiles = new ArrayList<>();
+    defaultProfile.getStringList("members").forEach(profileName -> {
+      try {
+        Optional<PartitionerProfile> profile = getPartitionerProfile(defaultProfile.getString(profileName));
+        if(profile.isEmpty()) {
+          PartitionerProfile newProfile = PartitionerProfile
+                  .newBuilder()
+                  .setName(profileName)
+                  .setDefaultGroupWeight(defaultProfile.getInt("weight"))
+                  .setPartitionKey("partition.key")
+                  .build();
+
+          partitionerProfiles.add(newProfile);
+          putPartitionerProfiles(partitionerProfiles);
+        }
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    });
   }
 }

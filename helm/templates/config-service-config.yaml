@@ -31,3 +31,10 @@ data:
         schema.registry.url = "http://schema-registry-service:8081"
       }
     }
+
+    partition.config.service {
+      members = {{ toJson .Values.partitionServiceConfig.default.profile.names }}
+      weight = {{ .Values.partitionServiceConfig.default.profile.weight }}
+      partition.key = {{ .Values.partitionServiceConfig.default.profile.partition.key }}
+    }
+

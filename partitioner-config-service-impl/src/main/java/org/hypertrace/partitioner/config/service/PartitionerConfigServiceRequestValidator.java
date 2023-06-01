@@ -37,11 +37,11 @@ public class PartitionerConfigServiceRequestValidator {
                     .withDescription("partition key cannot be empty")
                     .asRuntimeException();
               }
-              if (profile.getGroupsCount() == 0) {
-                throw Status.INVALID_ARGUMENT
-                    .withDescription("partition_groups cannot be empty")
-                    .asRuntimeException();
-              }
+//              if (profile.getGroupsCount() == 0) {
+//                throw Status.INVALID_ARGUMENT
+//                    .withDescription("partition_groups cannot be empty")
+//                    .asRuntimeException();
+//              }
               profile
                   .getGroupsList()
                   .forEach(
