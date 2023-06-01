@@ -4,8 +4,6 @@ import ai.traceable.anomaly.config.service.exclusion.handlers.AnomalyExclusionRu
 import ai.traceable.anomaly.config.service.v1.exclusion.AnomalyExclusionRuleConfig;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
-import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
-import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesStore;
@@ -14,6 +12,7 @@ import com.google.common.collect.Sets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -25,15 +24,11 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
 
   private static final GetRulesFilter OLD_RULES_FILTER =
       GetRulesFilter.newBuilder().addRuleCreationSources(RuleSource.RULE_SOURCE_OLD_API).build();
-  private static final DetectionExclusionRuleStatus DEFAULT_OLD_RULE_STATUS =
-      DetectionExclusionRuleStatus.newBuilder()
-          .setRuleCreationSource(RuleSource.RULE_SOURCE_OLD_API)
-          .build();
 
   private final FeatureCachingClient featureCachingClient;
-
   private final DetectionExclusionRulesStore newRulesStore;
   private final AnomalyExclusionRuleConfigStore oldRulesStore;
+  private final DetectionExclusionRuleConverter ruleConverter;
 
   private final Map<ContextualKey<Void>, Boolean> tenantMigrationCompletedMap = new HashMap<>();
 
@@ -41,20 +36,19 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
   public DetectionExclusionRulesMigrationManager(
       FeatureCachingClient featureCachingClient,
       DetectionExclusionRulesStore newRulesStore,
-      AnomalyExclusionRuleConfigStore oldRulesStore) {
+      AnomalyExclusionRuleConfigStore oldRulesStore,
+      DetectionExclusionRuleConverter ruleConverter) {
     this.featureCachingClient = featureCachingClient;
     this.newRulesStore = newRulesStore;
     this.oldRulesStore = oldRulesStore;
+    this.ruleConverter = ruleConverter;
   }
 
   @Override
   public boolean shouldMigrateFromOldStore(RequestContext requestContext) {
-    // TODO: Remove this and uncomment below logic once conversion code is added..
-    return false;
-    /*
-    return !tenantMigrationCompletedMap.getOrDefault(requestContext.buildInternalContextualKey(), false)
+    return !tenantMigrationCompletedMap.getOrDefault(
+            requestContext.buildInternalContextualKey(), false)
         && featureCachingClient.isDetectionExclusionV2EnabledForTenant(requestContext);
-     */
   }
 
   @Override
@@ -73,7 +67,8 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
     // rules created by old api, not present in new api
     List<DetectionExclusionRule> oldRulesToCreate =
         Sets.difference(oldRuleObjects.keySet(), newRuleObjects.keySet()).stream()
-            .map(key -> convertRule(oldRuleObjects.get(key).getData()))
+            .map(key -> ruleConverter.convertRule(oldRuleObjects.get(key).getData()))
+            .filter(Objects::nonNull)
             .collect(Collectors.toUnmodifiableList());
 
     // rules present in both stores
@@ -84,7 +79,8 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
                 key ->
                     oldRuleObjects.get(key).getLastUpdatedTimestamp().toEpochMilli()
                         > newRuleObjects.get(key).getLastUpdatedTimestamp().toEpochMilli())
-            .map(key -> convertRule(oldRuleObjects.get(key).getData()))
+            .map(key -> ruleConverter.convertRule(oldRuleObjects.get(key).getData()))
+            .filter(Objects::nonNull)
             .collect(Collectors.toUnmodifiableList());
 
     newRulesStore.deleteObjects(requestContext, oldRuleIdsToDelete);
@@ -92,13 +88,5 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
     newRulesStore.upsertObjects(requestContext, oldRulesToUpdate);
 
     tenantMigrationCompletedMap.put(requestContext.buildInternalContextualKey(), true);
-  }
-
-  private DetectionExclusionRule convertRule(AnomalyExclusionRuleConfig oldRule) {
-    // TODO: write conversion logic
-    return DetectionExclusionRule.newBuilder()
-        .setId(oldRule.getId())
-        .setRuleInfo(DetectionExclusionRuleInfo.newBuilder().setRuleStatus(DEFAULT_OLD_RULE_STATUS))
-        .build();
   }
 }
