@@ -86,9 +86,9 @@ configServiceConfig:
     url: ""
 
 partitionerServiceConfig:
-  default.profiles:
+  defaultProfiles:
     - name: "spans"
-      partitionkey: "customer_id"
+      partitionKey: "customer_id"
 
 logConfig:
   name: config-service-log-config

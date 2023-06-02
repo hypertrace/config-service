@@ -13,7 +13,7 @@ public class PartitionerConfigServiceModule extends AbstractModule {
   public static final String GENERIC_CONFIG_SERVICE = "generic.config.service";
   public static final String DOC_STORE_CONFIG_KEY = "document.store";
   public static final String DATA_STORE_TYPE = "dataStoreType";
-  public static final String DEFAULT_PROFILE = "partitioner.config.service";
+  public static final String PARTITIONER_CONFIG_SERVICE = "partitioner.config.service";
 
   private final Config config;
 
@@ -32,8 +32,8 @@ public class PartitionerConfigServiceModule extends AbstractModule {
     Config docStoreConfig = genericConfig.getConfig(DOC_STORE_CONFIG_KEY);
     String dataStoreType = docStoreConfig.getString(DATA_STORE_TYPE);
     Config dataStoreConfig = docStoreConfig.getConfig(dataStoreType);
-    Config defaultProfileConfig = config.getConfig(DEFAULT_PROFILE);
+    Config partitionerConfig = config.getConfig(PARTITIONER_CONFIG_SERVICE);
     Datastore datastore = DatastoreProvider.getDatastore(dataStoreType, dataStoreConfig);
-    return new PartitionerProfilesDocumentStore(datastore, defaultProfileConfig);
+    return new PartitionerProfilesDocumentStore(datastore, partitionerConfig);
   }
 }

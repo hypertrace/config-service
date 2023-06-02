@@ -12,15 +12,15 @@ import org.hypertrace.partitioner.config.service.v1.PartitionerProfile;
 public class PartitionerProfilesDocumentStore implements PartitionerProfilesStore {
   public static final String PARTITIONER_PROFILES = "partitioner_profiles";
   private static final String PARTITIONER_PROFILE_NAME_FIELD = "name";
-  private static final String DEFAULT_PROFILES_FIELD = "default.profiles";
-  private static final String DEFAULT_PROFILE_NAME = "name";
-  private static final String DEFAULT_PROFILE_PARTITION_KEY = "partitionkey";
+  private static final String DEFAULT_PROFILES = "default.profiles";
+  private static final String PROFILE_NAME = "name";
+  private static final String PROFILE_PARTITION_KEY = "partition.key";
   private static final int DEFAULT_PROFILE_WEIGHT = 100;
   private final Collection collection;
 
-  public PartitionerProfilesDocumentStore(Datastore datastore, Config defaultProfile) {
+  public PartitionerProfilesDocumentStore(Datastore datastore, Config partitionerConfig) {
     this.collection = datastore.getCollection(PARTITIONER_PROFILES);
-    setUpDefaultProfile(defaultProfile);
+    setUpDefaultProfile(partitionerConfig);
   }
 
   @Override
@@ -70,21 +70,21 @@ public class PartitionerProfilesDocumentStore implements PartitionerProfilesStor
         profiles.stream().map(PartitionerProfileKey::new).collect(Collectors.toSet()));
   }
 
-  private void setUpDefaultProfile(Config defaultProfile) {
+  private void setUpDefaultProfile(Config partitionerConfig) {
     ArrayList<PartitionerProfile> partitionerProfiles = new ArrayList<>();
-    defaultProfile
-        .getConfigList(DEFAULT_PROFILES_FIELD)
+    partitionerConfig
+        .getConfigList(DEFAULT_PROFILES)
         .forEach(
             profile -> {
               try {
                 Optional<PartitionerProfile> fetchedProfile =
-                    getPartitionerProfile(profile.getString(DEFAULT_PROFILE_NAME));
+                    getPartitionerProfile(profile.getString(PROFILE_NAME));
                 if (fetchedProfile.isEmpty()) {
                   PartitionerProfile newProfile =
                       PartitionerProfile.newBuilder()
-                          .setName(profile.getString(DEFAULT_PROFILE_NAME))
+                          .setName(profile.getString(PROFILE_NAME))
                           .setDefaultGroupWeight(DEFAULT_PROFILE_WEIGHT)
-                          .setPartitionKey(profile.getString(DEFAULT_PROFILE_PARTITION_KEY))
+                          .setPartitionKey(profile.getString(PROFILE_PARTITION_KEY))
                           .build();
                   partitionerProfiles.add(newProfile);
                   putPartitionerProfiles(partitionerProfiles);
