@@ -56,17 +56,17 @@ class PartitionerConfigServiceRequestValidatorTest {
   public void testPartitionGroupsExist() {
     PartitionerConfigServiceRequestValidator underTest =
         new PartitionerConfigServiceRequestValidator();
-assertDoesNotThrow(
-            () ->
-                underTest.validateOrThrow(
-                    PutPartitionerProfilesRequest.newBuilder()
-                        .addProfiles(
-                            PartitionerProfile.newBuilder()
-                                .setName("spansCountProfile")
-                                .setDefaultGroupWeight(25)
-                                .setPartitionKey("tenant_id")
-                                .build())
-                        .build()));
+    assertDoesNotThrow(
+        () ->
+            underTest.validateOrThrow(
+                PutPartitionerProfilesRequest.newBuilder()
+                    .addProfiles(
+                        PartitionerProfile.newBuilder()
+                            .setName("spansCountProfile")
+                            .setDefaultGroupWeight(25)
+                            .setPartitionKey("tenant_id")
+                            .build())
+                    .build()));
   }
 
   @Test

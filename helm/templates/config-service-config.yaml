@@ -32,9 +32,16 @@ data:
       }
     }
 
-    partition.config.service {
-      members = {{ toJson .Values.partitionServiceConfig.default.profile.names }}
-      weight = {{ .Values.partitionServiceConfig.default.profile.weight }}
-      partition.key = {{ .Values.partitionServiceConfig.default.profile.partition.key }}
+    partitioner.config.service {
+      {{- if $.Values.partitionerServiceConfig.default.profiles }}
+      default.profiles = [
+      {{- range $k,$v := $.Values.partitionerServiceConfig.default.profiles }}
+        {
+          name = {{ $v.name }}
+          partitionkey = {{ $v.partitionkey }}
+        }
+      {{- end }}
+      {{- end }}
+      ]
     }
 

@@ -85,12 +85,10 @@ configServiceConfig:
     host: mongo
     url: ""
 
-partitionServiceConfig:
-  default:
-    profile:
-      names: []
-      weight: 100
-      partition.key: ""
+partitionerServiceConfig:
+  default.profiles:
+    - name: "spans"
+      partitionkey: "customer_id"
 
 logConfig:
   name: config-service-log-config

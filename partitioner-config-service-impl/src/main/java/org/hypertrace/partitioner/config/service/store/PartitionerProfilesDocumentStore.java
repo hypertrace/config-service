@@ -7,13 +7,15 @@ import java.util.*;
 import java.util.stream.Collectors;
 import org.hypertrace.core.documentstore.*;
 import org.hypertrace.core.documentstore.Collection;
-import org.hypertrace.partitioner.config.service.v1.PartitionerGroup;
 import org.hypertrace.partitioner.config.service.v1.PartitionerProfile;
 
 public class PartitionerProfilesDocumentStore implements PartitionerProfilesStore {
   public static final String PARTITIONER_PROFILES = "partitioner_profiles";
   private static final String PARTITIONER_PROFILE_NAME_FIELD = "name";
-
+  private static final String DEFAULT_PROFILES_FIELD = "default.profiles";
+  private static final String DEFAULT_PROFILE_NAME = "name";
+  private static final String DEFAULT_PROFILE_PARTITION_KEY = "partitionkey";
+  private static final int DEFAULT_PROFILE_WEIGHT = 100;
   private final Collection collection;
 
   public PartitionerProfilesDocumentStore(Datastore datastore, Config defaultProfile) {
@@ -70,23 +72,26 @@ public class PartitionerProfilesDocumentStore implements PartitionerProfilesStor
 
   private void setUpDefaultProfile(Config defaultProfile) {
     ArrayList<PartitionerProfile> partitionerProfiles = new ArrayList<>();
-    defaultProfile.getStringList("members").forEach(profileName -> {
-      try {
-        Optional<PartitionerProfile> profile = getPartitionerProfile(defaultProfile.getString(profileName));
-        if(profile.isEmpty()) {
-          PartitionerProfile newProfile = PartitionerProfile
-                  .newBuilder()
-                  .setName(profileName)
-                  .setDefaultGroupWeight(defaultProfile.getInt("weight"))
-                  .setPartitionKey("partition.key")
-                  .build();
-
-          partitionerProfiles.add(newProfile);
-          putPartitionerProfiles(partitionerProfiles);
-        }
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-    });
+    defaultProfile
+        .getConfigList(DEFAULT_PROFILES_FIELD)
+        .forEach(
+            profile -> {
+              try {
+                Optional<PartitionerProfile> fetchedProfile =
+                    getPartitionerProfile(profile.getString(DEFAULT_PROFILE_NAME));
+                if (fetchedProfile.isEmpty()) {
+                  PartitionerProfile newProfile =
+                      PartitionerProfile.newBuilder()
+                          .setName(profile.getString(DEFAULT_PROFILE_NAME))
+                          .setDefaultGroupWeight(DEFAULT_PROFILE_WEIGHT)
+                          .setPartitionKey(profile.getString(DEFAULT_PROFILE_PARTITION_KEY))
+                          .build();
+                  partitionerProfiles.add(newProfile);
+                  putPartitionerProfiles(partitionerProfiles);
+                }
+              } catch (Exception e) {
+                throw new RuntimeException(e);
+              }
+            });
   }
 }
