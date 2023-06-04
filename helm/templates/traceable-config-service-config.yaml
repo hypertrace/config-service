@@ -28,6 +28,16 @@ data:
         }
       }
     }
+    partitioner.config.service {
+      default.profiles = [
+      {{- range $k,$v := $.Values.traceableConfigServiceConfig.partitionerServiceConfig.defaultProfiles }}
+        {
+          name = {{ $v.name }}
+          partition.key = {{ $v.partitionKey }}
+        }
+      {{- end }}
+      ]
+    }
     event.store {
       type = kafka
       bootstrap.servers = "bootstrap:9092"

@@ -164,6 +164,10 @@ traceableConfigServiceConfig:
     host: mongo
     url: ""
 
+  partitionerServiceConfig:
+    defaultProfiles:
+        - name: "spans"
+          partitionKey: "customer_id"
   insightsServiceConfig:
     host: insights-service
     port: 50098
