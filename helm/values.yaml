@@ -85,6 +85,11 @@ configServiceConfig:
     host: mongo
     url: ""
 
+partitionerServiceConfig:
+  defaultProfiles:
+    - name: "spans"
+      partitionKey: "customer_id"
+
 logConfig:
   name: config-service-log-config
   monitorInterval: 30

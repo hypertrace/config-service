@@ -31,3 +31,16 @@ data:
         schema.registry.url = "http://schema-registry-service:8081"
       }
     }
+    partitioner.config.service {
+      {{- if $.Values.partitionerServiceConfig.defaultProfiles }}
+      default.profiles = [
+      {{- range $k,$v := $.Values.partitionerServiceConfig.defaultProfiles }}
+        {
+          name = {{ $v.name }}
+          partition.key = {{ $v.partitionKey }}
+        }
+      {{- end }}
+      {{- end }}
+      ]
+    }
+
