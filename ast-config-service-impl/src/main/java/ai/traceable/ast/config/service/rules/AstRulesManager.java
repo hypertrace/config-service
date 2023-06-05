@@ -1,5 +1,6 @@
 package ai.traceable.ast.config.service.rules;
 
+import ai.traceable.ast.config.service.v1.CustomerDefinedTagsMap;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
@@ -83,10 +84,15 @@ class AstRulesManager implements RulesManager {
       VulnerabilityMetadataOverrides overriddenVulnerabilityMetadata) {
     existingVulnerabilityMetadata.setIdentifyingAttributes(
         overriddenVulnerabilityMetadata.getIdentifyingAttributes());
-    if (overriddenVulnerabilityMetadata.getCustomerDefinedTagsCount() > 0) {
+    if (overriddenVulnerabilityMetadata.hasCustomerDefinedTags()) {
       existingVulnerabilityMetadata.clearCustomerDefinedTags();
-      existingVulnerabilityMetadata.putAllCustomerDefinedTags(
-          overriddenVulnerabilityMetadata.getCustomerDefinedTagsMap());
+      existingVulnerabilityMetadata.setCustomerDefinedTags(
+          CustomerDefinedTagsMap.newBuilder()
+              .putAllCustomerDefinedTags(
+                  overriddenVulnerabilityMetadata
+                      .getCustomerDefinedTags()
+                      .getCustomerDefinedTagsMap())
+              .build());
     }
     if (overriddenVulnerabilityMetadata.hasCvssScore()) {
       existingVulnerabilityMetadata.setCvssScore(overriddenVulnerabilityMetadata.getCvssScore());

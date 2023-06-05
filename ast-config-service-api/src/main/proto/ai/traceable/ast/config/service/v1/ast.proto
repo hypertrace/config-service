@@ -12,11 +12,15 @@ message ScanPurgeConfig {
 
 message VulnerabilityMetadataOverrides {
   IdentifyingAttributes identifying_attributes = 1;
-  map<string, TagValue> customer_defined_tags = 2;
+  CustomerDefinedTagsMap customer_defined_tags = 2;
   optional double cvss_score = 3;
   optional string cvss_vector_string = 4;
   optional VulnerabilitySeverity severity = 5;
   optional google.protobuf.Duration estimated_fix_time = 6;
+}
+
+message CustomerDefinedTagsMap {
+  map<string, TagValue> customer_defined_tags = 1;
 }
 
 message TagValue {

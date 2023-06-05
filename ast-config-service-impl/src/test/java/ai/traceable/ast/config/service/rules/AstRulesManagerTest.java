@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import ai.traceable.ast.config.service.v1.CustomerDefinedTagsMap;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
@@ -101,14 +102,18 @@ class AstRulesManagerTest {
         VulnerabilityMetadataOverrides.newBuilder()
             .setIdentifyingAttributes(identifyingAttributes)
             .setCvssScore(7.7)
-            .putAllCustomerDefinedTags(
-                Map.of(
-                    "TAG_NAME_1",
-                    TagValue.newBuilder()
-                        .addAllValue(List.of("VALUE1", "VALUE2", "VALUE3"))
-                        .build(),
-                    "TAG_NAME_2",
-                    TagValue.newBuilder().addAllValue(List.of("VALUE4", "VALUE5")).build()))
+            .setCustomerDefinedTags(
+                CustomerDefinedTagsMap.newBuilder()
+                    .putAllCustomerDefinedTags(
+                        Map.of(
+                            "TAG_NAME_1",
+                            TagValue.newBuilder()
+                                .addAllValue(List.of("VALUE1", "VALUE2", "VALUE3"))
+                                .build(),
+                            "TAG_NAME_2",
+                            TagValue.newBuilder()
+                                .addAllValue(List.of("VALUE4", "VALUE5"))
+                                .build())))
             .build();
     EditVulnerabilityMetadataOverridesRequest request =
         EditVulnerabilityMetadataOverridesRequest.newBuilder()
@@ -123,12 +128,16 @@ class AstRulesManagerTest {
     VulnerabilityMetadataOverrides vulnerabilityMetadataUpdates =
         VulnerabilityMetadataOverrides.newBuilder()
             .setIdentifyingAttributes(identifyingAttributes)
-            .putAllCustomerDefinedTags(
-                Map.of(
-                    "TAG_NAME_1",
-                    TagValue.newBuilder().addAllValue(List.of("VALUE1", "VALUE2")).build(),
-                    "TAG_NAME_2",
-                    TagValue.newBuilder().addAllValue(List.of("VALUE4", "VALUE5")).build()))
+            .setCustomerDefinedTags(
+                CustomerDefinedTagsMap.newBuilder()
+                    .putAllCustomerDefinedTags(
+                        Map.of(
+                            "TAG_NAME_1",
+                            TagValue.newBuilder().addAllValue(List.of("VALUE1", "VALUE2")).build(),
+                            "TAG_NAME_2",
+                            TagValue.newBuilder()
+                                .addAllValue(List.of("VALUE4", "VALUE5"))
+                                .build())))
             .build();
     request =
         EditVulnerabilityMetadataOverridesRequest.newBuilder()
@@ -142,12 +151,16 @@ class AstRulesManagerTest {
         VulnerabilityMetadataOverrides.newBuilder()
             .setIdentifyingAttributes(identifyingAttributes)
             .setCvssScore(7.7)
-            .putAllCustomerDefinedTags(
-                Map.of(
-                    "TAG_NAME_1",
-                    TagValue.newBuilder().addAllValue(List.of("VALUE1", "VALUE2")).build(),
-                    "TAG_NAME_2",
-                    TagValue.newBuilder().addAllValue(List.of("VALUE4", "VALUE5")).build()))
+            .setCustomerDefinedTags(
+                CustomerDefinedTagsMap.newBuilder()
+                    .putAllCustomerDefinedTags(
+                        Map.of(
+                            "TAG_NAME_1",
+                            TagValue.newBuilder().addAllValue(List.of("VALUE1", "VALUE2")).build(),
+                            "TAG_NAME_2",
+                            TagValue.newBuilder()
+                                .addAllValue(List.of("VALUE4", "VALUE5"))
+                                .build())))
             .build(),
         returnedVulnerabilityMetadataOverrides);
   }
@@ -165,14 +178,18 @@ class AstRulesManagerTest {
         VulnerabilityMetadataOverrides.newBuilder()
             .setIdentifyingAttributes(identifyingAttributes)
             .setCvssScore(7.7)
-            .putAllCustomerDefinedTags(
-                Map.of(
-                    "TAG_NAME_1",
-                    TagValue.newBuilder()
-                        .addAllValue(List.of("VALUE1", "VALUE2", "VALUE3"))
-                        .build(),
-                    "TAG_NAME_2",
-                    TagValue.newBuilder().addAllValue(List.of("VALUE4", "VALUE5")).build()))
+            .setCustomerDefinedTags(
+                CustomerDefinedTagsMap.newBuilder()
+                    .putAllCustomerDefinedTags(
+                        Map.of(
+                            "TAG_NAME_1",
+                            TagValue.newBuilder()
+                                .addAllValue(List.of("VALUE1", "VALUE2", "VALUE3"))
+                                .build(),
+                            "TAG_NAME_2",
+                            TagValue.newBuilder()
+                                .addAllValue(List.of("VALUE4", "VALUE5"))
+                                .build())))
             .build();
     EditVulnerabilityMetadataOverridesRequest request =
         EditVulnerabilityMetadataOverridesRequest.newBuilder()
@@ -200,12 +217,16 @@ class AstRulesManagerTest {
     VulnerabilityMetadataOverrides vulnerabilityMetadataUpdates =
         VulnerabilityMetadataOverrides.newBuilder()
             .setIdentifyingAttributes(identifyingAttributes)
-            .putAllCustomerDefinedTags(
-                Map.of(
-                    "TAG_NAME_1",
-                    TagValue.newBuilder().addAllValue(List.of("VALUE1", "VALUE2")).build(),
-                    "TAG_NAME_2",
-                    TagValue.newBuilder().addAllValue(List.of("VALUE4", "VALUE5")).build()))
+            .setCustomerDefinedTags(
+                CustomerDefinedTagsMap.newBuilder()
+                    .putAllCustomerDefinedTags(
+                        Map.of(
+                            "TAG_NAME_1",
+                            TagValue.newBuilder().addAllValue(List.of("VALUE1", "VALUE2")).build(),
+                            "TAG_NAME_2",
+                            TagValue.newBuilder()
+                                .addAllValue(List.of("VALUE4", "VALUE5"))
+                                .build())))
             .build();
     request =
         EditVulnerabilityMetadataOverridesRequest.newBuilder()
@@ -218,12 +239,16 @@ class AstRulesManagerTest {
     assertEquals(
         VulnerabilityMetadataOverrides.newBuilder()
             .setIdentifyingAttributes(identifyingAttributes)
-            .putAllCustomerDefinedTags(
-                Map.of(
-                    "TAG_NAME_1",
-                    TagValue.newBuilder().addAllValue(List.of("VALUE1", "VALUE2")).build(),
-                    "TAG_NAME_2",
-                    TagValue.newBuilder().addAllValue(List.of("VALUE4", "VALUE5")).build()))
+            .setCustomerDefinedTags(
+                CustomerDefinedTagsMap.newBuilder()
+                    .putAllCustomerDefinedTags(
+                        Map.of(
+                            "TAG_NAME_1",
+                            TagValue.newBuilder().addAllValue(List.of("VALUE1", "VALUE2")).build(),
+                            "TAG_NAME_2",
+                            TagValue.newBuilder()
+                                .addAllValue(List.of("VALUE4", "VALUE5"))
+                                .build())))
             .build(),
         returnedVulnerabilityMetadataOverrides);
   }
@@ -241,14 +266,18 @@ class AstRulesManagerTest {
         VulnerabilityMetadataOverrides.newBuilder()
             .setIdentifyingAttributes(identifyingAttributes)
             .setCvssScore(7.7)
-            .putAllCustomerDefinedTags(
-                Map.of(
-                    "TAG_NAME_1",
-                    TagValue.newBuilder()
-                        .addAllValue(List.of("VALUE1", "VALUE2", "VALUE3"))
-                        .build(),
-                    "TAG_NAME_2",
-                    TagValue.newBuilder().addAllValue(List.of("VALUE4", "VALUE5")).build()))
+            .setCustomerDefinedTags(
+                CustomerDefinedTagsMap.newBuilder()
+                    .putAllCustomerDefinedTags(
+                        Map.of(
+                            "TAG_NAME_1",
+                            TagValue.newBuilder()
+                                .addAllValue(List.of("VALUE1", "VALUE2", "VALUE3"))
+                                .build(),
+                            "TAG_NAME_2",
+                            TagValue.newBuilder()
+                                .addAllValue(List.of("VALUE4", "VALUE5"))
+                                .build())))
             .build();
     EditVulnerabilityMetadataOverridesRequest request =
         EditVulnerabilityMetadataOverridesRequest.newBuilder()
@@ -306,14 +335,18 @@ class AstRulesManagerTest {
         VulnerabilityMetadataOverrides.newBuilder()
             .setIdentifyingAttributes(identifyingAttributes)
             .setCvssScore(7.7)
-            .putAllCustomerDefinedTags(
-                Map.of(
-                    "TAG_NAME_1",
-                    TagValue.newBuilder()
-                        .addAllValue(List.of("VALUE1", "VALUE2", "VALUE3"))
-                        .build(),
-                    "TAG_NAME_2",
-                    TagValue.newBuilder().addAllValue(List.of("VALUE4", "VALUE5")).build()))
+            .setCustomerDefinedTags(
+                CustomerDefinedTagsMap.newBuilder()
+                    .putAllCustomerDefinedTags(
+                        Map.of(
+                            "TAG_NAME_1",
+                            TagValue.newBuilder()
+                                .addAllValue(List.of("VALUE1", "VALUE2", "VALUE3"))
+                                .build(),
+                            "TAG_NAME_2",
+                            TagValue.newBuilder()
+                                .addAllValue(List.of("VALUE4", "VALUE5"))
+                                .build())))
             .build();
     EditVulnerabilityMetadataOverridesRequest request =
         EditVulnerabilityMetadataOverridesRequest.newBuilder()
