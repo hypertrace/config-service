@@ -83,6 +83,7 @@ public class RateLimitingRulesManagerTest {
                     .addAllIpAddresses(List.of("8.8.8.8")) // Shouldn't appear in processed
                     .addAllCidrIpRanges(List.of("3.3.3.3/31")) // Shouldn't appear in processed
                     .addAllRawInputIpData(List.of("1.2.3.4", "192.168.100.14/24", "127.0.0.1"))
+                    .setExclude(true)
                     .build())
             .build();
     LeafCondition processedIpRuleLeaf =
@@ -92,6 +93,7 @@ public class RateLimitingRulesManagerTest {
                     .addAllRawInputIpData(List.of("1.2.3.4", "192.168.100.14/24", "127.0.0.1"))
                     .addAllIpAddresses(List.of("1.2.3.4", "127.0.0.1"))
                     .addCidrIpRanges("192.168.100.14/24")
+                    .setExclude(true)
                     .build())
             .build();
     RateLimitingRuleData nonIpAddressRuleData =

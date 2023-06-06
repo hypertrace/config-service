@@ -97,15 +97,16 @@ public class RateLimitingRulesManager implements RulesManager {
   private Condition processCondition(Condition condition) {
     Condition.Builder builder = condition.toBuilder();
     if (condition.hasLeafCondition() && condition.getLeafCondition().hasIpAddressCondition()) {
-      List<String> rawIps =
-          condition.getLeafCondition().getIpAddressCondition().getRawInputIpDataList();
+      IpAddressCondition ipAddressCondition = condition.getLeafCondition().getIpAddressCondition();
+      List<String> rawIps = ipAddressCondition.getRawInputIpDataList();
       IpParsingResults parsedResults = parseRawIpRange(rawIps);
       IpAddressCondition.Builder ipAddressConditionBuilder =
           builder.getLeafConditionBuilder().getIpAddressConditionBuilder();
       ipAddressConditionBuilder.clearCidrIpRanges().clearIpAddresses();
       ipAddressConditionBuilder
           .addAllCidrIpRanges(parsedResults.getIpRanges())
-          .addAllIpAddresses(parsedResults.getIpAddresses());
+          .addAllIpAddresses(parsedResults.getIpAddresses())
+          .setExclude(ipAddressCondition.getExclude());
     } else if (condition.hasCompositeCondition()) {
       List<Condition> processedChildrenConditions =
           condition.getCompositeCondition().getChildrenList().stream()

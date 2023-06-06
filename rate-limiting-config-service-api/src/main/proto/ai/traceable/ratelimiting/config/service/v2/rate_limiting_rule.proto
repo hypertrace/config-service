@@ -168,6 +168,7 @@ message DatatypeCondition {
 message RegionCondition {
   repeated string regions = 1 [deprecated = true];
   repeated Region region_identifiers = 2;
+  bool exclude = 3;
 
   message Region {
     oneof region {
@@ -180,6 +181,7 @@ message IpAddressCondition {
   repeated string cidr_ip_ranges = 1;
   repeated string ip_addresses = 2;
   repeated string raw_input_ip_data = 3;
+  bool exclude = 4;
 }
 
 message IpLocationTypeCondition {
@@ -190,6 +192,7 @@ message UserIdCondition {
   repeated string user_id_regexes = 1;
   repeated string actor_entity_ids = 2; // not supported currently
   repeated string user_ids = 3;
+  bool exclude = 4;
 }
 
 message IpReputationCondition {
@@ -203,11 +206,13 @@ message IpConnectionTypeCondition {
 message EmailDomainCondition {
   repeated string email_domains = 1;
   repeated string email_regexes = 2;
+  bool exclude = 3;
 }
 
 message UserAgentCondition {
   repeated string user_agents = 1;
   repeated string user_agent_regexes = 2;
+  bool exclude = 3;
 }
 
 message ThresholdActionConfig {
