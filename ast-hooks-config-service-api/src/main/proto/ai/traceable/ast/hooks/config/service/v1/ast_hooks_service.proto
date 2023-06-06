@@ -66,7 +66,7 @@ message GetAstHookResponse {
 }
 
 message CreateAstHookTestRequest {
-  AstHookDetails hook_details = 1;
+  AstHookTestDetails hook_test_details = 1;
   AllowedRunners allowed_runners = 2;
 }
 
@@ -98,9 +98,8 @@ message DeleteAstHookTestsResponse {}
 
 message UpdateAstHookTestRequest {
   string id = 1;
-  AstHookTestDetails ast_hook_test_details = 2;
-  optional TestStatus test_status = 3;
-  optional string logs = 4;
+  optional TestStatus test_status = 2;
+  optional string logs = 3;
 }
 
 message UpdateAstHookTestResponse {

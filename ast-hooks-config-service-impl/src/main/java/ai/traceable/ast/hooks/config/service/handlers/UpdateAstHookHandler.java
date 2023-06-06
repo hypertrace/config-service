@@ -1,6 +1,6 @@
 package ai.traceable.ast.hooks.config.service.handlers;
 
-import ai.traceable.ast.hooks.config.service.AstHooksConfigStore;
+import ai.traceable.ast.hooks.config.service.store.AstHooksConfigStore;
 import ai.traceable.ast.hooks.config.service.v1.AstHook;
 import ai.traceable.ast.hooks.config.service.v1.AstHookDetails;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookRequest;

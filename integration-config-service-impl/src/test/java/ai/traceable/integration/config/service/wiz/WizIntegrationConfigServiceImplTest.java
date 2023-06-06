@@ -1,9 +1,11 @@
-package ai.traceable.integration.config.service.Wiz;
+package ai.traceable.integration.config.service.wiz;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.config.utils.UuidGenerator;
-import ai.traceable.integration.config.service.wiz.WizIntegrationConfigServiceImpl;
 import ai.traceable.integration.config.service.wiz.store.WizIntegrationConfigStore;
 import ai.traceable.integration.config.service.wiz.v1.CreateWizIntegrationRequest;
 import ai.traceable.integration.config.service.wiz.v1.DeleteWizIntegrationRequest;
@@ -21,23 +23,21 @@ import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
-import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class WizIntegrationConfigServiceImplTest {
+class WizIntegrationConfigServiceImplTest {
   WizIntegrationConfigServiceGrpc.WizIntegrationConfigServiceBlockingStub
       wizIntegrationConfigServiceBlockingStub;
 
   @Mock private ConfigChangeEventGenerator configChangeEventGenerator;
   @Mock private WizIntegrationConfigRequestValidator wizIntegrationConfigRequestValidator;
-  @Mock private RequestContext requestContext;
 
   @Test
-  public void testCreateWizIntegration() {
+  void testCreateWizIntegration() {
     setupMocks(new MockGenericConfigService().mockUpsert());
 
     CreateWizIntegrationRequest expected =
@@ -66,7 +66,7 @@ public class WizIntegrationConfigServiceImplTest {
   }
 
   @Test
-  public void testUpdateWizIntegration() {
+  void testUpdateWizIntegration() {
     setupMocks(new MockGenericConfigService().mockUpsert().mockGetAll());
 
     WizIntegration existing =
@@ -177,7 +177,7 @@ public class WizIntegrationConfigServiceImplTest {
   }
 
   @Test
-  public void testGetWizIntegrationSummaries() {
+  void testGetWizIntegrationSummaries() {
     setupMocks(new MockGenericConfigService().mockUpsert().mockGetAll());
 
     WizIntegration wizIntegration =

@@ -1,4 +1,6 @@
-package ai.traceable.ast.hooks.config.service;
+package ai.traceable.ast.hooks.config.service.store;
+
+import static ai.traceable.ast.hooks.config.service.store.AstHookConfigConstants.AST_HOOKS_CONFIG_RESOURCE_NAMESPACE;
 
 import ai.traceable.ast.hooks.config.service.v1.AstHook;
 import com.google.protobuf.Value;
@@ -10,7 +12,6 @@ import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 
 public class AstHooksConfigStore extends IdentifiedObjectStore<AstHook> {
-  private static final String AST_HOOKS_CONFIG_RESOURCE_NAMESPACE = "ast-hooks";
   private static final String AST_HOOKS_CONFIG_RESOURCE_NAME = "ast-hooks-config";
 
   @Inject

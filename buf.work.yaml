@@ -7,6 +7,7 @@ directories:
   - api-spec-config-service-api/src/main/proto
   - ast-scan-profile-config-service-api/src/main/proto
   - ast-config-service-api/src/main/proto
+  - ast-hooks-config-service-api/src/main/proto
   - auth-detection-config-service-api/src/main/proto
   - blocking-config-service-api/src/main/proto
   - custom-signature-config-service-api/src/main/proto

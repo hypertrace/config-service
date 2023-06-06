@@ -1,19 +1,34 @@
 package ai.traceable.ast.hooks.config.service;
 
+import ai.traceable.ast.hooks.config.service.handlers.AstHookTestManager;
 import ai.traceable.ast.hooks.config.service.handlers.CreateAstHookHandler;
 import ai.traceable.ast.hooks.config.service.handlers.UpdateAstHookHandler;
+import ai.traceable.ast.hooks.config.service.store.AstHooksConfigStore;
+import ai.traceable.ast.hooks.config.service.store.AstHooksTestConfigStore;
 import ai.traceable.ast.hooks.config.service.v1.AstHook;
+import ai.traceable.ast.hooks.config.service.v1.AstHookTest;
+import ai.traceable.ast.hooks.config.service.v1.AstHookTestResult;
 import ai.traceable.ast.hooks.config.service.v1.AstHooksConfigServiceGrpc.AstHooksConfigServiceImplBase;
 import ai.traceable.ast.hooks.config.service.v1.CreateAstHookRequest;
 import ai.traceable.ast.hooks.config.service.v1.CreateAstHookResponse;
+import ai.traceable.ast.hooks.config.service.v1.CreateAstHookTestRequest;
+import ai.traceable.ast.hooks.config.service.v1.CreateAstHookTestResponse;
 import ai.traceable.ast.hooks.config.service.v1.DeleteAstHookRequest;
 import ai.traceable.ast.hooks.config.service.v1.DeleteAstHookResponse;
+import ai.traceable.ast.hooks.config.service.v1.DeleteAstHookTestsRequest;
+import ai.traceable.ast.hooks.config.service.v1.DeleteAstHookTestsResponse;
 import ai.traceable.ast.hooks.config.service.v1.GetAllAstHooksRequest;
 import ai.traceable.ast.hooks.config.service.v1.GetAllAstHooksResponse;
 import ai.traceable.ast.hooks.config.service.v1.GetAstHookRequest;
 import ai.traceable.ast.hooks.config.service.v1.GetAstHookResponse;
+import ai.traceable.ast.hooks.config.service.v1.GetAstHookTestResultRequest;
+import ai.traceable.ast.hooks.config.service.v1.GetAstHookTestResultResponse;
+import ai.traceable.ast.hooks.config.service.v1.GetAstHookTestsRequest;
+import ai.traceable.ast.hooks.config.service.v1.GetAstHookTestsResponse;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookRequest;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookResponse;
+import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookTestRequest;
+import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookTestResponse;
 import ai.traceable.ast.hooks.config.service.validators.RequestValidator;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -29,14 +44,17 @@ public class AstHooksConfigServiceImpl extends AstHooksConfigServiceImplBase {
   private final RequestValidator requestValidator;
   private final CreateAstHookHandler createAstHookHandler;
   private final UpdateAstHookHandler updateAstHookHandler;
-  private final AstHooksConfigStore configStore;
+  private final AstHooksConfigStore astHooksConfigStore;
+  private final AstHooksTestConfigStore astHooksTestConfigStore;
+  private final AstHookTestManager astHookTestManager;
 
   @Override
   public void createAstHook(
       CreateAstHookRequest request, StreamObserver<CreateAstHookResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
     try {
-      requestValidator.validate(request);
-      AstHook upsertedHook = createAstHookHandler.createHook(request, RequestContext.CURRENT.get());
+      requestValidator.validate(requestContext, request);
+      AstHook upsertedHook = createAstHookHandler.createHook(request, requestContext);
       CreateAstHookResponse response =
           CreateAstHookResponse.newBuilder().setAstHook(upsertedHook).build();
       responseObserver.onNext(response);
@@ -51,7 +69,7 @@ public class AstHooksConfigServiceImpl extends AstHooksConfigServiceImplBase {
   public void getAllAstHooks(
       GetAllAstHooksRequest request, StreamObserver<GetAllAstHooksResponse> responseObserver) {
     try {
-      List<AstHook> astHooks = configStore.getAllConfigData(RequestContext.CURRENT.get());
+      List<AstHook> astHooks = astHooksConfigStore.getAllConfigData(RequestContext.CURRENT.get());
       GetAllAstHooksResponse response =
           GetAllAstHooksResponse.newBuilder().addAllAstHooks(astHooks).build();
       responseObserver.onNext(response);
@@ -68,7 +86,7 @@ public class AstHooksConfigServiceImpl extends AstHooksConfigServiceImplBase {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       AstHook astHook =
-          configStore
+          astHooksConfigStore
               .getData(requestContext, request.getId())
               .orElseThrow(
                   () -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
@@ -84,9 +102,10 @@ public class AstHooksConfigServiceImpl extends AstHooksConfigServiceImplBase {
   @Override
   public void deleteAstHook(
       DeleteAstHookRequest request, StreamObserver<DeleteAstHookResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
     try {
-      requestValidator.validate(request);
-      configStore.deleteObject(RequestContext.CURRENT.get(), request.getId());
+      requestValidator.validate(requestContext, request);
+      astHooksConfigStore.deleteObject(requestContext, request.getId());
       responseObserver.onNext(DeleteAstHookResponse.newBuilder().build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -98,13 +117,129 @@ public class AstHooksConfigServiceImpl extends AstHooksConfigServiceImplBase {
   @Override
   public void updateAstHook(
       UpdateAstHookRequest request, StreamObserver<UpdateAstHookResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
     try {
-      requestValidator.validate(request);
-      AstHook astHook = updateAstHookHandler.updateHook(request, RequestContext.CURRENT.get());
+      requestValidator.validate(requestContext, request);
+      AstHook astHook = updateAstHookHandler.updateHook(request, requestContext);
       responseObserver.onNext(UpdateAstHookResponse.newBuilder().setAstHook(astHook).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Error updating hook for id: " + request.getId(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void createAstHookTest(
+      CreateAstHookTestRequest request,
+      StreamObserver<CreateAstHookTestResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      requestValidator.validateOrThrow(requestContext, request);
+      responseObserver.onNext(
+          CreateAstHookTestResponse.newBuilder()
+              .setAstHookTest(astHookTestManager.createHookTest(requestContext, request))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(
+          "Unable to create ast hook test config in context {} with request {}",
+          requestContext,
+          request,
+          e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void updateAstHookTest(
+      UpdateAstHookTestRequest request,
+      StreamObserver<UpdateAstHookTestResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      requestValidator.validateOrThrow(requestContext, request);
+      responseObserver.onNext(
+          UpdateAstHookTestResponse.newBuilder()
+              .setAstHookTest(astHookTestManager.updateHookTest(requestContext, request))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(
+          "Unable to update ast hook test config in context {} with request {}",
+          requestContext,
+          request,
+          e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void deleteAstHookTests(
+      DeleteAstHookTestsRequest request,
+      StreamObserver<DeleteAstHookTestsResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      requestValidator.validateOrThrow(requestContext, request);
+      astHooksTestConfigStore.deleteObjects(requestContext, request.getIdsList());
+      responseObserver.onNext(DeleteAstHookTestsResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(
+          "Unable to delete ast hook test configs in context {} with request {}",
+          requestContext,
+          request,
+          e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getAstHookTestResult(
+      GetAstHookTestResultRequest request,
+      StreamObserver<GetAstHookTestResultResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      requestValidator.validateOrThrow(requestContext, request);
+      final AstHookTest astHookTest =
+          astHooksTestConfigStore.getData(requestContext, request.getId()).orElseThrow();
+      final AstHookTestResult astHookTestResult =
+          AstHookTestResult.newBuilder()
+              .setId(astHookTest.getId())
+              .setTestStatus(astHookTest.getTestStatus())
+              .addAllLogs(astHookTest.getLogsList())
+              .build();
+      responseObserver.onNext(
+          GetAstHookTestResultResponse.newBuilder().setHookTestResult(astHookTestResult).build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(
+          "Unable to fetch ast hook test result in context {} with request {}",
+          requestContext,
+          request,
+          e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getAstHookTests(
+      GetAstHookTestsRequest request, StreamObserver<GetAstHookTestsResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      requestValidator.validateOrThrow(requestContext, request);
+      responseObserver.onNext(
+          GetAstHookTestsResponse.newBuilder()
+              .addAllAstHookTests(
+                  astHooksTestConfigStore.getAllFilteredAstHookTests(
+                      requestContext, request.getAstHookTestFiltersList()))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(
+          "Unable to fetch ast hook tests in context {} with request {}}",
+          requestContext,
+          request,
+          e);
       responseObserver.onError(e);
     }
   }

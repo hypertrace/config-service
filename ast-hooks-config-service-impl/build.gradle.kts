@@ -7,6 +7,7 @@ plugins {
 dependencies {
   api(libs.grpc.api)
   api(libs.typesafe.config)
+  implementation(projects.configUtils)
   implementation(projects.astHooksConfigServiceApi)
   implementation(libs.guice)
   implementation(libs.slf4j.api)
@@ -17,6 +18,7 @@ dependencies {
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpcutils.client)
   implementation(libs.hypertrace.configservice.protoconverter)
+  implementation(libs.hypertrace.configservice.changeeventgenerator)
 
   implementation(libs.commons.lang)
 
@@ -25,6 +27,7 @@ dependencies {
 
   testImplementation(libs.junit.jupiter)
   testImplementation(libs.mockito.core)
+  testImplementation(libs.mockito.junit)
   testImplementation(testFixtures(libs.hypertrace.configservice.api))
 }
 

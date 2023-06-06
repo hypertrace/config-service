@@ -1,6 +1,8 @@
-package ai.traceable.integration.config.service.Wiz.validation;
+package ai.traceable.integration.config.service.wiz.validation;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -12,7 +14,6 @@ import ai.traceable.integration.config.service.wiz.v1.GetWizIntegrationSummaries
 import ai.traceable.integration.config.service.wiz.v1.GetWizIntegrationsRequest;
 import ai.traceable.integration.config.service.wiz.v1.UpdateWizIntegrationRequest;
 import ai.traceable.integration.config.service.wiz.v1.WizIntegrationFilter;
-import ai.traceable.integration.config.service.wiz.validation.WizIntegrationConfigRequestValidator;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.Objects;
@@ -26,7 +27,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class WizIntegrationConfigRequestValidatorTest {
+class WizIntegrationConfigRequestValidatorTest {
 
   private static final String TEST_TENANT_ID = "tenant-id";
   private WizIntegrationConfigRequestValidator requestValidator;
@@ -117,10 +118,10 @@ public class WizIntegrationConfigRequestValidatorTest {
 
     assertThrows(
         StatusRuntimeException.class,
-        () -> {
-          requestValidator.validateOrThrow(
-              mockRequestContext, DeleteWizIntegrationRequest.newBuilder().setId("fsdf").build());
-        });
+        () ->
+            requestValidator.validateOrThrow(
+                mockRequestContext,
+                DeleteWizIntegrationRequest.newBuilder().setId("fsdf").build()));
   }
 
   @Test
@@ -144,16 +145,15 @@ public class WizIntegrationConfigRequestValidatorTest {
 
     assertThrows(
         StatusRuntimeException.class,
-        () -> {
-          requestValidator.validateOrThrow(
-              mockRequestContext,
-              UpdateWizIntegrationRequest.newBuilder()
-                  .setId("fsdkjf")
-                  .setClientId("fsdfs")
-                  .setApiEndpointUrl("http://sdfsdf")
-                  .setTokenUrl("http://token")
-                  .build());
-        });
+        () ->
+            requestValidator.validateOrThrow(
+                mockRequestContext,
+                UpdateWizIntegrationRequest.newBuilder()
+                    .setId("fsdkjf")
+                    .setClientId("fsdfs")
+                    .setApiEndpointUrl("http://sdfsdf")
+                    .setTokenUrl("http://token")
+                    .build()));
   }
 
   private void assertInvalidArgStatusContaining(String text, Executable executable) {
