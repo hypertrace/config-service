@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.alerting.config.service.v2;
+
+message SensitiveDataConfigurationChangeCondition {
+  repeated SensitiveDataConfigType config_types = 1;
+  repeated SensitiveDataChangeType change_types = 2;
+}
+
+enum SensitiveDataConfigType {
+  SENSITIVE_DATA_CONFIG_TYPE_UNSPECIFIED = 0;
+  SENSITIVE_DATA_CONFIG_TYPE_USER_ATTRIBUTION = 1;
+  SENSITIVE_DATA_CONFIG_TYPE_SESSION_IDENTIFICATION = 2;
+  SENSITIVE_DATA_CONFIG_TYPE_DATA_SET = 3;
+  SENSITIVE_DATA_CONFIG_TYPE_DATA_TYPE = 4;
+}
+
+enum SensitiveDataChangeType {
+  SENSITIVE_DATA_CHANGE_TYPE_UNSPECIFIED = 0;
+  SENSITIVE_DATA_CHANGE_TYPE_CREATE = 1;
+  SENSITIVE_DATA_CHANGE_TYPE_UPDATE = 2;
+  SENSITIVE_DATA_CHANGE_TYPE_DELETE = 3;
+}

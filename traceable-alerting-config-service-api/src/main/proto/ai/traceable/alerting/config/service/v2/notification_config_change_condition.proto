@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.alerting.config.service.v2;
+
+message NotificationConfigChangeCondition {
+  repeated NotificationType notification_types = 1;
+  repeated NotificationConfigConditionChangeType change_types = 2;
+}
+
+enum NotificationType {
+  NOTIFICATION_TYPE_UNSPECIFIED = 0;
+  NOTIFICATION_TYPE_RULE = 1;
+  NOTIFICATION_TYPE_CHANNEL = 2;
+}
+
+enum NotificationConfigConditionChangeType {
+  NOTIFICATION_CONFIG_CONDITION_CHANGE_TYPE_UNSPECIFIED = 0;
+  NOTIFICATION_CONFIG_CONDITION_CHANGE_TYPE_CREATE = 1;
+  NOTIFICATION_CONFIG_CONDITION_CHANGE_TYPE_UPDATE = 2;
+  NOTIFICATION_CONFIG_CONDITION_CHANGE_TYPE_DELETE = 3;
+}

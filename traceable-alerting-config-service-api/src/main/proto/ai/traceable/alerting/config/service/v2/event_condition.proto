@@ -11,6 +11,9 @@ import "ai/traceable/alerting/config/service/v2/actor_severity_state_change_even
 import "ai/traceable/alerting/config/service/v2/security_config_change_event_condition.proto";
 import "ai/traceable/alerting/config/service/v2/user_change_event_condition.proto";
 import "org/hypertrace/alerting/config/service/v1/metric_anomaly_event_condition.proto";
+import "ai/traceable/alerting/config/service/v2/data_collection_change_condition.proto";
+import "ai/traceable/alerting/config/service/v2/notification_config_change_condition.proto";
+import "ai/traceable/alerting/config/service/v2/sensitive_data_configuration_change_condition.proto";
 
 message EventCondition {
   string id = 1;
@@ -26,6 +29,9 @@ message EventConditionMutableData {
     ActorSeverityStateChangeEventCondition actor_severity_state_change_event_condition = 6;
     SecurityConfigChangeEventCondition security_config_change_event_condition = 7;
     UserChangeEventCondition user_change_event_condition = 8;
+    NotificationConfigChangeCondition notification_config_change_condition = 10;
+    DataCollectionChangeCondition data_collection_change_condition = 11;
+    SensitiveDataConfigurationChangeCondition sensitive_data_configuration_change_condition = 12;
   }
   optional string environment = 5 [deprecated = true];// use the EventConditionScope moving forward
   EventConditionScope scope = 9;
