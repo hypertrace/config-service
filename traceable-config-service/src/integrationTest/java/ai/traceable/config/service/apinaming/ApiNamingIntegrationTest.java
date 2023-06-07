@@ -27,6 +27,7 @@ import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServi
 import ai.traceable.localprocessing.config.service.v1.Segment;
 import ai.traceable.localprocessing.config.service.v1.ServiceRequest;
 import ai.traceable.localprocessing.config.service.v1.Wildcard;
+import ai.traceable.platform.apientity.http.client.RegexPatternCachingClient;
 import ai.traceable.platform.apientity.http.difflog.TrieDiffLogModel;
 import ai.traceable.platform.apientity.http.model.TrieModel;
 import ai.traceable.platform.apientity.http.model.TrieModelTrainerConfig;
@@ -398,6 +399,7 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
 
   private static TrieModelTrainerConfig buildTrieModelTrainerConfig() {
     return new TrieModelTrainerConfig(
+        new RegexPatternCachingClient(),
         TrainingConfig.newBuilder()
             .setDisabled(false)
             .setApiNamingTrainingConfig(

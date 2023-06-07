@@ -5,6 +5,7 @@ import ai.traceable.localprocessing.config.service.apinaming.http.namingconfig.H
 import ai.traceable.localprocessing.config.service.apinaming.http.trie.HttpApiNamingTrieManagerModule;
 import ai.traceable.localprocessing.config.service.config.EntityQueryServiceConfig;
 import ai.traceable.localprocessing.config.service.config.http.HttpApiNamingConfig;
+import ai.traceable.platform.apientity.http.client.RegexPatternCachingClient;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
@@ -41,5 +42,10 @@ public class HttpApiNamingManagerModule extends AbstractModule {
   @Provides
   HttpApiNamingConfig providesApiNamingConfig() {
     return new HttpApiNamingConfig(this.config);
+  }
+
+  @Provides
+  RegexPatternCachingClient providesRegexPatternCachingClient() {
+    return new RegexPatternCachingClient(this.config);
   }
 }

@@ -24,8 +24,10 @@ import ai.traceable.span.processing.config.service.v1.SegmentMatchingBasedConfig
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
@@ -67,10 +69,14 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
 
     List<String> segmentWhitelistRegexes = new ArrayList<>();
     List<String> extensions = new ArrayList<>();
+    Set<String> idEnums = new HashSet<>();
     EnumMap<NodeType, String> wildcardConfigsMap = new EnumMap<>(NodeType.class);
     if (maybeTrieModelTrainingConfig.isPresent()) {
       TrieModelTrainingConfig trieModelTrainingConfig = maybeTrieModelTrainingConfig.get();
       extensions = trieModelTrainingConfig.getExtensions().getValuesList();
+      idEnums =
+          trieModelTrainingConfig.getIdEnums().getValuesList().stream()
+              .collect(Collectors.toUnmodifiableSet());
       segmentWhitelistRegexes = trieModelTrainingConfig.getAllowRegexList().getValuesList();
       wildcardConfigsMap = buildWildcardConfigMap(trieModelTrainingConfig);
     }
@@ -92,6 +98,7 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
           wildcardConfigsMap,
           segmentWhitelistRegexes,
           extensions,
+          idEnums,
           maxNumberOfTriePaths);
     }
     return new HttpApiNamingConfigInfo(
@@ -102,14 +109,14 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
         wildcardConfigsMap,
         segmentWhitelistRegexes,
         extensions,
+        idEnums,
         maxNumberOfTriePaths);
   }
 
   private EnumMap<NodeType, String> buildWildcardConfigMap(
       TrieModelTrainingConfig trieModelTrainingConfig) {
     EnumMap<NodeType, String> wildcardConfigMap = new EnumMap<>(NodeType.class);
-    wildcardConfigMap.put(
-        NodeType.ID, buildWildcardIdentificationRegex(trieModelTrainingConfig.getIds()));
+    wildcardConfigMap.put(NodeType.ID, buildIdWildcardIdentificationRegex(trieModelTrainingConfig));
     wildcardConfigMap.put(
         NodeType.LOW_CARDINALITY,
         buildWildcardIdentificationRegex(trieModelTrainingConfig.getLowCardinality()));
@@ -121,6 +128,14 @@ public class DefaultHttpApiNamingConfigManager implements HttpApiNamingConfigMan
         buildWildcardIdentificationRegex(trieModelTrainingConfig.getHighCardinality()));
 
     return wildcardConfigMap;
+  }
+
+  private String buildIdWildcardIdentificationRegex(
+      TrieModelTrainingConfig trieModelTrainingConfig) {
+    return Stream.concat(
+            trieModelTrainingConfig.getIds().getRegexList().getValuesList().stream(),
+            trieModelTrainingConfig.getIdEnums().getValuesList().stream())
+        .collect(Collectors.joining(OR_DELIMITER));
   }
 
   private String buildWildcardIdentificationRegex(ThresholdRegexConfig thresholdRegexConfig) {

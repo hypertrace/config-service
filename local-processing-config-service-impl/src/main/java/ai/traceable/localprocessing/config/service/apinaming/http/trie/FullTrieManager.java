@@ -5,6 +5,7 @@ import ai.traceable.localprocessing.config.service.apinaming.http.utils.SegmentC
 import ai.traceable.localprocessing.config.service.v1.ApiNamingPattern;
 import ai.traceable.localprocessing.config.service.v1.FullPattern;
 import ai.traceable.platform.apientity.Segment;
+import ai.traceable.platform.apientity.http.client.RegexPatternCachingClient;
 import ai.traceable.platform.apientity.http.model.NodeType;
 import ai.traceable.platform.apientity.http.model.TrieModel;
 import ai.traceable.platform.apientity.http.model.TrieNodeConfig;
@@ -61,13 +62,15 @@ public class FullTrieManager {
 
   private final LoadingCache<ContextualKey<FullTrieIdentifier>, FullTrieData> trieModelCache;
   private final ModelPersistentStore<TrieModel> trieModelStore;
+  private final RegexPatternCachingClient regexPatternCachingClient;
   private final SegmentConverter segmentConverter;
 
   @Inject
   public FullTrieManager(
       Config config,
       ModelPersistentStore<TrieModel> trieModelStore,
-      SegmentConverter segmentConverter) {
+      SegmentConverter segmentConverter,
+      RegexPatternCachingClient regexPatternCachingClient) {
     Duration cacheRefreshDuration =
         config.hasPath(CACHE_REFRESH_DURATION)
             ? config.getDuration(CACHE_REFRESH_DURATION)
@@ -98,6 +101,7 @@ public class FullTrieManager {
                     CacheLoader.from(this::loadTrieModelData),
                     Executors.newFixedThreadPool(
                         fullTrieCacheThreadPoolSize, this.buildFullTrieCacheThreadFactory())));
+    this.regexPatternCachingClient = regexPatternCachingClient;
     PlatformMetricsRegistry.registerCache(CACHE_NAME, trieModelCache, Collections.emptyMap());
   }
 
@@ -187,11 +191,13 @@ public class FullTrieManager {
 
   private TrieNodeConfig buildTrieNodeConfig(HttpApiNamingConfigInfo httpApiNamingConfigInfo) {
     return new TrieNodeConfig(
+        regexPatternCachingClient,
         httpApiNamingConfigInfo.getSegmentWhitelistRegexes(),
         List.of(httpApiNamingConfigInfo.getWildcardConfigMap().get(NodeType.ID)),
         List.of(httpApiNamingConfigInfo.getWildcardConfigMap().get(NodeType.LOW_CARDINALITY)),
         List.of(httpApiNamingConfigInfo.getWildcardConfigMap().get(NodeType.HIGH_CARDINALITY)),
         new HashSet<>(httpApiNamingConfigInfo.getExtensions()),
+        httpApiNamingConfigInfo.getIdEnums(),
         httpApiNamingConfigInfo.getEmbryonicThreshold(),
         true);
   }

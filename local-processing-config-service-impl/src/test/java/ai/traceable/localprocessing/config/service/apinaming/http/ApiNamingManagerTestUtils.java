@@ -27,6 +27,7 @@ import ai.traceable.platform.apientity.Addition;
 import ai.traceable.platform.apientity.Deletion;
 import ai.traceable.platform.apientity.Segment;
 import ai.traceable.platform.apientity.TrieDiffLog;
+import ai.traceable.platform.apientity.http.client.RegexPatternCachingClient;
 import ai.traceable.platform.apientity.http.model.NodeType;
 import ai.traceable.platform.apientity.http.model.TrieNodeConfig;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRule;
@@ -233,11 +234,13 @@ public class ApiNamingManagerTestUtils {
 
   public static TrieNodeConfig builtTrieNodeConfig =
       new TrieNodeConfig(
+          new RegexPatternCachingClient(),
           List.of("allowRegex"),
           List.of("regexId"),
           List.of("regexLow"),
           List.of("regexHigh"),
           new HashSet<>(List.of("extension")),
+          new HashSet<>(),
           123,
           true);
 

@@ -35,6 +35,7 @@ import ai.traceable.localprocessing.config.service.v1.FullPattern;
 import ai.traceable.localprocessing.config.service.v1.GetApiNamingModelRequest;
 import ai.traceable.localprocessing.config.service.v1.HttpServiceResponse;
 import ai.traceable.localprocessing.config.service.v1.ServiceRequest;
+import ai.traceable.platform.apientity.http.client.RegexPatternCachingClient;
 import ai.traceable.platform.apientity.http.difflog.TrieDiffLogModel;
 import ai.traceable.platform.apientity.http.model.TrieModel;
 import ai.traceable.platform.deepstore.FileMetadata;
@@ -92,7 +93,10 @@ class DefaultHttpApiNamingManagerTest {
             new DefaultHttpApiNamingTrieManager(
                 httpApiNamingConfig,
                 new FullTrieManager(
-                    ConfigFactory.parseMap(Map.of()), trieModelStore, segmentConverter),
+                    ConfigFactory.parseMap(Map.of()),
+                    trieModelStore,
+                    segmentConverter,
+                    new RegexPatternCachingClient()),
                 new TrieDiffLogManager(
                     ConfigFactory.parseMap(Map.of()),
                     trieDiffLogModelStore,
