@@ -29,9 +29,27 @@ public class ModsecCrsConfig {
               MODSEC_CRS_RULES_DIRECTORY + "modsec-initialization-901-rules.conf")
           .rulesFilePath(MODSEC_CRS_RULES_DIRECTORY + "modsec-crs-rules.conf")
           .build();
+  public static final ModsecCrsConfig MODSEC_CRS_V3_SECARG_LIMITS_DETECTION_ONLY_MODE_CONFIG =
+      ModsecCrsConfig.builder()
+          .directivesFilePath(
+              MODSEC_CRS_RULES_DIRECTORY
+                  + "directives/modsec-directives-v3-secarglimits-detectiononly-mode.conf")
+          .initializationRulesFilePath(
+              MODSEC_CRS_RULES_DIRECTORY + "modsec-initialization-901-rules.conf")
+          .rulesFilePath(MODSEC_CRS_RULES_DIRECTORY + "modsec-crs-rules.conf")
+          .build();
   public static final ModsecCrsConfig CORAZA_V3_CONFIG =
       ModsecCrsConfig.builder()
           .directivesFilePath(MODSEC_CRS_RULES_DIRECTORY + "directives/coraza-v3-directives.conf")
+          .initializationRulesFilePath(
+              MODSEC_CRS_RULES_DIRECTORY + "modsec-initialization-901-rules.conf")
+          .rulesFilePath(MODSEC_CRS_RULES_DIRECTORY + "modsec-crs-rules.conf")
+          .build();
+  public static final ModsecCrsConfig CORAZA_V3_DETECTION_ONLY_MODE_CONFIG =
+      ModsecCrsConfig.builder()
+          .directivesFilePath(
+              MODSEC_CRS_RULES_DIRECTORY
+                  + "directives/coraza-v3-detectiononly-mode-directives.conf")
           .initializationRulesFilePath(
               MODSEC_CRS_RULES_DIRECTORY + "modsec-initialization-901-rules.conf")
           .rulesFilePath(MODSEC_CRS_RULES_DIRECTORY + "modsec-crs-rules.conf")
@@ -43,6 +61,10 @@ public class ModsecCrsConfig {
           MODSEC_CRS_V3_CONFIG,
           ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
           MODSEC_CRS_V3_SECARG_LIMITS_CONFIG,
+          ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE,
+          MODSEC_CRS_V3_SECARG_LIMITS_DETECTION_ONLY_MODE_CONFIG,
           ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3,
-          CORAZA_V3_CONFIG);
+          CORAZA_V3_CONFIG,
+          ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3_DETECTION_ONLY_MODE,
+          CORAZA_V3_DETECTION_ONLY_MODE_CONFIG);
 }
