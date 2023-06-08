@@ -4,19 +4,22 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
 import ai.traceable.config.utils.RegexValidator;
-import ai.traceable.sessionattribution.config.service.v1.AttributeExpiration;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.sessionattribution.config.service.v1.AttributeProjection;
+import ai.traceable.sessionattribution.config.service.v1.CustomProjection;
 import ai.traceable.sessionattribution.config.service.v1.LiteralValue;
 import ai.traceable.sessionattribution.config.service.v1.MatchCondition;
 import ai.traceable.sessionattribution.config.service.v1.MatchOperator;
 import ai.traceable.sessionattribution.config.service.v1.Predicate;
+import ai.traceable.sessionattribution.config.service.v1.ProjectionRoot;
 import ai.traceable.sessionattribution.config.service.v1.RequestSessionTokenDetails;
-import ai.traceable.sessionattribution.config.service.v1.ResponseAccessTokenDetails;
-import ai.traceable.sessionattribution.config.service.v1.ResponseRefreshTokenDetails;
+import ai.traceable.sessionattribution.config.service.v1.ResponseAttributeExpiration;
+import ai.traceable.sessionattribution.config.service.v1.ResponseSessionTokenDetails;
 import ai.traceable.sessionattribution.config.service.v1.SessionTokenRule;
 import ai.traceable.sessionattribution.config.service.v1.SessionTokenValueRule;
-import ai.traceable.sessionattribution.config.service.v1.SessionTokenValueTransformation;
 import ai.traceable.sessionattribution.config.service.v1.ValueProjection;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.util.JsonFormat;
 import io.grpc.Status;
 import java.util.List;
 import javax.inject.Inject;
@@ -24,7 +27,7 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class SessionTokenRuleValidator {
-  private static int REGEX_CAPTURE_GROUP_COUNT = 1;
+  private static final int REGEX_CAPTURE_GROUP_COUNT = 1;
 
   public void validateTokenRules(List<SessionTokenRule> tokenRules) {
     if (tokenRules.isEmpty()) {
@@ -43,11 +46,8 @@ public class SessionTokenRuleValidator {
           requestSessionTokenTypeCount++;
           validateRequestSessionTokenDetails(tokenRule.getRequestSessionTokenDetails());
           break;
-        case RESPONSE_REFRESH_TOKEN_DETAILS:
-          validateResponseRefreshTokenDetails(tokenRule.getResponseRefreshTokenDetails());
-          break;
-        case RESPONSE_ACCESS_TOKEN_DETAILS:
-          validateResponseAccessTokenDetails(tokenRule.getResponseAccessTokenDetails());
+        case RESPONSE_SESSION_TOKEN_DETAILS:
+          validateResponseSessionTokenDetails(tokenRule.getResponseSessionTokenDetails());
           break;
         default:
           throw Status.INVALID_ARGUMENT
@@ -76,14 +76,41 @@ public class SessionTokenRuleValidator {
               String.format("Unexpected AttributeKeyLocation: %s", printMessage(predicate)))
           .asRuntimeException();
     }
-    validateAttributeProjection(predicate.getValueProjection());
+    validateProjectionRoot(predicate.getValueProjection());
     validateAttributeMatchCondition(predicate.getValueMatchCondition());
   }
 
   private void validateTokenValue(SessionTokenValueRule rule) {
-    validateAttributeProjection(rule.getTokenValueProjection());
-    if (rule.hasValueTransformation()) {
-      validateTokenValueTransformation(rule.getValueTransformation());
+    validateProjectionRoot(rule.getTokenValueProjection());
+  }
+
+  private void validateProjectionRoot(ProjectionRoot projectionRoot) {
+    switch (projectionRoot.getProjectionCase()) {
+      case ATTRIBUTE_PROJECTION:
+        validateAttributeProjection(projectionRoot.getAttributeProjection());
+        break;
+      case CUSTOM_PROJECTION:
+        validateCustomProjection(projectionRoot.getCustomProjection());
+        break;
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription(
+                String.format("Projection root can not be empty: %s", printMessage(projectionRoot)))
+            .asRuntimeException();
+    }
+  }
+
+  private void validateCustomProjection(CustomProjection customProjection) {
+
+    AttributeRule.Projector.Builder builder = AttributeRule.Projector.newBuilder();
+    try {
+      JsonFormat.parser().merge(customProjection.getCustomProjection(), builder);
+    } catch (InvalidProtocolBufferException e) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Invalid custom projection json %s", customProjection.getCustomProjection()))
+          .asRuntimeException();
     }
   }
 
@@ -136,45 +163,24 @@ public class SessionTokenRuleValidator {
         });
   }
 
-  private void validateTokenValueTransformation(
-      SessionTokenValueTransformation tokenValueTransformation) {
-    if (tokenValueTransformation.getTransformationCase()
-        == SessionTokenValueTransformation.TransformationCase.TRANSFORMATION_NOT_SET) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(
-              String.format(
-                  "Unexpected token value transformation: %s",
-                  printMessage(tokenValueTransformation)))
-          .asRuntimeException();
-    }
-  }
-
   private void validateRequestSessionTokenDetails(RequestSessionTokenDetails tokenDetails) {
     validateNonDefaultPresenceOrThrow(
         tokenDetails, RequestSessionTokenDetails.TOKEN_LOCATION_FIELD_NUMBER);
   }
 
-  private void validateResponseRefreshTokenDetails(ResponseRefreshTokenDetails tokenDetails) {
+  private void validateResponseSessionTokenDetails(ResponseSessionTokenDetails tokenDetails) {
     validateNonDefaultPresenceOrThrow(
-        tokenDetails, ResponseRefreshTokenDetails.TOKEN_LOCATION_FIELD_NUMBER);
-    if (tokenDetails.hasAttributeExpiration()) {
-      validateAttributeExpiration(tokenDetails.getAttributeExpiration());
+        tokenDetails, ResponseSessionTokenDetails.TOKEN_LOCATION_FIELD_NUMBER);
+    if (tokenDetails.hasResponseAttributeExpiration()) {
+      validateAttributeExpiration(tokenDetails.getResponseAttributeExpiration());
     }
   }
 
-  private void validateResponseAccessTokenDetails(ResponseAccessTokenDetails tokenDetails) {
+  private void validateAttributeExpiration(ResponseAttributeExpiration attributeExpiration) {
     validateNonDefaultPresenceOrThrow(
-        tokenDetails, ResponseAccessTokenDetails.TOKEN_LOCATION_FIELD_NUMBER);
-    if (tokenDetails.hasAttributeExpiration()) {
-      validateAttributeExpiration(tokenDetails.getAttributeExpiration());
-    }
-  }
-
-  private void validateAttributeExpiration(AttributeExpiration attributeExpiration) {
+        attributeExpiration, ResponseAttributeExpiration.ATTRIBUTE_KEY_LOCATION_FIELD_NUMBER);
+    validateProjectionRoot(attributeExpiration.getProjectionRoot());
     validateNonDefaultPresenceOrThrow(
-        attributeExpiration, AttributeExpiration.ATTRIBUTE_KEY_LOCATION_FIELD_NUMBER);
-    validateAttributeProjection(attributeExpiration.getAttributeProjection());
-    validateNonDefaultPresenceOrThrow(
-        attributeExpiration, AttributeExpiration.EXPIRATION_FORMAT_FIELD_NUMBER);
+        attributeExpiration, ResponseAttributeExpiration.EXPIRATION_FORMAT_FIELD_NUMBER);
   }
 }

@@ -11,7 +11,6 @@ service SessionAttributionConfigService {
   rpc CreateSessionAttributionRule (CreateSessionAttributionRuleRequest) returns (CreateSessionAttributionRuleResponse) {}
   rpc UpdateSessionAttributionRule (UpdateSessionAttributionRuleRequest) returns (UpdateSessionAttributionRuleResponse) {}
   rpc DeleteSessionAttributionRule (DeleteSessionAttributionRuleRequest) returns (DeleteSessionAttributionRuleResponse) {}
-  rpc RankSessionAttributionRule (RankSessionAttributionRuleRequest) returns (RankSessionAttributionRuleResponse) {}
 }
 
 message GetSessionAttributionRulesRequest {
@@ -60,12 +59,4 @@ message DeleteSessionAttributionRuleRequest {
 }
 
 message DeleteSessionAttributionRuleResponse {
-}
-
-message RankSessionAttributionRuleRequest {
-  string id_to_update = 1;
-  optional string preceding_rule_id = 2;
-}
-
-message RankSessionAttributionRuleResponse {
 }

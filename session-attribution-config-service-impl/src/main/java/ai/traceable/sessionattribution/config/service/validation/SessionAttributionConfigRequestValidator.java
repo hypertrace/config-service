@@ -1,13 +1,11 @@
 package ai.traceable.sessionattribution.config.service.validation;
 
-import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
 import ai.traceable.config.utils.RegexValidator;
 import ai.traceable.sessionattribution.config.service.v1.CreateSessionAttributionRuleRequest;
 import ai.traceable.sessionattribution.config.service.v1.DeleteSessionAttributionRuleRequest;
-import ai.traceable.sessionattribution.config.service.v1.RankSessionAttributionRuleRequest;
 import ai.traceable.sessionattribution.config.service.v1.SessionAttributionRuleScope;
 import ai.traceable.sessionattribution.config.service.v1.UpdateSessionAttributionRuleRequest;
 import io.grpc.Status;
@@ -52,18 +50,6 @@ public class SessionAttributionConfigRequestValidator {
       RequestContext requestContext, DeleteSessionAttributionRuleRequest request) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, DeleteSessionAttributionRuleRequest.ID_FIELD_NUMBER);
-  }
-
-  public void validateRankRequest(
-      RequestContext requestContext, RankSessionAttributionRuleRequest request) {
-    validateRequestContextOrThrow(requestContext);
-    validateNonDefaultPresenceOrThrow(
-        request, RankSessionAttributionRuleRequest.ID_TO_UPDATE_FIELD_NUMBER);
-    if (request.getIdToUpdate().equals(request.getPrecedingRuleId())) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription("Can't rerank a rule against itself: " + printMessage(request))
-          .asRuntimeException();
-    }
   }
 
   private void validateRuleScope(SessionAttributionRuleScope scope) {

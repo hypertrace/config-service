@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import ai.traceable.config.utils.ObjectDiffer;
-import ai.traceable.config.utils.RankCalculator;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.sessionattribution.config.service.store.SessionAttributionRuleGenerator;
 import ai.traceable.sessionattribution.config.service.store.SessionAttributionRuleStore;
@@ -16,7 +14,7 @@ import ai.traceable.sessionattribution.config.service.v1.GetSessionAttributionRu
 import ai.traceable.sessionattribution.config.service.v1.LiteralValue;
 import ai.traceable.sessionattribution.config.service.v1.MatchCondition;
 import ai.traceable.sessionattribution.config.service.v1.MatchOperator;
-import ai.traceable.sessionattribution.config.service.v1.RankSessionAttributionRuleRequest;
+import ai.traceable.sessionattribution.config.service.v1.ProjectionRoot;
 import ai.traceable.sessionattribution.config.service.v1.RequestAttributeKeyLocation;
 import ai.traceable.sessionattribution.config.service.v1.RequestSessionTokenDetails;
 import ai.traceable.sessionattribution.config.service.v1.SessionAttributionConfigServiceGrpc;
@@ -46,12 +44,15 @@ class SessionAttributionConfigServiceImplTest {
           .setTokenValueRule(
               SessionTokenValueRule.newBuilder()
                   .setTokenValueProjection(
-                      AttributeProjection.newBuilder()
-                          .setAttributeKeyMatchCondition(
-                              MatchCondition.newBuilder()
-                                  .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                                  .setMatchValue(
-                                      LiteralValue.newBuilder().setStringValue("authorization"))))
+                      ProjectionRoot.newBuilder()
+                          .setAttributeProjection(
+                              AttributeProjection.newBuilder()
+                                  .setAttributeKeyMatchCondition(
+                                      MatchCondition.newBuilder()
+                                          .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                          .setMatchValue(
+                                              LiteralValue.newBuilder()
+                                                  .setStringValue("authorization")))))
                   .build())
           .build();
   SessionAttributionConfigServiceGrpc.SessionAttributionConfigServiceBlockingStub
@@ -71,23 +72,13 @@ class SessionAttributionConfigServiceImplTest {
     ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
 
-    RankCalculator<SessionAttributionRule, String> rankCalculator =
-        new RankCalculator<>(
-            new RankCalculator.RankConfig<>(
-                SessionAttributionRule::getRank,
-                SessionAttributionRule::getId,
-                (rule, rank) -> rule.toBuilder().setRank(rank).build()));
-
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     this.mockGenericConfigService
         .addService(
             new SessionAttributionConfigServiceImpl(
                 new SessionAttributionConfigRequestValidator(new SessionTokenRuleValidator()),
-                new SessionAttributionRuleStore(
-                    genericStub, configChangeEventGenerator, rankCalculator),
-                new SessionAttributionRuleGenerator(new UuidGenerator()),
-                rankCalculator,
-                new ObjectDiffer()))
+                new SessionAttributionRuleStore(genericStub, configChangeEventGenerator),
+                new SessionAttributionRuleGenerator(new UuidGenerator())))
         .start();
 
     this.sessionAttributionConfigServiceBlockingStub =
@@ -122,7 +113,6 @@ class SessionAttributionConfigServiceImplTest {
                     .build())
             .getRule();
 
-    assertEquals(1, firstUpdated.getRank());
     assertTrue(firstUpdated.getStatus().getDisabled());
 
     SessionAttributionRule secondCreated =
@@ -133,34 +123,20 @@ class SessionAttributionConfigServiceImplTest {
                     .addTokenRules(RULE)
                     .build())
             .getRule();
-    assertEquals(2, secondCreated.getRank());
     assertEquals("second", secondCreated.getName());
 
     assertEquals(
-        List.of(firstUpdated, secondCreated),
+        List.of(secondCreated, firstUpdated),
         this.sessionAttributionConfigServiceBlockingStub
             .getSessionAttributionRules(GetSessionAttributionRulesRequest.getDefaultInstance())
             .getRulesList());
-    this.sessionAttributionConfigServiceBlockingStub.rankSessionAttributionRule(
-        RankSessionAttributionRuleRequest.newBuilder()
-            .setIdToUpdate(firstUpdated.getId())
-            .setPrecedingRuleId(secondCreated.getId())
-            .build());
-    assertEquals(
-        List.of(withRank(secondCreated, 1), withRank(firstUpdated, 2)),
-        this.sessionAttributionConfigServiceBlockingStub
-            .getSessionAttributionRules(GetSessionAttributionRulesRequest.getDefaultInstance())
-            .getRulesList());
+
     this.sessionAttributionConfigServiceBlockingStub.deleteSessionAttributionRule(
         DeleteSessionAttributionRuleRequest.newBuilder().setId(firstUpdated.getId()).build());
     assertEquals(
-        List.of(withRank(secondCreated, 1)),
+        List.of(secondCreated),
         this.sessionAttributionConfigServiceBlockingStub
             .getSessionAttributionRules(GetSessionAttributionRulesRequest.getDefaultInstance())
             .getRulesList());
-  }
-
-  private SessionAttributionRule withRank(SessionAttributionRule rule, int rank) {
-    return rule.toBuilder().setRank(rank).build();
   }
 }

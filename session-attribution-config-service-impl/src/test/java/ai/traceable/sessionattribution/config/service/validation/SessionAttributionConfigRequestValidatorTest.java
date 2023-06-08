@@ -12,7 +12,7 @@ import ai.traceable.sessionattribution.config.service.v1.DeleteSessionAttributio
 import ai.traceable.sessionattribution.config.service.v1.LiteralValue;
 import ai.traceable.sessionattribution.config.service.v1.MatchCondition;
 import ai.traceable.sessionattribution.config.service.v1.MatchOperator;
-import ai.traceable.sessionattribution.config.service.v1.RankSessionAttributionRuleRequest;
+import ai.traceable.sessionattribution.config.service.v1.ProjectionRoot;
 import ai.traceable.sessionattribution.config.service.v1.RequestAttributeKeyLocation;
 import ai.traceable.sessionattribution.config.service.v1.RequestSessionTokenDetails;
 import ai.traceable.sessionattribution.config.service.v1.SessionAttributionRuleScope;
@@ -46,12 +46,15 @@ class SessionAttributionConfigRequestValidatorTest {
           .setTokenValueRule(
               SessionTokenValueRule.newBuilder()
                   .setTokenValueProjection(
-                      AttributeProjection.newBuilder()
-                          .setAttributeKeyMatchCondition(
-                              MatchCondition.newBuilder()
-                                  .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                                  .setMatchValue(
-                                      LiteralValue.newBuilder().setStringValue("authorization"))))
+                      ProjectionRoot.newBuilder()
+                          .setAttributeProjection(
+                              AttributeProjection.newBuilder()
+                                  .setAttributeKeyMatchCondition(
+                                      MatchCondition.newBuilder()
+                                          .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                          .setMatchValue(
+                                              LiteralValue.newBuilder()
+                                                  .setStringValue("authorization")))))
                   .build())
           .build();
   @InjectMocks SessionAttributionConfigRequestValidator validator;
@@ -230,26 +233,6 @@ class SessionAttributionConfigRequestValidatorTest {
                     .setName("rule")
                     .setScope(SessionAttributionRuleScope.newBuilder())
                     .addTokenRules(RULE)
-                    .build()));
-  }
-
-  @Test
-  void validateRank() {
-    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
-    assertInvalidArgStatusContaining(
-        "RankSessionAttributionRuleRequest.id_to_update",
-        () ->
-            validator.validateRankRequest(
-                mockRequestContext, RankSessionAttributionRuleRequest.getDefaultInstance()));
-
-    assertInvalidArgStatusContaining(
-        "Can't rerank a rule against itself:",
-        () ->
-            validator.validateRankRequest(
-                mockRequestContext,
-                RankSessionAttributionRuleRequest.newBuilder()
-                    .setIdToUpdate("id")
-                    .setPrecedingRuleId("id")
                     .build()));
   }
 

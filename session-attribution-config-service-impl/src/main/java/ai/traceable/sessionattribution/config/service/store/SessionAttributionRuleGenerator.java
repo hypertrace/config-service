@@ -14,7 +14,7 @@ public class SessionAttributionRuleGenerator {
     this.uuidGenerator = uuidGenerator;
   }
 
-  public SessionAttributionRule generateNewRuleWithoutRank(
+  public SessionAttributionRule generateNewRuleFromCreateRequest(
       CreateSessionAttributionRuleRequest request) {
 
     SessionAttributionRule.Builder builder =
@@ -32,11 +32,10 @@ public class SessionAttributionRuleGenerator {
   }
 
   public SessionAttributionRule generateRuleFromUpdateRequest(
-      UpdateSessionAttributionRuleRequest request, SessionAttributionRule existingRule) {
+      UpdateSessionAttributionRuleRequest request) {
     SessionAttributionRule.Builder builder =
         SessionAttributionRule.newBuilder()
             .setId(request.getId())
-            .setRank(existingRule.getRank())
             .addAllTokenRules(request.getTokenRulesList())
             .setName(request.getName());
     if (request.hasDescription()) {

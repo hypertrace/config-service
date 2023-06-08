@@ -4,20 +4,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import ai.traceable.sessionattribution.config.service.v1.AttributeExpiration;
 import ai.traceable.sessionattribution.config.service.v1.AttributeProjection;
+import ai.traceable.sessionattribution.config.service.v1.CustomProjection;
 import ai.traceable.sessionattribution.config.service.v1.LiteralValue;
 import ai.traceable.sessionattribution.config.service.v1.MatchCondition;
 import ai.traceable.sessionattribution.config.service.v1.MatchOperator;
 import ai.traceable.sessionattribution.config.service.v1.Predicate;
+import ai.traceable.sessionattribution.config.service.v1.ProjectionRoot;
 import ai.traceable.sessionattribution.config.service.v1.RequestAttributeKeyLocation;
 import ai.traceable.sessionattribution.config.service.v1.RequestSessionTokenDetails;
-import ai.traceable.sessionattribution.config.service.v1.ResponseAccessTokenDetails;
+import ai.traceable.sessionattribution.config.service.v1.ResponseAttributeExpiration;
 import ai.traceable.sessionattribution.config.service.v1.ResponseAttributeKeyLocation;
-import ai.traceable.sessionattribution.config.service.v1.ResponseRefreshTokenDetails;
+import ai.traceable.sessionattribution.config.service.v1.ResponseSessionTokenDetails;
 import ai.traceable.sessionattribution.config.service.v1.SessionTokenRule;
 import ai.traceable.sessionattribution.config.service.v1.SessionTokenValueRule;
-import ai.traceable.sessionattribution.config.service.v1.SessionTokenValueTransformation;
 import ai.traceable.sessionattribution.config.service.v1.ValueProjection;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -34,11 +34,14 @@ class SessionTokenRuleValidatorTest {
   private static final SessionTokenValueRule TOKEN_VALUE_RULE =
       SessionTokenValueRule.newBuilder()
           .setTokenValueProjection(
-              AttributeProjection.newBuilder()
-                  .setAttributeKeyMatchCondition(
-                      MatchCondition.newBuilder()
-                          .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                          .setMatchValue(LiteralValue.newBuilder().setStringValue("auth"))))
+              ProjectionRoot.newBuilder()
+                  .setAttributeProjection(
+                      AttributeProjection.newBuilder()
+                          .setAttributeKeyMatchCondition(
+                              MatchCondition.newBuilder()
+                                  .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                  .setMatchValue(
+                                      LiteralValue.newBuilder().setStringValue("auth")))))
           .build();
   @InjectMocks SessionTokenRuleValidator tokenRuleValidator;
 
@@ -57,8 +60,8 @@ class SessionTokenRuleValidatorTest {
             tokenRuleValidator.validateTokenRules(
                 List.of(
                     SessionTokenRule.newBuilder()
-                        .setResponseAccessTokenDetails(
-                            ResponseAccessTokenDetails.newBuilder()
+                        .setResponseSessionTokenDetails(
+                            ResponseSessionTokenDetails.newBuilder()
                                 .setTokenLocation(
                                     ResponseAttributeKeyLocation
                                         .RESPONSE_ATTRIBUTE_KEY_LOCATION_HEADER))
@@ -74,7 +77,51 @@ class SessionTokenRuleValidatorTest {
             tokenRuleValidator.validateTokenRules(
                 List.of(
                     SessionTokenRule.newBuilder()
+                        .setTokenValueRule(
+                            SessionTokenValueRule.newBuilder()
+                                .setTokenValueProjection(
+                                    ProjectionRoot.newBuilder()
+                                        .setAttributeProjection(
+                                            AttributeProjection.getDefaultInstance())))
+                        .setRequestSessionTokenDetails(
+                            RequestSessionTokenDetails.newBuilder()
+                                .setTokenLocation(
+                                    RequestAttributeKeyLocation
+                                        .REQUEST_ATTRIBUTE_KEY_LOCATION_HEADER))
+                        .build())));
+  }
+
+  @Test
+  void validateProjectionRoot() {
+    assertInvalidArgStatusContaining(
+        "Projection root can not be empty",
+        () ->
+            tokenRuleValidator.validateTokenRules(
+                List.of(
+                    SessionTokenRule.newBuilder()
                         .setTokenValueRule(SessionTokenValueRule.getDefaultInstance())
+                        .setRequestSessionTokenDetails(
+                            RequestSessionTokenDetails.newBuilder()
+                                .setTokenLocation(
+                                    RequestAttributeKeyLocation
+                                        .REQUEST_ATTRIBUTE_KEY_LOCATION_HEADER))
+                        .build())));
+  }
+
+  @Test
+  void validateCustomProjection() {
+    assertInvalidArgStatusContaining(
+        "Invalid custom projection json",
+        () ->
+            tokenRuleValidator.validateTokenRules(
+                List.of(
+                    SessionTokenRule.newBuilder()
+                        .setTokenValueRule(
+                            SessionTokenValueRule.newBuilder()
+                                .setTokenValueProjection(
+                                    ProjectionRoot.newBuilder()
+                                        .setCustomProjection(
+                                            CustomProjection.newBuilder().setCustomProjection(""))))
                         .setRequestSessionTokenDetails(
                             RequestSessionTokenDetails.newBuilder()
                                 .setTokenLocation(
@@ -94,15 +141,18 @@ class SessionTokenRuleValidatorTest {
                         .setTokenValueRule(
                             TOKEN_VALUE_RULE.toBuilder()
                                 .setTokenValueProjection(
-                                    AttributeProjection.newBuilder()
-                                        .addValueProjectionsInOrder(
-                                            ValueProjection.getDefaultInstance())
-                                        .setAttributeKeyMatchCondition(
-                                            MatchCondition.newBuilder()
-                                                .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                                                .setMatchValue(
-                                                    LiteralValue.newBuilder()
-                                                        .setStringValue("auth")))))
+                                    ProjectionRoot.newBuilder()
+                                        .setAttributeProjection(
+                                            AttributeProjection.newBuilder()
+                                                .addValueProjectionsInOrder(
+                                                    ValueProjection.getDefaultInstance())
+                                                .setAttributeKeyMatchCondition(
+                                                    MatchCondition.newBuilder()
+                                                        .setOperator(
+                                                            MatchOperator.MATCH_OPERATOR_EQUALS)
+                                                        .setMatchValue(
+                                                            LiteralValue.newBuilder()
+                                                                .setStringValue("auth"))))))
                         .setRequestSessionTokenDetails(
                             RequestSessionTokenDetails.newBuilder()
                                 .setTokenLocation(
@@ -119,19 +169,23 @@ class SessionTokenRuleValidatorTest {
                         .setTokenValueRule(
                             TOKEN_VALUE_RULE.toBuilder()
                                 .setTokenValueProjection(
-                                    AttributeProjection.newBuilder()
-                                        .addValueProjectionsInOrder(
-                                            ValueProjection.newBuilder()
-                                                .setRegexCaptureGroup(
-                                                    ValueProjection.RegexCaptureGroupProjection
-                                                        .newBuilder()
-                                                        .setRegexCaptureGroup("+")))
-                                        .setAttributeKeyMatchCondition(
-                                            MatchCondition.newBuilder()
-                                                .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                                                .setMatchValue(
-                                                    LiteralValue.newBuilder()
-                                                        .setStringValue("auth")))))
+                                    ProjectionRoot.newBuilder()
+                                        .setAttributeProjection(
+                                            AttributeProjection.newBuilder()
+                                                .addValueProjectionsInOrder(
+                                                    ValueProjection.newBuilder()
+                                                        .setRegexCaptureGroup(
+                                                            ValueProjection
+                                                                .RegexCaptureGroupProjection
+                                                                .newBuilder()
+                                                                .setRegexCaptureGroup("+")))
+                                                .setAttributeKeyMatchCondition(
+                                                    MatchCondition.newBuilder()
+                                                        .setOperator(
+                                                            MatchOperator.MATCH_OPERATOR_EQUALS)
+                                                        .setMatchValue(
+                                                            LiteralValue.newBuilder()
+                                                                .setStringValue("auth"))))))
                         .setRequestSessionTokenDetails(
                             RequestSessionTokenDetails.newBuilder()
                                 .setTokenLocation(
@@ -148,19 +202,24 @@ class SessionTokenRuleValidatorTest {
                         .setTokenValueRule(
                             TOKEN_VALUE_RULE.toBuilder()
                                 .setTokenValueProjection(
-                                    AttributeProjection.newBuilder()
-                                        .addValueProjectionsInOrder(
-                                            ValueProjection.newBuilder()
-                                                .setRegexCaptureGroup(
-                                                    ValueProjection.RegexCaptureGroupProjection
-                                                        .newBuilder()
-                                                        .setRegexCaptureGroup("((A)(B(C)))")))
-                                        .setAttributeKeyMatchCondition(
-                                            MatchCondition.newBuilder()
-                                                .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                                                .setMatchValue(
-                                                    LiteralValue.newBuilder()
-                                                        .setStringValue("auth")))))
+                                    ProjectionRoot.newBuilder()
+                                        .setAttributeProjection(
+                                            AttributeProjection.newBuilder()
+                                                .addValueProjectionsInOrder(
+                                                    ValueProjection.newBuilder()
+                                                        .setRegexCaptureGroup(
+                                                            ValueProjection
+                                                                .RegexCaptureGroupProjection
+                                                                .newBuilder()
+                                                                .setRegexCaptureGroup(
+                                                                    "((A)(B(C)))")))
+                                                .setAttributeKeyMatchCondition(
+                                                    MatchCondition.newBuilder()
+                                                        .setOperator(
+                                                            MatchOperator.MATCH_OPERATOR_EQUALS)
+                                                        .setMatchValue(
+                                                            LiteralValue.newBuilder()
+                                                                .setStringValue("auth"))))))
                         .setRequestSessionTokenDetails(
                             RequestSessionTokenDetails.newBuilder()
                                 .setTokenLocation(
@@ -192,27 +251,6 @@ class SessionTokenRuleValidatorTest {
   }
 
   @Test
-  void validateTokenValueTransformation() {
-    assertInvalidArgStatusContaining(
-        "Unexpected token value transformation",
-        () ->
-            tokenRuleValidator.validateTokenRules(
-                List.of(
-                    SessionTokenRule.newBuilder()
-                        .setTokenValueRule(
-                            TOKEN_VALUE_RULE.toBuilder()
-                                .setValueTransformation(
-                                    SessionTokenValueTransformation.getDefaultInstance())
-                                .build())
-                        .setRequestSessionTokenDetails(
-                            RequestSessionTokenDetails.newBuilder()
-                                .setTokenLocation(
-                                    RequestAttributeKeyLocation
-                                        .REQUEST_ATTRIBUTE_KEY_LOCATION_HEADER))
-                        .build())));
-  }
-
-  @Test
   void validateRequestSessionTokenDetails() {
     assertInvalidArgStatusContaining(
         "RequestSessionTokenDetails.token_location but not present",
@@ -226,28 +264,15 @@ class SessionTokenRuleValidatorTest {
   }
 
   @Test
-  void validateResponseRefreshTokenDetails() {
-    assertInvalidArgStatusContaining(
-        "ResponseRefreshTokenDetails.token_location but not present",
-        () ->
-            tokenRuleValidator.validateTokenRules(
-                List.of(
-                    SessionTokenRule.newBuilder()
-                        .setTokenValueRule(TOKEN_VALUE_RULE)
-                        .setResponseRefreshTokenDetails(ResponseRefreshTokenDetails.newBuilder())
-                        .build())));
-  }
-
-  @Test
   void validateResponseAccessTokenDetails() {
     assertInvalidArgStatusContaining(
-        "ResponseAccessTokenDetails.token_location but not present",
+        "ResponseSessionTokenDetails.token_location but not present",
         () ->
             tokenRuleValidator.validateTokenRules(
                 List.of(
                     SessionTokenRule.newBuilder()
                         .setTokenValueRule(TOKEN_VALUE_RULE)
-                        .setResponseAccessTokenDetails(ResponseAccessTokenDetails.newBuilder())
+                        .setResponseSessionTokenDetails(ResponseSessionTokenDetails.newBuilder())
                         .build())));
   }
 
@@ -260,19 +285,22 @@ class SessionTokenRuleValidatorTest {
                 List.of(
                     SessionTokenRule.newBuilder()
                         .setTokenValueRule(TOKEN_VALUE_RULE)
-                        .setResponseAccessTokenDetails(
-                            ResponseAccessTokenDetails.newBuilder()
-                                .setAttributeExpiration(
-                                    AttributeExpiration.newBuilder()
-                                        .setAttributeProjection(
-                                            AttributeProjection.newBuilder()
-                                                .setAttributeKeyMatchCondition(
-                                                    MatchCondition.newBuilder()
-                                                        .setOperator(
-                                                            MatchOperator.MATCH_OPERATOR_EQUALS)
-                                                        .setMatchValue(
-                                                            LiteralValue.newBuilder()
-                                                                .setStringValue("auth"))))
+                        .setResponseSessionTokenDetails(
+                            ResponseSessionTokenDetails.newBuilder()
+                                .setResponseAttributeExpiration(
+                                    ResponseAttributeExpiration.newBuilder()
+                                        .setProjectionRoot(
+                                            ProjectionRoot.newBuilder()
+                                                .setAttributeProjection(
+                                                    AttributeProjection.newBuilder()
+                                                        .setAttributeKeyMatchCondition(
+                                                            MatchCondition.newBuilder()
+                                                                .setOperator(
+                                                                    MatchOperator
+                                                                        .MATCH_OPERATOR_EQUALS)
+                                                                .setMatchValue(
+                                                                    LiteralValue.newBuilder()
+                                                                        .setStringValue("auth")))))
                                         .setAttributeKeyLocation(
                                             ResponseAttributeKeyLocation
                                                 .RESPONSE_ATTRIBUTE_KEY_LOCATION_HEADER)

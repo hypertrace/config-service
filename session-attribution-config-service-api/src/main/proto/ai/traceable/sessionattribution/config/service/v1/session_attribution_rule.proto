@@ -8,10 +8,9 @@ message SessionAttributionRule {
   string id = 1;
   string name = 2;
   optional string description = 3;
-  int32 rank = 4;
-  SessionAttributionRuleScope scope = 5;
-  SessionAttributionRuleStatus status = 6;
-  repeated SessionTokenRule token_rules = 7;
+  SessionAttributionRuleScope scope = 4;
+  SessionAttributionRuleStatus status = 5;
+  repeated SessionTokenRule token_rules = 6;
 }
 
 message SessionAttributionRuleScope {
@@ -30,31 +29,19 @@ message SessionTokenRule {
   SessionTokenValueRule token_value_rule = 2;
   oneof token_type {
     RequestSessionTokenDetails request_session_token_details = 3;
-    ResponseRefreshTokenDetails response_refresh_token_details = 4;
-    ResponseAccessTokenDetails response_access_token_details = 5;
+    ResponseSessionTokenDetails response_session_token_details = 4;
   }
 }
 
 message RequestSessionTokenDetails {
   RequestAttributeKeyLocation token_location = 1;
-  oneof expiration {
-    JwtExpiration jwt_expiration = 2;
-  }
 }
 
-message ResponseRefreshTokenDetails {
+message ResponseSessionTokenDetails {
   ResponseAttributeKeyLocation token_location = 1;
   oneof expiration {
     JwtExpiration jwt_expiration = 2;
-    AttributeExpiration attribute_expiration = 3;
-  }
-}
-
-message ResponseAccessTokenDetails {
-  ResponseAttributeKeyLocation token_location = 1;
-  oneof expiration {
-    JwtExpiration jwt_expiration = 2;
-    AttributeExpiration attribute_expiration = 3;
+    ResponseAttributeExpiration response_attribute_expiration = 3;
   }
 }
 
@@ -62,9 +49,9 @@ message JwtExpiration {
   // empty means standard `exp` claim - expiration timestamp in epoch seconds
 }
 
-message AttributeExpiration {
+message ResponseAttributeExpiration {
   ResponseAttributeKeyLocation attribute_key_location = 1;
-  AttributeProjection attribute_projection = 2;
+  ProjectionRoot projection_root = 2;
   ExpirationFormat expiration_format = 3;
 }
 
@@ -77,24 +64,13 @@ enum ExpirationFormat {
 }
 
 message SessionTokenValueRule {
-  AttributeProjection token_value_projection = 1;
-  SessionTokenValueTransformation value_transformation = 2;
+  ProjectionRoot token_value_projection = 1;
+  ObfuscationStrategy value_obfuscation_strategy = 2;
 }
 
-message SessionTokenValueTransformation {
-  oneof transformation {
-    ObfuscationStrategy obfuscation_strategy = 1;
-  }
-
-  message ObfuscationStrategy {
-    HashFunction hash_function = 1;
-    string salt = 2;
-
-    enum HashFunction {
-      HASH_FUNCTION_UNSPECIFIED = 0;
-      HASH_FUNCTION_SHA256 = 1;
-    }
-  }
+enum ObfuscationStrategy {
+  OBFUSCATION_STRATEGY_UNSPECIFIED = 0;
+  OBFUSCATION_STRATEGY_HASH = 1;
 }
 
 enum RequestAttributeKeyLocation {
@@ -110,6 +86,17 @@ enum ResponseAttributeKeyLocation {
   RESPONSE_ATTRIBUTE_KEY_LOCATION_HEADER = 1;
   RESPONSE_ATTRIBUTE_KEY_LOCATION_COOKIE = 2;
   RESPONSE_ATTRIBUTE_KEY_LOCATION_BODY = 3;
+}
+
+message ProjectionRoot {
+  oneof projection {
+    AttributeProjection attribute_projection = 1;
+    CustomProjection custom_projection = 2;
+  }
+}
+
+message CustomProjection {
+  string custom_projection = 1; // This should directly translate into Projector in agentAttribute api
 }
 
 message AttributeProjection {
@@ -147,7 +134,7 @@ message Predicate {
       RequestAttributeKeyLocation request = 1;
       ResponseAttributeKeyLocation response = 2;
     }
-    AttributeProjection value_projection = 3;
+    ProjectionRoot value_projection = 3;
     MatchCondition value_match_condition = 4;
   }
 }
@@ -156,6 +143,9 @@ message ValueProjection {
   oneof projection {
     RegexCaptureGroupProjection regex_capture_group = 1;
     JsonPathProjection json_path = 2;
+    JwtPayloadClaimProjection jwt_payload_claim = 3;
+    Base64Projection base64_projection = 4;
+    UrlEncodedProjection url_encoded_projection = 5;
   }
 
   message RegexCaptureGroupProjection {
@@ -164,5 +154,15 @@ message ValueProjection {
 
   message JsonPathProjection {
     string path = 1;
+  }
+
+  message JwtPayloadClaimProjection {
+    string claim_key = 1;
+  }
+
+  message Base64Projection {
+  }
+
+  message UrlEncodedProjection {
   }
 }

@@ -9,6 +9,7 @@ dependencies {
   api(libs.grpc.api)
   api(libs.hypertrace.configservice.changeeventgenerator)
   implementation(projects.configUtils)
+  implementation(projects.externalAgentAttributeConfigServiceApi)
   implementation(projects.sessionAttributionConfigServiceApi)
   implementation(libs.hypertrace.configservice.objectstore)
   implementation(libs.hypertrace.configservice.validation)
