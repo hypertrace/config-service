@@ -194,7 +194,8 @@ public class DetectionExclusionConditionValidator {
   private void validateUserIdCondition(UserIdCondition condition) {
     List<String> actorEntityIds = condition.getActorEntityIdsList();
     List<String> userIdRegexes = condition.getUserIdRegexesList();
-    if (userIdRegexes.isEmpty() && actorEntityIds.isEmpty()) {
+    List<String> userIds = condition.getUserIdsList();
+    if (userIdRegexes.isEmpty() && actorEntityIds.isEmpty() && userIds.isEmpty()) {
       throw Status.INVALID_ARGUMENT
           .withDescription(
               String.format(
