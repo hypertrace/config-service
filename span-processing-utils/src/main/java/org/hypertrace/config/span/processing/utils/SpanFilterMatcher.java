@@ -111,7 +111,12 @@ public class SpanFilterMatcher {
       case RELATIONAL_OPERATOR_ENDS_WITH:
         return lhs.endsWith(rhs);
       case RELATIONAL_OPERATOR_REGEX_MATCH:
-        return Pattern.compile(rhs).matcher(lhs).find();
+        try {
+          return Pattern.compile(rhs).matcher(lhs).find();
+        } catch (Exception e) {
+          log.error("Invalid regex passed to match: {}", e);
+          return false;
+        }
       default:
         log.error("Unsupported relational operator for string value rhs:{}", relationalOperator);
         return false;
