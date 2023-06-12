@@ -114,8 +114,9 @@ public class SpanFilterMatcher {
         try {
           return Pattern.compile(rhs).matcher(lhs).find();
         } catch (Exception e) {
-          log.error("Invalid regex passed to match: {}", e);
-          return false;
+          log.error("Invalid regex: {} passed to match: {}", rhs, e);
+          log.debug("Invalid regex passed to match. Hence returning false. lhs: {} and rhs: {}", lhs, rhs);
+          return false;gi
         }
       default:
         log.error("Unsupported relational operator for string value rhs:{}", relationalOperator);
