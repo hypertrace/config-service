@@ -32,7 +32,6 @@ public class FeatureCachingClient {
   private static final boolean DEFAULT_IPQS_ENABLED_VALUE = false;
   private static final boolean DEFAULT_USER_ATTRIBUTION_V2_FLAG_VALUE = false;
   private static final boolean DEFAULT_DETECTION_EXCLUSION_V2_FLAG_VALUE = false;
-  private static final boolean DEFAULT_BLOCKING_CONFIG_V2_FLAG_VALUE = true;
   private static final boolean DEFAULT_TPA_MODSEC_PROCESSING_DISABLED = false;
   private static final boolean DEFAULT_RASP_INSPECTION = false;
   private static final String DATA_CLASSIFICATION_RP1_FLAG = "data-classification.mvp";
@@ -41,10 +40,9 @@ public class FeatureCachingClient {
   // Flag is no longer UI-only and has been renamed, but key can't be changed without creating anew
   private static final String USER_ATTRIBUTION_V2_FLAG = "ui.user-attribution-v2";
   private static final String DETECTION_EXCLUSION_V2_FLAG = "ui.detection-exclusions-v2";
-  private static final String BLOCKING_CONFIG_V2_FLAG = "tpa.blocking-api-v2";
   private static final String TPA_MODSEC_PROCESSING_DISABLED = "tpa.modsec-processing-disabled";
-
   private static final String RASP_INSPECTION = "enricher.rasp-inspection";
+
   private static final List<String> ALL_FLAGS_TO_FETCH =
       List.of(
           DATA_CLASSIFICATION_RP1_FLAG,
@@ -52,7 +50,6 @@ public class FeatureCachingClient {
           IPQS_ENABLED_FLAG,
           USER_ATTRIBUTION_V2_FLAG,
           DETECTION_EXCLUSION_V2_FLAG,
-          BLOCKING_CONFIG_V2_FLAG,
           TPA_MODSEC_PROCESSING_DISABLED,
           RASP_INSPECTION);
   private final FeatureFlagServiceBlockingStub featureFlagStub;
@@ -141,18 +138,6 @@ public class FeatureCachingClient {
       log.warn(
           "Failed to retrieve current feature flag value for Detection Exclusion V2", exception);
       return DEFAULT_DETECTION_EXCLUSION_V2_FLAG_VALUE;
-    }
-  }
-
-  public boolean isBlockingConfigV2Enabled(RequestContext requestContext) {
-    try {
-      return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(BLOCKING_CONFIG_V2_FLAG));
-    } catch (Exception exception) {
-      log.warn("Failed to retrieve current feature flag value for Blocking Config V2", exception);
-      return DEFAULT_BLOCKING_CONFIG_V2_FLAG_VALUE;
     }
   }
 
