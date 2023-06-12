@@ -114,6 +114,7 @@ public class SpanFilterMatcher {
         try {
           return Pattern.compile(rhs).matcher(lhs).find();
         } catch (Exception e) {
+          log.error("Invalid regex: {} passed to match", rhs);
           if (log.isDebugEnabled()) {
             log.debug(
                 "Invalid regex passed to match. Hence returning false. lhs: {} and rhs: {}",
