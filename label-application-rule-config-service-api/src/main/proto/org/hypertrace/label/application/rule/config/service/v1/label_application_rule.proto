@@ -51,6 +51,7 @@ message LabelApplicationRuleData {
       OPERATOR_UNSPECIFIED = 0;
       OPERATOR_EQUALS = 1; // operator to check if the key exists, and value is equal to the provided value
       OPERATOR_MATCHES_REGEX = 2; // operator to check if the key exists, and value matches the provided regex value
+      OPERATOR_CIDR = 3; // operator to check if the key exists, and IP value lies in the provided CIDR
     }
   }
 
