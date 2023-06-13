@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -18,6 +19,8 @@ import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleReq
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.Field;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
+import org.hypertrace.span.processing.config.service.v1.LogicalOperator;
+import org.hypertrace.span.processing.config.service.v1.LogicalSpanFilterExpression;
 import org.hypertrace.span.processing.config.service.v1.RelationalOperator;
 import org.hypertrace.span.processing.config.service.v1.RelationalSpanFilterExpression;
 import org.hypertrace.span.processing.config.service.v1.SpanFilter;
@@ -107,6 +110,21 @@ class SpanProcessingRequestValidatorTest {
                             .build())
                     .build()));
 
+    assertInvalidArgStatusContaining(
+        "Invalid regex passed",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateExcludeSpanRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ExcludeSpanRuleInfo.newBuilder()
+                            .setName("name")
+                            .setDisabled(true)
+                            .setFilter(buildInvalidTestFilter())
+                            .setType(RULE_TYPE_USER)
+                            .build())
+                    .build()));
+
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
@@ -180,6 +198,32 @@ class SpanProcessingRequestValidatorTest {
                 .setOperator(RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
                 .setRightOperand(SpanFilterValue.newBuilder().setStringValue("a").build())
                 .build())
+        .build();
+  }
+
+  private SpanFilter buildInvalidTestFilter() {
+    return SpanFilter.newBuilder()
+        .setLogicalSpanFilter(
+            LogicalSpanFilterExpression.newBuilder()
+                .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
+                .addAllOperands(
+                    List.of(
+                        SpanFilter.newBuilder()
+                            .setRelationalSpanFilter(
+                                RelationalSpanFilterExpression.newBuilder()
+                                    .setField(Field.FIELD_SERVICE_NAME)
+                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                    .setRightOperand(
+                                        SpanFilterValue.newBuilder().setStringValue("a")))
+                            .build(),
+                        SpanFilter.newBuilder()
+                            .setRelationalSpanFilter(
+                                RelationalSpanFilterExpression.newBuilder()
+                                    .setField(Field.FIELD_SERVICE_NAME)
+                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_REGEX_MATCH)
+                                    .setRightOperand(
+                                        SpanFilterValue.newBuilder().setStringValue("[(test")))
+                            .build())))
         .build();
   }
 }

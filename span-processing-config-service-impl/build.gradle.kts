@@ -11,6 +11,7 @@ dependencies {
   implementation(projects.validationUtils)
   implementation(projects.configProtoConverter)
   implementation(libs.protobuf.javautil)
+  implementation(libs.google.re2j)
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpcutils.client)
 
