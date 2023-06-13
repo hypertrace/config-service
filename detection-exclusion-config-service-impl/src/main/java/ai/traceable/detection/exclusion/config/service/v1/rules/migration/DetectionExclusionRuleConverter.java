@@ -1,7 +1,6 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules.migration;
 
 import static ai.traceable.anomaly.config.service.v1.AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF;
-import static ai.traceable.anomaly.config.service.v1.AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CUSTOM_SIGNATURE;
 import static ai.traceable.anomaly.config.service.v1.AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC;
 import static ai.traceable.anomaly.config.service.v1.AnomalyEventFamily.ANOMALY_EVENT_FAMILY_SESSION;
 import static ai.traceable.detection.exclusion.config.service.v1.CustomRuleFamily.CUSTOM_RULE_FAMILY_SIGNATURE;
@@ -41,6 +40,7 @@ import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
 import ai.traceable.detection.exclusion.config.service.v1.UserIdCondition;
 import com.google.protobuf.Value;
+import io.grpc.Status;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -79,7 +79,8 @@ class DetectionExclusionRuleConverter {
                   .collect(Collectors.toList()))
           .build();
 
-  DetectionExclusionRule convertRule(AnomalyExclusionRuleConfig oldRule) {
+  DetectionExclusionRule convertRule(
+      AnomalyExclusionRuleConfig oldRule, Map<String, String> oldRulesActorEntityIdToIdMap) {
     try {
       DetectionExclusionRule.Builder ruleBuilder =
           DetectionExclusionRule.newBuilder().setId(oldRule.getId());
@@ -133,12 +134,19 @@ class DetectionExclusionRuleConverter {
       }
 
       if (oldRuleData.getAnomalyActorExclusionInfo().hasAnomalyActor()) {
-        ruleInfoBuilder.addConditions(
-            DetectionExclusionCondition.newBuilder()
-                .setUserIdCondition(
-                    UserIdCondition.newBuilder()
-                        .addActorEntityIds(
-                            oldRuleData.getAnomalyActorExclusionInfo().getAnomalyActor().getId())));
+        String actorEntityId = oldRuleData.getAnomalyActorExclusionInfo().getAnomalyActor().getId();
+        Optional<String> actorId =
+            Optional.ofNullable(oldRulesActorEntityIdToIdMap.get(actorEntityId));
+        if (actorId.isPresent()) {
+          ruleInfoBuilder.addConditions(
+              DetectionExclusionCondition.newBuilder()
+                  .setUserIdCondition(UserIdCondition.newBuilder().addUserIds(actorId.get())));
+        } else {
+          throw Status.NOT_FOUND
+              .withDescription(
+                  String.format("ActorId not found for ActorEntityId : %s", actorEntityId))
+              .asRuntimeException();
+        }
       }
 
       return ruleBuilder.setRuleInfo(ruleInfoBuilder.setRuleStatus(ruleStatusBuilder)).build();

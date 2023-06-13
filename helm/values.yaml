@@ -234,6 +234,11 @@ traceableConfigServiceConfig:
     maxDynamicLabelApplicationRulesPerTenant: 100
   astConfigService:
     defaultPurgeDuration: 30d
+  actorService:
+    host: actor-service
+    port: 50888
+    request:
+      timeout: 1m
 
 localApiNamingConfig:
   agentPollingFrequency: 5m

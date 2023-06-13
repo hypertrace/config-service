@@ -7,6 +7,7 @@ hypertrace-grpcutils = "0.11.2"
 hypertrace-framework = "0.1.48"
 hypertrace-entityService = "0.8.41"
 traceable-platformGateway = "0.6.112"
+traceable-platform-apiAnomalyDetection = "0.9.31"
 kafka = "6.0.1"
 
 junit = "5.8.2"
@@ -25,6 +26,7 @@ traceable-platformGateway-trainingEvaluationFramework = { module = "ai.traceable
 traceable-platformGateway-ipUtils = { module = "ai.traceable.platform-gateway:ip-utils", version.ref = "traceable-platformGateway" }
 traceable-platformGateway-eventInvalidationCache = { module = "ai.traceable.platform-gateway:event-invalidation-cache", version.ref = "traceable-platformGateway" }
 traceable-featureFlag-api = { module = "ai.traceable.featureflag:feature-flag-service-api", version = "0.5.6" }
+traceable-platform-configProviders = { module = "ai.traceable.platform:config-providers", version.ref = "traceable-platform-apiAnomalyDetection"}
 
 hypertrace-grpcutils-client = { module = "org.hypertrace.core.grpcutils:grpc-client-utils", version.ref = "hypertrace-grpcutils" }
 hypertrace-grpcutils-server = { module = "org.hypertrace.core.grpcutils:grpc-server-utils", version.ref = "hypertrace-grpcutils" }

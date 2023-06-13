@@ -35,6 +35,7 @@ import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
 import ai.traceable.detection.exclusion.config.service.v1.UserIdCondition;
 import com.google.protobuf.Value;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class DetectionExclusionRuleConverterTest {
@@ -50,6 +51,7 @@ class DetectionExclusionRuleConverterTest {
             .build();
     AnomalyApiScope apiScope =
         AnomalyApiScope.newBuilder().setId("api").setServiceScope(serviceScope).build();
+    Map<String, String> oldRulesActorEntityIdToIdMap = Map.of("actorEntityId", "actorId");
 
     AnomalyExclusionRuleConfig oldRule1 =
         AnomalyExclusionRuleConfig.newBuilder()
@@ -210,10 +212,12 @@ class DetectionExclusionRuleConverterTest {
                     .addConditions(
                         DetectionExclusionCondition.newBuilder()
                             .setUserIdCondition(
-                                UserIdCondition.newBuilder().addActorEntityIds("actorEntityId"))))
+                                UserIdCondition.newBuilder().addUserIds("actorId"))))
             .build();
 
-    assertEquals(expectedNewRule1, ruleConverter.convertRule(oldRule1));
-    assertEquals(expectedNewRule2, ruleConverter.convertRule(oldRule2));
+    assertEquals(
+        expectedNewRule1, ruleConverter.convertRule(oldRule1, oldRulesActorEntityIdToIdMap));
+    assertEquals(
+        expectedNewRule2, ruleConverter.convertRule(oldRule2, oldRulesActorEntityIdToIdMap));
   }
 }

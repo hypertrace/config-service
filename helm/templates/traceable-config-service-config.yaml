@@ -99,6 +99,11 @@ data:
       }
       shouldPublishActivityEvents = true
     }
+    actor.service.config {
+      host = {{ .Values.traceableConfigServiceConfig.actorService.host }}
+      port = {{ .Values.traceableConfigServiceConfig.actorService.port }}
+      request.timeout = {{ .Values.traceableConfigServiceConfig.actorService.request.timeout }}
+    }
     blocking.config.service {
       agent.polling.frequency = {{ .Values.traceableConfigServiceConfig.blockingConfigService.agentPollingFrequency }}
       actor.fetcher.config = {

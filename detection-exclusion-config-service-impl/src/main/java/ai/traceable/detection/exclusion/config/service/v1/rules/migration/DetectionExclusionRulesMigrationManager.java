@@ -7,6 +7,8 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesStore;
+import ai.traceable.platform.actor.v1.Actor;
+import ai.traceable.platform.config.provider.common.clients.ActorServiceClient;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import java.util.HashMap;
@@ -16,6 +18,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
+import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -29,6 +32,7 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
   private final DetectionExclusionRulesStore newRulesStore;
   private final AnomalyExclusionRuleConfigStore oldRulesStore;
   private final DetectionExclusionRuleConverter ruleConverter;
+  private final ActorServiceClient actorServiceClient;
 
   private final Map<ContextualKey<Void>, Boolean> tenantMigrationCompletedMap = new HashMap<>();
 
@@ -37,11 +41,13 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
       FeatureCachingClient featureCachingClient,
       DetectionExclusionRulesStore newRulesStore,
       AnomalyExclusionRuleConfigStore oldRulesStore,
-      DetectionExclusionRuleConverter ruleConverter) {
+      DetectionExclusionRuleConverter ruleConverter,
+      ActorServiceClient actorServiceClient) {
     this.featureCachingClient = featureCachingClient;
     this.newRulesStore = newRulesStore;
     this.oldRulesStore = oldRulesStore;
     this.ruleConverter = ruleConverter;
+    this.actorServiceClient = actorServiceClient;
   }
 
   @Override
@@ -64,10 +70,28 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
     List<String> oldRuleIdsToDelete =
         ImmutableList.copyOf(Sets.difference(newRuleObjects.keySet(), oldRuleObjects.keySet()));
 
+    List<String> oldRulesActorEntityIds =
+        oldRuleObjects.values().stream()
+            .map(ConfigObject::getData)
+            .filter(rule -> rule.getRuleData().getAnomalyActorExclusionInfo().hasAnomalyActor())
+            .map(
+                rule -> rule.getRuleData().getAnomalyActorExclusionInfo().getAnomalyActor().getId())
+            .collect(Collectors.toUnmodifiableList());
+
+    Map<String, String> oldRulesActorEntityIdToIdMap =
+        actorServiceClient
+            .getActorsByEntityIds(
+                requestContext.getTenantId().orElseThrow(), oldRulesActorEntityIds)
+            .stream()
+            .collect(Collectors.toUnmodifiableMap(Actor::getEntityId, Actor::getActorId));
+
     // rules created by old api, not present in new api
     List<DetectionExclusionRule> oldRulesToCreate =
         Sets.difference(oldRuleObjects.keySet(), newRuleObjects.keySet()).stream()
-            .map(key -> ruleConverter.convertRule(oldRuleObjects.get(key).getData()))
+            .map(
+                key ->
+                    ruleConverter.convertRule(
+                        oldRuleObjects.get(key).getData(), oldRulesActorEntityIdToIdMap))
             .filter(Objects::nonNull)
             .collect(Collectors.toUnmodifiableList());
 
@@ -79,7 +103,10 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
                 key ->
                     oldRuleObjects.get(key).getLastUpdatedTimestamp().toEpochMilli()
                         > newRuleObjects.get(key).getLastUpdatedTimestamp().toEpochMilli())
-            .map(key -> ruleConverter.convertRule(oldRuleObjects.get(key).getData()))
+            .map(
+                key ->
+                    ruleConverter.convertRule(
+                        oldRuleObjects.get(key).getData(), oldRulesActorEntityIdToIdMap))
             .filter(Objects::nonNull)
             .collect(Collectors.toUnmodifiableList());
 

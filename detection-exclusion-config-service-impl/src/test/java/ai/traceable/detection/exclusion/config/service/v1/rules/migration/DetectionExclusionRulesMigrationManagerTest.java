@@ -35,6 +35,7 @@ import ai.traceable.detection.exclusion.config.service.v1.ScopeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesStore;
+import ai.traceable.platform.config.provider.common.clients.ActorServiceClient;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -73,13 +74,16 @@ class DetectionExclusionRulesMigrationManagerTest {
     featureCachingClient = mock(FeatureCachingClient.class);
     newRulesStore = mock(DetectionExclusionRulesStore.class);
     oldRulesStore = mock(AnomalyExclusionRuleConfigStore.class);
+    ActorServiceClient actorServiceClient = mock(ActorServiceClient.class);
+    when(actorServiceClient.getActorsByEntityIds(any(), any())).thenReturn(List.of());
 
     migrationManager =
         new DetectionExclusionRulesMigrationManager(
             featureCachingClient,
             newRulesStore,
             oldRulesStore,
-            new DetectionExclusionRuleConverter());
+            new DetectionExclusionRuleConverter(),
+            actorServiceClient);
   }
 
   @Test
