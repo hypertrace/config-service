@@ -120,7 +120,22 @@ class SpanProcessingRequestValidatorTest {
                         ExcludeSpanRuleInfo.newBuilder()
                             .setName("name")
                             .setDisabled(true)
-                            .setFilter(buildInvalidTestFilter())
+                            .setFilter(buildInvalidRegexTestFilterWithAndOperator())
+                            .setType(RULE_TYPE_USER)
+                            .build())
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Invalid regex passed",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateExcludeSpanRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ExcludeSpanRuleInfo.newBuilder()
+                            .setName("name")
+                            .setDisabled(true)
+                            .setFilter(buildInvalidRegexTestFilterWithOrOperator())
                             .setType(RULE_TYPE_USER)
                             .build())
                     .build()));
@@ -135,6 +150,34 @@ class SpanProcessingRequestValidatorTest {
                             .setName("name")
                             .setDisabled(true)
                             .setFilter(buildTestFilter())
+                            .setType(RULE_TYPE_USER)
+                            .build())
+                    .build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateExcludeSpanRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ExcludeSpanRuleInfo.newBuilder()
+                            .setName("name")
+                            .setDisabled(true)
+                            .setFilter(buildTestLogicalFilterWithNoOperands())
+                            .setType(RULE_TYPE_USER)
+                            .build())
+                    .build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateExcludeSpanRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ExcludeSpanRuleInfo.newBuilder()
+                            .setName("name")
+                            .setDisabled(true)
+                            .setFilter(buildRegexTestFilterWithOrOperator())
                             .setType(RULE_TYPE_USER)
                             .build())
                     .build()));
@@ -201,7 +244,7 @@ class SpanProcessingRequestValidatorTest {
         .build();
   }
 
-  private SpanFilter buildInvalidTestFilter() {
+  private SpanFilter buildInvalidRegexTestFilterWithAndOperator() {
     return SpanFilter.newBuilder()
         .setLogicalSpanFilter(
             LogicalSpanFilterExpression.newBuilder()
@@ -224,6 +267,67 @@ class SpanProcessingRequestValidatorTest {
                                     .setRightOperand(
                                         SpanFilterValue.newBuilder().setStringValue("[(test")))
                             .build())))
+        .build();
+  }
+
+  private SpanFilter buildInvalidRegexTestFilterWithOrOperator() {
+    return SpanFilter.newBuilder()
+        .setLogicalSpanFilter(
+            LogicalSpanFilterExpression.newBuilder()
+                .setOperator(LogicalOperator.LOGICAL_OPERATOR_OR)
+                .addAllOperands(
+                    List.of(
+                        SpanFilter.newBuilder()
+                            .setRelationalSpanFilter(
+                                RelationalSpanFilterExpression.newBuilder()
+                                    .setField(Field.FIELD_SERVICE_NAME)
+                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                    .setRightOperand(
+                                        SpanFilterValue.newBuilder().setStringValue("a")))
+                            .build(),
+                        SpanFilter.newBuilder()
+                            .setRelationalSpanFilter(
+                                RelationalSpanFilterExpression.newBuilder()
+                                    .setField(Field.FIELD_SERVICE_NAME)
+                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_REGEX_MATCH)
+                                    .setRightOperand(
+                                        SpanFilterValue.newBuilder().setStringValue("[(test")))
+                            .build())))
+        .build();
+  }
+
+  private SpanFilter buildRegexTestFilterWithOrOperator() {
+    return SpanFilter.newBuilder()
+        .setLogicalSpanFilter(
+            LogicalSpanFilterExpression.newBuilder()
+                .setOperator(LogicalOperator.LOGICAL_OPERATOR_OR)
+                .addAllOperands(
+                    List.of(
+                        SpanFilter.newBuilder()
+                            .setRelationalSpanFilter(
+                                RelationalSpanFilterExpression.newBuilder()
+                                    .setField(Field.FIELD_SERVICE_NAME)
+                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                    .setRightOperand(
+                                        SpanFilterValue.newBuilder().setStringValue("a")))
+                            .build(),
+                        SpanFilter.newBuilder()
+                            .setRelationalSpanFilter(
+                                RelationalSpanFilterExpression.newBuilder()
+                                    .setField(Field.FIELD_SERVICE_NAME)
+                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_REGEX_MATCH)
+                                    .setRightOperand(
+                                        SpanFilterValue.newBuilder().setStringValue(".*test")))
+                            .build())))
+        .build();
+  }
+
+  private SpanFilter buildTestLogicalFilterWithNoOperands() {
+    return SpanFilter.newBuilder()
+        .setLogicalSpanFilter(
+            LogicalSpanFilterExpression.newBuilder()
+                .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
+                .addAllOperands(List.of()))
         .build();
   }
 }

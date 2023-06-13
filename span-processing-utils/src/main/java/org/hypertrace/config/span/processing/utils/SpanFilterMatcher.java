@@ -119,13 +119,9 @@ public class SpanFilterMatcher {
       }
     } catch (Exception e) {
       log.error(
-          "Invalid regex or invalid value for lhs: {} or rhs: {} passed to match. Hence returning false.",
-          lhs,
-          rhs);
+          "Unable to match lhs: {} with rhs: {} for operator: {}", lhs, rhs, relationalOperator);
       log.debug(
-          "Invalid regex or invalid value for lhs: {} or rhs: {} passed to match. Hence returning false.",
-          lhs,
-          rhs);
+          "Unable to match lhs: {} with rhs: {} for operator: {}", lhs, rhs, relationalOperator);
       return false;
     }
   }
