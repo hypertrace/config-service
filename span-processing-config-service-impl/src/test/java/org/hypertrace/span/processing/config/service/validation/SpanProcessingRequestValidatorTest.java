@@ -111,7 +111,7 @@ class SpanProcessingRequestValidatorTest {
                     .build()));
 
     assertInvalidArgStatusContaining(
-        "Invalid regex passed",
+        "Invalid Regex pattern",
         () ->
             validator.validateOrThrow(
                 mockRequestContext,
@@ -126,7 +126,7 @@ class SpanProcessingRequestValidatorTest {
                     .build()));
 
     assertInvalidArgStatusContaining(
-        "Invalid regex passed",
+        "Invalid Regex pattern",
         () ->
             validator.validateOrThrow(
                 mockRequestContext,
@@ -154,7 +154,8 @@ class SpanProcessingRequestValidatorTest {
                             .build())
                     .build()));
 
-    assertDoesNotThrow(
+    assertInvalidArgStatusContaining(
+        "LogicalSpanFilterExpression.operands",
         () ->
             validator.validateOrThrow(
                 mockRequestContext,

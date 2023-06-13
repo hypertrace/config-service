@@ -5,7 +5,6 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDef
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 import static org.hypertrace.span.processing.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_REGEX_MATCH;
 import static org.hypertrace.span.processing.config.service.v1.RuleType.RULE_TYPE_SYSTEM;
-import static org.hypertrace.span.processing.config.service.v1.SpanFilterValue.ValueCase.STRING_VALUE;
 
 import com.google.re2j.Pattern;
 import com.google.re2j.PatternSyntaxException;
@@ -15,7 +14,8 @@ import org.hypertrace.span.processing.config.service.v1.CreateExcludeSpanRuleReq
 import org.hypertrace.span.processing.config.service.v1.DeleteExcludeSpanRuleRequest;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRuleInfo;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesRequest;
-import org.hypertrace.span.processing.config.service.v1.LogicalOperator;
+import org.hypertrace.span.processing.config.service.v1.LogicalSpanFilterExpression;
+import org.hypertrace.span.processing.config.service.v1.RelationalSpanFilterExpression;
 import org.hypertrace.span.processing.config.service.v1.SpanFilter;
 import org.hypertrace.span.processing.config.service.v1.SpanFilterValue;
 import org.hypertrace.span.processing.config.service.v1.UpdateExcludeSpanRule;
@@ -65,21 +65,7 @@ public class SpanProcessingConfigRequestValidator {
   private void validateSpanFilter(SpanFilter filter) {
     switch (filter.getSpanFilterExpressionCase()) {
       case LOGICAL_SPAN_FILTER:
-        if (filter
-            .getLogicalSpanFilter()
-            .getOperator()
-            .equals(LogicalOperator.LOGICAL_OPERATOR_AND)) {
-          filter.getLogicalSpanFilter().getOperandsList().stream()
-              .filter(SpanFilter::hasRelationalSpanFilter)
-              .forEach(this::validateRelationalSpanFilter);
-        } else {
-          if (filter.getLogicalSpanFilter().getOperandsCount() == 0) {
-            return;
-          }
-          filter.getLogicalSpanFilter().getOperandsList().stream()
-              .filter(SpanFilter::hasRelationalSpanFilter)
-              .forEach(this::validateRelationalSpanFilter);
-        }
+        validateLogicalSpanFilter(filter);
         break;
       case RELATIONAL_SPAN_FILTER:
         validateRelationalSpanFilter(filter);
@@ -91,10 +77,21 @@ public class SpanProcessingConfigRequestValidator {
     }
   }
 
+  private void validateLogicalSpanFilter(SpanFilter filter) {
+    validateNonDefaultPresenceOrThrow(
+        filter.getLogicalSpanFilter(), LogicalSpanFilterExpression.OPERATOR_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        filter.getLogicalSpanFilter(), LogicalSpanFilterExpression.OPERANDS_FIELD_NUMBER);
+    filter.getLogicalSpanFilter().getOperandsList().forEach(this::validateSpanFilter);
+  }
+
   private void validateRelationalSpanFilter(SpanFilter filter) {
-    SpanFilterValue rhs = filter.getRelationalSpanFilter().getRightOperand();
-    if (rhs.getValueCase().equals(STRING_VALUE)
-        && filter.getRelationalSpanFilter().getOperator().equals(RELATIONAL_OPERATOR_REGEX_MATCH)) {
+    validateNonDefaultPresenceOrThrow(
+        filter.getRelationalSpanFilter(), RelationalSpanFilterExpression.OPERATOR_FIELD_NUMBER);
+
+    final SpanFilterValue rhs = filter.getRelationalSpanFilter().getRightOperand();
+    if (filter.getRelationalSpanFilter().getOperator().equals(RELATIONAL_OPERATOR_REGEX_MATCH)) {
+      validateNonDefaultPresenceOrThrow(rhs, SpanFilterValue.STRING_VALUE_FIELD_NUMBER);
       validateRegex(rhs.getStringValue());
     }
   }
@@ -104,7 +101,7 @@ public class SpanProcessingConfigRequestValidator {
       Pattern.compile(regex);
     } catch (PatternSyntaxException e) {
       throw Status.INVALID_ARGUMENT
-          .withDescription("Invalid regex passed: " + regex)
+          .withDescription("Invalid Regex pattern: " + regex)
           .asRuntimeException();
     }
   }
