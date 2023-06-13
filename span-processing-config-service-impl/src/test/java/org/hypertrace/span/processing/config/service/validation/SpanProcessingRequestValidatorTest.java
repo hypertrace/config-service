@@ -326,7 +326,7 @@ class SpanProcessingRequestValidatorTest {
     return SpanFilter.newBuilder()
         .setLogicalSpanFilter(
             LogicalSpanFilterExpression.newBuilder()
-                .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
+                .setOperator(LogicalOperator.LOGICAL_OPERATOR_OR)
                 .addAllOperands(List.of()))
         .build();
   }
