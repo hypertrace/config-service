@@ -8,13 +8,7 @@ dependencies {
   implementation(libs.protobuf.javautil)
   implementation(libs.seancfoley.ipaddress)
 
-  compileOnly(libs.lombok)
-  annotationProcessor(libs.lombok)
-
   testImplementation(libs.junit.jupiter)
-
-  testCompileOnly(libs.lombok)
-  testAnnotationProcessor(libs.lombok)
 }
 
 tasks.test {

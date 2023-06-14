@@ -5,6 +5,7 @@ import static java.math.BigInteger.ONE;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
 import inet.ipaddr.IPAddressStringParameters;
+import java.util.Optional;
 
 public class IpValidationUtils {
   private static final IPAddressStringParameters ADDRESS_VALIDATION_PARAMS =
@@ -19,25 +20,22 @@ public class IpValidationUtils {
           .toParams();
 
   public static boolean isValidSubnet(String subnet) {
-    IPAddress parsedAddress = parseAddress(subnet);
-    if (parsedAddress == null) {
-      return false;
-    }
-    return !parsedAddress
-        .toPrefixBlock()
-        .getCount()
-        .equals(ONE); // range will represent multiple IPs
+    Optional<IPAddress> maybeParsedAddress = parseAddress(subnet);
+    // range will represent multiple IPs
+    return maybeParsedAddress
+        .filter(ipAddress -> !ipAddress.toPrefixBlock().getCount().equals(ONE))
+        .isPresent();
   }
 
   public static boolean isValidIpAddress(String ipAddress) {
-    IPAddress parsedAddress = parseAddress(ipAddress);
-    if (parsedAddress == null) {
-      return false;
-    }
-    return parsedAddress.toPrefixBlock().getCount().equals(ONE);
+    Optional<IPAddress> maybeParsedAddress = parseAddress(ipAddress);
+    return maybeParsedAddress
+        .map(address -> address.toPrefixBlock().getCount().equals(ONE))
+        .orElse(false);
   }
 
-  static IPAddress parseAddress(String address) {
-    return new IPAddressString(address, ADDRESS_VALIDATION_PARAMS).getAddress();
+  private static Optional<IPAddress> parseAddress(String address) {
+    return Optional.ofNullable(
+        new IPAddressString(address, ADDRESS_VALIDATION_PARAMS).getAddress());
   }
 }

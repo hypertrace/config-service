@@ -11,12 +11,10 @@ import static org.hypertrace.label.application.rule.config.service.v1.LabelAppli
 import com.google.protobuf.Message;
 import io.grpc.Status;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplicationRuleRequest;
 import org.hypertrace.label.application.rule.config.service.v1.DeleteLabelApplicationRuleRequest;
@@ -31,7 +29,6 @@ import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationR
 import org.hypertrace.label.application.rule.config.service.v1.UpdateLabelApplicationRuleRequest;
 
 public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleValidator {
-  private static final String STRING_SEPARATOR = ",";
 
   @Override
   public void validateOrThrow(
@@ -129,18 +126,23 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
 
   private void validateStringCondition(StringCondition stringCondition) {
     validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.OPERATOR_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.VALUE_FIELD_NUMBER);
     if (stringCondition.getOperator().equals(OPERATOR_MATCHES_IPS)
         || stringCondition.getOperator().equals(OPERATOR_NOT_MATCHES_IPS)) {
-      final String value = stringCondition.getValue();
-      final List<String> ips =
-          Arrays.stream(value.split(STRING_SEPARATOR))
-              .map(String::trim)
-              .collect(Collectors.toUnmodifiableList());
-
-      if (ips.stream().noneMatch(ip -> isValidIpAddress(ip) || isValidSubnet(ip))) {
-        throwInvalidArgumentException(
-            "StringCondition in LabelApplicationRule should have a valid IP address or CIDR");
+      if (stringCondition.getKindCase().equals(StringCondition.KindCase.VALUE)) {
+        validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.VALUE_FIELD_NUMBER);
+        final String ip = stringCondition.getValue();
+        if (!(isValidIpAddress(ip) || isValidSubnet(ip))) {
+          throwInvalidArgumentException(
+              "StringCondition in LabelApplicationRule should have a valid IP address or CIDR");
+        }
+      } else {
+        validateNonDefaultPresenceOrThrow(
+            stringCondition.getValues(), StringCondition.StringList.VALUES_FIELD_NUMBER);
+        if (stringCondition.getValues().getValuesList().stream()
+            .noneMatch(ip -> isValidIpAddress(ip) || isValidSubnet(ip))) {
+          throwInvalidArgumentException(
+              "StringCondition in LabelApplicationRule should have a valid list of IP addresses and CIDRs");
+        }
       }
     }
   }

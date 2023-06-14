@@ -50,12 +50,12 @@ public class LabelApplicationRuleValidatorTest {
     correctKeyConditionWithMatchesIPs =
         StringCondition.newBuilder()
             .setOperator(StringCondition.Operator.OPERATOR_MATCHES_IPS)
-            .setValue("1.2.3.4, 4.5.6.7/2")
+            .setValue("1.2.3.4")
             .build();
     incorrectKeyConditionWithMatchesIPs =
         StringCondition.newBuilder()
             .setOperator(StringCondition.Operator.OPERATOR_MATCHES_IPS)
-            .setValue("1.2.3,4.5.6.7/s")
+            .setValue("4.5.6.7/s")
             .build();
     errorUnaryValueCondition =
         UnaryCondition.newBuilder()
@@ -71,12 +71,16 @@ public class LabelApplicationRuleValidatorTest {
     correctStringValueConditionWithMatchesIPs =
         StringCondition.newBuilder()
             .setOperator(StringCondition.Operator.OPERATOR_MATCHES_IPS)
-            .setValue("1.2.3.4, 4.5.6.7/8")
+            .setValues(
+                StringCondition.StringList.newBuilder()
+                    .addAllValues(List.of("1.2.3.4", "4.5.6.7/8")))
             .build();
     incorrectStringValueConditionWithMatchesIPs =
         StringCondition.newBuilder()
             .setOperator(StringCondition.Operator.OPERATOR_MATCHES_IPS)
-            .setValue("1.2.4.5.6.7/8, 1.2 3.4")
+            .setValues(
+                StringCondition.StringList.newBuilder()
+                    .addAllValues(List.of("1.2.4.5.6.7/8", "1.2 3.4")))
             .build();
     correctAuthKeyCondition =
         StringCondition.newBuilder()

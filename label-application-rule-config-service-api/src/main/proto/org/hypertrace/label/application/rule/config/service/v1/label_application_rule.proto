@@ -45,7 +45,14 @@ message LabelApplicationRuleData {
 
   message StringCondition {
     Operator operator = 1;
-    string value = 2;
+    oneof kind {
+      string value = 2;
+      StringList values = 3;
+    }
+
+    message StringList {
+      repeated string values = 1;
+    }
 
     enum Operator {
       OPERATOR_UNSPECIFIED = 0;
