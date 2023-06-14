@@ -36,6 +36,8 @@ lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 rxjava3 = { module = "io.reactivex.rxjava3:rxjava", version = "3.0.11" }
 google-re2j = { module = "com.google.re2j:re2j", version = "1.6" }
+commons-validator = { module = "commons-validator:commons-validator", version = "1.7" }
+seancfoley-ipaddress = { module = "com.github.seancfoley:ipaddress", version = "5.3.4" }
 
 grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "grpc" }
 grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
