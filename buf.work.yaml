@@ -20,6 +20,7 @@ directories:
   - hypertrace-config-service/alerting-config-service-api/src/main/proto
   - integration-config-service-api/src/main/proto
   - iprange-config-service-api/src/main/proto
+  - ip-resolution-config-service-api/src/main/proto
   - jwt-extraction-config-service-api/src/main/proto
   - license-status-config-service-api/src/main/proto
   - local-processing-config-service-api/src/main/proto

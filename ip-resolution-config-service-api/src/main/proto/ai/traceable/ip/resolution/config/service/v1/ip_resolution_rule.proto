@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package ai.traceable.ip.resolution.config.service.v1;
+
+option java_multiple_files = true;
+
+message IpResolutionRule {
+  repeated ResolutionStrategy resolution_strategies = 1;
+  repeated IntelligenceOverride intelligence_overrides = 2;
+}
+
+message ResolutionStrategy {
+  oneof resolution_type {
+    HeaderXRealIp header_x_real_ip = 1;
+    HeaderXForwardedFor header_x_forwarded_for = 2;
+    HeaderForwarded header_forwarded = 3;
+    HeaderXProxyUser header_x_proxy_user = 4;
+    ProxyAgent proxy_agent = 5;
+    OtelHttpClientIp otel_http_client_ip = 6;
+    OtelAgent otel_agent = 7;
+  }
+
+  message HeaderXRealIp {}
+  message HeaderXForwardedFor {}
+  message HeaderForwarded {}
+  message HeaderXProxyUser {}
+  message ProxyAgent {}
+  message OtelHttpClientIp {}
+  message OtelAgent {}
+}
+
+message IntelligenceOverride {
+  string ip_address = 1;
+  OverrideType override_type = 2;
+  Country country = 3;
+  Region state = 4;
+  Region city = 5;
+  IpTraits ip_traits = 6;
+  int32 ip_reputation = 7;
+  IpReputationLevel ip_reputation_level = 8;
+}
+
+enum OverrideType {
+  OVERRIDE_TYPE_UNSPECIFIED = 0;
+  OVERRIDE_TYPE_UPSERT = 1;
+  OVERRIDE_TYPE_REPLACE = 2;
+}
+
+message Region {
+  string name = 1;
+}
+
+message Country {
+  Region region = 1;
+  string iso_code = 2;
+}
+
+message IpTraits {
+  IpAbuseVelocity abuse_velocity = 1;
+  IpConnectionType connection_type = 2;
+  repeated IpType ip_types = 3;
+}
+
+enum IpReputationLevel {
+  IP_REPUTATION_LEVEL_TYPE_UNSPECIFIED = 0;
+  IP_REPUTATION_LEVEL_TYPE_LOW = 1;
+  IP_REPUTATION_LEVEL_TYPE_MEDIUM = 2;
+  IP_REPUTATION_LEVEL_TYPE_HIGH = 3;
+  IP_REPUTATION_LEVEL_TYPE_CRITICAL = 4;
+}
+
+enum IpAbuseVelocity {
+  IP_ABUSE_VELOCITY_UNSPECIFIED = 0;
+  IP_ABUSE_VELOCITY_LOW = 1;
+  IP_ABUSE_VELOCITY_MEDIUM = 2;
+  IP_ABUSE_VELOCITY_HIGH = 3;
+}
+
+enum IpConnectionType {
+  IP_CONNECTION_TYPE_UNSPECIFIED = 0;
+  IP_CONNECTION_TYPE_RESIDENTIAL = 1;
+  IP_CONNECTION_TYPE_MOBILE = 2;
+  IP_CONNECTION_TYPE_CORPORATE= 3;
+  IP_CONNECTION_TYPE_DATA_CENTER = 4;
+  IP_CONNECTION_TYPE_EDUCATION = 5;
+}
+
+enum IpType {
+  IP_TYPE_UNSPECIFIED = 0;
+  IP_TYPE_ANONYMOUS_VPN = 1;
+  IP_TYPE_PUBLIC_PROXY = 2;
+  IP_TYPE_HOSTING_PROVIDER = 3;
+  IP_TYPE_TOR_EXIT_NODE = 4;
+  IP_TYPE_BOT = 5;
+}
