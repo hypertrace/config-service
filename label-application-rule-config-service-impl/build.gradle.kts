@@ -15,7 +15,6 @@ dependencies {
   implementation(libs.protobuf.javautil)
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpcutils.client)
-  implementation(projects.ipUtils)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

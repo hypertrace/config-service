@@ -1,10 +1,10 @@
 package org.hypertrace.label.application.rule.config.service;
 
-import static org.hypertrace.config.utils.ip.IpValidationUtils.isValidIpAddress;
-import static org.hypertrace.config.utils.ip.IpValidationUtils.isValidSubnet;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
+import static org.hypertrace.config.validation.IpValidationUtils.isValidIpAddress;
+import static org.hypertrace.config.validation.IpValidationUtils.isValidSubnet;
 import static org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.StringCondition.Operator.OPERATOR_MATCHES_IPS;
 import static org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.StringCondition.Operator.OPERATOR_NOT_MATCHES_IPS;
 
