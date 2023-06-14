@@ -6,7 +6,6 @@ dependencies {
   api(libs.hypertrace.grpcutils.context)
   api(libs.grpc.api)
   implementation(libs.protobuf.javautil)
-  implementation(libs.commons.validator)
   implementation(libs.seancfoley.ipaddress)
 
   compileOnly(libs.lombok)
