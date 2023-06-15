@@ -6,4 +6,5 @@ dependencies {
   api(libs.hypertrace.grpcutils.context)
   api(libs.grpc.api)
   implementation(libs.protobuf.javautil)
+  implementation(libs.seancfoley.ipaddress)
 }

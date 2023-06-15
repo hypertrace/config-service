@@ -45,13 +45,21 @@ message LabelApplicationRuleData {
 
   message StringCondition {
     Operator operator = 1;
-    string value = 2;
+    oneof kind {
+      string value = 2;
+      StringList values = 3;
+    }
+
+    message StringList {
+      repeated string values = 1;
+    }
 
     enum Operator {
       OPERATOR_UNSPECIFIED = 0;
       OPERATOR_EQUALS = 1; // operator to check if the key exists, and value is equal to the provided value
       OPERATOR_MATCHES_REGEX = 2; // operator to check if the key exists, and value matches the provided regex value
-      OPERATOR_CIDR = 3; // operator to check if the key exists, and IP value lies in the provided CIDR
+      OPERATOR_MATCHES_IPS = 3; // operator to check if the key exists, and IP value matches provided IP(s), CIDR(s)
+      OPERATOR_NOT_MATCHES_IPS = 4; // operator to check if the key exists, and IP doesn't match provided IP(s), CIDR(s)
     }
   }
 
