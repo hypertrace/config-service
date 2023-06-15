@@ -1,5 +1,6 @@
 package org.hypertrace.label.application.rule.config.service;
 
+import static org.hypertrace.config.validation.GrpcValidatorUtils.isValidIpAddressOrSubnet;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
@@ -7,8 +8,6 @@ import static org.hypertrace.label.application.rule.config.service.v1.LabelAppli
 import static org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.StringCondition.Operator.OPERATOR_NOT_MATCHES_IPS;
 
 import com.google.protobuf.Message;
-import inet.ipaddr.IPAddressString;
-import inet.ipaddr.IPAddressStringParameters;
 import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,16 +28,6 @@ import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationR
 import org.hypertrace.label.application.rule.config.service.v1.UpdateLabelApplicationRuleRequest;
 
 public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleValidator {
-  private static final IPAddressStringParameters ADDRESS_VALIDATION_PARAMS =
-      new IPAddressStringParameters.Builder()
-          // Allows ipv4 joined segments like 1.2.3, 1.2, or just 1 For the case of just 1 segment
-          .allow_inet_aton(false)
-          // Allows an address to be specified as a single value, eg ffffffff, without the standard
-          // use of segments like 1.2.3.4 or 1:2:4:3:5:6:7:8
-          .allowSingleSegment(false)
-          // Allows zero-length IPAddressStrings like ""
-          .allowEmpty(false)
-          .toParams();
 
   @Override
   public void validateOrThrow(
@@ -138,21 +127,26 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
     validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.OPERATOR_FIELD_NUMBER);
     if (stringCondition.getOperator().equals(OPERATOR_MATCHES_IPS)
         || stringCondition.getOperator().equals(OPERATOR_NOT_MATCHES_IPS)) {
-      if (stringCondition.getKindCase().equals(StringCondition.KindCase.VALUE)) {
-        validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.VALUE_FIELD_NUMBER);
-        final String ip = stringCondition.getValue();
-        if (!isValidIpAddressOrSubnet(ip)) {
+      switch (stringCondition.getKindCase()) {
+        case VALUE:
+          final String ip = stringCondition.getValue();
+          if (!isValidIpAddressOrSubnet(ip)) {
+            throwInvalidArgumentException(
+                "StringCondition in LabelApplicationRule should have a valid IP address or CIDR");
+          }
+          break;
+        case VALUES:
+          if (stringCondition.getValues().getValuesList().stream()
+              .anyMatch(s -> !isValidIpAddressOrSubnet(s))) {
+            throwInvalidArgumentException(
+                "StringCondition in LabelApplicationRule should have a valid list of IP addresses and CIDRs");
+          }
+          break;
+        default:
           throwInvalidArgumentException(
-              "StringCondition in LabelApplicationRule should have a valid IP address or CIDR");
-        }
-      } else {
-        validateNonDefaultPresenceOrThrow(
-            stringCondition.getValues(), StringCondition.StringList.VALUES_FIELD_NUMBER);
-        if (stringCondition.getValues().getValuesList().stream()
-            .anyMatch(s -> !isValidIpAddressOrSubnet(s))) {
-          throwInvalidArgumentException(
-              "StringCondition in LabelApplicationRule should have a valid list of IP addresses and CIDRs");
-        }
+              String.format(
+                  "Unexpected Case in %s:%n %s",
+                  getName(stringCondition), printMessage(stringCondition)));
       }
     }
   }
@@ -238,9 +232,5 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
 
   private String getName(Message message) {
     return message.getDescriptorForType().getName();
-  }
-
-  private boolean isValidIpAddressOrSubnet(final String input) {
-    return new IPAddressString(input, ADDRESS_VALIDATION_PARAMS).getAddress() != null;
   }
 }

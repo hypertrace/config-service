@@ -3,11 +3,23 @@ package org.hypertrace.config.validation;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
+import inet.ipaddr.IPAddressString;
+import inet.ipaddr.IPAddressStringParameters;
 import io.grpc.Status;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class GrpcValidatorUtils {
   private static final JsonFormat.Printer JSON_PRINTER = JsonFormat.printer();
+  private static final IPAddressStringParameters ADDRESS_VALIDATION_PARAMS =
+      new IPAddressStringParameters.Builder()
+          // Allows ipv4 joined segments like 1.2.3, 1.2, or just 1 For the case of just 1 segment
+          .allow_inet_aton(false)
+          // Allows an address to be specified as a single value, eg ffffffff, without the standard
+          // use of segments like 1.2.3.4 or 1:2:4:3:5:6:7:8
+          .allowSingleSegment(false)
+          // Allows zero-length IPAddressStrings like ""
+          .allowEmpty(false)
+          .toParams();
 
   private GrpcValidatorUtils() {}
 
@@ -34,6 +46,10 @@ public class GrpcValidatorUtils {
                   descriptor.getFullName(), printMessage(source)))
           .asRuntimeException();
     }
+  }
+
+  public static boolean isValidIpAddressOrSubnet(final String input) {
+    return new IPAddressString(input, ADDRESS_VALIDATION_PARAMS).getAddress() != null;
   }
 
   private static <T extends Message> void validateNonDefaultPresenceRepeatedOrThrow(

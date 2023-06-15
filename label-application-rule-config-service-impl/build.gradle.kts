@@ -13,7 +13,6 @@ dependencies {
   implementation(projects.configServiceChangeEventGenerator)
   implementation(libs.typesafe.config)
   implementation(libs.protobuf.javautil)
-  implementation(libs.seancfoley.ipaddress)
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpcutils.client)
 
