@@ -7,13 +7,11 @@ import static org.hypertrace.label.application.rule.config.service.v1.LabelAppli
 import static org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.StringCondition.Operator.OPERATOR_NOT_MATCHES_IPS;
 
 import com.google.protobuf.Message;
-import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
 import inet.ipaddr.IPAddressStringParameters;
 import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -243,12 +241,6 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
   }
 
   private boolean isValidIpAddressOrSubnet(final String input) {
-    Optional<IPAddress> maybeParsedAddress = parseAddress(input);
-    return maybeParsedAddress.isPresent();
-  }
-
-  private static Optional<IPAddress> parseAddress(final String address) {
-    return Optional.ofNullable(
-        new IPAddressString(address, ADDRESS_VALIDATION_PARAMS).getAddress());
+    return new IPAddressString(input, ADDRESS_VALIDATION_PARAMS).getAddress() != null;
   }
 }
