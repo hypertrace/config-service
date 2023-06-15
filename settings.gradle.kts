@@ -52,4 +52,3 @@ include(":span-processing-utils")
 
 include(":partitioner-config-service-api")
 include(":partitioner-config-service-impl")
-
