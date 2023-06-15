@@ -3,15 +3,17 @@ package org.hypertrace.label.application.rule.config.service;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
-import static org.hypertrace.config.validation.IpValidationUtils.isValidIpAddress;
-import static org.hypertrace.config.validation.IpValidationUtils.isValidSubnet;
 import static org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.StringCondition.Operator.OPERATOR_MATCHES_IPS;
 import static org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.StringCondition.Operator.OPERATOR_NOT_MATCHES_IPS;
 
 import com.google.protobuf.Message;
+import inet.ipaddr.IPAddress;
+import inet.ipaddr.IPAddressString;
+import inet.ipaddr.IPAddressStringParameters;
 import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,6 +31,16 @@ import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationR
 import org.hypertrace.label.application.rule.config.service.v1.UpdateLabelApplicationRuleRequest;
 
 public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleValidator {
+  private static final IPAddressStringParameters ADDRESS_VALIDATION_PARAMS =
+      new IPAddressStringParameters.Builder()
+          // Allows ipv4 joined segments like 1.2.3, 1.2, or just 1 For the case of just 1 segment
+          .allow_inet_aton(false)
+          // Allows an address to be specified as a single value, eg ffffffff, without the standard
+          // use of segments like 1.2.3.4 or 1:2:4:3:5:6:7:8
+          .allowSingleSegment(false)
+          // Allows zero-length IPAddressStrings like ""
+          .allowEmpty(false)
+          .toParams();
 
   @Override
   public void validateOrThrow(
@@ -131,7 +143,7 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
       if (stringCondition.getKindCase().equals(StringCondition.KindCase.VALUE)) {
         validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.VALUE_FIELD_NUMBER);
         final String ip = stringCondition.getValue();
-        if (!(isValidIpAddress(ip) || isValidSubnet(ip))) {
+        if (!isValidIpAddressOrSubnet(ip)) {
           throwInvalidArgumentException(
               "StringCondition in LabelApplicationRule should have a valid IP address or CIDR");
         }
@@ -139,7 +151,7 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
         validateNonDefaultPresenceOrThrow(
             stringCondition.getValues(), StringCondition.StringList.VALUES_FIELD_NUMBER);
         if (stringCondition.getValues().getValuesList().stream()
-            .noneMatch(ip -> isValidIpAddress(ip) || isValidSubnet(ip))) {
+            .anyMatch(s -> !isValidIpAddressOrSubnet(s))) {
           throwInvalidArgumentException(
               "StringCondition in LabelApplicationRule should have a valid list of IP addresses and CIDRs");
         }
@@ -228,5 +240,15 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
 
   private String getName(Message message) {
     return message.getDescriptorForType().getName();
+  }
+
+  private boolean isValidIpAddressOrSubnet(final String input) {
+    Optional<IPAddress> maybeParsedAddress = parseAddress(input);
+    return maybeParsedAddress.isPresent();
+  }
+
+  private static Optional<IPAddress> parseAddress(final String address) {
+    return Optional.ofNullable(
+        new IPAddressString(address, ADDRESS_VALIDATION_PARAMS).getAddress());
   }
 }
