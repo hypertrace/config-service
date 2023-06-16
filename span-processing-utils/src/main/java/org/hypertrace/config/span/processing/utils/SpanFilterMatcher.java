@@ -99,33 +99,28 @@ public class SpanFilterMatcher {
   }
 
   private boolean matches(String lhs, String rhs, RelationalOperator relationalOperator) {
-    switch (relationalOperator) {
-      case RELATIONAL_OPERATOR_CONTAINS:
-        return lhs.contains(rhs);
-      case RELATIONAL_OPERATOR_EQUALS:
-        return lhs.equals(rhs);
-      case RELATIONAL_OPERATOR_NOT_EQUALS:
-        return !lhs.equals(rhs);
-      case RELATIONAL_OPERATOR_STARTS_WITH:
-        return lhs.startsWith(rhs);
-      case RELATIONAL_OPERATOR_ENDS_WITH:
-        return lhs.endsWith(rhs);
-      case RELATIONAL_OPERATOR_REGEX_MATCH:
-        try {
+    try {
+      switch (relationalOperator) {
+        case RELATIONAL_OPERATOR_CONTAINS:
+          return lhs.contains(rhs);
+        case RELATIONAL_OPERATOR_EQUALS:
+          return lhs.equals(rhs);
+        case RELATIONAL_OPERATOR_NOT_EQUALS:
+          return !lhs.equals(rhs);
+        case RELATIONAL_OPERATOR_STARTS_WITH:
+          return lhs.startsWith(rhs);
+        case RELATIONAL_OPERATOR_ENDS_WITH:
+          return lhs.endsWith(rhs);
+        case RELATIONAL_OPERATOR_REGEX_MATCH:
           return Pattern.compile(rhs).matcher(lhs).find();
-        } catch (Exception e) {
-          log.error("Invalid regex: {} passed to match", rhs);
-          if (log.isDebugEnabled()) {
-            log.debug(
-                "Invalid regex passed to match. Hence returning false. lhs: {} and rhs: {}",
-                lhs,
-                rhs);
-          }
-          return false;
-        }
-      default:
-        log.error("Unsupported relational operator for string value rhs:{}", relationalOperator);
-        return false;
+        default:
+          throw new IllegalStateException(
+              "Unsupported relational operator for string value rhs: {}" + relationalOperator);
+      }
+    } catch (Exception e) {
+      log.error(
+          "Unable to match lhs: {} with rhs: {} for operator: {}", lhs, rhs, relationalOperator);
+      return false;
     }
   }
 
