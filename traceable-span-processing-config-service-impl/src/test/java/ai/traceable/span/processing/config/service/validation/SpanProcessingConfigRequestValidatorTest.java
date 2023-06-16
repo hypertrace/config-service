@@ -26,6 +26,8 @@ import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSp
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRuleEvaluationStatusRequest;
+import ai.traceable.span.processing.config.service.v1.LogicalOperator;
+import ai.traceable.span.processing.config.service.v1.LogicalSpanFilterExpression;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
 import ai.traceable.span.processing.config.service.v1.RateLimit;
 import ai.traceable.span.processing.config.service.v1.RateLimitConfig;
@@ -137,6 +139,34 @@ class SpanProcessingConfigRequestValidatorTest {
                     .setRuleInfo(ProtectionSpanRuleInfo.newBuilder().build())
                     .build()));
 
+    assertInvalidArgStatusContaining(
+        "Invalid Regex pattern",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateProtectionSpanRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ProtectionSpanRuleInfo.newBuilder()
+                            .setName("name")
+                            .setDisabled(true)
+                            .setFilter(buildInvalidRegexTestFilterWithAndOperator())
+                            .build())
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Invalid Regex pattern",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateProtectionSpanRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ProtectionSpanRuleInfo.newBuilder()
+                            .setName("name")
+                            .setDisabled(true)
+                            .setFilter(buildInvalidRegexTestFilterWithOrOperator())
+                            .build())
+                    .build()));
+
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
@@ -176,6 +206,34 @@ class SpanProcessingConfigRequestValidatorTest {
                 mockRequestContext,
                 UpdateProtectionSpanRuleRequest.newBuilder()
                     .setRule(UpdateProtectionSpanRule.newBuilder().setId("id").build())
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Invalid Regex pattern",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                UpdateProtectionSpanRuleRequest.newBuilder()
+                    .setRule(
+                        UpdateProtectionSpanRule.newBuilder()
+                            .setId("id")
+                            .setName("name")
+                            .setFilter(buildInvalidRegexTestFilterWithAndOperator())
+                            .build())
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Invalid Regex pattern",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                UpdateProtectionSpanRuleRequest.newBuilder()
+                    .setRule(
+                        UpdateProtectionSpanRule.newBuilder()
+                            .setId("id")
+                            .setName("name")
+                            .setFilter(buildInvalidRegexTestFilterWithOrOperator())
+                            .build())
                     .build()));
 
     assertDoesNotThrow(
@@ -285,6 +343,36 @@ class SpanProcessingConfigRequestValidatorTest {
                             .build())
                     .build()));
 
+    assertInvalidArgStatusContaining(
+        "Invalid Regex pattern",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setRateLimitConfig(
+                                buildTestRateLimitConfig(
+                                    RateLimitStrategy.RATE_LIMIT_STRATEGY_DROP))
+                            .setFilter(buildInvalidRegexTestFilterWithAndOperator())
+                            .build())
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Invalid Regex pattern",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setRateLimitConfig(
+                                buildTestRateLimitConfig(
+                                    RateLimitStrategy.RATE_LIMIT_STRATEGY_DROP))
+                            .setFilter(buildInvalidRegexTestFilterWithOrOperator())
+                            .build())
+                    .build()));
+
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
@@ -316,6 +404,38 @@ class SpanProcessingConfigRequestValidatorTest {
                 mockRequestContext,
                 UpdateSamplingConfigRequest.newBuilder()
                     .setSamplingConfig(UpdateSamplingConfig.newBuilder().build())
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Invalid Regex pattern",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                UpdateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfig(
+                        UpdateSamplingConfig.newBuilder()
+                            .setId("id")
+                            .setRateLimitConfig(
+                                buildTestRateLimitConfig(
+                                    RateLimitStrategy.RATE_LIMIT_STRATEGY_BARESPAN))
+                            .setFilter(buildInvalidRegexTestFilterWithAndOperator())
+                            .build())
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Invalid Regex pattern",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                UpdateSamplingConfigRequest.newBuilder()
+                    .setSamplingConfig(
+                        UpdateSamplingConfig.newBuilder()
+                            .setId("id")
+                            .setRateLimitConfig(
+                                buildTestRateLimitConfig(
+                                    RateLimitStrategy.RATE_LIMIT_STRATEGY_BARESPAN))
+                            .setFilter(buildInvalidRegexTestFilterWithOrOperator())
+                            .build())
                     .build()));
 
     assertDoesNotThrow(
@@ -952,6 +1072,58 @@ class SpanProcessingConfigRequestValidatorTest {
                 .setOperator(RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
                 .setRightOperand(SpanFilterValue.newBuilder().setStringValue("a").build())
                 .build())
+        .build();
+  }
+
+  private SpanFilter buildInvalidRegexTestFilterWithAndOperator() {
+    return SpanFilter.newBuilder()
+        .setLogicalSpanFilter(
+            LogicalSpanFilterExpression.newBuilder()
+                .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
+                .addAllOperands(
+                    List.of(
+                        SpanFilter.newBuilder()
+                            .setRelationalSpanFilter(
+                                RelationalSpanFilterExpression.newBuilder()
+                                    .setField(Field.FIELD_SERVICE_NAME)
+                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                    .setRightOperand(
+                                        SpanFilterValue.newBuilder().setStringValue("a")))
+                            .build(),
+                        SpanFilter.newBuilder()
+                            .setRelationalSpanFilter(
+                                RelationalSpanFilterExpression.newBuilder()
+                                    .setField(Field.FIELD_SERVICE_NAME)
+                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_REGEX_MATCH)
+                                    .setRightOperand(
+                                        SpanFilterValue.newBuilder().setStringValue("[(test")))
+                            .build())))
+        .build();
+  }
+
+  private SpanFilter buildInvalidRegexTestFilterWithOrOperator() {
+    return SpanFilter.newBuilder()
+        .setLogicalSpanFilter(
+            LogicalSpanFilterExpression.newBuilder()
+                .setOperator(LogicalOperator.LOGICAL_OPERATOR_OR)
+                .addAllOperands(
+                    List.of(
+                        SpanFilter.newBuilder()
+                            .setRelationalSpanFilter(
+                                RelationalSpanFilterExpression.newBuilder()
+                                    .setField(Field.FIELD_SERVICE_NAME)
+                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_CONTAINS)
+                                    .setRightOperand(
+                                        SpanFilterValue.newBuilder().setStringValue("a")))
+                            .build(),
+                        SpanFilter.newBuilder()
+                            .setRelationalSpanFilter(
+                                RelationalSpanFilterExpression.newBuilder()
+                                    .setField(Field.FIELD_SERVICE_NAME)
+                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_REGEX_MATCH)
+                                    .setRightOperand(
+                                        SpanFilterValue.newBuilder().setStringValue("[(test")))
+                            .build())))
         .build();
   }
 

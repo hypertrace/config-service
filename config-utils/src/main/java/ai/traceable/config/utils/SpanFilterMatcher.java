@@ -109,22 +109,28 @@ public class SpanFilterMatcher {
       String lhs,
       String rhs,
       ai.traceable.span.processing.config.service.v1.RelationalOperator relationalOperator) {
-    switch (relationalOperator) {
-      case RELATIONAL_OPERATOR_CONTAINS:
-        return lhs.contains(rhs);
-      case RELATIONAL_OPERATOR_EQUALS:
-        return lhs.equals(rhs);
-      case RELATIONAL_OPERATOR_NOT_EQUALS:
-        return !lhs.equals(rhs);
-      case RELATIONAL_OPERATOR_STARTS_WITH:
-        return lhs.startsWith(rhs);
-      case RELATIONAL_OPERATOR_ENDS_WITH:
-        return lhs.endsWith(rhs);
-      case RELATIONAL_OPERATOR_REGEX_MATCH:
-        return Pattern.compile(rhs).matcher(lhs).find();
-      default:
-        log.error("Unsupported relational operator for string value rhs:{}", relationalOperator);
-        return false;
+    try {
+      switch (relationalOperator) {
+        case RELATIONAL_OPERATOR_CONTAINS:
+          return lhs.contains(rhs);
+        case RELATIONAL_OPERATOR_EQUALS:
+          return lhs.equals(rhs);
+        case RELATIONAL_OPERATOR_NOT_EQUALS:
+          return !lhs.equals(rhs);
+        case RELATIONAL_OPERATOR_STARTS_WITH:
+          return lhs.startsWith(rhs);
+        case RELATIONAL_OPERATOR_ENDS_WITH:
+          return lhs.endsWith(rhs);
+        case RELATIONAL_OPERATOR_REGEX_MATCH:
+          return Pattern.compile(rhs).matcher(lhs).find();
+        default:
+          throw new IllegalStateException(
+              "Unsupported relational operator for string value rhs: {}" + relationalOperator);
+      }
+    } catch (Exception e) {
+      log.error(
+          "Unable to match lhs: {} with rhs: {} for operator: {}", lhs, rhs, relationalOperator);
+      return false;
     }
   }
 

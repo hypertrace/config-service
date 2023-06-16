@@ -1,5 +1,6 @@
 package ai.traceable.span.processing.config.service.validation;
 
+import static ai.traceable.span.processing.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_REGEX_MATCH;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
@@ -24,13 +25,16 @@ import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSp
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRuleEvaluationStatusRequest;
+import ai.traceable.span.processing.config.service.v1.LogicalSpanFilterExpression;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
 import ai.traceable.span.processing.config.service.v1.RateLimit;
 import ai.traceable.span.processing.config.service.v1.RateLimitConfig;
 import ai.traceable.span.processing.config.service.v1.RateLimitStrategy;
+import ai.traceable.span.processing.config.service.v1.RelationalSpanFilterExpression;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
 import ai.traceable.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 import ai.traceable.span.processing.config.service.v1.SpanFilter;
+import ai.traceable.span.processing.config.service.v1.SpanFilterValue;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRule;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRuleRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRulesRequest;
@@ -343,12 +347,37 @@ public class SpanProcessingConfigRequestValidator {
   private void validateSpanFilter(SpanFilter filter) {
     switch (filter.getSpanFilterExpressionCase()) {
       case LOGICAL_SPAN_FILTER:
+        validateLogicalSpanFilter(filter);
+        break;
       case RELATIONAL_SPAN_FILTER:
+        validateRelationalSpanFilter(filter);
         break;
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription("Unexpected filter case: " + printMessage(filter))
             .asRuntimeException();
+    }
+  }
+
+  private void validateLogicalSpanFilter(SpanFilter filter) {
+    validateNonDefaultPresenceOrThrow(
+        filter.getLogicalSpanFilter(), LogicalSpanFilterExpression.OPERATOR_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        filter.getLogicalSpanFilter(), LogicalSpanFilterExpression.OPERANDS_FIELD_NUMBER);
+    filter.getLogicalSpanFilter().getOperandsList().forEach(this::validateSpanFilter);
+  }
+
+  private void validateRelationalSpanFilter(SpanFilter filter) {
+    validateNonDefaultPresenceOrThrow(
+        filter.getRelationalSpanFilter(), RelationalSpanFilterExpression.OPERATOR_FIELD_NUMBER);
+
+    final SpanFilterValue rhs = filter.getRelationalSpanFilter().getRightOperand();
+    if (filter.getRelationalSpanFilter().getOperator().equals(RELATIONAL_OPERATOR_REGEX_MATCH)) {
+      validateNonDefaultPresenceOrThrow(rhs, SpanFilterValue.STRING_VALUE_FIELD_NUMBER);
+      final Status status = RegexValidator.validate(rhs.getStringValue());
+      if (!status.isOk()) {
+        throw status.asRuntimeException();
+      }
     }
   }
 

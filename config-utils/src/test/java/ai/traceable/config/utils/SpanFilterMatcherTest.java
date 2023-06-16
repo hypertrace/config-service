@@ -93,6 +93,11 @@ class SpanFilterMatcherTest {
             "name",
             buildSpanFilterValue("[a-zA-z]+[0-9]+"),
             RelationalOperator.RELATIONAL_OPERATOR_REGEX_MATCH));
+    assertFalse(
+        this.spanFilterMatcher.matches(
+            "name",
+            buildSpanFilterValue("[(name"),
+            RelationalOperator.RELATIONAL_OPERATOR_REGEX_MATCH));
 
     assertTrue(
         this.spanFilterMatcher.matches(
