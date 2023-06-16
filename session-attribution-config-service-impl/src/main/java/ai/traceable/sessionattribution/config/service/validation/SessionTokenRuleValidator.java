@@ -65,7 +65,11 @@ public class SessionTokenRuleValidator {
   }
 
   private void validateTokenConditionalPredicate(Predicate predicate) {
-    validateAttributePredicate(predicate.getAttributePredicate());
+    if (predicate.hasAttributePredicate()) {
+      validateAttributePredicate(predicate.getAttributePredicate());
+    } else if (predicate.hasCustomPredicate()) {
+      validateCustomProjection(predicate.getCustomPredicate());
+    }
   }
 
   private void validateAttributePredicate(Predicate.AttributePredicate predicate) {
@@ -76,7 +80,6 @@ public class SessionTokenRuleValidator {
               String.format("Unexpected AttributeKeyLocation: %s", printMessage(predicate)))
           .asRuntimeException();
     }
-    validateProjectionRoot(predicate.getValueProjection());
     validateAttributeMatchCondition(predicate.getValueMatchCondition());
   }
 

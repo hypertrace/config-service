@@ -127,6 +127,7 @@ message LiteralValue {
 message Predicate {
   oneof predicate {
       AttributePredicate attribute_predicate = 1;
+      CustomProjection custom_predicate = 2;
   }
 
   message AttributePredicate {
@@ -134,7 +135,7 @@ message Predicate {
       RequestAttributeKeyLocation request = 1;
       ResponseAttributeKeyLocation response = 2;
     }
-    ProjectionRoot value_projection = 3;
+    AttributeProjection value_projection = 3;
     MatchCondition value_match_condition = 4;
   }
 }
@@ -145,7 +146,6 @@ message ValueProjection {
     JsonPathProjection json_path = 2;
     JwtPayloadClaimProjection jwt_payload_claim = 3;
     Base64Projection base64_projection = 4;
-    UrlEncodedProjection url_encoded_projection = 5;
   }
 
   message RegexCaptureGroupProjection {
@@ -161,8 +161,5 @@ message ValueProjection {
   }
 
   message Base64Projection {
-  }
-
-  message UrlEncodedProjection {
   }
 }
