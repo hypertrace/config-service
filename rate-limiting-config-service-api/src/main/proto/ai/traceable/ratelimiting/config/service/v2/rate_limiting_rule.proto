@@ -18,6 +18,7 @@ message RateLimitingRuleData {
   bool enabled = 4;
   Condition condition = 5;
   repeated ThresholdActionConfig threshold_action_configs = 6;
+  TransactionActionConfig transaction_action_config = 9;
   RuleConfigScope rule_config_scope = 7;
   RuleStatus rule_status = 8;
 }
@@ -163,6 +164,20 @@ message DatatypeCondition {
   repeated string datatype_ids = 2;
   repeated DataSensitivityLevel data_sensitivity_levels = 3;
   DataLocation data_location = 4;
+  DatatypeMatching datatype_matching = 5;
+
+  message DatatypeMatching {
+    oneof matching {
+      LearnedTypesMatching learned_types_matching = 1;
+      RegexBasedMatching regex_based_matching = 2;
+    }
+  }
+
+  message LearnedTypesMatching{}
+
+  message RegexBasedMatching{
+    KeyValueCondition custom_matching_location = 6;
+  }
 }
 
 message RegionCondition {
@@ -258,6 +273,7 @@ message Action {
   oneof action {
     Block block = 1;
     Alert alert = 2;
+    Allow allow = 3;
   }
 
   message Block {
@@ -269,6 +285,10 @@ message Action {
     EventSeverity event_severity = 1;
   }
 
+  message Allow {
+    optional string duration_iso = 1;
+  }
+
   enum EventSeverity {
     EVENT_SEVERITY_UNSPECIFIED = 0;
     EVENT_SEVERITY_LOW = 1;
@@ -276,6 +296,10 @@ message Action {
     EVENT_SEVERITY_HIGH = 3;
     EVENT_SEVERITY_CRITICAL = 4;
   }
+}
+
+message TransactionActionConfig {
+  Action action = 1;
 }
 
 enum IpLocationType {
