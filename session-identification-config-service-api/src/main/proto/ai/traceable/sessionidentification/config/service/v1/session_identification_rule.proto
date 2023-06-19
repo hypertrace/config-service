@@ -1,0 +1,165 @@
+syntax = "proto3";
+
+package ai.traceable.sessionidentification.config.service.v1;
+
+option java_multiple_files = true;
+
+message SessionIdentificationRule {
+  string id = 1;
+  string name = 2;
+  optional string description = 3;
+  SessionIdentificationRuleScope scope = 4;
+  SessionIdentificationRuleStatus status = 5;
+  repeated SessionTokenRule token_rules = 6;
+}
+
+message SessionIdentificationRuleScope {
+  // scope matching `OR` within each repeated and `AND` across fields
+  repeated string environment_names = 1;
+  repeated string service_name_regexes = 2;
+  repeated string url_match_regexes = 3;
+}
+
+message SessionIdentificationRuleStatus {
+  bool disabled = 1;
+}
+
+message SessionTokenRule {
+  Predicate token_conditional_predicate = 1;
+  SessionTokenValueRule token_value_rule = 2;
+  oneof token_type {
+    RequestSessionTokenDetails request_session_token_details = 3;
+    ResponseSessionTokenDetails response_session_token_details = 4;
+  }
+}
+
+message RequestSessionTokenDetails {
+  RequestAttributeKeyLocation token_location = 1;
+}
+
+message ResponseSessionTokenDetails {
+  ResponseAttributeKeyLocation token_location = 1;
+  oneof expiration {
+    JwtExpiration jwt_expiration = 2;
+    ResponseAttributeExpiration response_attribute_expiration = 3;
+  }
+}
+
+message JwtExpiration {
+  // empty means standard `exp` claim - expiration timestamp in epoch seconds
+}
+
+message ResponseAttributeExpiration {
+  ResponseAttributeKeyLocation attribute_key_location = 1;
+  ProjectionRoot projection_root = 2;
+  ExpirationFormat expiration_format = 3;
+}
+
+enum ExpirationFormat {
+  EXPIRATION_FORMAT_UNSPECIFIED = 0;
+  EXPIRATION_FORMAT_DURATION_SECONDS = 1;
+  EXPIRATION_FORMAT_TIMESTAMP_EPOCH_SECONDS = 2;
+  EXPIRATION_FORMAT_DURATION_MILLIS = 3;
+  EXPIRATION_FORMAT_TIMESTAMP_EPOCH_MILLIS = 4;
+}
+
+message SessionTokenValueRule {
+  ProjectionRoot token_value_projection = 1;
+  ObfuscationStrategy value_obfuscation_strategy = 2;
+}
+
+enum ObfuscationStrategy {
+  OBFUSCATION_STRATEGY_UNSPECIFIED = 0;
+  OBFUSCATION_STRATEGY_HASH = 1;
+}
+
+enum RequestAttributeKeyLocation {
+  REQUEST_ATTRIBUTE_KEY_LOCATION_UNSPECIFIED = 0;
+  REQUEST_ATTRIBUTE_KEY_LOCATION_HEADER = 1;
+  REQUEST_ATTRIBUTE_KEY_LOCATION_COOKIE = 2;
+  REQUEST_ATTRIBUTE_KEY_LOCATION_BODY = 3;
+  REQUEST_ATTRIBUTE_KEY_LOCATION_QUERY_PARAMETER = 4;
+}
+
+enum ResponseAttributeKeyLocation {
+  RESPONSE_ATTRIBUTE_KEY_LOCATION_UNSPECIFIED = 0;
+  RESPONSE_ATTRIBUTE_KEY_LOCATION_HEADER = 1;
+  RESPONSE_ATTRIBUTE_KEY_LOCATION_COOKIE = 2;
+  RESPONSE_ATTRIBUTE_KEY_LOCATION_BODY = 3;
+}
+
+message ProjectionRoot {
+  oneof projection {
+    AttributeProjection attribute_projection = 1;
+    CustomProjection custom_projection = 2;
+  }
+}
+
+message CustomProjection {
+  string custom_projection = 1; // This should directly translate into Projector in agentAttribute api
+}
+
+message AttributeProjection {
+  MatchCondition attribute_key_match_condition = 1;
+  repeated ValueProjection value_projections_in_order = 2;  // empty list means no projection, return the value as-is
+}
+
+message MatchCondition {
+  MatchOperator operator = 1;
+  LiteralValue match_value = 2;
+}
+
+enum MatchOperator {
+  MATCH_OPERATOR_UNSPECIFIED = 0;
+  MATCH_OPERATOR_EQUALS = 1;
+  MATCH_OPERATOR_NOT_EQUALS = 2;
+  MATCH_OPERATOR_STARTS_WITH = 3;
+  MATCH_OPERATOR_CONTAINS = 4;
+  MATCH_OPERATOR_MATCHES_REGEX = 5;
+}
+
+message LiteralValue {
+  oneof value { // no selection means null value
+    string string_value = 1;
+  }
+}
+
+message Predicate {
+  oneof predicate {
+      AttributePredicate attribute_predicate = 1;
+      CustomProjection custom_predicate = 2;
+  }
+
+  message AttributePredicate {
+    oneof attribute_key_location {
+      RequestAttributeKeyLocation request = 1;
+      ResponseAttributeKeyLocation response = 2;
+    }
+    AttributeProjection value_projection = 3;
+    MatchCondition value_match_condition = 4;
+  }
+}
+
+message ValueProjection {
+  oneof projection {
+    RegexCaptureGroupProjection regex_capture_group = 1;
+    JsonPathProjection json_path = 2;
+    JwtPayloadClaimProjection jwt_payload_claim = 3;
+    Base64Projection base64_projection = 4;
+  }
+
+  message RegexCaptureGroupProjection {
+    string regex_capture_group = 1;
+  }
+
+  message JsonPathProjection {
+    string path = 1;
+  }
+
+  message JwtPayloadClaimProjection {
+    string claim_key = 1;
+  }
+
+  message Base64Projection {
+  }
+}

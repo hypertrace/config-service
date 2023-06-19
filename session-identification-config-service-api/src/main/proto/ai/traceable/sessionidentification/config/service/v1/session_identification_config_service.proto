@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package ai.traceable.sessionidentification.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/sessionidentification/config/service/v1/session_identification_rule.proto";
+
+service SessionIdentificationConfigService {
+  rpc GetSessionIdentificationRules (GetSessionIdentificationRulesRequest) returns (GetSessionIdentificationRulesResponse) {}
+  rpc CreateSessionIdentificationRule (CreateSessionIdentificationRuleRequest) returns (CreateSessionIdentificationRuleResponse) {}
+  rpc UpdateSessionIdentificationRule (UpdateSessionIdentificationRuleRequest) returns (UpdateSessionIdentificationRuleResponse) {}
+  rpc DeleteSessionIdentificationRule (DeleteSessionIdentificationRuleRequest) returns (DeleteSessionIdentificationRuleResponse) {}
+}
+
+message GetSessionIdentificationRulesRequest {
+  GetSessionIdentificationRulesFilter filter = 1;
+
+  message GetSessionIdentificationRulesFilter {
+    optional bool disabled = 1;
+    EnvironmentFilter environment_filter = 2;
+
+    message EnvironmentFilter {
+      repeated string environment_names = 1;
+    }
+  }
+}
+
+message GetSessionIdentificationRulesResponse {
+  repeated SessionIdentificationRule rules = 1;
+}
+
+message CreateSessionIdentificationRuleRequest {
+  string name = 1;
+  optional string description = 2;
+  SessionIdentificationRuleScope scope = 3;
+  repeated SessionTokenRule token_rules = 4;
+}
+
+message CreateSessionIdentificationRuleResponse {
+  SessionIdentificationRule rule = 1;
+}
+
+message UpdateSessionIdentificationRuleRequest {
+  string id = 1;
+  string name = 2;
+  optional string description = 3;
+  SessionIdentificationRuleScope scope = 4;
+  repeated SessionTokenRule token_rules = 5;
+  SessionIdentificationRuleStatus status = 6;
+}
+
+message UpdateSessionIdentificationRuleResponse {
+  SessionIdentificationRule rule = 1;
+}
+
+message DeleteSessionIdentificationRuleRequest {
+  string id = 1;
+}
+
+message DeleteSessionIdentificationRuleResponse {
+}
