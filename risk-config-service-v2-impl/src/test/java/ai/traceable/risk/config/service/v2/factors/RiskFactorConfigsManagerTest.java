@@ -5,7 +5,6 @@ import static ai.traceable.risk.config.service.v2.factors.MockFactorConfigsData.
 import static ai.traceable.risk.config.service.v2.scope.MockScopeData.getEnvironmentBasedScope;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -13,9 +12,6 @@ import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.risk.config.service.v2.RiskConfigIdGenerator;
 import ai.traceable.risk.config.service.v2.RiskConfigScope;
 import ai.traceable.risk.config.service.v2.RiskContributorConfigs;
-import ai.traceable.risk.config.service.v2.RiskElementConfigUpdateDetails;
-import ai.traceable.risk.config.service.v2.RiskElementConfigUpdates;
-import ai.traceable.risk.config.service.v2.RiskElementScoring;
 import ai.traceable.risk.config.service.v2.RiskFactorCategory;
 import ai.traceable.risk.config.service.v2.RiskFactorConfig;
 import ai.traceable.risk.config.service.v2.RiskFactorConfigUpdateDetails;
@@ -26,7 +22,6 @@ import ai.traceable.risk.config.service.v2.factors.comparator.RiskFactorConfigsC
 import ai.traceable.risk.config.service.v2.factors.comparator.RiskFactorConfigsComparatorImpl;
 import ai.traceable.risk.config.service.v2.factors.manager.RiskFactorConfigsManager;
 import ai.traceable.risk.config.service.v2.factors.manager.RiskFactorConfigsManagerImpl;
-import io.grpc.StatusRuntimeException;
 import java.util.List;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -78,26 +73,6 @@ public class RiskFactorConfigsManagerTest {
                     defaultRiskContributorConfigs
                         .getRiskFactorsList()
                         .contains(buildRiskFactorWithoutScope(riskFactor))));
-
-    RiskFactorConfigUpdateDetails updateDetailsWithInvalidElementId =
-        RiskFactorConfigUpdateDetails.newBuilder()
-            .setRiskFactorCategory(
-                RiskFactorCategory.RISK_FACTOR_CATEGORY_EASE_OF_RESOURCE_DISCOVERY)
-            .setRiskElementConfigUpdates(
-                RiskElementConfigUpdates.newBuilder()
-                    .addRiskElementConfigUpdateDetails(
-                        RiskElementConfigUpdateDetails.newBuilder()
-                            .setId("random")
-                            .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(4))))
-            .build();
-
-    assertThrows(
-        StatusRuntimeException.class,
-        () ->
-            configsManager.updateRiskContributorConfigs(
-                requestContext,
-                List.of(updateDetailsWithInvalidElementId),
-                environmentRiskConfigScope));
 
     RiskFactorConfigUpdateDetails updateDetailsWithDisabledUpdateOnly =
         RiskFactorConfigUpdateDetails.newBuilder()

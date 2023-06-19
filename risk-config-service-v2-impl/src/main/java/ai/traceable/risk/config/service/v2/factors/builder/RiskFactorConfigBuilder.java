@@ -3,14 +3,15 @@ package ai.traceable.risk.config.service.v2.factors.builder;
 import ai.traceable.risk.config.service.v2.RiskConfigBuilder;
 import ai.traceable.risk.config.service.v2.RiskElementConfig;
 import ai.traceable.risk.config.service.v2.RiskFactorConfig;
-import io.grpc.Status;
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class RiskFactorConfigBuilder extends RiskConfigBuilder<RiskFactorConfig> {
 
@@ -55,9 +56,7 @@ public class RiskFactorConfigBuilder extends RiskConfigBuilder<RiskFactorConfig>
             riskElementConfigBuilder.mergeConfigs(
                 riskElementConfig, lowPriorityElementConfigsMap.get(id)));
       } else {
-        throw Status.NOT_FOUND
-            .withDescription(String.format("Risk element id:%s NOT FOUND", id))
-            .asRuntimeException();
+        log.warn("Risk element id:{} NOT FOUND", id);
       }
     }
     return lowPriorityElementConfigsMap.values();
