@@ -62,30 +62,32 @@ enum AuthMechanism {
 }
 
 message HookConfig {
+  string auth_endpoint = 1;
   oneof hook_config {
-    PostmanHookConfig postman_hook_config = 1;
-    BasicAuthConfig basic_auth_config = 2;
-    JwtConfig jwt_config = 3;
-    Hmac hmac = 4;
-    Oauth2 oauth2 = 5;
-    ContentSignature content_signature = 6;
-    Bearer bearer = 7;
-    MutualTls mutual_tls = 8;
-    AwsSignatureV4 aws_signature_v4 = 9;
-    PopTokenSignature pop_token_signature = 10;
+    PostmanHookConfig postman_hook_config = 2;
+    BasicAuthConfig basic_auth_config = 3;
+    JwtConfig jwt_config = 4;
+    Hmac hmac = 5;
+    Oauth2 oauth2 = 6;
+    ContentSignature content_signature = 7;
+    Bearer bearer = 8;
+    MutualTls mutual_tls = 9;
+    AwsSignatureV4 aws_signature_v4 = 10;
+    PopTokenSignature pop_token_signature = 11;
+    ApiKey api_key = 12;
   }
 }
 
 message PopTokenSignature {
-  string pop_private_key = 1;
+  EncryptedText pop_private_key = 1;
   repeated string external_headers_to_sign = 2;
   string pop_header_key = 3;
   string pop_header_prefix = 4;
 }
 
 message AwsSignatureV4 {
-  string access_id_key = 1;
-  string secret_access_key = 2;
+  EncryptedText access_id_key = 1;
+  EncryptedText secret_access_key = 2;
   string aws_region = 3;
   string service_name = 4;
 }
@@ -93,18 +95,18 @@ message AwsSignatureV4 {
 message MutualTls {
   message MutualTlsAdvanced {
     string cert_authority_cert = 1;
-    string client_key_passphrase = 2;
+    EncryptedText client_key_passphrase = 2;
     string sni = 3;
   }
 
   string client_cert = 1;
-  string client_key = 2;
+  EncryptedText client_key = 2;
   MutualTlsAdvanced advanced_options = 3;
 }
 
 message Bearer {
   oneof generation_info {
-    string bearer_token = 1;
+    EncryptedText bearer_token = 1;
     DynamicBearer dynamic_bearer = 2;
   }
 }
@@ -118,18 +120,20 @@ message DynamicBearer {
 
 message ContentSignature {
   string header_key = 1;
-  string private_key = 2;
+  EncryptedText private_key = 2;
 }
 
 message BasicAuthConfig {
   string username = 1;
-  string password = 2;
+  EncryptedText password = 2;
 }
 
 message Hmac {
   KeyGenAlgo key_gen_algo = 1;
   string signature_header = 2;
   HmacAdvanced hmac_advanced = 3;
+  EncryptedText access_key = 4;
+  EncryptedText secret_key = 5;
 }
 
 message HmacAdvanced {
@@ -140,20 +144,24 @@ message HmacAdvanced {
 
 message Oauth2 {
   // TODO: OauthTokenGenInfo : if we need to show the token gen info back in UI.
-  string token = 1;
+  EncryptedText token = 1;
   RequestTokenInfo token_info = 2;
+  EncryptedText client_id = 3;
+  EncryptedText client_secret = 4;
+  string access_token_url = 5;
+  OauthClientAuthenticationType client_authentication_type = 6;
 }
 
 message JwtConfig {
   oneof jwt_info {
-    string jwt_token = 1;
+    EncryptedText jwt_token = 1;
     DynamicJwt dynamic_jwt = 2;
   }
   RequestTokenInfo token_info = 3;
 }
 
 message DynamicJwt {
-  string secret_key = 1;
+  EncryptedText secret_key = 1;
   KeyGenAlgo key_gen_algo = 2;
   map<string, string> claims = 3;
   int64 token_expiry_mins = 4;
@@ -161,6 +169,12 @@ message DynamicJwt {
 
 message PostmanHookConfig {
   string collection_url = 1;
+}
+
+enum OauthClientAuthenticationType {
+  OAUTH_CLIENT_AUTHENTICATION_TYPE_UNSPECIFIED = 0;
+  OAUTH_CLIENT_AUTHENTICATION_TYPE_REQUEST_BODY = 1;
+  OAUTH_CLIENT_AUTHENTICATION_TYPE_BASIC_AUTH_HEADER = 2;
 }
 
 enum HookMode {
@@ -181,4 +195,14 @@ enum KeyGenAlgo {
   KEY_GEN_ALGO_UNSPECIFIED = 0;
   KEY_GEN_ALGO_HMAC_SHA256 = 1;
   KEY_GEN_ALGO_HMAC_SHA1 = 2;
+}
+
+message EncryptedText {
+  string key_id = 1;
+  string value = 2;
+}
+
+message ApiKey {
+  EncryptedText api_key_value = 1;
+  RequestTokenInfo token_info = 2;
 }
