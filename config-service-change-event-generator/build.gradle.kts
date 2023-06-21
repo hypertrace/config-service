@@ -17,6 +17,10 @@ dependencies {
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
 
+  constraints {
+    implementation(libs.snappy.java)
+  }
+
   testImplementation(libs.junit.jupiter)
   testImplementation(libs.mockito.core)
   testImplementation(libs.mockito.junit)
