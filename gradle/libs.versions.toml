@@ -20,7 +20,6 @@ hypertrace-grpcutils-rxserver = { module = "org.hypertrace.core.grpcutils:grpc-s
 hypertrace-grpcutils-rxclient = { module = "org.hypertrace.core.grpcutils:grpc-client-rx-utils", version.ref = "hypertrace-grpcutils" }
 
 hypertrace-grpc-framework = { module = "org.hypertrace.core.serviceframework:platform-grpc-service-framework", version.ref = "hypertrace-framework" }
-hypertrace-framework-metrics = { module = "org.hypertrace.core.serviceframework:platform-service-framework", version.ref = "hypertrace-framework" }
 hypertrace-framework-integrationtest = { module = "org.hypertrace.core.serviceframework:integrationtest-service-framework", version.ref = "hypertrace-framework" }
 
 hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:document-store", version = "0.7.31" }
@@ -47,7 +46,6 @@ protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "p
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 
 kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
-snappy-java = { module = "org.xerial.snappy:snappy-java", version = "1.1.10.1"}
 
 slf4j-log4jimpl = { module = "org.apache.logging.log4j:log4j-slf4j-impl", version = "2.17.2" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version = "1.7.30" }
