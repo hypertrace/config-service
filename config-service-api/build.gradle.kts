@@ -8,7 +8,7 @@ import com.google.protobuf.gradle.protoc
 plugins {
   `java-library`
   `java-test-fixtures`
-  id("com.google.protobuf") version "0.8.17"
+  id("com.google.protobuf")
   id("org.hypertrace.publish-plugin")
 }
 
