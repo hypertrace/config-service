@@ -1,12 +1,12 @@
 [versions]
 protoc = "3.21.12"
-grpc = "1.50.0"
-gson = "2.9.0"
-hypertrace-grpcutils = "0.11.2"
-hypertrace-framework = "0.1.48"
+grpc = "1.56.0"
+gson = "2.10.1"
+hypertrace-grpcutils = "0.12.1"
+hypertrace-framework = "0.1.52"
 lombok = "1.18.22"
-jackson = "2.14.1"
-kafka = "6.0.1-ccs"
+jackson = "2.15.2"
+kafka = "7.2.1-ccs"
 kotlin = "1.4.32"
 
 junit = "5.8.2"
@@ -24,10 +24,10 @@ hypertrace-grpc-framework = { module = "org.hypertrace.core.serviceframework:pla
 hypertrace-framework-metrics = { module = "org.hypertrace.core.serviceframework:platform-service-framework", version.ref = "hypertrace-framework" }
 hypertrace-framework-integrationtest = { module = "org.hypertrace.core.serviceframework:integrationtest-service-framework", version.ref = "hypertrace-framework" }
 
-hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:document-store", version = "0.7.25" }
+hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:document-store", version = "0.7.31" }
 hypertrace-eventstore = { module = "org.hypertrace.core.eventstore:event-store", version = "0.1.2" }
 
-guava = { module = "com.google.guava:guava", version = "31.1-jre" }
+guava = { module = "com.google.guava:guava", version = "32.0.1-jre" }
 rholder-guava-retrying = { module = "com.github.rholder:guava-retrying", version = "2.0.0" }
 guice = { module = "com.google.inject:guice", version = "5.0.1" }
 javax-annotation = { module = "javax.annotation:javax.annotation-api", version = "1.3.2" }
@@ -53,6 +53,7 @@ kotlin-stdlibJdk7 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk7", versio
 kotlin-stdlibJdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
 commons-compress = { module = "org.apache.commons:commons-compress", version = "1.21" }
 jersey-common = { module = "org.glassfish.jersey.core:jersey-common", version = "2.34" }
+snappy-java = { module = "org.xerial.snappy:snappy-java", version = "1.1.10.1" }
 
 slf4j-log4jimpl = { module = "org.apache.logging.log4j:log4j-slf4j-impl", version = "2.17.2" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version = "1.7.30" }

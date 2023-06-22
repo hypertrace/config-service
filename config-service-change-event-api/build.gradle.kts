@@ -24,4 +24,10 @@ sourceSets {
 dependencies {
   api(libs.protobuf.java)
   api(libs.kafka.clients)
+  constraints {
+    api(libs.snappy.java) {
+      because("CVE-2023-34455")
+    }
+  }
+
 }
