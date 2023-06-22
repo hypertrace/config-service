@@ -4,7 +4,7 @@ grpc = "1.56.0"
 gson = "2.9.0"
 hypertrace-grpcutils = "0.12.1"
 hypertrace-framework = "0.1.52"
-kafka-streams-framework = "0.2.10"
+kafka-streams-framework = "0.2.11"
 lombok = "1.18.28"
 jackson = "2.15.2"
 
