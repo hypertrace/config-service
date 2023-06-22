@@ -1,16 +1,15 @@
 [versions]
 protoc = "3.21.12"
-grpc = "1.50.0"
+grpc = "1.56.0"
 gson = "2.9.0"
-hypertrace-grpcutils = "0.11.2"
-hypertrace-framework = "0.1.48"
-lombok = "1.18.22"
-jackson = "2.14.1"
-kafka = "6.0.1-ccs"
-kotlin = "1.4.32"
+hypertrace-grpcutils = "0.12.1"
+hypertrace-framework = "0.1.52"
+kafka-streams-framework = "0.2.11"
+lombok = "1.18.28"
+jackson = "2.15.2"
 
-junit = "5.8.2"
-mockito = "4.4.0"
+junit = "5.9.2"
+mockito = "5.2.0"
 
 [libraries]
 
@@ -21,17 +20,16 @@ hypertrace-grpcutils-rxserver = { module = "org.hypertrace.core.grpcutils:grpc-s
 hypertrace-grpcutils-rxclient = { module = "org.hypertrace.core.grpcutils:grpc-client-rx-utils", version.ref = "hypertrace-grpcutils" }
 
 hypertrace-grpc-framework = { module = "org.hypertrace.core.serviceframework:platform-grpc-service-framework", version.ref = "hypertrace-framework" }
-hypertrace-framework-metrics = { module = "org.hypertrace.core.serviceframework:platform-service-framework", version.ref = "hypertrace-framework" }
 hypertrace-framework-integrationtest = { module = "org.hypertrace.core.serviceframework:integrationtest-service-framework", version.ref = "hypertrace-framework" }
 
-hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:document-store", version = "0.7.25" }
+hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:document-store", version = "0.7.31" }
 hypertrace-eventstore = { module = "org.hypertrace.core.eventstore:event-store", version = "0.1.2" }
 
-guava = { module = "com.google.guava:guava", version = "31.1-jre" }
+guava = { module = "com.google.guava:guava", version = "32.0.1-jre" }
 rholder-guava-retrying = { module = "com.github.rholder:guava-retrying", version = "2.0.0" }
 guice = { module = "com.google.inject:guice", version = "5.0.1" }
 javax-annotation = { module = "javax.annotation:javax.annotation-api", version = "1.3.2" }
-typesafe-config = { module = "com.typesafe:config", version = "1.4.1" }
+typesafe-config = { module = "com.typesafe:config", version = "1.4.2" }
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 rxjava3 = { module = "io.reactivex.rxjava3:rxjava", version = "3.0.11" }
@@ -47,12 +45,8 @@ protobuf-javautil = { module = "com.google.protobuf:protobuf-java-util", version
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protoc" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 
-kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
-kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
-kotlin-stdlibJdk7 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk7", version.ref = "kotlin" }
-kotlin-stdlibJdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
-commons-compress = { module = "org.apache.commons:commons-compress", version = "1.21" }
-jersey-common = { module = "org.glassfish.jersey.core:jersey-common", version = "2.34" }
+kafka-bom = { module = "org.hypertrace.core.kafkastreams.framework:kafka-bom", version.ref = "kafka-streams-framework"}
+kafka-clients = { module = "org.apache.kafka:kafka-clients"}
 
 slf4j-log4jimpl = { module = "org.apache.logging.log4j:log4j-slf4j-impl", version = "2.17.2" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version = "1.7.30" }
