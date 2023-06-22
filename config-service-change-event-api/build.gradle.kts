@@ -29,5 +29,4 @@ dependencies {
       because("CVE-2023-34455")
     }
   }
-
 }
