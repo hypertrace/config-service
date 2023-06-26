@@ -119,6 +119,7 @@ dependencies {
 
   runtimeOnly(libs.grpc.netty)
   runtimeOnly(libs.slf4j.log4jimpl)
+  runtimeOnly(platform(libs.kafka.bom))
   runtimeOnly(libs.kafka.avro.serializer)
 
   constraints {

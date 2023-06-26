@@ -24,6 +24,7 @@ dependencies {
   implementation(libs.guice)
   implementation(libs.guava)
   implementation(libs.protobuf.javautil)
+  implementation(libs.slf4j.api)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

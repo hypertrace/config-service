@@ -30,6 +30,7 @@ dependencies {
   implementation(libs.hypertrace.grpcutils.client)
   implementation(libs.guice)
   implementation(libs.protobuf.javautil)
+  implementation(libs.slf4j.api)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
