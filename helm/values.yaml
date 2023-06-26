@@ -19,10 +19,13 @@ maxUnavailable: 0
 chartType: application
 
 image:
-  repository: traceableai-docker.jfrog.io/traceable/traceable-config-service
+  registry: us-docker.pkg.dev/traceable-actions-386017
+  repository: traceable/traceable-config-service
   pullPolicy: IfNotPresent
+  tagOverride: ""
 
 imagePullSecrets:
+  - name: gcp-artifact-registry
   - name: regcred
 
 internalContainerPort: 50101

@@ -1,5 +1,7 @@
 name: build and validate
 on:
+  schedule:
+    - cron: 10 5 * * 1
   push:
     branches:
       - main
@@ -7,7 +9,7 @@ on:
 
 jobs:
   validate-protos:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted-x64-small
     steps:
       - name: Check out code
         uses: actions/checkout@v2
@@ -39,7 +41,7 @@ jobs:
           against: ${{ runner.temp }}/cloned-main
 
   validate-helm-charts:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted-x64-small
     steps:
       - name: Check out code
         uses: actions/checkout@v2
@@ -49,7 +51,7 @@ jobs:
         with:
           extra-args: --set global.env=dev
   build:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted-x64-small
     steps:
       # Set fetch-depth: 0 to fetch commit history and tags for use in version calculation
       - name: Check out code
@@ -67,20 +69,6 @@ jobs:
 
       - name: Ensure submodules point to commit from main branch
         run: git submodule foreach --recursive "git merge-base --is-ancestor HEAD origin/main"
-
-      - name: Create checksum file
-        uses: hypertrace/github-actions/checksum@main
-
-      - name: Cache gradle
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.gradle
-            !~/.gradle/gradle.properties
-          key: gradle-packages-${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/checksum.txt') }}
-          restore-keys: |
-            gradle-packages-${{ runner.os }}-${{ github.job }}
-            gradle-packages-${{ runner.os }}
 
       - name: Setup gradle auth
         uses: ./.github/actions/gradle-setup
@@ -109,21 +97,14 @@ jobs:
           context: traceable-config-service/build/docker
           cache-from: type=gha,scope=main-service
 
-      - name: Determine docker tag
-        id: tag
-        run: echo tag=$(./gradlew -q printDockerImageDefaultTag | head -1) >> $GITHUB_OUTPUT
-
       - name: Scan docker image
-        uses: azure/container-scan@v0.1
+        uses: ./.github/actions/trivy-scan
         with:
-          image-name: ${{ secrets.ARTIFACTORY_DOCKER_REGISTRY }}/traceable/traceable-config-service:${{ steps.tag.outputs.tag }}
-        env:
-          DOCKLE_HOST: "unix:///var/run/docker.sock"
-        continue-on-error: true
-
+          image: ${{ secrets.ARTIFACTORY_DOCKER_REGISTRY }}/traceable/traceable-config-service
+          auth-token: ${{ secrets.DEFECTDOJO_AUTH_TOKEN }}
 
   test:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted-x64-small
     steps:
       # Set fetch-depth: 0 to fetch commit history and tags for use in version calculation
       - name: Check out code
@@ -138,20 +119,6 @@ jobs:
           repository: traceableai/github-actions
           ssh-key: ${{ secrets.GH_ACTION_READ_KEY }}
           path: .github/actions
-
-      - name: Create checksum file
-        uses: hypertrace/github-actions/checksum@main
-
-      - name: Cache gradle
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.gradle
-            !~/.gradle/gradle.properties
-          key: gradle-packages-${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/checksum.txt') }}
-          restore-keys: |
-            gradle-packages-${{ runner.os }}-${{ github.job }}
-            gradle-packages-${{ runner.os }}
 
       - name: Setup gradle auth
         uses: ./.github/actions/gradle-setup
@@ -172,25 +139,29 @@ jobs:
 
       - name: copy test reports
         uses: hypertrace/github-actions/gradle@main
-        if: always()
+        if: failure()
         with:
           args: copyAllReports --output-dir=/tmp/test-reports
 
+      - name: Tar test reports
+        if: failure()
+        run: tar -czf /tmp/test-reports.tar.gz /tmp/test-reports
+
       - name: Archive test reports
         uses: actions/upload-artifact@v1
-        if: always()
+        if: failure()
         with:
           name: test-reports
-          path: /tmp/test-reports
+          path: /tmp/test-reports.tar.gz
 
       - name: Publish Unit Test Results
-        uses: docker://ghcr.io/enricomi/publish-unit-test-result-action:v2
-        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: success() || failure()
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           files: ./**/build/test-results/**/*.xml
   integration-test:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted-x64-small
     steps:
       # Set fetch-depth: 0 to fetch commit history and tags for use in version calculation
       - name: Check out code
@@ -206,19 +177,6 @@ jobs:
           ssh-key: ${{ secrets.GH_ACTION_READ_KEY }}
           path: .github/actions
 
-      - name: Create checksum file
-        uses: hypertrace/github-actions/checksum@main
-
-      - name: Cache gradle
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.gradle
-            !~/.gradle/gradle.properties
-          key: gradle-packages-${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/checksum.txt') }}
-          restore-keys: |
-            gradle-packages-${{ runner.os }}-${{ github.job }}
-            gradle-packages-${{ runner.os }}
       - name: Setup gradle auth
         uses: ./.github/actions/gradle-setup
         with:
@@ -241,19 +199,51 @@ jobs:
         uses: hypertrace/github-actions/gradle@main
         with:
           args: copyAllReports --output-dir=/tmp/test-reports
-        if: always()
+        if: failure()
+
+      - name: Tar test reports
+        if: failure()
+        run: tar -czf /tmp/test-reports.tar.gz /tmp/test-reports
 
       - name: Archive Integration Test Reports
         uses: actions/upload-artifact@v1
         with:
           name: integration-test-reports
-          path: /tmp/test-reports
-        if: always()
+          path: /tmp/test-reports.tar.gz
+        if: failure()
 
       - name: Publish Integration Test Results
-        uses: docker://ghcr.io/enricomi/publish-unit-test-result-action:v2
+        uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           files: ./**/build/test-results/**/*.xml
           check_name: Integration Test Results
-        if: always()
+        if: success() || failure()
+
+  dependency-check:
+    runs-on: self-hosted-x64-small
+    steps:
+      # Set fetch-depth: 0 to fetch commit history and tags for use in version calculation
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Checkout Traceable actions
+        uses: actions/checkout@v3
+        with:
+          repository: traceableai/github-actions
+          ssh-key: ${{ secrets.GH_ACTION_READ_KEY }}
+          path: .github/actions
+
+      - name: Setup gradle auth
+        uses: ./.github/actions/gradle-setup
+        with:
+          context-url: ${{ secrets.ARTIFACTORY_CONTEXT_URL }}
+          user: ${{ secrets.ARTIFACTORY_READ_USER }}
+          password: ${{ secrets.ARTIFACTORY_READ_TOKEN }}
+
+      - name: Dependency Check
+        uses: ./.github/actions/dependency-check
+        with:
+          auth-token: ${{ secrets.DEFECTDOJO_AUTH_TOKEN }}

@@ -86,7 +86,7 @@ spec:
     {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
+          image: "{{ $.Values.image.registry }}/{{ .Values.image.repository }}:{{ default $.Chart.AppVersion $.Values.image.tagOverride }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: {{ .Values.internalContainerPortName }}

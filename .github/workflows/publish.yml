@@ -5,7 +5,7 @@ on:
       - main
 jobs:
   create-release:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted-x64-small
     steps:
       # Set fetch-depth: 0 to fetch commit history and tags for use in version calculation
       - name: Check out code
@@ -20,19 +20,6 @@ jobs:
           repository: traceableai/github-actions
           ssh-key: ${{ secrets.GH_ACTION_READ_KEY }}
           path: .github/actions
-
-      - name: Create checksum file
-        uses: hypertrace/github-actions/checksum@main
-
-      - name: Cache gradle
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.gradle
-            !~/.gradle/gradle.properties
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/checksum.txt') }}
-          restore-keys: |
-            gradle-${{ runner.os }}
 
       - name: Setup gradle auth
         uses: ./.github/actions/gradle-setup
@@ -53,7 +40,7 @@ jobs:
           tag_name: ${{ steps.version.outputs.version }}
           release_name: Release ${{ steps.version.outputs.version }}
   publish-artifacts:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted-x64-small
     needs: [ create-release ]
     steps:
       - name: Check out code
@@ -69,18 +56,12 @@ jobs:
           ssh-key: ${{ secrets.GH_ACTION_READ_KEY }}
           path: .github/actions
 
-      - name: Create checksum file
-        uses: hypertrace/github-actions/checksum@main
-
-      - name: Cache gradle
-        uses: actions/cache@v2
+      - name: Setup gradle auth
+        uses: ./.github/actions/gradle-setup
         with:
-          path: |
-            ~/.gradle
-            !~/.gradle/gradle.properties
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/checksum.txt') }}
-          restore-keys: |
-            gradle-${{ runner.os }}
+          context-url: ${{ secrets.ARTIFACTORY_CONTEXT_URL }}
+          user: ${{ secrets.ARTIFACTORY_PUBLISH_USER }}
+          password: ${{ secrets.ARTIFACTORY_PUBLISH_TOKEN }}
 
       - name: Determine docker tag
         id: tag
@@ -94,20 +75,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_READ_USER }}
           password: ${{ secrets.DOCKERHUB_READ_TOKEN }}
-
-      - name: Login to JFrog
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ secrets.ARTIFACTORY_DOCKER_REGISTRY }}
-          username: ${{ secrets.ARTIFACTORY_PUBLISH_USER }}
-          password: ${{ secrets.ARTIFACTORY_PUBLISH_TOKEN }}
-
-      - name: Setup gradle auth
-        uses: ./.github/actions/gradle-setup
-        with:
-          context-url: ${{ secrets.ARTIFACTORY_CONTEXT_URL }}
-          user: ${{ secrets.ARTIFACTORY_PUBLISH_USER }}
-          password: ${{ secrets.ARTIFACTORY_PUBLISH_TOKEN }}
 
       - name: Setup Docker Image Builds
         uses: hypertrace/github-actions/gradle@main
@@ -126,18 +93,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish Service Image to JFrog
-        uses: docker/build-push-action@v3
+      - name: Publish Service Docker Image
+        uses: ./.github/actions/docker-publish
         with:
+          image: traceable/traceable-config-service
+          tag: ${{ steps.tag.outputs.tag }}
           context: traceable-config-service/build/docker
-          push: true
-          cache-to: type=gha,mode=max,scope=main-service
-          cache-from: type=gha,scope=main-service
-          tags: ${{ secrets.ARTIFACTORY_DOCKER_REGISTRY }}/traceable/traceable-config-service:${{ steps.tag.outputs.tag }}
+          cache-scope: main-service
 
   publish-charts:
     needs: [ create-release, publish-artifacts ]
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted-x64-small
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
@@ -159,7 +125,7 @@ jobs:
           helm-artifactory-password: ${{ secrets.ARTIFACTORY_PUBLISH_TOKEN }}
 
   publish-release-notes:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted-x64-small
     needs: [ create-release ]
     steps:
       - uses: actions/checkout@v2

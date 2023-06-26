@@ -7,7 +7,7 @@ on:
 
 jobs:
   sonarqube-analysis:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted-x64-small
     steps:
       # Set fetch-depth: 0 to fetch commit history and tags for use in version calculation
       - name: Check out code
@@ -23,19 +23,6 @@ jobs:
           ssh-key: ${{ secrets.GH_ACTION_READ_KEY }}
           path: .github/actions
 
-      - name: Create checksum file
-        uses: hypertrace/actions/checksum@main
-
-      - name: Cache gradle
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.gradle
-            !~/.gradle/gradle.properties
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/checksum.txt') }}
-          restore-keys: |
-            gradle-${{ runner.os }}
-
       - name: Setup gradle auth
         uses: ./.github/actions/gradle-setup
         with:
@@ -44,16 +31,17 @@ jobs:
           password: ${{ secrets.ARTIFACTORY_READ_TOKEN }}
 
       - name: Compile source
-        run: ./gradlew classes testClasses
-
-      - name: Jacoco Test Report
-        run: ./gradlew jacocoTestReport
-
-      - name: Dependency Check
-        run: ./gradlew dependencyCheckAggregate
+        uses: hypertrace/github-actions/gradle@main
+        with:
+          args: classes testClasses
 
       - name: Sonarqube Analysis
         uses: ./.github/actions/sonarqube-analysis
         with:
           sonar-host-url: ${{ secrets.SONAR_HOST_URL }}
           sonar-login: ${{ secrets.SONAR_LOGIN }}
+
+      - name: Secret Scanning
+        uses: ./.github/actions/secret-scanning
+        with:
+          auth-token: ${{ secrets.DEFECTDOJO_AUTH_TOKEN }}
