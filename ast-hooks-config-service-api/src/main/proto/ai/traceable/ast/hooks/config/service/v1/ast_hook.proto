@@ -150,6 +150,9 @@ message Oauth2 {
   EncryptedText client_secret = 4;
   string access_token_url = 5;
   OauthClientAuthenticationType client_authentication_type = 6;
+  OauthFlowType flow_type = 7;
+  string state = 8;
+  string code_verifier = 9;
 }
 
 message JwtConfig {
@@ -175,6 +178,15 @@ enum OauthClientAuthenticationType {
   OAUTH_CLIENT_AUTHENTICATION_TYPE_UNSPECIFIED = 0;
   OAUTH_CLIENT_AUTHENTICATION_TYPE_REQUEST_BODY = 1;
   OAUTH_CLIENT_AUTHENTICATION_TYPE_BASIC_AUTH_HEADER = 2;
+}
+
+enum OauthFlowType {
+  OAUTH_FLOW_TYPE_UNSPECIFIED = 0;
+  OAUTH_FLOW_TYPE_AUTHORIZATION_CODE = 1;
+  OAUTH_FLOW_TYPE_PKCE = 2;
+  OAUTH_FLOW_TYPE_IMPLICIT = 3;
+  OAUTH_FLOW_TYPE_PASSWORD = 4;
+  OAUTH_FLOW_TYPE_CLIENT_CREDENTIALS = 5;
 }
 
 enum HookMode {
