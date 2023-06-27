@@ -69,6 +69,7 @@ message RiskElementConfigUpdates {
 message RiskElementConfigUpdateDetails {
   string id = 1;
   RiskElementScoring risk_element_scoring = 2;
+  bool disabled = 3;
 }
 
 message ResetRiskContributorConfigsRequest {

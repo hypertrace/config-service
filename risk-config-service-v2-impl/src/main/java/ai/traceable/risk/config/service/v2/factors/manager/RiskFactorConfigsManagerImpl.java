@@ -2,7 +2,6 @@ package ai.traceable.risk.config.service.v2.factors.manager;
 
 import static java.util.function.Predicate.not;
 
-import ai.traceable.risk.config.service.v2.RiskConfigBuilder;
 import ai.traceable.risk.config.service.v2.RiskConfigIdGenerator;
 import ai.traceable.risk.config.service.v2.RiskConfigScope;
 import ai.traceable.risk.config.service.v2.RiskContributorConfigs;
@@ -29,7 +28,6 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
 
   private final IdentifiedObjectStore<RiskFactorConfig> factorConfigStore;
   private final RiskFactorListBuilder riskFactorListBuilder;
-  private final RiskConfigBuilder<RiskFactorConfig> riskFactorConfigBuilder;
   private final RiskFactorConfigsComparator factorConfigsComparator;
   private final RiskContributorConfigs defaultRiskContributorConfigs;
   private final RiskConfigIdGenerator configIdGenerator;
@@ -182,6 +180,7 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
                 RiskElementConfig.newBuilder()
                     .setRiskElementScoring(riskElementConfigUpdateDetails.getRiskElementScoring())
                     .setId(riskElementConfigUpdateDetails.getId())
+                    .setDisabled(riskElementConfigUpdateDetails.getDisabled())
                     .build())
         .collect(Collectors.toUnmodifiableList());
   }
@@ -220,18 +219,9 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
       RiskFactorConfig updateConfig,
       RiskConfigScope riskConfigScope,
       Map<RiskFactorCategory, RiskFactor> defaultListFactorsMap) {
-    Optional<RiskFactorConfig> fetchedRiskFactorConfig =
-        getFactorConfigFromStore(
-            requestContext, updateConfig.getRiskFactorCategory(), riskConfigScope);
 
     RiskFactorConfig scopedDefaultConfig =
         defaultListFactorsMap.get(updateConfig.getRiskFactorCategory()).getRiskFactorConfig();
-    if (fetchedRiskFactorConfig.isPresent()) {
-      updateConfig =
-          riskFactorConfigBuilder.mergeConfigs(updateConfig, fetchedRiskFactorConfig.get());
-    } else {
-      updateConfig = riskFactorConfigBuilder.mergeConfigs(updateConfig, scopedDefaultConfig);
-    }
 
     if (factorConfigsComparator.isFactorConfigEqual(updateConfig, scopedDefaultConfig)) {
       deleteEachRiskFactorConfig(

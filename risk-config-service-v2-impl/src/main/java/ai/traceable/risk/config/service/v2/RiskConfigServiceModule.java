@@ -15,6 +15,7 @@ import lombok.AllArgsConstructor;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
+import org.hypertrace.label.config.service.v1.LabelsConfigServiceGrpc;
 
 @AllArgsConstructor
 public class RiskConfigServiceModule extends AbstractModule {
@@ -46,6 +47,15 @@ public class RiskConfigServiceModule extends AbstractModule {
   @Singleton
   ConfigServiceGrpc.ConfigServiceBlockingStub providesConfigService() {
     return ConfigServiceGrpc.newBlockingStub(channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  @Singleton
+  public LabelsConfigServiceGrpc.LabelsConfigServiceBlockingStub
+      providesLabelsConfigServiceBlockingStub() {
+    return LabelsConfigServiceGrpc.newBlockingStub(channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

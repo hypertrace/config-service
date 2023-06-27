@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import ai.traceable.risk.config.service.v2.RiskConfigServiceConfig;
 import ai.traceable.risk.config.service.v2.RiskConfigServiceRequestValidator;
@@ -14,6 +15,9 @@ import ai.traceable.risk.config.service.v2.RiskFactorCategory;
 import ai.traceable.risk.config.service.v2.contributors.builder.RiskContributorConfigBuilder;
 import ai.traceable.risk.config.service.v2.contributors.validator.RiskContributorConfigsValidator;
 import ai.traceable.risk.config.service.v2.contributors.validator.RiskContributorConfigsValidatorImpl;
+import ai.traceable.risk.config.service.v2.elements.builder.LabelElementConfigsBuilder;
+import ai.traceable.risk.config.service.v2.elements.builder.LabelPredicateBuilder;
+import ai.traceable.risk.config.service.v2.elements.builder.LabelsConfigProvider;
 import ai.traceable.risk.config.service.v2.elements.builder.RiskElementConfigBuilder;
 import ai.traceable.risk.config.service.v2.elements.validator.RiskElementConfigValidatorImpl;
 import ai.traceable.risk.config.service.v2.factors.builder.RiskFactorConfigBuilder;
@@ -29,10 +33,14 @@ import org.junit.jupiter.api.Test;
 
 public class DefaultRiskContributorConfigsProviderTest {
 
+  private final LabelsConfigProvider labelsConfigProvider = mock(LabelsConfigProvider.class);
+
   private final RiskContributorConfigBuilder configBuilder =
       new RiskContributorConfigBuilder(
           new RiskFactorListBuilder(
-              new RiskFactorConfigBuilder(new RiskElementConfigBuilder()),
+              new RiskFactorConfigBuilder(
+                  new RiskElementConfigBuilder(),
+                  new LabelElementConfigsBuilder(new LabelPredicateBuilder(labelsConfigProvider))),
               new RiskFactorConfigsComparatorImpl()));
   private final RiskContributorConfigsValidator contributorConfigsValidator =
       new RiskContributorConfigsValidatorImpl(

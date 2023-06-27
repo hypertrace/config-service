@@ -1,9 +1,9 @@
 package ai.traceable.risk.config.service.v2.factors.comparator;
 
 import ai.traceable.risk.config.service.v2.RiskElementConfig;
+import ai.traceable.risk.config.service.v2.RiskElementScoring;
 import ai.traceable.risk.config.service.v2.RiskFactorConfig;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class RiskFactorConfigsComparatorImpl implements RiskFactorConfigsComparator {
@@ -23,13 +23,15 @@ public class RiskFactorConfigsComparatorImpl implements RiskFactorConfigsCompara
       return false;
     }
 
-    Map<String, RiskElementConfig> elementConfigMap =
+    Map<String, RiskElementScoring> elementConfigMap =
         defaultConfig.getRiskElementConfigsList().stream()
-            .collect(Collectors.toUnmodifiableMap(RiskElementConfig::getId, Function.identity()));
+            .collect(
+                Collectors.toUnmodifiableMap(
+                    RiskElementConfig::getId, RiskElementConfig::getRiskElementScoring));
 
     for (RiskElementConfig config : specificConfig.getRiskElementConfigsList()) {
       if (!elementConfigMap.containsKey(config.getId())
-          || !config.equals(elementConfigMap.get(config.getId()))) {
+          || !config.getRiskElementScoring().equals(elementConfigMap.get(config.getId()))) {
         return false;
       }
     }

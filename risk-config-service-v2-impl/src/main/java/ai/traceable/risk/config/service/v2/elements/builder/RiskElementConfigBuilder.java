@@ -18,6 +18,7 @@ public class RiskElementConfigBuilder extends RiskConfigBuilder<RiskElementConfi
     }
 
     return lowPriorityConfig.toBuilder()
+        .setDisabled(highPriorityConfig.getDisabled())
         .setRiskElementScoring(highPriorityConfig.getRiskElementScoring())
         .build();
   }

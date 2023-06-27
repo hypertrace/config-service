@@ -8,6 +8,7 @@ message RiskElementConfig {
   string id = 1;
   RiskElementPredicate risk_element_predicate = 2;
   RiskElementScoring risk_element_scoring = 3;
+  bool disabled = 4;
 }
 
 message RiskElementPredicate {

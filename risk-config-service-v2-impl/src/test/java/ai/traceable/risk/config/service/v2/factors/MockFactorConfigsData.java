@@ -20,6 +20,7 @@ import ai.traceable.risk.config.service.v2.RiskFactor;
 import ai.traceable.risk.config.service.v2.RiskFactorCategory;
 import ai.traceable.risk.config.service.v2.RiskFactorConfig;
 import ai.traceable.risk.config.service.v2.RiskFactorInfo;
+import ai.traceable.risk.config.service.v2.StringPredicate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -35,9 +36,46 @@ public class MockFactorConfigsData {
   public static RiskContributorConfigs getDefaultRiskContributorConfigs() {
     RiskFactor defaultResourceDiscoveryFactor = getDefaultResourceDiscoveryFactor();
     RiskFactor defaultSensitiveDataExposureFactor = getDefaultSensitiveDataExposureFactor();
+    RiskFactor defaultLabelsFactor = getDefaultLabelsFactor();
     return RiskContributorConfigs.newBuilder()
         .addRiskFactors(defaultResourceDiscoveryFactor)
         .addRiskFactors(defaultSensitiveDataExposureFactor)
+        .addRiskFactors(defaultLabelsFactor)
+        .build();
+  }
+
+  private static RiskFactor getDefaultLabelsFactor() {
+    return RiskFactor.newBuilder()
+        .setRiskFactorInfo(
+            RiskFactorInfo.newBuilder()
+                .setIsDefault(true)
+                .setRiskContributorCategory(
+                    RiskContributorCategory.RISK_CONTRIBUTOR_CATEGORY_IMPACT))
+        .setRiskFactorConfig(
+            RiskFactorConfig.newBuilder()
+                .setDisabled(false)
+                .setRiskFactorCategory(RiskFactorCategory.RISK_FACTOR_CATEGORY_LABELS)
+                .addRiskElementConfigs(
+                    RiskElementConfig.newBuilder()
+                        .setId("critical")
+                        .setRiskElementPredicate(
+                            RiskElementPredicate.newBuilder()
+                                .setLabelId(StringPredicate.newBuilder().setValue("Critical")))
+                        .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(5)))
+                .addRiskElementConfigs(
+                    RiskElementConfig.newBuilder()
+                        .setId("sensitive")
+                        .setRiskElementPredicate(
+                            RiskElementPredicate.newBuilder()
+                                .setLabelId(StringPredicate.newBuilder().setValue("Sensitive")))
+                        .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(3)))
+                .addRiskElementConfigs(
+                    RiskElementConfig.newBuilder()
+                        .setId("sentry")
+                        .setRiskElementPredicate(
+                            RiskElementPredicate.newBuilder()
+                                .setLabelId(StringPredicate.newBuilder().setValue("Sentry")))
+                        .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(9))))
         .build();
   }
 
@@ -120,6 +158,7 @@ public class MockFactorConfigsData {
                 .addRiskElementConfigs(
                     RiskElementConfig.newBuilder()
                         .setId("responseSensitivityCritical")
+                        .setDisabled(true)
                         .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(9))
                         .setRiskElementPredicate(
                             RiskElementPredicate.newBuilder()
@@ -228,8 +267,8 @@ public class MockFactorConfigsData {
 
   public static class MockRiskFactorConfigStore extends RiskFactorConfigStore {
 
-    private Map<String, Map<String, ContextualConfigObject<RiskFactorConfig>>> tenantFactorsMap =
-        new HashMap<>();
+    private final Map<String, Map<String, ContextualConfigObject<RiskFactorConfig>>>
+        tenantFactorsMap = new HashMap<>();
     private final RiskConfigIdGenerator configIdGenerator;
 
     public MockRiskFactorConfigStore(

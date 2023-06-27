@@ -9,6 +9,7 @@ dependencies {
   api(libs.typesafe.config)
   implementation(projects.riskConfigServiceApi)
   implementation(libs.hypertrace.configservice.api)
+  implementation(libs.hypertrace.configservice.labelsConfigServiceApi)
   implementation(libs.guice)
   implementation(libs.guava)
   implementation(libs.protobuf.javautil)
@@ -22,6 +23,7 @@ dependencies {
   implementation(libs.hypertrace.configservice.objectstore)
   implementation(libs.hypertrace.configservice.changeeventgenerator)
   implementation(libs.hypertrace.configservice.validation)
+  implementation(libs.hypertrace.framework.metrics)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

@@ -3,6 +3,7 @@ package ai.traceable.risk.config.service.v2.contributors.builder;
 import static ai.traceable.risk.config.service.v2.factors.MockFactorConfigsData.getDefaultSensitiveDataExposureFactor;
 import static ai.traceable.risk.config.service.v2.factors.MockFactorConfigsData.getDefaultSensitiveDataExposureFactorWithChangedResponseSensitivityCriticalScore;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.risk.config.service.v2.RiskContributorConfigs;
 import ai.traceable.risk.config.service.v2.factors.builder.RiskFactorConfigBuilder;
@@ -63,6 +64,7 @@ class RiskContributorConfigBuilderTest {
                         riskElementConfig -> {
                           if (riskElementConfig.getId().equals("responseSensitivityCritical")) {
                             assertEquals(riskElementConfig.getRiskElementScoring().getScore(), 9);
+                            assertTrue(riskElementConfig.getDisabled());
                           }
                         }));
   }
