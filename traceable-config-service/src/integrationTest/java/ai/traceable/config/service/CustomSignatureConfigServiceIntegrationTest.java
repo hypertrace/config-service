@@ -48,7 +48,7 @@ public class CustomSignatureConfigServiceIntegrationTest
   @BeforeAll
   static void init() {
     configServiceStub =
-        CustomSignatureConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        CustomSignatureConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

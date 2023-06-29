@@ -50,7 +50,7 @@ public class DetectorConfigServiceIntegrationTest
   @BeforeAll
   static void init() {
     configServiceStub =
-        DetectorConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        DetectorConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

@@ -70,7 +70,7 @@ public class MaliciousSourcesConfigServiceIntegrationTest
   @BeforeAll
   static void init() {
     maliciousSourcesConfigServiceBlockingStub =
-        MaliciousSourcesConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        MaliciousSourcesConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

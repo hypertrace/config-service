@@ -34,7 +34,7 @@ public class RateLimitingConfigServiceIntegrationTest
   @BeforeAll
   static void init() {
     rateLimitingConfigServiceStub =
-        RateLimitingConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        RateLimitingConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

@@ -115,8 +115,6 @@ import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfi
 import ai.traceable.region.config.service.v1.RegionRuleActionType;
 import ai.traceable.region.config.service.v1.RegionsFilter;
 import com.google.protobuf.Duration;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -129,7 +127,6 @@ import org.hypertrace.entity.type.service.client.EntityTypeServiceClient;
 import org.hypertrace.entity.type.service.v1.AttributeKind;
 import org.hypertrace.entity.type.service.v1.AttributeType;
 import org.hypertrace.entity.type.service.v1.EntityType;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -149,52 +146,46 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
   private static ActorServiceBlockingStub actorServiceBlockingStub;
   private static MaliciousSourcesConfigServiceBlockingStub
       maliciousSourcesConfigServiceBlockingStub;
-  protected static ManagedChannel managedChannelForEntityServiceClient;
-  protected static ManagedChannel managedChannelForActorServices;
   private static final List<String> actorEntityId = new ArrayList<>();
   private static final List<String> customSignatureRuleId = new ArrayList<>();
 
   @BeforeEach
   void init() {
     regionConfigServiceStub =
-        RegionConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        RegionConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
     customSignatureConfigServiceStub =
-        CustomSignatureConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        CustomSignatureConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
     blockingConfigServiceStub =
-        BlockingConfigServiceGrpc.newBlockingStub(managedChannelForExternalServices)
+        BlockingConfigServiceGrpc.newBlockingStub(channelForExternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
     detectorConfigServiceStub =
-        DetectorConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        DetectorConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
     ipRangeConfigServiceStub =
-        IpRangeConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        IpRangeConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
     maliciousSourcesConfigServiceBlockingStub =
-        MaliciousSourcesConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        MaliciousSourcesConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
-    managedChannelForEntityServiceClient =
-        ManagedChannelBuilder.forAddress("localhost", 60061).usePlaintext().build();
     EntityTypeServiceClient entityTypeServiceClient =
-        new EntityTypeServiceClient(managedChannelForEntityServiceClient);
+        new EntityTypeServiceClient(channelRegistry.forPlaintextAddress("localhost", 60061));
 
-    managedChannelForActorServices =
-        ManagedChannelBuilder.forAddress("localhost", 60888).usePlaintext().build();
     actorServiceBlockingStub =
-        ActorServiceGrpc.newBlockingStub(managedChannelForActorServices)
+        ActorServiceGrpc.newBlockingStub(channelRegistry.forPlaintextAddress("localhost", 60888))
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
@@ -217,12 +208,6 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     enableBlockingOnAModsecRule(Optional.empty());
 
     customSignatureRuleId.add(createCustomSignatureRule(Optional.of(ENVIRONMENT_ID)));
-  }
-
-  @AfterAll
-  static void clean() {
-    managedChannelForActorServices.shutdownNow();
-    managedChannelForEntityServiceClient.shutdownNow();
   }
 
   @Test

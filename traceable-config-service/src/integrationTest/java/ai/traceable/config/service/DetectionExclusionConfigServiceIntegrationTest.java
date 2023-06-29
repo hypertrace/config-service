@@ -83,7 +83,7 @@ public class DetectionExclusionConfigServiceIntegrationTest
   @BeforeAll
   static void init() {
     detectionExclusionConfigServiceStub =
-        DetectionExclusionConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        DetectionExclusionConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

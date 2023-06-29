@@ -33,7 +33,7 @@ public class AnomalyExclusionConfigServiceIntegrationTest
   @BeforeAll
   static void init() {
     anomalyExclusionConfigServiceStub =
-        AnomalyExclusionConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        AnomalyExclusionConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

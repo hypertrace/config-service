@@ -4,14 +4,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.typesafe.config.ConfigFactory;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
+import io.grpc.Deadline;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.DatastoreProvider;
+import org.hypertrace.core.grpcutils.client.InProcessGrpcChannelRegistry;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.core.serviceframework.IntegrationTestServerUtil;
@@ -29,16 +30,16 @@ public class PartitionerConfigServiceIntegrationTest {
 
   private static final Collection PARTITIONER_PROFILES_COLLECTION =
       getPartitionerProfilesCollection();
+  protected static final String SERVICE_NAME = "traceable-config-service";
 
-  protected static ManagedChannel globalConfigInternalChannel;
+  protected static InProcessGrpcChannelRegistry channelRegistry;
 
   @BeforeAll
-  static void init() throws Exception {
-    IntegrationTestServerUtil.startServices(new String[] {"traceable-config-service"});
-    globalConfigInternalChannel =
-        ManagedChannelBuilder.forAddress("localhost", 60104).usePlaintext().build();
+  static void init() {
+    IntegrationTestServerUtil.startServices(new String[] {SERVICE_NAME});
+    channelRegistry = new InProcessGrpcChannelRegistry();
     partitionerConfigServiceBlockingStub =
-        PartitionerConfigServiceGrpc.newBlockingStub(globalConfigInternalChannel)
+        PartitionerConfigServiceGrpc.newBlockingStub(channelRegistry.forName(SERVICE_NAME))
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }
@@ -50,7 +51,8 @@ public class PartitionerConfigServiceIntegrationTest {
 
   @AfterAll
   public static void teardown() {
-    globalConfigInternalChannel.shutdown();
+    channelRegistry.shutdown(Deadline.after(1, TimeUnit.SECONDS));
+    IntegrationTestServerUtil.shutdownServices();
   }
 
   @Test

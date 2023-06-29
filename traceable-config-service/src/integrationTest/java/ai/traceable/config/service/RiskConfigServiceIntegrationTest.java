@@ -51,7 +51,7 @@ class RiskConfigServiceIntegrationTest extends TraceableConfigServiceIntegration
   @BeforeAll
   static void init() {
     riskConfigServiceStub =
-        RiskConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        RiskConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

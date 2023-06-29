@@ -42,6 +42,7 @@ data:
       type = kafka
       bootstrap.servers = "bootstrap:9092"
       activity.events.producer {
+        enabled = true
         bootstrap.servers = "bootstrap:9092"
         schema.registry.url = "http://schema-registry-service:8081"
       }

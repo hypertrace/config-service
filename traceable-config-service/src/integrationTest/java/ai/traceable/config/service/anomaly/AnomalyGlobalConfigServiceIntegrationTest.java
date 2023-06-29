@@ -49,7 +49,7 @@ public class AnomalyGlobalConfigServiceIntegrationTest
   @BeforeAll
   static void init() {
     configServiceStub =
-        AnomalyGlobalConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        AnomalyGlobalConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

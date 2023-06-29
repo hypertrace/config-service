@@ -40,7 +40,7 @@ class RegionConfigServiceIntegrationTest extends TraceableConfigServiceIntegrati
   @BeforeAll
   static void init() {
     regionConfigServiceStub =
-        RegionConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        RegionConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

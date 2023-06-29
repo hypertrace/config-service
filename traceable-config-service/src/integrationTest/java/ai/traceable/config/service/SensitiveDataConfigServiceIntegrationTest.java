@@ -70,15 +70,15 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
   @BeforeAll
   static void init() {
     sensitiveDataConfigServiceStub =
-        SensitiveDataConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        SensitiveDataConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
     piiFilterConfigServiceStub =
-        PiiFilterConfigServiceGrpc.newBlockingStub(managedChannelForExternalServices)
+        PiiFilterConfigServiceGrpc.newBlockingStub(channelForExternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
     dataClassificationConfigServiceStub =
-        DataClassificationConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        DataClassificationConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

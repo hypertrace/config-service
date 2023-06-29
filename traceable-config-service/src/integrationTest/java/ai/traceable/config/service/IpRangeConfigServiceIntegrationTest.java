@@ -35,7 +35,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
   @BeforeAll
   static void init() {
     ipRangeConfigServiceStub =
-        IpRangeConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        IpRangeConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

@@ -68,7 +68,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
   @BeforeAll
   static void init() {
     configServiceStub =
-        TrainerConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        TrainerConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

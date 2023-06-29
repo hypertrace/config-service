@@ -42,7 +42,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.entity.constants.v1.CommonAttribute;
@@ -76,13 +75,12 @@ public class ApiNamingIntegrationTest extends TraceableConfigServiceIntegrationT
 
   @BeforeAll
   static void init() {
-    GrpcChannelRegistry channelRegistry = new GrpcChannelRegistry();
     localProcessingConfigStub =
-        LocalProcessingConfigServiceGrpc.newBlockingStub(managedChannelForExternalServices)
+        LocalProcessingConfigServiceGrpc.newBlockingStub(channelForExternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
     trainerConfigServiceBlockingStub =
-        TrainerConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        TrainerConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
     entityServiceClient =

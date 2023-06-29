@@ -19,7 +19,7 @@ public class SplunkIntegrationConfigServiceIntegrationTest
   @BeforeAll
   static void init() {
     splunkIntegrationConfigServiceBlockingStub =
-        SplunkIntegrationConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        SplunkIntegrationConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

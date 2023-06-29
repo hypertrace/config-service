@@ -59,15 +59,15 @@ public class LocalProcessingConfigServiceIntegrationTest
   @BeforeAll
   static void init() {
     localProcessingRulesStub =
-        LocalProcessingRulesServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        LocalProcessingRulesServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
     localProcessingConfigStub =
-        LocalProcessingConfigServiceGrpc.newBlockingStub(managedChannelForExternalServices)
+        LocalProcessingConfigServiceGrpc.newBlockingStub(channelForExternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
     customSignatureConfigServiceStub =
-        CustomSignatureConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        CustomSignatureConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

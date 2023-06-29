@@ -27,7 +27,7 @@ class LocalProcessingRuleServiceIntegrationTest extends TraceableConfigServiceIn
   @BeforeAll
   static void init() {
     localProcessingRulesStub =
-        LocalProcessingRulesServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        LocalProcessingRulesServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

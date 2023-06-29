@@ -54,7 +54,7 @@ public class AnomalyScoringConfigServiceIntegrationTest
   @BeforeAll
   static void init() {
     anomalyScoringConfigServiceStub =
-        AnomalyScoringConfigServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        AnomalyScoringConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

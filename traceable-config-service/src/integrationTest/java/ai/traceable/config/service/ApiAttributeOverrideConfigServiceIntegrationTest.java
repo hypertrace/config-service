@@ -26,7 +26,7 @@ public class ApiAttributeOverrideConfigServiceIntegrationTest
   @BeforeAll
   static void init() {
     overrideServiceStub =
-        ApiAttributeOverrideServiceGrpc.newBlockingStub(managedChannelForInternalServices)
+        ApiAttributeOverrideServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

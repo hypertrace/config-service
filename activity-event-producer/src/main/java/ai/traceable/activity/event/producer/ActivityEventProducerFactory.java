@@ -13,11 +13,15 @@ public class ActivityEventProducerFactory {
   private static final String EVENT_STORE_TYPE_CONFIG = "type";
   private static final String ACTIVITY_EVENTS_TOPIC = "activity-events";
   private static final String ACTIVITY_EVENTS_PRODUCER_CONFIG = "activity.events.producer";
+  private static final String ACTIVITY_EVENTS_ENABLED_PATH = "activity.events.producer.enabled";
 
   private ActivityEventProducerFactory() {}
 
   public static ActivityEventProducer build(Config config) {
     Config eventStoreConfig = config.getConfig(EVENT_STORE);
+    if (!eventStoreConfig.getBoolean(ACTIVITY_EVENTS_ENABLED_PATH)) {
+      return new NoOpActivityEventProducer();
+    }
     String storeType = eventStoreConfig.getString(EVENT_STORE_TYPE_CONFIG);
     EventStore eventStore = EventStoreProvider.getEventStore(storeType, eventStoreConfig);
     EventProducer<Void, ActivityEvent> eventProducer =
