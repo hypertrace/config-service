@@ -25,6 +25,17 @@ message GetLocalProcessingConfigRequest {
   string custom_modsec_detection_rules_hash = 2;
   string protection_mode_hash = 3;
   string sampling_policies_hash = 4;
+  AgentCapabilities agent_capabilities = 5;
+
+  message AgentCapabilities {
+    repeated Component components = 1;
+  }
+
+  message Component {
+    oneof value {
+      string traceable_platform_agent_version = 1;
+    }
+  }
 }
 
 message GetLocalProcessingConfigResponse {
@@ -67,6 +78,14 @@ message RegularModsecDetectionRules {
 
 message ModsecConfig {
   bool redact_messages = 1;
+  // The modsec_detection_rules will have corresponding rules blob
+  RulesBlobType rules_blob_type = 2;
+
+  enum RulesBlobType {
+    RULES_BLOB_TYPE_UNSPECIFIED = 0;
+    RULES_BLOB_TYPE_MODSEC = 1;
+    RULES_BLOB_TYPE_CORAZA = 2;
+  }
 }
 
 message SpanProcessingRules {
