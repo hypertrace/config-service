@@ -75,12 +75,9 @@ public class DetectionExclusionConditionValidator {
         validateIpConnectionTypeCondition(condition.getIpConnectionTypeCondition());
         break;
       default:
-        throw Status.INVALID_ARGUMENT
-            .withDescription(
-                String.format(
-                    "Invalid detection exclusion condition type : %s",
-                    condition.getConditionCase()))
-            .asRuntimeException();
+        throwInvalidArgumentException(
+            String.format(
+                "Invalid detection exclusion condition type : %s", condition.getConditionCase()));
     }
   }
 
@@ -94,9 +91,8 @@ public class DetectionExclusionConditionValidator {
   private void validateIpConnectionType(IpConnectionType ipConnectionType) {
     if (ipConnectionType.equals(IpConnectionType.IP_CONNECTION_TYPE_UNSPECIFIED)
         || ipConnectionType.equals(IpConnectionType.UNRECOGNIZED)) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(String.format("Invalid IP Connection Type : %s", ipConnectionType))
-          .asRuntimeException();
+      throwInvalidArgumentException(
+          String.format("Invalid IP Connection Type : %s", ipConnectionType));
     }
   }
 
@@ -109,10 +105,8 @@ public class DetectionExclusionConditionValidator {
         validateLabelScope(condition.getLabelScope());
         break;
       default:
-        throw Status.INVALID_ARGUMENT
-            .withDescription(
-                String.format("Invalid scopeConditionCase %s", condition.getScopeCase()))
-            .asRuntimeException();
+        throwInvalidArgumentException(
+            String.format("Invalid scopeConditionCase %s", condition.getScopeCase()));
     }
   }
 
@@ -128,12 +122,10 @@ public class DetectionExclusionConditionValidator {
 
   private void validateSpanAttributeMatchCondition(SpanAttributeMatchCondition condition) {
     if (!condition.hasKeyMatchCondition() || !condition.hasValueMatchCondition()) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(
-              String.format(
-                  "Invalid spanAttributeMatchCondition for detection exclusion rule :%n %s",
-                  printMessage(condition)))
-          .asRuntimeException();
+      throwInvalidArgumentException(
+          String.format(
+              "Invalid spanAttributeMatchCondition for detection exclusion rule :%n %s",
+              printMessage(condition)));
     }
 
     KeyMetadataMatchCondition keyMetadataMatchCondition = condition.getKeyMatchCondition();
@@ -155,9 +147,7 @@ public class DetectionExclusionConditionValidator {
   private void validateIpLocationType(IpLocationType ipLocationType) {
     if (ipLocationType.equals(IpLocationType.IP_LOCATION_TYPE_UNSPECIFIED)
         || ipLocationType.equals(IpLocationType.UNRECOGNIZED)) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(String.format("Invalid IP location type : %s", ipLocationType))
-          .asRuntimeException();
+      throwInvalidArgumentException(String.format("Invalid IP location type : %s", ipLocationType));
     }
   }
 
@@ -165,29 +155,23 @@ public class DetectionExclusionConditionValidator {
     switch (condition.getReputationCase()) {
       case MAX_IP_REPUTATION_SCORE:
         if (condition.getMaxIpReputationScore() > 100 || condition.getMaxIpReputationScore() < 0) {
-          throw Status.INVALID_ARGUMENT
-              .withDescription(
-                  "IP reputation score should be >= 0 and <= 100 for ipReputationCondition")
-              .asRuntimeException();
+          throwInvalidArgumentException(
+              "IP reputation score should be >= 0 and <= 100 for ipReputationCondition");
         }
         break;
       case MAX_IP_REPUTATION_SEVERITY:
         IpReputationSeverity ipReputationSeverity = condition.getMaxIpReputationSeverity();
         if (ipReputationSeverity.equals(IpReputationSeverity.IP_REPUTATION_SEVERITY_UNSPECIFIED)
             || ipReputationSeverity.equals(IpReputationSeverity.UNRECOGNIZED)) {
-          throw Status.INVALID_ARGUMENT
-              .withDescription(
-                  String.format("Invalid IP reputation severity : %s", ipReputationSeverity))
-              .asRuntimeException();
+          throwInvalidArgumentException(
+              String.format("Invalid IP reputation severity : %s", ipReputationSeverity));
         }
         break;
       default:
-        throw Status.INVALID_ARGUMENT
-            .withDescription(
-                String.format(
-                    "Invalid ipReputationCondition for detection exclusion rule :%n %s",
-                    printMessage(condition)))
-            .asRuntimeException();
+        throwInvalidArgumentException(
+            String.format(
+                "Invalid ipReputationCondition for detection exclusion rule :%n %s",
+                printMessage(condition)));
     }
   }
 
@@ -196,12 +180,10 @@ public class DetectionExclusionConditionValidator {
     List<String> userIdRegexes = condition.getUserIdRegexesList();
     List<String> userIds = condition.getUserIdsList();
     if (userIdRegexes.isEmpty() && actorEntityIds.isEmpty() && userIds.isEmpty()) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(
-              String.format(
-                  "Invalid userIdCondition for detection exclusion rule :%n %s",
-                  printMessage(condition)))
-          .asRuntimeException();
+      throwInvalidArgumentException(
+          String.format(
+              "Invalid userIdCondition for detection exclusion rule :%n %s",
+              printMessage(condition)));
     }
 
     if (!userIdRegexes.isEmpty()) {
@@ -213,12 +195,10 @@ public class DetectionExclusionConditionValidator {
     List<CustomRuleEvent> customRuleEvents = condition.getCustomRuleEventsList();
     List<SystemDefinedEvent> systemDefinedEvents = condition.getSystemDefinedEventsList();
     if (customRuleEvents.isEmpty() && systemDefinedEvents.isEmpty()) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(
-              String.format(
-                  "Invalid eventCondition for detection exclusion rule :%n %s",
-                  printMessage(condition)))
-          .asRuntimeException();
+      throwInvalidArgumentException(
+          String.format(
+              "Invalid eventCondition for detection exclusion rule :%n %s",
+              printMessage(condition)));
     }
 
     if (!customRuleEvents.isEmpty()) {
@@ -234,15 +214,12 @@ public class DetectionExclusionConditionValidator {
     CustomRuleFamily customRuleFamily = customRuleEvent.getRuleFamily();
     if (customRuleFamily.equals(CustomRuleFamily.CUSTOM_RULE_FAMILY_UNSPECIFIED)
         || customRuleFamily.equals(CustomRuleFamily.UNRECOGNIZED)) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(String.format("Invalid custom rule family : %s", customRuleFamily))
-          .asRuntimeException();
+      throwInvalidArgumentException(
+          String.format("Invalid custom rule family : %s", customRuleFamily));
     }
     if (customRuleEvent.hasRuleId() && customRuleEvent.getRuleId().trim().isEmpty()) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(
-              String.format("RuleId provided is empty for custom rule family %s", customRuleFamily))
-          .asRuntimeException();
+      throwInvalidArgumentException(
+          String.format("RuleId provided is empty for custom rule family %s", customRuleFamily));
     }
   }
 
@@ -251,20 +228,16 @@ public class DetectionExclusionConditionValidator {
     if (systemDefinedEventFamily.equals(
             SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_UNSPECIFIED)
         || systemDefinedEventFamily.equals(SystemDefinedEventFamily.UNRECOGNIZED)) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(
-              String.format("Invalid system defined event family : %s", systemDefinedEventFamily))
-          .asRuntimeException();
+      throwInvalidArgumentException(
+          String.format("Invalid system defined event family : %s", systemDefinedEventFamily));
     }
 
     Optional<String> typeId = getSystemDefinedEventTypeId(systemDefinedEvent);
     if (typeId.isPresent() && typeId.get().trim().isEmpty()) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(
-              String.format(
-                  "TypeId provided is empty for system defined event family %s",
-                  systemDefinedEventFamily))
-          .asRuntimeException();
+      throwInvalidArgumentException(
+          String.format(
+              "TypeId provided is empty for system defined event family %s",
+              systemDefinedEventFamily));
     }
 
     if (systemDefinedEvent.hasDescriptionMatchCondition()) {
@@ -285,12 +258,10 @@ public class DetectionExclusionConditionValidator {
 
   private void validateAnomalousAttributeCondition(AnomalousAttributeCondition condition) {
     if (!condition.hasKeyMatchCondition() && !condition.hasValueMatchCondition()) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(
-              String.format(
-                  "Invalid anomalousAttributeCondition for detection exclusion rule :%n %s",
-                  printMessage(condition)))
-          .asRuntimeException();
+      throwInvalidArgumentException(
+          String.format(
+              "Invalid anomalousAttributeCondition for detection exclusion rule :%n %s",
+              printMessage(condition)));
     }
     if (condition.hasKeyMatchCondition()) {
       validateMatchCondition(condition.getKeyMatchCondition());
@@ -305,9 +276,7 @@ public class DetectionExclusionConditionValidator {
   private void validateAttributeValueType(AttributeValueType type) {
     if (type.equals(AttributeValueType.ATTRIBUTE_VALUE_TYPE_UNSPECIFIED)
         || type.equals(AttributeValueType.UNRECOGNIZED)) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(String.format("Invalid type : %s", type))
-          .asRuntimeException();
+      throwInvalidArgumentException(String.format("Invalid type : %s", type));
     }
   }
 
@@ -315,9 +284,7 @@ public class DetectionExclusionConditionValidator {
     validateNonDefaultPresenceOrThrow(matchCondition, MatchCondition.OPERATOR_FIELD_NUMBER);
 
     if (!matchCondition.hasValue()) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription("Match condition should have a valid value")
-          .asRuntimeException();
+      throwInvalidArgumentException("Match condition should have a valid value");
     }
 
     if (matchCondition.getOperator().equals(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
@@ -325,10 +292,8 @@ public class DetectionExclusionConditionValidator {
       Value value = matchCondition.getValue();
       if (!value.hasStringValue()
           && !(value.hasListValue() && listValueContainsOnlyStrings(value.getListValue()))) {
-        throw Status.INVALID_ARGUMENT
-            .withDescription(
-                "Match condition value should be string or list of strings for regex matching")
-            .asRuntimeException();
+        throwInvalidArgumentException(
+            "Match condition value should be string or list of strings for regex matching");
       }
       if (value.hasStringValue()) {
         validateRegex(matchCondition.getValue().getStringValue());
@@ -342,25 +307,27 @@ public class DetectionExclusionConditionValidator {
   }
 
   private void validateIpAddressCondition(IpAddressCondition condition) {
-    if (condition.getCidrIpRangesList().isEmpty() && condition.getIpAddressesList().isEmpty()) {
-      throw Status.NOT_FOUND
-          .withDescription(
-              String.format(
-                  "Invalid ipAddressCondition for detection exclusion rule :%n %s",
-                  printMessage(condition)))
-          .asRuntimeException();
-    }
 
-    if (!condition.getIpAddressesList().stream().allMatch(IpValidationUtils::isValidIpAddress)) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription("IpAddressCondition should have valid IP addresses")
-          .asRuntimeException();
+    List<String> cidrIpRanges = condition.getCidrIpRangesList();
+    List<String> ipAddresses = condition.getIpAddressesList();
+    List<String> rawInputIpData = condition.getRawInputIpDataList();
+    if (cidrIpRanges.isEmpty() && ipAddresses.isEmpty() && rawInputIpData.isEmpty()) {
+      throwInvalidArgumentException(
+          String.format(
+              "Invalid ipAddressCondition for detection exclusion rule :%n %s",
+              printMessage(condition)));
     }
-
-    if (!condition.getCidrIpRangesList().stream().allMatch(IpValidationUtils::isValidSubnet)) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription("IpAddressCondition should have valid CIDR IP ranges")
-          .asRuntimeException();
+    if ((!rawInputIpData.isEmpty()) && (!cidrIpRanges.isEmpty() || !ipAddresses.isEmpty())) {
+      throwInvalidArgumentException(
+          String.format(
+              "IpAddressCondition should not have rawInputIpData and (cidrIpRanges or ipAddresses) simultaneously :%n %s",
+              printMessage(condition)));
+    }
+    if (!ipAddresses.stream().allMatch(IpValidationUtils::isValidIpAddress)) {
+      throwInvalidArgumentException("IpAddressCondition should have valid IP addresses");
+    }
+    if (!cidrIpRanges.stream().allMatch(IpValidationUtils::isValidSubnet)) {
+      throwInvalidArgumentException("IpAddressCondition should have valid CIDR IP ranges");
     }
   }
 
@@ -373,9 +340,11 @@ public class DetectionExclusionConditionValidator {
     try {
       Pattern.compile(regexPattern);
     } catch (PatternSyntaxException e) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(String.format("Invalid Regex Value : %s", regexPattern))
-          .asRuntimeException();
+      throwInvalidArgumentException(String.format("Invalid Regex Value : %s", regexPattern));
     }
+  }
+
+  private void throwInvalidArgumentException(String description) {
+    throw Status.INVALID_ARGUMENT.withDescription(description).asRuntimeException();
   }
 }

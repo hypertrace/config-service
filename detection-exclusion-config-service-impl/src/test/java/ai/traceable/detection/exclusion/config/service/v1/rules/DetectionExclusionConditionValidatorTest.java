@@ -705,48 +705,67 @@ class DetectionExclusionConditionValidatorTest {
           DetectionExclusionCondition.newBuilder()
               .setIpAddressCondition(IpAddressCondition.getDefaultInstance())
               .build();
-      Throwable throwable =
-          assertThrows(
-              StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
-      assertTrue(throwable.getMessage().contains("Invalid ipAddressCondition"));
+      assertThrows(
+          StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition));
     }
 
-    // invalid ip address
-    {
-      DetectionExclusionCondition condition =
-          DetectionExclusionCondition.newBuilder()
-              .setIpAddressCondition(
-                  IpAddressCondition.newBuilder().addIpAddresses("300.300.300.300"))
-              .build();
-      Throwable throwable =
-          assertThrows(
-              StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
-      assertTrue(throwable.getMessage().contains("should have valid IP addresses"));
-    }
-
-    // invalid cidr range
-    {
-      DetectionExclusionCondition condition =
-          DetectionExclusionCondition.newBuilder()
-              .setIpAddressCondition(IpAddressCondition.newBuilder().addCidrIpRanges("2.3.4.5/50"))
-              .build();
-      Throwable throwable =
-          assertThrows(
-              StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
-      assertTrue(throwable.getMessage().contains("should have valid CIDR IP ranges"));
-    }
-
-    // valid condition
+    // invalid ip address condition (either rawInputIpData or (any one of cidrRanges or ipAddress)
+    // can be set)
     {
       DetectionExclusionCondition condition =
           DetectionExclusionCondition.newBuilder()
               .setIpAddressCondition(
                   IpAddressCondition.newBuilder()
-                      .addIpAddresses("1.2.3.4")
-                      .addCidrIpRanges("2.3.4.5/24"))
+                      .addAllRawInputIpData(List.of("2.3.4.5", "1.2.3.4/23"))
+                      .addIpAddresses("1.2.3.4"))
+              .build();
+      assertThrows(
+          StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition));
+
+      DetectionExclusionCondition condition1 =
+          DetectionExclusionCondition.newBuilder()
+              .setIpAddressCondition(
+                  IpAddressCondition.newBuilder()
+                      .addAllRawInputIpData(List.of("2.3.4.5", "1.2.3.4/23"))
+                      .addCidrIpRanges("192.3.4.5/2"))
+              .build();
+      assertThrows(
+          StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition1));
+
+      DetectionExclusionCondition condition2 =
+          DetectionExclusionCondition.newBuilder()
+              .setIpAddressCondition(
+                  IpAddressCondition.newBuilder()
+                      .addAllRawInputIpData(List.of("2.3.4.5", "1.2.3.4/23"))
+                      .addCidrIpRanges("192.3.4.5/2")
+                      .addIpAddresses("1.2.3.4"))
+              .build();
+      assertThrows(
+          StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition2));
+    }
+
+    // valid ip address condition (empty rawInputIpData and any one of cidrRanges or ip address is
+    // present)
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setIpAddressCondition(IpAddressCondition.newBuilder().addIpAddresses("1.2.3.4"))
+              .build();
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+      DetectionExclusionCondition condition1 =
+          DetectionExclusionCondition.newBuilder()
+              .setIpAddressCondition(IpAddressCondition.newBuilder().addCidrIpRanges("192.3.4.5/2"))
+              .build();
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition1));
+    }
+
+    // valid ip address condition (raw input ip data is present)
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setIpAddressCondition(
+                  IpAddressCondition.newBuilder()
+                      .addAllRawInputIpData(List.of("2.3.4.5", "1.2.3.4/23")))
               .build();
       assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
     }

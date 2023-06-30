@@ -16,6 +16,9 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
+import ai.traceable.detection.exclusion.config.service.v1.IpAddressCondition;
+import ai.traceable.detection.exclusion.config.service.v1.IpConnectionType;
+import ai.traceable.detection.exclusion.config.service.v1.IpConnectionTypeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.DetectionExclusionRulesMigrationManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.RulesMigrationManager;
@@ -114,6 +117,84 @@ class DetectionExclusionRulesManagerTest {
         rulesManager
             .getDetectionExclusionRules(requestContext, GetRulesFilter.getDefaultInstance())
             .contains(detectionExclusionRule));
+  }
+
+  @Test
+  void testProcessRawInputIpDataDetails() {
+    IpAddressCondition ipAddressCondition =
+        IpAddressCondition.newBuilder()
+            .addAllIpAddresses(List.of("8.8.8.8"))
+            .addAllCidrIpRanges(List.of("3.3.3.3/31"))
+            .addAllRawInputIpData(List.of("1.2.3.4", "192.168.100.14/24", "127.0.0.1"))
+            .build();
+    IpAddressCondition processedIpAddressCondition =
+        IpAddressCondition.newBuilder()
+            .addAllRawInputIpData(List.of("1.2.3.4", "192.168.100.14/24", "127.0.0.1"))
+            .addAllIpAddresses(List.of("8.8.8.8", "1.2.3.4", "127.0.0.1"))
+            .addAllCidrIpRanges(List.of("3.3.3.3/31", "192.168.100.14/24"))
+            .build();
+    IpConnectionTypeCondition ipConnectionTypeCondition =
+        IpConnectionTypeCondition.newBuilder()
+            .addAllIpConnectionTypes(List.of(IpConnectionType.IP_CONNECTION_TYPE_EDUCATION))
+            .build();
+    DetectionExclusionRuleInfo detectionExclusionRuleInfo =
+        DetectionExclusionRuleInfo.newBuilder()
+            .setName("rule")
+            .addAllConditions(
+                List.of(
+                    DetectionExclusionCondition.newBuilder()
+                        .setIpAddressCondition(ipAddressCondition)
+                        .build(),
+                    DetectionExclusionCondition.newBuilder()
+                        .setIpConnectionTypeCondition(ipConnectionTypeCondition)
+                        .build()))
+            .setRuleStatus(DetectionExclusionRuleStatus.newBuilder().build())
+            .build();
+
+    DetectionExclusionRuleScope detectionExclusionRuleScope =
+        DetectionExclusionRuleScope.getDefaultInstance();
+
+    when(uuidGenerator.generateRandomId()).thenReturn("id");
+
+    DetectionExclusionRule detectionExclusionRule =
+        rulesManager.createDetectionExclusionRule(
+            requestContext, detectionExclusionRuleScope, detectionExclusionRuleInfo);
+
+    assertEquals(
+        processedIpAddressCondition,
+        detectionExclusionRule.getRuleInfo().getConditions(0).getIpAddressCondition());
+    assertEquals(
+        ipConnectionTypeCondition,
+        detectionExclusionRule.getRuleInfo().getConditions(1).getIpConnectionTypeCondition());
+
+    IpAddressCondition updatedIpAddressCondition =
+        IpAddressCondition.newBuilder()
+            .addAllRawInputIpData(List.of("2.3.4.5", "192.168.100.14/2", "127.0.0.2"))
+            .addAllIpAddresses(List.of("1.2.3.4", "127.0.0.1"))
+            .addCidrIpRanges("192.168.100.14/24")
+            .build();
+    IpAddressCondition processedUpdatedIpAddressCondition =
+        IpAddressCondition.newBuilder()
+            .addAllRawInputIpData(List.of("2.3.4.5", "192.168.100.14/2", "127.0.0.2"))
+            .addAllIpAddresses(List.of("1.2.3.4", "127.0.0.1", "2.3.4.5", "127.0.0.2"))
+            .addAllCidrIpRanges(List.of("192.168.100.14/24", "192.168.100.14/2"))
+            .build();
+    DetectionExclusionRuleInfo info =
+        detectionExclusionRule.getRuleInfo().toBuilder()
+            .setRuleStatus(DetectionExclusionRuleStatus.getDefaultInstance())
+            .addAllConditions(
+                List.of(
+                    DetectionExclusionCondition.newBuilder()
+                        .setIpAddressCondition(updatedIpAddressCondition)
+                        .build()))
+            .build();
+    detectionExclusionRule = detectionExclusionRule.toBuilder().setRuleInfo(info).build();
+    detectionExclusionRule =
+        rulesManager.updateDetectionExclusionRule(requestContext, detectionExclusionRule);
+
+    assertEquals(
+        processedUpdatedIpAddressCondition,
+        detectionExclusionRule.getRuleInfo().getConditions(2).getIpAddressCondition());
   }
 
   @Test

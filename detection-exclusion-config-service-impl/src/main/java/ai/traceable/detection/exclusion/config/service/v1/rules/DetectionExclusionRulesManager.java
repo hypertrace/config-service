@@ -1,14 +1,20 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
+import static ai.traceable.platform.utils.ip.IpAddressParsingUtils.parseRawIpRange;
+
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
+import ai.traceable.detection.exclusion.config.service.v1.IpAddressCondition;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.RulesMigrationManager;
+import ai.traceable.platform.utils.ip.IpAddressParsingUtils;
 import io.grpc.Status;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -53,7 +59,7 @@ public class DetectionExclusionRulesManager implements RulesManager {
                         String.format(
                             "Detection exclusion rule with rule id : {} does not exists", ruleId))
                     ::asRuntimeException);
-    rule = getModifiedRule(rule, originalRule.getRuleInfo().getRuleStatus());
+    rule = processDetectionExclusionRule(rule, originalRule.getRuleInfo().getRuleStatus());
     return rulesStore.upsertObject(requestContext, rule).getData();
   }
 
@@ -65,7 +71,7 @@ public class DetectionExclusionRulesManager implements RulesManager {
     DetectionExclusionRule rule =
         DetectionExclusionRule.newBuilder()
             .setId(uuidGenerator.generateRandomId())
-            .setRuleInfo(ruleInfo)
+            .setRuleInfo(processIpAddressCondition(ruleInfo))
             .setRuleScope(ruleScope)
             .build();
     return rulesStore.upsertObject(requestContext, rule).getData();
@@ -76,6 +82,42 @@ public class DetectionExclusionRulesManager implements RulesManager {
     rulesStore
         .deleteObject(requestContext, ruleId)
         .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
+  }
+
+  private DetectionExclusionRule processDetectionExclusionRule(
+      DetectionExclusionRule rule, DetectionExclusionRuleStatus originalRuleStatus) {
+    DetectionExclusionRuleInfo processedDetectionExclusionRuleInfo =
+        processIpAddressCondition(rule.getRuleInfo());
+    rule = rule.toBuilder().setRuleInfo(processedDetectionExclusionRuleInfo).build();
+    return getModifiedRule(rule, originalRuleStatus);
+  }
+
+  private DetectionExclusionRuleInfo processIpAddressCondition(
+      DetectionExclusionRuleInfo ruleInfo) {
+    DetectionExclusionRuleInfo.Builder builder = ruleInfo.toBuilder();
+    List<DetectionExclusionCondition> detectionExclusionConditions =
+        ruleInfo.getConditionsList().stream()
+            .map(
+                detectionExclusionCondition -> {
+                  DetectionExclusionCondition.Builder conditionBuilder =
+                      detectionExclusionCondition.toBuilder();
+                  if (detectionExclusionCondition.hasIpAddressCondition()) {
+                    IpAddressCondition ipAddressCondition =
+                        detectionExclusionCondition.getIpAddressCondition();
+                    List<String> rawIps = ipAddressCondition.getRawInputIpDataList();
+                    IpAddressParsingUtils.IpParsingResults parsedResults = parseRawIpRange(rawIps);
+                    IpAddressCondition.Builder ipAddressConditionBuilder =
+                        detectionExclusionCondition.toBuilder().getIpAddressConditionBuilder();
+                    ipAddressConditionBuilder
+                        .addAllCidrIpRanges(parsedResults.getIpRanges())
+                        .addAllIpAddresses(parsedResults.getIpAddresses());
+                    conditionBuilder.setIpAddressCondition(ipAddressConditionBuilder);
+                  }
+                  return conditionBuilder.build();
+                })
+            .collect(Collectors.toUnmodifiableList());
+    builder.clearConditions();
+    return builder.addAllConditions(detectionExclusionConditions).build();
   }
 
   private DetectionExclusionRuleStatus getMergeRuleStatus(
