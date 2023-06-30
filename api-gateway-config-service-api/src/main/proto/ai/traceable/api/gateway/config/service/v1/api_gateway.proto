@@ -12,6 +12,7 @@ enum GatewayType {
 
 message ConfigMetadata {
   string org_id = 1;
+  GatewayType gateway_type = 3;
   repeated SourceInfo source_info = 2;
 }
 

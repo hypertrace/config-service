@@ -60,6 +60,7 @@ message ApiRouteFilter {
 
 message OrgIds {
   repeated string org_id = 1;
+  GatewayType gateway_type = 2;
 }
 
 message ApiInfo {
