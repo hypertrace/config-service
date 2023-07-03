@@ -9,7 +9,6 @@ import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesStore;
 import ai.traceable.platform.actor.v1.Actor;
 import ai.traceable.platform.config.provider.common.clients.ActorServiceClient;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import java.util.HashMap;
 import java.util.List;
@@ -66,10 +65,6 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
         oldRulesStore.getAllObjects(requestContext).stream()
             .collect(Collectors.toMap(object -> object.getData().getId(), Function.identity()));
 
-    // rules deleted by old api, still present in new store
-    List<String> oldRuleIdsToDelete =
-        ImmutableList.copyOf(Sets.difference(newRuleObjects.keySet(), oldRuleObjects.keySet()));
-
     List<String> oldRulesActorEntityIds =
         oldRuleObjects.values().stream()
             .map(ConfigObject::getData)
@@ -110,9 +105,6 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
             .filter(Objects::nonNull)
             .collect(Collectors.toUnmodifiableList());
 
-    if (!oldRuleIdsToDelete.isEmpty()) {
-      newRulesStore.deleteObjects(requestContext, oldRuleIdsToDelete);
-    }
     if (!oldRulesToCreate.isEmpty()) {
       newRulesStore.upsertObjects(requestContext, oldRulesToCreate);
     }

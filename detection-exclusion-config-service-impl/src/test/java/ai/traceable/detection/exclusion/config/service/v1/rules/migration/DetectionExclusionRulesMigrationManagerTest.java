@@ -97,9 +97,6 @@ class DetectionExclusionRulesMigrationManagerTest {
     assertTrue(migrationManager.shouldMigrateFromOldStore(requestContext));
 
     migrationManager.updateDetectionExclusionRulesFromOldStore(requestContext);
-    verify(newRulesStore, times(1))
-        .deleteObjects(
-            eq(requestContext), argThat(list -> list.size() == 1 && list.contains("id3")));
     verify(newRulesStore, times(2)).upsertObjects(eq(requestContext), any());
     verify(newRulesStore, times(1))
         .upsertObjects(
@@ -113,22 +110,6 @@ class DetectionExclusionRulesMigrationManagerTest {
   }
 
   @Test
-  void testMigration_noDelete() {
-    when(featureCachingClient.isDetectionExclusionV2EnabledForTenant(requestContext))
-        .thenReturn(true);
-    when(newRulesStore.getAllObjects(any(), any())).thenReturn(Collections.emptyList());
-    when(oldRulesStore.getAllObjects(any())).thenReturn(oldRules);
-    assertTrue(migrationManager.shouldMigrateFromOldStore(requestContext));
-
-    migrationManager.updateDetectionExclusionRulesFromOldStore(requestContext);
-    verify(newRulesStore, times(0)).deleteObjects(any(), any());
-    verify(newRulesStore, times(1)).upsertObjects(any(), any());
-    verify(newRulesStore, times(1))
-        .upsertObjects(eq(requestContext), argThat(list -> list.size() == 3));
-    assertFalse(migrationManager.shouldMigrateFromOldStore(requestContext));
-  }
-
-  @Test
   void testMigration_noUpdate() {
     when(featureCachingClient.isDetectionExclusionV2EnabledForTenant(requestContext))
         .thenReturn(true);
@@ -137,7 +118,6 @@ class DetectionExclusionRulesMigrationManagerTest {
     assertTrue(migrationManager.shouldMigrateFromOldStore(requestContext));
 
     migrationManager.updateDetectionExclusionRulesFromOldStore(requestContext);
-    verify(newRulesStore, times(0)).deleteObjects(any(), any());
     verify(newRulesStore, times(0)).upsertObjects(any(), any());
     assertFalse(migrationManager.shouldMigrateFromOldStore(requestContext));
   }
