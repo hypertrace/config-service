@@ -9,11 +9,18 @@ import ai.traceable.ast.hooks.config.service.v1.DynamicBearer;
 import ai.traceable.ast.hooks.config.service.v1.DynamicJwt;
 import ai.traceable.ast.hooks.config.service.v1.EncryptedText;
 import ai.traceable.ast.hooks.config.service.v1.Hmac;
+import ai.traceable.ast.hooks.config.service.v1.HmacHash;
 import ai.traceable.ast.hooks.config.service.v1.HookConfig;
 import ai.traceable.ast.hooks.config.service.v1.JwtConfig;
 import ai.traceable.ast.hooks.config.service.v1.KeyGenAlgo;
 import ai.traceable.ast.hooks.config.service.v1.MutualTls;
 import ai.traceable.ast.hooks.config.service.v1.Oauth2;
+import ai.traceable.ast.hooks.config.service.v1.OauthAuthorizationCodeFlow;
+import ai.traceable.ast.hooks.config.service.v1.OauthClientAuthenticationType;
+import ai.traceable.ast.hooks.config.service.v1.OauthClientCredentialsFlow;
+import ai.traceable.ast.hooks.config.service.v1.OauthImplicitFlow;
+import ai.traceable.ast.hooks.config.service.v1.OauthPasswordFlow;
+import ai.traceable.ast.hooks.config.service.v1.OauthPkceFlow;
 import ai.traceable.ast.hooks.config.service.v1.PopTokenSignature;
 import ai.traceable.ast.hooks.config.service.v1.RequestTokenInfo;
 import io.grpc.Status;
@@ -127,9 +134,62 @@ public class HookConfigValidator extends ValidatorBase {
   private void validateOauth2(Oauth2 oauth2) {
     validateEncryptedText(oauth2.getToken(), "token");
     validateEncryptedText(oauth2.getClientId(), "client id");
-    validateEncryptedText(oauth2.getClientSecret(), "client secret");
     validateStringNotBlank(oauth2.getAccessTokenUrl(), "access token url not found for oauth");
     validateRequestTokenInfo(oauth2.getTokenInfo());
+    validateStringNotBlank(oauth2.getAccessTokenUrl(), "access token url can not be blank");
+    if (oauth2.hasAuthorizationCodeFlow()) {
+      validateOauthAuthorizationCodeFlow(oauth2.getAuthorizationCodeFlow());
+    } else if (oauth2.hasPkceFlow()) {
+      validateOauthPkceFlow(oauth2.getPkceFlow());
+    } else if (oauth2.hasImplicitFlow()) {
+      validateOauthImplicitFlow(oauth2.getImplicitFlow());
+    } else if (oauth2.hasClientCredentialsFlow()) {
+      validateOauthClientCredentialsFlow(oauth2.getClientCredentialsFlow());
+    } else if (oauth2.hasPasswordFlow()) {
+      validateOauthPasswordFlow(oauth2.getPasswordFlow());
+    }
+  }
+
+  private void validateOauthPasswordFlow(OauthPasswordFlow passwordFlow) {
+    validateStringNotBlank(passwordFlow.getUsername(), "username can not be blank");
+    validateStringNotBlank(passwordFlow.getPassword(), "password can not be blank");
+    validateEncryptedText(passwordFlow.getClientSecret(), "client secret");
+  }
+
+  private void validateOauthClientCredentialsFlow(
+      OauthClientCredentialsFlow clientCredentialsFlow) {
+    validateEncryptedText(clientCredentialsFlow.getClientSecret(), "client secret");
+  }
+
+  private void validateOauthImplicitFlow(OauthImplicitFlow implicitFlow) {
+    validateStringNotBlank(implicitFlow.getState(), "state can not be blank");
+  }
+
+  private void validateOauthPkceFlow(OauthPkceFlow pkceFlow) {
+    validateStringNotBlank(pkceFlow.getState(), "state can not be blank");
+    validateStringNotBlank(pkceFlow.getCodeVerifier(), "code verifier can not be blank");
+    validateEncryptedText(pkceFlow.getClientSecret(), "client secret");
+  }
+
+  private void validateOauthAuthorizationCodeFlow(
+      OauthAuthorizationCodeFlow authorizationCodeFlow) {
+    validateStringNotBlank(authorizationCodeFlow.getState(), "state can not be blank");
+    validateOauthClientAuthenticationType(authorizationCodeFlow.getClientAuthenticationType());
+    validateEncryptedText(authorizationCodeFlow.getClientSecret(), "client secret");
+  }
+
+  private void validateOauthClientAuthenticationType(
+      OauthClientAuthenticationType clientAuthenticationType) {
+    switch (clientAuthenticationType) {
+      case OAUTH_CLIENT_AUTHENTICATION_TYPE_REQUEST_BODY:
+      case OAUTH_CLIENT_AUTHENTICATION_TYPE_BASIC_AUTH_HEADER:
+        break;
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription(
+                "Oauth client authentication type not found, received " + clientAuthenticationType)
+            .asRuntimeException();
+    }
   }
 
   private void validateRequestTokenInfo(RequestTokenInfo requestTokenInfo) {
@@ -164,12 +224,26 @@ public class HookConfigValidator extends ValidatorBase {
     validateStringNotBlank(hmac.getSignatureHeader(), "Hmac signature header not found");
     validateEncryptedText(hmac.getAccessKey(), "access key");
     validateEncryptedText(hmac.getSecretKey(), "secret key");
+    validateHmacHash(hmac.getHmacHashAlgo());
+  }
+
+  private void validateHmacHash(HmacHash hmacHash) {
+    switch (hmacHash) {
+      case HMAC_HASH_HMAC_SHA1:
+      case HMAC_HASH_HMAC_SHA256:
+      case HMAC_HASH_HMAC_SHA512:
+        break;
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Unknown hmac hash " + hmacHash)
+            .asRuntimeException();
+    }
   }
 
   private void validateKeyGenAlgo(KeyGenAlgo keyGenAlgo) {
     switch (keyGenAlgo) {
-      case KEY_GEN_ALGO_HMAC_SHA1:
-      case KEY_GEN_ALGO_HMAC_SHA256:
+      case KEY_GEN_ALGO_SHA1:
+      case KEY_GEN_ALGO_SHA256:
         break;
       default:
         throw Status.INVALID_ARGUMENT.withDescription("Unknown key gen algo").asRuntimeException();

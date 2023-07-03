@@ -129,7 +129,7 @@ message BasicAuthConfig {
 }
 
 message Hmac {
-  KeyGenAlgo key_gen_algo = 1;
+  HmacHash hmac_hash_algo = 1;
   string signature_header = 2;
   HmacAdvanced hmac_advanced = 3;
   EncryptedText access_key = 4;
@@ -147,12 +147,40 @@ message Oauth2 {
   EncryptedText token = 1;
   RequestTokenInfo token_info = 2;
   EncryptedText client_id = 3;
-  EncryptedText client_secret = 4;
-  string access_token_url = 5;
-  OauthClientAuthenticationType client_authentication_type = 6;
-  OauthFlowType flow_type = 7;
-  string state = 8;
-  string code_verifier = 9;
+  string access_token_url = 4;
+  oneof flow_type {
+    OauthAuthorizationCodeFlow authorization_code_flow = 5;
+    OauthPkceFlow pkce_flow = 6;
+    OauthImplicitFlow implicit_flow = 7;
+    OauthClientCredentialsFlow client_credentials_flow = 8;
+    OauthPasswordFlow password_flow = 9;
+  }
+}
+
+message OauthAuthorizationCodeFlow {
+  string state = 1;
+  OauthClientAuthenticationType client_authentication_type = 2;
+  EncryptedText client_secret = 3;
+}
+
+message OauthImplicitFlow {
+  string state = 1;
+}
+
+message OauthPkceFlow {
+  string state = 1;
+  string code_verifier = 2;
+  EncryptedText client_secret = 3;
+}
+
+message OauthClientCredentialsFlow {
+  EncryptedText client_secret = 1;
+}
+
+message OauthPasswordFlow {
+  string username = 1;
+  string password = 2;
+  EncryptedText client_secret = 3;
 }
 
 message JwtConfig {
@@ -180,15 +208,6 @@ enum OauthClientAuthenticationType {
   OAUTH_CLIENT_AUTHENTICATION_TYPE_BASIC_AUTH_HEADER = 2;
 }
 
-enum OauthFlowType {
-  OAUTH_FLOW_TYPE_UNSPECIFIED = 0;
-  OAUTH_FLOW_TYPE_AUTHORIZATION_CODE = 1;
-  OAUTH_FLOW_TYPE_PKCE = 2;
-  OAUTH_FLOW_TYPE_IMPLICIT = 3;
-  OAUTH_FLOW_TYPE_PASSWORD = 4;
-  OAUTH_FLOW_TYPE_CLIENT_CREDENTIALS = 5;
-}
-
 enum HookMode {
   HOOK_MODE_UNSPECIFIED = 0;
   HOOK_MODE_NORMAL = 1;
@@ -205,8 +224,15 @@ enum Role {
 
 enum KeyGenAlgo {
   KEY_GEN_ALGO_UNSPECIFIED = 0;
-  KEY_GEN_ALGO_HMAC_SHA256 = 1;
-  KEY_GEN_ALGO_HMAC_SHA1 = 2;
+  KEY_GEN_ALGO_SHA256 = 1;
+  KEY_GEN_ALGO_SHA1 = 2;
+}
+
+enum HmacHash {
+  HMAC_HASH_UNSPECIFIED = 0;
+  HMAC_HASH_HMAC_SHA1 = 1;
+  HMAC_HASH_HMAC_SHA256 = 2;
+  HMAC_HASH_HMAC_SHA512 = 3;
 }
 
 message EncryptedText {
