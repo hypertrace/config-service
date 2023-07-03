@@ -110,6 +110,12 @@ public class DetectionExclusionRulesStore
                     || filter
                         .getRuleChangeSourcesList()
                         .contains(rule.getRuleInfo().getRuleStatus().getChangeSource()))
+        .filter(
+            rule ->
+                filter.getRuleCreationSourcesList().isEmpty()
+                    || filter
+                        .getRuleCreationSourcesList()
+                        .contains(rule.getRuleInfo().getRuleStatus().getRuleCreationSource()))
         .filter(rule -> filterRuleOnScope(rule, filter.getRuleScope()));
   }
 

@@ -14,7 +14,7 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
 import ai.traceable.detection.exclusion.config.service.v1.EnvironmentScope;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
-import ai.traceable.detection.exclusion.config.service.v1.RuleChangeSource;
+import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import com.google.protobuf.Value;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
@@ -126,7 +126,7 @@ class DetectionExclusionRulesStoreTest {
                         DetectionExclusionRuleStatus.newBuilder()
                             .setDisabled(false)
                             .setHidden(false)
-                            .setChangeSource(RuleChangeSource.RULE_CHANGE_SOURCE_CUSTOMER)
+                            .setRuleCreationSource(RuleSource.RULE_SOURCE_CUSTOMER)
                             .build())
                     .build())
             .build();
@@ -134,52 +134,42 @@ class DetectionExclusionRulesStoreTest {
     Optional<DetectionExclusionRule> result =
         detectionExclusionRulesStore.filterConfigData(
             detectionExclusionRule,
-            getRulesFilter(
-                "envId2", false, false, "ruleId", RuleChangeSource.RULE_CHANGE_SOURCE_CUSTOMER));
+            getRulesFilter("envId2", false, false, "ruleId", RuleSource.RULE_SOURCE_CUSTOMER));
     assertTrue(result.isEmpty());
 
     result =
         detectionExclusionRulesStore.filterConfigData(
             detectionExclusionRule,
-            getRulesFilter(
-                "envId1", true, false, "ruleId", RuleChangeSource.RULE_CHANGE_SOURCE_CUSTOMER));
+            getRulesFilter("envId1", true, false, "ruleId", RuleSource.RULE_SOURCE_CUSTOMER));
     assertTrue(result.isEmpty());
 
     result =
         detectionExclusionRulesStore.filterConfigData(
             detectionExclusionRule,
-            getRulesFilter(
-                "envId1", false, true, "ruleId", RuleChangeSource.RULE_CHANGE_SOURCE_CUSTOMER));
+            getRulesFilter("envId1", false, true, "ruleId", RuleSource.RULE_SOURCE_CUSTOMER));
     assertTrue(result.isEmpty());
 
     result =
         detectionExclusionRulesStore.filterConfigData(
             detectionExclusionRule,
-            getRulesFilter(
-                "envId1", false, false, "ruleId1", RuleChangeSource.RULE_CHANGE_SOURCE_CUSTOMER));
+            getRulesFilter("envId1", false, false, "ruleId1", RuleSource.RULE_SOURCE_CUSTOMER));
     assertTrue(result.isEmpty());
 
     result =
         detectionExclusionRulesStore.filterConfigData(
             detectionExclusionRule,
-            getRulesFilter(
-                "envId1", false, false, "ruleId", RuleChangeSource.RULE_CHANGE_SOURCE_SYSTEM));
+            getRulesFilter("envId1", false, false, "ruleId", RuleSource.RULE_SOURCE_DEFAULT));
     assertTrue(result.isEmpty());
 
     result =
         detectionExclusionRulesStore.filterConfigData(
             detectionExclusionRule,
-            getRulesFilter(
-                "envId1", false, false, "ruleId", RuleChangeSource.RULE_CHANGE_SOURCE_CUSTOMER));
+            getRulesFilter("envId1", false, false, "ruleId", RuleSource.RULE_SOURCE_CUSTOMER));
     assertEquals(detectionExclusionRule, result.get());
   }
 
   private GetRulesFilter getRulesFilter(
-      String envId,
-      boolean disabled,
-      boolean hidden,
-      String ruleId,
-      RuleChangeSource changeSource) {
+      String envId, boolean disabled, boolean hidden, String ruleId, RuleSource creationSource) {
     return GetRulesFilter.newBuilder()
         .addRuleIds(ruleId)
         .setRuleScope(
@@ -187,7 +177,7 @@ class DetectionExclusionRulesStoreTest {
                 .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds(envId)))
         .setDisabled(disabled)
         .setHidden(hidden)
-        .addRuleChangeSources(changeSource)
+        .addRuleCreationSources(creationSource)
         .build();
   }
 
