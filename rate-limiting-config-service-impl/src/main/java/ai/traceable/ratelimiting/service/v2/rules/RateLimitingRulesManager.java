@@ -102,7 +102,6 @@ public class RateLimitingRulesManager implements RulesManager {
       IpParsingResults parsedResults = parseRawIpRange(rawIps);
       IpAddressCondition.Builder ipAddressConditionBuilder =
           builder.getLeafConditionBuilder().getIpAddressConditionBuilder();
-      ipAddressConditionBuilder.clearCidrIpRanges().clearIpAddresses();
       ipAddressConditionBuilder
           .addAllCidrIpRanges(parsedResults.getIpRanges())
           .addAllIpAddresses(parsedResults.getIpAddresses())

@@ -6,6 +6,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
+import ai.traceable.platform.utils.ip.IpValidationUtils;
 import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.ApiAggregateType;
 import ai.traceable.ratelimiting.config.service.v2.Category;
@@ -305,11 +306,26 @@ public class RateLimitingRulesValidator implements RulesValidator {
   }
 
   private void validateIpAddressCondition(IpAddressCondition ipAddressCondition) {
-    if (ipAddressCondition.getRawInputIpDataList().isEmpty()) {
+    List<String> cidrIpRanges = ipAddressCondition.getCidrIpRangesList();
+    List<String> ipAddresses = ipAddressCondition.getIpAddressesList();
+    List<String> rawInputIpData = ipAddressCondition.getRawInputIpDataList();
+    if (cidrIpRanges.isEmpty() && ipAddresses.isEmpty() && rawInputIpData.isEmpty()) {
       throwInvalidArgumentException(
           String.format(
-              "Invalid condition for type %s:%n %s",
-              getName(ipAddressCondition), printMessage(ipAddressCondition)));
+              "Invalid ipAddressCondition for rate limit rule :%n %s",
+              printMessage(ipAddressCondition)));
+    }
+    if ((!rawInputIpData.isEmpty()) && (!cidrIpRanges.isEmpty() || !ipAddresses.isEmpty())) {
+      throwInvalidArgumentException(
+          String.format(
+              "IpAddressCondition should not have rawInputIpData and (cidrIpRanges or ipAddresses) simultaneously :%n %s",
+              printMessage(ipAddressCondition)));
+    }
+    if (!ipAddresses.stream().allMatch(IpValidationUtils::isValidIpAddress)) {
+      throwInvalidArgumentException("IpAddressCondition should have valid IP addresses");
+    }
+    if (!cidrIpRanges.stream().allMatch(IpValidationUtils::isValidSubnet)) {
+      throwInvalidArgumentException("IpAddressCondition should have valid CIDR IP ranges");
     }
   }
 
