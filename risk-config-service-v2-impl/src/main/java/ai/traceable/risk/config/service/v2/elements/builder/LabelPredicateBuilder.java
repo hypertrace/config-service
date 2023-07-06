@@ -47,11 +47,9 @@ public class LabelPredicateBuilder {
           .withDescription(String.format("No label found for labelElementId:%s NOT FOUND", labelId))
           .asRuntimeException();
     }
-    Label matchedLabel = matchedLabelOptional.get();
-    String labelName = matchedLabel.getData().getKey();
     return RiskElementPredicate.newBuilder()
         .setLabelId(
-            StringPredicate.newBuilder().setOperator(STRING_OPERATOR_EQUALS).setValue(labelName))
+            StringPredicate.newBuilder().setOperator(STRING_OPERATOR_EQUALS).setValue(labelId))
         .build();
   }
 }

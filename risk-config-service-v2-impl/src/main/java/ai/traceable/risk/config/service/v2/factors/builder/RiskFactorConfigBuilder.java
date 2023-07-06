@@ -6,7 +6,6 @@ import ai.traceable.risk.config.service.v2.RiskConfigBuilder;
 import ai.traceable.risk.config.service.v2.RiskElementConfig;
 import ai.traceable.risk.config.service.v2.RiskFactorConfig;
 import ai.traceable.risk.config.service.v2.elements.builder.LabelElementConfigsBuilder;
-import io.grpc.Status;
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Function;
@@ -63,16 +62,13 @@ public class RiskFactorConfigBuilder extends RiskConfigBuilder<RiskFactorConfig>
 
     for (RiskElementConfig riskElementConfig : highPriorityRiskElementConfigsList) {
       String id = riskElementConfig.getId();
+      RiskElementConfig mergedElementConfig = riskElementConfig;
       if (lowPriorityElementConfigsMap.containsKey(id)) {
-        lowPriorityElementConfigsMap.put(
-            id,
+        mergedElementConfig =
             riskElementConfigBuilder.mergeConfigs(
-                riskElementConfig, lowPriorityElementConfigsMap.get(id)));
-      } else {
-        throw Status.NOT_FOUND
-            .withDescription(String.format("Risk element id:%s NOT FOUND", id))
-            .asRuntimeException();
+                riskElementConfig, lowPriorityElementConfigsMap.get(id));
       }
+      lowPriorityElementConfigsMap.put(id, mergedElementConfig);
     }
     return lowPriorityElementConfigsMap.values();
   }

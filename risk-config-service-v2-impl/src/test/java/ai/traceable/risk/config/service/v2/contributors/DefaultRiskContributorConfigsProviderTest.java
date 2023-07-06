@@ -19,6 +19,7 @@ import ai.traceable.risk.config.service.v2.elements.builder.LabelElementConfigsB
 import ai.traceable.risk.config.service.v2.elements.builder.LabelPredicateBuilder;
 import ai.traceable.risk.config.service.v2.elements.builder.LabelsConfigProvider;
 import ai.traceable.risk.config.service.v2.elements.builder.RiskElementConfigBuilder;
+import ai.traceable.risk.config.service.v2.elements.normalizer.LabelIdNormalizer;
 import ai.traceable.risk.config.service.v2.elements.validator.RiskElementConfigValidatorImpl;
 import ai.traceable.risk.config.service.v2.factors.builder.RiskFactorConfigBuilder;
 import ai.traceable.risk.config.service.v2.factors.builder.RiskFactorListBuilder;
@@ -40,7 +41,8 @@ public class DefaultRiskContributorConfigsProviderTest {
           new RiskFactorListBuilder(
               new RiskFactorConfigBuilder(
                   new RiskElementConfigBuilder(),
-                  new LabelElementConfigsBuilder(new LabelPredicateBuilder(labelsConfigProvider))),
+                  new LabelElementConfigsBuilder(
+                      new LabelPredicateBuilder(labelsConfigProvider), new LabelIdNormalizer())),
               new RiskFactorConfigsComparatorImpl()));
   private final RiskContributorConfigsValidator contributorConfigsValidator =
       new RiskContributorConfigsValidatorImpl(

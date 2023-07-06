@@ -28,6 +28,7 @@ import ai.traceable.risk.config.service.v2.elements.builder.LabelElementConfigsB
 import ai.traceable.risk.config.service.v2.elements.builder.LabelPredicateBuilder;
 import ai.traceable.risk.config.service.v2.elements.builder.LabelsConfigProvider;
 import ai.traceable.risk.config.service.v2.elements.builder.RiskElementConfigBuilder;
+import ai.traceable.risk.config.service.v2.elements.normalizer.LabelIdNormalizer;
 import ai.traceable.risk.config.service.v2.factors.builder.RiskFactorConfigBuilder;
 import ai.traceable.risk.config.service.v2.factors.builder.RiskFactorListBuilder;
 import ai.traceable.risk.config.service.v2.factors.comparator.RiskFactorConfigsComparator;
@@ -65,7 +66,8 @@ public class RiskFactorConfigsManagerTest {
     RiskFactorConfigBuilder riskFactorConfigBuilder =
         new RiskFactorConfigBuilder(
             new RiskElementConfigBuilder(),
-            new LabelElementConfigsBuilder(new LabelPredicateBuilder(labelsConfigProvider)));
+            new LabelElementConfigsBuilder(
+                new LabelPredicateBuilder(labelsConfigProvider), new LabelIdNormalizer()));
     factorConfigStore =
         new MockFactorConfigsData.MockRiskFactorConfigStore(
             null, null, null, mock(ConfigChangeEventGenerator.class), configIdGenerator);
@@ -74,6 +76,7 @@ public class RiskFactorConfigsManagerTest {
         new RiskFactorConfigsManagerImpl(
             factorConfigStore,
             new RiskFactorListBuilder(riskFactorConfigBuilder, factorConfigsComparator),
+            riskFactorConfigBuilder,
             factorConfigsComparator,
             defaultRiskContributorConfigs,
             configIdGenerator);
@@ -83,7 +86,16 @@ public class RiskFactorConfigsManagerTest {
     return List.of(
         Label.newBuilder()
             .setId("newLabel")
-            .setData(LabelData.newBuilder().setKey("NewLabel"))
+            .setData(LabelData.newBuilder().setKey("newLabel"))
+            .build(),
+        Label.newBuilder().setId("Sentry").setData(LabelData.newBuilder().setKey("Sentry")).build(),
+        Label.newBuilder()
+            .setId("Critical")
+            .setData(LabelData.newBuilder().setKey("Critical"))
+            .build(),
+        Label.newBuilder()
+            .setId("Sensitive")
+            .setData(LabelData.newBuilder().setKey("Sensitive"))
             .build());
   }
 
@@ -360,7 +372,7 @@ public class RiskFactorConfigsManagerTest {
                                     .setLabelId(
                                         StringPredicate.newBuilder()
                                             .setOperator(STRING_OPERATOR_EQUALS)
-                                            .setValue("NewLabel"))
+                                            .setValue("newLabel"))
                                     .build(),
                                 riskElementConfig.getRiskElementPredicate());
                             assertEquals(1, riskElementConfig.getRiskElementScoring().getScore());
@@ -380,7 +392,7 @@ public class RiskFactorConfigsManagerTest {
             riskElementConfig -> {
               if (riskElementConfig.getId().equals("newLabel")) {
                 assertFalse(riskElementConfig.getDisabled());
-                assertFalse(riskElementConfig.hasRiskElementPredicate());
+                assertTrue(riskElementConfig.hasRiskElementPredicate());
                 assertEquals(1, riskElementConfig.getRiskElementScoring().getScore());
               }
             });
@@ -422,7 +434,7 @@ public class RiskFactorConfigsManagerTest {
                                     .setLabelId(
                                         StringPredicate.newBuilder()
                                             .setOperator(STRING_OPERATOR_EQUALS)
-                                            .setValue("NewLabel"))
+                                            .setValue("newLabel"))
                                     .build(),
                                 riskElementConfig.getRiskElementPredicate());
                             assertEquals(1, riskElementConfig.getRiskElementScoring().getScore());
@@ -442,7 +454,7 @@ public class RiskFactorConfigsManagerTest {
             riskElementConfig -> {
               if (riskElementConfig.getId().equals("newLabel")) {
                 assertTrue(riskElementConfig.getDisabled());
-                assertFalse(riskElementConfig.hasRiskElementPredicate());
+                assertTrue(riskElementConfig.hasRiskElementPredicate());
                 assertEquals(1, riskElementConfig.getRiskElementScoring().getScore());
               }
             });

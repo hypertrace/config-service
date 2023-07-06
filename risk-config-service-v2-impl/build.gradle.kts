@@ -12,6 +12,7 @@ dependencies {
   implementation(libs.hypertrace.configservice.labelsConfigServiceApi)
   implementation(libs.guice)
   implementation(libs.guava)
+  implementation(libs.commons.lang)
   implementation(libs.protobuf.javautil)
   implementation(libs.slf4j.api)
   implementation(libs.uuidCreator)

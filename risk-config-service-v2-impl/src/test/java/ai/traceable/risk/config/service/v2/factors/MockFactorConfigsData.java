@@ -57,21 +57,21 @@ public class MockFactorConfigsData {
                 .setRiskFactorCategory(RiskFactorCategory.RISK_FACTOR_CATEGORY_LABELS)
                 .addRiskElementConfigs(
                     RiskElementConfig.newBuilder()
-                        .setId("critical")
+                        .setId("Critical")
                         .setRiskElementPredicate(
                             RiskElementPredicate.newBuilder()
                                 .setLabelId(StringPredicate.newBuilder().setValue("Critical")))
                         .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(5)))
                 .addRiskElementConfigs(
                     RiskElementConfig.newBuilder()
-                        .setId("sensitive")
+                        .setId("Sensitive")
                         .setRiskElementPredicate(
                             RiskElementPredicate.newBuilder()
                                 .setLabelId(StringPredicate.newBuilder().setValue("Sensitive")))
                         .setRiskElementScoring(RiskElementScoring.newBuilder().setScore(3)))
                 .addRiskElementConfigs(
                     RiskElementConfig.newBuilder()
-                        .setId("sentry")
+                        .setId("Sentry")
                         .setRiskElementPredicate(
                             RiskElementPredicate.newBuilder()
                                 .setLabelId(StringPredicate.newBuilder().setValue("Sentry")))

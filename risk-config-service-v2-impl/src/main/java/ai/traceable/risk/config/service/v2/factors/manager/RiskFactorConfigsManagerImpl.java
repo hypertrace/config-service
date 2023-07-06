@@ -11,6 +11,7 @@ import ai.traceable.risk.config.service.v2.RiskFactor;
 import ai.traceable.risk.config.service.v2.RiskFactorCategory;
 import ai.traceable.risk.config.service.v2.RiskFactorConfig;
 import ai.traceable.risk.config.service.v2.RiskFactorConfigUpdateDetails;
+import ai.traceable.risk.config.service.v2.factors.builder.RiskFactorConfigBuilder;
 import ai.traceable.risk.config.service.v2.factors.builder.RiskFactorListBuilder;
 import ai.traceable.risk.config.service.v2.factors.comparator.RiskFactorConfigsComparator;
 import java.util.Collection;
@@ -28,6 +29,7 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
 
   private final IdentifiedObjectStore<RiskFactorConfig> factorConfigStore;
   private final RiskFactorListBuilder riskFactorListBuilder;
+  private final RiskFactorConfigBuilder riskFactorConfigBuilder;
   private final RiskFactorConfigsComparator factorConfigsComparator;
   private final RiskContributorConfigs defaultRiskContributorConfigs;
   private final RiskConfigIdGenerator configIdGenerator;
@@ -219,9 +221,16 @@ public class RiskFactorConfigsManagerImpl implements RiskFactorConfigsManager {
       RiskFactorConfig updateConfig,
       RiskConfigScope riskConfigScope,
       Map<RiskFactorCategory, RiskFactor> defaultListFactorsMap) {
+    Optional<RiskFactorConfig> fetchedRiskFactorConfig =
+        getFactorConfigFromStore(
+            requestContext, updateConfig.getRiskFactorCategory(), riskConfigScope);
 
     RiskFactorConfig scopedDefaultConfig =
         defaultListFactorsMap.get(updateConfig.getRiskFactorCategory()).getRiskFactorConfig();
+    if (fetchedRiskFactorConfig.isPresent()) {
+      updateConfig =
+          riskFactorConfigBuilder.mergeConfigs(updateConfig, fetchedRiskFactorConfig.get());
+    }
 
     if (factorConfigsComparator.isFactorConfigEqual(updateConfig, scopedDefaultConfig)) {
       deleteEachRiskFactorConfig(
