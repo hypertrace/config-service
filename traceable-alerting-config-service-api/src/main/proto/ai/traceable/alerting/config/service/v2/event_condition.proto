@@ -14,6 +14,7 @@ import "org/hypertrace/alerting/config/service/v1/metric_anomaly_event_condition
 import "ai/traceable/alerting/config/service/v2/data_collection_change_condition.proto";
 import "ai/traceable/alerting/config/service/v2/notification_config_change_condition.proto";
 import "ai/traceable/alerting/config/service/v2/sensitive_data_configuration_change_condition.proto";
+import "ai/traceable/alerting/config/service/v2/api_fraud_incident_change_event_condition.proto";
 
 message EventCondition {
   string id = 1;
@@ -32,6 +33,7 @@ message EventConditionMutableData {
     NotificationConfigChangeCondition notification_config_change_condition = 10;
     DataCollectionChangeCondition data_collection_change_condition = 11;
     SensitiveDataConfigurationChangeCondition sensitive_data_configuration_change_condition = 12;
+    ApiFraudIncidentChangeEventCondition api_fraud_incident_change_event_condition = 13;
   }
   optional string environment = 5 [deprecated = true];// use the EventConditionScope moving forward
   EventConditionScope scope = 9;
