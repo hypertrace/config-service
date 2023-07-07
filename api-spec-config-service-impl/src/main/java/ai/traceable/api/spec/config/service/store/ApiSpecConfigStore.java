@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -22,11 +23,13 @@ public class ApiSpecConfigStore extends IdentifiedObjectStore<ApiSpec> {
   @Inject
   public ApiSpecConfigStore(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
-      TimestampConverter timestampConverter) {
+      TimestampConverter timestampConverter,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
         configServiceBlockingStub,
         API_SPEC_CONFIG_RESOURCE_NAMESPACE,
-        API_SPEC_CONFIG_RESOURCE_NAME);
+        API_SPEC_CONFIG_RESOURCE_NAME,
+        configChangeEventGenerator);
     this.timestampConverter = timestampConverter;
   }
 
