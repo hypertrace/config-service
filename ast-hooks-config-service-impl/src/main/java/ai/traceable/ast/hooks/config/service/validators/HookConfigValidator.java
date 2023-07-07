@@ -34,24 +34,34 @@ public class HookConfigValidator extends ValidatorBase {
     switch (hookConfig.getHookConfigCase()) {
       case HMAC:
         validateHmac(hookConfig.getHmac());
+        break;
       case BEARER:
         validateBearer(hookConfig.getBearer());
+        break;
       case OAUTH2:
         validateOauth2(hookConfig.getOauth2());
+        break;
       case BASIC_AUTH_CONFIG:
         validateBasicAuth(hookConfig.getBasicAuthConfig());
+        break;
       case MUTUAL_TLS:
         validateMutualTls(hookConfig.getMutualTls());
+        break;
       case JWT_CONFIG:
         validateJwt(hookConfig.getJwtConfig());
+        break;
       case POP_TOKEN_SIGNATURE:
         validatePopTokenSignature(hookConfig.getPopTokenSignature());
+        break;
       case AWS_SIGNATURE_V4:
         validateAwsSignature(hookConfig.getAwsSignatureV4());
+        break;
       case CONTENT_SIGNATURE:
         validateContentSignature(hookConfig.getContentSignature());
+        break;
       case API_KEY:
         validateApiKey(hookConfig.getApiKey());
+        break;
       case POSTMAN_HOOK_CONFIG:
         throw Status.UNIMPLEMENTED
             .withDescription("Postman hook not supported yet")
@@ -98,8 +108,10 @@ public class HookConfigValidator extends ValidatorBase {
     switch (jwtConfig.getJwtInfoCase()) {
       case JWT_TOKEN:
         validateEncryptedText(jwtConfig.getJwtToken(), "jwt token");
+        break;
       case DYNAMIC_JWT:
         validateDynamicJwt(jwtConfig.getDynamicJwt());
+        break;
     }
   }
 
@@ -122,8 +134,10 @@ public class HookConfigValidator extends ValidatorBase {
     switch (bearer.getGenerationInfoCase()) {
       case BEARER_TOKEN:
         validateEncryptedText(bearer.getBearerToken(), "bearer token");
+        break;
       case DYNAMIC_BEARER:
         validateDynamicBearer(bearer.getDynamicBearer());
+        break;
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription("Generation info not found for Bearer")
@@ -211,8 +225,10 @@ public class HookConfigValidator extends ValidatorBase {
     switch (dynamicBearer.getBearerAuthTypeCase()) {
       case OAUTH2:
         validateOauth2(dynamicBearer.getOauth2());
+        break;
       case BASIC_AUTH:
         validateBasicAuth(dynamicBearer.getBasicAuth());
+        break;
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription("Auth not specified for dynamic bearer")

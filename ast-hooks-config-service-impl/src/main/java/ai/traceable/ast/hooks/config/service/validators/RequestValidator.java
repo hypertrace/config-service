@@ -83,10 +83,12 @@ public class RequestValidator extends ValidatorBase {
               .asRuntimeException(requestContext.buildTrailers());
         }
         validateHookConfig(astHookDetails.getHookConfig());
+        break;
       case ADVANCED_MODE:
         validateStringNotBlank(
             astHookDetails.getAdvancedMode().getCodeSnippet(),
             " Code snippet not found while trying to create ast hooks config");
+        break;
     }
     validateStringNotBlank(
         astHookDetails.getName(), "name not found while trying to create ast hooks config");
@@ -173,10 +175,12 @@ public class RequestValidator extends ValidatorBase {
               .asRuntimeException(requestContext.buildTrailers());
         }
         validateHookConfig(hookTestDetails.getHookConfig());
+        break;
       case ADVANCED_MODE:
         validateStringNotBlank(
             hookTestDetails.getAdvancedMode().getCodeSnippet(),
             " Code snippet not found while trying to create ast hooks test config");
+        break;
     }
     validateRole(requestContext, hookTestDetails.getRole());
   }
