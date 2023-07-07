@@ -476,6 +476,7 @@ message RejectFilterConfig {
   SegmentFilterConfig segment_filter_config = 2;
   UserAgentFilterConfig user_agent_filter_config = 3;
   StatusCodeFilterConfig status_code_filter_config = 4;
+  SpanAttributeFilterConfig span_attribute_filter_config = 5;
 }
 
 message StatusCodeFilterConfig {
@@ -541,16 +542,65 @@ message UserAgentFilterConfig {
   StringList bot_agent_list = 2;
 }
 
+message SpanAttributeFilterConfig {
+  Filter filter = 1;
+}
+
+message Filter {
+  oneof filter {
+    RelationalFilter relational_filter = 1;
+    LogicalFilter logical_filter = 2;
+  }
+}
+
+message RelationalFilter {
+  RelationalOperator operator = 1;
+  repeated LogicalFilter logical_filters = 2;
+}
+
+message LogicalFilter {
+  oneof left_operand {
+    string key = 1;
+  }
+  LogicalOperator operator = 2;
+  Value value = 3;
+}
+
+message Value {
+  oneof value {
+    string string_value = 1;
+    StringList string_values = 2;
+  }
+}
+
+enum LogicalOperator {
+  LOGICAL_OPERATOR_UNSPECIFIED = 0;
+  LOGICAL_OPERATOR_AND = 1;
+  LOGICAL_OPERATOR_OR = 2;
+}
+
+enum RelationalOperator {
+  RELATIONAL_OPERATOR_UNSPECIFIED = 0;
+  RELATIONAL_OPERATOR_EQUALS = 1;
+  RELATIONAL_OPERATOR_NOT_EQUALS = 2;
+  RELATIONAL_OPERATOR_CONTAINS = 3;
+  RELATIONAL_OPERATOR_STARTS_WITH = 4;
+  RELATIONAL_OPERATOR_ENDS_WITH = 5;
+  RELATIONAL_OPERATOR_REGEX_MATCH = 6;
+  RELATIONAL_OPERATOR_IN = 7;
+  RELATIONAL_OPERATOR_EXISTS = 8;
+}
+
 message ThresholdRegexConfig {
   optional int32 threshold = 1;
   StringList regex_list = 2;
 }
 
-message CustomRulesListConfig{
+message CustomRulesListConfig {
   repeated CustomRuleConfig custom_rules_config = 1;
 }
 
-message CustomRuleConfig{
+message CustomRuleConfig {
   string regex = 1;
   string url_pattern = 2;
 }
