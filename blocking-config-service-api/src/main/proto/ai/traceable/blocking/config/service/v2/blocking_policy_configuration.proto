@@ -24,6 +24,30 @@ message BlockingDetails {
     RegionDetails region_details = 8;
     ActorDetails actor_details = 10;
     IpTypeDetails ip_type_details = 11;
+    BlockingDetailsCombination details_combination = 12;
+  }
+}
+
+message BlockingDetailsCombination {
+  repeated BlockingDetailsCondition details_conditions = 1;
+  ConditionsOperator operator = 2;
+
+  enum ConditionsOperator {
+    CONDITIONS_OPERATOR_UNSPECIFIED = 0;
+    CONDITIONS_OPERATOR_AND = 1;
+    CONDITIONS_OPERATOR_OR = 2;
+  }
+}
+
+message BlockingDetailsCondition {
+  oneof details {
+    IpDetails ip_details = 1;
+    ModsecDetails modsec_details = 2;
+    CustomSignatureDetails custom_signature_details = 3;
+    RegionDetails region_details = 4;
+    ActorDetails actor_details = 5;
+    IpTypeDetails ip_type_details = 6;
+    BlockingDetailsCombination details_combination = 7;
   }
 }
 

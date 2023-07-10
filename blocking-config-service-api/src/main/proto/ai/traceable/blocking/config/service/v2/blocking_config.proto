@@ -53,6 +53,7 @@ message Component {
   oneof value {
     string libtraceable_version = 1;
     string traceable_platform_agent_version = 2;
+    string service_name = 3;
    }
 }
 
