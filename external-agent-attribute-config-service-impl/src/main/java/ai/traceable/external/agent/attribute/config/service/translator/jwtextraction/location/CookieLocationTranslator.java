@@ -1,6 +1,6 @@
 package ai.traceable.external.agent.attribute.config.service.translator.jwtextraction.location;
 
-import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.COOKIE_HEADER_KEY;
+import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.REQUEST_COOKIE_HEADER_KEY;
 
 import ai.traceable.external.agent.attribute.config.service.translator.jwtextraction.JwtTranslationException;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
@@ -22,7 +22,7 @@ public class CookieLocationTranslator extends AbstractLocationTranslator {
     }
     return List.of(
         new LocationTranslationState(
-            COOKIE_HEADER_KEY,
+            REQUEST_COOKIE_HEADER_KEY,
             Optional.of(cookiePredicate.getValue()),
             getRegexCaptureGroup(location),
             Optional.of(

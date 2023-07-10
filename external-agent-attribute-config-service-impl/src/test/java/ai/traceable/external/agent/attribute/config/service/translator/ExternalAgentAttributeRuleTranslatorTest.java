@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import ai.traceable.external.agent.attribute.config.service.translator.authdetection.AuthDetectionRuleTranslationModule;
 import ai.traceable.external.agent.attribute.config.service.translator.jwtextraction.JwtExtractionTranslationModule;
+import ai.traceable.external.agent.attribute.config.service.translator.sessionidentification.SessionIdentificationTranslationModule;
 import ai.traceable.external.agent.attribute.config.service.translator.userattribution.UserAttributionRuleTranslationModule;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import com.google.inject.Guice;
@@ -20,7 +21,8 @@ class ExternalAgentAttributeRuleTranslatorTest {
               DEVELOPMENT,
               new UserAttributionRuleTranslationModule(),
               new AuthDetectionRuleTranslationModule(),
-              new JwtExtractionTranslationModule())
+              new JwtExtractionTranslationModule(),
+              new SessionIdentificationTranslationModule())
           .getInstance(ExternalAgentAttributeRuleTranslator.class);
 
   @Test
@@ -42,13 +44,17 @@ class ExternalAgentAttributeRuleTranslatorTest {
                 TestUtils.getServiceNamingRule("servicenaming/single_condition/input_rule.json"),
                 TestUtils.getServiceNamingRule("servicenaming/disabled_rule/input_rule.json"),
                 TestUtils.getServiceNamingRule("servicenaming/multiple_condition/input_rule.json"),
-                TestUtils.getServiceNamingRule("servicenaming/dynamic_naming/input_rule.json")));
+                TestUtils.getServiceNamingRule("servicenaming/dynamic_naming/input_rule.json")),
+            List.of(
+                TestUtils.getSessionIdentificationRule(
+                    "session_identification/complete_input_rule.json")));
     assertEquals(TestUtils.getExpectedAttributeRules("agent_attribute_rules.json"), attributeRules);
   }
 
   @Test
   void translateNoRule() {
     assertEquals(
-        List.of(), translator.translateRules(emptyList(), emptyList(), emptyList(), emptyList()));
+        List.of(),
+        translator.translateRules(emptyList(), emptyList(), emptyList(), emptyList(), emptyList()));
   }
 }

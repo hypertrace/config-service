@@ -1,0 +1,24 @@
+{
+  "attributeRules": [{
+    "projector": {
+      "attributeProjector": {
+        "attributeKey": "http.request.header.cookie",
+        "attributeRule": {
+          "projector": {
+            "cookieProjector": {
+              "cookieNameRule": {
+                "attributeRule": {
+                },
+                "keyPredicate": {
+                  "operator": "COMPARISON_OPERATOR_EQUALS",
+                  "value": "cookie1"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  ]
+}

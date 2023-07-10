@@ -1,0 +1,26 @@
+{
+  "attributeProjector": {
+    "attributeKey": "http.request.body",
+    "attributeRule": {
+      "projector": {
+        "jsonProjector": {
+          "jsonPathRule": {
+            "attributeRule": {
+              "projector": {
+                "regexCaptureGroupProjector": {
+                  "regexCaptureGroup": "1.*234",
+                  "attributeRule": {
+                  }
+                }
+              }
+            },
+            "keyPredicate": {
+              "operator": "COMPARISON_OPERATOR_EQUALS",
+              "value": "body1"
+            }
+          }
+        }
+      }
+    }
+  }
+}

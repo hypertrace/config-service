@@ -1,0 +1,18 @@
+{
+  "tokenRules": [{
+    "tokenValueRule": {
+      "tokenValueProjection": {
+        "attributeProjection": {
+          "valueProjectionsInOrder": [{
+            "regexCaptureGroup": {
+              "regexCaptureGroup": "*1234"
+            }
+          }]
+        }
+      }
+    },
+    "responseSessionTokenDetails": {
+      "tokenLocation": "RESPONSE_ATTRIBUTE_KEY_LOCATION_BODY"
+    }
+  }]
+}

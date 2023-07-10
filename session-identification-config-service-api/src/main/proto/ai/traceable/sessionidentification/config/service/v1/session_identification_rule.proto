@@ -126,8 +126,8 @@ message LiteralValue {
 
 message Predicate {
   oneof predicate {
-      AttributePredicate attribute_predicate = 1;
-      CustomProjection custom_predicate = 2;
+    AttributePredicate attribute_predicate = 1;
+    CustomProjection custom_predicate = 2;
   }
 
   message AttributePredicate {

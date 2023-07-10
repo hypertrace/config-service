@@ -1,0 +1,27 @@
+{
+  "id": "rule-id",
+  "tokenRules": [{
+    "responseSessionTokenDetails": {
+      "tokenLocation": "RESPONSE_ATTRIBUTE_KEY_LOCATION_BODY",
+      "responseAttributeExpiration": {
+        "attributeKeyLocation": "RESPONSE_ATTRIBUTE_KEY_LOCATION_COOKIE",
+        "projectionRoot": {
+          "attributeProjection": {
+            "attributeKeyMatchCondition": {
+              "operator": "MATCH_OPERATOR_EQUALS",
+              "matchValue": {
+                "stringValue": "cookie1"
+              }
+            },
+            "valueProjectionsInOrder": [{
+              "regexCaptureGroup": {
+                "regexCaptureGroup": "1.*234"
+              }
+            }]
+          }
+        },
+        "expirationFormat": "EXPIRATION_FORMAT_DURATION_MILLIS"
+      }
+    }
+  }]
+}

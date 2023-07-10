@@ -1,0 +1,25 @@
+{
+  "attributeRules": [{
+    "projector": {
+      "attributeProjector": {
+        "attributeRule": {
+        },
+        "attributeKeyPredicate": {
+          "operator": "COMPARISON_OPERATOR_EQUALS",
+          "value": "http.response.header.auth1"
+        }
+      }
+    }
+  }, {
+    "projector": {
+      "attributeProjector": {
+        "attributeRule": {
+        },
+        "attributeKeyPredicate": {
+          "operator": "COMPARISON_OPERATOR_EQUALS",
+          "value": "rpc.response.metadata.auth1"
+        }
+      }
+    }
+  }]
+}

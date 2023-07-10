@@ -1,0 +1,12 @@
+{
+  "attributePredicate": {
+    "namePredicate": {
+      "operator": "COMPARISON_OPERATOR_EQUALS",
+      "value": "service.name"
+    },
+    "valuePredicate": {
+      "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+      "value": "service1|service2"
+    }
+  }
+}

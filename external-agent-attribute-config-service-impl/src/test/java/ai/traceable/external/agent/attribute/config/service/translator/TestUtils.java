@@ -4,6 +4,7 @@ import ai.traceable.auth.detection.config.service.v1.AuthDetectionRule;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.FirstMatchingProjector;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionRule;
+import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRule;
 import ai.traceable.span.processing.config.service.v1.ServiceNamingRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import com.google.common.io.Resources;
@@ -40,6 +41,13 @@ public class TestUtils {
   }
 
   @SneakyThrows
+  public static SessionIdentificationRule getSessionIdentificationRule(String fileName) {
+    SessionIdentificationRule.Builder ruleBuilder = SessionIdentificationRule.newBuilder();
+    PARSER.merge(reader(fileName), ruleBuilder);
+    return ruleBuilder.build();
+  }
+
+  @SneakyThrows
   public static JwtExtractionRule getJwtExtractionRule(String fileName) {
     JwtExtractionRule.Builder ruleBuilder = JwtExtractionRule.newBuilder();
     PARSER.merge(reader(fileName), ruleBuilder);
@@ -61,7 +69,7 @@ public class TestUtils {
   }
 
   @SneakyThrows
-  private static Reader reader(String fileName) {
+  public static Reader reader(String fileName) {
     return Resources.asCharSource(Resources.getResource(fileName), Charset.defaultCharset())
         .openBufferedStream();
   }

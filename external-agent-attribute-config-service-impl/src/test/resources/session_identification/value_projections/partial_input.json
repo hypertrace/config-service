@@ -1,0 +1,20 @@
+{
+
+          "valueProjectionsInOrder": [{
+            "regexCaptureGroup": {
+              "regexCaptureGroup": "*1234"
+            }
+          }, {
+            "jsonPath": {
+              "path": "a.b.c.d"
+            }
+          }, {
+            "jwtPayloadClaim": {
+              "claimKey": "claim-key-1"
+            }
+          }, {
+            "base64Projection": {
+            }
+          }]
+
+}

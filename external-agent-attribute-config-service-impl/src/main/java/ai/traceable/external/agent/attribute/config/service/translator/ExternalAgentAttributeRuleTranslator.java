@@ -3,9 +3,11 @@ package ai.traceable.external.agent.attribute.config.service.translator;
 import ai.traceable.auth.detection.config.service.v1.AuthDetectionRule;
 import ai.traceable.external.agent.attribute.config.service.translator.jwtextraction.JwtExtractionRuleTranslator;
 import ai.traceable.external.agent.attribute.config.service.translator.servicenaming.ServiceNamingRuleTranslator;
+import ai.traceable.external.agent.attribute.config.service.translator.sessionidentification.SessionIdentificationRuleTranslator;
 import ai.traceable.external.agent.attribute.config.service.translator.userattribution.UserAttributionRuleTranslatorLookup;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionRule;
+import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRule;
 import ai.traceable.span.processing.config.service.v1.ServiceNamingRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import java.util.ArrayList;
@@ -28,12 +30,14 @@ public class ExternalAgentAttributeRuleTranslator {
   private final UserAttributionRuleTranslatorLookup ruleTranslatorLookup;
   private final JwtExtractionRuleTranslator jwtExtractionRuleTranslator;
   private final ServiceNamingRuleTranslator serviceNamingRuleTranslator;
+  private final SessionIdentificationRuleTranslator sessionIdentificationRuleTranslator;
 
   public List<AttributeRule> translateRules(
       List<UserAttributionRule> userAttributionRules,
       List<AuthDetectionRule> authDetectionRules,
       List<JwtExtractionRule> jwtExtractionRules,
-      List<ServiceNamingRule> serviceNamingRules) {
+      List<ServiceNamingRule> serviceNamingRules,
+      List<SessionIdentificationRule> sessionIdentificationRules) {
     List<AttributeRule> agentAttributeRules = new ArrayList<>();
     getAttributeRuleForUserId(userAttributionRules).ifPresent(agentAttributeRules::add);
     getAttributeRuleForUserRole(userAttributionRules).ifPresent(agentAttributeRules::add);
@@ -46,6 +50,11 @@ public class ExternalAgentAttributeRuleTranslator {
         .forEach(agentAttributeRules::add);
 
     serviceNamingRuleTranslator.buildRule(serviceNamingRules).ifPresent(agentAttributeRules::add);
+
+    sessionIdentificationRuleTranslator
+        .translateSessionIdentificationRules(sessionIdentificationRules)
+        .forEach(agentAttributeRules::add);
+
     return List.copyOf(agentAttributeRules);
   }
 

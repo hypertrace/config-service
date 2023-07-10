@@ -1,0 +1,6 @@
+{
+  "operator": "MATCH_OPERATOR_EQUALS",
+  "matchValue": {
+    "stringValue": "param1"
+  }
+}

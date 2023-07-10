@@ -1,0 +1,116 @@
+{
+  "projector": {
+    "conditionalProjector": {
+      "predicate": {
+        "logicalPredicate": {
+          "operator": "LOGICAL_OPERATOR_OR",
+          "children": [{
+            "projectorPredicate": {
+              "projector": {
+                "attributeProjector": {
+                  "attributeRule": {
+                    "projector": {
+                      "regexCaptureGroupProjector": {
+                        "regexCaptureGroup": "^(?i:Basic|Bearer) ?(.*)$",
+                        "attributeRule": {
+                          "projector": {
+                            "conditionalProjector": {
+                              "predicate": {
+                                "currentValuePredicate": {
+                                  "operator": "COMPARISON_OPERATOR_EQUALS",
+                                  "value": "xyz"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "attributeKeyPredicate": {
+                    "operator": "COMPARISON_OPERATOR_EQUALS",
+                    "value": "http.request.header.authorization"
+                  }
+                }
+              }
+            }
+          }, {
+            "projectorPredicate": {
+              "projector": {
+                "attributeProjector": {
+                  "attributeRule": {
+                    "projector": {
+                      "regexCaptureGroupProjector": {
+                        "regexCaptureGroup": "^(?i:Basic|Bearer) ?(.*)$",
+                        "attributeRule": {
+                          "projector": {
+                            "conditionalProjector": {
+                              "predicate": {
+                                "currentValuePredicate": {
+                                  "operator": "COMPARISON_OPERATOR_EQUALS",
+                                  "value": "xyz"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "attributeKeyPredicate": {
+                    "operator": "COMPARISON_OPERATOR_EQUALS",
+                    "value": "rpc.request.metadata.authorization"
+                  }
+                }
+              }
+            }
+          }]
+        }
+      },
+      "attributeRule": {
+        "initialActions": [{
+          "attributeAddition": {
+            "attributeKey": "traceableai.session.rule-id.0.id",
+            "valueProjectionRule": {
+              "projector": {
+                "eachMatchingProjector": {
+                  "attributeRules": [{
+                    "projector": {
+                      "attributeProjector": {
+                        "attributeKey": "http.request.body",
+                        "attributeRule": {
+                          "projector": {
+                            "regexCaptureGroupProjector": {
+                              "regexCaptureGroup": "a.*bcd",
+                              "attributeRule": {
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }, {
+                    "projector": {
+                      "attributeProjector": {
+                        "attributeKey": "rpc.request.body",
+                        "attributeRule": {
+                          "projector": {
+                            "regexCaptureGroupProjector": {
+                              "regexCaptureGroup": "a.*bcd",
+                              "attributeRule": {
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }]
+                }
+              }
+            }
+          }
+        }]
+      }
+    }
+  }
+}

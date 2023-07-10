@@ -5,9 +5,12 @@ import ai.traceable.auth.detection.config.service.v1.AuthDetectionConfigServiceG
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.external.agent.attribute.config.service.translator.authdetection.AuthDetectionRuleTranslationModule;
 import ai.traceable.external.agent.attribute.config.service.translator.jwtextraction.JwtExtractionTranslationModule;
+import ai.traceable.external.agent.attribute.config.service.translator.sessionidentification.SessionIdentificationTranslationModule;
 import ai.traceable.external.agent.attribute.config.service.translator.userattribution.UserAttributionRuleTranslationModule;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc.JwtExtractionConfigServiceBlockingStub;
+import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationConfigServiceGrpc;
+import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationConfigServiceGrpc.SessionIdentificationConfigServiceBlockingStub;
 import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
 import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub;
 import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServiceGrpc;
@@ -35,6 +38,14 @@ class ExternalAgentAttributeConfigServiceModule extends AbstractModule {
     install(new UserAttributionRuleTranslationModule());
     install(new AuthDetectionRuleTranslationModule());
     install(new JwtExtractionTranslationModule());
+    install(new SessionIdentificationTranslationModule());
+  }
+
+  @Provides
+  SessionIdentificationConfigServiceBlockingStub providesSessionIdentificationStub() {
+    return SessionIdentificationConfigServiceGrpc.newBlockingStub(this.channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }
 
   @Provides

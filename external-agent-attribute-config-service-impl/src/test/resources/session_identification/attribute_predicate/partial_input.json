@@ -1,0 +1,22 @@
+{
+  "request": "REQUEST_ATTRIBUTE_KEY_LOCATION_HEADER",
+  "valueProjection": {
+    "attributeKeyMatchCondition": {
+      "operator": "MATCH_OPERATOR_EQUALS",
+      "matchValue": {
+        "stringValue": "authorization"
+      }
+    },
+    "valueProjectionsInOrder": [{
+      "regexCaptureGroup": {
+        "regexCaptureGroup": "^(?i:Basic|Bearer) ?(.*)$"
+      }
+    }]
+  },
+  "valueMatchCondition": {
+    "operator": "MATCH_OPERATOR_EQUALS",
+    "matchValue": {
+      "stringValue": "xyz"
+    }
+  }
+}

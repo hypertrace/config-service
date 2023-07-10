@@ -7,4 +7,5 @@ import lombok.Value;
 public class AgentAttributeIdentifier {
   Optional<String> environmentName;
   boolean jwtExtractionSupported;
+  boolean newSessionIdentificationApiSupported;
 }

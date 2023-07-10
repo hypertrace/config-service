@@ -1,6 +1,6 @@
 package ai.traceable.external.agent.attribute.config.service;
 
-import static ai.traceable.external.agent.attribute.config.service.ExternalAgentAttributeConfigServiceConstants.JWT_EXTRACTION_MIN_TPA_VERSION;
+import static ai.traceable.external.agent.attribute.config.service.ExternalAgentAttributeConfigServiceConstants.PROJECTOR_PREDICATE_SUPPORT_MIN_TPA_VERSION;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import ai.traceable.auth.detection.config.service.v1.AuthDetectionConfigServiceGrpc.AuthDetectionConfigServiceBlockingStub;
@@ -20,6 +20,9 @@ import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceG
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionRule;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionRuleFilter;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionRuleScope;
+import ai.traceable.sessionidentification.config.service.v1.GetSessionIdentificationRulesRequest;
+import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationConfigServiceGrpc;
+import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRule;
 import ai.traceable.span.processing.config.service.v1.GetServiceNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.ServiceNamingRule;
 import ai.traceable.span.processing.config.service.v1.ServiceNamingRuleFilter;
@@ -56,6 +59,9 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
   private final AuthDetectionConfigServiceBlockingStub authDetectionConfigServiceBlockingStub;
   private final JwtExtractionConfigServiceBlockingStub jwtExtractionBlockingStub;
   private final SpanProcessingConfigServiceBlockingStub spanProcessingConfigServiceBlockingStub;
+  private final SessionIdentificationConfigServiceGrpc
+          .SessionIdentificationConfigServiceBlockingStub
+      sessionAttributionConfigServiceBlockingStub;
   private final ExternalAgentAttributeRuleTranslator ruleTranslator;
   private final ExternalAgentAttributeRuleResponseBuilder responseBuilder;
   private final FeatureCachingClient featureCachingClient;
@@ -83,13 +89,15 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
         responseObserver.onCompleted();
         return;
       }
+      String tpaVersion = getTPAVersion(request.getAgentCapabilities());
       ContextualKey<AgentAttributeIdentifier> agentAttributeIdentifier =
           requestContext.buildInternalContextualKey(
               new AgentAttributeIdentifier(
                   getEnvironmentName(request),
                   semanticVersioningComparator.isVersionSupported(
-                      getTPAVersion(request.getAgentCapabilities()),
-                      JWT_EXTRACTION_MIN_TPA_VERSION)));
+                      tpaVersion, PROJECTOR_PREDICATE_SUPPORT_MIN_TPA_VERSION),
+                  semanticVersioningComparator.isVersionSupported(
+                      tpaVersion, PROJECTOR_PREDICATE_SUPPORT_MIN_TPA_VERSION)));
       List<AttributeRule> rules = attributeRulesCache.getUnchecked(agentAttributeIdentifier);
       responseObserver.onNext(this.responseBuilder.buildEnabledResponse(request, rules));
       responseObserver.onCompleted();
@@ -107,13 +115,19 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
         agentAttributeIdentifierContextualKey.getData().getEnvironmentName();
     boolean jwtExtractionSupported =
         agentAttributeIdentifierContextualKey.getData().isJwtExtractionSupported();
+    boolean newSessionIdentificationApiSupported =
+        agentAttributeIdentifierContextualKey.getData().isNewSessionIdentificationApiSupported();
     return ruleTranslator.translateRules(
         fetchActiveUserAttributionRules(requestContext, environmentName),
         fetchAuthDetectionRules(requestContext, environmentName),
         jwtExtractionSupported
             ? fetchActiveJwtExtractionRules(requestContext, environmentName)
             : Collections.emptyList(),
-        fetchServiceNamingRules(requestContext, environmentName));
+        fetchServiceNamingRules(requestContext, environmentName),
+        newSessionIdentificationApiSupported
+                && featureCachingClient.isSessionIdentificationV2EnabledForTenant(requestContext)
+            ? fetchActiveSessionIdentificationRules(requestContext, environmentName)
+            : Collections.emptyList());
   }
 
   private List<UserAttributionRule> fetchActiveUserAttributionRules(
@@ -234,6 +248,32 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
             this.spanProcessingConfigServiceBlockingStub
                 .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
                 .getServiceNamingRules(request)
+                .getRulesList());
+  }
+
+  private List<SessionIdentificationRule> fetchActiveSessionIdentificationRules(
+      RequestContext requestContext, Optional<String> maybeEnvName) {
+
+    GetSessionIdentificationRulesRequest request =
+        maybeEnvName
+            .map(
+                envName ->
+                    GetSessionIdentificationRulesRequest.newBuilder()
+                        .setFilter(
+                            GetSessionIdentificationRulesRequest.GetSessionIdentificationRulesFilter
+                                .newBuilder()
+                                .setEnvironmentFilter(
+                                    GetSessionIdentificationRulesRequest
+                                        .GetSessionIdentificationRulesFilter.EnvironmentFilter
+                                        .newBuilder()
+                                        .addEnvironmentNames(envName)))
+                        .build())
+            .orElseGet(GetSessionIdentificationRulesRequest::getDefaultInstance);
+    return requestContext.call(
+        () ->
+            this.sessionAttributionConfigServiceBlockingStub
+                .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
+                .getSessionIdentificationRules(request)
                 .getRulesList());
   }
 }

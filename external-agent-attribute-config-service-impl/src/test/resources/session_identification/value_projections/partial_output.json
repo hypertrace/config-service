@@ -1,0 +1,33 @@
+{
+  "projector": {
+    "regexCaptureGroupProjector": {
+      "regexCaptureGroup": "*1234",
+      "attributeRule": {
+        "projector": {
+          "jsonProjector": {
+            "jsonPathRule": {
+              "key": "a.b.c.d",
+              "attributeRule": {
+                "projector": {
+                  "jwtProjector": {
+                    "claimRule": {
+                      "key": "claim-key-1",
+                      "attributeRule": {
+                        "projector": {
+                          "base64Projector": {
+                            "attributeRule": {
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

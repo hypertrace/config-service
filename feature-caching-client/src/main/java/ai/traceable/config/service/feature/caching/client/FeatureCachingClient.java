@@ -32,6 +32,7 @@ public class FeatureCachingClient {
   private static final boolean DEFAULT_IPQS_ENABLED_VALUE = false;
   private static final boolean DEFAULT_USER_ATTRIBUTION_V2_FLAG_VALUE = false;
   private static final boolean DEFAULT_DETECTION_EXCLUSION_V2_FLAG_VALUE = false;
+  private static final boolean DEFAULT_SESSION_IDENTIFICATION_V2_FLAG_VALUE = false;
   private static final boolean DEFAULT_TPA_MODSEC_PROCESSING_DISABLED = false;
   private static final boolean DEFAULT_RASP_INSPECTION = false;
   private static final String DATA_CLASSIFICATION_RP1_FLAG = "data-classification.mvp";
@@ -40,6 +41,7 @@ public class FeatureCachingClient {
   // Flag is no longer UI-only and has been renamed, but key can't be changed without creating anew
   private static final String USER_ATTRIBUTION_V2_FLAG = "ui.user-attribution-v2";
   private static final String DETECTION_EXCLUSION_V2_FLAG = "ui.detection-exclusions-v2";
+  private static final String SESSION_IDENTIFICATION_V2_FLAG = "session-identification.v2";
   private static final String TPA_MODSEC_PROCESSING_DISABLED = "tpa.modsec-processing-disabled";
   private static final String RASP_INSPECTION = "enricher.rasp-inspection";
 
@@ -50,6 +52,7 @@ public class FeatureCachingClient {
           IPQS_ENABLED_FLAG,
           USER_ATTRIBUTION_V2_FLAG,
           DETECTION_EXCLUSION_V2_FLAG,
+          SESSION_IDENTIFICATION_V2_FLAG,
           TPA_MODSEC_PROCESSING_DISABLED,
           RASP_INSPECTION);
   private final FeatureFlagServiceBlockingStub featureFlagStub;
@@ -163,6 +166,19 @@ public class FeatureCachingClient {
     } catch (Exception exception) {
       log.warn("Failed to retrieve current feature flag value for RASP Inspection", exception);
       return DEFAULT_RASP_INSPECTION;
+    }
+  }
+
+  public boolean isSessionIdentificationV2EnabledForTenant(RequestContext requestContext) {
+    try {
+      return requireNonNull(
+          this.featureFlagCache
+              .get(requestContext.buildInternalContextualKey())
+              .get(SESSION_IDENTIFICATION_V2_FLAG));
+    } catch (Exception exception) {
+      log.warn(
+          "Failed to retrieve current feature flag value for Session Identification V2", exception);
+      return DEFAULT_SESSION_IDENTIFICATION_V2_FLAG_VALUE;
     }
   }
 

@@ -1,0 +1,59 @@
+{
+  "attributeRules": [{
+    "projector": {
+      "attributeProjector": {
+        "attributeRule": {
+          "projector": {
+            "regexCaptureGroupProjector": {
+              "regexCaptureGroup": "^(?i:Basic|Bearer) ?(.*)$",
+              "attributeRule": {
+                "projector": {
+                  "conditionalProjector": {
+                    "predicate": {
+                      "currentValuePredicate": {
+                        "operator": "COMPARISON_OPERATOR_EQUALS",
+                        "value": "xyz"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "attributeKeyPredicate": {
+          "operator": "COMPARISON_OPERATOR_EQUALS",
+          "value": "http.request.header.authorization"
+        }
+      }
+    }
+  }, {
+    "projector": {
+      "attributeProjector": {
+        "attributeRule": {
+          "projector": {
+            "regexCaptureGroupProjector": {
+              "regexCaptureGroup": "^(?i:Basic|Bearer) ?(.*)$",
+              "attributeRule": {
+                "projector": {
+                  "conditionalProjector": {
+                    "predicate": {
+                      "currentValuePredicate": {
+                        "operator": "COMPARISON_OPERATOR_EQUALS",
+                        "value": "xyz"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "attributeKeyPredicate": {
+          "operator": "COMPARISON_OPERATOR_EQUALS",
+          "value": "rpc.request.metadata.authorization"
+        }
+      }
+    }
+  }]
+}

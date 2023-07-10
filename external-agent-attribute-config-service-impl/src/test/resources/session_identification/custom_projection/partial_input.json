@@ -1,0 +1,4 @@
+{
+
+          "customProjection":  "{\n \"attributeProjector\": {\n            \"attributeKey\": \"http.request.body\",\n            \"attributeRule\": {\n              \"projector\": {\n                \"jsonProjector\": {\n                  \"jsonPathRule\": {\n                    \"attributeRule\": {\n                      \"projector\": {\n                        \"regexCaptureGroupProjector\": {\n                          \"regexCaptureGroup\": \"1.*234\",\n                          \"attributeRule\": {\n                          }\n                        }\n                      }\n                    },\n                    \"keyPredicate\": {\n                      \"operator\": \"COMPARISON_OPERATOR_EQUALS\",\n                      \"value\": \"body1\"\n                    }\n                  }\n                }\n              }\n            }\n          }\n}"
+}

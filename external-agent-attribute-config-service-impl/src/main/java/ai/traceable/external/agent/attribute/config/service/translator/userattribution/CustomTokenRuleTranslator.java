@@ -1,7 +1,7 @@
 package ai.traceable.external.agent.attribute.config.service.translator.userattribution;
 
-import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.COOKIE_HEADER_KEY;
 import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.REQUEST_BODY_KEYS;
+import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.REQUEST_COOKIE_HEADER_KEY;
 
 import ai.traceable.external.agent.attribute.config.service.translator.AttributeRuleBuilder;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
@@ -72,7 +72,7 @@ public class CustomTokenRuleTranslator implements UserAttributionRuleTranslator 
   private AttributeRule translateRuleForRequestCookie(
       CustomTokenRuleData data, String cookieName, String ruleId) {
     return attributeRuleBuilder.buildRuleForAttribute(
-        COOKIE_HEADER_KEY,
+        REQUEST_COOKIE_HEADER_KEY,
         attributeRuleBuilder.buildRuleForCookie(
             cookieName,
             attributeRuleBuilder.buildActionAttributeRuleForAuthType(

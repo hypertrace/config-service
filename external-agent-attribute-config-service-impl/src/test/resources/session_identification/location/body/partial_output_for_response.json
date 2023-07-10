@@ -1,0 +1,20 @@
+{
+  "attributeRules": [{
+    "projector": {
+      "attributeProjector": {
+        "attributeKey": "http.response.body",
+        "attributeRule": {
+        }
+      }
+    }
+  }, {
+    "projector": {
+      "attributeProjector": {
+        "attributeKey": "rpc.response.body",
+        "attributeRule": {
+        }
+      }
+    }
+  }]
+
+}

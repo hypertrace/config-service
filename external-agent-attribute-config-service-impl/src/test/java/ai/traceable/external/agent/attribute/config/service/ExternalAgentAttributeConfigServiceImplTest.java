@@ -21,6 +21,9 @@ import ai.traceable.jwt.extraction.config.service.v1.GetJwtExtractionRulesReques
 import ai.traceable.jwt.extraction.config.service.v1.GetJwtExtractionRulesResponse;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc.JwtExtractionConfigServiceImplBase;
+import ai.traceable.sessionidentification.config.service.v1.GetSessionIdentificationRulesRequest;
+import ai.traceable.sessionidentification.config.service.v1.GetSessionIdentificationRulesResponse;
+import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationConfigServiceGrpc;
 import ai.traceable.span.processing.config.service.v1.GetServiceNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetServiceNamingRulesResponse;
 import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
@@ -55,6 +58,7 @@ class ExternalAgentAttributeConfigServiceImplTest {
         .addService(new MockAuthDetectionConfigService())
         .addService(new MockJwtExtractionConfigService())
         .addService(new MockSpanProcessingConfigService())
+        .addService(new MockSessionIdentificationService())
         .addService(
             new ExternalAgentAttributeConfigServiceImpl(
                 UserAttributionConfigServiceGrpc.newBlockingStub(
@@ -64,6 +68,8 @@ class ExternalAgentAttributeConfigServiceImplTest {
                 JwtExtractionConfigServiceGrpc.newBlockingStub(
                     this.mockGenericConfigService.channel()),
                 SpanProcessingConfigServiceGrpc.newBlockingStub(
+                    this.mockGenericConfigService.channel()),
+                SessionIdentificationConfigServiceGrpc.newBlockingStub(
                     this.mockGenericConfigService.channel()),
                 mockRuleTranslator,
                 new ExternalAgentAttributeRuleResponseBuilder(mockUuidGenerator),
@@ -107,6 +113,17 @@ class ExternalAgentAttributeConfigServiceImplTest {
         GetUserAttributionRulesRequest request,
         StreamObserver<GetUserAttributionRulesResponse> responseObserver) {
       responseObserver.onNext(GetUserAttributionRulesResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    }
+  }
+
+  private static class MockSessionIdentificationService
+      extends SessionIdentificationConfigServiceGrpc.SessionIdentificationConfigServiceImplBase {
+    @Override
+    public void getSessionIdentificationRules(
+        GetSessionIdentificationRulesRequest request,
+        StreamObserver<GetSessionIdentificationRulesResponse> responseObserver) {
+      responseObserver.onNext(GetSessionIdentificationRulesResponse.getDefaultInstance());
       responseObserver.onCompleted();
     }
   }

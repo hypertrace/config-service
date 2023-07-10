@@ -1,6 +1,6 @@
 package ai.traceable.external.agent.attribute.config.service.translator.userattribution;
 
-import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.COOKIE_HEADER_KEY;
+import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.REQUEST_COOKIE_HEADER_KEY;
 import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.REQUEST_HEADER_KEY_FORMAT_STRINGS;
 
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.HeaderLocation;
@@ -41,7 +41,7 @@ class AttributeKeysExtractor {
       case HEADER_NAME:
         return getHeaderAttributeKeysIfSet(headerLocation);
       case COOKIE_NAME:
-        return Optional.of(List.of(COOKIE_HEADER_KEY));
+        return Optional.of(List.of(REQUEST_COOKIE_HEADER_KEY));
       case LOCATION_NOT_SET:
         return Optional.empty();
       default:

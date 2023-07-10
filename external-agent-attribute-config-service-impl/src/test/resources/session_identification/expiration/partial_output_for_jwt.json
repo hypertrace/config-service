@@ -1,0 +1,58 @@
+{
+  "initialActions": [{
+    "attributeAddition": {
+      "attributeKey": "traceableai.session.new.rule-id.0.expiration.value",
+      "valueProjectionRule": {
+        "projector": {
+          "conditionalProjector": {
+            "predicate": {
+              "attributePredicate": {
+                "namePredicate": {
+                  "operator": "COMPARISON_OPERATOR_EQUALS",
+                  "value": "traceableai.session.new.rule-id.0.id"
+                }
+              }
+            },
+            "attributeRule": {
+              "projector": {
+                "eachMatchingProjector": {
+                  "attributeRules": [{
+                    "projector": {
+                      "attributeProjector": {
+                        "attributeKey": "http.response.body",
+                        "attributeRule": {
+                          "projector": {
+                            "jwtProjector": {
+                              "claimRule": {
+                                "key": "exp"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }, {
+                    "projector": {
+                      "attributeProjector": {
+                        "attributeKey": "rpc.response.body",
+                        "attributeRule": {
+                          "projector": {
+                            "jwtProjector": {
+                              "claimRule": {
+                                "key": "exp"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }]
+}

@@ -126,7 +126,6 @@ public class SessionTokenRuleValidator {
     validateNonDefaultPresenceOrThrow(matchCondition, MatchCondition.OPERATOR_FIELD_NUMBER);
     MatchOperator operator = matchCondition.getOperator();
     if (matchCondition.getMatchValue().getValueCase() == LiteralValue.ValueCase.VALUE_NOT_SET
-        && operator != MatchOperator.MATCH_OPERATOR_EQUALS
         && operator != MatchOperator.MATCH_OPERATOR_NOT_EQUALS) {
       throw Status.INVALID_ARGUMENT
           .withDescription(

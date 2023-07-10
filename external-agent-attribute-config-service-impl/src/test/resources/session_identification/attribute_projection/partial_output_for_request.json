@@ -1,0 +1,33 @@
+{
+  "attributeRules": [{
+    "projector": {
+      "attributeProjector": {
+        "attributeKey": "http.request.body",
+        "attributeRule": {
+          "projector": {
+            "regexCaptureGroupProjector": {
+              "regexCaptureGroup": "*1234",
+              "attributeRule": {
+              }
+            }
+          }
+        }
+      }
+    }
+  }, {
+    "projector": {
+      "attributeProjector": {
+        "attributeKey": "rpc.request.body",
+        "attributeRule": {
+          "projector": {
+            "regexCaptureGroupProjector": {
+              "regexCaptureGroup": "*1234",
+              "attributeRule": {
+              }
+            }
+          }
+        }
+      }
+    }
+  }]
+}
