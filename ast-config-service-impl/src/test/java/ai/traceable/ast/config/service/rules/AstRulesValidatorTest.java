@@ -1,9 +1,12 @@
 package ai.traceable.ast.config.service.rules;
 
+import static ai.traceable.ast.config.service.v1.VulnerabilitySeverity.VULNERABILITY_SEVERITY_HIGH;
+import static ai.traceable.ast.config.service.v1.VulnerabilitySeverity.VULNERABILITY_SEVERITY_UNSPECIFIED;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.ast.config.service.v1.CustomerDefinedTagsMap;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
@@ -11,6 +14,7 @@ import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.IdentifyingAttributes;
 import ai.traceable.ast.config.service.v1.ScanPurgeConfig;
+import ai.traceable.ast.config.service.v1.TagValue;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.VulnerabilityMetadataOverrides;
 import com.google.protobuf.Duration;
@@ -119,6 +123,68 @@ class AstRulesValidatorTest {
                             .build())
                     .build()));
 
+    // invalid severity
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext,
+                EditVulnerabilityMetadataOverridesRequest.newBuilder()
+                    .setVulnerabilityMetadataOverrides(
+                        VulnerabilityMetadataOverrides.newBuilder()
+                            .setIdentifyingAttributes(
+                                IdentifyingAttributes.newBuilder().setCategory("category").build())
+                            .setSeverity(VULNERABILITY_SEVERITY_UNSPECIFIED)
+                            .build())
+                    .build()));
+
+    // invalid cvss vector string
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext,
+                EditVulnerabilityMetadataOverridesRequest.newBuilder()
+                    .setVulnerabilityMetadataOverrides(
+                        VulnerabilityMetadataOverrides.newBuilder()
+                            .setIdentifyingAttributes(
+                                IdentifyingAttributes.newBuilder().setCategory("category").build())
+                            .setCvssVectorString("")
+                            .build())
+                    .build()));
+
+    // invalid estimated fix time
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext,
+                EditVulnerabilityMetadataOverridesRequest.newBuilder()
+                    .setVulnerabilityMetadataOverrides(
+                        VulnerabilityMetadataOverrides.newBuilder()
+                            .setIdentifyingAttributes(
+                                IdentifyingAttributes.newBuilder().setCategory("category").build())
+                            .setEstimatedFixTime(Duration.getDefaultInstance())
+                            .build())
+                    .build()));
+
+    // invalid customer defined tags
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext,
+                EditVulnerabilityMetadataOverridesRequest.newBuilder()
+                    .setVulnerabilityMetadataOverrides(
+                        VulnerabilityMetadataOverrides.newBuilder()
+                            .setIdentifyingAttributes(
+                                IdentifyingAttributes.newBuilder().setCategory("category").build())
+                            .setCustomerDefinedTags(
+                                CustomerDefinedTagsMap.newBuilder()
+                                    .putCustomerDefinedTags("key1", TagValue.newBuilder().build()))
+                            .build())
+                    .build()));
+
     // valid request
     assertDoesNotThrow(
         () ->
@@ -133,6 +199,14 @@ class AstRulesValidatorTest {
                                     .setCategory("category")
                                     .setSubcategory("sub_category")
                                     .build())
+                            .setSeverity(VULNERABILITY_SEVERITY_HIGH)
+                            .setCvssScore(9.6)
+                            .setCvssVectorString("CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:L")
+                            .setEstimatedFixTime(Duration.newBuilder().setSeconds(100L).build())
+                            .setCustomerDefinedTags(
+                                CustomerDefinedTagsMap.newBuilder()
+                                    .putCustomerDefinedTags(
+                                        "key1", TagValue.newBuilder().addValue("value1").build()))
                             .build())
                     .build()));
   }
