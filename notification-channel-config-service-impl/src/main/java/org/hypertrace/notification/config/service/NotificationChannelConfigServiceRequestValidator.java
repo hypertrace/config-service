@@ -3,7 +3,9 @@ package org.hypertrace.notification.config.service;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
+import com.typesafe.config.Config;
 import io.grpc.Status;
+import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.AwsS3BucketChannelConfig;
 import org.hypertrace.notification.config.service.v1.AwsS3BucketChannelConfig.WebIdentityAuthenticationCredential;
@@ -20,17 +22,50 @@ import org.hypertrace.notification.config.service.v1.WebhookHeader;
 
 public class NotificationChannelConfigServiceRequestValidator {
 
+  public static final String WEBHOOK_EXCLUSION_DOMAINS = "webhook.exclusion.domains";
+
   public void validateCreateNotificationChannelRequest(
-      RequestContext requestContext, CreateNotificationChannelRequest request) {
+      RequestContext requestContext,
+      CreateNotificationChannelRequest request,
+      Config notificationChannelConfig) {
     validateRequestContextOrThrow(requestContext);
     validateNotificationChannelMutableData(request.getNotificationChannelMutableData());
+    validateWebhookConfigExclusionDomains(
+        request.getNotificationChannelMutableData(), notificationChannelConfig);
+  }
+
+  private void validateWebhookConfigExclusionDomains(
+      NotificationChannelMutableData notificationChannelMutableData,
+      Config notificationChannelConfig) {
+    if (notificationChannelConfig == null
+        || notificationChannelMutableData.getWebhookChannelConfigList().isEmpty()) {
+      return;
+    }
+    if (notificationChannelConfig.hasPath(WEBHOOK_EXCLUSION_DOMAINS)) {
+      List<String> exclusionDomains =
+          notificationChannelConfig.getStringList(WEBHOOK_EXCLUSION_DOMAINS);
+      for (WebhookChannelConfig webhookChannelConfig :
+          notificationChannelMutableData.getWebhookChannelConfigList()) {
+        for (String exclusionDomain : exclusionDomains) {
+          if (webhookChannelConfig.getUrl().contains(exclusionDomain)) {
+            throw Status.INVALID_ARGUMENT
+                .withDescription("URL configured in webhook contains excluded domain")
+                .asRuntimeException();
+          }
+        }
+      }
+    }
   }
 
   public void validateUpdateNotificationChannelRequest(
-      RequestContext requestContext, UpdateNotificationChannelRequest request) {
+      RequestContext requestContext,
+      UpdateNotificationChannelRequest request,
+      Config notificationChannelConfig) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, UpdateNotificationChannelRequest.ID_FIELD_NUMBER);
     validateNotificationChannelMutableData(request.getNotificationChannelMutableData());
+    validateWebhookConfigExclusionDomains(
+        request.getNotificationChannelMutableData(), notificationChannelConfig);
   }
 
   private void validateNotificationChannelMutableData(NotificationChannelMutableData data) {
