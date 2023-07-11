@@ -22,6 +22,8 @@ import ai.traceable.anomaly.config.service.v1.exclusion.EventExclusionInfo;
 import ai.traceable.anomaly.config.service.v1.exclusion.EventExclusionType;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionMigrationConfig;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
@@ -36,9 +38,11 @@ import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesStore;
 import ai.traceable.platform.config.provider.common.clients.ActorServiceClient;
+import com.typesafe.config.ConfigFactory;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -67,6 +71,8 @@ class DetectionExclusionRulesMigrationManagerTest {
   private DetectionExclusionRulesStore newRulesStore = mock(DetectionExclusionRulesStore.class);
   private AnomalyExclusionRuleConfigStore oldRulesStore =
       mock(AnomalyExclusionRuleConfigStore.class);
+  private DetectionExclusionMigrationStore migrationStore =
+      mock(DetectionExclusionMigrationStore.class);
   private DetectionExclusionRulesMigrationManager migrationManager;
 
   @BeforeEach
@@ -74,6 +80,7 @@ class DetectionExclusionRulesMigrationManagerTest {
     featureCachingClient = mock(FeatureCachingClient.class);
     newRulesStore = mock(DetectionExclusionRulesStore.class);
     oldRulesStore = mock(AnomalyExclusionRuleConfigStore.class);
+    migrationStore = mock(DetectionExclusionMigrationStore.class);
     ActorServiceClient actorServiceClient = mock(ActorServiceClient.class);
     when(actorServiceClient.getActorsByEntityIds(any(), any())).thenReturn(List.of());
 
@@ -82,8 +89,10 @@ class DetectionExclusionRulesMigrationManagerTest {
             featureCachingClient,
             newRulesStore,
             oldRulesStore,
+            migrationStore,
             new DetectionExclusionRuleConverter(),
-            actorServiceClient);
+            actorServiceClient,
+            new DetectionExclusionConfigServiceConfig(ConfigFactory.empty()));
   }
 
   @Test
@@ -110,7 +119,7 @@ class DetectionExclusionRulesMigrationManagerTest {
   }
 
   @Test
-  void testMigration_noUpdate() {
+  void testMigration_noUpdate_noOldRules() {
     when(featureCachingClient.isDetectionExclusionV2EnabledForTenant(requestContext))
         .thenReturn(true);
     when(newRulesStore.getAllObjects(any(), any())).thenReturn(Collections.emptyList());
@@ -119,6 +128,21 @@ class DetectionExclusionRulesMigrationManagerTest {
 
     migrationManager.updateDetectionExclusionRulesFromOldStore(requestContext);
     verify(newRulesStore, times(0)).upsertObjects(any(), any());
+    assertFalse(migrationManager.shouldMigrateFromOldStore(requestContext));
+  }
+
+  @Test
+  void testMigration_noUpdate_migrationCOmpleted() {
+    when(featureCachingClient.isDetectionExclusionV2EnabledForTenant(requestContext))
+        .thenReturn(true);
+    assertTrue(migrationManager.shouldMigrateFromOldStore(requestContext));
+
+    when(migrationStore.getData(any()))
+        .thenReturn(
+            Optional.of(
+                DetectionExclusionMigrationConfig.newBuilder()
+                    .setMigrationCompleted(true)
+                    .build()));
     assertFalse(migrationManager.shouldMigrateFromOldStore(requestContext));
   }
 

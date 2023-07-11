@@ -22,6 +22,7 @@ import ai.traceable.detection.exclusion.config.service.v1.IpConnectionTypeCondit
 import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.DetectionExclusionRulesMigrationManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.RulesMigrationManager;
+import com.typesafe.config.ConfigFactory;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -45,7 +46,8 @@ class DetectionExclusionRulesManagerTest {
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     ConfigChangeEventGenerator mockConfigChangeEventGenerator =
         mock(ConfigChangeEventGenerator.class);
-    DetectionExclusionConfigServiceConfig config = new DetectionExclusionConfigServiceConfig();
+    DetectionExclusionConfigServiceConfig config =
+        new DetectionExclusionConfigServiceConfig(ConfigFactory.empty());
     DetectionExclusionRulesStore rulesStore =
         new DetectionExclusionRulesStore(
             configServiceBlockingStub, mockConfigChangeEventGenerator, config);

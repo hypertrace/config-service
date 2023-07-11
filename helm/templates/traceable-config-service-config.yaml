@@ -241,6 +241,9 @@ data:
     label.application.rule.config.service {
       max.dynamic.label.application.rules.per.tenant = {{ int .Values.traceableConfigServiceConfig.labelApplicationRuleConfigServiceConfig.maxDynamicLabelApplicationRulesPerTenant }}
     }
+    detection.exclusion.config.service = {
+      migrationDisabled = {{ .Values.traceableConfigServiceConfig.detectionExclusionConfigService.migrationDisabled }}
+    }
     ast.config.service = {
       defaultPurgeDuration = {{ .Values.traceableConfigServiceConfig.astConfigService.defaultPurgeDuration }}
     }

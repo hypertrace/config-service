@@ -45,7 +45,12 @@ class DetectionExclusionConfigServiceModule extends AbstractModule {
 
     install(
         new DetectionExclusionRulesMigrationModule(
-            featureCachingClient, config, grpcChannelRegistry));
+            featureCachingClient, config, grpcChannelRegistry, channel));
+  }
+
+  @Provides
+  DetectionExclusionConfigServiceConfig providesConfig() {
+    return new DetectionExclusionConfigServiceConfig(config);
   }
 
   @Provides

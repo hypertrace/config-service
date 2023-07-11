@@ -235,6 +235,8 @@ traceableConfigServiceConfig:
           size: 2
   labelApplicationRuleConfigServiceConfig:
     maxDynamicLabelApplicationRulesPerTenant: 100
+  detectionExclusionConfigService:
+    migrationDisabled: false
   astConfigService:
     defaultPurgeDuration: 30d
   actorService:

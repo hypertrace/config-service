@@ -3,6 +3,8 @@ package ai.traceable.detection.exclusion.config.service.v1.rules.migration;
 import ai.traceable.anomaly.config.service.exclusion.handlers.AnomalyExclusionRuleConfigStore;
 import ai.traceable.anomaly.config.service.v1.exclusion.AnomalyExclusionRuleConfig;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionMigrationConfig;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
@@ -10,10 +12,11 @@ import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusi
 import ai.traceable.platform.actor.v1.Actor;
 import ai.traceable.platform.config.provider.common.clients.ActorServiceClient;
 import com.google.common.collect.Sets;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -27,33 +30,58 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
   private static final GetRulesFilter OLD_RULES_FILTER =
       GetRulesFilter.newBuilder().addRuleCreationSources(RuleSource.RULE_SOURCE_OLD_API).build();
 
+  private static final DetectionExclusionMigrationConfig MIGRATION_COMPLETED_CONFIG =
+      DetectionExclusionMigrationConfig.newBuilder().setMigrationCompleted(true).build();
+
   private final FeatureCachingClient featureCachingClient;
   private final DetectionExclusionRulesStore newRulesStore;
   private final AnomalyExclusionRuleConfigStore oldRulesStore;
+  private final DetectionExclusionMigrationStore migrationStore;
   private final DetectionExclusionRuleConverter ruleConverter;
   private final ActorServiceClient actorServiceClient;
+  private final DetectionExclusionConfigServiceConfig config;
 
-  private final Map<ContextualKey<Void>, Boolean> tenantMigrationCompletedMap = new HashMap<>();
+  private final Set<ContextualKey<Void>> migrationCompletedTenantsSet = new HashSet<>();
 
   @Inject
   public DetectionExclusionRulesMigrationManager(
       FeatureCachingClient featureCachingClient,
       DetectionExclusionRulesStore newRulesStore,
       AnomalyExclusionRuleConfigStore oldRulesStore,
+      DetectionExclusionMigrationStore migrationStore,
       DetectionExclusionRuleConverter ruleConverter,
-      ActorServiceClient actorServiceClient) {
+      ActorServiceClient actorServiceClient,
+      DetectionExclusionConfigServiceConfig config) {
     this.featureCachingClient = featureCachingClient;
     this.newRulesStore = newRulesStore;
     this.oldRulesStore = oldRulesStore;
+    this.migrationStore = migrationStore;
     this.ruleConverter = ruleConverter;
     this.actorServiceClient = actorServiceClient;
+    this.config = config;
   }
 
   @Override
   public boolean shouldMigrateFromOldStore(RequestContext requestContext) {
-    return !tenantMigrationCompletedMap.getOrDefault(
-            requestContext.buildInternalContextualKey(), false)
-        && featureCachingClient.isDetectionExclusionV2EnabledForTenant(requestContext);
+    if (config.isMigrationDisabled()) {
+      return false;
+    }
+    ContextualKey<Void> contextualKey = requestContext.buildInternalContextualKey();
+    if (migrationCompletedTenantsSet.contains(contextualKey)) {
+      return false;
+    }
+
+    boolean migrationCompleted =
+        migrationStore
+            .getData(requestContext)
+            .map(DetectionExclusionMigrationConfig::getMigrationCompleted)
+            .orElse(false);
+    if (migrationCompleted) {
+      migrationCompletedTenantsSet.add(contextualKey);
+      return false;
+    } else {
+      return featureCachingClient.isDetectionExclusionV2EnabledForTenant(requestContext);
+    }
   }
 
   @Override
@@ -112,6 +140,7 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
       newRulesStore.upsertObjects(requestContext, oldRulesToUpdate);
     }
 
-    tenantMigrationCompletedMap.put(requestContext.buildInternalContextualKey(), true);
+    migrationStore.upsertObject(requestContext, MIGRATION_COMPLETED_CONFIG);
+    migrationCompletedTenantsSet.add(requestContext.buildInternalContextualKey());
   }
 }

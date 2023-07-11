@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionConditionValidator;
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesValidator;
+import com.typesafe.config.ConfigFactory;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -17,7 +18,7 @@ class DetectionExclusionConfigServiceConfigTest {
   @Test
   void testConfig() {
     DetectionExclusionConfigServiceConfig detectionExclusionConfigServiceConfig =
-        new DetectionExclusionConfigServiceConfig();
+        new DetectionExclusionConfigServiceConfig(ConfigFactory.empty());
     List<DetectionExclusionRule> detectionExclusionRules =
         detectionExclusionConfigServiceConfig.getDefaultDetectionExclusionRules();
     assertDetectionExclusionRules(detectionExclusionRules);

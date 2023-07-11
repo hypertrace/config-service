@@ -15,10 +15,29 @@ public class DetectionExclusionConfigServiceConfig {
   private static final ConfigRenderOptions CONFIG_RENDER_CONCISE = ConfigRenderOptions.concise();
   private static final String DETECTION_EXCLUSION_RULES_PATH = "detectionExclusionRules";
 
+  private static final String DETECTION_EXCLUSION_CONFIG_KEY = "detection.exclusion.config.service";
+  private static final String MIGRATION_DISABLED_KEY = "migrationDisabled";
+
+  private final Config config;
+  private final boolean migrationDisabled;
+
+  public DetectionExclusionConfigServiceConfig(Config config) {
+    this.config =
+        config.hasPath(DETECTION_EXCLUSION_CONFIG_KEY)
+            ? config.getConfig(DETECTION_EXCLUSION_CONFIG_KEY)
+            : ConfigFactory.empty();
+    migrationDisabled =
+        config.hasPath(MIGRATION_DISABLED_KEY) && config.getBoolean(MIGRATION_DISABLED_KEY);
+  }
+
   public List<DetectionExclusionRule> getDefaultDetectionExclusionRules() {
     return this.convertToDetectionExclusionRules(
         ConfigFactory.parseResources(DEFAULT_EXCLUSION_RULES_FILE_PATH)
             .getConfigList(DETECTION_EXCLUSION_RULES_PATH));
+  }
+
+  public boolean isMigrationDisabled() {
+    return migrationDisabled;
   }
 
   private List<DetectionExclusionRule> convertToDetectionExclusionRules(
