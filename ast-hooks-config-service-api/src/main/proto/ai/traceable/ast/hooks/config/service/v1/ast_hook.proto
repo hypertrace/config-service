@@ -21,6 +21,14 @@ message AstHookDetails {
   string code_snippet = 4 [deprecated = true];
   AuthMechanism auth_mechanism = 5 [deprecated = true];
   Role role = 8;
+  HookCategory hook_category = 10;
+}
+
+enum HookCategory {
+  HOOK_CATEGORY_UNSPECIFIED = 0;
+  HOOK_CATEGORY_PRE_HOOK = 1;
+  HOOK_CATEGORY_POST_HOOK = 2;
+  HOOK_CATEGORY_POST_MUTATION_PRE_HOOK = 3;
 }
 
 message AdvancedMode {
