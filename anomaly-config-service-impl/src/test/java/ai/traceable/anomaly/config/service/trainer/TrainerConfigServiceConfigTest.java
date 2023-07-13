@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.trainer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.anomaly.config.service.AnomalyConfigServiceConfig;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
@@ -32,9 +33,25 @@ public class TrainerConfigServiceConfigTest {
         trainerConfigServiceConfig.getApiNamingTrainingConfigs();
     List<TrainingConfig> metadataTrainingConfigs =
         trainerConfigServiceConfig.getMetadataTrainingConfigs();
-
+    List<TrainingConfig> vulnerabilityTrainingConfigs =
+        trainerConfigServiceConfig.getVulnerabilityTrainingConfigs();
     testApiNamingTrainingConfigs(apiNamingTrainingConfigs);
     testMetadataTrainingConfigs(metadataTrainingConfigs);
+    testVulnerabilityTrainingConfigs(vulnerabilityTrainingConfigs);
+  }
+
+  private void testVulnerabilityTrainingConfigs(List<TrainingConfig> vulnerabilityTrainingConfigs) {
+    assertEquals(19, vulnerabilityTrainingConfigs.size());
+    vulnerabilityTrainingConfigs.forEach(
+        trainingConfig -> {
+          assertFalse(trainingConfig.getDisabled());
+          assertTrue(trainingConfig.getVulnerabilityTrainingConfig().hasAutoResolutionConfig());
+          assertFalse(
+              trainingConfig
+                  .getVulnerabilityTrainingConfig()
+                  .getAutoResolutionConfig()
+                  .getDisabled());
+        });
   }
 
   private void testApiNamingTrainingConfigs(List<TrainingConfig> apiNamingTrainingConfigs) {

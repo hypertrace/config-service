@@ -9,8 +9,10 @@ import java.util.List;
 public class TrainerConfigServiceConfig {
   private static final String API_NAMING_TRAINING_CONFIGS_PATH = "apiNamingTrainingConfigs";
   private static final String METADATA_TRAINING_CONFIGS_PATH = "metadataTrainingConfigs";
+  private static final String VULNERABILITY_TRAINING_CONFIGS_PATH = "vulnerabilityTrainingConfigs";
   private final List<TrainingConfig> apiNamingTrainingConfigs;
   private final List<TrainingConfig> metadataTrainingConfigs;
+  private final List<TrainingConfig> vulnerabilityTrainingConfigs;
 
   @Inject
   public TrainerConfigServiceConfig(
@@ -21,6 +23,11 @@ public class TrainerConfigServiceConfig {
     this.metadataTrainingConfigs =
         configConverter.convertToTrainingConfigs(
             config.getTrainerConfigServiceConfig().getConfigList(METADATA_TRAINING_CONFIGS_PATH));
+    this.vulnerabilityTrainingConfigs =
+        configConverter.convertToTrainingConfigs(
+            config
+                .getTrainerConfigServiceConfig()
+                .getConfigList(VULNERABILITY_TRAINING_CONFIGS_PATH));
   }
 
   public List<TrainingConfig> getApiNamingTrainingConfigs() {
@@ -29,5 +36,9 @@ public class TrainerConfigServiceConfig {
 
   public List<TrainingConfig> getMetadataTrainingConfigs() {
     return this.metadataTrainingConfigs;
+  }
+
+  public List<TrainingConfig> getVulnerabilityTrainingConfigs() {
+    return this.vulnerabilityTrainingConfigs;
   }
 }

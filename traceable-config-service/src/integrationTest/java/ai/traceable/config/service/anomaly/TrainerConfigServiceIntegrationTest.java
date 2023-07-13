@@ -752,6 +752,9 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
         50,
         fetchTrainerConfig(customerConfigScope).getTrainingConfigsList().stream()
             .filter(TrainingConfig::hasVulnerabilityTrainingConfig)
+            .filter(
+                trainingConfig ->
+                    trainingConfig.getVulnerabilityTrainingConfig().hasLackOfEncryption())
             .collect(Collectors.toUnmodifiableList())
             .get(0)
             .getVulnerabilityTrainingConfig()
@@ -762,6 +765,9 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
         50,
         fetchTrainerConfig(serviceConfigScope).getTrainingConfigsList().stream()
             .filter(TrainingConfig::hasVulnerabilityTrainingConfig)
+            .filter(
+                trainingConfig ->
+                    trainingConfig.getVulnerabilityTrainingConfig().hasLackOfEncryption())
             .collect(Collectors.toUnmodifiableList())
             .get(0)
             .getVulnerabilityTrainingConfig()
@@ -772,6 +778,9 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
         50,
         fetchTrainerConfig(apiConfigScope).getTrainingConfigsList().stream()
             .filter(TrainingConfig::hasVulnerabilityTrainingConfig)
+            .filter(
+                trainingConfig ->
+                    trainingConfig.getVulnerabilityTrainingConfig().hasLackOfEncryption())
             .collect(Collectors.toUnmodifiableList())
             .get(0)
             .getVulnerabilityTrainingConfig()
@@ -803,6 +812,9 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
         50,
         fetchTrainerConfig(customerConfigScope).getTrainingConfigsList().stream()
             .filter(TrainingConfig::hasVulnerabilityTrainingConfig)
+            .filter(
+                trainingConfig ->
+                    trainingConfig.getVulnerabilityTrainingConfig().hasLackOfEncryption())
             .collect(Collectors.toUnmodifiableList())
             .get(0)
             .getVulnerabilityTrainingConfig()
@@ -813,6 +825,9 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
         60,
         fetchTrainerConfig(serviceConfigScope).getTrainingConfigsList().stream()
             .filter(TrainingConfig::hasVulnerabilityTrainingConfig)
+            .filter(
+                trainingConfig ->
+                    trainingConfig.getVulnerabilityTrainingConfig().hasLackOfEncryption())
             .collect(Collectors.toUnmodifiableList())
             .get(0)
             .getVulnerabilityTrainingConfig()
@@ -823,6 +838,9 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
         60,
         fetchTrainerConfig(apiConfigScope).getTrainingConfigsList().stream()
             .filter(TrainingConfig::hasVulnerabilityTrainingConfig)
+            .filter(
+                trainingConfig ->
+                    trainingConfig.getVulnerabilityTrainingConfig().hasLackOfEncryption())
             .collect(Collectors.toUnmodifiableList())
             .get(0)
             .getVulnerabilityTrainingConfig()
@@ -854,6 +872,9 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
         50,
         fetchTrainerConfig(customerConfigScope).getTrainingConfigsList().stream()
             .filter(TrainingConfig::hasVulnerabilityTrainingConfig)
+            .filter(
+                trainingConfig ->
+                    trainingConfig.getVulnerabilityTrainingConfig().hasLackOfEncryption())
             .collect(Collectors.toUnmodifiableList())
             .get(0)
             .getVulnerabilityTrainingConfig()
@@ -865,6 +886,9 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
         60,
         fetchTrainerConfig(serviceConfigScope).getTrainingConfigsList().stream()
             .filter(TrainingConfig::hasVulnerabilityTrainingConfig)
+            .filter(
+                trainingConfig ->
+                    trainingConfig.getVulnerabilityTrainingConfig().hasLackOfEncryption())
             .collect(Collectors.toUnmodifiableList())
             .get(0)
             .getVulnerabilityTrainingConfig()
@@ -875,6 +899,9 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
         70,
         fetchTrainerConfig(apiConfigScope).getTrainingConfigsList().stream()
             .filter(TrainingConfig::hasVulnerabilityTrainingConfig)
+            .filter(
+                trainingConfig ->
+                    trainingConfig.getVulnerabilityTrainingConfig().hasLackOfEncryption())
             .collect(Collectors.toUnmodifiableList())
             .get(0)
             .getVulnerabilityTrainingConfig()
@@ -908,6 +935,9 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
         50,
         fetchTrainerConfig(customerConfigScope).getTrainingConfigsList().stream()
             .filter(TrainingConfig::hasVulnerabilityTrainingConfig)
+            .filter(
+                trainingConfig ->
+                    trainingConfig.getVulnerabilityTrainingConfig().hasLackOfEncryption())
             .collect(Collectors.toUnmodifiableList())
             .get(0)
             .getVulnerabilityTrainingConfig()
@@ -932,7 +962,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     updateTrainerConfig(scopedTrainingConfig);
     List<TrainingConfig> trainingConfigs =
         fetchTrainerConfig(customerConfigScope).getTrainingConfigsList();
-    assertEquals(18, trainingConfigs.size());
+    assertEquals(36, trainingConfigs.size());
     for (TrainingConfig trainingConfig : trainingConfigs) {
       if (trainingConfig.getTrainingConfigCase() == TrainingConfigCase.METADATA_TRAINING_CONFIG
           && trainingConfig.getMetadataTrainingConfig().getConfigCase()
@@ -959,7 +989,8 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
                 .getParamLevelExclusionConfigsList()
                 .size());
       } else if (trainingConfig.getTrainingConfigCase()
-          == TrainingConfigCase.VULNERABILITY_TRAINING_CONFIG) {
+              == TrainingConfigCase.VULNERABILITY_TRAINING_CONFIG
+          && trainingConfig.getVulnerabilityTrainingConfig().hasLackOfEncryption()) {
         assertEquals(
             50,
             trainingConfig
@@ -1002,6 +1033,9 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
             .getTrainingConfigsList()
             .stream()
             .filter(TrainingConfig::hasVulnerabilityTrainingConfig)
+            .filter(
+                trainingConfig ->
+                    trainingConfig.getVulnerabilityTrainingConfig().hasLackOfEncryption())
             .collect(Collectors.toUnmodifiableList());
     assertEquals(1, scopedTrainingConfigs.size());
     assertEquals(
@@ -1041,6 +1075,9 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
             .getTrainingConfigsList()
             .stream()
             .filter(TrainingConfig::hasVulnerabilityTrainingConfig)
+            .filter(
+                trainingConfig ->
+                    trainingConfig.getVulnerabilityTrainingConfig().hasLackOfEncryption())
             .collect(Collectors.toUnmodifiableList())
             .get(0)
             .getVulnerabilityTrainingConfig()
@@ -1053,6 +1090,9 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
             .getTrainingConfigsList()
             .stream()
             .filter(TrainingConfig::hasVulnerabilityTrainingConfig)
+            .filter(
+                trainingConfig ->
+                    trainingConfig.getVulnerabilityTrainingConfig().hasLackOfEncryption())
             .collect(Collectors.toUnmodifiableList())
             .get(0)
             .getVulnerabilityTrainingConfig()
@@ -1088,6 +1128,9 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
             .getTrainingConfigsList()
             .stream()
             .filter(TrainingConfig::hasVulnerabilityTrainingConfig)
+            .filter(
+                trainingConfig ->
+                    trainingConfig.getVulnerabilityTrainingConfig().hasLackOfEncryption())
             .collect(Collectors.toUnmodifiableList())
             .get(0)
             .getVulnerabilityTrainingConfig()
@@ -1100,6 +1143,9 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
             .getTrainingConfigsList()
             .stream()
             .filter(TrainingConfig::hasVulnerabilityTrainingConfig)
+            .filter(
+                trainingConfig ->
+                    trainingConfig.getVulnerabilityTrainingConfig().hasLackOfEncryption())
             .collect(Collectors.toUnmodifiableList())
             .get(0)
             .getVulnerabilityTrainingConfig()
@@ -1112,6 +1158,9 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
             .getTrainingConfigsList()
             .stream()
             .filter(TrainingConfig::hasVulnerabilityTrainingConfig)
+            .filter(
+                trainingConfig ->
+                    trainingConfig.getVulnerabilityTrainingConfig().hasLackOfEncryption())
             .collect(Collectors.toUnmodifiableList())
             .get(0)
             .getVulnerabilityTrainingConfig()
@@ -1300,7 +1349,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
         return trainingConfig;
       }
     }
-    return null;
+    return ScopedTrainingConfig.getDefaultInstance();
   }
 
   private ScopedTrainingActionConfig upsertTrainingAction(

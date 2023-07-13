@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.SneakyThrows;
@@ -37,6 +38,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
   private final AnomalyConfigScopeUtils anomalyConfigScopeUtils;
   private final List<TrainingConfig> defaultApiNamingTrainingConfigs;
   private final List<TrainingConfig> defaultMetadataTrainingConfigs;
+  private final List<TrainingConfig> defaultVulnerabilityTrainingConfigs;
 
   @Inject
   public TrainingConfigManagerImpl(
@@ -54,6 +56,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
     this.anomalyConfigScopeUtils = anomalyConfigScopeUtils;
     this.defaultApiNamingTrainingConfigs = config.getApiNamingTrainingConfigs();
     this.defaultMetadataTrainingConfigs = config.getMetadataTrainingConfigs();
+    this.defaultVulnerabilityTrainingConfigs = config.getVulnerabilityTrainingConfigs();
   }
 
   @Override
@@ -252,9 +255,11 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
   }
 
   private List<TrainingConfig> getDefaultTrainingConfigs() {
-    return Stream.concat(
+    return Stream.of(
             this.defaultApiNamingTrainingConfigs.stream(),
-            this.defaultMetadataTrainingConfigs.stream())
+            this.defaultMetadataTrainingConfigs.stream(),
+            this.defaultVulnerabilityTrainingConfigs.stream())
+        .flatMap(Function.identity())
         .collect(Collectors.toUnmodifiableList());
   }
 
