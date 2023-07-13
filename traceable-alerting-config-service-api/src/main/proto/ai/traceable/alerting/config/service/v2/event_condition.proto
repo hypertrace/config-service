@@ -15,6 +15,7 @@ import "ai/traceable/alerting/config/service/v2/data_collection_change_condition
 import "ai/traceable/alerting/config/service/v2/notification_config_change_condition.proto";
 import "ai/traceable/alerting/config/service/v2/sensitive_data_configuration_change_condition.proto";
 import "ai/traceable/alerting/config/service/v2/api_fraud_incident_change_event_condition.proto";
+import "ai/traceable/alerting/config/service/v2/posture_event_condition.proto";
 
 message EventCondition {
   string id = 1;
@@ -34,6 +35,7 @@ message EventConditionMutableData {
     DataCollectionChangeCondition data_collection_change_condition = 11;
     SensitiveDataConfigurationChangeCondition sensitive_data_configuration_change_condition = 12;
     ApiFraudIncidentChangeEventCondition api_fraud_incident_change_event_condition = 13;
+    PostureEventCondition posture_event_condition = 14;
   }
   optional string environment = 5 [deprecated = true];// use the EventConditionScope moving forward
   EventConditionScope scope = 9;

@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.alerting.config.service.v2;
+
+message PostureEventCondition {
+  repeated PostureEventType posture_event_types = 1;
+}
+
+message PostureEventType {
+  oneof event_type {
+    ApiDiscoveryEvent api_discovery_event = 1;
+    RiskScoreChangeEvent risk_score_change_event = 2;
+    SensitiveDataDiscovery sensitive_data_discovery = 3;
+    SensitiveDataSharedWithThirdParty sensitive_data_shared_with_third_party = 4;
+    ServiceDiscovery service_discovery = 5;
+    VulnerabilityDiscovery vulnerability_discovery = 6;
+  }
+}
+
+message SensitiveDataDiscovery {
+}
+
+message SensitiveDataSharedWithThirdParty {
+}
+
+message ServiceDiscovery {
+}
+
+message VulnerabilityDiscovery {
+}
+
+
+message ApiDiscoveryEvent {
+}
+
+message RiskScoreChangeEvent {
+  repeated RiskDelta risk_delta = 1;
+}
+
+enum RiskDelta {
+  RISK_DELTA_UNSPECIFIED = 0;
+  RISK_DELTA_INCREASE = 1;
+  RISK_DELTA_DECREASE = 2;
+}
