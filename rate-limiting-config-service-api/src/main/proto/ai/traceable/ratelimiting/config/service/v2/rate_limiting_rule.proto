@@ -84,6 +84,11 @@ message ScopeCondition {
   oneof scope {
     EntityScope entity_scope = 1;
     LabelScope label_scope = 2;
+    UrlScope url_scope = 3;
+  }
+
+  message UrlScope{
+    repeated string url_regexes = 1;
   }
 
   message EntityScope {
@@ -99,6 +104,7 @@ message ScopeCondition {
   enum EntityType {
     ENTITY_TYPE_UNSPECIFIED = 0;
     ENTITY_TYPE_API = 1;
+    ENTITY_TYPE_SERVICE = 2;
   }
 
   enum LabelType {
