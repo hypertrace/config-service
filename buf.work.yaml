@@ -17,6 +17,7 @@ directories:
   - external-agent-attribute-config-service-api/src/main/proto
   - external-data-classification-config-service-api/src/main/proto
   - external-user-attribution-config-service-api/src/main/proto
+  - external-wasm-config-service-api/src/main/proto
   - hypertrace-config-service/alerting-config-service-api/src/main/proto
   - integration-config-service-api/src/main/proto
   - iprange-config-service-api/src/main/proto
