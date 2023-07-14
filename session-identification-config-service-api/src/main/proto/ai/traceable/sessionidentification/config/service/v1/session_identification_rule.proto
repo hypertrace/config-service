@@ -22,6 +22,12 @@ message SessionIdentificationRuleScope {
 
 message SessionIdentificationRuleStatus {
   bool disabled = 1;
+  RuleCreationSource rule_creation_source = 2;
+}
+
+enum RuleCreationSource {
+  RULE_CREATION_SOURCE_UNSPECIFIED = 0;
+  RULE_CREATION_SOURCE_OLD_API = 1;
 }
 
 message SessionTokenRule {
