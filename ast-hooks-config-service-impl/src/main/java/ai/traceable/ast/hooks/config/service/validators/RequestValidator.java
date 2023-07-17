@@ -64,6 +64,9 @@ public class RequestValidator extends ValidatorBase {
     if (request.hasAstHookDetails()) {
       validateHookDetails(requestContext, request.getAstHookDetails());
     }
+    if (request.hasHookTestId()) {
+      validateStringNotBlank(request.getHookTestId(), "hook test id not found");
+    }
   }
 
   public void validate(RequestContext requestContext, DeleteAstHookRequest request) {

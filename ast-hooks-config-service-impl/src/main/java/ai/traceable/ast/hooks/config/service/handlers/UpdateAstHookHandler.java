@@ -26,9 +26,12 @@ public class UpdateAstHookHandler {
     if (request.hasAstHookDetails()) {
       updatedHookDetailsBuilder = AstHookDetails.newBuilder(request.getAstHookDetails());
     }
-    AstHook updatedHook =
-        oldHook.toBuilder().setHookDetails(updatedHookDetailsBuilder.build()).build();
-    return configStore.upsertObject(requestContext, updatedHook).getData();
+    AstHook.Builder updatedHookBuilder =
+        oldHook.toBuilder().setHookDetails(updatedHookDetailsBuilder.build());
+    if (request.hasHookTestId()) {
+      updatedHookBuilder.setAstHookTestId(request.getHookTestId());
+    }
+    return configStore.upsertObject(requestContext, updatedHookBuilder.build()).getData();
   }
 
   private void applyNameUpdate(UpdateAstHookRequest request, AstHookDetails.Builder builder) {

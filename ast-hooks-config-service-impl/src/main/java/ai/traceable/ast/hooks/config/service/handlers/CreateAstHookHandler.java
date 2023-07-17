@@ -7,6 +7,7 @@ import ai.traceable.config.utils.UuidGenerator;
 import java.util.Optional;
 import javax.inject.Inject;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @AllArgsConstructor(onConstructor_ = {@Inject})
@@ -19,6 +20,9 @@ public class CreateAstHookHandler {
     AstHook.Builder astHookBuilder =
         AstHook.newBuilder().setId(id).setHookDetails(request.getHookDetails());
     getRequestUser(requestContext).ifPresent(astHookBuilder::setCreatedBy);
+    if (!StringUtils.isEmpty(request.getHookTestId())) {
+      astHookBuilder.setAstHookTestId(request.getHookTestId());
+    }
 
     return configStore.upsertObject(requestContext, astHookBuilder.build()).getData();
   }

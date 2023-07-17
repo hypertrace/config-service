@@ -27,6 +27,7 @@ message UpdateAstHookRequest {
   optional AstHookType hook_type = 4 [deprecated = true];
   optional string code_snippet = 5 [deprecated = true];
   AstHookDetails ast_hook_details = 6;
+  optional string hook_test_id = 7;
 }
 
 message UpdateAstHookResponse {
@@ -35,6 +36,7 @@ message UpdateAstHookResponse {
 
 message CreateAstHookRequest {
   AstHookDetails hook_details = 1;
+  string hook_test_id = 2;
 }
 
 message CreateAstHookResponse {
