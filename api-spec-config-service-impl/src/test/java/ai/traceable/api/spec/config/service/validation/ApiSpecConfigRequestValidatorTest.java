@@ -106,6 +106,7 @@ class ApiSpecConfigRequestValidatorTest {
                             .setName("name")
                             .setApiNamingEnabled(true)
                             .setStatus(API_SPEC_STATUS_COMPLETED)
+                            .setSpecPath("/test/name.json")
                             .build())
                     .build()));
   }

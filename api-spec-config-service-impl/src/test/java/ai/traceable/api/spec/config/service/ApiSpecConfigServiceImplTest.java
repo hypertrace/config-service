@@ -92,7 +92,8 @@ class ApiSpecConfigServiceImplTest {
                         CreateApiSpec.newBuilder()
                             .setName("spec1")
                             .setApiNamingEnabled(true)
-                            .setStatus(API_SPEC_STATUS_IN_PROGRESS))
+                            .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                            .setSpecPath("/test/spec1.json"))
                     .build())
             .getApiSpec();
     Timestamp expectedTimestamp = Timestamp.newBuilder().setSeconds(100).build();
@@ -107,7 +108,8 @@ class ApiSpecConfigServiceImplTest {
                         CreateApiSpec.newBuilder()
                             .setName("spec2")
                             .setApiNamingEnabled(true)
-                            .setStatus(API_SPEC_STATUS_COMPLETED))
+                            .setStatus(API_SPEC_STATUS_COMPLETED)
+                            .setSpecPath("/test/spec2.json"))
                     .build())
             .getApiSpec();
 
@@ -216,6 +218,7 @@ class ApiSpecConfigServiceImplTest {
                             .setName("spec1")
                             .setApiNamingEnabled(true)
                             .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                            .setSpecPath("/test/spec1.json")
                             .setFileContentSha256(
                                 "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"))
                     .build())
@@ -238,6 +241,7 @@ class ApiSpecConfigServiceImplTest {
                             .setName("spec2")
                             .setApiNamingEnabled(true)
                             .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                            .setSpecPath("/test/spec2.json")
                             .setFileContentSha256(
                                 "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"))
                     .build()));
@@ -253,6 +257,7 @@ class ApiSpecConfigServiceImplTest {
                             .setName("spec3")
                             .setApiNamingEnabled(true)
                             .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                            .setSpecPath("/test/spec3.json")
                             .setFileContentSha256("filehash1"))
                     .build()));
 
@@ -272,6 +277,56 @@ class ApiSpecConfigServiceImplTest {
     assertEquals(
         "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
         updatedApiSpec.getFileContentSha256());
+    assertEquals(API_SPEC_STATUS_IN_PROGRESS, updatedApiSpec.getStatus());
+  }
+
+  @Test
+  void testCreateApiSpecWithSameSpecPath() {
+    ApiSpec createdApiSpec =
+        this.apiSpecConfigServiceBlockingStub
+            .createApiSpec(
+                CreateApiSpecRequest.newBuilder()
+                    .setCreateApiSpec(
+                        CreateApiSpec.newBuilder()
+                            .setName("spec1")
+                            .setApiNamingEnabled(true)
+                            .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                            .setSpecPath("/test/spec1.json"))
+                    .build())
+            .getApiSpec();
+    Timestamp expectedTimestamp = Timestamp.newBuilder().setSeconds(100).build();
+    assertEquals(expectedTimestamp, createdApiSpec.getCreationTimestamp());
+    assertEquals(expectedTimestamp, createdApiSpec.getLastUpdatedTimestamp());
+    assertEquals("/test/spec1.json", createdApiSpec.getSpecPath());
+
+    // Check if spec-config with same spec path is uploaded, exception is thrown.
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            this.apiSpecConfigServiceBlockingStub.createApiSpec(
+                CreateApiSpecRequest.newBuilder()
+                    .setCreateApiSpec(
+                        CreateApiSpec.newBuilder()
+                            .setName("spec2")
+                            .setApiNamingEnabled(true)
+                            .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                            .setSpecPath("/test/spec1.json"))
+                    .build()));
+
+    ApiSpec updatedApiSpec =
+        this.apiSpecConfigServiceBlockingStub
+            .updateApiSpec(
+                UpdateApiSpecRequest.newBuilder()
+                    .setApiSpec(
+                        UpdateApiSpec.newBuilder()
+                            .setSpecId(createdApiSpec.getSpecId())
+                            .setName("updatedSpec1")
+                            .setApiNamingEnabled(false))
+                    .build())
+            .getApiSpec();
+    assertEquals("updatedSpec1", updatedApiSpec.getName());
+    assertFalse(updatedApiSpec.getApiNamingEnabled());
+    assertEquals("/test/spec1.json", updatedApiSpec.getSpecPath());
     assertEquals(API_SPEC_STATUS_IN_PROGRESS, updatedApiSpec.getStatus());
   }
 
@@ -300,6 +355,7 @@ class ApiSpecConfigServiceImplTest {
                             .setName("spec1")
                             .setApiNamingEnabled(true)
                             .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                            .setSpecPath("/test/spec1.json")
                             .setFileContentSha256(
                                 "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"))
                     .build())
@@ -331,6 +387,7 @@ class ApiSpecConfigServiceImplTest {
                       .setName(String.format("spec %d", i))
                       .setApiNamingEnabled(true)
                       .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                      .setSpecPath(String.format("/test/spec%d.json", i))
                       .setFileContentSha256(
                           String.format(
                               "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f2001%03d",
@@ -348,6 +405,7 @@ class ApiSpecConfigServiceImplTest {
                             .setName("spec2")
                             .setApiNamingEnabled(true)
                             .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                            .setSpecPath("/test/spec2.json")
                             .setFileContentSha256(
                                 "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015az"))
                     .build()));
@@ -363,7 +421,8 @@ class ApiSpecConfigServiceImplTest {
                         CreateApiSpec.newBuilder()
                             .setName("spec1")
                             .setApiNamingEnabled(true)
-                            .setStatus(API_SPEC_STATUS_IN_PROGRESS))
+                            .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                            .setSpecPath("/test/spec1.json"))
                     .build())
             .getApiSpec();
     Timestamp expectedTimestamp = Timestamp.newBuilder().setSeconds(100).build();
@@ -378,7 +437,8 @@ class ApiSpecConfigServiceImplTest {
                         CreateApiSpec.newBuilder()
                             .setName("spec2")
                             .setApiNamingEnabled(true)
-                            .setStatus(API_SPEC_STATUS_COMPLETED))
+                            .setStatus(API_SPEC_STATUS_COMPLETED)
+                            .setSpecPath("/test/spec2.json"))
                     .build())
             .getApiSpec();
 
@@ -443,6 +503,7 @@ class ApiSpecConfigServiceImplTest {
             .setStatus(API_SPEC_STATUS_COMPLETED)
             .setCreationTimestamp(Timestamp.newBuilder().setSeconds(100).build())
             .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(100).build())
+            .setSpecPath("/test/spec1.json")
             .build();
     ApiSpec updatedSecondApiSpec =
         ApiSpec.newBuilder()
@@ -452,6 +513,7 @@ class ApiSpecConfigServiceImplTest {
             .setStatus(API_SPEC_STATUS_COMPLETED)
             .setCreationTimestamp(Timestamp.newBuilder().setSeconds(100).build())
             .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(100).build())
+            .setSpecPath("/test/spec2.json")
             .build();
 
     assertTrue(updatedApiSpecs.contains(updatedFirstApiSpec));
@@ -488,7 +550,8 @@ class ApiSpecConfigServiceImplTest {
                         CreateApiSpec.newBuilder()
                             .setName("spec1")
                             .setApiNamingEnabled(true)
-                            .setStatus(API_SPEC_STATUS_IN_PROGRESS))
+                            .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                            .setSpecPath("/test/spec1.json"))
                     .build())
             .getApiSpec();
     Timestamp expectedTimestamp = Timestamp.newBuilder().setSeconds(100).build();

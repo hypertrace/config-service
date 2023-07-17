@@ -148,6 +148,24 @@ public class ApiSpecConfigServiceImpl
         }
       }
 
+      // If spec path already exists then reject the request
+      if (createApiSpec.hasSpecPath()) {
+        final String specPath = createApiSpec.getSpecPath();
+        boolean specPathExists =
+            existingApiSpecs.stream().map(ApiSpec::getSpecPath).anyMatch(specPath::equals);
+        if (specPathExists) {
+          log.warn(
+              "An API spec with the spec path specified in request: {} within context: {} already exists",
+              request,
+              requestContext);
+          throw Status.ALREADY_EXISTS
+              .withDescription("An API spec with the same spec path already exists.")
+              .asRuntimeException(requestContext.buildTrailers());
+        } else {
+          apiSpecBuilder.setSpecPath(createApiSpec.getSpecPath());
+        }
+      }
+
       // Limit number of API specs per tenant.
       if (existingApiSpecs.size() >= apiSpecConfig.getMaxAllowedSpecsPerTenant()) {
         throw Status.RESOURCE_EXHAUSTED
