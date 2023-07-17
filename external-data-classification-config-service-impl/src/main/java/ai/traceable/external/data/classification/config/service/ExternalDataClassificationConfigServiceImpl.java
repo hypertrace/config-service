@@ -10,6 +10,8 @@ import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
 import ai.traceable.data.classification.config.service.v1.DataType;
+import ai.traceable.external.data.classification.config.service.session.SessionIdentificationRulesDao;
+import ai.traceable.external.data.classification.config.service.session.SessionIdentificationRulesTranslator;
 import ai.traceable.external.data.classification.config.service.v1.DataType.Builder;
 import ai.traceable.external.data.classification.config.service.v1.ExternalDataClassificationServiceGrpc.ExternalDataClassificationServiceImplBase;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest;
@@ -17,6 +19,7 @@ import ai.traceable.external.data.classification.config.service.v1.GetDataClassi
 import ai.traceable.sensitivedata.config.service.v1.Parameter;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
+import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRule;
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
@@ -54,6 +57,8 @@ class ExternalDataClassificationConfigServiceImpl
       externalDataClassificationConfigRequestValidator;
   private final RedactionRulesDao redactionRulesDao;
   private final DataClassificationRulesDao dataClassificationRulesDao;
+  private final SessionIdentificationRulesDao sessionIdentificationRulesDao;
+  private final SessionIdentificationRulesTranslator sessionIdentificationRulesTranslator;
   private final RedactionRulesTranslator redactionRulesTranslator;
   private final DataClassificationRulesTranslator dataClassificationRulesTranslator;
   private final ExternalDataClassificationRuleResponseBuilder responseBuilder;
@@ -71,7 +76,9 @@ class ExternalDataClassificationConfigServiceImpl
       DataClassificationRulesTranslator dataClassificationRulesTranslator,
       ExternalDataClassificationRuleResponseBuilder responseBuilder,
       InsightsServiceCoordinator insightsServiceCoordinator,
-      FeatureCachingClient featureCachingClient) {
+      FeatureCachingClient featureCachingClient,
+      SessionIdentificationRulesDao sessionIdentificationRulesDao,
+      SessionIdentificationRulesTranslator sessionIdentificationRulesTranslator) {
     this.externalDataClassificationConfig = externalDataClassificationConfig;
     this.externalDataClassificationConfigRequestValidator =
         externalDataClassificationConfigRequestValidator;
@@ -82,6 +89,8 @@ class ExternalDataClassificationConfigServiceImpl
     this.responseBuilder = responseBuilder;
     this.insightsServiceCoordinator = insightsServiceCoordinator;
     this.featureCachingClient = featureCachingClient;
+    this.sessionIdentificationRulesDao = sessionIdentificationRulesDao;
+    this.sessionIdentificationRulesTranslator = sessionIdentificationRulesTranslator;
   }
 
   @Override
@@ -160,6 +169,14 @@ class ExternalDataClassificationConfigServiceImpl
               dataTypesToDataSuppressionMap,
               envOptional,
               request.getPredicateSupportLevel()));
+
+      if (featureCachingClient.isSessionIdentificationV2EnabledForTenant(requestContext)) {
+        List<SessionIdentificationRule> sessionIdentificationRules =
+            this.sessionIdentificationRulesDao.getEnabledSessionIdentificationRules(requestContext);
+        externalDataTypes.addAll(
+            this.sessionIdentificationRulesTranslator.translateSessionIdentificationRules(
+                sessionIdentificationRules, envOptional));
+      }
 
       // sensitive headers
       RedactionStrategy redactionStrategy =

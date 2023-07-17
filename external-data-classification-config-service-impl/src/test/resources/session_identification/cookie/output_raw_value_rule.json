@@ -1,0 +1,82 @@
+{
+  "dataTypeId": "rule-id",
+  "matchRules": [{
+    "spanFilter": {
+      "requiredMatchingAttributes": [{
+        "namePredicate": {
+          "operator": "OPERATOR_EQUALS",
+          "value": "traceableai.session.rule-id.0.id"
+        }
+      },{
+        "namePredicate": {
+          "operator": "OPERATOR_EQUALS",
+          "value": "service.name"
+        },
+        "valuePredicate": {
+          "operator": "OPERATOR_MATCHES_REGEX",
+          "value": "service1.*"
+        }
+      },
+        {
+          "namePredicate": {
+            "operator": "OPERATOR_EQUALS",
+            "value": "http.url"
+          },
+          "valuePredicate": {
+            "operator": "OPERATOR_MATCHES_REGEX",
+            "value": "url.*"
+          }
+        }]
+    },
+    "attributeFilter": {
+      "prefixes": ["http.request.header.cookie"]
+    },
+    "result": "RESULT_MATCH",
+    "pathPredicate": {
+      "pathSegmentPredicate": {
+        "operator": "OPERATOR_EQUALS",
+        "value": "cookie1"
+      }
+    }
+  },{
+    "spanFilter": {
+      "requiredMatchingAttributes": [{
+        "namePredicate": {
+          "operator": "OPERATOR_EQUALS",
+          "value": "traceableai.session.rule-id.0.id"
+        }
+      },{
+        "namePredicate": {
+          "operator": "OPERATOR_EQUALS",
+          "value": "service.name"
+        },
+        "valuePredicate": {
+          "operator": "OPERATOR_MATCHES_REGEX",
+          "value": "service1.*"
+        }
+      },
+        {
+          "namePredicate": {
+            "operator": "OPERATOR_EQUALS",
+            "value": "http.target"
+          },
+          "valuePredicate": {
+            "operator": "OPERATOR_MATCHES_REGEX",
+            "value": "url.*"
+          }
+        }]
+    },
+    "attributeFilter": {
+      "prefixes": ["http.request.header.cookie"]
+    },
+    "result": "RESULT_MATCH",
+    "pathPredicate": {
+      "pathSegmentPredicate": {
+        "operator": "OPERATOR_EQUALS",
+        "value": "cookie1"
+      }
+    }
+  }],
+  "transformation": "DATA_TRANSFORMATION_OBFUSCATE",
+  "suppressionPattern": "a.*bcd"
+}

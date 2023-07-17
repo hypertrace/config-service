@@ -1,0 +1,34 @@
+{
+  "id": "rule-id",
+  "scope": {
+    "serviceNameRegexes": ["service1.*"]
+  },
+  "tokenRules": [{
+    "tokenValueRule": {
+      "valueObfuscationStrategy": "OBFUSCATION_STRATEGY_HASH",
+      "tokenValueProjection": {
+        "attributeProjection": {
+          "attributeKeyMatchCondition": {
+            "operator": "MATCH_OPERATOR_EQUALS",
+            "matchValue": {
+              "stringValue": "xyz"
+            }
+          },
+          "valueProjectionsInOrder": [
+            {
+              "jsonPath": {
+                "path": "$.a.b.c.d"
+              }
+            },{
+            "regexCaptureGroup": {
+              "regexCaptureGroup": "a.*bcd"
+            }
+          }]
+        }
+      }
+    },
+    "requestSessionTokenDetails": {
+      "tokenLocation": "REQUEST_ATTRIBUTE_KEY_LOCATION_QUERY_PARAMETER"
+    }
+  }]
+}

@@ -12,6 +12,7 @@ dependencies {
 
   implementation(projects.dataClassificationConfigServiceApi)
   implementation(projects.sensitiveDataConfigServiceApi)
+  implementation(projects.sessionIdentificationConfigServiceApi)
   implementation(libs.traceable.insights.api)
   implementation(libs.hypertrace.grpcutils.client)
   implementation(libs.hypertrace.grpcutils.context)
@@ -26,6 +27,7 @@ dependencies {
 
   testImplementation(libs.junit.jupiter)
   testImplementation(libs.mockito.core)
+  testImplementation(libs.protobuf.javautil)
   testImplementation(libs.mockito.junit)
   testImplementation(testFixtures(libs.hypertrace.configservice.api))
 }

@@ -7,6 +7,8 @@ import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc;
 import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc.InsightsServiceBlockingStub;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
+import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationConfigServiceGrpc;
+import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationConfigServiceGrpc.SessionIdentificationConfigServiceBlockingStub;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
@@ -40,6 +42,13 @@ public class ExternalDataClassificationConfigServiceModule extends AbstractModul
     bind(ExternalDataClassificationConfig.class)
         .toInstance(new ExternalDataClassificationConfig(this.config));
     bind(FeatureCachingClient.class).toInstance(this.featureCachingClient);
+  }
+
+  @Provides
+  SessionIdentificationConfigServiceBlockingStub provideSessionIdentificationConfigService() {
+    return SessionIdentificationConfigServiceGrpc.newBlockingStub(this.channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }
 
   @Provides

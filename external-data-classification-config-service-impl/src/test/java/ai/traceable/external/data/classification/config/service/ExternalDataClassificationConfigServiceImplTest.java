@@ -31,6 +31,10 @@ import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataSetsResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
+import ai.traceable.external.data.classification.config.service.session.MatchConditionTranslator;
+import ai.traceable.external.data.classification.config.service.session.SessionIdentificationConstants;
+import ai.traceable.external.data.classification.config.service.session.SessionIdentificationRulesDao;
+import ai.traceable.external.data.classification.config.service.session.SessionIdentificationRulesTranslator;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTypeMatchRule;
 import ai.traceable.external.data.classification.config.service.v1.DataType.Result;
 import ai.traceable.external.data.classification.config.service.v1.ExternalDataClassificationServiceGrpc;
@@ -48,6 +52,9 @@ import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeR
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
+import ai.traceable.sessionidentification.config.service.v1.GetSessionIdentificationRulesRequest;
+import ai.traceable.sessionidentification.config.service.v1.GetSessionIdentificationRulesResponse;
+import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationConfigServiceGrpc;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,6 +73,8 @@ public class ExternalDataClassificationConfigServiceImplTest {
   ExternalDataClassificationServiceBlockingStub externalDataClassificationServiceBlockingStub;
   SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub;
   DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceBlockingStub;
+  SessionIdentificationConfigServiceGrpc.SessionIdentificationConfigServiceBlockingStub
+      sessionIdentificationConfigServiceBlockingStub;
   @Mock InsightsServiceCoordinator insightsServiceCoordinator;
 
   UuidGenerator uuidGenerator = new UuidGenerator();
@@ -81,8 +90,12 @@ public class ExternalDataClassificationConfigServiceImplTest {
     dataClassificationConfigServiceBlockingStub =
         DataClassificationConfigServiceGrpc.newBlockingStub(
             this.mockGenericConfigService.channel());
+    sessionIdentificationConfigServiceBlockingStub =
+        SessionIdentificationConfigServiceGrpc.newBlockingStub(
+            this.mockGenericConfigService.channel());
     when(featureCachingClient.isDataClassificationRp2Enabled(any())).thenReturn(true);
     mockGenericConfigService
+        .addService(new MockSessionIdentificationConfigService())
         .addService(
             new ExternalDataClassificationConfigServiceImpl(
                 externalDataClassificationConfig,
@@ -93,7 +106,10 @@ public class ExternalDataClassificationConfigServiceImplTest {
                 new DataClassificationRulesTranslator(),
                 new ExternalDataClassificationRuleResponseBuilder(uuidGenerator),
                 insightsServiceCoordinator,
-                featureCachingClient))
+                featureCachingClient,
+                new SessionIdentificationRulesDao(sessionIdentificationConfigServiceBlockingStub),
+                new SessionIdentificationRulesTranslator(
+                    new SessionIdentificationConstants(), new MatchConditionTranslator())))
         .addService(new MockSensitiveDataConfigService())
         .addService(new MockDataClassificationConfigService())
         .start();
@@ -423,6 +439,20 @@ public class ExternalDataClassificationConfigServiceImplTest {
           GetRedactionStrategyForTypeResponse.newBuilder()
               .setRedactionStrategy(RedactionStrategy.REDACTION_STRATEGY_RAW)
               .build());
+      responseObserver.onCompleted();
+    }
+  }
+
+  static class MockSessionIdentificationConfigService
+      extends SessionIdentificationConfigServiceGrpc.SessionIdentificationConfigServiceImplBase {
+
+    @Override
+    public void getSessionIdentificationRules(
+        GetSessionIdentificationRulesRequest request,
+        StreamObserver<GetSessionIdentificationRulesResponse> responseObserver) {
+      GetSessionIdentificationRulesResponse.Builder responseBuilder =
+          GetSessionIdentificationRulesResponse.newBuilder();
+      responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();
     }
   }

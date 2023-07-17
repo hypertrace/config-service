@@ -1,0 +1,24 @@
+{
+  "dataTypeId": "rule-id",
+  "matchRules": [{
+    "result": "RESULT_MATCH",
+    "spanFilter": {
+      "requiredMatchingAttributes": [{
+        "namePredicate": {
+          "operator": "OPERATOR_EQUALS",
+          "value": "traceableai.session.new.rule-id.0.id"
+        }
+      }]
+    },
+    "attributeFilter": {
+      "prefixes": ["traceableai.session.new.rule-id.0.id"]
+    },
+    "pathPredicate": {
+      "pathSegmentPredicate": {
+        "operator": "OPERATOR_EQUALS",
+        "value": "traceableai.session.new.rule-id.0.id"
+      }
+    }
+  }],
+  "transformation": "DATA_TRANSFORMATION_OBFUSCATE"
+}
