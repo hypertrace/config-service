@@ -28,5 +28,5 @@ public interface ConfigServiceCoordinator {
 
   SamplingPolicies getSamplingPoliciesConfig();
 
-  ModsecConfig getModsecConfig();
+  ModsecConfig getModsecConfig(boolean shouldUseCoraza);
 }

@@ -4,7 +4,8 @@ import ai.traceable.localprocessing.config.service.v1.RegularModsecDetectionRule
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public interface RegularModsecDetectionManager {
-  RegularModsecDetectionRules getDetectionRules(RequestContext requestContext, String requestHash);
+  RegularModsecDetectionRules getDetectionRules(
+      RequestContext requestContext, String requestHash, boolean shouldUseCoraza);
 
   RegularModsecDetectionRules getEmptyRules();
 }

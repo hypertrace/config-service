@@ -9,8 +9,10 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc.AnomalyModsecConfigServiceBlockingStub;
+import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesResponse;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesData;
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.RegularModsecDetectionRules;
@@ -58,7 +60,8 @@ class DefaultRegularModsecDetectionManagerTest {
     // When hash does not match we expect the blob
     assertEquals(
         expectedModsecDetectionRules,
-        regularModsecDetectionManager.getDetectionRules(RequestContext.forTenantId("test"), ""));
+        regularModsecDetectionManager.getDetectionRules(
+            RequestContext.forTenantId("test"), "", false));
 
     // When hash matches we don't expect the blob
     assertEquals(
@@ -66,7 +69,40 @@ class DefaultRegularModsecDetectionManagerTest {
             .setHash(uuidGenerator.generateId("Tester rule blob"))
             .build(),
         regularModsecDetectionManager.getDetectionRules(
-            RequestContext.forTenantId("test"), uuidGenerator.generateId("Tester rule blob")));
+            RequestContext.forTenantId("test"),
+            uuidGenerator.generateId("Tester rule blob"),
+            false));
+  }
+
+  @Test
+  void testDetectionRulesWithCoraza() {
+    RegularModsecDetectionRules expectedModsecDetectionRules =
+        RegularModsecDetectionRules.newBuilder()
+            .setRegularModsecDetectionRulesBlob("Tester rule blob")
+            .setHash(uuidGenerator.generateId("Tester rule blob"))
+            .build();
+
+    when(configServiceBlockingStub.getModsecCrsRules(
+            GetModsecCrsRulesRequest.newBuilder()
+                .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
+                .setRemoveDisabledRules(true)
+                .setRuleVersion(ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3)
+                .build()))
+        .thenReturn(
+            GetModsecCrsRulesResponse.newBuilder()
+                .addAllModsecCrsRules(
+                    List.of(
+                        ModsecCrsRulesData.newBuilder()
+                            .setModsecCrsRulesBlob("Tester rule blob")
+                            .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)
+                            .build()))
+                .build());
+
+    // When coraza was enabled, only then we expect the blob
+    assertEquals(
+        expectedModsecDetectionRules,
+        regularModsecDetectionManager.getDetectionRules(
+            RequestContext.forTenantId("test"), "", true));
   }
 
   @Test
@@ -76,6 +112,6 @@ class DefaultRegularModsecDetectionManagerTest {
         RuntimeException.class,
         () ->
             regularModsecDetectionManager.getDetectionRules(
-                RequestContext.forTenantId("test"), ""));
+                RequestContext.forTenantId("test"), "", false));
   }
 }

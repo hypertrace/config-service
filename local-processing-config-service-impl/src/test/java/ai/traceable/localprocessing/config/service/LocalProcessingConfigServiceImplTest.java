@@ -7,6 +7,7 @@ import static ai.traceable.localprocessing.config.service.constants.LocalProcess
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -16,6 +17,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
+import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
 import ai.traceable.localprocessing.config.service.apinaming.http.HttpApiNamingManager;
 import ai.traceable.localprocessing.config.service.client.EntityQueryServiceClient;
@@ -44,6 +46,7 @@ import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServi
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRuleDetails;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRulesServiceGrpc;
 import ai.traceable.localprocessing.config.service.v1.LocalProcessingRulesServiceGrpc.LocalProcessingRulesServiceBlockingStub;
+import ai.traceable.localprocessing.config.service.v1.ModsecConfig;
 import ai.traceable.localprocessing.config.service.v1.NewLocalProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.ProtectedEndpoint;
 import ai.traceable.localprocessing.config.service.v1.ProtectionMode;
@@ -81,6 +84,7 @@ class LocalProcessingConfigServiceImplTest {
   EntityQueryServiceClient entityQueryServiceClient;
   LocalProcessingConfigRequestValidator localProcessingConfigRequestValidator;
   FeatureCachingClient featureCachingClient;
+  SemanticVersioningComparator semanticVersioningComparator;
 
   @BeforeEach
   void setUp() {
@@ -92,6 +96,7 @@ class LocalProcessingConfigServiceImplTest {
     entityQueryServiceClient = mock(EntityQueryServiceClient.class);
     localProcessingConfigRequestValidator = mock(LocalProcessingConfigRequestValidator.class);
     featureCachingClient = mock(FeatureCachingClient.class);
+    semanticVersioningComparator = new SemanticVersioningComparator();
 
     Map<String, Map> configMap = new HashMap<>();
     configMap.put(
@@ -163,7 +168,8 @@ class LocalProcessingConfigServiceImplTest {
                 spanProcessingRulesManager,
                 uuidGenerator,
                 localProcessingConfigRequestValidator,
-                featureCachingClient))
+                featureCachingClient,
+                semanticVersioningComparator))
         .addService(new LocalProcessingRulesServiceImpl(configServiceCoordinator))
         .start();
 
@@ -179,20 +185,6 @@ class LocalProcessingConfigServiceImplTest {
   @Test
   void testGetLocalProcessingConfigWithModSecDisabled() {
     when(featureCachingClient.isTpaModSecProcessingDisabled(any())).thenReturn(true);
-    doReturn(
-            CustomModsecDetectionRules.newBuilder()
-                .setCustomModsecDetectionRulesBlob("some blob")
-                .setHash("some hash")
-                .build())
-        .when(customModsecDetectionManager)
-        .getEnabledRules(any(), any());
-    doReturn(
-            RegularModsecDetectionRules.newBuilder()
-                .setRegularModsecDetectionRulesBlob("some blob")
-                .setHash("some hash")
-                .build())
-        .when(regularModsecDetectionManager)
-        .getDetectionRules(any(), any());
     GetLocalProcessingConfigResponse localProcessingConfigResponse =
         localProcessingConfigStub.getLocalProcessingConfig(
             GetLocalProcessingConfigRequest.newBuilder()
@@ -215,7 +207,7 @@ class LocalProcessingConfigServiceImplTest {
             .build();
     doReturn(expectedCustomModsecDetectionRules)
         .when(customModsecDetectionManager)
-        .getEnabledRules(any(), any());
+        .getEnabledRules(any(), any(), eq(false));
     RegularModsecDetectionRules expectedRegularModsecDetectionRules =
         RegularModsecDetectionRules.newBuilder()
             .setRegularModsecDetectionRulesBlob("some blob")
@@ -223,7 +215,7 @@ class LocalProcessingConfigServiceImplTest {
             .build();
     doReturn(expectedRegularModsecDetectionRules)
         .when(regularModsecDetectionManager)
-        .getDetectionRules(any(), any());
+        .getDetectionRules(any(), any(), eq(false));
     GetLocalProcessingConfigResponse localProcessingConfigResponse =
         localProcessingConfigStub.getLocalProcessingConfig(
             GetLocalProcessingConfigRequest.newBuilder()
@@ -235,6 +227,48 @@ class LocalProcessingConfigServiceImplTest {
     assertEquals(
         expectedRegularModsecDetectionRules,
         localProcessingConfigResponse.getRegularModsecDetectionRules());
+  }
+
+  @Test
+  void testGetLocalProcessingConfigWithModSecCorazaEnabled() {
+    when(featureCachingClient.isTpaCorazaBasedEvaluationEnabled(any())).thenReturn(true);
+    CustomModsecDetectionRules expectedCustomModsecDetectionRules =
+        CustomModsecDetectionRules.newBuilder()
+            .setCustomModsecDetectionRulesBlob("some blob")
+            .setHash("some hash")
+            .build();
+    doReturn(expectedCustomModsecDetectionRules)
+        .when(customModsecDetectionManager)
+        .getEnabledRules(any(), any(), eq(true));
+    RegularModsecDetectionRules expectedRegularModsecDetectionRules =
+        RegularModsecDetectionRules.newBuilder()
+            .setRegularModsecDetectionRulesBlob("some blob")
+            .setHash("some hash")
+            .build();
+    doReturn(expectedRegularModsecDetectionRules)
+        .when(regularModsecDetectionManager)
+        .getDetectionRules(any(), any(), eq(true));
+    GetLocalProcessingConfigResponse localProcessingConfigResponse =
+        localProcessingConfigStub.getLocalProcessingConfig(
+            GetLocalProcessingConfigRequest.newBuilder()
+                .setCustomModsecDetectionRulesHash("old hash")
+                .setAgentCapabilities(
+                    GetLocalProcessingConfigRequest.AgentCapabilities.newBuilder()
+                        .addComponents(
+                            GetLocalProcessingConfigRequest.Component.newBuilder()
+                                .setTraceablePlatformAgentVersion("1.32.0")
+                                .build())
+                        .build())
+                .build());
+    assertEquals(
+        expectedCustomModsecDetectionRules,
+        localProcessingConfigResponse.getCustomModsecDetectionRules());
+    assertEquals(
+        expectedRegularModsecDetectionRules,
+        localProcessingConfigResponse.getRegularModsecDetectionRules());
+    assertEquals(
+        ModsecConfig.RulesBlobType.RULES_BLOB_TYPE_CORAZA,
+        localProcessingConfigResponse.getModsecConfig().getRulesBlobType());
   }
 
   @Test
@@ -285,10 +319,10 @@ class LocalProcessingConfigServiceImplTest {
 
     doReturn(expectedCustomModsecDetectionRules)
         .when(customModsecDetectionManager)
-        .getEnabledRules(any(RequestContext.class), eq("Custom"));
+        .getEnabledRules(any(RequestContext.class), eq("Custom"), anyBoolean());
     doReturn(expectedRegularModsecDetectionRules)
         .when(regularModsecDetectionManager)
-        .getDetectionRules(any(RequestContext.class), eq("Regular"));
+        .getDetectionRules(any(RequestContext.class), eq("Regular"), anyBoolean());
 
     createLocalProcessingRule("/checkout/*", "abc.com", ProtectionMode.PROTECTION_MODE_CORE);
     createLocalProcessingRule("/orders/**", "xyz.com", ProtectionMode.PROTECTION_MODE_ADVANCED);
@@ -310,10 +344,10 @@ class LocalProcessingConfigServiceImplTest {
   void getLocalProcessingConfig_protectionConfig() {
     doReturn(CustomModsecDetectionRules.getDefaultInstance())
         .when(customModsecDetectionManager)
-        .getEnabledRules(any(), any());
+        .getEnabledRules(any(), any(), anyBoolean());
     doReturn(RegularModsecDetectionRules.getDefaultInstance())
         .when(regularModsecDetectionManager)
-        .getDetectionRules(any(), any());
+        .getDetectionRules(any(), any(), anyBoolean());
 
     createLocalProcessingRule("/checkout/*", "abc.com", ProtectionMode.PROTECTION_MODE_CORE);
     createLocalProcessingRule("/orders/**", "xyz.com", ProtectionMode.PROTECTION_MODE_ADVANCED);
@@ -369,10 +403,10 @@ class LocalProcessingConfigServiceImplTest {
   void getSamplingPoliciesConfig() {
     doReturn(CustomModsecDetectionRules.getDefaultInstance())
         .when(customModsecDetectionManager)
-        .getEnabledRules(any(), any());
+        .getEnabledRules(any(), any(), anyBoolean());
     doReturn(RegularModsecDetectionRules.getDefaultInstance())
         .when(regularModsecDetectionManager)
-        .getDetectionRules(any(), any());
+        .getDetectionRules(any(), any(), anyBoolean());
 
     SamplingPolicies samplingPolicies =
         localProcessingConfigStub

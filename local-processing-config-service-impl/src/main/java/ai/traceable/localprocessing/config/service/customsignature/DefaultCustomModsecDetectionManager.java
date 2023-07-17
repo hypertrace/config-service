@@ -1,5 +1,6 @@
 package ai.traceable.localprocessing.config.service.customsignature;
 
+import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesRequest;
@@ -30,7 +31,7 @@ public class DefaultCustomModsecDetectionManager implements CustomModsecDetectio
 
   @Override
   public CustomModsecDetectionRules getEnabledRules(
-      RequestContext requestContext, String requestHash) {
+      RequestContext requestContext, String requestHash, boolean shouldUseCoraza) {
     GetCustomSignatureModsecRulesResponse response =
         requestContext.call(
             () ->
@@ -41,6 +42,10 @@ public class DefaultCustomModsecDetectionManager implements CustomModsecDetectio
                                 .addEventTypes(EventType.EVENT_TYPE_NORMAL_DETECTION)
                                 .setDisabled(false)
                                 .build())
+                        .setRuleVersion(
+                            shouldUseCoraza
+                                ? CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3
+                                : CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_UNSPECIFIED)
                         .build()));
 
     String customModSecRulesBlob = response.getModsecRulesBlob();

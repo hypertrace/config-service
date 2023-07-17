@@ -123,8 +123,14 @@ public class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   }
 
   @Override
-  public ModsecConfig getModsecConfig() {
-    return this.defaultModsecConfig;
+  public ModsecConfig getModsecConfig(boolean shouldUseCoraza) {
+    if (shouldUseCoraza) {
+      return this.defaultModsecConfig.toBuilder()
+          .setRulesBlobType(ModsecConfig.RulesBlobType.RULES_BLOB_TYPE_CORAZA)
+          .build();
+    } else {
+      return this.defaultModsecConfig;
+    }
   }
 
   private void validateRule(LocalProcessingRule localProcessingRule) {

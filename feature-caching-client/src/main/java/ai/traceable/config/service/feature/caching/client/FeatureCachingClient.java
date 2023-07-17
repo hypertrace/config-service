@@ -34,6 +34,7 @@ public class FeatureCachingClient {
   private static final boolean DEFAULT_DETECTION_EXCLUSION_V2_FLAG_VALUE = false;
   private static final boolean DEFAULT_SESSION_IDENTIFICATION_V2_FLAG_VALUE = false;
   private static final boolean DEFAULT_TPA_MODSEC_PROCESSING_DISABLED = false;
+  private static final boolean DEFAULT_TPA_CORAZA_BASED_EVALUATION = false;
   private static final boolean DEFAULT_RASP_INSPECTION = false;
   private static final String DATA_CLASSIFICATION_RP1_FLAG = "data-classification.mvp";
   private static final String DATA_CLASSIFICATION_RP2_FLAG = "data-classification.rp2";
@@ -43,6 +44,7 @@ public class FeatureCachingClient {
   private static final String DETECTION_EXCLUSION_V2_FLAG = "ui.detection-exclusions-v2";
   private static final String SESSION_IDENTIFICATION_V2_FLAG = "session-identification.v2";
   private static final String TPA_MODSEC_PROCESSING_DISABLED = "tpa.modsec-processing-disabled";
+  private static final String TPA_CORAZA_BASED_EVALUATION = "tpa.coraza-based-evaluation";
   private static final String RASP_INSPECTION = "enricher.rasp-inspection";
 
   private static final List<String> ALL_FLAGS_TO_FETCH =
@@ -54,6 +56,7 @@ public class FeatureCachingClient {
           DETECTION_EXCLUSION_V2_FLAG,
           SESSION_IDENTIFICATION_V2_FLAG,
           TPA_MODSEC_PROCESSING_DISABLED,
+          TPA_CORAZA_BASED_EVALUATION,
           RASP_INSPECTION);
   private final FeatureFlagServiceBlockingStub featureFlagStub;
   private final LoadingCache<ContextualKey<Void>, Map<String, Boolean>> featureFlagCache;
@@ -154,6 +157,20 @@ public class FeatureCachingClient {
       log.warn(
           "Failed to retrieve current feature flag value for TPA ModSec Processing", exception);
       return DEFAULT_TPA_MODSEC_PROCESSING_DISABLED;
+    }
+  }
+
+  public boolean isTpaCorazaBasedEvaluationEnabled(RequestContext requestContext) {
+    try {
+      return requireNonNull(
+          this.featureFlagCache
+              .get(requestContext.buildInternalContextualKey())
+              .get(TPA_CORAZA_BASED_EVALUATION));
+    } catch (Exception exception) {
+      log.warn(
+          "Failed to retrieve current feature flag value for TPA ModSec Coraza Processing",
+          exception);
+      return DEFAULT_TPA_CORAZA_BASED_EVALUATION;
     }
   }
 

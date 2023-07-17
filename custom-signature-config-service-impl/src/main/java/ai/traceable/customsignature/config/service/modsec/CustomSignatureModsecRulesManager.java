@@ -164,6 +164,9 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
       case CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS:
         return modsecDirectivesManager.getModsecHeader(
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS);
+      case CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3:
+        return modsecDirectivesManager.getModsecHeader(
+            ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3);
       default:
         return modsecDirectivesManager.getModsecHeader(ModsecRuleVersion.MODSEC_RULE_VERSION_V3);
     }

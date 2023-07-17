@@ -4,6 +4,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc.AnomalyModsecConfigServiceBlockingStub;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesResponse;
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.RegularModsecDetectionRules;
 import com.google.inject.Inject;
@@ -30,7 +31,7 @@ public class DefaultRegularModsecDetectionManager implements RegularModsecDetect
 
   @Override
   public RegularModsecDetectionRules getDetectionRules(
-      RequestContext requestContext, String requestHash) {
+      RequestContext requestContext, String requestHash, boolean shouldUseCoraza) {
     // https://traceableai.atlassian.net/browse/ENG-15496
     // Only Safe CRS rules will be evaluated on sensitive params on Traceable Platform Agent due
     // to perf constraints
@@ -42,6 +43,10 @@ public class DefaultRegularModsecDetectionManager implements RegularModsecDetect
                     GetModsecCrsRulesRequest.newBuilder()
                         .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
                         .setRemoveDisabledRules(true)
+                        .setRuleVersion(
+                            shouldUseCoraza
+                                ? ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3
+                                : ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED)
                         .build()));
     if (response.getModsecCrsRulesList().size() == 1
         && response.getModsecCrsRulesList().get(0).getSubRuleType()

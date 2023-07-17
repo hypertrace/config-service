@@ -1,7 +1,9 @@
 package ai.traceable.localprocessing.config.service;
 
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
+import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.localprocessing.config.service.apinaming.http.HttpApiNamingManager;
+import ai.traceable.localprocessing.config.service.constants.LocalProcessingConstants;
 import ai.traceable.localprocessing.config.service.coordinator.ConfigServiceCoordinator;
 import ai.traceable.localprocessing.config.service.customsignature.CustomModsecDetectionManager;
 import ai.traceable.localprocessing.config.service.regularmodsec.RegularModsecDetectionManager;
@@ -37,6 +39,7 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
   private final UuidGenerator uuidGenerator;
   private final LocalProcessingConfigRequestValidator localProcessingConfigRequestValidator;
   private final FeatureCachingClient featureCachingClient;
+  private final SemanticVersioningComparator semanticVersioningComparator;
 
   @Inject
   public LocalProcessingConfigServiceImpl(
@@ -47,7 +50,8 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
       SpanProcessingRulesManager spanProcessingRulesManager,
       UuidGenerator uuidGenerator,
       LocalProcessingConfigRequestValidator localProcessingConfigRequestValidator,
-      FeatureCachingClient featureCachingClient) {
+      FeatureCachingClient featureCachingClient,
+      SemanticVersioningComparator semanticVersioningComparator) {
     this.configServiceCoordinator = configServiceCoordinator;
     this.regularModsecDetectionManager = regularModsecDetectionManager;
     this.customModsecDetectionManager = customModsecDetectionManager;
@@ -56,6 +60,7 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
     this.uuidGenerator = uuidGenerator;
     this.localProcessingConfigRequestValidator = localProcessingConfigRequestValidator;
     this.featureCachingClient = featureCachingClient;
+    this.semanticVersioningComparator = semanticVersioningComparator;
   }
 
   @Override
@@ -64,12 +69,13 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
       StreamObserver<GetLocalProcessingConfigResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
+      boolean shouldUseCoraza = shouldUseCoraza(requestContext, request.getAgentCapabilities());
       GetLocalProcessingConfigResponse.Builder responseBuilder =
           GetLocalProcessingConfigResponse.newBuilder()
               .setProtectionModeConfig(
                   getProtectionModeConfig(request.getProtectionModeHash(), requestContext))
               .setSamplingPolicies(getSamplingPoliciesConfig(request.getSamplingPoliciesHash()))
-              .setModsecConfig(configServiceCoordinator.getModsecConfig());
+              .setModsecConfig(configServiceCoordinator.getModsecConfig(shouldUseCoraza));
       if (featureCachingClient.isTpaModSecProcessingDisabled(requestContext)) {
         responseBuilder
             .setCustomModsecDetectionRules(customModsecDetectionManager.getEmptyRules())
@@ -78,10 +84,10 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
         responseBuilder
             .setCustomModsecDetectionRules(
                 customModsecDetectionManager.getEnabledRules(
-                    requestContext, request.getCustomModsecDetectionRulesHash()))
+                    requestContext, request.getCustomModsecDetectionRulesHash(), shouldUseCoraza))
             .setRegularModsecDetectionRules(
                 regularModsecDetectionManager.getDetectionRules(
-                    requestContext, request.getRegularModsecDetectionRulesHash()));
+                    requestContext, request.getRegularModsecDetectionRulesHash(), shouldUseCoraza));
       }
       responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();
@@ -175,5 +181,22 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
             .addAllProtectedEndpoints(protectedEndpoints);
 
     return protectionModeConfigBuilder.build();
+  }
+
+  private boolean shouldUseCoraza(
+      RequestContext requestContext,
+      GetLocalProcessingConfigRequest.AgentCapabilities agentCapabilities) {
+    return semanticVersioningComparator.isVersionSupported(
+            getTPAVersion(agentCapabilities),
+            LocalProcessingConstants.TPA_CORAZA_MIN_SUPPORTED_VERSION)
+        && featureCachingClient.isTpaCorazaBasedEvaluationEnabled(requestContext);
+  }
+
+  private String getTPAVersion(
+      GetLocalProcessingConfigRequest.AgentCapabilities agentCapabilities) {
+    return agentCapabilities.getComponentsList().stream()
+        .map(GetLocalProcessingConfigRequest.Component::getTraceablePlatformAgentVersion)
+        .findFirst()
+        .orElse("0.0.0");
   }
 }
