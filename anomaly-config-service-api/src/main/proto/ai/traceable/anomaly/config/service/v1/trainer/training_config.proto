@@ -397,7 +397,9 @@ message DirectoryListingTrainingConfig {}
 
 message JavaSerializedObjectTrainingConfig {}
 
-message MultipleApiVersionsTrainingConfig {}
+message MultipleApiVersionsTrainingConfig {
+  optional int64 max_allowed_api_versions_count = 1;
+}
 
 message ServiceUsesBasicAuthTrainingConfig {}
 
