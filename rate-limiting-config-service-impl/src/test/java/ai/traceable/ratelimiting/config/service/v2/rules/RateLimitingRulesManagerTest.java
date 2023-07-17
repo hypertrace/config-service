@@ -6,12 +6,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.ratelimiting.config.service.v2.Action;
+import ai.traceable.ratelimiting.config.service.v2.Action.Allow;
+import ai.traceable.ratelimiting.config.service.v2.Action.Block;
 import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
 import ai.traceable.ratelimiting.config.service.v2.CompositeCondition.LogicalOperator;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.EnvironmentScope;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter.RuleAction;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
@@ -19,6 +23,7 @@ import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
 import ai.traceable.ratelimiting.config.service.v2.RuleStatus;
+import ai.traceable.ratelimiting.config.service.v2.TransactionActionConfig;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesManager;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesStore;
@@ -273,9 +278,45 @@ public class RateLimitingRulesManagerTest {
             GetRateLimitingRulesFilter.newBuilder()
                 .addCategories(Category.CATEGORY_RATE_LIMITING)
                 .setScope(filterScope)
+                .setDisabled(true)
+                .addRuleActions(RuleAction.RULE_ACTION_TRANSACTION_BLOCKED)
+                .addRuleActions(RuleAction.RULE_ACTION_TRANSACTION_ALLOWED)
                 .build());
-    assertEquals(2, rules.size());
-    assertEquals(new HashSet<>(expectedRules.subList(0, 2)), new HashSet<>(rules));
+    assertEquals(1, rules.size());
+    assertEquals(new HashSet<>(expectedRules.subList(0, 1)), new HashSet<>(rules));
+
+    rules =
+        rulesManager.getRateLimitingRules(
+            requestContext,
+            GetRateLimitingRulesFilter.newBuilder()
+                .addCategories(Category.CATEGORY_RATE_LIMITING)
+                .setScope(filterScope)
+                .addRuleActions(RuleAction.RULE_ACTION_TRANSACTION_ALLOWED)
+                .build());
+    assertEquals(1, rules.size());
+
+    rules =
+        rulesManager.getRateLimitingRules(
+            requestContext,
+            GetRateLimitingRulesFilter.newBuilder()
+                .addCategories(Category.CATEGORY_RATE_LIMITING)
+                .setScope(filterScope)
+                .setDisabled(false)
+                .build());
+    assertEquals(1, rules.size());
+    assertEquals(new HashSet<>(expectedRules.subList(1, 2)), new HashSet<>(rules));
+
+    rules =
+        rulesManager.getRateLimitingRules(
+            requestContext,
+            GetRateLimitingRulesFilter.newBuilder()
+                .addCategories(Category.CATEGORY_RATE_LIMITING)
+                .setScope(filterScope)
+                .setDisabled(false)
+                .addRuleActions(RuleAction.RULE_ACTION_TRANSACTION_ALLOWED)
+                .build());
+    assertEquals(1, rules.size());
+    assertEquals(new HashSet<>(expectedRules.subList(1, 2)), new HashSet<>(rules));
   }
 
   @Test
@@ -442,6 +483,10 @@ public class RateLimitingRulesManagerTest {
         .setName(name)
         .setCategory(category)
         .setRuleStatus(RuleStatus.newBuilder().build())
+        .setEnabled(true)
+        .setTransactionActionConfig(
+            TransactionActionConfig.newBuilder()
+                .setAction(Action.newBuilder().setBlock(Block.getDefaultInstance()).build()))
         .build();
   }
 
@@ -478,6 +523,10 @@ public class RateLimitingRulesManagerTest {
         .setCategory(category)
         .setRuleConfigScope(scope)
         .setRuleStatus(RuleStatus.newBuilder().build())
+        .setEnabled(false)
+        .setTransactionActionConfig(
+            TransactionActionConfig.newBuilder()
+                .setAction(Action.newBuilder().setAllow(Allow.getDefaultInstance()).build()))
         .build();
   }
 }

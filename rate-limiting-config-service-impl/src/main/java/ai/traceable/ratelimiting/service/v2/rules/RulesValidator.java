@@ -18,4 +18,7 @@ public interface RulesValidator {
       List<RateLimitingRule> existingRules);
 
   void validateOrThrow(RequestContext requestContext, GetRateLimitingRulesRequest request);
+
+  void validateOrThrow(
+      RequestContext requestContext, GetRateLimitingRuleModsecRulesRequest request);
 }

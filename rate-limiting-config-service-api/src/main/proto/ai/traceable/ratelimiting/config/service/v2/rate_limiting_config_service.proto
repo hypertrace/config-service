@@ -15,6 +15,8 @@ service RateLimitingConfigService {
   }
   rpc CreateRateLimitingRule (CreateRateLimitingRuleRequest) returns (CreateRateLimitingRuleResponse) {
   }
+  rpc GetRateLimitingRuleModsecRules (GetRateLimitingRuleModsecRulesRequest) returns (GetRateLimitingRuleModsecRulesResponse) {
+  }
 }
 
 message GetRateLimitingRulesRequest {
@@ -25,6 +27,14 @@ message GetRateLimitingRulesRequest {
 message GetRateLimitingRulesFilter {
   repeated Category categories = 1;
   RuleConfigScope scope = 2;
+  optional bool disabled = 3;
+  repeated RuleAction rule_actions = 4;
+
+  enum RuleAction {
+    RULE_ACTION_UNSPECIFIED = 0;
+    RULE_ACTION_TRANSACTION_BLOCKED = 1;
+    RULE_ACTION_TRANSACTION_ALLOWED = 2;
+  }
 }
 
 message GetRulesByCategoryFilter {
@@ -57,4 +67,14 @@ message CreateRateLimitingRuleRequest {
 
 message CreateRateLimitingRuleResponse {
   RateLimitingRule rule = 1;
+}
+
+message GetRateLimitingRuleModsecRulesRequest{
+  GetRateLimitingRulesFilter rules_filter = 1;
+}
+
+message GetRateLimitingRuleModsecRulesResponse {
+  string modsec_directives_blob = 1;
+  string modsec_rules_blob = 2;
+  repeated RateLimitingModsecRule rules = 3;
 }

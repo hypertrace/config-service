@@ -11,6 +11,12 @@ message RateLimitingRule {
   RateLimitingRuleData data = 2;
 }
 
+message RateLimitingModsecRule {
+  string id = 1;
+  RateLimitingRuleData data = 2;
+  repeated string data_type_ids = 3;
+}
+
 message RateLimitingRuleData {
   Category category = 1;
   string name = 2;

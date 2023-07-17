@@ -1,10 +1,14 @@
 package ai.traceable.ratelimiting.service.v2.rules;
 
+import static ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter.RuleAction.RULE_ACTION_TRANSACTION_ALLOWED;
+import static ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter.RuleAction.RULE_ACTION_TRANSACTION_BLOCKED;
+import static ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter.RuleAction.RULE_ACTION_UNSPECIFIED;
 import static ai.traceable.ratelimiting.service.v2.constants.RateLimitingConfigConstants.RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME;
 import static ai.traceable.ratelimiting.service.v2.constants.RateLimitingConfigConstants.RATE_LIMITING_RULE_CONFIG_RESOURCE_NAMESPACE;
 
 import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter.RuleAction;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
@@ -15,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
@@ -89,7 +94,10 @@ public class RateLimitingRulesStore
       RateLimitingRule rateLimitingRule, GetRateLimitingRulesFilter filter) {
     return Optional.of(rateLimitingRule)
         .filter(rule -> filterRuleOnCategory(rule, filter.getCategoriesList()))
-        .filter(rule -> filterRuleOnScope(rule, filter.getScope()));
+        .filter(rule -> filterRuleOnScope(rule, filter.getScope()))
+        .filter(
+            rule -> !filter.hasDisabled() || filter.getDisabled() == rule.getData().getEnabled())
+        .filter(rule -> filterRuleOnActions(rule, filter.getRuleActionsList()));
   }
 
   private boolean filterRuleOnCategory(RateLimitingRule rule, List<Category> categoryList) {
@@ -125,5 +133,21 @@ public class RateLimitingRulesStore
   private Map<String, RateLimitingRule> getRuleIdToRuleMap(
       List<RateLimitingRule> rateLimitingRules) {
     return Maps.uniqueIndex(rateLimitingRules, RateLimitingRule::getId);
+  }
+
+  private boolean filterRuleOnActions(RateLimitingRule rule, List<RuleAction> filterRuleActions) {
+    if (filterRuleActions.isEmpty()) {
+      return true;
+    }
+    RuleAction currentRuleAction = RULE_ACTION_UNSPECIFIED;
+    switch (rule.getData().getTransactionActionConfig().getAction().getActionCase()) {
+      case BLOCK:
+        currentRuleAction = RULE_ACTION_TRANSACTION_BLOCKED;
+        break;
+      case ALLOW:
+        currentRuleAction = RULE_ACTION_TRANSACTION_ALLOWED;
+        break;
+    }
+    return filterRuleActions.stream().anyMatch(Predicate.isEqual(currentRuleAction));
   }
 }

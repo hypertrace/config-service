@@ -12,6 +12,9 @@ import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.DeleteRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.EnvironmentScope;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRulesRequest;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter.RuleAction;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
@@ -20,6 +23,7 @@ import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
 import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
 import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.UserAggregateType;
+import io.grpc.Status;
 import java.util.List;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -32,6 +36,14 @@ public class RateLimitingRulesValidator implements RulesValidator {
   @Override
   public void validateOrThrow(RequestContext requestContext, GetRateLimitingRulesRequest request) {
     validateRequestContextOrThrow(requestContext);
+    validateFilter(request.getRulesFilter());
+  }
+
+  @Override
+  public void validateOrThrow(
+      RequestContext requestContext, GetRateLimitingRuleModsecRulesRequest request) {
+    validateRequestContextOrThrow(requestContext);
+    validateFilter(request.getRulesFilter());
   }
 
   @Override
@@ -119,6 +131,20 @@ public class RateLimitingRulesValidator implements RulesValidator {
       if (scope.getEnvironmentScope().getEnvironmentIdsList().stream().anyMatch(String::isEmpty)) {
         validatorUtils.throwInvalidArgumentException("Environment id should not be empty string.");
       }
+    }
+  }
+
+  private void validateFilter(GetRateLimitingRulesFilter filter) {
+    if (filter.getCategoriesList().contains(Category.CATEGORY_UNSPECIFIED)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Cannot filter for UNSPECIFIED category")
+          .asRuntimeException();
+    }
+
+    if (filter.getRuleActionsList().contains(RuleAction.RULE_ACTION_UNSPECIFIED)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Cannot filter for UNSPECIFIED rule actions")
+          .asRuntimeException();
     }
   }
 
