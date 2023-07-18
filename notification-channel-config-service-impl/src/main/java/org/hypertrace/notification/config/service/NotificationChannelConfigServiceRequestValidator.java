@@ -5,6 +5,8 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 
 import com.typesafe.config.Config;
 import io.grpc.Status;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.AwsS3BucketChannelConfig;
@@ -23,6 +25,7 @@ import org.hypertrace.notification.config.service.v1.WebhookHeader;
 public class NotificationChannelConfigServiceRequestValidator {
 
   public static final String WEBHOOK_EXCLUSION_DOMAINS = "webhook.exclusion.domains";
+  public static final String WEBHOOK_HTTP_SUPPORT_ENABLED = "webhook.http.support.enabled";
 
   public void validateCreateNotificationChannelRequest(
       RequestContext requestContext,
@@ -32,9 +35,44 @@ public class NotificationChannelConfigServiceRequestValidator {
     validateNotificationChannelMutableData(request.getNotificationChannelMutableData());
     validateWebhookConfigExclusionDomains(
         request.getNotificationChannelMutableData(), notificationChannelConfig);
+    validateWebhookHttpSupport(
+        request.getNotificationChannelMutableData(), notificationChannelConfig);
   }
 
-  private void validateWebhookConfigExclusionDomains(
+  void validateWebhookHttpSupport(
+      NotificationChannelMutableData notificationChannelMutableData,
+      Config notificationChannelConfig) {
+    if (notificationChannelConfig == null
+        || notificationChannelMutableData.getWebhookChannelConfigList().isEmpty()) {
+      return;
+    }
+    for (WebhookChannelConfig webhookChannelConfig :
+        notificationChannelMutableData.getWebhookChannelConfigList()) {
+      if (notificationChannelConfig.hasPath(WEBHOOK_HTTP_SUPPORT_ENABLED)
+          && notificationChannelConfig.getBoolean(WEBHOOK_HTTP_SUPPORT_ENABLED)) {
+        continue;
+      }
+      validateHttpsUrl(webhookChannelConfig.getUrl());
+    }
+  }
+
+  private void validateHttpsUrl(String urlString) {
+    try {
+      URL url = new URL(urlString);
+      String protocol = url.getProtocol();
+      if (!protocol.equals("https")) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription("URL configured in webhook is not https ")
+            .asRuntimeException();
+      }
+    } catch (MalformedURLException e) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("URL configured in webhook is malformed ")
+          .asRuntimeException();
+    }
+  }
+
+  void validateWebhookConfigExclusionDomains(
       NotificationChannelMutableData notificationChannelMutableData,
       Config notificationChannelConfig) {
     if (notificationChannelConfig == null
