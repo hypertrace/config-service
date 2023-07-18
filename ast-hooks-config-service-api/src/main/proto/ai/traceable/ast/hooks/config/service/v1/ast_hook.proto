@@ -121,6 +121,7 @@ message MutualTls {
     string cert_authority_cert = 1;
     EncryptedText client_key_passphrase = 2;
     string sni = 3;
+    optional string host = 4;
   }
 
   string client_cert = 1;
@@ -164,6 +165,7 @@ message HmacAdvanced {
   string timestamp_header = 1;
   string canonical_request_format = 2;
   int64 allowed_time_skew = 3;
+  optional string canonical_mac_header_format = 4;
 }
 
 message Oauth2 {
