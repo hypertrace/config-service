@@ -48,6 +48,7 @@ message CreateApiSpec {
   ApiSpecStatus status = 3;
   optional string file_content_sha256 = 4;
   optional string spec_path = 5;
+  bool api_discovery_enabled = 6;
 }
 
 // update
@@ -72,6 +73,7 @@ message UpdateApiSpec {
   string name = 2;
   bool api_naming_enabled = 3;
   ApiSpecStatus status = 4;
+  bool api_discovery_enabled = 5;
 }
 
 // delete
@@ -98,6 +100,7 @@ message ApiSpec {
   google.protobuf.Timestamp last_updated_timestamp = 6;
   optional string file_content_sha256 = 7;
   optional string spec_path = 8;
+  bool api_discovery_enabled = 9;
 }
 
 enum ApiSpecStatus {

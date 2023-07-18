@@ -124,7 +124,8 @@ public class ApiSpecConfigServiceImpl
               .setSpecId(UUID.randomUUID().toString())
               .setName(createApiSpec.getName())
               .setApiNamingEnabled(createApiSpec.getApiNamingEnabled())
-              .setStatus(createApiSpec.getStatus());
+              .setStatus(createApiSpec.getStatus())
+              .setApiDiscoveryEnabled(createApiSpec.getApiDiscoveryEnabled());
 
       List<ApiSpec> existingApiSpecs = this.apiSpecConfigStore.getAllData(requestContext);
 
@@ -322,7 +323,8 @@ public class ApiSpecConfigServiceImpl
     ApiSpec.Builder apiSpecBuilder =
         ApiSpec.newBuilder(existingApiSpec)
             .setName(updateApiSpec.getName())
-            .setApiNamingEnabled(updateApiSpec.getApiNamingEnabled());
+            .setApiNamingEnabled(updateApiSpec.getApiNamingEnabled())
+            .setApiDiscoveryEnabled(updateApiSpec.getApiDiscoveryEnabled());
 
     // set updated status if present, else persist with existing status
     if (!API_SPEC_STATUS_UNSPECIFIED.equals(updateApiSpec.getStatus())) {
