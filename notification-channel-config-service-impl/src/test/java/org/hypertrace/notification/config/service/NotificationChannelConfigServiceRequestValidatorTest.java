@@ -1,9 +1,11 @@
 package org.hypertrace.notification.config.service;
 
 import static org.hypertrace.notification.config.service.NotificationChannelConfigServiceImpl.NOTIFICATION_CHANNEL_CONFIG_SERVICE_CONFIG;
+import static org.hypertrace.notification.config.service.NotificationChannelConfigServiceRequestValidator.WEBHOOK_HTTP_SUPPORT_ENABLED;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigValueFactory;
 import java.io.File;
 import org.hypertrace.notification.config.service.v1.NotificationChannelMutableData;
 import org.hypertrace.notification.config.service.v1.WebhookChannelConfig;
@@ -19,11 +21,7 @@ public class NotificationChannelConfigServiceRequestValidatorTest {
     File configFile = new File(ClassLoader.getSystemResource("application.conf").getPath());
     Config config = ConfigFactory.parseFile(configFile);
     NotificationChannelMutableData notificationChannelMutableDataWithExcludedDomain =
-        NotificationChannelMutableData.newBuilder()
-            .setChannelName("testChannel")
-            .addWebhookChannelConfig(
-                WebhookChannelConfig.newBuilder().setUrl("http://localhost:9000/test"))
-            .build();
+        getNotificationChannelMutableData("http://localhost:9000/test");
     Assertions.assertThrows(
         RuntimeException.class,
         () -> {
@@ -33,11 +31,7 @@ public class NotificationChannelConfigServiceRequestValidatorTest {
         },
         "RuntimeException was expected");
     NotificationChannelMutableData notificationChannelMutableDataWithValidDomain =
-        NotificationChannelMutableData.newBuilder()
-            .setChannelName("testChannel")
-            .addWebhookChannelConfig(
-                WebhookChannelConfig.newBuilder().setUrl("http://testHost:9000/test"))
-            .build();
+        getNotificationChannelMutableData("http://testHost:9000/test");
     notificationChannelConfigServiceRequestValidator.validateWebhookConfigExclusionDomains(
         notificationChannelMutableDataWithValidDomain,
         config.getConfig(NOTIFICATION_CHANNEL_CONFIG_SERVICE_CONFIG));
@@ -50,42 +44,49 @@ public class NotificationChannelConfigServiceRequestValidatorTest {
             new NotificationChannelConfigServiceRequestValidator();
     File configFile = new File(ClassLoader.getSystemResource("application.conf").getPath());
     Config config = ConfigFactory.parseFile(configFile);
+    Config notificationChannelConfig = config.getConfig(NOTIFICATION_CHANNEL_CONFIG_SERVICE_CONFIG);
     NotificationChannelMutableData notificationChannelWithHttpUrl =
-        NotificationChannelMutableData.newBuilder()
-            .setChannelName("testChannel")
-            .addWebhookChannelConfig(
-                WebhookChannelConfig.newBuilder().setUrl("http://localhost:9000/test"))
-            .build();
+        getNotificationChannelMutableData("http://localhost:9000/test");
+    // As http support disabled RuntimeException should be thrown.
     Assertions.assertThrows(
         RuntimeException.class,
         () -> {
           notificationChannelConfigServiceRequestValidator.validateWebhookHttpSupport(
-              notificationChannelWithHttpUrl,
-              config.getConfig(NOTIFICATION_CHANNEL_CONFIG_SERVICE_CONFIG));
-        },
-        "RuntimeException was expected");
-    NotificationChannelMutableData notificationChannelWithInvalidUrl =
-        NotificationChannelMutableData.newBuilder()
-            .setChannelName("testChannel")
-            .addWebhookChannelConfig(WebhookChannelConfig.newBuilder().setUrl("localhost"))
-            .build();
-    Assertions.assertThrows(
-        RuntimeException.class,
-        () -> {
-          notificationChannelConfigServiceRequestValidator.validateWebhookHttpSupport(
-              notificationChannelWithInvalidUrl,
-              config.getConfig(NOTIFICATION_CHANNEL_CONFIG_SERVICE_CONFIG));
+              notificationChannelWithHttpUrl, notificationChannelConfig);
         },
         "RuntimeException was expected");
 
+    // In valid URl not accepted
+    NotificationChannelMutableData notificationChannelWithInvalidUrl =
+        getNotificationChannelMutableData("localhost");
+    Assertions.assertThrows(
+        RuntimeException.class,
+        () -> {
+          notificationChannelConfigServiceRequestValidator.validateWebhookHttpSupport(
+              notificationChannelWithInvalidUrl, notificationChannelConfig);
+        },
+        "RuntimeException was expected");
+
+    // Valid webhook config with https url.
     NotificationChannelMutableData notificationChannelMutableDataWithHttpsUrl =
-        NotificationChannelMutableData.newBuilder()
-            .setChannelName("testChannel")
-            .addWebhookChannelConfig(
-                WebhookChannelConfig.newBuilder().setUrl("https://localhost:9000/test"))
-            .build();
+        getNotificationChannelMutableData("https://localhost:9000/test");
     notificationChannelConfigServiceRequestValidator.validateWebhookHttpSupport(
-        notificationChannelMutableDataWithHttpsUrl,
-        config.getConfig(NOTIFICATION_CHANNEL_CONFIG_SERVICE_CONFIG));
+        notificationChannelMutableDataWithHttpsUrl, notificationChannelConfig);
+
+    // Update config with http support enabled and verify no exceptions for http url
+    Config updatedNotificationChannelConfig =
+        config.withValue(WEBHOOK_HTTP_SUPPORT_ENABLED, ConfigValueFactory.fromAnyRef("true"));
+
+    NotificationChannelMutableData notificationChannelMutableDataWithHttpUrl =
+        getNotificationChannelMutableData("http://localhost:9000/test");
+    notificationChannelConfigServiceRequestValidator.validateWebhookHttpSupport(
+        notificationChannelMutableDataWithHttpUrl, updatedNotificationChannelConfig);
+  }
+
+  private static NotificationChannelMutableData getNotificationChannelMutableData(String url) {
+    return NotificationChannelMutableData.newBuilder()
+        .setChannelName("testChannel")
+        .addWebhookChannelConfig(WebhookChannelConfig.newBuilder().setUrl(url))
+        .build();
   }
 }
