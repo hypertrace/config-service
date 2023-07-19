@@ -555,12 +555,12 @@ message Filter {
   }
 }
 
-message RelationalFilter {
-  RelationalOperator operator = 1;
-  repeated LogicalFilter logical_filters = 2;
+message LogicalFilter {
+  LogicalOperator operator = 1;
+  repeated RelationalFilter relational_filters = 2;
 }
 
-message LogicalFilter {
+message RelationalFilter {
   oneof left_operand {
     string key = 1;
   }
