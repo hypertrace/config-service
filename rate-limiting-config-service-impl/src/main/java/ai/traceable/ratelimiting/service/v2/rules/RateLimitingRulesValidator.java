@@ -12,9 +12,10 @@ import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.DeleteRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.EnvironmentScope;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingModsecRulesFilter;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingModsecRulesFilter.RuleAction;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
-import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter.RuleAction;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
@@ -43,7 +44,7 @@ public class RateLimitingRulesValidator implements RulesValidator {
   public void validateOrThrow(
       RequestContext requestContext, GetRateLimitingRuleModsecRulesRequest request) {
     validateRequestContextOrThrow(requestContext);
-    validateFilter(request.getRulesFilter());
+    validateModsecFilter(request.getRulesFilter());
   }
 
   @Override
@@ -135,6 +136,14 @@ public class RateLimitingRulesValidator implements RulesValidator {
   }
 
   private void validateFilter(GetRateLimitingRulesFilter filter) {
+    if (filter.getCategoriesList().contains(Category.CATEGORY_UNSPECIFIED)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Cannot filter for UNSPECIFIED category")
+          .asRuntimeException();
+    }
+  }
+
+  private void validateModsecFilter(GetRateLimitingModsecRulesFilter filter) {
     if (filter.getCategoriesList().contains(Category.CATEGORY_UNSPECIFIED)) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Cannot filter for UNSPECIFIED category")

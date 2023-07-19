@@ -2,6 +2,7 @@ package ai.traceable.ratelimiting.config.service.v2.rules;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -15,7 +16,6 @@ import ai.traceable.ratelimiting.config.service.v2.CompositeCondition.LogicalOpe
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.EnvironmentScope;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
-import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter.RuleAction;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
@@ -29,6 +29,7 @@ import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesManager;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesStore;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import java.time.Clock;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -66,8 +67,11 @@ public class RateLimitingRulesManagerTest {
             mockConfigChangeEventGenerator,
             rateLimitingConfigServiceConfig);
     uuidGenerator = mock(UuidGenerator.class);
+    Clock clock = mock(Clock.class);
+    doReturn(1000000L).when(clock).millis();
     rulesManager =
-        new RateLimitingRulesManager(rulesStore, uuidGenerator, rateLimitingConfigServiceConfig);
+        new RateLimitingRulesManager(
+            rulesStore, uuidGenerator, rateLimitingConfigServiceConfig, clock);
   }
 
   @AfterEach
@@ -142,11 +146,11 @@ public class RateLimitingRulesManagerTest {
 
     List<RateLimitingRuleData> ruleDataList =
         List.of(
-            buildRateLimitingRuleData("rule1", Category.CATEGORY_RATE_LIMITING),
+            buildRateLimitingRuleData("rule1", Category.CATEGORY_RATE_LIMITING, false),
             buildRateLimitingRuleData(
                 "rule2", Category.CATEGORY_RATE_LIMITING, RuleConfigScope.newBuilder().build()),
             buildRateLimitingRuleData("rule3", Category.CATEGORY_RATE_LIMITING, scope),
-            buildRateLimitingRuleData("rule4", Category.CATEGORY_DATA_EXFILTRATION));
+            buildRateLimitingRuleData("rule4", Category.CATEGORY_DATA_EXFILTRATION, false));
 
     when(uuidGenerator.generateRandomId())
         .thenReturn("id1")
@@ -184,11 +188,11 @@ public class RateLimitingRulesManagerTest {
 
     List<RateLimitingRuleData> ruleDataList =
         List.of(
-            buildRateLimitingRuleData("rule1", Category.CATEGORY_RATE_LIMITING),
+            buildRateLimitingRuleData("rule1", Category.CATEGORY_RATE_LIMITING, false),
             buildRateLimitingRuleData(
                 "rule2", Category.CATEGORY_RATE_LIMITING, RuleConfigScope.newBuilder().build()),
             buildRateLimitingRuleData("rule3", Category.CATEGORY_RATE_LIMITING, scope),
-            buildRateLimitingRuleData("rule4", Category.CATEGORY_DATA_EXFILTRATION));
+            buildRateLimitingRuleData("rule4", Category.CATEGORY_DATA_EXFILTRATION, true));
 
     when(uuidGenerator.generateRandomId())
         .thenReturn("id1")
@@ -279,21 +283,9 @@ public class RateLimitingRulesManagerTest {
                 .addCategories(Category.CATEGORY_RATE_LIMITING)
                 .setScope(filterScope)
                 .setDisabled(true)
-                .addRuleActions(RuleAction.RULE_ACTION_TRANSACTION_BLOCKED)
-                .addRuleActions(RuleAction.RULE_ACTION_TRANSACTION_ALLOWED)
                 .build());
     assertEquals(1, rules.size());
     assertEquals(new HashSet<>(expectedRules.subList(0, 1)), new HashSet<>(rules));
-
-    rules =
-        rulesManager.getRateLimitingRules(
-            requestContext,
-            GetRateLimitingRulesFilter.newBuilder()
-                .addCategories(Category.CATEGORY_RATE_LIMITING)
-                .setScope(filterScope)
-                .addRuleActions(RuleAction.RULE_ACTION_TRANSACTION_ALLOWED)
-                .build());
-    assertEquals(1, rules.size());
 
     rules =
         rulesManager.getRateLimitingRules(
@@ -313,7 +305,6 @@ public class RateLimitingRulesManagerTest {
                 .addCategories(Category.CATEGORY_RATE_LIMITING)
                 .setScope(filterScope)
                 .setDisabled(false)
-                .addRuleActions(RuleAction.RULE_ACTION_TRANSACTION_ALLOWED)
                 .build());
     assertEquals(1, rules.size());
     assertEquals(new HashSet<>(expectedRules.subList(1, 2)), new HashSet<>(rules));
@@ -363,11 +354,11 @@ public class RateLimitingRulesManagerTest {
 
     List<RateLimitingRuleData> ruleDataList =
         List.of(
-            buildRateLimitingRuleData("rule1", Category.CATEGORY_RATE_LIMITING),
+            buildRateLimitingRuleData("rule1", Category.CATEGORY_RATE_LIMITING, false),
             buildRateLimitingRuleData(
                 "rule2", Category.CATEGORY_RATE_LIMITING, RuleConfigScope.newBuilder().build()),
             buildRateLimitingRuleData("rule3", Category.CATEGORY_RATE_LIMITING, scope),
-            buildRateLimitingRuleData("rule4", Category.CATEGORY_DATA_EXFILTRATION));
+            buildRateLimitingRuleData("rule4", Category.CATEGORY_DATA_EXFILTRATION, false));
 
     when(uuidGenerator.generateRandomId())
         .thenReturn("id1")
@@ -382,7 +373,7 @@ public class RateLimitingRulesManagerTest {
     rulesManager.updateRateLimitingRule(
         requestContext,
         "id1",
-        buildRateLimitingRuleData("rule1Updated", Category.CATEGORY_RATE_LIMITING));
+        buildRateLimitingRuleData("rule1Updated", Category.CATEGORY_RATE_LIMITING, false));
     rulesManager.updateRateLimitingRule(
         requestContext,
         "id2",
@@ -395,7 +386,7 @@ public class RateLimitingRulesManagerTest {
     rulesManager.updateRateLimitingRule(
         requestContext,
         "id4",
-        buildRateLimitingRuleData("rule4Updated", Category.CATEGORY_DATA_EXFILTRATION));
+        buildRateLimitingRuleData("rule4Updated", Category.CATEGORY_DATA_EXFILTRATION, true));
 
     List<RateLimitingRule> rules =
         rulesManager.getRateLimitingRules(
@@ -422,7 +413,8 @@ public class RateLimitingRulesManagerTest {
                 rulesManager.updateRateLimitingRule(
                     requestContext,
                     "id",
-                    buildRateLimitingRuleData("ruleUpdated", Category.CATEGORY_RATE_LIMITING)));
+                    buildRateLimitingRuleData(
+                        "ruleUpdated", Category.CATEGORY_RATE_LIMITING, false)));
     assertEquals(Status.NOT_FOUND, Status.fromThrowable(throwable));
   }
 
@@ -430,9 +422,9 @@ public class RateLimitingRulesManagerTest {
   void testDeleteRateLimitingRule() {
     List<RateLimitingRuleData> ruleDataList =
         List.of(
-            buildRateLimitingRuleData("rule1", Category.CATEGORY_RATE_LIMITING),
-            buildRateLimitingRuleData("rule2", Category.CATEGORY_RATE_LIMITING),
-            buildRateLimitingRuleData("rule3", Category.CATEGORY_DATA_EXFILTRATION));
+            buildRateLimitingRuleData("rule1", Category.CATEGORY_RATE_LIMITING, false),
+            buildRateLimitingRuleData("rule2", Category.CATEGORY_RATE_LIMITING, false),
+            buildRateLimitingRuleData("rule3", Category.CATEGORY_DATA_EXFILTRATION, true));
     when(uuidGenerator.generateRandomId()).thenReturn("id1").thenReturn("id2").thenReturn("id3");
     ruleDataList.stream()
         .map(ruleData -> rulesManager.createRateLimitingRule(requestContext, ruleData))
@@ -474,19 +466,25 @@ public class RateLimitingRulesManagerTest {
   private RateLimitingRule buildRateLimitingRule(String id, String name, Category category) {
     return RateLimitingRule.newBuilder()
         .setId(id)
-        .setData(buildRateLimitingRuleData(name, category))
+        .setData(buildRateLimitingRuleData(name, category, true))
         .build();
   }
 
-  private RateLimitingRuleData buildRateLimitingRuleData(String name, Category category) {
+  private RateLimitingRuleData buildRateLimitingRuleData(
+      String name, Category category, boolean setExpiry) {
+    TransactionActionConfig.Builder transactionActionConfigBuilder =
+        TransactionActionConfig.newBuilder()
+            .setAction(
+                Action.newBuilder().setBlock(Block.newBuilder().setDurationIso("PT2H")).build());
+    if (setExpiry) {
+      transactionActionConfigBuilder.setExpirationTimestampMillis(8200000L);
+    }
     return RateLimitingRuleData.newBuilder()
         .setName(name)
         .setCategory(category)
         .setRuleStatus(RuleStatus.newBuilder().build())
         .setEnabled(true)
-        .setTransactionActionConfig(
-            TransactionActionConfig.newBuilder()
-                .setAction(Action.newBuilder().setBlock(Block.getDefaultInstance()).build()))
+        .setTransactionActionConfig(transactionActionConfigBuilder)
         .build();
   }
 

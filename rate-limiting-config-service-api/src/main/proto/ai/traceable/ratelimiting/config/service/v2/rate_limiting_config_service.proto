@@ -28,7 +28,14 @@ message GetRateLimitingRulesFilter {
   repeated Category categories = 1;
   RuleConfigScope scope = 2;
   optional bool disabled = 3;
+}
+
+message GetRateLimitingModsecRulesFilter {
+  repeated Category categories = 1;
+  RuleConfigScope scope = 2;
+  optional bool disabled = 3;
   repeated RuleAction rule_actions = 4;
+  repeated string service_names = 5;
 
   enum RuleAction {
     RULE_ACTION_UNSPECIFIED = 0;
@@ -70,11 +77,17 @@ message CreateRateLimitingRuleResponse {
 }
 
 message GetRateLimitingRuleModsecRulesRequest{
-  GetRateLimitingRulesFilter rules_filter = 1;
+  GetRateLimitingModsecRulesFilter rules_filter = 1;
 }
 
 message GetRateLimitingRuleModsecRulesResponse {
   string modsec_directives_blob = 1;
-  string modsec_rules_blob = 2;
+  repeated ModsecBlobData modsec_blobs_data = 2;
   repeated RateLimitingModsecRule rules = 3;
+}
+
+message ModsecBlobData {
+  string modsec_blob = 1;
+  repeated string service_names = 2;
+  repeated string rule_ids = 3;
 }

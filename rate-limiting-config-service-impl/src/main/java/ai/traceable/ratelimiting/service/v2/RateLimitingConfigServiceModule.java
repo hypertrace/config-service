@@ -10,6 +10,7 @@ import com.google.inject.Provides;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.Channel;
+import java.time.Clock;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
@@ -40,6 +41,7 @@ public class RateLimitingConfigServiceModule extends AbstractModule {
     bind(RulesManager.class).to(RateLimitingRulesManager.class);
     bind(RulesValidator.class).to(RateLimitingRulesValidator.class);
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
+    bind(Clock.class).toInstance(Clock.systemUTC());
   }
 
   @Provides

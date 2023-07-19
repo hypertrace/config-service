@@ -4,15 +4,19 @@ import static ai.traceable.platform.utils.ip.IpAddressParsingUtils.parseRawIpRan
 
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.platform.utils.ip.IpAddressParsingUtils.IpParsingResults;
+import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RuleStatus;
+import ai.traceable.ratelimiting.config.service.v2.TransactionActionConfig;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
 import com.google.inject.Inject;
 import io.grpc.Status;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -23,15 +27,18 @@ public class RateLimitingRulesManager implements RulesManager {
   private final RateLimitingRulesStore rateLimitingRulesStore;
   private final UuidGenerator uuidGenerator;
   private final RateLimitingConfigServiceConfig rateLimitingConfigServiceConfig;
+  private final Clock clock;
 
   @Inject
   public RateLimitingRulesManager(
       RateLimitingRulesStore rateLimitingRulesStore,
       UuidGenerator uuidGenerator,
-      RateLimitingConfigServiceConfig rateLimitingConfigServiceConfig) {
+      RateLimitingConfigServiceConfig rateLimitingConfigServiceConfig,
+      Clock clock) {
     this.rateLimitingRulesStore = rateLimitingRulesStore;
     this.uuidGenerator = uuidGenerator;
     this.rateLimitingConfigServiceConfig = rateLimitingConfigServiceConfig;
+    this.clock = clock;
   }
 
   @Override
@@ -86,12 +93,34 @@ public class RateLimitingRulesManager implements RulesManager {
   }
 
   public RateLimitingRuleData processRateLimitRuleData(RateLimitingRuleData data) {
+    RateLimitingRuleData.Builder builder = data.toBuilder();
     if (data.hasCondition()) {
-      RateLimitingRuleData.Builder builder = data.toBuilder();
       builder.setCondition(processCondition(data.getCondition()));
-      return builder.build();
     }
-    return data;
+    if (data.hasTransactionActionConfig()) {
+      builder.setTransactionActionConfig(
+          processTransactionActionConfig(data.getTransactionActionConfig()));
+    }
+    return builder.build();
+  }
+
+  public TransactionActionConfig processTransactionActionConfig(
+      TransactionActionConfig transactionActionConfig) {
+    if (transactionActionConfig.hasExpirationTimestampMillis()) {
+      return transactionActionConfig;
+    }
+    TransactionActionConfig.Builder builder = transactionActionConfig.toBuilder();
+    Action action = transactionActionConfig.getAction();
+    String durationIso = null;
+    if (action.hasAllow() && action.getAllow().hasDurationIso()) {
+      durationIso = transactionActionConfig.getAction().getAllow().getDurationIso();
+    } else if (action.hasBlock() && action.getBlock().hasDurationIso()) {
+      durationIso = transactionActionConfig.getAction().getBlock().getDurationIso();
+    }
+    if (durationIso != null) {
+      builder.setExpirationTimestampMillis(clock.millis() + Duration.parse(durationIso).toMillis());
+    }
+    return builder.build();
   }
 
   private Condition processCondition(Condition condition) {

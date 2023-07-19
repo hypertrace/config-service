@@ -15,6 +15,7 @@ message RateLimitingModsecRule {
   string id = 1;
   RateLimitingRuleData data = 2;
   repeated string data_type_ids = 3;
+  repeated string key_value_condition_ids = 4;
 }
 
 message RateLimitingRuleData {
@@ -312,6 +313,7 @@ message Action {
 
 message TransactionActionConfig {
   Action action = 1;
+  optional int64 expiration_timestamp_millis = 2;
 }
 
 enum IpLocationType {
