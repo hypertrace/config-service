@@ -1,15 +1,20 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
+import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
@@ -18,15 +23,24 @@ import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Slf4j
 public class DetectionExclusionRulesStore
     extends IdentifiedObjectStoreWithFilter<DetectionExclusionRule, GetRulesFilter> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(DetectionExclusionRulesStore.class);
   public static final String DETECTION_EXCLUSION_RULE_CONFIG_RESOURCE_NAME =
       "detectionExclusionRule";
   public static final String DETECTION_EXCLUSION_RULE_CONFIG_RESOURCE_NAMESPACE =
       "detectionExclusionRuleConfig";
+
+  private static final String SSRF_BAD_REPUTATION_HOST = "ssrfBadReputationHost";
+  private static final String SSRF_EVENT_TYPE_ID = "ssrf";
+  private static final Set<ContextualKey<Void>> SSRF_FIXED_TENANTS = new HashSet<>();
+
   private final List<DetectionExclusionRule> defaultDetectionExclusionRules;
 
   @Inject
@@ -45,7 +59,8 @@ public class DetectionExclusionRulesStore
   @Override
   public List<DetectionExclusionRule> getAllConfigData(RequestContext context) {
     List<DetectionExclusionRule> detectionExclusionRules = super.getAllConfigData(context);
-    return mergeDetectionExclusionRules(detectionExclusionRules, defaultDetectionExclusionRules);
+    return mergeDetectionExclusionRules(
+        context, detectionExclusionRules, defaultDetectionExclusionRules);
   }
 
   @Override
@@ -57,7 +72,7 @@ public class DetectionExclusionRulesStore
             .collect(Collectors.toUnmodifiableList());
     List<DetectionExclusionRule> detectionExclusionRules = super.getAllConfigData(context, filter);
     return mergeDetectionExclusionRules(
-        detectionExclusionRules, filteredDefaultDetectionExclusionRules);
+        context, detectionExclusionRules, filteredDefaultDetectionExclusionRules);
   }
 
   @Override
@@ -139,8 +154,15 @@ public class DetectionExclusionRulesStore
   }
 
   private List<DetectionExclusionRule> mergeDetectionExclusionRules(
+      RequestContext context,
       List<DetectionExclusionRule> detectionExclusionRules,
       List<DetectionExclusionRule> defaultDetectionExclusionRules) {
+
+    if (!SSRF_FIXED_TENANTS.contains(context.buildInternalContextualKey())) {
+      // Bugfix: https://traceableai.atlassian.net/browse/ENG-33151
+      detectionExclusionRules = fixSsrfRulesIfAny(context, detectionExclusionRules);
+    }
+
     Map<String, DetectionExclusionRule> detectionExclusionRuleMap = new HashMap<>();
     detectionExclusionRuleMap.putAll(this.getRuleIdToRuleMap(defaultDetectionExclusionRules));
     detectionExclusionRuleMap.putAll(this.getRuleIdToRuleMap(detectionExclusionRules));
@@ -152,5 +174,88 @@ public class DetectionExclusionRulesStore
       List<DetectionExclusionRule> detectionExclusionRules) {
     return detectionExclusionRules.stream()
         .collect(Collectors.toUnmodifiableMap(DetectionExclusionRule::getId, Function.identity()));
+  }
+
+  private List<DetectionExclusionRule> fixSsrfRulesIfAny(
+      RequestContext context, List<DetectionExclusionRule> detectionExclusionRules) {
+    Map<String, DetectionExclusionRule> ssrfFixedRules =
+        detectionExclusionRules.stream()
+            .filter(
+                rule ->
+                    rule.getRuleInfo().getConditionsList().stream()
+                        .anyMatch(
+                            condition ->
+                                condition.getEventCondition().getSystemDefinedEventsList().stream()
+                                    .anyMatch(
+                                        event ->
+                                            SSRF_BAD_REPUTATION_HOST.equals(
+                                                event.getEventTypeId()))))
+            .map(
+                rule -> {
+                  List<DetectionExclusionCondition> conditions =
+                      rule.getRuleInfo().getConditionsList().stream()
+                          .map(
+                              condition -> {
+                                if (condition.getEventCondition().getSystemDefinedEventsCount()
+                                    == 0) {
+                                  return condition;
+                                }
+                                List<SystemDefinedEvent> events =
+                                    condition
+                                        .getEventCondition()
+                                        .getSystemDefinedEventsList()
+                                        .stream()
+                                        .map(
+                                            event -> {
+                                              if (SSRF_BAD_REPUTATION_HOST.equals(
+                                                  event.getEventTypeId())) {
+                                                return event.toBuilder()
+                                                    .setEventTypeId(SSRF_EVENT_TYPE_ID)
+                                                    .build();
+                                              }
+                                              return event;
+                                            })
+                                        .collect(Collectors.toList());
+                                return condition.toBuilder()
+                                    .setEventCondition(
+                                        condition.getEventCondition().toBuilder()
+                                            .clearSystemDefinedEvents()
+                                            .addAllSystemDefinedEvents(events))
+                                    .build();
+                              })
+                          .collect(Collectors.toList());
+                  return rule.toBuilder()
+                      .setRuleInfo(
+                          rule.getRuleInfo().toBuilder()
+                              .clearConditions()
+                              .addAllConditions(conditions))
+                      .build();
+                })
+            .collect(Collectors.toMap(DetectionExclusionRule::getId, Function.identity()));
+
+    // This is going to be the majority of the case..
+    if (ssrfFixedRules.isEmpty()) {
+      return detectionExclusionRules;
+    }
+
+    LOGGER.info(
+        "For tenant:{} fixed 'ssrf' ruleId in exclusion rules [{}]",
+        context.getTenantId().get(),
+        String.join(",", ssrfFixedRules.keySet()));
+
+    try {
+      // upsert the fixed rules
+      upsertObjects(context, new ArrayList<>(ssrfFixedRules.values()));
+      SSRF_FIXED_TENANTS.add(context.buildInternalContextualKey());
+    } catch (Exception e) {
+      LOGGER.error(
+          "Error in upserting ssrf-fixed exclusion rules for tenant:{},",
+          context.getTenantId().get(),
+          e);
+    }
+
+    return detectionExclusionRules.stream()
+        .map(rule -> ssrfFixedRules.getOrDefault(rule.getId(), rule))
+        .collect(Collectors.toList());
   }
 }

@@ -7,14 +7,21 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
 import ai.traceable.detection.exclusion.config.service.v1.EnvironmentScope;
+import ai.traceable.detection.exclusion.config.service.v1.EventCondition;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
+import ai.traceable.detection.exclusion.config.service.v1.IpReputationCondition;
+import ai.traceable.detection.exclusion.config.service.v1.IpReputationSeverity;
+import ai.traceable.detection.exclusion.config.service.v1.RuleChangeSource;
 import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
+import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
+import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
 import com.google.protobuf.Value;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
@@ -103,6 +110,92 @@ class DetectionExclusionRulesStoreTest {
     mockConfigService.setDetectionExclusionRules(List.of(rule));
     // mongo rule overrides default rule
     assertEquals(List.of(rule), detectionExclusionRulesStore.getAllConfigData(requestContext));
+  }
+
+  @Test
+  // Bugfix: https://traceableai.atlassian.net/browse/ENG-33151
+  public void testSsrfBugFix() {
+
+    DetectionExclusionRuleInfo ruleInfo =
+        DetectionExclusionRuleInfo.newBuilder()
+            .setName("ruleName")
+            .setRuleStatus(
+                DetectionExclusionRuleStatus.newBuilder()
+                    .setChangeSource(RuleChangeSource.RULE_CHANGE_SOURCE_CUSTOMER))
+            .build();
+    DetectionExclusionRuleScope ruleScope =
+        DetectionExclusionRuleScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env1").build())
+            .build();
+
+    DetectionExclusionCondition condition1 =
+        DetectionExclusionCondition.newBuilder()
+            .setIpReputationCondition(
+                IpReputationCondition.newBuilder()
+                    .setMaxIpReputationSeverity(IpReputationSeverity.IP_REPUTATION_SEVERITY_MEDIUM))
+            .build();
+    DetectionExclusionCondition condition2WithBadSsrfId =
+        DetectionExclusionCondition.newBuilder()
+            .setEventCondition(
+                EventCondition.newBuilder()
+                    .addSystemDefinedEvents(
+                        SystemDefinedEvent.newBuilder()
+                            .setEventFamily(
+                                SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF)
+                            .setEventTypeId("ssrfBadReputationHost"))
+                    .addSystemDefinedEvents(
+                        SystemDefinedEvent.newBuilder()
+                            .setEventFamily(
+                                SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF)
+                            .setEventTypeId("bfla")))
+            .build();
+    DetectionExclusionCondition condition2WithRightSsrfId =
+        DetectionExclusionCondition.newBuilder()
+            .setEventCondition(
+                EventCondition.newBuilder()
+                    .addSystemDefinedEvents(
+                        SystemDefinedEvent.newBuilder()
+                            .setEventFamily(
+                                SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF)
+                            .setEventTypeId("ssrf"))
+                    .addSystemDefinedEvents(
+                        SystemDefinedEvent.newBuilder()
+                            .setEventFamily(
+                                SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF)
+                            .setEventTypeId("bfla")))
+            .build();
+
+    DetectionExclusionRule rule1 =
+        DetectionExclusionRule.newBuilder()
+            .setId("id1")
+            .setRuleInfo(
+                ruleInfo.toBuilder()
+                    .addConditions(condition1)
+                    .addConditions(condition2WithBadSsrfId))
+            .setRuleScope(ruleScope)
+            .build();
+    DetectionExclusionRule expectedRule1 =
+        DetectionExclusionRule.newBuilder()
+            .setId("id1")
+            .setRuleInfo(
+                ruleInfo.toBuilder()
+                    .addConditions(condition1)
+                    .addConditions(condition2WithRightSsrfId))
+            .setRuleScope(ruleScope)
+            .build();
+    DetectionExclusionRule rule2 =
+        DetectionExclusionRule.newBuilder()
+            .setId("id2")
+            .setRuleInfo(ruleInfo.toBuilder().addConditions(condition1))
+            .setRuleScope(ruleScope)
+            .build();
+
+    RequestContext requestContext = RequestContext.forTenantId("tenantId");
+    mockConfigService.setDetectionExclusionRules(List.of(rule1, rule2));
+    assertTrue(
+        detectionExclusionRulesStore
+            .getAllConfigData(requestContext)
+            .containsAll(List.of(DEFAULT_DETECTION_EXCLUSION_RULE, expectedRule1, rule2)));
   }
 
   @Test
