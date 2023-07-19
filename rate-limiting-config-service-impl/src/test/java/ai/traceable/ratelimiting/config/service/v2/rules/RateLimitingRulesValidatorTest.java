@@ -446,6 +446,64 @@ public class RateLimitingRulesValidatorTest {
             () -> rulesValidator.validateOrThrow(requestContext, request15, List.of()));
     status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    ruleData =
+        ruleData.toBuilder()
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setIpAddressCondition(
+                                IpAddressCondition.newBuilder()
+                                    .setExclude(true)
+                                    .addAllRawInputIpData(List.of("1.2.3.4"))
+                                    .build())
+                            .build())
+                    .build())
+            .setTransactionActionConfig(
+                TransactionActionConfig.newBuilder()
+                    .setAction(
+                        Action.newBuilder()
+                            .setAllow(Action.Allow.newBuilder().setDurationIso("iso").build())))
+            .build();
+    CreateRateLimitingRuleRequest request16 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request16, List.of()));
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    ruleData =
+        ruleData.toBuilder()
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setRegionCondition(
+                                RegionCondition.newBuilder()
+                                    .setExclude(true)
+                                    .addAllRegionIdentifiers(
+                                        List.of(
+                                            Region.newBuilder().setCountryIsoCode("IND").build()))
+                                    .build())
+                            .build())
+                    .build())
+            .setTransactionActionConfig(
+                TransactionActionConfig.newBuilder()
+                    .setAction(
+                        Action.newBuilder()
+                            .setAllow(Action.Allow.newBuilder().setDurationIso("iso").build())))
+            .build();
+    CreateRateLimitingRuleRequest request17 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request17, List.of()));
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
   }
 
   @Test

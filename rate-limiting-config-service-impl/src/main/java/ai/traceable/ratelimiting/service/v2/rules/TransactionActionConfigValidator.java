@@ -11,8 +11,10 @@ import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.DataLocation;
 import ai.traceable.ratelimiting.config.service.v2.DatatypeCondition;
+import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
+import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
 import ai.traceable.ratelimiting.config.service.v2.ScopeCondition;
 import com.google.protobuf.ProtocolStringList;
 
@@ -69,9 +71,13 @@ public class TransactionActionConfigValidator {
       case DATATYPE_CONDITION:
         validateDatatypeConditionForTransactionActionConfig(leafCondition.getDatatypeCondition());
         break;
-      case KEY_VALUE_CONDITION:
       case REGION_CONDITION:
+        validateRegionConditionForTransactionActionConfig(leafCondition.getRegionCondition());
+        break;
       case IP_ADDRESS_CONDITION:
+        validateIpAddressConditionForTransactionActionConfig(leafCondition.getIpAddressCondition());
+        break;
+      case KEY_VALUE_CONDITION:
       case IP_LOCATION_TYPE_CONDITION:
         validatorUtils.validateLeafCondition(leafCondition);
         break;
@@ -80,6 +86,27 @@ public class TransactionActionConfigValidator {
             String.format(
                 "Invalid leaf condition : %s, for transaction action config", leafCondition));
     }
+  }
+
+  private void validateIpAddressConditionForTransactionActionConfig(
+      IpAddressCondition ipAddressCondition) {
+    if (ipAddressCondition.getExclude()) {
+      validatorUtils.throwInvalidArgumentException(
+          String.format(
+              "Exclude should be set false when transaction action config is present : %s",
+              ipAddressCondition));
+    }
+    validatorUtils.validateIpAddressCondition(ipAddressCondition);
+  }
+
+  private void validateRegionConditionForTransactionActionConfig(RegionCondition regionCondition) {
+    if (regionCondition.getExclude()) {
+      validatorUtils.throwInvalidArgumentException(
+          String.format(
+              "Exclude should be set false when transaction action config is present : %s",
+              regionCondition));
+    }
+    validatorUtils.validateRegionCondition(regionCondition);
   }
 
   private void validateDatatypeMatchingForTransactionActionConfig(

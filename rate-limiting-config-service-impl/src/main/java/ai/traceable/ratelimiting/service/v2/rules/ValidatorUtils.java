@@ -120,6 +120,62 @@ public class ValidatorUtils {
     return message.getDescriptorForType().getName();
   }
 
+  public void validateRegionCondition(RegionCondition regionCondition) {
+    if (regionCondition.getRegionsList().isEmpty()
+        && regionCondition.getRegionIdentifiersList().isEmpty()) {
+      throwInvalidArgumentException(
+          String.format(
+              "At least one region value should be provided for region condition : %s",
+              regionCondition));
+    }
+
+    regionCondition
+        .getRegionsList()
+        .forEach(
+            region -> {
+              if (region.isEmpty()) {
+                throwInvalidArgumentException(
+                    String.format(
+                        "Region value cannot be empty for region condition : %s", regionCondition));
+              }
+            });
+
+    regionCondition
+        .getRegionIdentifiersList()
+        .forEach(
+            region -> {
+              if (region.getCountryIsoCode().isEmpty()) {
+                throwInvalidArgumentException(
+                    String.format(
+                        "Region value cannot be empty for region condition : %s", regionCondition));
+              }
+            });
+  }
+
+  public void validateIpAddressCondition(IpAddressCondition ipAddressCondition) {
+    List<String> cidrIpRanges = ipAddressCondition.getCidrIpRangesList();
+    List<String> ipAddresses = ipAddressCondition.getIpAddressesList();
+    List<String> rawInputIpData = ipAddressCondition.getRawInputIpDataList();
+    if (cidrIpRanges.isEmpty() && ipAddresses.isEmpty() && rawInputIpData.isEmpty()) {
+      throwInvalidArgumentException(
+          String.format(
+              "Invalid ipAddressCondition for rate limit rule :%n %s",
+              printMessage(ipAddressCondition)));
+    }
+    if ((!rawInputIpData.isEmpty()) && (!cidrIpRanges.isEmpty() || !ipAddresses.isEmpty())) {
+      throwInvalidArgumentException(
+          String.format(
+              "IpAddressCondition should not have rawInputIpData and (cidrIpRanges or ipAddresses) simultaneously :%n %s",
+              printMessage(ipAddressCondition)));
+    }
+    if (!ipAddresses.stream().allMatch(IpValidationUtils::isValidIpAddress)) {
+      throwInvalidArgumentException("IpAddressCondition should have valid IP addresses");
+    }
+    if (!cidrIpRanges.stream().allMatch(IpValidationUtils::isValidSubnet)) {
+      throwInvalidArgumentException("IpAddressCondition should have valid CIDR IP ranges");
+    }
+  }
+
   private void validateScopeCondition(ScopeCondition scopeCondition) {
     switch (scopeCondition.getScopeCase()) {
       case ENTITY_SCOPE:
@@ -179,62 +235,6 @@ public class ValidatorUtils {
           String.format(
               "Invalid condition for type %s:%n %s",
               getName(datatypeCondition), printMessage(datatypeCondition)));
-    }
-  }
-
-  private void validateRegionCondition(RegionCondition regionCondition) {
-    if (regionCondition.getRegionsList().isEmpty()
-        && regionCondition.getRegionIdentifiersList().isEmpty()) {
-      throwInvalidArgumentException(
-          String.format(
-              "At least one region value should be provided for region condition : %s",
-              regionCondition));
-    }
-
-    regionCondition
-        .getRegionsList()
-        .forEach(
-            region -> {
-              if (region.isEmpty()) {
-                throwInvalidArgumentException(
-                    String.format(
-                        "Region value cannot be empty for region condition : %s", regionCondition));
-              }
-            });
-
-    regionCondition
-        .getRegionIdentifiersList()
-        .forEach(
-            region -> {
-              if (region.getCountryIsoCode().isEmpty()) {
-                throwInvalidArgumentException(
-                    String.format(
-                        "Region value cannot be empty for region condition : %s", regionCondition));
-              }
-            });
-  }
-
-  private void validateIpAddressCondition(IpAddressCondition ipAddressCondition) {
-    List<String> cidrIpRanges = ipAddressCondition.getCidrIpRangesList();
-    List<String> ipAddresses = ipAddressCondition.getIpAddressesList();
-    List<String> rawInputIpData = ipAddressCondition.getRawInputIpDataList();
-    if (cidrIpRanges.isEmpty() && ipAddresses.isEmpty() && rawInputIpData.isEmpty()) {
-      throwInvalidArgumentException(
-          String.format(
-              "Invalid ipAddressCondition for rate limit rule :%n %s",
-              printMessage(ipAddressCondition)));
-    }
-    if ((!rawInputIpData.isEmpty()) && (!cidrIpRanges.isEmpty() || !ipAddresses.isEmpty())) {
-      throwInvalidArgumentException(
-          String.format(
-              "IpAddressCondition should not have rawInputIpData and (cidrIpRanges or ipAddresses) simultaneously :%n %s",
-              printMessage(ipAddressCondition)));
-    }
-    if (!ipAddresses.stream().allMatch(IpValidationUtils::isValidIpAddress)) {
-      throwInvalidArgumentException("IpAddressCondition should have valid IP addresses");
-    }
-    if (!cidrIpRanges.stream().allMatch(IpValidationUtils::isValidSubnet)) {
-      throwInvalidArgumentException("IpAddressCondition should have valid CIDR IP ranges");
     }
   }
 
