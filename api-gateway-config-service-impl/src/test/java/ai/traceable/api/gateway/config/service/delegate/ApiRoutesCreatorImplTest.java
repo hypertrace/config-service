@@ -42,6 +42,11 @@ class ApiRoutesCreatorImplTest {
                     .setInfo(RouteInfo.newBuilder().setPath("/planet/Mars").setIsDeprecated(true))
                     .setMetadata(Metadata.newBuilder().setOrgId(orgId))
                     .build())
+            .addRoutes(
+                NewApiRoute.newBuilder()
+                    .setInfo(RouteInfo.newBuilder().setPath("/planet/Mars").setIsDeprecated(true))
+                    .setMetadata(Metadata.newBuilder().setOrgId(orgId))
+                    .build())
             .build();
     final RequestContext requestContext = new RequestContext();
     final String uuid = UUID.randomUUID().toString();

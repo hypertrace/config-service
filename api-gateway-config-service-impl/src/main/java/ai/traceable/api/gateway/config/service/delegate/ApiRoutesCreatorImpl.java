@@ -23,7 +23,10 @@ public class ApiRoutesCreatorImpl implements ApiRoutesCreator {
   public CreateRoutesResponse create(
       final CreateRoutesRequest request, final RequestContext requestContext) {
     final List<ApiRoute> routesToCreate =
-        request.getRoutesList().stream().map(this::buildApiRoute).collect(toUnmodifiableList());
+        request.getRoutesList().stream()
+            .distinct()
+            .map(this::buildApiRoute)
+            .collect(toUnmodifiableList());
     final List<ContextualConfigObject<ApiRoute>> createdObjects =
         apiRoutesConfigStore.upsertObjects(requestContext, routesToCreate);
     final CreateRoutesResponse.Builder responseBuilder = CreateRoutesResponse.newBuilder();
