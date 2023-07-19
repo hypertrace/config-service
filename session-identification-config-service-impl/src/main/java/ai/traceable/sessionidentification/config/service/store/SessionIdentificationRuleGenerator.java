@@ -2,7 +2,9 @@ package ai.traceable.sessionidentification.config.service.store;
 
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.sessionidentification.config.service.v1.CreateSessionIdentificationRuleRequest;
+import ai.traceable.sessionidentification.config.service.v1.RuleCreationSource;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRule;
+import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRuleStatus;
 import ai.traceable.sessionidentification.config.service.v1.UpdateSessionIdentificationRuleRequest;
 import javax.inject.Inject;
 
@@ -29,6 +31,16 @@ public class SessionIdentificationRuleGenerator {
       builder.setScope(request.getScope());
     }
     return builder.build();
+  }
+
+  public SessionIdentificationRule generateRuleForOldApiConfigFromUpdateRequest(
+      UpdateSessionIdentificationRuleRequest request) {
+    return SessionIdentificationRule.newBuilder(
+            generateRuleForOldApiConfigFromUpdateRequest(request))
+        .setStatus(
+            SessionIdentificationRuleStatus.newBuilder(request.getStatus())
+                .setRuleCreationSource(RuleCreationSource.RULE_CREATION_SOURCE_OLD_API))
+        .build();
   }
 
   public SessionIdentificationRule generateRuleFromUpdateRequest(

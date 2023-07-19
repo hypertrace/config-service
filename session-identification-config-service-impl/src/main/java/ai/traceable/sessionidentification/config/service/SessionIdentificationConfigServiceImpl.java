@@ -1,5 +1,6 @@
 package ai.traceable.sessionidentification.config.service;
 
+import ai.traceable.sessionidentification.config.service.migration.LegacySessionIdentificationRuleTranslatingDao;
 import ai.traceable.sessionidentification.config.service.store.SessionIdentificationRuleGenerator;
 import ai.traceable.sessionidentification.config.service.store.SessionIdentificationRuleStore;
 import ai.traceable.sessionidentification.config.service.v1.CreateSessionIdentificationRuleRequest;
@@ -25,15 +26,20 @@ public class SessionIdentificationConfigServiceImpl
   private final SessionIdentificationConfigRequestValidator validator;
   private final SessionIdentificationRuleStore ruleStore;
   private final SessionIdentificationRuleGenerator ruleGenerator;
+  private final LegacySessionIdentificationRuleTranslatingDao
+      legacySessionIdentificationRuleTranslatingDao;
 
   @Inject
   SessionIdentificationConfigServiceImpl(
       SessionIdentificationConfigRequestValidator validator,
       SessionIdentificationRuleStore ruleStore,
-      SessionIdentificationRuleGenerator ruleGenerator) {
+      SessionIdentificationRuleGenerator ruleGenerator,
+      LegacySessionIdentificationRuleTranslatingDao legacySessionIdentificationRuleTranslatingDao) {
     this.validator = validator;
     this.ruleStore = ruleStore;
     this.ruleGenerator = ruleGenerator;
+    this.legacySessionIdentificationRuleTranslatingDao =
+        legacySessionIdentificationRuleTranslatingDao;
   }
 
   @Override
@@ -43,8 +49,12 @@ public class SessionIdentificationConfigServiceImpl
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
       this.validator.validateGetRequest(requestContext);
+
       responseObserver.onNext(
           GetSessionIdentificationRulesResponse.newBuilder()
+              .addAllRules(
+                  legacySessionIdentificationRuleTranslatingDao
+                      .getSessionIdentificationRulesFromOldStore(requestContext))
               .addAllRules(this.ruleStore.getAllConfigData(requestContext, request.getFilter()))
               .build());
       responseObserver.onCompleted();
@@ -93,13 +103,19 @@ public class SessionIdentificationConfigServiceImpl
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
       this.validator.validateUpdateRequest(requestContext, request);
-
-      SessionIdentificationRule rule = this.ruleGenerator.generateRuleFromUpdateRequest(request);
-
+      SessionIdentificationRule rule;
+      if (legacySessionIdentificationRuleTranslatingDao.isSessionIdentificationRuleFromOldStore(
+          requestContext, request.getId())) {
+        rule = this.ruleGenerator.generateRuleForOldApiConfigFromUpdateRequest(request);
+      } else {
+        rule = this.ruleGenerator.generateRuleFromUpdateRequest(request);
+      }
+      SessionIdentificationRule updatedRule =
+          this.ruleStore.upsertObject(requestContext, rule).getData();
+      legacySessionIdentificationRuleTranslatingDao
+          .deleteSessionIdentificationRuleFromOldStoreIfFound(requestContext, request.getId());
       responseObserver.onNext(
-          UpdateSessionIdentificationRuleResponse.newBuilder()
-              .setRule(this.ruleStore.upsertObject(requestContext, rule).getData())
-              .build());
+          UpdateSessionIdentificationRuleResponse.newBuilder().setRule(updatedRule).build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
       Exception decoratedException = decorateException(requestContext, exception);
@@ -120,10 +136,12 @@ public class SessionIdentificationConfigServiceImpl
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
       this.validator.validateDeleteRequest(requestContext, request);
-      this.ruleStore
-          .deleteObject(requestContext, request.getId())
-          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
-
+      if (!legacySessionIdentificationRuleTranslatingDao
+          .deleteSessionIdentificationRuleFromOldStoreIfFound(requestContext, request.getId())) {
+        this.ruleStore
+            .deleteObject(requestContext, request.getId())
+            .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      }
       responseObserver.onNext(DeleteSessionIdentificationRuleResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Exception exception) {

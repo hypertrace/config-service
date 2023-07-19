@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.sessionidentification.config.service.migration.LegacySessionIdentificationRuleTranslatingDaoImpl;
 import ai.traceable.sessionidentification.config.service.store.SessionIdentificationRuleGenerator;
 import ai.traceable.sessionidentification.config.service.store.SessionIdentificationRuleStore;
 import ai.traceable.sessionidentification.config.service.v1.AttributeProjection;
@@ -78,7 +79,8 @@ class SessionIdentificationConfigServiceImplTest {
             new SessionIdentificationConfigServiceImpl(
                 new SessionIdentificationConfigRequestValidator(new SessionTokenRuleValidator()),
                 new SessionIdentificationRuleStore(genericStub, configChangeEventGenerator),
-                new SessionIdentificationRuleGenerator(new UuidGenerator())))
+                new SessionIdentificationRuleGenerator(new UuidGenerator()),
+                mock(LegacySessionIdentificationRuleTranslatingDaoImpl.class)))
         .start();
 
     this.sessionIdentificationConfigServiceBlockingStub =

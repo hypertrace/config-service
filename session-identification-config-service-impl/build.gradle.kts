@@ -8,6 +8,8 @@ dependencies {
   api(libs.typesafe.config)
   api(libs.grpc.api)
   api(libs.hypertrace.configservice.changeeventgenerator)
+  api(projects.featureCachingClient)
+  implementation(projects.sensitiveDataConfigServiceApi)
   implementation(projects.configUtils)
   implementation(projects.externalAgentAttributeConfigServiceApi)
   implementation(projects.sessionIdentificationConfigServiceApi)
