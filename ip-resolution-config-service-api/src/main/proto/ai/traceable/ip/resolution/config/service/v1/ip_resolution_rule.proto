@@ -18,6 +18,7 @@ message ResolutionStrategy {
     ProxyAgent proxy_agent = 5;
     OtelHttpClientIp otel_http_client_ip = 6;
     OtelAgent otel_agent = 7;
+    CustomHeader custom_header = 8;
   }
 
   message HeaderXRealIp {}
@@ -27,6 +28,9 @@ message ResolutionStrategy {
   message ProxyAgent {}
   message OtelHttpClientIp {}
   message OtelAgent {}
+  message CustomHeader {
+    string header_name = 1;
+  }
 }
 
 message IntelligenceOverride {
