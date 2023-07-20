@@ -67,18 +67,38 @@ public class ApiSpecConfigServiceImpl
 
       List<ApiSpec> existingApiSpecs = this.apiSpecConfigStore.getAllData(requestContext);
       GetApiSpecsResponse.Builder getApiSpecsResponse = GetApiSpecsResponse.newBuilder();
-      if (!request.getApiSpecFilter().hasFileContentSha256()) {
+      if (!request.hasApiSpecFilter()) {
         getApiSpecsResponse.addAllApiSpecs(existingApiSpecs);
       } else {
         List<ApiSpec> matchedApiSpecs =
             existingApiSpecs.stream()
+                // filter based on ids
                 .filter(
                     spec ->
-                        request
-                            .getApiSpecFilter()
-                            .getFileContentSha256()
-                            .getFileContentSha256List()
-                            .contains(spec.getFileContentSha256()))
+                        !request.getApiSpecFilter().hasIds()
+                            || request
+                                .getApiSpecFilter()
+                                .getIds()
+                                .getValuesList()
+                                .contains(spec.getSpecId()))
+                // filter based on spec paths
+                .filter(
+                    spec ->
+                        !request.getApiSpecFilter().hasSpecPaths()
+                            || request
+                                .getApiSpecFilter()
+                                .getSpecPaths()
+                                .getValuesList()
+                                .contains(spec.getSpecPath()))
+                // filter based on file sha.
+                .filter(
+                    spec ->
+                        !request.getApiSpecFilter().hasFileContentSha256()
+                            || request
+                                .getApiSpecFilter()
+                                .getFileContentSha256()
+                                .getFileContentSha256List()
+                                .contains(spec.getFileContentSha256()))
                 .collect(Collectors.toUnmodifiableList());
         getApiSpecsResponse.addAllApiSpecs(matchedApiSpecs);
       }

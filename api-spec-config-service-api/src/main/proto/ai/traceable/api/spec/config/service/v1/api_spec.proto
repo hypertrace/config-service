@@ -14,7 +14,13 @@ message GetApiSpecsRequest {
 message ApiSpecFilter {
   oneof filter {
     FileContentSha256Filter file_content_sha_256 = 1;
+    StringList ids = 2;
+    StringList spec_paths = 3;
   }
+}
+
+message StringList {
+  repeated string values = 1;
 }
 
 message FileContentSha256Filter {

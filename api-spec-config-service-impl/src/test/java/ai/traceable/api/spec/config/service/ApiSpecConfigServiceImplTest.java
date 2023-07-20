@@ -21,6 +21,7 @@ import ai.traceable.api.spec.config.service.v1.DeleteApiSpecsRequest;
 import ai.traceable.api.spec.config.service.v1.FileContentSha256Filter;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecsRequest;
+import ai.traceable.api.spec.config.service.v1.StringList;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpec;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpecsRequest;
@@ -328,6 +329,65 @@ class ApiSpecConfigServiceImplTest {
     assertFalse(updatedApiSpec.getApiNamingEnabled());
     assertEquals("/test/spec1.json", updatedApiSpec.getSpecPath());
     assertEquals(API_SPEC_STATUS_IN_PROGRESS, updatedApiSpec.getStatus());
+  }
+
+  @Test
+  void testGetApiSpecsWithSpecPathFilter() {
+    assertTrue(
+        this.apiSpecConfigServiceBlockingStub
+                .getApiSpecs(
+                    GetApiSpecsRequest.newBuilder()
+                        .setApiSpecFilter(
+                            ApiSpecFilter.newBuilder()
+                                .setSpecPaths(
+                                    StringList.newBuilder()
+                                        .addAllValues(
+                                            List.of("/test/spec1.json", "/test/spec2.json"))
+                                        .build()))
+                        .build())
+                .getApiSpecsCount()
+            == 0);
+    ApiSpec createdApiSpec =
+        this.apiSpecConfigServiceBlockingStub
+            .createApiSpec(
+                CreateApiSpecRequest.newBuilder()
+                    .setCreateApiSpec(
+                        CreateApiSpec.newBuilder()
+                            .setName("spec1")
+                            .setApiNamingEnabled(true)
+                            .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                            .setSpecPath("/test/spec1.json")
+                            .setFileContentSha256(
+                                "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"))
+                    .build())
+            .getApiSpec();
+    assertEquals(
+        createdApiSpec,
+        this.apiSpecConfigServiceBlockingStub
+            .getApiSpecs(
+                GetApiSpecsRequest.newBuilder()
+                    .setApiSpecFilter(
+                        ApiSpecFilter.newBuilder()
+                            .setSpecPaths(
+                                StringList.newBuilder()
+                                    .addAllValues(List.of("/test/spec1.json", "/test/spec2.json"))
+                                    .build()))
+                    .build())
+            .getApiSpecs(0));
+    assertTrue(
+        this.apiSpecConfigServiceBlockingStub
+                .getApiSpecs(
+                    GetApiSpecsRequest.newBuilder()
+                        .setApiSpecFilter(
+                            ApiSpecFilter.newBuilder()
+                                .setSpecPaths(
+                                    StringList.newBuilder()
+                                        .addAllValues(
+                                            List.of("/test/spec2.json", "/test/spec3.json"))
+                                        .build()))
+                        .build())
+                .getApiSpecsCount()
+            == 0);
   }
 
   @Test
