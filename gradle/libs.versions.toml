@@ -1,6 +1,6 @@
 [versions]
-protoc = "3.21.12"
-grpc = "1.56.0"
+protoc = "3.23.2"
+grpc = "1.56.1"
 gson = "2.9.0"
 hypertrace-grpcutils = "0.12.1"
 hypertrace-framework = "0.1.52"

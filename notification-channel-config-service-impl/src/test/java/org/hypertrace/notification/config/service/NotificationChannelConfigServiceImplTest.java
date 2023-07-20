@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 
 import com.google.protobuf.Value;
 import com.google.protobuf.util.JsonFormat;
+import com.typesafe.config.Config;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -38,7 +39,7 @@ class NotificationChannelConfigServiceImplTest {
     mockGenericConfigService
         .addService(
             new NotificationChannelConfigServiceImpl(
-                mockGenericConfigService.channel(), configChangeEventGenerator))
+                mockGenericConfigService.channel(), mock(Config.class), configChangeEventGenerator))
         .start();
 
     channelStub =

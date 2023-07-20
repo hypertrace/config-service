@@ -1,5 +1,6 @@
 package org.hypertrace.notification.config.service;
 
+import com.typesafe.config.Config;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -27,11 +28,18 @@ import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelRe
 public class NotificationChannelConfigServiceImpl
     extends NotificationChannelConfigServiceGrpc.NotificationChannelConfigServiceImplBase {
 
+  static final String NOTIFICATION_CHANNEL_CONFIG_SERVICE_CONFIG =
+      "notification.channel.config.service";
+
   private final NotificationChannelStore notificationChannelStore;
   private final NotificationChannelConfigServiceRequestValidator validator;
+  private Config notificationChannelConfig = null;
 
   public NotificationChannelConfigServiceImpl(
-      Channel channel, ConfigChangeEventGenerator configChangeEventGenerator) {
+      Channel channel, Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
+    if (config.hasPath(NOTIFICATION_CHANNEL_CONFIG_SERVICE_CONFIG)) {
+      this.notificationChannelConfig = config.getConfig(NOTIFICATION_CHANNEL_CONFIG_SERVICE_CONFIG);
+    }
     this.notificationChannelStore =
         new NotificationChannelStore(channel, configChangeEventGenerator);
     this.validator = new NotificationChannelConfigServiceRequestValidator();
@@ -43,7 +51,8 @@ public class NotificationChannelConfigServiceImpl
       StreamObserver<CreateNotificationChannelResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      validator.validateCreateNotificationChannelRequest(requestContext, request);
+      validator.validateCreateNotificationChannelRequest(
+          requestContext, request, notificationChannelConfig);
       NotificationChannel.Builder builder =
           NotificationChannel.newBuilder()
               .setId(UUID.randomUUID().toString())
@@ -66,7 +75,8 @@ public class NotificationChannelConfigServiceImpl
       StreamObserver<UpdateNotificationChannelResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      validator.validateUpdateNotificationChannelRequest(requestContext, request);
+      validator.validateUpdateNotificationChannelRequest(
+          requestContext, request, notificationChannelConfig);
       responseObserver.onNext(
           UpdateNotificationChannelResponse.newBuilder()
               .setNotificationChannel(
