@@ -241,6 +241,10 @@ data:
     label.application.rule.config.service {
       max.dynamic.label.application.rules.per.tenant = {{ int .Values.traceableConfigServiceConfig.labelApplicationRuleConfigServiceConfig.maxDynamicLabelApplicationRulesPerTenant }}
     }
+    notification.channel.config.service {
+      webhook.exclusion.domains = {{ .Values.traceableConfigServiceConfig.notificationChannelConfigServiceConfig.webhookExclusionDomains | toJson }}
+      webhook.http.support.enabled = {{ .Values.traceableConfigServiceConfig.notificationChannelConfigServiceConfig.webhookHttpSupportEnabled }}
+    }
     detection.exclusion.config.service = {
       migrationDisabled = {{ .Values.traceableConfigServiceConfig.detectionExclusionConfigService.migrationDisabled }}
     }
