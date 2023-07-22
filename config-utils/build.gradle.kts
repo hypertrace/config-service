@@ -16,6 +16,7 @@ dependencies {
   implementation(libs.commons.validator)
   implementation(libs.typesafe.config)
   implementation(libs.commons.csv)
+  implementation(libs.guava)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

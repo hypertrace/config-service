@@ -28,11 +28,11 @@ tasks.register<DockerRemoveNetwork>("removeIntegrationTestNetwork") {
 }
 
 tasks.register<DockerPullImage>("pullMongoImage") {
-  image.set(docker.registryCredentials.url.get() + "/mongo:4.4.0")
+  image.set(docker.registryCredentials.url.get() + "/traceable/mongo:4.4.22")
 }
 
 tasks.register<DockerPullImage>("pullEntityServiceImage") {
-  image.set(docker.registryCredentials.url.get() + "/hypertrace/entity-service:0.8.58")
+  image.set("hypertrace/entity-service:0.8.58")
 }
 
 tasks.register<DockerPullImage>("pullActorServiceImage") {
