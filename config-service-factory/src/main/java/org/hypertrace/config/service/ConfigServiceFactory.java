@@ -67,7 +67,8 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
             new NotificationRuleConfigServiceImpl(localChannel, configChangeEventGenerator),
             new NotificationChannelConfigServiceImpl(
                 localChannel, config, configChangeEventGenerator),
-            SpanProcessingConfigServiceFactory.build(localChannel, config))
+            SpanProcessingConfigServiceFactory.build(
+                localChannel, config, configChangeEventGenerator))
         .map(GrpcPlatformService::new)
         .collect(Collectors.toUnmodifiableList());
   }
