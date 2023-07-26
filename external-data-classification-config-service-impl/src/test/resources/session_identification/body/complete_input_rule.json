@@ -2,7 +2,8 @@
   "id": "rule-id",
   "scope": {
     "urlMatchRegexes": ["url.*"],
-    "serviceNameRegexes": ["service1.*"]
+    "serviceNameRegexes": ["service1.*"],
+    "serviceNames": ["service2"]
   },
   "tokenRules": [{
     "tokenValueRule": {

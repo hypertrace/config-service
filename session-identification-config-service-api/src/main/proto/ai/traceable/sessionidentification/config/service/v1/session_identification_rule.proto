@@ -18,6 +18,7 @@ message SessionIdentificationRuleScope {
   repeated string environment_names = 1;
   repeated string service_name_regexes = 2;
   repeated string url_match_regexes = 3;
+  repeated string service_names = 4;
 }
 
 message SessionIdentificationRuleStatus {

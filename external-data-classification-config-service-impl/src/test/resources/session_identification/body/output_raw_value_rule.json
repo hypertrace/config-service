@@ -15,7 +15,7 @@
           },
           "valuePredicate": {
             "operator": "OPERATOR_MATCHES_REGEX",
-            "value": "service1.*"
+            "value": "service1.*|^service2$"
           }
       },
         {
@@ -52,7 +52,7 @@
           },
           "valuePredicate": {
             "operator": "OPERATOR_MATCHES_REGEX",
-            "value": "service1.*"
+            "value": "service1.*|^service2$"
           }
         },
         {

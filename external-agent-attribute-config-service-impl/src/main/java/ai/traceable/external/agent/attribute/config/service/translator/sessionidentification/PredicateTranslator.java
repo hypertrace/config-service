@@ -81,7 +81,10 @@ class PredicateTranslator {
   }
 
   private Optional<Predicate> buildScopePredicate(SessionIdentificationRuleScope scope) {
-    if (scope.getUrlMatchRegexesCount() != 0 && scope.getServiceNameRegexesCount() != 0) {
+    Optional<Predicate> serviceScopePredicate =
+        serviceScopeTranslator.addServiceScopes(
+            scope.getServiceNameRegexesList(), scope.getServiceNamesList());
+    if (scope.getUrlMatchRegexesCount() != 0 && serviceScopePredicate.isPresent()) {
       return Optional.of(
           Predicate.newBuilder()
               .setLogicalPredicate(
@@ -93,21 +96,19 @@ class PredicateTranslator {
                               URL_KEYS,
                               ComparisonOperator.COMPARISON_OPERATOR_MATCHES_REGEX,
                               String.join("|", scope.getUrlMatchRegexesList())))
-                      .addChildren(
-                          serviceScopeTranslator.addServiceScopeRegexes(
-                              scope.getServiceNameRegexesList())))
+                      .addChildren(serviceScopePredicate.get()))
               .build());
-    } else if (scope.getUrlMatchRegexesCount() != 0) {
+    }
+
+    if (scope.getUrlMatchRegexesCount() != 0) {
       return Optional.of(
           attributeRuleBuilder.buildPredicate(
               ComparisonOperator.COMPARISON_OPERATOR_EQUALS,
               URL_KEYS,
               ComparisonOperator.COMPARISON_OPERATOR_MATCHES_REGEX,
               String.join("|", scope.getUrlMatchRegexesList())));
-    } else if (scope.getServiceNameRegexesCount() != 0) {
-      return Optional.of(
-          serviceScopeTranslator.addServiceScopeRegexes(scope.getServiceNameRegexesList()));
     }
-    return Optional.empty();
+
+    return serviceScopePredicate;
   }
 }

@@ -18,11 +18,15 @@ class ServiceScopeTranslatorTest {
           .getInstance(ServiceScopeTranslator.class);
 
   @Test
-  void test() throws IOException {
-    Predicate predicate = translator.addServiceScopeRegexes(List.of("service1", "service2"));
+  void test_serviceScopes() throws IOException {
+    Predicate predicate =
+        translator
+            .addServiceScopes(List.of("service1.*", "service.*2"), List.of("service3", "service4"))
+            .get();
     Predicate.Builder expectedPredicate = Predicate.newBuilder();
     PARSER.merge(
-        reader("session_identification/service_scope/partial_output.json"), expectedPredicate);
+        reader("session_identification/service_scope/partial_output_for_service_scope.json"),
+        expectedPredicate);
 
     Assertions.assertEquals(expectedPredicate.build(), predicate);
   }

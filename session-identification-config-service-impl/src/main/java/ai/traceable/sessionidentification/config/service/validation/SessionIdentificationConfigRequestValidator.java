@@ -57,12 +57,14 @@ public class SessionIdentificationConfigRequestValidator {
   private void validateRuleScope(SessionIdentificationRuleScope scope) {
     if (scope.getEnvironmentNamesCount() == 0
         && scope.getServiceNameRegexesCount() == 0
-        && scope.getUrlMatchRegexesCount() == 0) {
+        && scope.getUrlMatchRegexesCount() == 0
+        && scope.getServiceNamesCount() == 0) {
       throw Status.INVALID_ARGUMENT
           .withDescription("One of the scope must be non empty")
           .asRuntimeException();
     }
     validateNoDuplicates(scope.getEnvironmentNamesList());
+    validateNoDuplicates(scope.getServiceNamesList());
     validateRegexList(scope.getServiceNameRegexesList());
     validateRegexList(scope.getUrlMatchRegexesList());
   }

@@ -6,7 +6,7 @@
     },
     "valuePredicate": {
       "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
-      "value": "service1|service2"
+      "value": "service1.*|service.*2|^service3$|^service4$"
     }
   }
 }

@@ -80,7 +80,8 @@ public class SessionIdentificationRulesTranslator {
                 ruleId,
                 ruleIndex,
                 rule.getScope().getServiceNameRegexesList(),
-                rule.getScope().getUrlMatchRegexesList()));
+                rule.getScope().getUrlMatchRegexesList(),
+                rule.getScope().getServiceNamesList()));
       }
       ruleIndex++;
     }
@@ -92,7 +93,8 @@ public class SessionIdentificationRulesTranslator {
       String ruleId,
       int ruleIndex,
       List<String> serviceNameRegexes,
-      List<String> urlMatchRegexes) {
+      List<String> urlMatchRegexes,
+      List<String> serviceNames) {
     AttributeFilter.Builder attributeFilterBuilder = AttributeFilter.newBuilder();
     String sessionIdKey;
     if (tokenRule.hasRequestSessionTokenDetails()) {
@@ -116,20 +118,18 @@ public class SessionIdentificationRulesTranslator {
                     .setNamePredicate(stringPredicateBuilderForSessionId)
                     .build()));
 
-    // add service name regexes list to span filter
+    // add service names and regexes list to span filter
+    List<String> serviceScopeRegexes = new ArrayList<>();
     if (!serviceNameRegexes.isEmpty()) {
-      String serviceNameRegexValue = String.join("|", serviceNameRegexes);
+      serviceScopeRegexes.addAll(serviceNameRegexes);
+    }
+    if (!serviceNames.isEmpty()) {
+      serviceNames.forEach(name -> serviceScopeRegexes.add("^" + name + "$"));
+    }
+
+    if (!serviceScopeRegexes.isEmpty()) {
       requiredMatchingAttributeList.add(
-          AttributePredicate.newBuilder()
-              .setNamePredicate(
-                  StringPredicate.newBuilder()
-                      .setValue("service.name")
-                      .setOperator(Operator.OPERATOR_EQUALS))
-              .setValuePredicate(
-                  StringPredicate.newBuilder()
-                      .setOperator(Operator.OPERATOR_MATCHES_REGEX)
-                      .setValue(serviceNameRegexValue))
-              .build());
+          buildPredicateWithServiceNameKey(String.join("|", serviceScopeRegexes)));
     }
 
     // add url match regex list to span filter
@@ -274,6 +274,19 @@ public class SessionIdentificationRulesTranslator {
                 .setAttributeFilter(AttributeFilter.newBuilder().addPrefixes(sessionIdKey))
                 .setResult(DataType.Result.RESULT_MATCH)
                 .setPathPredicate(PathPredicate.newBuilder().setPathSegmentPredicate(predicate)))
+        .build();
+  }
+
+  private AttributePredicate buildPredicateWithServiceNameKey(String serviceNameRegexValue) {
+    return AttributePredicate.newBuilder()
+        .setNamePredicate(
+            StringPredicate.newBuilder()
+                .setValue("service.name")
+                .setOperator(Operator.OPERATOR_EQUALS))
+        .setValuePredicate(
+            StringPredicate.newBuilder()
+                .setOperator(Operator.OPERATOR_MATCHES_REGEX)
+                .setValue(serviceNameRegexValue))
         .build();
   }
 }
