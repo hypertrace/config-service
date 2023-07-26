@@ -71,13 +71,13 @@
         "projector": {
           "eachMatchingProjector": {
             "attributeRules": [{
-              "initialActions": [{
-                "attributeAddition": {
-                  "attributeKey": "traceableai.session.new.rule-id.0.id",
-                  "valueProjectionRule": {
-                    "projector": {
-                      "eachMatchingProjector": {
-                        "attributeRules": [{
+              "projector": {
+                "firstMatchingProjector": {
+                  "attributeRules": [{
+                    "initialActions": [{
+                      "attributeAddition": {
+                        "attributeKey": "traceableai.session.new.rule-id.0.id",
+                        "valueProjectionRule": {
                           "projector": {
                             "attributeProjector": {
                               "attributeKey": "http.response.body",
@@ -92,7 +92,14 @@
                               }
                             }
                           }
-                        }, {
+                        }
+                      }
+                    }]
+                  }, {
+                    "initialActions": [{
+                      "attributeAddition": {
+                        "attributeKey": "traceableai.session.new.rule-id.0.id",
+                        "valueProjectionRule": {
                           "projector": {
                             "attributeProjector": {
                               "attributeKey": "rpc.response.body",
@@ -107,53 +114,59 @@
                               }
                             }
                           }
-                        }]
+                        }
                       }
-                    }
-                  }
+                    }]
+                  }]
                 }
-              }]
+              }
             }, {
-              "initialActions": [{
-                "attributeAddition": {
-                  "attributeKey": "traceableai.session.new.rule-id.0.expiration.value",
-                  "valueProjectionRule": {
-                    "projector": {
-                      "conditionalProjector": {
-                        "predicate": {
-                          "attributePredicate": {
-                            "namePredicate": {
-                              "operator": "COMPARISON_OPERATOR_EQUALS",
-                              "value": "traceableai.session.new.rule-id.0.id"
-                            }
-                          }
-                        },
-                        "attributeRule": {
+              "projector": {
+                "firstMatchingProjector": {
+                  "attributeRules": [{
+                    "initialActions": [{
+                      "attributeAddition": {
+                        "attributeKey": "traceableai.session.new.rule-id.0.expiration.value",
+                        "valueProjectionRule": {
                           "projector": {
-                            "attributeProjector": {
-                              "attributeKey": "http.response.header.set-cookie",
+                            "conditionalProjector": {
+                              "predicate": {
+                                "attributePredicate": {
+                                  "namePredicate": {
+                                    "operator": "COMPARISON_OPERATOR_EQUALS",
+                                    "value": "traceableai.session.new.rule-id.0.id"
+                                  }
+                                }
+                              },
                               "attributeRule": {
                                 "projector": {
-                                  "cookieProjector": {
-                                    "cookieNameRule": {
-                                      "attributeRule": {
-                                        "projector": {
-                                          "regexCaptureGroupProjector": {
-                                            "regexCaptureGroup": "1.*234",
+                                  "attributeProjector": {
+                                    "attributeKey": "http.response.header.set-cookie",
+                                    "attributeRule": {
+                                      "projector": {
+                                        "cookieProjector": {
+                                          "cookieNameRule": {
                                             "attributeRule": {
                                               "projector": {
-                                                "jsonProjector": {
-                                                  "jsonPathRule": {
-                                                    "key": "$.a.b.c.d",
-                                                    "attributeRule": {
-                                                      "projector": {
-                                                        "jwtProjector": {
-                                                          "claimRule": {
-                                                            "key": "claim-key-1",
-                                                            "attributeRule": {
-                                                              "projector": {
-                                                                "base64Projector": {
+                                                "regexCaptureGroupProjector": {
+                                                  "regexCaptureGroup": "1.*234",
+                                                  "attributeRule": {
+                                                    "projector": {
+                                                      "jsonProjector": {
+                                                        "jsonPathRule": {
+                                                          "key": "$.a.b.c.d",
+                                                          "attributeRule": {
+                                                            "projector": {
+                                                              "jwtProjector": {
+                                                                "claimRule": {
+                                                                  "key": "claim-key-1",
                                                                   "attributeRule": {
+                                                                    "projector": {
+                                                                      "base64Projector": {
+                                                                        "attributeRule": {
+                                                                        }
+                                                                      }
+                                                                    }
                                                                   }
                                                                 }
                                                               }
@@ -165,13 +178,13 @@
                                                   }
                                                 }
                                               }
+                                            },
+                                            "keyPredicate": {
+                                              "operator": "COMPARISON_OPERATOR_EQUALS",
+                                              "value": "cookie1"
                                             }
                                           }
                                         }
-                                      },
-                                      "keyPredicate": {
-                                        "operator": "COMPARISON_OPERATOR_EQUALS",
-                                        "value": "cookie1"
                                       }
                                     }
                                   }
@@ -181,10 +194,10 @@
                           }
                         }
                       }
-                    }
-                  }
+                    }]
+                  }]
                 }
-              }]
+              }
             }]
           }
         }

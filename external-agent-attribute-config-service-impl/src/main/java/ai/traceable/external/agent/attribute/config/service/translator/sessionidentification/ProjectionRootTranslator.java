@@ -21,17 +21,18 @@ public class ProjectionRootTranslator {
   private final ResponseLocationTranslatorLookup responseLocationTranslatorLookup;
   private final ValueProjectionsTranslator valueProjectionsTranslator;
 
-  Projector translateForTokenValue(SessionTokenRule tokenRule) {
+  List<Projector> translateForTokenValue(SessionTokenRule tokenRule) {
     ProjectionRoot projectionRoot = tokenRule.getTokenValueRule().getTokenValueProjection();
     if (projectionRoot.hasCustomProjection()) {
-      return customProjectionTranslator.translateCustomProjection(
-          projectionRoot.getCustomProjection());
+      return List.of(
+          customProjectionTranslator.translateCustomProjection(
+              projectionRoot.getCustomProjection()));
     }
     switch (tokenRule.getTokenTypeCase()) {
       case REQUEST_SESSION_TOKEN_DETAILS:
-        return buildProjector(attributeProjectionTranslator.translateForRequest(tokenRule));
+        return attributeProjectionTranslator.translateForRequest(tokenRule);
       case RESPONSE_SESSION_TOKEN_DETAILS:
-        return buildProjector(attributeProjectionTranslator.translateForResponse(tokenRule));
+        return attributeProjectionTranslator.translateForResponse(tokenRule);
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription(
@@ -40,43 +41,40 @@ public class ProjectionRootTranslator {
     }
   }
 
-  Projector translateForAttributeExpiration(
+  List<Projector> translateForAttributeExpiration(
       ResponseSessionTokenDetails responseSessionTokenDetails) {
     ProjectionRoot projectionRoot =
         responseSessionTokenDetails.getResponseAttributeExpiration().getProjectionRoot();
     if (projectionRoot.hasCustomProjection()) {
-      return customProjectionTranslator.translateCustomProjection(
-          projectionRoot.getCustomProjection());
+      return List.of(
+          customProjectionTranslator.translateCustomProjection(
+              projectionRoot.getCustomProjection()));
     }
 
-    return buildProjector(
-        responseLocationTranslatorLookup
-            .getTranslator(
-                responseSessionTokenDetails
-                    .getResponseAttributeExpiration()
-                    .getAttributeKeyLocation())
-            .translateForResponse(
-                projectionRoot.getAttributeProjection().getAttributeKeyMatchCondition(),
-                valueProjectionsTranslator.translateValueProjections(
-                    projectionRoot.getAttributeProjection().getValueProjectionsInOrderList(),
-                    AttributeRule.newBuilder())));
+    return responseLocationTranslatorLookup
+        .getTranslator(
+            responseSessionTokenDetails.getResponseAttributeExpiration().getAttributeKeyLocation())
+        .translateForResponse(
+            projectionRoot.getAttributeProjection().getAttributeKeyMatchCondition(),
+            valueProjectionsTranslator.translateValueProjections(
+                projectionRoot.getAttributeProjection().getValueProjectionsInOrderList(),
+                AttributeRule.newBuilder()));
   }
 
-  Projector translateForJwtExpiration(
+  List<Projector> translateForJwtExpiration(
       ResponseSessionTokenDetails responseSessionTokenDetails, MatchCondition matchCondition) {
-    return buildProjector(
-        responseLocationTranslatorLookup
-            .getTranslator(responseSessionTokenDetails.getTokenLocation())
-            .translateForResponse(
-                matchCondition,
-                AttributeRule.newBuilder()
-                    .setProjector(
-                        Projector.newBuilder()
-                            .setJwtProjector(
-                                Projector.JwtProjector.newBuilder()
-                                    .setClaimRule(
-                                        Projector.ParsedObjectKeyRule.newBuilder().setKey("exp"))))
-                    .build()));
+    return responseLocationTranslatorLookup
+        .getTranslator(responseSessionTokenDetails.getTokenLocation())
+        .translateForResponse(
+            matchCondition,
+            AttributeRule.newBuilder()
+                .setProjector(
+                    Projector.newBuilder()
+                        .setJwtProjector(
+                            Projector.JwtProjector.newBuilder()
+                                .setClaimRule(
+                                    Projector.ParsedObjectKeyRule.newBuilder().setKey("exp"))))
+                .build());
   }
 
   private Projector buildProjector(List<Projector> projectors) {

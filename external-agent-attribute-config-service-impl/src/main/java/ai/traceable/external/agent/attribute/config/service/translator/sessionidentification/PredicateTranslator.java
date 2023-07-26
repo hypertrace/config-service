@@ -12,6 +12,7 @@ import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Pro
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate.LogicalPredicate;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate.ProjectorPredicate;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRuleScope;
+import ai.traceable.sessionidentification.config.service.v1.SessionTokenRule;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -25,7 +26,44 @@ class PredicateTranslator {
   private final AttributeRuleBuilder attributeRuleBuilder;
   private final CustomProjectionTranslator customProjectionTranslator;
 
-  Predicate translatePredicate(
+  AttributeRule addConditionalPredicateIfPresent(
+      List<AttributeRule.Action> actionBuilders, SessionTokenRule tokenRule) {
+    if (!tokenRule.hasTokenConditionalPredicate()) {
+      return buildFirstMatchingProjector(
+          actionBuilders.stream()
+              .map(action -> AttributeRule.newBuilder().addInitialActions(action).build())
+              .collect(Collectors.toUnmodifiableList()));
+    }
+    return AttributeRule.newBuilder()
+        .setProjector(
+            addConditionalPredicate(
+                buildFirstMatchingProjector(
+                    actionBuilders.stream()
+                        .map(action -> AttributeRule.newBuilder().addInitialActions(action).build())
+                        .collect(Collectors.toUnmodifiableList())),
+                tokenRule))
+        .build();
+  }
+
+  AttributeRule addConditionalPredicateIfPresent(AttributeRule rule, SessionTokenRule tokenRule) {
+    if (!tokenRule.hasTokenConditionalPredicate()) {
+      return rule;
+    }
+    return AttributeRule.newBuilder()
+        .setProjector(addConditionalPredicate(rule, tokenRule))
+        .build();
+  }
+
+  Projector addConditionalPredicate(AttributeRule rule, SessionTokenRule tokenRule) {
+    return Projector.newBuilder()
+        .setConditionalProjector(
+            ConditionalProjector.newBuilder()
+                .setPredicate(translatePredicate(tokenRule.getTokenConditionalPredicate()))
+                .setAttributeRule(rule))
+        .build();
+  }
+
+  private Predicate translatePredicate(
       ai.traceable.sessionidentification.config.service.v1.Predicate predicate) {
     if (predicate.hasCustomPredicate()) {
       return Predicate.newBuilder()
@@ -110,5 +148,14 @@ class PredicateTranslator {
     }
 
     return serviceScopePredicate;
+  }
+
+  AttributeRule buildFirstMatchingProjector(List<AttributeRule> rules) {
+    return AttributeRule.newBuilder()
+        .setProjector(
+            Projector.newBuilder()
+                .setFirstMatchingProjector(
+                    Projector.FirstMatchingProjector.newBuilder().addAllAttributeRules(rules)))
+        .build();
   }
 }

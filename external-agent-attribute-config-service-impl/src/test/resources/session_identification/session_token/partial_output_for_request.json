@@ -68,13 +68,13 @@
         }
       },
       "attributeRule": {
-        "initialActions": [{
-          "attributeAddition": {
-            "attributeKey": "traceableai.session.rule-id.0.id",
-            "valueProjectionRule": {
-              "projector": {
-                "eachMatchingProjector": {
-                  "attributeRules": [{
+        "projector": {
+          "firstMatchingProjector": {
+            "attributeRules": [{
+              "initialActions": [{
+                "attributeAddition": {
+                  "attributeKey": "traceableai.session.rule-id.0.id",
+                  "valueProjectionRule": {
                     "projector": {
                       "attributeProjector": {
                         "attributeKey": "http.request.body",
@@ -89,7 +89,14 @@
                         }
                       }
                     }
-                  }, {
+                  }
+                }
+              }]
+            }, {
+              "initialActions": [{
+                "attributeAddition": {
+                  "attributeKey": "traceableai.session.rule-id.0.id",
+                  "valueProjectionRule": {
                     "projector": {
                       "attributeProjector": {
                         "attributeKey": "rpc.request.body",
@@ -104,12 +111,12 @@
                         }
                       }
                     }
-                  }]
+                  }
                 }
-              }
-            }
+              }]
+            }]
           }
-        }]
+        }
       }
     }
   }

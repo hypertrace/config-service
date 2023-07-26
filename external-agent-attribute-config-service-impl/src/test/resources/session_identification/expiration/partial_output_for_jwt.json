@@ -1,22 +1,22 @@
 {
-  "initialActions": [{
-    "attributeAddition": {
-      "attributeKey": "traceableai.session.new.rule-id.0.expiration.value",
-      "valueProjectionRule": {
-        "projector": {
-          "conditionalProjector": {
-            "predicate": {
-              "attributePredicate": {
-                "namePredicate": {
-                  "operator": "COMPARISON_OPERATOR_EQUALS",
-                  "value": "traceableai.session.new.rule-id.0.id"
-                }
-              }
-            },
-            "attributeRule": {
+  "projector": {
+    "firstMatchingProjector": {
+      "attributeRules": [{
+        "initialActions": [{
+          "attributeAddition": {
+            "attributeKey": "traceableai.session.new.rule-id.0.expiration.value",
+            "valueProjectionRule": {
               "projector": {
-                "eachMatchingProjector": {
-                  "attributeRules": [{
+                "conditionalProjector": {
+                  "predicate": {
+                    "attributePredicate": {
+                      "namePredicate": {
+                        "operator": "COMPARISON_OPERATOR_EQUALS",
+                        "value": "traceableai.session.new.rule-id.0.id"
+                      }
+                    }
+                  },
+                  "attributeRule": {
                     "projector": {
                       "attributeProjector": {
                         "attributeKey": "http.response.body",
@@ -31,7 +31,28 @@
                         }
                       }
                     }
-                  }, {
+                  }
+                }
+              }
+            }
+          }
+        }]
+      }, {
+        "initialActions": [{
+          "attributeAddition": {
+            "attributeKey": "traceableai.session.new.rule-id.0.expiration.value",
+            "valueProjectionRule": {
+              "projector": {
+                "conditionalProjector": {
+                  "predicate": {
+                    "attributePredicate": {
+                      "namePredicate": {
+                        "operator": "COMPARISON_OPERATOR_EQUALS",
+                        "value": "traceableai.session.new.rule-id.0.id"
+                      }
+                    }
+                  },
+                  "attributeRule": {
                     "projector": {
                       "attributeProjector": {
                         "attributeKey": "rpc.response.body",
@@ -46,13 +67,13 @@
                         }
                       }
                     }
-                  }]
+                  }
                 }
               }
             }
           }
-        }
-      }
+        }]
+      }]
     }
-  }]
+  }
 }

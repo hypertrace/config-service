@@ -4,9 +4,9 @@ import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Action;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Action.AttributeAddition;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector;
-import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector;
-import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.EachMatchingProjector;
 import ai.traceable.sessionidentification.config.service.v1.SessionTokenRule;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 
@@ -19,56 +19,72 @@ class SessionTokenRuleTranslator {
 
   AttributeRule translateSessionTokenRule(
       SessionTokenRule tokenRule, int ruleIndex, String ruleId) {
-    AttributeRule.Builder ruleBuilder = AttributeRule.newBuilder();
-    Projector projector = projectionRootTranslator.translateForTokenValue(tokenRule);
+
+    List<Projector> projectors = projectionRootTranslator.translateForTokenValue(tokenRule);
     if (tokenRule.hasRequestSessionTokenDetails()) {
-      ruleBuilder.addInitialActions(
-          addAttributeAndProject(
-              sessionIdentificationConstants.buildKeyForSessionId(ruleId, ruleIndex), projector));
-    } else if (tokenRule.getResponseSessionTokenDetails().hasResponseAttributeExpiration()) {
-      ruleBuilder
-          .setProjector(
-              Projector.newBuilder()
-                  .setEachMatchingProjector(
-                      EachMatchingProjector.newBuilder()
-                          .addAttributeRules(
-                              AttributeRule.newBuilder()
-                                  .addInitialActions(
-                                      addAttributeAndProject(
-                                          sessionIdentificationConstants.buildKeyForNewSessionId(
-                                              ruleId, ruleIndex),
-                                          projector)))
-                          .addAttributeRules(
-                              expirationTranslator.translateExpiration(
-                                  tokenRule.getResponseSessionTokenDetails(),
-                                  ruleIndex,
-                                  ruleId,
-                                  tokenRule
-                                      .getTokenValueRule()
-                                      .getTokenValueProjection()
-                                      .getAttributeProjection()
-                                      .getAttributeKeyMatchCondition()))))
-          .build();
-    } else {
-      ruleBuilder.addInitialActions(
-          addAttributeAndProject(
-              sessionIdentificationConstants.buildKeyForNewSessionId(ruleId, ruleIndex),
-              projector));
+      return predicateTranslator.addConditionalPredicateIfPresent(
+          projectors.stream()
+              .map(
+                  projector ->
+                      addAttributeAndProject(
+                          sessionIdentificationConstants.buildKeyForSessionId(ruleId, ruleIndex),
+                          projector))
+              .collect(Collectors.toUnmodifiableList()),
+          tokenRule);
+    }
+    if (tokenRule.getResponseSessionTokenDetails().hasResponseAttributeExpiration()) {
+      return predicateTranslator.addConditionalPredicateIfPresent(
+          AttributeRule.newBuilder()
+              .setProjector(
+                  Projector.newBuilder()
+                      .setEachMatchingProjector(
+                          Projector.EachMatchingProjector.newBuilder()
+                              .addAttributeRules(
+                                  predicateTranslator.buildFirstMatchingProjector(
+                                      projectors.stream()
+                                          .map(
+                                              projector ->
+                                                  AttributeRule.newBuilder()
+                                                      .addInitialActions(
+                                                          addAttributeAndProject(
+                                                              sessionIdentificationConstants
+                                                                  .buildKeyForNewSessionId(
+                                                                      ruleId, ruleIndex),
+                                                              projector))
+                                                      .build())
+                                          .collect(Collectors.toUnmodifiableList())))
+                              .addAttributeRules(
+                                  predicateTranslator.buildFirstMatchingProjector(
+                                      expirationTranslator
+                                          .translateExpiration(
+                                              tokenRule.getResponseSessionTokenDetails(),
+                                              ruleIndex,
+                                              ruleId,
+                                              tokenRule
+                                                  .getTokenValueRule()
+                                                  .getTokenValueProjection()
+                                                  .getAttributeProjection()
+                                                  .getAttributeKeyMatchCondition())
+                                          .stream()
+                                          .map(
+                                              action ->
+                                                  AttributeRule.newBuilder()
+                                                      .addInitialActions(action)
+                                                      .build())
+                                          .collect(Collectors.toUnmodifiableList())))))
+              .build(),
+          tokenRule);
     }
 
-    if (tokenRule.hasTokenConditionalPredicate()) {
-      return AttributeRule.newBuilder()
-          .setProjector(
-              Projector.newBuilder()
-                  .setConditionalProjector(
-                      ConditionalProjector.newBuilder()
-                          .setPredicate(
-                              predicateTranslator.translatePredicate(
-                                  tokenRule.getTokenConditionalPredicate()))
-                          .setAttributeRule(ruleBuilder)))
-          .build();
-    }
-    return ruleBuilder.build();
+    return predicateTranslator.addConditionalPredicateIfPresent(
+        projectors.stream()
+            .map(
+                projector ->
+                    addAttributeAndProject(
+                        sessionIdentificationConstants.buildKeyForNewSessionId(ruleId, ruleIndex),
+                        projector))
+            .collect(Collectors.toUnmodifiableList()),
+        tokenRule);
   }
 
   private Action addAttributeAndProject(String attributeKey, Projector projector) {

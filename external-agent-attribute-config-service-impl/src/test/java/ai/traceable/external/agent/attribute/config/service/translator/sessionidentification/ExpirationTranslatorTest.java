@@ -6,6 +6,7 @@ import ai.traceable.external.agent.attribute.config.service.translator.TestUtils
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRule;
 import com.google.inject.Guice;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -20,15 +21,30 @@ class ExpirationTranslatorTest {
         TestUtils.getSessionIdentificationRule(
             "session_identification/expiration/partial_input_for_jwt.json");
     AttributeRule attributeRule =
-        translator.translateExpiration(
-            rule.getTokenRules(0).getResponseSessionTokenDetails(),
-            0,
-            rule.getId(),
-            rule.getTokenRules(0)
-                .getTokenValueRule()
-                .getTokenValueProjection()
-                .getAttributeProjection()
-                .getAttributeKeyMatchCondition());
+        AttributeRule.newBuilder()
+            .setProjector(
+                AttributeRule.Projector.newBuilder()
+                    .setFirstMatchingProjector(
+                        AttributeRule.Projector.FirstMatchingProjector.newBuilder()
+                            .addAllAttributeRules(
+                                translator
+                                    .translateExpiration(
+                                        rule.getTokenRules(0).getResponseSessionTokenDetails(),
+                                        0,
+                                        rule.getId(),
+                                        rule.getTokenRules(0)
+                                            .getTokenValueRule()
+                                            .getTokenValueProjection()
+                                            .getAttributeProjection()
+                                            .getAttributeKeyMatchCondition())
+                                    .stream()
+                                    .map(
+                                        action ->
+                                            AttributeRule.newBuilder()
+                                                .addInitialActions(action)
+                                                .build())
+                                    .collect(Collectors.toUnmodifiableList()))))
+            .build();
     AttributeRule expectedAttributeRule =
         TestUtils.getExpectedAttributeRule(
             "session_identification/expiration/partial_output_for_jwt.json");
@@ -41,15 +57,18 @@ class ExpirationTranslatorTest {
         TestUtils.getSessionIdentificationRule(
             "session_identification/expiration/partial_input_for_attribute.json");
     AttributeRule attributeRule =
-        translator.translateExpiration(
-            rule.getTokenRules(0).getResponseSessionTokenDetails(),
-            0,
-            rule.getId(),
-            rule.getTokenRules(0)
-                .getTokenValueRule()
-                .getTokenValueProjection()
-                .getAttributeProjection()
-                .getAttributeKeyMatchCondition());
+        AttributeRule.newBuilder()
+            .addAllInitialActions(
+                translator.translateExpiration(
+                    rule.getTokenRules(0).getResponseSessionTokenDetails(),
+                    0,
+                    rule.getId(),
+                    rule.getTokenRules(0)
+                        .getTokenValueRule()
+                        .getTokenValueProjection()
+                        .getAttributeProjection()
+                        .getAttributeKeyMatchCondition()))
+            .build();
     AttributeRule expectedAttributeRule =
         TestUtils.getExpectedAttributeRule(
             "session_identification/expiration/partial_output_for_attribute.json");
