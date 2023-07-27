@@ -37,7 +37,7 @@ public class RequestValidator extends ValidatorBase {
           .withDescription("name not found while trying to create ast hooks config")
           .asRuntimeException(requestContext.buildTrailers());
     }
-    // TODO: We should no throw invalid argument because code snippet in hook details is deprecated
+    // TODO: We should not throw invalid argument because code snippet in hook details is deprecated
     //    if (isBlank(request.getHookDetails().getCodeSnippet())) {
     //      throw Status.INVALID_ARGUMENT
     //          .withDescription("Code snippet not found while trying to create ast hooks config")

@@ -11,6 +11,8 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class UpdateAstHookHandler {
   private final AstHooksConfigStore configStore;
+  private final UpdateAstHookConfigHandler updateAstHookConfigHandler =
+      new UpdateAstHookConfigHandler();
 
   public AstHook updateHook(UpdateAstHookRequest request, RequestContext requestContext) {
     AstHook oldHook =
@@ -24,7 +26,8 @@ public class UpdateAstHookHandler {
     applyDescriptionUpdate(request, updatedHookDetailsBuilder);
     applyCodeSnippetUpdate(request, updatedHookDetailsBuilder);
     if (request.hasAstHookDetails()) {
-      updatedHookDetailsBuilder = AstHookDetails.newBuilder(request.getAstHookDetails());
+      updatedHookDetailsBuilder =
+          applyHookDetailsUpdate(request.getAstHookDetails(), oldHook.getHookDetails());
     }
     AstHook.Builder updatedHookBuilder =
         oldHook.toBuilder().setHookDetails(updatedHookDetailsBuilder.build());
@@ -32,6 +35,22 @@ public class UpdateAstHookHandler {
       updatedHookBuilder.setAstHookTestId(request.getHookTestId());
     }
     return configStore.upsertObject(requestContext, updatedHookBuilder.build()).getData();
+  }
+
+  private AstHookDetails.Builder applyHookDetailsUpdate(
+      AstHookDetails newHookDetails, AstHookDetails oldHookDetails) {
+    AstHookDetails.Builder astHookDetailsBuilder =
+        AstHookDetails.newBuilder()
+            .setName(newHookDetails.getName())
+            .setDescription(newHookDetails.getDescription());
+    if (newHookDetails.hasHookConfig()) {
+      astHookDetailsBuilder.setHookConfig(
+          updateAstHookConfigHandler.applyHookConfigUpdate(
+              newHookDetails.getHookConfig(), oldHookDetails.getHookConfig()));
+    } else if (newHookDetails.hasAdvancedMode()) {
+      astHookDetailsBuilder.setAdvancedMode(newHookDetails.getAdvancedMode());
+    }
+    return astHookDetailsBuilder;
   }
 
   private void applyNameUpdate(UpdateAstHookRequest request, AstHookDetails.Builder builder) {

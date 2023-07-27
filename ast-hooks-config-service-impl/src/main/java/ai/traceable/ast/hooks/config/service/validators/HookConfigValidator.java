@@ -133,7 +133,14 @@ public class HookConfigValidator extends ValidatorBase {
   private void validateBearer(Bearer bearer) {
     switch (bearer.getGenerationInfoCase()) {
       case BEARER_TOKEN:
-        validateEncryptedText(bearer.getBearerToken(), "bearer token");
+        if (bearer.hasTokenInfo()) {
+          validateRequestTokenInfo(bearer.getTokenInfo());
+          validateEncryptedText(bearer.getBearerToken(), "bearer token");
+        } else {
+          throw Status.INVALID_ARGUMENT
+              .withDescription("Token info not found for explicit token bearer")
+              .asRuntimeException();
+        }
         break;
       case DYNAMIC_BEARER:
         validateDynamicBearer(bearer.getDynamicBearer());
@@ -146,7 +153,9 @@ public class HookConfigValidator extends ValidatorBase {
   }
 
   private void validateOauth2(Oauth2 oauth2) {
-    validateEncryptedText(oauth2.getToken(), "token");
+    if (oauth2.hasToken()) {
+      validateEncryptedText(oauth2.getToken(), "token");
+    }
     validateEncryptedText(oauth2.getClientId(), "client id");
     validateStringNotBlank(oauth2.getAccessTokenUrl(), "access token url not found for oauth");
     validateRequestTokenInfo(oauth2.getTokenInfo());
