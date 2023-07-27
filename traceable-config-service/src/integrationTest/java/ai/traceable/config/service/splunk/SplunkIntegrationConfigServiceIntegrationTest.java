@@ -45,14 +45,14 @@ public class SplunkIntegrationConfigServiceIntegrationTest
             .setApiToken(EncryptedText.newBuilder().setKeyId("keyid").setValue("encrypted").build())
             .setName("name1")
             .setDescription("desc")
-            .setHttpEventCollectorUrl("http://hec.url")
+            .setHttpEventCollectorUrl("https://testhost.com/hec.url")
             .build();
     CreateSplunkIntegrationRequest request2 =
         CreateSplunkIntegrationRequest.newBuilder()
             .setApiToken(EncryptedText.newBuilder().setKeyId("keyid").setValue("encrypted").build())
             .setName("name2")
             .setDescription("desc")
-            .setHttpEventCollectorUrl("http://hec.url")
+            .setHttpEventCollectorUrl("https://testhost.com/hec.url")
             .build();
     SplunkIntegration integration1 = createIntegration(requestContext, request1);
     SplunkIntegration integration2 = createIntegration(requestContext, request2);
@@ -74,7 +74,7 @@ public class SplunkIntegrationConfigServiceIntegrationTest
             .setApiToken(EncryptedText.newBuilder().setKeyId("keyid").setValue("encrypted").build())
             .setName("name1")
             .setDescription("desc")
-            .setHttpEventCollectorUrl("http://hec.url")
+            .setHttpEventCollectorUrl("https://testhost.com/hec.url")
             .build();
 
     SplunkIntegration integration1 = createIntegration(requestContext, request1);
@@ -84,7 +84,7 @@ public class SplunkIntegrationConfigServiceIntegrationTest
             .setName("name2")
             .setDescription("desc")
             .setApiToken(EncryptedText.newBuilder().setKeyId("keyid").setValue("encrypted").build())
-            .setHttpEventCollectorUrl("http://xyz")
+            .setHttpEventCollectorUrl("https://testhost.com/xyz")
             .build();
     SplunkIntegration updated =
         requestContext

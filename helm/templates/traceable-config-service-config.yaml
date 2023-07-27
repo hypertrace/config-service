@@ -245,6 +245,9 @@ data:
       webhook.exclusion.domains = {{ .Values.traceableConfigServiceConfig.notificationChannelConfigServiceConfig.webhookExclusionDomains | toJson }}
       webhook.http.support.enabled = {{ .Values.traceableConfigServiceConfig.notificationChannelConfigServiceConfig.webhookHttpSupportEnabled }}
     }
+    splunk.integration.config.service {
+      splunk.http.support.enabled = {{ .Values.traceableConfigServiceConfig.splunkIntegrationConfigServiceConfig.splunkHttpSupportEnabled }}
+    }
     detection.exclusion.config.service = {
       migrationDisabled = {{ .Values.traceableConfigServiceConfig.detectionExclusionConfigService.migrationDisabled }}
     }

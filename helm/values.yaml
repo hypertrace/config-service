@@ -238,6 +238,8 @@ traceableConfigServiceConfig:
   notificationChannelConfigServiceConfig:
     webhookExclusionDomains: ["localhost", "127.0.0.1", "169.254.169.254", "metadata.google.internal"]
     webhookHttpSupportEnabled: false
+  splunkIntegrationConfigServiceConfig:
+    splunkHttpSupportEnabled: false
   detectionExclusionConfigService:
     migrationDisabled: false
   astConfigService:

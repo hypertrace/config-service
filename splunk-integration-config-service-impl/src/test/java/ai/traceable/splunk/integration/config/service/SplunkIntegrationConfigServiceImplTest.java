@@ -18,6 +18,7 @@ import ai.traceable.splunk.integration.config.service.api.v1.SplunkIntegrationsF
 import ai.traceable.splunk.integration.config.service.api.v1.UpdateSplunkIntegrationRequest;
 import ai.traceable.splunk.integration.config.service.store.SplunkIntegrationConfigStore;
 import ai.traceable.splunk.integration.config.service.validation.SplunkIntegrationConfigRequestValidator;
+import com.typesafe.config.Config;
 import io.grpc.Status;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -26,6 +27,7 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -349,7 +351,8 @@ class SplunkIntegrationConfigServiceImplTest {
             new SplunkIntegrationConfigServiceImpl(
                 new SplunkIntegrationConfigRequestValidator(splunkIntegrationConfigStore),
                 splunkIntegrationConfigStore,
-                new UuidGenerator()))
+                new UuidGenerator(),
+                Mockito.mock(Config.class)))
         .start();
 
     this.splunkIntegrationServiceBlockingStub =

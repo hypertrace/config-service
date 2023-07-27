@@ -6,6 +6,7 @@ import ai.traceable.splunk.integration.config.service.api.v1.SplunkIntegrationCo
 import ai.traceable.splunk.integration.config.service.store.SplunkIntegrationConfigStore;
 import ai.traceable.splunk.integration.config.service.validation.SplunkIntegrationConfigRequestValidator;
 import com.google.inject.Inject;
+import com.typesafe.config.Config;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,10 +16,14 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class SplunkIntegrationConfigServiceImpl extends SplunkIntegrationConfigServiceImplBase {
 
+  public static final String SPLUNK_INTEGRATION_CONFIG_SERVICE_CONFIG =
+      "splunk.integration.config.service";
+
   private final SplunkIntegrationConfigRequestValidator requestValidator;
   private final SplunkIntegrationConfigStore splunkIntegrationConfigStore;
 
   private final UuidGenerator uuidGenerator;
+  private final Config config;
 
   @Override
   public void createSplunkIntegration(
@@ -28,7 +33,8 @@ public class SplunkIntegrationConfigServiceImpl extends SplunkIntegrationConfigS
           responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
-      requestValidator.validateOrThrow(requestContext, request);
+      requestValidator.validateOrThrow(
+          requestContext, request, config.getConfig(SPLUNK_INTEGRATION_CONFIG_SERVICE_CONFIG));
       final SplunkIntegration splunkIntegration =
           SplunkIntegration.newBuilder()
               .setId(uuidGenerator.generateRandomId())
@@ -91,7 +97,8 @@ public class SplunkIntegrationConfigServiceImpl extends SplunkIntegrationConfigS
           responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
-      requestValidator.validateOrThrow(requestContext, request);
+      requestValidator.validateOrThrow(
+          requestContext, request, config.getConfig(SPLUNK_INTEGRATION_CONFIG_SERVICE_CONFIG));
       SplunkIntegration.Builder builder = SplunkIntegration.newBuilder();
       builder.setId(request.getId());
       SplunkIntegrationDetails.Builder detailsBuilder = SplunkIntegrationDetails.newBuilder();

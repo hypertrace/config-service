@@ -6,31 +6,63 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 import ai.traceable.splunk.integration.config.service.api.v1.*;
 import ai.traceable.splunk.integration.config.service.store.SplunkIntegrationConfigStore;
 import com.google.inject.Inject;
+import com.typesafe.config.Config;
 import io.grpc.Status;
+import java.net.MalformedURLException;
+import java.net.URL;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class SplunkIntegrationConfigRequestValidator {
 
+  public static final String SPLUNK_HTTP_SUPPORT_ENABLED = "splunk.http.support.enabled";
+
   private final SplunkIntegrationConfigStore splunkIntegrationConfigStore;
 
   public void validateOrThrow(
-      RequestContext requestContext, CreateSplunkIntegrationRequest request) {
+      RequestContext requestContext, CreateSplunkIntegrationRequest request, Config config) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, CreateSplunkIntegrationRequest.NAME_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         request, CreateSplunkIntegrationRequest.HTTP_EVENT_COLLECTOR_URL_FIELD_NUMBER);
+    validateEventCollectorURL(request.getHttpEventCollectorUrl(), config);
     validateEncryptedText(request.getApiToken());
   }
 
+  void validateEventCollectorURL(String eventCollectorUrl, Config config) {
+    if (config == null
+        || (config.hasPath(SPLUNK_HTTP_SUPPORT_ENABLED)
+            && config.getBoolean(SPLUNK_HTTP_SUPPORT_ENABLED))) {
+      return;
+    }
+    validateHttpsUrl(eventCollectorUrl);
+  }
+
+  private void validateHttpsUrl(String urlString) {
+    try {
+      URL url = new URL(urlString);
+      String protocol = url.getProtocol();
+      if (!protocol.equals("https")) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription("URL configured in webhook is not https ")
+            .asRuntimeException();
+      }
+    } catch (MalformedURLException e) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("URL configured in webhook is malformed ")
+          .asRuntimeException();
+    }
+  }
+
   public void validateOrThrow(
-      RequestContext requestContext, UpdateSplunkIntegrationRequest request) {
+      RequestContext requestContext, UpdateSplunkIntegrationRequest request, Config config) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, UpdateSplunkIntegrationRequest.ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(request, UpdateSplunkIntegrationRequest.NAME_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         request, UpdateSplunkIntegrationRequest.HTTP_EVENT_COLLECTOR_URL_FIELD_NUMBER);
+    validateEventCollectorURL(request.getHttpEventCollectorUrl(), config);
 
     // let us check if the id exists in DB or not
     boolean exists =
