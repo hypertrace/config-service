@@ -5,14 +5,20 @@ package ai.traceable.waf.integration.service.api.v1;
 option java_multiple_files = true;
 
 message AwsIntegrationParams {
-  string access_key_id = 1 [deprecated=true];
-  string encrypted_secret_access_key = 2 [deprecated=true];
+  string access_key_id = 1 [deprecated = true];
+  string encrypted_secret_access_key = 2 [deprecated = true];
   repeated AwsResource resources = 3;
   optional int64 rule_group_capacity = 4;
+  IntegrationActionType integration_action_type = 5;
   oneof connection_credentials {
     AuthCredentials auth_credentials = 10;
     WebIdentityAuthenticationCredentials web_identity_auth_credentials = 11;
   }
+}
+
+enum IntegrationActionType {
+  INTEGRATION_ACTION_TYPE_UNSPECIFIED = 0;
+  INTEGRATION_ACTION_TYPE_COUNT = 1;
 }
 
 message AuthCredentials {
@@ -30,10 +36,11 @@ message AwsResource {
 }
 
 message AwsIntegrationUpdateParams {
-  string access_key_id = 1 [deprecated=true];
-  optional string encrypted_secret_access_key = 2 [deprecated=true];
+  string access_key_id = 1 [deprecated = true];
+  optional string encrypted_secret_access_key = 2 [deprecated = true];
   repeated AwsResource resources = 3;
   optional int64 rule_group_capacity = 4;
+  IntegrationActionType integration_action_type = 5;
   oneof connection_credentials {
     AuthCredentials auth_credentials = 10;
     WebIdentityAuthenticationCredentials web_identity_auth_credentials = 11;

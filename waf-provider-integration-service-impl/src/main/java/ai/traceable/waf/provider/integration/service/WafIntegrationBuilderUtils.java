@@ -94,6 +94,8 @@ public class WafIntegrationBuilderUtils {
                                     .getWafIntegrationDetails()
                                     .getAwsIntegrationParams()
                                     .getEncryptedSecretAccessKey())
+                        .setIntegrationActionType(
+                            awsIntegrationUpdateParams.getIntegrationActionType())
                         .addAllResources(awsIntegrationUpdateParams.getResourcesList())))
         .build();
   }
