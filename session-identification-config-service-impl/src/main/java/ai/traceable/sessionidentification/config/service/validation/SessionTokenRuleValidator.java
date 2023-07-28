@@ -3,6 +3,7 @@ package ai.traceable.sessionidentification.config.service.validation;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
+import ai.traceable.config.utils.JsonPathValidator;
 import ai.traceable.config.utils.RegexValidator;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.sessionidentification.config.service.v1.AttributeProjection;
@@ -118,7 +119,9 @@ public class SessionTokenRuleValidator {
   }
 
   private void validateAttributeProjection(AttributeProjection attributeProjection) {
-    validateAttributeMatchCondition(attributeProjection.getAttributeKeyMatchCondition());
+    if (attributeProjection.hasAttributeKeyMatchCondition()) {
+      validateAttributeMatchCondition(attributeProjection.getAttributeKeyMatchCondition());
+    }
     validateValueProjections(attributeProjection.getValueProjectionsInOrderList());
   }
 
@@ -146,21 +149,28 @@ public class SessionTokenRuleValidator {
   private void validateValueProjections(List<ValueProjection> projections) {
     projections.forEach(
         projection -> {
-          if (projection.getProjectionCase() == ValueProjection.ProjectionCase.PROJECTION_NOT_SET) {
-            throw Status.INVALID_ARGUMENT
-                .withDescription(
-                    String.format("Unexpected value projection: %s", printMessage(projection)))
-                .asRuntimeException();
-          }
-
-          if (projection.hasRegexCaptureGroup()) {
-            Status status =
-                RegexValidator.validateCaptureGroupCount(
-                    projection.getRegexCaptureGroup().getRegexCaptureGroup(),
-                    REGEX_CAPTURE_GROUP_COUNT);
-            if (!status.isOk()) {
-              throw status.asRuntimeException();
-            }
+          switch (projection.getProjectionCase()) {
+            case PROJECTION_NOT_SET:
+              throw Status.INVALID_ARGUMENT
+                  .withDescription(
+                      String.format("Unexpected value projection: %s", printMessage(projection)))
+                  .asRuntimeException();
+            case REGEX_CAPTURE_GROUP:
+              Status status =
+                  RegexValidator.validateCaptureGroupCount(
+                      projection.getRegexCaptureGroup().getRegexCaptureGroup(),
+                      REGEX_CAPTURE_GROUP_COUNT);
+              if (!status.isOk()) {
+                throw status.asRuntimeException();
+              }
+              break;
+            case JSON_PATH:
+              validateNonDefaultPresenceOrThrow(
+                  projection.getJsonPath(), ValueProjection.JsonPathProjection.PATH_FIELD_NUMBER);
+              status = JsonPathValidator.validate(projection.getJsonPath().getPath());
+              if (!status.isOk()) {
+                throw status.asRuntimeException();
+              }
           }
         });
   }

@@ -70,28 +70,6 @@ class SessionTokenRuleValidatorTest {
   }
 
   @Test
-  void validateAttributeMatchCondition() {
-    assertInvalidArgStatusContaining(
-        "MatchCondition.operator but not present",
-        () ->
-            tokenRuleValidator.validateTokenRules(
-                List.of(
-                    SessionTokenRule.newBuilder()
-                        .setTokenValueRule(
-                            SessionTokenValueRule.newBuilder()
-                                .setTokenValueProjection(
-                                    ProjectionRoot.newBuilder()
-                                        .setAttributeProjection(
-                                            AttributeProjection.getDefaultInstance())))
-                        .setRequestSessionTokenDetails(
-                            RequestSessionTokenDetails.newBuilder()
-                                .setTokenLocation(
-                                    RequestAttributeKeyLocation
-                                        .REQUEST_ATTRIBUTE_KEY_LOCATION_HEADER))
-                        .build())));
-  }
-
-  @Test
   void validateProjectionRoot() {
     assertInvalidArgStatusContaining(
         "Projection root can not be empty",
@@ -213,6 +191,38 @@ class SessionTokenRuleValidatorTest {
                                                                 .newBuilder()
                                                                 .setRegexCaptureGroup(
                                                                     "((A)(B(C)))")))
+                                                .setAttributeKeyMatchCondition(
+                                                    MatchCondition.newBuilder()
+                                                        .setOperator(
+                                                            MatchOperator.MATCH_OPERATOR_EQUALS)
+                                                        .setMatchValue(
+                                                            LiteralValue.newBuilder()
+                                                                .setStringValue("auth"))))))
+                        .setRequestSessionTokenDetails(
+                            RequestSessionTokenDetails.newBuilder()
+                                .setTokenLocation(
+                                    RequestAttributeKeyLocation
+                                        .REQUEST_ATTRIBUTE_KEY_LOCATION_HEADER))
+                        .build())));
+
+    assertInvalidArgStatusContaining(
+        "Invalid json path:",
+        () ->
+            tokenRuleValidator.validateTokenRules(
+                List.of(
+                    SessionTokenRule.newBuilder()
+                        .setTokenValueRule(
+                            TOKEN_VALUE_RULE.toBuilder()
+                                .setTokenValueProjection(
+                                    ProjectionRoot.newBuilder()
+                                        .setAttributeProjection(
+                                            AttributeProjection.newBuilder()
+                                                .addValueProjectionsInOrder(
+                                                    ValueProjection.newBuilder()
+                                                        .setJsonPath(
+                                                            ValueProjection.JsonPathProjection
+                                                                .newBuilder()
+                                                                .setPath("$jsonpath")))
                                                 .setAttributeKeyMatchCondition(
                                                     MatchCondition.newBuilder()
                                                         .setOperator(

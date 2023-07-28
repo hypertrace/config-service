@@ -6,6 +6,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 import ai.traceable.config.utils.RegexValidator;
 import ai.traceable.sessionidentification.config.service.v1.CreateSessionIdentificationRuleRequest;
 import ai.traceable.sessionidentification.config.service.v1.DeleteSessionIdentificationRuleRequest;
+import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRule;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRuleScope;
 import ai.traceable.sessionidentification.config.service.v1.UpdateSessionIdentificationRuleRequest;
 import io.grpc.Status;
@@ -13,14 +14,25 @@ import java.util.List;
 import java.util.Set;
 import javax.inject.Inject;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @AllArgsConstructor(onConstructor_ = {@Inject})
+@Slf4j
 public class SessionIdentificationConfigRequestValidator {
   private final SessionTokenRuleValidator tokenRuleValidator;
 
   public void validateGetRequest(RequestContext requestContext) {
     validateRequestContextOrThrow(requestContext);
+  }
+
+  public void validateSessionIdentificationRule(SessionIdentificationRule rule) {
+    validateNonDefaultPresenceOrThrow(rule, SessionIdentificationRule.ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(rule, SessionIdentificationRule.NAME_FIELD_NUMBER);
+    tokenRuleValidator.validateTokenRules(rule.getTokenRulesList());
+    if (rule.hasScope()) {
+      validateRuleScope(rule.getScope());
+    }
   }
 
   public void validateCreateRequest(

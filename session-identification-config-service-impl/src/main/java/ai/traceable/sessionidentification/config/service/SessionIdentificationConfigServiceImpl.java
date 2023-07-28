@@ -49,7 +49,6 @@ public class SessionIdentificationConfigServiceImpl
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
       this.validator.validateGetRequest(requestContext);
-
       responseObserver.onNext(
           GetSessionIdentificationRulesResponse.newBuilder()
               .addAllRules(

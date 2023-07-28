@@ -7,6 +7,7 @@ import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRule;
+import ai.traceable.sessionidentification.config.service.validation.SessionIdentificationConfigRequestValidator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -21,14 +22,17 @@ public class LegacySessionIdentificationRuleTranslatingDaoImpl
   private final SessionIdentificationRuleConverter ruleConverter;
   private final SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub
       sensitiveDataConfigServiceBlockingStub;
+  private final SessionIdentificationConfigRequestValidator validator;
 
   @Inject
   public LegacySessionIdentificationRuleTranslatingDaoImpl(
       SessionIdentificationRuleConverter ruleConverter,
       SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub
-          sensitiveDataConfigServiceBlockingStub) {
+          sensitiveDataConfigServiceBlockingStub,
+      SessionIdentificationConfigRequestValidator validator) {
     this.ruleConverter = ruleConverter;
     this.sensitiveDataConfigServiceBlockingStub = sensitiveDataConfigServiceBlockingStub;
+    this.validator = validator;
   }
 
   @Override
@@ -37,7 +41,7 @@ public class LegacySessionIdentificationRuleTranslatingDaoImpl
     List<RedactionRule> redactionRuleList = fetchRedactionRules(requestContext);
     return redactionRuleList.stream()
         .filter(RedactionRule::getSessionIdentifier)
-        .map(ruleConverter::convert)
+        .map(this::convertAndValidateRule)
         .flatMap(Optional::stream)
         .collect(Collectors.toUnmodifiableList());
   }
@@ -77,5 +81,20 @@ public class LegacySessionIdentificationRuleTranslatingDaoImpl
                 .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
                 .deleteRedactionRule(
                     DeleteRedactionRuleRequest.newBuilder().setRedactionRuleId(ruleId).build()));
+  }
+
+  private Optional<SessionIdentificationRule> convertAndValidateRule(RedactionRule rule) {
+    Optional<SessionIdentificationRule> sessionIdentificationRuleOptional =
+        ruleConverter.convert(rule);
+    return sessionIdentificationRuleOptional.filter(
+        sessionIdentificationRule -> {
+          try {
+            validator.validateSessionIdentificationRule(sessionIdentificationRule);
+            return true;
+          } catch (Exception e) {
+            log.warn("Invalid session identification rule {}", rule);
+            return false;
+          }
+        });
   }
 }

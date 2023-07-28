@@ -17,6 +17,7 @@ dependencies {
   implementation(libs.typesafe.config)
   implementation(libs.commons.csv)
   implementation(libs.guava)
+  implementation(libs.json.path)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

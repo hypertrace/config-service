@@ -95,8 +95,6 @@ public class SessionIdentificationRuleConverter {
   }
 
   private SessionIdentificationRule buildResponseBodyRule(RedactionRule redactionRule) {
-    SessionIdentificationRule.Builder sessionIdentificationRuleBuilder =
-        SessionIdentificationRule.newBuilder();
     SessionTokenValueRule.Builder tokenValueRule =
         SessionTokenValueRule.newBuilder()
             .setTokenValueProjection(

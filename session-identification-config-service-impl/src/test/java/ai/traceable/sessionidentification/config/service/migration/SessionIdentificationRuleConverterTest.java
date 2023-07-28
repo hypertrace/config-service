@@ -121,7 +121,7 @@ class SessionIdentificationRuleConverterTest {
             .setSessionIdentifier(true)
             .setId("old-rule-id")
             .setName("old rule")
-            .setRegex("some-json-path")
+            .setRegex("$.some-json-path")
             .setMatchType(MatchType.MATCH_TYPE_COMPLEX_DATA)
             .addConditions(
                 Condition.newBuilder()
@@ -155,7 +155,7 @@ class SessionIdentificationRuleConverterTest {
                                                     .setJsonPath(
                                                         ValueProjection.JsonPathProjection
                                                             .newBuilder()
-                                                            .setPath("some-json-path")))))))
+                                                            .setPath("$.some-json-path")))))))
             .build();
     Assertions.assertEquals(expectedRule, converter.convert(redactionRule).get());
   }
