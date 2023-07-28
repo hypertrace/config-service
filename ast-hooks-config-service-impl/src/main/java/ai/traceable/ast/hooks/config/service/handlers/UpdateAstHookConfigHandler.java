@@ -237,9 +237,6 @@ public class UpdateAstHookConfigHandler {
     if (StringUtils.isEmpty(newOauth.getToken().getValue())) {
       oauthBuilder.setToken(oldOauth.getToken());
     }
-    if (StringUtils.isEmpty(newOauth.getClientId().getValue())) {
-      oauthBuilder.setClientId(oldOauth.getClientId());
-    }
 
     if (newOauth.hasAuthorizationCodeFlow()) {
       OauthAuthorizationCodeFlow.Builder oauthAuthorizationCodeFlowBuilder =

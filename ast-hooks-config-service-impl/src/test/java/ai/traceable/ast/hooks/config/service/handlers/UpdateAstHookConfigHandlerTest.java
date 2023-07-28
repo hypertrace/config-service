@@ -25,6 +25,7 @@ public class UpdateAstHookConfigHandlerTest {
       new UpdateAstHookConfigHandler();
   private HookConfig newHookConfig, oldHookConfig;
   private static final String AUTH_ENDPOINT = "auth-endpoint";
+  private static final String CLIENT_ID = "client-id";
   private static final EncryptedText ENCRYPTED_TEXT1 =
       EncryptedText.newBuilder().setKeyId("key-id").setValue("value").build();
   private static final EncryptedText ENCRYPTED_TEXT2 =
@@ -91,12 +92,12 @@ public class UpdateAstHookConfigHandlerTest {
     Oauth2 newOauth =
         Oauth2.newBuilder()
             .setToken(ENCRYPTED_TEXT1)
+            .setClientIdPlainText(CLIENT_ID)
             .setAuthorizationCodeFlow(OauthAuthorizationCodeFlow.newBuilder())
             .build();
     Oauth2 oldOauth =
         Oauth2.newBuilder()
             .setToken(ENCRYPTED_TEXT2)
-            .setClientId(ENCRYPTED_TEXT2)
             .setAuthorizationCodeFlow(
                 OauthAuthorizationCodeFlow.newBuilder().setClientSecret(ENCRYPTED_TEXT3))
             .build();
@@ -105,7 +106,7 @@ public class UpdateAstHookConfigHandlerTest {
     HookConfig result =
         updateAstHookConfigHandler.applyHookConfigUpdate(newHookConfig, oldHookConfig);
     assertEquals(ENCRYPTED_TEXT1, result.getOauth2().getToken());
-    assertEquals(ENCRYPTED_TEXT2, result.getOauth2().getClientId());
+    assertEquals(CLIENT_ID, result.getOauth2().getClientIdPlainText());
     assertEquals(ENCRYPTED_TEXT3, result.getOauth2().getAuthorizationCodeFlow().getClientSecret());
 
     newOauth =
@@ -121,13 +122,11 @@ public class UpdateAstHookConfigHandlerTest {
     oldOauth =
         Oauth2.newBuilder()
             .setToken(ENCRYPTED_TEXT2)
-            .setClientId(ENCRYPTED_TEXT2)
             .setPasswordFlow(OauthPasswordFlow.newBuilder().setClientSecret(ENCRYPTED_TEXT3))
             .build();
     oldHookConfig = oldHookConfig.toBuilder().setOauth2(oldOauth).build();
     result = updateAstHookConfigHandler.applyHookConfigUpdate(newHookConfig, oldHookConfig);
     assertEquals(ENCRYPTED_TEXT2, result.getOauth2().getToken());
-    assertEquals(ENCRYPTED_TEXT2, result.getOauth2().getClientId());
     assertEquals(ENCRYPTED_TEXT3, result.getOauth2().getPasswordFlow().getClientSecret());
   }
 

@@ -30,7 +30,6 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class HookConfigValidator extends ValidatorBase {
   public void validate(HookConfig hookConfig) {
-    validateStringNotBlank(hookConfig.getAuthEndpoint(), "auth endpoint not found");
     switch (hookConfig.getHookConfigCase()) {
       case HMAC:
         validateHmac(hookConfig.getHmac());
@@ -87,6 +86,7 @@ public class HookConfigValidator extends ValidatorBase {
     String description = "encrypted value not found for " + fieldName;
     validateStringNotBlank(encryptedText.getKeyId(), description);
     validateStringNotBlank(encryptedText.getValue(), description);
+    validateStringNotBlank(encryptedText.getSymmetricKey(), description);
   }
 
   private void validateAwsSignature(AwsSignatureV4 awsSignatureV4) {
@@ -156,7 +156,7 @@ public class HookConfigValidator extends ValidatorBase {
     if (oauth2.hasToken()) {
       validateEncryptedText(oauth2.getToken(), "token");
     }
-    validateEncryptedText(oauth2.getClientId(), "client id");
+    validateStringNotBlank(oauth2.getClientIdPlainText(), "client id not found");
     validateStringNotBlank(oauth2.getAccessTokenUrl(), "access token url not found for oauth");
     validateRequestTokenInfo(oauth2.getTokenInfo());
     validateStringNotBlank(oauth2.getAccessTokenUrl(), "access token url can not be blank");
