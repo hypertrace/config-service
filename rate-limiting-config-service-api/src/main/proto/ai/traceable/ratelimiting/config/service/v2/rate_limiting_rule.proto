@@ -147,6 +147,7 @@ message KeyValueCondition {
     TYPE_QUERY_PARAMETER = 12;
     TYPE_REQUEST_BODY_PARAMETER = 13;
     TYPE_RESPONSE_BODY_PARAMETER = 14;
+    TYPE_TAG = 15;
   }
 
   enum MatchOperator {

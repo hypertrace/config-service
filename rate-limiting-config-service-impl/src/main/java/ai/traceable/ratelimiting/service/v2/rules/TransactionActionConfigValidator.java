@@ -78,6 +78,8 @@ public class TransactionActionConfigValidator {
         validateIpAddressConditionForTransactionActionConfig(leafCondition.getIpAddressCondition());
         break;
       case KEY_VALUE_CONDITION:
+        validateKeyValueConditionForTransactionActionConfig(leafCondition);
+        break;
       case IP_LOCATION_TYPE_CONDITION:
         validatorUtils.validateLeafCondition(leafCondition);
         break;
@@ -85,6 +87,23 @@ public class TransactionActionConfigValidator {
         validatorUtils.throwInvalidArgumentException(
             String.format(
                 "Invalid leaf condition : %s, for transaction action config", leafCondition));
+    }
+  }
+
+  private void validateKeyValueConditionForTransactionActionConfig(LeafCondition condition) {
+    switch (condition.getKeyValueCondition().getType()) {
+      case TYPE_RESPONSE_BODY:
+      case TYPE_RESPONSE_COOKIE:
+      case TYPE_RESPONSE_HEADER:
+      case TYPE_RESPONSE_BODY_PARAMETER:
+      case TYPE_TAG:
+        validatorUtils.throwInvalidArgumentException(
+            String.format(
+                "Invalid key value condition type for transaction action config : %s",
+                condition.getKeyValueCondition()));
+        break;
+      default:
+        validatorUtils.validateLeafCondition(condition);
     }
   }
 
