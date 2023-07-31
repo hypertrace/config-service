@@ -2,6 +2,7 @@ package ai.traceable.blocking.config.service.v2.modsec;
 
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.blocking.config.service.common.modsec.BlockingModsecBlobFetcher;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.blocking.config.service.v2.AgentCapabilities;
 import ai.traceable.blocking.config.service.v2.BlockingConfigManagerBase;
 import ai.traceable.blocking.config.service.v2.BlockingConfigRequestElement;
@@ -17,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class ModsecBlockingManager implements BlockingConfigManagerBase {
 
@@ -43,10 +43,10 @@ public class ModsecBlockingManager implements BlockingConfigManagerBase {
     this.semanticVersioningComparator = semanticVersioningComparator;
   }
 
+  @Override
   public List<BlockingConfigResponseElement> generateBlockingElements(
       List<BlockingConfigRequestElement> requestElements,
-      RequestContext requestContext,
-      Optional<String> environmentId) {
+      BlockingRulesSupplier blockingRulesSupplier) {
     List<BlockingConfigRequestElement> modsecRequestElements =
         requestElements.stream()
             .filter(BlockingConfigRequestElement::hasCrsBlockingRulesRequest)

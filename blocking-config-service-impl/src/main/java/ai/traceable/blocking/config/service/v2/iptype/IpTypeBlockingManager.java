@@ -1,6 +1,7 @@
 package ai.traceable.blocking.config.service.v2.iptype;
 
 import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleAggregatorBase;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.blocking.config.service.v2.BlockingConfigManagerBase;
 import ai.traceable.blocking.config.service.v2.BlockingConfigRequestElement;
 import ai.traceable.blocking.config.service.v2.BlockingConfigResponseElement;
@@ -10,9 +11,7 @@ import ai.traceable.config.utils.UuidGenerator;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
-import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class IpTypeBlockingManager implements BlockingConfigManagerBase {
   private final IpTypeRuleAggregatorBase<IpTypeRule> ipTypeRuleAggregator;
@@ -28,8 +27,7 @@ public class IpTypeBlockingManager implements BlockingConfigManagerBase {
   @Override
   public List<BlockingConfigResponseElement> generateBlockingElements(
       List<BlockingConfigRequestElement> requestElements,
-      RequestContext requestContext,
-      Optional<String> environmentId) {
+      BlockingRulesSupplier blockingRulesSupplier) {
     List<BlockingConfigRequestElement> ipTypeRequestElements =
         requestElements.stream()
             .filter(BlockingConfigRequestElement::hasIpTypeBlockingRulesRequest)
@@ -41,7 +39,9 @@ public class IpTypeBlockingManager implements BlockingConfigManagerBase {
     IpTypeBlockingRules ipTypeBlockingRules =
         IpTypeBlockingRules.newBuilder()
             .addAllIpTypeRuleList(
-                ipTypeRuleAggregator.getEnabledBlockingRules(requestContext, environmentId))
+                ipTypeRuleAggregator.getEnabledBlockingRules(
+                    blockingRulesSupplier.getRequestContext(),
+                    blockingRulesSupplier.getEnvironmentId()))
             .build();
     return List.of(buildResponseElement(ipTypeRequestElements, ipTypeBlockingRules));
   }

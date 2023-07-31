@@ -16,6 +16,8 @@ import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesConfigSer
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesConfigServiceGrpc.MaliciousSourcesConfigServiceBlockingStub;
 import ai.traceable.platform.actor.v1.ActorServiceGrpc;
 import ai.traceable.platform.actor.v1.ActorServiceGrpc.ActorServiceBlockingStub;
+import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc;
+import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceBlockingStub;
 import com.google.inject.AbstractModule;
@@ -65,6 +67,14 @@ public class BlockingConfigServiceModule extends AbstractModule {
   MaliciousSourcesConfigServiceBlockingStub providesMaliciousSourcesConfigServiceBlockingStub(
       Channel channel) {
     return MaliciousSourcesConfigServiceGrpc.newBlockingStub(channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  RateLimitingConfigServiceBlockingStub providesRateLimitingConfigServiceBlockingStub(
+      Channel channel) {
+    return RateLimitingConfigServiceGrpc.newBlockingStub(channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

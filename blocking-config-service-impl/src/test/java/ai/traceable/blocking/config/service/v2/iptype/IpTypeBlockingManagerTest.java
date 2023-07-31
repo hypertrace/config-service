@@ -6,6 +6,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleAggregatorBase;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.blocking.config.service.v2.BlockingConfigManagerBase;
 import ai.traceable.blocking.config.service.v2.BlockingConfigRequestElement;
 import ai.traceable.blocking.config.service.v2.BlockingConfigResponseElement;
@@ -14,6 +15,7 @@ import ai.traceable.blocking.config.service.v2.IpTypeBlockingRules;
 import ai.traceable.blocking.config.service.v2.IpTypeBlockingRulesRequest;
 import ai.traceable.blocking.config.service.v2.IpTypeRule;
 import ai.traceable.config.utils.UuidGenerator;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -61,8 +63,7 @@ class IpTypeBlockingManagerTest {
                     .setPreviousHash("mock-hash")
                     .setIpTypeBlockingRulesRequest(IpTypeBlockingRulesRequest.getDefaultInstance())
                     .build()),
-            requestContext,
-            environmentId));
+            new BlockingRulesSupplier(Collections.emptyMap(), requestContext, environmentId)));
 
     // Test in case hashes do match the new ip-type config is empty
     assertEquals(
@@ -86,8 +87,7 @@ class IpTypeBlockingManagerTest {
                     .setBlockingPolicyConfigurationRequest(
                         BlockingPolicyConfigurationRequest.getDefaultInstance())
                     .build()),
-            requestContext,
-            environmentId));
+            new BlockingRulesSupplier(Collections.emptyMap(), requestContext, environmentId)));
 
     // Test empty in case request elements are empty
     assertEquals(
@@ -95,7 +95,6 @@ class IpTypeBlockingManagerTest {
         manager.generateBlockingElements(
             List.of(
                 BlockingConfigRequestElement.newBuilder().setPreviousHash("random-hash").build()),
-            requestContext,
-            environmentId));
+            new BlockingRulesSupplier(Collections.emptyMap(), requestContext, environmentId)));
   }
 }

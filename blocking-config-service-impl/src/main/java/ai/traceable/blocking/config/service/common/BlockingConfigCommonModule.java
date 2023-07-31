@@ -5,6 +5,7 @@ import ai.traceable.blocking.config.service.common.customsignature.CustomSignatu
 import ai.traceable.blocking.config.service.common.iptype.IpTypeCommonModule;
 import ai.traceable.blocking.config.service.common.modsec.ModsecCommonModule;
 import ai.traceable.blocking.config.service.common.regions.RegionRulesCommonModule;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesFetcherModule;
 import com.google.inject.AbstractModule;
 import java.time.Clock;
 
@@ -17,5 +18,6 @@ public class BlockingConfigCommonModule extends AbstractModule {
     install(new RegionRulesCommonModule());
     install(new ModsecCommonModule());
     install(new CustomSignatureCommonModule());
+    install(new BlockingRulesFetcherModule());
   }
 }

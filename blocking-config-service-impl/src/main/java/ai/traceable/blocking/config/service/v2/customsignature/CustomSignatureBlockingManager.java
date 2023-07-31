@@ -1,6 +1,6 @@
 package ai.traceable.blocking.config.service.v2.customsignature;
 
-import ai.traceable.blocking.config.service.common.customsignature.CustomSignatureBlobFetcher;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.blocking.config.service.v2.AgentCapabilities;
 import ai.traceable.blocking.config.service.v2.BlockingConfigManagerBase;
 import ai.traceable.blocking.config.service.v2.BlockingConfigRequestElement;
@@ -17,29 +17,24 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class CustomSignatureBlockingManager implements BlockingConfigManagerBase {
   private static final String MINIMUM_LIBTRACEABLE_VERSION_FOR_V3_SECARG = "0.1.98-rc.139";
 
-  private final CustomSignatureBlobFetcher customSignatureBlobFetcher;
   private final UuidGenerator uuidGenerator;
   private final SemanticVersioningComparator semanticVersioningComparator;
 
   @Inject
   public CustomSignatureBlockingManager(
-      CustomSignatureBlobFetcher customSignatureBlobFetcher,
-      UuidGenerator uuidGenerator,
-      SemanticVersioningComparator semanticVersioningComparator) {
-    this.customSignatureBlobFetcher = customSignatureBlobFetcher;
+      UuidGenerator uuidGenerator, SemanticVersioningComparator semanticVersioningComparator) {
     this.uuidGenerator = uuidGenerator;
     this.semanticVersioningComparator = semanticVersioningComparator;
   }
 
+  @Override
   public List<BlockingConfigResponseElement> generateBlockingElements(
       List<BlockingConfigRequestElement> requestElements,
-      RequestContext requestContext,
-      Optional<String> environmentId) {
+      BlockingRulesSupplier blockingRulesSupplier) {
     List<BlockingConfigRequestElement> customSignatureRequestElements =
         requestElements.stream()
             .filter(BlockingConfigRequestElement::hasCustomSignatureBlockingRulesRequest)
@@ -51,14 +46,12 @@ public class CustomSignatureBlockingManager implements BlockingConfigManagerBase
     List<BlockingConfigResponseElement> responseElements = new ArrayList<>();
     buildResponseElement(
             customSignatureRequestElements,
-            requestContext,
-            environmentId,
+            blockingRulesSupplier,
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3)
         .ifPresent(responseElements::add);
     buildResponseElement(
             customSignatureRequestElements,
-            requestContext,
-            environmentId,
+            blockingRulesSupplier,
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS)
         .ifPresent(responseElements::add);
     return responseElements;
@@ -66,8 +59,7 @@ public class CustomSignatureBlockingManager implements BlockingConfigManagerBase
 
   private Optional<BlockingConfigResponseElement> buildResponseElement(
       List<BlockingConfigRequestElement> requestElements,
-      RequestContext requestContext,
-      Optional<String> environmentId,
+      BlockingRulesSupplier blockingRulesSupplier,
       CustomModsecRuleVersion customModsecRuleVersion) {
     List<BlockingConfigRequestElement> filteredRequestElements =
         requestElements.stream()
@@ -81,8 +73,7 @@ public class CustomSignatureBlockingManager implements BlockingConfigManagerBase
     }
 
     String customSignatureRulesBlob =
-        customSignatureBlobFetcher.getEnabledCustomSignatureRulesBlob(
-            requestContext, customModsecRuleVersion, environmentId);
+        blockingRulesSupplier.getCustomSignatureRulesBlob(customModsecRuleVersion);
     String responseHash = uuidGenerator.generateId(customSignatureRulesBlob);
 
     // Getting all the libtraceable versions explicitly mentioned

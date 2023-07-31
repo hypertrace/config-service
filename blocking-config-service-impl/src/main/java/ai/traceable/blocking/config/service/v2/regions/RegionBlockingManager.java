@@ -1,6 +1,7 @@
 package ai.traceable.blocking.config.service.v2.regions;
 
 import ai.traceable.blocking.config.service.common.regions.GenericRegionRuleAggregator;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.blocking.config.service.v2.BlockingConfigManagerBase;
 import ai.traceable.blocking.config.service.v2.BlockingConfigRequestElement;
 import ai.traceable.blocking.config.service.v2.BlockingConfigResponseElement;
@@ -9,9 +10,7 @@ import ai.traceable.blocking.config.service.v2.RegionIpBlockingRule;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.inject.Inject;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
-import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RegionBlockingManager implements BlockingConfigManagerBase {
   private final GenericRegionRuleAggregator<RegionIpBlockingRule> regionRuleAggregator;
@@ -28,8 +27,7 @@ public class RegionBlockingManager implements BlockingConfigManagerBase {
   @Override
   public List<BlockingConfigResponseElement> generateBlockingElements(
       List<BlockingConfigRequestElement> requestElements,
-      RequestContext requestContext,
-      Optional<String> environmentId) {
+      BlockingRulesSupplier blockingRulesSupplier) {
     List<BlockingConfigRequestElement> regionRequestElements =
         requestElements.stream()
             .filter(BlockingConfigRequestElement::hasRegionBlockingRulesRequest)
@@ -41,7 +39,9 @@ public class RegionBlockingManager implements BlockingConfigManagerBase {
     RegionBlockingRules regionBlockingRules =
         RegionBlockingRules.newBuilder()
             .addAllRegionIpBlockingRules(
-                regionRuleAggregator.getEnabledBlockingRules(requestContext, environmentId))
+                regionRuleAggregator.getEnabledBlockingRules(
+                    blockingRulesSupplier.getRequestContext(),
+                    blockingRulesSupplier.getEnvironmentId()))
             .build();
     return List.of(buildResponseElement(regionRequestElements, regionBlockingRules));
   }

@@ -2,6 +2,7 @@ package ai.traceable.blocking.config.service.v2.blockingpolicy;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.GenericBlockingDetailsAggregator;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.blocking.config.service.v2.BlockingConfigManagerBase;
 import ai.traceable.blocking.config.service.v2.BlockingConfigRequestElement;
 import ai.traceable.blocking.config.service.v2.BlockingConfigResponseElement;
@@ -11,9 +12,7 @@ import ai.traceable.blocking.config.service.v2.Component;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.inject.Inject;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
-import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class BlockingPolicyConfigurationManager implements BlockingConfigManagerBase {
   private final GenericBlockingDetailsAggregator<BlockingDetails> blockingDetailsAggregator;
@@ -30,8 +29,7 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
   @Override
   public List<BlockingConfigResponseElement> generateBlockingElements(
       List<BlockingConfigRequestElement> requestElements,
-      RequestContext requestContext,
-      Optional<String> environmentId) {
+      BlockingRulesSupplier blockingRulesSupplier) {
     List<BlockingConfigRequestElement> blockingPolicyRequestElements =
         requestElements.stream()
             .filter(BlockingConfigRequestElement::hasBlockingPolicyConfigurationRequest)
@@ -54,13 +52,14 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
 
     BlockingPolicyDataFilter filter =
         BlockingPolicyDataFilter.builder()
-            .environmentId(environmentId)
+            .environmentId(blockingRulesSupplier.getEnvironmentId())
             .serviceNames(serviceNames)
             .build();
     BlockingPolicyConfiguration blockingPolicyConfiguration =
         BlockingPolicyConfiguration.newBuilder()
             .addAllBlockingDetailsList(
-                blockingDetailsAggregator.getBlockingDetails(requestContext, filter))
+                blockingDetailsAggregator.getBlockingDetails(
+                    blockingRulesSupplier.getRequestContext(), filter))
             .build();
     return List.of(
         buildResponseElement(blockingPolicyRequestElements, blockingPolicyConfiguration));

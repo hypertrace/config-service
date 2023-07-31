@@ -1,6 +1,8 @@
 package ai.traceable.blocking.config.service.v2;
 
 import ai.traceable.blocking.config.service.common.entity.EntityFetcher;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
+import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher;
 import ai.traceable.blocking.config.service.v2.BlockingConfigServiceGrpc.BlockingConfigServiceImplBase;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.inject.Inject;
@@ -8,6 +10,7 @@ import com.google.protobuf.Duration;
 import com.typesafe.config.Config;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -21,6 +24,7 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
   private final Set<BlockingConfigManagerBase> blockingConfigManagers;
   private final java.time.Duration agentPollingFrequency;
   private final EntityFetcher entityFetcher;
+  private final Map<RulesFetcher.RulesFetcherType, RulesFetcher> rulesFetchers;
   private final UuidGenerator uuidGenerator;
 
   @Inject
@@ -28,10 +32,12 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
       Set<BlockingConfigManagerBase> blockingConfigManagers,
       Config config,
       EntityFetcher entityFetcher,
+      Map<RulesFetcher.RulesFetcherType, RulesFetcher> rulesFetchers,
       UuidGenerator uuidGenerator) {
     this.blockingConfigManagers = blockingConfigManagers;
     this.agentPollingFrequency = config.getDuration(AGENT_POLLING_FREQUENCY_CONFIG_NAME);
     this.entityFetcher = entityFetcher;
+    this.rulesFetchers = rulesFetchers;
     this.uuidGenerator = uuidGenerator;
   }
 
@@ -46,13 +52,16 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
       Optional<String> environmentId =
           entityFetcher.getEnvironmentId(requestContext, request.getEnvironment());
 
+      BlockingRulesSupplier blockingRulesSupplier =
+          new BlockingRulesSupplier(rulesFetchers, requestContext, environmentId);
+
       List<BlockingConfigResponseElement> responseElements =
           blockingConfigManagers.stream()
               .flatMap(
                   blockingConfigManagerBase ->
                       blockingConfigManagerBase
                           .generateBlockingElements(
-                              request.getRequestElementsList(), requestContext, environmentId)
+                              request.getRequestElementsList(), blockingRulesSupplier)
                           .stream())
               .collect(Collectors.toUnmodifiableList());
 

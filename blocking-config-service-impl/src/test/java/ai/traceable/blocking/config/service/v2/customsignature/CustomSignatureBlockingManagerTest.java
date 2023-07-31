@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
-import ai.traceable.blocking.config.service.common.customsignature.CustomSignatureBlobFetcher;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.blocking.config.service.v2.AgentCapabilities;
 import ai.traceable.blocking.config.service.v2.BlockingConfigManagerBase;
 import ai.traceable.blocking.config.service.v2.BlockingConfigRequestElement;
@@ -31,26 +31,21 @@ class CustomSignatureBlockingManagerTest {
   private static final String V3_SEG_ARG_HASH = uuidGenerator.generateId(V3_seg_arg_blob);
 
   private static BlockingConfigManagerBase manager;
+  private static BlockingRulesSupplier blockingRulesSupplier;
 
   @BeforeAll
   static void setup() {
-    CustomSignatureBlobFetcher mockCustomSignatureBlobFetcher =
-        mock(CustomSignatureBlobFetcher.class);
     SemanticVersioningComparator semanticVersioningComparator = new SemanticVersioningComparator();
-    manager =
-        new CustomSignatureBlockingManager(
-            mockCustomSignatureBlobFetcher, uuidGenerator, semanticVersioningComparator);
+    manager = new CustomSignatureBlockingManager(uuidGenerator, semanticVersioningComparator);
+    blockingRulesSupplier = mock(BlockingRulesSupplier.class);
 
     doReturn(V3_blob)
-        .when(mockCustomSignatureBlobFetcher)
-        .getEnabledCustomSignatureRulesBlob(
-            requestContext, CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3, environmentId);
+        .when(blockingRulesSupplier)
+        .getCustomSignatureRulesBlob(CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3);
     doReturn(V3_seg_arg_blob)
-        .when(mockCustomSignatureBlobFetcher)
-        .getEnabledCustomSignatureRulesBlob(
-            requestContext,
-            CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
-            environmentId);
+        .when(blockingRulesSupplier)
+        .getCustomSignatureRulesBlob(
+            CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS);
   }
 
   @Test
@@ -70,8 +65,7 @@ class CustomSignatureBlockingManagerTest {
                     .setCustomSignatureBlockingRulesRequest(
                         CustomSignatureBlockingRulesRequest.getDefaultInstance())
                     .build()),
-            requestContext,
-            environmentId));
+            blockingRulesSupplier));
 
     // Old libtraceable version
     assertEquals(
@@ -96,8 +90,7 @@ class CustomSignatureBlockingManagerTest {
                     .setCustomSignatureBlockingRulesRequest(
                         CustomSignatureBlockingRulesRequest.getDefaultInstance())
                     .build()),
-            requestContext,
-            environmentId));
+            blockingRulesSupplier));
 
     // Same hash for all
     assertEquals(
@@ -126,8 +119,7 @@ class CustomSignatureBlockingManagerTest {
                     .setCustomSignatureBlockingRulesRequest(
                         CustomSignatureBlockingRulesRequest.getDefaultInstance())
                     .build()),
-            requestContext,
-            environmentId));
+            blockingRulesSupplier));
 
     // Same hash for some
     assertEquals(
@@ -162,8 +154,7 @@ class CustomSignatureBlockingManagerTest {
                     .setCustomSignatureBlockingRulesRequest(
                         CustomSignatureBlockingRulesRequest.getDefaultInstance())
                     .build()),
-            requestContext,
-            environmentId));
+            blockingRulesSupplier));
   }
 
   @Test
@@ -209,8 +200,7 @@ class CustomSignatureBlockingManagerTest {
                     .setCustomSignatureBlockingRulesRequest(
                         CustomSignatureBlockingRulesRequest.getDefaultInstance())
                     .build()),
-            requestContext,
-            environmentId));
+            blockingRulesSupplier));
 
     // Same hash for all
     assertEquals(
@@ -266,8 +256,7 @@ class CustomSignatureBlockingManagerTest {
                     .setCustomSignatureBlockingRulesRequest(
                         CustomSignatureBlockingRulesRequest.getDefaultInstance())
                     .build()),
-            requestContext,
-            environmentId));
+            blockingRulesSupplier));
 
     // Test empty in case request elements are empty
     assertEquals(
@@ -285,8 +274,7 @@ class CustomSignatureBlockingManagerTest {
                             .addComponents(
                                 Component.newBuilder().setLibtraceableVersion("0.1.98-rc.148")))
                     .build()),
-            requestContext,
-            environmentId));
+            blockingRulesSupplier));
   }
 
   private static BlockingConfigResponseElement getV4Response(

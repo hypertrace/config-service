@@ -2,6 +2,8 @@ package ai.traceable.blocking.config.service.v2;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -9,6 +11,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import ai.traceable.blocking.config.service.common.entity.EntityFetcher;
+import ai.traceable.blocking.config.service.common.rules.fetchers.CustomSignatureRulesFetcher;
+import ai.traceable.blocking.config.service.common.rules.fetchers.MaliciousSourcesRulesFetcher;
+import ai.traceable.blocking.config.service.common.rules.fetchers.RegionRulesFetcher;
+import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.protobuf.Duration;
 import com.typesafe.config.ConfigFactory;
@@ -53,18 +59,35 @@ class BlockingConfigServiceImplTest {
     doReturn(sampleResponseElements)
         .when(blockingManager1)
         .generateBlockingElements(
-            blockingConfigRequestElements, REQUEST_CONTEXT, Optional.of(ENVIRONMENT));
+            eq(blockingConfigRequestElements),
+            argThat(
+                blockingRulesSupplier ->
+                    blockingRulesSupplier.getRequestContext().equals(REQUEST_CONTEXT)
+                        && blockingRulesSupplier.getEnvironmentId().get().equals(ENVIRONMENT)));
 
     doReturn(sampleResponseElements)
         .when(blockingManager2)
         .generateBlockingElements(
-            blockingConfigRequestElements, REQUEST_CONTEXT, Optional.of(ENVIRONMENT));
+            eq(blockingConfigRequestElements),
+            argThat(
+                blockingRulesSupplier ->
+                    blockingRulesSupplier.getRequestContext().equals(REQUEST_CONTEXT)
+                        && blockingRulesSupplier.getEnvironmentId().get().equals(ENVIRONMENT)));
 
+    Map<RulesFetcher.RulesFetcherType, RulesFetcher> rulesFetchers =
+        Map.of(
+            RulesFetcher.RulesFetcherType.CUSTOM_SIGNATURE,
+            mock(CustomSignatureRulesFetcher.class),
+            RulesFetcher.RulesFetcherType.REGION,
+            mock(RegionRulesFetcher.class),
+            RulesFetcher.RulesFetcherType.MALICIOUS_SOURCES,
+            mock(MaliciousSourcesRulesFetcher.class));
     this.blockingConfigService =
         new BlockingConfigServiceImpl(
             Set.of(blockingManager1, blockingManager2),
             ConfigFactory.parseMap(Map.of("agent.polling.frequency", "30s")),
             entityFetcher,
+            rulesFetchers,
             uuidGenerator);
   }
 
@@ -118,8 +141,7 @@ class BlockingConfigServiceImplTest {
   void testResponseOnException() {
     doThrow(RuntimeException.class)
         .when(blockingManager1)
-        .generateBlockingElements(
-            blockingConfigRequestElements, REQUEST_CONTEXT, Optional.of(ENVIRONMENT));
+        .generateBlockingElements(eq(blockingConfigRequestElements), any());
 
     StreamObserver<GetBlockingRulesResponse> responseObserver = mock(StreamObserver.class);
     Runnable runnable =
