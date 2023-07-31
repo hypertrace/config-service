@@ -1,13 +1,12 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.malicioussources.handlers;
 
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingDetails;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Category;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.IpBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
-import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.RuleActionType;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -23,8 +22,8 @@ public class IpRangeDataHandler extends MaliciousSourceDataHandler {
   }
 
   @Override
-  protected BlockingPolicyData.Category getCategory() {
-    return BlockingPolicyData.Category.CUSTOM_IP_RULE;
+  protected Category getCategory() {
+    return Category.CUSTOM_IP_RULE;
   }
 
   @Override
@@ -43,30 +42,21 @@ public class IpRangeDataHandler extends MaliciousSourceDataHandler {
   }
 
   @Override
-  protected List<String> getBlockingIpAddresses(MaliciousSourcesRule rule) {
-    return rule.getRuleInfo().getConditionsList().stream()
-        .flatMap(condition -> condition.getIpRangeCondition().getIpAddressesList().stream())
-        .distinct()
-        .filter(Objects::nonNull)
-        .collect(Collectors.toUnmodifiableList());
-  }
-
-  @Override
-  protected List<String> getBlockingCidrIpRanges(MaliciousSourcesRule rule) {
-    return rule.getRuleInfo().getConditionsList().stream()
-        .flatMap(condition -> condition.getIpRangeCondition().getCidrIpRangesList().stream())
-        .distinct()
-        .filter(Objects::nonNull)
-        .collect(Collectors.toUnmodifiableList());
-  }
-
-  @Override
-  protected List<IpLocationType> getBlockingIpTypes(MaliciousSourcesRule rule) {
-    return Collections.emptyList();
-  }
-
-  @Override
-  protected List<String> getBlockingRegions(MaliciousSourcesRule rule) {
-    return Collections.emptyList();
+  protected BlockingDetails generateBlockingDetails(MaliciousSourcesRule rule) {
+    return IpBlockingDetails.builder()
+        .ipAddresses(
+            rule.getRuleInfo().getConditionsList().stream()
+                .flatMap(condition -> condition.getIpRangeCondition().getIpAddressesList().stream())
+                .distinct()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toUnmodifiableList()))
+        .ipRanges(
+            rule.getRuleInfo().getConditionsList().stream()
+                .flatMap(
+                    condition -> condition.getIpRangeCondition().getCidrIpRangesList().stream())
+                .distinct()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toUnmodifiableList()))
+        .build();
   }
 }

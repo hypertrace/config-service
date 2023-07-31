@@ -16,14 +16,14 @@ public class DataFetcherModule extends AbstractModule {
   protected void configure() {
     install(new MaliciousSourcesDataFetcherModule());
 
-    Multibinder<DataFetcherBase> managerBaseMultibinder =
-        Multibinder.newSetBinder(binder(), DataFetcherBase.class);
-    managerBaseMultibinder.addBinding().to(CustomSignatureDataFetcher.class);
-    managerBaseMultibinder.addBinding().to(CustomIpBasedDataFetcher.class);
-    managerBaseMultibinder.addBinding().to(ActorBasedDataFetcher.class);
-    managerBaseMultibinder.addBinding().to(ModsecDataFetcher.class);
-    managerBaseMultibinder.addBinding().to(RegionDataFetcher.class);
-    managerBaseMultibinder.addBinding().to(MaliciousSourcesDataFetcher.class);
+    Multibinder<BlockingPolicyDataFetcherBase> managerBaseMultibinder =
+        Multibinder.newSetBinder(binder(), BlockingPolicyDataFetcherBase.class);
+    managerBaseMultibinder.addBinding().to(CustomSignatureBlockingPolicyDataFetcher.class);
+    managerBaseMultibinder.addBinding().to(CustomIpBasedBlockingPolicyDataFetcher.class);
+    managerBaseMultibinder.addBinding().to(ActorBasedBlockingPolicyDataFetcher.class);
+    managerBaseMultibinder.addBinding().to(ModsecBlockingPolicyDataFetcher.class);
+    managerBaseMultibinder.addBinding().to(RegionBlockingPolicyDataFetcher.class);
+    managerBaseMultibinder.addBinding().to(MaliciousSourcesBlockingPolicyDataFetcher.class);
 
     requireBinding(CustomSignatureConfigServiceBlockingStub.class);
     requireBinding(RegionConfigServiceBlockingStub.class);

@@ -1,9 +1,9 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.malicioussources.handlers;
 
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingDetails;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
-import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.RuleActionType;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
@@ -25,13 +25,7 @@ public abstract class MaliciousSourceDataHandler {
   protected abstract Optional<BlockingPolicyDataBucket> getRuleBucket(
       String ruleId, RuleActionType ruleActionType);
 
-  protected abstract List<String> getBlockingRegions(MaliciousSourcesRule rule);
-
-  protected abstract List<String> getBlockingIpAddresses(MaliciousSourcesRule rule);
-
-  protected abstract List<String> getBlockingCidrIpRanges(MaliciousSourcesRule rule);
-
-  protected abstract List<IpLocationType> getBlockingIpTypes(MaliciousSourcesRule rule);
+  protected abstract BlockingDetails generateBlockingDetails(MaliciousSourcesRule rule);
 
   public Optional<BlockingPolicyData> getBlockingDetails(MaliciousSourcesRule rule) {
     long expirationTimestampMillis =
@@ -48,10 +42,6 @@ public abstract class MaliciousSourceDataHandler {
     if (ruleType.isEmpty() || bucket.isEmpty()) {
       return Optional.empty();
     }
-    List<IpLocationType> ipTypes = getBlockingIpTypes(rule);
-    List<String> regions = getBlockingRegions(rule);
-    List<String> ipAddresses = getBlockingIpAddresses(rule);
-    List<String> cidrIpRanges = getBlockingCidrIpRanges(rule);
     BlockingPolicyData blockingPolicyData =
         BlockingPolicyData.builder()
             .ruleType(ruleType.get())
@@ -68,10 +58,7 @@ public abstract class MaliciousSourceDataHandler {
                     expirationTimestampMillis, ruleType.get()))
             .category(getCategory())
             .bucket(bucket.get())
-            .ipTypes(ipTypes)
-            .ipAddresses(ipAddresses)
-            .ipRanges(cidrIpRanges)
-            .regions(regions)
+            .blockingDetails(generateBlockingDetails(rule))
             .build();
     return Optional.of(blockingPolicyData);
   }

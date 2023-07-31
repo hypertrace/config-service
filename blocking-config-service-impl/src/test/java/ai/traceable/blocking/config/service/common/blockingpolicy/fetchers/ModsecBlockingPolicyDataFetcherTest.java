@@ -22,11 +22,13 @@ import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceG
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Category;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.RuleType;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Status;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Category;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.RuleType;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Status;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.ModsecBlockingDetails;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import java.util.List;
 import java.util.Optional;
@@ -34,21 +36,22 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class ModsecDataFetcherTest {
+class ModsecBlockingPolicyDataFetcherTest {
   private static final String TENANT_ID = "tenant-id";
   private static final String ENVIRONMENT_ID = "environment-id";
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
 
   private AnomalyGlobalConfigServiceBlockingStub anomalyGlobalConfigServiceStub;
   private DetectorConfigServiceBlockingStub detectorConfigServiceBlockingStub;
-  private ModsecDataFetcher modsecDataFetcher;
+  private ModsecBlockingPolicyDataFetcher modsecDataFetcher;
 
   @BeforeEach
   void setUp() {
     anomalyGlobalConfigServiceStub = mock(AnomalyGlobalConfigServiceBlockingStub.class);
     detectorConfigServiceBlockingStub = mock(DetectorConfigServiceBlockingStub.class);
     modsecDataFetcher =
-        new ModsecDataFetcher(anomalyGlobalConfigServiceStub, detectorConfigServiceBlockingStub);
+        new ModsecBlockingPolicyDataFetcher(
+            anomalyGlobalConfigServiceStub, detectorConfigServiceBlockingStub);
   }
 
   @Test
@@ -77,10 +80,14 @@ class ModsecDataFetcherTest {
                 .build());
 
     List<BlockingPolicyData> violations =
-        modsecDataFetcher.getBlockingPolicyData(REQUEST_CONTEXT, Optional.empty());
+        modsecDataFetcher.getBlockingPolicyData(
+            REQUEST_CONTEXT,
+            BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build());
 
     assertEquals(1, violations.size());
-    assertEquals("123456", violations.get(0).getRuleId());
+    assertEquals(
+        ModsecBlockingDetails.builder().ruleId("123456").build(),
+        violations.get(0).getBlockingDetails());
     assertEquals(Category.MODSECURITY, violations.get(0).getCategory());
     assertEquals(RuleType.BLOCK, violations.get(0).getRuleType());
     assertEquals(Status.DENIED, violations.get(0).getStatus());
@@ -103,7 +110,9 @@ class ModsecDataFetcherTest {
                 .setConfigScope(defaultCustomerScope)
                 .build());
     List<BlockingPolicyData> violations2 =
-        modsecDataFetcher.getBlockingPolicyData(REQUEST_CONTEXT, Optional.empty());
+        modsecDataFetcher.getBlockingPolicyData(
+            REQUEST_CONTEXT,
+            BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build());
     assertEquals(0, violations2.size());
   }
 
@@ -134,10 +143,14 @@ class ModsecDataFetcherTest {
                 .build());
 
     List<BlockingPolicyData> violations =
-        modsecDataFetcher.getBlockingPolicyData(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
+        modsecDataFetcher.getBlockingPolicyData(
+            REQUEST_CONTEXT,
+            BlockingPolicyDataFilter.builder().environmentId(Optional.of(ENVIRONMENT_ID)).build());
 
     assertEquals(1, violations.size());
-    assertEquals("123456", violations.get(0).getRuleId());
+    assertEquals(
+        ModsecBlockingDetails.builder().ruleId("123456").build(),
+        violations.get(0).getBlockingDetails());
   }
 
   private static final GetScopedAnomalyDetectionConfigResponse

@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doReturn;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.GenericBlockingDetailsAggregator.BlockingDetailsConverterBase;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import java.util.List;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -23,19 +25,22 @@ class GenericBlockingDetailsAggregatorTest {
             mockBlockingPolicyDataAggregator, mockBlockingDetailsConverter);
 
     RequestContext requestContext = RequestContext.forTenantId("TENANT_ID");
-    Optional<String> environmentId = Optional.of("environment");
+    BlockingPolicyDataFilter filter =
+        BlockingPolicyDataFilter.builder().environmentId(Optional.of("environment")).build();
 
     BlockingPolicyData blockingPolicyData1 = BlockingPolicyData.builder().info("one").build();
     BlockingPolicyData blockingPolicyData2 = BlockingPolicyData.builder().info("two").build();
+    BlockingPolicyData blockingPolicyData3 = BlockingPolicyData.builder().info("three").build();
 
-    doReturn(List.of(blockingPolicyData1, blockingPolicyData2))
+    doReturn(List.of(blockingPolicyData1, blockingPolicyData2, blockingPolicyData3))
         .when(mockBlockingPolicyDataAggregator)
-        .getOrderedBlockingRules(requestContext, environmentId);
-    doReturn(List.of("1-1", "1-2")).when(mockBlockingDetailsConverter).convert(blockingPolicyData1);
-    doReturn(List.of("2-1", "2-2")).when(mockBlockingDetailsConverter).convert(blockingPolicyData2);
+        .getOrderedBlockingRules(requestContext, filter);
+    doReturn("1-1").when(mockBlockingDetailsConverter).convert(blockingPolicyData1);
+    doReturn("2-1").when(mockBlockingDetailsConverter).convert(blockingPolicyData2);
+    doReturn(null).when(mockBlockingDetailsConverter).convert(blockingPolicyData3);
 
     assertEquals(
-        List.of("1-1", "1-2", "2-1", "2-2"),
-        blockingDetailsAggregator.getBlockingDetails(requestContext, environmentId));
+        List.of("1-1", "2-1"),
+        blockingDetailsAggregator.getBlockingDetails(requestContext, filter));
   }
 }

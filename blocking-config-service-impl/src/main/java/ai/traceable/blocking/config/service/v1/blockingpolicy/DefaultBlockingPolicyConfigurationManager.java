@@ -1,6 +1,7 @@
 package ai.traceable.blocking.config.service.v1.blockingpolicy;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.GenericBlockingDetailsAggregator;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
 import ai.traceable.blocking.config.service.v1.BlockingPolicyConfiguration;
 import ai.traceable.config.utils.UuidGenerator;
@@ -28,7 +29,9 @@ class DefaultBlockingPolicyConfigurationManager implements BlockingPolicyConfigu
       RequestContext requestContext, String requestHash, Optional<String> environmentId) {
     try {
       List<BlockingDetails> blockingDetailsList =
-          blockingDetailsAggregator.getBlockingDetails(requestContext, environmentId);
+          blockingDetailsAggregator.getBlockingDetails(
+              requestContext,
+              BlockingPolicyDataFilter.builder().environmentId(environmentId).build());
       String responseHash = uuidGenerator.generateId(blockingDetailsList);
       if (responseHash.equals(requestHash)) {
         return BlockingPolicyConfiguration.newBuilder().setHash(requestHash).build();

@@ -1,150 +1,50 @@
 package ai.traceable.blocking.config.service.v2.blockingpolicy;
 
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.RuleType;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Status;
 import ai.traceable.blocking.config.service.common.blockingpolicy.GenericBlockingDetailsAggregator.BlockingDetailsConverterBase;
-import ai.traceable.blocking.config.service.v2.ActorDetails;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingDetailsVisitor;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Category;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.RuleType;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Status;
 import ai.traceable.blocking.config.service.v2.BlockingCategory;
 import ai.traceable.blocking.config.service.v2.BlockingDetails;
 import ai.traceable.blocking.config.service.v2.BlockingDetails.Builder;
+import ai.traceable.blocking.config.service.v2.BlockingDetailsCondition;
 import ai.traceable.blocking.config.service.v2.BlockingRuleType;
 import ai.traceable.blocking.config.service.v2.BlockingStatus;
-import ai.traceable.blocking.config.service.v2.CustomSignatureDetails;
-import ai.traceable.blocking.config.service.v2.IpDetails;
-import ai.traceable.blocking.config.service.v2.IpTypeDetails;
-import ai.traceable.blocking.config.service.v2.ModsecDetails;
-import ai.traceable.blocking.config.service.v2.RegionDetails;
-import ai.traceable.blocking.config.service.v2.iptype.IpTypeRuleConverter;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 final class BlockingDetailsConverter implements BlockingDetailsConverterBase<BlockingDetails> {
+  private final BlockingDetailsVisitor<BlockingDetailsCondition>
+      blockingDetailsBlockingDetailsVisitor;
+
+  @Inject
+  BlockingDetailsConverter(
+      BlockingDetailsVisitor<BlockingDetailsCondition> blockingDetailsVisitor) {
+    this.blockingDetailsBlockingDetailsVisitor = blockingDetailsVisitor;
+  }
+
   @Override
-  public List<BlockingDetails> convert(BlockingPolicyData blockingPolicyData) {
+  public BlockingDetails convert(BlockingPolicyData blockingPolicyData) {
     Builder blockingDetailsBuilder =
         BlockingDetails.newBuilder()
-            .setBlockingRuleType(getBlockingRuleType(blockingPolicyData.getRuleType()))
+            .setBlockingRuleType(convert(blockingPolicyData.getRuleType()))
             .setInfo(blockingPolicyData.getInfo())
-            .setStatus(getBlockingStatus(blockingPolicyData.getStatus()));
+            .setStatus(convert(blockingPolicyData.getStatus()))
+            .setCategory(convert(blockingPolicyData.getCategory()));
     if (blockingPolicyData.getTimestamp() != 0) {
       blockingDetailsBuilder.setExpirationTimestamp(blockingPolicyData.getTimestamp());
     }
 
-    BlockingDetails actorDetails;
-    // Setting rule details based on category
-    switch (blockingPolicyData.getCategory()) {
-      case THREAT_ACTOR:
-        blockingDetailsBuilder.setCategory(BlockingCategory.BLOCKING_CATEGORY_THREAT_ACTOR);
-        blockingDetailsBuilder.setActorDetails(
-            ActorDetails.newBuilder()
-                .addAllIpAddresses(blockingPolicyData.getIpAddresses())
-                .setUserId(blockingPolicyData.getUserId()));
-        actorDetails = blockingDetailsBuilder.build();
-        // for backward compatibility for agent version 1.24
-        blockingDetailsBuilder
-            .clearActorDetails()
-            .setIpDetails(
-                IpDetails.newBuilder().addAllIpAddresses(blockingPolicyData.getIpAddresses()));
-        return List.of(actorDetails, blockingDetailsBuilder.build());
-      case RATE_LIMIT:
-        blockingDetailsBuilder.setCategory(BlockingCategory.BLOCKING_CATEGORY_RATE_LIMIT);
-        blockingDetailsBuilder.setActorDetails(
-            ActorDetails.newBuilder()
-                .addAllIpAddresses(blockingPolicyData.getIpAddresses())
-                .setUserId(blockingPolicyData.getUserId()));
-        actorDetails = blockingDetailsBuilder.build();
-        // for backward compatibility for agent version 1.24
-        blockingDetailsBuilder
-            .clearActorDetails()
-            .setIpDetails(
-                IpDetails.newBuilder().addAllIpAddresses(blockingPolicyData.getIpAddresses()));
-        return List.of(actorDetails, blockingDetailsBuilder.build());
-      case MODSECURITY:
-        blockingDetailsBuilder.setCategory(BlockingCategory.BLOCKING_CATEGORY_MODSECURITY);
-        blockingDetailsBuilder.setModsecDetails(
-            ModsecDetails.newBuilder().setRuleId(blockingPolicyData.getRuleId()));
-        return List.of(blockingDetailsBuilder.build());
-      case CUSTOM_IP_RULE:
-        blockingDetailsBuilder.setCategory(BlockingCategory.BLOCKING_CATEGORY_CUSTOM_IP_RULE);
-        blockingDetailsBuilder.setIpDetails(
-            IpDetails.newBuilder()
-                .addAllIpAddresses(blockingPolicyData.getIpAddresses())
-                .addAllIpRanges(blockingPolicyData.getIpRanges()));
-        return List.of(blockingDetailsBuilder.build());
-      case CUSTOM_REGION_RULE:
-        blockingDetailsBuilder.setCategory(BlockingCategory.BLOCKING_CATEGORY_CUSTOM_REGION_RULE);
-        blockingDetailsBuilder.setRegionDetails(
-            RegionDetails.newBuilder().addAllRegions(blockingPolicyData.getRegions()));
-        return List.of(blockingDetailsBuilder.build());
-      case CUSTOM_SIGNATURE_RULE:
-        blockingDetailsBuilder.setCategory(
-            BlockingCategory.BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE);
-        blockingDetailsBuilder.setCustomSignatureDetails(
-            CustomSignatureDetails.newBuilder().setRuleId(blockingPolicyData.getRuleId()));
-        return List.of(blockingDetailsBuilder.build());
-      case IP_TYPE_RULE:
-        blockingDetailsBuilder.setCategory(
-            BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE);
-        blockingDetailsBuilder.setIpTypeDetails(
-            IpTypeDetails.newBuilder()
-                .addAllIpTypes(
-                    blockingPolicyData.getIpTypes().stream()
-                        .map(IpTypeRuleConverter::convert)
-                        .collect(Collectors.toUnmodifiableList())));
-        return List.of(blockingDetailsBuilder.build());
-      case DATA_EXFILTRATION:
-        blockingDetailsBuilder.setCategory(BlockingCategory.BLOCKING_CATEGORY_DATA_EXFILTRATION);
-        blockingDetailsBuilder.setActorDetails(
-            ActorDetails.newBuilder()
-                .addAllIpAddresses(blockingPolicyData.getIpAddresses())
-                .setUserId(blockingPolicyData.getUserId()));
-        actorDetails = blockingDetailsBuilder.build();
-        // for backward compatibility for agent version 1.24
-        blockingDetailsBuilder
-            .clearActorDetails()
-            .setIpDetails(
-                IpDetails.newBuilder().addAllIpAddresses(blockingPolicyData.getIpAddresses()));
-        return List.of(actorDetails, blockingDetailsBuilder.build());
-      case ENUMERATION:
-        blockingDetailsBuilder.setCategory(BlockingCategory.BLOCKING_CATEGORY_ENUMERATION);
-        blockingDetailsBuilder.setActorDetails(
-            ActorDetails.newBuilder()
-                .addAllIpAddresses(blockingPolicyData.getIpAddresses())
-                .setUserId(blockingPolicyData.getUserId()));
-        actorDetails = blockingDetailsBuilder.build();
-        // for backward compatibility for agent version 1.24
-        blockingDetailsBuilder
-            .clearActorDetails()
-            .setIpDetails(
-                IpDetails.newBuilder().addAllIpAddresses(blockingPolicyData.getIpAddresses()));
-        return List.of(actorDetails, blockingDetailsBuilder.build());
-      case EMAIL_DOMAIN_RULE:
-        blockingDetailsBuilder.setCategory(
-            BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE);
-        blockingDetailsBuilder.setActorDetails(
-            ActorDetails.newBuilder()
-                .addAllIpAddresses(blockingPolicyData.getIpAddresses())
-                .setUserId(blockingPolicyData.getUserId()));
-        actorDetails = blockingDetailsBuilder.build();
-        // for backward compatibility for agent version 1.24
-        blockingDetailsBuilder
-            .clearActorDetails()
-            .setIpDetails(
-                IpDetails.newBuilder().addAllIpAddresses(blockingPolicyData.getIpAddresses()));
-        return List.of(actorDetails, blockingDetailsBuilder.build());
-      default:
-        log.error(
-            "Cannot find blocking category corresponding to - {}",
-            blockingPolicyData.getCategory());
-        blockingDetailsBuilder.setCategory(BlockingCategory.BLOCKING_CATEGORY_UNSPECIFIED);
-        return List.of(blockingDetailsBuilder.build());
-    }
+    BlockingDetailsCondition blockingDetailsCondition =
+        blockingPolicyData.getBlockingDetails().accept(blockingDetailsBlockingDetailsVisitor);
+
+    return setBlockingDetailsCondition(blockingDetailsBuilder, blockingDetailsCondition);
   }
 
-  private static BlockingRuleType getBlockingRuleType(RuleType ruleType) {
+  private static BlockingRuleType convert(RuleType ruleType) {
     switch (ruleType) {
       case ALLOW:
         return BlockingRuleType.BLOCKING_RULE_TYPE_ALLOW;
@@ -158,7 +58,7 @@ final class BlockingDetailsConverter implements BlockingDetailsConverterBase<Blo
     }
   }
 
-  private static BlockingStatus getBlockingStatus(Status status) {
+  private static BlockingStatus convert(Status status) {
     switch (status) {
       case ALLOWED:
         return BlockingStatus.BLOCKING_STATUS_ALLOWED;
@@ -171,6 +71,62 @@ final class BlockingDetailsConverter implements BlockingDetailsConverterBase<Blo
       default:
         log.error("Cannot find blocking status type corresponding to - {}", status);
         return BlockingStatus.BLOCKING_STATUS_UNSPECIFIED;
+    }
+  }
+
+  private static BlockingCategory convert(Category category) {
+    switch (category) {
+      case THREAT_ACTOR:
+        return BlockingCategory.BLOCKING_CATEGORY_THREAT_ACTOR;
+      case RATE_LIMIT:
+        return BlockingCategory.BLOCKING_CATEGORY_RATE_LIMIT;
+      case MODSECURITY:
+        return BlockingCategory.BLOCKING_CATEGORY_MODSECURITY;
+      case CUSTOM_IP_RULE:
+        return BlockingCategory.BLOCKING_CATEGORY_CUSTOM_IP_RULE;
+      case CUSTOM_REGION_RULE:
+        return BlockingCategory.BLOCKING_CATEGORY_CUSTOM_REGION_RULE;
+      case CUSTOM_SIGNATURE_RULE:
+        return BlockingCategory.BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE;
+      case IP_TYPE_RULE:
+      case EMAIL_DOMAIN_RULE:
+        return BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE;
+      case DATA_EXFILTRATION:
+        return BlockingCategory.BLOCKING_CATEGORY_DATA_EXFILTRATION;
+      case ENUMERATION:
+        return BlockingCategory.BLOCKING_CATEGORY_ENUMERATION;
+      default:
+        log.error("Cannot find blocking category type corresponding to - {}", category);
+        return BlockingCategory.BLOCKING_CATEGORY_UNSPECIFIED;
+    }
+  }
+
+  private static BlockingDetails setBlockingDetailsCondition(
+      BlockingDetails.Builder builder, BlockingDetailsCondition blockingDetailsCondition) {
+    switch (blockingDetailsCondition.getDetailsCase()) {
+      case IP_DETAILS:
+        return builder.setIpDetails(blockingDetailsCondition.getIpDetails()).build();
+      case MODSEC_DETAILS:
+        return builder.setModsecDetails(blockingDetailsCondition.getModsecDetails()).build();
+      case CUSTOM_SIGNATURE_DETAILS:
+        return builder
+            .setCustomSignatureDetails(blockingDetailsCondition.getCustomSignatureDetails())
+            .build();
+      case REGION_DETAILS:
+        return builder.setRegionDetails(blockingDetailsCondition.getRegionDetails()).build();
+      case ACTOR_DETAILS:
+        return builder.setActorDetails(blockingDetailsCondition.getActorDetails()).build();
+      case IP_TYPE_DETAILS:
+        return builder.setIpTypeDetails(blockingDetailsCondition.getIpTypeDetails()).build();
+      case DETAILS_COMBINATION:
+        return builder
+            .setDetailsCombination(blockingDetailsCondition.getDetailsCombination())
+            .build();
+      default:
+        log.warn(
+            "Unable to convert blockingDetailsCondition:{} to v2 blocking details",
+            blockingDetailsCondition);
+        return builder.build();
     }
   }
 }

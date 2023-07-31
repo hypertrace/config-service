@@ -4,8 +4,10 @@ import static ai.traceable.blocking.config.service.common.blockingpolicy.Blockin
 import static ai.traceable.region.config.service.v1.RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK;
 import static ai.traceable.region.config.service.v1.RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT;
 
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Category;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.RegionBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import ai.traceable.region.config.service.v1.EnvironmentScope;
@@ -25,14 +27,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-class RegionDataFetcher implements DataFetcherBase {
+class RegionBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
   private static final List<RegionRuleActionType> SUPPORTED_RULE_ACTIONS =
       ImmutableList.of(REGION_RULE_ACTION_TYPE_BLOCK, REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT);
   private final RegionConfigServiceBlockingStub regionConfigServiceStub;
   private final BlockingRulesUtils blockingRulesUtils;
 
   @Inject
-  RegionDataFetcher(
+  RegionBlockingPolicyDataFetcher(
       RegionConfigServiceBlockingStub regionConfigServiceStub,
       BlockingRulesUtils blockingRulesUtils) {
     this.regionConfigServiceStub = regionConfigServiceStub;
@@ -41,7 +43,8 @@ class RegionDataFetcher implements DataFetcherBase {
 
   @Override
   public List<BlockingPolicyData> getBlockingPolicyData(
-      RequestContext requestContext, Optional<String> environmentId) {
+      RequestContext requestContext, BlockingPolicyDataFilter filter) {
+    Optional<String> environmentId = filter.getEnvironmentId();
     List<RegionRule> ruleList = fetchRegionRules(requestContext, environmentId);
     return ruleList.stream()
         .map(this::getBlockingDetails)
@@ -66,7 +69,7 @@ class RegionDataFetcher implements DataFetcherBase {
     }
     return Optional.of(
         BlockingPolicyData.builder()
-            .category(BlockingPolicyData.Category.CUSTOM_REGION_RULE)
+            .category(Category.CUSTOM_REGION_RULE)
             .bucket(bucket.get())
             .ruleType(ruleType.get())
             .info(
@@ -76,7 +79,8 @@ class RegionDataFetcher implements DataFetcherBase {
             .status(
                 blockingRulesUtils.generateBlockingStatus(
                     regionRule.getExpirationDetails().getTimestampMillis(), ruleType.get()))
-            .regions(regionRule.getRegionIdList())
+            .blockingDetails(
+                RegionBlockingDetails.builder().regions(regionRule.getRegionIdList()).build())
             .build());
   }
 

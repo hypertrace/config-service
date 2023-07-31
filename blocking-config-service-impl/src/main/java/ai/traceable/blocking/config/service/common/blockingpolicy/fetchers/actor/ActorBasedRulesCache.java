@@ -6,10 +6,11 @@ import static ai.traceable.platform.actor.v1.Status.STATUS_SNOOZED;
 import static ai.traceable.platform.actor.v1.Status.STATUS_SUSPENDED;
 
 import ai.traceable.blocking.config.service.common.BlockingDataCacheConfig;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Category;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.RuleType;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.ActorBlockingDetails;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Category;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.RuleType;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.actor.config.ActorServiceConfig;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleCondition;
@@ -227,8 +228,11 @@ public class ActorBasedRulesCache {
         .status(
             blockingRulesUtils.generateBlockingStatus(
                 actorStatusDetails.getExpirationTimestampMillis(), ruleType))
-        .ipAddresses(parseIpAddresses(actorStatusDetails.getIpAddresses()))
-        .userId(actorStatusDetails.getActorId())
+        .blockingDetails(
+            ActorBlockingDetails.builder()
+                .ipAddresses(parseIpAddresses(actorStatusDetails.getIpAddresses()))
+                .userId(actorStatusDetails.getActorId())
+                .build())
         .build();
   }
 

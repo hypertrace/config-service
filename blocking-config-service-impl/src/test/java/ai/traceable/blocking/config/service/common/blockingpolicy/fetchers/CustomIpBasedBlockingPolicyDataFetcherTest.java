@@ -9,7 +9,9 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.IpBlockingDetails;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.iprange.config.service.v1.EnvironmentScope;
 import ai.traceable.iprange.config.service.v1.ExpirationDetails;
@@ -28,8 +30,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class CustomIpBasedDataFetcherTest {
-
+class CustomIpBasedBlockingPolicyDataFetcherTest {
   private static final String TENANT_ID = "tenant-id";
   private static final String ENVIRONMENT_ID = "environment-id";
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
@@ -46,7 +47,7 @@ class CustomIpBasedDataFetcherTest {
           .build();
 
   private IpRangeConfigServiceGrpc.IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub;
-  private CustomIpBasedDataFetcher customIpBasedDataFetcher;
+  private CustomIpBasedBlockingPolicyDataFetcher customIpBasedDataFetcher;
   private static final long inactiveTimestamp = System.currentTimeMillis() - 10000L;
   private static final long activeTimestamp = System.currentTimeMillis() + 10000L;
 
@@ -78,7 +79,7 @@ class CustomIpBasedDataFetcherTest {
         .thenReturn(BlockingPolicyData.Status.SUSPENDED);
 
     customIpBasedDataFetcher =
-        new CustomIpBasedDataFetcher(ipRangeConfigServiceStub, blockingRulesUtils);
+        new CustomIpBasedBlockingPolicyDataFetcher(ipRangeConfigServiceStub, blockingRulesUtils);
   }
 
   @Test
@@ -88,7 +89,9 @@ class CustomIpBasedDataFetcherTest {
         .getIpRangeRules(DEFAULT_GET_REQUEST);
 
     List<BlockingPolicyData> customIpBasedRuleList =
-        customIpBasedDataFetcher.getBlockingPolicyData(REQUEST_CONTEXT, Optional.empty());
+        customIpBasedDataFetcher.getBlockingPolicyData(
+            REQUEST_CONTEXT,
+            BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build());
     assertEquals(0, customIpBasedRuleList.size());
   }
 
@@ -99,13 +102,17 @@ class CustomIpBasedDataFetcherTest {
         .getIpRangeRules(DEFAULT_GET_REQUEST);
 
     List<BlockingPolicyData> customIpBasedRuleList =
-        customIpBasedDataFetcher.getBlockingPolicyData(REQUEST_CONTEXT, Optional.empty());
+        customIpBasedDataFetcher.getBlockingPolicyData(
+            REQUEST_CONTEXT,
+            BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build());
 
     assertEquals(4, customIpBasedRuleList.size());
-
-    assertEquals("1.2.3.4", customIpBasedRuleList.get(0).getIpAddresses().get(0));
-    assertEquals("11.22.33.44", customIpBasedRuleList.get(0).getIpAddresses().get(1));
-    assertEquals("1.2.3.4", customIpBasedRuleList.get(1).getIpRanges().get(0));
+    assertEquals(
+        IpBlockingDetails.builder().ipAddresses(List.of("1.2.3.4", "11.22.33.44")).build(),
+        customIpBasedRuleList.get(0).getBlockingDetails());
+    assertEquals(
+        IpBlockingDetails.builder().ipRanges(List.of("1.2.3.4")).build(),
+        customIpBasedRuleList.get(1).getBlockingDetails());
     assertEquals(
         BlockingPolicyData.Category.CUSTOM_IP_RULE, customIpBasedRuleList.get(0).getCategory());
     assertEquals(BlockingPolicyData.RuleType.BLOCK, customIpBasedRuleList.get(0).getRuleType());
@@ -115,8 +122,9 @@ class CustomIpBasedDataFetcherTest {
         ViolationInfoEncoder.getEncodedCustomIpRuleViolationInfo("rule-id-1", "rule-name-1"),
         customIpBasedRuleList.get(0).getInfo());
 
-    assertEquals("1.2.3.4", customIpBasedRuleList.get(2).getIpAddresses().get(0));
-    assertEquals("11.22.33.44", customIpBasedRuleList.get(2).getIpAddresses().get(1));
+    assertEquals(
+        IpBlockingDetails.builder().ipAddresses(List.of("1.2.3.4", "11.22.33.44")).build(),
+        customIpBasedRuleList.get(2).getBlockingDetails());
     assertEquals(
         BlockingPolicyData.Category.CUSTOM_IP_RULE, customIpBasedRuleList.get(2).getCategory());
     assertEquals(BlockingPolicyData.RuleType.ALLOW, customIpBasedRuleList.get(2).getRuleType());
@@ -126,8 +134,9 @@ class CustomIpBasedDataFetcherTest {
         ExemptionInfoEncoder.getEncodedCustomIpRuleExemptionInfo("rule-id-5", "rule-name-5"),
         customIpBasedRuleList.get(2).getInfo());
 
-    assertEquals("1.2.3.4", customIpBasedRuleList.get(3).getIpAddresses().get(0));
-    assertEquals("11.22.33.44", customIpBasedRuleList.get(3).getIpAddresses().get(1));
+    assertEquals(
+        IpBlockingDetails.builder().ipAddresses(List.of("1.2.3.4", "11.22.33.44")).build(),
+        customIpBasedRuleList.get(3).getBlockingDetails());
     assertEquals(
         BlockingPolicyData.Category.CUSTOM_IP_RULE, customIpBasedRuleList.get(3).getCategory());
     assertEquals(
@@ -163,20 +172,27 @@ class CustomIpBasedDataFetcherTest {
 
     List<BlockingPolicyData> customIpBasedRuleList =
         customIpBasedDataFetcher.getBlockingPolicyData(
-            REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
+            REQUEST_CONTEXT,
+            BlockingPolicyDataFilter.builder().environmentId(Optional.of(ENVIRONMENT_ID)).build());
     assertEquals(5, customIpBasedRuleList.size());
 
     // Without environment
     assertThrows(
         NullPointerException.class,
-        () -> customIpBasedDataFetcher.getBlockingPolicyData(REQUEST_CONTEXT, Optional.empty()));
+        () ->
+            customIpBasedDataFetcher.getBlockingPolicyData(
+                REQUEST_CONTEXT,
+                BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build()));
 
     // Wrong environment
     assertThrows(
         NullPointerException.class,
         () ->
             customIpBasedDataFetcher.getBlockingPolicyData(
-                REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID + "random")));
+                REQUEST_CONTEXT,
+                BlockingPolicyDataFilter.builder()
+                    .environmentId(Optional.of(ENVIRONMENT_ID + "random"))
+                    .build()));
   }
 
   private static final GetIpRangeRulesResponse sampleGetIpRangeRulesAllEnvsResponse =

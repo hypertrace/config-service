@@ -1,6 +1,6 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers;
 
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.malicioussources.handlers.MaliciousSourceDataHandler;
 import ai.traceable.malicioussources.config.service.v1.EnvironmentScope;
 import ai.traceable.malicioussources.config.service.v1.GetMaliciousSourcesRulesRequest;
@@ -19,13 +19,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-class MaliciousSourcesDataFetcher implements DataFetcherBase {
+class MaliciousSourcesBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
   private final MaliciousSourcesConfigServiceBlockingStub maliciousSourcesConfigServiceBlockingStub;
   private final Map<MaliciousSourcesRuleCondition.ConditionCase, MaliciousSourceDataHandler>
       maliciousSourceDataHandlerMap;
 
   @Inject
-  MaliciousSourcesDataFetcher(
+  MaliciousSourcesBlockingPolicyDataFetcher(
       MaliciousSourcesConfigServiceBlockingStub maliciousSourcesConfigServiceBlockingStub,
       Map<MaliciousSourcesRuleCondition.ConditionCase, MaliciousSourceDataHandler>
           maliciousSourceDataHandlerMap) {
@@ -35,7 +35,8 @@ class MaliciousSourcesDataFetcher implements DataFetcherBase {
 
   @Override
   public List<BlockingPolicyData> getBlockingPolicyData(
-      RequestContext requestContext, Optional<String> environmentId) {
+      RequestContext requestContext, BlockingPolicyDataFilter filter) {
+    Optional<String> environmentId = filter.getEnvironmentId();
     List<MaliciousSourcesRule> ruleList = fetchMaliciousSourceRules(requestContext, environmentId);
     return ruleList.stream()
         .map(

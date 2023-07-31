@@ -1,10 +1,11 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy;
 
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import com.google.inject.Inject;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -22,25 +23,24 @@ public class GenericBlockingDetailsAggregator<T> {
     this.blockingDetailsConverter = blockingDetailsConverter;
   }
 
-  public List<T> getBlockingDetails(RequestContext requestContext, Optional<String> environmentId) {
+  public List<T> getBlockingDetails(
+      RequestContext requestContext, BlockingPolicyDataFilter filter) {
     try {
-      return blockingPolicyDataAggregator
-          .getOrderedBlockingRules(requestContext, environmentId)
-          .stream()
+      return blockingPolicyDataAggregator.getOrderedBlockingRules(requestContext, filter).stream()
           .map(blockingDetailsConverter::convert)
-          .flatMap(Collection::stream)
+          .filter(Objects::nonNull)
           .collect(Collectors.toUnmodifiableList());
     } catch (Exception e) {
       log.error(
-          "Unable to create blocking policies for tenant:{} and environment:{} ",
+          "Unable to create blocking policies for tenant:{} with filter:{} ",
           requestContext.getTenantId(),
-          environmentId.orElse(""),
+          filter,
           e);
       return Collections.emptyList();
     }
   }
 
   public interface BlockingDetailsConverterBase<T> {
-    List<T> convert(BlockingPolicyData blockingPolicyData);
+    T convert(BlockingPolicyData blockingPolicyData);
   }
 }

@@ -3,8 +3,10 @@ package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers;
 import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.CUSTOM_SIGNATURE_EXEMPTIONS;
 import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.CUSTOM_SIGNATURE_VIOLATIONS;
 
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Category;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.CustomSignatureBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
@@ -25,14 +27,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-class CustomSignatureDataFetcher implements DataFetcherBase {
+class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
   private final CustomSignatureConfigServiceBlockingStub configServiceBlockingStub;
   private static final List<EventType> EVENT_TYPES_LIST =
       ImmutableList.of(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING, EventType.EVENT_TYPE_ALLOW);
   private final BlockingRulesUtils blockingRulesUtils;
 
   @Inject
-  CustomSignatureDataFetcher(
+  CustomSignatureBlockingPolicyDataFetcher(
       CustomSignatureConfigServiceBlockingStub configServiceBlockingStub,
       BlockingRulesUtils blockingRulesUtils) {
     this.configServiceBlockingStub = configServiceBlockingStub;
@@ -41,7 +43,8 @@ class CustomSignatureDataFetcher implements DataFetcherBase {
 
   @Override
   public List<BlockingPolicyData> getBlockingPolicyData(
-      RequestContext requestContext, Optional<String> environmentId) {
+      RequestContext requestContext, BlockingPolicyDataFilter filter) {
+    Optional<String> environmentId = filter.getEnvironmentId();
     List<CustomSignatureRule> ruleList = fetchCustomSignatureRule(requestContext, environmentId);
     return ruleList.stream()
         .map(this::getBlockingDetails)
@@ -65,7 +68,7 @@ class CustomSignatureDataFetcher implements DataFetcherBase {
     }
     return Optional.of(
         BlockingPolicyData.builder()
-            .category(BlockingPolicyData.Category.CUSTOM_SIGNATURE_RULE)
+            .category(Category.CUSTOM_SIGNATURE_RULE)
             .ruleType(ruleType.get())
             .bucket(ruleBucket.get())
             .info(info.get())
@@ -74,7 +77,10 @@ class CustomSignatureDataFetcher implements DataFetcherBase {
                 blockingRulesUtils.generateBlockingStatus(
                     customSignatureRule.getBlockingExpiryDetails().getExpiryTimestampMillis(),
                     ruleType.get()))
-            .ruleId(customSignatureRule.getId())
+            .blockingDetails(
+                CustomSignatureBlockingDetails.builder()
+                    .ruleId(customSignatureRule.getId())
+                    .build())
             .build());
   }
 
@@ -91,7 +97,7 @@ class CustomSignatureDataFetcher implements DataFetcherBase {
                 rule.getId(), rule.getName(), rule.getEffect().getEventSeverity().name()));
 
       default:
-        log.info("Could not find info for rule with rule id", rule.getId());
+        log.info("Could not find info for rule with rule id: {}", rule.getId());
         return Optional.empty();
     }
   }

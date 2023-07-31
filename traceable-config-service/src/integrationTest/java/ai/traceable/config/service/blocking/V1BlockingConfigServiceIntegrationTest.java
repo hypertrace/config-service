@@ -257,9 +257,9 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertNotEquals(emptyValueUuid, modsecCrsBlockingRulesHash);
     assertFalse(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
 
-    // 1 modsec rule is present + 2 * (1 threat-actors + 2 rate-limit + 2 malicious-source)
+    // 1 modsec rule is present + (1 threat-actors + 2 rate-limit + 2 malicious-source)
     assertNotEquals(emptyValueUuid, response.getBlockingPolicyConfiguration().getHash());
-    assertEquals(11, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
+    assertEquals(6, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
 
     createRegionRules();
     customSignatureRuleId.add(createCustomSignatureRule(Optional.empty()));
@@ -326,10 +326,10 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
         modsecCrsBlockingRulesHash, response.getSafeCrsBlockingRules().getHash()); // not changed
     assertTrue(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
 
-    // 1 modsec + 2 region + 1 custom-signature rule + 2 * (1 threat-actors + 2 rate-limit + 2
+    // 1 modsec + 2 region + 1 custom-signature rule +  (1 threat-actors + 2 rate-limit + 2
     // malicious-source) + 1 ip-type
     assertNotEquals(emptyValueUuid, response.getBlockingPolicyConfiguration().getHash());
-    assertEquals(15, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
+    assertEquals(10, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
 
     // Checking with environment
     response =
@@ -367,11 +367,11 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
         modsecCrsBlockingRulesHash, response.getSafeCrsBlockingRules().getHash()); // not changed
     assertTrue(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
 
-    // 2 modsec + 3 region + 2 custom-signature rule + 2 * (1 threat-actors + 1 rate-limit + 2
+    // 2 modsec + 3 region + 2 custom-signature rule + (1 threat-actors + 1 rate-limit + 2
     // malicious-source) + 3 ip-type
     String blockingPolicyConfigurationHash = response.getBlockingPolicyConfiguration().getHash();
     assertNotEquals(emptyValueUuid, response.getBlockingPolicyConfiguration().getHash());
-    assertEquals(18, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
+    assertEquals(14, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
 
     response =
         RequestContext.forTenantId(TENANT_ID)
@@ -452,11 +452,11 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
   }
 
   void checkBlockingPolicy(BlockingPolicyConfiguration blockingPolicyConfiguration) {
-    // 2 modsec + 3 region + 2 custom-signature rule + 2 * (1 threat-actors + 1 rate-limit + 2
+    // 2 modsec + 3 region + 2 custom-signature rule + (1 threat-actors + 1 rate-limit + 2
     // malicious-source) + 2 custom-ip + 3 ip-type + 3 malicious-sources-rule(1 ipType, 1 ipRange, 1
     // region)
 
-    assertEquals(22, blockingPolicyConfiguration.getBlockingDetailsListCount());
+    assertEquals(18, blockingPolicyConfiguration.getBlockingDetailsListCount());
 
     int index = 0;
 
@@ -490,13 +490,6 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
         List.of("197.23.5.0"),
         blockingPolicyConfiguration
             .getBlockingDetailsList(index)
-            .getActorDetails()
-            .getIpAddressesList());
-    index++;
-    assertEquals(
-        List.of("197.23.5.0"),
-        blockingPolicyConfiguration
-            .getBlockingDetailsList(index)
             .getIpDetails()
             .getIpAddressesList());
     index++;
@@ -517,14 +510,6 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertEquals(
         BLOCKING_RULE_TYPE_ALLOW,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getBlockingRuleType());
-    assertEquals(
-        List.of("197.23.5.0"),
-        blockingPolicyConfiguration
-            .getBlockingDetailsList(index)
-            .getActorDetails()
-            .getIpAddressesList());
-    index++;
-
     assertEquals(
         List.of("197.23.5.0"),
         blockingPolicyConfiguration
@@ -597,7 +582,7 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
         ipAddress.stream().sorted().collect(Collectors.toList()),
         List.of("1.2.3.4", "11.11.11.11"));
     assertEquals(ipRange, List.of("1.2.3.4/5"));
-    index += 3;
+    index += 2;
 
     assertEquals(
         BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE,
@@ -656,7 +641,7 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
         List.of("197.23.5.0"),
         blockingPolicyConfiguration
             .getBlockingDetailsList(index)
-            .getActorDetails()
+            .getIpDetails()
             .getIpAddressesList());
   }
 

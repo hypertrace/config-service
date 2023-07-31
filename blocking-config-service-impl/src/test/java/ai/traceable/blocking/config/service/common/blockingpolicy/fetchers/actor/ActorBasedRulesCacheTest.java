@@ -14,10 +14,11 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 import ai.traceable.blocking.config.service.common.BlockingDataCacheConfig;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Category;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.RuleType;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Status;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.ActorBlockingDetails;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Category;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.RuleType;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Status;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.actor.config.ActorServiceConfig;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleCondition;
@@ -84,8 +85,9 @@ class ActorBasedRulesCacheTest {
 
     assertEquals(6, response.size());
 
-    assertEquals(List.of("1.1.1.1"), response.get(0).getIpAddresses());
-    assertEquals("actor-1", response.get(0).getUserId());
+    assertEquals(
+        ActorBlockingDetails.builder().ipAddresses(List.of("1.1.1.1")).userId("actor-1").build(),
+        response.get(0).getBlockingDetails());
     assertEquals(Category.RATE_LIMIT, response.get(0).getCategory());
     assertEquals(RuleType.BLOCK, response.get(0).getRuleType());
     assertEquals(Status.SUSPENDED, response.get(0).getStatus());
@@ -94,17 +96,19 @@ class ActorBasedRulesCacheTest {
             "entity-1", "rate-limit-id-1", "rate-limit-name-1", RATE_LIMIT_CATEGORY_RATE_LIMITING),
         response.get(0).getInfo());
 
-    assertEquals(List.of("2.2.2.2"), response.get(1).getIpAddresses());
+    assertEquals(
+        ActorBlockingDetails.builder().ipAddresses(List.of("2.2.2.2")).userId("actor-2").build(),
+        response.get(1).getBlockingDetails());
     assertEquals(Category.THREAT_ACTOR, response.get(1).getCategory());
-    assertEquals("actor-2", response.get(1).getUserId());
     assertEquals(RuleType.BLOCK, response.get(1).getRuleType());
     assertEquals(Status.DENIED, response.get(1).getStatus());
     assertEquals(
         ViolationInfoEncoder.getEncodedThreatActorViolationInfo("entity-2"),
         response.get(1).getInfo());
 
-    assertEquals(List.of("3.3.3.3"), response.get(2).getIpAddresses());
-    assertEquals("actor-3", response.get(2).getUserId());
+    assertEquals(
+        ActorBlockingDetails.builder().ipAddresses(List.of("3.3.3.3")).userId("actor-3").build(),
+        response.get(2).getBlockingDetails());
     assertEquals(Category.THREAT_ACTOR, response.get(2).getCategory());
     assertEquals(RuleType.ALLOW, response.get(2).getRuleType());
     assertEquals(Status.SNOOZED, response.get(2).getStatus());
@@ -112,8 +116,9 @@ class ActorBasedRulesCacheTest {
         ExemptionInfoEncoder.getEncodedThreatActorExemptionInfo("entity-3"),
         response.get(2).getInfo());
 
-    assertEquals(List.of("5.5.5.5"), response.get(3).getIpAddresses());
-    assertEquals("actor-5", response.get(3).getUserId());
+    assertEquals(
+        ActorBlockingDetails.builder().ipAddresses(List.of("5.5.5.5")).userId("actor-5").build(),
+        response.get(3).getBlockingDetails());
     assertEquals(Category.EMAIL_DOMAIN_RULE, response.get(3).getCategory());
     assertEquals(RuleType.ALLOW, response.get(3).getRuleType());
     assertEquals(Status.ALLOWED, response.get(3).getStatus());
@@ -126,8 +131,9 @@ class ActorBasedRulesCacheTest {
             List.of(MaliciousSourcesRuleCondition.ConditionCase.EMAIL_DOMAIN_CONDITION)),
         response.get(3).getInfo());
 
-    assertEquals(List.of("6.6.6.6"), response.get(4).getIpAddresses());
-    assertEquals("actor-6", response.get(4).getUserId());
+    assertEquals(
+        ActorBlockingDetails.builder().ipAddresses(List.of("6.6.6.6")).userId("actor-6").build(),
+        response.get(4).getBlockingDetails());
     assertEquals(Category.EMAIL_DOMAIN_RULE, response.get(4).getCategory());
     assertEquals(RuleType.BLOCK, response.get(4).getRuleType());
     assertEquals(Status.SUSPENDED, response.get(4).getStatus());
@@ -140,7 +146,9 @@ class ActorBasedRulesCacheTest {
             List.of(MaliciousSourcesRuleCondition.ConditionCase.EMAIL_DOMAIN_CONDITION)),
         response.get(4).getInfo());
 
-    assertEquals("actor-7", response.get(5).getUserId());
+    assertEquals(
+        ActorBlockingDetails.builder().ipAddresses(List.of("7.7.7.7")).userId("actor-7").build(),
+        response.get(5).getBlockingDetails());
     assertEquals(Category.DATA_EXFILTRATION, response.get(5).getCategory());
   }
 

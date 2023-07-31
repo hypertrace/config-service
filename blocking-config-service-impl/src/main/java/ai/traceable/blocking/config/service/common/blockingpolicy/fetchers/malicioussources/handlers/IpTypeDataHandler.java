@@ -1,13 +1,12 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.malicioussources.handlers;
 
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingDetails;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.IpTypeBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
-import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.RuleActionType;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -27,28 +26,17 @@ public class IpTypeDataHandler extends MaliciousSourceDataHandler {
   }
 
   @Override
-  protected List<String> getBlockingIpAddresses(MaliciousSourcesRule rule) {
-    return Collections.emptyList();
-  }
-
-  @Override
-  protected List<String> getBlockingCidrIpRanges(MaliciousSourcesRule rule) {
-    return Collections.emptyList();
-  }
-
-  @Override
-  protected List<IpLocationType> getBlockingIpTypes(MaliciousSourcesRule maliciousSourcesRule) {
-    return maliciousSourcesRule.getRuleInfo().getConditionsList().stream()
-        .flatMap(
-            condition -> condition.getIpLocationTypeCondition().getIpLocationTypesList().stream())
-        .distinct()
-        .filter(Objects::nonNull)
-        .collect(Collectors.toUnmodifiableList());
-  }
-
-  @Override
-  protected List<String> getBlockingRegions(MaliciousSourcesRule rule) {
-    return Collections.emptyList();
+  protected BlockingDetails generateBlockingDetails(MaliciousSourcesRule maliciousSourcesRule) {
+    return IpTypeBlockingDetails.builder()
+        .ipTypes(
+            maliciousSourcesRule.getRuleInfo().getConditionsList().stream()
+                .flatMap(
+                    condition ->
+                        condition.getIpLocationTypeCondition().getIpLocationTypesList().stream())
+                .distinct()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toUnmodifiableList()))
+        .build();
   }
 
   @Override

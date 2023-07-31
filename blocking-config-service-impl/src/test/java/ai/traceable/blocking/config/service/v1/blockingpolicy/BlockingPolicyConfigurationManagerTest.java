@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doReturn;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.GenericBlockingDetailsAggregator;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
 import ai.traceable.blocking.config.service.v1.BlockingPolicyConfiguration;
 import ai.traceable.config.utils.UuidGenerator;
@@ -34,7 +35,9 @@ class BlockingPolicyConfigurationManagerTest {
 
     doReturn(mockBlockingDetailsList)
         .when(mockAggregator)
-        .getBlockingDetails(requestContext, environmentId);
+        .getBlockingDetails(
+            requestContext,
+            BlockingPolicyDataFilter.builder().environmentId(environmentId).build());
     doReturn("hash").when(uuidGenerator).generateId(mockBlockingDetailsList);
 
     assertEquals(

@@ -1,7 +1,7 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils;
 
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.RuleType;
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData.Status;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.RuleType;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Status;
 import com.google.inject.Inject;
 import java.time.Clock;
 

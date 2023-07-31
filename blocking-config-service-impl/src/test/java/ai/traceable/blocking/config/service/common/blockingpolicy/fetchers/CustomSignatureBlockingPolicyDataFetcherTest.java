@@ -9,7 +9,9 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.CustomSignatureBlockingDetails;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
@@ -28,7 +30,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class CustomSignatureDataFetcherTest {
+class CustomSignatureBlockingPolicyDataFetcherTest {
   private static final String TENANT_ID = "tenant-id";
   private static final String ENVIRONMENT_ID = "environment-id";
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
@@ -45,7 +47,7 @@ class CustomSignatureDataFetcherTest {
 
   private CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub
       customSignatureConfigServiceBlockingStub;
-  private CustomSignatureDataFetcher customSignatureDataFetcher;
+  private CustomSignatureBlockingPolicyDataFetcher customSignatureDataFetcher;
   private static final long inactiveTimestamp = System.currentTimeMillis() - 10000L;
   private static final long activeTimestamp = System.currentTimeMillis() + 10000L;
 
@@ -77,7 +79,7 @@ class CustomSignatureDataFetcherTest {
         .thenReturn(BlockingPolicyData.Status.SUSPENDED);
 
     customSignatureDataFetcher =
-        new CustomSignatureDataFetcher(
+        new CustomSignatureBlockingPolicyDataFetcher(
             customSignatureConfigServiceBlockingStub, blockingRulesUtils);
   }
 
@@ -87,7 +89,9 @@ class CustomSignatureDataFetcherTest {
         .when(customSignatureConfigServiceBlockingStub)
         .getCustomSignatureRules(DEFAULT_GET_REQUEST);
     List<BlockingPolicyData> customSignatureRuleList =
-        customSignatureDataFetcher.getBlockingPolicyData(REQUEST_CONTEXT, Optional.empty());
+        customSignatureDataFetcher.getBlockingPolicyData(
+            REQUEST_CONTEXT,
+            BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build());
     assertEquals(0, customSignatureRuleList.size());
   }
 
@@ -98,11 +102,15 @@ class CustomSignatureDataFetcherTest {
         .getCustomSignatureRules(DEFAULT_GET_REQUEST);
 
     List<BlockingPolicyData> customSignatureRuleList =
-        customSignatureDataFetcher.getBlockingPolicyData(REQUEST_CONTEXT, Optional.empty());
+        customSignatureDataFetcher.getBlockingPolicyData(
+            REQUEST_CONTEXT,
+            BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build());
 
     assertEquals(2, customSignatureRuleList.size());
 
-    assertEquals("rule-id-1", customSignatureRuleList.get(0).getRuleId());
+    assertEquals(
+        CustomSignatureBlockingDetails.builder().ruleId("rule-id-1").build(),
+        customSignatureRuleList.get(0).getBlockingDetails());
     assertEquals(
         BlockingPolicyData.Category.CUSTOM_SIGNATURE_RULE,
         customSignatureRuleList.get(0).getCategory());
@@ -114,7 +122,9 @@ class CustomSignatureDataFetcherTest {
             "rule-id-1", "rule-name-1", EVENT_SEVERITY_HIGH.name()),
         customSignatureRuleList.get(0).getInfo());
 
-    assertEquals("rule-id-3", customSignatureRuleList.get(1).getRuleId());
+    assertEquals(
+        CustomSignatureBlockingDetails.builder().ruleId("rule-id-3").build(),
+        customSignatureRuleList.get(1).getBlockingDetails());
     assertEquals(
         BlockingPolicyData.Category.CUSTOM_SIGNATURE_RULE,
         customSignatureRuleList.get(1).getCategory());
@@ -146,18 +156,25 @@ class CustomSignatureDataFetcherTest {
                 .build());
     List<BlockingPolicyData> customSignatureRuleList =
         customSignatureDataFetcher.getBlockingPolicyData(
-            REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
+            REQUEST_CONTEXT,
+            BlockingPolicyDataFilter.builder().environmentId(Optional.of(ENVIRONMENT_ID)).build());
     assertEquals(3, customSignatureRuleList.size());
     assertThrows(
         NullPointerException.class,
-        () -> customSignatureDataFetcher.getBlockingPolicyData(REQUEST_CONTEXT, Optional.empty()));
+        () ->
+            customSignatureDataFetcher.getBlockingPolicyData(
+                REQUEST_CONTEXT,
+                BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build()));
 
     // Wrong environment
     assertThrows(
         NullPointerException.class,
         () ->
             customSignatureDataFetcher.getBlockingPolicyData(
-                REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID + "random")));
+                REQUEST_CONTEXT,
+                BlockingPolicyDataFilter.builder()
+                    .environmentId(Optional.of(ENVIRONMENT_ID + "random"))
+                    .build()));
   }
 
   private static final GetCustomSignatureRulesResponse sampleCustomSignatureAllEnvRulesResponse =

@@ -1,25 +1,19 @@
-package ai.traceable.blocking.config.service.common.blockingpolicy;
+package ai.traceable.blocking.config.service.common.blockingpolicy.data;
 
-import ai.traceable.malicioussources.config.service.v1.IpLocationType;
-import java.util.List;
+import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
 import lombok.Builder;
 import lombok.Getter;
 
 @Builder
 @Getter
-public class BlockingPolicyData {
+public final class BlockingPolicyData {
   Category category;
   RuleType ruleType;
   String info;
   long timestamp;
   Status status;
-  String ruleId;
-  String userId;
-  List<String> ipAddresses;
-  List<String> ipRanges;
-  List<String> regions;
-  List<IpLocationType> ipTypes;
   BlockingPolicyDataBucket bucket;
+  BlockingDetails blockingDetails;
 
   public enum Category {
     THREAT_ACTOR,

@@ -7,8 +7,9 @@ import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_ALLO
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_BLOCK;
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT;
 
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.IpBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.iprange.config.service.v1.EnvironmentScope;
 import ai.traceable.iprange.config.service.v1.GetIpRangeRulesRequest;
@@ -29,14 +30,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-class CustomIpBasedDataFetcher implements DataFetcherBase {
+class CustomIpBasedBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
   private static final List<RuleAction> SUPPORTED_RULE_ACTIONS =
       ImmutableList.of(RULE_ACTION_BLOCK, RULE_ACTION_ALLOW, RULE_ACTION_BLOCK_ALL_EXCEPT);
   private final IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub;
   private final BlockingRulesUtils blockingRulesUtils;
 
   @Inject
-  CustomIpBasedDataFetcher(
+  CustomIpBasedBlockingPolicyDataFetcher(
       IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub,
       BlockingRulesUtils blockingRulesUtils) {
     this.ipRangeConfigServiceStub = ipRangeConfigServiceStub;
@@ -45,7 +46,8 @@ class CustomIpBasedDataFetcher implements DataFetcherBase {
 
   @Override
   public List<BlockingPolicyData> getBlockingPolicyData(
-      RequestContext requestContext, Optional<String> environmentId) {
+      RequestContext requestContext, BlockingPolicyDataFilter filter) {
+    Optional<String> environmentId = filter.getEnvironmentId();
     List<IpRangeRule> ruleList = fetchIpRangeRules(requestContext, environmentId);
     return ruleList.stream()
         .map(this::getBlockingDetails)
@@ -79,8 +81,11 @@ class CustomIpBasedDataFetcher implements DataFetcherBase {
                     ruleType.get()))
             .timestamp(
                 ipRule.getRuleDetails().getExpirationDetails().getExpirationTimestampMillis())
-            .ipAddresses(ipRule.getIpAddressesList())
-            .ipRanges(ipRule.getIpRangesList())
+            .blockingDetails(
+                IpBlockingDetails.builder()
+                    .ipAddresses(ipRule.getIpAddressesList())
+                    .ipRanges(ipRule.getIpRangesList())
+                    .build())
             .build());
   }
 

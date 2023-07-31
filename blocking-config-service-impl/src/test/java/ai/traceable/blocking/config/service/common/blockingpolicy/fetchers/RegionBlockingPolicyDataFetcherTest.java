@@ -9,7 +9,9 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyData;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.RegionBlockingDetails;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import ai.traceable.region.config.service.v1.EnvironmentScope;
@@ -25,7 +27,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class RegionDataFetcherTest {
+class RegionBlockingPolicyDataFetcherTest {
 
   private static final String TENANT_ID = "tenant-id";
   private static final String ENVIRONMENT_ID = "environment-id";
@@ -45,7 +47,7 @@ class RegionDataFetcherTest {
 
   private RegionConfigServiceGrpc.RegionConfigServiceBlockingStub regionConfigServiceBlockingStub;
 
-  private RegionDataFetcher regionDataFetcher;
+  private RegionBlockingPolicyDataFetcher regionDataFetcher;
 
   private static final long inactiveTimestamp = System.currentTimeMillis() - 10000L;
   private static final long activeTimestamp = System.currentTimeMillis() + 10000L;
@@ -77,7 +79,8 @@ class RegionDataFetcherTest {
             activeTimestamp, BlockingPolicyData.RuleType.BLOCK_ALL_EXCEPT))
         .thenReturn(BlockingPolicyData.Status.SUSPENDED);
 
-    regionDataFetcher = new RegionDataFetcher(regionConfigServiceBlockingStub, blockingRulesUtils);
+    regionDataFetcher =
+        new RegionBlockingPolicyDataFetcher(regionConfigServiceBlockingStub, blockingRulesUtils);
   }
 
   @Test
@@ -86,7 +89,9 @@ class RegionDataFetcherTest {
         .when(regionConfigServiceBlockingStub)
         .getAllRegionRules(DEFAULT_GET_REQUEST);
     List<BlockingPolicyData> regionBasedRuleList =
-        regionDataFetcher.getBlockingPolicyData(REQUEST_CONTEXT, Optional.empty());
+        regionDataFetcher.getBlockingPolicyData(
+            REQUEST_CONTEXT,
+            BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build());
     assertEquals(0, regionBasedRuleList.size());
   }
 
@@ -97,10 +102,14 @@ class RegionDataFetcherTest {
         .getAllRegionRules(DEFAULT_GET_REQUEST);
 
     List<BlockingPolicyData> regionBasedRuleList =
-        regionDataFetcher.getBlockingPolicyData(REQUEST_CONTEXT, Optional.empty());
+        regionDataFetcher.getBlockingPolicyData(
+            REQUEST_CONTEXT,
+            BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build());
 
     assertEquals(2, regionBasedRuleList.size());
-    assertEquals(List.of("Nepal", "Bhutan"), regionBasedRuleList.get(0).getRegions());
+    assertEquals(
+        RegionBlockingDetails.builder().regions(List.of("Nepal", "Bhutan")).build(),
+        regionBasedRuleList.get(0).getBlockingDetails());
     assertEquals(
         BlockingPolicyData.Category.CUSTOM_REGION_RULE, regionBasedRuleList.get(0).getCategory());
     assertEquals(BlockingPolicyData.RuleType.BLOCK, regionBasedRuleList.get(0).getRuleType());
@@ -110,7 +119,9 @@ class RegionDataFetcherTest {
         ViolationInfoEncoder.getEncodedCustomRegionRuleViolationInfo("rule-id-1", "rule-name-1"),
         regionBasedRuleList.get(0).getInfo());
 
-    assertEquals(List.of("China", "Pakistan"), regionBasedRuleList.get(1).getRegions());
+    assertEquals(
+        RegionBlockingDetails.builder().regions(List.of("China", "Pakistan")).build(),
+        regionBasedRuleList.get(1).getBlockingDetails());
     assertEquals(
         BlockingPolicyData.Category.CUSTOM_REGION_RULE, regionBasedRuleList.get(1).getCategory());
     assertEquals(
@@ -147,20 +158,28 @@ class RegionDataFetcherTest {
 
     // With correct environment
     List<BlockingPolicyData> regionBasedRuleList =
-        regionDataFetcher.getBlockingPolicyData(REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID));
+        regionDataFetcher.getBlockingPolicyData(
+            REQUEST_CONTEXT,
+            BlockingPolicyDataFilter.builder().environmentId(Optional.of(ENVIRONMENT_ID)).build());
     assertEquals(3, regionBasedRuleList.size());
 
     // Without environment
     assertThrows(
         NullPointerException.class,
-        () -> regionDataFetcher.getBlockingPolicyData(REQUEST_CONTEXT, Optional.empty()));
+        () ->
+            regionDataFetcher.getBlockingPolicyData(
+                REQUEST_CONTEXT,
+                BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build()));
 
     // Wrong environment
     assertThrows(
         NullPointerException.class,
         () ->
             regionDataFetcher.getBlockingPolicyData(
-                REQUEST_CONTEXT, Optional.of(ENVIRONMENT_ID + "random")));
+                REQUEST_CONTEXT,
+                BlockingPolicyDataFilter.builder()
+                    .environmentId(Optional.of(ENVIRONMENT_ID + "random"))
+                    .build()));
   }
 
   private static final GetAllRegionRulesResponse sampleRegionAllEnvRulesResponse =

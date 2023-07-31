@@ -6,6 +6,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.GenericBlockingDetailsAggregator;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.blocking.config.service.v2.BlockingConfigManagerBase;
 import ai.traceable.blocking.config.service.v2.BlockingConfigRequestElement;
 import ai.traceable.blocking.config.service.v2.BlockingConfigResponseElement;
@@ -40,7 +41,12 @@ class BlockingPolicyConfigurationManagerTest {
 
     doReturn(mockBlockingDetailsList)
         .when(mockAggregator)
-        .getBlockingDetails(requestContext, environmentId);
+        .getBlockingDetails(
+            requestContext,
+            BlockingPolicyDataFilter.builder()
+                .serviceNames(List.of())
+                .environmentId(environmentId)
+                .build());
     doReturn("mock-hash")
         .when(mockUuidGenerator)
         .generateId(any(BlockingPolicyConfiguration.class));
