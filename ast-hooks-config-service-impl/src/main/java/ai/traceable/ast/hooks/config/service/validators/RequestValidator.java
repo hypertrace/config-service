@@ -50,7 +50,7 @@ public class RequestValidator extends ValidatorBase {
               "Code snippet not found while trying to create ast hooks config in advanced mode")
           .asRuntimeException(requestContext.buildTrailers());
     }
-    validateHookDetails(requestContext, request.getHookDetails());
+    validateHookDetails(requestContext, request.getHookDetails(), false);
   }
 
   public void validate(RequestContext requestContext, UpdateAstHookRequest request) {
@@ -62,7 +62,7 @@ public class RequestValidator extends ValidatorBase {
           .asRuntimeException(requestContext.buildTrailers());
     }
     if (request.hasAstHookDetails()) {
-      validateHookDetails(requestContext, request.getAstHookDetails());
+      validateHookDetails(requestContext, request.getAstHookDetails(), true);
     }
     if (request.hasHookTestId()) {
       validateStringNotBlank(request.getHookTestId(), "hook test id not found");
@@ -77,7 +77,8 @@ public class RequestValidator extends ValidatorBase {
     }
   }
 
-  private void validateHookDetails(RequestContext requestContext, AstHookDetails astHookDetails) {
+  private void validateHookDetails(
+      RequestContext requestContext, AstHookDetails astHookDetails, boolean isUpdateRequest) {
     switch (astHookDetails.getAstHookTypeCase()) {
       case HOOK_CONFIG:
         if (!astHookDetails.hasHookConfig()) {
@@ -85,7 +86,7 @@ public class RequestValidator extends ValidatorBase {
               .withDescription("hook config expected in normal mode")
               .asRuntimeException(requestContext.buildTrailers());
         }
-        validateHookConfig(astHookDetails.getHookConfig());
+        validateHookConfig(astHookDetails.getHookConfig(), isUpdateRequest);
         break;
       case ADVANCED_MODE:
         validateStringNotBlank(
@@ -98,8 +99,8 @@ public class RequestValidator extends ValidatorBase {
     //    validateRole(astHookDetails.getRole());
   }
 
-  private void validateHookConfig(HookConfig hookConfig) {
-    hookConfigValidator.validate(hookConfig);
+  private void validateHookConfig(HookConfig hookConfig, boolean isUpdateRequest) {
+    hookConfigValidator.validate(hookConfig, isUpdateRequest);
   }
 
   private void validateRole(RequestContext requestContext, Role role) {
@@ -177,7 +178,7 @@ public class RequestValidator extends ValidatorBase {
               .withDescription("hook config expected in normal mode")
               .asRuntimeException(requestContext.buildTrailers());
         }
-        validateHookConfig(hookTestDetails.getHookConfig());
+        validateHookConfig(hookTestDetails.getHookConfig(), false);
         break;
       case ADVANCED_MODE:
         validateStringNotBlank(
