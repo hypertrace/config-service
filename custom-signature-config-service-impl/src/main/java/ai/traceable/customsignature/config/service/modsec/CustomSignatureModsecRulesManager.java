@@ -161,12 +161,20 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
 
   private String getModsecDirective(CustomModsecRuleVersion customModsecRuleVersion) {
     switch (customModsecRuleVersion) {
+      case CUSTOM_MODSEC_RULE_VERSION_V3:
+        return modsecDirectivesManager.getModsecHeader(ModsecRuleVersion.MODSEC_RULE_VERSION_V3);
       case CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS:
         return modsecDirectivesManager.getModsecHeader(
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS);
       case CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3:
         return modsecDirectivesManager.getModsecHeader(
             ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3);
+      case CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE:
+        return modsecDirectivesManager.getModsecHeader(
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE);
+      case CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3_DETECTION_ONLY_MODE:
+        return modsecDirectivesManager.getModsecHeader(
+            ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3_DETECTION_ONLY_MODE);
       default:
         return modsecDirectivesManager.getModsecHeader(ModsecRuleVersion.MODSEC_RULE_VERSION_V3);
     }
