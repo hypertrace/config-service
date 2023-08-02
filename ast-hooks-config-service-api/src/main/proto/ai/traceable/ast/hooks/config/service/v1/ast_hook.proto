@@ -87,7 +87,7 @@ enum AdvancedModeMechanism {
 }
 
 message HookConfig {
-  string auth_endpoint = 1;
+  string auth_endpoint = 1 [deprecated = true];
   oneof hook_config {
     PostmanHookConfig postman_hook_config = 2;
     BasicAuthConfig basic_auth_config = 3;
@@ -184,6 +184,7 @@ message Oauth2 {
     OauthClientCredentialsFlow client_credentials_flow = 8;
     OauthPasswordFlow password_flow = 9;
   }
+  string auth_endpoint = 11;
 }
 
 message OauthAuthorizationCodeFlow {
