@@ -34,4 +34,5 @@ dependencyCheck {
   suppressionFile = "owasp-suppressions.xml"
   scanConfigurations.add("runtimeClasspath")
   failBuildOnCVSS = 7.0F
+  analyzers.ossIndex.warnOnlyOnRemoteErrors = true
 }
