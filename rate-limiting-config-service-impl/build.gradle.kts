@@ -7,7 +7,10 @@ plugins {
 dependencies {
   api(projects.rateLimitingConfigServiceApi)
   api(libs.hypertrace.configservice.api)
+  api(projects.customSignatureConfigServiceApi)
 
+  implementation(projects.customSignatureConfigServiceImpl)
+  implementation(projects.anomalyConfigServiceRegistry)
   implementation(projects.activityEventProducer)
   implementation(projects.configUtils)
 
@@ -22,6 +25,7 @@ dependencies {
   implementation(libs.hypertrace.configservice.validation)
   implementation(libs.hypertrace.configservice.changeeventgenerator)
   implementation(libs.traceable.platformGateway.ipUtils)
+  implementation(libs.commons.lang)
 
   implementation(libs.traceable.activityevent.api)
   implementation(libs.protobuf.javautil)
@@ -31,8 +35,8 @@ dependencies {
 
   testImplementation(libs.junit.jupiter)
   testImplementation(libs.mockito.core)
+  testImplementation(libs.mockito.junit)
   testImplementation(libs.hypertrace.grpcutils.client)
-  testImplementation(libs.commons.lang)
   testImplementation(libs.grpc.core)
   testImplementation(libs.hypertrace.grpcutils.client)
   testImplementation(testFixtures(libs.hypertrace.configservice.api))

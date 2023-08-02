@@ -27,6 +27,7 @@ import ai.traceable.ratelimiting.config.service.v2.TransactionActionConfig;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesManager;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesStore;
+import ai.traceable.ratelimiting.service.v2.rules.modsec.RateLimitingModsecRulesManager;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.time.Clock;
@@ -42,6 +43,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 
 public class RateLimitingRulesManagerTest {
   private RequestContext requestContext;
@@ -49,6 +51,7 @@ public class RateLimitingRulesManagerTest {
   private UuidGenerator uuidGenerator;
   private RateLimitingRulesManager rulesManager;
   private RateLimitingConfigServiceConfig rateLimitingConfigServiceConfig;
+  @Mock private RateLimitingModsecRulesManager rateLimitingModsecRulesManager;
 
   @BeforeEach
   void setUp() {
@@ -71,7 +74,11 @@ public class RateLimitingRulesManagerTest {
     doReturn(1000000L).when(clock).millis();
     rulesManager =
         new RateLimitingRulesManager(
-            rulesStore, uuidGenerator, rateLimitingConfigServiceConfig, clock);
+            rulesStore,
+            uuidGenerator,
+            rateLimitingConfigServiceConfig,
+            rateLimitingModsecRulesManager,
+            clock);
   }
 
   @AfterEach

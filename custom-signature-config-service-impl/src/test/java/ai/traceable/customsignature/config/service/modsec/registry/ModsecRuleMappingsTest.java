@@ -92,6 +92,13 @@ public class ModsecRuleMappingsTest {
             MatchKey.MATCH_KEY_PARAMETER_VALUE,
             MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX,
             "value"));
+    assertEquals(
+        "ARGS_GET_NAMES \"@rx name\"",
+        modsecRuleMappings.getVariablePlusOperatorString(
+            MatchCategory.MATCH_CATEGORY_REQUEST,
+            MatchKey.MATCH_KEY_QUERY_PARAMETER_NAME,
+            MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
+            "name"));
   }
 
   @Test

@@ -6,18 +6,18 @@ public class ModsecActions {
   private static final String ID_FORMAT = "id:%d";
   private static final String PHASE_FORMAT = "phase:%d";
   private static final String MSG_FORMAT = "msg:'%s'";
+  private static final String LOG_DATA_FORMAT = "logdata:'%s'";
   private static final String PARANOIA_LEVEL_TAG_FORMAT = "tag:'paranoia-level/%d'";
   private static final String RULE_UUID_TAG_FORMAT = "tag:'rule-uuid/%s'";
 
   private static final String DEFAULT_PHASE = String.format(PHASE_FORMAT, 2);
   private static final String RESPONSE_PHASE = String.format(PHASE_FORMAT, 4);
   private static final String DEFAULT_PARANOIA_LEVEL = String.format(PARANOIA_LEVEL_TAG_FORMAT, 1);
-
+  private static final String DEFAULT_LOG_DATA =
+      "Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}";
   private static final String CAPTURE = "capture";
   private static final String BLOCK = "block";
   private static final String TRANSFORMATION_NONE = "t:none";
-  private static final String LOG_DATA =
-      "logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}'";
   private static final String CUSTOM_SIGNATURE_TAG = "tag:'CUSTOM_SIGNATURE'";
   private static final String SEVERITY_CRITICAL = "severity:'CRITICAL'";
   private static final String CHAIN = "chain";
@@ -25,11 +25,20 @@ public class ModsecActions {
   private final long id;
   private final String msg;
   private final String ruleUuid;
+  private final String logData;
 
   public ModsecActions(long id, String ruleUuid, String msg) {
     this.id = id;
     this.msg = msg;
     this.ruleUuid = ruleUuid;
+    this.logData = DEFAULT_LOG_DATA;
+  }
+
+  public ModsecActions(long id, String ruleUuid, String msg, String logData) {
+    this.id = id;
+    this.msg = msg;
+    this.ruleUuid = ruleUuid;
+    this.logData = logData;
   }
 
   public String getSingularRuleActionsString(boolean responsePhase) {
@@ -42,7 +51,7 @@ public class ModsecActions {
             BLOCK,
             TRANSFORMATION_NONE,
             String.format(MSG_FORMAT, msg),
-            LOG_DATA,
+            String.format(LOG_DATA_FORMAT, logData),
             CUSTOM_SIGNATURE_TAG,
             DEFAULT_PARANOIA_LEVEL,
             String.format(RULE_UUID_TAG_FORMAT, ruleUuid),
@@ -59,7 +68,7 @@ public class ModsecActions {
             CAPTURE,
             TRANSFORMATION_NONE,
             String.format(MSG_FORMAT, msg),
-            LOG_DATA,
+            String.format(LOG_DATA_FORMAT, logData),
             CUSTOM_SIGNATURE_TAG,
             DEFAULT_PARANOIA_LEVEL,
             String.format(RULE_UUID_TAG_FORMAT, ruleUuid),

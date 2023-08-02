@@ -6,6 +6,8 @@ import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.platform.utils.ip.IpAddressParsingUtils.IpParsingResults;
 import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingModsecRulesFilter;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRulesResponse;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
@@ -13,6 +15,7 @@ import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RuleStatus;
 import ai.traceable.ratelimiting.config.service.v2.TransactionActionConfig;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
+import ai.traceable.ratelimiting.service.v2.rules.modsec.RateLimitingModsecRulesManager;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import java.time.Clock;
@@ -27,6 +30,7 @@ public class RateLimitingRulesManager implements RulesManager {
   private final RateLimitingRulesStore rateLimitingRulesStore;
   private final UuidGenerator uuidGenerator;
   private final RateLimitingConfigServiceConfig rateLimitingConfigServiceConfig;
+  private final RateLimitingModsecRulesManager modsecRulesManager;
   private final Clock clock;
 
   @Inject
@@ -34,10 +38,12 @@ public class RateLimitingRulesManager implements RulesManager {
       RateLimitingRulesStore rateLimitingRulesStore,
       UuidGenerator uuidGenerator,
       RateLimitingConfigServiceConfig rateLimitingConfigServiceConfig,
+      RateLimitingModsecRulesManager modsecRulesManager,
       Clock clock) {
     this.rateLimitingRulesStore = rateLimitingRulesStore;
     this.uuidGenerator = uuidGenerator;
     this.rateLimitingConfigServiceConfig = rateLimitingConfigServiceConfig;
+    this.modsecRulesManager = modsecRulesManager;
     this.clock = clock;
   }
 
@@ -153,5 +159,12 @@ public class RateLimitingRulesManager implements RulesManager {
         .deleteObject(requestContext, ruleId)
         .map(DeletedConfigObject::getDeletedData)
         .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
+  }
+
+  @Override
+  public GetRateLimitingRuleModsecRulesResponse getRateLimitingModsecRules(
+      RequestContext requestContext, GetRateLimitingModsecRulesFilter filter) {
+    return modsecRulesManager.getRateLimitingModsecRules(
+        requestContext, filter, filter2 -> getRateLimitingRules(requestContext, filter2));
   }
 }

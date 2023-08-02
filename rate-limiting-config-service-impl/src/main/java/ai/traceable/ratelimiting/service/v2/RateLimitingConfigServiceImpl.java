@@ -8,6 +8,8 @@ import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleResponse;
 import ai.traceable.ratelimiting.config.service.v2.DeleteRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.DeleteRateLimitingRuleResponse;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRulesRequest;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRulesResponse;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesResponse;
@@ -149,6 +151,23 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
             buildSecurityConfigurationChangeEvent(
                 response.getRule(), SecurityConfigurationAction.ADD));
       }
+    } catch (Exception exception) {
+      log.error(exception.getMessage(), exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void getRateLimitingRuleModsecRules(
+      GetRateLimitingRuleModsecRulesRequest request,
+      StreamObserver<GetRateLimitingRuleModsecRulesResponse> responseObserver) {
+    try {
+      RequestContext context = RequestContext.CURRENT.get();
+      rulesValidator.validateOrThrow(context, request);
+
+      responseObserver.onNext(
+          rulesManager.getRateLimitingModsecRules(context, request.getRulesFilter()));
+      responseObserver.onCompleted();
     } catch (Exception exception) {
       log.error(exception.getMessage(), exception);
       responseObserver.onError(exception);

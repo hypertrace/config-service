@@ -16,6 +16,19 @@ message RateLimitingModsecRule {
   RateLimitingRuleData data = 2;
   repeated string data_type_ids = 3;
   repeated string key_value_condition_ids = 4;
+  // Implicit AND within the list
+  repeated ModsecRuleIdInfo associated_modsec_rule_ids = 5;
+}
+
+message ModsecRuleIdInfo {
+  // Implicit OR within the list
+  repeated string matching_ids = 1;
+  IdType type = 2;
+  enum IdType {
+    ID_TYPE_DATA_TYPE_UNSPECIFIED = 0;
+    ID_TYPE_DATA_TYPE_CUSTOM_LOCATION = 1;
+    ID_TYPE_KEY_VALUE_CONDITION_URL_REGEXES = 2;
+  }
 }
 
 message RateLimitingRuleData {

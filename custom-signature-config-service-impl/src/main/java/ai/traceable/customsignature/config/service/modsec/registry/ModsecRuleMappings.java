@@ -188,6 +188,15 @@ public class ModsecRuleMappings {
     requestMappings.put(MatchKey.MATCH_KEY_BODY, ModsecVariables.REQUEST_BODY.name());
     requestMappings.put(MatchKey.MATCH_KEY_PARAMETER_NAME, ModsecVariables.ARGS_NAMES.name());
     requestMappings.put(MatchKey.MATCH_KEY_PARAMETER_VALUE, ModsecVariables.ARGS.name());
+    requestMappings.put(
+        MatchKey.MATCH_KEY_QUERY_PARAMETER_NAME, ModsecVariables.ARGS_GET_NAMES.name());
+    requestMappings.put(MatchKey.MATCH_KEY_QUERY_PARAMETER_VALUE, ModsecVariables.ARGS_GET.name());
+    requestMappings.put(
+        MatchKey.MATCH_KEY_BODY_PARAMETER_NAME, ModsecVariables.ARGS_POST_NAMES.name());
+    requestMappings.put(MatchKey.MATCH_KEY_BODY_PARAMETER_VALUE, ModsecVariables.ARGS_POST.name());
+    requestMappings.put(
+        MatchKey.MATCH_KEY_COOKIE_NAME, ModsecVariables.REQUEST_COOKIES_NAMES.name());
+    requestMappings.put(MatchKey.MATCH_KEY_COOKIE_VALUE, ModsecVariables.REQUEST_COOKIES.name());
 
     Map<MatchKey, String> responseMappings = new HashMap<>();
     responseMappings.put(MatchKey.MATCH_KEY_STATUS_CODE, ModsecVariables.RESPONSE_STATUS.name());
@@ -224,9 +233,14 @@ public class ModsecRuleMappings {
     Map<KeyValueTag, String> requestMappings = new HashMap<>();
     requestMappings.put(KeyValueTag.KEY_VALUE_TAG_HEADER, ModsecVariables.REQUEST_HEADERS.name());
     requestMappings.put(KeyValueTag.KEY_VALUE_TAG_PARAMETER, ModsecVariables.ARGS.name());
+    requestMappings.put(KeyValueTag.KEY_VALUE_TAG_QUERY_PARAMETER, ModsecVariables.ARGS_GET.name());
+    requestMappings.put(KeyValueTag.KEY_VALUE_TAG_BODY_PARAMETER, ModsecVariables.ARGS_POST.name());
+    requestMappings.put(KeyValueTag.KEY_VALUE_TAG_COOKIE, ModsecVariables.REQUEST_COOKIES.name());
 
     Map<KeyValueTag, String> responseMappings = new HashMap<>();
     responseMappings.put(KeyValueTag.KEY_VALUE_TAG_HEADER, ModsecVariables.RESPONSE_HEADERS.name());
+    responseMappings.put(
+        KeyValueTag.KEY_VALUE_TAG_BODY_PARAMETER, ModsecVariables.ARGS_POST.name());
 
     keyValueTagMappings.put(MatchCategory.MATCH_CATEGORY_REQUEST, requestMappings);
     keyValueTagMappings.put(MatchCategory.MATCH_CATEGORY_RESPONSE, responseMappings);

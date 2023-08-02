@@ -5,6 +5,7 @@ import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesManager;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesValidator;
 import ai.traceable.ratelimiting.service.v2.rules.RulesManager;
 import ai.traceable.ratelimiting.service.v2.rules.RulesValidator;
+import ai.traceable.ratelimiting.service.v2.rules.modsec.RateLimitingModsecRulesModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
@@ -22,7 +23,7 @@ public class RateLimitingConfigServiceModule extends AbstractModule {
   private final ActivityEventProducer activityEventProducer;
   private final ConfigChangeEventGenerator configChangeEventGenerator;
 
-  RateLimitingConfigServiceModule(
+  public RateLimitingConfigServiceModule(
       Channel channel,
       Config config,
       ActivityEventProducer activityEventProducer,
@@ -42,6 +43,8 @@ public class RateLimitingConfigServiceModule extends AbstractModule {
     bind(RulesValidator.class).to(RateLimitingRulesValidator.class);
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
     bind(Clock.class).toInstance(Clock.systemUTC());
+
+    install(new RateLimitingModsecRulesModule());
   }
 
   @Provides

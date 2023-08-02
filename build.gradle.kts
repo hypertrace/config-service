@@ -4,7 +4,7 @@ plugins {
   id("ai.traceable.publish-plugin") version "1.4.3" apply false
   id("org.hypertrace.jacoco-report-plugin") version "0.2.0" apply false
   id("org.sonarqube") version "3.4.0.2513"
-  id("org.owasp.dependencycheck") version "7.4.4"
+  id("org.owasp.dependencycheck") version "8.2.1"
   id("org.hypertrace.code-style-plugin") version "1.1.2" apply false
   id("org.hypertrace.docker-java-application-plugin") version "0.9.9" apply false
   id("org.hypertrace.docker-publish-plugin") version "0.9.9" apply false
@@ -18,8 +18,9 @@ subprojects {
 }
 
 dependencyCheck {
-  format = org.owasp.dependencycheck.reporting.ReportGenerator.Format.valueOf("ALL")
+  format = org.owasp.dependencycheck.reporting.ReportGenerator.Format.ALL.toString()
   suppressionFile = "owasp-suppressions.xml"
   scanConfigurations.add("runtimeClasspath")
   skipProjects.add(":mock-config-service")
+  analyzers.ossIndex.warnOnlyOnRemoteErrors = true
 }
