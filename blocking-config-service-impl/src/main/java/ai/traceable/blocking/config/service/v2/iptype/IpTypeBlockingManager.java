@@ -1,12 +1,10 @@
 package ai.traceable.blocking.config.service.v2.iptype;
 
-import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleAggregatorBase;
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.blocking.config.service.v2.BlockingConfigManagerBase;
 import ai.traceable.blocking.config.service.v2.BlockingConfigRequestElement;
 import ai.traceable.blocking.config.service.v2.BlockingConfigResponseElement;
 import ai.traceable.blocking.config.service.v2.IpTypeBlockingRules;
-import ai.traceable.blocking.config.service.v2.IpTypeRule;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -14,13 +12,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class IpTypeBlockingManager implements BlockingConfigManagerBase {
-  private final IpTypeRuleAggregatorBase<IpTypeRule> ipTypeRuleAggregator;
+  private final IpTypeRuleConverter ipTypeRuleConverter;
   private final UuidGenerator uuidGenerator;
 
   @Inject
   public IpTypeBlockingManager(
-      IpTypeRuleAggregatorBase<IpTypeRule> ipTypeRuleAggregator, UuidGenerator uuidGenerator) {
-    this.ipTypeRuleAggregator = ipTypeRuleAggregator;
+      IpTypeRuleConverter ipTypeRuleConverter, UuidGenerator uuidGenerator) {
+    this.ipTypeRuleConverter = ipTypeRuleConverter;
     this.uuidGenerator = uuidGenerator;
   }
 
@@ -39,9 +37,7 @@ public class IpTypeBlockingManager implements BlockingConfigManagerBase {
     IpTypeBlockingRules ipTypeBlockingRules =
         IpTypeBlockingRules.newBuilder()
             .addAllIpTypeRuleList(
-                ipTypeRuleAggregator.getEnabledBlockingRules(
-                    blockingRulesSupplier.getRequestContext(),
-                    blockingRulesSupplier.getEnvironmentId()))
+                blockingRulesSupplier.getIpTypeIpMappings(ipTypeRuleConverter::convert))
             .build();
     return List.of(buildResponseElement(ipTypeRequestElements, ipTypeBlockingRules));
   }

@@ -15,7 +15,6 @@ import ai.traceable.blocking.config.service.v2.IpTypeBlockingRules;
 import ai.traceable.blocking.config.service.v2.IpTypeBlockingRulesRequest;
 import ai.traceable.blocking.config.service.v2.IpTypeRule;
 import ai.traceable.config.utils.UuidGenerator;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -30,8 +29,9 @@ class IpTypeBlockingManagerTest {
         (IpTypeRuleAggregatorBase<IpTypeRule>) Mockito.mock(IpTypeRuleAggregatorBase.class);
 
     UuidGenerator mockUuidGenerator = mock(UuidGenerator.class);
+    IpTypeRuleConverter ipTypeRuleConverter = new IpTypeRuleConverter();
     BlockingConfigManagerBase manager =
-        new IpTypeBlockingManager(mockAggregator, mockUuidGenerator);
+        new IpTypeBlockingManager(ipTypeRuleConverter, mockUuidGenerator);
 
     RequestContext requestContext = RequestContext.forTenantId("TENANT_ID");
     Optional<String> environmentId = Optional.of("environment");
@@ -43,6 +43,10 @@ class IpTypeBlockingManagerTest {
     doReturn(mockIpTypeRuleList)
         .when(mockAggregator)
         .getEnabledBlockingRules(requestContext, environmentId);
+
+    BlockingRulesSupplier blockingRulesSupplier = mock(BlockingRulesSupplier.class);
+    doReturn(mockIpTypeRuleList).when(blockingRulesSupplier).getIpTypeIpMappings(any());
+
     doReturn("mock-hash").when(mockUuidGenerator).generateId(any(IpTypeBlockingRules.class));
 
     // Test in case hashes don't match the new ip-type config is loaded
@@ -63,7 +67,7 @@ class IpTypeBlockingManagerTest {
                     .setPreviousHash("mock-hash")
                     .setIpTypeBlockingRulesRequest(IpTypeBlockingRulesRequest.getDefaultInstance())
                     .build()),
-            new BlockingRulesSupplier(Collections.emptyMap(), requestContext, environmentId)));
+            blockingRulesSupplier));
 
     // Test in case hashes do match the new ip-type config is empty
     assertEquals(
@@ -87,7 +91,7 @@ class IpTypeBlockingManagerTest {
                     .setBlockingPolicyConfigurationRequest(
                         BlockingPolicyConfigurationRequest.getDefaultInstance())
                     .build()),
-            new BlockingRulesSupplier(Collections.emptyMap(), requestContext, environmentId)));
+            blockingRulesSupplier));
 
     // Test empty in case request elements are empty
     assertEquals(
@@ -95,6 +99,6 @@ class IpTypeBlockingManagerTest {
         manager.generateBlockingElements(
             List.of(
                 BlockingConfigRequestElement.newBuilder().setPreviousHash("random-hash").build()),
-            new BlockingRulesSupplier(Collections.emptyMap(), requestContext, environmentId)));
+            blockingRulesSupplier));
   }
 }

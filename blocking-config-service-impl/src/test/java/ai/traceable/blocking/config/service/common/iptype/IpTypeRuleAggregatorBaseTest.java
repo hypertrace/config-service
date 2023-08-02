@@ -14,6 +14,7 @@ import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleCondition;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleInfo;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -34,7 +35,13 @@ class IpTypeRuleAggregatorBaseTest {
     rule1.getIpv4Addresses().add(22);
     rule1.getIpv4Ranges().add(new IpRangeInfo(252, 262));
 
-    Supplier<List<IpTypeRuleInfo>> ipTypeRuleSupplier = () -> List.of(rule1, rule2);
+    Supplier<Map<IpLocationType, IpTypeRuleInfo>> ipTypeRuleSupplier =
+        () ->
+            Map.of(
+                IpLocationType.IP_LOCATION_TYPE_BOT,
+                rule1,
+                IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN,
+                rule2);
     doReturn(ipTypeRuleSupplier).when(ipTypeRulesLoader).getLatestDataSupplier();
 
     when(blockingIpTypesClient.fetchMaliciousSourceRules(any(), any()))

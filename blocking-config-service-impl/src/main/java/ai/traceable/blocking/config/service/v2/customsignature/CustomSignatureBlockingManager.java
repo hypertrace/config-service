@@ -73,7 +73,7 @@ public class CustomSignatureBlockingManager implements BlockingConfigManagerBase
     }
 
     String customSignatureRulesBlob =
-        blockingRulesSupplier.getCustomSignatureRulesBlob(customModsecRuleVersion);
+        blockingRulesSupplier.getCustomSignatureModsecBlob(customModsecRuleVersion);
     String responseHash = uuidGenerator.generateId(customSignatureRulesBlob);
 
     // Getting all the libtraceable versions explicitly mentioned

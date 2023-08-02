@@ -9,15 +9,14 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Collections;
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVRecord;
 
 @Singleton
 @Slf4j
-public class IpTypeRulesLoader extends FileVersionBasedRefresh<List<IpTypeRuleInfo>> {
+public class IpTypeRulesLoader
+    extends FileVersionBasedRefresh<Map<IpLocationType, IpTypeRuleInfo>> {
   private static final String START_IP_INT_CSV_HEADER = "start_ip_int";
   private static final String END_IP_INT_CSV_HEADER = "end_ip_int";
   private static final String IP_TYPE_CSV_HEADER = "IP Type";
@@ -43,10 +42,10 @@ public class IpTypeRulesLoader extends FileVersionBasedRefresh<List<IpTypeRuleIn
   }
 
   @Override
-  protected List<IpTypeRuleInfo> buildFromRecords(Iterable<CSVRecord> records) {
+  protected Map<IpLocationType, IpTypeRuleInfo> buildFromRecords(Iterable<CSVRecord> records) {
     if (!records.iterator().hasNext()) {
       log.warn("Received empty highrisk CSV, builder not returning ip types for blocking");
-      return Collections.emptyList();
+      return Collections.emptyMap();
     }
     Map<IpLocationType, IpTypeRuleInfo> ipTypeToRuleMap = new EnumMap<>(IpLocationType.class);
     for (CSVRecord csvRecord : records) {
@@ -73,6 +72,6 @@ public class IpTypeRulesLoader extends FileVersionBasedRefresh<List<IpTypeRuleIn
         log.error("Unable to parse csv record {}", csvRecord, e);
       }
     }
-    return ipTypeToRuleMap.values().stream().collect(Collectors.toUnmodifiableList());
+    return ipTypeToRuleMap;
   }
 }

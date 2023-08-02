@@ -25,9 +25,11 @@ class IpTypeRulesLoaderTest {
             new FileRefreshConfig(
                 ConfigFactory.parseMap(
                     Map.of("mode", "RESOURCE_FILE", "resource.file", "iptype/highrisk.csv"))));
-    List<IpTypeRuleInfo> ipTypeRules = builder.getLatestDataSupplier().get();
-    assertEquals(5, ipTypeRules.size());
-    ipTypeRules.forEach(rule -> assertEquals(testIpTypeRules.get(rule.getIpLocationType()), rule));
+    Map<IpLocationType, IpTypeRuleInfo> ipTypeRulesMap = builder.getLatestDataSupplier().get();
+    assertEquals(5, ipTypeRulesMap.size());
+    ipTypeRulesMap
+        .entrySet()
+        .forEach(entry -> assertEquals(testIpTypeRules.get(entry.getKey()), entry.getValue()));
   }
 
   private void insertTestDataForVerification() {

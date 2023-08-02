@@ -9,21 +9,29 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.blocking.config.service.common.entity.EntityFetcher;
+import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleInfo;
+import ai.traceable.blocking.config.service.common.iptype.IpTypeRulesLoader;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplierContext;
 import ai.traceable.blocking.config.service.common.rules.fetchers.CustomSignatureRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.MaliciousSourcesRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RegionRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher;
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import com.google.protobuf.Duration;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.stub.StreamObserver;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -82,12 +90,22 @@ class BlockingConfigServiceImplTest {
             mock(RegionRulesFetcher.class),
             RulesFetcher.RulesFetcherType.MALICIOUS_SOURCES,
             mock(MaliciousSourcesRulesFetcher.class));
+    IpTypeRulesLoader ipTypeRulesLoader = mock(IpTypeRulesLoader.class);
+    when(ipTypeRulesLoader.getLatestDataSupplier())
+        .thenReturn(
+            () ->
+                Arrays.stream(IpLocationType.values())
+                    .collect(
+                        Collectors.toMap(
+                            Function.identity(), ipType -> new IpTypeRuleInfo(ipType))));
+    BlockingRulesSupplierContext blockingRulesSupplierContext =
+        new BlockingRulesSupplierContext(rulesFetchers, ipTypeRulesLoader);
     this.blockingConfigService =
         new BlockingConfigServiceImpl(
             Set.of(blockingManager1, blockingManager2),
             ConfigFactory.parseMap(Map.of("agent.polling.frequency", "30s")),
             entityFetcher,
-            rulesFetchers,
+            blockingRulesSupplierContext,
             uuidGenerator);
   }
 

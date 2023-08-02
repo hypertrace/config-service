@@ -7,14 +7,27 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleInfo;
+import ai.traceable.blocking.config.service.common.iptype.IpTypeRulesLoader;
 import ai.traceable.blocking.config.service.common.rules.fetchers.CustomSignatureRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.MaliciousSourcesRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RegionRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
+import ai.traceable.malicioussources.config.service.v1.IpAddressCondition;
+import ai.traceable.malicioussources.config.service.v1.IpLocationType;
+import ai.traceable.malicioussources.config.service.v1.IpLocationTypeCondition;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleCondition;
+import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleInfo;
+import ai.traceable.region.config.service.v1.DetailedRegion;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +36,8 @@ public class BlockingRulesSupplierTest {
 
   private static final RequestContext REQUEST_CONTEXT = mock(RequestContext.class);
   private static final Optional<String> ENVIRONMENT_ID = Optional.of("env");
+
+  BlockingRulesSupplierContext blockingRulesSupplierContext;
 
   RegionRulesFetcher regionRulesFetcher;
   CustomSignatureRulesFetcher customSignatureRulesFetcher;
@@ -46,6 +61,18 @@ public class BlockingRulesSupplierTest {
             regionRulesFetcher,
             RulesFetcher.RulesFetcherType.MALICIOUS_SOURCES,
             maliciousSourcesRulesFetcher);
+
+    IpTypeRulesLoader ipTypeRulesLoader = mock(IpTypeRulesLoader.class);
+    when(ipTypeRulesLoader.getLatestDataSupplier())
+        .thenReturn(
+            () ->
+                Arrays.stream(IpLocationType.values())
+                    .filter(ipType -> !ipType.equals(IpLocationType.IP_LOCATION_TYPE_TOR_EXIT_NODE))
+                    .collect(
+                        Collectors.toMap(
+                            Function.identity(), ipType -> new IpTypeRuleInfo(ipType))));
+    blockingRulesSupplierContext =
+        new BlockingRulesSupplierContext(rulesFetchers, ipTypeRulesLoader);
   }
 
   @Test
@@ -64,18 +91,106 @@ public class BlockingRulesSupplierTest {
             GetCustomSignatureModsecRulesResponse.newBuilder().setModsecRulesBlob(blob2).build());
 
     blockingRulesSupplier =
-        new BlockingRulesSupplier(rulesFetchers, REQUEST_CONTEXT, ENVIRONMENT_ID);
-    assertEquals(blob1, blockingRulesSupplier.getCustomSignatureRulesBlob(version1));
+        new BlockingRulesSupplier(blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
+    assertEquals(blob1, blockingRulesSupplier.getCustomSignatureModsecBlob(version1));
     verify(customSignatureRulesFetcher, times(1)).fetchModsecRules(any(), any(), any());
-    assertEquals(blob2, blockingRulesSupplier.getCustomSignatureRulesBlob(version2));
+    assertEquals(blob2, blockingRulesSupplier.getCustomSignatureModsecBlob(version2));
     verify(customSignatureRulesFetcher, times(2)).fetchModsecRules(any(), any(), any());
-    assertEquals(blob2, blockingRulesSupplier.getCustomSignatureRulesBlob(version2));
+    assertEquals(blob2, blockingRulesSupplier.getCustomSignatureModsecBlob(version2));
     // fetchRules will not be called again..
     verify(customSignatureRulesFetcher, times(2)).fetchModsecRules(any(), any(), any());
 
     assertEquals(
         "",
-        blockingRulesSupplier.getCustomSignatureRulesBlob(
+        blockingRulesSupplier.getCustomSignatureModsecBlob(
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3));
+  }
+
+  @Test
+  public void test_getRegionBlockingRules() {
+    final DetailedRegion detailedRegion1 = mock(DetailedRegion.class);
+    final DetailedRegion detailedRegion2 = mock(DetailedRegion.class);
+    final DetailedRegion detailedRegion3 = mock(DetailedRegion.class);
+    when(regionRulesFetcher.fetchRegionRules(REQUEST_CONTEXT, ENVIRONMENT_ID))
+        .thenReturn(List.of(detailedRegion1, detailedRegion2, detailedRegion3));
+
+    blockingRulesSupplier =
+        new BlockingRulesSupplier(blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
+    assertEquals(
+        List.of(detailedRegion1, detailedRegion2, detailedRegion3),
+        blockingRulesSupplier.getRegionIpMappings(Function.identity()));
+    verify(regionRulesFetcher, times(1)).fetchRegionRules(any(), any());
+    assertEquals(
+        List.of(detailedRegion1, detailedRegion2, detailedRegion3),
+        blockingRulesSupplier.getRegionIpMappings(Function.identity()));
+    // fetchRules will not be called again..
+    verify(regionRulesFetcher, times(1)).fetchRegionRules(any(), any());
+  }
+
+  @Test
+  public void test_getIpTypeBlockingRules() {
+    MaliciousSourcesRule rule1 =
+        MaliciousSourcesRule.newBuilder()
+            .setRuleInfo(
+                MaliciousSourcesRuleInfo.newBuilder()
+                    .addConditions(
+                        MaliciousSourcesRuleCondition.newBuilder()
+                            .setIpLocationTypeCondition(
+                                IpLocationTypeCondition.newBuilder()
+                                    .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_BOT)
+                                    .addIpLocationTypes(
+                                        IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN))))
+            .build();
+    MaliciousSourcesRule rule2 =
+        MaliciousSourcesRule.newBuilder()
+            .setRuleInfo(
+                MaliciousSourcesRuleInfo.newBuilder()
+                    .addConditions(
+                        MaliciousSourcesRuleCondition.newBuilder()
+                            .setIpRangeCondition(
+                                IpAddressCondition.newBuilder().addIpAddresses("1.2.3.4")))
+                    .addConditions(
+                        MaliciousSourcesRuleCondition.newBuilder()
+                            .setIpLocationTypeCondition(
+                                IpLocationTypeCondition.newBuilder()
+                                    .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_BOT)
+                                    .addIpLocationTypes(
+                                        IpLocationType.IP_LOCATION_TYPE_TOR_EXIT_NODE)
+                                    .addIpLocationTypes(
+                                        IpLocationType.IP_LOCATION_TYPE_PUBLIC_PROXY))))
+            .build();
+    MaliciousSourcesRule rule3 =
+        MaliciousSourcesRule.newBuilder()
+            .setRuleInfo(
+                MaliciousSourcesRuleInfo.newBuilder()
+                    .addConditions(
+                        MaliciousSourcesRuleCondition.newBuilder()
+                            .setIpRangeCondition(
+                                IpAddressCondition.newBuilder().addIpAddresses("1.2.3.4"))))
+            .build();
+
+    when(maliciousSourcesRulesFetcher.fetchRules(REQUEST_CONTEXT, ENVIRONMENT_ID))
+        .thenReturn(List.of(rule1, rule2, rule3));
+
+    blockingRulesSupplier =
+        new BlockingRulesSupplier(blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
+
+    List<IpLocationType> ipTypeRuleInfoList =
+        blockingRulesSupplier.getIpTypeIpMappings(Function.identity()).stream()
+            .map(IpTypeRuleInfo::getIpLocationType)
+            .collect(Collectors.toList());
+    verify(maliciousSourcesRulesFetcher, times(1)).fetchRules(any(), any());
+    assertEquals(
+        List.of(
+            IpLocationType.IP_LOCATION_TYPE_BOT,
+            IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN,
+            IpLocationType.IP_LOCATION_TYPE_PUBLIC_PROXY),
+        ipTypeRuleInfoList);
+    ipTypeRuleInfoList =
+        blockingRulesSupplier.getIpTypeIpMappings(Function.identity()).stream()
+            .map(IpTypeRuleInfo::getIpLocationType)
+            .collect(Collectors.toList());
+    // fetchRules will not be called again..
+    verify(maliciousSourcesRulesFetcher, times(1)).fetchRules(any(), any());
   }
 }

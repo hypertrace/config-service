@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import ai.traceable.blocking.config.service.common.blockingpolicy.GenericBlockingDetailsAggregator;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplierContext;
 import ai.traceable.blocking.config.service.v2.BlockingConfigManagerBase;
 import ai.traceable.blocking.config.service.v2.BlockingConfigRequestElement;
 import ai.traceable.blocking.config.service.v2.BlockingConfigResponseElement;
@@ -23,6 +24,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 class BlockingPolicyConfigurationManagerTest {
+
+  private final BlockingRulesSupplierContext blockingRulesSupplierContext =
+      new BlockingRulesSupplierContext(Collections.emptyMap(), null);
 
   @Test
   void getBlockingPolicyConfiguration() {
@@ -74,7 +78,8 @@ class BlockingPolicyConfigurationManagerTest {
                     .setBlockingPolicyConfigurationRequest(
                         BlockingPolicyConfigurationRequest.getDefaultInstance())
                     .build()),
-            new BlockingRulesSupplier(Collections.emptyMap(), requestContext, environmentId)));
+            new BlockingRulesSupplier(
+                blockingRulesSupplierContext, requestContext, environmentId)));
 
     // Test in case hashes do match the new policy is empty
     assertEquals(
@@ -96,7 +101,8 @@ class BlockingPolicyConfigurationManagerTest {
                         BlockingPolicyConfigurationRequest.getDefaultInstance())
                     .build(),
                 BlockingConfigRequestElement.newBuilder().setPreviousHash("random-hash").build()),
-            new BlockingRulesSupplier(Collections.emptyMap(), requestContext, environmentId)));
+            new BlockingRulesSupplier(
+                blockingRulesSupplierContext, requestContext, environmentId)));
 
     // Test empty in case request elements are empty
     assertEquals(
@@ -104,6 +110,7 @@ class BlockingPolicyConfigurationManagerTest {
         manager.generateBlockingElements(
             List.of(
                 BlockingConfigRequestElement.newBuilder().setPreviousHash("random-hash").build()),
-            new BlockingRulesSupplier(Collections.emptyMap(), requestContext, environmentId)));
+            new BlockingRulesSupplier(
+                blockingRulesSupplierContext, requestContext, environmentId)));
   }
 }

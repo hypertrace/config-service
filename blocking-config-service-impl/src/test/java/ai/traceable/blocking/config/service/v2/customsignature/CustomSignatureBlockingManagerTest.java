@@ -41,10 +41,10 @@ class CustomSignatureBlockingManagerTest {
 
     doReturn(V3_blob)
         .when(blockingRulesSupplier)
-        .getCustomSignatureRulesBlob(CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3);
+        .getCustomSignatureModsecBlob(CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3);
     doReturn(V3_seg_arg_blob)
         .when(blockingRulesSupplier)
-        .getCustomSignatureRulesBlob(
+        .getCustomSignatureModsecBlob(
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS);
   }
 

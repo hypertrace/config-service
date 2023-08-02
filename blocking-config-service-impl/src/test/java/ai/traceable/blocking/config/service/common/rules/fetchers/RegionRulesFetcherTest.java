@@ -1,6 +1,7 @@
 package ai.traceable.blocking.config.service.common.rules.fetchers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -14,6 +15,7 @@ import ai.traceable.region.config.service.v1.GetDetailedRegionsRequest;
 import ai.traceable.region.config.service.v1.GetDetailedRegionsResponse;
 import ai.traceable.region.config.service.v1.GetRegionRulesFilter;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceBlockingStub;
+import ai.traceable.region.config.service.v1.RegionIdentifier;
 import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionsFilter;
 import ai.traceable.region.config.service.v1.RuleScope;
@@ -21,6 +23,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -88,6 +91,39 @@ class RegionRulesFetcherTest {
     assertEquals(
         List.of(detailedRegion2),
         regionRulesFetcher.fetchRegionRules(REQUEST_CONTEXT, Optional.empty()));
+  }
+
+  @Test
+  void testFetchDetailedRegions() {
+    Map<String, DetailedRegion> detailedRegionMap =
+        Map.of(
+            "isoCode1", detailedRegion1, "isoCode2", detailedRegion2, "isoCode3", detailedRegion3);
+
+    doAnswer(
+            invocation -> {
+              List<RegionIdentifier> regionIdentifiers =
+                  invocation
+                      .getArgument(0, GetDetailedRegionsRequest.class)
+                      .getFilter()
+                      .getRegionIdentifierList();
+              return GetDetailedRegionsResponse.newBuilder()
+                  .addAllRegion(
+                      regionIdentifiers.stream()
+                          .map(id -> detailedRegionMap.get(id.getCountryIsoCode()))
+                          .filter(Objects::nonNull)
+                          .collect(Collectors.toList()))
+                  .build();
+            })
+        .when(regionConfigServiceStub)
+        .getDetailedRegions(any());
+
+    assertEquals(
+        List.of(detailedRegion2, detailedRegion3),
+        regionRulesFetcher.fetchDetailedRegions(List.of("isoCode2", "isoCode3")));
+    assertEquals(
+        List.of(detailedRegion2),
+        regionRulesFetcher.fetchDetailedRegions(List.of("isoCode2", "isoCode4")));
+    assertTrue(regionRulesFetcher.fetchDetailedRegions(List.of("isoCode", "isoCode5")).isEmpty());
   }
 
   private static final RegionRule expiredRegionRule =

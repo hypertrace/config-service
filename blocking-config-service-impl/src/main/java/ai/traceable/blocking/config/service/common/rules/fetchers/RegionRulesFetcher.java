@@ -64,7 +64,7 @@ public class RegionRulesFetcher implements RulesFetcher<List<DetailedRegion>> {
         .getRegionList();
   }
 
-  public List<DetailedRegion> fetchDetailedRegions(Set<String> countryIsoCodes) {
+  public List<DetailedRegion> fetchDetailedRegions(List<String> countryIsoCodes) {
     List<RegionIdentifier> regionIdentifiers =
         countryIsoCodes.stream()
             .map(isoCode -> RegionIdentifier.newBuilder().setCountryIsoCode(isoCode).build())

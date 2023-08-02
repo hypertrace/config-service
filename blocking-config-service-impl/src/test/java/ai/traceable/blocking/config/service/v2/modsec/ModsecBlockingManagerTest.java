@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.blocking.config.service.common.modsec.BlockingModsecBlobFetcher;
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplierContext;
 import ai.traceable.blocking.config.service.v2.AgentCapabilities;
 import ai.traceable.blocking.config.service.v2.BlockingConfigManagerBase;
 import ai.traceable.blocking.config.service.v2.BlockingConfigRequestElement;
@@ -33,6 +34,9 @@ class ModsecBlockingManagerTest {
   private static final String V3_SEG_ARG_HASH = uuidGenerator.generateId(V3_seg_arg_blob);
 
   private static BlockingConfigManagerBase manager;
+
+  private final BlockingRulesSupplierContext blockingRulesSupplierContext =
+      new BlockingRulesSupplierContext(Collections.emptyMap(), null);
 
   @BeforeAll
   static void setup() {
@@ -65,7 +69,8 @@ class ModsecBlockingManagerTest {
                     .setPreviousHash("random")
                     .setCrsBlockingRulesRequest(CrsBlockingRulesRequest.getDefaultInstance())
                     .build()),
-            new BlockingRulesSupplier(Collections.emptyMap(), requestContext, environmentId)));
+            new BlockingRulesSupplier(
+                blockingRulesSupplierContext, requestContext, environmentId)));
 
     // Old libtraceable version
     assertEquals(
@@ -88,7 +93,8 @@ class ModsecBlockingManagerTest {
                                 Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
                     .setCrsBlockingRulesRequest(CrsBlockingRulesRequest.getDefaultInstance())
                     .build()),
-            new BlockingRulesSupplier(Collections.emptyMap(), requestContext, environmentId)));
+            new BlockingRulesSupplier(
+                blockingRulesSupplierContext, requestContext, environmentId)));
 
     // Same hash for all
     assertEquals(
@@ -121,7 +127,8 @@ class ModsecBlockingManagerTest {
                             .addComponents(Component.newBuilder().setLibtraceableVersion("")))
                     .setCrsBlockingRulesRequest(CrsBlockingRulesRequest.getDefaultInstance())
                     .build()),
-            new BlockingRulesSupplier(Collections.emptyMap(), requestContext, environmentId)));
+            new BlockingRulesSupplier(
+                blockingRulesSupplierContext, requestContext, environmentId)));
 
     // Same hash for some
     assertEquals(
@@ -153,7 +160,8 @@ class ModsecBlockingManagerTest {
                                 Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
                     .setCrsBlockingRulesRequest(CrsBlockingRulesRequest.getDefaultInstance())
                     .build()),
-            new BlockingRulesSupplier(Collections.emptyMap(), requestContext, environmentId)));
+            new BlockingRulesSupplier(
+                blockingRulesSupplierContext, requestContext, environmentId)));
   }
 
   @Test
@@ -203,7 +211,8 @@ class ModsecBlockingManagerTest {
                             .addComponents(Component.newBuilder().setLibtraceableVersion("")))
                     .setCrsBlockingRulesRequest(CrsBlockingRulesRequest.getDefaultInstance())
                     .build()),
-            new BlockingRulesSupplier(Collections.emptyMap(), requestContext, environmentId)));
+            new BlockingRulesSupplier(
+                blockingRulesSupplierContext, requestContext, environmentId)));
 
     // Same hash for all
     assertEquals(
@@ -256,7 +265,8 @@ class ModsecBlockingManagerTest {
                                 Component.newBuilder().setLibtraceableVersion("0.1.98-rc.149")))
                     .setCrsBlockingRulesRequest(CrsBlockingRulesRequest.getDefaultInstance())
                     .build()),
-            new BlockingRulesSupplier(Collections.emptyMap(), requestContext, environmentId)));
+            new BlockingRulesSupplier(
+                blockingRulesSupplierContext, requestContext, environmentId)));
 
     // Test empty in case request elements are empty
     assertEquals(
@@ -274,7 +284,8 @@ class ModsecBlockingManagerTest {
                             .addComponents(
                                 Component.newBuilder().setLibtraceableVersion("0.1.98-rc.148")))
                     .build()),
-            new BlockingRulesSupplier(Collections.emptyMap(), requestContext, environmentId)));
+            new BlockingRulesSupplier(
+                blockingRulesSupplierContext, requestContext, environmentId)));
   }
 
   private static BlockingConfigResponseElement getV4Response(
