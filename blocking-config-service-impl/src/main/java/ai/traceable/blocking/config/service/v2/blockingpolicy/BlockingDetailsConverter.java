@@ -1,33 +1,48 @@
 package ai.traceable.blocking.config.service.v2.blockingpolicy;
 
+import static ai.traceable.blocking.config.service.v2.blockingpolicy.BlockingPolicyConfigurationManagerModule.ACTOR_DETAILS_FOR_THREAT_ACTOR_VISITOR;
+import static ai.traceable.blocking.config.service.v2.blockingpolicy.BlockingPolicyConfigurationManagerModule.IP_DETAILS_FOR_THREAT_ACTOR_VISITOR;
+
 import ai.traceable.blocking.config.service.common.blockingpolicy.GenericBlockingDetailsAggregator.BlockingDetailsConverterBase;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingDetailsVisitor;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Category;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.RuleType;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Status;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.blocking.config.service.v2.BlockingCategory;
 import ai.traceable.blocking.config.service.v2.BlockingDetails;
 import ai.traceable.blocking.config.service.v2.BlockingDetails.Builder;
 import ai.traceable.blocking.config.service.v2.BlockingDetailsCondition;
 import ai.traceable.blocking.config.service.v2.BlockingRuleType;
 import ai.traceable.blocking.config.service.v2.BlockingStatus;
+import ai.traceable.config.utils.SemanticVersioningComparator;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 final class BlockingDetailsConverter implements BlockingDetailsConverterBase<BlockingDetails> {
-  private final BlockingDetailsVisitor<BlockingDetailsCondition>
-      blockingDetailsBlockingDetailsVisitor;
+  private static final String MINIMUM_LIBTRACEABLE_VERSION_FOR_ACTOR_DETAILS = "0.1.98-rc.162";
+  private final BlockingDetailsVisitor<BlockingDetailsCondition> actorDetailsForThreatActorVisitor;
+  private final BlockingDetailsVisitor<BlockingDetailsCondition> ipDetailsForThreatActorVisitor;
+  private final SemanticVersioningComparator semanticVersioningComparator;
 
   @Inject
   BlockingDetailsConverter(
-      BlockingDetailsVisitor<BlockingDetailsCondition> blockingDetailsVisitor) {
-    this.blockingDetailsBlockingDetailsVisitor = blockingDetailsVisitor;
+      @Named(ACTOR_DETAILS_FOR_THREAT_ACTOR_VISITOR)
+          BlockingDetailsVisitor<BlockingDetailsCondition> actorDetailsForThreatActorVisitor,
+      @Named(IP_DETAILS_FOR_THREAT_ACTOR_VISITOR)
+          BlockingDetailsVisitor<BlockingDetailsCondition> ipDetailsForThreatActorVisitor,
+      SemanticVersioningComparator semanticVersioningComparator) {
+    this.actorDetailsForThreatActorVisitor = actorDetailsForThreatActorVisitor;
+    this.ipDetailsForThreatActorVisitor = ipDetailsForThreatActorVisitor;
+    this.semanticVersioningComparator = semanticVersioningComparator;
   }
 
   @Override
-  public BlockingDetails convert(BlockingPolicyData blockingPolicyData) {
+  public BlockingDetails convert(
+      BlockingPolicyData blockingPolicyData, BlockingPolicyDataFilter filter) {
     Builder blockingDetailsBuilder =
         BlockingDetails.newBuilder()
             .setBlockingRuleType(convert(blockingPolicyData.getRuleType()))
@@ -38,8 +53,16 @@ final class BlockingDetailsConverter implements BlockingDetailsConverterBase<Blo
       blockingDetailsBuilder.setExpirationTimestamp(blockingPolicyData.getTimestamp());
     }
 
-    BlockingDetailsCondition blockingDetailsCondition =
-        blockingPolicyData.getBlockingDetails().accept(blockingDetailsBlockingDetailsVisitor);
+    BlockingDetailsCondition blockingDetailsCondition;
+    if (semanticVersioningComparator.compare(
+            filter.getMinLibtraceableVersion(), MINIMUM_LIBTRACEABLE_VERSION_FOR_ACTOR_DETAILS)
+        >= 0) {
+      blockingDetailsCondition =
+          blockingPolicyData.getBlockingDetails().accept(actorDetailsForThreatActorVisitor);
+    } else {
+      blockingDetailsCondition =
+          blockingPolicyData.getBlockingDetails().accept(ipDetailsForThreatActorVisitor);
+    }
 
     return setBlockingDetailsCondition(blockingDetailsBuilder, blockingDetailsCondition);
   }

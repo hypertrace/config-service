@@ -9,6 +9,7 @@ import ai.traceable.blocking.config.service.v2.BlockingConfigResponseElement;
 import ai.traceable.blocking.config.service.v2.BlockingDetails;
 import ai.traceable.blocking.config.service.v2.BlockingPolicyConfiguration;
 import ai.traceable.blocking.config.service.v2.Component;
+import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.inject.Inject;
 import java.util.List;
@@ -16,13 +17,16 @@ import java.util.stream.Collectors;
 
 public class BlockingPolicyConfigurationManager implements BlockingConfigManagerBase {
   private final GenericBlockingDetailsAggregator<BlockingDetails> blockingDetailsAggregator;
+  private final SemanticVersioningComparator semanticVersioningComparator;
   private final UuidGenerator uuidGenerator;
 
   @Inject
   public BlockingPolicyConfigurationManager(
       GenericBlockingDetailsAggregator<BlockingDetails> blockingDetailsAggregator,
+      SemanticVersioningComparator semanticVersioningComparator,
       UuidGenerator uuidGenerator) {
     this.blockingDetailsAggregator = blockingDetailsAggregator;
+    this.semanticVersioningComparator = semanticVersioningComparator;
     this.uuidGenerator = uuidGenerator;
   }
 
@@ -34,6 +38,17 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
         requestElements.stream()
             .filter(BlockingConfigRequestElement::hasBlockingPolicyConfigurationRequest)
             .collect(Collectors.toUnmodifiableList());
+
+    // Getting minimum the libtraceable version mentioned
+    String minLibtraceableVersion =
+        requestElements.stream()
+            .filter(BlockingConfigRequestElement::hasBlockingPolicyConfigurationRequest)
+            .flatMap(requestElement -> requestElement.getSupportedAgentCapabilitiesList().stream())
+            .flatMap(agentCapabilities -> agentCapabilities.getComponentsList().stream())
+            .filter(Component::hasLibtraceableVersion)
+            .map(Component::getLibtraceableVersion)
+            .min(semanticVersioningComparator)
+            .orElse("");
 
     // Getting all the service-names explicitly mentioned
     List<String> serviceNames =
@@ -54,6 +69,7 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
         BlockingPolicyDataFilter.builder()
             .environmentId(blockingRulesSupplier.getEnvironmentId())
             .serviceNames(serviceNames)
+            .minLibtraceableVersion(minLibtraceableVersion)
             .build();
     BlockingPolicyConfiguration blockingPolicyConfiguration =
         BlockingPolicyConfiguration.newBuilder()

@@ -1,6 +1,5 @@
 package ai.traceable.blocking.config.service.v2.blockingpolicy;
 
-import ai.traceable.blocking.config.service.common.blockingpolicy.data.ActorBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingDetailsVisitor;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.CombinationBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.CombinationBlockingDetails.Operator;
@@ -9,8 +8,6 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.data.IpBlockin
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.IpTypeBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.ModsecBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.RegionBlockingDetails;
-import ai.traceable.blocking.config.service.v2.ActorDetails;
-import ai.traceable.blocking.config.service.v2.ActorDetails.Builder;
 import ai.traceable.blocking.config.service.v2.BlockingDetailsCombination;
 import ai.traceable.blocking.config.service.v2.BlockingDetailsCombination.ConditionsOperator;
 import ai.traceable.blocking.config.service.v2.BlockingDetailsCondition;
@@ -23,18 +20,8 @@ import ai.traceable.blocking.config.service.v2.RegionDetails;
 import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import java.util.stream.Collectors;
 
-public class BlockingDetailsVisitorImpl
+abstract class AbstractBlockingDetailsVisitor
     implements BlockingDetailsVisitor<BlockingDetailsCondition> {
-
-  @Override
-  public BlockingDetailsCondition visit(ActorBlockingDetails actorBlockingDetails) {
-    Builder builder =
-        ActorDetails.newBuilder().addAllIpAddresses(actorBlockingDetails.getIpAddresses());
-    if (actorBlockingDetails.getUserId() != null) {
-      builder.setUserId(actorBlockingDetails.getUserId());
-    }
-    return BlockingDetailsCondition.newBuilder().setActorDetails(builder).build();
-  }
 
   @Override
   public BlockingDetailsCondition visit(CombinationBlockingDetails combinationBlockingDetails) {
@@ -95,7 +82,7 @@ public class BlockingDetailsVisitorImpl
             IpTypeDetails.newBuilder()
                 .addAllIpTypes(
                     ipTypeBlockingDetails.getIpTypes().stream()
-                        .map(BlockingDetailsVisitorImpl::convert)
+                        .map(AbstractBlockingDetailsVisitor::convert)
                         .collect(Collectors.toUnmodifiableList())))
         .build();
   }

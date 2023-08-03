@@ -6,6 +6,7 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingP
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Category;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.RuleType;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Status;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.blocking.config.service.v1.BlockingCategory;
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
 import ai.traceable.blocking.config.service.v1.BlockingDetails.Builder;
@@ -25,7 +26,8 @@ final class BlockingDetailsConverter implements BlockingDetailsConverterBase<Blo
   }
 
   @Override
-  public BlockingDetails convert(BlockingPolicyData blockingPolicyData) {
+  public BlockingDetails convert(
+      BlockingPolicyData blockingPolicyData, BlockingPolicyDataFilter filter) {
     return setBlockingDetailsProperties(
         blockingPolicyData,
         blockingPolicyData.getBlockingDetails().accept(blockingDetailsBlockingDetailsVisitor));

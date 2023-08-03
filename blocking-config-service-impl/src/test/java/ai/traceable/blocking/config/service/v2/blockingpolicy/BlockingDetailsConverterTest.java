@@ -14,6 +14,7 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.data.IpBlockin
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.IpTypeBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.ModsecBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.RegionBlockingDetails;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.blocking.config.service.v2.ActorDetails;
 import ai.traceable.blocking.config.service.v2.BlockingCategory;
 import ai.traceable.blocking.config.service.v2.BlockingDetails;
@@ -29,6 +30,7 @@ import ai.traceable.blocking.config.service.v2.IpType;
 import ai.traceable.blocking.config.service.v2.IpTypeDetails;
 import ai.traceable.blocking.config.service.v2.ModsecDetails;
 import ai.traceable.blocking.config.service.v2.RegionDetails;
+import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +38,13 @@ import org.junit.jupiter.api.Test;
 
 class BlockingDetailsConverterTest {
   private static final BlockingDetailsConverter converter =
-      new BlockingDetailsConverter(new BlockingDetailsVisitorImpl());
+      new BlockingDetailsConverter(
+          new ActorDetailsForThreatActorVisitor(),
+          new IpDetailsForThreatActorVisitor(),
+          new SemanticVersioningComparator());
+
+  private static final BlockingPolicyDataFilter filter =
+      BlockingPolicyDataFilter.builder().minLibtraceableVersion("0.1.98-rc.164").build();
 
   @Test
   void testIpRangeConversion() {
@@ -65,7 +73,8 @@ class BlockingDetailsConverterTest {
                 IpBlockingDetails.builder()
                     .ipRanges(List.of("11.22.33.44/5", "1.2.3.4/5"))
                     .ipAddresses(List.of("1.2.2.3", "1.2.3.4"))
-                    .build())));
+                    .build()),
+            filter));
   }
 
   @Test
@@ -96,7 +105,8 @@ class BlockingDetailsConverterTest {
                         List.of(
                             IpLocationType.IP_LOCATION_TYPE_BOT,
                             IpLocationType.IP_LOCATION_TYPE_TOR_EXIT_NODE))
-                    .build())));
+                    .build()),
+            filter));
   }
 
   @Test
@@ -120,7 +130,8 @@ class BlockingDetailsConverterTest {
                 RuleType.BLOCK_ALL_EXCEPT,
                 100L,
                 Category.CUSTOM_REGION_RULE,
-                RegionBlockingDetails.builder().regions(List.of("Spain", "Morocco")).build())));
+                RegionBlockingDetails.builder().regions(List.of("Spain", "Morocco")).build()),
+            filter));
   }
 
   @Test
@@ -143,7 +154,8 @@ class BlockingDetailsConverterTest {
                 RuleType.BLOCK,
                 0L,
                 Category.MODSECURITY,
-                ModsecBlockingDetails.builder().ruleId("crs_123").build())));
+                ModsecBlockingDetails.builder().ruleId("crs_123").build()),
+            filter));
   }
 
   @Test
@@ -167,7 +179,8 @@ class BlockingDetailsConverterTest {
                 RuleType.ALLOW,
                 100L,
                 Category.CUSTOM_SIGNATURE_RULE,
-                CustomSignatureBlockingDetails.builder().ruleId("cs-1").build())));
+                CustomSignatureBlockingDetails.builder().ruleId("cs-1").build()),
+            filter));
   }
 
   @Test
@@ -198,7 +211,25 @@ class BlockingDetailsConverterTest {
                 ActorBlockingDetails.builder()
                     .userId("user-1")
                     .ipAddresses(List.of("1.2.2.3", "1.2.3.4"))
-                    .build())));
+                    .build()),
+            filter));
+
+    // Testing backward compatibility for older TAs
+    assertEquals(
+        detailsBuilder
+            .clearActorDetails()
+            .setIpDetails(
+                IpDetails.newBuilder().addAllIpAddresses(List.of("1.2.2.3", "1.2.3.4")).build())
+            .build(),
+        converter.convert(
+            setBlockingDetailsInfo(
+                Status.SUSPENDED,
+                "threat-actor-type",
+                RuleType.BLOCK,
+                100L,
+                Category.THREAT_ACTOR,
+                IpBlockingDetails.builder().ipAddresses(List.of("1.2.2.3", "1.2.3.4")).build()),
+            BlockingPolicyDataFilter.builder().build()));
   }
 
   @Test
@@ -232,7 +263,8 @@ class BlockingDetailsConverterTest {
                 ActorBlockingDetails.builder()
                     .ipAddresses(List.of("1.2.2.3", "1.2.3.4"))
                     .userId("user-1")
-                    .build())));
+                    .build()),
+            filter));
   }
 
   @Test
@@ -266,7 +298,8 @@ class BlockingDetailsConverterTest {
                 ActorBlockingDetails.builder()
                     .ipAddresses(List.of("1.2.2.3", "1.2.3.4"))
                     .userId("user-1")
-                    .build())));
+                    .build()),
+            filter));
   }
 
   @Test
@@ -300,7 +333,8 @@ class BlockingDetailsConverterTest {
                 ActorBlockingDetails.builder()
                     .ipAddresses(List.of("1.2.2.3", "1.2.3.4"))
                     .userId("user-1")
-                    .build())));
+                    .build()),
+            filter));
   }
 
   @Test
@@ -334,7 +368,8 @@ class BlockingDetailsConverterTest {
                 ActorBlockingDetails.builder()
                     .ipAddresses(List.of("1.2.2.3", "1.2.3.4"))
                     .userId("user-1")
-                    .build())));
+                    .build()),
+            filter));
   }
 
   @Test
@@ -436,7 +471,7 @@ class BlockingDetailsConverterTest {
                     .setCustomSignatureDetails(
                         CustomSignatureDetails.newBuilder().setRuleId("url-regex-rule-id")))
             .build());
-    assertEquals(detailsBuilder.build(), converter.convert(policy));
+    assertEquals(detailsBuilder.build(), converter.convert(policy, filter));
   }
 
   private static BlockingPolicyData setBlockingDetailsInfo(

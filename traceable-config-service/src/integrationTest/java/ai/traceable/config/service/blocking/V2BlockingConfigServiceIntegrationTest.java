@@ -469,7 +469,12 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
                                     .setBlockingPolicyConfigurationRequest(
-                                        BlockingPolicyConfigurationRequest.getDefaultInstance()))
+                                        BlockingPolicyConfigurationRequest.getDefaultInstance())
+                                    .addSupportedAgentCapabilities(
+                                        AgentCapabilities.newBuilder()
+                                            .addComponents(
+                                                Component.newBuilder()
+                                                    .setLibtraceableVersion("0.1.98-rc.137"))))
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
                                     .setRegionBlockingRulesRequest(
@@ -549,6 +554,23 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertEquals(
         6, filteredElements.get(0).getBlockingPolicyConfiguration().getBlockingDetailsListCount());
 
+    // Testing that for older TAs we return IP-Details for threat-actor
+    assertEquals(
+        BLOCKING_CATEGORY_THREAT_ACTOR,
+        filteredElements
+            .get(0)
+            .getBlockingPolicyConfiguration()
+            .getBlockingDetailsList(0)
+            .getCategory());
+    assertEquals(
+        List.of("197.23.5.0"),
+        filteredElements
+            .get(0)
+            .getBlockingPolicyConfiguration()
+            .getBlockingDetailsList(0)
+            .getIpDetails()
+            .getIpAddressesList());
+
     createRegionRules();
     customSignatureRuleId.add(createCustomSignatureRule(Optional.empty()));
     createMaliciousSourceRule(
@@ -615,7 +637,12 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                 BlockingConfigRequestElement.newBuilder()
                                     .setPreviousHash(emptyValueUuid)
                                     .setBlockingPolicyConfigurationRequest(
-                                        BlockingPolicyConfigurationRequest.getDefaultInstance()))
+                                        BlockingPolicyConfigurationRequest.getDefaultInstance())
+                                    .addSupportedAgentCapabilities(
+                                        AgentCapabilities.newBuilder()
+                                            .addComponents(
+                                                Component.newBuilder()
+                                                    .setLibtraceableVersion("0.1.98-rc.167"))))
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
                                     .setPreviousHash(emptyValueUuid)
@@ -716,7 +743,12 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                 BlockingConfigRequestElement.newBuilder()
                                     .setPreviousHash(emptyValueUuid)
                                     .setBlockingPolicyConfigurationRequest(
-                                        BlockingPolicyConfigurationRequest.getDefaultInstance()))
+                                        BlockingPolicyConfigurationRequest.getDefaultInstance())
+                                    .addSupportedAgentCapabilities(
+                                        AgentCapabilities.newBuilder()
+                                            .addComponents(
+                                                Component.newBuilder()
+                                                    .setLibtraceableVersion("0.1.98-rc.167"))))
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
                                     .setPreviousHash(emptyValueUuid)
@@ -804,7 +836,12 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                 BlockingConfigRequestElement.newBuilder()
                                     .setPreviousHash(blockingPolicyConfigurationHash)
                                     .setBlockingPolicyConfigurationRequest(
-                                        BlockingPolicyConfigurationRequest.getDefaultInstance()))
+                                        BlockingPolicyConfigurationRequest.getDefaultInstance())
+                                    .addSupportedAgentCapabilities(
+                                        AgentCapabilities.newBuilder()
+                                            .addComponents(
+                                                Component.newBuilder()
+                                                    .setLibtraceableVersion("0.1.98-rc.167"))))
                             .setEnvironment(ENVIRONMENT_ID)
                             .build()));
 
@@ -832,7 +869,12 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                 BlockingConfigRequestElement.newBuilder()
                                     .setPreviousHash(blockingPolicyConfigurationHash)
                                     .setBlockingPolicyConfigurationRequest(
-                                        BlockingPolicyConfigurationRequest.getDefaultInstance()))
+                                        BlockingPolicyConfigurationRequest.getDefaultInstance())
+                                    .addSupportedAgentCapabilities(
+                                        AgentCapabilities.newBuilder()
+                                            .addComponents(
+                                                Component.newBuilder()
+                                                    .setLibtraceableVersion("0.1.98-rc.167"))))
                             .setEnvironment(ENVIRONMENT_ID)
                             .build()));
     assertEquals(

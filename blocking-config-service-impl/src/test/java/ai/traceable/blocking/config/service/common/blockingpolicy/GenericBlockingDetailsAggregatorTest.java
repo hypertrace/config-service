@@ -35,9 +35,9 @@ class GenericBlockingDetailsAggregatorTest {
     doReturn(List.of(blockingPolicyData1, blockingPolicyData2, blockingPolicyData3))
         .when(mockBlockingPolicyDataAggregator)
         .getOrderedBlockingRules(requestContext, filter);
-    doReturn("1-1").when(mockBlockingDetailsConverter).convert(blockingPolicyData1);
-    doReturn("2-1").when(mockBlockingDetailsConverter).convert(blockingPolicyData2);
-    doReturn(null).when(mockBlockingDetailsConverter).convert(blockingPolicyData3);
+    doReturn("1-1").when(mockBlockingDetailsConverter).convert(blockingPolicyData1, filter);
+    doReturn("2-1").when(mockBlockingDetailsConverter).convert(blockingPolicyData2, filter);
+    doReturn(null).when(mockBlockingDetailsConverter).convert(blockingPolicyData3, filter);
 
     assertEquals(
         List.of("1-1", "2-1"),

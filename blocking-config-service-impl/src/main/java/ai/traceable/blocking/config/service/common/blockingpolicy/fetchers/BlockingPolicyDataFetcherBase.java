@@ -4,6 +4,8 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingP
 import java.util.List;
 import java.util.Optional;
 import lombok.Builder;
+import lombok.Builder.Default;
+import lombok.Singular;
 import lombok.Value;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -14,7 +16,9 @@ public interface BlockingPolicyDataFetcherBase {
   @Value
   @Builder
   class BlockingPolicyDataFilter {
-    List<String> serviceNames;
+    @Singular List<String> serviceNames;
     Optional<String> environmentId;
+
+    @Default String minLibtraceableVersion = "";
   }
 }

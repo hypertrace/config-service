@@ -9,12 +9,15 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.GenericBlockin
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplierContext;
+import ai.traceable.blocking.config.service.v2.AgentCapabilities;
 import ai.traceable.blocking.config.service.v2.BlockingConfigManagerBase;
 import ai.traceable.blocking.config.service.v2.BlockingConfigRequestElement;
 import ai.traceable.blocking.config.service.v2.BlockingConfigResponseElement;
 import ai.traceable.blocking.config.service.v2.BlockingDetails;
 import ai.traceable.blocking.config.service.v2.BlockingPolicyConfiguration;
 import ai.traceable.blocking.config.service.v2.BlockingPolicyConfigurationRequest;
+import ai.traceable.blocking.config.service.v2.Component;
+import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.config.utils.UuidGenerator;
 import java.util.Collections;
 import java.util.List;
@@ -36,7 +39,8 @@ class BlockingPolicyConfigurationManagerTest {
 
     UuidGenerator mockUuidGenerator = mock(UuidGenerator.class);
     BlockingConfigManagerBase manager =
-        new BlockingPolicyConfigurationManager(mockAggregator, mockUuidGenerator);
+        new BlockingPolicyConfigurationManager(
+            mockAggregator, new SemanticVersioningComparator(), mockUuidGenerator);
 
     RequestContext requestContext = RequestContext.forTenantId("TENANT_ID");
     Optional<String> environmentId = Optional.of("environment");
@@ -50,8 +54,9 @@ class BlockingPolicyConfigurationManagerTest {
         .getBlockingDetails(
             requestContext,
             BlockingPolicyDataFilter.builder()
-                .serviceNames(List.of())
+                .serviceNames(List.of("service-1", "service-2"))
                 .environmentId(environmentId)
+                .minLibtraceableVersion("1.2.3-rc.4")
                 .build());
     doReturn("mock-hash")
         .when(mockUuidGenerator)
@@ -72,11 +77,21 @@ class BlockingPolicyConfigurationManagerTest {
                     .setPreviousHash("random")
                     .setBlockingPolicyConfigurationRequest(
                         BlockingPolicyConfigurationRequest.getDefaultInstance())
+                    .addSupportedAgentCapabilities(
+                        AgentCapabilities.newBuilder()
+                            .addComponents(
+                                Component.newBuilder().setLibtraceableVersion("1.2.3-rc.4"))
+                            .addComponents(Component.newBuilder().setServiceName("service-1")))
                     .build(),
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("mock-hash")
                     .setBlockingPolicyConfigurationRequest(
                         BlockingPolicyConfigurationRequest.getDefaultInstance())
+                    .addSupportedAgentCapabilities(
+                        AgentCapabilities.newBuilder()
+                            .addComponents(
+                                Component.newBuilder().setLibtraceableVersion("1.2.3-rc.5"))
+                            .addComponents(Component.newBuilder().setServiceName("service-2")))
                     .build()),
             new BlockingRulesSupplier(
                 blockingRulesSupplierContext, requestContext, environmentId)));

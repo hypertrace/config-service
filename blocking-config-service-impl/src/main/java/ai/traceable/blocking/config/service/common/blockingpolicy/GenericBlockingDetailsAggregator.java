@@ -27,7 +27,7 @@ public class GenericBlockingDetailsAggregator<T> {
       RequestContext requestContext, BlockingPolicyDataFilter filter) {
     try {
       return blockingPolicyDataAggregator.getOrderedBlockingRules(requestContext, filter).stream()
-          .map(blockingDetailsConverter::convert)
+          .map(blockingPolicyData -> blockingDetailsConverter.convert(blockingPolicyData, filter))
           .filter(Objects::nonNull)
           .collect(Collectors.toUnmodifiableList());
     } catch (Exception e) {
@@ -41,6 +41,6 @@ public class GenericBlockingDetailsAggregator<T> {
   }
 
   public interface BlockingDetailsConverterBase<T> {
-    T convert(BlockingPolicyData blockingPolicyData);
+    T convert(BlockingPolicyData blockingPolicyData, BlockingPolicyDataFilter filter);
   }
 }

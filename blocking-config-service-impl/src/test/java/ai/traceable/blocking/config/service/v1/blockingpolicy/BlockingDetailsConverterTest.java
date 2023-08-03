@@ -2,6 +2,7 @@ package ai.traceable.blocking.config.service.v1.blockingpolicy;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.mock;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.ActorBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
@@ -15,6 +16,7 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.data.IpBlockin
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.IpTypeBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.ModsecBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.RegionBlockingDetails;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.blocking.config.service.v1.ActorDetails;
 import ai.traceable.blocking.config.service.v1.BlockingCategory;
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
@@ -35,6 +37,7 @@ import org.junit.jupiter.api.Test;
 class BlockingDetailsConverterTest {
   private static final BlockingDetailsConverter converter =
       new BlockingDetailsConverter(new BlockingDetailsVisitorImpl());
+  private static final BlockingPolicyDataFilter filter = mock(BlockingPolicyDataFilter.class);
 
   @Test
   void testIpRangeConversion() {
@@ -63,7 +66,8 @@ class BlockingDetailsConverterTest {
                 IpBlockingDetails.builder()
                     .ipRanges(List.of("11.22.33.44/5", "1.2.3.4/5"))
                     .ipAddresses(List.of("1.2.2.3", "1.2.3.4"))
-                    .build())));
+                    .build()),
+            filter));
   }
 
   @Test
@@ -94,7 +98,8 @@ class BlockingDetailsConverterTest {
                         List.of(
                             IpLocationType.IP_LOCATION_TYPE_BOT,
                             IpLocationType.IP_LOCATION_TYPE_TOR_EXIT_NODE))
-                    .build())));
+                    .build()),
+            filter));
   }
 
   @Test
@@ -118,7 +123,8 @@ class BlockingDetailsConverterTest {
                 RuleType.BLOCK_ALL_EXCEPT,
                 100L,
                 Category.CUSTOM_REGION_RULE,
-                RegionBlockingDetails.builder().regions(List.of("Spain", "Morocco")).build())));
+                RegionBlockingDetails.builder().regions(List.of("Spain", "Morocco")).build()),
+            filter));
   }
 
   @Test
@@ -141,7 +147,8 @@ class BlockingDetailsConverterTest {
                 RuleType.BLOCK,
                 0L,
                 Category.MODSECURITY,
-                ModsecBlockingDetails.builder().ruleId("crs_123").build())));
+                ModsecBlockingDetails.builder().ruleId("crs_123").build()),
+            filter));
   }
 
   @Test
@@ -165,7 +172,8 @@ class BlockingDetailsConverterTest {
                 RuleType.ALLOW,
                 100L,
                 Category.CUSTOM_SIGNATURE_RULE,
-                CustomSignatureBlockingDetails.builder().ruleId("cs-1").build())));
+                CustomSignatureBlockingDetails.builder().ruleId("cs-1").build()),
+            filter));
   }
 
   @Test
@@ -197,7 +205,8 @@ class BlockingDetailsConverterTest {
                 ActorBlockingDetails.builder()
                     .userId("user-1")
                     .ipAddresses(List.of("1.2.2.3", "1.2.3.4"))
-                    .build())));
+                    .build()),
+            filter));
   }
 
   @Test
@@ -209,13 +218,6 @@ class BlockingDetailsConverterTest {
             BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK,
             Optional.of(100L),
             BlockingCategory.BLOCKING_CATEGORY_RATE_LIMIT);
-    detailsBuilder.setActorDetails(
-        ActorDetails.newBuilder()
-            .setUserId("user-1")
-            .addAllIpAddresses(List.of("1.2.2.3", "1.2.3.4"))
-            .build());
-    BlockingDetails actorDetails = detailsBuilder.build();
-    detailsBuilder.clearActorDetails();
     detailsBuilder.setIpDetails(
         IpDetails.newBuilder().addAllIpAddresses(List.of("1.2.2.3", "1.2.3.4")).build());
 
@@ -231,7 +233,8 @@ class BlockingDetailsConverterTest {
                 ActorBlockingDetails.builder()
                     .ipAddresses(List.of("1.2.2.3", "1.2.3.4"))
                     .userId("user-1")
-                    .build())));
+                    .build()),
+            filter));
   }
 
   @Test
@@ -265,7 +268,8 @@ class BlockingDetailsConverterTest {
                 ActorBlockingDetails.builder()
                     .ipAddresses(List.of("1.2.2.3", "1.2.3.4"))
                     .userId("user-1")
-                    .build())));
+                    .build()),
+            filter));
   }
 
   @Test
@@ -299,7 +303,8 @@ class BlockingDetailsConverterTest {
                 ActorBlockingDetails.builder()
                     .ipAddresses(List.of("1.2.2.3", "1.2.3.4"))
                     .userId("user-1")
-                    .build())));
+                    .build()),
+            filter));
   }
 
   @Test
@@ -331,7 +336,8 @@ class BlockingDetailsConverterTest {
                 ActorBlockingDetails.builder()
                     .ipAddresses(List.of("1.2.2.3", "1.2.3.4"))
                     .userId("user-1")
-                    .build())));
+                    .build()),
+            filter));
   }
 
   @Test
@@ -350,7 +356,8 @@ class BlockingDetailsConverterTest {
                         List.of(
                             IpBlockingDetails.builder().ipAddresses(List.of("1.2.3.4")).build(),
                             RegionBlockingDetails.builder().regions(List.of("Bhutan")).build()))
-                    .build())));
+                    .build()),
+            filter));
   }
 
   private static BlockingPolicyData setBlockingDetailsInfo(
