@@ -128,6 +128,7 @@ message MutualTls {
   string client_cert = 1;
   EncryptedText client_key = 2;
   MutualTlsAdvanced advanced_options = 3;
+  string auth_endpoint = 4;
 }
 
 message Bearer {
@@ -153,6 +154,7 @@ message ContentSignature {
 message BasicAuthConfig {
   string username = 1;
   EncryptedText password = 2;
+  string header_value_format = 3;
 }
 
 message Hmac {
