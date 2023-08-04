@@ -490,7 +490,7 @@ public class RateLimitingRulesManagerTest {
         .setName(name)
         .setCategory(category)
         .setRuleStatus(RuleStatus.newBuilder().build())
-        .setEnabled(true)
+        .setEnabled(false)
         .setTransactionActionConfig(transactionActionConfigBuilder)
         .build();
   }
@@ -528,7 +528,7 @@ public class RateLimitingRulesManagerTest {
         .setCategory(category)
         .setRuleConfigScope(scope)
         .setRuleStatus(RuleStatus.newBuilder().build())
-        .setEnabled(false)
+        .setEnabled(true)
         .setTransactionActionConfig(
             TransactionActionConfig.newBuilder()
                 .setAction(Action.newBuilder().setAllow(Allow.getDefaultInstance()).build()))

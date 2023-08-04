@@ -91,7 +91,7 @@ public class RateLimitingRulesStore
         .filter(rule -> filterRuleOnCategory(rule, filter.getCategoriesList()))
         .filter(rule -> filterRuleOnScope(rule, filter.getScope()))
         .filter(
-            rule -> !filter.hasDisabled() || filter.getDisabled() == rule.getData().getEnabled());
+            rule -> !filter.hasDisabled() || filter.getDisabled() != rule.getData().getEnabled());
   }
 
   private boolean filterRuleOnCategory(RateLimitingRule rule, List<Category> categoryList) {
