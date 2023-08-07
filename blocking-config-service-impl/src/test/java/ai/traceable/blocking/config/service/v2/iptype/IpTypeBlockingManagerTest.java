@@ -7,7 +7,6 @@ import static org.mockito.Mockito.mock;
 
 import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleAggregatorBase;
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
-import ai.traceable.blocking.config.service.v2.AgentCapabilities;
 import ai.traceable.blocking.config.service.v2.BlockingConfigManagerBase;
 import ai.traceable.blocking.config.service.v2.BlockingConfigRequestElement;
 import ai.traceable.blocking.config.service.v2.BlockingConfigResponseElement;
@@ -41,9 +40,6 @@ class IpTypeBlockingManagerTest {
     IpTypeRule ipTypeRule2 = Mockito.mock(IpTypeRule.class);
     List<IpTypeRule> mockIpTypeRuleList = List.of(ipTypeRule1, ipTypeRule2);
 
-    AgentCapabilities agentCapabilities1 = Mockito.mock(AgentCapabilities.class);
-    AgentCapabilities agentCapabilities2 = Mockito.mock(AgentCapabilities.class);
-
     doReturn(mockIpTypeRuleList)
         .when(mockAggregator)
         .getEnabledBlockingRules(requestContext, environmentId);
@@ -60,20 +56,16 @@ class IpTypeBlockingManagerTest {
                 .setHash("mock-hash")
                 .setIpTypeBlockingRules(
                     IpTypeBlockingRules.newBuilder().addAllIpTypeRuleList(mockIpTypeRuleList))
-                .addAgentCapabilities(agentCapabilities1)
-                .addAgentCapabilities(agentCapabilities2)
                 .build()),
         manager.generateBlockingElements(
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("random")
                     .setIpTypeBlockingRulesRequest(IpTypeBlockingRulesRequest.getDefaultInstance())
-                    .addSupportedAgentCapabilities(agentCapabilities1)
                     .build(),
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("mock-hash")
                     .setIpTypeBlockingRulesRequest(IpTypeBlockingRulesRequest.getDefaultInstance())
-                    .addSupportedAgentCapabilities(agentCapabilities2)
                     .build()),
             blockingRulesSupplier));
 

@@ -6,7 +6,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
-import ai.traceable.blocking.config.service.v2.AgentCapabilities;
 import ai.traceable.blocking.config.service.v2.BlockingConfigManagerBase;
 import ai.traceable.blocking.config.service.v2.BlockingConfigRequestElement;
 import ai.traceable.blocking.config.service.v2.BlockingConfigResponseElement;
@@ -16,7 +15,6 @@ import ai.traceable.blocking.config.service.v2.RegionIpBlockingRule;
 import ai.traceable.config.utils.UuidGenerator;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 class RegionBlockingManagerTest {
   @Test
@@ -33,9 +31,6 @@ class RegionBlockingManagerTest {
     List<RegionIpBlockingRule> mockRegionIpBlockingRules =
         List.of(regionIpBlockingRule1, regionIpBlockingRule2);
 
-    AgentCapabilities agentCapabilities1 = Mockito.mock(AgentCapabilities.class);
-    AgentCapabilities agentCapabilities2 = Mockito.mock(AgentCapabilities.class);
-
     BlockingRulesSupplier blockingRulesSupplier = mock(BlockingRulesSupplier.class);
     doReturn(mockRegionIpBlockingRules).when(blockingRulesSupplier).getRegionIpMappings(any());
 
@@ -49,20 +44,16 @@ class RegionBlockingManagerTest {
                 .setRegionBlockingRules(
                     RegionBlockingRules.newBuilder()
                         .addAllRegionIpBlockingRules(mockRegionIpBlockingRules))
-                .addAgentCapabilities(agentCapabilities1)
-                .addAgentCapabilities(agentCapabilities2)
                 .build()),
         manager.generateBlockingElements(
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("random")
                     .setRegionBlockingRulesRequest(RegionBlockingRulesRequest.getDefaultInstance())
-                    .addSupportedAgentCapabilities(agentCapabilities1)
                     .build(),
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("mock-hash")
                     .setRegionBlockingRulesRequest(RegionBlockingRulesRequest.getDefaultInstance())
-                    .addSupportedAgentCapabilities(agentCapabilities2)
                     .build()),
             blockingRulesSupplier));
 
@@ -72,20 +63,16 @@ class RegionBlockingManagerTest {
             BlockingConfigResponseElement.newBuilder()
                 .setHash("mock-hash")
                 .setRegionBlockingRules(RegionBlockingRules.getDefaultInstance())
-                .addAgentCapabilities(agentCapabilities1)
-                .addAgentCapabilities(agentCapabilities2)
                 .build()),
         manager.generateBlockingElements(
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("mock-hash")
                     .setRegionBlockingRulesRequest(RegionBlockingRulesRequest.getDefaultInstance())
-                    .addSupportedAgentCapabilities(agentCapabilities1)
                     .build(),
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash("mock-hash")
                     .setRegionBlockingRulesRequest(RegionBlockingRulesRequest.getDefaultInstance())
-                    .addSupportedAgentCapabilities(agentCapabilities2)
                     .build(),
                 BlockingConfigRequestElement.newBuilder().setPreviousHash("random-hash").build()),
             blockingRulesSupplier));
@@ -95,10 +82,7 @@ class RegionBlockingManagerTest {
         List.of(),
         manager.generateBlockingElements(
             List.of(
-                BlockingConfigRequestElement.newBuilder()
-                    .setPreviousHash("random-hash")
-                    .addSupportedAgentCapabilities(agentCapabilities1)
-                    .build()),
+                BlockingConfigRequestElement.newBuilder().setPreviousHash("random-hash").build()),
             blockingRulesSupplier));
   }
 }

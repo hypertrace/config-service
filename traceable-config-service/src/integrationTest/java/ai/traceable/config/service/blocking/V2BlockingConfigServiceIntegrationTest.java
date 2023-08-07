@@ -116,7 +116,6 @@ import ai.traceable.region.config.service.v1.RegionRuleActionType;
 import ai.traceable.region.config.service.v1.RegionsFilter;
 import com.google.protobuf.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -139,18 +138,6 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
   private static final long inactiveTimestamp = System.currentTimeMillis() - 100000L;
   private static final long activeTimestamp = System.currentTimeMillis() + 100000L;
   private static final String emptyValueUuid = uuidGenerator.generateId("");
-  private static final AgentCapabilities sampleLatestAgentCapability =
-      AgentCapabilities.newBuilder()
-          .addComponents(Component.newBuilder().setTraceablePlatformAgentVersion("1.32.0"))
-          .addComponents(Component.newBuilder().setLibtraceableVersion("0.1.98-rc.167"))
-          .addComponents(Component.newBuilder().setServiceName("serviceName"))
-          .build();
-
-  private static final AgentCapabilities sampleOlderAgentCapability =
-      AgentCapabilities.newBuilder()
-          .addComponents(Component.newBuilder().setTraceablePlatformAgentVersion("1.30.0-rc.2"))
-          .addComponents(Component.newBuilder().setLibtraceableVersion("0.1.98-rc.137"))
-          .build();
 
   private static BlockingConfigServiceBlockingStub blockingConfigServiceStub;
   private static CustomSignatureConfigServiceBlockingStub customSignatureConfigServiceStub;
@@ -164,7 +151,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
   private static final List<String> customSignatureRuleId = new ArrayList<>();
 
   @BeforeEach
-  void initialize() {
+  void init() {
     regionConfigServiceStub =
         RegionConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
@@ -220,18 +207,13 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     enableBlockingOnAModsecRule(Optional.empty());
     enableBlockingOnAModsecRule(Optional.of(ENVIRONMENT_ID));
     enableBlockingOnAModsecRule(Optional.empty());
+
+    customSignatureRuleId.add(createCustomSignatureRule(Optional.of(ENVIRONMENT_ID)));
   }
 
   @Test
-  void agentVersioningTest() {
-    createCustomSignatureRule(Optional.of(ENVIRONMENT_ID));
-
-    AgentCapabilities unsetLibtraceableAgentCapability =
-        AgentCapabilities.newBuilder()
-            .addComponents(Component.newBuilder().setTraceablePlatformAgentVersion("1.23.2-dev.2"))
-            .addComponents(Component.newBuilder().setLibtraceableVersion(""))
-            .build();
-
+  // This test is tests the same functionality as v1
+  void testAgentVersioning() {
     GetBlockingRulesResponse response =
         RequestContext.forTenantId(TENANT_ID)
             .call(
@@ -241,12 +223,26 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                             .setPreviousHash("")
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
-                                    .addSupportedAgentCapabilities(unsetLibtraceableAgentCapability)
+                                    .addSupportedAgentCapabilities(
+                                        AgentCapabilities.newBuilder()
+                                            .addComponents(
+                                                Component.newBuilder()
+                                                    .setTraceablePlatformAgentVersion(
+                                                        "1.23.2-dev.2"))
+                                            .addComponents(
+                                                Component.newBuilder().setLibtraceableVersion("")))
                                     .setCrsBlockingRulesRequest(
                                         CrsBlockingRulesRequest.getDefaultInstance()))
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
-                                    .addSupportedAgentCapabilities(unsetLibtraceableAgentCapability)
+                                    .addSupportedAgentCapabilities(
+                                        AgentCapabilities.newBuilder()
+                                            .addComponents(
+                                                Component.newBuilder()
+                                                    .setTraceablePlatformAgentVersion(
+                                                        "1.23.2-dev.2"))
+                                            .addComponents(
+                                                Component.newBuilder().setLibtraceableVersion("")))
                                     .setCustomSignatureBlockingRulesRequest(
                                         CustomSignatureBlockingRulesRequest.getDefaultInstance()))
                             .setEnvironment(ENVIRONMENT_ID)
@@ -266,7 +262,10 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             .getCrsRulesBlob()
             .contains("SecArgumentsLimit"));
     assertEquals(
-        List.of(unsetLibtraceableAgentCapability),
+        List.of(
+            AgentCapabilities.newBuilder()
+                .addComponents(Component.newBuilder().setLibtraceableVersion(""))
+                .build()),
         modsecResponse.get(0).getAgentCapabilitiesList());
 
     // Custom Signature
@@ -283,7 +282,10 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             .getCustomSignatureRulesBlob()
             .contains("SecArgumentsLimit"));
     assertEquals(
-        List.of(unsetLibtraceableAgentCapability),
+        List.of(
+            AgentCapabilities.newBuilder()
+                .addComponents(Component.newBuilder().setLibtraceableVersion(""))
+                .build()),
         customSignatureResponse.get(0).getAgentCapabilitiesList());
 
     response =
@@ -295,16 +297,58 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                             .setPreviousHash("")
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
-                                    .addSupportedAgentCapabilities(sampleOlderAgentCapability)
-                                    .addSupportedAgentCapabilities(sampleLatestAgentCapability)
-                                    .addSupportedAgentCapabilities(unsetLibtraceableAgentCapability)
+                                    .addSupportedAgentCapabilities(
+                                        AgentCapabilities.newBuilder()
+                                            .addComponents(
+                                                Component.newBuilder()
+                                                    .setTraceablePlatformAgentVersion(
+                                                        "1.23.2-dev.2"))
+                                            .addComponents(
+                                                Component.newBuilder()
+                                                    .setLibtraceableVersion("0.1.98-rc.128")))
+                                    .addSupportedAgentCapabilities(
+                                        AgentCapabilities.newBuilder()
+                                            .addComponents(
+                                                Component.newBuilder()
+                                                    .setTraceablePlatformAgentVersion(
+                                                        "1.23.2-dev.2"))
+                                            .addComponents(
+                                                Component.newBuilder()
+                                                    .setLibtraceableVersion("0.1.98-rc.150")))
+                                    .addSupportedAgentCapabilities(
+                                        AgentCapabilities.newBuilder()
+                                            .addComponents(
+                                                Component.newBuilder()
+                                                    .setTraceablePlatformAgentVersion(
+                                                        "1.23.2-dev.2"))
+                                            .addComponents(
+                                                Component.newBuilder().setLibtraceableVersion("")))
                                     .setCrsBlockingRulesRequest(
                                         CrsBlockingRulesRequest.getDefaultInstance()))
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
-                                    .addSupportedAgentCapabilities(sampleOlderAgentCapability)
-                                    .addSupportedAgentCapabilities(sampleLatestAgentCapability)
-                                    .addSupportedAgentCapabilities(unsetLibtraceableAgentCapability)
+                                    .addSupportedAgentCapabilities(
+                                        AgentCapabilities.newBuilder()
+                                            .addComponents(
+                                                Component.newBuilder()
+                                                    .setLibtraceableVersion("0.1.98-rc.128")))
+                                    .addSupportedAgentCapabilities(
+                                        AgentCapabilities.newBuilder()
+                                            .addComponents(
+                                                Component.newBuilder()
+                                                    .setTraceablePlatformAgentVersion(
+                                                        "1.23.2-dev.2"))
+                                            .addComponents(
+                                                Component.newBuilder()
+                                                    .setLibtraceableVersion("0.1.98-rc.150")))
+                                    .addSupportedAgentCapabilities(
+                                        AgentCapabilities.newBuilder()
+                                            .addComponents(
+                                                Component.newBuilder()
+                                                    .setTraceablePlatformAgentVersion(
+                                                        "1.23.2-dev.2"))
+                                            .addComponents(
+                                                Component.newBuilder().setLibtraceableVersion("")))
                                     .setCustomSignatureBlockingRulesRequest(
                                         CustomSignatureBlockingRulesRequest.getDefaultInstance()))
                             .setEnvironment(ENVIRONMENT_ID)
@@ -319,7 +363,13 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertEquals(modsecHash, modsecResponse.get(0).getHash());
     assertFalse(modsecResponse.get(0).getCrsBlockingRules().getCrsRulesBlob().isEmpty());
     assertEquals(
-        List.of(sampleOlderAgentCapability, unsetLibtraceableAgentCapability),
+        List.of(
+            AgentCapabilities.newBuilder()
+                .addComponents(Component.newBuilder().setLibtraceableVersion("0.1.98-rc.128"))
+                .build(),
+            AgentCapabilities.newBuilder()
+                .addComponents(Component.newBuilder().setLibtraceableVersion(""))
+                .build()),
         modsecResponse.get(0).getAgentCapabilitiesList());
 
     assertNotEquals(modsecHash, modsecResponse.get(1).getHash());
@@ -330,7 +380,11 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             .getCrsRulesBlob()
             .contains("SecArgumentsLimit"));
     assertEquals(
-        List.of(sampleLatestAgentCapability), modsecResponse.get(1).getAgentCapabilitiesList());
+        List.of(
+            AgentCapabilities.newBuilder()
+                .addComponents(Component.newBuilder().setLibtraceableVersion("0.1.98-rc.150"))
+                .build()),
+        modsecResponse.get(1).getAgentCapabilitiesList());
 
     // Custom Signature
     customSignatureResponse =
@@ -345,7 +399,13 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             .getCustomSignatureRulesBlob()
             .isEmpty());
     assertEquals(
-        List.of(sampleOlderAgentCapability, unsetLibtraceableAgentCapability),
+        List.of(
+            AgentCapabilities.newBuilder()
+                .addComponents(Component.newBuilder().setLibtraceableVersion("0.1.98-rc.128"))
+                .build(),
+            AgentCapabilities.newBuilder()
+                .addComponents(Component.newBuilder().setLibtraceableVersion(""))
+                .build()),
         customSignatureResponse.get(0).getAgentCapabilitiesList());
 
     assertNotEquals(modsecHash, customSignatureResponse.get(1).getHash());
@@ -356,13 +416,16 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             .getCustomSignatureRulesBlob()
             .contains("SecArgumentsLimit"));
     assertEquals(
-        List.of(sampleLatestAgentCapability),
+        List.of(
+            AgentCapabilities.newBuilder()
+                .addComponents(Component.newBuilder().setLibtraceableVersion("0.1.98-rc.150"))
+                .build()),
         customSignatureResponse.get(1).getAgentCapabilitiesList());
   }
 
   @Test
   // This test is tests the same functionality as v1
-  void getBlockingRulesTest() {
+  void getBlockingRules_test() {
     // Need to add actors upfront due to caching
     actorEntityId.add(createActor(STATUS_ALWAYS_DENIED, 0L, "", BLOCKING_CATEGORY_RATE_LIMIT));
     actorEntityId.add(
@@ -387,8 +450,6 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     actorEntityId.add(
         createActor(STATUS_ALWAYS_ALLOWED, 0L, "", BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE));
 
-    customSignatureRuleId.add(createCustomSignatureRule(Optional.of(ENVIRONMENT_ID)));
-
     GetBlockingRulesResponse response =
         RequestContext.forTenantId(TENANT_ID)
             .call(
@@ -397,10 +458,6 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                         GetBlockingRulesRequest.getDefaultInstance()));
     assertEquals(emptyValueUuid, response.getHash());
     assertEquals(0, response.getResponseElementsCount());
-
-    System.out.println("zdhf DEBUG");
-    System.out.println(customSignatureRuleId);
-    System.out.println("zdhf DEBUG");
 
     response =
         RequestContext.forTenantId(TENANT_ID)
@@ -413,27 +470,27 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                 BlockingConfigRequestElement.newBuilder()
                                     .setBlockingPolicyConfigurationRequest(
                                         BlockingPolicyConfigurationRequest.getDefaultInstance())
-                                    .addSupportedAgentCapabilities(sampleOlderAgentCapability))
+                                    .addSupportedAgentCapabilities(
+                                        AgentCapabilities.newBuilder()
+                                            .addComponents(
+                                                Component.newBuilder()
+                                                    .setLibtraceableVersion("0.1.98-rc.137"))))
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
                                     .setRegionBlockingRulesRequest(
-                                        RegionBlockingRulesRequest.getDefaultInstance())
-                                    .addSupportedAgentCapabilities(sampleLatestAgentCapability))
+                                        RegionBlockingRulesRequest.getDefaultInstance()))
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
                                     .setCrsBlockingRulesRequest(
-                                        CrsBlockingRulesRequest.getDefaultInstance())
-                                    .addSupportedAgentCapabilities(sampleLatestAgentCapability))
+                                        CrsBlockingRulesRequest.getDefaultInstance()))
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
                                     .setCustomSignatureBlockingRulesRequest(
-                                        CustomSignatureBlockingRulesRequest.getDefaultInstance())
-                                    .addSupportedAgentCapabilities(sampleOlderAgentCapability))
+                                        CustomSignatureBlockingRulesRequest.getDefaultInstance()))
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
                                     .setIpTypeBlockingRulesRequest(
-                                        IpTypeBlockingRulesRequest.getDefaultInstance())
-                                    .addSupportedAgentCapabilities(sampleLatestAgentCapability))
+                                        IpTypeBlockingRulesRequest.getDefaultInstance()))
                             .build()));
 
     assertNotEquals(emptyValueUuid, response.getHash());
@@ -451,9 +508,6 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             .getRegionBlockingRules()
             .getRegionIpBlockingRulesList()
             .isEmpty()); // rules actually empty
-    assertEquals(
-        Collections.singletonList(sampleLatestAgentCapability),
-        filteredElements.get(0).getAgentCapabilitiesList());
 
     filteredElements =
         filterElements(
@@ -468,9 +522,6 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             .getCustomSignatureBlockingRules()
             .getCustomSignatureRulesBlob()
             .isEmpty()); // rules actually empty
-    assertEquals(
-        Collections.singletonList(sampleOlderAgentCapability),
-        filteredElements.get(0).getAgentCapabilitiesList());
 
     filteredElements =
         filterElements(
@@ -484,9 +535,6 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             .getIpTypeBlockingRules()
             .getIpTypeRuleListList()
             .isEmpty()); // rules actually empty
-    assertEquals(
-        Collections.singletonList(sampleLatestAgentCapability),
-        filteredElements.get(0).getAgentCapabilitiesList());
 
     filteredElements =
         filterElements(
@@ -495,9 +543,6 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     final String modsecCrsBlockingRulesHash = filteredElements.get(0).getHash();
     assertNotEquals(emptyValueUuid, modsecCrsBlockingRulesHash);
     assertFalse(filteredElements.get(0).getCrsBlockingRules().getCrsRulesBlob().isEmpty());
-    assertEquals(
-        Collections.singletonList(sampleLatestAgentCapability),
-        filteredElements.get(0).getAgentCapabilitiesList());
 
     // 1 modsec rule is present + (1 threat-actors + 2 rate-limit + 2 malicious-source)
     filteredElements =
@@ -593,31 +638,31 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                     .setPreviousHash(emptyValueUuid)
                                     .setBlockingPolicyConfigurationRequest(
                                         BlockingPolicyConfigurationRequest.getDefaultInstance())
-                                    .addSupportedAgentCapabilities(sampleLatestAgentCapability))
+                                    .addSupportedAgentCapabilities(
+                                        AgentCapabilities.newBuilder()
+                                            .addComponents(
+                                                Component.newBuilder()
+                                                    .setLibtraceableVersion("0.1.98-rc.167"))))
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
                                     .setPreviousHash(emptyValueUuid)
                                     .setRegionBlockingRulesRequest(
-                                        RegionBlockingRulesRequest.getDefaultInstance())
-                                    .addSupportedAgentCapabilities(sampleLatestAgentCapability))
+                                        RegionBlockingRulesRequest.getDefaultInstance()))
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
                                     .setPreviousHash(modsecCrsBlockingRulesHash)
                                     .setCrsBlockingRulesRequest(
-                                        CrsBlockingRulesRequest.getDefaultInstance())
-                                    .addSupportedAgentCapabilities(sampleLatestAgentCapability))
+                                        CrsBlockingRulesRequest.getDefaultInstance()))
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
                                     .setPreviousHash(emptyValueUuid)
                                     .setCustomSignatureBlockingRulesRequest(
-                                        CustomSignatureBlockingRulesRequest.getDefaultInstance())
-                                    .addSupportedAgentCapabilities(sampleLatestAgentCapability))
+                                        CustomSignatureBlockingRulesRequest.getDefaultInstance()))
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
                                     .setPreviousHash(emptyValueUuid)
                                     .setIpTypeBlockingRulesRequest(
-                                        IpTypeBlockingRulesRequest.getDefaultInstance())
-                                    .addSupportedAgentCapabilities(sampleLatestAgentCapability))
+                                        IpTypeBlockingRulesRequest.getDefaultInstance()))
                             .build()));
 
     assertNotEquals(emptyValueUuid, response.getHash());
@@ -699,31 +744,31 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                     .setPreviousHash(emptyValueUuid)
                                     .setBlockingPolicyConfigurationRequest(
                                         BlockingPolicyConfigurationRequest.getDefaultInstance())
-                                    .addSupportedAgentCapabilities(sampleLatestAgentCapability))
+                                    .addSupportedAgentCapabilities(
+                                        AgentCapabilities.newBuilder()
+                                            .addComponents(
+                                                Component.newBuilder()
+                                                    .setLibtraceableVersion("0.1.98-rc.167"))))
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
                                     .setPreviousHash(emptyValueUuid)
                                     .setRegionBlockingRulesRequest(
-                                        RegionBlockingRulesRequest.getDefaultInstance())
-                                    .addSupportedAgentCapabilities(sampleLatestAgentCapability))
+                                        RegionBlockingRulesRequest.getDefaultInstance()))
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
                                     .setPreviousHash(modsecCrsBlockingRulesHash)
                                     .setCrsBlockingRulesRequest(
-                                        CrsBlockingRulesRequest.getDefaultInstance())
-                                    .addSupportedAgentCapabilities(sampleLatestAgentCapability))
+                                        CrsBlockingRulesRequest.getDefaultInstance()))
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
                                     .setPreviousHash(emptyValueUuid)
                                     .setCustomSignatureBlockingRulesRequest(
-                                        CustomSignatureBlockingRulesRequest.getDefaultInstance())
-                                    .addSupportedAgentCapabilities(sampleLatestAgentCapability))
+                                        CustomSignatureBlockingRulesRequest.getDefaultInstance()))
                             .addRequestElements(
                                 BlockingConfigRequestElement.newBuilder()
                                     .setPreviousHash(emptyValueUuid)
                                     .setIpTypeBlockingRulesRequest(
-                                        IpTypeBlockingRulesRequest.getDefaultInstance())
-                                    .addSupportedAgentCapabilities(sampleLatestAgentCapability))
+                                        IpTypeBlockingRulesRequest.getDefaultInstance()))
                             .setEnvironment(ENVIRONMENT_ID)
                             .build()));
 
@@ -825,7 +870,11 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                     .setPreviousHash(blockingPolicyConfigurationHash)
                                     .setBlockingPolicyConfigurationRequest(
                                         BlockingPolicyConfigurationRequest.getDefaultInstance())
-                                    .addSupportedAgentCapabilities(sampleLatestAgentCapability))
+                                    .addSupportedAgentCapabilities(
+                                        AgentCapabilities.newBuilder()
+                                            .addComponents(
+                                                Component.newBuilder()
+                                                    .setLibtraceableVersion("0.1.98-rc.167"))))
                             .setEnvironment(ENVIRONMENT_ID)
                             .build()));
     assertEquals(

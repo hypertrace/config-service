@@ -40,13 +40,7 @@ class BlockingConfigServiceImplTest {
   private static final String TENANT_ID = "tenant1";
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
   private static final List<BlockingConfigRequestElement> blockingConfigRequestElements =
-      List.of(
-          BlockingConfigRequestElement.newBuilder()
-              .addSupportedAgentCapabilities(AgentCapabilities.getDefaultInstance())
-              .build(),
-          BlockingConfigRequestElement.newBuilder()
-              .addSupportedAgentCapabilities(AgentCapabilities.getDefaultInstance())
-              .build());
+      List.of(mock(BlockingConfigRequestElement.class), mock(BlockingConfigRequestElement.class));
   private static final List<BlockingConfigResponseElement> sampleResponseElements =
       List.of(
           BlockingConfigResponseElement.newBuilder().setHash("1").build(),
@@ -111,7 +105,6 @@ class BlockingConfigServiceImplTest {
             Set.of(blockingManager1, blockingManager2),
             ConfigFactory.parseMap(Map.of("agent.polling.frequency", "30s")),
             entityFetcher,
-            new BlockingRulesRequestValidator(),
             blockingRulesSupplierContext,
             uuidGenerator);
   }

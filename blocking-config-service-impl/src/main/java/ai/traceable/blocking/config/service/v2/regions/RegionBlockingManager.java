@@ -50,21 +50,11 @@ public class RegionBlockingManager implements BlockingConfigManagerBase {
       return BlockingConfigResponseElement.newBuilder()
           .setHash(responseHash)
           .setRegionBlockingRules(RegionBlockingRules.getDefaultInstance())
-          .addAllAgentCapabilities(
-              requestElements.stream()
-                  .map(BlockingConfigRequestElement::getSupportedAgentCapabilitiesList)
-                  .flatMap(List::stream)
-                  .collect(Collectors.toUnmodifiableList()))
           .build();
     }
     return BlockingConfigResponseElement.newBuilder()
         .setHash(responseHash)
         .setRegionBlockingRules(regionBlockingRules)
-        .addAllAgentCapabilities(
-            requestElements.stream()
-                .map(BlockingConfigRequestElement::getSupportedAgentCapabilitiesList)
-                .flatMap(List::stream)
-                .collect(Collectors.toUnmodifiableList()))
         .build();
   }
 }
