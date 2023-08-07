@@ -70,6 +70,14 @@ class BlockingPolicyConfigurationManagerTest {
                 .setBlockingPolicyConfiguration(
                     BlockingPolicyConfiguration.newBuilder()
                         .addAllBlockingDetailsList(mockBlockingDetailsList))
+                .addAgentCapabilities(
+                    AgentCapabilities.newBuilder()
+                        .addComponents(Component.newBuilder().setLibtraceableVersion("1.2.3-rc.4"))
+                        .addComponents(Component.newBuilder().setServiceName("service-1")))
+                .addAgentCapabilities(
+                    AgentCapabilities.newBuilder()
+                        .addComponents(Component.newBuilder().setLibtraceableVersion("1.2.3-rc.5"))
+                        .addComponents(Component.newBuilder().setServiceName("service-2")))
                 .build()),
         manager.generateBlockingElements(
             List.of(

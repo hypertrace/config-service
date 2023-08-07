@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class CustomSignatureBlockingManager implements BlockingConfigManagerBase {
@@ -61,14 +60,25 @@ public class CustomSignatureBlockingManager implements BlockingConfigManagerBase
       List<BlockingConfigRequestElement> requestElements,
       BlockingRulesSupplier blockingRulesSupplier,
       CustomModsecRuleVersion customModsecRuleVersion) {
-    List<BlockingConfigRequestElement> filteredRequestElements =
-        requestElements.stream()
-            .filter(
-                requestElement ->
-                    isCustomModsecVersionSupported(requestElement, customModsecRuleVersion))
-            .collect(Collectors.toUnmodifiableList());
+    List<AgentCapabilities> matchingRequestAgentCapabilities = new ArrayList<>();
+    List<String> previousHashes = new ArrayList<>();
+    requestElements.forEach(
+        requestElement -> {
+          List<AgentCapabilities> filteredAgentCapabilities =
+              requestElement.getSupportedAgentCapabilitiesList().stream()
+                  .filter(
+                      agentCapabilities ->
+                          this.isModsecRuleVersionSupported(
+                              agentCapabilities, customModsecRuleVersion))
+                  .collect(Collectors.toUnmodifiableList());
+          if (!filteredAgentCapabilities.isEmpty()) {
+            previousHashes.add(requestElement.getPreviousHash());
+            matchingRequestAgentCapabilities.addAll(filteredAgentCapabilities);
+          }
+        });
+
     // We don't want to send the rules to agents if they don't require it
-    if (filteredRequestElements.isEmpty()) {
+    if (matchingRequestAgentCapabilities.isEmpty()) {
       return Optional.empty();
     }
 
@@ -76,25 +86,12 @@ public class CustomSignatureBlockingManager implements BlockingConfigManagerBase
         blockingRulesSupplier.getCustomSignatureModsecBlob(customModsecRuleVersion);
     String responseHash = uuidGenerator.generateId(customSignatureRulesBlob);
 
-    // Getting all the libtraceable versions explicitly mentioned
-    List<AgentCapabilities> libtraceableCapabilities =
-        filteredRequestElements.stream()
-            .flatMap(requestElement -> requestElement.getSupportedAgentCapabilitiesList().stream())
-            .flatMap(agentCapabilities -> agentCapabilities.getComponentsList().stream())
-            .filter(Component::hasLibtraceableVersion)
-            .filter(component -> getSupportedRuleVersion(component) == customModsecRuleVersion)
-            .distinct()
-            .map(component -> AgentCapabilities.newBuilder().addComponents(component).build())
-            .collect(Collectors.toUnmodifiableList());
-
     // Checking if hashes of all requests are same
-    if (filteredRequestElements.stream()
-        .map(BlockingConfigRequestElement::getPreviousHash)
-        .allMatch(responseHash::equals)) {
+    if (previousHashes.stream().allMatch(responseHash::equals)) {
       return Optional.of(
           BlockingConfigResponseElement.newBuilder()
               .setHash(responseHash)
-              .addAllAgentCapabilities(libtraceableCapabilities)
+              .addAllAgentCapabilities(matchingRequestAgentCapabilities)
               .setCustomSignatureBlockingRules(CustomSignatureBlockingRules.getDefaultInstance())
               .build());
     }
@@ -102,45 +99,28 @@ public class CustomSignatureBlockingManager implements BlockingConfigManagerBase
     return Optional.of(
         BlockingConfigResponseElement.newBuilder()
             .setHash(responseHash)
-            .addAllAgentCapabilities(libtraceableCapabilities)
+            .addAllAgentCapabilities(matchingRequestAgentCapabilities)
             .setCustomSignatureBlockingRules(
                 CustomSignatureBlockingRules.newBuilder()
                     .setCustomSignatureRulesBlob(customSignatureRulesBlob))
             .build());
   }
 
-  private boolean isCustomModsecVersionSupported(
-      BlockingConfigRequestElement requestElement,
-      CustomModsecRuleVersion customModsecRuleVersion) {
-    // Concerned with only libtraceable version for returning modsec with seg args
-    // TPA version can is irrelevant as the object type is string blob in both cases
-    if (customModsecRuleVersion == CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3
-        && requestElement.getSupportedAgentCapabilitiesList().isEmpty()) {
-      return true;
-    }
-    return requestElement.getSupportedAgentCapabilitiesList().stream()
-        .anyMatch(
-            agentCapabilities ->
-                isSecArgLimitsSupported(agentCapabilities, customModsecRuleVersion));
-  }
-
-  private boolean isSecArgLimitsSupported(
+  private boolean isModsecRuleVersionSupported(
       AgentCapabilities agentCapabilities, CustomModsecRuleVersion customModsecRuleVersion) {
     // An agent can be said to support seg arg limit if it has any component with desired
     // libtraceable version
-    return agentCapabilities.getComponentsList().stream()
-        .map(this::getSupportedRuleVersion)
-        .anyMatch(Predicate.isEqual(customModsecRuleVersion));
+    return (customModsecRuleVersion.equals(
+            CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS))
+        ? agentCapabilities.getComponentsList().stream().anyMatch(this::isSecArgLimitsSupported)
+        : agentCapabilities.getComponentsList().stream().noneMatch(this::isSecArgLimitsSupported);
   }
 
-  private CustomModsecRuleVersion getSupportedRuleVersion(Component component) {
+  private boolean isSecArgLimitsSupported(Component component) {
     // A component can be said to support seg arg limit if it has desired libtraceable version
-    if (component.hasLibtraceableVersion()
+    return component.hasLibtraceableVersion()
         && semanticVersioningComparator.compare(
                 component.getLibtraceableVersion(), MINIMUM_LIBTRACEABLE_VERSION_FOR_V3_SECARG)
-            >= 0) {
-      return CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS;
-    }
-    return CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3;
+            >= 0;
   }
 }

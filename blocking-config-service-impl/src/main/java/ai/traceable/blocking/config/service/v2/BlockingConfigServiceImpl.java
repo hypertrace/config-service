@@ -23,6 +23,7 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
   private final Set<BlockingConfigManagerBase> blockingConfigManagers;
   private final java.time.Duration agentPollingFrequency;
   private final EntityFetcher entityFetcher;
+  private final BlockingRulesRequestValidator blockingRulesRequestValidator;
   private final BlockingRulesSupplierContext blockingRulesSupplierContext;
   private final UuidGenerator uuidGenerator;
 
@@ -31,11 +32,13 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
       Set<BlockingConfigManagerBase> blockingConfigManagers,
       Config config,
       EntityFetcher entityFetcher,
+      BlockingRulesRequestValidator blockingRulesRequestValidator,
       BlockingRulesSupplierContext blockingRulesSupplierContext,
       UuidGenerator uuidGenerator) {
     this.blockingConfigManagers = blockingConfigManagers;
     this.agentPollingFrequency = config.getDuration(AGENT_POLLING_FREQUENCY_CONFIG_NAME);
     this.entityFetcher = entityFetcher;
+    this.blockingRulesRequestValidator = blockingRulesRequestValidator;
     this.blockingRulesSupplierContext = blockingRulesSupplierContext;
     this.uuidGenerator = uuidGenerator;
   }
@@ -47,6 +50,7 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
     GetBlockingRulesResponse.Builder responseBuilder = GetBlockingRulesResponse.newBuilder();
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
+      blockingRulesRequestValidator.validateOrThrow(requestContext, request);
 
       Optional<String> environmentId =
           entityFetcher.getEnvironmentId(requestContext, request.getEnvironment());

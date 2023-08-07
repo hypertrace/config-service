@@ -56,22 +56,6 @@ class ModsecBlockingManagerTest {
 
   @Test
   void ruleFormationV3Only() {
-    // Test backward compatibility for old agents
-    assertEquals(
-        List.of(
-            BlockingConfigResponseElement.newBuilder()
-                .setHash(V3_HASH)
-                .setCrsBlockingRules(CrsBlockingRules.newBuilder().setCrsRulesBlob(V3_blob))
-                .build()),
-        manager.generateBlockingElements(
-            List.of(
-                BlockingConfigRequestElement.newBuilder()
-                    .setPreviousHash("random")
-                    .setCrsBlockingRulesRequest(CrsBlockingRulesRequest.getDefaultInstance())
-                    .build()),
-            new BlockingRulesSupplier(
-                blockingRulesSupplierContext, requestContext, environmentId)));
-
     // Old libtraceable version
     assertEquals(
         List.of(
@@ -80,17 +64,21 @@ class ModsecBlockingManagerTest {
                 .addAgentCapabilities(
                     AgentCapabilities.newBuilder()
                         .addComponents(
-                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
+                            Component.newBuilder()
+                                .setLibtraceableVersion("0.1.98-rc.138")
+                                .setTraceablePlatformAgentVersion("1.31.0")))
                 .setCrsBlockingRules(CrsBlockingRules.newBuilder().setCrsRulesBlob(V3_blob))
                 .build()),
         manager.generateBlockingElements(
             List.of(
                 BlockingConfigRequestElement.newBuilder()
-                    .setPreviousHash("hg")
+                    .setPreviousHash("random")
                     .addSupportedAgentCapabilities(
                         AgentCapabilities.newBuilder()
                             .addComponents(
-                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
+                                Component.newBuilder()
+                                    .setLibtraceableVersion("0.1.98-rc.138")
+                                    .setTraceablePlatformAgentVersion("1.31.0")))
                     .setCrsBlockingRulesRequest(CrsBlockingRulesRequest.getDefaultInstance())
                     .build()),
             new BlockingRulesSupplier(
@@ -114,10 +102,6 @@ class ModsecBlockingManagerTest {
             List.of(
                 BlockingConfigRequestElement.newBuilder()
                     .setPreviousHash(V3_HASH)
-                    .setCrsBlockingRulesRequest(CrsBlockingRulesRequest.getDefaultInstance())
-                    .build(),
-                BlockingConfigRequestElement.newBuilder()
-                    .setPreviousHash(V3_HASH)
                     .addSupportedAgentCapabilities(
                         AgentCapabilities.newBuilder()
                             .addComponents(
@@ -138,6 +122,10 @@ class ModsecBlockingManagerTest {
                 .addAgentCapabilities(
                     AgentCapabilities.newBuilder()
                         .addComponents(
+                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.128")))
+                .addAgentCapabilities(
+                    AgentCapabilities.newBuilder()
+                        .addComponents(
                             Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
                 .setCrsBlockingRules(CrsBlockingRules.newBuilder().setCrsRulesBlob(V3_blob))
                 .build()),
@@ -148,8 +136,7 @@ class ModsecBlockingManagerTest {
                     .addSupportedAgentCapabilities(
                         AgentCapabilities.newBuilder()
                             .addComponents(
-                                Component.newBuilder()
-                                    .setTraceablePlatformAgentVersion("0.1.98-rc.148")))
+                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.128")))
                     .setCrsBlockingRulesRequest(CrsBlockingRulesRequest.getDefaultInstance())
                     .build(),
                 BlockingConfigRequestElement.newBuilder()
