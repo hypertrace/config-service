@@ -54,7 +54,11 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
               .setWafIntegrationDetails(request.getWafIntegrationDetails())
               .build();
       WafIntegration createdWafIntegration =
-          wafIntegrationStore.upsertObject(requestContext, wafIntegration).getData();
+          wafIntegrationStore
+              .upsertObject(
+                  requestContext,
+                  WafIntegrationBuilderUtils.getCreateWafIntegrationV2(wafIntegration))
+              .getData();
       responseStreamObserver.onNext(
           CreateWafIntegrationResponse.newBuilder()
               .setWafIntegration(createdWafIntegration)
@@ -77,7 +81,10 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
               .getData(requestContext, request.getId())
               .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       responseStreamObserver.onNext(
-          GetWafIntegrationResponse.newBuilder().setWafIntegration(wafIntegration).build());
+          GetWafIntegrationResponse.newBuilder()
+              .setWafIntegration(
+                  WafIntegrationBuilderUtils.getBackwardCompatibleWafIntegration(wafIntegration))
+              .build());
       responseStreamObserver.onCompleted();
     } catch (Exception e) {
       responseStreamObserver.onError(e);
@@ -96,6 +103,7 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
       List<WafIntegration> tenantWafIntegrations =
           wafIntegrationStore.getAllObjects(requestContext).stream()
               .map(ConfigObject::getData)
+              .map(WafIntegrationBuilderUtils::getBackwardCompatibleWafIntegration)
               .filter(wafIntegration -> checkWafIdPresence(wafIntegration.getId(), requiredIds))
               .filter(
                   wafIntegration ->

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
+import ai.traceable.waf.integration.service.api.v1.AuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.AwsResource;
@@ -29,6 +30,7 @@ import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase;
 import ai.traceable.waf.integration.service.api.v1.WafProviderServiceGrpc;
 import ai.traceable.waf.integration.service.api.v1.WafProviderServiceGrpc.WafProviderServiceBlockingStub;
+import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCredentials;
 import com.typesafe.config.Config;
 import io.grpc.Status;
 import java.util.List;
@@ -82,14 +84,24 @@ class WafIntegrationConfigServiceImplTest {
   }
 
   @Test
-  void createWafIntegrationAWSTest() {
-
+  void createWafIntegrationAwsWithAwsAuthTest() {
     WafIntegrationDetails expectedDetails =
         createWafIntegrationDetails("name", "email", IntegrationParamsCase.AWS_INTEGRATION_PARAMS);
     CreateWafIntegrationRequest request =
         CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
     CreateWafIntegrationResponse response =
         wafProviderServiceBlockingStub.createWafIntegration(request);
+    assertEquals(expectedDetails, response.getWafIntegration().getWafIntegrationDetails());
+  }
+
+  @Test
+  void createWafIntegrationAwsWithWebIdentityAuthTest() {
+    WafIntegrationDetails expectedDetails =
+        createWebIdentityDetails("name", IntegrationParamsCase.AWS_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest request2 =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
+    CreateWafIntegrationResponse response =
+        wafProviderServiceBlockingStub.createWafIntegration(request2);
     assertEquals(expectedDetails, response.getWafIntegration().getWafIntegrationDetails());
   }
 
@@ -328,8 +340,11 @@ class WafIntegrationConfigServiceImplTest {
             .setDescription("des")
             .setUpdatedAwsIntegrationParams(
                 AwsIntegrationUpdateParams.newBuilder()
-                    .setAccessKeyId("id-1")
-                    .setEncryptedSecretAccessKey("key-1")
+                    .setAuthCredentials(
+                        AuthCredentials.newBuilder()
+                            .setAccessKeyId("id-1")
+                            .setEncryptedSecretAccessKey("key-1"))
+                    .setRuleGroupCapacity(100)
                     .addResources(AwsResource.newBuilder().setArn("arn-1").setRegion("region-1")))
             .build();
     UpdateWafIntegrationRequest updateRequest =
@@ -346,6 +361,7 @@ class WafIntegrationConfigServiceImplTest {
             .getWafIntegration()
             .getWafIntegrationDetails()
             .getAwsIntegrationParams()
+            .getAuthCredentials()
             .getAccessKeyId());
     assertEquals(
         "key-1",
@@ -353,6 +369,7 @@ class WafIntegrationConfigServiceImplTest {
             .getWafIntegration()
             .getWafIntegrationDetails()
             .getAwsIntegrationParams()
+            .getAuthCredentials()
             .getEncryptedSecretAccessKey());
     assertEquals(
         List.of(AwsResource.newBuilder().setArn("arn-1").setRegion("region-1").build()),
@@ -361,6 +378,63 @@ class WafIntegrationConfigServiceImplTest {
             .getWafIntegrationDetails()
             .getAwsIntegrationParams()
             .getResourcesList());
+    assertEquals(
+        100,
+        updateResponse
+            .getWafIntegration()
+            .getWafIntegrationDetails()
+            .getAwsIntegrationParams()
+            .getRuleGroupCapacity());
+  }
+
+  @Test
+  void updateWafIntegrationAwsWebIdentityAuth() {
+
+    WafIntegrationDetails wafIntegrationDetails =
+        createWebIdentityDetails("name", IntegrationParamsCase.AWS_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest request =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(wafIntegrationDetails)
+            .build();
+
+    CreateWafIntegrationResponse response =
+        wafProviderServiceBlockingStub.createWafIntegration(request);
+    String id = response.getWafIntegration().getId();
+
+    UpdatedWafIntegrationDetails updatedDetails =
+        UpdatedWafIntegrationDetails.newBuilder()
+            .setName(wafIntegrationDetails.getName())
+            .setDescription(wafIntegrationDetails.getDescription())
+            .setUpdatedAwsIntegrationParams(
+                AwsIntegrationUpdateParams.newBuilder()
+                    .setWebIdentityAuthCredentials(
+                        WebIdentityAuthenticationCredentials.newBuilder().setRoleArn("role-arn"))
+                    .setRuleGroupCapacity(200)
+                    .addAllResources(
+                        wafIntegrationDetails.getAwsIntegrationParams().getResourcesList()))
+            .build();
+    UpdateWafIntegrationRequest updateRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId(id)
+            .setUpdatedWafIntegrationDetails(updatedDetails)
+            .build();
+    UpdateWafIntegrationResponse updateResponse =
+        wafProviderServiceBlockingStub.updateWafIntegration(updateRequest);
+    assertEquals(
+        "role-arn",
+        updateResponse
+            .getWafIntegration()
+            .getWafIntegrationDetails()
+            .getAwsIntegrationParams()
+            .getWebIdentityAuthCredentials()
+            .getRoleArn());
+    assertEquals(
+        200,
+        updateResponse
+            .getWafIntegration()
+            .getWafIntegrationDetails()
+            .getAwsIntegrationParams()
+            .getRuleGroupCapacity());
   }
 
   @Test
@@ -498,6 +572,26 @@ class WafIntegrationConfigServiceImplTest {
     assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
   }
 
+  private WafIntegrationDetails createWebIdentityDetails(
+      String name, IntegrationParamsCase paramsCase) {
+    switch (paramsCase) {
+      case AWS_INTEGRATION_PARAMS:
+        return WafIntegrationDetails.newBuilder()
+            .setName(name)
+            .setDescription("des")
+            .setAwsIntegrationParams(
+                AwsIntegrationParams.newBuilder()
+                    .setWebIdentityAuthCredentials(
+                        WebIdentityAuthenticationCredentials.newBuilder()
+                            .setRoleArn("aws:arn:435485798347"))
+                    .addResources(
+                        AwsResource.newBuilder().setArn("arn").setRegion("region").build()))
+            .build();
+      default:
+        throw new RuntimeException();
+    }
+  }
+
   private WafIntegrationDetails createWafIntegrationDetails(
       String name, String email, IntegrationParamsCase paramsCase) {
     switch (paramsCase) {
@@ -517,8 +611,11 @@ class WafIntegrationConfigServiceImplTest {
             .setDescription("des")
             .setAwsIntegrationParams(
                 AwsIntegrationParams.newBuilder()
-                    .setAccessKeyId("id")
-                    .setEncryptedSecretAccessKey("secret")
+                    .setAuthCredentials(
+                        AuthCredentials.newBuilder()
+                            .setAccessKeyId("id")
+                            .setEncryptedSecretAccessKey("secret"))
+                    .setRuleGroupCapacity(300)
                     .addResources(
                         AwsResource.newBuilder().setArn("arn").setRegion("region").build()))
             .build();

@@ -1,5 +1,6 @@
 package ai.traceable.waf.provider.integration.service;
 
+import ai.traceable.waf.integration.service.api.v1.AuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
@@ -8,6 +9,7 @@ import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationUpdateParam
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.WafIntegration;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCredentials;
 import io.grpc.Status;
 
 public class WafIntegrationBuilderUtils {
@@ -78,25 +80,23 @@ public class WafIntegrationBuilderUtils {
       UpdateWafIntegrationRequest request, WafIntegration existingWafIntegration) {
     AwsIntegrationUpdateParams awsIntegrationUpdateParams =
         request.getUpdatedWafIntegrationDetails().getUpdatedAwsIntegrationParams();
+    AwsIntegrationParams.Builder awsIntegrationParamsBuilder =
+        AwsIntegrationParams.newBuilder()
+            .addAllResources(awsIntegrationUpdateParams.getResourcesList())
+            .setIntegrationActionType(awsIntegrationUpdateParams.getIntegrationActionType());
+    if (awsIntegrationUpdateParams.hasRuleGroupCapacity()) {
+      awsIntegrationParamsBuilder.setRuleGroupCapacity(
+          awsIntegrationUpdateParams.getRuleGroupCapacity());
+    }
+    updateConnectionCredentials(
+        awsIntegrationUpdateParams, awsIntegrationParamsBuilder, existingWafIntegration);
     return WafIntegration.newBuilder()
         .setId(existingWafIntegration.getId())
         .setWafIntegrationDetails(
             WafIntegrationDetails.newBuilder()
                 .setDescription(request.getUpdatedWafIntegrationDetails().getDescription())
                 .setName(request.getUpdatedWafIntegrationDetails().getName())
-                .setAwsIntegrationParams(
-                    AwsIntegrationParams.newBuilder()
-                        .setAccessKeyId(awsIntegrationUpdateParams.getAccessKeyId())
-                        .setEncryptedSecretAccessKey(
-                            awsIntegrationUpdateParams.hasEncryptedSecretAccessKey()
-                                ? awsIntegrationUpdateParams.getEncryptedSecretAccessKey()
-                                : existingWafIntegration
-                                    .getWafIntegrationDetails()
-                                    .getAwsIntegrationParams()
-                                    .getEncryptedSecretAccessKey())
-                        .setIntegrationActionType(
-                            awsIntegrationUpdateParams.getIntegrationActionType())
-                        .addAllResources(awsIntegrationUpdateParams.getResourcesList())))
+                .setAwsIntegrationParams(awsIntegrationParamsBuilder.build()))
         .build();
   }
 
@@ -127,5 +127,109 @@ public class WafIntegrationBuilderUtils {
                                     .getImpervaIntegrationParams()
                                     .getApiKey())))
         .build();
+  }
+
+  private static void updateConnectionCredentials(
+      AwsIntegrationUpdateParams awsIntegrationUpdateParams,
+      AwsIntegrationParams.Builder builder,
+      WafIntegration existingWafIntegration) {
+    switch (awsIntegrationUpdateParams.getConnectionCredentialsCase()) {
+      case AUTH_CREDENTIALS:
+        builder.setAuthCredentials(
+            AuthCredentials.newBuilder()
+                .setAccessKeyId(awsIntegrationUpdateParams.getAuthCredentials().getAccessKeyId())
+                .setEncryptedSecretAccessKey(
+                    awsIntegrationUpdateParams
+                            .getAuthCredentials()
+                            .getEncryptedSecretAccessKey()
+                            .isEmpty()
+                        ? existingWafIntegration
+                            .getWafIntegrationDetails()
+                            .getAwsIntegrationParams()
+                            .getAuthCredentials()
+                            .getEncryptedSecretAccessKey()
+                        : awsIntegrationUpdateParams
+                            .getAuthCredentials()
+                            .getEncryptedSecretAccessKey())
+                .build());
+        return;
+      case WEB_IDENTITY_AUTH_CREDENTIALS:
+        builder.setWebIdentityAuthCredentials(
+            WebIdentityAuthenticationCredentials.newBuilder()
+                .setRoleArn(awsIntegrationUpdateParams.getWebIdentityAuthCredentials().getRoleArn())
+                .build());
+        return;
+      case CONNECTIONCREDENTIALS_NOT_SET:
+        builder.setAuthCredentials(
+            AuthCredentials.newBuilder()
+                .setAccessKeyId(awsIntegrationUpdateParams.getAccessKeyId())
+                .setEncryptedSecretAccessKey(
+                    awsIntegrationUpdateParams.getEncryptedSecretAccessKey().isEmpty()
+                        ? existingWafIntegration
+                            .getWafIntegrationDetails()
+                            .getAwsIntegrationParams()
+                            .getEncryptedSecretAccessKey()
+                        : awsIntegrationUpdateParams.getEncryptedSecretAccessKey())
+                .build());
+        return;
+      default:
+        throw Status.INVALID_ARGUMENT.asRuntimeException();
+    }
+  }
+
+  public static WafIntegration getBackwardCompatibleWafIntegration(
+      WafIntegration
+          wafIntegration) { // this is for supporting waf integration, should be removed once all
+    // services are updated
+    switch (wafIntegration.getWafIntegrationDetails().getIntegrationParamsCase()) {
+      case AWS_INTEGRATION_PARAMS:
+        AwsIntegrationParams awsIntegrationParams =
+            wafIntegration.getWafIntegrationDetails().getAwsIntegrationParams();
+        AwsIntegrationParams.Builder convertedAwsIntegrationParamsBuilder =
+            awsIntegrationParams.toBuilder();
+        if (!awsIntegrationParams.getAccessKeyId().isEmpty()) {
+          convertedAwsIntegrationParamsBuilder.setAuthCredentials(
+              AuthCredentials.newBuilder()
+                  .setAccessKeyId(awsIntegrationParams.getAccessKeyId())
+                  .setEncryptedSecretAccessKey(awsIntegrationParams.getEncryptedSecretAccessKey()));
+        }
+        return WafIntegration.newBuilder()
+            .setId(wafIntegration.getId())
+            .setWafIntegrationDetails(
+                wafIntegration.getWafIntegrationDetails().toBuilder()
+                    .setAwsIntegrationParams(convertedAwsIntegrationParamsBuilder.build()))
+            .build();
+      default:
+        return wafIntegration;
+    }
+  }
+
+  public static WafIntegration getCreateWafIntegrationV2(
+      WafIntegration
+          wafIntegration) { // this is for supporting waf integration, should be removed once all
+    // services are updated
+    switch (wafIntegration.getWafIntegrationDetails().getIntegrationParamsCase()) {
+      case AWS_INTEGRATION_PARAMS:
+        AwsIntegrationParams awsIntegrationParams =
+            wafIntegration.getWafIntegrationDetails().getAwsIntegrationParams();
+        AwsIntegrationParams.Builder convertedAwsIntegrationParamsBuilder =
+            awsIntegrationParams.toBuilder();
+        if (!awsIntegrationParams.getAccessKeyId().isEmpty()) {
+          convertedAwsIntegrationParamsBuilder.setAuthCredentials(
+              AuthCredentials.newBuilder()
+                  .setAccessKeyId(awsIntegrationParams.getAccessKeyId())
+                  .setEncryptedSecretAccessKey(awsIntegrationParams.getEncryptedSecretAccessKey()));
+          convertedAwsIntegrationParamsBuilder.clearAccessKeyId();
+          convertedAwsIntegrationParamsBuilder.clearEncryptedSecretAccessKey();
+        }
+        return WafIntegration.newBuilder()
+            .setId(wafIntegration.getId())
+            .setWafIntegrationDetails(
+                wafIntegration.getWafIntegrationDetails().toBuilder()
+                    .setAwsIntegrationParams(convertedAwsIntegrationParamsBuilder.build()))
+            .build();
+      default:
+        return wafIntegration;
+    }
   }
 }

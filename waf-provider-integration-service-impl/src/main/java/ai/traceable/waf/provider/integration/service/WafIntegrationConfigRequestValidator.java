@@ -4,6 +4,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
+import ai.traceable.waf.integration.service.api.v1.AuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.AwsResource;
@@ -21,6 +22,7 @@ import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdatedCloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.UpdatedWafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCredentials;
 import io.grpc.Status;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -187,10 +189,7 @@ public class WafIntegrationConfigRequestValidator {
   }
 
   private void validateAwsIntegrationParams(AwsIntegrationParams awsIntegrationParams) {
-    validateNonDefaultPresenceOrThrow(
-        awsIntegrationParams, AwsIntegrationParams.ACCESS_KEY_ID_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(
-        awsIntegrationParams, AwsIntegrationParams.ENCRYPTED_SECRET_ACCESS_KEY_FIELD_NUMBER);
+    validateCredentials(awsIntegrationParams);
     validateNonDefaultPresenceOrThrow(
         awsIntegrationParams, AwsIntegrationParams.RESOURCES_FIELD_NUMBER);
     awsIntegrationParams.getResourcesList().forEach(this::validateAwsResource);
@@ -199,5 +198,29 @@ public class WafIntegrationConfigRequestValidator {
   private void validateAwsResource(AwsResource awsResource) {
     validateNonDefaultPresenceOrThrow(awsResource, AwsResource.ARN_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(awsResource, AwsResource.REGION_FIELD_NUMBER);
+  }
+
+  private void validateCredentials(AwsIntegrationParams awsIntegrationParams) {
+
+    switch (awsIntegrationParams.getConnectionCredentialsCase()) {
+      case AUTH_CREDENTIALS:
+        validateNonDefaultPresenceOrThrow(
+            awsIntegrationParams.getAuthCredentials(), AuthCredentials.ACCESS_KEY_ID_FIELD_NUMBER);
+        validateNonDefaultPresenceOrThrow(
+            awsIntegrationParams.getAuthCredentials(),
+            AuthCredentials.ENCRYPTED_SECRET_ACCESS_KEY_FIELD_NUMBER);
+        break;
+      case WEB_IDENTITY_AUTH_CREDENTIALS:
+        validateNonDefaultPresenceOrThrow(
+            awsIntegrationParams.getWebIdentityAuthCredentials(),
+            WebIdentityAuthenticationCredentials.ROLE_ARN_FIELD_NUMBER);
+        break;
+      case CONNECTIONCREDENTIALS_NOT_SET:
+      default:
+        validateNonDefaultPresenceOrThrow(
+            awsIntegrationParams, AwsIntegrationParams.ACCESS_KEY_ID_FIELD_NUMBER);
+        validateNonDefaultPresenceOrThrow(
+            awsIntegrationParams, AwsIntegrationParams.ENCRYPTED_SECRET_ACCESS_KEY_FIELD_NUMBER);
+    }
   }
 }

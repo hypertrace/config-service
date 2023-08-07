@@ -3,6 +3,7 @@ package ai.traceable.waf.provider.integration.service;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import ai.traceable.waf.integration.service.api.v1.AuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.AwsResource;
@@ -20,6 +21,7 @@ import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdatedCloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.UpdatedWafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCredentials;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -392,8 +394,11 @@ class WafIntegrationConfigRequestValidatorTest {
   void invalidCreateAwsWafIntegrationTest() {
     AwsIntegrationParams.Builder awsIntegrationParamsBuilder =
         AwsIntegrationParams.newBuilder()
-            .setAccessKeyId("access-key")
-            .setEncryptedSecretAccessKey("secret")
+            .setAuthCredentials(
+                AuthCredentials.newBuilder()
+                    .setAccessKeyId("access-key")
+                    .setEncryptedSecretAccessKey("secret")
+                    .build())
             .addAllResources(
                 List.of(AwsResource.newBuilder().setArn("arn").setRegion("region").build()));
 
@@ -416,7 +421,12 @@ class WafIntegrationConfigRequestValidatorTest {
             .setWafIntegrationDetails(
                 WafIntegrationDetails.newBuilder()
                     .setName("name")
-                    .setAwsIntegrationParams(awsIntegrationParamsBuilder.clearAccessKeyId()))
+                    .setAwsIntegrationParams(
+                        awsIntegrationParamsBuilder
+                            .clearAuthCredentials()
+                            .setAuthCredentials(
+                                AuthCredentials.newBuilder()
+                                    .setEncryptedSecretAccessKey("secret"))))
             .build();
     assertThrows(
         StatusRuntimeException.class,
@@ -431,7 +441,10 @@ class WafIntegrationConfigRequestValidatorTest {
                 WafIntegrationDetails.newBuilder()
                     .setName("name")
                     .setAwsIntegrationParams(
-                        awsIntegrationParamsBuilder.clearEncryptedSecretAccessKey()))
+                        awsIntegrationParamsBuilder
+                            .clearAuthCredentials()
+                            .setAuthCredentials(
+                                AuthCredentials.newBuilder().setAccessKeyId("access-key"))))
             .build();
     assertThrows(
         StatusRuntimeException.class,
@@ -460,8 +473,9 @@ class WafIntegrationConfigRequestValidatorTest {
                     .setName("name")
                     .setAwsIntegrationParams(
                         AwsIntegrationParams.newBuilder()
-                            .setAccessKeyId("id")
-                            .setEncryptedSecretAccessKey("key")
+                            .setWebIdentityAuthCredentials(
+                                WebIdentityAuthenticationCredentials.newBuilder()
+                                    .setRoleArn("arn:aws:398429084503/role"))
                             .addResources(
                                 AwsResource.newBuilder().setArn("arn").setRegion("region"))))
             .build();
@@ -474,13 +488,33 @@ class WafIntegrationConfigRequestValidatorTest {
         () -> {
           wafIntegrationConfigRequestValidator.validateOrThrow(validRequest, REQUEST_CONTEXT);
         });
+
+    // role arn absent for web identity authentication
+    assertThrows(
+        RuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(
+              CreateWafIntegrationRequest.newBuilder()
+                  .setWafIntegrationDetails(
+                      WafIntegrationDetails.newBuilder()
+                          .setName("name")
+                          .setAwsIntegrationParams(
+                              AwsIntegrationParams.newBuilder()
+                                  .setWebIdentityAuthCredentials(
+                                      WebIdentityAuthenticationCredentials.newBuilder()
+                                          .setRoleArn(""))
+                                  .addResources(
+                                      AwsResource.newBuilder().setArn("arn").setRegion("region"))))
+                  .build(),
+              REQUEST_CONTEXT);
+        });
   }
 
   @Test
   void invalidUpdateAwsRequestTest() {
     AwsIntegrationUpdateParams.Builder awsIntegrationUpdateParams =
         AwsIntegrationUpdateParams.newBuilder()
-            .setAccessKeyId("access-key")
+            .setAuthCredentials(AuthCredentials.newBuilder().setAccessKeyId("access-key"))
             .addAllResources(
                 List.of(AwsResource.newBuilder().setArn("arn").setRegion("region").build()));
 
@@ -536,8 +570,10 @@ class WafIntegrationConfigRequestValidatorTest {
                     .setName("name")
                     .setUpdatedAwsIntegrationParams(
                         AwsIntegrationUpdateParams.newBuilder()
-                            .setAccessKeyId("id")
-                            .setEncryptedSecretAccessKey("key")
+                            .setAuthCredentials(
+                                AuthCredentials.newBuilder()
+                                    .setAccessKeyId("id")
+                                    .setEncryptedSecretAccessKey("key"))
                             .addResources(
                                 AwsResource.newBuilder().setArn("arn").setRegion("region"))))
             .build();
@@ -558,8 +594,9 @@ class WafIntegrationConfigRequestValidatorTest {
 
     AwsIntegrationParams.Builder awsIntegrationBuilder =
         AwsIntegrationParams.newBuilder()
-            .setAccessKeyId("access-key")
-            .setEncryptedSecretAccessKey("secret");
+            .setWebIdentityAuthCredentials(
+                WebIdentityAuthenticationCredentials.newBuilder()
+                    .setRoleArn("arn:aws:398429084503/role"));
 
     // no arn
     assertThrows(
@@ -596,8 +633,8 @@ class WafIntegrationConfigRequestValidatorTest {
 
     AwsIntegrationUpdateParams.Builder awsIntegrationBuilder =
         AwsIntegrationUpdateParams.newBuilder()
-            .setAccessKeyId("access-key")
-            .setEncryptedSecretAccessKey("secret");
+            .setWebIdentityAuthCredentials(
+                WebIdentityAuthenticationCredentials.newBuilder().setRoleArn("aws:arn:342342"));
 
     // no arn
     assertThrows(
