@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package ai.traceable.span.processing.config.service.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+
+message KeyValueRetentionRuleSet {
+  // Basically like a network aCL - apply first matching rule or use default if no match
+  repeated KeyValueRetentionRule rules = 1;
+  RetentionAction default = 2;
+}
+
+message KeyValueRetentionRuleData {
+  RetentionAction action = 1;
+  // We could support value match if needed in future
+  StringPredicate key_match = 2;
+  google.protobuf.Timestamp expiration = 3;
+}
+
+message KeyValueRetentionRule {
+  string id = 1;
+  KeyValueRetentionRuleData data = 2;
+}
+
+message RetentionAction {
+  // Using oneof over simple enum to support configuration in future (e.g. retain but truncate to X chars, sample, etc.)
+  oneof action {
+    RetainAction retain = 5;
+    DiscardAction discard = 6;
+  }
+
+  message RetainAction {}
+  message DiscardAction {}
+}
+
+message StringPredicate {
+  Operator operator = 1;
+  string value = 2;
+
+  enum Operator {
+    OPERATOR_UNSPECIFIED = 0;
+    OPERATOR_EQUALS = 1;
+    OPERATOR_MATCHES_REGEX = 2;
+  }
+}
+
+enum IngestionStage {
+  INGESTION_STAGE_UNSPECIFIED = 0;
+  INGESTION_STAGE_QUERY_STORE_PERSISTENCE = 1;
+}

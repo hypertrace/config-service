@@ -6,6 +6,7 @@ option java_multiple_files = true;
 
 import "ai/traceable/span/processing/config/service/v1/sampling_configs.proto";
 import "ai/traceable/span/processing/config/service/v1/span_filter.proto";
+import "ai/traceable/span/processing/config/service/v1/ingestion.proto";
 import "google/protobuf/timestamp.proto";
 
 service SpanProcessingConfigService {
@@ -51,6 +52,12 @@ service SpanProcessingConfigService {
   rpc CreateServiceNamingRule (CreateServiceNamingRuleRequest) returns (CreateServiceNamingRuleResponse) {}
   rpc UpdateServiceNamingRule (UpdateServiceNamingRuleRequest) returns (UpdateServiceNamingRuleResponse) {}
   rpc DeleteServiceNamingRule (DeleteServiceNamingRuleRequest) returns (DeleteServiceNamingRuleResponse) {}
+
+  rpc GetSpanIngestionConfig(GetSpanIngestionConfigRequest) returns (GetSpanIngestionConfigResponse) {}
+  rpc CreateSpanIngestionRule(CreateSpanIngestionRuleRequest) returns (CreateSpanIngestionRuleResponse) {}
+  rpc UpdateSpanIngestionRule(UpdateSpanIngestionRuleRequest) returns (UpdateSpanIngestionRuleResponse) {}
+  rpc DeleteSpanIngestionRule(DeleteSpanIngestionRuleRequest) returns (DeleteSpanIngestionRuleResponse) {}
+  rpc RankSpanIngestionRule(RankSpanIngestionRuleRequest) returns (RankSpanIngestionRuleResponse) {}
 }
 
 message GetAllResolvedSamplingConfigsRequest {}
@@ -381,4 +388,56 @@ message ServiceNamingRuleAction {
 }
 message ServiceNamingRuleFilter {
   ServiceNamingRuleScope scope = 1;
+}
+
+
+message GetSpanIngestionConfigRequest {
+  IngestionStage stage = 1;
+}
+
+message GetSpanIngestionConfigResponse {
+  KeyValueRetentionRuleSet request_header_ruleset = 1;
+  KeyValueRetentionRuleSet response_header_ruleset = 2;
+  KeyValueRetentionRuleSet attribute_ruleset = 3;
+  // More could be added later like req body truncation limits etc.
+}
+
+message CreateSpanIngestionRuleRequest {
+  IngestionStage stage = 1;
+  oneof rule {
+    KeyValueRetentionRuleData request_header_rule = 2;
+    KeyValueRetentionRuleData response_header_rule = 3;
+    KeyValueRetentionRuleData attribute_rule = 4;
+  }
+}
+
+message CreateSpanIngestionRuleResponse {
+  KeyValueRetentionRule rule = 1;
+}
+
+message UpdateSpanIngestionRuleRequest {
+  string id = 1;
+  oneof rule {
+    KeyValueRetentionRuleData key_value_retention_rule_data = 2;
+  }
+}
+
+message UpdateSpanIngestionRuleResponse {
+  KeyValueRetentionRule rule = 1;
+}
+
+message DeleteSpanIngestionRuleRequest {
+  string id = 1;
+}
+
+message DeleteSpanIngestionRuleResponse {
+}
+
+message RankSpanIngestionRuleRequest {
+  string id_to_update = 1;
+  // The id of the rule that should immediately precede the target id. Omit if we're updating to highest rank.
+  optional string preceding_rule_id = 2;
+}
+
+message RankSpanIngestionRuleResponse {
 }
