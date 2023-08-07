@@ -176,6 +176,18 @@ public class ValidatorUtils {
     }
   }
 
+  public void validateStringCondition(KeyValueCondition.StringCondition stringCondition) {
+    validateNonDefaultPresenceOrThrow(
+        stringCondition, KeyValueCondition.StringCondition.OPERATOR_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        stringCondition, KeyValueCondition.StringCondition.VALUE_FIELD_NUMBER);
+    if (stringCondition.getOperator() == MATCH_OPERATOR_MATCHES_REGEX
+        || stringCondition.getOperator()
+            == KeyValueCondition.MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX) {
+      validateRegex(stringCondition.getValue());
+    }
+  }
+
   private void validateScopeCondition(ScopeCondition scopeCondition) {
     switch (scopeCondition.getScopeCase()) {
       case ENTITY_SCOPE:
@@ -202,18 +214,6 @@ public class ValidatorUtils {
     validateNonDefaultPresenceOrThrow(
         labelScope, ScopeCondition.LabelScope.LABEL_TYPE_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(labelScope, ScopeCondition.LabelScope.LABEL_IDS_FIELD_NUMBER);
-  }
-
-  private void validateStringCondition(KeyValueCondition.StringCondition stringCondition) {
-    validateNonDefaultPresenceOrThrow(
-        stringCondition, KeyValueCondition.StringCondition.OPERATOR_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(
-        stringCondition, KeyValueCondition.StringCondition.VALUE_FIELD_NUMBER);
-    if (stringCondition.getOperator() == MATCH_OPERATOR_MATCHES_REGEX
-        || stringCondition.getOperator()
-            == KeyValueCondition.MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX) {
-      validateRegex(stringCondition.getValue());
-    }
   }
 
   private void validateDatatypeCondition(DatatypeCondition datatypeCondition) {

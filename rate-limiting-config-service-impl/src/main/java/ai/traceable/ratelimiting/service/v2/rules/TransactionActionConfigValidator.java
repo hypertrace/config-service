@@ -12,6 +12,7 @@ import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.DataLocation;
 import ai.traceable.ratelimiting.config.service.v2.DatatypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
+import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
@@ -137,8 +138,50 @@ public class TransactionActionConfigValidator {
               "Invalid datatype matching : %s for transaction action config", datatypeMatching));
     }
     if (datatypeMatching.getRegexBasedMatching().hasCustomMatchingLocation())
-      validatorUtils.validateKeyValueCondition(
+      validateCustomMatchingLocationKeyValueCondition(
           datatypeMatching.getRegexBasedMatching().getCustomMatchingLocation());
+  }
+
+  private void validateCustomMatchingLocationKeyValueCondition(
+      KeyValueCondition keyValueCondition) {
+    validateNonDefaultPresenceOrThrow(keyValueCondition, KeyValueCondition.TYPE_FIELD_NUMBER);
+    if (keyValueCondition.hasValueCondition()) {
+      validatorUtils.throwInvalidArgumentException(
+          String.format(
+              "Value condition should not be present in custom location matching : %s",
+              keyValueCondition));
+    }
+    switch (keyValueCondition.getType()) {
+      case TYPE_REQUEST_BODY:
+        if (keyValueCondition.hasKeyCondition()) {
+          validatorUtils.throwInvalidArgumentException(
+              String.format(
+                  "For type : %s%n key condition should not be present in custom location matching: %s%n",
+                  keyValueCondition.getType(), keyValueCondition));
+        }
+        break;
+      case TYPE_HOST:
+      case TYPE_HTTP_METHOD:
+      case TYPE_REQUEST_HEADER:
+      case TYPE_REQUEST_COOKIE:
+      case TYPE_QUERY_PARAMETER:
+      case TYPE_REQUEST_BODY_PARAMETER:
+        if (!keyValueCondition.hasKeyCondition()) {
+          validatorUtils.throwInvalidArgumentException(
+              String.format(
+                  "For type : %s%n key condition should be present in custom location matching: %s%n",
+                  keyValueCondition.getType(), keyValueCondition));
+        }
+        validatorUtils.validateStringCondition(keyValueCondition.getKeyCondition());
+        break;
+      default:
+        if (keyValueCondition.hasKeyCondition()) {
+          validatorUtils.throwInvalidArgumentException(
+              String.format(
+                  "Invalid type : %s%n for custom location matching: %s",
+                  keyValueCondition.getType(), keyValueCondition));
+        }
+    }
   }
 
   private void validateDatatypeConditionForTransactionActionConfig(
