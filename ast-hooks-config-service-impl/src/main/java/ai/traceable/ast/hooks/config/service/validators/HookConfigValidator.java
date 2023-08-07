@@ -31,6 +31,7 @@ import lombok.AllArgsConstructor;
 public class HookConfigValidator extends ValidatorBase {
 
   private static final EncryptedText EMPTY_ENCRYPTED_TEXT = EncryptedText.newBuilder().build();
+  private static final String ACCESS_TOKEN_URL_NOT_FOUND = "access token url not found for oauth";
 
   public void validate(HookConfig hookConfig, boolean isUpdateRequest) {
     switch (hookConfig.getHookConfigCase()) {
@@ -168,18 +169,20 @@ public class HookConfigValidator extends ValidatorBase {
       validateEncryptedText(oauth2.getToken(), "token", isUpdateRequest);
     }
     validateStringNotBlank(oauth2.getClientIdPlainText(), "client id not found");
-    validateStringNotBlank(oauth2.getAccessTokenUrl(), "access token url not found for oauth");
     validateRequestTokenInfo(oauth2.getTokenInfo());
-    validateStringNotBlank(oauth2.getAccessTokenUrl(), "access token url can not be blank");
     if (oauth2.hasAuthorizationCodeFlow()) {
+      validateStringNotBlank(oauth2.getAccessTokenUrl(), ACCESS_TOKEN_URL_NOT_FOUND);
       validateOauthAuthorizationCodeFlow(oauth2.getAuthorizationCodeFlow(), isUpdateRequest);
     } else if (oauth2.hasPkceFlow()) {
+      validateStringNotBlank(oauth2.getAccessTokenUrl(), ACCESS_TOKEN_URL_NOT_FOUND);
       validateOauthPkceFlow(oauth2.getPkceFlow(), isUpdateRequest);
     } else if (oauth2.hasImplicitFlow()) {
       validateOauthImplicitFlow(oauth2.getImplicitFlow());
     } else if (oauth2.hasClientCredentialsFlow()) {
+      validateStringNotBlank(oauth2.getAccessTokenUrl(), ACCESS_TOKEN_URL_NOT_FOUND);
       validateOauthClientCredentialsFlow(oauth2.getClientCredentialsFlow(), isUpdateRequest);
     } else if (oauth2.hasPasswordFlow()) {
+      validateStringNotBlank(oauth2.getAccessTokenUrl(), ACCESS_TOKEN_URL_NOT_FOUND);
       validateOauthPasswordFlow(oauth2.getPasswordFlow(), isUpdateRequest);
     }
   }
