@@ -91,11 +91,21 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
       return BlockingConfigResponseElement.newBuilder()
           .setHash(responseHash)
           .setBlockingPolicyConfiguration(BlockingPolicyConfiguration.getDefaultInstance())
+          .addAllAgentCapabilities(
+              requestElements.stream()
+                  .map(BlockingConfigRequestElement::getSupportedAgentCapabilitiesList)
+                  .flatMap(List::stream)
+                  .collect(Collectors.toUnmodifiableList()))
           .build();
     }
     return BlockingConfigResponseElement.newBuilder()
         .setHash(responseHash)
         .setBlockingPolicyConfiguration(blockingPolicyConfiguration)
+        .addAllAgentCapabilities(
+            requestElements.stream()
+                .map(BlockingConfigRequestElement::getSupportedAgentCapabilitiesList)
+                .flatMap(List::stream)
+                .collect(Collectors.toUnmodifiableList()))
         .build();
   }
 }

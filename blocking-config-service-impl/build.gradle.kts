@@ -17,6 +17,7 @@ dependencies {
   implementation(libs.traceable.actorService.api)
   implementation(libs.traceable.platformGateway.ipUtils)
   implementation(libs.hypertrace.configservice.protoconverter)
+  implementation(libs.hypertrace.configservice.validation)
   implementation(projects.configUtils)
 
   implementation(libs.guice)

@@ -51,11 +51,21 @@ public class IpTypeBlockingManager implements BlockingConfigManagerBase {
       return BlockingConfigResponseElement.newBuilder()
           .setHash(responseHash)
           .setIpTypeBlockingRules(IpTypeBlockingRules.getDefaultInstance())
+          .addAllAgentCapabilities(
+              requestElements.stream()
+                  .map(BlockingConfigRequestElement::getSupportedAgentCapabilitiesList)
+                  .flatMap(List::stream)
+                  .collect(Collectors.toUnmodifiableList()))
           .build();
     }
     return BlockingConfigResponseElement.newBuilder()
         .setHash(responseHash)
         .setIpTypeBlockingRules(ipTypeBlockingRules)
+        .addAllAgentCapabilities(
+            requestElements.stream()
+                .map(BlockingConfigRequestElement::getSupportedAgentCapabilitiesList)
+                .flatMap(List::stream)
+                .collect(Collectors.toUnmodifiableList()))
         .build();
   }
 }
