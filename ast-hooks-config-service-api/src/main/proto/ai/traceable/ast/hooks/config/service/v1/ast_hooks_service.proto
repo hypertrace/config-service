@@ -70,6 +70,7 @@ message GetAstHookResponse {
 message CreateAstHookTestRequest {
   AstHookTestDetails hook_test_details = 1;
   AllowedRunners allowed_runners = 2;
+  optional string ast_hook_id = 3;
 }
 
 message CreateAstHookTestResponse {

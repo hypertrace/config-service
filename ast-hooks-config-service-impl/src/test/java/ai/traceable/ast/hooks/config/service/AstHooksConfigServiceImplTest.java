@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.ast.hooks.config.service.handlers.AstHookTestManager;
 import ai.traceable.ast.hooks.config.service.handlers.CreateAstHookHandler;
+import ai.traceable.ast.hooks.config.service.handlers.UpdateAstHookConfigHandler;
 import ai.traceable.ast.hooks.config.service.handlers.UpdateAstHookHandler;
 import ai.traceable.ast.hooks.config.service.store.AstHooksConfigStore;
 import ai.traceable.ast.hooks.config.service.store.AstHooksTestConfigStore;
@@ -52,6 +53,7 @@ class AstHooksConfigServiceImplTest {
   @Mock CreateAstHookHandler mockCreateAstHookHandler;
   @Mock UpdateAstHookHandler mockUpdateAstHookHandler;
   @Mock UuidGenerator mockUuidGenerator;
+  @Mock UpdateAstHookConfigHandler mockUpdateAstHookConfigHandler;
 
   AstHooksConfigServiceGrpc.AstHooksConfigServiceBlockingStub stub;
 
@@ -71,7 +73,8 @@ class AstHooksConfigServiceImplTest {
                 mockUpdateAstHookHandler,
                 new AstHooksConfigStore(configServiceBlockingStub),
                 astHooksTestConfigStore,
-                new AstHookTestManager(mockUuidGenerator, astHooksTestConfigStore)))
+                new AstHookTestManager(
+                    mockUuidGenerator, astHooksTestConfigStore, mockUpdateAstHookConfigHandler)))
         .start();
     stub = AstHooksConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
   }

@@ -11,8 +11,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class UpdateAstHookHandler {
   private final AstHooksConfigStore configStore;
-  private final UpdateAstHookConfigHandler updateAstHookConfigHandler =
-      new UpdateAstHookConfigHandler();
+  private final UpdateAstHookConfigHandler updateAstHookConfigHandler;
 
   public AstHook updateHook(UpdateAstHookRequest request, RequestContext requestContext) {
     AstHook oldHook =

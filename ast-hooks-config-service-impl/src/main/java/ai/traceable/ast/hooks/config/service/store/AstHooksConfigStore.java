@@ -4,12 +4,14 @@ import static ai.traceable.ast.hooks.config.service.store.AstHookConfigConstants
 
 import ai.traceable.ast.hooks.config.service.v1.AstHook;
 import com.google.protobuf.Value;
+import io.grpc.Status;
 import java.util.Optional;
 import javax.inject.Inject;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class AstHooksConfigStore extends IdentifiedObjectStore<AstHook> {
   private static final String AST_HOOKS_CONFIG_RESOURCE_NAME = "ast-hooks-config";
@@ -39,5 +41,10 @@ public class AstHooksConfigStore extends IdentifiedObjectStore<AstHook> {
   @Override
   protected String getContextFromData(AstHook astHook) {
     return astHook.getId();
+  }
+
+  public AstHook getAstHook(RequestContext requestContext, String id) {
+    return getData(requestContext, id)
+        .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
   }
 }

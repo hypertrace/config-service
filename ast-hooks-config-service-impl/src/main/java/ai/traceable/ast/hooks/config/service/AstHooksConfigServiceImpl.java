@@ -25,12 +25,12 @@ import ai.traceable.ast.hooks.config.service.v1.GetAstHookTestResultRequest;
 import ai.traceable.ast.hooks.config.service.v1.GetAstHookTestResultResponse;
 import ai.traceable.ast.hooks.config.service.v1.GetAstHookTestsRequest;
 import ai.traceable.ast.hooks.config.service.v1.GetAstHookTestsResponse;
+import ai.traceable.ast.hooks.config.service.v1.HookConfig;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookRequest;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookResponse;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookTestRequest;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookTestResponse;
 import ai.traceable.ast.hooks.config.service.validators.RequestValidator;
-import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import javax.inject.Inject;
@@ -85,11 +85,7 @@ public class AstHooksConfigServiceImpl extends AstHooksConfigServiceImplBase {
       GetAstHookRequest request, StreamObserver<GetAstHookResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      AstHook astHook =
-          astHooksConfigStore
-              .getData(requestContext, request.getId())
-              .orElseThrow(
-                  () -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
+      AstHook astHook = astHooksConfigStore.getAstHook(requestContext, request.getId());
       GetAstHookResponse response = GetAstHookResponse.newBuilder().setAstHook(astHook).build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();
@@ -136,9 +132,15 @@ public class AstHooksConfigServiceImpl extends AstHooksConfigServiceImplBase {
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
       requestValidator.validateOrThrow(requestContext, request);
+      HookConfig oldHookConfig = null;
+      if (request.hasAstHookId()) {
+        AstHook astHook = astHooksConfigStore.getAstHook(requestContext, request.getAstHookId());
+        oldHookConfig = astHook.getHookDetails().getHookConfig();
+      }
       responseObserver.onNext(
           CreateAstHookTestResponse.newBuilder()
-              .setAstHookTest(astHookTestManager.createHookTest(requestContext, request))
+              .setAstHookTest(
+                  astHookTestManager.createHookTest(requestContext, request, oldHookConfig))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {

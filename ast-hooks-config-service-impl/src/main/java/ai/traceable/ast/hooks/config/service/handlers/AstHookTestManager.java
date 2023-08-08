@@ -4,7 +4,9 @@ import static ai.traceable.ast.hooks.config.service.v1.TestStatus.TEST_STATUS_PE
 
 import ai.traceable.ast.hooks.config.service.store.AstHooksTestConfigStore;
 import ai.traceable.ast.hooks.config.service.v1.AstHookTest;
+import ai.traceable.ast.hooks.config.service.v1.AstHookTestDetails;
 import ai.traceable.ast.hooks.config.service.v1.CreateAstHookTestRequest;
+import ai.traceable.ast.hooks.config.service.v1.HookConfig;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookTestRequest;
 import ai.traceable.config.utils.UuidGenerator;
 import javax.inject.Inject;
@@ -16,14 +18,21 @@ public class AstHookTestManager {
 
   private final UuidGenerator uuidGenerator;
   private final AstHooksTestConfigStore configStore;
+  private final UpdateAstHookConfigHandler updateAstHookConfigHandler;
 
   public AstHookTest createHookTest(
-      final RequestContext requestContext, final CreateAstHookTestRequest request) {
+      final RequestContext requestContext,
+      final CreateAstHookTestRequest request,
+      final HookConfig oldHookConfig) {
     String id = uuidGenerator.generateRandomId();
+    AstHookTestDetails astHookTestDetails =
+        request.hasAstHookId()
+            ? resolveHookTestDetails(request.getHookTestDetails(), oldHookConfig)
+            : request.getHookTestDetails();
     AstHookTest astHookTest =
         AstHookTest.newBuilder()
             .setId(id)
-            .setAstHookTestDetails(request.getHookTestDetails())
+            .setAstHookTestDetails(astHookTestDetails)
             .setTestStatus(TEST_STATUS_PENDING)
             .setAllowedRunners(request.getAllowedRunners())
             .build();
@@ -57,5 +66,19 @@ public class AstHookTestManager {
     if (request.hasTestStatus()) {
       updatedHookTestBuilder.setTestStatus(request.getTestStatus());
     }
+  }
+
+  private AstHookTestDetails resolveHookTestDetails(
+      AstHookTestDetails hookTestDetails, HookConfig oldHookConfig) {
+    AstHookTestDetails.Builder astHookTestDetailsBuilder =
+        AstHookTestDetails.newBuilder().setRole(hookTestDetails.getRole());
+    if (hookTestDetails.hasHookConfig()) {
+      astHookTestDetailsBuilder.setHookConfig(
+          updateAstHookConfigHandler.applyHookConfigUpdate(
+              hookTestDetails.getHookConfig(), oldHookConfig));
+    } else if (hookTestDetails.hasAdvancedMode()) {
+      astHookTestDetailsBuilder.setAdvancedMode(hookTestDetails.getAdvancedMode());
+    }
+    return astHookTestDetailsBuilder.build();
   }
 }
