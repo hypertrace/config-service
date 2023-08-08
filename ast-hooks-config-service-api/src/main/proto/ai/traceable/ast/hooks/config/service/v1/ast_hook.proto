@@ -188,6 +188,7 @@ message Oauth2 {
     OauthPasswordFlow password_flow = 9;
   }
   string auth_endpoint = 11;
+  repeated string scopes = 12;
 }
 
 message OauthAuthorizationCodeFlow {
