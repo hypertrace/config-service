@@ -137,7 +137,6 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
 
       WafIntegration updatedWafIntegration =
           WafIntegrationBuilderUtils.getUpdatedIntegration(request, existingWafIntegration);
-
       WafIntegration upsertedWafIntegration =
           wafIntegrationStore.upsertObject(requestContext, updatedWafIntegration).getData();
       responseStreamObserver.onNext(

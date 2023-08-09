@@ -164,12 +164,12 @@ public class WafIntegrationBuilderUtils {
             AuthCredentials.newBuilder()
                 .setAccessKeyId(awsIntegrationUpdateParams.getAccessKeyId())
                 .setEncryptedSecretAccessKey(
-                    awsIntegrationUpdateParams.getEncryptedSecretAccessKey().isEmpty()
-                        ? existingWafIntegration
+                    awsIntegrationUpdateParams.hasEncryptedSecretAccessKey()
+                        ? awsIntegrationUpdateParams.getEncryptedSecretAccessKey()
+                        : existingWafIntegration
                             .getWafIntegrationDetails()
                             .getAwsIntegrationParams()
-                            .getEncryptedSecretAccessKey()
-                        : awsIntegrationUpdateParams.getEncryptedSecretAccessKey())
+                            .getEncryptedSecretAccessKey())
                 .build());
         return;
       default:
@@ -187,11 +187,20 @@ public class WafIntegrationBuilderUtils {
             wafIntegration.getWafIntegrationDetails().getAwsIntegrationParams();
         AwsIntegrationParams.Builder convertedAwsIntegrationParamsBuilder =
             awsIntegrationParams.toBuilder();
-        if (!awsIntegrationParams.getAccessKeyId().isEmpty()) {
+        if (!awsIntegrationParams.getAccessKeyId().isEmpty()) { // we are getting waf in old format
           convertedAwsIntegrationParamsBuilder.setAuthCredentials(
               AuthCredentials.newBuilder()
                   .setAccessKeyId(awsIntegrationParams.getAccessKeyId())
                   .setEncryptedSecretAccessKey(awsIntegrationParams.getEncryptedSecretAccessKey()));
+        } else { // getting waf in new format
+          if (awsIntegrationParams
+              .getConnectionCredentialsCase()
+              .equals(AwsIntegrationParams.ConnectionCredentialsCase.AUTH_CREDENTIALS)) {
+            convertedAwsIntegrationParamsBuilder
+                .setAccessKeyId(awsIntegrationParams.getAuthCredentials().getAccessKeyId())
+                .setEncryptedSecretAccessKey(
+                    awsIntegrationParams.getAuthCredentials().getEncryptedSecretAccessKey());
+          }
         }
         return WafIntegration.newBuilder()
             .setId(wafIntegration.getId())

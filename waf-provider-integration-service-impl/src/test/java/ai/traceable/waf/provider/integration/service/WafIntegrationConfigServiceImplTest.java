@@ -21,6 +21,7 @@ import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsResponse;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.IntegrationActionType;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationResponse;
 import ai.traceable.waf.integration.service.api.v1.UpdatedCloudflareIntegrationParams;
@@ -191,7 +192,42 @@ class WafIntegrationConfigServiceImplTest {
         wafProviderServiceBlockingStub.getWafIntegration(
             GetWafIntegrationRequest.newBuilder().setId(id).build());
     assertEquals(
-        WafIntegration.newBuilder().setWafIntegrationDetails(expectedDetails).setId(id).build(),
+        WafIntegration.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setDescription("des")
+                    .setAwsIntegrationParams(
+                        AwsIntegrationParams.newBuilder()
+                            .setAccessKeyId(
+                                expectedDetails
+                                    .getAwsIntegrationParams()
+                                    .getAuthCredentials()
+                                    .getAccessKeyId())
+                            .setEncryptedSecretAccessKey(
+                                expectedDetails
+                                    .getAwsIntegrationParams()
+                                    .getAuthCredentials()
+                                    .getEncryptedSecretAccessKey())
+                            .setAuthCredentials(
+                                AuthCredentials.newBuilder()
+                                    .setAccessKeyId(
+                                        expectedDetails
+                                            .getAwsIntegrationParams()
+                                            .getAuthCredentials()
+                                            .getAccessKeyId())
+                                    .setEncryptedSecretAccessKey(
+                                        expectedDetails
+                                            .getAwsIntegrationParams()
+                                            .getAuthCredentials()
+                                            .getEncryptedSecretAccessKey()))
+                            .setRuleGroupCapacity(300)
+                            .setIntegrationActionType(
+                                IntegrationActionType.INTEGRATION_ACTION_TYPE_COUNT)
+                            .addResources(
+                                AwsResource.newBuilder().setArn("arn").setRegion("region"))))
+            .setId(id)
+            .build(),
         getResponse.getWafIntegration());
   }
 
@@ -259,7 +295,38 @@ class WafIntegrationConfigServiceImplTest {
         wafProviderServiceBlockingStub.getWafIntegrations(request);
     assertEquals(1, response.getWafIntegrationCount());
     assertEquals(
-        expectedDetails, response.getWafIntegrationList().get(0).getWafIntegrationDetails());
+        WafIntegrationDetails.newBuilder()
+            .setName("name3")
+            .setDescription("des")
+            .setAwsIntegrationParams(
+                AwsIntegrationParams.newBuilder()
+                    .setAccessKeyId(
+                        expectedDetails
+                            .getAwsIntegrationParams()
+                            .getAuthCredentials()
+                            .getAccessKeyId())
+                    .setEncryptedSecretAccessKey(
+                        expectedDetails
+                            .getAwsIntegrationParams()
+                            .getAuthCredentials()
+                            .getEncryptedSecretAccessKey())
+                    .setAuthCredentials(
+                        AuthCredentials.newBuilder()
+                            .setAccessKeyId(
+                                expectedDetails
+                                    .getAwsIntegrationParams()
+                                    .getAuthCredentials()
+                                    .getAccessKeyId())
+                            .setEncryptedSecretAccessKey(
+                                expectedDetails
+                                    .getAwsIntegrationParams()
+                                    .getAuthCredentials()
+                                    .getEncryptedSecretAccessKey()))
+                    .setRuleGroupCapacity(300)
+                    .setIntegrationActionType(IntegrationActionType.INTEGRATION_ACTION_TYPE_COUNT)
+                    .addResources(AwsResource.newBuilder().setArn("arn").setRegion("region")))
+            .build(),
+        response.getWafIntegrationList().get(0).getWafIntegrationDetails());
   }
 
   @Test
@@ -617,7 +684,8 @@ class WafIntegrationConfigServiceImplTest {
                             .setEncryptedSecretAccessKey("secret"))
                     .setRuleGroupCapacity(300)
                     .addResources(
-                        AwsResource.newBuilder().setArn("arn").setRegion("region").build()))
+                        AwsResource.newBuilder().setArn("arn").setRegion("region").build())
+                    .setIntegrationActionType(IntegrationActionType.INTEGRATION_ACTION_TYPE_COUNT))
             .build();
       case IMPERVA_INTEGRATION_PARAMS:
         return WafIntegrationDetails.newBuilder()
