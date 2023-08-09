@@ -165,12 +165,12 @@ public class RequestValidator extends ValidatorBase {
 
   public void validateOrThrow(RequestContext requestContext, CreateAstHookTestRequest request) {
     validateRequestContextOrThrow(requestContext);
-    validateHookTestDetails(requestContext, request.getHookTestDetails());
+    validateHookTestDetails(requestContext, request.getHookTestDetails(), request.hasAstHookId());
     validateAllowedRunners(requestContext, request.getAllowedRunners());
   }
 
   private void validateHookTestDetails(
-      RequestContext requestContext, AstHookTestDetails hookTestDetails) {
+      RequestContext requestContext, AstHookTestDetails hookTestDetails, boolean isHookUpdate) {
     switch (hookTestDetails.getAstHookTypeCase()) {
       case HOOK_CONFIG:
         if (!hookTestDetails.hasHookConfig()) {
@@ -178,7 +178,7 @@ public class RequestValidator extends ValidatorBase {
               .withDescription("hook config expected in normal mode")
               .asRuntimeException(requestContext.buildTrailers());
         }
-        validateHookConfig(hookTestDetails.getHookConfig(), false);
+        validateHookConfig(hookTestDetails.getHookConfig(), isHookUpdate);
         break;
       case ADVANCED_MODE:
         validateStringNotBlank(
