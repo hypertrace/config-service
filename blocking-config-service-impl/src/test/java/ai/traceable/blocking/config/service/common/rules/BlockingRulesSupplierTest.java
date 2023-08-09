@@ -2,6 +2,7 @@ package ai.traceable.blocking.config.service.common.rules;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -10,6 +11,7 @@ import static org.mockito.Mockito.when;
 import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleInfo;
 import ai.traceable.blocking.config.service.common.iptype.IpTypeRulesLoader;
 import ai.traceable.blocking.config.service.common.rules.fetchers.CustomSignatureRulesFetcher;
+import ai.traceable.blocking.config.service.common.rules.fetchers.DlpRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.MaliciousSourcesRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RegionRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher;
@@ -21,6 +23,7 @@ import ai.traceable.malicioussources.config.service.v1.IpLocationTypeCondition;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleCondition;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleInfo;
+import ai.traceable.ratelimiting.config.service.v2.RateLimitingModsecRule;
 import ai.traceable.region.config.service.v1.DetailedRegion;
 import java.util.Arrays;
 import java.util.List;
@@ -42,6 +45,7 @@ public class BlockingRulesSupplierTest {
   RegionRulesFetcher regionRulesFetcher;
   CustomSignatureRulesFetcher customSignatureRulesFetcher;
   MaliciousSourcesRulesFetcher maliciousSourcesRulesFetcher;
+  DlpRulesFetcher dlpRulesFetcher;
 
   Map<RulesFetcher.RulesFetcherType, RulesFetcher> rulesFetchers;
 
@@ -52,6 +56,7 @@ public class BlockingRulesSupplierTest {
     regionRulesFetcher = mock(RegionRulesFetcher.class);
     customSignatureRulesFetcher = mock(CustomSignatureRulesFetcher.class);
     maliciousSourcesRulesFetcher = mock(MaliciousSourcesRulesFetcher.class);
+    dlpRulesFetcher = mock(DlpRulesFetcher.class);
 
     rulesFetchers =
         Map.of(
@@ -60,7 +65,9 @@ public class BlockingRulesSupplierTest {
             RulesFetcher.RulesFetcherType.REGION,
             regionRulesFetcher,
             RulesFetcher.RulesFetcherType.MALICIOUS_SOURCES,
-            maliciousSourcesRulesFetcher);
+            maliciousSourcesRulesFetcher,
+            RulesFetcher.RulesFetcherType.DLP,
+            dlpRulesFetcher);
 
     IpTypeRulesLoader ipTypeRulesLoader = mock(IpTypeRulesLoader.class);
     when(ipTypeRulesLoader.getLatestDataSupplier())
@@ -104,6 +111,87 @@ public class BlockingRulesSupplierTest {
         "",
         blockingRulesSupplier.getCustomSignatureModsecBlob(
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3));
+  }
+
+  @Test
+  public void test_getCustomSignatureRulesBlobs() {
+    CustomModsecRuleVersion version1 = CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3;
+    CustomModsecRuleVersion version2 =
+        CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE;
+
+    String blob1 = "blob1";
+    String blob2 = "blob2";
+    List<String> serviceNames = List.of("service1", "service2", "service-x");
+    List<RateLimitingModsecRule> rateLimitingModsecRules =
+        List.of(
+            RateLimitingModsecRule.newBuilder().setId("id1").build(),
+            RateLimitingModsecRule.newBuilder().setId("id2").build(),
+            RateLimitingModsecRule.newBuilder().setId("id3").build());
+
+    when(customSignatureRulesFetcher.fetchModsecRules(REQUEST_CONTEXT, ENVIRONMENT_ID, version1))
+        .thenReturn(
+            GetCustomSignatureModsecRulesResponse.newBuilder().setModsecRulesBlob(blob1).build());
+    when(customSignatureRulesFetcher.fetchModsecRules(REQUEST_CONTEXT, ENVIRONMENT_ID, version2))
+        .thenReturn(
+            GetCustomSignatureModsecRulesResponse.newBuilder().setModsecRulesBlob(blob2).build());
+    when(dlpRulesFetcher.fetchDlpModsecRules(REQUEST_CONTEXT, ENVIRONMENT_ID, serviceNames))
+        .thenReturn(
+            Map.of(
+                "service1",
+                new DlpRulesFetcher.DlpModsecRulesData(
+                    "directives", "blobA", List.of("id1", "id2"), rateLimitingModsecRules),
+                "service2",
+                new DlpRulesFetcher.DlpModsecRulesData(
+                    "directives", "blobB", List.of("id1", "id3"), rateLimitingModsecRules),
+                "service-x",
+                new DlpRulesFetcher.DlpModsecRulesData()));
+
+    blockingRulesSupplier =
+        new BlockingRulesSupplier(blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
+    Map<String, String> modsecBlobs;
+
+    // no dlp rules fetched..
+    modsecBlobs = blockingRulesSupplier.getCustomSignatureModsecBlobs(version1, serviceNames);
+    assertEquals(3, modsecBlobs.size());
+    for (String sName : serviceNames) {
+      assertEquals(blob1, modsecBlobs.get(sName));
+    }
+    verify(customSignatureRulesFetcher, times(1)).fetchModsecRules(any(), any(), any());
+    verify(dlpRulesFetcher, times(0)).fetchDlpModsecRules(any(), any(), any());
+
+    modsecBlobs = blockingRulesSupplier.getCustomSignatureModsecBlobs(version2, serviceNames);
+    assertEquals(3, modsecBlobs.size());
+    // no dlp rule for service-x
+    assertEquals(blob2, modsecBlobs.get("service-x"));
+    assertEquals(blob2 + "\nblobA", modsecBlobs.get("service1"));
+    assertEquals(blob2 + "\nblobB", modsecBlobs.get("service2"));
+    verify(customSignatureRulesFetcher, times(2)).fetchModsecRules(any(), any(), any());
+    verify(dlpRulesFetcher, times(1)).fetchDlpModsecRules(any(), any(), eq(serviceNames));
+
+    modsecBlobs =
+        blockingRulesSupplier.getCustomSignatureModsecBlobs(
+            version2, List.of("service1", "service-x"));
+    assertEquals(2, modsecBlobs.size());
+    // no dlp rule for service-x
+    assertEquals(blob2, modsecBlobs.get("service-x"));
+    assertEquals(blob2 + "\nblobA", modsecBlobs.get("service1"));
+    // fetchModsecRules will not be called again.
+    verify(customSignatureRulesFetcher, times(2)).fetchModsecRules(any(), any(), any());
+    // fetchDlpModsecRules will not be called again for the list of services.
+    verify(dlpRulesFetcher, times(2)).fetchDlpModsecRules(any(), any(), any());
+    verify(dlpRulesFetcher, times(1)).fetchDlpModsecRules(any(), any(), eq(serviceNames));
+    verify(dlpRulesFetcher, times(1)).fetchDlpModsecRules(any(), any(), eq(List.of()));
+
+    blockingRulesSupplier =
+        new BlockingRulesSupplier(blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
+    when(customSignatureRulesFetcher.fetchModsecRules(REQUEST_CONTEXT, ENVIRONMENT_ID, version2))
+        .thenReturn(GetCustomSignatureModsecRulesResponse.getDefaultInstance());
+    modsecBlobs = blockingRulesSupplier.getCustomSignatureModsecBlobs(version2, serviceNames);
+    assertEquals(3, modsecBlobs.size());
+    // no dlp rule for service-x
+    assertEquals("", modsecBlobs.get("service-x"));
+    assertEquals("directives\nblobA", modsecBlobs.get("service1"));
+    assertEquals("directives\nblobB", modsecBlobs.get("service2"));
   }
 
   @Test

@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-public class MaliciousSourcesRulesFetcher implements RulesFetcher<List<MaliciousSourcesRule>> {
+public class MaliciousSourcesRulesFetcher implements RulesFetcher {
 
   private static final GetRulesFilter DEFAULT_RULES_FILTER =
       GetRulesFilter.newBuilder()

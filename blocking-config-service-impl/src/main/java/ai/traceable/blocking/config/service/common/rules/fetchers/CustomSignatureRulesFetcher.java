@@ -12,8 +12,7 @@ import java.util.Optional;
 import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public class CustomSignatureRulesFetcher
-    implements RulesFetcher<GetCustomSignatureModsecRulesResponse> {
+public class CustomSignatureRulesFetcher implements RulesFetcher {
   private static final GetRulesFilter DEFAULT_GET_CUSTOM_SIGNATURE_MODSEC_RULES_FILTER =
       GetRulesFilter.newBuilder()
           .addEventTypes(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)

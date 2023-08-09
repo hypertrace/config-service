@@ -2,7 +2,7 @@ package ai.traceable.blocking.config.service.common.rules;
 
 import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc;
 import ai.traceable.blocking.config.service.common.rules.fetchers.CustomSignatureRulesFetcher;
-import ai.traceable.blocking.config.service.common.rules.fetchers.DLPRulesFetcher;
+import ai.traceable.blocking.config.service.common.rules.fetchers.DlpRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.MaliciousSourcesRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RegionRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher;
@@ -26,7 +26,7 @@ public class BlockingRulesFetcherModule extends AbstractModule {
         .addBinding(RulesFetcher.RulesFetcherType.MALICIOUS_SOURCES)
         .to(MaliciousSourcesRulesFetcher.class);
     multiBinder.addBinding(RulesFetcher.RulesFetcherType.REGION).to(RegionRulesFetcher.class);
-    multiBinder.addBinding(RulesFetcher.RulesFetcherType.DLP).to(DLPRulesFetcher.class);
+    multiBinder.addBinding(RulesFetcher.RulesFetcherType.DLP).to(DlpRulesFetcher.class);
 
     requireBinding(Clock.class);
     requireBinding(RegionConfigServiceGrpc.RegionConfigServiceBlockingStub.class);

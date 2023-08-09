@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public class RegionRulesFetcher implements RulesFetcher<List<DetailedRegion>> {
+public class RegionRulesFetcher implements RulesFetcher {
   private final Clock clock;
   private final RegionConfigServiceBlockingStub regionConfigServiceStub;
 

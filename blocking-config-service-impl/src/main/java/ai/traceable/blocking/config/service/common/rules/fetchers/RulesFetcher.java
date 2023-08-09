@@ -1,6 +1,6 @@
 package ai.traceable.blocking.config.service.common.rules.fetchers;
 
-public interface RulesFetcher<T> {
+public interface RulesFetcher {
 
   enum RulesFetcherType {
     MALICIOUS_SOURCES,
