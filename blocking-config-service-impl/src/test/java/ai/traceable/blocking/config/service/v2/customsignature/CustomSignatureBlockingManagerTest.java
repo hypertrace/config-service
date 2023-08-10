@@ -46,6 +46,31 @@ class CustomSignatureBlockingManagerTest {
 
   @Test
   void ruleFormationV3Only() {
+
+    // Incorrect libtraceable version
+    assertEquals(
+        List.of(
+            BlockingConfigResponseElement.newBuilder()
+                .setHash(V3_HASH)
+                .addAgentCapabilities(
+                    AgentCapabilities.newBuilder()
+                        .addComponents(Component.newBuilder().setLibtraceableVersion("0.0.2.3")))
+                .setCustomSignatureBlockingRules(
+                    CustomSignatureBlockingRules.newBuilder().setCustomSignatureRulesBlob(V3_blob))
+                .build()),
+        manager.generateBlockingElements(
+            List.of(
+                BlockingConfigRequestElement.newBuilder()
+                    .setPreviousHash("hg")
+                    .addSupportedAgentCapabilities(
+                        AgentCapabilities.newBuilder()
+                            .addComponents(
+                                Component.newBuilder().setLibtraceableVersion("0.0.2.3")))
+                    .setCustomSignatureBlockingRulesRequest(
+                        CustomSignatureBlockingRulesRequest.getDefaultInstance())
+                    .build()),
+            blockingRulesSupplier));
+
     // Old libtraceable version
     assertEquals(
         List.of(
@@ -55,7 +80,7 @@ class CustomSignatureBlockingManagerTest {
                     AgentCapabilities.newBuilder()
                         .addComponents(
                             Component.newBuilder()
-                                .setLibtraceableVersion("0.1.98-rc.138")
+                                .setLibtraceableVersion("0.1.98-rc.110")
                                 .setServiceName("serviceName")))
                 .setCustomSignatureBlockingRules(
                     CustomSignatureBlockingRules.newBuilder().setCustomSignatureRulesBlob(V3_blob))
@@ -68,7 +93,7 @@ class CustomSignatureBlockingManagerTest {
                         AgentCapabilities.newBuilder()
                             .addComponents(
                                 Component.newBuilder()
-                                    .setLibtraceableVersion("0.1.98-rc.138")
+                                    .setLibtraceableVersion("0.1.98-rc.110")
                                     .setServiceName("serviceName")))
                     .setCustomSignatureBlockingRulesRequest(
                         CustomSignatureBlockingRulesRequest.getDefaultInstance())
@@ -118,6 +143,11 @@ class CustomSignatureBlockingManagerTest {
                 .addAgentCapabilities(
                     AgentCapabilities.newBuilder()
                         .addComponents(
+                            Component.newBuilder()
+                                .setTraceablePlatformAgentVersion("0.1.98-rc.148")))
+                .addAgentCapabilities(
+                    AgentCapabilities.newBuilder()
+                        .addComponents(
                             Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
                 .setCustomSignatureBlockingRules(
                     CustomSignatureBlockingRules.newBuilder().setCustomSignatureRulesBlob(V3_blob))
@@ -132,6 +162,11 @@ class CustomSignatureBlockingManagerTest {
                                 Component.newBuilder()
                                     .setLibtraceableVersion("")
                                     .setTraceablePlatformAgentVersion("1.30.2-rc.3")))
+                    .addSupportedAgentCapabilities(
+                        AgentCapabilities.newBuilder()
+                            .addComponents(
+                                Component.newBuilder()
+                                    .setTraceablePlatformAgentVersion("0.1.98-rc.148")))
                     .setCustomSignatureBlockingRulesRequest(
                         CustomSignatureBlockingRulesRequest.getDefaultInstance())
                     .build(),
@@ -152,15 +187,6 @@ class CustomSignatureBlockingManagerTest {
     // Different libtraceable version
     assertEquals(
         List.of(
-            BlockingConfigResponseElement.newBuilder()
-                .setHash(V3_HASH)
-                .addAgentCapabilities(
-                    AgentCapabilities.newBuilder()
-                        .addComponents(
-                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
-                .setCustomSignatureBlockingRules(
-                    CustomSignatureBlockingRules.newBuilder().setCustomSignatureRulesBlob(V3_blob))
-                .build(),
             getV4Response(
                 List.of(
                     AgentCapabilities.newBuilder()
@@ -170,7 +196,16 @@ class CustomSignatureBlockingManagerTest {
                     AgentCapabilities.newBuilder()
                         .addComponents(
                             Component.newBuilder().setLibtraceableVersion("0.1.98-rc.140"))
-                        .build()))),
+                        .build())),
+            BlockingConfigResponseElement.newBuilder()
+                .setHash(V3_HASH)
+                .addAgentCapabilities(
+                    AgentCapabilities.newBuilder()
+                        .addComponents(
+                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
+                .setCustomSignatureBlockingRules(
+                    CustomSignatureBlockingRules.newBuilder().setCustomSignatureRulesBlob(V3_blob))
+                .build()),
         manager.generateBlockingElements(
             List.of(
                 BlockingConfigRequestElement.newBuilder()
@@ -196,14 +231,6 @@ class CustomSignatureBlockingManagerTest {
     assertEquals(
         List.of(
             BlockingConfigResponseElement.newBuilder()
-                .setHash(V3_HASH)
-                .addAgentCapabilities(
-                    AgentCapabilities.newBuilder()
-                        .addComponents(
-                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
-                .setCustomSignatureBlockingRules(CustomSignatureBlockingRules.getDefaultInstance())
-                .build(),
-            BlockingConfigResponseElement.newBuilder()
                 .setHash(V3_SEG_ARG_HASH)
                 .addAgentCapabilities(
                     AgentCapabilities.newBuilder()
@@ -215,6 +242,14 @@ class CustomSignatureBlockingManagerTest {
                         .addComponents(
                             Component.newBuilder().setLibtraceableVersion("0.1.98-rc.149"))
                         .build())
+                .setCustomSignatureBlockingRules(CustomSignatureBlockingRules.getDefaultInstance())
+                .build(),
+            BlockingConfigResponseElement.newBuilder()
+                .setHash(V3_HASH)
+                .addAgentCapabilities(
+                    AgentCapabilities.newBuilder()
+                        .addComponents(
+                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
                 .setCustomSignatureBlockingRules(CustomSignatureBlockingRules.getDefaultInstance())
                 .build()),
         manager.generateBlockingElements(
