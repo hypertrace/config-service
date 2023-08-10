@@ -166,15 +166,21 @@ public class WafIntegrationBuilderUtils {
                 .setEncryptedSecretAccessKey(
                     awsIntegrationUpdateParams.hasEncryptedSecretAccessKey()
                         ? awsIntegrationUpdateParams.getEncryptedSecretAccessKey()
-                        : existingWafIntegration
-                            .getWafIntegrationDetails()
-                            .getAwsIntegrationParams()
-                            .getEncryptedSecretAccessKey())
+                        : getAWSEncryptedSecretAccessKey(existingWafIntegration))
                 .build());
         return;
       default:
         throw Status.INVALID_ARGUMENT.asRuntimeException();
     }
+  }
+
+  private static String getAWSEncryptedSecretAccessKey(WafIntegration existingWafIntegration) {
+    AwsIntegrationParams awsIntegrationParams =
+        existingWafIntegration.getWafIntegrationDetails().getAwsIntegrationParams();
+    if (awsIntegrationParams.hasAuthCredentials()) {
+      return awsIntegrationParams.getAuthCredentials().getEncryptedSecretAccessKey();
+    }
+    return awsIntegrationParams.getEncryptedSecretAccessKey();
   }
 
   public static WafIntegration getBackwardCompatibleWafIntegration(
