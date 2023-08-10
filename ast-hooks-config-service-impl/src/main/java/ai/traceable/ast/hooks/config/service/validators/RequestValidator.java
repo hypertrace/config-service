@@ -22,12 +22,15 @@ import ai.traceable.ast.hooks.config.service.v1.TestStatusFilter;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookRequest;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookTestRequest;
 import io.grpc.Status;
+import java.util.regex.Pattern;
 import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class RequestValidator extends ValidatorBase {
+
+  private static final Pattern AST_HOOK_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]*$");
 
   private final HookConfigValidator hookConfigValidator;
 
@@ -79,6 +82,11 @@ public class RequestValidator extends ValidatorBase {
 
   private void validateHookDetails(
       RequestContext requestContext, AstHookDetails astHookDetails, boolean isUpdateRequest) {
+    if (!isValidAstHookName(astHookDetails.getName())) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Provided ast hook name is not valid: " + astHookDetails.getName())
+          .asRuntimeException();
+    }
     switch (astHookDetails.getAstHookTypeCase()) {
       case HOOK_CONFIG:
         if (!astHookDetails.hasHookConfig()) {
@@ -97,6 +105,10 @@ public class RequestValidator extends ValidatorBase {
     validateStringNotBlank(
         astHookDetails.getName(), "name not found while trying to create ast hooks config");
     //    validateRole(astHookDetails.getRole());
+  }
+
+  boolean isValidAstHookName(String name) {
+    return AST_HOOK_NAME_PATTERN.matcher(name).find();
   }
 
   private void validateHookConfig(HookConfig hookConfig, boolean isUpdateRequest) {
