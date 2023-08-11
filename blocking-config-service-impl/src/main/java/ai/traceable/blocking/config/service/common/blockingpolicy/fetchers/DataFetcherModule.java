@@ -7,6 +7,7 @@ import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServi
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc.IpRangeConfigServiceBlockingStub;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesConfigServiceGrpc.MaliciousSourcesConfigServiceBlockingStub;
 import ai.traceable.platform.actor.v1.ActorServiceGrpc.ActorServiceBlockingStub;
+import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceBlockingStub;
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.Multibinder;
@@ -24,6 +25,7 @@ public class DataFetcherModule extends AbstractModule {
     managerBaseMultibinder.addBinding().to(ModsecBlockingPolicyDataFetcher.class);
     managerBaseMultibinder.addBinding().to(RegionBlockingPolicyDataFetcher.class);
     managerBaseMultibinder.addBinding().to(MaliciousSourcesBlockingPolicyDataFetcher.class);
+    managerBaseMultibinder.addBinding().to(DLPBlockingPolicyDataFetcher.class);
 
     requireBinding(CustomSignatureConfigServiceBlockingStub.class);
     requireBinding(RegionConfigServiceBlockingStub.class);
@@ -32,5 +34,6 @@ public class DataFetcherModule extends AbstractModule {
     requireBinding(ActorServiceBlockingStub.class);
     requireBinding(AnomalyGlobalConfigServiceBlockingStub.class);
     requireBinding(DetectorConfigServiceBlockingStub.class);
+    requireBinding(RateLimitingConfigServiceBlockingStub.class);
   }
 }

@@ -26,6 +26,7 @@ import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
 import ai.traceable.ratelimiting.config.service.v2.CompositeCondition.LogicalOperator;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
+import ai.traceable.ratelimiting.config.service.v2.DataLocation;
 import ai.traceable.ratelimiting.config.service.v2.DatatypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.DatatypeCondition.DatatypeMatching;
 import ai.traceable.ratelimiting.config.service.v2.DatatypeCondition.RegexBasedMatching;
@@ -329,7 +330,10 @@ class RateLimitingModsecRulesManagerTest {
 
   private static Condition buildDataTypeCondition(boolean customLocation) {
     DatatypeCondition.Builder datatypeConditionBuilder =
-        DatatypeCondition.newBuilder().addDatasetIds("PII-Codex").addDatatypeIds("credit-card");
+        DatatypeCondition.newBuilder()
+            .addDatasetIds("PII-Codex")
+            .addDatatypeIds("credit-card")
+            .setDataLocation(DataLocation.DATA_LOCATION_REQUEST);
 
     if (customLocation) {
       datatypeConditionBuilder.setDatatypeMatching(

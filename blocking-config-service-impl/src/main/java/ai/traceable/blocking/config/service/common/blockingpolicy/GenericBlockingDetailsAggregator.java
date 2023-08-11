@@ -1,12 +1,11 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyAggregate;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import com.google.inject.Inject;
 import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -23,20 +22,22 @@ public class GenericBlockingDetailsAggregator<T> {
     this.blockingDetailsConverter = blockingDetailsConverter;
   }
 
-  public List<T> getBlockingDetails(
-      RequestContext requestContext, BlockingPolicyDataFilter filter) {
+  public BlockingPolicyAggregate<T> getBlockingDetails(
+      RequestContext requestContext,
+      BlockingPolicyDataFilter filter,
+      BlockingRulesSupplier blockingRulesSupplier) {
     try {
-      return blockingPolicyDataAggregator.getOrderedBlockingRules(requestContext, filter).stream()
-          .map(blockingPolicyData -> blockingDetailsConverter.convert(blockingPolicyData, filter))
-          .filter(Objects::nonNull)
-          .collect(Collectors.toUnmodifiableList());
+      return BlockingPolicyAggregate.convert(
+          blockingPolicyDataAggregator.getOrderedBlockingRules(
+              requestContext, filter, blockingRulesSupplier),
+          blockingPolicyData -> blockingDetailsConverter.convert(blockingPolicyData, filter));
     } catch (Exception e) {
       log.error(
           "Unable to create blocking policies for tenant:{} with filter:{} ",
           requestContext.getTenantId(),
           filter,
           e);
-      return Collections.emptyList();
+      return new BlockingPolicyAggregate<>(Collections.emptyList());
     }
   }
 

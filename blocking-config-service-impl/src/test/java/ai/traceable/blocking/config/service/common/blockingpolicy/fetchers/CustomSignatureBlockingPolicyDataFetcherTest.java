@@ -13,6 +13,7 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingP
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.CustomSignatureBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
@@ -89,9 +90,12 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
         .when(customSignatureConfigServiceBlockingStub)
         .getCustomSignatureRules(DEFAULT_GET_REQUEST);
     List<BlockingPolicyData> customSignatureRuleList =
-        customSignatureDataFetcher.getBlockingPolicyData(
-            REQUEST_CONTEXT,
-            BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build());
+        customSignatureDataFetcher
+            .getBlockingPolicyData(
+                REQUEST_CONTEXT,
+                BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build(),
+                mock(BlockingRulesSupplier.class))
+            .getBlockingPolicyList();
     assertEquals(0, customSignatureRuleList.size());
   }
 
@@ -102,9 +106,12 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
         .getCustomSignatureRules(DEFAULT_GET_REQUEST);
 
     List<BlockingPolicyData> customSignatureRuleList =
-        customSignatureDataFetcher.getBlockingPolicyData(
-            REQUEST_CONTEXT,
-            BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build());
+        customSignatureDataFetcher
+            .getBlockingPolicyData(
+                REQUEST_CONTEXT,
+                BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build(),
+                mock(BlockingRulesSupplier.class))
+            .getBlockingPolicyList();
 
     assertEquals(2, customSignatureRuleList.size());
 
@@ -155,16 +162,22 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
                         .setDisabled(false))
                 .build());
     List<BlockingPolicyData> customSignatureRuleList =
-        customSignatureDataFetcher.getBlockingPolicyData(
-            REQUEST_CONTEXT,
-            BlockingPolicyDataFilter.builder().environmentId(Optional.of(ENVIRONMENT_ID)).build());
+        customSignatureDataFetcher
+            .getBlockingPolicyData(
+                REQUEST_CONTEXT,
+                BlockingPolicyDataFilter.builder()
+                    .environmentId(Optional.of(ENVIRONMENT_ID))
+                    .build(),
+                mock(BlockingRulesSupplier.class))
+            .getBlockingPolicyList();
     assertEquals(3, customSignatureRuleList.size());
     assertThrows(
         NullPointerException.class,
         () ->
             customSignatureDataFetcher.getBlockingPolicyData(
                 REQUEST_CONTEXT,
-                BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build()));
+                BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build(),
+                mock(BlockingRulesSupplier.class)));
 
     // Wrong environment
     assertThrows(
@@ -174,7 +187,8 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
                 REQUEST_CONTEXT,
                 BlockingPolicyDataFilter.builder()
                     .environmentId(Optional.of(ENVIRONMENT_ID + "random"))
-                    .build()));
+                    .build(),
+                mock(BlockingRulesSupplier.class)));
   }
 
   private static final GetCustomSignatureRulesResponse sampleCustomSignatureAllEnvRulesResponse =

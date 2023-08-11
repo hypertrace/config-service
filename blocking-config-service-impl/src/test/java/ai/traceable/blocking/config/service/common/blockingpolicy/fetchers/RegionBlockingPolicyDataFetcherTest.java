@@ -13,6 +13,7 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingP
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.RegionBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import ai.traceable.region.config.service.v1.EnvironmentScope;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesRequest;
@@ -89,9 +90,12 @@ class RegionBlockingPolicyDataFetcherTest {
         .when(regionConfigServiceBlockingStub)
         .getAllRegionRules(DEFAULT_GET_REQUEST);
     List<BlockingPolicyData> regionBasedRuleList =
-        regionDataFetcher.getBlockingPolicyData(
-            REQUEST_CONTEXT,
-            BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build());
+        regionDataFetcher
+            .getBlockingPolicyData(
+                REQUEST_CONTEXT,
+                BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build(),
+                mock(BlockingRulesSupplier.class))
+            .getBlockingPolicyList();
     assertEquals(0, regionBasedRuleList.size());
   }
 
@@ -102,9 +106,12 @@ class RegionBlockingPolicyDataFetcherTest {
         .getAllRegionRules(DEFAULT_GET_REQUEST);
 
     List<BlockingPolicyData> regionBasedRuleList =
-        regionDataFetcher.getBlockingPolicyData(
-            REQUEST_CONTEXT,
-            BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build());
+        regionDataFetcher
+            .getBlockingPolicyData(
+                REQUEST_CONTEXT,
+                BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build(),
+                mock(BlockingRulesSupplier.class))
+            .getBlockingPolicyList();
 
     assertEquals(2, regionBasedRuleList.size());
     assertEquals(
@@ -158,9 +165,14 @@ class RegionBlockingPolicyDataFetcherTest {
 
     // With correct environment
     List<BlockingPolicyData> regionBasedRuleList =
-        regionDataFetcher.getBlockingPolicyData(
-            REQUEST_CONTEXT,
-            BlockingPolicyDataFilter.builder().environmentId(Optional.of(ENVIRONMENT_ID)).build());
+        regionDataFetcher
+            .getBlockingPolicyData(
+                REQUEST_CONTEXT,
+                BlockingPolicyDataFilter.builder()
+                    .environmentId(Optional.of(ENVIRONMENT_ID))
+                    .build(),
+                mock(BlockingRulesSupplier.class))
+            .getBlockingPolicyList();
     assertEquals(3, regionBasedRuleList.size());
 
     // Without environment
@@ -169,7 +181,8 @@ class RegionBlockingPolicyDataFetcherTest {
         () ->
             regionDataFetcher.getBlockingPolicyData(
                 REQUEST_CONTEXT,
-                BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build()));
+                BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build(),
+                mock(BlockingRulesSupplier.class)));
 
     // Wrong environment
     assertThrows(
@@ -179,7 +192,8 @@ class RegionBlockingPolicyDataFetcherTest {
                 REQUEST_CONTEXT,
                 BlockingPolicyDataFilter.builder()
                     .environmentId(Optional.of(ENVIRONMENT_ID + "random"))
-                    .build()));
+                    .build(),
+                mock(BlockingRulesSupplier.class)));
   }
 
   private static final GetAllRegionRulesResponse sampleRegionAllEnvRulesResponse =

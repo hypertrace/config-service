@@ -18,6 +18,7 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingP
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.RuleType;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Status;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.ModsecBlockingDetails;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -45,8 +46,10 @@ class ModsecBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
   }
 
   @Override
-  public List<BlockingPolicyData> getBlockingPolicyData(
-      RequestContext requestContext, BlockingPolicyDataFilter filter) {
+  public BlockingPolicyAggregate<BlockingPolicyData> getBlockingPolicyData(
+      RequestContext requestContext,
+      BlockingPolicyDataFilter filter,
+      BlockingRulesSupplier blockingRulesSupplier) {
     Optional<String> environmentId = filter.getEnvironmentId();
     AnomalyConfigScope anomalyConfigScope =
         environmentId
@@ -61,10 +64,11 @@ class ModsecBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
     GetScopedAnomalyGlobalConfigStatusResponse statusResponse =
         getScopedAnomalyGlobalConfigStatus(requestContext, anomalyConfigScope);
     if (!statusResponse.getScopedConfig().getConfigStatus().getDisabled()) {
-      return parseModsecViolations(
-          getScopedAnomalyDetectionConfig(requestContext, anomalyConfigScope));
+      return new BlockingPolicyAggregate(
+          parseModsecViolations(
+              getScopedAnomalyDetectionConfig(requestContext, anomalyConfigScope)));
     }
-    return Collections.emptyList();
+    return new BlockingPolicyAggregate(Collections.emptyList());
   }
 
   private GetScopedAnomalyGlobalConfigStatusResponse getScopedAnomalyGlobalConfigStatus(

@@ -72,14 +72,6 @@ public class BlockingConfigServiceModule extends AbstractModule {
   }
 
   @Provides
-  RateLimitingConfigServiceBlockingStub providesRateLimitingConfigServiceBlockingStub(
-      Channel channel) {
-    return RateLimitingConfigServiceGrpc.newBlockingStub(channel)
-        .withCallCredentials(
-            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
-  }
-
-  @Provides
   CustomSignatureConfigServiceBlockingStub providesCustomSignatureConfigServiceStub(
       Channel channel) {
     return CustomSignatureConfigServiceGrpc.newBlockingStub(channel)
@@ -116,6 +108,14 @@ public class BlockingConfigServiceModule extends AbstractModule {
   AnomalyModsecConfigServiceBlockingStub providesAnomalyModsecConfigServiceBlockingStub(
       Channel channel) {
     return AnomalyModsecConfigServiceGrpc.newBlockingStub(channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  RateLimitingConfigServiceBlockingStub providesRateLimitingConfigServiceBlockingStub(
+      Channel channel) {
+    return RateLimitingConfigServiceGrpc.newBlockingStub(channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

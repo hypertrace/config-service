@@ -13,6 +13,7 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingP
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.IpBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.iprange.config.service.v1.EnvironmentScope;
 import ai.traceable.iprange.config.service.v1.ExpirationDetails;
 import ai.traceable.iprange.config.service.v1.GetIpRangeRulesRequest;
@@ -89,9 +90,12 @@ class CustomIpBasedBlockingPolicyDataFetcherTest {
         .getIpRangeRules(DEFAULT_GET_REQUEST);
 
     List<BlockingPolicyData> customIpBasedRuleList =
-        customIpBasedDataFetcher.getBlockingPolicyData(
-            REQUEST_CONTEXT,
-            BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build());
+        customIpBasedDataFetcher
+            .getBlockingPolicyData(
+                REQUEST_CONTEXT,
+                BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build(),
+                mock(BlockingRulesSupplier.class))
+            .getBlockingPolicyList();
     assertEquals(0, customIpBasedRuleList.size());
   }
 
@@ -102,9 +106,12 @@ class CustomIpBasedBlockingPolicyDataFetcherTest {
         .getIpRangeRules(DEFAULT_GET_REQUEST);
 
     List<BlockingPolicyData> customIpBasedRuleList =
-        customIpBasedDataFetcher.getBlockingPolicyData(
-            REQUEST_CONTEXT,
-            BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build());
+        customIpBasedDataFetcher
+            .getBlockingPolicyData(
+                REQUEST_CONTEXT,
+                BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build(),
+                mock(BlockingRulesSupplier.class))
+            .getBlockingPolicyList();
 
     assertEquals(4, customIpBasedRuleList.size());
     assertEquals(
@@ -171,9 +178,14 @@ class CustomIpBasedBlockingPolicyDataFetcherTest {
                 .build());
 
     List<BlockingPolicyData> customIpBasedRuleList =
-        customIpBasedDataFetcher.getBlockingPolicyData(
-            REQUEST_CONTEXT,
-            BlockingPolicyDataFilter.builder().environmentId(Optional.of(ENVIRONMENT_ID)).build());
+        customIpBasedDataFetcher
+            .getBlockingPolicyData(
+                REQUEST_CONTEXT,
+                BlockingPolicyDataFilter.builder()
+                    .environmentId(Optional.of(ENVIRONMENT_ID))
+                    .build(),
+                mock(BlockingRulesSupplier.class))
+            .getBlockingPolicyList();
     assertEquals(5, customIpBasedRuleList.size());
 
     // Without environment
@@ -182,7 +194,8 @@ class CustomIpBasedBlockingPolicyDataFetcherTest {
         () ->
             customIpBasedDataFetcher.getBlockingPolicyData(
                 REQUEST_CONTEXT,
-                BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build()));
+                BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build(),
+                mock(BlockingRulesSupplier.class)));
 
     // Wrong environment
     assertThrows(
@@ -192,7 +205,8 @@ class CustomIpBasedBlockingPolicyDataFetcherTest {
                 REQUEST_CONTEXT,
                 BlockingPolicyDataFilter.builder()
                     .environmentId(Optional.of(ENVIRONMENT_ID + "random"))
-                    .build()));
+                    .build(),
+                mock(BlockingRulesSupplier.class)));
   }
 
   private static final GetIpRangeRulesResponse sampleGetIpRangeRulesAllEnvsResponse =

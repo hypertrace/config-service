@@ -29,6 +29,7 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingP
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Status;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.ModsecBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import java.util.List;
 import java.util.Optional;
@@ -80,9 +81,12 @@ class ModsecBlockingPolicyDataFetcherTest {
                 .build());
 
     List<BlockingPolicyData> violations =
-        modsecDataFetcher.getBlockingPolicyData(
-            REQUEST_CONTEXT,
-            BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build());
+        modsecDataFetcher
+            .getBlockingPolicyData(
+                REQUEST_CONTEXT,
+                BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build(),
+                mock(BlockingRulesSupplier.class))
+            .getBlockingPolicyList();
 
     assertEquals(1, violations.size());
     assertEquals(
@@ -110,9 +114,12 @@ class ModsecBlockingPolicyDataFetcherTest {
                 .setConfigScope(defaultCustomerScope)
                 .build());
     List<BlockingPolicyData> violations2 =
-        modsecDataFetcher.getBlockingPolicyData(
-            REQUEST_CONTEXT,
-            BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build());
+        modsecDataFetcher
+            .getBlockingPolicyData(
+                REQUEST_CONTEXT,
+                BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build(),
+                mock(BlockingRulesSupplier.class))
+            .getBlockingPolicyList();
     assertEquals(0, violations2.size());
   }
 
@@ -143,9 +150,14 @@ class ModsecBlockingPolicyDataFetcherTest {
                 .build());
 
     List<BlockingPolicyData> violations =
-        modsecDataFetcher.getBlockingPolicyData(
-            REQUEST_CONTEXT,
-            BlockingPolicyDataFilter.builder().environmentId(Optional.of(ENVIRONMENT_ID)).build());
+        modsecDataFetcher
+            .getBlockingPolicyData(
+                REQUEST_CONTEXT,
+                BlockingPolicyDataFilter.builder()
+                    .environmentId(Optional.of(ENVIRONMENT_ID))
+                    .build(),
+                mock(BlockingRulesSupplier.class))
+            .getBlockingPolicyList();
 
     assertEquals(1, violations.size());
     assertEquals(

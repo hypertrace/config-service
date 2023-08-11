@@ -1,8 +1,10 @@
 package ai.traceable.blocking.config.service.v2.blockingpolicy;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.GenericBlockingDetailsAggregator;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyAggregate;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
+import ai.traceable.blocking.config.service.v2.AgentCapabilities;
 import ai.traceable.blocking.config.service.v2.BlockingConfigManagerBase;
 import ai.traceable.blocking.config.service.v2.BlockingConfigRequestElement;
 import ai.traceable.blocking.config.service.v2.BlockingConfigResponseElement;
@@ -12,7 +14,12 @@ import ai.traceable.blocking.config.service.v2.Component;
 import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.inject.Inject;
+import java.util.AbstractMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class BlockingPolicyConfigurationManager implements BlockingConfigManagerBase {
@@ -34,10 +41,14 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
   public List<BlockingConfigResponseElement> generateBlockingElements(
       List<BlockingConfigRequestElement> requestElements,
       BlockingRulesSupplier blockingRulesSupplier) {
-    List<BlockingConfigRequestElement> blockingPolicyRequestElements =
+    requestElements =
         requestElements.stream()
             .filter(BlockingConfigRequestElement::hasBlockingPolicyConfigurationRequest)
             .collect(Collectors.toUnmodifiableList());
+
+    if (requestElements.isEmpty()) {
+      return List.of();
+    }
 
     // Getting minimum the libtraceable version mentioned
     String minLibtraceableVersion =
@@ -55,15 +66,9 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
         requestElements.stream()
             .filter(BlockingConfigRequestElement::hasBlockingPolicyConfigurationRequest)
             .flatMap(requestElement -> requestElement.getSupportedAgentCapabilitiesList().stream())
-            .flatMap(agentCapabilities -> agentCapabilities.getComponentsList().stream())
-            .filter(Component::hasServiceName)
-            .map(Component::getServiceName)
+            .map(this::getServiceName)
             .distinct()
             .collect(Collectors.toUnmodifiableList());
-
-    if (blockingPolicyRequestElements.isEmpty()) {
-      return List.of();
-    }
 
     BlockingPolicyDataFilter filter =
         BlockingPolicyDataFilter.builder()
@@ -71,41 +76,85 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
             .serviceNames(serviceNames)
             .minLibtraceableVersion(minLibtraceableVersion)
             .build();
-    BlockingPolicyConfiguration blockingPolicyConfiguration =
-        BlockingPolicyConfiguration.newBuilder()
-            .addAllBlockingDetailsList(
-                blockingDetailsAggregator.getBlockingDetails(
-                    blockingRulesSupplier.getRequestContext(), filter))
-            .build();
-    return List.of(
-        buildResponseElement(blockingPolicyRequestElements, blockingPolicyConfiguration));
-  }
 
-  private BlockingConfigResponseElement buildResponseElement(
-      List<BlockingConfigRequestElement> requestElements,
-      BlockingPolicyConfiguration blockingPolicyConfiguration) {
-    String responseHash = uuidGenerator.generateId(blockingPolicyConfiguration);
-    if (requestElements.stream()
-        .map(BlockingConfigRequestElement::getPreviousHash)
-        .allMatch(responseHash::equals)) {
-      return BlockingConfigResponseElement.newBuilder()
-          .setHash(responseHash)
-          .setBlockingPolicyConfiguration(BlockingPolicyConfiguration.getDefaultInstance())
-          .addAllAgentCapabilities(
+    BlockingPolicyAggregate<BlockingDetails> aggregate =
+        blockingDetailsAggregator.getBlockingDetails(
+            blockingRulesSupplier.getRequestContext(), filter, blockingRulesSupplier);
+
+    if (aggregate.getBlockingPolicyList() != null) {
+      return Collections.singletonList(
+          checkHashAndBuildResponse(
+              requestElements.stream()
+                  .map(BlockingConfigRequestElement::getPreviousHash)
+                  .collect(Collectors.toUnmodifiableList()),
+              aggregate.getBlockingPolicyList(),
               requestElements.stream()
                   .map(BlockingConfigRequestElement::getSupportedAgentCapabilitiesList)
                   .flatMap(List::stream)
-                  .collect(Collectors.toUnmodifiableList()))
+                  .collect(Collectors.toUnmodifiableList())));
+    }
+
+    return requestElements.stream()
+        .map(
+            requestElement ->
+                buildServiceScopedResponseElements(
+                    requestElement, aggregate.getServiceScopedBlockingPolicyMap()))
+        .flatMap(List::stream)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private List<BlockingConfigResponseElement> buildServiceScopedResponseElements(
+      BlockingConfigRequestElement requestElement,
+      Map<String, List<BlockingDetails>> serviceBlockingDetails) {
+    return requestElement.getSupportedAgentCapabilitiesList().stream()
+        .map(
+            agentCapabilities ->
+                new AbstractMap.SimpleEntry<>(
+                    agentCapabilities,
+                    Optional.ofNullable(
+                        serviceBlockingDetails.get(this.getServiceName(agentCapabilities)))))
+        .collect(
+            Collectors.groupingBy(
+                Map.Entry::getValue,
+                LinkedHashMap::new,
+                Collectors.mapping(Map.Entry::getKey, Collectors.toUnmodifiableList())))
+        .entrySet()
+        .stream()
+        .map(
+            entry ->
+                checkHashAndBuildResponse(
+                    Collections.singletonList(requestElement.getPreviousHash()),
+                    entry.getKey().orElse(List.of()),
+                    entry.getValue()))
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private BlockingConfigResponseElement checkHashAndBuildResponse(
+      List<String> previousHashes,
+      List<BlockingDetails> blockingDetails,
+      List<AgentCapabilities> agentCapabilities) {
+    BlockingPolicyConfiguration blockingPolicyConfiguration =
+        BlockingPolicyConfiguration.newBuilder().addAllBlockingDetailsList(blockingDetails).build();
+    String responseHash = uuidGenerator.generateId(blockingPolicyConfiguration);
+    if (previousHashes.stream().allMatch(responseHash::equals)) {
+      return BlockingConfigResponseElement.newBuilder()
+          .setHash(responseHash)
+          .setBlockingPolicyConfiguration(BlockingPolicyConfiguration.getDefaultInstance())
+          .addAllAgentCapabilities(agentCapabilities)
           .build();
     }
     return BlockingConfigResponseElement.newBuilder()
         .setHash(responseHash)
         .setBlockingPolicyConfiguration(blockingPolicyConfiguration)
-        .addAllAgentCapabilities(
-            requestElements.stream()
-                .map(BlockingConfigRequestElement::getSupportedAgentCapabilitiesList)
-                .flatMap(List::stream)
-                .collect(Collectors.toUnmodifiableList()))
+        .addAllAgentCapabilities(agentCapabilities)
         .build();
+  }
+
+  private String getServiceName(AgentCapabilities agentCapabilities) {
+    return agentCapabilities.getComponentsList().stream()
+        .filter(Component::hasServiceName)
+        .map(Component::getServiceName)
+        .findAny()
+        .orElse("");
   }
 }

@@ -9,6 +9,7 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingP
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Category;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.RegionBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import ai.traceable.region.config.service.v1.EnvironmentScope;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesRequest;
@@ -42,15 +43,18 @@ class RegionBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
   }
 
   @Override
-  public List<BlockingPolicyData> getBlockingPolicyData(
-      RequestContext requestContext, BlockingPolicyDataFilter filter) {
+  public BlockingPolicyAggregate<BlockingPolicyData> getBlockingPolicyData(
+      RequestContext requestContext,
+      BlockingPolicyDataFilter filter,
+      BlockingRulesSupplier blockingRulesSupplier) {
     Optional<String> environmentId = filter.getEnvironmentId();
     List<RegionRule> ruleList = fetchRegionRules(requestContext, environmentId);
-    return ruleList.stream()
-        .map(this::getBlockingDetails)
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .collect(Collectors.toUnmodifiableList());
+    return new BlockingPolicyAggregate(
+        ruleList.stream()
+            .map(this::getBlockingDetails)
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .collect(Collectors.toUnmodifiableList()));
   }
 
   private Optional<BlockingPolicyData> getBlockingDetails(RegionRule regionRule) {

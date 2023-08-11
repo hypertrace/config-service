@@ -2,8 +2,8 @@ package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.actor.ActorBasedRulesCache;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import com.google.inject.Inject;
-import java.util.List;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -16,10 +16,13 @@ class ActorBasedBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBa
   }
 
   @Override
-  public List<BlockingPolicyData> getBlockingPolicyData(
-      RequestContext requestContext, BlockingPolicyDataFilter filter) {
+  public BlockingPolicyAggregate<BlockingPolicyData> getBlockingPolicyData(
+      RequestContext requestContext,
+      BlockingPolicyDataFilter filter,
+      BlockingRulesSupplier blockingRulesSupplier) {
     Optional<String> environmentId = filter.getEnvironmentId();
-    return activeActorsCache.getActorBasedRules(
-        requestContext.buildInternalContextualKey(environmentId));
+    return new BlockingPolicyAggregate(
+        activeActorsCache.getActorBasedRules(
+            requestContext.buildInternalContextualKey(environmentId)));
   }
 }

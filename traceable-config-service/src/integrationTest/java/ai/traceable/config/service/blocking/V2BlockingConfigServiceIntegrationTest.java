@@ -3,6 +3,7 @@ package ai.traceable.config.service.blocking;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_CUSTOM_IP_RULE;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_CUSTOM_REGION_RULE;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE;
+import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_DATA_EXFILTRATION;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_ENUMERATION;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_MODSECURITY;
@@ -14,6 +15,9 @@ import static ai.traceable.blocking.config.service.v2.BlockingRuleType.BLOCKING_
 import static ai.traceable.blocking.config.service.v2.BlockingStatus.BLOCKING_STATUS_ALLOWED;
 import static ai.traceable.blocking.config.service.v2.BlockingStatus.BLOCKING_STATUS_DENIED;
 import static ai.traceable.blocking.config.service.v2.BlockingStatus.BLOCKING_STATUS_SNOOZED;
+import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_QUERY;
+import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_BODY;
+import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_HEADER;
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_ALLOW;
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_BLOCK;
 import static ai.traceable.platform.actor.v1.Status.STATUS_ALWAYS_ALLOWED;
@@ -43,17 +47,22 @@ import ai.traceable.blocking.config.service.v2.BlockingConfigRequestElement;
 import ai.traceable.blocking.config.service.v2.BlockingConfigResponseElement;
 import ai.traceable.blocking.config.service.v2.BlockingConfigServiceGrpc;
 import ai.traceable.blocking.config.service.v2.BlockingConfigServiceGrpc.BlockingConfigServiceBlockingStub;
+import ai.traceable.blocking.config.service.v2.BlockingDetailsCombination;
+import ai.traceable.blocking.config.service.v2.BlockingDetailsCombination.ConditionsOperator;
+import ai.traceable.blocking.config.service.v2.BlockingDetailsCondition;
 import ai.traceable.blocking.config.service.v2.BlockingPolicyConfiguration;
 import ai.traceable.blocking.config.service.v2.BlockingPolicyConfigurationRequest;
 import ai.traceable.blocking.config.service.v2.Component;
 import ai.traceable.blocking.config.service.v2.CrsBlockingRulesRequest;
 import ai.traceable.blocking.config.service.v2.CustomSignatureBlockingRulesRequest;
+import ai.traceable.blocking.config.service.v2.CustomSignatureDetails;
 import ai.traceable.blocking.config.service.v2.GetBlockingRulesRequest;
 import ai.traceable.blocking.config.service.v2.GetBlockingRulesResponse;
 import ai.traceable.blocking.config.service.v2.IpType;
 import ai.traceable.blocking.config.service.v2.IpTypeBlockingRulesRequest;
 import ai.traceable.blocking.config.service.v2.IpTypeRule;
 import ai.traceable.blocking.config.service.v2.RegionBlockingRulesRequest;
+import ai.traceable.blocking.config.service.v2.RegionDetails;
 import ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
@@ -71,6 +80,19 @@ import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
+import ai.traceable.data.classification.config.service.v1.CreateDataSetRequest;
+import ai.traceable.data.classification.config.service.v1.CreateDataTypeRequest;
+import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
+import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
+import ai.traceable.data.classification.config.service.v1.DataSet;
+import ai.traceable.data.classification.config.service.v1.DataSetInfo;
+import ai.traceable.data.classification.config.service.v1.DataType;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.GlobalScope;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.Location;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc.IpRangeConfigServiceBlockingStub;
@@ -105,6 +127,24 @@ import ai.traceable.platform.actor.v1.UpsertActorRequest;
 import ai.traceable.platform.actor.v1.UpsertActorResponse;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
+import ai.traceable.ratelimiting.config.service.v2.Action;
+import ai.traceable.ratelimiting.config.service.v2.Action.Block;
+import ai.traceable.ratelimiting.config.service.v2.Category;
+import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
+import ai.traceable.ratelimiting.config.service.v2.CompositeCondition.LogicalOperator;
+import ai.traceable.ratelimiting.config.service.v2.Condition;
+import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
+import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleResponse;
+import ai.traceable.ratelimiting.config.service.v2.DataLocation;
+import ai.traceable.ratelimiting.config.service.v2.DatatypeCondition;
+import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
+import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc;
+import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub;
+import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
+import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
+import ai.traceable.ratelimiting.config.service.v2.ScopeCondition;
+import ai.traceable.ratelimiting.config.service.v2.ScopeCondition.UrlScope;
+import ai.traceable.ratelimiting.config.service.v2.TransactionActionConfig;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.DetailedRegion;
 import ai.traceable.region.config.service.v1.GetDetailedRegionsRequest;
@@ -157,11 +197,14 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
   private static DetectorConfigServiceBlockingStub detectorConfigServiceStub;
   private static IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub;
   private static RegionConfigServiceBlockingStub regionConfigServiceStub;
+  private static RateLimitingConfigServiceBlockingStub rateLimitingConfigStub;
   private static ActorServiceBlockingStub actorServiceBlockingStub;
   private static MaliciousSourcesConfigServiceBlockingStub
       maliciousSourcesConfigServiceBlockingStub;
+  private static DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceStub;
   private static final List<String> actorEntityId = new ArrayList<>();
   private static final List<String> customSignatureRuleId = new ArrayList<>();
+  private static String lastCreatedDLPRuleId;
 
   @BeforeEach
   void initialize() {
@@ -195,6 +238,16 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
+    rateLimitingConfigStub =
+        RateLimitingConfigServiceGrpc.newBlockingStub(channelForInternalServices)
+            .withCallCredentials(
+                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+
+    dataClassificationConfigServiceStub =
+        DataClassificationConfigServiceGrpc.newBlockingStub(channelForInternalServices)
+            .withCallCredentials(
+                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+
     EntityTypeServiceClient entityTypeServiceClient =
         new EntityTypeServiceClient(channelRegistry.forPlaintextAddress("localhost", 60061));
 
@@ -223,7 +276,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
   }
 
   @Test
-  void agentVersioningTest() {
+  void agentVersioningModsecTest() {
     createCustomSignatureRule(Optional.of(ENVIRONMENT_ID));
 
     AgentCapabilities unsetLibtraceableAgentCapability =
@@ -397,10 +450,6 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                         GetBlockingRulesRequest.getDefaultInstance()));
     assertEquals(emptyValueUuid, response.getHash());
     assertEquals(0, response.getResponseElementsCount());
-
-    System.out.println("zdhf DEBUG");
-    System.out.println(customSignatureRuleId);
-    System.out.println("zdhf DEBUG");
 
     response =
         RequestContext.forTenantId(TENANT_ID)
@@ -686,6 +735,9 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
 
     addIpRangeRule(Optional.empty(), RULE_ACTION_ALLOW);
     addIpRangeRule(Optional.of(ENVIRONMENT_ID), RULE_ACTION_BLOCK);
+
+    createDLPPolicy(Optional.of(ENVIRONMENT_ID));
+
     // Checking with environment
     response =
         RequestContext.forTenantId(TENANT_ID)
@@ -770,7 +822,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             .collect(Collectors.toSet()));
 
     // 2 modsec + 3 region + 2 custom-signature rule + (1 threat-actors + 1 rate-limit + 2
-    // malicious-source) + 3 ip-type + 2 custom-ip
+    // malicious-source) + 3 ip-type + 2 custom-ip + 1 DLP
     filteredElements =
         filterElements(
             response.getResponseElementsList(),
@@ -792,11 +844,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                     .setPreviousHash(blockingPolicyConfigurationHash)
                                     .setBlockingPolicyConfigurationRequest(
                                         BlockingPolicyConfigurationRequest.getDefaultInstance())
-                                    .addSupportedAgentCapabilities(
-                                        AgentCapabilities.newBuilder()
-                                            .addComponents(
-                                                Component.newBuilder()
-                                                    .setLibtraceableVersion("0.1.98-rc.167"))))
+                                    .addSupportedAgentCapabilities(sampleLatestAgentCapability))
                             .setEnvironment(ENVIRONMENT_ID)
                             .build()));
 
@@ -839,8 +887,8 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
 
   void checkBlockingPolicy(BlockingPolicyConfiguration blockingPolicyConfiguration) {
     // 2 modsec + 3 region + 2 custom-signature rule + (1 threat-actors + 1 rate-limit + 4
-    // malicious-source) + 2 custom-ip + 3 ip-type
-    assertEquals(18, blockingPolicyConfiguration.getBlockingDetailsListCount());
+    // malicious-source) + 2 custom-ip + 3 ip-type + 1 DLP
+    assertEquals(19, blockingPolicyConfiguration.getBlockingDetailsListCount());
     int index = 0;
     assertEquals(
         BLOCKING_CATEGORY_CUSTOM_IP_RULE,
@@ -922,6 +970,61 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertEquals(
         "941280",
         blockingPolicyConfiguration.getBlockingDetailsList(index).getModsecDetails().getRuleId());
+    index++;
+
+    // Verifying DLP Policy
+    assertEquals(
+        BLOCKING_CATEGORY_DATA_EXFILTRATION,
+        blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
+    assertEquals(
+        BLOCKING_RULE_TYPE_BLOCK,
+        blockingPolicyConfiguration.getBlockingDetailsList(index).getBlockingRuleType());
+    BlockingDetailsCombination blockingDetailsCombination =
+        blockingPolicyConfiguration.getBlockingDetailsList(index).getDetailsCombination();
+    assertEquals(
+        ConditionsOperator.CONDITIONS_OPERATOR_AND, blockingDetailsCombination.getOperator());
+    assertEquals(3, blockingDetailsCombination.getDetailsConditionsCount());
+    assertEquals(
+        BlockingDetailsCondition.newBuilder()
+            .setRegionDetails(RegionDetails.newBuilder().addRegions("IND"))
+            .build(),
+        blockingDetailsCombination.getDetailsConditions(0));
+    // URL and other conditions
+    assertEquals(
+        BlockingDetailsCondition.newBuilder()
+            .setCustomSignatureDetails(
+                CustomSignatureDetails.newBuilder().setRuleId(lastCreatedDLPRuleId))
+            .build(),
+        blockingDetailsCombination.getDetailsConditions(1));
+    // Data type matching custom signature rules
+    assertEquals(
+        ConditionsOperator.CONDITIONS_OPERATOR_OR,
+        blockingDetailsCombination.getDetailsConditions(2).getDetailsCombination().getOperator());
+    assertEquals(
+        3,
+        blockingDetailsCombination
+            .getDetailsConditions(2)
+            .getDetailsCombination()
+            .getDetailsConditionsCount());
+    assertTrue(
+        blockingDetailsCombination
+            .getDetailsConditions(2)
+            .getDetailsCombination()
+            .getDetailsConditions(0)
+            .hasCustomSignatureDetails());
+    assertTrue(
+        blockingDetailsCombination
+            .getDetailsConditions(2)
+            .getDetailsCombination()
+            .getDetailsConditions(1)
+            .hasCustomSignatureDetails());
+    assertTrue(
+        blockingDetailsCombination
+            .getDetailsConditions(2)
+            .getDetailsCombination()
+            .getDetailsConditions(2)
+            .hasCustomSignatureDetails());
+
     index++;
     List<String> ipAddress = new ArrayList<>();
     assertEquals(
@@ -1159,6 +1262,99 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     return response.getRule().getId();
   }
 
+  private static void createDLPPolicy(Optional<String> environmentId) {
+    DataType dataType1 = createDataType("datatype-rule-1", LOCATION_REQUEST_HEADER, "^header");
+    DataType dataType2 = createDataType("datatype-rule-2", LOCATION_REQUEST_BODY, "^body");
+    DataType dataType3 = createDataType("datatype-rule-3", LOCATION_QUERY, "query_.*");
+    DataSet dataSet = createDataSet("dataset-1", List.of(dataType1.getId(), dataType2.getId()));
+
+    CreateRateLimitingRuleResponse response =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(
+                () ->
+                    rateLimitingConfigStub.createRateLimitingRule(
+                        CreateRateLimitingRuleRequest.newBuilder()
+                            .setData(
+                                RateLimitingRuleData.newBuilder()
+                                    .setCategory(Category.CATEGORY_DATA_EXFILTRATION)
+                                    .setName("DLP")
+                                    .setEnabled(true)
+                                    .setCondition(
+                                        Condition.newBuilder()
+                                            .setCompositeCondition(
+                                                CompositeCondition.newBuilder()
+                                                    .setOperator(
+                                                        LogicalOperator.LOGICAL_OPERATOR_AND)
+                                                    .addChildren(
+                                                        Condition.newBuilder()
+                                                            .setLeafCondition(
+                                                                LeafCondition.newBuilder()
+                                                                    .setRegionCondition(
+                                                                        ai.traceable.ratelimiting
+                                                                            .config.service.v2
+                                                                            .RegionCondition
+                                                                            .newBuilder()
+                                                                            .addRegionIdentifiers(
+                                                                                ai.traceable
+                                                                                    .ratelimiting
+                                                                                    .config.service
+                                                                                    .v2
+                                                                                    .RegionCondition
+                                                                                    .Region
+                                                                                    .newBuilder()
+                                                                                    .setCountryIsoCode(
+                                                                                        "IND")))))
+                                                    .addChildren(
+                                                        Condition.newBuilder()
+                                                            .setLeafCondition(
+                                                                LeafCondition.newBuilder()
+                                                                    .setDatatypeCondition(
+                                                                        DatatypeCondition
+                                                                            .newBuilder()
+                                                                            .addDatasetIds(
+                                                                                dataSet.getId())
+                                                                            .addDatatypeIds(
+                                                                                dataType3.getId())
+                                                                            .setDataLocation(
+                                                                                DataLocation
+                                                                                    .DATA_LOCATION_REQUEST))))
+                                                    .addChildren(
+                                                        Condition.newBuilder()
+                                                            .setLeafCondition(
+                                                                LeafCondition.newBuilder()
+                                                                    .setScopeCondition(
+                                                                        ScopeCondition.newBuilder()
+                                                                            .setUrlScope(
+                                                                                UrlScope
+                                                                                    .newBuilder()
+                                                                                    .addAllUrlRegexes(
+                                                                                        List.of(
+                                                                                            "/order/.*",
+                                                                                            "/pastOrders"))))))))
+                                    .setTransactionActionConfig(
+                                        TransactionActionConfig.newBuilder()
+                                            .setAction(
+                                                Action.newBuilder()
+                                                    .setBlock(
+                                                        Block.newBuilder()
+                                                            .setEventSeverity(
+                                                                Action.EventSeverity
+                                                                    .EVENT_SEVERITY_HIGH))))
+                                    .setRuleConfigScope(
+                                        environmentId
+                                            .map(
+                                                id ->
+                                                    RuleConfigScope.newBuilder()
+                                                        .setEnvironmentScope(
+                                                            ai.traceable.ratelimiting.config.service
+                                                                .v2.EnvironmentScope.newBuilder()
+                                                                .addEnvironmentIds(id))
+                                                        .build())
+                                            .orElse(RuleConfigScope.getDefaultInstance())))
+                            .build()));
+    lastCreatedDLPRuleId = response.getRule().getId();
+  }
+
   private static void enableBlockingOnAModsecRule(Optional<String> environmentId) {
     RequestContext.forTenantId(TENANT_ID)
         .call(
@@ -1270,5 +1466,42 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                     actorServiceBlockingStub.upsertActor(
                         UpsertActorRequest.newBuilder().setActor(actor).build()));
     return response.getActor().getEntityId();
+  }
+
+  private static DataSet createDataSet(String name, List<String> datatypeIds) {
+    CreateDataSetRequest request =
+        CreateDataSetRequest.newBuilder()
+            .setInfo(
+                DataSetInfo.newBuilder()
+                    .setName(name)
+                    .setEnabled(true)
+                    .addAllDataTypeIds(datatypeIds))
+            .build();
+
+    return RequestContext.forTenantId(TENANT_ID)
+        .call(() -> dataClassificationConfigServiceStub.createDataSet(request))
+        .getDataSet();
+  }
+
+  private static DataType createDataType(String name, Location location, String key) {
+    CreateDataTypeRequest request =
+        CreateDataTypeRequest.newBuilder()
+            .setRule(
+                DataTypeRule.newBuilder()
+                    .setName(name)
+                    .addScopedPatterns(
+                        ScopedPattern.newBuilder()
+                            .setGlobalScope(GlobalScope.newBuilder())
+                            .addLocations(location)
+                            .setKeyPattern(
+                                StringPattern.newBuilder()
+                                    .setValue(key)
+                                    .setOperator(Operator.OPERATOR_MATCHES_REGEX))
+                            .setAction(DataTypeRule.Action.ACTION_MATCH)))
+            .build();
+
+    return RequestContext.forTenantId(TENANT_ID)
+        .call(() -> dataClassificationConfigServiceStub.createDataType(request))
+        .getDataType();
   }
 }

@@ -2,6 +2,7 @@ package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.malicioussources.handlers.MaliciousSourceDataHandler;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.malicioussources.config.service.v1.EnvironmentScope;
 import ai.traceable.malicioussources.config.service.v1.GetMaliciousSourcesRulesRequest;
 import ai.traceable.malicioussources.config.service.v1.GetRulesFilter;
@@ -34,20 +35,26 @@ class MaliciousSourcesBlockingPolicyDataFetcher implements BlockingPolicyDataFet
   }
 
   @Override
-  public List<BlockingPolicyData> getBlockingPolicyData(
-      RequestContext requestContext, BlockingPolicyDataFilter filter) {
+  public BlockingPolicyAggregate<BlockingPolicyData> getBlockingPolicyData(
+      RequestContext requestContext,
+      BlockingPolicyDataFilter filter,
+      BlockingRulesSupplier blockingRulesSupplier) {
     Optional<String> environmentId = filter.getEnvironmentId();
     List<MaliciousSourcesRule> ruleList = fetchMaliciousSourceRules(requestContext, environmentId);
-    return ruleList.stream()
-        .map(
-            maliciousSourcesRule ->
-                Optional.ofNullable(
-                        maliciousSourceDataHandlerMap.get(
-                            maliciousSourcesRule.getRuleInfo().getConditions(0).getConditionCase()))
-                    .flatMap(handler -> handler.getBlockingDetails(maliciousSourcesRule)))
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .collect(Collectors.toUnmodifiableList());
+    return new BlockingPolicyAggregate(
+        ruleList.stream()
+            .map(
+                maliciousSourcesRule ->
+                    Optional.ofNullable(
+                            maliciousSourceDataHandlerMap.get(
+                                maliciousSourcesRule
+                                    .getRuleInfo()
+                                    .getConditions(0)
+                                    .getConditionCase()))
+                        .flatMap(handler -> handler.getBlockingDetails(maliciousSourcesRule)))
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .collect(Collectors.toUnmodifiableList()));
   }
 
   private List<MaliciousSourcesRule> fetchMaliciousSourceRules(

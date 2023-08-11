@@ -15,6 +15,7 @@ import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleCondi
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingModsecRule;
 import ai.traceable.region.config.service.v1.DetailedRegion;
 import com.google.common.base.Suppliers;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -100,7 +101,7 @@ public class BlockingRulesSupplier {
           .getModsecRulesBlob();
     } catch (Exception e) {
       log.error(
-          "Error in fetching custom signature modsec rules for request context: {} and environment",
+          "Error in fetching custom signature modsec rules for request context: {} and environment: {}",
           requestContext,
           environmentId);
       return "";
@@ -171,7 +172,9 @@ public class BlockingRulesSupplier {
             Collectors.toMap(
                 Function.identity(),
                 serviceName ->
-                    dlpRulesMap.getOrDefault(serviceName, new DlpModsecRulesData()).getRules()));
+                    dlpRulesMap.getOrDefault(serviceName, new DlpModsecRulesData()).getRules(),
+                (existingList, newList) -> existingList,
+                LinkedHashMap::new));
   }
 
   /** Method to fetch DLP rules for service not present in the map */

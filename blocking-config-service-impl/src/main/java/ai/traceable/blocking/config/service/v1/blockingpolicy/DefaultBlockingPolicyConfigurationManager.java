@@ -1,11 +1,14 @@
 package ai.traceable.blocking.config.service.v1.blockingpolicy;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.GenericBlockingDetailsAggregator;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyAggregate;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
 import ai.traceable.blocking.config.service.v1.BlockingPolicyConfiguration;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -26,12 +29,27 @@ class DefaultBlockingPolicyConfigurationManager implements BlockingPolicyConfigu
 
   @Override
   public BlockingPolicyConfiguration getBlockingPolicyConfiguration(
-      RequestContext requestContext, String requestHash, Optional<String> environmentId) {
+      RequestContext requestContext,
+      String requestHash,
+      Optional<String> environmentId,
+      BlockingRulesSupplier blockingRulesSupplier) {
     try {
-      List<BlockingDetails> blockingDetailsList =
+      BlockingPolicyAggregate<BlockingDetails> aggregate =
           blockingDetailsAggregator.getBlockingDetails(
               requestContext,
-              BlockingPolicyDataFilter.builder().environmentId(environmentId).build());
+              BlockingPolicyDataFilter.builder().environmentId(environmentId).build(),
+              blockingRulesSupplier);
+
+      List<BlockingDetails> blockingDetailsList;
+      if (aggregate.getBlockingPolicyList() != null) {
+        blockingDetailsList = aggregate.getBlockingPolicyList();
+      } else {
+        blockingDetailsList =
+            aggregate.getServiceScopedBlockingPolicyMap().values().stream()
+                .findAny()
+                .orElse(Collections.emptyList());
+      }
+
       String responseHash = uuidGenerator.generateId(blockingDetailsList);
       if (responseHash.equals(requestHash)) {
         return BlockingPolicyConfiguration.newBuilder().setHash(requestHash).build();

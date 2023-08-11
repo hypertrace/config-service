@@ -1,13 +1,14 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyAggregate;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 class BlockingPolicyDataAggregator {
@@ -18,14 +19,21 @@ class BlockingPolicyDataAggregator {
     this.blockingPolicyDataFetchers = blockingPolicyDataFetchers;
   }
 
-  List<BlockingPolicyData> getOrderedBlockingRules(
-      RequestContext requestContext, BlockingPolicyDataFilter filter) {
+  BlockingPolicyAggregate<BlockingPolicyData> getOrderedBlockingRules(
+      RequestContext requestContext,
+      BlockingPolicyDataFilter filter,
+      BlockingRulesSupplier blockingRulesSupplier) {
     // BlockingPolicyData is sorted according to BlockingPolicyDataBucket Enum.
     return blockingPolicyDataFetchers.stream()
-        .flatMap(
+        .map(
             blockingConfigManagerBase ->
-                blockingConfigManagerBase.getBlockingPolicyData(requestContext, filter).stream())
-        .sorted(Comparator.comparing(BlockingPolicyData::getBucket))
-        .collect(Collectors.toUnmodifiableList());
+                blockingConfigManagerBase.getBlockingPolicyData(
+                    requestContext, filter, blockingRulesSupplier))
+        .reduce(BlockingPolicyAggregate::merge)
+        .map(
+            blockingPolicyAggregate ->
+                BlockingPolicyAggregate.sort(
+                    blockingPolicyAggregate, Comparator.comparing(BlockingPolicyData::getBucket)))
+        .orElse(new BlockingPolicyAggregate<>(Collections.emptyList()));
   }
 }

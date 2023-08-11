@@ -2,9 +2,12 @@ package ai.traceable.blocking.config.service.v1.blockingpolicy;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.GenericBlockingDetailsAggregator;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyAggregate;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.blocking.config.service.v1.BlockingDetails;
 import ai.traceable.blocking.config.service.v1.BlockingPolicyConfiguration;
 import ai.traceable.config.utils.UuidGenerator;
@@ -33,11 +36,13 @@ class BlockingPolicyConfigurationManagerTest {
     BlockingDetails blockingDetails2 = Mockito.mock(BlockingDetails.class);
     List<BlockingDetails> mockBlockingDetailsList = List.of(blockingDetails1, blockingDetails2);
 
-    doReturn(mockBlockingDetailsList)
+    BlockingRulesSupplier mockBlockingRulesSupplier = mock(BlockingRulesSupplier.class);
+    doReturn(new BlockingPolicyAggregate<>(mockBlockingDetailsList))
         .when(mockAggregator)
         .getBlockingDetails(
             requestContext,
-            BlockingPolicyDataFilter.builder().environmentId(environmentId).build());
+            BlockingPolicyDataFilter.builder().environmentId(environmentId).build(),
+            mockBlockingRulesSupplier);
     doReturn("hash").when(uuidGenerator).generateId(mockBlockingDetailsList);
 
     assertEquals(
@@ -45,10 +50,12 @@ class BlockingPolicyConfigurationManagerTest {
             .addAllBlockingDetailsList(mockBlockingDetailsList)
             .setHash("hash")
             .build(),
-        manager.getBlockingPolicyConfiguration(requestContext, "", environmentId));
+        manager.getBlockingPolicyConfiguration(
+            requestContext, "", environmentId, mockBlockingRulesSupplier));
 
     assertEquals(
         BlockingPolicyConfiguration.newBuilder().setHash("hash").build(),
-        manager.getBlockingPolicyConfiguration(requestContext, "hash", environmentId));
+        manager.getBlockingPolicyConfiguration(
+            requestContext, "hash", environmentId, mockBlockingRulesSupplier));
   }
 }

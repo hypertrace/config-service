@@ -1,12 +1,15 @@
 package ai.traceable.blocking.config.service.v1;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import ai.traceable.blocking.config.service.common.entity.EntityFetcher;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplierContext;
 import ai.traceable.blocking.config.service.v1.blockingmodsec.ModsecBlockingManager;
 import ai.traceable.blocking.config.service.v1.blockingpolicy.BlockingPolicyConfigurationManager;
 import ai.traceable.blocking.config.service.v1.customsignature.CustomModsecBlockingManager;
@@ -28,6 +31,7 @@ class BlockingConfigServiceImplTest {
   private SafeCrsBlockingRules modsecCrsBlockingRules;
   private IpTypeBlockingRules ipTypeBlockingRules;
   private BlockingPolicyConfiguration blockingPolicyConfiguration;
+  private BlockingRulesSupplierContext blockingRulesSupplierContext;
 
   private BlockingConfigServiceImpl blockingConfigService;
   private final String hash1 = "hash1";
@@ -52,6 +56,7 @@ class BlockingConfigServiceImplTest {
     this.ipTypeBlockingRules = IpTypeBlockingRules.newBuilder().setHash(hash2).build();
     this.blockingPolicyConfiguration =
         BlockingPolicyConfiguration.newBuilder().setHash(hash2).build();
+    this.blockingRulesSupplierContext = mock(BlockingRulesSupplierContext.class);
 
     doReturn(environmentId).when(entityFetcher).getEnvironmentId(REQUEST_CONTEXT, environment);
 
@@ -67,7 +72,14 @@ class BlockingConfigServiceImplTest {
         .getEnabledBlockingRules(REQUEST_CONTEXT, hash1, environmentId);
     doReturn(blockingPolicyConfiguration)
         .when(blockingPolicyConfigurationManager)
-        .getBlockingPolicyConfiguration(REQUEST_CONTEXT, hash1, environmentId);
+        .getBlockingPolicyConfiguration(
+            eq(REQUEST_CONTEXT),
+            eq(hash1),
+            eq(environmentId),
+            argThat(
+                blockingRulesSupplier ->
+                    blockingRulesSupplier.getRequestContext().equals(REQUEST_CONTEXT)
+                        && blockingRulesSupplier.getEnvironmentId().equals(environmentId)));
 
     this.blockingConfigService =
         new BlockingConfigServiceImpl(
@@ -76,6 +88,7 @@ class BlockingConfigServiceImplTest {
             modsecBlockingManager,
             ipTypeBlockingManager,
             blockingPolicyConfigurationManager,
+            blockingRulesSupplierContext,
             entityFetcher);
   }
 

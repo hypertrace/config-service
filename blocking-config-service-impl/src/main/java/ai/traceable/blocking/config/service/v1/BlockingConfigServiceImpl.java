@@ -1,6 +1,8 @@
 package ai.traceable.blocking.config.service.v1;
 
 import ai.traceable.blocking.config.service.common.entity.EntityFetcher;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplierContext;
 import ai.traceable.blocking.config.service.v1.BlockingConfigServiceGrpc.BlockingConfigServiceImplBase;
 import ai.traceable.blocking.config.service.v1.blockingmodsec.ModsecBlockingManager;
 import ai.traceable.blocking.config.service.v1.blockingpolicy.BlockingPolicyConfigurationManager;
@@ -21,6 +23,7 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
   private final ModsecBlockingManager modsecBlockingManager;
   private final IpTypeBlockingManager ipTypeBlockingManager;
   private final BlockingPolicyConfigurationManager blockingPolicyConfigurationManager;
+  private final BlockingRulesSupplierContext blockingRulesSupplierContext;
   private final EntityFetcher entityFetcher;
 
   @Inject
@@ -30,12 +33,14 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
       ModsecBlockingManager modsecBlockingManager,
       IpTypeBlockingManager ipTypeBlockingManager,
       BlockingPolicyConfigurationManager blockingPolicyConfigurationManager,
+      BlockingRulesSupplierContext blockingRulesSupplierContext,
       EntityFetcher entityFetcher) {
     this.regionBlockingManager = regionBlockingManager;
     this.customModsecBlockingManager = customModsecBlockingManager;
     this.modsecBlockingManager = modsecBlockingManager;
     this.ipTypeBlockingManager = ipTypeBlockingManager;
     this.blockingPolicyConfigurationManager = blockingPolicyConfigurationManager;
+    this.blockingRulesSupplierContext = blockingRulesSupplierContext;
     this.entityFetcher = entityFetcher;
   }
 
@@ -49,6 +54,9 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
 
       Optional<String> environmentId =
           entityFetcher.getEnvironmentId(requestContext, request.getEnvironment());
+
+      BlockingRulesSupplier blockingRulesSupplier =
+          new BlockingRulesSupplier(blockingRulesSupplierContext, requestContext, environmentId);
 
       if (request.getFilter().getBlockingConfigDataOption()
           != BlockingConfigDataOption.BLOCKING_CONFIG_DATA_OPTION_POLICY_ONLY) {
@@ -68,9 +76,19 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
                 requestContext, request.getIpTypeBlockingRulesHash(), environmentId));
       }
 
+      var a =
+          blockingPolicyConfigurationManager.getBlockingPolicyConfiguration(
+              requestContext,
+              request.getBlockingPolicyConfigurationHash(),
+              environmentId,
+              blockingRulesSupplier);
+
       responseBuilder.setBlockingPolicyConfiguration(
           blockingPolicyConfigurationManager.getBlockingPolicyConfiguration(
-              requestContext, request.getBlockingPolicyConfigurationHash(), environmentId));
+              requestContext,
+              request.getBlockingPolicyConfigurationHash(),
+              environmentId,
+              blockingRulesSupplier));
 
       responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();
