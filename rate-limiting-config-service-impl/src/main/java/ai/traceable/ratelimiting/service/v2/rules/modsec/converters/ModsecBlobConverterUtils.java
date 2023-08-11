@@ -1,5 +1,6 @@
 package ai.traceable.ratelimiting.service.v2.rules.modsec.converters;
 
+import ai.traceable.config.utils.RegexValidator;
 import ai.traceable.customsignature.config.service.modsec.ModsecRuleConversion;
 import ai.traceable.customsignature.config.service.modsec.registry.ModsecActions;
 import ai.traceable.customsignature.config.service.v1.Clause;
@@ -76,6 +77,10 @@ public class ModsecBlobConverterUtils {
     ClauseDetails extractedClauseDetails = convertType(keyValueCondition.getType());
     if (keyValueCondition.hasKeyCondition() && keyValueCondition.hasValueCondition()) {
       if (extractedClauseDetails.getKeyValueTagOptional().isPresent()) {
+        // Check if formed regexes are valid
+        RegexValidator.validate(keyValueCondition.getKeyCondition().getValue());
+        RegexValidator.validate(keyValueCondition.getValueCondition().getValue());
+
         return Clause.newBuilder()
             .setKeyValueExpression(
                 KeyValueExpression.newBuilder()
@@ -90,6 +95,9 @@ public class ModsecBlobConverterUtils {
             .build();
       }
     } else if (keyValueCondition.hasValueCondition()) {
+      // Check if formed regex are valid
+      RegexValidator.validate(keyValueCondition.getValueCondition().getValue());
+
       return Clause.newBuilder()
           .setMatchExpression(
               MatchExpression.newBuilder()
@@ -100,6 +108,9 @@ public class ModsecBlobConverterUtils {
                   .setMatchValue(keyValueCondition.getValueCondition().getValue()))
           .build();
     } else if (extractedClauseDetails.getKeyTypeOptional().isPresent()) {
+      // Check if formed regex are valid
+      RegexValidator.validate(keyValueCondition.getKeyCondition().getValue());
+
       return Clause.newBuilder()
           .setMatchExpression(
               MatchExpression.newBuilder()
@@ -115,7 +126,7 @@ public class ModsecBlobConverterUtils {
             "Cannot convert key-value-condition - %s, into modsec rule", keyValueCondition));
   }
 
-  ClauseDetails convertType(Type type) {
+  private ClauseDetails convertType(Type type) {
     switch (type) {
       case TYPE_URL:
         return new ClauseDetails(

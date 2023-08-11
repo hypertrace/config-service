@@ -44,7 +44,7 @@ public class RateLimitingConfigServiceModule extends AbstractModule {
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
     bind(Clock.class).toInstance(Clock.systemUTC());
 
-    install(new RateLimitingModsecRulesModule());
+    install(new RateLimitingModsecRulesModule(channel));
   }
 
   @Provides

@@ -9,7 +9,6 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -20,18 +19,35 @@ public class ModsecBlobDataConverter {
   private static final long MODSEC_ID_SEED = 20000000;
   private static final String NEW_LINES_DELIMITER = "\n\n";
   private final ModsecBlobConverterUtils modsecBlobConverterUtils;
+  private final DataTypeRuleModsecConverter dataTypeRuleModsecConverter;
 
   @Inject
-  public ModsecBlobDataConverter(ModsecBlobConverterUtils modsecBlobConverterUtils) {
+  public ModsecBlobDataConverter(
+      ModsecBlobConverterUtils modsecBlobConverterUtils,
+      DataTypeRuleModsecConverter dataTypeRuleModsecConverter) {
     this.modsecBlobConverterUtils = modsecBlobConverterUtils;
+    this.dataTypeRuleModsecConverter = dataTypeRuleModsecConverter;
   }
 
   public ModsecBlobData generateModsecBlobData(
       Collection<EnrichedRateLimitingModsecRule> enrichedRateLimitingModsecRules,
-      Optional<String> serviceName) {
+      final Collection<String> serviceNames,
+      final List<String> environmentIds) {
+    // To protect evaluation of costly data type matching by chaining around them
+    List<String> jointUrlRegexes =
+        enrichedRateLimitingModsecRules.stream()
+            .map(EnrichedRateLimitingModsecRule::getUrlRegexes)
+            .flatMap(List::stream)
+            .distinct()
+            .collect(Collectors.toUnmodifiableList());
+
+    // Numbering rules to generate unique ids for each modsec rule
+    // Using same seed to keep modsec rules blob same if nothing else changes
     AtomicLong modsecIdAssignment = new AtomicLong(MODSEC_ID_SEED);
 
     List<String> modsecRules = new ArrayList<>();
+
+    // Convert url-regexes and key-value-conditions into modsec blob
     enrichedRateLimitingModsecRules.stream()
         .map(
             rule ->
@@ -43,16 +59,25 @@ public class ModsecBlobDataConverter {
         .filter(Predicate.not(String::isEmpty))
         .forEach(modsecRules::add);
 
-    ModsecBlobData.Builder builder =
-        ModsecBlobData.newBuilder()
-            .setModsecBlob(String.join(NEW_LINES_DELIMITER, modsecRules))
-            .addAllRuleIds(
-                enrichedRateLimitingModsecRules.stream()
-                    .map(EnrichedRateLimitingModsecRule::getId)
-                    .collect(Collectors.toUnmodifiableList()));
+    // Convert data-type rules into modsec blob
+    enrichedRateLimitingModsecRules.stream()
+        .map(EnrichedRateLimitingModsecRule::getDataTypeRuleWrappers)
+        .flatMap(List::stream)
+        .distinct()
+        .map(
+            dataTypeRuleWrapper ->
+                dataTypeRuleModsecConverter.convertToModsecRule(
+                    dataTypeRuleWrapper, jointUrlRegexes, environmentIds, modsecIdAssignment))
+        .forEach(modsecRules::addAll);
 
-    serviceName.ifPresent(builder::addServiceNames);
-    return builder.build();
+    return ModsecBlobData.newBuilder()
+        .setModsecBlob(String.join(NEW_LINES_DELIMITER, modsecRules))
+        .addAllRuleIds(
+            enrichedRateLimitingModsecRules.stream()
+                .map(EnrichedRateLimitingModsecRule::getId)
+                .collect(Collectors.toUnmodifiableList()))
+        .addAllServiceNames(serviceNames)
+        .build();
   }
 
   private String convertRateLimitConditionsToModsecRule(
@@ -69,9 +94,7 @@ public class ModsecBlobDataConverter {
               .collect(Collectors.toUnmodifiableList()),
           String.format(
               "URL Regex and key-value conditions corresponding to DLP Rule - %s", ruleIdentifier),
-          String.format(
-              "Matched all URL Regex and key-value conditions corresponding to DLP Rule - %s",
-              ruleIdentifier),
+          "Matched URL and request criteria corresponding to DLP Rule",
           modsecIdAssignment);
     } catch (Exception e) {
       log.warn("Cannot convert rateLimitingRule with id {} into modsec rule", ruleIdentifier, e);

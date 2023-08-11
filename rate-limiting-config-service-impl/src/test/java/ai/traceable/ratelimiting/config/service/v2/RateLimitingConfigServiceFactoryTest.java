@@ -1,4 +1,4 @@
-package ai.traceable.ratelimiting.config.service.v2.rules;
+package ai.traceable.ratelimiting.config.service.v2;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.mock;

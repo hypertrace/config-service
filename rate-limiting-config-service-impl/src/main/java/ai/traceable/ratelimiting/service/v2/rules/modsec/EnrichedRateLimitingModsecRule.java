@@ -2,15 +2,18 @@ package ai.traceable.ratelimiting.service.v2.rules.modsec;
 
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.Condition.ConditionCase;
-import ai.traceable.ratelimiting.config.service.v2.DatatypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.ModsecRuleIdInfo;
 import ai.traceable.ratelimiting.config.service.v2.ModsecRuleIdInfo.IdType;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingModsecRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.ScopeCondition.EntityType;
+import ai.traceable.ratelimiting.service.v2.rules.modsec.converters.DataTypeConditionConverter;
+import ai.traceable.ratelimiting.service.v2.rules.modsec.datatype.DataClassificationInfoProvider.DataClassificationInfo;
+import ai.traceable.ratelimiting.service.v2.rules.modsec.datatype.DataTypeRuleWrapper;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Value;
 
@@ -22,9 +25,10 @@ public class EnrichedRateLimitingModsecRule {
   List<String> serviceNames = new ArrayList<>();
   List<String> urlRegexes = new ArrayList<>();
   List<KeyValueCondition> keyValueConditions = new ArrayList<>();
-  List<DatatypeCondition> datatypeConditions = new ArrayList<>();
+  List<DataTypeRuleWrapper> dataTypeRuleWrappers = new ArrayList<>();
 
-  EnrichedRateLimitingModsecRule(final RateLimitingRule rule) {
+  EnrichedRateLimitingModsecRule(
+      final RateLimitingRule rule, DataClassificationInfo dataClassificationInfo) {
     this.id = rule.getId();
     // For now working with a single layer of composite condition
     // Operator is AND
@@ -33,9 +37,9 @@ public class EnrichedRateLimitingModsecRule {
           .getCondition()
           .getCompositeCondition()
           .getChildrenList()
-          .forEach(this::handleLeafCondition);
+          .forEach(condition -> this.handleLeafCondition(condition, dataClassificationInfo));
     } else {
-      handleLeafCondition(rule.getData().getCondition());
+      handleLeafCondition(rule.getData().getCondition(), dataClassificationInfo);
     }
 
     this.rule =
@@ -46,10 +50,18 @@ public class EnrichedRateLimitingModsecRule {
                 ModsecRuleIdInfo.newBuilder()
                     .addMatchingIds(rule.getId())
                     .setType(IdType.ID_TYPE_KEY_VALUE_CONDITION_URL_REGEXES))
+            .addAssociatedModsecRuleIds(
+                ModsecRuleIdInfo.newBuilder()
+                    .addAllMatchingIds(
+                        dataTypeRuleWrappers.stream()
+                            .map(DataTypeRuleWrapper::getModsecRuleId)
+                            .collect(Collectors.toUnmodifiableList()))
+                    .setType(IdType.ID_TYPE_DATA_TYPE_CUSTOM_LOCATION))
             .build();
   }
 
-  private void handleLeafCondition(Condition condition) {
+  private void handleLeafCondition(
+      Condition condition, DataClassificationInfo dataClassificationInfo) {
     if (condition.getConditionCase().equals(ConditionCase.COMPOSITE_CONDITION)) {
       throw new UnsupportedOperationException(
           "Cannot convert nested composite conditions to modsec blob");
@@ -79,7 +91,9 @@ public class EnrichedRateLimitingModsecRule {
         keyValueConditions.add(condition.getLeafCondition().getKeyValueCondition());
         break;
       case DATATYPE_CONDITION:
-        datatypeConditions.add(condition.getLeafCondition().getDatatypeCondition());
+        dataTypeRuleWrappers.addAll(
+            DataTypeConditionConverter.converter(
+                condition.getLeafCondition().getDatatypeCondition(), dataClassificationInfo));
         break;
       case REGION_CONDITION:
       case IP_ADDRESS_CONDITION:

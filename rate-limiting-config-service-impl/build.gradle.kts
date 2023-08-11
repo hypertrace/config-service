@@ -8,6 +8,7 @@ dependencies {
   api(projects.rateLimitingConfigServiceApi)
   api(libs.hypertrace.configservice.api)
   api(projects.customSignatureConfigServiceApi)
+  api(projects.dataClassificationConfigServiceApi)
 
   implementation(projects.customSignatureConfigServiceImpl)
   implementation(projects.anomalyConfigServiceRegistry)

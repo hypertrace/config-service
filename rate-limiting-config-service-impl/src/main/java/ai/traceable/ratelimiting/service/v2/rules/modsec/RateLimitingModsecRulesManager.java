@@ -11,13 +11,15 @@ import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter.Bu
 import ai.traceable.ratelimiting.config.service.v2.ModsecBlobData;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.converters.ModsecBlobDataConverter;
+import ai.traceable.ratelimiting.service.v2.rules.modsec.datatype.DataClassificationInfoProvider;
+import ai.traceable.ratelimiting.service.v2.rules.modsec.datatype.DataClassificationInfoProvider.DataClassificationInfo;
 import com.google.inject.Inject;
 import java.time.Clock;
 import java.util.AbstractMap;
-import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -27,15 +29,18 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class RateLimitingModsecRulesManager {
   private final ModsecBlobDataConverter modsecBlobDataConverter;
   private final ModsecRulesRegistry modsecRulesRegistry;
+  private final DataClassificationInfoProvider dataClassificationInfoProvider;
   private final Clock clock;
 
   @Inject
   public RateLimitingModsecRulesManager(
       ModsecBlobDataConverter modsecBlobDataConverter,
       ModsecRulesRegistry modsecRulesRegistry,
+      DataClassificationInfoProvider dataClassificationInfoProvider,
       Clock clock) {
     this.modsecBlobDataConverter = modsecBlobDataConverter;
     this.modsecRulesRegistry = modsecRulesRegistry;
+    this.dataClassificationInfoProvider = dataClassificationInfoProvider;
     this.clock = clock;
   }
 
@@ -43,26 +48,28 @@ public class RateLimitingModsecRulesManager {
       RequestContext requestContext,
       GetRateLimitingModsecRulesFilter filter,
       Function<GetRateLimitingRulesFilter, List<RateLimitingRule>> rateLimitingRulesSupplier) {
+    DataClassificationInfo dataClassificationInfo =
+        dataClassificationInfoProvider.fetchDataClassificationInfo(requestContext);
+
     List<EnrichedRateLimitingModsecRule> enrichedRateLimitingRules =
-        getEnrichedRateLimitingRules(requestContext, filter, rateLimitingRulesSupplier);
+        getEnrichedRateLimitingRules(filter, dataClassificationInfo, rateLimitingRulesSupplier);
+    List<String> environmentIds = filter.getScope().getEnvironmentScope().getEnvironmentIdsList();
 
     List<ModsecBlobData> serviceScopedModsecBlobData;
     if (filter.getServiceNamesList().isEmpty()) {
       serviceScopedModsecBlobData =
           List.of(
               modsecBlobDataConverter.generateModsecBlobData(
-                  enrichedRateLimitingRules, Optional.empty()));
+                  enrichedRateLimitingRules, Collections.emptyList(), environmentIds));
     } else {
-      Map<String, List<EnrichedRateLimitingModsecRule>> serviceIdToRuleIdsMap =
-          getServiceIdToRulesMap(enrichedRateLimitingRules, filter.getServiceNamesList());
-
       serviceScopedModsecBlobData =
-          filter.getServiceNamesList().stream()
-              .filter(serviceIdToRuleIdsMap::containsKey)
+          getRulesToServiceIdsMap(enrichedRateLimitingRules, filter.getServiceNamesList())
+              .entrySet()
+              .stream()
               .map(
-                  serviceName ->
+                  entry ->
                       modsecBlobDataConverter.generateModsecBlobData(
-                          serviceIdToRuleIdsMap.get(serviceName), Optional.of(serviceName)))
+                          entry.getKey(), entry.getValue(), environmentIds))
               .collect(Collectors.toUnmodifiableList());
     }
 
@@ -79,13 +86,13 @@ public class RateLimitingModsecRulesManager {
   }
 
   private List<EnrichedRateLimitingModsecRule> getEnrichedRateLimitingRules(
-      RequestContext requestContext,
       final GetRateLimitingModsecRulesFilter filter,
+      DataClassificationInfo dataClassificationInfo,
       Function<GetRateLimitingRulesFilter, List<RateLimitingRule>> rateLimitingRulesSupplier) {
     return rateLimitingRulesSupplier.apply(convertFilter(filter)).stream()
         .filter(rule -> filterByRuleAction(rule, filter.getRuleActionsList()))
         .filter(this::filterExpired)
-        .map(EnrichedRateLimitingModsecRule::new)
+        .map(rule -> new EnrichedRateLimitingModsecRule(rule, dataClassificationInfo))
         .filter(
             enrichedRateLimitingModsecRule ->
                 filterRulesByServiceScope(
@@ -136,23 +143,34 @@ public class RateLimitingModsecRulesManager {
     return !ruleServiceScopes.isEmpty();
   }
 
-  private static Map<String, List<EnrichedRateLimitingModsecRule>> getServiceIdToRulesMap(
-      Collection<EnrichedRateLimitingModsecRule> enrichedRateLimitingRules,
+  private static Map<List<EnrichedRateLimitingModsecRule>, List<String>> getRulesToServiceIdsMap(
+      List<EnrichedRateLimitingModsecRule> enrichedRateLimitingModsecRules,
       List<String> filterServiceNames) {
-    return enrichedRateLimitingRules.stream()
+    return enrichedRateLimitingModsecRules.stream()
         .flatMap(
-            rule -> {
-              if (rule.getServiceNames().isEmpty()) {
-                return filterServiceNames.stream()
-                    .map(serviceName -> new AbstractMap.SimpleEntry<>(serviceName, rule));
-              } else {
-                return rule.getServiceNames().stream()
-                    .map(serviceName -> new AbstractMap.SimpleEntry<>(serviceName, rule));
-              }
-            })
+            rule ->
+                rule.getServiceNames().isEmpty()
+                    ? filterServiceNames.stream()
+                        .map(serviceName -> new AbstractMap.SimpleEntry<>(serviceName, rule))
+                    : rule.getServiceNames().stream()
+                        .filter(filterServiceNames::contains)
+                        .map(serviceName -> new AbstractMap.SimpleEntry<>(serviceName, rule)))
         .collect(
             Collectors.groupingBy(
                 Map.Entry::getKey,
-                Collectors.mapping(Map.Entry::getValue, Collectors.toUnmodifiableList())));
+                LinkedHashMap::new, // Maintain insertion order
+                Collectors.mapping(Map.Entry::getValue, Collectors.toUnmodifiableList())))
+        .entrySet()
+        .stream()
+        .collect(
+            Collectors.groupingBy(
+                Map.Entry::getValue,
+                LinkedHashMap::new,
+                Collectors.mapping(
+                    Map.Entry::getKey,
+                    Collectors.collectingAndThen(
+                        Collectors.toList(),
+                        sortList ->
+                            sortList.stream().sorted().collect(Collectors.toUnmodifiableList())))));
   }
 }
