@@ -16,6 +16,7 @@ import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -42,6 +43,15 @@ class CustomSignatureBlockingManagerTest {
         .when(blockingRulesSupplier)
         .getCustomSignatureModsecBlob(
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS);
+    doReturn(Map.of("service1", V3_blob, "service2", V3_seg_arg_blob, "service3", V3_seg_arg_blob))
+        .when(blockingRulesSupplier)
+        .getCustomSignatureModsecBlobs(
+            CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
+            List.of("service1", "service2", "service3"));
+    doReturn(Map.of("serviceName", V3_blob))
+        .when(blockingRulesSupplier)
+        .getCustomSignatureModsecBlobs(
+            CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3, List.of("serviceName"));
   }
 
   @Test
@@ -49,136 +59,57 @@ class CustomSignatureBlockingManagerTest {
 
     // Incorrect libtraceable version
     assertEquals(
-        List.of(
-            BlockingConfigResponseElement.newBuilder()
-                .setHash(V3_HASH)
-                .addAgentCapabilities(
-                    AgentCapabilities.newBuilder()
-                        .addComponents(Component.newBuilder().setLibtraceableVersion("0.0.2.3")))
-                .setCustomSignatureBlockingRules(
-                    CustomSignatureBlockingRules.newBuilder().setCustomSignatureRulesBlob(V3_blob))
-                .build()),
+        List.of(getV3Response(List.of(getLibtraceableAgentCapabilities("0.0.2.3")), true)),
         manager.generateBlockingElements(
             List.of(
-                BlockingConfigRequestElement.newBuilder()
-                    .setPreviousHash("hg")
-                    .addSupportedAgentCapabilities(
-                        AgentCapabilities.newBuilder()
-                            .addComponents(
-                                Component.newBuilder().setLibtraceableVersion("0.0.2.3")))
-                    .setCustomSignatureBlockingRulesRequest(
-                        CustomSignatureBlockingRulesRequest.getDefaultInstance())
-                    .build()),
+                getRequestElement(
+                    "hg", List.of(getLibtraceableAgentCapabilities("0.0.2.3")), true)),
             blockingRulesSupplier));
 
     // Old libtraceable version
     assertEquals(
         List.of(
-            BlockingConfigResponseElement.newBuilder()
-                .setHash(V3_HASH)
-                .addAgentCapabilities(
-                    AgentCapabilities.newBuilder()
-                        .addComponents(
-                            Component.newBuilder()
-                                .setLibtraceableVersion("0.1.98-rc.110")
-                                .setServiceName("serviceName")))
-                .setCustomSignatureBlockingRules(
-                    CustomSignatureBlockingRules.newBuilder().setCustomSignatureRulesBlob(V3_blob))
-                .build()),
+            getV3Response(
+                List.of(getServiceLibtraceableAgentCapabilities("serviceName", "0.1.98-rc.110")),
+                true)),
         manager.generateBlockingElements(
             List.of(
-                BlockingConfigRequestElement.newBuilder()
-                    .setPreviousHash("random")
-                    .addSupportedAgentCapabilities(
-                        AgentCapabilities.newBuilder()
-                            .addComponents(
-                                Component.newBuilder()
-                                    .setLibtraceableVersion("0.1.98-rc.110")
-                                    .setServiceName("serviceName")))
-                    .setCustomSignatureBlockingRulesRequest(
-                        CustomSignatureBlockingRulesRequest.getDefaultInstance())
-                    .build()),
+                getRequestElement(
+                    "random",
+                    List.of(
+                        getServiceLibtraceableAgentCapabilities("serviceName", "0.1.98-rc.110")),
+                    true)),
             blockingRulesSupplier));
 
     // Same hash for all
     assertEquals(
-        List.of(
-            BlockingConfigResponseElement.newBuilder()
-                .setHash(V3_HASH)
-                .addAgentCapabilities(
-                    AgentCapabilities.newBuilder()
-                        .addComponents(
-                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
-                .setCustomSignatureBlockingRules(CustomSignatureBlockingRules.getDefaultInstance())
-                .build()),
+        List.of(getV3Response(List.of(getLibtraceableAgentCapabilities("0.1.98-rc.138")), false)),
         manager.generateBlockingElements(
             List.of(
-                BlockingConfigRequestElement.newBuilder()
-                    .setPreviousHash(V3_HASH)
-                    .setCustomSignatureBlockingRulesRequest(
-                        CustomSignatureBlockingRulesRequest.getDefaultInstance())
-                    .build(),
-                BlockingConfigRequestElement.newBuilder()
-                    .setPreviousHash(V3_HASH)
-                    .addSupportedAgentCapabilities(
-                        AgentCapabilities.newBuilder()
-                            .addComponents(
-                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
-                    .setCustomSignatureBlockingRulesRequest(
-                        CustomSignatureBlockingRulesRequest.getDefaultInstance())
-                    .build()),
+                getRequestElement(V3_HASH, List.of(), true),
+                getRequestElement(
+                    V3_HASH, List.of(getLibtraceableAgentCapabilities("0.1.98-rc.138")), true)),
             blockingRulesSupplier));
 
     // Same hash for some
     assertEquals(
         List.of(
-            BlockingConfigResponseElement.newBuilder()
-                .setHash(V3_HASH)
-                .addAgentCapabilities(
-                    AgentCapabilities.newBuilder()
-                        .addComponents(
-                            Component.newBuilder()
-                                .setLibtraceableVersion("")
-                                .setTraceablePlatformAgentVersion("1.30.2-rc.3")))
-                .addAgentCapabilities(
-                    AgentCapabilities.newBuilder()
-                        .addComponents(
-                            Component.newBuilder()
-                                .setTraceablePlatformAgentVersion("0.1.98-rc.148")))
-                .addAgentCapabilities(
-                    AgentCapabilities.newBuilder()
-                        .addComponents(
-                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
-                .setCustomSignatureBlockingRules(
-                    CustomSignatureBlockingRules.newBuilder().setCustomSignatureRulesBlob(V3_blob))
-                .build()),
+            getV3Response(
+                List.of(
+                    getTpaLibtraceableAgentCapabilities("1.30.2-rc.3", ""),
+                    getTraceablePlatformAgentCapabilities("0.1.98-rc.148"),
+                    getLibtraceableAgentCapabilities("0.1.98-rc.138")),
+                true)),
         manager.generateBlockingElements(
             List.of(
-                BlockingConfigRequestElement.newBuilder()
-                    .setPreviousHash("random")
-                    .addSupportedAgentCapabilities(
-                        AgentCapabilities.newBuilder()
-                            .addComponents(
-                                Component.newBuilder()
-                                    .setLibtraceableVersion("")
-                                    .setTraceablePlatformAgentVersion("1.30.2-rc.3")))
-                    .addSupportedAgentCapabilities(
-                        AgentCapabilities.newBuilder()
-                            .addComponents(
-                                Component.newBuilder()
-                                    .setTraceablePlatformAgentVersion("0.1.98-rc.148")))
-                    .setCustomSignatureBlockingRulesRequest(
-                        CustomSignatureBlockingRulesRequest.getDefaultInstance())
-                    .build(),
-                BlockingConfigRequestElement.newBuilder()
-                    .setPreviousHash(V3_HASH)
-                    .addSupportedAgentCapabilities(
-                        AgentCapabilities.newBuilder()
-                            .addComponents(
-                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
-                    .setCustomSignatureBlockingRulesRequest(
-                        CustomSignatureBlockingRulesRequest.getDefaultInstance())
-                    .build()),
+                getRequestElement(
+                    "random",
+                    List.of(
+                        getTpaLibtraceableAgentCapabilities("1.30.2-rc.3", ""),
+                        getTraceablePlatformAgentCapabilities("0.1.98-rc.148")),
+                    true),
+                getRequestElement(
+                    V3_HASH, List.of(getLibtraceableAgentCapabilities("0.1.98-rc.138")), true)),
             blockingRulesSupplier));
   }
 
@@ -187,100 +118,44 @@ class CustomSignatureBlockingManagerTest {
     // Different libtraceable version
     assertEquals(
         List.of(
-            getV4Response(
+            getV3SecArgResponse(
                 List.of(
-                    AgentCapabilities.newBuilder()
-                        .addComponents(
-                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.139"))
-                        .build(),
-                    AgentCapabilities.newBuilder()
-                        .addComponents(
-                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.140"))
-                        .build())),
-            BlockingConfigResponseElement.newBuilder()
-                .setHash(V3_HASH)
-                .addAgentCapabilities(
-                    AgentCapabilities.newBuilder()
-                        .addComponents(
-                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
-                .setCustomSignatureBlockingRules(
-                    CustomSignatureBlockingRules.newBuilder().setCustomSignatureRulesBlob(V3_blob))
-                .build()),
+                    getLibtraceableAgentCapabilities("0.1.98-rc.139"),
+                    getLibtraceableAgentCapabilities("0.1.98-rc.140")),
+                true),
+            getV3Response(List.of(getLibtraceableAgentCapabilities("0.1.98-rc.138")), true)),
         manager.generateBlockingElements(
             List.of(
-                BlockingConfigRequestElement.newBuilder()
-                    .setPreviousHash("random")
-                    .addSupportedAgentCapabilities(
-                        AgentCapabilities.newBuilder()
-                            .addComponents(
-                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.139")))
-                    .addSupportedAgentCapabilities(
-                        AgentCapabilities.newBuilder()
-                            .addComponents(
-                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.140")))
-                    .addSupportedAgentCapabilities(
-                        AgentCapabilities.newBuilder()
-                            .addComponents(
-                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
-                    .setCustomSignatureBlockingRulesRequest(
-                        CustomSignatureBlockingRulesRequest.getDefaultInstance())
-                    .build()),
+                getRequestElement(
+                    "random",
+                    List.of(
+                        getLibtraceableAgentCapabilities("0.1.98-rc.139"),
+                        getLibtraceableAgentCapabilities("0.1.98-rc.140"),
+                        getLibtraceableAgentCapabilities("0.1.98-rc.138")),
+                    true)),
             blockingRulesSupplier));
 
     // Same hash for all
     assertEquals(
         List.of(
-            BlockingConfigResponseElement.newBuilder()
-                .setHash(V3_SEG_ARG_HASH)
-                .addAgentCapabilities(
-                    AgentCapabilities.newBuilder()
-                        .addComponents(
-                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.139"))
-                        .build())
-                .addAgentCapabilities(
-                    AgentCapabilities.newBuilder()
-                        .addComponents(
-                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.149"))
-                        .build())
-                .setCustomSignatureBlockingRules(CustomSignatureBlockingRules.getDefaultInstance())
-                .build(),
-            BlockingConfigResponseElement.newBuilder()
-                .setHash(V3_HASH)
-                .addAgentCapabilities(
-                    AgentCapabilities.newBuilder()
-                        .addComponents(
-                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
-                .setCustomSignatureBlockingRules(CustomSignatureBlockingRules.getDefaultInstance())
-                .build()),
+            getV3SecArgResponse(
+                List.of(
+                    getLibtraceableAgentCapabilities("0.1.98-rc.139"),
+                    getLibtraceableAgentCapabilities("0.1.98-rc.149")),
+                false),
+            getV3Response(List.of(getLibtraceableAgentCapabilities("0.1.98-rc.138")), false)),
         manager.generateBlockingElements(
             List.of(
-                BlockingConfigRequestElement.newBuilder()
-                    .setPreviousHash(V3_SEG_ARG_HASH)
-                    .addSupportedAgentCapabilities(
-                        AgentCapabilities.newBuilder()
-                            .addComponents(
-                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.139")))
-                    .setCustomSignatureBlockingRulesRequest(
-                        CustomSignatureBlockingRulesRequest.getDefaultInstance())
-                    .build(),
-                BlockingConfigRequestElement.newBuilder()
-                    .setPreviousHash(V3_HASH)
-                    .addSupportedAgentCapabilities(
-                        AgentCapabilities.newBuilder()
-                            .addComponents(
-                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
-                    .setCustomSignatureBlockingRulesRequest(
-                        CustomSignatureBlockingRulesRequest.getDefaultInstance())
-                    .build(),
-                BlockingConfigRequestElement.newBuilder()
-                    .setPreviousHash(V3_SEG_ARG_HASH)
-                    .addSupportedAgentCapabilities(
-                        AgentCapabilities.newBuilder()
-                            .addComponents(
-                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.149")))
-                    .setCustomSignatureBlockingRulesRequest(
-                        CustomSignatureBlockingRulesRequest.getDefaultInstance())
-                    .build()),
+                getRequestElement(
+                    V3_SEG_ARG_HASH,
+                    List.of(getLibtraceableAgentCapabilities("0.1.98-rc.139")),
+                    true),
+                getRequestElement(
+                    V3_HASH, List.of(getLibtraceableAgentCapabilities("0.1.98-rc.138")), true),
+                getRequestElement(
+                    V3_SEG_ARG_HASH,
+                    List.of(getLibtraceableAgentCapabilities("0.1.98-rc.149")),
+                    true)),
             blockingRulesSupplier));
 
     // Test empty in case request elements are empty
@@ -288,27 +163,113 @@ class CustomSignatureBlockingManagerTest {
         List.of(),
         manager.generateBlockingElements(
             List.of(
-                BlockingConfigRequestElement.newBuilder()
-                    .setPreviousHash(V3_HASH)
-                    .addSupportedAgentCapabilities(
-                        AgentCapabilities.newBuilder()
-                            .addComponents(
-                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.138")))
-                    .addSupportedAgentCapabilities(
-                        AgentCapabilities.newBuilder()
-                            .addComponents(
-                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.148")))
-                    .build()),
+                getRequestElement(
+                    V3_HASH,
+                    List.of(
+                        getLibtraceableAgentCapabilities("0.1.98-rc.138"),
+                        getLibtraceableAgentCapabilities("0.1.98-rc.148")),
+                    false)),
+            blockingRulesSupplier));
+
+    // Test in case of serviceNames present
+    assertEquals(
+        List.of(
+            getV3SecArgResponse(
+                List.of(
+                    getLibtraceableAgentCapabilities("0.1.98-rc.149"),
+                    getServiceLibtraceableAgentCapabilities("service2", "0.1.98-rc.148"),
+                    getServiceLibtraceableAgentCapabilities("service3", "0.1.98-rc.148")),
+                true),
+            getV3Response(
+                List.of(getServiceLibtraceableAgentCapabilities("service1", "0.1.98-rc.139")),
+                true),
+            getV3Response(List.of(getLibtraceableAgentCapabilities("0.1.98-rc.138")), false)),
+        manager.generateBlockingElements(
+            List.of(
+                getRequestElement(
+                    V3_SEG_ARG_HASH,
+                    List.of(
+                        getServiceLibtraceableAgentCapabilities("service1", "0.1.98-rc.139"),
+                        getLibtraceableAgentCapabilities("0.1.98-rc.149")),
+                    true),
+                getRequestElement(
+                    V3_HASH,
+                    List.of(
+                        getServiceLibtraceableAgentCapabilities("service2", "0.1.98-rc.148"),
+                        getServiceLibtraceableAgentCapabilities("service3", "0.1.98-rc.148"),
+                        getLibtraceableAgentCapabilities("0.1.98-rc.138")),
+                    true)),
             blockingRulesSupplier));
   }
 
-  private static BlockingConfigResponseElement getV4Response(
-      List<AgentCapabilities> agentCapabilities) {
+  private AgentCapabilities getLibtraceableAgentCapabilities(String libtraceableVersion) {
+    return AgentCapabilities.newBuilder()
+        .addComponents(Component.newBuilder().setLibtraceableVersion(libtraceableVersion))
+        .build();
+  }
+
+  private AgentCapabilities getTraceablePlatformAgentCapabilities(String tpaVersion) {
+    return AgentCapabilities.newBuilder()
+        .addComponents(Component.newBuilder().setTraceablePlatformAgentVersion(tpaVersion))
+        .build();
+  }
+
+  private AgentCapabilities getTpaLibtraceableAgentCapabilities(
+      String tpaVersion, String libtraceableVersion) {
+    return AgentCapabilities.newBuilder()
+        .addComponents(Component.newBuilder().setTraceablePlatformAgentVersion(tpaVersion))
+        .addComponents(Component.newBuilder().setLibtraceableVersion(libtraceableVersion))
+        .build();
+  }
+
+  private AgentCapabilities getServiceLibtraceableAgentCapabilities(
+      String serviceName, String libtraceableVersion) {
+    return AgentCapabilities.newBuilder()
+        .addComponents(Component.newBuilder().setServiceName(serviceName))
+        .addComponents(Component.newBuilder().setLibtraceableVersion(libtraceableVersion))
+        .build();
+  }
+
+  private BlockingConfigRequestElement getRequestElement(
+      String previousHash,
+      List<AgentCapabilities> agentCapabilities,
+      boolean setCustomSignatureRequest) {
+    BlockingConfigRequestElement.Builder builder =
+        BlockingConfigRequestElement.newBuilder()
+            .setPreviousHash(previousHash)
+            .addAllSupportedAgentCapabilities(agentCapabilities);
+    if (setCustomSignatureRequest) {
+      builder.setCustomSignatureBlockingRulesRequest(
+          CustomSignatureBlockingRulesRequest.getDefaultInstance());
+    }
+    return builder.build();
+  }
+
+  private BlockingConfigResponseElement getV3Response(
+      List<AgentCapabilities> agentCapabilities, boolean setBlob) {
+    return BlockingConfigResponseElement.newBuilder()
+        .setHash(V3_HASH)
+        .addAllAgentCapabilities(agentCapabilities)
+        .setCustomSignatureBlockingRules(
+            setBlob
+                ? CustomSignatureBlockingRules.newBuilder()
+                    .setCustomSignatureRulesBlob(V3_blob)
+                    .build()
+                : CustomSignatureBlockingRules.getDefaultInstance())
+        .build();
+  }
+
+  private BlockingConfigResponseElement getV3SecArgResponse(
+      List<AgentCapabilities> agentCapabilities, boolean setBlob) {
     return BlockingConfigResponseElement.newBuilder()
         .setHash(V3_SEG_ARG_HASH)
         .addAllAgentCapabilities(agentCapabilities)
         .setCustomSignatureBlockingRules(
-            CustomSignatureBlockingRules.newBuilder().setCustomSignatureRulesBlob(V3_seg_arg_blob))
+            setBlob
+                ? CustomSignatureBlockingRules.newBuilder()
+                    .setCustomSignatureRulesBlob(V3_seg_arg_blob)
+                    .build()
+                : CustomSignatureBlockingRules.getDefaultInstance())
         .build();
   }
 }

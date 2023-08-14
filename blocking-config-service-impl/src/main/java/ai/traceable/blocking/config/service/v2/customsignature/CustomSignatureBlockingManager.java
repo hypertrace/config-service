@@ -12,16 +12,16 @@ import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
 import java.util.stream.Collectors;
-import lombok.AccessLevel;
-import lombok.Getter;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -60,51 +60,116 @@ public class CustomSignatureBlockingManager implements BlockingConfigManagerBase
       return Collections.emptyList();
     }
 
-    Map<CustomModsecRuleVersion, AgentRequestComponents> requestElementsMap = new LinkedHashMap<>();
+    Map<CustomModsecRuleVersion, List<AgentRequestComponent>> agentComponentsMap =
+        new LinkedHashMap<>();
 
     for (BlockingConfigRequestElement requestElement : customSignatureRequestElements) {
       for (AgentCapabilities agentCapabilities :
           requestElement.getSupportedAgentCapabilitiesList()) {
         CustomModsecRuleVersion modsecRuleVersion =
             getMaximumSupportedModsecRuleVersion(agentCapabilities);
-        AgentRequestComponents agentRequestComponents =
-            requestElementsMap.computeIfAbsent(
-                modsecRuleVersion, v -> new AgentRequestComponents());
-        agentRequestComponents.getMatchingRequestAgentCapabilities().add(agentCapabilities);
-        agentRequestComponents.getPreviousHashes().add(requestElement.getPreviousHash());
+        AgentRequestComponent agentRequestComponent =
+            new AgentRequestComponent(agentCapabilities, requestElement.getPreviousHash());
+        agentComponentsMap
+            .computeIfAbsent(modsecRuleVersion, v -> new ArrayList<>())
+            .add(agentRequestComponent);
       }
     }
 
-    return requestElementsMap.entrySet().stream()
-        .map(entry -> buildResponseElement(entry.getKey(), entry.getValue(), blockingRulesSupplier))
+    return agentComponentsMap.entrySet().stream()
+        .flatMap(
+            entry ->
+                buildAgentResponseComponents(
+                        entry.getKey(), entry.getValue(), blockingRulesSupplier)
+                    .stream()
+                    .map(this::buildResponseElement))
         .collect(Collectors.toUnmodifiableList());
   }
 
-  private BlockingConfigResponseElement buildResponseElement(
+  private Collection<AgentResponseComponent> buildAgentResponseComponents(
       CustomModsecRuleVersion customModsecRuleVersion,
-      AgentRequestComponents agentRequestComponents,
+      List<AgentRequestComponent> agentRequestComponents,
       BlockingRulesSupplier blockingRulesSupplier) {
 
-    String customSignatureRulesBlob =
-        blockingRulesSupplier.getCustomSignatureModsecBlob(customModsecRuleVersion);
-    String responseHash = uuidGenerator.generateId(customSignatureRulesBlob);
-
-    // Checking if hashes of all requests are same
-    if (agentRequestComponents.getPreviousHashes().stream().allMatch(responseHash::equals)) {
-      return BlockingConfigResponseElement.newBuilder()
-          .setHash(responseHash)
-          .addAllAgentCapabilities(agentRequestComponents.getMatchingRequestAgentCapabilities())
-          .setCustomSignatureBlockingRules(CustomSignatureBlockingRules.getDefaultInstance())
-          .build();
+    List<AgentRequestComponent> serviceAgnosticComponents = new ArrayList<>();
+    Map<String, List<AgentRequestComponent>> serviceComponentsMap = new LinkedHashMap<>();
+    for (AgentRequestComponent agentRequestComponent : agentRequestComponents) {
+      Optional<String> serviceName =
+          agentRequestComponent.getMatchingRequestAgentCapabilities().getComponentsList().stream()
+              .filter(Component::hasServiceName)
+              .findAny()
+              .map(Component::getServiceName);
+      if (serviceName.isPresent()) {
+        serviceComponentsMap
+            .computeIfAbsent(serviceName.get(), sName -> new ArrayList<>())
+            .add(agentRequestComponent);
+      } else {
+        serviceAgnosticComponents.add(agentRequestComponent);
+      }
     }
 
-    return BlockingConfigResponseElement.newBuilder()
-        .setHash(responseHash)
-        .addAllAgentCapabilities(agentRequestComponents.getMatchingRequestAgentCapabilities())
-        .setCustomSignatureBlockingRules(
-            CustomSignatureBlockingRules.newBuilder()
-                .setCustomSignatureRulesBlob(customSignatureRulesBlob))
-        .build();
+    Map<String, AgentResponseComponent> responseHashComponentsMap = new HashMap<>();
+    if (!serviceAgnosticComponents.isEmpty()) {
+      updateResponseHashComponentsMap(
+          blockingRulesSupplier.getCustomSignatureModsecBlob(customModsecRuleVersion),
+          serviceAgnosticComponents,
+          responseHashComponentsMap);
+    }
+    if (!serviceComponentsMap.isEmpty()) {
+      blockingRulesSupplier
+          .getCustomSignatureModsecBlobs(
+              customModsecRuleVersion, new ArrayList<>(serviceComponentsMap.keySet()))
+          .forEach(
+              (serviceName, customSignatureRulesBlob) ->
+                  updateResponseHashComponentsMap(
+                      customSignatureRulesBlob,
+                      serviceComponentsMap.get(serviceName),
+                      responseHashComponentsMap));
+    }
+
+    return responseHashComponentsMap.values();
+  }
+
+  private void updateResponseHashComponentsMap(
+      String customSignatureRulesBlob,
+      List<AgentRequestComponent> components,
+      Map<String, AgentResponseComponent> responseHashComponentsMap) {
+    String responseHash = uuidGenerator.generateId(customSignatureRulesBlob);
+    responseHashComponentsMap
+        .computeIfAbsent(
+            responseHash,
+            hash -> new AgentResponseComponent(responseHash, customSignatureRulesBlob))
+        .getAgentRequestComponents()
+        .addAll(components);
+  }
+
+  private BlockingConfigResponseElement buildResponseElement(
+      AgentResponseComponent agentResponseComponent) {
+    String responseHash = agentResponseComponent.getResponseHash();
+    List<AgentRequestComponent> agentRequestComponentsList =
+        agentResponseComponent.getAgentRequestComponents();
+
+    BlockingConfigResponseElement.Builder responseElementBuilder =
+        BlockingConfigResponseElement.newBuilder()
+            .setHash(responseHash)
+            .addAllAgentCapabilities(
+                agentRequestComponentsList.stream()
+                    .map(AgentRequestComponent::getMatchingRequestAgentCapabilities)
+                    .collect(Collectors.toList()));
+
+    if (agentRequestComponentsList.stream()
+        .allMatch(
+            agentRequestComponent ->
+                responseHash.equals(agentRequestComponent.getPreviousHash()))) {
+      responseElementBuilder.setCustomSignatureBlockingRules(
+          CustomSignatureBlockingRules.getDefaultInstance());
+    } else {
+      responseElementBuilder.setCustomSignatureBlockingRules(
+          CustomSignatureBlockingRules.newBuilder()
+              .setCustomSignatureRulesBlob(agentResponseComponent.getCustomSignatureModsecBlob()));
+    }
+
+    return responseElementBuilder.build();
   }
 
   private CustomModsecRuleVersion getMaximumSupportedModsecRuleVersion(
@@ -138,9 +203,16 @@ public class CustomSignatureBlockingManager implements BlockingConfigManagerBase
     return CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3;
   }
 
-  @Getter(AccessLevel.PACKAGE)
-  static class AgentRequestComponents {
-    private final List<AgentCapabilities> matchingRequestAgentCapabilities = new ArrayList<>();
-    private final Set<String> previousHashes = new HashSet<>();
+  @Value
+  private static class AgentRequestComponent {
+    private final AgentCapabilities matchingRequestAgentCapabilities;
+    private final String previousHash;
+  }
+
+  @Value
+  private static class AgentResponseComponent {
+    private final String responseHash;
+    private final String customSignatureModsecBlob;
+    private final List<AgentRequestComponent> agentRequestComponents = new ArrayList<>();
   }
 }
