@@ -450,7 +450,7 @@ message MinOccurrenceConfig {
 
 message MinDataTypeOccurrenceConfig {
   optional int32 min_total_occurrences = 1;
-  optional int32 min_percent = 2;
+  optional int32 min_percent = 2 [deprecated = true];
   optional int32 min_data_type_occurrences = 3;
 }
 
