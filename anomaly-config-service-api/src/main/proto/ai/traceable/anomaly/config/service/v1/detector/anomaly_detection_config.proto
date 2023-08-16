@@ -186,7 +186,7 @@ message CustomRulesAnomalyDetectionConfig {
   message EmailDomainAnomalyConfig {
     int32 high_email_fraud_score_min_threshold = 1;
     int32 critical_email_fraud_score_min_threshold = 2;
-    bool disabled = 3;
+    optional bool disabled = 3;
   }
 
   message IpTypeAnomalyConfig {
