@@ -1,7 +1,9 @@
 package ai.traceable.data.classification.config.service;
 
+import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_QUERY;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_HEADER;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_UNSPECIFIED;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.traceable.data.classification.config.service.v1.CreateDataTypeRequest;
@@ -310,6 +312,47 @@ class DataTypeConfigRequestValidatorTest {
             .build();
     CreateDataTypeRequest request = CreateDataTypeRequest.newBuilder().setRule(rule).build();
     dataTypeConfigRequestValidator.validateOrThrow(REQUEST_CONTEXT, request);
+  }
+
+  @Test
+  void testKeyPatternHaveValidRegex() {
+
+    // invalid regex
+    StringPattern stringPattern =
+        StringPattern.newBuilder()
+            .setOperator(Operator.OPERATOR_MATCHES_REGEX)
+            .setValue("[")
+            .build();
+    DataTypeRule rule =
+        DataTypeRule.newBuilder()
+            .setName("name-1")
+            .addScopedPatterns(
+                ScopedPattern.newBuilder()
+                    .setApiScope(createApiScope())
+                    .setKeyPattern(stringPattern)
+                    .addLocations(LOCATION_QUERY)
+                    .setActionValue(1))
+            .build();
+    CreateDataTypeRequest request = CreateDataTypeRequest.newBuilder().setRule(rule).build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> dataTypeConfigRequestValidator.validateOrThrow(REQUEST_CONTEXT, request));
+
+    // valid regex
+    stringPattern = stringPattern.toBuilder().setValue("[a-z]").build();
+    rule =
+        DataTypeRule.newBuilder()
+            .setName("name-1")
+            .addScopedPatterns(
+                ScopedPattern.newBuilder()
+                    .setApiScope(createApiScope())
+                    .setKeyPattern(stringPattern)
+                    .addLocations(LOCATION_QUERY)
+                    .setActionValue(1))
+            .build();
+    CreateDataTypeRequest request1 = CreateDataTypeRequest.newBuilder().setRule(rule).build();
+    assertDoesNotThrow(
+        () -> dataTypeConfigRequestValidator.validateOrThrow(REQUEST_CONTEXT, request1));
   }
 
   private ApiScope createApiScope() {

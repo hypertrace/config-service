@@ -6,6 +6,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
+import ai.traceable.config.utils.RegexValidator;
 import ai.traceable.data.classification.config.service.v1.CreateDataTypeRequest;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ApiScope;
@@ -117,6 +118,14 @@ class DataTypeConfigRequestValidator {
   private void validateStringPattern(StringPattern pattern) {
     validateNonDefaultPresenceOrThrow(pattern, StringPattern.OPERATOR_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(pattern, StringPattern.VALUE_FIELD_NUMBER);
+    if (pattern.getOperator().equals(DataTypeRule.Operator.OPERATOR_MATCHES_REGEX)) {
+      Status regexValidationStatus = RegexValidator.validate(pattern.getValue());
+      if (!regexValidationStatus.isOk()) {
+        throw regexValidationStatus
+            .withDescription(String.format("Invalid regex : %s", pattern.getValue()))
+            .asRuntimeException();
+      }
+    }
   }
 
   private void validateScope(ScopedPattern scopedPattern) {
