@@ -585,6 +585,34 @@ public class RateLimitingRulesValidatorTest {
             () -> rulesValidator.validateOrThrow(requestContext, request19, List.of()));
     status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    ruleData =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule1")
+            .setCategory(Category.CATEGORY_DATA_EXFILTRATION)
+            .setEnabled(true)
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setScopeCondition(
+                                ScopeCondition.newBuilder()
+                                    .setEntityScope(
+                                        ScopeCondition.EntityScope.newBuilder()
+                                            .setEntityType(
+                                                ScopeCondition.EntityType.ENTITY_TYPE_SERVICE)
+                                            .addAllEntityIds(List.of("id1", "id2"))))))
+            .setRuleConfigScope(RuleConfigScope.newBuilder())
+            .setTransactionActionConfig(TransactionActionConfig.newBuilder())
+            .build();
+    CreateRateLimitingRuleRequest request20 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request20, List.of()));
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
   }
 
   @Test

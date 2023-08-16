@@ -1,11 +1,9 @@
 package ai.traceable.ratelimiting.service.v2.rules;
 
-import static ai.traceable.ratelimiting.config.service.v2.Action.ActionCase.ALLOW;
-import static ai.traceable.ratelimiting.config.service.v2.Action.ActionCase.BLOCK;
+import static ai.traceable.ratelimiting.config.service.v2.Action.ActionCase.ACTION_NOT_SET;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
-import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
@@ -35,10 +33,13 @@ public class TransactionActionConfigValidator {
               "Invalid category : %n%s if transaction action config is present",
               data.getCategory()));
     }
-    Action.ActionCase actionCase = data.getTransactionActionConfig().getAction().getActionCase();
-    if (actionCase.equals(ALLOW) || actionCase.equals(BLOCK)) {
-      validateConditionForTransactionActionConfig(data.getCondition());
+    if (data.getTransactionActionConfig().getAction().getActionCase().equals(ACTION_NOT_SET)) {
+      validatorUtils.throwInvalidArgumentException(
+          String.format(
+              "Action is not set in transaction action config: {}",
+              data.getTransactionActionConfig()));
     }
+    validateConditionForTransactionActionConfig(data.getCondition());
   }
 
   private void validateConditionForTransactionActionConfig(Condition condition) {
