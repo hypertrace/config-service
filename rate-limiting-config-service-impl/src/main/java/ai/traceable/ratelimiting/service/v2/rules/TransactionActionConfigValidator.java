@@ -36,10 +36,30 @@ public class TransactionActionConfigValidator {
     if (data.getTransactionActionConfig().getAction().getActionCase().equals(ACTION_NOT_SET)) {
       validatorUtils.throwInvalidArgumentException(
           String.format(
-              "Action is not set in transaction action config: {}",
+              "Action is not set in transaction action config: %s",
               data.getTransactionActionConfig()));
     }
+    if (!isUrlScopePresent(data.getCondition())) {
+      validatorUtils.throwInvalidArgumentException(
+          String.format(
+              "Transaction Action Config should have a url-scope condition : %s",
+              data.getCondition()));
+    }
     validateConditionForTransactionActionConfig(data.getCondition());
+  }
+
+  private boolean isUrlScopePresent(Condition condition) {
+    switch (condition.getConditionCase()) {
+      case LEAF_CONDITION:
+        if (condition.getLeafCondition().hasScopeCondition()) {
+          return condition.getLeafCondition().getScopeCondition().hasUrlScope();
+        }
+        break;
+      case COMPOSITE_CONDITION:
+        return condition.getCompositeCondition().getChildrenList().stream()
+            .anyMatch(this::isUrlScopePresent);
+    }
+    return false;
   }
 
   private void validateConditionForTransactionActionConfig(Condition condition) {
