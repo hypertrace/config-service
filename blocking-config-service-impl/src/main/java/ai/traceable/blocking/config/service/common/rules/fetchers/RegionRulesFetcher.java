@@ -13,8 +13,10 @@ import ai.traceable.region.config.service.v1.RuleScope;
 import java.time.Clock;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -64,7 +66,7 @@ public class RegionRulesFetcher implements RulesFetcher {
         .getRegionList();
   }
 
-  public List<DetailedRegion> fetchDetailedRegions(List<String> countryIsoCodes) {
+  public Map<String, DetailedRegion> fetchDetailedRegions(List<String> countryIsoCodes) {
     List<RegionIdentifier> regionIdentifiers =
         countryIsoCodes.stream()
             .map(isoCode -> RegionIdentifier.newBuilder().setCountryIsoCode(isoCode).build())
@@ -74,7 +76,12 @@ public class RegionRulesFetcher implements RulesFetcher {
             GetDetailedRegionsRequest.newBuilder()
                 .setFilter(RegionsFilter.newBuilder().addAllRegionIdentifier(regionIdentifiers))
                 .build())
-        .getRegionList();
+        .getRegionList()
+        .stream()
+        .collect(
+            Collectors.toMap(
+                detailedRegion -> detailedRegion.getRegion().getCountry().getIsoCode(),
+                Function.identity()));
   }
 
   private boolean isRuleActive(long currentTimeMillis, RegionRule regionRule) {

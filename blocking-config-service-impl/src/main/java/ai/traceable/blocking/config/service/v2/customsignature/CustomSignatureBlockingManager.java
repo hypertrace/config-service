@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -86,7 +85,7 @@ public class CustomSignatureBlockingManager implements BlockingConfigManagerBase
         .collect(Collectors.toUnmodifiableList());
   }
 
-  private Collection<AgentResponseComponent> buildAgentResponseComponents(
+  private Collection<AgentResponseComponent<String>> buildAgentResponseComponents(
       CustomModsecRuleVersion customModsecRuleVersion,
       List<AgentRequestComponent> agentRequestComponents,
       BlockingRulesSupplier blockingRulesSupplier) {
@@ -108,23 +107,23 @@ public class CustomSignatureBlockingManager implements BlockingConfigManagerBase
       }
     }
 
-    Map<String, AgentResponseComponent> responseHashComponentsMap = new HashMap<>();
+    Map<String, AgentResponseComponent<String>> responseHashComponentsMap = new HashMap<>();
+    String customSignatureRulesBlob =
+        blockingRulesSupplier.getCustomSignatureModsecBlob(customModsecRuleVersion);
     if (!serviceAgnosticComponents.isEmpty()) {
       updateResponseHashComponentsMap(
-          blockingRulesSupplier.getCustomSignatureModsecBlob(customModsecRuleVersion),
-          serviceAgnosticComponents,
-          responseHashComponentsMap);
+          customSignatureRulesBlob, serviceAgnosticComponents, responseHashComponentsMap);
     }
     if (!serviceComponentsMap.isEmpty()) {
-      blockingRulesSupplier
-          .getCustomSignatureModsecBlobs(
-              customModsecRuleVersion, new ArrayList<>(serviceComponentsMap.keySet()))
-          .forEach(
-              (serviceName, customSignatureRulesBlob) ->
-                  updateResponseHashComponentsMap(
-                      customSignatureRulesBlob,
-                      serviceComponentsMap.get(serviceName),
-                      responseHashComponentsMap));
+      Map<String, String> serviceBlobs =
+          blockingRulesSupplier.getCustomSignatureModsecBlobs(
+              customModsecRuleVersion, new ArrayList<>(serviceComponentsMap.keySet()));
+      serviceComponentsMap.forEach(
+          (serviceName, components) ->
+              updateResponseHashComponentsMap(
+                  serviceBlobs.getOrDefault(serviceName, customSignatureRulesBlob),
+                  components,
+                  responseHashComponentsMap));
     }
 
     return responseHashComponentsMap.values();
@@ -133,18 +132,18 @@ public class CustomSignatureBlockingManager implements BlockingConfigManagerBase
   private void updateResponseHashComponentsMap(
       String customSignatureRulesBlob,
       List<AgentRequestComponent> components,
-      Map<String, AgentResponseComponent> responseHashComponentsMap) {
+      Map<String, AgentResponseComponent<String>> responseHashComponentsMap) {
     String responseHash = uuidGenerator.generateId(customSignatureRulesBlob);
     responseHashComponentsMap
         .computeIfAbsent(
             responseHash,
-            hash -> new AgentResponseComponent(responseHash, customSignatureRulesBlob))
+            hash -> new AgentResponseComponent(customSignatureRulesBlob, responseHash))
         .getAgentRequestComponents()
         .addAll(components);
   }
 
   private BlockingConfigResponseElement buildResponseElement(
-      AgentResponseComponent agentResponseComponent) {
+      AgentResponseComponent<String> agentResponseComponent) {
     String responseHash = agentResponseComponent.getResponseHash();
     List<AgentRequestComponent> agentRequestComponentsList =
         agentResponseComponent.getAgentRequestComponents();
@@ -166,7 +165,7 @@ public class CustomSignatureBlockingManager implements BlockingConfigManagerBase
     } else {
       responseElementBuilder.setCustomSignatureBlockingRules(
           CustomSignatureBlockingRules.newBuilder()
-              .setCustomSignatureRulesBlob(agentResponseComponent.getCustomSignatureModsecBlob()));
+              .setCustomSignatureRulesBlob(agentResponseComponent.getResponseData()));
     }
 
     return responseElementBuilder.build();
@@ -201,18 +200,5 @@ public class CustomSignatureBlockingManager implements BlockingConfigManagerBase
       }
     }
     return CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3;
-  }
-
-  @Value
-  private static class AgentRequestComponent {
-    private final AgentCapabilities matchingRequestAgentCapabilities;
-    private final String previousHash;
-  }
-
-  @Value
-  private static class AgentResponseComponent {
-    private final String responseHash;
-    private final String customSignatureModsecBlob;
-    private final List<AgentRequestComponent> agentRequestComponents = new ArrayList<>();
   }
 }

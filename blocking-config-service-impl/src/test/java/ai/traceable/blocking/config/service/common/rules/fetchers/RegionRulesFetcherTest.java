@@ -7,6 +7,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.region.config.service.v1.Country;
 import ai.traceable.region.config.service.v1.DetailedRegion;
 import ai.traceable.region.config.service.v1.EnvironmentScope;
 import ai.traceable.region.config.service.v1.GetAllRegionRulesRequest;
@@ -14,6 +15,7 @@ import ai.traceable.region.config.service.v1.GetAllRegionRulesResponse;
 import ai.traceable.region.config.service.v1.GetDetailedRegionsRequest;
 import ai.traceable.region.config.service.v1.GetDetailedRegionsResponse;
 import ai.traceable.region.config.service.v1.GetRegionRulesFilter;
+import ai.traceable.region.config.service.v1.Region;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc.RegionConfigServiceBlockingStub;
 import ai.traceable.region.config.service.v1.RegionIdentifier;
 import ai.traceable.region.config.service.v1.RegionRule;
@@ -47,6 +49,14 @@ class RegionRulesFetcherTest {
     regionRulesFetcher = new RegionRulesFetcher(clock, regionConfigServiceStub);
 
     when(this.clock.millis()).thenReturn(TIMESTAMP);
+    Map<String, DetailedRegion> regionsMap =
+        Map.of(
+            detailedRegion1.getId(),
+            detailedRegion1,
+            detailedRegion2.getId(),
+            detailedRegion2,
+            detailedRegion3.getId(),
+            detailedRegion3);
 
     // Mock response for detailed rules fetch
     doAnswer(
@@ -55,9 +65,7 @@ class RegionRulesFetcherTest {
                   invocation.getArgument(0, GetDetailedRegionsRequest.class).getFilter();
               return GetDetailedRegionsResponse.newBuilder()
                   .addAllRegion(
-                      filter.getIdList().stream()
-                          .map(REGIONS_MAP::get)
-                          .collect(Collectors.toList()))
+                      filter.getIdList().stream().map(regionsMap::get).collect(Collectors.toList()))
                   .build();
             })
         .when(regionConfigServiceStub)
@@ -118,10 +126,10 @@ class RegionRulesFetcherTest {
         .getDetailedRegions(any());
 
     assertEquals(
-        List.of(detailedRegion2, detailedRegion3),
+        Map.of("isoCode2", detailedRegion2, "isoCode3", detailedRegion3),
         regionRulesFetcher.fetchDetailedRegions(List.of("isoCode2", "isoCode3")));
     assertEquals(
-        List.of(detailedRegion2),
+        Map.of("isoCode2", detailedRegion2),
         regionRulesFetcher.fetchDetailedRegions(List.of("isoCode2", "isoCode4")));
     assertTrue(regionRulesFetcher.fetchDetailedRegions(List.of("isoCode", "isoCode5")).isEmpty());
   }
@@ -163,16 +171,17 @@ class RegionRulesFetcherTest {
                       EnvironmentScope.newBuilder().addEnvironmentIds(environmentId)))
           .build();
 
-  private static final DetailedRegion detailedRegion1 = mock(DetailedRegion.class);
-  private static final DetailedRegion detailedRegion2 = mock(DetailedRegion.class);
-  private static final DetailedRegion detailedRegion3 = mock(DetailedRegion.class);
+  private static final DetailedRegion detailedRegion1 =
+      getDetailedRegion("region-id-1", "isoCode1");
+  private static final DetailedRegion detailedRegion2 =
+      getDetailedRegion("region-id-2", "isoCode2");
+  private static final DetailedRegion detailedRegion3 =
+      getDetailedRegion("region-id-3", "isoCode3");
 
-  private static final Map<String, DetailedRegion> REGIONS_MAP =
-      Map.of(
-          "region-id-1",
-          detailedRegion1,
-          "region-id-2",
-          detailedRegion2,
-          "region-id-3",
-          detailedRegion3);
+  private static DetailedRegion getDetailedRegion(String regionId, String isoCode) {
+    return DetailedRegion.newBuilder()
+        .setId(regionId)
+        .setRegion(Region.newBuilder().setCountry(Country.newBuilder().setIsoCode(isoCode)))
+        .build();
+  }
 }
