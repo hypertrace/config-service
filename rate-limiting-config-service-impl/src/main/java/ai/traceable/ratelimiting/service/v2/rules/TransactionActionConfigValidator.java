@@ -174,7 +174,7 @@ public class TransactionActionConfigValidator {
     }
     switch (keyValueCondition.getType()) {
       case TYPE_REQUEST_BODY:
-        if (keyValueCondition.hasKeyCondition()) {
+        if (keyValueCondition.hasKeyCondition() || keyValueCondition.hasValueCondition()) {
           validatorUtils.throwInvalidArgumentException(
               String.format(
                   "For type : %s%n key condition should not be present in custom location matching: %s%n",

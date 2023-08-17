@@ -2,6 +2,11 @@ package ai.traceable.ratelimiting.service.v2.rules;
 
 import static ai.traceable.ratelimiting.config.service.v2.DataSensitivityLevel.DATA_SENSITIVITY_LEVEL_UNSPECIFIED;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperator.MATCH_OPERATOR_MATCHES_REGEX;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_HOST;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_HTTP_METHOD;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_BODY;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_URL;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_USER_AGENT;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
@@ -30,6 +35,8 @@ import java.util.List;
 
 public class ValidatorUtils {
   private static final String UTF_8_REGEX_PREFIX = "(*UTF8)";
+  private static List<KeyValueCondition.Type> KEY_NULL_CONDITION_TYPES =
+      List.of(TYPE_URL, TYPE_HOST, TYPE_HTTP_METHOD, TYPE_USER_AGENT, TYPE_REQUEST_BODY);
 
   public void validateLeafCondition(LeafCondition leafCondition) {
     switch (leafCondition.getConditionCase()) {
@@ -76,6 +83,13 @@ public class ValidatorUtils {
   public void validateKeyValueCondition(KeyValueCondition keyValueCondition) {
     validateNonDefaultPresenceOrThrow(keyValueCondition, KeyValueCondition.TYPE_FIELD_NUMBER);
     if (!keyValueCondition.hasKeyCondition() && !keyValueCondition.hasValueCondition()) {
+      throwInvalidArgumentException(
+          String.format(
+              "Invalid condition for type %s:%n %s",
+              getName(keyValueCondition), printMessage(keyValueCondition)));
+    }
+    if (KEY_NULL_CONDITION_TYPES.contains(keyValueCondition.getType())
+        && (!keyValueCondition.hasValueCondition() || keyValueCondition.hasKeyCondition())) {
       throwInvalidArgumentException(
           String.format(
               "Invalid condition for type %s:%n %s",
