@@ -111,8 +111,6 @@ public class HookConfigValidator extends ValidatorBase {
       PopTokenSignature popTokenSignature, boolean isUpdateRequest) {
     validateEncryptedText(popTokenSignature.getPopPrivateKey(), "pop private key", isUpdateRequest);
     validateStringNotBlank(popTokenSignature.getPopHeaderKey(), "pop sig header key not found");
-    validateStringNotBlank(
-        popTokenSignature.getPopHeaderPrefix(), "pop sig header prefix not found");
   }
 
   private void validateJwt(JwtConfig jwtConfig, boolean isUpdateRequest) {
