@@ -13,8 +13,10 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class RegionBlockingManager implements BlockingConfigManagerBase {
@@ -42,7 +44,7 @@ public class RegionBlockingManager implements BlockingConfigManagerBase {
 
     List<AgentRequestComponent> serviceAgnosticComponents = new ArrayList<>();
     List<AgentRequestComponent> serviceBasedComponents = new ArrayList<>();
-    List<String> serviceNames = new ArrayList<>();
+    Set<String> serviceNames = new LinkedHashSet<>();
     for (BlockingConfigRequestElement requestElement : regionRequestElements) {
       for (AgentCapabilities agentCapabilities :
           requestElement.getSupportedAgentCapabilitiesList()) {
@@ -61,14 +63,14 @@ public class RegionBlockingManager implements BlockingConfigManagerBase {
         }
       }
     }
-    serviceNames = serviceNames.stream().distinct().collect(Collectors.toList());
 
     Map<String, AgentResponseComponent<List<RegionIpBlockingRule>>> responseHashComponentsMap =
         new LinkedHashMap<>();
     if (!serviceAgnosticComponents.isEmpty()) {
+      // dlp rules are not supported..
       updateResponseHashComponentsMap(
           blockingRulesSupplier.getRegionIpMappings(
-              regionIpRulesConverter::convert, Collections.emptyList()),
+              regionIpRulesConverter::convert, Collections.emptySet()),
           serviceAgnosticComponents,
           responseHashComponentsMap);
     }

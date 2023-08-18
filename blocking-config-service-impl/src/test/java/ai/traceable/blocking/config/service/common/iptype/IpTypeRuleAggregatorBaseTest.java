@@ -27,21 +27,16 @@ class IpTypeRuleAggregatorBaseTest {
     IpTypeRulesLoader ipTypeRulesLoader = mock(IpTypeRulesLoader.class);
     BlockingIpTypesClient blockingIpTypesClient = mock(BlockingIpTypesClient.class);
 
-    IpTypeRuleInfo rule1 = new IpTypeRuleInfo(IpLocationType.IP_LOCATION_TYPE_BOT);
+    IpTypeRuleInfo rule1 = new IpTypeRuleInfo(IpTypeRuleInfo.IpType.BOT);
     rule1.getIpv4Addresses().add(11);
     rule1.getIpv4Ranges().add(new IpRangeInfo(151, 161));
 
-    IpTypeRuleInfo rule2 = new IpTypeRuleInfo(IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN);
+    IpTypeRuleInfo rule2 = new IpTypeRuleInfo(IpTypeRuleInfo.IpType.ANONYMOUS_VPN);
     rule1.getIpv4Addresses().add(22);
     rule1.getIpv4Ranges().add(new IpRangeInfo(252, 262));
 
-    Supplier<Map<IpLocationType, IpTypeRuleInfo>> ipTypeRuleSupplier =
-        () ->
-            Map.of(
-                IpLocationType.IP_LOCATION_TYPE_BOT,
-                rule1,
-                IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN,
-                rule2);
+    Supplier<Map<IpTypeRuleInfo.IpType, IpTypeRuleInfo>> ipTypeRuleSupplier =
+        () -> Map.of(IpTypeRuleInfo.IpType.BOT, rule1, IpTypeRuleInfo.IpType.ANONYMOUS_VPN, rule2);
     doReturn(ipTypeRuleSupplier).when(ipTypeRulesLoader).getLatestDataSupplier();
 
     when(blockingIpTypesClient.fetchMaliciousSourceRules(any(), any()))

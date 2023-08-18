@@ -51,10 +51,10 @@ class RegionBlockingManagerTest {
     BlockingRulesSupplier blockingRulesSupplier = mock(BlockingRulesSupplier.class);
     doReturn(mockRegionIpBlockingRules)
         .when(blockingRulesSupplier)
-        .getRegionIpMappings(any(), eq(Collections.emptyList()));
+        .getRegionIpMappings(any(), eq(Collections.emptySet()));
     doReturn(mockServiceRegionIpBlockingRules)
         .when(blockingRulesSupplier)
-        .getRegionIpMappings(any(), eq(Collections.singletonList("serviceName")));
+        .getRegionIpMappings(any(), eq(Collections.singleton("serviceName")));
 
     doReturn("mock-hash").when(mockUuidGenerator).generateId(mockRegionIpBlockingRules);
     doReturn("mock-hash").when(mockUuidGenerator).generateId(mockServiceRegionIpBlockingRules);

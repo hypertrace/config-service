@@ -8,6 +8,7 @@ option go_package = "github.com/Traceableai/config-service/blocking/v2";
 message BlockingPolicyConfigurationRequest {}
 
 message BlockingPolicyConfiguration {
+  // in the precedence-order of evaluation
   repeated BlockingDetails blocking_details_list = 1;
 }
 

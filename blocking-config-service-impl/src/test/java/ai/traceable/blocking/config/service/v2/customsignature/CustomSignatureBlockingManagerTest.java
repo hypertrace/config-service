@@ -15,8 +15,10 @@ import ai.traceable.blocking.config.service.v2.CustomSignatureBlockingRulesReque
 import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -45,13 +47,13 @@ class CustomSignatureBlockingManagerTest {
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS);
     doReturn(Map.of("service1", V3_blob, "service2", V3_seg_arg_blob, "service3", V3_seg_arg_blob))
         .when(blockingRulesSupplier)
-        .getCustomSignatureModsecBlobs(
+        .getCustomModsecBlobs(
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
-            List.of("service1", "service2", "service3"));
+            new LinkedHashSet<>(List.of("service1", "service2", "service3")));
     doReturn(Map.of("serviceName", V3_blob))
         .when(blockingRulesSupplier)
-        .getCustomSignatureModsecBlobs(
-            CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3, List.of("serviceName"));
+        .getCustomModsecBlobs(
+            CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3, Set.of("serviceName"));
   }
 
   @Test

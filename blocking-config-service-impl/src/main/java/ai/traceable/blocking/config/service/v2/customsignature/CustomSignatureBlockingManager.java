@@ -116,8 +116,8 @@ public class CustomSignatureBlockingManager implements BlockingConfigManagerBase
     }
     if (!serviceComponentsMap.isEmpty()) {
       Map<String, String> serviceBlobs =
-          blockingRulesSupplier.getCustomSignatureModsecBlobs(
-              customModsecRuleVersion, new ArrayList<>(serviceComponentsMap.keySet()));
+          blockingRulesSupplier.getCustomModsecBlobs(
+              customModsecRuleVersion, serviceComponentsMap.keySet());
       serviceComponentsMap.forEach(
           (serviceName, components) ->
               updateResponseHashComponentsMap(

@@ -6,28 +6,27 @@ import ai.traceable.blocking.config.service.v1.IpRange;
 import ai.traceable.blocking.config.service.v1.IpType;
 import ai.traceable.blocking.config.service.v1.IpTypeRule;
 import ai.traceable.blocking.config.service.v1.IpV4Range;
-import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class IpTypeRuleConverter implements GenericIpTypeRuleConverter<IpTypeRule> {
-  private static final Map<IpLocationType, IpType> IP_TYPE_MAPPING =
+  private static final Map<IpTypeRuleInfo.IpType, IpType> IP_TYPE_MAPPING =
       Map.of(
-          IpLocationType.IP_LOCATION_TYPE_BOT,
+          IpTypeRuleInfo.IpType.BOT,
           IpType.IP_TYPE_BOT,
-          IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN,
+          IpTypeRuleInfo.IpType.ANONYMOUS_VPN,
           IpType.IP_TYPE_VPN,
-          IpLocationType.IP_LOCATION_TYPE_HOSTING_PROVIDER,
+          IpTypeRuleInfo.IpType.HOSTING_PROVIDER,
           IpType.IP_TYPE_HOSTING_PROVIDER,
-          IpLocationType.IP_LOCATION_TYPE_PUBLIC_PROXY,
+          IpTypeRuleInfo.IpType.PUBLIC_PROXY,
           IpType.IP_TYPE_PROXY,
-          IpLocationType.IP_LOCATION_TYPE_TOR_EXIT_NODE,
+          IpTypeRuleInfo.IpType.TOR_EXIT_NODE,
           IpType.IP_TYPE_TOR);
 
   @Override
   public IpTypeRule convert(IpTypeRuleInfo commonIpTypeRule) {
     return IpTypeRule.newBuilder()
-        .setIpType(convert(commonIpTypeRule.getIpLocationType()))
+        .setIpType(convert(commonIpTypeRule.getIpType()))
         .addAllIpRanges(
             commonIpTypeRule.getIpv4Ranges().stream()
                 .map(
@@ -46,7 +45,7 @@ public class IpTypeRuleConverter implements GenericIpTypeRuleConverter<IpTypeRul
         .build();
   }
 
-  public static IpType convert(IpLocationType ipLocationType) {
+  public static IpType convert(IpTypeRuleInfo.IpType ipLocationType) {
     return IP_TYPE_MAPPING.get(ipLocationType);
   }
 }

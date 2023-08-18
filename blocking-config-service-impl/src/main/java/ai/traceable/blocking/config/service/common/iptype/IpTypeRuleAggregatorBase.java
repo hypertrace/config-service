@@ -12,7 +12,7 @@ import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class IpTypeRuleAggregatorBase<T> {
-  Supplier<Map<IpLocationType, IpTypeRuleInfo>> ipTypeRulesSupplier;
+  Supplier<Map<IpTypeRuleInfo.IpType, IpTypeRuleInfo>> ipTypeRulesSupplier;
   private final BlockingIpTypesClient blockingIpTypesClient;
   private final GenericIpTypeRuleConverter<T> ipTypeConverter;
 
@@ -39,9 +39,10 @@ public class IpTypeRuleAggregatorBase<T> {
             .distinct()
             .collect(Collectors.toUnmodifiableList());
 
-    Map<IpLocationType, IpTypeRuleInfo> ipTypesInfoMap = ipTypeRulesSupplier.get();
+    Map<IpTypeRuleInfo.IpType, IpTypeRuleInfo> ipTypesInfoMap = ipTypeRulesSupplier.get();
     return blockingIpTypes.stream()
-        .map(ipType -> ipTypesInfoMap.get(ipType))
+        .map(IpTypeRuleInfo::convertIpType)
+        .map(ipTypesInfoMap::get)
         .filter(Objects::nonNull)
         .map(ipTypeConverter::convert)
         .collect(Collectors.toUnmodifiableList());

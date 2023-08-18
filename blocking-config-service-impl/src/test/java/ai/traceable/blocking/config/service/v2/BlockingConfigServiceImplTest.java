@@ -20,7 +20,6 @@ import ai.traceable.blocking.config.service.common.rules.fetchers.MaliciousSourc
 import ai.traceable.blocking.config.service.common.rules.fetchers.RegionRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher;
 import ai.traceable.config.utils.UuidGenerator;
-import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import com.google.protobuf.Duration;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.stub.StreamObserver;
@@ -100,10 +99,8 @@ class BlockingConfigServiceImplTest {
     when(ipTypeRulesLoader.getLatestDataSupplier())
         .thenReturn(
             () ->
-                Arrays.stream(IpLocationType.values())
-                    .collect(
-                        Collectors.toMap(
-                            Function.identity(), ipType -> new IpTypeRuleInfo(ipType))));
+                Arrays.stream(IpTypeRuleInfo.IpType.values())
+                    .collect(Collectors.toMap(Function.identity(), IpTypeRuleInfo::new)));
     BlockingRulesSupplierContext blockingRulesSupplierContext =
         new BlockingRulesSupplierContext(rulesFetchers, ipTypeRulesLoader);
     this.blockingConfigService =

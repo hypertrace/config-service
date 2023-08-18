@@ -1,10 +1,10 @@
 package ai.traceable.blocking.config.service.common.iptype;
 
 import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleInfo.IpRangeInfo;
+import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleInfo.IpType;
 import ai.traceable.config.utils.LatestInstantNamedPathFinder;
 import ai.traceable.config.utils.refresh.FileRefreshConfig;
 import ai.traceable.config.utils.refresh.FileVersionBasedRefresh;
-import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Collections;
@@ -15,23 +15,22 @@ import org.apache.commons.csv.CSVRecord;
 
 @Singleton
 @Slf4j
-public class IpTypeRulesLoader
-    extends FileVersionBasedRefresh<Map<IpLocationType, IpTypeRuleInfo>> {
+public class IpTypeRulesLoader extends FileVersionBasedRefresh<Map<IpType, IpTypeRuleInfo>> {
   private static final String START_IP_INT_CSV_HEADER = "start_ip_int";
   private static final String END_IP_INT_CSV_HEADER = "end_ip_int";
   private static final String IP_TYPE_CSV_HEADER = "IP Type";
-  private static final Map<String, IpLocationType> ipTypeMapping =
+  private static final Map<String, IpType> ipTypeMapping =
       Map.of(
           "IP_TYPE_VPN",
-          IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN,
+          IpType.ANONYMOUS_VPN,
           "IP_TYPE_TOR",
-          IpLocationType.IP_LOCATION_TYPE_TOR_EXIT_NODE,
+          IpType.TOR_EXIT_NODE,
           "IP_TYPE_BOT",
-          IpLocationType.IP_LOCATION_TYPE_BOT,
+          IpType.BOT,
           "IP_TYPE_PROXY",
-          IpLocationType.IP_LOCATION_TYPE_PUBLIC_PROXY,
+          IpType.PUBLIC_PROXY,
           "IP_TYPE_HOSTING_PROVIDER",
-          IpLocationType.IP_LOCATION_TYPE_HOSTING_PROVIDER);
+          IpType.HOSTING_PROVIDER);
 
   @Inject
   public IpTypeRulesLoader(
@@ -42,16 +41,16 @@ public class IpTypeRulesLoader
   }
 
   @Override
-  protected Map<IpLocationType, IpTypeRuleInfo> buildFromRecords(Iterable<CSVRecord> records) {
+  protected Map<IpType, IpTypeRuleInfo> buildFromRecords(Iterable<CSVRecord> records) {
     if (!records.iterator().hasNext()) {
       log.warn("Received empty highrisk CSV, builder not returning ip types for blocking");
       return Collections.emptyMap();
     }
-    Map<IpLocationType, IpTypeRuleInfo> ipTypeToRuleMap = new EnumMap<>(IpLocationType.class);
+    Map<IpType, IpTypeRuleInfo> ipTypeToRuleMap = new EnumMap<>(IpType.class);
     for (CSVRecord csvRecord : records) {
       try {
         String recordIpType = csvRecord.get(IP_TYPE_CSV_HEADER);
-        IpLocationType ipType = ipTypeMapping.get(recordIpType);
+        IpType ipType = ipTypeMapping.get(recordIpType);
         if (ipType == null) {
           log.error("Received unknown ip type {}, skipping", recordIpType);
           continue;

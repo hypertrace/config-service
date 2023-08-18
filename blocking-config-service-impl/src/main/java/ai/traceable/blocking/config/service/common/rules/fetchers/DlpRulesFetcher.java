@@ -8,10 +8,12 @@ import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRule
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingModsecRule;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -31,7 +33,7 @@ public class DlpRulesFetcher implements RulesFetcher {
 
   @Nullable
   public Map<String, DlpModsecRulesData> fetchDlpModsecRules(
-      RequestContext requestContext, Optional<String> environmentId, List<String> serviceNames) {
+      RequestContext requestContext, Optional<String> environmentId, Set<String> serviceNames) {
     if (serviceNames.isEmpty()) {
       return Collections.emptyMap();
     }
@@ -96,7 +98,7 @@ public class DlpRulesFetcher implements RulesFetcher {
         String modsecDirectivesBlob,
         String modsecRulesBlob,
         List<String> ruleIds,
-        List<RateLimitingModsecRule> rules) {
+        Collection<RateLimitingModsecRule> rules) {
       this.modsecDirectivesBlob = modsecDirectivesBlob;
       this.modsecRulesBlob = modsecRulesBlob;
       this.rules =

@@ -1,14 +1,22 @@
 package ai.traceable.blocking.config.service.v2.iptype;
 
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
+import ai.traceable.blocking.config.service.v2.AgentCapabilities;
 import ai.traceable.blocking.config.service.v2.BlockingConfigManagerBase;
 import ai.traceable.blocking.config.service.v2.BlockingConfigRequestElement;
 import ai.traceable.blocking.config.service.v2.BlockingConfigResponseElement;
+import ai.traceable.blocking.config.service.v2.Component;
 import ai.traceable.blocking.config.service.v2.IpTypeBlockingRules;
+import ai.traceable.blocking.config.service.v2.IpTypeRule;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class IpTypeBlockingManager implements BlockingConfigManagerBase {
@@ -34,38 +42,87 @@ public class IpTypeBlockingManager implements BlockingConfigManagerBase {
       return Collections.emptyList();
     }
 
-    IpTypeBlockingRules ipTypeBlockingRules =
-        IpTypeBlockingRules.newBuilder()
-            .addAllIpTypeRuleList(
-                blockingRulesSupplier.getIpTypeIpMappings(ipTypeRuleConverter::convert))
-            .build();
-    return List.of(buildResponseElement(ipTypeRequestElements, ipTypeBlockingRules));
+    List<AgentRequestComponent> serviceAgnosticComponents = new ArrayList<>();
+    List<AgentRequestComponent> serviceBasedComponents = new ArrayList<>();
+    Set<String> serviceNames = new LinkedHashSet<>();
+    for (BlockingConfigRequestElement requestElement : ipTypeRequestElements) {
+      for (AgentCapabilities agentCapabilities :
+          requestElement.getSupportedAgentCapabilitiesList()) {
+        AgentRequestComponent agentRequestComponent =
+            new AgentRequestComponent(agentCapabilities, requestElement.getPreviousHash());
+        List<String> services =
+            agentCapabilities.getComponentsList().stream()
+                .filter(Component::hasServiceName)
+                .map(Component::getServiceName)
+                .collect(Collectors.toList());
+        if (services.isEmpty()) {
+          serviceAgnosticComponents.add(agentRequestComponent);
+        } else {
+          serviceBasedComponents.add(agentRequestComponent);
+          serviceNames.addAll(services);
+        }
+      }
+    }
+
+    Map<String, AgentResponseComponent<List<IpTypeRule>>> responseHashComponentsMap =
+        new LinkedHashMap<>();
+    if (!serviceAgnosticComponents.isEmpty()) {
+      updateResponseHashComponentsMap(
+          blockingRulesSupplier.getIpTypeIpMappings(
+              ipTypeRuleConverter::convert, Collections.emptySet()),
+          serviceAgnosticComponents,
+          responseHashComponentsMap);
+    }
+    // for simplicity, we combine all service-based region info as single response..
+    if (!serviceBasedComponents.isEmpty()) {
+      updateResponseHashComponentsMap(
+          blockingRulesSupplier.getIpTypeIpMappings(ipTypeRuleConverter::convert, serviceNames),
+          serviceBasedComponents,
+          responseHashComponentsMap);
+    }
+
+    return responseHashComponentsMap.values().stream()
+        .map(this::buildResponseElement)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private void updateResponseHashComponentsMap(
+      List<IpTypeRule> ipTypeBlockingRules,
+      List<AgentRequestComponent> components,
+      Map<String, AgentResponseComponent<List<IpTypeRule>>> responseHashComponentsMap) {
+    String responseHash = uuidGenerator.generateId(ipTypeBlockingRules);
+    responseHashComponentsMap
+        .computeIfAbsent(
+            responseHash, hash -> new AgentResponseComponent<>(ipTypeBlockingRules, responseHash))
+        .getAgentRequestComponents()
+        .addAll(components);
   }
 
   private BlockingConfigResponseElement buildResponseElement(
-      List<BlockingConfigRequestElement> requestElements, IpTypeBlockingRules ipTypeBlockingRules) {
-    String responseHash = uuidGenerator.generateId(ipTypeBlockingRules);
-    if (requestElements.stream()
-        .map(BlockingConfigRequestElement::getPreviousHash)
-        .allMatch(responseHash::equals)) {
-      return BlockingConfigResponseElement.newBuilder()
-          .setHash(responseHash)
-          .setIpTypeBlockingRules(IpTypeBlockingRules.getDefaultInstance())
-          .addAllAgentCapabilities(
-              requestElements.stream()
-                  .map(BlockingConfigRequestElement::getSupportedAgentCapabilitiesList)
-                  .flatMap(List::stream)
-                  .collect(Collectors.toUnmodifiableList()))
-          .build();
+      AgentResponseComponent<List<IpTypeRule>> agentResponseComponent) {
+    String responseHash = agentResponseComponent.getResponseHash();
+    List<AgentRequestComponent> agentRequestComponentsList =
+        agentResponseComponent.getAgentRequestComponents();
+
+    BlockingConfigResponseElement.Builder responseElementBuilder =
+        BlockingConfigResponseElement.newBuilder()
+            .setHash(responseHash)
+            .addAllAgentCapabilities(
+                agentRequestComponentsList.stream()
+                    .map(AgentRequestComponent::getMatchingRequestAgentCapabilities)
+                    .collect(Collectors.toList()));
+
+    if (agentRequestComponentsList.stream()
+        .allMatch(
+            agentRequestComponent ->
+                responseHash.equals(agentRequestComponent.getPreviousHash()))) {
+      responseElementBuilder.setIpTypeBlockingRules(IpTypeBlockingRules.getDefaultInstance());
+    } else {
+      responseElementBuilder.setIpTypeBlockingRules(
+          IpTypeBlockingRules.newBuilder()
+              .addAllIpTypeRuleList(agentResponseComponent.getResponseData()));
     }
-    return BlockingConfigResponseElement.newBuilder()
-        .setHash(responseHash)
-        .setIpTypeBlockingRules(ipTypeBlockingRules)
-        .addAllAgentCapabilities(
-            requestElements.stream()
-                .map(BlockingConfigRequestElement::getSupportedAgentCapabilitiesList)
-                .flatMap(List::stream)
-                .collect(Collectors.toUnmodifiableList()))
-        .build();
+
+    return responseElementBuilder.build();
   }
 }

@@ -1,6 +1,7 @@
 package ai.traceable.blocking.config.service.common.rules;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -34,9 +35,12 @@ import ai.traceable.region.config.service.v1.DetailedRegion;
 import ai.traceable.region.config.service.v1.Region;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -47,7 +51,10 @@ public class BlockingRulesSupplierTest {
 
   private static final RequestContext REQUEST_CONTEXT = mock(RequestContext.class);
   private static final Optional<String> ENVIRONMENT_ID = Optional.of("env");
-  private static List<String> SERVICE_NAMES = List.of("service1", "service2", "service-x");
+  private static Set<String> SERVICE_NAMES =
+      new LinkedHashSet<>(List.of("service1", "service2", "service-x"));
+  private static Map<String, RateLimitingModsecRule> rateLimitingModsecRulesMap =
+      createRateLimitingModsecRuleMap();
 
   BlockingRulesSupplierContext blockingRulesSupplierContext;
 
@@ -82,59 +89,25 @@ public class BlockingRulesSupplierTest {
     when(ipTypeRulesLoader.getLatestDataSupplier())
         .thenReturn(
             () ->
-                Arrays.stream(IpLocationType.values())
-                    .filter(ipType -> !ipType.equals(IpLocationType.IP_LOCATION_TYPE_TOR_EXIT_NODE))
-                    .collect(
-                        Collectors.toMap(
-                            Function.identity(), ipType -> new IpTypeRuleInfo(ipType))));
-
-    List<RateLimitingModsecRule> rateLimitingModsecRules =
-        List.of(
-            RateLimitingModsecRule.newBuilder()
-                .setId("id1")
-                .setData(
-                    RateLimitingRuleData.newBuilder()
-                        .setCondition(
-                            Condition.newBuilder()
-                                .setCompositeCondition(
-                                    CompositeCondition.newBuilder()
-                                        .addChildren(
-                                            Condition.newBuilder()
-                                                .setLeafCondition(
-                                                    LeafCondition.newBuilder()
-                                                        .setRegionCondition(
-                                                            RegionCondition.newBuilder()
-                                                                .addRegionIdentifiers(
-                                                                    RegionCondition.Region
-                                                                        .newBuilder()
-                                                                        .setCountryIsoCode(
-                                                                            "isoCode4"))))))))
-                .build(),
-            RateLimitingModsecRule.newBuilder()
-                .setId("id2")
-                .setData(
-                    RateLimitingRuleData.newBuilder()
-                        .setCondition(
-                            Condition.newBuilder()
-                                .setLeafCondition(
-                                    LeafCondition.newBuilder()
-                                        .setRegionCondition(
-                                            RegionCondition.newBuilder()
-                                                .addRegionIdentifiers(
-                                                    RegionCondition.Region.newBuilder()
-                                                        .setCountryIsoCode("isoCode2"))))))
-                .build(),
-            RateLimitingModsecRule.newBuilder().setId("id3").build());
+                Arrays.stream(IpTypeRuleInfo.IpType.values())
+                    .filter(ipType -> !ipType.equals(IpTypeRuleInfo.IpType.TOR_EXIT_NODE))
+                    .collect(Collectors.toMap(Function.identity(), IpTypeRuleInfo::new)));
 
     when(dlpRulesFetcher.fetchDlpModsecRules(REQUEST_CONTEXT, ENVIRONMENT_ID, SERVICE_NAMES))
         .thenReturn(
             Map.of(
                 "service1",
                 new DlpRulesFetcher.DlpModsecRulesData(
-                    "directives", "blobA", List.of("id1", "id2"), rateLimitingModsecRules),
+                    "directives",
+                    "blobA",
+                    List.of("id1", "id2"),
+                    rateLimitingModsecRulesMap.values()),
                 "service2",
                 new DlpRulesFetcher.DlpModsecRulesData(
-                    "directives", "blobB", List.of("id1", "id3"), rateLimitingModsecRules),
+                    "directives",
+                    "blobB",
+                    List.of("id1", "id3"),
+                    rateLimitingModsecRulesMap.values()),
                 "service-x",
                 new DlpRulesFetcher.DlpModsecRulesData()));
 
@@ -194,7 +167,7 @@ public class BlockingRulesSupplierTest {
     Map<String, String> modsecBlobs;
 
     // no dlp rules fetched..
-    modsecBlobs = blockingRulesSupplier.getCustomSignatureModsecBlobs(version1, SERVICE_NAMES);
+    modsecBlobs = blockingRulesSupplier.getCustomModsecBlobs(version1, SERVICE_NAMES);
     assertEquals(3, modsecBlobs.size());
     for (String sName : SERVICE_NAMES) {
       assertEquals(blob1, modsecBlobs.get(sName));
@@ -202,7 +175,7 @@ public class BlockingRulesSupplierTest {
     verify(customSignatureRulesFetcher, times(1)).fetchModsecRules(any(), any(), any());
     verify(dlpRulesFetcher, times(0)).fetchDlpModsecRules(any(), any(), any());
 
-    modsecBlobs = blockingRulesSupplier.getCustomSignatureModsecBlobs(version2, SERVICE_NAMES);
+    modsecBlobs = blockingRulesSupplier.getCustomModsecBlobs(version2, SERVICE_NAMES);
     assertEquals(3, modsecBlobs.size());
     // no dlp rule for service-x
     assertEquals(blob2, modsecBlobs.get("service-x"));
@@ -212,8 +185,8 @@ public class BlockingRulesSupplierTest {
     verify(dlpRulesFetcher, times(1)).fetchDlpModsecRules(any(), any(), eq(SERVICE_NAMES));
 
     modsecBlobs =
-        blockingRulesSupplier.getCustomSignatureModsecBlobs(
-            version2, List.of("service1", "service-x"));
+        blockingRulesSupplier.getCustomModsecBlobs(
+            version2, new LinkedHashSet<>(List.of("service1", "service-x")));
     assertEquals(2, modsecBlobs.size());
     // no dlp rule for service-x
     assertEquals(blob2, modsecBlobs.get("service-x"));
@@ -223,13 +196,13 @@ public class BlockingRulesSupplierTest {
     // fetchDlpModsecRules will not be called again for the list of services.
     verify(dlpRulesFetcher, times(2)).fetchDlpModsecRules(any(), any(), any());
     verify(dlpRulesFetcher, times(1)).fetchDlpModsecRules(any(), any(), eq(SERVICE_NAMES));
-    verify(dlpRulesFetcher, times(1)).fetchDlpModsecRules(any(), any(), eq(List.of()));
+    verify(dlpRulesFetcher, times(1)).fetchDlpModsecRules(any(), any(), eq(Set.of()));
 
     blockingRulesSupplier =
         new BlockingRulesSupplier(blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
     when(customSignatureRulesFetcher.fetchModsecRules(REQUEST_CONTEXT, ENVIRONMENT_ID, version2))
         .thenReturn(GetCustomSignatureModsecRulesResponse.getDefaultInstance());
-    modsecBlobs = blockingRulesSupplier.getCustomSignatureModsecBlobs(version2, SERVICE_NAMES);
+    modsecBlobs = blockingRulesSupplier.getCustomModsecBlobs(version2, SERVICE_NAMES);
     assertEquals(3, modsecBlobs.size());
     // no dlp rule for service-x
     assertEquals("", modsecBlobs.get("service-x"));
@@ -252,11 +225,11 @@ public class BlockingRulesSupplierTest {
         new BlockingRulesSupplier(blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
     assertEquals(
         List.of(detailedRegion1, detailedRegion2, detailedRegion3),
-        blockingRulesSupplier.getRegionIpMappings(Function.identity(), Collections.emptyList()));
+        blockingRulesSupplier.getRegionIpMappings(Function.identity(), Collections.emptySet()));
     verify(regionRulesFetcher, times(1)).fetchRegionRules(any(), any());
     assertEquals(
         List.of(detailedRegion1, detailedRegion2, detailedRegion3),
-        blockingRulesSupplier.getRegionIpMappings(Function.identity(), Collections.emptyList()));
+        blockingRulesSupplier.getRegionIpMappings(Function.identity(), Collections.emptySet()));
     // fetchRules will not be called again..
     verify(regionRulesFetcher, times(1)).fetchRegionRules(any(), any());
 
@@ -268,6 +241,7 @@ public class BlockingRulesSupplierTest {
     // fetchDetailedRegions will be called exactly once
     verify(regionRulesFetcher, times(1)).fetchDetailedRegions(List.of("isoCode4"));
     verify(regionRulesFetcher, times(1)).fetchDetailedRegions(any());
+    verify(dlpRulesFetcher, times(1)).fetchDlpModsecRules(any(), any(), eq(SERVICE_NAMES));
   }
 
   private static DetailedRegion getDetailedRegion(String regionId, String isoCode) {
@@ -325,22 +299,123 @@ public class BlockingRulesSupplierTest {
     blockingRulesSupplier =
         new BlockingRulesSupplier(blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
 
-    List<IpLocationType> ipTypeRuleInfoList =
-        blockingRulesSupplier.getIpTypeIpMappings(Function.identity()).stream()
-            .map(IpTypeRuleInfo::getIpLocationType)
+    List<IpTypeRuleInfo.IpType> ipTypeRuleInfoList =
+        blockingRulesSupplier
+            .getIpTypeIpMappings(Function.identity(), Collections.emptySet())
+            .stream()
+            .map(IpTypeRuleInfo::getIpType)
             .collect(Collectors.toList());
     verify(maliciousSourcesRulesFetcher, times(1)).fetchRules(any(), any());
     assertEquals(
         List.of(
-            IpLocationType.IP_LOCATION_TYPE_BOT,
-            IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN,
-            IpLocationType.IP_LOCATION_TYPE_PUBLIC_PROXY),
+            IpTypeRuleInfo.IpType.BOT,
+            IpTypeRuleInfo.IpType.ANONYMOUS_VPN,
+            IpTypeRuleInfo.IpType.PUBLIC_PROXY),
         ipTypeRuleInfoList);
+
     ipTypeRuleInfoList =
-        blockingRulesSupplier.getIpTypeIpMappings(Function.identity()).stream()
-            .map(IpTypeRuleInfo::getIpLocationType)
+        blockingRulesSupplier.getIpTypeIpMappings(Function.identity(), SERVICE_NAMES).stream()
+            .map(IpTypeRuleInfo::getIpType)
             .collect(Collectors.toList());
+    assertEquals(
+        List.of(
+            IpTypeRuleInfo.IpType.BOT,
+            IpTypeRuleInfo.IpType.ANONYMOUS_VPN,
+            IpTypeRuleInfo.IpType.PUBLIC_PROXY,
+            IpTypeRuleInfo.IpType.HOSTING_PROVIDER),
+        ipTypeRuleInfoList);
+    verify(dlpRulesFetcher, times(1)).fetchDlpModsecRules(any(), any(), eq(SERVICE_NAMES));
     // fetchRules will not be called again..
     verify(maliciousSourcesRulesFetcher, times(1)).fetchRules(any(), any());
+  }
+
+  @Test
+  public void test_getDlpRules() {
+    blockingRulesSupplier =
+        new BlockingRulesSupplier(blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
+    assertTrue(blockingRulesSupplier.getDlpRules(Collections.emptySet()).isEmpty());
+
+    Map<String, List<RateLimitingModsecRule>> dlpRules =
+        blockingRulesSupplier.getDlpRules(SERVICE_NAMES);
+    assertEquals(3, dlpRules.size());
+    assertEquals(
+        List.of(rateLimitingModsecRulesMap.get("id1"), rateLimitingModsecRulesMap.get("id2")),
+        dlpRules.get("service1"));
+    assertEquals(
+        List.of(rateLimitingModsecRulesMap.get("id1"), rateLimitingModsecRulesMap.get("id3")),
+        dlpRules.get("service2"));
+    assertTrue(dlpRules.get("service-x").isEmpty());
+  }
+
+  private static Map<String, RateLimitingModsecRule> createRateLimitingModsecRuleMap() {
+    Map<String, RateLimitingModsecRule> rulesMap = new LinkedHashMap<>();
+    rulesMap.put(
+        "id1",
+        RateLimitingModsecRule.newBuilder()
+            .setId("id1")
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setCondition(
+                        Condition.newBuilder()
+                            .setCompositeCondition(
+                                CompositeCondition.newBuilder()
+                                    .addChildren(
+                                        Condition.newBuilder()
+                                            .setLeafCondition(
+                                                LeafCondition.newBuilder()
+                                                    .setRegionCondition(
+                                                        RegionCondition.newBuilder()
+                                                            .addRegionIdentifiers(
+                                                                RegionCondition.Region.newBuilder()
+                                                                    .setCountryIsoCode(
+                                                                        "isoCode4")))))
+                                    .addChildren(
+                                        Condition.newBuilder()
+                                            .setLeafCondition(
+                                                LeafCondition.newBuilder()
+                                                    .setIpLocationTypeCondition(
+                                                        ai.traceable.ratelimiting.config.service.v2
+                                                            .IpLocationTypeCondition.newBuilder()
+                                                            .addIpLocationTypes(
+                                                                ai.traceable.ratelimiting.config
+                                                                    .service.v2.IpLocationType
+                                                                    .IP_LOCATION_TYPE_HOSTING_PROVIDER)))))))
+            .build());
+    rulesMap.put(
+        "id2",
+        RateLimitingModsecRule.newBuilder()
+            .setId("id2")
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setCondition(
+                        Condition.newBuilder()
+                            .setLeafCondition(
+                                LeafCondition.newBuilder()
+                                    .setRegionCondition(
+                                        RegionCondition.newBuilder()
+                                            .addRegionIdentifiers(
+                                                RegionCondition.Region.newBuilder()
+                                                    .setCountryIsoCode("isoCode2"))))))
+            .build());
+    rulesMap.put(
+        "id3",
+        RateLimitingModsecRule.newBuilder()
+            .setId("id3")
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setCondition(
+                        Condition.newBuilder()
+                            .setLeafCondition(
+                                LeafCondition.newBuilder()
+                                    .setIpLocationTypeCondition(
+                                        ai.traceable.ratelimiting.config.service.v2
+                                            .IpLocationTypeCondition.newBuilder()
+                                            .addIpLocationTypes(
+                                                ai.traceable.ratelimiting.config.service.v2
+                                                    .IpLocationType
+                                                    .IP_LOCATION_TYPE_PUBLIC_PROXY)))))
+            .build());
+    rulesMap.put("id4", RateLimitingModsecRule.newBuilder().setId("id4").build());
+    return rulesMap;
   }
 }

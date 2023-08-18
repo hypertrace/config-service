@@ -13,9 +13,11 @@ import ai.traceable.ratelimiting.config.service.v2.ModsecBlobData;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingModsecRule;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -75,15 +77,13 @@ public class DlpRulesFetcherTest {
   @Test
   void test_fetchDlpModsecRules() {
     assertTrue(
-        dlpRulesFetcher
-            .fetchDlpModsecRules(REQUEST_CONTEXT, Optional.empty(), List.of())
-            .isEmpty());
+        dlpRulesFetcher.fetchDlpModsecRules(REQUEST_CONTEXT, Optional.empty(), Set.of()).isEmpty());
 
     Map<String, DlpRulesFetcher.DlpModsecRulesData> dlpModsecRulesDataMap =
         dlpRulesFetcher.fetchDlpModsecRules(
             REQUEST_CONTEXT,
             Optional.empty(),
-            List.of("service1", "service2", "service3", "service-x"));
+            new LinkedHashSet<>(List.of("service1", "service2", "service3", "service-x")));
     // no dlp rules for service-x
     assertEquals(4, dlpModsecRulesDataMap.size());
 

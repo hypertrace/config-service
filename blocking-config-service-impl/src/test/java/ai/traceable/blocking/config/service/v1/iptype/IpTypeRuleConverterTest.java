@@ -9,15 +9,13 @@ import ai.traceable.blocking.config.service.v1.IpRange;
 import ai.traceable.blocking.config.service.v1.IpType;
 import ai.traceable.blocking.config.service.v1.IpTypeRule;
 import ai.traceable.blocking.config.service.v1.IpV4Range;
-import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import org.junit.jupiter.api.Test;
 
 class IpTypeRuleConverterTest {
 
   @Test
   void testRuleConversion() {
-    IpTypeRuleInfo commonIpTypeRule =
-        new IpTypeRuleInfo(IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN);
+    IpTypeRuleInfo commonIpTypeRule = new IpTypeRuleInfo(IpTypeRuleInfo.IpType.ANONYMOUS_VPN);
     commonIpTypeRule.getIpv4Ranges().add(new IpRangeInfo(11, 22));
     commonIpTypeRule.getIpv4Ranges().add(new IpRangeInfo(33, 44));
     commonIpTypeRule.getIpv4Addresses().add(55);

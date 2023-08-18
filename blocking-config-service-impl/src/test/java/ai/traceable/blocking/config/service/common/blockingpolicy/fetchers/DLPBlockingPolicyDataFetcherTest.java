@@ -39,6 +39,7 @@ import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition.Region;
 import ai.traceable.ratelimiting.config.service.v2.TransactionActionConfig;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -80,7 +81,9 @@ class DLPBlockingPolicyDataFetcherTest {
     sampleMap.put("service1", List.of(buildSampleRateLimitingModsecRule("1", false)));
     sampleMap.put("service2", List.of(buildSampleRateLimitingModsecRule("2", true)));
 
-    doReturn(sampleMap).when(blockingRulesSupplier).getDlpRules(List.of("service1", "service2"));
+    doReturn(sampleMap)
+        .when(blockingRulesSupplier)
+        .getDlpRules(new LinkedHashSet<>(List.of("service1", "service2")));
 
     LinkedHashMap<String, List<BlockingPolicyData>> serviceScopeDLPRules =
         rateLimiterTransactionBasedDataFetcher

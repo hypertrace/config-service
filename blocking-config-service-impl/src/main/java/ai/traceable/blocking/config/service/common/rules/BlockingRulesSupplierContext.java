@@ -3,13 +3,13 @@ package ai.traceable.blocking.config.service.common.rules;
 import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleInfo;
 import ai.traceable.blocking.config.service.common.iptype.IpTypeRulesLoader;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher;
-import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import java.util.Map;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class BlockingRulesSupplierContext {
+
   private final Map<RulesFetcher.RulesFetcherType, RulesFetcher> rulesFetchers;
   private final IpTypeRulesLoader ipTypeRulesLoader;
 
@@ -25,7 +25,7 @@ public class BlockingRulesSupplierContext {
     return rulesFetchers.get(fetcherType);
   }
 
-  public Map<IpLocationType, IpTypeRuleInfo> getIpTypeRulesInfoMap() {
+  public Map<IpTypeRuleInfo.IpType, IpTypeRuleInfo> getIpTypeRulesInfoMap() {
     return ipTypeRulesLoader.getLatestDataSupplier().get();
   }
 }

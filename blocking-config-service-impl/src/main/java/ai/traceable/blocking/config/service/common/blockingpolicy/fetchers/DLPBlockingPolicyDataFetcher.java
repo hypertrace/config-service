@@ -30,6 +30,7 @@ import ai.traceable.ratelimiting.config.service.v2.RateLimitingModsecRule;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition.Region;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -55,7 +56,7 @@ class DLPBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
     LinkedHashMap<String, List<BlockingPolicyData>> serviceScopedBlockingPolicies =
         new LinkedHashMap<>();
     blockingRulesSupplier
-        .getDlpRules(filter.getServiceNames())
+        .getDlpRules(new LinkedHashSet<>(filter.getServiceNames()))
         .forEach(
             (serviceName, rules) ->
                 serviceScopedBlockingPolicies.put(

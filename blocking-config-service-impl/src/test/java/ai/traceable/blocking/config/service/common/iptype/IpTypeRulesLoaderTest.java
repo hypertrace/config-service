@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleInfo.IpRangeInfo;
 import ai.traceable.config.utils.LatestInstantNamedPathFinder;
 import ai.traceable.config.utils.refresh.FileRefreshConfig;
-import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import com.typesafe.config.ConfigFactory;
 import java.util.EnumMap;
 import java.util.List;
@@ -13,8 +12,8 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class IpTypeRulesLoaderTest {
-  private final Map<IpLocationType, IpTypeRuleInfo> testIpTypeRules =
-      new EnumMap<>(IpLocationType.class);
+  private final Map<IpTypeRuleInfo.IpType, IpTypeRuleInfo> testIpTypeRules =
+      new EnumMap<>(IpTypeRuleInfo.IpType.class);
 
   @Test
   void buildIpTypeRules() {
@@ -25,7 +24,8 @@ class IpTypeRulesLoaderTest {
             new FileRefreshConfig(
                 ConfigFactory.parseMap(
                     Map.of("mode", "RESOURCE_FILE", "resource.file", "iptype/highrisk.csv"))));
-    Map<IpLocationType, IpTypeRuleInfo> ipTypeRulesMap = builder.getLatestDataSupplier().get();
+    Map<IpTypeRuleInfo.IpType, IpTypeRuleInfo> ipTypeRulesMap =
+        builder.getLatestDataSupplier().get();
     assertEquals(5, ipTypeRulesMap.size());
     ipTypeRulesMap
         .entrySet()
@@ -35,23 +35,23 @@ class IpTypeRulesLoaderTest {
   private void insertTestDataForVerification() {
     // based on data in test/resources/iptype/highrisk.csv
     testIpTypeRules.put(
-        IpLocationType.IP_LOCATION_TYPE_BOT,
-        getIpTypeRule(IpLocationType.IP_LOCATION_TYPE_BOT, List.of(1L, 2L, 4L, 4L)));
+        IpTypeRuleInfo.IpType.BOT,
+        getIpTypeRule(IpTypeRuleInfo.IpType.BOT, List.of(1L, 2L, 4L, 4L)));
     testIpTypeRules.put(
-        IpLocationType.IP_LOCATION_TYPE_PUBLIC_PROXY,
-        getIpTypeRule(IpLocationType.IP_LOCATION_TYPE_PUBLIC_PROXY, List.of(10L, 22L, 4L, 4L)));
+        IpTypeRuleInfo.IpType.PUBLIC_PROXY,
+        getIpTypeRule(IpTypeRuleInfo.IpType.PUBLIC_PROXY, List.of(10L, 22L, 4L, 4L)));
     testIpTypeRules.put(
-        IpLocationType.IP_LOCATION_TYPE_TOR_EXIT_NODE,
-        getIpTypeRule(IpLocationType.IP_LOCATION_TYPE_TOR_EXIT_NODE, List.of(1L, 2L, 40L, 40L)));
+        IpTypeRuleInfo.IpType.TOR_EXIT_NODE,
+        getIpTypeRule(IpTypeRuleInfo.IpType.TOR_EXIT_NODE, List.of(1L, 2L, 40L, 40L)));
     testIpTypeRules.put(
-        IpLocationType.IP_LOCATION_TYPE_HOSTING_PROVIDER,
-        getIpTypeRule(IpLocationType.IP_LOCATION_TYPE_HOSTING_PROVIDER, List.of(11L, 21L, 4L, 4L)));
+        IpTypeRuleInfo.IpType.HOSTING_PROVIDER,
+        getIpTypeRule(IpTypeRuleInfo.IpType.HOSTING_PROVIDER, List.of(11L, 21L, 4L, 4L)));
     testIpTypeRules.put(
-        IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN,
-        getIpTypeRule(IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN, List.of(31L, 42L, 43L, 49L)));
+        IpTypeRuleInfo.IpType.ANONYMOUS_VPN,
+        getIpTypeRule(IpTypeRuleInfo.IpType.ANONYMOUS_VPN, List.of(31L, 42L, 43L, 49L)));
   }
 
-  private IpTypeRuleInfo getIpTypeRule(IpLocationType ipType, List<Long> rangePairs) {
+  private IpTypeRuleInfo getIpTypeRule(IpTypeRuleInfo.IpType ipType, List<Long> rangePairs) {
     assert rangePairs.size() % 2 == 0;
 
     IpTypeRuleInfo commonIpTypeRule = new IpTypeRuleInfo(ipType);
