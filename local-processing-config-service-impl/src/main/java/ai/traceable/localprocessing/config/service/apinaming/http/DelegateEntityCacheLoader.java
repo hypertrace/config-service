@@ -68,7 +68,7 @@ public class DelegateEntityCacheLoader
       if (maybeServiceId.isEmpty()) {
         serviceEntityCache.invalidate(serviceIdentifierContextualKey);
         ServiceIdentifier serviceIdentifier = serviceIdentifierContextualKey.getData();
-        log.error(
+        log.debug(
             "Could not fetch entity for tenant id:{}, service name: {} and environment : {}",
             serviceIdentifierContextualKey.getContext().getTenantId(),
             serviceIdentifier.getServiceName(),
@@ -77,7 +77,7 @@ public class DelegateEntityCacheLoader
       return maybeServiceId;
     } catch (Exception e) {
       ServiceIdentifier serviceIdentifier = serviceIdentifierContextualKey.getData();
-      log.error(
+      log.debug(
           "Could not fetch entity for tenant id:{}, service name: {} and environment : {}",
           serviceIdentifierContextualKey.getContext().getTenantId(),
           serviceIdentifier.getServiceName(),
@@ -98,7 +98,7 @@ public class DelegateEntityCacheLoader
         Optional<String> maybeServiceId = maybeServiceIds.get(serviceIdentifierContextualKey);
         if (maybeServiceId == null || maybeServiceId.isEmpty()) {
           serviceEntityCache.invalidate(serviceIdentifierContextualKey);
-          log.error(
+          log.debug(
               "Could not fetch entity for tenant id:{}, and contextual service identifier: {}",
               keys.iterator().next().getContext().getTenantId(),
               serviceIdentifierContextualKey);
@@ -106,7 +106,7 @@ public class DelegateEntityCacheLoader
       }
       return maybeServiceIds;
     } catch (Exception e) {
-      log.error(
+      log.debug(
           "Could not fetch entities for tenant id:{}, and contextual service identifiers: {}",
           keys.iterator().next().getContext().getTenantId(),
           keys,
