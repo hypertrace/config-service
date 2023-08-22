@@ -98,6 +98,8 @@ enum Operator {
   OPERATOR_UNSPECIFIED = 0;
   OPERATOR_EQUALS = 1;
   OPERATOR_MATCHES_REGEX = 2;
+  OPERATOR_NOT_EQUALS = 3;
+  OPERATOR_NOT_MATCHES_REGEX = 4;
 }
 
 message ObfuscationStrategy {
