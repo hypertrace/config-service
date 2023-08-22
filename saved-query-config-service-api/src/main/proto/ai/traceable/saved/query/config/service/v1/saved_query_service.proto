@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package ai.traceable.saved.query.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/saved/query/config/service/v1/saved_query.proto";
+
+service SavedQueryService {
+  // Create a new saved query
+  rpc CreateSavedQuery(CreateSavedQueryRequest) returns (CreateSavedQueryResponse);
+  // Update an existing saved query
+  rpc UpdateSavedQuery(UpdateSavedQueryRequest) returns (UpdateSavedQueryResponse);
+  // Delete an existing saved query
+  rpc DeleteSavedQuery(DeleteSavedQueryRequest) returns (DeleteSavedQueryResponse);
+  // Get saved queries based on the specified fields
+  rpc GetSavedQueries(GetSavedQueriesRequest) returns (GetSavedQueriesResponse);
+}
+
+message CreateSavedQueryRequest {
+  // Name for the saved query
+  string name = 1;
+  // The category against which the saved query is associated with
+  string scope = 2;
+  // Saved query clauses
+  QueryClauses query_clauses = 3;
+}
+
+message CreateSavedQueryResponse {
+  SavedQuery saved_query = 1;
+}
+
+message UpdateSavedQueryRequest {
+  // Unique ID generated for a saved query
+  string id = 1;
+  // Name of the saved query
+  string name = 2;
+  // Saved query clauses
+  QueryClauses query_clauses = 3;
+}
+
+message UpdateSavedQueryResponse {
+  SavedQuery saved_query = 1;
+}
+
+message GetSavedQueriesRequest {
+  GetSavedQueriesFilter filter = 1;
+}
+
+message GetSavedQueriesFilter {
+  // user_id will be extracted from the request context and applied as a default filter
+  optional string scope = 1;
+}
+
+message GetSavedQueriesResponse {
+  repeated SavedQuery saved_queries = 1;
+}
+
+message DeleteSavedQueryRequest {
+  string id = 1;
+}
+
+message DeleteSavedQueryResponse {
+}

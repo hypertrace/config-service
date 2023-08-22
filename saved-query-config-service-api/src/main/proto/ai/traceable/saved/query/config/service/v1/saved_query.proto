@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package ai.traceable.saved.query.config.service.v1;
+
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+
+message SavedQuery {
+  // Unique ID generated for a saved query
+  string id = 1;
+  // Name of the saved query
+  string name = 2;
+  // The category against which the saved query is associated with
+  string scope = 3;
+  // Saved query clauses
+  QueryClauses query_clauses = 4;
+  // ID of the user who created the saved query
+  string created_by_user_id = 5;
+  // Creation timestamp of the saved query
+  google.protobuf.Timestamp created_timestamp = 6;
+  // Last updated timestamp of the saved query
+  google.protobuf.Timestamp updated_timestamp = 7;
+}
+
+message QueryClauses {
+  // Selection criteria
+  repeated string selection = 1;
+  // Filtering criteria
+  repeated string filter = 2;
+  // Grouping criteria
+  repeated string group_by = 3;
+  // Max groups limit
+  optional string group_limit = 4;
+  // Includes the remaining ungrouped data as "others" group
+  optional string include_others_groups = 5;
+  // Ordering criteria
+  repeated string order_by = 6;
+  // Time interval across which metrics are calculated
+  optional string interval = 7;
+}
