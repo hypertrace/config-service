@@ -76,13 +76,6 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
                 requestContext, request.getIpTypeBlockingRulesHash(), environmentId));
       }
 
-      var a =
-          blockingPolicyConfigurationManager.getBlockingPolicyConfiguration(
-              requestContext,
-              request.getBlockingPolicyConfigurationHash(),
-              environmentId,
-              blockingRulesSupplier);
-
       responseBuilder.setBlockingPolicyConfiguration(
           blockingPolicyConfigurationManager.getBlockingPolicyConfiguration(
               requestContext,
