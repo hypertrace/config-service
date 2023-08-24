@@ -51,6 +51,7 @@ dependencies {
   implementation(projects.astHooksConfigServiceImpl)
   implementation(projects.savedFilterConfigServiceImpl)
   implementation(projects.anomalyScoringConfigServiceImpl)
+  implementation(projects.savedQueryConfigServiceImpl)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

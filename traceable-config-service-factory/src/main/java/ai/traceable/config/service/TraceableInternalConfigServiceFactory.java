@@ -27,6 +27,7 @@ import ai.traceable.reporting.config.service.v2.ReportingConfigServiceFactory;
 import ai.traceable.risk.config.service.RiskConfigServiceFactory;
 import ai.traceable.risk.config.service.v2.ApiRiskConfigServiceFactory;
 import ai.traceable.saved.filter.config.service.SavedFilterConfigServiceFactory;
+import ai.traceable.saved.query.config.service.SavedQueryConfigServiceFactory;
 import ai.traceable.sensitivedata.config.service.SensitiveDataConfigServicesProvider;
 import ai.traceable.sessionidentification.config.service.SessionIdentificationConfigServiceFactory;
 import ai.traceable.span.processing.config.service.SpanProcessingConfigServiceFactory;
@@ -224,6 +225,9 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getChangeEventGenerator())),
             wrap(
                 SavedFilterConfigServiceFactory.build(
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())),
+            wrap(
+                SavedQueryConfigServiceFactory.build(
                     providers.getLocalChannel(), providers.getChangeEventGenerator())))
         .flatMap(stream -> stream)
         .collect(Collectors.toUnmodifiableList());
