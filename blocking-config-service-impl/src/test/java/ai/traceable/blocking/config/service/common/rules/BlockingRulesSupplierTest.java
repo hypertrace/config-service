@@ -33,6 +33,7 @@ import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
 import ai.traceable.region.config.service.v1.Country;
 import ai.traceable.region.config.service.v1.DetailedRegion;
 import ai.traceable.region.config.service.v1.Region;
+import ai.traceable.region.config.service.v1.RegionRule;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -51,9 +52,9 @@ public class BlockingRulesSupplierTest {
 
   private static final RequestContext REQUEST_CONTEXT = mock(RequestContext.class);
   private static final Optional<String> ENVIRONMENT_ID = Optional.of("env");
-  private static Set<String> SERVICE_NAMES =
+  private static final Set<String> SERVICE_NAMES =
       new LinkedHashSet<>(List.of("service1", "service2", "service-x"));
-  private static Map<String, RateLimitingModsecRule> rateLimitingModsecRulesMap =
+  private static final Map<String, RateLimitingModsecRule> rateLimitingModsecRulesMap =
       createRateLimitingModsecRuleMap();
 
   BlockingRulesSupplierContext blockingRulesSupplierContext;
@@ -216,10 +217,18 @@ public class BlockingRulesSupplierTest {
     final DetailedRegion detailedRegion2 = getDetailedRegion("id2", "isoCode2");
     final DetailedRegion detailedRegion3 = getDetailedRegion("id3", "isoCode3");
     final DetailedRegion detailedRegion4 = getDetailedRegion("id4", "isoCode4");
+
     when(regionRulesFetcher.fetchRegionRules(REQUEST_CONTEXT, ENVIRONMENT_ID))
+        .thenReturn(
+            List.of(
+                buildRegionRules("id1", "isoCode1"),
+                buildRegionRules("id2", "isoCode2"),
+                buildRegionRules("id3", "isoCode3")));
+    when(regionRulesFetcher.fetchDetailedRegions(List.of("isoCode1", "isoCode2", "isoCode3")))
         .thenReturn(List.of(detailedRegion1, detailedRegion2, detailedRegion3));
-    when(regionRulesFetcher.fetchDetailedRegions(List.of("isoCode4")))
-        .thenReturn(Map.of("isoCode4", detailedRegion4));
+    when(regionRulesFetcher.fetchDetailedRegions(
+            List.of("isoCode1", "isoCode2", "isoCode3", "isoCode4")))
+        .thenReturn(List.of(detailedRegion1, detailedRegion2, detailedRegion3, detailedRegion4));
 
     blockingRulesSupplier =
         new BlockingRulesSupplier(blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
@@ -238,10 +247,15 @@ public class BlockingRulesSupplierTest {
         blockingRulesSupplier.getRegionIpMappings(Function.identity(), SERVICE_NAMES));
     // fetchRules will not be called again..
     verify(regionRulesFetcher, times(1)).fetchRegionRules(any(), any());
-    // fetchDetailedRegions will be called exactly once
-    verify(regionRulesFetcher, times(1)).fetchDetailedRegions(List.of("isoCode4"));
-    verify(regionRulesFetcher, times(1)).fetchDetailedRegions(any());
     verify(dlpRulesFetcher, times(1)).fetchDlpModsecRules(any(), any(), eq(SERVICE_NAMES));
+  }
+
+  private static RegionRule buildRegionRules(String regionId, String isoCode) {
+    return RegionRule.newBuilder()
+        .setId("id")
+        .addRegionId(regionId)
+        .putRegionIdToCountryMap(regionId, Country.newBuilder().setIsoCode(isoCode).build())
+        .build();
   }
 
   private static DetailedRegion getDetailedRegion(String regionId, String isoCode) {

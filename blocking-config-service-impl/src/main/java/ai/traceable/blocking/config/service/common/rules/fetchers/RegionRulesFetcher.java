@@ -11,12 +11,8 @@ import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionsFilter;
 import ai.traceable.region.config.service.v1.RuleScope;
 import java.time.Clock;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -31,7 +27,7 @@ public class RegionRulesFetcher implements RulesFetcher {
     this.regionConfigServiceStub = regionConfigServiceStub;
   }
 
-  public List<DetailedRegion> fetchRegionRules(
+  public List<RegionRule> fetchRegionRules(
       RequestContext requestContext, Optional<String> environmentId) {
     GetAllRegionRulesRequest rulesRequest =
         GetAllRegionRulesRequest.newBuilder()
@@ -45,28 +41,14 @@ public class RegionRulesFetcher implements RulesFetcher {
                                     .map(id -> EnvironmentScope.newBuilder().addEnvironmentIds(id))
                                     .orElse(EnvironmentScope.newBuilder()))))
             .build();
-    List<RegionRule> regionRules =
-        requestContext.call(
-            () -> this.regionConfigServiceStub.getAllRegionRules(rulesRequest).getRuleList());
-
-    Set<String> regionIds =
-        regionRules.stream()
-            .filter(rule -> isRuleActive(clock.millis(), rule))
-            .flatMap(rule -> rule.getRegionIdList().stream())
-            .collect(Collectors.toSet());
-    if (regionIds.isEmpty()) {
-      return Collections.emptyList();
-    }
-
-    return this.regionConfigServiceStub
-        .getDetailedRegions(
-            GetDetailedRegionsRequest.newBuilder()
-                .setFilter(RegionsFilter.newBuilder().addAllId(regionIds))
-                .build())
-        .getRegionList();
+    return requestContext.call(
+        () ->
+            this.regionConfigServiceStub.getAllRegionRules(rulesRequest).getRuleList().stream()
+                .filter(rule -> isRuleActive(clock.millis(), rule))
+                .collect(Collectors.toUnmodifiableList()));
   }
 
-  public Map<String, DetailedRegion> fetchDetailedRegions(List<String> countryIsoCodes) {
+  public List<DetailedRegion> fetchDetailedRegions(List<String> countryIsoCodes) {
     List<RegionIdentifier> regionIdentifiers =
         countryIsoCodes.stream()
             .map(isoCode -> RegionIdentifier.newBuilder().setCountryIsoCode(isoCode).build())
@@ -76,12 +58,7 @@ public class RegionRulesFetcher implements RulesFetcher {
             GetDetailedRegionsRequest.newBuilder()
                 .setFilter(RegionsFilter.newBuilder().addAllRegionIdentifier(regionIdentifiers))
                 .build())
-        .getRegionList()
-        .stream()
-        .collect(
-            Collectors.toMap(
-                detailedRegion -> detailedRegion.getRegion().getCountry().getIsoCode(),
-                Function.identity()));
+        .getRegionList();
   }
 
   private boolean isRuleActive(long currentTimeMillis, RegionRule regionRule) {

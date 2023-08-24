@@ -4,7 +4,6 @@ import static ai.traceable.region.config.service.v1.RegionRuleActionType.REGION_
 import static ai.traceable.region.config.service.v1.RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK;
 import static ai.traceable.region.config.service.v1.RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -15,13 +14,8 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.Block
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
-import ai.traceable.region.config.service.v1.EnvironmentScope;
-import ai.traceable.region.config.service.v1.GetAllRegionRulesRequest;
-import ai.traceable.region.config.service.v1.GetAllRegionRulesResponse;
-import ai.traceable.region.config.service.v1.GetRegionRulesFilter;
-import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc;
+import ai.traceable.region.config.service.v1.Country;
 import ai.traceable.region.config.service.v1.RegionRule;
-import ai.traceable.region.config.service.v1.RuleScope;
 import java.util.List;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -29,35 +23,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class RegionBlockingPolicyDataFetcherTest {
-
   private static final String TENANT_ID = "tenant-id";
-  private static final String ENVIRONMENT_ID = "environment-id";
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
-  private static final GetAllRegionRulesRequest DEFAULT_GET_REQUEST =
-      GetAllRegionRulesRequest.newBuilder()
-          .setFilter(
-              GetRegionRulesFilter.newBuilder()
-                  .setRuleScope(
-                      RuleScope.newBuilder()
-                          .setEnvironmentScope(EnvironmentScope.getDefaultInstance()))
-                  .addAllRuleActionTypes(
-                      List.of(
-                          REGION_RULE_ACTION_TYPE_BLOCK, REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT))
-                  .setDisabled(false))
-          .build();
-
-  private RegionConfigServiceGrpc.RegionConfigServiceBlockingStub regionConfigServiceBlockingStub;
 
   private RegionBlockingPolicyDataFetcher regionDataFetcher;
+  private BlockingRulesSupplier blockingRulesSupplier;
 
   private static final long inactiveTimestamp = System.currentTimeMillis() - 10000L;
   private static final long activeTimestamp = System.currentTimeMillis() + 10000L;
 
   @BeforeEach
   void setUp() {
-    regionConfigServiceBlockingStub =
-        mock(RegionConfigServiceGrpc.RegionConfigServiceBlockingStub.class);
-
+    blockingRulesSupplier = mock(BlockingRulesSupplier.class);
     BlockingRulesUtils blockingRulesUtils = mock(BlockingRulesUtils.class);
     doReturn(true).when(blockingRulesUtils).isRuleActive(activeTimestamp);
     doReturn(true).when(blockingRulesUtils).isRuleActive(0);
@@ -80,42 +57,37 @@ class RegionBlockingPolicyDataFetcherTest {
             activeTimestamp, BlockingPolicyData.RuleType.BLOCK_ALL_EXCEPT))
         .thenReturn(BlockingPolicyData.Status.SUSPENDED);
 
-    regionDataFetcher =
-        new RegionBlockingPolicyDataFetcher(regionConfigServiceBlockingStub, blockingRulesUtils);
+    regionDataFetcher = new RegionBlockingPolicyDataFetcher(blockingRulesUtils);
   }
 
   @Test
   void getRegionBasedRulesTestEmpty() {
-    doReturn(GetAllRegionRulesResponse.getDefaultInstance())
-        .when(regionConfigServiceBlockingStub)
-        .getAllRegionRules(DEFAULT_GET_REQUEST);
+    doReturn(List.of()).when(blockingRulesSupplier).getRegionRules();
     List<BlockingPolicyData> regionBasedRuleList =
         regionDataFetcher
             .getBlockingPolicyData(
                 REQUEST_CONTEXT,
                 BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build(),
-                mock(BlockingRulesSupplier.class))
+                blockingRulesSupplier)
             .getBlockingPolicyList();
     assertEquals(0, regionBasedRuleList.size());
   }
 
   @Test
-  void getRegionBasedRulesTestWithoutEnvironment() {
-    doReturn(sampleRegionAllEnvRulesResponse)
-        .when(regionConfigServiceBlockingStub)
-        .getAllRegionRules(DEFAULT_GET_REQUEST);
+  void getRegionBasedRulesTest() {
+    doReturn(sampleRegionAllEnvRulesResponse).when(blockingRulesSupplier).getRegionRules();
 
     List<BlockingPolicyData> regionBasedRuleList =
         regionDataFetcher
             .getBlockingPolicyData(
                 REQUEST_CONTEXT,
                 BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build(),
-                mock(BlockingRulesSupplier.class))
+                blockingRulesSupplier)
             .getBlockingPolicyList();
 
     assertEquals(2, regionBasedRuleList.size());
     assertEquals(
-        RegionBlockingDetails.builder().regions(List.of("Nepal", "Bhutan")).build(),
+        RegionBlockingDetails.builder().regions(List.of("NP", "BN")).build(),
         regionBasedRuleList.get(0).getBlockingDetails());
     assertEquals(
         BlockingPolicyData.Category.CUSTOM_REGION_RULE, regionBasedRuleList.get(0).getCategory());
@@ -127,7 +99,7 @@ class RegionBlockingPolicyDataFetcherTest {
         regionBasedRuleList.get(0).getInfo());
 
     assertEquals(
-        RegionBlockingDetails.builder().regions(List.of("China", "Pakistan")).build(),
+        RegionBlockingDetails.builder().regions(List.of("CH", "PK")).build(),
         regionBasedRuleList.get(1).getBlockingDetails());
     assertEquals(
         BlockingPolicyData.Category.CUSTOM_REGION_RULE, regionBasedRuleList.get(1).getCategory());
@@ -140,133 +112,59 @@ class RegionBlockingPolicyDataFetcherTest {
         regionBasedRuleList.get(1).getInfo());
   }
 
-  @Test
-  void getRegionBasedRulesTestWithEnvironment() {
-    doReturn(sampleRegionAllRulesResponse)
-        .when(regionConfigServiceBlockingStub)
-        .getAllRegionRules(
-            GetAllRegionRulesRequest.newBuilder()
-                .setFilter(
-                    GetRegionRulesFilter.newBuilder()
-                        .setRuleScope(
-                            RuleScope.newBuilder()
-                                .setEnvironmentScope(
-                                    EnvironmentScope.newBuilder()
-                                        .addEnvironmentIds(ENVIRONMENT_ID)
-                                        .build())
-                                .build())
-                        .setDisabled(false)
-                        .addAllRuleActionTypes(
-                            List.of(
-                                REGION_RULE_ACTION_TYPE_BLOCK,
-                                REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT))
-                        .build())
-                .build());
-
-    // With correct environment
-    List<BlockingPolicyData> regionBasedRuleList =
-        regionDataFetcher
-            .getBlockingPolicyData(
-                REQUEST_CONTEXT,
-                BlockingPolicyDataFilter.builder()
-                    .environmentId(Optional.of(ENVIRONMENT_ID))
-                    .build(),
-                mock(BlockingRulesSupplier.class))
-            .getBlockingPolicyList();
-    assertEquals(3, regionBasedRuleList.size());
-
-    // Without environment
-    assertThrows(
-        NullPointerException.class,
-        () ->
-            regionDataFetcher.getBlockingPolicyData(
-                REQUEST_CONTEXT,
-                BlockingPolicyDataFilter.builder().environmentId(Optional.empty()).build(),
-                mock(BlockingRulesSupplier.class)));
-
-    // Wrong environment
-    assertThrows(
-        NullPointerException.class,
-        () ->
-            regionDataFetcher.getBlockingPolicyData(
-                REQUEST_CONTEXT,
-                BlockingPolicyDataFilter.builder()
-                    .environmentId(Optional.of(ENVIRONMENT_ID + "random"))
-                    .build(),
-                mock(BlockingRulesSupplier.class)));
-  }
-
-  private static final GetAllRegionRulesResponse sampleRegionAllEnvRulesResponse =
-      GetAllRegionRulesResponse.newBuilder()
-          .addRule(
-              RegionRule.newBuilder()
-                  .setId("rule-id-1")
-                  .addAllRegionId(List.of("Nepal", "Bhutan"))
-                  .setName("rule-name-1")
-                  .setActionType(REGION_RULE_ACTION_TYPE_BLOCK)
-                  .setExpirationDetails(
-                      RegionRule.ExpirationDetails.newBuilder()
-                          .setTimestampMillis(activeTimestamp)
-                          .build())
-                  .build())
-          .addRule(
-              RegionRule.newBuilder()
-                  .setId("rule-id-2")
-                  .addAllRegionId(List.of("Nepal", "Bhutan"))
-                  .setName("rule-name-2")
-                  .setActionType(REGION_RULE_ACTION_TYPE_ALLOW)
-                  .setExpirationDetails(
-                      RegionRule.ExpirationDetails.newBuilder()
-                          .setTimestampMillis(activeTimestamp)
-                          .build())
-                  .build())
-          .addRule(
-              RegionRule.newBuilder()
-                  .setId("rule-id-3")
-                  .addAllRegionId(List.of("China", "Pakistan"))
-                  .setName("rule-name-3")
-                  .setActionType(REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
-                  .setExpirationDetails(
-                      RegionRule.ExpirationDetails.newBuilder().setTimestampMillis(0).build())
-                  .build())
-          .addRule(
-              RegionRule.newBuilder()
-                  .setId("rule-id-4")
-                  .addAllRegionId(List.of("Nepal", "Bhutan"))
-                  .setName("rule-name-4")
-                  .setActionType(REGION_RULE_ACTION_TYPE_BLOCK)
-                  .setExpirationDetails(
-                      RegionRule.ExpirationDetails.newBuilder()
-                          .setTimestampMillis(inactiveTimestamp)
-                          .build())
-                  .build())
-          .addRule(
-              RegionRule.newBuilder()
-                  .setId("rule-id-5")
-                  .addAllRegionId(List.of("Nepal", "Bhutan"))
-                  .setName("rule-name-5")
-                  .setActionType(REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
-                  .setExpirationDetails(
-                      RegionRule.ExpirationDetails.newBuilder()
-                          .setTimestampMillis(inactiveTimestamp)
-                          .build())
-                  .build())
-          .build();
-  private static final GetAllRegionRulesResponse sampleRegionAllRulesResponse =
-      sampleRegionAllEnvRulesResponse.toBuilder()
-          .addRule(
-              RegionRule.newBuilder()
-                  .setId("rule-id-6")
-                  .addAllRegionId(List.of("Nepal", "Bhutan"))
-                  .setName("rule-name-6")
-                  .setActionType(REGION_RULE_ACTION_TYPE_BLOCK)
-                  .setExpirationDetails(
-                      RegionRule.ExpirationDetails.newBuilder()
-                          .setTimestampMillis(activeTimestamp)
-                          .build())
-                  .setRuleScope(
-                      RuleScope.newBuilder()
-                          .setEnvironmentScope(
-                              EnvironmentScope.newBuilder().addEnvironmentIds(ENVIRONMENT_ID))))
-          .build();
+  private static final List<RegionRule> sampleRegionAllEnvRulesResponse =
+      List.of(
+          RegionRule.newBuilder()
+              .setId("rule-id-1")
+              .addAllRegionId(List.of("Nepal", "Bhutan"))
+              .setName("rule-name-1")
+              .setActionType(REGION_RULE_ACTION_TYPE_BLOCK)
+              .setExpirationDetails(
+                  RegionRule.ExpirationDetails.newBuilder()
+                      .setTimestampMillis(activeTimestamp)
+                      .build())
+              .putRegionIdToCountryMap("Nepal", Country.newBuilder().setIsoCode("NP").build())
+              .putRegionIdToCountryMap("Bhutan", Country.newBuilder().setIsoCode("BN").build())
+              .build(),
+          RegionRule.newBuilder()
+              .setId("rule-id-2")
+              .addAllRegionId(List.of("Nepal", "Bhutan"))
+              .setName("rule-name-2")
+              .setActionType(REGION_RULE_ACTION_TYPE_ALLOW)
+              .setExpirationDetails(
+                  RegionRule.ExpirationDetails.newBuilder()
+                      .setTimestampMillis(activeTimestamp)
+                      .build())
+              .putRegionIdToCountryMap("Nepal", Country.newBuilder().setIsoCode("NP").build())
+              .putRegionIdToCountryMap("Bhutan", Country.newBuilder().setIsoCode("BN").build())
+              .build(),
+          RegionRule.newBuilder()
+              .setId("rule-id-3")
+              .addAllRegionId(List.of("China", "Pakistan"))
+              .setName("rule-name-3")
+              .setActionType(REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+              .setExpirationDetails(RegionRule.ExpirationDetails.newBuilder().setTimestampMillis(0))
+              .putRegionIdToCountryMap("China", Country.newBuilder().setIsoCode("CH").build())
+              .putRegionIdToCountryMap("Pakistan", Country.newBuilder().setIsoCode("PK").build())
+              .build(),
+          RegionRule.newBuilder()
+              .setId("rule-id-4")
+              .addAllRegionId(List.of("Nepal", "Bhutan"))
+              .setName("rule-name-4")
+              .setActionType(REGION_RULE_ACTION_TYPE_BLOCK)
+              .setExpirationDetails(
+                  RegionRule.ExpirationDetails.newBuilder().setTimestampMillis(inactiveTimestamp))
+              .putRegionIdToCountryMap("Nepal", Country.newBuilder().setIsoCode("NP").build())
+              .putRegionIdToCountryMap("Bhutan", Country.newBuilder().setIsoCode("BN").build())
+              .build(),
+          RegionRule.newBuilder()
+              .setId("rule-id-5")
+              .addAllRegionId(List.of("Nepal", "Bhutan"))
+              .setName("rule-name-5")
+              .setActionType(REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+              .setExpirationDetails(
+                  RegionRule.ExpirationDetails.newBuilder().setTimestampMillis(inactiveTimestamp))
+              .putRegionIdToCountryMap("Nepal", Country.newBuilder().setIsoCode("NP").build())
+              .putRegionIdToCountryMap("Bhutan", Country.newBuilder().setIsoCode("BN").build())
+              .build());
 }

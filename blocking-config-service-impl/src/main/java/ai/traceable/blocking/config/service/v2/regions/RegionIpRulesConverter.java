@@ -15,7 +15,7 @@ class RegionIpRulesConverter implements GenericRegionRuleConverter<RegionIpBlock
 
   public RegionIpBlockingRule convert(DetailedRegion detailedRegion) {
     return RegionIpBlockingRule.newBuilder()
-        .setRegionId(detailedRegion.getId())
+        .setRegionId(detailedRegion.getRegion().getCountry().getIsoCode())
         .addAllIpRanges(ipRangesConverter.convert(detailedRegion.getIpRangeList()))
         .build();
   }

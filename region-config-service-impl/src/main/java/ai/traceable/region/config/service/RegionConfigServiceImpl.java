@@ -10,6 +10,7 @@ import ai.traceable.region.config.service.regions.NeustarRegionStore;
 import ai.traceable.region.config.service.regions.RegionStore;
 import ai.traceable.region.config.service.rules.RulesManager;
 import ai.traceable.region.config.service.rules.RulesValidator;
+import ai.traceable.region.config.service.v1.Country;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.CreateRegionRuleResponse;
 import ai.traceable.region.config.service.v1.DeleteRegionRuleRequest;
@@ -277,9 +278,10 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
             .flatMap(regionRule -> regionRule.getRegionIdList().stream())
             .collect(Collectors.toUnmodifiableSet());
     RegionStore regionStore = getRegionStore(requestContext);
-    Map<String, String> regionMapping =
+    Map<String, Country> regionMapping =
         regionStore.getCountries(new ArrayList<>(regionIds), Collections.emptyList()).stream()
-            .collect(Collectors.toUnmodifiableMap(Region::getId, Region::getName, (v1, v2) -> v1));
+            .collect(
+                Collectors.toUnmodifiableMap(Region::getId, Region::getCountry, (v1, v2) -> v1));
 
     return regionRules.stream()
         .map(regionRule -> populateRegionMapping(regionRule, regionMapping))
@@ -287,15 +289,27 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
   }
 
   private RegionRule populateRegionMapping(
-      RegionRule regionRule, Map<String, String> regionMapping) {
+      RegionRule regionRule, Map<String, Country> regionMapping) {
     List<String> regionIds = regionRule.getRegionIdList();
     Map<String, String> regionIdToNameMap =
         regionIds.stream()
             .filter(regionMapping::containsKey)
             .collect(
                 Collectors.toUnmodifiableMap(
+                    Function.identity(),
+                    regionId -> regionMapping.get(regionId).getName(),
+                    (v1, v2) -> v1));
+
+    Map<String, Country> regionIdToCountryMap =
+        regionIds.stream()
+            .filter(regionMapping::containsKey)
+            .collect(
+                Collectors.toUnmodifiableMap(
                     Function.identity(), regionMapping::get, (v1, v2) -> v1));
 
-    return regionRule.toBuilder().putAllRegionIdToNameMap(regionIdToNameMap).build();
+    return regionRule.toBuilder()
+        .putAllRegionIdToNameMap(regionIdToNameMap)
+        .putAllRegionIdToCountryMap(regionIdToCountryMap)
+        .build();
   }
 }

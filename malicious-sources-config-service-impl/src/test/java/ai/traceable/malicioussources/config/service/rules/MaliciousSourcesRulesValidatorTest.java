@@ -914,7 +914,7 @@ public class MaliciousSourcesRulesValidatorTest {
                       .setRegionCondition(
                           RegionCondition.newBuilder()
                               .addAllRegions(
-                                  List.of(Region.newBuilder().setCountryIsoCode("AFG").build()))
+                                  List.of(Region.newBuilder().setCountryIsoCode("AF").build()))
                               .build())
                       .build())
               .build();

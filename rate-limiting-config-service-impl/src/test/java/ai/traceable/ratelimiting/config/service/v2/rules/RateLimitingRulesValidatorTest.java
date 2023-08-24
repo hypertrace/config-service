@@ -612,7 +612,7 @@ public class RateLimitingRulesValidatorTest {
                                                     .addAllRegionIdentifiers(
                                                         List.of(
                                                             Region.newBuilder()
-                                                                .setCountryIsoCode("IND")
+                                                                .setCountryIsoCode("IN")
                                                                 .build()))
                                                     .build())
                                             .build())))
@@ -1148,7 +1148,7 @@ public class RateLimitingRulesValidatorTest {
                                         LeafCondition.newBuilder()
                                             .setRegionCondition(
                                                 RegionCondition.newBuilder()
-                                                    .addAllRegions(List.of("IND", "US"))))
+                                                    .addAllRegions(List.of("IN", "US"))))
                                     .build())
                             .addChildren(
                                 Condition.newBuilder()
@@ -1203,7 +1203,7 @@ public class RateLimitingRulesValidatorTest {
                                         LeafCondition.newBuilder()
                                             .setRegionCondition(
                                                 RegionCondition.newBuilder()
-                                                    .addAllRegions(List.of("IND", "US"))))
+                                                    .addAllRegions(List.of("IN", "US"))))
                                     .build())
                             .addChildren(
                                 Condition.newBuilder()
@@ -1366,7 +1366,7 @@ public class RateLimitingRulesValidatorTest {
                                     .setLeafCondition(
                                         LeafCondition.newBuilder()
                                             .setRegionCondition(
-                                                buildRegionCondition(List.of("IND", "US")))))
+                                                buildRegionCondition(List.of("IN", "US")))))
                             .addChildren(
                                 Condition.newBuilder()
                                     .setLeafCondition(
@@ -1455,7 +1455,7 @@ public class RateLimitingRulesValidatorTest {
                                     .setLeafCondition(
                                         LeafCondition.newBuilder()
                                             .setRegionCondition(
-                                                buildRegionCondition(List.of("IND", "US")))))
+                                                buildRegionCondition(List.of("IN", "US")))))
                             .addChildren(
                                 Condition.newBuilder()
                                     .setLeafCondition(
@@ -1602,7 +1602,7 @@ public class RateLimitingRulesValidatorTest {
                                     .setLeafCondition(
                                         LeafCondition.newBuilder()
                                             .setRegionCondition(
-                                                buildRegionCondition(List.of("IND", "US")))))
+                                                buildRegionCondition(List.of("IN", "US")))))
                             .addChildren(
                                 Condition.newBuilder()
                                     .setLeafCondition(
@@ -2196,7 +2196,7 @@ public class RateLimitingRulesValidatorTest {
                                     LeafCondition.newBuilder()
                                         .setRegionCondition(
                                             RegionCondition.newBuilder()
-                                                .addAllRegions(List.of("IND", "US"))))
+                                                .addAllRegions(List.of("IN", "US"))))
                                 .build())
                         .addChildren(
                             Condition.newBuilder()
@@ -2251,7 +2251,7 @@ public class RateLimitingRulesValidatorTest {
                                     LeafCondition.newBuilder()
                                         .setRegionCondition(
                                             RegionCondition.newBuilder()
-                                                .addAllRegions(List.of("IND", "US"))))
+                                                .addAllRegions(List.of("IN", "US"))))
                                 .build())
                         .addChildren(
                             Condition.newBuilder()

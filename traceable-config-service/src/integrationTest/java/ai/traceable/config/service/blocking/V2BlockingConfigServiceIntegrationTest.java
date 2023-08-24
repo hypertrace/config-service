@@ -626,7 +626,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                     .addAllRegions(
                         List.of(
                             ai.traceable.malicioussources.config.service.v1.Region.newBuilder()
-                                .setCountryIsoCode("AFG")
+                                .setCountryIsoCode("AF")
                                 .build())))
             .build());
     // Checking without environment
@@ -679,7 +679,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertEquals(1, filteredElements.size());
     assertNotEquals(emptyValueUuid, filteredElements.get(0).getHash());
     assertEquals(
-        3, filteredElements.get(0).getRegionBlockingRules().getRegionIpBlockingRulesCount());
+        2, filteredElements.get(0).getRegionBlockingRules().getRegionIpBlockingRulesCount());
 
     filteredElements =
         filterElements(
@@ -786,6 +786,15 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertNotEquals(emptyValueUuid, filteredElements.get(0).getHash());
     assertEquals(
         4, filteredElements.get(0).getRegionBlockingRules().getRegionIpBlockingRulesCount());
+    // Checking DLP condition is included
+    assertEquals(
+        "IN",
+        filteredElements
+            .get(0)
+            .getRegionBlockingRules()
+            .getRegionIpBlockingRulesList()
+            .get(3)
+            .getRegionId());
 
     filteredElements =
         filterElements(
@@ -986,7 +995,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertEquals(3, blockingDetailsCombination.getDetailsConditionsCount());
     assertEquals(
         BlockingDetailsCondition.newBuilder()
-            .setRegionDetails(RegionDetails.newBuilder().addRegions("IND"))
+            .setRegionDetails(RegionDetails.newBuilder().addRegions("IN"))
             .build(),
         blockingDetailsCombination.getDetailsConditions(0));
     // URL and other conditions
@@ -1092,7 +1101,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
         BLOCKING_STATUS_DENIED,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getStatus());
     assertEquals(
-        "AFG",
+        "AF",
         blockingPolicyConfiguration.getBlockingDetailsList(index).getRegionDetails().getRegions(0));
     index++;
     assertEquals(
@@ -1141,8 +1150,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                 RegionsFilter.newBuilder()
                                     .addId(regions.get(0).getId())
                                     .addId(regions.get(1).getId())
-                                    .addId(regions.get(2).getId())
-                                    .addId(regions.get(3).getId()))
+                                    .addId(regions.get(2).getId()))
                             .build()))
             .getRegionList();
 
@@ -1153,7 +1161,6 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                     CreateRegionRuleRequest.newBuilder()
                         .setName("rule-1")
                         .addRegionId(detailedRegions.get(0).getId())
-                        .addRegionId(detailedRegions.get(1).getId())
                         .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
                         .build()));
 
@@ -1163,7 +1170,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                 regionConfigServiceStub.createRegionRule(
                     CreateRegionRuleRequest.newBuilder()
                         .setName("rule-2")
-                        .addRegionId(detailedRegions.get(2).getId())
+                        .addRegionId(detailedRegions.get(1).getId())
                         .setActionType(
                             RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
                         .build()));
@@ -1175,7 +1182,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                     .createRegionRule(
                         CreateRegionRuleRequest.newBuilder()
                             .setName("rule-3")
-                            .addRegionId(detailedRegions.get(3).getId())
+                            .addRegionId(detailedRegions.get(2).getId())
                             .setRuleScope(
                                 ai.traceable.region.config.service.v1.RuleScope.newBuilder()
                                     .setEnvironmentScope(
@@ -1303,7 +1310,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                                                                     .Region
                                                                                     .newBuilder()
                                                                                     .setCountryIsoCode(
-                                                                                        "IND")))))
+                                                                                        "IN")))))
                                                     .addChildren(
                                                         Condition.newBuilder()
                                                             .setLeafCondition(

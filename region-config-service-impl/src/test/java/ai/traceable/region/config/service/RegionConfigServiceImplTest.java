@@ -17,6 +17,7 @@ import ai.traceable.region.config.service.regions.IpqsRegionStore;
 import ai.traceable.region.config.service.regions.NeustarRegionStore;
 import ai.traceable.region.config.service.rules.RulesManager;
 import ai.traceable.region.config.service.rules.RulesValidator;
+import ai.traceable.region.config.service.v1.Country;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.CreateRegionRuleResponse;
 import ai.traceable.region.config.service.v1.DeleteRegionRuleRequest;
@@ -212,8 +213,16 @@ class RegionConfigServiceImplTest {
       when(neustarRegionStore.getCountries(any(), any()))
           .thenReturn(
               List.of(
-                  Region.newBuilder().setId("region-id-1").setName("region-1").build(),
-                  Region.newBuilder().setId("region-id-2").setName("region-2").build()));
+                  Region.newBuilder()
+                      .setId("region-id-1")
+                      .setName("region-1")
+                      .setCountry(Country.newBuilder().setIsoCode("R1").setName("region-1"))
+                      .build(),
+                  Region.newBuilder()
+                      .setId("region-id-2")
+                      .setName("region-2")
+                      .setCountry(Country.newBuilder().setIsoCode("R2").setName("region-2"))
+                      .build()));
 
       StreamObserver<GetAllRegionRulesResponse> responseObserver = mock(StreamObserver.class);
 
@@ -224,9 +233,19 @@ class RegionConfigServiceImplTest {
             return null;
           });
 
-      regionRule1 = regionRule1.toBuilder().putRegionIdToNameMap("region-id-1", "region-1").build();
+      regionRule1 =
+          regionRule1.toBuilder()
+              .putRegionIdToNameMap("region-id-1", "region-1")
+              .putRegionIdToCountryMap(
+                  "region-id-1", Country.newBuilder().setName("region-1").setIsoCode("R1").build())
+              .build();
 
-      regionRule2 = regionRule2.toBuilder().putRegionIdToNameMap("region-id-2", "region-2").build();
+      regionRule2 =
+          regionRule2.toBuilder()
+              .putRegionIdToNameMap("region-id-2", "region-2")
+              .putRegionIdToCountryMap(
+                  "region-id-2", Country.newBuilder().setName("region-2").setIsoCode("R2").build())
+              .build();
 
       verify(responseObserver, times(1))
           .onNext(

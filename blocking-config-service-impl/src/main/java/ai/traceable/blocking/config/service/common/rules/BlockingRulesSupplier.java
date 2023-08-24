@@ -16,7 +16,9 @@ import ai.traceable.ratelimiting.config.service.v2.IpLocationType;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingModsecRule;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
+import ai.traceable.region.config.service.v1.Country;
 import ai.traceable.region.config.service.v1.DetailedRegion;
+import ai.traceable.region.config.service.v1.RegionRule;
 import com.google.common.base.Suppliers;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -51,13 +53,11 @@ public class BlockingRulesSupplier {
   private final Function<CustomModsecRuleVersion, GetCustomSignatureModsecRulesResponse>
       customSignatureRulesGetter;
   private final Function<Set<String>, Map<String, DlpModsecRulesData>> dlpModsecRulesGetter;
-  private final Function<List<String>, Map<String, DetailedRegion>> countryIsoCodeRegionsGetter;
+  private final Function<List<String>, List<DetailedRegion>> countryIsoCodeRegionsGetter;
   private final ConcurrentMap<CustomModsecRuleVersion, GetCustomSignatureModsecRulesResponse>
       customSignatureRulesMap = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, DlpModsecRulesData> dlpRulesMap = new ConcurrentHashMap<>();
-  private final ConcurrentMap<String, DetailedRegion> countryIsoCodeRegionsMap =
-      new ConcurrentHashMap<>();
-  private final Supplier<List<DetailedRegion>> regionRulesSupplier;
+  private final Supplier<List<RegionRule>> regionRulesSupplier;
   private final Supplier<List<MaliciousSourcesRule>> maliciousSourcesRulesSupplier;
 
   public BlockingRulesSupplier(
@@ -169,25 +169,27 @@ public class BlockingRulesSupplier {
   public <T> List<T> getRegionIpMappings(
       Function<DetailedRegion, T> ruleConverter, Set<String> serviceNames) {
 
-    List<DetailedRegion> detailedRegionsFromRegionRules = regionRulesSupplier.get();
-    if (serviceNames.isEmpty()) {
-      // no dlp rules would be fetched if service-name is not provided.
-      // assumption: agents supporting DLP rules will always send service-name.
-      return detailedRegionsFromRegionRules.stream()
-          .map(ruleConverter)
-          .collect(Collectors.toUnmodifiableList());
+    List<String> combinedIsoCodes =
+        Stream.concat(
+                regionRulesSupplier.get().stream()
+                    .flatMap(
+                        regionRule -> regionRule.getRegionIdToCountryMapMap().values().stream())
+                    .map(Country::getIsoCode),
+                getDlpRulesCountryIsoCodes(serviceNames).stream())
+            .distinct()
+            .collect(Collectors.toUnmodifiableList());
+
+    if (combinedIsoCodes.isEmpty()) {
+      return List.of();
     }
 
-    Set<String> regionRulesCountryIsoCodes =
-        getAndPopulateRegionRulesCountryIsoCodes(detailedRegionsFromRegionRules);
-    List<String> dlpRulesCountryIsoCodes = getDlpRulesCountryIsoCodes(serviceNames);
-
-    return Stream.concat(regionRulesCountryIsoCodes.stream(), dlpRulesCountryIsoCodes.stream())
-        .distinct()
-        .map(countryIsoCodeRegionsMap::get)
-        .filter(Objects::nonNull)
+    return countryIsoCodeRegionsGetter.apply(combinedIsoCodes).stream()
         .map(ruleConverter)
         .collect(Collectors.toUnmodifiableList());
+  }
+
+  public List<RegionRule> getRegionRules() {
+    return regionRulesSupplier.get();
   }
 
   /**
@@ -290,48 +292,27 @@ public class BlockingRulesSupplier {
         .map(IpTypeRuleInfo::convertIpType);
   }
 
-  private Set<String> getAndPopulateRegionRulesCountryIsoCodes(
-      List<DetailedRegion> detailedRegions) {
-    Map<String, DetailedRegion> countryIsoCodeDetailedRegionsMap =
-        detailedRegions.stream()
-            .collect(
-                Collectors.toMap(
-                    detailedRegion -> detailedRegion.getRegion().getCountry().getIsoCode(),
-                    Function.identity(),
-                    (oldValue, newValue) -> oldValue,
-                    LinkedHashMap::new));
-    // To avoid duplicate fetch from region-rules-grpc service
-    this.countryIsoCodeRegionsMap.putAll(countryIsoCodeDetailedRegionsMap);
-    return countryIsoCodeDetailedRegionsMap.keySet();
-  }
-
   private List<String> getDlpRulesCountryIsoCodes(Set<String> serviceNames) {
+    // no dlp rules would be fetched if service-name is not provided.
+    // assumption: agents supporting DLP rules will always send service-name.
+    if (serviceNames.isEmpty()) {
+      return Collections.emptyList();
+    }
+
     fetchDlpRulesForMissingServiceNamesIfAny(serviceNames);
 
     // To avoid using entire message for identifying distinct rules
     // to subsequently avoid extracting ip-types from same rule multiple times
     Set<String> ruleIds = ConcurrentHashMap.newKeySet();
-    List<String> dlpRulesCountryIsoCodes =
-        serviceNames.stream()
-            .flatMap(
-                serviceName ->
-                    dlpRulesMap
-                        .getOrDefault(serviceName, new DlpModsecRulesData())
-                        .getRules()
-                        .stream())
-            .filter(rule -> ruleIds.add(rule.getId()))
-            .flatMap(rule -> extractDlpCountryIsoCodes(rule.getData().getCondition()))
-            .distinct()
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
-
-    countryIsoCodeRegionsMap.putAll(
-        countryIsoCodeRegionsGetter.apply(
-            dlpRulesCountryIsoCodes.stream()
-                .filter(serviceName -> !countryIsoCodeRegionsMap.containsKey(serviceName))
-                .distinct()
-                .collect(Collectors.toList())));
-    return dlpRulesCountryIsoCodes;
+    return serviceNames.stream()
+        .flatMap(
+            serviceName ->
+                dlpRulesMap.getOrDefault(serviceName, new DlpModsecRulesData()).getRules().stream())
+        .filter(rule -> ruleIds.add(rule.getId()))
+        .flatMap(rule -> extractDlpCountryIsoCodes(rule.getData().getCondition()))
+        .distinct()
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
   }
 
   private static Stream<String> extractDlpCountryIsoCodes(Condition condition) {

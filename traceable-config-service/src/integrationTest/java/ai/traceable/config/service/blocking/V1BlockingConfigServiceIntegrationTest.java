@@ -432,7 +432,7 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                     .addAllRegions(
                         List.of(
                             ai.traceable.malicioussources.config.service.v1.Region.newBuilder()
-                                .setCountryIsoCode("AFG")
+                                .setCountryIsoCode("AF")
                                 .build())))
             .build());
     response =
@@ -617,7 +617,7 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
         BLOCKING_STATUS_DENIED,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getStatus());
     assertEquals(
-        List.of("AFG"),
+        List.of("AF"),
         blockingPolicyConfiguration
             .getBlockingDetailsList(index)
             .getRegionDetails()

@@ -36,7 +36,7 @@ message GetDetailedRegionsResponse {
 
 message Region {
   string id = 1;
-  string name = 2;
+  string name = 2 [deprecated = true];
   oneof region {
     Country country = 3;
   }
@@ -145,7 +145,8 @@ message RegionRule {
   bool disabled = 9;
   bool internal = 10;
   string description = 11;
-  map<string, string> region_id_to_name_map = 12;
+  map<string, string> region_id_to_name_map = 12 [deprecated = true];
+  map<string, Country> region_id_to_country_map = 13;
 
   message ExpirationDetails {
     // Duration represented in ISO 8601 duration format.
