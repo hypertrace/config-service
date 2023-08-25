@@ -26,6 +26,7 @@ dependencies {
   implementation(libs.hypertrace.configservice.validation)
   implementation(libs.hypertrace.configservice.changeeventgenerator)
   implementation(libs.traceable.platformGateway.ipUtils)
+  implementation(libs.traceable.platform.jnimodsecurity)
   implementation(libs.commons.lang)
 
   implementation(libs.traceable.activityevent.api)

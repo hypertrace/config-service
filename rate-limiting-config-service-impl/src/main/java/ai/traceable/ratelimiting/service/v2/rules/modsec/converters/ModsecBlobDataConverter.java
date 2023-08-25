@@ -5,10 +5,12 @@ import static ai.traceable.ratelimiting.service.v2.rules.modsec.converters.Modse
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.ModsecBlobData;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.EnrichedRateLimitingModsecRule;
+import ai.traceable.ratelimiting.service.v2.rules.modsec.validator.ModsecBlobValidator;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -20,18 +22,22 @@ public class ModsecBlobDataConverter {
   private static final String NEW_LINES_DELIMITER = "\n\n";
   private final ModsecBlobConverterUtils modsecBlobConverterUtils;
   private final DataTypeRuleModsecConverter dataTypeRuleModsecConverter;
+  private final ModsecBlobValidator modsecBlobValidator;
 
   @Inject
   public ModsecBlobDataConverter(
       ModsecBlobConverterUtils modsecBlobConverterUtils,
-      DataTypeRuleModsecConverter dataTypeRuleModsecConverter) {
+      DataTypeRuleModsecConverter dataTypeRuleModsecConverter,
+      ModsecBlobValidator modsecBlobValidator) {
     this.modsecBlobConverterUtils = modsecBlobConverterUtils;
     this.dataTypeRuleModsecConverter = dataTypeRuleModsecConverter;
+    this.modsecBlobValidator = modsecBlobValidator;
   }
 
-  public ModsecBlobData generateModsecBlobData(
+  public Optional<ModsecBlobData> generateModsecBlobData(
       Collection<EnrichedRateLimitingModsecRule> enrichedRateLimitingModsecRules,
-      final Collection<String> serviceNames,
+      String tenantId,
+      final List<String> serviceNames,
       final List<String> environmentIds) {
     // To protect evaluation of costly data type matching by chaining around them
     List<String> jointUrlRegexes =
@@ -70,14 +76,20 @@ public class ModsecBlobDataConverter {
                     dataTypeRuleWrapper, jointUrlRegexes, environmentIds, modsecIdAssignment))
         .forEach(modsecRules::addAll);
 
-    return ModsecBlobData.newBuilder()
-        .setModsecBlob(String.join(NEW_LINES_DELIMITER, modsecRules))
-        .addAllRuleIds(
-            enrichedRateLimitingModsecRules.stream()
-                .map(EnrichedRateLimitingModsecRule::getId)
-                .collect(Collectors.toUnmodifiableList()))
-        .addAllServiceNames(serviceNames)
-        .build();
+    String modsecBlob = String.join(NEW_LINES_DELIMITER, modsecRules);
+    if (!modsecBlobValidator.validate(modsecBlob, tenantId, serviceNames, environmentIds)) {
+      return Optional.empty();
+    }
+
+    return Optional.of(
+        ModsecBlobData.newBuilder()
+            .setModsecBlob(modsecBlob)
+            .addAllRuleIds(
+                enrichedRateLimitingModsecRules.stream()
+                    .map(EnrichedRateLimitingModsecRule::getId)
+                    .collect(Collectors.toUnmodifiableList()))
+            .addAllServiceNames(serviceNames)
+            .build());
   }
 
   private String convertRateLimitConditionsToModsecRule(

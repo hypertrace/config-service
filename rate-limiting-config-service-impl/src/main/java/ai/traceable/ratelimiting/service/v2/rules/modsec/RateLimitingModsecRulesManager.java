@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -58,9 +59,14 @@ public class RateLimitingModsecRulesManager {
     List<ModsecBlobData> serviceScopedModsecBlobData;
     if (filter.getServiceNamesList().isEmpty()) {
       serviceScopedModsecBlobData =
-          List.of(
-              modsecBlobDataConverter.generateModsecBlobData(
-                  enrichedRateLimitingRules, Collections.emptyList(), environmentIds));
+          modsecBlobDataConverter
+              .generateModsecBlobData(
+                  enrichedRateLimitingRules,
+                  requestContext.getTenantId().orElse(""),
+                  Collections.emptyList(),
+                  environmentIds)
+              .map(Collections::singletonList)
+              .orElse(Collections.emptyList());
     } else {
       serviceScopedModsecBlobData =
           getRulesToServiceIdsMap(enrichedRateLimitingRules, filter.getServiceNamesList())
@@ -69,7 +75,11 @@ public class RateLimitingModsecRulesManager {
               .map(
                   entry ->
                       modsecBlobDataConverter.generateModsecBlobData(
-                          entry.getKey(), entry.getValue(), environmentIds))
+                          entry.getKey(),
+                          requestContext.getTenantId().orElse(""),
+                          entry.getValue(),
+                          environmentIds))
+              .flatMap(Optional::stream)
               .collect(Collectors.toUnmodifiableList());
     }
 

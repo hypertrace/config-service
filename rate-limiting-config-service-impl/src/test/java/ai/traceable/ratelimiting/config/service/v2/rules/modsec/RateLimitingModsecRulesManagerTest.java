@@ -3,6 +3,7 @@ package ai.traceable.ratelimiting.config.service.v2.rules.modsec;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -62,6 +63,7 @@ import ai.traceable.ratelimiting.service.v2.rules.modsec.converters.ScopedPatter
 import ai.traceable.ratelimiting.service.v2.rules.modsec.converters.ScopedPatternWithCustomLocationConverter;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.datatype.DataClassificationInfoProvider;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.datatype.DataClassificationInfoProvider.DataClassificationInfo;
+import ai.traceable.ratelimiting.service.v2.rules.modsec.validator.ModsecBlobValidator;
 import java.time.Clock;
 import java.util.Collection;
 import java.util.List;
@@ -119,6 +121,8 @@ class RateLimitingModsecRulesManagerTest {
 
     ModsecBlobConverterUtils blobConverterUtils =
         new ModsecBlobConverterUtils(new ModsecRuleConversion(new ModsecRuleMappings()));
+    ModsecBlobValidator modsecBlobValidator = mock(ModsecBlobValidator.class);
+    doReturn(true).when(modsecBlobValidator).validate(any(), any(), any(), any());
 
     rateLimitingModsecRulesManager =
         new RateLimitingModsecRulesManager(
@@ -127,7 +131,8 @@ class RateLimitingModsecRulesManagerTest {
                 new DataTypeRuleModsecConverter(
                     blobConverterUtils,
                     new ScopedPatternConverter(),
-                    new ScopedPatternWithCustomLocationConverter(blobConverterUtils))),
+                    new ScopedPatternWithCustomLocationConverter(blobConverterUtils)),
+                modsecBlobValidator),
             modsecRulesRegistry,
             dataClassificationInfoProvider,
             clock);
