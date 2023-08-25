@@ -8,20 +8,17 @@ class KeyRegexConvertersTest {
   @Test
   void testBodyParamNameTransformer() {
     assertEquals(
-        "(\\.|^)abc(\\.|$)", KeyRegexConverters.transformNestedParamNameRegex("abc", false, false));
+        "^(.*[.])?abc([.].*)?$",
+        KeyRegexConverters.transformNestedParamNameRegex("abc", false, false));
     assertEquals(
-        "(\\.|^)abc$", KeyRegexConverters.transformNestedParamNameRegex("abc", false, true));
+        "^(.*[.])?abc$", KeyRegexConverters.transformNestedParamNameRegex("abc", false, true));
+    assertEquals("abc", KeyRegexConverters.transformNestedParamNameRegex("abc", true, false));
+    assertEquals("abc[^.]*$", KeyRegexConverters.transformNestedParamNameRegex("abc", true, true));
     assertEquals(
-        "(\\.|^)([^\\.])*abc([^\\.])*(\\.|$)",
-        KeyRegexConverters.transformNestedParamNameRegex("abc", true, false));
-    assertEquals(
-        "(\\.|^)([^\\.])*abc([^\\.])*$",
-        KeyRegexConverters.transformNestedParamNameRegex("abc", true, true));
-    assertEquals(
-        "(\\.|^)abc(\\.|$)",
+        "^(.*[.])?abc([.].*)?$",
         KeyRegexConverters.transformNestedParamNameRegex("^abc$", true, false));
     assertEquals(
-        "(\\.|^)abc$", KeyRegexConverters.transformNestedParamNameRegex("^abc$", true, true));
+        "^(.*[.])?abc$", KeyRegexConverters.transformNestedParamNameRegex("^abc$", true, true));
   }
 
   @Test

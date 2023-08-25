@@ -449,7 +449,7 @@ class RateLimitingModsecRulesManagerTest {
               + "tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',tag:'rule-uuid/credit-card:"
               + EMPTY_LOCATION_HASH
               + "',severity:'CRITICAL',chain\"\n"
-              + "SecRule ARGS_POST:/(\\.|^)cc(\\.|$)/ \"@rx ^5554$\" \"capture,block,t:none\"");
+              + "SecRule ARGS_POST:/^(.*[.])?cc([.].*)?$/ \"@rx ^5554$\" \"capture,block,t:none\"");
 
   private static List<String> expectedCreditCardWithCustomLocation(String urlRegexes) {
     return List.of(
