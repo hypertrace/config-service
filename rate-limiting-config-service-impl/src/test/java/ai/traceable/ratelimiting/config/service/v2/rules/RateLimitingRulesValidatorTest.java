@@ -844,6 +844,52 @@ public class RateLimitingRulesValidatorTest {
             () -> rulesValidator.validateOrThrow(requestContext, request22, List.of()));
     status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    ruleData =
+        ruleData.toBuilder()
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setScopeCondition(
+                                ScopeCondition.newBuilder()
+                                    .setUrlScope(
+                                        ScopeCondition.UrlScope.newBuilder()
+                                            .addUrlRegexes("(.*)")))))
+            .setRuleConfigScope(RuleConfigScope.newBuilder())
+            .setTransactionActionConfig(
+                TransactionActionConfig.newBuilder()
+                    .setAction(Action.newBuilder().setAllow(Action.Allow.getDefaultInstance())))
+            .build();
+    CreateRateLimitingRuleRequest request23 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request23, List.of()));
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    ruleData =
+        ruleData.toBuilder()
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setScopeCondition(
+                                ScopeCondition.newBuilder()
+                                    .setUrlScope(
+                                        ScopeCondition.UrlScope.newBuilder()
+                                            .addUrlRegexes("m.m")))))
+            .setRuleConfigScope(RuleConfigScope.newBuilder())
+            .clearThresholdActionConfigs()
+            .setTransactionActionConfig(
+                TransactionActionConfig.newBuilder()
+                    .setAction(Action.newBuilder().setAllow(Action.Allow.getDefaultInstance())))
+            .build();
+    CreateRateLimitingRuleRequest request24 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request24, List.of()));
   }
 
   @Test

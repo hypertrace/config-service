@@ -28,6 +28,7 @@ dependencies {
   implementation(libs.traceable.platformGateway.ipUtils)
   implementation(libs.traceable.platform.jnimodsecurity)
   implementation(libs.commons.lang)
+  implementation(libs.automaton)
 
   implementation(libs.traceable.activityevent.api)
   implementation(libs.protobuf.javautil)
