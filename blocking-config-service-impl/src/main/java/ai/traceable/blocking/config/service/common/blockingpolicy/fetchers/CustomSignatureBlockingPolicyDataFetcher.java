@@ -100,6 +100,9 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
             ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
                 rule.getId(), rule.getName(), rule.getEffect().getEventSeverity().name()));
 
+      case EVENT_TYPE_NORMAL_DETECTION:
+      case EVENT_TYPE_TESTING_DETECTION:
+        return Optional.empty();
       default:
         log.info("Could not find info for rule with rule id: {}", rule.getId());
         return Optional.empty();

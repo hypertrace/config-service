@@ -44,6 +44,8 @@ public class IpTypeDataHandler extends MaliciousSourceDataHandler {
     switch (actionType) {
       case RULE_ACTION_TYPE_BLOCK:
         return Optional.of(BlockingPolicyDataBucket.IP_TYPE_VIOLATIONS);
+      case RULE_ACTION_TYPE_ALERT:
+        return Optional.empty();
       default:
         log.error("Invalid rule action type: {} for rule with rule id: {}", actionType, id);
         return Optional.empty();

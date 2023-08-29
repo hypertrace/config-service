@@ -245,6 +245,8 @@ class DLPBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
         return BlockingPolicyData.RuleType.ALLOW;
       case BLOCK:
         return BlockingPolicyData.RuleType.BLOCK;
+      case ALERT:
+        return null;
       default:
         log.info("Invalid rule event type: {} for rule with rule id: {}", actionCase, id);
         return null;

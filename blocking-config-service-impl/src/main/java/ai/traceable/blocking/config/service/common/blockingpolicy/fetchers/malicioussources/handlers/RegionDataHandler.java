@@ -46,6 +46,8 @@ public class RegionDataHandler extends MaliciousSourceDataHandler {
         return Optional.of(BlockingPolicyDataBucket.REGION_VIOLATIONS);
       case RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT:
         return Optional.of(BlockingPolicyDataBucket.REGION_BLOCK_ALL_EXCEPT_VIOLATIONS);
+      case RULE_ACTION_TYPE_ALERT:
+        return Optional.empty();
       default:
         log.error("Invalid rule action type: {} for rule with rule id: {}", actionType, id);
         return Optional.empty();

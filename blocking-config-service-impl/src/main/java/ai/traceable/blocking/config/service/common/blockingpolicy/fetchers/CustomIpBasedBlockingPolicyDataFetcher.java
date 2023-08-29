@@ -104,6 +104,8 @@ class CustomIpBasedBlockingPolicyDataFetcher implements BlockingPolicyDataFetche
         return Optional.of(
             ViolationInfoEncoder.getEncodedCustomIpRuleViolationInfo(
                 ipRangeRule.getId(), ipRangeRule.getRuleDetails().getName()));
+      case RULE_ACTION_ALERT:
+        return Optional.empty();
       default:
         log.info(
             "No info exist for rule with rule action type: {}  with rule id: {}",
@@ -122,6 +124,8 @@ class CustomIpBasedBlockingPolicyDataFetcher implements BlockingPolicyDataFetche
         return Optional.of(IP_RANGE_BLOCK_ALL_EXCEPT_VIOLATIONS);
       case RULE_ACTION_BLOCK:
         return Optional.of(IP_RANGE_VIOLATIONS);
+      case RULE_ACTION_ALERT:
+        return Optional.empty();
       default:
         log.info(
             "No Bucket exist for rule with rule action type: {}  with rule id: {}", ruleAction, id);
@@ -138,6 +142,8 @@ class CustomIpBasedBlockingPolicyDataFetcher implements BlockingPolicyDataFetche
         return Optional.of(BlockingPolicyData.RuleType.BLOCK_ALL_EXCEPT);
       case RULE_ACTION_BLOCK:
         return Optional.of(BlockingPolicyData.RuleType.BLOCK);
+      case RULE_ACTION_ALERT:
+        return Optional.empty();
       default:
         log.info("Invalid rule action type: {} for rule with rule id: {}", ruleAction, id);
         return Optional.empty();

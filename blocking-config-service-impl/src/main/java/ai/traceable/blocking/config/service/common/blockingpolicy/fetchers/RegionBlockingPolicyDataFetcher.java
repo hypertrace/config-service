@@ -84,6 +84,8 @@ class RegionBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
         return Optional.of(REGION_VIOLATIONS);
       case REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT:
         return Optional.of(BlockingPolicyDataBucket.REGION_BLOCK_ALL_EXCEPT_VIOLATIONS);
+      case REGION_RULE_ACTION_TYPE_ALERT:
+        return Optional.empty();
       default:
         log.info(
             "No bucket type exist for rule with rule type : {} and rule id {}", actionType, id);
@@ -98,6 +100,8 @@ class RegionBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
         return Optional.of(BlockingPolicyData.RuleType.BLOCK_ALL_EXCEPT);
       case REGION_RULE_ACTION_TYPE_BLOCK:
         return Optional.of(BlockingPolicyData.RuleType.BLOCK);
+      case REGION_RULE_ACTION_TYPE_ALERT:
+        return Optional.empty();
       default:
         log.error("Invalid rule action type: {} for rule with rule id: {}", actionType, id);
         return Optional.empty();
