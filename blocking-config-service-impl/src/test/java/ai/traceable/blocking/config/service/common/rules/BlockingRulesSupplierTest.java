@@ -50,7 +50,7 @@ import org.junit.jupiter.api.Test;
 
 public class BlockingRulesSupplierTest {
 
-  private static final RequestContext REQUEST_CONTEXT = mock(RequestContext.class);
+  private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId("tenantId");
   private static final Optional<String> ENVIRONMENT_ID = Optional.of("env");
   private static final Set<String> SERVICE_NAMES =
       new LinkedHashSet<>(List.of("service1", "service2", "service-x"));

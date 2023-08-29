@@ -1,9 +1,9 @@
 package ai.traceable.localprocessing.config.service.apinaming.http;
 
 import ai.traceable.anomaly.config.service.v1.trainer.TrainerConfigServiceGrpc;
+import ai.traceable.entity.fetcher.cache.config.EntityQueryServiceConfig;
 import ai.traceable.localprocessing.config.service.apinaming.http.namingconfig.HttpApiNamingConfigManagerModule;
 import ai.traceable.localprocessing.config.service.apinaming.http.trie.HttpApiNamingTrieManagerModule;
-import ai.traceable.localprocessing.config.service.config.EntityQueryServiceConfig;
 import ai.traceable.localprocessing.config.service.config.http.HttpApiNamingConfig;
 import ai.traceable.platform.apientity.http.client.RegexPatternCachingClient;
 import com.google.inject.AbstractModule;

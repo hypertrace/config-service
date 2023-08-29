@@ -5,10 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
+import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.EnvironmentScope;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingModsecRulesFilter;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingModsecRulesFilter.RuleAction;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRulesResponse;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.ModsecBlobData;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingModsecRule;
@@ -59,18 +62,20 @@ public class DlpRulesFetcherTest {
             GetRateLimitingRuleModsecRulesRequest.newBuilder()
                 .setRulesFilter(
                     GetRateLimitingModsecRulesFilter.newBuilder()
+                        .setRulesFilter(
+                            GetRateLimitingRulesFilter.newBuilder()
+                                .setScope(
+                                    RuleConfigScope.newBuilder()
+                                        .setEnvironmentScope(EnvironmentScope.getDefaultInstance()))
+                                .setDisabled(false)
+                                .addCategories(Category.CATEGORY_DATA_EXFILTRATION)
+                                .build())
                         .addAllRuleActions(
                             List.of(
-                                GetRateLimitingModsecRulesFilter.RuleAction
-                                    .RULE_ACTION_TRANSACTION_BLOCKED,
-                                GetRateLimitingModsecRulesFilter.RuleAction
-                                    .RULE_ACTION_TRANSACTION_ALLOWED))
+                                RuleAction.RULE_ACTION_TRANSACTION_BLOCKED,
+                                RuleAction.RULE_ACTION_TRANSACTION_ALLOWED))
                         .addAllServiceNames(
-                            List.of("service1", "service2", "service3", "service-x"))
-                        .setScope(
-                            RuleConfigScope.newBuilder()
-                                .setEnvironmentScope(EnvironmentScope.getDefaultInstance()))
-                        .setDisabled(false))
+                            List.of("service1", "service2", "service3", "service-x")))
                 .build());
   }
 
@@ -84,6 +89,7 @@ public class DlpRulesFetcherTest {
             REQUEST_CONTEXT,
             Optional.empty(),
             new LinkedHashSet<>(List.of("service1", "service2", "service3", "service-x")));
+
     // no dlp rules for service-x
     assertEquals(4, dlpModsecRulesDataMap.size());
 

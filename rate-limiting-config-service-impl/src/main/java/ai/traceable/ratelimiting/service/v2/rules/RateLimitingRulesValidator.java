@@ -144,12 +144,7 @@ public class RateLimitingRulesValidator implements RulesValidator {
   }
 
   private void validateModsecFilter(GetRateLimitingModsecRulesFilter filter) {
-    if (filter.getCategoriesList().contains(Category.CATEGORY_UNSPECIFIED)) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription("Cannot filter for UNSPECIFIED category")
-          .asRuntimeException();
-    }
-
+    validateFilter(filter.getRulesFilter());
     if (filter.getRuleActionsList().contains(RuleAction.RULE_ACTION_UNSPECIFIED)) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Cannot filter for UNSPECIFIED rule actions")

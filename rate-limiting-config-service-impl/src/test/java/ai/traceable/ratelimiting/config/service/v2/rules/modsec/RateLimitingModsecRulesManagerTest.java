@@ -20,6 +20,8 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule.Location;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider.ServiceIdentifierEntity;
 import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.Action.Allow;
 import ai.traceable.ratelimiting.config.service.v2.Action.Block;
@@ -67,6 +69,7 @@ import ai.traceable.ratelimiting.service.v2.rules.modsec.validator.ModsecBlobVal
 import java.time.Clock;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -87,6 +90,7 @@ class RateLimitingModsecRulesManagerTest {
   @Mock Function<GetRateLimitingRulesFilter, List<RateLimitingRule>> rateLimitingRulesSupplier;
   @Mock ModsecRulesRegistry modsecRulesRegistry;
   @Mock DataClassificationInfoProvider dataClassificationInfoProvider;
+  @Mock CachedServiceMappingProvider cachedServiceMappingProvider;
   private static final UuidGenerator uuidGenerator = new UuidGenerator();
 
   @BeforeEach
@@ -119,6 +123,10 @@ class RateLimitingModsecRulesManagerTest {
         .when(dataClassificationInfo)
         .getDataTypeRule("PAN");
 
+    doReturn(Optional.of(new ServiceIdentifierEntity("serviceName1", Optional.of(ENVIRONMENT))))
+        .when(cachedServiceMappingProvider)
+        .getServiceIdentifierEntity(REQUEST_CONTEXT, "serviceId1");
+
     ModsecBlobConverterUtils blobConverterUtils =
         new ModsecBlobConverterUtils(new ModsecRuleConversion(new ModsecRuleMappings()));
     ModsecBlobValidator modsecBlobValidator = mock(ModsecBlobValidator.class);
@@ -135,6 +143,7 @@ class RateLimitingModsecRulesManagerTest {
                 modsecBlobValidator),
             modsecRulesRegistry,
             dataClassificationInfoProvider,
+            cachedServiceMappingProvider,
             clock);
   }
 
@@ -156,12 +165,15 @@ class RateLimitingModsecRulesManagerTest {
         rateLimitingModsecRulesManager.getRateLimitingModsecRules(
             REQUEST_CONTEXT,
             GetRateLimitingModsecRulesFilter.newBuilder()
-                .addCategories(Category.CATEGORY_DATA_EXFILTRATION)
-                .setScope(
-                    RuleConfigScope.newBuilder()
-                        .setEnvironmentScope(
-                            EnvironmentScope.newBuilder().addEnvironmentIds(ENVIRONMENT)))
-                .setDisabled(false)
+                .setRulesFilter(
+                    GetRateLimitingRulesFilter.newBuilder()
+                        .addCategories(Category.CATEGORY_DATA_EXFILTRATION)
+                        .setScope(
+                            RuleConfigScope.newBuilder()
+                                .setEnvironmentScope(
+                                    EnvironmentScope.newBuilder().addEnvironmentIds(ENVIRONMENT)))
+                        .setDisabled(false)
+                        .build())
                 .addRuleActions(RuleAction.RULE_ACTION_TRANSACTION_BLOCKED)
                 .addRuleActions(RuleAction.RULE_ACTION_TRANSACTION_ALLOWED)
                 .addServiceNames("serviceName1")
@@ -251,7 +263,7 @@ class RateLimitingModsecRulesManagerTest {
                                       .addChildren(
                                           buildUrlCondition(List.of("/order/.*", "/myOrders")))
                                       .addChildren(buildDataTypeCondition(false))
-                                      .addChildren(buildServiceCondition(List.of("serviceName1")))))
+                                      .addChildren(buildServiceCondition(List.of("serviceId1")))))
                       .setTransactionActionConfig(
                           TransactionActionConfig.newBuilder()
                               .setAction(
@@ -320,7 +332,7 @@ class RateLimitingModsecRulesManagerTest {
         .build();
   }
 
-  private static Condition buildServiceCondition(List<String> serviceNames) {
+  private static Condition buildServiceCondition(List<String> serviceIds) {
     return Condition.newBuilder()
         .setLeafCondition(
             LeafCondition.newBuilder()
@@ -328,7 +340,7 @@ class RateLimitingModsecRulesManagerTest {
                     ScopeCondition.newBuilder()
                         .setEntityScope(
                             EntityScope.newBuilder()
-                                .addAllEntityIds(serviceNames)
+                                .addAllEntityIds(serviceIds)
                                 .setEntityType(EntityType.ENTITY_TYPE_SERVICE))))
         .build();
   }

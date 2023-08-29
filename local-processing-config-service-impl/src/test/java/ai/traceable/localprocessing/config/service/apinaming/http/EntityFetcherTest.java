@@ -6,8 +6,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.entity.fetcher.cache.config.EntityQueryServiceConfig;
 import ai.traceable.localprocessing.config.service.client.EntityQueryServiceClient;
-import ai.traceable.localprocessing.config.service.config.EntityQueryServiceConfig;
 import ai.traceable.localprocessing.config.service.v1.ServiceRequest;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;

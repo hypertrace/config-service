@@ -14,10 +14,8 @@ message RateLimitingRule {
 message RateLimitingModsecRule {
   string id = 1;
   RateLimitingRuleData data = 2;
-  repeated string data_type_ids = 3 [deprecated = true];
-  repeated string key_value_condition_ids = 4 [deprecated = true];
   // Implicit AND within the list
-  repeated ModsecRuleIdInfo associated_modsec_rule_ids = 5;
+  repeated ModsecRuleIdInfo associated_modsec_rule_ids = 3;
 }
 
 message ModsecRuleIdInfo {

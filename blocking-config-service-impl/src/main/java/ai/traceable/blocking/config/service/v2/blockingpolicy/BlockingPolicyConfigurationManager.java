@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class BlockingPolicyConfigurationManager implements BlockingConfigManagerBase {
@@ -67,6 +68,7 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
             .filter(BlockingConfigRequestElement::hasBlockingPolicyConfigurationRequest)
             .flatMap(requestElement -> requestElement.getSupportedAgentCapabilitiesList().stream())
             .map(this::getServiceName)
+            .filter(Predicate.not(String::isBlank))
             .distinct()
             .collect(Collectors.toUnmodifiableList());
 

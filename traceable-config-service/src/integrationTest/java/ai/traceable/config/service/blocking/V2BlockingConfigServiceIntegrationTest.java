@@ -143,6 +143,7 @@ import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
 import ai.traceable.ratelimiting.config.service.v2.ScopeCondition;
+import ai.traceable.ratelimiting.config.service.v2.ScopeCondition.EntityScope;
 import ai.traceable.ratelimiting.config.service.v2.ScopeCondition.UrlScope;
 import ai.traceable.ratelimiting.config.service.v2.TransactionActionConfig;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
@@ -165,6 +166,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.entity.constants.v1.CommonAttribute;
+import org.hypertrace.entity.data.service.v1.AttributeValue;
+import org.hypertrace.entity.data.service.v1.Entity;
+import org.hypertrace.entity.data.service.v1.EntityDataServiceGrpc;
+import org.hypertrace.entity.data.service.v1.EntityDataServiceGrpc.EntityDataServiceBlockingStub;
+import org.hypertrace.entity.data.service.v1.Value;
+import org.hypertrace.entity.service.constants.EntityConstants;
 import org.hypertrace.entity.type.service.client.EntityTypeServiceClient;
 import org.hypertrace.entity.type.service.v1.AttributeKind;
 import org.hypertrace.entity.type.service.v1.AttributeType;
@@ -204,6 +212,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
   private static DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceStub;
   private static final List<String> actorEntityId = new ArrayList<>();
   private static final List<String> customSignatureRuleId = new ArrayList<>();
+  private static String serviceEntityId;
   private static String lastCreatedDLPRuleId;
 
   @BeforeEach
@@ -251,6 +260,12 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     EntityTypeServiceClient entityTypeServiceClient =
         new EntityTypeServiceClient(channelRegistry.forPlaintextAddress("localhost", 60061));
 
+    EntityDataServiceBlockingStub entityDataServiceBlockingStub =
+        EntityDataServiceGrpc.newBlockingStub(
+                channelRegistry.forPlaintextAddress("localhost", 60061))
+            .withCallCredentials(
+                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+
     actorServiceBlockingStub =
         ActorServiceGrpc.newBlockingStub(channelRegistry.forPlaintextAddress("localhost", 60888))
             .withCallCredentials(
@@ -269,6 +284,37 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                     .setValueKind(AttributeKind.TYPE_STRING)
                     .build())
             .build());
+
+    entityTypeServiceClient.upsertEntityType(
+        TENANT_ID,
+        EntityType.newBuilder()
+            .setName("SERVICE")
+            .setTenantId(TENANT_ID)
+            .addAttributeType(
+                AttributeType.newBuilder()
+                    .setName(EntityConstants.getValue(CommonAttribute.COMMON_ATTRIBUTE_FQN))
+                    .setIdentifyingAttribute(true)
+                    .setValueKind(AttributeKind.TYPE_STRING)
+                    .build())
+            .build());
+
+    Entity entity =
+        Entity.newBuilder()
+            .setTenantId(TENANT_ID)
+            .setEntityType("SERVICE")
+            .setEntityId("id")
+            .setEntityName("serviceName")
+            .putIdentifyingAttributes(
+                EntityConstants.getValue(CommonAttribute.COMMON_ATTRIBUTE_FQN),
+                AttributeValue.newBuilder()
+                    .setValue(Value.newBuilder().setString("serviceName").build())
+                    .build())
+            .build();
+
+    serviceEntityId =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(() -> entityDataServiceBlockingStub.upsert(entity))
+            .getEntityId();
 
     enableBlockingOnAModsecRule(Optional.empty());
     enableBlockingOnAModsecRule(Optional.of(ENVIRONMENT_ID));
@@ -801,12 +847,12 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             response.getResponseElementsList(),
             BlockingConfigResponseElement::hasCustomSignatureBlockingRules);
     assertNotEquals(emptyValueUuid, filteredElements.get(0).getHash());
-    assertFalse(
+    assertTrue(
         filteredElements
             .get(0)
             .getCustomSignatureBlockingRules()
             .getCustomSignatureRulesBlob()
-            .isEmpty());
+            .contains(lastCreatedDLPRuleId));
 
     filteredElements =
         filterElements(
@@ -1311,6 +1357,21 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                                                                     .newBuilder()
                                                                                     .setCountryIsoCode(
                                                                                         "IN")))))
+                                                    .addChildren(
+                                                        Condition.newBuilder()
+                                                            .setLeafCondition(
+                                                                LeafCondition.newBuilder()
+                                                                    .setScopeCondition(
+                                                                        ScopeCondition.newBuilder()
+                                                                            .setEntityScope(
+                                                                                EntityScope
+                                                                                    .newBuilder()
+                                                                                    .addEntityIds(
+                                                                                        serviceEntityId)
+                                                                                    .setEntityType(
+                                                                                        ScopeCondition
+                                                                                            .EntityType
+                                                                                            .ENTITY_TYPE_SERVICE)))))
                                                     .addChildren(
                                                         Condition.newBuilder()
                                                             .setLeafCondition(

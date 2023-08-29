@@ -1,7 +1,6 @@
 package ai.traceable.ratelimiting.service.v2.rules.modsec.converters;
 
 import ai.traceable.customsignature.config.service.v1.Clause;
-import ai.traceable.data.classification.config.service.v1.DataTypeRule.Action;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.datatype.DataTypeRuleWrapper;
 import com.google.inject.Inject;
@@ -74,13 +73,15 @@ public class DataTypeRuleModsecConverter {
 
   private static boolean filterScopedPattern(
       ScopedPattern scopedPattern, final List<String> environmentIds) {
-    if (scopedPattern.getAction().equals(Action.ACTION_MATCH)) {
-      if (scopedPattern.hasGlobalScope() || environmentIds.isEmpty()) {
+    if (scopedPattern.hasGlobalScope() || environmentIds.isEmpty()) {
+      return true;
+    }
+    if (scopedPattern.hasEnvironmentScope()) {
+      if (scopedPattern.getEnvironmentScope().getEnvironmentIdsList().isEmpty()) {
         return true;
       }
-      if (scopedPattern.hasEnvironmentScope()) {
-        scopedPattern.getEnvironmentScope().getEnvironmentIdsList().retainAll(environmentIds);
-      }
+      return scopedPattern.getEnvironmentScope().getEnvironmentIdsList().stream()
+          .anyMatch(environmentIds::contains);
     }
     return false;
   }

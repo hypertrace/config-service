@@ -13,6 +13,7 @@ dependencies {
   implementation(projects.customSignatureConfigServiceImpl)
   implementation(projects.anomalyConfigServiceRegistry)
   implementation(projects.activityEventProducer)
+  implementation(projects.entityFetcherCache)
   implementation(projects.configUtils)
 
   implementation(libs.typesafe.config)

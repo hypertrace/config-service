@@ -2,12 +2,13 @@ package ai.traceable.ratelimiting.service.v2.rules.modsec;
 
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider.ServiceIdentifierEntity;
 import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingModsecRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingModsecRulesFilter.RuleAction;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRulesResponse;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
-import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter.Builder;
 import ai.traceable.ratelimiting.config.service.v2.ModsecBlobData;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.converters.ModsecBlobDataConverter;
@@ -31,6 +32,7 @@ public class RateLimitingModsecRulesManager {
   private final ModsecBlobDataConverter modsecBlobDataConverter;
   private final ModsecRulesRegistry modsecRulesRegistry;
   private final DataClassificationInfoProvider dataClassificationInfoProvider;
+  private final CachedServiceMappingProvider cachedServiceMappingProvider;
   private final Clock clock;
 
   @Inject
@@ -38,10 +40,12 @@ public class RateLimitingModsecRulesManager {
       ModsecBlobDataConverter modsecBlobDataConverter,
       ModsecRulesRegistry modsecRulesRegistry,
       DataClassificationInfoProvider dataClassificationInfoProvider,
+      CachedServiceMappingProvider cachedServiceMappingProvider,
       Clock clock) {
     this.modsecBlobDataConverter = modsecBlobDataConverter;
     this.modsecRulesRegistry = modsecRulesRegistry;
     this.dataClassificationInfoProvider = dataClassificationInfoProvider;
+    this.cachedServiceMappingProvider = cachedServiceMappingProvider;
     this.clock = clock;
   }
 
@@ -53,8 +57,13 @@ public class RateLimitingModsecRulesManager {
         dataClassificationInfoProvider.fetchDataClassificationInfo(requestContext);
 
     List<EnrichedRateLimitingModsecRule> enrichedRateLimitingRules =
-        getEnrichedRateLimitingRules(filter, dataClassificationInfo, rateLimitingRulesSupplier);
-    List<String> environmentIds = filter.getScope().getEnvironmentScope().getEnvironmentIdsList();
+        getEnrichedRateLimitingRules(
+            filter,
+            dataClassificationInfo,
+            rateLimitingRulesSupplier,
+            getServiceNameProvider(requestContext));
+    List<String> environmentIds =
+        filter.getRulesFilter().getScope().getEnvironmentScope().getEnvironmentIdsList();
 
     List<ModsecBlobData> serviceScopedModsecBlobData;
     if (filter.getServiceNamesList().isEmpty()) {
@@ -98,27 +107,20 @@ public class RateLimitingModsecRulesManager {
   private List<EnrichedRateLimitingModsecRule> getEnrichedRateLimitingRules(
       final GetRateLimitingModsecRulesFilter filter,
       DataClassificationInfo dataClassificationInfo,
-      Function<GetRateLimitingRulesFilter, List<RateLimitingRule>> rateLimitingRulesSupplier) {
-    return rateLimitingRulesSupplier.apply(convertFilter(filter)).stream()
+      Function<GetRateLimitingRulesFilter, List<RateLimitingRule>> rateLimitingRulesSupplier,
+      Function<String, String> serviceNameProvider) {
+    return rateLimitingRulesSupplier.apply(filter.getRulesFilter()).stream()
         .filter(rule -> filterByRuleAction(rule, filter.getRuleActionsList()))
         .filter(this::filterExpired)
-        .map(rule -> new EnrichedRateLimitingModsecRule(rule, dataClassificationInfo))
+        .map(
+            rule ->
+                new EnrichedRateLimitingModsecRule(
+                    rule, dataClassificationInfo, serviceNameProvider))
         .filter(
             enrichedRateLimitingModsecRule ->
                 filterRulesByServiceScope(
                     enrichedRateLimitingModsecRule.getServiceNames(), filter.getServiceNamesList()))
         .collect(Collectors.toUnmodifiableList());
-  }
-
-  private GetRateLimitingRulesFilter convertFilter(final GetRateLimitingModsecRulesFilter filter) {
-    Builder filterBuilder =
-        GetRateLimitingRulesFilter.newBuilder()
-            .addAllCategories(filter.getCategoriesList())
-            .setScope(filter.getScope());
-    if (filter.hasDisabled()) {
-      filterBuilder.setDisabled(filter.getDisabled());
-    }
-    return filterBuilder.build();
   }
 
   private boolean filterByRuleAction(
@@ -151,6 +153,14 @@ public class RateLimitingModsecRulesManager {
     }
     ruleServiceScopes.retainAll(serviceNames);
     return !ruleServiceScopes.isEmpty();
+  }
+
+  private Function<String, String> getServiceNameProvider(RequestContext requestContext) {
+    return serviceId ->
+        this.cachedServiceMappingProvider
+            .getServiceIdentifierEntity(requestContext, serviceId)
+            .map(ServiceIdentifierEntity::getServiceName)
+            .orElse(null);
   }
 
   private static Map<List<EnrichedRateLimitingModsecRule>, List<String>> getRulesToServiceIdsMap(

@@ -49,7 +49,6 @@ public class BlockingRulesSupplier {
   private final BlockingRulesSupplierContext blockingRulesSupplierContext;
   private final RequestContext requestContext;
   private final Optional<String> environmentId;
-
   private final Function<CustomModsecRuleVersion, GetCustomSignatureModsecRulesResponse>
       customSignatureRulesGetter;
   private final Function<Set<String>, Map<String, DlpModsecRulesData>> dlpModsecRulesGetter;

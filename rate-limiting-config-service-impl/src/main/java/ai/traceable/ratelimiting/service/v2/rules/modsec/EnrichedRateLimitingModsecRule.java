@@ -13,6 +13,7 @@ import ai.traceable.ratelimiting.service.v2.rules.modsec.datatype.DataClassifica
 import ai.traceable.ratelimiting.service.v2.rules.modsec.datatype.DataTypeRuleWrapper;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Value;
@@ -28,7 +29,9 @@ public class EnrichedRateLimitingModsecRule {
   List<DataTypeRuleWrapper> dataTypeRuleWrappers = new ArrayList<>();
 
   EnrichedRateLimitingModsecRule(
-      final RateLimitingRule rule, DataClassificationInfo dataClassificationInfo) {
+      final RateLimitingRule rule,
+      DataClassificationInfo dataClassificationInfo,
+      Function<String, String> serviceNameProvider) {
     this.id = rule.getId();
     // For now working with a single layer of composite condition
     // Operator is AND
@@ -37,9 +40,12 @@ public class EnrichedRateLimitingModsecRule {
           .getCondition()
           .getCompositeCondition()
           .getChildrenList()
-          .forEach(condition -> this.handleLeafCondition(condition, dataClassificationInfo));
+          .forEach(
+              condition ->
+                  this.handleLeafCondition(condition, dataClassificationInfo, serviceNameProvider));
     } else {
-      handleLeafCondition(rule.getData().getCondition(), dataClassificationInfo);
+      handleLeafCondition(
+          rule.getData().getCondition(), dataClassificationInfo, serviceNameProvider);
     }
 
     this.rule =
@@ -61,7 +67,9 @@ public class EnrichedRateLimitingModsecRule {
   }
 
   private void handleLeafCondition(
-      Condition condition, DataClassificationInfo dataClassificationInfo) {
+      Condition condition,
+      DataClassificationInfo dataClassificationInfo,
+      Function<String, String> serviceNameProvider) {
     if (condition.getConditionCase().equals(ConditionCase.COMPOSITE_CONDITION)) {
       throw new UnsupportedOperationException(
           "Cannot convert nested composite conditions to modsec blob");
@@ -78,7 +86,14 @@ public class EnrichedRateLimitingModsecRule {
             .getEntityType()
             .equals(EntityType.ENTITY_TYPE_SERVICE)) {
           serviceNames.addAll(
-              condition.getLeafCondition().getScopeCondition().getEntityScope().getEntityIdsList());
+              condition
+                  .getLeafCondition()
+                  .getScopeCondition()
+                  .getEntityScope()
+                  .getEntityIdsList()
+                  .stream()
+                  .map(serviceNameProvider)
+                  .collect(Collectors.toUnmodifiableList()));
         } else {
           // TODO handle service label
           throw new UnsupportedOperationException(

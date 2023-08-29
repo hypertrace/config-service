@@ -1,32 +1,34 @@
-package ai.traceable.ratelimiting.config.service.v2;
+package ai.traceable.entity.fetcher.cache;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.activity.event.producer.ActivityEventProducer;
-import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceModule;
 import com.google.inject.Guice;
-import com.google.inject.Stage;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import io.grpc.Channel;
 import io.grpc.ManagedChannel;
-import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.junit.jupiter.api.Test;
 
-class RateLimitingConfigServiceFactoryTest {
+class CachedServiceMappingProviderModuleTest {
   @Test
   void testResolveBindings() {
-    Channel mockChannel = mock(Channel.class);
     Config mockConfig = mock(Config.class);
-    ActivityEventProducer mockActivityEventProducer = mock(ActivityEventProducer.class);
     GrpcChannelRegistry mockGrpcChannelRegistry = mock(GrpcChannelRegistry.class);
-    ConfigChangeEventGenerator mockConfigChangeEventGenerator =
-        mock(ConfigChangeEventGenerator.class);
+    doReturn(mock(ManagedChannel.class))
+        .when(mockGrpcChannelRegistry)
+        .forPlaintextAddress("localhost", 50061);
 
+    when(mockConfig.getConfig("entity.fetcher.cache"))
+        .thenReturn(
+            ConfigFactory.parseString(
+                "service.mapping.cache = {\n"
+                    + "    maxSize = 100\n"
+                    + "    refreshAfterWriteDuration = 6h\n"
+                    + "    expireAfterWriteDuration = 24h\n"
+                    + "  }"));
     when(mockConfig.getConfig("entity.service"))
         .thenReturn(
             ConfigFactory.parseString(
@@ -39,21 +41,14 @@ class RateLimitingConfigServiceFactoryTest {
                     + "    service.id = \"SERVICE.id\"\n"
                     + "    service.name = \"SERVICE.name\"\n"
                     + "    service.environment = \"SERVICE.environment\"\n"
+                    + "    environment.id = \"ENVIRONMENT.id\"\n"
+                    + "    environment.name = \"ENVIRONMENT.name\"\n"
                     + "  }"));
-    doReturn(mock(ManagedChannel.class))
-        .when(mockGrpcChannelRegistry)
-        .forPlaintextAddress("localhost", 50061);
-
     assertDoesNotThrow(
         () ->
             Guice.createInjector(
-                    Stage.PRODUCTION,
-                    new RateLimitingConfigServiceModule(
-                        mockChannel,
-                        mockConfig,
-                        mockActivityEventProducer,
-                        mockConfigChangeEventGenerator,
-                        mockGrpcChannelRegistry))
+                    new CachedServiceMappingProviderModule(
+                        mockGrpcChannelRegistry, mockConfig, "name"))
                 .getAllBindings());
   }
 }

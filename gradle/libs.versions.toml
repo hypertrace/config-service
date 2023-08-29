@@ -1,20 +1,21 @@
 [versions]
 protoc = "3.21.12"
-grpc = "1.56.0"
+grpc = "1.57.2"
 lombok = "1.18.22"
 jackson = "2.15.2"
-hypertrace-grpcutils = "0.12.1"
-hypertrace-framework = "0.1.54"
-hypertrace-entityService = "0.8.73"
-traceable-platformGateway = "0.6.125"
+hypertrace-grpcutils = "0.12.2"
+hypertrace-framework = "0.1.58"
+hypertrace-entityService = "0.8.78"
+traceable-platformGateway = "0.6.138"
 traceable-platform-apiAnomalyDetection = "0.9.50"
 kafka-streams-framework = "0.2.12"
+actorService = "0.2.118"
 
 junit = "5.8.2"
 mockito = "4.4.0"
 
 [libraries]
-traceable-actorService-api = { module = "ai.traceable.platform:actor-service-api", version = "0.2.118" }
+traceable-actorService-api = { module = "ai.traceable.platform:actor-service-api", version.ref = "actorService" }
 traceable-opaDistributor-api = { module = "ai.traceable.platform:opa-aggregator-api", version = "0.2.44" }
 traceable-insights-api = { module = "ai.traceable.platform:insights-service-api", version = "0.49.69" }
 traceable-activityevent-api = { module = "ai.traceable.activity.event.service:activity-event-api", version = "0.4.17" }
@@ -71,7 +72,7 @@ commons-net = { module = "commons-net:commons-net", version = "3.9.0" }
 commons-validator = { module = "commons-validator:commons-validator", version = "1.7" }
 jackson-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
 kafka-bom = { module = "org.hypertrace.core.kafkastreams.framework:kafka-bom", version.ref = "kafka-streams-framework"}
-kafka-avro-serializer = { module = "io.confluent:kafka-avro-serializer" }
+kafka-avro-serializer = { module = "io.confluent:kafka-avro-serializer"}
 grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "grpc" }
 grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
 grpc-api = { module = "io.grpc:grpc-api", version.ref = "grpc" }

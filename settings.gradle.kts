@@ -92,6 +92,7 @@ include(":api-gateway-config-service-common")
 include(":api-gateway-config-service-impl")
 include(":anomaly-scoring-config-service-api")
 include(":anomaly-scoring-config-service-impl")
+include(":entity-fetcher-cache")
 
 include(":mock-config-service")
 include(":ast-scan-profile-config-service-api")

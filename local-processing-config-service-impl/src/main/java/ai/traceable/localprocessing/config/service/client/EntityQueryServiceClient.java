@@ -1,6 +1,6 @@
 package ai.traceable.localprocessing.config.service.client;
 
-import ai.traceable.localprocessing.config.service.config.EntityQueryServiceConfig;
+import ai.traceable.entity.fetcher.cache.config.EntityQueryServiceConfig;
 import com.google.inject.Inject;
 import java.util.Iterator;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;

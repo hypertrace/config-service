@@ -1,24 +1,32 @@
-package ai.traceable.localprocessing.config.service.config;
+package ai.traceable.entity.fetcher.cache.config;
 
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
+import java.time.Duration;
 
 public class EntityQueryServiceConfig {
-  private final Config config;
+  private static final String TIMEOUT_CONFIG_KEY = "timeout";
+
+  private final Config serviceConfig;
   private final Config attributesMapConfig;
 
   @Inject
   public EntityQueryServiceConfig(Config config) {
-    this.config = config.getConfig("entity.service.config");
-    this.attributesMapConfig = config.getConfig("entity.service.attributeMap");
+    config = config.getConfig("entity.service");
+    this.serviceConfig = config.getConfig("config");
+    this.attributesMapConfig = config.getConfig("attributeMap");
   }
 
   public String getEntityServiceHost() {
-    return this.config.getString("host");
+    return this.serviceConfig.getString("host");
   }
 
   public Integer getEntityServicePort() {
-    return this.config.getInt("port");
+    return this.serviceConfig.getInt("port");
+  }
+
+  public Duration getTimeout() {
+    return this.serviceConfig.getDuration(TIMEOUT_CONFIG_KEY);
   }
 
   public String getServiceIdColumnName() {

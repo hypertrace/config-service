@@ -38,14 +38,14 @@ public class BlockingConfigServiceModule extends AbstractModule {
   public BlockingConfigServiceModule(
       Channel channel, Config config, GrpcChannelRegistry grpcChannelRegistry) {
     this.channel = channel;
-    this.config = config.getConfig(BLOCKING_CONFIG_SERVICE_CONFIG_NAME);
+    this.config = config;
     this.grpcChannelRegistry = grpcChannelRegistry;
   }
 
   @Override
   protected void configure() {
     bind(Channel.class).toInstance(channel);
-    bind(Config.class).toInstance(config);
+    bind(Config.class).toInstance(config.getConfig(BLOCKING_CONFIG_SERVICE_CONFIG_NAME));
     bind(GrpcChannelRegistry.class).toInstance(grpcChannelRegistry);
   }
 
@@ -122,6 +122,7 @@ public class BlockingConfigServiceModule extends AbstractModule {
 
   @Provides
   FileRefreshConfig providesFileRefreshConfig() {
-    return new FileRefreshConfig(config.getConfig(IP_TYPE_BLOCKING_CONFIG));
+    return new FileRefreshConfig(
+        config.getConfig(BLOCKING_CONFIG_SERVICE_CONFIG_NAME).getConfig(IP_TYPE_BLOCKING_CONFIG));
   }
 }

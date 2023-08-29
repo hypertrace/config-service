@@ -1,10 +1,12 @@
 package ai.traceable.blocking.config.service.common.rules.fetchers;
 
+import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.EnvironmentScope;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingModsecRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingModsecRulesFilter.RuleAction;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRulesResponse;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingModsecRule;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
@@ -42,22 +44,25 @@ public class DlpRulesFetcher implements RulesFetcher {
         GetRateLimitingRuleModsecRulesRequest.newBuilder()
             .setRulesFilter(
                 GetRateLimitingModsecRulesFilter.newBuilder()
-                    .setDisabled(false)
+                    .setRulesFilter(
+                        GetRateLimitingRulesFilter.newBuilder()
+                            .setScope(
+                                RuleConfigScope.newBuilder()
+                                    .setEnvironmentScope(
+                                        environmentId
+                                            .map(
+                                                id ->
+                                                    EnvironmentScope.newBuilder()
+                                                        .addEnvironmentIds(id)
+                                                        .build())
+                                            .orElse(EnvironmentScope.getDefaultInstance())))
+                            .setDisabled(false)
+                            .addCategories(Category.CATEGORY_DATA_EXFILTRATION))
                     .addAllRuleActions(
                         List.of(
                             RuleAction.RULE_ACTION_TRANSACTION_BLOCKED,
                             RuleAction.RULE_ACTION_TRANSACTION_ALLOWED))
-                    .addAllServiceNames(serviceNames)
-                    .setScope(
-                        RuleConfigScope.newBuilder()
-                            .setEnvironmentScope(
-                                environmentId
-                                    .map(
-                                        id ->
-                                            EnvironmentScope.newBuilder()
-                                                .addEnvironmentIds(id)
-                                                .build())
-                                    .orElse(EnvironmentScope.getDefaultInstance()))))
+                    .addAllServiceNames(serviceNames))
             .build();
 
     GetRateLimitingRuleModsecRulesResponse response =

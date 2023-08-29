@@ -1,8 +1,8 @@
 package ai.traceable.localprocessing.config.service.apinaming.http;
 
+import ai.traceable.entity.fetcher.cache.config.EntityQueryServiceConfig;
 import ai.traceable.localprocessing.config.service.apinaming.http.utils.ServiceIdentifier;
 import ai.traceable.localprocessing.config.service.client.EntityQueryServiceClient;
-import ai.traceable.localprocessing.config.service.config.EntityQueryServiceConfig;
 import com.google.common.cache.CacheLoader;
 import com.google.common.collect.Streams;
 import com.google.inject.Inject;

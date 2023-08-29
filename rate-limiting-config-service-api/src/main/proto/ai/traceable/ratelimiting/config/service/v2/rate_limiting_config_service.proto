@@ -31,11 +31,9 @@ message GetRateLimitingRulesFilter {
 }
 
 message GetRateLimitingModsecRulesFilter {
-  repeated Category categories = 1;
-  RuleConfigScope scope = 2;
-  optional bool disabled = 3;
-  repeated RuleAction rule_actions = 4;
-  repeated string service_names = 5;
+  GetRateLimitingRulesFilter rules_filter = 1;
+  repeated RuleAction rule_actions = 2;
+  repeated string service_names = 3;
 
   enum RuleAction {
     RULE_ACTION_UNSPECIFIED = 0;

@@ -179,6 +179,7 @@ traceableConfigServiceConfig:
   entityServiceConfig:
     host: entity-service
     port: 50061
+    timeout: 10s
     cache:
       maxCacheSize: 10000
       refreshAfterWriteDuration: 10m
