@@ -1,0 +1,22 @@
+syntax="proto3";
+
+package ai.traceable.span.processing.config.service.impl.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/span/processing/config/service/v1/ingestion.proto";
+
+message PersistedKeyValueRetentionRule{
+  string id = 1;
+  ai.traceable.span.processing.config.service.v1.IngestionStage ingestionStage = 2;
+  ai.traceable.span.processing.config.service.v1.KeyValueRetentionRuleData data = 3;
+  RuleType rule_type = 4;
+  int32 rank = 5;
+}
+
+enum RuleType {
+  RULE_TYPE_UNSPECIFIED = 0;
+  RULE_TYPE_REQUEST_HEADER_RULE = 1;
+  RULE_TYPE_RESPONSE_HEADER_RULE = 2;
+  RULE_TYPE_ATTRIBUTE_RULE = 3;
+}

@@ -10,4 +10,8 @@ public class TimestampConverter {
         .setNanos(instant.getNano())
         .build();
   }
+
+  public Instant convertToInstant(Timestamp timestamp) {
+    return Instant.ofEpochSecond(timestamp.getSeconds(), timestamp.getNanos());
+  }
 }

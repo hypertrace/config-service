@@ -4,6 +4,7 @@ import ai.traceable.span.processing.config.service.apinamingrules.ApiNamingRules
 import ai.traceable.span.processing.config.service.protectionspanrules.ProtectionSpanRulesManager;
 import ai.traceable.span.processing.config.service.samplingconfigs.SamplingConfigManager;
 import ai.traceable.span.processing.config.service.servicenaming.ServiceNamingRulesManager;
+import ai.traceable.span.processing.config.service.spaningestionrules.SpanIngestionRulesManager;
 import ai.traceable.span.processing.config.service.store.DefaultProtectionSpanRuleEvaluationStatusConfigStore;
 import ai.traceable.span.processing.config.service.v1.CreateApiNamingRuleRequest;
 import ai.traceable.span.processing.config.service.v1.CreateApiNamingRuleResponse;
@@ -15,6 +16,8 @@ import ai.traceable.span.processing.config.service.v1.CreateSamplingConfigReques
 import ai.traceable.span.processing.config.service.v1.CreateSamplingConfigResponse;
 import ai.traceable.span.processing.config.service.v1.CreateServiceNamingRuleRequest;
 import ai.traceable.span.processing.config.service.v1.CreateServiceNamingRuleResponse;
+import ai.traceable.span.processing.config.service.v1.CreateSpanIngestionRuleRequest;
+import ai.traceable.span.processing.config.service.v1.CreateSpanIngestionRuleResponse;
 import ai.traceable.span.processing.config.service.v1.DefaultProtectionSpanRuleEvaluationStatus;
 import ai.traceable.span.processing.config.service.v1.DeleteApiNamingRuleRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteApiNamingRuleResponse;
@@ -26,6 +29,8 @@ import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigReques
 import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigResponse;
 import ai.traceable.span.processing.config.service.v1.DeleteServiceNamingRuleRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteServiceNamingRuleResponse;
+import ai.traceable.span.processing.config.service.v1.DeleteSpanIngestionRuleRequest;
+import ai.traceable.span.processing.config.service.v1.DeleteSpanIngestionRuleResponse;
 import ai.traceable.span.processing.config.service.v1.GetAllApiNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllApiNamingRulesResponse;
 import ai.traceable.span.processing.config.service.v1.GetAllProtectionSpanRulesRequest;
@@ -40,6 +45,10 @@ import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRu
 import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRuleEvaluationStatusResponse;
 import ai.traceable.span.processing.config.service.v1.GetServiceNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetServiceNamingRulesResponse;
+import ai.traceable.span.processing.config.service.v1.GetSpanIngestionConfigRequest;
+import ai.traceable.span.processing.config.service.v1.GetSpanIngestionConfigResponse;
+import ai.traceable.span.processing.config.service.v1.RankSpanIngestionRuleRequest;
+import ai.traceable.span.processing.config.service.v1.RankSpanIngestionRuleResponse;
 import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRuleRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateApiNamingRuleResponse;
@@ -53,7 +62,10 @@ import ai.traceable.span.processing.config.service.v1.UpdateSamplingConfigReques
 import ai.traceable.span.processing.config.service.v1.UpdateSamplingConfigResponse;
 import ai.traceable.span.processing.config.service.v1.UpdateServiceNamingRuleRequest;
 import ai.traceable.span.processing.config.service.v1.UpdateServiceNamingRuleResponse;
+import ai.traceable.span.processing.config.service.v1.UpdateSpanIngestionRuleRequest;
+import ai.traceable.span.processing.config.service.v1.UpdateSpanIngestionRuleResponse;
 import ai.traceable.span.processing.config.service.validation.SpanProcessingConfigRequestValidator;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import javax.inject.Inject;
 import lombok.RequiredArgsConstructor;
@@ -72,6 +84,7 @@ public class SpanProcessingConfigServiceImpl
   private final DefaultProtectionSpanRuleEvaluationStatusConfigStore
       defaultProtectionSpanRuleEvaluationStatusStore;
   private final ServiceNamingRulesManager serviceNamingRulesManager;
+  private final SpanIngestionRulesManager spanIngestionRulesManager;
   private static final boolean DEFAULT_PROTECTION_RULE_EVALUATION_STATUS = false;
 
   @Override
@@ -523,5 +536,114 @@ public class SpanProcessingConfigServiceImpl
       log.warn("Failed to delete service naming rule: {}", request, exception);
       responseObserver.onError(exception);
     }
+  }
+
+  @Override
+  public void getSpanIngestionConfig(
+      GetSpanIngestionConfigRequest request,
+      StreamObserver<GetSpanIngestionConfigResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      responseObserver.onNext(this.spanIngestionRulesManager.getRuleSet(requestContext, request));
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Failed to get span ingestion config for request: {} with context: {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void createSpanIngestionRule(
+      CreateSpanIngestionRuleRequest request,
+      StreamObserver<CreateSpanIngestionRuleResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      responseObserver.onNext(
+          CreateSpanIngestionRuleResponse.newBuilder()
+              .setRule(this.spanIngestionRulesManager.createRule(requestContext, request))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Failed to create span ingestion rule for request: {} with context: {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void updateSpanIngestionRule(
+      UpdateSpanIngestionRuleRequest request,
+      StreamObserver<UpdateSpanIngestionRuleResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      responseObserver.onNext(
+          UpdateSpanIngestionRuleResponse.newBuilder()
+              .setRule(this.spanIngestionRulesManager.updateRule(requestContext, request))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Failed to update span ingestion rule for request: {} with context: {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void deleteSpanIngestionRule(
+      DeleteSpanIngestionRuleRequest request,
+      StreamObserver<DeleteSpanIngestionRuleResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      this.spanIngestionRulesManager.deleteRule(requestContext, request);
+      responseObserver.onNext(DeleteSpanIngestionRuleResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Failed to delete span ingestion rule for request: {} with context: {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void rankSpanIngestionRule(
+      RankSpanIngestionRuleRequest request,
+      StreamObserver<RankSpanIngestionRuleResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      this.spanIngestionRulesManager.rankRules(requestContext, request);
+      responseObserver.onNext(RankSpanIngestionRuleResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Failed to rank span ingestion rule for request: {} with context: {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(exception);
+    }
+  }
+
+  private Exception decorateException(RequestContext requestContext, Exception exception) {
+    return Status.fromThrowable(exception)
+        .withCause(exception)
+        .asRuntimeException(requestContext.buildTrailers());
   }
 }
