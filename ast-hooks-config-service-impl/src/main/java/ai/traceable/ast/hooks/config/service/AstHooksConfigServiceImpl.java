@@ -83,15 +83,31 @@ public class AstHooksConfigServiceImpl extends AstHooksConfigServiceImplBase {
   @Override
   public void getAstHook(
       GetAstHookRequest request, StreamObserver<GetAstHookResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
     try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
-      AstHook astHook = astHooksConfigStore.getAstHook(requestContext, request.getId());
-      GetAstHookResponse response = GetAstHookResponse.newBuilder().setAstHook(astHook).build();
+      GetAstHookResponse response;
+
+      // backward compatibility
+      if (!request.getId().isBlank()) {
+        AstHook astHook = astHooksConfigStore.getAstHook(requestContext, request.getId());
+        response = GetAstHookResponse.newBuilder().setAstHook(astHook).build();
+      } else {
+        response =
+            GetAstHookResponse.newBuilder()
+                .addAllAstHooks(
+                    astHooksConfigStore.getAllConfigData(requestContext, request.getFilter()))
+                .build();
+      }
+
       responseObserver.onNext(response);
       responseObserver.onCompleted();
-    } catch (Exception e) {
-      log.error("Error getting ast hooks for id: " + request.getId(), e);
-      responseObserver.onError(e);
+    } catch (Exception exception) {
+      log.error(
+          "Error getting ast hooks for request: {} with context: {}",
+          request,
+          requestContext,
+          exception);
+      responseObserver.onError(exception);
     }
   }
 

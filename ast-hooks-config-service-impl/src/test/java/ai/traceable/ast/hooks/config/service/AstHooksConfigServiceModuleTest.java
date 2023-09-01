@@ -3,6 +3,7 @@ package ai.traceable.ast.hooks.config.service;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import com.google.inject.Guice;
+import com.google.inject.Stage;
 import io.grpc.Channel;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ class AstHooksConfigServiceModuleTest {
     assertDoesNotThrow(
         () ->
             Guice.createInjector(
+                    Stage.PRODUCTION,
                     new AstHooksConfigServiceModule(mockChannel, mockChangeEventGenerator))
                 .getAllBindings());
   }

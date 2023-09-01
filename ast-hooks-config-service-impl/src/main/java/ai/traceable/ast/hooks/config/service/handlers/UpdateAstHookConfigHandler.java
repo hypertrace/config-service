@@ -22,7 +22,6 @@ import io.grpc.Status;
 import org.apache.commons.lang3.StringUtils;
 
 public class UpdateAstHookConfigHandler {
-
   public HookConfig applyHookConfigUpdate(HookConfig newHookConfig, HookConfig oldHookConfig) {
     HookConfig.Builder hookConfigBuilder =
         newHookConfig.toBuilder().setAuthEndpoint(newHookConfig.getAuthEndpoint());

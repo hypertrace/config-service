@@ -1,6 +1,5 @@
 package ai.traceable.ast.hooks.config.service;
 
-import ai.traceable.ast.hooks.config.service.handlers.UpdateAstHookConfigHandler;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import io.grpc.BindableService;
@@ -24,7 +23,6 @@ public class AstHooksConfigServiceModule extends AbstractModule {
     bind(BindableService.class).to(AstHooksConfigServiceImpl.class);
     bind(Channel.class).toInstance(channel);
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
-    bind(UpdateAstHookConfigHandler.class).toInstance(new UpdateAstHookConfigHandler());
   }
 
   @Provides

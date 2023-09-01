@@ -71,7 +71,7 @@ class AstHooksConfigServiceImplTest {
                 mockValidator,
                 mockCreateAstHookHandler,
                 mockUpdateAstHookHandler,
-                new AstHooksConfigStore(configServiceBlockingStub),
+                new AstHooksConfigStore(configServiceBlockingStub, mockConfigChangeEventGenerator),
                 astHooksTestConfigStore,
                 new AstHookTestManager(
                     mockUuidGenerator, astHooksTestConfigStore, mockUpdateAstHookConfigHandler)))
