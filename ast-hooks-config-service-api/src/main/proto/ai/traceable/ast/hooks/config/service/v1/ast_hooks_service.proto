@@ -60,11 +60,18 @@ message GetAllAstHooksResponse {
 }
 
 message GetAstHookRequest {
-  string id = 1;
+  string id = 1 [deprecated = true];
+  GetAstHookFilter filter = 2;
+}
+
+message GetAstHookFilter {
+  repeated string id = 1;
+  repeated string name = 2;
 }
 
 message GetAstHookResponse {
-  AstHook ast_hook = 1;
+  AstHook ast_hook = 1 [deprecated = true];
+  repeated AstHook ast_hooks = 2;
 }
 
 message CreateAstHookTestRequest {
