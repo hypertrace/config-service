@@ -103,6 +103,8 @@ public class SpanFilterMatcher {
       switch (relationalOperator) {
         case RELATIONAL_OPERATOR_CONTAINS:
           return lhs.contains(rhs);
+        case RELATIONAL_OPERATOR_NOT_CONTAINS:
+          return !lhs.contains(rhs);
         case RELATIONAL_OPERATOR_EQUALS:
           return lhs.equals(rhs);
         case RELATIONAL_OPERATOR_NOT_EQUALS:

@@ -36,6 +36,17 @@ class SpanFilterMatcherTest {
             buildSpanFilterValue("names"),
             RelationalOperator.RELATIONAL_OPERATOR_CONTAINS));
 
+    assertFalse(
+        this.spanFilterMatcher.matches(
+            "name",
+            buildSpanFilterValue("nam"),
+            RelationalOperator.RELATIONAL_OPERATOR_NOT_CONTAINS));
+    assertTrue(
+        this.spanFilterMatcher.matches(
+            "name",
+            buildSpanFilterValue("names"),
+            RelationalOperator.RELATIONAL_OPERATOR_NOT_CONTAINS));
+
     assertTrue(
         this.spanFilterMatcher.matches(
             "name", buildSpanFilterValue("name"), RelationalOperator.RELATIONAL_OPERATOR_EQUALS));
