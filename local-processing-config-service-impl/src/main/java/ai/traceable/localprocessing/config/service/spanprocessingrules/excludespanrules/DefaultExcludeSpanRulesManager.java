@@ -173,6 +173,8 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
     switch (relationalOperator) {
       case RELATIONAL_OPERATOR_CONTAINS:
         return RelationalOperator.RELATIONAL_OPERATOR_CONTAINS;
+      case RELATIONAL_OPERATOR_NOT_CONTAINS:
+        return RelationalOperator.RELATIONAL_OPERATOR_NOT_CONTAINS;
       case RELATIONAL_OPERATOR_STARTS_WITH:
         return RelationalOperator.RELATIONAL_OPERATOR_STARTS_WITH;
       case RELATIONAL_OPERATOR_ENDS_WITH:
