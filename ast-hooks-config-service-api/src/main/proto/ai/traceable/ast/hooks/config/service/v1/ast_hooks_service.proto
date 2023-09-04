@@ -44,7 +44,8 @@ message CreateAstHookResponse {
 }
 
 message DeleteAstHookRequest {
-  string id = 1;
+  string id = 1 [deprecated=true];
+  repeated string ids = 2;
 }
 
 message DeleteAstHookResponse {

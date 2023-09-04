@@ -32,6 +32,7 @@ import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookTestRequest;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookTestResponse;
 import ai.traceable.ast.hooks.config.service.validators.RequestValidator;
 import io.grpc.stub.StreamObserver;
+import java.util.ArrayList;
 import java.util.List;
 import javax.inject.Inject;
 import lombok.AllArgsConstructor;
@@ -117,7 +118,13 @@ public class AstHooksConfigServiceImpl extends AstHooksConfigServiceImplBase {
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
       requestValidator.validate(requestContext, request);
-      astHooksConfigStore.deleteObject(requestContext, request.getId());
+      List<String> idsToDelete = new ArrayList<>();
+      if (!request.getId().isEmpty()) {
+        idsToDelete.add(request.getId());
+      } else if (!request.getIdsList().isEmpty()) {
+        idsToDelete.addAll(request.getIdsList());
+      }
+      astHooksConfigStore.deleteObjects(requestContext, idsToDelete);
       responseObserver.onNext(DeleteAstHookResponse.newBuilder().build());
       responseObserver.onCompleted();
     } catch (Exception e) {
