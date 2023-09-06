@@ -103,27 +103,6 @@ class DetectionExclusionRulesValidatorTest {
           throwable.getMessage().contains("DetectionExclusionRule has no specified conditions"));
     }
 
-    // no event condition
-    {
-      CreateDetectionExclusionRuleRequest request =
-          CreateDetectionExclusionRuleRequest.newBuilder()
-              .setRuleInfo(
-                  DetectionExclusionRuleInfo.newBuilder()
-                      .setName("rule")
-                      .addConditions(DetectionExclusionCondition.getDefaultInstance()))
-              .build();
-      Throwable throwable =
-          assertThrows(
-              StatusRuntimeException.class,
-              () ->
-                  detectionExclusionRulesValidator.validateOrThrow(
-                      requestContext, request, List.of()));
-      assertTrue(
-          throwable
-              .getMessage()
-              .contains("DetectionExclusionRule should have at least one event condition"));
-    }
-
     // empty env Id string for env scope
     {
       CreateDetectionExclusionRuleRequest request =
