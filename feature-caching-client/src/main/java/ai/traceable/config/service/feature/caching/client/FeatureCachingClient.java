@@ -30,7 +30,7 @@ public class FeatureCachingClient {
 
   private static final boolean DEFAULT_DATA_CLASSIFICATION_RP2_FLAG_VALUE = false;
   private static final boolean DEFAULT_IPQS_ENABLED_VALUE = false;
-  private static final boolean DEFAULT_USER_ATTRIBUTION_V2_FLAG_VALUE = false;
+  private static final boolean DEFAULT_USER_ATTRIBUTION_V2_FLAG_VALUE = true;
   private static final boolean DEFAULT_DETECTION_EXCLUSION_V2_FLAG_VALUE = false;
   private static final boolean DEFAULT_SESSION_IDENTIFICATION_V2_FLAG_VALUE = false;
   private static final boolean DEFAULT_TPA_MODSEC_PROCESSING_DISABLED = false;
