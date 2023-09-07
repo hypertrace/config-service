@@ -307,10 +307,29 @@ public class DetectionExclusionConditionValidator {
   }
 
   private void validateIpAddressCondition(IpAddressCondition condition) {
-
     List<String> cidrIpRanges = condition.getCidrIpRangesList();
     List<String> ipAddresses = condition.getIpAddressesList();
     List<String> rawInputIpData = condition.getRawInputIpDataList();
+    switch (condition.getIpAddressConditionType()) {
+      case IP_ADDRESS_CONDITION_TYPE_ALL_INTERNAL:
+      case IP_ADDRESS_CONDITION_TYPE_ALL_EXTERNAL:
+        if (!cidrIpRanges.isEmpty() || !ipAddresses.isEmpty() || !rawInputIpData.isEmpty()) {
+          throwInvalidArgumentException(
+              String.format(
+                  "RawInputIpData, cidrIpRanges and ipAddresses should be empty for ip address condition type : %s ",
+                  condition.getIpAddressConditionType()));
+        }
+        break;
+      default:
+        validateIpAddressesAndRanges(condition, cidrIpRanges, ipAddresses, rawInputIpData);
+    }
+  }
+
+  private void validateIpAddressesAndRanges(
+      IpAddressCondition condition,
+      List<String> cidrIpRanges,
+      List<String> ipAddresses,
+      List<String> rawInputIpData) {
     if (cidrIpRanges.isEmpty() && ipAddresses.isEmpty() && rawInputIpData.isEmpty()) {
       throwInvalidArgumentException(
           String.format(

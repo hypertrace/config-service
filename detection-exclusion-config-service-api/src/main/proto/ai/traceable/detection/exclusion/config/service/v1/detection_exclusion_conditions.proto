@@ -71,6 +71,7 @@ message IpAddressCondition {
   repeated string cidr_ip_ranges = 1;
   repeated string ip_addresses = 2;
   repeated string raw_input_ip_data = 3;
+  IpAddressConditionType ip_address_condition_type = 4;
 }
 
 
@@ -106,4 +107,10 @@ enum AttributeValueType {
   ATTRIBUTE_VALUE_TYPE_RICH_TEXT_HTML = 14;
   ATTRIBUTE_VALUE_TYPE_CLOB = 15;
   ATTRIBUTE_VALUE_TYPE_FREE_TEXT = 16;
+}
+
+enum IpAddressConditionType {
+  IP_ADDRESS_CONDITION_TYPE_UNSPECIFIED = 0;
+  IP_ADDRESS_CONDITION_TYPE_ALL_INTERNAL = 2;
+  IP_ADDRESS_CONDITION_TYPE_ALL_EXTERNAL = 3;
 }

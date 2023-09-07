@@ -15,6 +15,7 @@ import ai.traceable.detection.exclusion.config.service.v1.EntityScope;
 import ai.traceable.detection.exclusion.config.service.v1.EntityType;
 import ai.traceable.detection.exclusion.config.service.v1.EventCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpAddressCondition;
+import ai.traceable.detection.exclusion.config.service.v1.IpAddressConditionType;
 import ai.traceable.detection.exclusion.config.service.v1.IpConnectionType;
 import ai.traceable.detection.exclusion.config.service.v1.IpConnectionTypeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpLocationType;
@@ -742,6 +743,19 @@ class DetectionExclusionConditionValidatorTest {
               .build();
       assertThrows(
           StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition2));
+
+      DetectionExclusionCondition condition3 =
+          DetectionExclusionCondition.newBuilder()
+              .setIpAddressCondition(
+                  IpAddressCondition.newBuilder()
+                      .setIpAddressConditionType(
+                          IpAddressConditionType.IP_ADDRESS_CONDITION_TYPE_ALL_EXTERNAL)
+                      .addAllRawInputIpData(List.of("2.3.4.5", "1.2.3.4/23"))
+                      .addCidrIpRanges("192.3.4.5/2")
+                      .addIpAddresses("1.2.3.4"))
+              .build();
+      assertThrows(
+          StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition3));
     }
 
     // valid ip address condition (empty rawInputIpData and any one of cidrRanges or ip address is
@@ -768,6 +782,26 @@ class DetectionExclusionConditionValidatorTest {
                       .addAllRawInputIpData(List.of("2.3.4.5", "1.2.3.4/23")))
               .build();
       assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+    }
+
+    // valid ip address condition (ip address condition type is all internal/external)
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setIpAddressCondition(
+                  IpAddressCondition.newBuilder()
+                      .setIpAddressConditionType(
+                          IpAddressConditionType.IP_ADDRESS_CONDITION_TYPE_ALL_INTERNAL))
+              .build();
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+      DetectionExclusionCondition condition1 =
+          DetectionExclusionCondition.newBuilder()
+              .setIpAddressCondition(
+                  IpAddressCondition.newBuilder()
+                      .setIpAddressConditionType(
+                          IpAddressConditionType.IP_ADDRESS_CONDITION_TYPE_ALL_EXTERNAL))
+              .build();
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition1));
     }
   }
 
