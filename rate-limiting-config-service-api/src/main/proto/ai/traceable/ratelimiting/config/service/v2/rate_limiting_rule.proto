@@ -222,6 +222,7 @@ message IpAddressCondition {
   repeated string ip_addresses = 2;
   repeated string raw_input_ip_data = 3;
   bool exclude = 4;
+  IpAddressConditionType ip_address_condition_type = 5;
 }
 
 message IpLocationTypeCondition {
@@ -373,4 +374,10 @@ enum IpConnectionType {
   IP_CONNECTION_TYPE_CORPORATE= 3;
   IP_CONNECTION_TYPE_DATA_CENTER = 4;
   IP_CONNECTION_TYPE_EDUCATION = 5;
+}
+
+enum IpAddressConditionType {
+  IP_ADDRESS_CONDITION_TYPE_UNSPECIFIED = 0;
+  IP_ADDRESS_CONDITION_TYPE_ALL_INTERNAL = 2;
+  IP_ADDRESS_CONDITION_TYPE_ALL_EXTERNAL = 3;
 }

@@ -10,6 +10,7 @@ import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.DataLocation;
 import ai.traceable.ratelimiting.config.service.v2.DatatypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
+import ai.traceable.ratelimiting.config.service.v2.IpAddressConditionType;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
@@ -143,6 +144,14 @@ public class TransactionActionConfigValidator {
           String.format(
               "Exclude should be set false when transaction action config is present : %s",
               ipAddressCondition));
+    }
+    if (!ipAddressCondition
+        .getIpAddressConditionType()
+        .equals(IpAddressConditionType.IP_ADDRESS_CONDITION_TYPE_UNSPECIFIED)) {
+      validatorUtils.throwInvalidArgumentException(
+          String.format(
+              "Unsupported ip address condition type : %s for transaction action config",
+              ipAddressCondition.getIpAddressConditionType()));
     }
     validatorUtils.validateIpAddressCondition(ipAddressCondition);
   }

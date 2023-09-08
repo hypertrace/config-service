@@ -20,6 +20,7 @@ import ai.traceable.ratelimiting.config.service.v2.DatatypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.EmailDomainCondition;
 import ai.traceable.ratelimiting.config.service.v2.EnvironmentScope;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
+import ai.traceable.ratelimiting.config.service.v2.IpAddressConditionType;
 import ai.traceable.ratelimiting.config.service.v2.IpConnectionType;
 import ai.traceable.ratelimiting.config.service.v2.IpConnectionTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationType;
@@ -890,6 +891,62 @@ public class RateLimitingRulesValidatorTest {
     CreateRateLimitingRuleRequest request24 =
         CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
     assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request24, List.of()));
+
+    RateLimitingRuleData ruleData25 =
+        ruleData.toBuilder()
+            .setCondition(
+                Condition.newBuilder()
+                    .setCompositeCondition(
+                        compositeCondition.toBuilder()
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setIpAddressCondition(
+                                                IpAddressCondition.newBuilder()
+                                                    .addAllCidrIpRanges(List.of("1.2.3.4/5"))
+                                                    .setIpAddressConditionType(
+                                                        IpAddressConditionType
+                                                            .IP_ADDRESS_CONDITION_TYPE_ALL_EXTERNAL))))
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setDatatypeCondition(
+                                                DatatypeCondition.newBuilder()
+                                                    .addAllDatatypeIds(List.of("datatype1"))
+                                                    .setDataLocation(
+                                                        DataLocation.DATA_LOCATION_REQUEST)
+                                                    .setDatatypeMatching(
+                                                        DatatypeCondition.DatatypeMatching
+                                                            .newBuilder()
+                                                            .setRegexBasedMatching(
+                                                                DatatypeCondition.RegexBasedMatching
+                                                                    .newBuilder()
+                                                                    .setCustomMatchingLocation(
+                                                                        KeyValueCondition
+                                                                            .newBuilder()
+                                                                            .setType(
+                                                                                Type
+                                                                                    .TYPE_REQUEST_BODY_PARAMETER)
+                                                                            .setKeyCondition(
+                                                                                StringCondition
+                                                                                    .newBuilder()
+                                                                                    .setOperator(
+                                                                                        MatchOperator
+                                                                                            .MATCH_OPERATOR_MATCHES_REGEX)
+                                                                                    .setValue(
+                                                                                        "^a")))))))))
+                    .build())
+            .build();
+    CreateRateLimitingRuleRequest request25 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData25).build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request25, List.of()));
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
   }
 
   @Test
