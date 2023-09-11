@@ -50,6 +50,7 @@ message BlockingDetailsCondition {
     IpTypeDetails ip_type_details = 6;
     BlockingDetailsCombination details_combination = 7;
   }
+  bool is_negation = 8;
 }
 
 message ModsecDetails {
