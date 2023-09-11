@@ -410,6 +410,7 @@ message MultiValuedStringParamRule {
 message SessionViolationConfig {
   LandSpeedViolationConfig land_speed = 1;
   SessionExpiryConfig session_expiry = 2;
+  optional bool disallow_unauthenticated_sessions = 3;
 }
 
 message LandSpeedViolationConfig {
