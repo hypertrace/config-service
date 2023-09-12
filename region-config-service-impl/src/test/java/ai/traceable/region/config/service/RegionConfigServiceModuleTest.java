@@ -24,8 +24,10 @@ class RegionConfigServiceModuleTest {
                 + "    resource.file = neustar/countries.csv\n"
                 + "  }\n"
                 + "ipqs.countries.data {\n"
-                + "    mode = RESOURCE_FILE\n"
-                + "    resource.file = ipqs/countries.csv\n"
+                + "    mode = VERSIONS_DIR\n"
+                + "    versions.dir = /var/ipqs/country_csv\n"
+                + "    versions.file.name = countries.csv\n"
+                + "    versions.refresh.duration = 24h\n"
                 + "}\n"
                 + "}");
     Channel mockChannel = mock(Channel.class);

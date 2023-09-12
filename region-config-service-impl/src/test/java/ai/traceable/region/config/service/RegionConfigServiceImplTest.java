@@ -14,7 +14,6 @@ import ai.traceable.activity.event.SecurityConfigurationType;
 import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.region.config.service.regions.IpqsRegionStore;
-import ai.traceable.region.config.service.regions.IpqsResolvedWithNeustarRegionStore;
 import ai.traceable.region.config.service.regions.NeustarRegionStore;
 import ai.traceable.region.config.service.rules.RulesManager;
 import ai.traceable.region.config.service.rules.RulesValidator;
@@ -82,7 +81,6 @@ class RegionConfigServiceImplTest {
         new RegionConfigServiceImpl(
             neustarRegionStore,
             ipqsRegionStore,
-            mock(IpqsResolvedWithNeustarRegionStore.class),
             rulesValidator,
             rulesManager,
             mockCustomSignatureConfigServiceConfig,

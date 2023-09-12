@@ -834,7 +834,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
         4, filteredElements.get(0).getRegionBlockingRules().getRegionIpBlockingRulesCount());
     // Checking DLP condition is included
     assertEquals(
-        "in",
+        "IN",
         filteredElements
             .get(0)
             .getRegionBlockingRules()
@@ -1041,7 +1041,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertEquals(3, blockingDetailsCombination.getDetailsConditionsCount());
     assertEquals(
         BlockingDetailsCondition.newBuilder()
-            .setRegionDetails(RegionDetails.newBuilder().addRegions("in"))
+            .setRegionDetails(RegionDetails.newBuilder().addRegions("IN"))
             .build(),
         blockingDetailsCombination.getDetailsConditions(0));
     // URL and other conditions
@@ -1356,7 +1356,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                                                                     .Region
                                                                                     .newBuilder()
                                                                                     .setCountryIsoCode(
-                                                                                        "in")))))
+                                                                                        "IN")))))
                                                     .addChildren(
                                                         Condition.newBuilder()
                                                             .setLeafCondition(

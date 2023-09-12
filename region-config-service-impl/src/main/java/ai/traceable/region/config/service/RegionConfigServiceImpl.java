@@ -6,7 +6,6 @@ import ai.traceable.activity.event.SecurityConfigurationType;
 import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.region.config.service.regions.IpqsRegionStore;
-import ai.traceable.region.config.service.regions.IpqsResolvedWithNeustarRegionStore;
 import ai.traceable.region.config.service.regions.NeustarRegionStore;
 import ai.traceable.region.config.service.regions.RegionStore;
 import ai.traceable.region.config.service.rules.RulesManager;
@@ -56,14 +55,11 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
   private final ActivityEventProducer activityEventProducer;
   private final boolean shouldPublishActivityEvents;
   private final FeatureCachingClient featureCachingClient;
-  private final IpqsResolvedWithNeustarRegionStore ipqsResolvedWithNeustarRegionStore;
-  private final boolean ipqsNeustarResolutionEnabled; // only considered when ipqs is enabled
 
   @Inject
   RegionConfigServiceImpl(
       NeustarRegionStore neustarRegionStore,
       IpqsRegionStore ipqsRegionStore,
-      IpqsResolvedWithNeustarRegionStore ipqsResolvedWithNeustarRegionStore,
       RulesValidator rulesValidator,
       RulesManager rulesManager,
       RegionConfigServiceConfig config,
@@ -71,8 +67,6 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
       FeatureCachingClient featureCachingClient) {
     this.neustarRegionStore = neustarRegionStore;
     this.ipqsRegionStore = ipqsRegionStore;
-    this.ipqsResolvedWithNeustarRegionStore = ipqsResolvedWithNeustarRegionStore;
-    this.ipqsNeustarResolutionEnabled = config.getIpqsNeustarResolutionEnabled();
     this.rulesValidator = rulesValidator;
     this.rulesManager = rulesManager;
     this.activityEventProducer = activityEventProducer;
@@ -272,7 +266,7 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
 
   private RegionStore getRegionStore(RequestContext requestContext) {
     if (featureCachingClient.isIpqsEnabledForRegionToIpMapping(requestContext)) {
-      return ipqsNeustarResolutionEnabled ? ipqsResolvedWithNeustarRegionStore : ipqsRegionStore;
+      return ipqsRegionStore;
     }
     return neustarRegionStore;
   }

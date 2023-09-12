@@ -25,7 +25,7 @@ import org.apache.commons.csv.CSVPrinter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-class DefaultRegionBuilderTest {
+class RegionBuilderTest {
   private static final String START_IP_INT_CSV_HEADER = "start_ip_int";
   private static final String END_IP_INT_CSV_HEADER = "end_ip_int";
   private static final String COUNTRY_CSV_HEADER = "country";
@@ -57,27 +57,30 @@ class DefaultRegionBuilderTest {
 
     Region region1 =
         new Region(
-            uuidGenerator.generateId("ru"),
-            "russia",
+            uuidGenerator.generateId("Russia"),
+            "Russia",
             RegionType.COUNTRY,
             List.of(
                 new IpV4Range(3758096382L, 3758096383L), new IpV4Range(2758096382L, 2758096383L)),
-            "ru");
+            "RU");
     Region region2 =
         new Region(
-            uuidGenerator.generateId("cn"),
-            "china",
+            uuidGenerator.generateId("China"),
+            "China",
             RegionType.COUNTRY,
             List.of(new IpV4Range(1L, 2L)),
-            "cn");
+            "CN");
 
-    DefaultRegionBuilder regionBuilder =
-        new DefaultRegionBuilder(
-            latestInstantNamedPathFinder, uuidGenerator, fileRefreshConfig, false);
+    RegionBuilder regionBuilder =
+        new RegionBuilder(latestInstantNamedPathFinder, uuidGenerator, fileRefreshConfig);
 
     Map<String, Region> regionIdToRegionMap = regionBuilder.getLatestDataSupplier().get();
     assertEquals(
-        Map.of(uuidGenerator.generateId("ru"), region1, uuidGenerator.generateId("cn"), region2),
+        Map.of(
+            uuidGenerator.generateId("Russia"),
+            region1,
+            uuidGenerator.generateId("China"),
+            region2),
         regionIdToRegionMap);
   }
 
@@ -107,7 +110,7 @@ class DefaultRegionBuilderTest {
   }
 
   private void mockUuids() {
-    when(uuidGenerator.generateId("ru")).thenReturn("id-1");
-    when(uuidGenerator.generateId("cn")).thenReturn("id-2");
+    when(uuidGenerator.generateId("Russia")).thenReturn("id-1");
+    when(uuidGenerator.generateId("China")).thenReturn("id-2");
   }
 }

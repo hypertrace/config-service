@@ -10,7 +10,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Executors;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +19,7 @@ import org.apache.commons.csv.CSVRecord;
 @Slf4j
 public abstract class FileVersionBasedRefresh<T> {
   private final LatestInstantNamedPathFinder latestInstantNamedPathFinder;
-  protected Supplier<T> supplier = null;
+  private Supplier<T> supplier = null;
 
   protected FileVersionBasedRefresh(LatestInstantNamedPathFinder latestInstantNamedPathFinder) {
     this.latestInstantNamedPathFinder = latestInstantNamedPathFinder;
@@ -36,10 +35,8 @@ public abstract class FileVersionBasedRefresh<T> {
   protected void initializeSupplier(FileRefreshConfig config) {
     switch (config.getMode()) {
       case RESOURCE_FILE:
-        this.supplier =
-            () ->
-                fetchRecordsAndApplyFunction(
-                    config, latestInstantNamedPathFinder, this::buildFromRecords);
+        T dataFromResources = fetchDataFromResources(config.getResourceFile());
+        this.supplier = () -> dataFromResources;
         break;
       case VERSIONS_DIR:
         // Using cache to ensure async refresh of data
@@ -48,16 +45,11 @@ public abstract class FileVersionBasedRefresh<T> {
                 .refreshAfterWrite(config.getVersionRefreshDuration())
                 .build(
                     CacheLoader.asyncReloading(
-                        CacheLoader.from(
-                            () ->
-                                fetchRecordsAndApplyFunction(
-                                    config, latestInstantNamedPathFinder, this::buildFromRecords)),
+                        CacheLoader.from(this::fetchDataFromLatestFile),
                         Executors.newSingleThreadExecutor()));
         // Seed the cache
-        cache.put(
-            config,
-            fetchRecordsAndApplyFunction(
-                config, latestInstantNamedPathFinder, this::buildFromRecords));
+        T dataFromVersionedFile = fetchDataFromLatestFile(config);
+        cache.put(config, dataFromVersionedFile);
         this.supplier = () -> cache.getUnchecked(config);
         break;
       default:
@@ -69,36 +61,29 @@ public abstract class FileVersionBasedRefresh<T> {
   protected abstract T buildFromRecords(Iterable<CSVRecord> records);
 
   @SneakyThrows
-  public static <K> K fetchRecordsAndApplyFunction(
-      FileRefreshConfig config,
-      LatestInstantNamedPathFinder latestInstantNamedPathFinder,
-      Function<Iterable<CSVRecord>, K> applier) {
-    switch (config.getMode()) {
-      case RESOURCE_FILE:
-        try (Reader reader =
-            Resources.asCharSource(
-                    Resources.getResource(config.getResourceFile()), Charset.defaultCharset())
-                .openBufferedStream()) {
-          return applier.apply(
-              CSVFormat.DEFAULT.withHeader().withFirstRecordAsHeader().parse(reader));
-        }
-      case VERSIONS_DIR:
-        Path latestDirPath =
-            latestInstantNamedPathFinder
-                .get(Path.of(config.getVersionsDir()).toUri(), Files::isDirectory)
-                .orElseThrow(
-                    () ->
-                        new IllegalArgumentException(
-                            "Could not fetch latest file in dir: " + config.getVersionsDir()));
-        Path latestFilePath = latestDirPath.resolve(config.getVersionsFileName());
-        log.info("Loading latest data from file {}", latestFilePath.toFile().getAbsolutePath());
-        try (Reader reader = Files.newBufferedReader(latestFilePath)) {
-          return applier.apply(
-              CSVFormat.DEFAULT.withHeader().withFirstRecordAsHeader().parse(reader));
-        }
-      default:
-        throw new UnsupportedOperationException(
-            "Unknown FileRefreshConfig mode " + config.getMode());
+  private T fetchDataFromResources(String resourceDataPath) {
+    Reader csvReader =
+        Resources.asCharSource(Resources.getResource(resourceDataPath), Charset.defaultCharset())
+            .openBufferedStream();
+    Iterable<CSVRecord> records =
+        CSVFormat.DEFAULT.withHeader().withFirstRecordAsHeader().parse(csvReader);
+    return buildFromRecords(records);
+  }
+
+  @SneakyThrows
+  private T fetchDataFromLatestFile(FileRefreshConfig config) {
+    Path latestDirPath =
+        latestInstantNamedPathFinder
+            .get(Path.of(config.getVersionsDir()).toUri(), Files::isDirectory)
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        "Could not fetch latest file in dir: " + config.getVersionsDir()));
+    Path latestFilePath = latestDirPath.resolve(config.getVersionsFileName());
+    log.info("Loading latest data from file {}", latestFilePath.toFile().getAbsolutePath());
+    try (Reader reader = Files.newBufferedReader(latestFilePath)) {
+      return buildFromRecords(
+          CSVFormat.DEFAULT.withHeader().withFirstRecordAsHeader().parse(reader));
     }
   }
 }

@@ -190,16 +190,11 @@ traceableConfigServiceConfig:
     cacheExpiryDuration: 5m
   regionConfigService:
     neustar:
-      mode: VERSIONS_DIR
+      mode: RESOURCE_FILE
       resourceFile: neustar/countries.csv
-      versions: |-
-        versions.dir = /var/data/models/neustar/country_csv
-        versions.file.name = countries.csv
-        versions.refresh.duration = 24h
     ipqs:
       mode: VERSIONS_DIR
       resourceFile: ipqs/countries.csv
-      resolveNeustar: true
       versions: |-
         versions.dir = /var/data/models/ipqs/country_csv
         versions.file.name = countries.csv

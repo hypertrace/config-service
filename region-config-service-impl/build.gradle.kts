@@ -34,7 +34,6 @@ dependencies {
   testImplementation(testFixtures(libs.hypertrace.configservice.api))
   testAnnotationProcessor(libs.lombok)
   testCompileOnly(libs.lombok)
-  testRuntimeOnly(libs.slf4j.log4jimpl)
 }
 
 tasks.test {
