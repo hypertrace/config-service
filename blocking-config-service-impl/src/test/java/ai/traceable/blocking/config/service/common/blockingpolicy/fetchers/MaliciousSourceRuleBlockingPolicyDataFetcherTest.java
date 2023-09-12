@@ -462,9 +462,9 @@ class MaliciousSourceRuleBlockingPolicyDataFetcherTest {
                             "1",
                             Timestamp.getDefaultInstance(),
                             List.of(
-                                Region.newBuilder().setCountryIsoCode("AF").build(),
-                                Region.newBuilder().setCountryIsoCode("IN").build(),
-                                Region.newBuilder().setCountryIsoCode("IN").build()),
+                                Region.newBuilder().setCountryIsoCode("af").build(),
+                                Region.newBuilder().setCountryIsoCode("in").build(),
+                                Region.newBuilder().setCountryIsoCode("in").build()),
                             RuleActionType.RULE_ACTION_TYPE_BLOCK),
                         generateRegionRule(
                             "2",
@@ -472,7 +472,7 @@ class MaliciousSourceRuleBlockingPolicyDataFetcherTest {
                                 .setSeconds(activeTimestamp / 1000)
                                 .setNanos(((int) (activeTimestamp % 1000)) * 1000000)
                                 .build(),
-                            List.of(Region.newBuilder().setCountryIsoCode("AF").build()),
+                            List.of(Region.newBuilder().setCountryIsoCode("af").build()),
                             RuleActionType.RULE_ACTION_TYPE_BLOCK),
                         generateRegionRule(
                             "3",
@@ -480,7 +480,7 @@ class MaliciousSourceRuleBlockingPolicyDataFetcherTest {
                                 .setSeconds(inactiveTimestamp / 1000)
                                 .setNanos(((int) (inactiveTimestamp % 1000)) * 1000000)
                                 .build(),
-                            List.of(Region.newBuilder().setCountryIsoCode("AF").build()),
+                            List.of(Region.newBuilder().setCountryIsoCode("af").build()),
                             RuleActionType.RULE_ACTION_TYPE_BLOCK)))
                 .build());
 
@@ -495,10 +495,10 @@ class MaliciousSourceRuleBlockingPolicyDataFetcherTest {
             .getBlockingPolicyList();
     assertEquals(2, maliciousSourceRegionViolations.size());
     assertEquals(
-        RegionBlockingDetails.builder().regions(List.of("AF", "IN")).build(),
+        RegionBlockingDetails.builder().regions(List.of("af", "in")).build(),
         maliciousSourceRegionViolations.get(0).getBlockingDetails());
     assertEquals(
-        RegionBlockingDetails.builder().regions(List.of("AF")).build(),
+        RegionBlockingDetails.builder().regions(List.of("af")).build(),
         maliciousSourceRegionViolations.get(1).getBlockingDetails());
 
     assertEquals(
@@ -547,9 +547,9 @@ class MaliciousSourceRuleBlockingPolicyDataFetcherTest {
                             "1",
                             Timestamp.getDefaultInstance(),
                             List.of(
-                                Region.newBuilder().setCountryIsoCode("AF").build(),
-                                Region.newBuilder().setCountryIsoCode("IN").build(),
-                                Region.newBuilder().setCountryIsoCode("IN").build()),
+                                Region.newBuilder().setCountryIsoCode("af").build(),
+                                Region.newBuilder().setCountryIsoCode("in").build(),
+                                Region.newBuilder().setCountryIsoCode("in").build()),
                             RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT),
                         generateRegionRule(
                             "2",
@@ -557,7 +557,7 @@ class MaliciousSourceRuleBlockingPolicyDataFetcherTest {
                                 .setSeconds(activeTimestamp / 1000)
                                 .setNanos(((int) (activeTimestamp % 1000)) * 1000000)
                                 .build(),
-                            List.of(Region.newBuilder().setCountryIsoCode("AF").build()),
+                            List.of(Region.newBuilder().setCountryIsoCode("af").build()),
                             RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT),
                         generateRegionRule(
                             "3",
@@ -565,7 +565,7 @@ class MaliciousSourceRuleBlockingPolicyDataFetcherTest {
                                 .setSeconds(inactiveTimestamp / 1000)
                                 .setNanos(((int) (inactiveTimestamp % 1000)) * 1000000)
                                 .build(),
-                            List.of(Region.newBuilder().setCountryIsoCode("AF").build()),
+                            List.of(Region.newBuilder().setCountryIsoCode("af").build()),
                             RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)))
                 .build());
 
@@ -581,10 +581,10 @@ class MaliciousSourceRuleBlockingPolicyDataFetcherTest {
 
     assertEquals(2, maliciousSourceRegionBlockAllExcept.size());
     assertEquals(
-        RegionBlockingDetails.builder().regions(List.of("AF", "IN")).build(),
+        RegionBlockingDetails.builder().regions(List.of("af", "in")).build(),
         maliciousSourceRegionBlockAllExcept.get(0).getBlockingDetails());
     assertEquals(
-        RegionBlockingDetails.builder().regions(List.of("AF")).build(),
+        RegionBlockingDetails.builder().regions(List.of("af")).build(),
         maliciousSourceRegionBlockAllExcept.get(1).getBlockingDetails());
 
     assertEquals(

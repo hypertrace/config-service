@@ -25,7 +25,7 @@ import org.apache.commons.csv.CSVPrinter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-class RegionBuilderTest {
+class DefaultRegionBuilderTest {
   private static final String START_IP_INT_CSV_HEADER = "start_ip_int";
   private static final String END_IP_INT_CSV_HEADER = "end_ip_int";
   private static final String COUNTRY_CSV_HEADER = "country";
@@ -57,30 +57,27 @@ class RegionBuilderTest {
 
     Region region1 =
         new Region(
-            uuidGenerator.generateId("Russia"),
-            "Russia",
+            uuidGenerator.generateId("ru"),
+            "russia",
             RegionType.COUNTRY,
             List.of(
                 new IpV4Range(3758096382L, 3758096383L), new IpV4Range(2758096382L, 2758096383L)),
-            "RU");
+            "ru");
     Region region2 =
         new Region(
-            uuidGenerator.generateId("China"),
-            "China",
+            uuidGenerator.generateId("cn"),
+            "china",
             RegionType.COUNTRY,
             List.of(new IpV4Range(1L, 2L)),
-            "CN");
+            "cn");
 
-    RegionBuilder regionBuilder =
-        new RegionBuilder(latestInstantNamedPathFinder, uuidGenerator, fileRefreshConfig);
+    DefaultRegionBuilder regionBuilder =
+        new DefaultRegionBuilder(
+            latestInstantNamedPathFinder, uuidGenerator, fileRefreshConfig, false);
 
     Map<String, Region> regionIdToRegionMap = regionBuilder.getLatestDataSupplier().get();
     assertEquals(
-        Map.of(
-            uuidGenerator.generateId("Russia"),
-            region1,
-            uuidGenerator.generateId("China"),
-            region2),
+        Map.of(uuidGenerator.generateId("ru"), region1, uuidGenerator.generateId("cn"), region2),
         regionIdToRegionMap);
   }
 
@@ -110,7 +107,7 @@ class RegionBuilderTest {
   }
 
   private void mockUuids() {
-    when(uuidGenerator.generateId("Russia")).thenReturn("id-1");
-    when(uuidGenerator.generateId("China")).thenReturn("id-2");
+    when(uuidGenerator.generateId("ru")).thenReturn("id-1");
+    when(uuidGenerator.generateId("cn")).thenReturn("id-2");
   }
 }

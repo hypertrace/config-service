@@ -90,6 +90,9 @@ data:
         {{- if .Values.traceableConfigServiceConfig.regionConfigService.ipqs.versions }}
         {{ .Values.traceableConfigServiceConfig.regionConfigService.ipqs.versions | nindent 8 }}
         {{- end }}
+        {{- if .Values.traceableConfigServiceConfig.regionConfigService.ipqs.resolveNeustar }}
+        resolve.neustar = {{ .Values.traceableConfigServiceConfig.regionConfigService.ipqs.resolveNeustar }}
+        {{- end }}
       }
       shouldPublishActivityEvents = true
     }

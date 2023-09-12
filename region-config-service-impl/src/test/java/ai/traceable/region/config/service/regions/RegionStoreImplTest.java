@@ -23,7 +23,7 @@ class RegionStoreImplTest {
 
   @BeforeEach
   void setup() {
-    RegionBuilder regionBuilder = mock(RegionBuilder.class);
+    DefaultRegionBuilder regionBuilder = mock(DefaultRegionBuilder.class);
     RegionConverter regionConverter = mock(RegionConverter.class);
 
     when(regionConverter.convert(any(Region.class)))

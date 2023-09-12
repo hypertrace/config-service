@@ -52,7 +52,7 @@ class RegionConfigServiceIntegrationTest extends TraceableConfigServiceIntegrati
             TENANT_ID,
             () -> regionConfigServiceStub.getRegions(GetRegionsRequest.getDefaultInstance()));
     List<Region> regions = regionsResponse.getRegionList();
-    assertEquals(241, regions.size());
+    assertEquals(245, regions.size());
     regions.forEach(
         region -> {
           assertFalse(region.getId().isEmpty());
