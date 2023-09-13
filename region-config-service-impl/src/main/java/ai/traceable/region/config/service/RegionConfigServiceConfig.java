@@ -9,6 +9,8 @@ public class RegionConfigServiceConfig {
   private static final String SHOULD_PUBLISH_ACTIVITY_EVENTS_CONFIG = "shouldPublishActivityEvents";
   private static final String NEUSTAR_COUNTRIES_DATA_CONFIG = "neustar.countries.data";
   private static final String IPQS_COUNTRIES_DATA_CONFIG = "ipqs.countries.data";
+  private static final String IPQS_NEUSTAR_RESOLUTION_ENABLED_CONFIG =
+      "ipqs.countries.data.resolve.neustar";
 
   public RegionConfigServiceConfig(Config config) {
     this.config = config.getConfig(REGION_CONFIG_SERVICE);
@@ -20,6 +22,11 @@ public class RegionConfigServiceConfig {
 
   public FileRefreshConfig getIpqsCountriesDataConfig() {
     return new FileRefreshConfig(config.getConfig(IPQS_COUNTRIES_DATA_CONFIG));
+  }
+
+  public boolean getIpqsNeustarResolutionEnabled() {
+    return config.hasPath(IPQS_NEUSTAR_RESOLUTION_ENABLED_CONFIG)
+        && config.getBoolean(IPQS_NEUSTAR_RESOLUTION_ENABLED_CONFIG);
   }
 
   public boolean shouldPublishActivityEvents() {

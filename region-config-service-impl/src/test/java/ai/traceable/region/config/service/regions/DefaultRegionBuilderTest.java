@@ -25,7 +25,7 @@ import org.apache.commons.csv.CSVPrinter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-class RegionBuilderTest {
+class DefaultRegionBuilderTest {
   private static final String START_IP_INT_CSV_HEADER = "start_ip_int";
   private static final String END_IP_INT_CSV_HEADER = "end_ip_int";
   private static final String COUNTRY_CSV_HEADER = "country";
@@ -71,8 +71,9 @@ class RegionBuilderTest {
             List.of(new IpV4Range(1L, 2L)),
             "CN");
 
-    RegionBuilder regionBuilder =
-        new RegionBuilder(latestInstantNamedPathFinder, uuidGenerator, fileRefreshConfig);
+    DefaultRegionBuilder regionBuilder =
+        new DefaultRegionBuilder(
+            latestInstantNamedPathFinder, uuidGenerator, fileRefreshConfig, false);
 
     Map<String, Region> regionIdToRegionMap = regionBuilder.getLatestDataSupplier().get();
     assertEquals(

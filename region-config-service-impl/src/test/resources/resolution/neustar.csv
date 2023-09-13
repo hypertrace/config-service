@@ -1,0 +1,6 @@
+start_ip_int,end_ip_int,country,country_iso_code
+1,9,bangladesh,bg
+10,19,pakistan,pk
+20,55,india,in
+70,90,australia,au
+94,115,pakistan,pk
