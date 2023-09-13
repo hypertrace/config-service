@@ -222,6 +222,7 @@ class WafIntegrationConfigServiceImplTest {
                                             .getAuthCredentials()
                                             .getEncryptedSecretAccessKey()))
                             .setRuleGroupCapacity(300)
+                            .setSyncExistingBlockingData(true)
                             .setIntegrationActionType(
                                 IntegrationActionType.INTEGRATION_ACTION_TYPE_COUNT)
                             .addResources(
@@ -323,6 +324,7 @@ class WafIntegrationConfigServiceImplTest {
                                     .getAuthCredentials()
                                     .getEncryptedSecretAccessKey()))
                     .setRuleGroupCapacity(300)
+                    .setSyncExistingBlockingData(true)
                     .setIntegrationActionType(IntegrationActionType.INTEGRATION_ACTION_TYPE_COUNT)
                     .addResources(AwsResource.newBuilder().setArn("arn").setRegion("region")))
             .build(),
@@ -683,6 +685,7 @@ class WafIntegrationConfigServiceImplTest {
                             .setAccessKeyId("id")
                             .setEncryptedSecretAccessKey("secret"))
                     .setRuleGroupCapacity(300)
+                    .setSyncExistingBlockingData(true)
                     .addResources(
                         AwsResource.newBuilder().setArn("arn").setRegion("region").build())
                     .setIntegrationActionType(IntegrationActionType.INTEGRATION_ACTION_TYPE_COUNT))

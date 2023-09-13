@@ -83,7 +83,8 @@ public class WafIntegrationBuilderUtils {
     AwsIntegrationParams.Builder awsIntegrationParamsBuilder =
         AwsIntegrationParams.newBuilder()
             .addAllResources(awsIntegrationUpdateParams.getResourcesList())
-            .setIntegrationActionType(awsIntegrationUpdateParams.getIntegrationActionType());
+            .setIntegrationActionType(awsIntegrationUpdateParams.getIntegrationActionType())
+            .setSyncExistingBlockingData(awsIntegrationUpdateParams.getSyncExistingBlockingData());
     if (awsIntegrationUpdateParams.hasRuleGroupCapacity()) {
       awsIntegrationParamsBuilder.setRuleGroupCapacity(
           awsIntegrationUpdateParams.getRuleGroupCapacity());
