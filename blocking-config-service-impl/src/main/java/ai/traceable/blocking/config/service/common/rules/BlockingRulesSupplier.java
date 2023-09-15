@@ -123,7 +123,8 @@ public class BlockingRulesSupplier {
       log.error(
           "Error in fetching custom signature modsec rules for request context: {} and environment: {}",
           requestContext,
-          environmentId);
+          environmentId,
+          e);
       return "";
     }
   }
