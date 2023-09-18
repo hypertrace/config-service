@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package ai.traceable.dashboard.config.service.v1;
+
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+
+service DashboardConfigService {
+  rpc GetDashboards(GetDashboardsRequest) returns (GetDashboardsResponse) {}
+
+  rpc CreateDashboard(CreateDashboardRequest) returns (CreateDashboardResponse) {}
+
+  rpc UpdateDashboard(UpdateDashboardRequest) returns (UpdateDashboardResponse) {}
+
+  rpc DeleteDashboard(DeleteDashboardRequest) returns (DeleteDashboardResponse) {}
+}
+
+message GetDashboardsRequest {
+  DashboardFilter filter = 1;
+
+  message DashboardFilter {
+    optional string ui_reference = 1;
+  }
+}
+
+message GetDashboardsResponse {
+  repeated Dashboard dashboards = 1;
+}
+
+message CreateDashboardRequest {
+  string name = 1;
+  optional string description = 2;
+  string json = 3;
+  optional string ui_reference = 4;
+}
+
+message CreateDashboardResponse {
+  Dashboard dashboard = 1;
+}
+
+message UpdateDashboardRequest {
+  string id = 1;
+  string name = 2;
+  optional string description = 3;
+  string json = 4;
+}
+
+message UpdateDashboardResponse {
+  Dashboard dashboard = 1;
+}
+
+message DeleteDashboardRequest {
+  string id = 1;
+}
+
+message DeleteDashboardResponse {
+}
+
+message Dashboard {
+  string id = 1;
+  string name = 2;
+  optional string description = 3;
+  string author = 4;
+  string json = 5;
+  google.protobuf.Timestamp creation_timestamp = 6;
+  google.protobuf.Timestamp last_updated_timestamp = 7;
+  optional string ui_reference = 8;
+}

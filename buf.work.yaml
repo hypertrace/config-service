@@ -40,3 +40,4 @@ directories:
   - saved-filter-config-service-api/src/main/proto
   - session-identification-config-service-api/src/main/proto
   - saved-query-config-service-api/src/main/proto
+  - dashboard-config-service-api/src/main/proto
