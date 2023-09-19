@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package ai.traceable.waf.integration.service.api.v1;
+
+option java_multiple_files = true;
+
+message AzureIntegrationParams {
+  repeated AzureIntegrationDetails azure_integration_details = 1;
+}
+
+message AzureIntegrationUpdateParams {
+  repeated AzureIntegrationDetails azure_integration_details = 1;
+}
+
+message AzureIntegrationDetails {
+  string azure_tenant_id = 1;
+  string subscription_id = 2;
+  string azure_environment = 3;
+  repeated AzureResourceGroupDetails azure_resource_group_details = 4;
+  AzureAuthCredentials auth_credentials = 5;
+}
+
+message AzureResourceGroupDetails {
+  string name = 1;
+  string region = 2;
+}
+
+message AzureAuthCredentials {
+  string client_id = 1; // also known as azure application id
+  string encrypted_client_secret = 2;
+  string access_key_id = 3; // id of key used to encrypt the provided client secret
+}
