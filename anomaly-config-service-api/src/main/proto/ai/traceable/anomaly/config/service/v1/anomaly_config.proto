@@ -107,6 +107,7 @@ message AnomalyRuleInfo {
   AnomalyEventFamily event_family = 4;
   repeated AnomalySubRuleInfo sub_rule_infos = 5;
   AnomalyRuleCategory anomaly_rule_category = 6;
+  map<string, string> event_labels = 7;
 }
 
 message AnomalySubRuleInfo {

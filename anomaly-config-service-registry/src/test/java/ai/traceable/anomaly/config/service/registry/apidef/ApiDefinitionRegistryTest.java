@@ -46,9 +46,11 @@ public class ApiDefinitionRegistryTest {
                               assertEquals(
                                   ANOMALY_SUB_RULE_TYPE_REGULAR, subRuleInfo.getSubRuleTypes(0));
                               assertTrue(subRuleInfo.getRuleId().startsWith(jwtRuleId));
+                              assertTrue(subRuleInfo.getEventLabelsCount() > 0);
                             });
                   } else {
                     assertEquals(0, anomalyRuleInfo.getSubRuleInfosCount());
+                    assertTrue(anomalyRuleInfo.getEventLabelsCount() > 0);
                   }
                   return anomalyRuleInfo.getRuleId();
                 })
