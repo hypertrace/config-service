@@ -35,8 +35,7 @@ public class SessionIdentificationRuleGenerator {
 
   public SessionIdentificationRule generateRuleForOldApiConfigFromUpdateRequest(
       UpdateSessionIdentificationRuleRequest request) {
-    return SessionIdentificationRule.newBuilder(
-            generateRuleForOldApiConfigFromUpdateRequest(request))
+    return SessionIdentificationRule.newBuilder(generateRuleFromUpdateRequest(request))
         .setStatus(
             SessionIdentificationRuleStatus.newBuilder(request.getStatus())
                 .setRuleCreationSource(RuleCreationSource.RULE_CREATION_SOURCE_OLD_API))

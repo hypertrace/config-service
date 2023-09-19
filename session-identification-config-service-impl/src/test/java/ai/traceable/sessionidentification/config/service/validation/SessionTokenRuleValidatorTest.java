@@ -53,20 +53,6 @@ class SessionTokenRuleValidatorTest {
             tokenRuleValidator.validateTokenRules(
                 List.of(
                     SessionTokenRule.newBuilder().setTokenValueRule(TOKEN_VALUE_RULE).build())));
-
-    assertInvalidArgStatusContaining(
-        "At least one Request Session Token rule must be there in a rule",
-        () ->
-            tokenRuleValidator.validateTokenRules(
-                List.of(
-                    SessionTokenRule.newBuilder()
-                        .setResponseSessionTokenDetails(
-                            ResponseSessionTokenDetails.newBuilder()
-                                .setTokenLocation(
-                                    ResponseAttributeKeyLocation
-                                        .RESPONSE_ATTRIBUTE_KEY_LOCATION_HEADER))
-                        .setTokenValueRule(TOKEN_VALUE_RULE)
-                        .build())));
   }
 
   @Test

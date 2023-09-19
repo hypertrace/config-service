@@ -92,7 +92,7 @@ public class LegacySessionIdentificationRuleTranslatingDaoImpl
             validator.validateSessionIdentificationRule(sessionIdentificationRule);
             return true;
           } catch (Exception e) {
-            log.warn("Invalid session identification rule {}", rule);
+            log.debug("Invalid session identification rule {}", rule);
             return false;
           }
         });

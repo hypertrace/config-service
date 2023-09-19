@@ -36,7 +36,6 @@ public class SessionTokenRuleValidator {
           .withDescription("Session token rule list cannot be empty")
           .asRuntimeException();
     }
-    int requestSessionTokenTypeCount = 0;
     for (SessionTokenRule tokenRule : tokenRules) {
       if (tokenRule.hasTokenConditionalPredicate()) {
         validateTokenConditionalPredicate(tokenRule.getTokenConditionalPredicate());
@@ -44,7 +43,6 @@ public class SessionTokenRuleValidator {
       validateTokenValue(tokenRule.getTokenValueRule());
       switch (tokenRule.getTokenTypeCase()) {
         case REQUEST_SESSION_TOKEN_DETAILS:
-          requestSessionTokenTypeCount++;
           validateRequestSessionTokenDetails(tokenRule.getRequestSessionTokenDetails());
           break;
         case RESPONSE_SESSION_TOKEN_DETAILS:
@@ -55,13 +53,6 @@ public class SessionTokenRuleValidator {
               .withDescription(String.format("Unexpected token type: %s", printMessage(tokenRule)))
               .asRuntimeException();
       }
-    }
-    if (requestSessionTokenTypeCount == 0) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(
-              String.format(
-                  "At least one Request Session Token rule must be there in a rule %s", tokenRules))
-          .asRuntimeException();
     }
   }
 
