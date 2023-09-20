@@ -37,6 +37,7 @@ message BlockingDetailsCombination {
     CONDITIONS_OPERATOR_UNSPECIFIED = 0;
     CONDITIONS_OPERATOR_AND = 1;
     CONDITIONS_OPERATOR_OR = 2;
+    CONDITIONS_OPERATOR_NOT = 3;
   }
 }
 
@@ -50,7 +51,6 @@ message BlockingDetailsCondition {
     IpTypeDetails ip_type_details = 6;
     BlockingDetailsCombination details_combination = 7;
   }
-  bool is_negation = 8;
 }
 
 message ModsecDetails {
