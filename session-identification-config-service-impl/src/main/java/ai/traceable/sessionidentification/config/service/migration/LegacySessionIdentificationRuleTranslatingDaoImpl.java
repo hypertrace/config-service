@@ -8,6 +8,7 @@ import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRule;
 import ai.traceable.sessionidentification.config.service.validation.SessionIdentificationConfigRequestValidator;
+import com.google.common.util.concurrent.RateLimiter;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -19,6 +20,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class LegacySessionIdentificationRuleTranslatingDaoImpl
     implements LegacySessionIdentificationRuleTranslatingDao {
   private static final int DEFAULT_DEADLINE_SECONDS = 10;
+  private static final RateLimiter LOG_RATE_LIMITER = RateLimiter.create(0.01);
   private final SessionIdentificationRuleConverter ruleConverter;
   private final SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub
       sensitiveDataConfigServiceBlockingStub;
@@ -92,7 +94,9 @@ public class LegacySessionIdentificationRuleTranslatingDaoImpl
             validator.validateSessionIdentificationRule(sessionIdentificationRule);
             return true;
           } catch (Exception e) {
-            log.debug("Invalid session identification rule {}", rule);
+            if (LOG_RATE_LIMITER.tryAcquire()) {
+              log.warn("Invalid session identification rule {}", rule);
+            }
             return false;
           }
         });
