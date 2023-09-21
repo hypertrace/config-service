@@ -52,6 +52,7 @@ dependencies {
   implementation(projects.savedFilterConfigServiceImpl)
   implementation(projects.anomalyScoringConfigServiceImpl)
   implementation(projects.savedQueryConfigServiceImpl)
+  implementation(projects.dashboardConfigServiceImpl)
 
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)

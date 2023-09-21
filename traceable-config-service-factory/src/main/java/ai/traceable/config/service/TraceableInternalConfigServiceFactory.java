@@ -11,6 +11,7 @@ import ai.traceable.ast.hooks.config.service.AstHooksConfigServiceFactory;
 import ai.traceable.ast.scan.profile.config.service.AstScanProfileConfigServiceFactory;
 import ai.traceable.auth.detection.config.service.AuthDetectionConfigServiceFactory;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceFactory;
+import ai.traceable.dashboard.config.service.DashboardConfigServiceFactory;
 import ai.traceable.data.classification.config.service.DataClassificationConfigServiceFactory;
 import ai.traceable.data.exfiltration.config.service.detection.rule.DataExfiltrationDetectionRulesConfigServiceFactory;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceFactory;
@@ -229,6 +230,9 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
             wrap(
                 SavedQueryConfigServiceFactory.build(
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())),
+            wrap(
+                DashboardConfigServiceFactory.build(
                     providers.getLocalChannel(), providers.getChangeEventGenerator())))
         .flatMap(stream -> stream)
         .collect(Collectors.toUnmodifiableList());
