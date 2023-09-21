@@ -104,7 +104,8 @@ public class ExternalDataClassificationConfigServiceImplTest {
                 new DataClassificationRulesDao(dataClassificationConfigServiceBlockingStub),
                 new RedactionRulesTranslator(),
                 new DataClassificationRulesTranslator(),
-                new ExternalDataClassificationRuleResponseBuilder(uuidGenerator),
+                new ExternalDataClassificationRuleResponseBuilder(
+                    uuidGenerator, featureCachingClient),
                 insightsServiceCoordinator,
                 featureCachingClient,
                 new SessionIdentificationRulesDao(sessionIdentificationConfigServiceBlockingStub),

@@ -1,20 +1,21 @@
 package ai.traceable.external.data.classification.config.service;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.external.data.classification.config.service.v1.DataParsingRule;
 import ai.traceable.external.data.classification.config.service.v1.DataType;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigResponse;
-import com.google.inject.Inject;
+import ai.traceable.external.data.classification.config.service.v1.ObfuscationStrategy;
 import java.util.List;
+import javax.inject.Inject;
+import lombok.AllArgsConstructor;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
+@AllArgsConstructor(onConstructor_ = @Inject)
 class ExternalDataClassificationRuleResponseBuilder {
   private final UuidGenerator uuidGenerator;
-
-  @Inject
-  ExternalDataClassificationRuleResponseBuilder(UuidGenerator uuidGenerator) {
-    this.uuidGenerator = uuidGenerator;
-  }
+  private final FeatureCachingClient featureClient;
 
   GetDataClassificationConfigResponse buildDisabledResponse() {
     return GetDataClassificationConfigResponse.newBuilder().setEnabled(false).build();
@@ -22,6 +23,7 @@ class ExternalDataClassificationRuleResponseBuilder {
 
   GetDataClassificationConfigResponse buildEnabledResponse(
       GetDataClassificationConfigRequest request,
+      RequestContext requestContext,
       List<DataType> dataTypes,
       List<DataParsingRule> dataParsingRules) {
     GetDataClassificationConfigResponse.Builder responseBuilder =
@@ -29,6 +31,13 @@ class ExternalDataClassificationRuleResponseBuilder {
             .setEnabled(true)
             .addAllDataTypes(dataTypes)
             .addAllDataParsingRules(dataParsingRules);
+    if (this.featureClient.isDataClassificationEnhancedObfuscationEnabled(requestContext)) {
+      // Use the tenant ID as a salt for now. In future can support customization if needed
+      responseBuilder.setObfuscationStrategy(
+          ObfuscationStrategy.newBuilder()
+              .setHashFunction(ObfuscationStrategy.HashFunction.HASH_FUNCTION_SHA256)
+              .setSalt(requestContext.getTenantId().orElseThrow()));
+    }
 
     String responseHash = uuidGenerator.generateId(responseBuilder.build());
     responseBuilder.setHash(responseHash);

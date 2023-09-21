@@ -203,6 +203,7 @@ class ExternalDataClassificationConfigServiceImpl
       responseObserver.onNext(
           this.responseBuilder.buildEnabledResponse(
               request,
+              requestContext,
               externalDataTypes,
               this.externalDataClassificationConfig.getDefaultDataParsingRules()));
       responseObserver.onCompleted();
