@@ -1,6 +1,7 @@
 package ai.traceable.ratelimiting.service.v2.rules.modsec.converters;
 
-import ai.traceable.config.utils.RegexValidator;
+import static ai.traceable.ratelimiting.service.v2.rules.modsec.converters.ModsecBlobConverterUtils.validateRegex;
+
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueTag;
@@ -104,7 +105,7 @@ public class ScopedPatternConverter {
     }
 
     // Check if formed regex are valid
-    RegexValidator.validate(matchValue);
+    validateRegex(matchValue);
 
     return Clause.newBuilder()
         .setMatchExpression(
@@ -135,8 +136,8 @@ public class ScopedPatternConverter {
     }
 
     // Check if formed regexes are valid
-    RegexValidator.validate(matchKey);
-    RegexValidator.validate(valuePattern.getValue());
+    validateRegex(matchKey);
+    validateRegex(valuePattern.getValue());
 
     return Clause.newBuilder()
         .setKeyValueExpression(

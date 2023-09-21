@@ -14,6 +14,7 @@ import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperat
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
@@ -61,6 +62,9 @@ public class ModsecBlobConverterUtils {
   }
 
   Clause buildUrlRegexClause(Collection<String> urlRegexes) {
+    String combinedRegex = String.join(OR_REGEX_DELIMITER, urlRegexes);
+    validateRegex(combinedRegex);
+
     return Clause.newBuilder()
         .setMatchExpression(
             MatchExpression.newBuilder()
@@ -68,7 +72,7 @@ public class ModsecBlobConverterUtils {
                 .setMatchOperator(
                     ai.traceable.customsignature.config.service.v1.MatchOperator
                         .MATCH_OPERATOR_MATCHES_REGEX)
-                .setMatchValue(String.join(OR_REGEX_DELIMITER, urlRegexes))
+                .setMatchValue(combinedRegex)
                 .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST))
         .build();
   }
@@ -77,9 +81,8 @@ public class ModsecBlobConverterUtils {
     ClauseDetails extractedClauseDetails = convertType(keyValueCondition.getType());
     if (keyValueCondition.hasKeyCondition() && keyValueCondition.hasValueCondition()) {
       if (extractedClauseDetails.getKeyValueTagOptional().isPresent()) {
-        // Check if formed regexes are valid
-        RegexValidator.validate(keyValueCondition.getKeyCondition().getValue());
-        RegexValidator.validate(keyValueCondition.getValueCondition().getValue());
+        validateRegex(keyValueCondition.getKeyCondition().getValue());
+        validateRegex(keyValueCondition.getValueCondition().getValue());
 
         return Clause.newBuilder()
             .setKeyValueExpression(
@@ -96,7 +99,7 @@ public class ModsecBlobConverterUtils {
       }
     } else if (keyValueCondition.hasValueCondition()) {
       // Check if formed regex are valid
-      RegexValidator.validate(keyValueCondition.getValueCondition().getValue());
+      validateRegex(keyValueCondition.getValueCondition().getValue());
 
       return Clause.newBuilder()
           .setMatchExpression(
@@ -109,7 +112,7 @@ public class ModsecBlobConverterUtils {
           .build();
     } else if (extractedClauseDetails.getKeyTypeOptional().isPresent()) {
       // Check if formed regex are valid
-      RegexValidator.validate(keyValueCondition.getKeyCondition().getValue());
+      validateRegex(keyValueCondition.getKeyCondition().getValue());
 
       return Clause.newBuilder()
           .setMatchExpression(
@@ -124,6 +127,13 @@ public class ModsecBlobConverterUtils {
     throw new UnsupportedOperationException(
         String.format(
             "Cannot convert key-value-condition - %s, into modsec rule", keyValueCondition));
+  }
+
+  static void validateRegex(String combinedRegex) {
+    Status validationStatus = RegexValidator.validate(combinedRegex);
+    if (!validationStatus.isOk()) {
+      throw validationStatus.asRuntimeException();
+    }
   }
 
   private ClauseDetails convertType(Type type) {

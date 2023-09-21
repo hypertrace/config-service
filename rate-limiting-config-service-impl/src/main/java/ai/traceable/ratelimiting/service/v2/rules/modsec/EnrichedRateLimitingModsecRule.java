@@ -61,6 +61,7 @@ public class EnrichedRateLimitingModsecRule {
                     .addAllMatchingIds(
                         dataTypeRuleWrappers.stream()
                             .map(DataTypeRuleWrapper::getModsecRuleId)
+                            .distinct()
                             .collect(Collectors.toUnmodifiableList()))
                     .setType(IdType.ID_TYPE_DATA_TYPE_CUSTOM_LOCATION))
             .build();
