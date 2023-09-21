@@ -95,6 +95,9 @@ message LeafCondition {
     EmailDomainCondition email_domain_condition = 9;
     UserAgentCondition user_agent_condition = 10;
     IpConnectionTypeCondition ip_connection_type_condition = 11;
+    IpOrganisationCondition ip_organisation_condition = 12;
+    IpAsnCondition ip_asn_condition = 13;
+    IpAbuseVelocityCondition ip_abuse_velocity_condition = 14;
   }
 }
 
@@ -227,6 +230,7 @@ message IpAddressCondition {
 
 message IpLocationTypeCondition {
   repeated IpLocationType ip_location_types = 1;
+  bool exclude = 2;
 }
 
 message UserIdCondition {
@@ -242,6 +246,7 @@ message IpReputationCondition {
 
 message IpConnectionTypeCondition {
   repeated IpConnectionType ip_connection_types = 1;
+  bool exclude = 2;
 }
 
 message EmailDomainCondition {
@@ -254,6 +259,20 @@ message UserAgentCondition {
   repeated string user_agents = 1;
   repeated string user_agent_regexes = 2;
   bool exclude = 3;
+}
+
+message IpOrganisationCondition {
+  repeated string ip_organisation_regexes = 1;
+  bool exclude = 2;
+}
+
+message IpAsnCondition {
+  repeated string ip_asn_regexes = 1;
+  bool exclude = 2;
+}
+
+message IpAbuseVelocityCondition {
+  IpAbuseVelocity min_ip_abuse_velocity = 1;
 }
 
 message ThresholdActionConfig {
@@ -380,4 +399,11 @@ enum IpAddressConditionType {
   IP_ADDRESS_CONDITION_TYPE_UNSPECIFIED = 0;
   IP_ADDRESS_CONDITION_TYPE_ALL_INTERNAL = 2;
   IP_ADDRESS_CONDITION_TYPE_ALL_EXTERNAL = 3;
+}
+
+enum IpAbuseVelocity {
+  IP_ABUSE_VELOCITY_UNSPECIFIED = 0;
+  IP_ABUSE_VELOCITY_LOW = 1;
+  IP_ABUSE_VELOCITY_MEDIUM = 2;
+  IP_ABUSE_VELOCITY_HIGH = 3;
 }
