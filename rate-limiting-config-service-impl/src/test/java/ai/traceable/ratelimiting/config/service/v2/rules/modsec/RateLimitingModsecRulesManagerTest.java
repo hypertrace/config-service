@@ -130,7 +130,7 @@ class RateLimitingModsecRulesManagerTest {
     ModsecBlobConverterUtils blobConverterUtils =
         new ModsecBlobConverterUtils(new ModsecRuleConversion(new ModsecRuleMappings()));
     ModsecBlobValidator modsecBlobValidator = mock(ModsecBlobValidator.class);
-    doReturn(true).when(modsecBlobValidator).validate(any(), any(), any(), any());
+    doReturn(true).when(modsecBlobValidator).validate(any(), any(), any(), any(), any());
 
     rateLimitingModsecRulesManager =
         new RateLimitingModsecRulesManager(

@@ -77,7 +77,8 @@ public class ModsecBlobDataConverter {
         .forEach(modsecRules::addAll);
 
     String modsecBlob = String.join(NEW_LINES_DELIMITER, modsecRules);
-    if (!modsecBlobValidator.validate(modsecBlob, tenantId, serviceNames, environmentIds)) {
+    if (!modsecBlobValidator.validate(
+        modsecBlob, tenantId, serviceNames, environmentIds, enrichedRateLimitingModsecRules)) {
       return Optional.empty();
     }
 

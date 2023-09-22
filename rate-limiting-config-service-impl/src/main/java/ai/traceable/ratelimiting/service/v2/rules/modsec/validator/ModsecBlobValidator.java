@@ -2,10 +2,12 @@ package ai.traceable.ratelimiting.service.v2.rules.modsec.validator;
 
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.modsecurity.RuleEngine;
+import ai.traceable.ratelimiting.service.v2.rules.modsec.EnrichedRateLimitingModsecRule;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
@@ -39,18 +41,24 @@ public class ModsecBlobValidator {
 
   public boolean validate(
       String modsecRuleBlob,
-      String tenantName,
+      String tenantId,
       List<String> serviceNames,
-      List<String> environmentIds) {
+      List<String> environmentIds,
+      Collection<EnrichedRateLimitingModsecRule> enrichedRateLimitingModsecRules) {
     if (modsecRuleBlob.isBlank()) {
       return true;
     }
 
     String modsecBlobHash = uuidGenerator.generateId(modsecRuleBlob);
     if (!modsecBlobCache.containsKey(modsecBlobHash)) {
+      log.debug(
+          "For customer ID: {}, Created modsec blob: [{}] for the enrichedRateLimitingModsecRules: [{}]",
+          tenantId,
+          modsecRuleBlob,
+          enrichedRateLimitingModsecRules);
       modsecBlobCache.put(
           modsecBlobHash,
-          validateModsecBlob(modsecRuleBlob, tenantName, serviceNames, environmentIds));
+          validateModsecBlob(modsecRuleBlob, tenantId, serviceNames, environmentIds));
     }
     return modsecBlobCache.get(modsecBlobHash);
   }
@@ -76,13 +84,14 @@ public class ModsecBlobValidator {
             serviceNames,
             environmentIds,
             e);
+      } else {
+        log.debug(
+            "Invalid modsec rule: {} was formed when trying to convert rate-limiting rule for tenant:{} and services:{}. Skipping.",
+            modsecRuleBlob,
+            tenantName,
+            serviceNames,
+            e);
       }
-      log.debug(
-          "Invalid modsec rule: {} was formed when trying to convert rate-limiting rule for tenant:{} and services:{}. Skipping.",
-          modsecRuleBlob,
-          tenantName,
-          serviceNames,
-          e);
       return false;
     }
   }
