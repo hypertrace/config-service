@@ -74,7 +74,7 @@ dependencies {
   testFixturesAnnotationProcessor(libs.lombok)
   testFixturesCompileOnly(libs.lombok)
   constraints {
-    implementation("com.google.guava:guava:32.0.1-jre") {
+    implementation("com.google.guava:guava:32.1.2-jre") {
       because("https://nvd.nist.gov/vuln/detail/CVE-2023-2976")
     }
   }
