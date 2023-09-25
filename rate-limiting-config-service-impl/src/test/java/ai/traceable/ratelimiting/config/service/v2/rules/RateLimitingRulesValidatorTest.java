@@ -1,5 +1,6 @@
 package ai.traceable.ratelimiting.config.service.v2.rules;
 
+import static ai.traceable.ratelimiting.config.service.v2.IpLocationType.IP_LOCATION_TYPE_HOSTING_PROVIDER;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -19,12 +20,16 @@ import ai.traceable.ratelimiting.config.service.v2.DataSensitivityLevel;
 import ai.traceable.ratelimiting.config.service.v2.DatatypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.EmailDomainCondition;
 import ai.traceable.ratelimiting.config.service.v2.EnvironmentScope;
+import ai.traceable.ratelimiting.config.service.v2.IpAbuseVelocity;
+import ai.traceable.ratelimiting.config.service.v2.IpAbuseVelocityCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressConditionType;
+import ai.traceable.ratelimiting.config.service.v2.IpAsnCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpConnectionType;
 import ai.traceable.ratelimiting.config.service.v2.IpConnectionTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationType;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationTypeCondition;
+import ai.traceable.ratelimiting.config.service.v2.IpOrganisationCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperator;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.StringCondition;
@@ -947,6 +952,198 @@ public class RateLimitingRulesValidatorTest {
             () -> rulesValidator.validateOrThrow(requestContext, request25, List.of()));
     status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    RateLimitingRuleData ruleData26 =
+        ruleData.toBuilder()
+            .setCondition(
+                Condition.newBuilder()
+                    .setCompositeCondition(
+                        compositeCondition.toBuilder()
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setDatatypeCondition(
+                                                DatatypeCondition.newBuilder()
+                                                    .addAllDatatypeIds(List.of("datatype1"))
+                                                    .setDataLocation(
+                                                        DataLocation.DATA_LOCATION_REQUEST)
+                                                    .setDatatypeMatching(
+                                                        DatatypeCondition.DatatypeMatching
+                                                            .newBuilder()
+                                                            .setRegexBasedMatching(
+                                                                DatatypeCondition.RegexBasedMatching
+                                                                    .newBuilder()
+                                                                    .setCustomMatchingLocation(
+                                                                        KeyValueCondition
+                                                                            .newBuilder()
+                                                                            .setType(
+                                                                                Type
+                                                                                    .TYPE_REQUEST_BODY)))))))
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setIpOrganisationCondition(
+                                                IpOrganisationCondition.newBuilder()
+                                                    .setExclude(true)
+                                                    .addAllIpOrganisationRegexes(
+                                                        List.of(".*reg.*"))))))
+                    .build())
+            .build();
+
+    CreateRateLimitingRuleRequest request26 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData26).build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request26, List.of()));
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    RateLimitingRuleData ruleData27 =
+        ruleData.toBuilder()
+            .setCondition(
+                Condition.newBuilder()
+                    .setCompositeCondition(
+                        compositeCondition.toBuilder()
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setDatatypeCondition(
+                                                DatatypeCondition.newBuilder()
+                                                    .addAllDatatypeIds(List.of("datatype1"))
+                                                    .setDataLocation(
+                                                        DataLocation.DATA_LOCATION_REQUEST)
+                                                    .setDatatypeMatching(
+                                                        DatatypeCondition.DatatypeMatching
+                                                            .newBuilder()
+                                                            .setRegexBasedMatching(
+                                                                DatatypeCondition.RegexBasedMatching
+                                                                    .newBuilder()
+                                                                    .setCustomMatchingLocation(
+                                                                        KeyValueCondition
+                                                                            .newBuilder()
+                                                                            .setType(
+                                                                                Type
+                                                                                    .TYPE_REQUEST_BODY)))))))
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setIpAsnCondition(
+                                                IpAsnCondition.newBuilder()
+                                                    .setExclude(true)
+                                                    .addAllIpAsnRegexes(List.of(".*reg.*"))))))
+                    .build())
+            .build();
+
+    CreateRateLimitingRuleRequest request27 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData27).build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request27, List.of()));
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    RateLimitingRuleData ruleData28 =
+        ruleData.toBuilder()
+            .setCondition(
+                Condition.newBuilder()
+                    .setCompositeCondition(
+                        compositeCondition.toBuilder()
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setDatatypeCondition(
+                                                DatatypeCondition.newBuilder()
+                                                    .addAllDatatypeIds(List.of("datatype1"))
+                                                    .setDataLocation(
+                                                        DataLocation.DATA_LOCATION_REQUEST)
+                                                    .setDatatypeMatching(
+                                                        DatatypeCondition.DatatypeMatching
+                                                            .newBuilder()
+                                                            .setRegexBasedMatching(
+                                                                DatatypeCondition.RegexBasedMatching
+                                                                    .newBuilder()
+                                                                    .setCustomMatchingLocation(
+                                                                        KeyValueCondition
+                                                                            .newBuilder()
+                                                                            .setType(
+                                                                                Type
+                                                                                    .TYPE_REQUEST_BODY)))))))
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setIpAbuseVelocityCondition(
+                                                IpAbuseVelocityCondition.newBuilder()
+                                                    .setMinIpAbuseVelocity(
+                                                        IpAbuseVelocity
+                                                            .IP_ABUSE_VELOCITY_UNSPECIFIED)))))
+                    .build())
+            .build();
+
+    CreateRateLimitingRuleRequest request28 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData28).build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request28, List.of()));
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    RateLimitingRuleData ruleData29 =
+        ruleData.toBuilder()
+            .setCondition(
+                Condition.newBuilder()
+                    .setCompositeCondition(
+                        compositeCondition.toBuilder()
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setDatatypeCondition(
+                                                DatatypeCondition.newBuilder()
+                                                    .addAllDatatypeIds(List.of("datatype1"))
+                                                    .setDataLocation(
+                                                        DataLocation.DATA_LOCATION_REQUEST)
+                                                    .setDatatypeMatching(
+                                                        DatatypeCondition.DatatypeMatching
+                                                            .newBuilder()
+                                                            .setRegexBasedMatching(
+                                                                DatatypeCondition.RegexBasedMatching
+                                                                    .newBuilder()
+                                                                    .setCustomMatchingLocation(
+                                                                        KeyValueCondition
+                                                                            .newBuilder()
+                                                                            .setType(
+                                                                                Type
+                                                                                    .TYPE_REQUEST_BODY)))))))
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setIpLocationTypeCondition(
+                                                IpLocationTypeCondition.newBuilder()
+                                                    .setExclude(true)
+                                                    .addAllIpLocationTypes(
+                                                        List.of(
+                                                            IP_LOCATION_TYPE_HOSTING_PROVIDER))))))
+                    .build())
+            .build();
+
+    CreateRateLimitingRuleRequest request29 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData29).build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request29, List.of()));
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
   }
 
   @Test
@@ -1773,6 +1970,33 @@ public class RateLimitingRulesValidatorTest {
                                 Condition.newBuilder()
                                     .setLeafCondition(
                                         LeafCondition.newBuilder()
+                                            .setIpOrganisationCondition(
+                                                IpOrganisationCondition.newBuilder()
+                                                    .setExclude(true)
+                                                    .addAllIpOrganisationRegexes(List.of("^reg"))))
+                                    .build())
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setIpAsnCondition(
+                                                IpAsnCondition.newBuilder()
+                                                    .setExclude(true)
+                                                    .addAllIpAsnRegexes(List.of("^reg"))))
+                                    .build())
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setIpAbuseVelocityCondition(
+                                                IpAbuseVelocityCondition.newBuilder()
+                                                    .setMinIpAbuseVelocity(
+                                                        IpAbuseVelocity.IP_ABUSE_VELOCITY_LOW)))
+                                    .build())
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
                                             .setIpConnectionTypeCondition(
                                                 IpConnectionTypeCondition.newBuilder()
                                                     .addIpConnectionTypes(
@@ -1807,6 +2031,147 @@ public class RateLimitingRulesValidatorTest {
     CreateRateLimitingRuleRequest request =
         CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
     assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
+  }
+
+  @Test
+  void testValidIpOrganisationCondition() {
+    RateLimitingRuleData.Builder builder =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule1")
+            .setCategory(Category.CATEGORY_RATE_LIMITING)
+            .setEnabled(true)
+            .addThresholdActionConfigs(
+                ThresholdActionConfig.newBuilder()
+                    .addActions(
+                        Action.newBuilder()
+                            .setBlock(
+                                Block.newBuilder()
+                                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                                    .build())
+                            .build())
+                    .addResourceAccessThresholdConfigs(
+                        ResourceAccessThresholdConfig.newBuilder()
+                            .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                            .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                            .setRollingWindowThresholdConfig(
+                                RollingWindowThresholdConfig.newBuilder()
+                                    .setCountAllowed(1000)
+                                    .setDurationIso("P3Y6M4DT12H30M5S")
+                                    .build())
+                            .build()))
+            .setRuleConfigScope(RuleConfigScope.newBuilder());
+    RateLimitingRuleData data =
+        builder.setCondition(getIpOrganisationCondition(true, List.of("^reg"))).build();
+
+    CreateRateLimitingRuleRequest request =
+        CreateRateLimitingRuleRequest.newBuilder().setData(data).build();
+    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
+
+    data = builder.setCondition(getIpOrganisationCondition(false, List.of("]["))).build();
+    CreateRateLimitingRuleRequest request1 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(data).build();
+    Throwable throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request1, List.of()));
+    Status status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+  }
+
+  @Test
+  void testValidIpAsnCondition() {
+    RateLimitingRuleData.Builder builder =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule1")
+            .setCategory(Category.CATEGORY_RATE_LIMITING)
+            .setEnabled(true)
+            .addThresholdActionConfigs(
+                ThresholdActionConfig.newBuilder()
+                    .addActions(
+                        Action.newBuilder()
+                            .setBlock(
+                                Block.newBuilder()
+                                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                                    .build())
+                            .build())
+                    .addResourceAccessThresholdConfigs(
+                        ResourceAccessThresholdConfig.newBuilder()
+                            .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                            .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                            .setRollingWindowThresholdConfig(
+                                RollingWindowThresholdConfig.newBuilder()
+                                    .setCountAllowed(1000)
+                                    .setDurationIso("P3Y6M4DT12H30M5S")
+                                    .build())
+                            .build()))
+            .setRuleConfigScope(RuleConfigScope.newBuilder());
+    RateLimitingRuleData data =
+        builder.setCondition(getIpAsnCondition(true, List.of("^reg"))).build();
+
+    CreateRateLimitingRuleRequest request =
+        CreateRateLimitingRuleRequest.newBuilder().setData(data).build();
+    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
+
+    data = builder.setCondition(getIpAsnCondition(false, List.of("]["))).build();
+    CreateRateLimitingRuleRequest request1 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(data).build();
+    Throwable throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request1, List.of()));
+    Status status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+  }
+
+  @Test
+  void testValidIpAbuseVelocityCondition() {
+    RateLimitingRuleData.Builder builder =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule1")
+            .setCategory(Category.CATEGORY_RATE_LIMITING)
+            .setEnabled(true)
+            .addThresholdActionConfigs(
+                ThresholdActionConfig.newBuilder()
+                    .addActions(
+                        Action.newBuilder()
+                            .setBlock(
+                                Block.newBuilder()
+                                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                                    .build())
+                            .build())
+                    .addResourceAccessThresholdConfigs(
+                        ResourceAccessThresholdConfig.newBuilder()
+                            .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                            .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                            .setRollingWindowThresholdConfig(
+                                RollingWindowThresholdConfig.newBuilder()
+                                    .setCountAllowed(1000)
+                                    .setDurationIso("P3Y6M4DT12H30M5S")
+                                    .build())
+                            .build()))
+            .setRuleConfigScope(RuleConfigScope.newBuilder());
+    RateLimitingRuleData data =
+        builder
+            .setCondition(getIpAbuseVelocityCondition(IpAbuseVelocity.IP_ABUSE_VELOCITY_LOW))
+            .build();
+
+    CreateRateLimitingRuleRequest request =
+        CreateRateLimitingRuleRequest.newBuilder().setData(data).build();
+    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
+
+    data =
+        builder
+            .setCondition(
+                getIpAbuseVelocityCondition(IpAbuseVelocity.IP_ABUSE_VELOCITY_UNSPECIFIED))
+            .build();
+    CreateRateLimitingRuleRequest request1 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(data).build();
+    Throwable throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request1, List.of()));
+    Status status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
   }
 
   @Test
@@ -2387,6 +2752,35 @@ public class RateLimitingRulesValidatorTest {
                         .setUserAggregateType(userAggregateType)
                         .setDynamicThresholdConfig(dynamicThresholdConfig)
                         .build()))
+        .build();
+  }
+
+  private Condition getIpOrganisationCondition(boolean exclude, List<String> regexes) {
+    return Condition.newBuilder()
+        .setLeafCondition(
+            LeafCondition.newBuilder()
+                .setIpOrganisationCondition(
+                    IpOrganisationCondition.newBuilder()
+                        .setExclude(exclude)
+                        .addAllIpOrganisationRegexes(regexes)))
+        .build();
+  }
+
+  private Condition getIpAsnCondition(boolean exclude, List<String> regexes) {
+    return Condition.newBuilder()
+        .setLeafCondition(
+            LeafCondition.newBuilder()
+                .setIpAsnCondition(
+                    IpAsnCondition.newBuilder().setExclude(exclude).addAllIpAsnRegexes(regexes)))
+        .build();
+  }
+
+  private Condition getIpAbuseVelocityCondition(IpAbuseVelocity ipAbuseVelocity) {
+    return Condition.newBuilder()
+        .setLeafCondition(
+            LeafCondition.newBuilder()
+                .setIpAbuseVelocityCondition(
+                    IpAbuseVelocityCondition.newBuilder().setMinIpAbuseVelocity(ipAbuseVelocity)))
         .build();
   }
 }

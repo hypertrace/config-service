@@ -111,13 +111,24 @@ public class TransactionActionConfigValidator {
         validateKeyValueConditionForTransactionActionConfig(leafCondition);
         break;
       case IP_LOCATION_TYPE_CONDITION:
-        validatorUtils.validateLeafCondition(leafCondition);
+        validateIpLocationTypeConditionForTransactionActionConfig(leafCondition);
         break;
       default:
         validatorUtils.throwInvalidArgumentException(
             String.format(
                 "Invalid leaf condition : %s, for transaction action config", leafCondition));
     }
+  }
+
+  private void validateIpLocationTypeConditionForTransactionActionConfig(
+      LeafCondition leafCondition) {
+    if (leafCondition.getIpLocationTypeCondition().getExclude()) {
+      validatorUtils.throwInvalidArgumentException(
+          String.format(
+              "Exclude should be set false when transaction action config is present : %s",
+              leafCondition.getIpLocationTypeCondition()));
+    }
+    validatorUtils.validateLeafCondition(leafCondition);
   }
 
   private void validateKeyValueConditionForTransactionActionConfig(LeafCondition condition) {

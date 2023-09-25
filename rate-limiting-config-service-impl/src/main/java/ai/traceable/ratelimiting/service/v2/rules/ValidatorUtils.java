@@ -10,16 +10,20 @@ import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
+import ai.traceable.config.utils.RegexValidator;
 import ai.traceable.platform.utils.ip.IpValidationUtils;
 import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.DatatypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.EmailDomainCondition;
+import ai.traceable.ratelimiting.config.service.v2.IpAbuseVelocityCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
+import ai.traceable.ratelimiting.config.service.v2.IpAsnCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpConnectionType;
 import ai.traceable.ratelimiting.config.service.v2.IpConnectionTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationType;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationTypeCondition;
+import ai.traceable.ratelimiting.config.service.v2.IpOrganisationCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpReputationCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
@@ -28,13 +32,10 @@ import ai.traceable.ratelimiting.config.service.v2.ScopeCondition;
 import ai.traceable.ratelimiting.config.service.v2.UserAgentCondition;
 import ai.traceable.ratelimiting.config.service.v2.UserIdCondition;
 import com.google.protobuf.Message;
-import com.google.re2j.Pattern;
-import com.google.re2j.PatternSyntaxException;
 import io.grpc.Status;
 import java.util.List;
 
 public class ValidatorUtils {
-  private static final String UTF_8_REGEX_PREFIX = "(*UTF8)";
   private static List<KeyValueCondition.Type> KEY_NULL_CONDITION_TYPES =
       List.of(TYPE_URL, TYPE_HOST, TYPE_HTTP_METHOD, TYPE_USER_AGENT, TYPE_REQUEST_BODY);
 
@@ -72,6 +73,15 @@ public class ValidatorUtils {
         break;
       case IP_CONNECTION_TYPE_CONDITION:
         validateIpConnectionTypeCondition(leafCondition.getIpConnectionTypeCondition());
+        break;
+      case IP_ORGANISATION_CONDITION:
+        validateIpOrganisationCondition(leafCondition.getIpOrganisationCondition());
+        break;
+      case IP_ASN_CONDITION:
+        validateIpAsnCondition(leafCondition.getIpAsnCondition());
+        break;
+      case IP_ABUSE_VELOCITY_CONDITION:
+        validateIpAbuseVelocityCondition(leafCondition.getIpAbuseVelocityCondition());
         break;
       default:
         throwInvalidArgumentException(
@@ -114,15 +124,9 @@ public class ValidatorUtils {
   }
 
   public void validateRegex(String regexPattern) {
-    if (regexPattern.startsWith(UTF_8_REGEX_PREFIX)) {
-      return;
-    }
-    // compiling an invalid regex throws PatternSyntaxException
-    try {
-      Pattern.compile(regexPattern);
-    } catch (PatternSyntaxException e) {
-      throw new IllegalArgumentException(
-          "Invalid Regex Value for the rate limit rule expression", e);
+    Status status = RegexValidator.validate(regexPattern);
+    if (!status.isOk()) {
+      throwInvalidArgumentException(String.format("Invalid Regex pattern: %s", regexPattern));
     }
   }
 
@@ -362,5 +366,18 @@ public class ValidatorUtils {
         throwInvalidArgumentException(
             String.format("Invalid Case in %s:%n %s", getName(condition), printMessage(condition)));
     }
+  }
+
+  private void validateIpOrganisationCondition(IpOrganisationCondition ipOrganisationCondition) {
+    validateRegexes(ipOrganisationCondition.getIpOrganisationRegexesList());
+  }
+
+  private void validateIpAsnCondition(IpAsnCondition ipAsnCondition) {
+    validateRegexes(ipAsnCondition.getIpAsnRegexesList());
+  }
+
+  private void validateIpAbuseVelocityCondition(IpAbuseVelocityCondition ipAbuseVelocityCondition) {
+    validateNonDefaultPresenceOrThrow(
+        ipAbuseVelocityCondition, IpAbuseVelocityCondition.MIN_IP_ABUSE_VELOCITY_FIELD_NUMBER);
   }
 }
