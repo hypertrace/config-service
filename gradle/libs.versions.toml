@@ -20,7 +20,7 @@ traceable-opaDistributor-api = { module = "ai.traceable.platform:opa-aggregator-
 traceable-insights-api = { module = "ai.traceable.platform:insights-service-api", version = "0.49.69" }
 traceable-activityevent-api = { module = "ai.traceable.activity.event.service:activity-event-api", version = "0.4.17" }
 traceable-licensemetering-api = { module = "ai.traceable.license.metering.service:license-metering-service-api", version = "0.1.40" }
-traceable-platform-jnimodsecurity = { module = "ai.traceable.platform:jni-modsecurity", version = "0.1.106"}
+traceable-platform-jnimodsecurity = { module = "ai.traceable.platform:jni-modsecurity", version = "0.1.108"}
 traceable-apiNamingModel = { module = "ai.traceable.platform:api-naming-model", version = "0.13.1" }
 traceable-platformGateway-deepDataStore = { module = "ai.traceable.platform-gateway:deep-data-store", version.ref = "traceable-platformGateway" }
 traceable-platformGateway-trainingEvaluationFramework = { module = "ai.traceable.platform-gateway:training-evaluation-framework", version.ref = "traceable-platformGateway" }
