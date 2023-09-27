@@ -8,7 +8,7 @@ hypertrace-framework = "0.1.59"
 hypertrace-entityService = "0.8.78"
 traceable-platformGateway = "0.6.138"
 traceable-platform-apiAnomalyDetection = "0.9.50"
-kafka-streams-framework = "0.2.12"
+kafka-streams-framework = "0.3.7"
 actorService = "0.2.118"
 
 junit = "5.8.2"

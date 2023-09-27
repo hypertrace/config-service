@@ -55,7 +55,6 @@ public class SavedFilterStoreManager {
       RequestContext requestContext, UpdateSavedFilterRequest request) throws StatusException {
     SavedFilter existingSavedFilter =
         fetchExistingSavedFilterOrThrow(request.getId(), requestContext);
-    validateUserPermission(requestContext, existingSavedFilter);
     SavedFilter updatedSavedFilter =
         SavedFilter.newBuilder(existingSavedFilter)
             .setName(request.getName())
@@ -72,7 +71,6 @@ public class SavedFilterStoreManager {
       RequestContext requestContext, DeleteSavedFilterRequest request) throws StatusException {
     SavedFilter existingSavedFilter =
         fetchExistingSavedFilterOrThrow(request.getId(), requestContext);
-    validateUserPermission(requestContext, existingSavedFilter);
     this.savedFilterConfigStore
         .deleteObject(requestContext, request.getId())
         .orElseThrow(Status.NOT_FOUND::asRuntimeException);
